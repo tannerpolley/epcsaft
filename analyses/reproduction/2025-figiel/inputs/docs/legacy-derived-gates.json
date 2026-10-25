@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "derivation": {
+    "source": "legacy Figiel 2025 model-vs-literature metrics inspected once for gate derivation",
+    "legacy_model_series_retained": false,
+    "margin": 0.1,
+    "formula": "max(1.10 * legacy metric, numerical floor)",
+    "numerical_floor": 1e-12,
+    "claim": "reproduction evidence only; not independent prediction or runtime authority"
+  },
+  "figures": {
+    "1": {"kind": "structural"},
+    "2": {"rmse_max": 4.26998357985747, "max_abs_max": 7.732864211484299},
+    "3": {"rmse_max": 0.10318611857971721, "max_abs_max": 0.29485434606235256},
+    "4": {"rmse_max": 1.9446641862680991, "max_abs_max": 3.3502459319142646},
+    "5": {"rmse_max": 0.1510610521457796, "max_abs_max": 1.2762471764814711, "first_nonzero_max": 0.98},
+    "6": {"rmse_max": 2.72696879657699, "max_abs_max": 5.548249265936175},
+    "7": {"rmse_max": 0.022519123453101392, "max_abs_max": 0.06713989136687185},
+    "8": {"rmse_max": 0.8799320071280046, "max_abs_max": 8.711838569428192},
+    "9": {"rmse_max": 0.05449014230149261, "max_abs_max": 0.310155476125932, "first_nonzero_max": 0.98}
+  }
+}

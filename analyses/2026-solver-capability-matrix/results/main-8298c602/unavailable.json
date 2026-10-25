@@ -1,0 +1,6 @@
+{
+  "available": false,
+  "reason": "The leaf has an inventory README and capability-matrix.csv only; no runnable study declaration or retained second-/third-order check values. Creating a new calculation harness is outside #680.",
+  "evidence_label": "numerical verification",
+  "previous_files": []
+}

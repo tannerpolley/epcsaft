@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "case_id": "nist-janaf-n2o4-no2",
+  "claim": "source-derived ideal-gas dimerization benchmark with an analytic extent",
+  "reaction": "N2O4(g) = 2 NO2(g)",
+  "reaction_stoichiometry": [-1.0, 2.0],
+  "temperature_k": 500.0,
+  "pressures_pa": [20000.0, 100000.0, 500000.0],
+  "standard_pressure_pa": 100000.0,
+  "species": [
+    {
+      "id": "N2O4",
+      "molar_mass_kg_per_mol": 0.092011,
+      "formation_enthalpy_298_kj_per_mol": 9.078988,
+      "shomate_temperature_range_k": [500.0, 1000.0],
+      "shomate": [34.05274, 191.9845, -151.0575, 44.3935, -0.158949, -8.893428, 293.7724, 9.078988],
+      "url": "https://webbook.nist.gov/cgi/cbook.cgi?ID=C10544726&Mask=1",
+      "retrieved_utc_date": "2026-07-29",
+      "retrieved_sha256": "dcaf71393834515c0d3085b00916874287b5e45e26a7c589c0ee88d73ca9ed16"
+    },
+    {
+      "id": "NO2",
+      "molar_mass_kg_per_mol": 0.0460055,
+      "formation_enthalpy_298_kj_per_mol": 33.09502,
+      "shomate_temperature_range_k": [298.0, 1200.0],
+      "shomate": [16.10857, 75.89525, -54.3874, 14.30777, 0.239423, 26.17464, 240.5386, 33.09502],
+      "url": "https://webbook.nist.gov/cgi/cbook.cgi?ID=C10102440&Mask=1",
+      "retrieved_utc_date": "2026-07-29",
+      "retrieved_sha256": "c1d93096aba471ec16ab2575380432e806958c4f59e1fc1010efbd810cd55240"
+    }
+  ],
+  "source_reference": "Chase, M. W., Jr., NIST-JANAF Thermochemical Tables, Fourth Edition, J. Phys. Chem. Ref. Data, Monograph 9 (1998)",
+  "provider_basis_transform": "ln(Kc) = ln(Kp) + delta_n*ln(p_standard/(R*T)); delta_n=1",
+  "analytic_extent": "xi = sqrt(Kp/(Kp + 4*p/p_standard)); n_N2O4=1-xi; n_NO2=2*xi",
+  "amount_absolute_tolerance_mol": 2e-9,
+  "limitations": [
+    "The benchmark uses the NIST-JANAF ideal-gas standard state and is not a nonideal ePC-SAFT prediction.",
+    "Source coefficient precision limits thermochemical accuracy but does not weaken the analytic solver comparison because both paths consume the same derived constant."
+  ]
+}

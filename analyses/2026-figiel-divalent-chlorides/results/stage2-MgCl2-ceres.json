@@ -1,0 +1,2337 @@
+{
+  "results": [
+    {
+      "status": "converged",
+      "message": "Function tolerance reached. |cost_change|/cost: 5.219253e-14 <= 1.000000e-12",
+      "usable": true,
+      "optimizer": [
+        2.707876499444583,
+        -1.0,
+        1.0
+      ],
+      "physical": [
+        2.707876499444583,
+        2.382931319511233,
+        2.382931319511233,
+        -1.0,
+        1.0,
+        3.157332370296715
+      ],
+      "iterations": 23,
+      "initial_cost": 380.91845715113607,
+      "final_cost": 82.22782139807637,
+      "residual_evaluations": 23,
+      "jacobian_evaluations": 10,
+      "trial_failures": 0,
+      "iteration_seconds": {
+        "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+        "elements": 23
+      },
+      "iteration_costs": {
+        "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+        "elements": 23
+      },
+      "holds": [
+        {
+          "energy_error": -2.612359821796417e-07,
+          "correction": 4.857169843576157e-13,
+          "uncertainty": 4.857169843576157e-13,
+          "derivative": 537835.7986083995,
+          "parameter_derivative": [
+            -82936.73344992581,
+            16354.251939517184,
+            9.634065862406726e-09,
+            82092.72604155871,
+            1.4206112346793988e-09,
+            537835.7986083995
+          ],
+          "cause": "converged"
+        }
+      ],
+      "covariance": {
+        "status": "active_bound",
+        "rank": 3,
+        "singular_values": [
+          318.2097364043002,
+          4.870393014126102,
+          0.18692635474559577
+        ],
+        "active_bounds": [
+          1,
+          2
+        ],
+        "optimizer": [],
+        "physical": [],
+        "variance_factor": 2.030316577730281,
+        "projected_gradient_norm": 0.0023212291148588804,
+        "left_vectors": {
+          "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+          "elements": 252
+        },
+        "right_vectors": {
+          "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+          "elements": 9
+        },
+        "assumption": "unit-variance weighted residuals, independent errors and a regular local linearization at an interior point; multiply by variance_factor for an unknown common variance; no claim under bounds, rank deficiency or model discrepancy"
+      },
+      "failures": []
+    },
+    {
+      "status": "converged",
+      "message": "Function tolerance reached. |cost_change|/cost: 4.465745e-13 <= 1.000000e-12",
+      "usable": true,
+      "optimizer": [
+        2.7078764898801166,
+        -1.0,
+        1.0
+      ],
+      "physical": [
+        2.7078764898801166,
+        2.3829313110945027,
+        2.3829313110945027,
+        -1.0,
+        1.0,
+        3.157332369078214
+      ],
+      "iterations": 24,
+      "initial_cost": 15144.319936594704,
+      "final_cost": 82.22782139814558,
+      "residual_evaluations": 24,
+      "jacobian_evaluations": 12,
+      "trial_failures": 0,
+      "iteration_seconds": {
+        "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+        "elements": 24
+      },
+      "iteration_costs": {
+        "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+        "elements": 24
+      },
+      "holds": [
+        {
+          "energy_error": -1.83936208486557e-08,
+          "correction": 3.4199324184166044e-14,
+          "uncertainty": 3.4199324184166044e-14,
+          "derivative": 537835.7990235307,
+          "parameter_derivative": [
+            -82936.73316173156,
+            16354.251864263933,
+            9.634065862406813e-09,
+            82092.72561366655,
+            1.4206112272190972e-09,
+            537835.7990235307
+          ],
+          "cause": "converged"
+        }
+      ],
+      "covariance": {
+        "status": "active_bound",
+        "rank": 3,
+        "singular_values": [
+          318.20973500522143,
+          4.870392982034767,
+          0.18692635485107376
+        ],
+        "active_bounds": [
+          1,
+          2
+        ],
+        "optimizer": [],
+        "physical": [],
+        "variance_factor": 2.03031657773199,
+        "projected_gradient_norm": 0.0015864871839355033,
+        "left_vectors": {
+          "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+          "elements": 252
+        },
+        "right_vectors": {
+          "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+          "elements": 9
+        },
+        "assumption": "unit-variance weighted residuals, independent errors and a regular local linearization at an interior point; multiply by variance_factor for an unknown common variance; no claim under bounds, rank deficiency or model discrepancy"
+      },
+      "failures": []
+    },
+    {
+      "status": "converged",
+      "message": "Function tolerance reached. |cost_change|/cost: 5.606377e-13 <= 1.000000e-12",
+      "usable": true,
+      "optimizer": [
+        2.7078764957329566,
+        -1.0,
+        1.0
+      ],
+      "physical": [
+        2.7078764957329566,
+        2.382931316245002,
+        2.382931316245002,
+        -1.0,
+        1.0,
+        3.1573323698241347
+      ],
+      "iterations": 13,
+      "initial_cost": 7227.369388131721,
+      "final_cost": 82.22782139804708,
+      "residual_evaluations": 13,
+      "jacobian_evaluations": 9,
+      "trial_failures": 0,
+      "iteration_seconds": {
+        "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+        "elements": 13
+      },
+      "iteration_costs": {
+        "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+        "elements": 13
+      },
+      "holds": [
+        {
+          "energy_error": -1.862645149230957e-08,
+          "correction": 3.4632227038304065e-14,
+          "uncertainty": 3.4632227038304065e-14,
+          "derivative": 537835.7987694027,
+          "parameter_derivative": [
+            -82936.73333808794,
+            16354.251910314117,
+            9.634065862406759e-09,
+            82092.72587550909,
+            1.4206112317843233e-09,
+            537835.7987694027
+          ],
+          "cause": "converged"
+        }
+      ],
+      "covariance": {
+        "status": "active_bound",
+        "rank": 3,
+        "singular_values": [
+          318.20973586136785,
+          4.870393001671838,
+          0.18692635478641445
+        ],
+        "active_bounds": [
+          1,
+          2
+        ],
+        "optimizer": [],
+        "physical": [],
+        "variance_factor": 2.0303165777295575,
+        "projected_gradient_norm": 0.002036097604204201,
+        "left_vectors": {
+          "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+          "elements": 252
+        },
+        "right_vectors": {
+          "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+          "elements": 9
+        },
+        "assumption": "unit-variance weighted residuals, independent errors and a regular local linearization at an interior point; multiply by variance_factor for an unknown common variance; no claim under bounds, rank deficiency or model discrepancy"
+      },
+      "failures": []
+    },
+    {
+      "status": "converged",
+      "message": "Function tolerance reached. |cost_change|/cost: 7.849618e-13 <= 1.000000e-12",
+      "usable": true,
+      "optimizer": [
+        2.707876502428458,
+        -1.0,
+        1.0
+      ],
+      "physical": [
+        2.707876502428458,
+        2.382931322137043,
+        2.382931322137043,
+        -1.0,
+        1.0,
+        3.15733237067745
+      ],
+      "iterations": 20,
+      "initial_cost": 2391.5167971948185,
+      "final_cost": 82.22782139805736,
+      "residual_evaluations": 20,
+      "jacobian_evaluations": 11,
+      "trial_failures": 0,
+      "iteration_seconds": {
+        "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+        "elements": 20
+      },
+      "iteration_costs": {
+        "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+        "elements": 20
+      },
+      "holds": [
+        {
+          "energy_error": -1.792795956134796e-08,
+          "correction": 3.333351854238539e-14,
+          "uncertainty": 3.333351854238539e-14,
+          "derivative": 537835.7984786868,
+          "parameter_derivative": [
+            -82936.73353983523,
+            16354.251962994304,
+            9.634065862406699e-09,
+            82092.72617505038,
+            1.420611237006827e-09,
+            537835.7984786868
+          ],
+          "cause": "converged"
+        }
+      ],
+      "covariance": {
+        "status": "active_bound",
+        "rank": 3,
+        "singular_values": [
+          318.20973684077956,
+          4.870393024136649,
+          0.1869263547127014
+        ],
+        "active_bounds": [
+          1,
+          2
+        ],
+        "optimizer": [],
+        "physical": [],
+        "variance_factor": 2.030316577729811,
+        "projected_gradient_norm": 0.002550439769962054,
+        "left_vectors": {
+          "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+          "elements": 252
+        },
+        "right_vectors": {
+          "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+          "elements": 9
+        },
+        "assumption": "unit-variance weighted residuals, independent errors and a regular local linearization at an interior point; multiply by variance_factor for an unknown common variance; no claim under bounds, rank deficiency or model discrepancy"
+      },
+      "failures": []
+    },
+    {
+      "status": "converged",
+      "message": "Function tolerance reached. |cost_change|/cost: 7.464223e-13 <= 1.000000e-12",
+      "usable": true,
+      "optimizer": [
+        2.7078764698277222,
+        -1.0,
+        1.0
+      ],
+      "physical": [
+        2.7078764698277222,
+        2.3829312934483955,
+        2.3829312934483955,
+        -1.0,
+        1.0,
+        3.157332366522652
+      ],
+      "iterations": 48,
+      "initial_cost": 31229.716709535995,
+      "final_cost": 82.22782139785112,
+      "residual_evaluations": 46,
+      "jacobian_evaluations": 24,
+      "trial_failures": 0,
+      "iteration_seconds": {
+        "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+        "elements": 48
+      },
+      "iteration_costs": {
+        "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+        "elements": 48
+      },
+      "holds": [
+        {
+          "energy_error": -2.3283064365386963e-10,
+          "correction": 4.329028370734659e-16,
+          "uncertainty": 4.329028370734659e-16,
+          "derivative": 537835.7998941852,
+          "parameter_derivative": [
+            -82936.73255751745,
+            16354.251706491752,
+            9.634065862406997e-09,
+            82092.7247165686,
+            1.4206112115781935e-09,
+            537835.7998941852
+          ],
+          "cause": "converged"
+        }
+      ],
+      "covariance": {
+        "status": "active_bound",
+        "rank": 3,
+        "singular_values": [
+          318.20973207197585,
+          4.870392914756472,
+          0.1869263550719809
+        ],
+        "active_bounds": [
+          1,
+          2
+        ],
+        "optimizer": [],
+        "physical": [],
+        "variance_factor": 2.0303165777247187,
+        "projected_gradient_norm": 4.607922658195207e-05,
+        "left_vectors": {
+          "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+          "elements": 252
+        },
+        "right_vectors": {
+          "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+          "elements": 9
+        },
+        "assumption": "unit-variance weighted residuals, independent errors and a regular local linearization at an interior point; multiply by variance_factor for an unknown common variance; no claim under bounds, rank deficiency or model discrepancy"
+      },
+      "failures": []
+    },
+    {
+      "status": "converged",
+      "message": "Function tolerance reached. |cost_change|/cost: 5.608105e-13 <= 1.000000e-12",
+      "usable": true,
+      "optimizer": [
+        2.7078765011196433,
+        -1.0,
+        1.0
+      ],
+      "physical": [
+        2.7078765011196433,
+        2.382931320985286,
+        2.382931320985286,
+        -1.0,
+        1.0,
+        3.1573323705106797
+      ],
+      "iterations": 15,
+      "initial_cost": 18620.498038355152,
+      "final_cost": 82.22782139814905,
+      "residual_evaluations": 15,
+      "jacobian_evaluations": 9,
+      "trial_failures": 0,
+      "iteration_seconds": {
+        "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+        "elements": 15
+      },
+      "iteration_costs": {
+        "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+        "elements": 15
+      },
+      "holds": [
+        {
+          "energy_error": 0.0,
+          "correction": 0.0,
+          "uncertainty": 0.0,
+          "derivative": 537835.7985355037,
+          "parameter_derivative": [
+            -82936.73350039836,
+            16354.251952696553,
+            9.634065862406709e-09,
+            82092.72611649704,
+            1.4206112359859488e-09,
+            537835.7985355037
+          ],
+          "cause": "converged"
+        }
+      ],
+      "covariance": {
+        "status": "active_bound",
+        "rank": 3,
+        "singular_values": [
+          318.209736649328,
+          4.870393019745158,
+          0.18692635472714322
+        ],
+        "active_bounds": [
+          1,
+          2
+        ],
+        "optimizer": [],
+        "physical": [],
+        "variance_factor": 2.030316577732075,
+        "projected_gradient_norm": 0.002449896306526256,
+        "left_vectors": {
+          "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+          "elements": 252
+        },
+        "right_vectors": {
+          "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+          "elements": 9
+        },
+        "assumption": "unit-variance weighted residuals, independent errors and a regular local linearization at an interior point; multiply by variance_factor for an unknown common variance; no claim under bounds, rank deficiency or model discrepancy"
+      },
+      "failures": []
+    },
+    {
+      "status": "converged",
+      "message": "Parameter tolerance reached. Relative step_norm: 2.006079e-14 <= 1.000000e-12.",
+      "usable": true,
+      "optimizer": [
+        2.7078764693195896,
+        -1.0,
+        1.0
+      ],
+      "physical": [
+        2.7078764693195896,
+        2.382931293001239,
+        2.382931293001239,
+        -1.0,
+        1.0,
+        3.1573323664578923
+      ],
+      "iterations": 24,
+      "initial_cost": 9857.31773196657,
+      "final_cost": 82.22782139777578,
+      "residual_evaluations": 24,
+      "jacobian_evaluations": 11,
+      "trial_failures": 0,
+      "iteration_seconds": {
+        "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+        "elements": 24
+      },
+      "iteration_costs": {
+        "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+        "elements": 24
+      },
+      "holds": [
+        {
+          "energy_error": 0.0,
+          "correction": 0.0,
+          "uncertainty": 0.0,
+          "derivative": 537835.799916248,
+          "parameter_derivative": [
+            -82936.7325422065,
+            16354.25170249377,
+            9.634065862407002e-09,
+            82092.72469383592,
+            1.4206112111818487e-09,
+            537835.799916248
+          ],
+          "cause": "converged"
+        }
+      ],
+      "covariance": {
+        "status": "active_bound",
+        "rank": 3,
+        "singular_values": [
+          318.209731997647,
+          4.870392913051179,
+          0.18692635507769773
+        ],
+        "active_bounds": [
+          1,
+          2
+        ],
+        "optimizer": [],
+        "physical": [],
+        "variance_factor": 2.030316577722859,
+        "projected_gradient_norm": 7.043802675354982e-06,
+        "left_vectors": {
+          "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+          "elements": 252
+        },
+        "right_vectors": {
+          "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+          "elements": 9
+        },
+        "assumption": "unit-variance weighted residuals, independent errors and a regular local linearization at an interior point; multiply by variance_factor for an unknown common variance; no claim under bounds, rank deficiency or model discrepancy"
+      },
+      "failures": []
+    },
+    {
+      "status": "converged",
+      "message": "Parameter tolerance reached. Relative step_norm: 3.198097e-15 <= 1.000000e-12.",
+      "usable": true,
+      "optimizer": [
+        2.7078764692279007,
+        -1.0,
+        1.0
+      ],
+      "physical": [
+        2.7078764692279007,
+        2.382931292920553,
+        2.382931292920553,
+        -1.0,
+        1.0,
+        3.157332366446207
+      ],
+      "iterations": 38,
+      "initial_cost": 60502.28124783081,
+      "final_cost": 82.22782139790667,
+      "residual_evaluations": 37,
+      "jacobian_evaluations": 20,
+      "trial_failures": 4,
+      "iteration_seconds": {
+        "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+        "elements": 38
+      },
+      "iteration_costs": {
+        "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+        "elements": 38
+      },
+      "holds": [
+        {
+          "energy_error": 0.0,
+          "correction": 0.0,
+          "uncertainty": 0.0,
+          "derivative": 537835.799920229,
+          "parameter_derivative": [
+            -82936.73253944378,
+            16354.251701772362,
+            9.634065862407005e-09,
+            82092.72468973396,
+            1.4206112111103307e-09,
+            537835.799920229
+          ],
+          "cause": "converged"
+        }
+      ],
+      "covariance": {
+        "status": "active_bound",
+        "rank": 3,
+        "singular_values": [
+          318.20973198423457,
+          4.870392912744525,
+          0.18692635507874888
+        ],
+        "active_bounds": [
+          1,
+          2
+        ],
+        "optimizer": [],
+        "physical": [],
+        "variance_factor": 2.0303165777260905,
+        "projected_gradient_norm": 7.656666412003688e-10,
+        "left_vectors": {
+          "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+          "elements": 252
+        },
+        "right_vectors": {
+          "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+          "elements": 9
+        },
+        "assumption": "unit-variance weighted residuals, independent errors and a regular local linearization at an interior point; multiply by variance_factor for an unknown common variance; no claim under bounds, rank deficiency or model discrepancy"
+      },
+      "failures": [
+        {
+          "trial": 2,
+          "observation": 65,
+          "optimizer": [
+            4.4,
+            0.6686896231217494,
+            -0.7752116920653751
+          ],
+          "status": "NonpositiveLogArgument",
+          "message": "",
+          "jacobian": false
+        },
+        {
+          "trial": 3,
+          "observation": 65,
+          "optimizer": [
+            4.4,
+            0.6734082121657199,
+            -0.7672805805490603
+          ],
+          "status": "NonpositiveLogArgument",
+          "message": "",
+          "jacobian": false
+        },
+        {
+          "trial": 4,
+          "observation": 65,
+          "optimizer": [
+            4.4,
+            0.674384746215934,
+            -0.7577163910258855
+          ],
+          "status": "NonpositiveLogArgument",
+          "message": "",
+          "jacobian": false
+        },
+        {
+          "trial": 5,
+          "observation": 67,
+          "optimizer": [
+            4.4,
+            0.649557205223391,
+            -0.7195023300782156
+          ],
+          "status": "NonpositiveLogArgument",
+          "message": "",
+          "jacobian": false
+        }
+      ]
+    },
+    {
+      "status": "converged",
+      "message": "Parameter tolerance reached. Relative step_norm: 1.482754e-14 <= 1.000000e-12.",
+      "usable": true,
+      "optimizer": [
+        2.707876469227896,
+        -1.0,
+        1.0
+      ],
+      "physical": [
+        2.707876469227896,
+        2.3829312929205484,
+        2.3829312929205484,
+        -1.0,
+        1.0,
+        3.157332366446206
+      ],
+      "iterations": 35,
+      "initial_cost": 37155.45901760912,
+      "final_cost": 82.22782139781745,
+      "residual_evaluations": 34,
+      "jacobian_evaluations": 17,
+      "trial_failures": 0,
+      "iteration_seconds": {
+        "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+        "elements": 35
+      },
+      "iteration_costs": {
+        "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+        "elements": 35
+      },
+      "holds": [
+        {
+          "energy_error": -6.984919309616089e-10,
+          "correction": 1.2987085111575083e-15,
+          "uncertainty": 1.2987085111575083e-15,
+          "derivative": 537835.7999202296,
+          "parameter_derivative": [
+            -82936.73253944362,
+            16354.251701772322,
+            9.634065862407005e-09,
+            82092.72468973375,
+            1.4206112111103272e-09,
+            537835.7999202296
+          ],
+          "cause": "converged"
+        }
+      ],
+      "covariance": {
+        "status": "active_bound",
+        "rank": 3,
+        "singular_values": [
+          318.209731984235,
+          4.870392912743862,
+          0.18692635507861258
+        ],
+        "active_bounds": [
+          1,
+          2
+        ],
+        "optimizer": [],
+        "physical": [],
+        "variance_factor": 2.030316577723888,
+        "projected_gradient_norm": 3.465295606019936e-09,
+        "left_vectors": {
+          "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+          "elements": 252
+        },
+        "right_vectors": {
+          "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+          "elements": 9
+        },
+        "assumption": "unit-variance weighted residuals, independent errors and a regular local linearization at an interior point; multiply by variance_factor for an unknown common variance; no claim under bounds, rank deficiency or model discrepancy"
+      },
+      "failures": []
+    },
+    {
+      "status": "converged",
+      "message": "Function tolerance reached. |cost_change|/cost: 4.049242e-13 <= 1.000000e-12",
+      "usable": true,
+      "optimizer": [
+        2.7078764698277564,
+        -1.0,
+        1.0
+      ],
+      "physical": [
+        2.7078764698277564,
+        2.3829312934484257,
+        2.3829312934484257,
+        -1.0,
+        1.0,
+        3.157332366522656
+      ],
+      "iterations": 26,
+      "initial_cost": 23337.6906738605,
+      "final_cost": 82.22782139792386,
+      "residual_evaluations": 26,
+      "jacobian_evaluations": 15,
+      "trial_failures": 0,
+      "iteration_seconds": {
+        "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+        "elements": 26
+      },
+      "iteration_costs": {
+        "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+        "elements": 26
+      },
+      "holds": [
+        {
+          "energy_error": 0.0,
+          "correction": 0.0,
+          "uncertainty": 0.0,
+          "derivative": 537835.7998941836,
+          "parameter_derivative": [
+            -82936.73255751851,
+            16354.251706492027,
+            9.634065862406997e-09,
+            82092.72471657014,
+            1.4206112115782198e-09,
+            537835.7998941836
+          ],
+          "cause": "converged"
+        }
+      ],
+      "covariance": {
+        "status": "active_bound",
+        "rank": 3,
+        "singular_values": [
+          318.2097320719813,
+          4.8703929147560245,
+          0.18692635507189065
+        ],
+        "active_bounds": [
+          1,
+          2
+        ],
+        "optimizer": [],
+        "physical": [],
+        "variance_factor": 2.030316577726515,
+        "projected_gradient_norm": 4.608044792320243e-05,
+        "left_vectors": {
+          "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+          "elements": 252
+        },
+        "right_vectors": {
+          "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+          "elements": 9
+        },
+        "assumption": "unit-variance weighted residuals, independent errors and a regular local linearization at an interior point; multiply by variance_factor for an unknown common variance; no claim under bounds, rank deficiency or model discrepancy"
+      },
+      "failures": []
+    },
+    {
+      "status": "converged",
+      "message": "Function tolerance reached. |cost_change|/cost: 1.650459e-13 <= 1.000000e-12",
+      "usable": true,
+      "optimizer": [
+        2.7078765066677386,
+        -1.0,
+        1.0
+      ],
+      "physical": [
+        2.7078765066677386,
+        2.38293132586761,
+        2.38293132586761,
+        -1.0,
+        1.0,
+        3.157332371217763
+      ],
+      "iterations": 21,
+      "initial_cost": 3059.2709783962478,
+      "final_cost": 82.22782139785922,
+      "residual_evaluations": 21,
+      "jacobian_evaluations": 10,
+      "trial_failures": 0,
+      "iteration_seconds": {
+        "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+        "elements": 21
+      },
+      "iteration_costs": {
+        "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+        "elements": 21
+      },
+      "holds": [
+        {
+          "energy_error": 0.0,
+          "correction": 0.0,
+          "uncertainty": 0.0,
+          "derivative": 537835.7982946075,
+          "parameter_derivative": [
+            -82936.73366757226,
+            16354.251996348892,
+            9.634065862406654e-09,
+            82092.72636470608,
+            1.420611240313473e-09,
+            537835.7982946075
+          ],
+          "cause": "converged"
+        }
+      ],
+      "covariance": {
+        "status": "active_bound",
+        "rank": 3,
+        "singular_values": [
+          318.20973746089874,
+          4.870393038360103,
+          0.1869263546660098
+        ],
+        "active_bounds": [
+          1,
+          2
+        ],
+        "optimizer": [],
+        "physical": [],
+        "variance_factor": 2.030316577724919,
+        "projected_gradient_norm": 0.0028760994053804723,
+        "left_vectors": {
+          "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+          "elements": 252
+        },
+        "right_vectors": {
+          "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+          "elements": 9
+        },
+        "assumption": "unit-variance weighted residuals, independent errors and a regular local linearization at an interior point; multiply by variance_factor for an unknown common variance; no claim under bounds, rank deficiency or model discrepancy"
+      },
+      "failures": []
+    },
+    {
+      "status": "converged",
+      "message": "Parameter tolerance reached. Relative step_norm: 9.303556e-15 <= 1.000000e-12.",
+      "usable": true,
+      "optimizer": [
+        2.707876469227891,
+        -1.0,
+        1.0
+      ],
+      "physical": [
+        2.707876469227891,
+        2.382931292920544,
+        2.382931292920544,
+        -1.0,
+        1.0,
+        3.157332366446206
+      ],
+      "iterations": 15,
+      "initial_cost": 183.4545566995494,
+      "final_cost": 82.22782139784853,
+      "residual_evaluations": 15,
+      "jacobian_evaluations": 10,
+      "trial_failures": 0,
+      "iteration_seconds": {
+        "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+        "elements": 15
+      },
+      "iteration_costs": {
+        "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+        "elements": 15
+      },
+      "holds": [
+        {
+          "energy_error": -4.656612873077393e-10,
+          "correction": 8.658056741050055e-16,
+          "uncertainty": 8.658056741050055e-16,
+          "derivative": 537835.7999202296,
+          "parameter_derivative": [
+            -82936.73253944347,
+            16354.251701772284,
+            9.634065862407005e-09,
+            82092.72468973353,
+            1.420611211110324e-09,
+            537835.7999202296
+          ],
+          "cause": "converged"
+        }
+      ],
+      "covariance": {
+        "status": "active_bound",
+        "rank": 3,
+        "singular_values": [
+          318.20973198423343,
+          4.8703929127448005,
+          0.18692635507870023
+        ],
+        "active_bounds": [
+          1,
+          2
+        ],
+        "optimizer": [],
+        "physical": [],
+        "variance_factor": 2.0303165777246552,
+        "projected_gradient_norm": 2.192063419670376e-09,
+        "left_vectors": {
+          "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+          "elements": 252
+        },
+        "right_vectors": {
+          "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+          "elements": 9
+        },
+        "assumption": "unit-variance weighted residuals, independent errors and a regular local linearization at an interior point; multiply by variance_factor for an unknown common variance; no claim under bounds, rank deficiency or model discrepancy"
+      },
+      "failures": []
+    },
+    {
+      "status": "converged",
+      "message": "Parameter tolerance reached. Relative step_norm: 4.244748e-14 <= 1.000000e-12.",
+      "usable": true,
+      "optimizer": [
+        2.707876469228008,
+        -1.0,
+        1.0
+      ],
+      "physical": [
+        2.707876469228008,
+        2.3829312929206474,
+        2.3829312929206474,
+        -1.0,
+        1.0,
+        3.1573323664462203
+      ],
+      "iterations": 13,
+      "initial_cost": 1515.9348867489732,
+      "final_cost": 82.2278213978655,
+      "residual_evaluations": 13,
+      "jacobian_evaluations": 9,
+      "trial_failures": 0,
+      "iteration_seconds": {
+        "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+        "elements": 13
+      },
+      "iteration_costs": {
+        "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+        "elements": 13
+      },
+      "holds": [
+        {
+          "energy_error": -4.656612873077393e-10,
+          "correction": 8.658056741050138e-16,
+          "uncertainty": 8.658056741050138e-16,
+          "derivative": 537835.7999202245,
+          "parameter_derivative": [
+            -82936.732539447,
+            16354.25170177321,
+            9.634065862407005e-09,
+            82092.72468973878,
+            1.4206112111104152e-09,
+            537835.7999202245
+          ],
+          "cause": "converged"
+        }
+      ],
+      "covariance": {
+        "status": "active_bound",
+        "rank": 3,
+        "singular_values": [
+          318.20973198425065,
+          4.870392912744145,
+          0.18692635507870634
+        ],
+        "active_bounds": [
+          1,
+          2
+        ],
+        "optimizer": [],
+        "physical": [],
+        "variance_factor": 2.030316577725074,
+        "projected_gradient_norm": 9.97894389342946e-09,
+        "left_vectors": {
+          "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+          "elements": 252
+        },
+        "right_vectors": {
+          "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+          "elements": 9
+        },
+        "assumption": "unit-variance weighted residuals, independent errors and a regular local linearization at an interior point; multiply by variance_factor for an unknown common variance; no claim under bounds, rank deficiency or model discrepancy"
+      },
+      "failures": []
+    },
+    {
+      "status": "converged",
+      "message": "Function tolerance reached. |cost_change|/cost: 1.653916e-13 <= 1.000000e-12",
+      "usable": true,
+      "optimizer": [
+        2.707876469827079,
+        -1.0,
+        1.0
+      ],
+      "physical": [
+        2.707876469827079,
+        2.3829312934478297,
+        2.3829312934478297,
+        -1.0,
+        1.0,
+        3.1573323665225703
+      ],
+      "iterations": 16,
+      "initial_cost": 17611.638428689625,
+      "final_cost": 82.2278213978889,
+      "residual_evaluations": 16,
+      "jacobian_evaluations": 11,
+      "trial_failures": 0,
+      "iteration_seconds": {
+        "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+        "elements": 16
+      },
+      "iteration_costs": {
+        "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+        "elements": 16
+      },
+      "holds": [
+        {
+          "energy_error": 0.0,
+          "correction": 0.0,
+          "uncertainty": 0.0,
+          "derivative": 537835.7998942129,
+          "parameter_derivative": [
+            -82936.73255749808,
+            16354.251706486697,
+            9.634065862406997e-09,
+            82092.72471653984,
+            1.4206112115776919e-09,
+            537835.7998942129
+          ],
+          "cause": "converged"
+        }
+      ],
+      "covariance": {
+        "status": "active_bound",
+        "rank": 3,
+        "singular_values": [
+          318.2097320718816,
+          4.870392914754652,
+          0.18692635507204666
+        ],
+        "active_bounds": [
+          1,
+          2
+        ],
+        "optimizer": [],
+        "physical": [],
+        "variance_factor": 2.0303165777256518,
+        "projected_gradient_norm": 4.6028770807282626e-05,
+        "left_vectors": {
+          "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+          "elements": 252
+        },
+        "right_vectors": {
+          "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+          "elements": 9
+        },
+        "assumption": "unit-variance weighted residuals, independent errors and a regular local linearization at an interior point; multiply by variance_factor for an unknown common variance; no claim under bounds, rank deficiency or model discrepancy"
+      },
+      "failures": []
+    },
+    {
+      "status": "converged",
+      "message": "Function tolerance reached. |cost_change|/cost: 2.696038e-14 <= 1.000000e-12",
+      "usable": true,
+      "optimizer": [
+        2.7078764945315115,
+        -1.0,
+        1.0
+      ],
+      "physical": [
+        2.7078764945315115,
+        2.3829313151877303,
+        2.3829313151877303,
+        -1.0,
+        1.0,
+        3.15733236967105
+      ],
+      "iterations": 16,
+      "initial_cost": 7253.967130796389,
+      "final_cost": 82.22782139809523,
+      "residual_evaluations": 16,
+      "jacobian_evaluations": 10,
+      "trial_failures": 0,
+      "iteration_seconds": {
+        "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+        "elements": 16
+      },
+      "iteration_costs": {
+        "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+        "elements": 16
+      },
+      "holds": [
+        {
+          "energy_error": 2.3283064365386963e-10,
+          "correction": 4.3290283793682184e-16,
+          "uncertainty": 4.3290283793682184e-16,
+          "derivative": 537835.7988215571,
+          "parameter_derivative": [
+            -82936.73330188628,
+            16354.251900861154,
+            9.63406586240677e-09,
+            82092.7258217592,
+            1.4206112308471945e-09,
+            537835.7988215571
+          ],
+          "cause": "converged"
+        }
+      ],
+      "covariance": {
+        "status": "active_bound",
+        "rank": 3,
+        "singular_values": [
+          318.2097356856218,
+          4.870392997641305,
+          0.18692635479981834
+        ],
+        "active_bounds": [
+          1,
+          2
+        ],
+        "optimizer": [],
+        "physical": [],
+        "variance_factor": 2.0303165777307464,
+        "projected_gradient_norm": 0.001943802627224045,
+        "left_vectors": {
+          "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+          "elements": 252
+        },
+        "right_vectors": {
+          "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+          "elements": 9
+        },
+        "assumption": "unit-variance weighted residuals, independent errors and a regular local linearization at an interior point; multiply by variance_factor for an unknown common variance; no claim under bounds, rank deficiency or model discrepancy"
+      },
+      "failures": []
+    },
+    {
+      "status": "converged",
+      "message": "Parameter tolerance reached. Relative step_norm: 5.814723e-16 <= 1.000000e-12.",
+      "usable": true,
+      "optimizer": [
+        2.707876469227899,
+        -1.0,
+        1.0
+      ],
+      "physical": [
+        2.707876469227899,
+        2.382931292920551,
+        2.382931292920551,
+        -1.0,
+        1.0,
+        3.157332366446207
+      ],
+      "iterations": 14,
+      "initial_cost": 1665.3539601000646,
+      "final_cost": 82.22782139788347,
+      "residual_evaluations": 14,
+      "jacobian_evaluations": 11,
+      "trial_failures": 0,
+      "iteration_seconds": {
+        "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+        "elements": 14
+      },
+      "iteration_costs": {
+        "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+        "elements": 14
+      },
+      "holds": [
+        {
+          "energy_error": 2.3283064365386963e-10,
+          "correction": 4.3290283705250324e-16,
+          "uncertainty": 4.3290283705250324e-16,
+          "derivative": 537835.799920229,
+          "parameter_derivative": [
+            -82936.7325394437,
+            16354.25170177235,
+            9.634065862407005e-09,
+            82092.72468973389,
+            1.4206112111103296e-09,
+            537835.799920229
+          ],
+          "cause": "converged"
+        }
+      ],
+      "covariance": {
+        "status": "active_bound",
+        "rank": 3,
+        "singular_values": [
+          318.20973198423457,
+          4.870392912743723,
+          0.18692635507873465
+        ],
+        "active_bounds": [
+          1,
+          2
+        ],
+        "optimizer": [],
+        "physical": [],
+        "variance_factor": 2.030316577725518,
+        "projected_gradient_norm": 1.4347278920467943e-10,
+        "left_vectors": {
+          "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+          "elements": 252
+        },
+        "right_vectors": {
+          "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+          "elements": 9
+        },
+        "assumption": "unit-variance weighted residuals, independent errors and a regular local linearization at an interior point; multiply by variance_factor for an unknown common variance; no claim under bounds, rank deficiency or model discrepancy"
+      },
+      "failures": []
+    },
+    {
+      "status": "converged",
+      "message": "Function tolerance reached. |cost_change|/cost: 4.277368e-13 <= 1.000000e-12",
+      "usable": true,
+      "optimizer": [
+        2.707876469834291,
+        -1.0,
+        1.0
+      ],
+      "physical": [
+        2.707876469834291,
+        2.382931293454176,
+        2.382931293454176,
+        -1.0,
+        1.0,
+        3.157332366523489
+      ],
+      "iterations": 35,
+      "initial_cost": 49772.575013441216,
+      "final_cost": 82.22782139798034,
+      "residual_evaluations": 34,
+      "jacobian_evaluations": 16,
+      "trial_failures": 0,
+      "iteration_seconds": {
+        "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+        "elements": 35
+      },
+      "iteration_costs": {
+        "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+        "elements": 35
+      },
+      "holds": [
+        {
+          "energy_error": 2.3283064365386963e-10,
+          "correction": 4.3290283707369575e-16,
+          "uncertainty": 4.3290283707369575e-16,
+          "derivative": 537835.7998938996,
+          "parameter_derivative": [
+            -82936.7325577154,
+            16354.25170654344,
+            9.634065862406997e-09,
+            82092.72471686249,
+            1.4206112115833173e-09,
+            537835.7998938996
+          ],
+          "cause": "converged"
+        }
+      ],
+      "covariance": {
+        "status": "active_bound",
+        "rank": 3,
+        "singular_values": [
+          318.2097320729376,
+          4.870392914778528,
+          0.18692635507214994
+        ],
+        "active_bounds": [
+          1,
+          2
+        ],
+        "optimizer": [],
+        "physical": [],
+        "variance_factor": 2.0303165777279095,
+        "projected_gradient_norm": 4.6582378683268644e-05,
+        "left_vectors": {
+          "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+          "elements": 252
+        },
+        "right_vectors": {
+          "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+          "elements": 9
+        },
+        "assumption": "unit-variance weighted residuals, independent errors and a regular local linearization at an interior point; multiply by variance_factor for an unknown common variance; no claim under bounds, rank deficiency or model discrepancy"
+      },
+      "failures": []
+    },
+    {
+      "status": "converged",
+      "message": "Parameter tolerance reached. Relative step_norm: 1.555438e-14 <= 1.000000e-12.",
+      "usable": true,
+      "optimizer": [
+        2.707876469227919,
+        -1.0,
+        1.0
+      ],
+      "physical": [
+        2.707876469227919,
+        2.382931292920569,
+        2.382931292920569,
+        -1.0,
+        1.0,
+        3.157332366446209
+      ],
+      "iterations": 30,
+      "initial_cost": 27664.89158240917,
+      "final_cost": 82.22782139788181,
+      "residual_evaluations": 29,
+      "jacobian_evaluations": 17,
+      "trial_failures": 0,
+      "iteration_seconds": {
+        "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+        "elements": 30
+      },
+      "iteration_costs": {
+        "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+        "elements": 30
+      },
+      "holds": [
+        {
+          "energy_error": -2.3283064365386963e-10,
+          "correction": 4.329028370525038e-16,
+          "uncertainty": 4.329028370525038e-16,
+          "derivative": 537835.7999202283,
+          "parameter_derivative": [
+            -82936.7325394443,
+            16354.251701772508,
+            9.634065862407005e-09,
+            82092.72468973478,
+            1.420611211110345e-09,
+            537835.7999202283
+          ],
+          "cause": "converged"
+        }
+      ],
+      "covariance": {
+        "status": "active_bound",
+        "rank": 3,
+        "singular_values": [
+          318.20973198423764,
+          4.870392912744571,
+          0.18692635507886485
+        ],
+        "active_bounds": [
+          1,
+          2
+        ],
+        "optimizer": [],
+        "physical": [],
+        "variance_factor": 2.030316577725477,
+        "projected_gradient_norm": 3.645030943744132e-09,
+        "left_vectors": {
+          "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+          "elements": 252
+        },
+        "right_vectors": {
+          "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+          "elements": 9
+        },
+        "assumption": "unit-variance weighted residuals, independent errors and a regular local linearization at an interior point; multiply by variance_factor for an unknown common variance; no claim under bounds, rank deficiency or model discrepancy"
+      },
+      "failures": []
+    },
+    {
+      "status": "converged",
+      "message": "Function tolerance reached. |cost_change|/cost: 6.463578e-14 <= 1.000000e-12",
+      "usable": true,
+      "optimizer": [
+        2.7078764864652034,
+        -1.0,
+        1.0
+      ],
+      "physical": [
+        2.7078764864652034,
+        2.382931308089379,
+        2.382931308089379,
+        -1.0,
+        1.0,
+        3.1573323686430315
+      ],
+      "iterations": 28,
+      "initial_cost": 14181.82346678284,
+      "final_cost": 82.22782139803432,
+      "residual_evaluations": 28,
+      "jacobian_evaluations": 14,
+      "trial_failures": 0,
+      "iteration_seconds": {
+        "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+        "elements": 28
+      },
+      "iteration_costs": {
+        "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+        "elements": 28
+      },
+      "holds": [
+        {
+          "energy_error": 2.3283064365386963e-10,
+          "correction": 4.3290283765491796e-16,
+          "uncertainty": 4.3290283765491796e-16,
+          "derivative": 537835.7991717927,
+          "parameter_derivative": [
+            -82936.7330588342,
+            16354.251837395406,
+            9.634065862406843e-09,
+            82092.7254608912,
+            1.420611224555459e-09,
+            537835.7991717927
+          ],
+          "cause": "converged"
+        }
+      ],
+      "covariance": {
+        "status": "active_bound",
+        "rank": 3,
+        "singular_values": [
+          318.2097345056924,
+          4.870392970578006,
+          0.1869263548888783
+        ],
+        "active_bounds": [
+          1,
+          2
+        ],
+        "optimizer": [],
+        "physical": [],
+        "variance_factor": 2.0303165777292427,
+        "projected_gradient_norm": 0.0013241567415676059,
+        "left_vectors": {
+          "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+          "elements": 252
+        },
+        "right_vectors": {
+          "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+          "elements": 9
+        },
+        "assumption": "unit-variance weighted residuals, independent errors and a regular local linearization at an interior point; multiply by variance_factor for an unknown common variance; no claim under bounds, rank deficiency or model discrepancy"
+      },
+      "failures": []
+    },
+    {
+      "status": "converged",
+      "message": "Parameter tolerance reached. Relative step_norm: 1.090260e-14 <= 1.000000e-12.",
+      "usable": true,
+      "optimizer": [
+        2.7078764692279274,
+        -1.0,
+        1.0
+      ],
+      "physical": [
+        2.7078764692279274,
+        2.382931292920576,
+        2.382931292920576,
+        -1.0,
+        1.0,
+        3.1573323664461967
+      ],
+      "iterations": 17,
+      "initial_cost": 1457.0785270443214,
+      "final_cost": 82.22782139797339,
+      "residual_evaluations": 17,
+      "jacobian_evaluations": 11,
+      "trial_failures": 0,
+      "iteration_seconds": {
+        "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+        "elements": 17
+      },
+      "iteration_costs": {
+        "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+        "elements": 17
+      },
+      "holds": [
+        {
+          "energy_error": -7.683411240577698e-09,
+          "correction": 1.4285793622732508e-14,
+          "uncertainty": 1.4285793622732508e-14,
+          "derivative": 537835.7999202327,
+          "parameter_derivative": [
+            -82936.73253944457,
+            16354.25170177257,
+            9.634065862407005e-09,
+            82092.72468973517,
+            1.4206112111103516e-09,
+            537835.7999202327
+          ],
+          "cause": "converged"
+        }
+      ],
+      "covariance": {
+        "status": "active_bound",
+        "rank": 3,
+        "singular_values": [
+          318.20973198423764,
+          4.87039291274459,
+          0.18692635507869265
+        ],
+        "active_bounds": [
+          1,
+          2
+        ],
+        "optimizer": [],
+        "physical": [],
+        "variance_factor": 2.030316577727738,
+        "projected_gradient_norm": 2.5514523827041558e-09,
+        "left_vectors": {
+          "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+          "elements": 252
+        },
+        "right_vectors": {
+          "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+          "elements": 9
+        },
+        "assumption": "unit-variance weighted residuals, independent errors and a regular local linearization at an interior point; multiply by variance_factor for an unknown common variance; no claim under bounds, rank deficiency or model discrepancy"
+      },
+      "failures": []
+    },
+    {
+      "status": "converged",
+      "message": "Parameter tolerance reached. Relative step_norm: 7.849876e-15 <= 1.000000e-12.",
+      "usable": true,
+      "optimizer": [
+        2.7078764692279313,
+        -1.0,
+        1.0
+      ],
+      "physical": [
+        2.7078764692279313,
+        2.3829312929205795,
+        2.3829312929205795,
+        -1.0,
+        1.0,
+        3.1573323664461976
+      ],
+      "iterations": 15,
+      "initial_cost": 8592.310035166372,
+      "final_cost": 82.22782139787292,
+      "residual_evaluations": 15,
+      "jacobian_evaluations": 10,
+      "trial_failures": 0,
+      "iteration_seconds": {
+        "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+        "elements": 15
+      },
+      "iteration_costs": {
+        "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+        "elements": 15
+      },
+      "holds": [
+        {
+          "energy_error": -6.984919309616089e-09,
+          "correction": 1.2987085111575019e-14,
+          "uncertainty": 1.2987085111575019e-14,
+          "derivative": 537835.7999202323,
+          "parameter_derivative": [
+            -82936.73253944468,
+            16354.2517017726,
+            9.634065862407005e-09,
+            82092.72468973532,
+            1.420611211110355e-09,
+            537835.7999202323
+          ],
+          "cause": "converged"
+        }
+      ],
+      "covariance": {
+        "status": "active_bound",
+        "rank": 3,
+        "singular_values": [
+          318.2097319842386,
+          4.870392912744109,
+          0.18692635507861002
+        ],
+        "active_bounds": [
+          1,
+          2
+        ],
+        "optimizer": [],
+        "physical": [],
+        "variance_factor": 2.030316577725257,
+        "projected_gradient_norm": 1.8301697934930417e-09,
+        "left_vectors": {
+          "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+          "elements": 252
+        },
+        "right_vectors": {
+          "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+          "elements": 9
+        },
+        "assumption": "unit-variance weighted residuals, independent errors and a regular local linearization at an interior point; multiply by variance_factor for an unknown common variance; no claim under bounds, rank deficiency or model discrepancy"
+      },
+      "failures": []
+    },
+    {
+      "status": "converged",
+      "message": "Parameter tolerance reached. Relative step_norm: 5.146030e-14 <= 1.000000e-12.",
+      "usable": true,
+      "optimizer": [
+        2.707876469228023,
+        -1.0,
+        1.0
+      ],
+      "physical": [
+        2.707876469228023,
+        2.3829312929206603,
+        2.3829312929206603,
+        -1.0,
+        1.0,
+        3.1573323664462096
+      ],
+      "iterations": 13,
+      "initial_cost": 21516.99732403145,
+      "final_cost": 82.22782139783433,
+      "residual_evaluations": 13,
+      "jacobian_evaluations": 9,
+      "trial_failures": 0,
+      "iteration_seconds": {
+        "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+        "elements": 13
+      },
+      "iteration_costs": {
+        "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+        "elements": 13
+      },
+      "holds": [
+        {
+          "energy_error": -7.683411240577698e-09,
+          "correction": 1.4285793622732628e-14,
+          "uncertainty": 1.4285793622732628e-14,
+          "derivative": 537835.7999202282,
+          "parameter_derivative": [
+            -82936.73253944746,
+            16354.251701773326,
+            9.634065862407005e-09,
+            82092.72468973945,
+            1.4206112111104266e-09,
+            537835.7999202282
+          ],
+          "cause": "converged"
+        }
+      ],
+      "covariance": {
+        "status": "active_bound",
+        "rank": 3,
+        "singular_values": [
+          318.2097319842531,
+          4.870392912744005,
+          0.18692635507866118
+        ],
+        "active_bounds": [
+          1,
+          2
+        ],
+        "optimizer": [],
+        "physical": [],
+        "variance_factor": 2.0303165777243044,
+        "projected_gradient_norm": 1.2060318965723127e-08,
+        "left_vectors": {
+          "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+          "elements": 252
+        },
+        "right_vectors": {
+          "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+          "elements": 9
+        },
+        "assumption": "unit-variance weighted residuals, independent errors and a regular local linearization at an interior point; multiply by variance_factor for an unknown common variance; no claim under bounds, rank deficiency or model discrepancy"
+      },
+      "failures": []
+    },
+    {
+      "status": "converged",
+      "message": "Function tolerance reached. |cost_change|/cost: 4.572895e-13 <= 1.000000e-12",
+      "usable": true,
+      "optimizer": [
+        2.7078765137888667,
+        -1.0,
+        1.0
+      ],
+      "physical": [
+        2.7078765137888667,
+        2.382931332134203,
+        2.382931332134203,
+        -1.0,
+        1.0,
+        3.157332372124873
+      ],
+      "iterations": 15,
+      "initial_cost": 6519.902157098743,
+      "final_cost": 82.22782139817717,
+      "residual_evaluations": 15,
+      "jacobian_evaluations": 11,
+      "trial_failures": 0,
+      "iteration_seconds": {
+        "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+        "elements": 15
+      },
+      "iteration_costs": {
+        "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+        "elements": 15
+      },
+      "holds": [
+        {
+          "energy_error": -2.4121254682540894e-07,
+          "correction": 4.484873407996604e-13,
+          "uncertainty": 4.484873407996604e-13,
+          "derivative": 537835.797985564,
+          "parameter_derivative": [
+            -82936.73388214446,
+            16354.25205237791,
+            9.63406586240659e-09,
+            82092.72668328897,
+            1.4206112458679666e-09,
+            537835.797985564
+          ],
+          "cause": "converged"
+        }
+      ],
+      "covariance": {
+        "status": "active_bound",
+        "rank": 3,
+        "singular_values": [
+          318.2097385025697,
+          4.8703930622517655,
+          0.1869263545875778
+        ],
+        "active_bounds": [
+          1,
+          2
+        ],
+        "optimizer": [],
+        "physical": [],
+        "variance_factor": 2.0303165777327696,
+        "projected_gradient_norm": 0.003423144146005086,
+        "left_vectors": {
+          "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+          "elements": 252
+        },
+        "right_vectors": {
+          "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+          "elements": 9
+        },
+        "assumption": "unit-variance weighted residuals, independent errors and a regular local linearization at an interior point; multiply by variance_factor for an unknown common variance; no claim under bounds, rank deficiency or model discrepancy"
+      },
+      "failures": []
+    },
+    {
+      "status": "converged",
+      "message": "Parameter tolerance reached. Relative step_norm: 4.797146e-15 <= 1.000000e-12.",
+      "usable": true,
+      "optimizer": [
+        2.707876469227836,
+        -1.0,
+        1.0
+      ],
+      "physical": [
+        2.707876469227836,
+        2.3829312929204955,
+        2.3829312929204955,
+        -1.0,
+        1.0,
+        3.157332366445751
+      ],
+      "iterations": 16,
+      "initial_cost": 729.745504004027,
+      "final_cost": 82.22782139789487,
+      "residual_evaluations": 16,
+      "jacobian_evaluations": 12,
+      "trial_failures": 0,
+      "iteration_seconds": {
+        "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+        "elements": 16
+      },
+      "iteration_costs": {
+        "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+        "elements": 16
+      },
+      "holds": [
+        {
+          "energy_error": -2.4097971618175507e-07,
+          "correction": 4.4805443634921136e-13,
+          "uncertainty": 4.4805443634921136e-13,
+          "derivative": 537835.7999203844,
+          "parameter_derivative": [
+            -82936.73253944183,
+            16354.251701771851,
+            9.634065862407005e-09,
+            82092.72468973107,
+            1.4206112111102808e-09,
+            537835.7999203844
+          ],
+          "cause": "converged"
+        }
+      ],
+      "covariance": {
+        "status": "active_bound",
+        "rank": 3,
+        "singular_values": [
+          318.20973198422405,
+          4.8703929127436,
+          0.1869263550787881
+        ],
+        "active_bounds": [
+          1,
+          2
+        ],
+        "optimizer": [],
+        "physical": [],
+        "variance_factor": 2.030316577725799,
+        "projected_gradient_norm": 1.1244658537634677e-09,
+        "left_vectors": {
+          "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+          "elements": 252
+        },
+        "right_vectors": {
+          "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+          "elements": 9
+        },
+        "assumption": "unit-variance weighted residuals, independent errors and a regular local linearization at an interior point; multiply by variance_factor for an unknown common variance; no claim under bounds, rank deficiency or model discrepancy"
+      },
+      "failures": []
+    },
+    {
+      "status": "converged",
+      "message": "Parameter tolerance reached. Relative step_norm: 2.180521e-15 <= 1.000000e-12.",
+      "usable": true,
+      "optimizer": [
+        2.7078764692278248,
+        -1.0,
+        1.0
+      ],
+      "physical": [
+        2.7078764692278248,
+        2.3829312929204858,
+        2.3829312929204858,
+        -1.0,
+        1.0,
+        3.1573323664457495
+      ],
+      "iterations": 17,
+      "initial_cost": 1201.2754394887033,
+      "final_cost": 82.22782139789676,
+      "residual_evaluations": 17,
+      "jacobian_evaluations": 13,
+      "trial_failures": 0,
+      "iteration_seconds": {
+        "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+        "elements": 17
+      },
+      "iteration_costs": {
+        "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+        "elements": 17
+      },
+      "holds": [
+        {
+          "energy_error": -2.407468855381012e-07,
+          "correction": 4.4762153351215863e-13,
+          "uncertainty": 4.4762153351215863e-13,
+          "derivative": 537835.7999203849,
+          "parameter_derivative": [
+            -82936.73253944147,
+            16354.251701771764,
+            9.634065862407005e-09,
+            82092.72468973054,
+            1.420611211110272e-09,
+            537835.7999203849
+          ],
+          "cause": "converged"
+        }
+      ],
+      "covariance": {
+        "status": "active_bound",
+        "rank": 3,
+        "singular_values": [
+          318.209731984223,
+          4.870392912742975,
+          0.1869263550786493
+        ],
+        "active_bounds": [
+          1,
+          2
+        ],
+        "optimizer": [],
+        "physical": [],
+        "variance_factor": 2.030316577725846,
+        "projected_gradient_norm": 5.178222295398882e-10,
+        "left_vectors": {
+          "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+          "elements": 252
+        },
+        "right_vectors": {
+          "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+          "elements": 9
+        },
+        "assumption": "unit-variance weighted residuals, independent errors and a regular local linearization at an interior point; multiply by variance_factor for an unknown common variance; no claim under bounds, rank deficiency or model discrepancy"
+      },
+      "failures": []
+    },
+    {
+      "status": "converged",
+      "message": "Parameter tolerance reached. Relative step_norm: 6.599710e-14 <= 1.000000e-12.",
+      "usable": true,
+      "optimizer": [
+        2.7078764698289155,
+        -1.0,
+        1.0
+      ],
+      "physical": [
+        2.7078764698289155,
+        2.3829312934494458,
+        2.3829312934494458,
+        -1.0,
+        1.0,
+        3.157332366522804
+      ],
+      "iterations": 39,
+      "initial_cost": 43066.68624002835,
+      "final_cost": 82.22782139765457,
+      "residual_evaluations": 38,
+      "jacobian_evaluations": 17,
+      "trial_failures": 0,
+      "iteration_seconds": {
+        "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+        "elements": 39
+      },
+      "iteration_costs": {
+        "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+        "elements": 39
+      },
+      "holds": [
+        {
+          "energy_error": 0.0,
+          "correction": 0.0,
+          "uncertainty": 0.0,
+          "derivative": 537835.7998941332,
+          "parameter_derivative": [
+            -82936.7325575534,
+            16354.251706501147,
+            9.634065862406997e-09,
+            82092.72471662196,
+            1.4206112115791237e-09,
+            537835.7998941332
+          ],
+          "cause": "converged"
+        }
+      ],
+      "covariance": {
+        "status": "active_bound",
+        "rank": 3,
+        "singular_values": [
+          318.20973207215036,
+          4.87039291476171,
+          0.1869263550720504
+        ],
+        "active_bounds": [
+          1,
+          2
+        ],
+        "optimizer": [],
+        "physical": [],
+        "variance_factor": 2.0303165777198657,
+        "projected_gradient_norm": 4.6169752049962653e-05,
+        "left_vectors": {
+          "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+          "elements": 252
+        },
+        "right_vectors": {
+          "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+          "elements": 9
+        },
+        "assumption": "unit-variance weighted residuals, independent errors and a regular local linearization at an interior point; multiply by variance_factor for an unknown common variance; no claim under bounds, rank deficiency or model discrepancy"
+      },
+      "failures": []
+    },
+    {
+      "status": "converged",
+      "message": "Parameter tolerance reached. Relative step_norm: 4.070306e-15 <= 1.000000e-12.",
+      "usable": true,
+      "optimizer": [
+        2.707876469227901,
+        -1.0,
+        1.0
+      ],
+      "physical": [
+        2.707876469227901,
+        2.382931292920553,
+        2.382931292920553,
+        -1.0,
+        1.0,
+        3.1573323664462074
+      ],
+      "iterations": 33,
+      "initial_cost": 20524.742798871226,
+      "final_cost": 82.22782139790277,
+      "residual_evaluations": 32,
+      "jacobian_evaluations": 19,
+      "trial_failures": 0,
+      "iteration_seconds": {
+        "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+        "elements": 33
+      },
+      "iteration_costs": {
+        "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+        "elements": 33
+      },
+      "holds": [
+        {
+          "energy_error": 2.3283064365386963e-10,
+          "correction": 4.3290283705250334e-16,
+          "uncertainty": 4.3290283705250334e-16,
+          "derivative": 537835.7999202289,
+          "parameter_derivative": [
+            -82936.73253944378,
+            16354.251701772362,
+            9.634065862407005e-09,
+            82092.72468973396,
+            1.4206112111103315e-09,
+            537835.7999202289
+          ],
+          "cause": "converged"
+        }
+      ],
+      "covariance": {
+        "status": "active_bound",
+        "rank": 3,
+        "singular_values": [
+          318.2097319842344,
+          4.87039291274457,
+          0.18692635507871772
+        ],
+        "active_bounds": [
+          1,
+          2
+        ],
+        "optimizer": [],
+        "physical": [],
+        "variance_factor": 2.030316577725994,
+        "projected_gradient_norm": 9.407266077232634e-10,
+        "left_vectors": {
+          "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+          "elements": 252
+        },
+        "right_vectors": {
+          "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+          "elements": 9
+        },
+        "assumption": "unit-variance weighted residuals, independent errors and a regular local linearization at an interior point; multiply by variance_factor for an unknown common variance; no claim under bounds, rank deficiency or model discrepancy"
+      },
+      "failures": []
+    },
+    {
+      "status": "converged",
+      "message": "Parameter tolerance reached. Relative step_norm: 1.933395e-14 <= 1.000000e-12.",
+      "usable": true,
+      "optimizer": [
+        2.7078764692279242,
+        -1.0,
+        1.0
+      ],
+      "physical": [
+        2.7078764692279242,
+        2.3829312929205733,
+        2.3829312929205733,
+        -1.0,
+        1.0,
+        3.1573323664462105
+      ],
+      "iterations": 18,
+      "initial_cost": 7708.559142700172,
+      "final_cost": 82.22782139788029,
+      "residual_evaluations": 18,
+      "jacobian_evaluations": 12,
+      "trial_failures": 0,
+      "iteration_seconds": {
+        "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+        "elements": 18
+      },
+      "iteration_costs": {
+        "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+        "elements": 18
+      },
+      "holds": [
+        {
+          "energy_error": 0.0,
+          "correction": 0.0,
+          "uncertainty": 0.0,
+          "derivative": 537835.7999202277,
+          "parameter_derivative": [
+            -82936.73253944446,
+            16354.251701772548,
+            9.634065862407005e-09,
+            82092.72468973501,
+            1.4206112111103495e-09,
+            537835.7999202277
+          ],
+          "cause": "converged"
+        }
+      ],
+      "covariance": {
+        "status": "active_bound",
+        "rank": 3,
+        "singular_values": [
+          318.2097319842388,
+          4.870392912744768,
+          0.18692635507881755
+        ],
+        "active_bounds": [
+          1,
+          2
+        ],
+        "optimizer": [],
+        "physical": [],
+        "variance_factor": 2.0303165777254395,
+        "projected_gradient_norm": 4.52295267905356e-09,
+        "left_vectors": {
+          "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+          "elements": 252
+        },
+        "right_vectors": {
+          "csv": "stage2-MgCl2-ceres-numeric-arrays.csv",
+          "elements": 9
+        },
+        "assumption": "unit-variance weighted residuals, independent errors and a regular local linearization at an interior point; multiply by variance_factor for an unknown common variance; no claim under bounds, rank deficiency or model discrepancy"
+      },
+      "failures": []
+    }
+  ],
+  "declared_starts": [
+    [
+      3.1327,
+      -0.25,
+      0.817
+    ],
+    [
+      2.9,
+      -0.5,
+      -0.5
+    ],
+    [
+      2.9,
+      -0.5,
+      0.0
+    ],
+    [
+      2.9,
+      -0.5,
+      0.5
+    ],
+    [
+      2.9,
+      0.0,
+      -0.5
+    ],
+    [
+      2.9,
+      0.0,
+      0.0
+    ],
+    [
+      2.9,
+      0.0,
+      0.5
+    ],
+    [
+      2.9,
+      0.5,
+      -0.5
+    ],
+    [
+      2.9,
+      0.5,
+      0.0
+    ],
+    [
+      2.9,
+      0.5,
+      0.5
+    ],
+    [
+      3.4,
+      -0.5,
+      -0.5
+    ],
+    [
+      3.4,
+      -0.5,
+      0.0
+    ],
+    [
+      3.4,
+      -0.5,
+      0.5
+    ],
+    [
+      3.4,
+      0.0,
+      -0.5
+    ],
+    [
+      3.4,
+      0.0,
+      0.0
+    ],
+    [
+      3.4,
+      0.0,
+      0.5
+    ],
+    [
+      3.4,
+      0.5,
+      -0.5
+    ],
+    [
+      3.4,
+      0.5,
+      0.0
+    ],
+    [
+      3.4,
+      0.5,
+      0.5
+    ],
+    [
+      3.9,
+      -0.5,
+      -0.5
+    ],
+    [
+      3.9,
+      -0.5,
+      0.0
+    ],
+    [
+      3.9,
+      -0.5,
+      0.5
+    ],
+    [
+      3.9,
+      0.0,
+      -0.5
+    ],
+    [
+      3.9,
+      0.0,
+      0.0
+    ],
+    [
+      3.9,
+      0.0,
+      0.5
+    ],
+    [
+      3.9,
+      0.5,
+      -0.5
+    ],
+    [
+      3.9,
+      0.5,
+      0.0
+    ],
+    [
+      3.9,
+      0.5,
+      0.5
+    ]
+  ],
+  "completed_starts": 28,
+  "seconds": 88.07513891800045,
+  "wheel_sha256": "71ee347fb606352dff9b69df1ddd930b62a7ddbdacb0cec7a0c9f4aece94cfcc",
+  "source_sha256": "cec1bfc9c833f7196c7bc11d51d21aa8bc224cc388b04f165712acc5c4473626",
+  "evaluated_sha256": "cda600657e41e8518b08211edf874a771cb8287a98398a7cf6df90d7e6f311fb",
+  "script_sha256": "3e645f40db15dd2aedad3d8e3cf66239133be2a66227c9f87d96d75daef4b2cc",
+  "source_head": "b0c82fb28c32965d3036a1ff57497c7174f8c32d",
+  "controls": {
+    "maximum_iterations": 200,
+    "maximum_elapsed_time_seconds": 120.0,
+    "function_tolerance": 1e-12,
+    "gradient_tolerance": 1e-10,
+    "parameter_tolerance": 1e-12
+  }
+}

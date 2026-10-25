@@ -1,0 +1,22 @@
+{
+  "case": 1,
+  "value": 0,
+  "success": false,
+  "solver_status": "MAXITER_EXCEEDED",
+  "message": "budget_exhausted: residual 0.28388157366789168 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 200 iterations, contraction absent, floor 2.2597357900440967e-10, amplification 348.57941503322081; trial preparation failed: reference_unavailable: reaction R1 neutral reference temperature or system pressure is invalid",
+  "iterations": 200,
+  "evaluations": 237,
+  "generic_jacobian_rank": 20,
+  "generic_nullity": 0,
+  "reduced_hessian_minimum": null,
+  "criterion_met": false,
+  "wall_s": 9.770933645,
+  "convergence": {
+    "residual": 0.2838815736678917,
+    "floor": 2.2597357900440967e-10,
+    "amplification": 348.5794150332208,
+    "contraction": null,
+    "stop": "Stop.budget_exhausted"
+  },
+  "state_file": null
+}

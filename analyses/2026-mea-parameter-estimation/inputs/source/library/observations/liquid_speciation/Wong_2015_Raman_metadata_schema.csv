@@ -1,0 +1,9 @@
+column,required,unit_or_domain,description
+source_key,yes,Wong2015,Stable source identifier.
+metadata_key,yes,text,Name of experimental or extraction metadata field.
+metadata_value,yes,text,Value transcribed or summarized from repo-local Markdown.
+source_table_or_figure,no,text,Source table/figure/caption identifier from repo-local Markdown.
+source_line_start,no,line number,First line in repo-local Markdown used for traceability.
+source_line_end,no,line number,Last line in repo-local Markdown used for traceability.
+status,yes,extracted|staged|ambiguous|needs_review,Metadata extraction status.
+notes,no,text,Short extraction note; do not paste article text.

@@ -1,0 +1,232 @@
+{
+ "date": "2026-09-18",
+ "class": "MODERN_REFIT",
+ "wheel_sha256": "9f73aeb466c54eff80c89a8776c90d49cb9c9c2d130f0eb15bf0311c1f76e606",
+ "build_fingerprint": "9928c1d60bacda75e8c12835ac00f4f3c6844fdaf56983a1d00042c60189f5f5",
+ "sources": {
+  "training_csv": "analyses/2026-pure-saturation-regression/inputs/source/propane-baseline.csv",
+  "training_sha256": "b81e7bcd9bc298464b738b5fb7cd3d1ad11e10896813348eb8f32c07807f7dc5",
+  "fit_request_sha256": "74da1e1064259b4b149371435d32e74e9b47bd9c9c552d20155f736d376fc86b",
+  "parameters_sha256": "5b72b92f1b47162e5fffee8641a83fc5354d15eeec2ac51658cb051c727bd099",
+  "holdout_csv": "analyses/reproduction/2004-glos/inputs/source/glos-2004-propane-saturation.csv",
+  "holdout_sha256": "ccd1cfa15ec44432b06cbf22316d168c61b282631c9b1e1591e497b8d48b5676"
+ },
+ "objective": "sum of ln(y_pred / y_obs)^2 over 3 pressures and 3 saturated-liquid mass densities, unit weights",
+ "coordinates": {
+  "component/propane/dispersion_energy_over_k": {
+   "bounds": [
+    150.0,
+    260.0
+   ],
+   "origin": 221.0,
+   "scale": 10.0,
+   "unit": "kelvin"
+  },
+  "component/propane/segment_count": {
+   "bounds": [
+    1.5,
+    2.5
+   ],
+   "origin": 1.9489,
+   "scale": 0.1,
+   "unit": "dimensionless"
+  },
+  "component/propane/segment_diameter": {
+   "bounds": [
+    3.0,
+    4.2
+   ],
+   "origin": 3.7209,
+   "scale": 0.1,
+   "unit": "angstrom"
+  }
+ },
+ "starts": [
+  {
+   "start": "origin",
+   "values": [
+    221.0,
+    1.9489,
+    3.7209
+   ],
+   "status": "converged",
+   "iterations": 5,
+   "residual_evaluations": 5,
+   "jacobian_evaluations": 12,
+   "trial_failures": 0,
+   "initial_cost": 0.274110322771836,
+   "final_cost": 3.700790235756914e-06,
+   "fitted": [
+    208.5112485048856,
+    1.996455631422861,
+    3.6194290792310873
+   ]
+  },
+  {
+   "start": "confirmation-1",
+   "values": [
+    191.0,
+    2.1489,
+    3.5209
+   ],
+   "status": "initial_evaluation_failed",
+   "iterations": 0,
+   "residual_evaluations": 0,
+   "jacobian_evaluations": 1,
+   "trial_failures": 1,
+   "initial_cost": 0.0,
+   "final_cost": 0.0,
+   "fitted": null
+  },
+  {
+   "start": "confirmation-2",
+   "values": [
+    241.0,
+    1.7489,
+    3.9209
+   ],
+   "status": "converged",
+   "iterations": 6,
+   "residual_evaluations": 6,
+   "jacobian_evaluations": 14,
+   "trial_failures": 0,
+   "initial_cost": 0.6619843003858887,
+   "final_cost": 3.700790235755827e-06,
+   "fitted": [
+    208.51124876921722,
+    1.9964556270631237,
+    3.6194290820304
+   ]
+  },
+  {
+   "start": "confirmation-3",
+   "values": [
+    231.0,
+    2.0489,
+    3.6209
+   ],
+   "status": "converged",
+   "iterations": 6,
+   "residual_evaluations": 5,
+   "jacobian_evaluations": 13,
+   "trial_failures": 0,
+   "initial_cost": 1.736334167908819,
+   "final_cost": 3.700790235757335e-06,
+   "fitted": [
+    208.5112487708743,
+    1.9964556270358926,
+    3.6194290820477493
+   ]
+  }
+ ],
+ "multistart_spread": {
+  "epsilon_K": 2.659886888523033e-07,
+  "m": 4.386968344149977e-09,
+  "sigma_angstrom": 2.8166620147374033e-09
+ },
+ "fitted": {
+  "identities": [
+   "component/propane/dispersion_energy_over_k",
+   "component/propane/segment_count",
+   "component/propane/segment_diameter"
+  ],
+  "values": [
+   208.5112485048856,
+   1.996455631422861,
+   3.6194290792310873
+  ],
+  "units": [
+   "K",
+   "1",
+   "angstrom"
+  ],
+  "packet_values": [
+   208.11,
+   2.002,
+   3.6184
+  ],
+  "historical_fitted_2026_07": [
+   209.27852823846877,
+   1.9835426308533168,
+   3.627861545037305
+  ],
+  "historical_note": "the retained July result fitted eleven Glos rows from the packet start with another optimizer build; agreement is descriptive"
+ },
+ "covariance": {
+  "status": "available",
+  "assumption": "unit-variance weighted residuals, independent errors and a regular local linearization at an interior point; multiply by variance_factor for an unknown common variance; no claim under bounds, rank deficiency or model discrepancy",
+  "rank": 3,
+  "singular_values": [
+   0.8574614946547845,
+   0.1727727951087937,
+   0.018886202421288086
+  ],
+  "active_bounds": [],
+  "variance_factor": 2.4671934905046095e-06,
+  "physical": [
+   57570.200729404205,
+   -947.8855896201156,
+   605.2912798886749,
+   -947.8855896201156,
+   15.698271625355574,
+   -10.137747954151596,
+   605.2912798886748,
+   -10.137747954151596,
+   6.928968572533147
+  ],
+  "physical_std_scaled_by_variance_factor": [
+   0.3768777314814843,
+   0.006223397268875778,
+   0.004134622855601801
+  ],
+  "meaning": "rank and the conditional covariance describe local conditioning of the least-squares problem at the fitted point under the stated assumption; six residuals and three parameters leave three degrees of freedom, so the variance factor is a rough scale, not a validated uncertainty; neither establishes structural or global identifiability nor predictive accuracy"
+ },
+ "training_residuals": {
+  "weighted": [
+   -0.00012773549347977933,
+   -0.002091626792789162,
+   0.00024467712176969286,
+   0.0017015979247639293,
+   4.228135452865997e-05,
+   0.0002308059151898822
+  ],
+  "statuses": [
+   "Available",
+   "Available",
+   "Available",
+   "Available",
+   "Available",
+   "Available"
+  ]
+ },
+ "holdout": {
+  "rows": 24,
+  "csv": "analyses/2026-pure-saturation-regression/results/propane-replay-2026-09-18.csv",
+  "role_note": "roles come from the 2004-glos packet; its 150 K 'training' row is outside this replay's training set (210, 270, 330 K) and is a genuine holdout here",
+  "max_abs_relative_error_held_out_pressure": 0.10000149965146976,
+  "max_abs_held_out_pressure_error_in_expanded_uncertainties": 4.365465732814151,
+  "max_abs_relative_error_held_out_density": 0.003878101703166603,
+  "max_abs_held_out_density_error_in_expanded_uncertainties": 20.65829252681046
+ },
+ "failures": [
+  {
+   "start": "confirmation-1",
+   "status": "initial_evaluation_failed",
+   "message": "boundary seed has no coexisting density roots",
+   "trial_failures": [
+    [
+     4,
+     "CentralSolveUnavailable",
+     "boundary seed has no coexisting density roots"
+    ]
+   ]
+  }
+ ],
+ "claim_limits": [
+  "the converged multistart spread measures optimizer reproducibility across those starts; rank and the conditional covariance (physical_std_scaled_by_variance_factor) describe local conditioning under the stated assumptions; neither establishes structural or global identifiability of the three parameters nor predictive accuracy",
+  "unit weights on log-ratio residuals treat every training value as equally uncertain in relative terms; the source expanded uncertainties were not used as weights and the covariance assumption therefore means unit variance in log space",
+  "held-out rows are descriptive comparisons against Glos 2004 with their expanded uncertainties; no accuracy bar or promotion",
+  "the stress row at 110 K lies outside the fitted domain and is retained whatever its error",
+  "no held-out predictive claim transfers to other fluids, mixtures or properties"
+ ]
+}

@@ -1,0 +1,41 @@
+{
+  "completed": true,
+  "engine_commit": "80f23237e2fde391e83e5d88c951c36e655f08d2",
+  "checkout_dirty": false,
+  "build_fingerprint": "1c716148c02874703bfa2802669516b9085f37a8fa0027ad09907c02fd400acc",
+  "wheel_sha256": "78a2695fe0cc7c286f61c404ac0178050ad69335fc1a50598a4c140b2a4e7075",
+  "import_ms": 9.311232002801262,
+  "input_sha256": {
+    "parameters.json": "413f3933c6dd884c7d9022b3ddadfe9666bbca3ae119e24c667dea5b9c48fee9",
+    "case.json": "7f798b9d15ee678d6a0838423443fd34d7b16ce02fc7ff498b9b80ba5c2f9d98"
+  },
+  "cpu_affinity": [
+    0
+  ],
+  "nice": 19,
+  "warmups": 1,
+  "samples": 5,
+  "fd_steps": [
+    0.001,
+    0.0005
+  ],
+  "threads": {
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1"
+  },
+  "limits": "Adopted calibrated model; declared disjoint supports; fixed T/P and lnK; local stability, no global phase search. No external-package runtime comparison.",
+  "failures": [],
+  "model_setup_ms": 0.8889710006769747,
+  "first_solve_ms": 138.4480970009463,
+  "peak_rss_kib": 40440,
+  "recordings_by_parent": {
+    "equilibrium_prepare": 84,
+    "solve_density": 5,
+    "state": 2
+  },
+  "phase_signature_count": 2,
+  "phase_evaluations": 84,
+  "derivative_coordinate_requests": [],
+  "traced_success": true
+}

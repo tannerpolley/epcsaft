@@ -1,0 +1,2202 @@
+[
+  {
+    "point": 0,
+    "probe": "nominal",
+    "success": true,
+    "message": "converged: residual 1.3766765505351941e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor absent, amplification 0",
+    "solver_status": "NEWTON_CONVERGED",
+    "pressure": 38542879.122412786,
+    "amounts": [
+      1.0,
+      0.0
+    ],
+    "mole_fractions": [
+      0.3685636856368564,
+      0.6314363143631436,
+      0.0168517416571079,
+      0.983148258342892
+    ],
+    "molar_densities": [
+      15874.66903501886,
+      17212.007353876805
+    ],
+    "residuals": [
+      1.3766765505351941e-14,
+      -3.552713678800501e-15,
+      2.406272369534008e-15,
+      1.2878587085651816e-14,
+      1.7763568394002505e-15,
+      1.7965841650256184e-15,
+      -5.551115123125783e-17,
+      -1.1102230246251565e-16,
+      -2.220446049250313e-16,
+      2.220446049250313e-16
+    ],
+    "classified_residuals": [
+      1.3766765505351941e-14,
+      -3.552713678800501e-15,
+      2.406272369534008e-15,
+      1.2878587085651816e-14,
+      1.7763568394002505e-15,
+      1.7965841650256184e-15,
+      -5.551115123125783e-17,
+      -1.1102230246251565e-16,
+      -2.220446049250313e-16,
+      2.220446049250313e-16
+    ],
+    "iterations": 0,
+    "evaluations": 8,
+    "pressure_relative": 2.886579864025407e-15,
+    "isofugacity": 1.5987211554602254e-14,
+    "normalization": 1.1102230246251565e-16,
+    "pressure_slopes": [
+      66292.8334603434,
+      6341.7972332241025
+    ]
+  },
+  {
+    "point": 0,
+    "probe": "T-minus",
+    "success": true,
+    "message": "converged: residual 1.3322676295501878e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor absent, amplification 0",
+    "solver_status": "NEWTON_CONVERGED",
+    "pressure": 38407264.358363405,
+    "amounts": [
+      1.0,
+      0.0
+    ],
+    "mole_fractions": [
+      0.3685636856368564,
+      0.6314363143631436,
+      0.01676918088285828,
+      0.9832308191171418
+    ],
+    "molar_densities": [
+      15880.979809359698,
+      17225.227020075312
+    ],
+    "residuals": [
+      1.3322676295501878e-14,
+      1.7763568394002505e-15,
+      4.237938007548557e-15,
+      -2.6645352591003757e-15,
+      0.0,
+      6.33601891490625e-16,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "classified_residuals": [
+      1.3322676295501878e-14,
+      1.7763568394002505e-15,
+      4.237938007548557e-15,
+      -2.6645352591003757e-15,
+      0.0,
+      6.33601891490625e-16,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "iterations": 0,
+    "evaluations": 8,
+    "pressure_relative": 8.881784197001252e-15,
+    "isofugacity": 1.5987211554602254e-14,
+    "normalization": 0.0,
+    "pressure_slopes": [
+      66387.71831525618,
+      6330.910349268993
+    ]
+  },
+  {
+    "point": 0,
+    "probe": "T-plus",
+    "success": true,
+    "message": "converged: residual 8.8817841970012523e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor absent, amplification 0",
+    "solver_status": "NEWTON_CONVERGED",
+    "pressure": 38678061.67878032,
+    "amounts": [
+      1.0,
+      0.0
+    ],
+    "mole_fractions": [
+      0.3685636856368564,
+      0.6314363143631436,
+      0.016934759954951775,
+      0.9830652400450481
+    ],
+    "molar_densities": [
+      15868.35600146265,
+      17198.814066704632
+    ],
+    "residuals": [
+      -4.440892098500626e-16,
+      8.881784197001252e-15,
+      3.8974194752662826e-15,
+      3.1086244689504383e-15,
+      -1.7763568394002505e-15,
+      -4.2304996065217256e-16,
+      0.0,
+      0.0,
+      0.0,
+      2.220446049250313e-16
+    ],
+    "classified_residuals": [
+      -4.440892098500626e-16,
+      8.881784197001252e-15,
+      3.8974194752662826e-15,
+      3.1086244689504383e-15,
+      -1.7763568394002505e-15,
+      -4.2304996065217256e-16,
+      0.0,
+      0.0,
+      0.0,
+      2.220446049250313e-16
+    ],
+    "iterations": 0,
+    "evaluations": 8,
+    "pressure_relative": 5.10702591327572e-15,
+    "isofugacity": 3.552713678800501e-15,
+    "normalization": 1.1102230246251565e-16,
+    "pressure_slopes": [
+      66197.94728582994,
+      6352.696641794249
+    ]
+  },
+  {
+    "point": 0,
+    "probe": "x-minus",
+    "success": true,
+    "message": "converged: residual 1.8207657603852567e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor absent, amplification 0",
+    "solver_status": "NEWTON_CONVERGED",
+    "pressure": 38975379.26983346,
+    "amounts": [
+      1.0,
+      0.0
+    ],
+    "mole_fractions": [
+      0.36585365853658536,
+      0.6341463414634146,
+      0.017312140104009437,
+      0.9826878598959906
+    ],
+    "molar_densities": [
+      15915.211431039943,
+      17292.646477654067
+    ],
+    "residuals": [
+      -1.8207657603852567e-14,
+      -5.329070518200751e-15,
+      -5.60033281115656e-15,
+      -1.2878587085651816e-14,
+      -1.7763568394002505e-15,
+      -6.311316451983429e-16,
+      -5.551115123125783e-17,
+      -1.1102230246251565e-16,
+      -2.220446049250313e-16,
+      0.0
+    ],
+    "classified_residuals": [
+      -1.8207657603852567e-14,
+      -5.329070518200751e-15,
+      -5.60033281115656e-15,
+      -1.2878587085651816e-14,
+      -1.7763568394002505e-15,
+      -6.311316451983429e-16,
+      -5.551115123125783e-17,
+      -1.1102230246251565e-16,
+      -2.220446049250313e-16,
+      0.0
+    ],
+    "iterations": 0,
+    "evaluations": 8,
+    "pressure_relative": 1.0658141036401503e-14,
+    "isofugacity": 9.992007221626409e-15,
+    "normalization": 0.0,
+    "pressure_slopes": [
+      65911.77943262222,
+      6475.260198862036
+    ]
+  },
+  {
+    "point": 0,
+    "probe": "x-plus",
+    "success": true,
+    "message": "converged: residual 2.6645352591003757e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor absent, amplification 0",
+    "solver_status": "NEWTON_CONVERGED",
+    "pressure": 38112831.10988893,
+    "amounts": [
+      1.0,
+      0.0
+    ],
+    "mole_fractions": [
+      0.3712737127371274,
+      0.6287262872628726,
+      0.01639998277168376,
+      0.9836000172283162
+    ],
+    "molar_densities": [
+      15834.314666479124,
+      17130.23694137648
+    ],
+    "residuals": [
+      -2.6645352591003757e-14,
+      0.0,
+      -9.87937223681104e-15,
+      2.6645352591003757e-15,
+      0.0,
+      -1.1680447566183305e-15,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "classified_residuals": [
+      -2.6645352591003757e-14,
+      0.0,
+      -9.87937223681104e-15,
+      2.6645352591003757e-15,
+      0.0,
+      -1.1680447566183305e-15,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "iterations": 0,
+    "evaluations": 8,
+    "pressure_relative": 1.199040866595169e-14,
+    "isofugacity": 4.773959005888173e-15,
+    "normalization": 0.0,
+    "pressure_slopes": [
+      66674.44782612535,
+      6210.3354632474075
+    ]
+  },
+  {
+    "point": 1,
+    "probe": "nominal",
+    "success": true,
+    "message": "converged: residual 2.3980817331903381e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor absent, amplification 0",
+    "solver_status": "NEWTON_CONVERGED",
+    "pressure": 16260869.520050205,
+    "amounts": [
+      1.0000000000000002,
+      0.0
+    ],
+    "mole_fractions": [
+      0.5582655826558266,
+      0.44173441734417346,
+      0.0011808827091749142,
+      0.9988191172908252
+    ],
+    "molar_densities": [
+      13477.107087556602,
+      8777.877516464936
+    ],
+    "residuals": [
+      -2.398081733190338e-14,
+      -1.5987211554602254e-14,
+      -1.957048065290454e-14,
+      6.661338147750939e-15,
+      0.0,
+      4.144485725926165e-16,
+      0.0,
+      5.551115123125783e-17,
+      -2.220446049250313e-16,
+      0.0
+    ],
+    "classified_residuals": [
+      -2.398081733190338e-14,
+      -1.5987211554602254e-14,
+      -1.957048065290454e-14,
+      6.661338147750939e-15,
+      0.0,
+      4.144485725926165e-16,
+      0.0,
+      5.551115123125783e-17,
+      -2.220446049250313e-16,
+      0.0
+    ],
+    "iterations": 0,
+    "evaluations": 7,
+    "pressure_relative": 5.4511950509095186e-14,
+    "isofugacity": 3.574918139293004e-14,
+    "normalization": 0.0,
+    "pressure_slopes": [
+      95568.87802333003,
+      1461.81136433954
+    ]
+  },
+  {
+    "point": 1,
+    "probe": "T-minus",
+    "success": true,
+    "message": "converged: residual 2.1316282072803006e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor absent, amplification 0",
+    "solver_status": "NEWTON_CONVERGED",
+    "pressure": 16167763.20311282,
+    "amounts": [
+      1.0,
+      0.0
+    ],
+    "mole_fractions": [
+      0.5582655826558267,
+      0.4417344173441734,
+      0.0011549714937171623,
+      0.9988450285062829
+    ],
+    "molar_densities": [
+      13482.142440842736,
+      8757.351234547017
+    ],
+    "residuals": [
+      -2.1316282072803006e-14,
+      3.552713678800501e-15,
+      -6.611002751590543e-15,
+      4.440892098500626e-16,
+      0.0,
+      -2.07709997558405e-16,
+      1.1102230246251565e-16,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "classified_residuals": [
+      -2.1316282072803006e-14,
+      3.552713678800501e-15,
+      -6.611002751590543e-15,
+      4.440892098500626e-16,
+      0.0,
+      -2.07709997558405e-16,
+      1.1102230246251565e-16,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "iterations": 0,
+    "evaluations": 7,
+    "pressure_relative": 1.709743457922741e-14,
+    "isofugacity": 2.1649348980190553e-14,
+    "normalization": 0.0,
+    "pressure_slopes": [
+      95704.3729000969,
+      1448.8593926469628
+    ]
+  },
+  {
+    "point": 1,
+    "probe": "T-plus",
+    "success": true,
+    "message": "converged: residual 1.9984014443252818e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor absent, amplification 0",
+    "solver_status": "NEWTON_CONVERGED",
+    "pressure": 16353887.78915273,
+    "amounts": [
+      0.9999999999999999,
+      0.0
+    ],
+    "mole_fractions": [
+      0.5582655826558266,
+      0.44173441734417335,
+      0.0012071130820423596,
+      0.9987928869179575
+    ],
+    "molar_densities": [
+      13472.073395378326,
+      8798.033672855601
+    ],
+    "residuals": [
+      1.9984014443252818e-14,
+      -1.7763568394002505e-15,
+      4.253106743862527e-15,
+      1.3322676295501878e-15,
+      -1.7763568394002505e-15,
+      -7.236233855358864e-16,
+      0.0,
+      0.0,
+      2.220446049250313e-16,
+      2.220446049250313e-16
+    ],
+    "classified_residuals": [
+      1.9984014443252818e-14,
+      -1.7763568394002505e-15,
+      4.253106743862527e-15,
+      1.3322676295501878e-15,
+      -1.7763568394002505e-15,
+      -7.236233855358864e-16,
+      0.0,
+      0.0,
+      2.220446049250313e-16,
+      2.220446049250313e-16
+    ],
+    "iterations": 0,
+    "evaluations": 7,
+    "pressure_relative": 2.5979218776228663e-14,
+    "isofugacity": 1.7763568394002505e-14,
+    "normalization": 1.1102230246251565e-16,
+    "pressure_slopes": [
+      95433.46216762626,
+      1474.7977993754291
+    ]
+  },
+  {
+    "point": 1,
+    "probe": "x-minus",
+    "success": true,
+    "message": "converged: residual 5.3290705182007514e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor absent, amplification 0",
+    "solver_status": "NEWTON_CONVERGED",
+    "pressure": 16459531.099304548,
+    "amounts": [
+      1.0,
+      0.0
+    ],
+    "mole_fractions": [
+      0.5555555555555556,
+      0.4444444444444444,
+      0.0012370081330055182,
+      0.9987629918669945
+    ],
+    "molar_densities": [
+      13505.888955960505,
+      8916.536642927142
+    ],
+    "residuals": [
+      -1.7763568394002505e-15,
+      -5.329070518200751e-15,
+      2.693624106457781e-16,
+      2.6645352591003757e-15,
+      0.0,
+      4.08003572774802e-16,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "classified_residuals": [
+      -1.7763568394002505e-15,
+      -5.329070518200751e-15,
+      2.693624106457781e-16,
+      2.6645352591003757e-15,
+      0.0,
+      4.08003572774802e-16,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "iterations": 0,
+    "evaluations": 7,
+    "pressure_relative": 6.661338147750939e-16,
+    "isofugacity": 4.773959005888173e-15,
+    "normalization": 0.0,
+    "pressure_slopes": [
+      95104.31598405927,
+      1475.0542411562824
+    ]
+  },
+  {
+    "point": 1,
+    "probe": "x-plus",
+    "success": true,
+    "message": "converged: residual 5.773159728050814e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor absent, amplification 0",
+    "solver_status": "NEWTON_CONVERGED",
+    "pressure": 16065203.806371517,
+    "amounts": [
+      1.0,
+      0.0
+    ],
+    "mole_fractions": [
+      0.5609756097560976,
+      0.4390243902439024,
+      0.0011275162567719078,
+      0.9988724837432281
+    ],
+    "molar_densities": [
+      13448.457840157631,
+      8640.322656776905
+    ],
+    "residuals": [
+      -5.773159728050814e-15,
+      3.552713678800501e-15,
+      -2.5698707672021213e-15,
+      -8.881784197001252e-16,
+      1.7763568394002505e-15,
+      4.2104663814126426e-16,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "classified_residuals": [
+      -5.773159728050814e-15,
+      3.552713678800501e-15,
+      -2.5698707672021213e-15,
+      -8.881784197001252e-16,
+      1.7763568394002505e-15,
+      4.2104663814126426e-16,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "iterations": 0,
+    "evaluations": 7,
+    "pressure_relative": 6.772360450213455e-15,
+    "isofugacity": 8.104628079763643e-15,
+    "normalization": 0.0,
+    "pressure_slopes": [
+      96034.7127014682,
+      1449.8855598360974
+    ]
+  },
+  {
+    "point": 2,
+    "probe": "nominal",
+    "success": true,
+    "message": "converged: residual 1.3322676295501878e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor absent, amplification 0",
+    "solver_status": "NEWTON_CONVERGED",
+    "pressure": 7997611.516625183,
+    "amounts": [
+      1.0,
+      0.0
+    ],
+    "mole_fractions": [
+      0.7208672086720868,
+      0.2791327913279132,
+      0.00017498440537887003,
+      0.9998250155946211
+    ],
+    "molar_densities": [
+      11953.795988972013,
+      3296.7118609537997
+    ],
+    "residuals": [
+      1.3322676295501878e-14,
+      0.0,
+      5.097639701648152e-15,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      -5.551115123125783e-17,
+      0.0,
+      0.0
+    ],
+    "classified_residuals": [
+      1.3322676295501878e-14,
+      0.0,
+      5.097639701648152e-15,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      -5.551115123125783e-17,
+      0.0,
+      0.0
+    ],
+    "iterations": 0,
+    "evaluations": 6,
+    "pressure_relative": 2.7755575615628914e-14,
+    "isofugacity": 3.0142555118573e-14,
+    "normalization": 0.0,
+    "pressure_slopes": [
+      124889.98476193022,
+      1883.9555259352271
+    ]
+  },
+  {
+    "point": 2,
+    "probe": "T-minus",
+    "success": true,
+    "message": "converged: residual 1.0658141036401503e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor absent, amplification 0",
+    "solver_status": "NEWTON_CONVERGED",
+    "pressure": 7956173.008913515,
+    "amounts": [
+      1.0,
+      0.0
+    ],
+    "mole_fractions": [
+      0.7208672086720868,
+      0.2791327913279132,
+      0.0001706190649329286,
+      0.9998293809350671
+    ],
+    "molar_densities": [
+      11958.213718957324,
+      3284.052683254063
+    ],
+    "residuals": [
+      1.0658141036401503e-14,
+      8.881784197001252e-15,
+      5.095756477590316e-15,
+      -1.7763568394002505e-15,
+      -8.881784197001252e-16,
+      0.0,
+      0.0,
+      -5.551115123125783e-17,
+      0.0,
+      -1.1102230246251565e-16
+    ],
+    "classified_residuals": [
+      1.0658141036401503e-14,
+      8.881784197001252e-15,
+      5.095756477590316e-15,
+      -1.7763568394002505e-15,
+      -8.881784197001252e-16,
+      0.0,
+      0.0,
+      -5.551115123125783e-17,
+      0.0,
+      -1.1102230246251565e-16
+    ],
+    "iterations": 0,
+    "evaluations": 6,
+    "pressure_relative": 1.680877659282487e-13,
+    "isofugacity": 1.4951928584139296e-13,
+    "normalization": 0.0,
+    "pressure_slopes": [
+      125065.63354002591,
+      1880.6378359963642
+    ]
+  },
+  {
+    "point": 2,
+    "probe": "T-plus",
+    "success": true,
+    "message": "converged: residual 1.2434497875801753e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor absent, amplification 0",
+    "solver_status": "NEWTON_CONVERGED",
+    "pressure": 8039090.536772474,
+    "amounts": [
+      1.0,
+      0.0
+    ],
+    "mole_fractions": [
+      0.7208672086720868,
+      0.2791327913279133,
+      0.0001794421312621732,
+      0.9998205578687379
+    ],
+    "molar_densities": [
+      11949.380385262255,
+      3309.328896332343
+    ],
+    "residuals": [
+      9.769962616701378e-15,
+      1.2434497875801753e-14,
+      7.535116681578781e-15,
+      -8.881784197001252e-16,
+      -8.881784197001252e-16,
+      2.7482753460404046e-16,
+      0.0,
+      5.551115123125783e-17,
+      0.0,
+      0.0
+    ],
+    "classified_residuals": [
+      9.769962616701378e-15,
+      1.2434497875801753e-14,
+      7.535116681578781e-15,
+      -8.881784197001252e-16,
+      -8.881784197001252e-16,
+      2.7482753460404046e-16,
+      0.0,
+      5.551115123125783e-17,
+      0.0,
+      0.0
+    ],
+    "iterations": 0,
+    "evaluations": 6,
+    "pressure_relative": 3.4861002973229915e-14,
+    "isofugacity": 2.531308496145357e-14,
+    "normalization": 0.0,
+    "pressure_slopes": [
+      124714.3884915188,
+      1887.3099630179192
+    ]
+  },
+  {
+    "point": 2,
+    "probe": "x-minus",
+    "success": true,
+    "message": "converged: residual 2.6645352591003757e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor absent, amplification 0",
+    "solver_status": "NEWTON_CONVERGED",
+    "pressure": 8099074.653584474,
+    "amounts": [
+      1.0,
+      0.0
+    ],
+    "mole_fractions": [
+      0.7181571815718157,
+      0.28184281842818426,
+      0.00017800189005277007,
+      0.9998219981099472
+    ],
+    "molar_densities": [
+      11976.396810122098,
+      3350.7894228819373
+    ],
+    "residuals": [
+      1.7763568394002505e-15,
+      -2.6645352591003757e-15,
+      1.2530198203327836e-15,
+      4.440892098500626e-16,
+      0.0,
+      -2.71426994356062e-16,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "classified_residuals": [
+      1.7763568394002505e-15,
+      -2.6645352591003757e-15,
+      1.2530198203327836e-15,
+      4.440892098500626e-16,
+      0.0,
+      -2.71426994356062e-16,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "iterations": 0,
+    "evaluations": 6,
+    "pressure_relative": 3.8191672047105385e-14,
+    "isofugacity": 3.3362201889985954e-14,
+    "normalization": 0.0,
+    "pressure_slopes": [
+      124389.52501461333,
+      1870.48843339144
+    ]
+  },
+  {
+    "point": 2,
+    "probe": "x-plus",
+    "success": true,
+    "message": "converged: residual 5.3359441952664099e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor absent, amplification 0",
+    "solver_status": "NEWTON_CONVERGED",
+    "pressure": 7896879.882162674,
+    "amounts": [
+      1.0000000000000002,
+      0.0
+    ],
+    "mole_fractions": [
+      0.7235772357723578,
+      0.2764227642276422,
+      0.00017208740488734942,
+      0.9998279125951127
+    ],
+    "molar_densities": [
+      11931.277163764706,
+      3243.408284423043
+    ],
+    "residuals": [
+      -1.7763568394002505e-15,
+      -3.552713678800501e-15,
+      -5.33594419526641e-15,
+      -1.3322676295501878e-15,
+      -8.881784197001252e-16,
+      -2.804132634614377e-16,
+      0.0,
+      0.0,
+      -2.220446049250313e-16,
+      0.0
+    ],
+    "classified_residuals": [
+      -1.7763568394002505e-15,
+      -3.552713678800501e-15,
+      -5.33594419526641e-15,
+      -1.3322676295501878e-15,
+      -8.881784197001252e-16,
+      -2.804132634614377e-16,
+      0.0,
+      0.0,
+      -2.220446049250313e-16,
+      0.0
+    ],
+    "iterations": 0,
+    "evaluations": 6,
+    "pressure_relative": 7.216449660063518e-15,
+    "isofugacity": 9.325873406851315e-15,
+    "normalization": 0.0,
+    "pressure_slopes": [
+      125390.58026894434,
+      1897.4255944707056
+    ]
+  },
+  {
+    "point": 3,
+    "probe": "nominal",
+    "success": true,
+    "message": "converged: residual 1.4210854715202004e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor absent, amplification 0",
+    "solver_status": "NEWTON_CONVERGED",
+    "pressure": 4422838.773043401,
+    "amounts": [
+      1.0,
+      0.0
+    ],
+    "mole_fractions": [
+      0.8292682926829268,
+      0.1707317073170732,
+      0.00011991114481215417,
+      0.9998800888551879
+    ],
+    "molar_densities": [
+      11112.541642799111,
+      1616.2217414644276
+    ],
+    "residuals": [
+      1.4210854715202004e-14,
+      -8.881784197001252e-16,
+      6.281525919527583e-15,
+      0.0,
+      -8.881784197001252e-16,
+      -4.220466838366123e-16,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "classified_residuals": [
+      1.4210854715202004e-14,
+      -8.881784197001252e-16,
+      6.281525919527583e-15,
+      0.0,
+      -8.881784197001252e-16,
+      -4.220466838366123e-16,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "iterations": 0,
+    "evaluations": 6,
+    "pressure_relative": 4.907185768843192e-14,
+    "isofugacity": 4.9654724776360126e-14,
+    "normalization": 0.0,
+    "pressure_slopes": [
+      144956.50829144122,
+      2404.715126609664
+    ]
+  },
+  {
+    "point": 3,
+    "probe": "T-minus",
+    "success": true,
+    "message": "converged: residual 8.8817841970012523e-16 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor absent, amplification 0",
+    "solver_status": "NEWTON_CONVERGED",
+    "pressure": 4401401.422172659,
+    "amounts": [
+      1.0,
+      0.0
+    ],
+    "mole_fractions": [
+      0.8292682926829268,
+      0.1707317073170732,
+      0.00011709267942929704,
+      0.9998829073205707
+    ],
+    "molar_densities": [
+      11116.561517700247,
+      1610.4991682961404
+    ],
+    "residuals": [
+      8.881784197001252e-16,
+      0.0,
+      6.749687192104811e-16,
+      8.881784197001252e-16,
+      0.0,
+      2.8236422584904103e-16,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "classified_residuals": [
+      8.881784197001252e-16,
+      0.0,
+      6.749687192104811e-16,
+      8.881784197001252e-16,
+      0.0,
+      2.8236422584904103e-16,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "iterations": 0,
+    "evaluations": 6,
+    "pressure_relative": 5.329070518200751e-15,
+    "isofugacity": 5.9396931817445875e-15,
+    "normalization": 0.0,
+    "pressure_slopes": [
+      145149.3842029014,
+      2401.487009535253
+    ]
+  },
+  {
+    "point": 3,
+    "probe": "T-plus",
+    "success": true,
+    "message": "converged: residual 2.3092638912203256e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor absent, amplification 0",
+    "solver_status": "NEWTON_CONVERGED",
+    "pressure": 4444297.575833938,
+    "amounts": [
+      1.0,
+      0.0
+    ],
+    "mole_fractions": [
+      0.8292682926829268,
+      0.1707317073170732,
+      0.00012278738544645797,
+      0.9998772126145535
+    ],
+    "molar_densities": [
+      11108.523696497334,
+      1621.933296300551
+    ],
+    "residuals": [
+      -2.1760371282653068e-14,
+      -2.3092638912203256e-14,
+      -2.0918701949229715e-14,
+      -4.440892098500626e-16,
+      0.0,
+      1.4018682270217033e-16,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "classified_residuals": [
+      -2.1760371282653068e-14,
+      -2.3092638912203256e-14,
+      -2.0918701949229715e-14,
+      -4.440892098500626e-16,
+      0.0,
+      1.4018682270217033e-16,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "iterations": 0,
+    "evaluations": 6,
+    "pressure_relative": 6.017408793468348e-14,
+    "isofugacity": 5.698219673888616e-14,
+    "normalization": 0.0,
+    "pressure_slopes": [
+      144763.60586729675,
+      2407.9565360568727
+    ]
+  },
+  {
+    "point": 3,
+    "probe": "x-minus",
+    "success": true,
+    "message": "converged: residual 7.4346644905550812e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor absent, amplification 0",
+    "solver_status": "NEWTON_CONVERGED",
+    "pressure": 4502915.28775136,
+    "amounts": [
+      1.0,
+      0.0
+    ],
+    "mole_fractions": [
+      0.8265582655826558,
+      0.1734417344173442,
+      0.00012018022163927149,
+      0.9998798197783607
+    ],
+    "molar_densities": [
+      11132.17926195311,
+      1649.6076898352094
+    ],
+    "residuals": [
+      -1.3322676295501878e-15,
+      8.881784197001252e-16,
+      -7.434664490555081e-15,
+      -4.440892098500626e-16,
+      -8.881784197001252e-16,
+      -2.7566999941173405e-16,
+      0.0,
+      -2.7755575615628914e-17,
+      0.0,
+      0.0
+    ],
+    "classified_residuals": [
+      -1.3322676295501878e-15,
+      8.881784197001252e-16,
+      -7.434664490555081e-15,
+      -4.440892098500626e-16,
+      -8.881784197001252e-16,
+      -2.7566999941173405e-16,
+      0.0,
+      -2.7755575615628914e-17,
+      0.0,
+      0.0
+    ],
+    "iterations": 0,
+    "evaluations": 6,
+    "pressure_relative": 1.2223555501122974e-13,
+    "isofugacity": 1.2159717677207027e-13,
+    "normalization": 0.0,
+    "pressure_slopes": [
+      144454.90233018633,
+      2392.391616161047
+    ]
+  },
+  {
+    "point": 3,
+    "probe": "x-plus",
+    "success": true,
+    "message": "converged: residual 8.8817841970012523e-16 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor absent, amplification 0",
+    "solver_status": "NEWTON_CONVERGED",
+    "pressure": 4343149.961350367,
+    "amounts": [
+      1.0,
+      0.0
+    ],
+    "mole_fractions": [
+      0.8319783197831978,
+      0.1680216802168022,
+      0.00011969079970640955,
+      0.9998803092002936
+    ],
+    "molar_densities": [
+      11092.970739792956,
+      1583.1670908870058
+    ],
+    "residuals": [
+      -8.881784197001252e-16,
+      0.0,
+      -8.813750863856927e-16,
+      -8.881784197001252e-16,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "classified_residuals": [
+      -8.881784197001252e-16,
+      0.0,
+      -8.813750863856927e-16,
+      -8.881784197001252e-16,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "iterations": 0,
+    "evaluations": 6,
+    "pressure_relative": 7.105427357601002e-15,
+    "isofugacity": 5.88418203051333e-15,
+    "normalization": 0.0,
+    "pressure_slopes": [
+      145458.06332389027,
+      2416.9971388856584
+    ]
+  },
+  {
+    "point": 4,
+    "probe": "nominal",
+    "success": true,
+    "message": "converged: residual 4.6629367034256575e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor absent, amplification 0",
+    "solver_status": "NEWTON_CONVERGED",
+    "pressure": 45909048.24334239,
+    "amounts": [
+      0.9999999999999999,
+      0.0
+    ],
+    "mole_fractions": [
+      0.36856368563685643,
+      0.6314363143631436,
+      0.022670109591376348,
+      0.9773298904086236
+    ],
+    "molar_densities": [
+      15491.213310571726,
+      16457.505834363204
+    ],
+    "residuals": [
+      4.6629367034256575e-15,
+      -3.552713678800501e-15,
+      2.935517972476237e-15,
+      2.886579864025407e-15,
+      3.552713678800501e-15,
+      1.657896483695434e-15,
+      0.0,
+      -1.1102230246251565e-16,
+      0.0,
+      0.0
+    ],
+    "classified_residuals": [
+      4.6629367034256575e-15,
+      -3.552713678800501e-15,
+      2.935517972476237e-15,
+      2.886579864025407e-15,
+      3.552713678800501e-15,
+      1.657896483695434e-15,
+      0.0,
+      -1.1102230246251565e-16,
+      0.0,
+      0.0
+    ],
+    "iterations": 0,
+    "evaluations": 8,
+    "pressure_relative": 3.3306690738754696e-15,
+    "isofugacity": 8.215650382226158e-15,
+    "normalization": 0.0,
+    "pressure_slopes": [
+      60609.62815955369,
+      7003.24175924087
+    ]
+  },
+  {
+    "point": 4,
+    "probe": "T-minus",
+    "success": true,
+    "message": "converged: residual 1.4543921622589551e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor absent, amplification 0",
+    "solver_status": "NEWTON_CONVERGED",
+    "pressure": 45798378.271882124,
+    "amounts": [
+      1.0,
+      0.0
+    ],
+    "mole_fractions": [
+      0.3685636856368564,
+      0.6314363143631436,
+      0.022558669865005602,
+      0.9774413301349943
+    ],
+    "molar_densities": [
+      15497.692892371026,
+      16469.59113128244
+    ],
+    "residuals": [
+      -1.454392162258955e-14,
+      -1.7763568394002505e-15,
+      -5.51646639021607e-15,
+      -3.885780586188048e-15,
+      1.7763568394002505e-15,
+      1.3253439425761022e-15,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "classified_residuals": [
+      -1.454392162258955e-14,
+      -1.7763568394002505e-15,
+      -5.51646639021607e-15,
+      -3.885780586188048e-15,
+      1.7763568394002505e-15,
+      1.3253439425761022e-15,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "iterations": 0,
+    "evaluations": 8,
+    "pressure_relative": 6.661338147750939e-15,
+    "isofugacity": 3.6637359812630166e-15,
+    "normalization": 0.0,
+    "pressure_slopes": [
+      60703.997710593656,
+      6992.274598330485
+    ]
+  },
+  {
+    "point": 4,
+    "probe": "T-plus",
+    "success": true,
+    "message": "converged: residual 6.8833827526759706e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor absent, amplification 0",
+    "solver_status": "NEWTON_CONVERGED",
+    "pressure": 46019318.90626774,
+    "amounts": [
+      1.0,
+      0.0
+    ],
+    "mole_fractions": [
+      0.3685636856368564,
+      0.6314363143631436,
+      0.022782060508545754,
+      0.9772179394914542
+    ],
+    "molar_densities": [
+      15484.730335911136,
+      16445.433273272265
+    ],
+    "residuals": [
+      -6.8833827526759706e-15,
+      -3.552713678800501e-15,
+      -3.4066264996875035e-15,
+      -5.995204332975845e-15,
+      0.0,
+      -6.636454169324243e-16,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "classified_residuals": [
+      -6.8833827526759706e-15,
+      -3.552713678800501e-15,
+      -3.4066264996875035e-15,
+      -5.995204332975845e-15,
+      0.0,
+      -6.636454169324243e-16,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "iterations": 0,
+    "evaluations": 8,
+    "pressure_relative": 2.55351295663786e-15,
+    "isofugacity": 9.769962616701378e-15,
+    "normalization": 0.0,
+    "pressure_slopes": [
+      60515.27668751774,
+      7014.201987652996
+    ]
+  },
+  {
+    "point": 4,
+    "probe": "x-minus",
+    "success": true,
+    "message": "converged: residual 8.7707618945387367e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor absent, amplification 0",
+    "solver_status": "NEWTON_CONVERGED",
+    "pressure": 46343909.345531516,
+    "amounts": [
+      0.9999999999999999,
+      0.0
+    ],
+    "mole_fractions": [
+      0.36585365853658536,
+      0.6341463414634146,
+      0.02317714867727713,
+      0.9768228513227228
+    ],
+    "molar_densities": [
+      15529.845160569996,
+      16530.15177833683
+    ],
+    "residuals": [
+      8.104628079763643e-15,
+      7.105427357601002e-15,
+      6.090688477985629e-15,
+      -8.770761894538737e-15,
+      -1.7763568394002505e-15,
+      -1.5405697413508093e-15,
+      0.0,
+      0.0,
+      2.220446049250313e-16,
+      -1.1102230246251565e-16
+    ],
+    "classified_residuals": [
+      8.104628079763643e-15,
+      7.105427357601002e-15,
+      6.090688477985629e-15,
+      -8.770761894538737e-15,
+      -1.7763568394002505e-15,
+      -1.5405697413508093e-15,
+      0.0,
+      0.0,
+      2.220446049250313e-16,
+      -1.1102230246251565e-16
+    ],
+    "iterations": 0,
+    "evaluations": 8,
+    "pressure_relative": 6.217248937900877e-15,
+    "isofugacity": 9.769962616701378e-15,
+    "normalization": 0.0,
+    "pressure_slopes": [
+      60252.06887694832,
+      7122.277145805783
+    ]
+  },
+  {
+    "point": 4,
+    "probe": "x-plus",
+    "success": true,
+    "message": "converged: residual 1.7208456881689926e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor absent, amplification 0",
+    "solver_status": "NEWTON_CONVERGED",
+    "pressure": 45475956.784795836,
+    "amounts": [
+      1.0,
+      0.0
+    ],
+    "mole_fractions": [
+      0.3712737127371274,
+      0.6287262872628727,
+      0.022171712703354444,
+      0.9778282872966455
+    ],
+    "molar_densities": [
+      15452.74265082835,
+      16384.013191597147
+    ],
+    "residuals": [
+      -1.7208456881689926e-14,
+      -7.105427357601002e-15,
+      -7.533634931834857e-15,
+      2.3314683517128287e-15,
+      0.0,
+      8.881777045827867e-16,
+      0.0,
+      1.1102230246251565e-16,
+      0.0,
+      0.0
+    ],
+    "classified_residuals": [
+      -1.7208456881689926e-14,
+      -7.105427357601002e-15,
+      -7.533634931834857e-15,
+      2.3314683517128287e-15,
+      0.0,
+      8.881777045827867e-16,
+      0.0,
+      1.1102230246251565e-16,
+      0.0,
+      0.0
+    ],
+    "iterations": 0,
+    "evaluations": 8,
+    "pressure_relative": 8.548717289613705e-15,
+    "isofugacity": 1.2434497875801753e-14,
+    "normalization": 0.0,
+    "pressure_slopes": [
+      60967.586404217254,
+      6885.941607429148
+    ]
+  },
+  {
+    "point": 5,
+    "probe": "nominal",
+    "success": true,
+    "message": "converged: residual 5.1070259132757201e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor absent, amplification 0",
+    "solver_status": "NEWTON_CONVERGED",
+    "pressure": 21597784.15206752,
+    "amounts": [
+      1.0,
+      0.0
+    ],
+    "mole_fractions": [
+      0.5582655826558266,
+      0.4417344173441734,
+      0.0033404262595148893,
+      0.9966595737404852
+    ],
+    "molar_densities": [
+      13176.652681385875,
+      9510.230874267034
+    ],
+    "residuals": [
+      -2.4424906541753444e-15,
+      1.7763568394002505e-15,
+      -1.3804639520592879e-15,
+      5.10702591327572e-15,
+      1.7763568394002505e-15,
+      6.694330554726066e-16,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "classified_residuals": [
+      -2.4424906541753444e-15,
+      1.7763568394002505e-15,
+      -1.3804639520592879e-15,
+      5.10702591327572e-15,
+      1.7763568394002505e-15,
+      6.694330554726066e-16,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "iterations": 0,
+    "evaluations": 7,
+    "pressure_relative": 1.3322676295501878e-15,
+    "isofugacity": 1.0658141036401503e-14,
+    "normalization": 0.0,
+    "pressure_slopes": [
+      87551.43952907146,
+      2256.258533192177
+    ]
+  },
+  {
+    "point": 5,
+    "probe": "T-minus",
+    "success": true,
+    "message": "converged: residual 1.4210854715202004e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor absent, amplification 0",
+    "solver_status": "NEWTON_CONVERGED",
+    "pressure": 21513864.623921443,
+    "amounts": [
+      1.0,
+      0.0
+    ],
+    "mole_fractions": [
+      0.5582655826558267,
+      0.4417344173441734,
+      0.0032942327916482233,
+      0.9967057672083518
+    ],
+    "molar_densities": [
+      13181.652150503733,
+      9503.821250169503
+    ],
+    "residuals": [
+      -1.0658141036401503e-14,
+      -1.4210854715202004e-14,
+      -5.381767469533584e-15,
+      -1.3322676295501878e-15,
+      -1.7763568394002505e-15,
+      -8.612801209629614e-16,
+      1.1102230246251565e-16,
+      0.0,
+      0.0,
+      -1.1102230246251565e-16
+    ],
+    "classified_residuals": [
+      -1.0658141036401503e-14,
+      -1.4210854715202004e-14,
+      -5.381767469533584e-15,
+      -1.3322676295501878e-15,
+      -1.7763568394002505e-15,
+      -8.612801209629614e-16,
+      1.1102230246251565e-16,
+      0.0,
+      0.0,
+      -1.1102230246251565e-16
+    ],
+    "iterations": 0,
+    "evaluations": 7,
+    "pressure_relative": 1.0880185641326534e-14,
+    "isofugacity": 2.1649348980190553e-15,
+    "normalization": 0.0,
+    "pressure_slopes": [
+      87683.5827229274,
+      2243.213632819916
+    ]
+  },
+  {
+    "point": 5,
+    "probe": "T-plus",
+    "success": true,
+    "message": "converged: residual 2.4424906541753444e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor absent, amplification 0",
+    "solver_status": "NEWTON_CONVERGED",
+    "pressure": 21681510.590871505,
+    "amounts": [
+      1.0,
+      0.0
+    ],
+    "mole_fractions": [
+      0.5582655826558266,
+      0.4417344173441734,
+      0.00338698444661307,
+      0.996613015553387
+    ],
+    "molar_densities": [
+      13171.652944058527,
+      9516.501218812342
+    ],
+    "residuals": [
+      2.4424906541753444e-14,
+      0.0,
+      1.1807446997252104e-14,
+      3.1086244689504383e-15,
+      0.0,
+      9.557028164668625e-17,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "classified_residuals": [
+      2.4424906541753444e-14,
+      0.0,
+      1.1807446997252104e-14,
+      3.1086244689504383e-15,
+      0.0,
+      9.557028164668625e-17,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "iterations": 0,
+    "evaluations": 7,
+    "pressure_relative": 2.6756374893466273e-14,
+    "isofugacity": 1.0658141036401503e-14,
+    "normalization": 0.0,
+    "pressure_slopes": [
+      87419.34064639601,
+      2269.2872605557122
+    ]
+  },
+  {
+    "point": 5,
+    "probe": "x-minus",
+    "success": true,
+    "message": "converged: residual 4.4630965589931293e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor absent, amplification 0",
+    "solver_status": "NEWTON_CONVERGED",
+    "pressure": 21848728.636873294,
+    "amounts": [
+      1.0,
+      0.0
+    ],
+    "mole_fractions": [
+      0.5555555555555556,
+      0.4444444444444444,
+      0.0034498448894420223,
+      0.996550155110558
+    ],
+    "molar_densities": [
+      13204.734296669927,
+      9625.322057950209
+    ],
+    "residuals": [
+      -4.463096558993129e-14,
+      -3.552713678800501e-15,
+      -1.9492024210335576e-14,
+      -5.551115123125783e-15,
+      -1.7763568394002505e-15,
+      -1.133877532155984e-15,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "classified_residuals": [
+      -4.463096558993129e-14,
+      -3.552713678800501e-15,
+      -1.9492024210335576e-14,
+      -5.551115123125783e-15,
+      -1.7763568394002505e-15,
+      -1.133877532155984e-15,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "iterations": 0,
+    "evaluations": 7,
+    "pressure_relative": 3.064215547965432e-14,
+    "isofugacity": 2.8144153674247718e-14,
+    "normalization": 0.0,
+    "pressure_slopes": [
+      87130.81404017442,
+      2281.3227384774796
+    ]
+  },
+  {
+    "point": 5,
+    "probe": "x-plus",
+    "success": true,
+    "message": "converged: residual 1.4210854715202004e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor absent, amplification 0",
+    "solver_status": "NEWTON_CONVERGED",
+    "pressure": 21349566.278732143,
+    "amounts": [
+      1.0,
+      0.0
+    ],
+    "mole_fractions": [
+      0.5609756097560976,
+      0.4390243902439024,
+      0.0032343659126827917,
+      0.9967656340873172
+    ],
+    "molar_densities": [
+      13148.697592237992,
+      9395.313315280398
+    ],
+    "residuals": [
+      -1.4210854715202004e-14,
+      -1.7763568394002505e-15,
+      -8.231223568094629e-15,
+      0.0,
+      -1.7763568394002505e-15,
+      -7.744241591549604e-16,
+      0.0,
+      0.0,
+      0.0,
+      -1.1102230246251565e-16
+    ],
+    "classified_residuals": [
+      -1.4210854715202004e-14,
+      -1.7763568394002505e-15,
+      -8.231223568094629e-15,
+      0.0,
+      -1.7763568394002505e-15,
+      -7.744241591549604e-16,
+      0.0,
+      0.0,
+      0.0,
+      -1.1102230246251565e-16
+    ],
+    "iterations": 0,
+    "evaluations": 7,
+    "pressure_relative": 1.687538997430238e-14,
+    "isofugacity": 1.5487611193520934e-14,
+    "normalization": 0.0,
+    "pressure_slopes": [
+      87973.20321389656,
+      2232.268899780043
+    ]
+  },
+  {
+    "point": 6,
+    "probe": "nominal",
+    "success": true,
+    "message": "converged: residual 2.5313084961453569e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor absent, amplification 0",
+    "solver_status": "NEWTON_CONVERGED",
+    "pressure": 10521599.078679336,
+    "amounts": [
+      1.0,
+      0.0
+    ],
+    "mole_fractions": [
+      0.7208672086720868,
+      0.2791327913279133,
+      0.0006627955337639797,
+      0.999337204466236
+    ],
+    "molar_densities": [
+      11691.999105209696,
+      3964.941389935509
+    ],
+    "residuals": [
+      -2.531308496145357e-14,
+      1.7763568394002505e-15,
+      -1.8941325421674847e-14,
+      -1.1102230246251565e-15,
+      0.0,
+      1.1469207389566498e-16,
+      0.0,
+      5.551115123125783e-17,
+      0.0,
+      -1.1102230246251565e-16
+    ],
+    "classified_residuals": [
+      -2.531308496145357e-14,
+      1.7763568394002505e-15,
+      -1.8941325421674847e-14,
+      -1.1102230246251565e-15,
+      0.0,
+      1.1469207389566498e-16,
+      0.0,
+      5.551115123125783e-17,
+      0.0,
+      -1.1102230246251565e-16
+    ],
+    "iterations": 0,
+    "evaluations": 6,
+    "pressure_relative": 2.7644553313166398e-14,
+    "isofugacity": 3.3556490919295356e-14,
+    "normalization": 0.0,
+    "pressure_slopes": [
+      114460.71136132584,
+      2145.2368469807043
+    ]
+  },
+  {
+    "point": 6,
+    "probe": "T-minus",
+    "success": true,
+    "message": "converged: residual 1.4654943925052066e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor absent, amplification 0",
+    "solver_status": "NEWTON_CONVERGED",
+    "pressure": 10479493.63265391,
+    "amounts": [
+      1.0,
+      0.0
+    ],
+    "mole_fractions": [
+      0.7208672086720868,
+      0.2791327913279133,
+      0.0006500218242979066,
+      0.9993499781757021
+    ],
+    "molar_densities": [
+      11696.31994750501,
+      3955.4323873264284
+    ],
+    "residuals": [
+      1.4654943925052066e-14,
+      1.1546319456101628e-14,
+      1.4307664793482007e-14,
+      -6.661338147750939e-16,
+      -8.881784197001252e-16,
+      0.0,
+      0.0,
+      5.551115123125783e-17,
+      0.0,
+      0.0
+    ],
+    "classified_residuals": [
+      1.4654943925052066e-14,
+      1.1546319456101628e-14,
+      1.4307664793482007e-14,
+      -6.661338147750939e-16,
+      -8.881784197001252e-16,
+      0.0,
+      0.0,
+      5.551115123125783e-17,
+      0.0,
+      0.0
+    ],
+    "iterations": 0,
+    "evaluations": 6,
+    "pressure_relative": 3.9968028886505635e-15,
+    "isofugacity": 7.549516567451064e-15,
+    "normalization": 0.0,
+    "pressure_slopes": [
+      114632.5902077437,
+      2139.988233017819
+    ]
+  },
+  {
+    "point": 6,
+    "probe": "T-plus",
+    "success": true,
+    "message": "converged: residual 9.5479180117763462e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor absent, amplification 0",
+    "solver_status": "NEWTON_CONVERGED",
+    "pressure": 10563687.640662296,
+    "amounts": [
+      1.0,
+      0.0
+    ],
+    "mole_fractions": [
+      0.7208672086720868,
+      0.2791327913279132,
+      0.0006757633400126459,
+      0.9993242366599874
+    ],
+    "molar_densities": [
+      11687.679351874624,
+      3974.392475112995
+    ],
+    "residuals": [
+      9.547918011776346e-15,
+      -3.552713678800501e-15,
+      6.497680618339241e-15,
+      -2.220446049250313e-16,
+      -8.881784197001252e-16,
+      -1.1441933672479976e-16,
+      0.0,
+      -5.551115123125783e-17,
+      0.0,
+      0.0
+    ],
+    "classified_residuals": [
+      9.547918011776346e-15,
+      -3.552713678800501e-15,
+      6.497680618339241e-15,
+      -2.220446049250313e-16,
+      -8.881784197001252e-16,
+      -1.1441933672479976e-16,
+      0.0,
+      -5.551115123125783e-17,
+      0.0,
+      0.0
+    ],
+    "iterations": 0,
+    "evaluations": 6,
+    "pressure_relative": 1.7319479184152442e-14,
+    "isofugacity": 1.3655743202889425e-14,
+    "normalization": 0.0,
+    "pressure_slopes": [
+      114288.90302758112,
+      2150.511310302898
+    ]
+  },
+  {
+    "point": 6,
+    "probe": "x-minus",
+    "success": true,
+    "message": "converged: residual 2.375877272697835e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor absent, amplification 0",
+    "solver_status": "NEWTON_CONVERGED",
+    "pressure": 10659285.010157408,
+    "amounts": [
+      1.0,
+      0.0
+    ],
+    "mole_fractions": [
+      0.7181571815718157,
+      0.28184281842818426,
+      0.0006747094419046226,
+      0.9993252905580954
+    ],
+    "molar_densities": [
+      11713.97417600004,
+      4029.40733167728
+    ],
+    "residuals": [
+      2.375877272697835e-14,
+      4.440892098500626e-15,
+      1.968221061745292e-14,
+      -6.661338147750939e-16,
+      -8.881784197001252e-16,
+      -5.642856547555482e-16,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "classified_residuals": [
+      2.375877272697835e-14,
+      4.440892098500626e-15,
+      1.968221061745292e-14,
+      -6.661338147750939e-16,
+      -8.881784197001252e-16,
+      -5.642856547555482e-16,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "iterations": 0,
+    "evaluations": 6,
+    "pressure_relative": 7.260858581048524e-14,
+    "isofugacity": 6.800116025829084e-14,
+    "normalization": 0.0,
+    "pressure_slopes": [
+      113993.40328362143,
+      2134.7350790964006
+    ]
+  },
+  {
+    "point": 6,
+    "probe": "x-plus",
+    "success": true,
+    "message": "converged: residual 7.9936057773011271e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor absent, amplification 0",
+    "solver_status": "NEWTON_CONVERGED",
+    "pressure": 10384990.29142243,
+    "amounts": [
+      1.0,
+      0.0
+    ],
+    "mole_fractions": [
+      0.7235772357723578,
+      0.27642276422764217,
+      0.0006513233637630885,
+      0.9993486766362369
+    ],
+    "molar_densities": [
+      11670.104818690546,
+      3901.3012536611864
+    ],
+    "residuals": [
+      4.6629367034256575e-15,
+      7.993605777301127e-15,
+      2.8056139831226676e-15,
+      2.220446049250313e-16,
+      0.0,
+      0.0,
+      0.0,
+      -5.551115123125783e-17,
+      0.0,
+      0.0
+    ],
+    "classified_residuals": [
+      4.6629367034256575e-15,
+      7.993605777301127e-15,
+      2.8056139831226676e-15,
+      2.220446049250313e-16,
+      0.0,
+      0.0,
+      0.0,
+      -5.551115123125783e-17,
+      0.0,
+      0.0
+    ],
+    "iterations": 0,
+    "evaluations": 6,
+    "pressure_relative": 1.3433698597964394e-14,
+    "isofugacity": 2.1371793224034263e-14,
+    "normalization": 0.0,
+    "pressure_slopes": [
+      114928.39472556538,
+      2155.880012530667
+    ]
+  },
+  {
+    "point": 7,
+    "probe": "nominal",
+    "success": true,
+    "message": "converged: residual 1.7763568394002505e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor absent, amplification 0",
+    "solver_status": "NEWTON_CONVERGED",
+    "pressure": 5734945.634832,
+    "amounts": [
+      1.0,
+      0.0
+    ],
+    "mole_fractions": [
+      0.8292682926829268,
+      0.1707317073170732,
+      0.000434572168396274,
+      0.9995654278316037
+    ],
+    "molar_densities": [
+      10874.422710278282,
+      1935.1265860163812
+    ],
+    "residuals": [
+      1.7763568394002505e-15,
+      8.881784197001252e-16,
+      1.5681775587152994e-15,
+      4.440892098500626e-16,
+      -8.881784197001252e-16,
+      -4.699923552004929e-16,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "classified_residuals": [
+      1.7763568394002505e-15,
+      8.881784197001252e-16,
+      1.5681775587152994e-15,
+      4.440892098500626e-16,
+      -8.881784197001252e-16,
+      -4.699923552004929e-16,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "iterations": 0,
+    "evaluations": 6,
+    "pressure_relative": 2.398081733190338e-14,
+    "isofugacity": 3.82055498349132e-14,
+    "normalization": 0.0,
+    "pressure_slopes": [
+      133372.22569657813,
+      2622.2401116362935
+    ]
+  },
+  {
+    "point": 7,
+    "probe": "T-minus",
+    "success": true,
+    "message": "converged: residual 7.1054273576010019e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor absent, amplification 0",
+    "solver_status": "NEWTON_CONVERGED",
+    "pressure": 5712873.725479583,
+    "amounts": [
+      1.0,
+      0.0
+    ],
+    "mole_fractions": [
+      0.8292682926829268,
+      0.1707317073170732,
+      0.00042623201639959763,
+      0.9995737679836004
+    ],
+    "molar_densities": [
+      10878.349251818263,
+      1930.2644991976842
+    ],
+    "residuals": [
+      4.218847493575595e-15,
+      7.105427357601002e-15,
+      3.21882899764457e-15,
+      -6.661338147750939e-16,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "classified_residuals": [
+      4.218847493575595e-15,
+      7.105427357601002e-15,
+      3.21882899764457e-15,
+      -6.661338147750939e-16,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "iterations": 0,
+    "evaluations": 6,
+    "pressure_relative": 2.042810365310288e-14,
+    "isofugacity": 1.6653345369377348e-14,
+    "normalization": 0.0,
+    "pressure_slopes": [
+      133564.95043656087,
+      2618.245673817187
+    ]
+  },
+  {
+    "point": 7,
+    "probe": "T-plus",
+    "success": true,
+    "message": "converged: residual 1.1336788761570273e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor absent, amplification 0",
+    "solver_status": "NEWTON_CONVERGED",
+    "pressure": 5757017.370767404,
+    "amounts": [
+      0.9999999999999999,
+      0.0
+    ],
+    "mole_fractions": [
+      0.8292682926829268,
+      0.17073170731707324,
+      0.0004430467017075996,
+      0.9995569532982924
+    ],
+    "molar_densities": [
+      10870.49734118554,
+      1939.9717113364466
+    ],
+    "residuals": [
+      1.0436096431476471e-14,
+      -5.329070518200751e-15,
+      1.1336788761570273e-14,
+      -4.440892098500626e-16,
+      0.0,
+      0.0,
+      -1.1102230246251565e-16,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "classified_residuals": [
+      1.0436096431476471e-14,
+      -5.329070518200751e-15,
+      1.1336788761570273e-14,
+      -4.440892098500626e-16,
+      0.0,
+      0.0,
+      -1.1102230246251565e-16,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "iterations": 0,
+    "evaluations": 6,
+    "pressure_relative": 7.172040739078511e-14,
+    "isofugacity": 7.789602296526255e-14,
+    "normalization": 0.0,
+    "pressure_slopes": [
+      133179.52893765687,
+      2626.2462938602507
+    ]
+  },
+  {
+    "point": 7,
+    "probe": "x-minus",
+    "success": true,
+    "message": "converged: residual 1.4654943925052066e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor absent, amplification 0",
+    "solver_status": "NEWTON_CONVERGED",
+    "pressure": 5840682.650279978,
+    "amounts": [
+      1.0,
+      0.0
+    ],
+    "mole_fractions": [
+      0.8265582655826558,
+      0.17344173441734426,
+      0.00043604223243371137,
+      0.9995639577675663
+    ],
+    "molar_densities": [
+      10893.506433939541,
+      1975.5482669896883
+    ],
+    "residuals": [
+      1.4654943925052066e-14,
+      -6.217248937900877e-15,
+      6.094742187196126e-15,
+      -2.220446049250313e-16,
+      0.0,
+      2.3018792225178154e-16,
+      0.0,
+      2.7755575615628914e-17,
+      0.0,
+      0.0
+    ],
+    "classified_residuals": [
+      1.4654943925052066e-14,
+      -6.217248937900877e-15,
+      6.094742187196126e-15,
+      -2.220446049250313e-16,
+      0.0,
+      2.3018792225178154e-16,
+      0.0,
+      2.7755575615628914e-17,
+      0.0,
+      0.0
+    ],
+    "iterations": 0,
+    "evaluations": 6,
+    "pressure_relative": 3.8191672047105385e-14,
+    "isofugacity": 4.365952044338428e-14,
+    "normalization": 0.0,
+    "pressure_slopes": [
+      132895.98877120673,
+      2609.9241446464025
+    ]
+  },
+  {
+    "point": 7,
+    "probe": "x-plus",
+    "success": true,
+    "message": "converged: residual 1.3322676295501878e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor absent, amplification 0",
+    "solver_status": "NEWTON_CONVERGED",
+    "pressure": 5629789.88726982,
+    "amounts": [
+      1.0,
+      0.0
+    ],
+    "mole_fractions": [
+      0.8319783197831978,
+      0.1680216802168022,
+      0.00043328430711921085,
+      0.9995667156928808
+    ],
+    "molar_densities": [
+      10855.40358152515,
+      1895.115923783103
+    ],
+    "residuals": [
+      -1.3322676295501878e-15,
+      -8.881784197001252e-16,
+      -1.2776857256272082e-15,
+      4.440892098500626e-16,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      -1.1102230246251565e-16
+    ],
+    "classified_residuals": [
+      -1.3322676295501878e-15,
+      -8.881784197001252e-16,
+      -1.2776857256272082e-15,
+      4.440892098500626e-16,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      -1.1102230246251565e-16
+    ],
+    "iterations": 0,
+    "evaluations": 6,
+    "pressure_relative": 8.326672684688674e-15,
+    "isofugacity": 7.244205235679146e-15,
+    "normalization": 0.0,
+    "pressure_slopes": [
+      133848.56605379996,
+      2634.54547268751
+    ]
+  }
+]

@@ -1,0 +1,219 @@
+{
+  "identity": {
+    "wheel": "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-223-build-tpd-stability-test-and-phase-35ebff8f/build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+    "wheel_sha256": "8470b49a9283528b83dbbdab46dc62dee0fc70e5e2149f8f218b823dd85812cb",
+    "direct_url": {
+      "url": "file:///home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-223-build-tpd-stability-test-and-phase-35ebff8f/build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "archive_info": {}
+    },
+    "engine_import": "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-223-build-tpd-stability-test-and-phase-35ebff8f/.venv/lib/python3.13/site-packages/epcsaft/__init__.py",
+    "source_head": "798cb53550229f2cd12016b8b57378fb315773da",
+    "thread_environment": {
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1"
+    },
+    "dependencies": {
+      "epcsaft": "0.2.0.dev0",
+      "numpy": "2.5.1",
+      "scipy": "1.18.0",
+      "pyomo": "6.10.1",
+      "idaes-pse": "2.12.0"
+    },
+    "physical_inputs": {
+      "analyses/2026-khudaida-idaes-settler/inputs/data/khudaida-2026-figure-2-electrolyte-lle/7/parameters/parameters.json": "8babed899e7347e58c403c7aff24a7fdd6d60411af3b4d81eb6aa90c2431dfa4",
+      "data/packets/mea-co2-h2o-nine-species-estimation/3/parameters/parameters.json": "2ea3b41485a98d2cf49add620b87bb05fc5a275cdd132c1cdbb0cfc5f07f2ca4",
+      "data/packets/gross-2001-methane-ethane/3/parameters/parameters.json": "109cfe8e80c4fcefadcbb4975ebe7436d371710ed9d20f2c7bd6d30d9c581bf2",
+      "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d"
+    },
+    "script_sha256": "640a35eb50295dc97469ad32a7eb2836b5b9b5262c2a7d3d4b7293594a1c6d9f",
+    "source_mtimes": {
+      "engine/native/equilibrium/gibbs_minimizer.cpp": 1790935477428563179,
+      "engine/native/equilibrium/request_compile.cpp": 1790915612053935625
+    }
+  },
+  "inputs": {
+    "continuation/bubble-180-to-181-K/step-0.5": {
+      "start": {
+        "T": 180.0,
+        "P": {
+          "kind": "Free",
+          "value": 100000.0
+        },
+        "feed": {
+          "methane": 0.5,
+          "ethane": 0.5
+        },
+        "row_tolerance": null,
+        "phases": [
+          {
+            "name": "L",
+            "kind": "liquid",
+            "support": null,
+            "amount": {
+              "kind": "Free",
+              "value": null
+            },
+            "composition_guess": [],
+            "packing_guess": null
+          },
+          {
+            "name": "V",
+            "kind": "vapor",
+            "support": null,
+            "amount": {
+              "kind": "Pinned",
+              "value": 0.0
+            },
+            "composition_guess": [],
+            "packing_guess": null
+          }
+        ]
+      },
+      "target": {
+        "T": 181.0,
+        "P": {
+          "kind": "Free",
+          "value": 100000.0
+        },
+        "feed": {
+          "methane": 0.5,
+          "ethane": 0.5
+        },
+        "row_tolerance": null,
+        "phases": [
+          {
+            "name": "L",
+            "kind": "liquid",
+            "support": null,
+            "amount": {
+              "kind": "Free",
+              "value": null
+            },
+            "composition_guess": [],
+            "packing_guess": null
+          },
+          {
+            "name": "V",
+            "kind": "vapor",
+            "support": null,
+            "amount": {
+              "kind": "Pinned",
+              "value": 0.0
+            },
+            "composition_guess": [],
+            "packing_guess": null
+          }
+        ]
+      },
+      "initial_step": 0.5,
+      "minimum_step": 0.5,
+      "max_steps": 2,
+      "max_retries_per_step": 1
+    },
+    "continuation/bubble-180-to-181-K/step-0.25": {
+      "start": {
+        "T": 180.0,
+        "P": {
+          "kind": "Free",
+          "value": 100000.0
+        },
+        "feed": {
+          "methane": 0.5,
+          "ethane": 0.5
+        },
+        "row_tolerance": null,
+        "phases": [
+          {
+            "name": "L",
+            "kind": "liquid",
+            "support": null,
+            "amount": {
+              "kind": "Free",
+              "value": null
+            },
+            "composition_guess": [],
+            "packing_guess": null
+          },
+          {
+            "name": "V",
+            "kind": "vapor",
+            "support": null,
+            "amount": {
+              "kind": "Pinned",
+              "value": 0.0
+            },
+            "composition_guess": [],
+            "packing_guess": null
+          }
+        ]
+      },
+      "target": {
+        "T": 181.0,
+        "P": {
+          "kind": "Free",
+          "value": 100000.0
+        },
+        "feed": {
+          "methane": 0.5,
+          "ethane": 0.5
+        },
+        "row_tolerance": null,
+        "phases": [
+          {
+            "name": "L",
+            "kind": "liquid",
+            "support": null,
+            "amount": {
+              "kind": "Free",
+              "value": null
+            },
+            "composition_guess": [],
+            "packing_guess": null
+          },
+          {
+            "name": "V",
+            "kind": "vapor",
+            "support": null,
+            "amount": {
+              "kind": "Pinned",
+              "value": 0.0
+            },
+            "composition_guess": [],
+            "packing_guess": null
+          }
+        ]
+      },
+      "initial_step": 0.25,
+      "minimum_step": 0.25,
+      "max_steps": 4,
+      "max_retries_per_step": 1
+    }
+  },
+  "costs": [
+    {
+      "case": "continuation/bubble-180-to-181-K/step-0.5",
+      "seconds": 0.01392587499867659
+    },
+    {
+      "case": "continuation/bubble-180-to-181-K/step-0.25",
+      "seconds": 0.019324230997881386
+    }
+  ],
+  "failure": null,
+  "comparison": {
+    "identical": true,
+    "rows_before": 838,
+    "rows_after": 838,
+    "operands_csv": "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-223-build-tpd-stability-test-and-phase-35ebff8f/analyses/2026-tpd-phase-discovery/results/before/continuation.csv",
+    "operands_sha256": "742ff6fab9bdd6714e284bf0843a248b03c33741fec846701d46cf61e3eac9a9"
+  },
+  "trace_comparison": null,
+  "trace_counts": {
+    "tangent_plane_trials": 0,
+    "driver_finalizations": 7,
+    "hessian_calls": 27.0
+  },
+  "limits": [
+    "declared topology numerical replay; no physical validation"
+  ]
+}

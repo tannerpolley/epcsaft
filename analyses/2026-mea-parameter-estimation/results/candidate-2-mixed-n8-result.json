@@ -1,0 +1,33 @@
+{
+  "accounting": {
+    "accepted_starts": 0,
+    "attempted_starts": 1,
+    "dropped_rows": 0,
+    "evaluated_row_trials": 0,
+    "failed_row_trials": 11,
+    "failed_starts": 1,
+    "included_rows": 12,
+    "input_rows": 12,
+    "non_evaluable_trials": 1,
+    "rejected_row_trials": 1
+  },
+  "artifact_fingerprint": "sha256:85c2c94b6b10309b3ae21ed99d7a30e89eb7fe4615dd2ccb5b33b7252a0f1675",
+  "best_usable_start": null,
+  "candidate_manifest_path": "inputs/fit-candidates.json",
+  "candidate_parameter_identity": null,
+  "claim_boundary": "Failed retained diagnostic fit; no fitted parameter or validation claim.",
+  "covariance_coordinate_identities": [],
+  "digest": "sha256:3cc25c1caeb8ed33f96695c8924619d3e326a74be0503a94c2e2a25f69e4ac16",
+  "evaluated_row_table_hash": null,
+  "evaluation_strategy": "simultaneous_sparse_full_space",
+  "fit_configuration": "candidate-2-fit",
+  "fitted_values": [],
+  "input_path": "inputs/observations.json",
+  "input_sha256": "sha256:fc6b7446266e1ee47f7cab78a55fc5a2a7d6fbe502c601839c844fd3bc0d0912",
+  "outcomes": null,
+  "package_fingerprint": "sha256:e0ae3b4f7263cef088f6edbd1eb6ed39475883b446267b3a04d89b5df3e0ccd5",
+  "physical_covariance": [],
+  "schema": "epcsaft.fit-result",
+  "schema_version": 2,
+  "specification_digest": "sha256:a982d50b642b9a799b5733c6dd1dd1b13a811bffb9fa2152f94747a62533256e"
+}

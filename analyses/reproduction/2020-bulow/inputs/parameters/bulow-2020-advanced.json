@@ -1,0 +1,2629 @@
+{
+ "schema": "epcsaft.parameters",
+ "schema_version": 1,
+ "document_id": "bulow-2020-advanced",
+ "document_version": 1,
+ "purpose": "external-document",
+ "sources": [
+  {
+   "source_id": "bulow-2020",
+   "citation": "B\u00fclow, M.; Ascani, M.; Held, C. ePC-SAFT advanced - Part I. Fluid Phase Equilibria 2021, 535, 112967; corrigendum 548 (2021) 113184.",
+   "doi": "10.1016/j.fluid.2021.112967",
+   "use_basis": "Tables 1-4 and Eqs. (2), (7)-(11) at 298.15 K and 1 bar"
+  },
+  {
+   "source_id": "held-2014",
+   "citation": "Held, C.; Reschke, T.; Mohammad, S.; Luza, A.; Sadowski, G. ePC-SAFT revised. Chem. Eng. Res. Des. 2014, 92, 2884-2897.",
+   "doi": "10.1016/j.cherd.2014.05.017",
+   "use_basis": "ion packing and Debye-H\u00fcckel diameter conventions of the parameter source"
+  },
+  {
+   "source_id": "iupac-atomic-weights",
+   "citation": "IUPAC standard atomic weights",
+   "use_basis": "solvent molar masses"
+  }
+ ],
+ "domains": [
+  {
+   "domain_id": "bulow-2020-298-15-k-1-bar",
+   "kind": "reported-conditions",
+   "temperature_min": {
+    "magnitude": 298.15,
+    "unit": "kelvin"
+   },
+   "temperature_max": {
+    "magnitude": 298.15,
+    "unit": "kelvin"
+   },
+   "pressure_min": {
+    "magnitude": 1,
+    "unit": "bar"
+   },
+   "pressure_max": {
+    "magnitude": 1,
+    "unit": "bar"
+   }
+  }
+ ],
+ "components": [
+  {
+   "component_id": "water",
+   "aliases": [],
+   "fixed": {
+    "charge_number": {
+     "value": {
+      "magnitude": 0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 1 water row and footnote; Table 4",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    "molar_mass": {
+     "value": {
+      "magnitude": 18.01528,
+      "unit": "gram / mole"
+     },
+     "provenance": {
+      "source_id": "iupac-atomic-weights",
+      "locator": "IUPAC standard atomic weights",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/water/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 1.2047,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 1 water row and footnote; Table 4",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/water/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 353.95,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 1 water row and footnote; Table 4",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/water/solvation_factor",
+     "family": "solvation_factor",
+     "value": {
+      "magnitude": 1.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Eq. (2) uncorrected Born term",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/water/relative_permittivity",
+     "family": "relative_permittivity",
+     "value": {
+      "magnitude": 78.09,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 1 water row and footnote; Table 4",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "methanol",
+   "aliases": [],
+   "fixed": {
+    "charge_number": {
+     "value": {
+      "magnitude": 0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 1 methanol row; Table 4",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    "molar_mass": {
+     "value": {
+      "magnitude": 32.04186,
+      "unit": "gram / mole"
+     },
+     "provenance": {
+      "source_id": "iupac-atomic-weights",
+      "locator": "IUPAC standard atomic weights",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/methanol/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 1.5255,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 1 methanol row; Table 4",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/methanol/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 188.9,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 1 methanol row; Table 4",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/methanol/solvation_factor",
+     "family": "solvation_factor",
+     "value": {
+      "magnitude": 1.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Eq. (2) uncorrected Born term",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/methanol/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.23,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 1 methanol row; Table 4",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/methanol/relative_permittivity",
+     "family": "relative_permittivity",
+     "value": {
+      "magnitude": 33.05,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 1 methanol row; Table 4",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "ethanol",
+   "aliases": [],
+   "fixed": {
+    "charge_number": {
+     "value": {
+      "magnitude": 0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 1 ethanol row; Table 4",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    "molar_mass": {
+     "value": {
+      "magnitude": 46.06844,
+      "unit": "gram / mole"
+     },
+     "provenance": {
+      "source_id": "iupac-atomic-weights",
+      "locator": "IUPAC standard atomic weights",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/ethanol/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 2.3827,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 1 ethanol row; Table 4",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/ethanol/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 198.24,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 1 ethanol row; Table 4",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/ethanol/solvation_factor",
+     "family": "solvation_factor",
+     "value": {
+      "magnitude": 1.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Eq. (2) uncorrected Born term",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/ethanol/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.1771,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 1 ethanol row; Table 4",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/ethanol/relative_permittivity",
+     "family": "relative_permittivity",
+     "value": {
+      "magnitude": 24.88,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 1 ethanol row; Table 4",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "lithium-cation",
+   "aliases": [],
+   "fixed": {
+    "charge_number": {
+     "value": {
+      "magnitude": 1,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 2 Li+ row; Table 4 salts",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/lithium-cation/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 1.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 2 Li+ row; Table 4 salts",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/lithium-cation/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 360.0,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 2 Li+ row; Table 4 salts",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/lithium-cation/solvation_factor",
+     "family": "solvation_factor",
+     "value": {
+      "magnitude": 1.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Eq. (2) uncorrected Born term",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/lithium-cation/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 2.8449,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 2 Li+ row; Table 4 salts",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/lithium-cation/packing_diameter",
+     "family": "packing_diameter",
+     "value": {
+      "magnitude": 2.503512,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "held-2014",
+      "locator": "Held 2014 Eq. (21) d_ion = 0.88 sigma_ion",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/lithium-cation/debye_huckel_diameter",
+     "family": "debye_huckel_diameter",
+     "value": {
+      "magnitude": 2.503512,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "unified d_i = 0.88 sigma; reproduces the corrigendum revised curves",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/lithium-cation/born_diameter",
+     "family": "born_diameter",
+     "value": {
+      "magnitude": 2.503512,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Sec. 2.1 Born a_i = ePC-SAFT ion diameter; 0.88 sigma reproduces Fig. 3",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/lithium-cation/relative_permittivity",
+     "family": "relative_permittivity",
+     "value": {
+      "magnitude": 8.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 2 Li+ row; Table 4 salts",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "sodium-cation",
+   "aliases": [],
+   "fixed": {
+    "charge_number": {
+     "value": {
+      "magnitude": 1,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 2 Na+ row; Table 4 salts",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/sodium-cation/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 1.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 2 Na+ row; Table 4 salts",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/sodium-cation/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 230.0,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 2 Na+ row; Table 4 salts",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/sodium-cation/solvation_factor",
+     "family": "solvation_factor",
+     "value": {
+      "magnitude": 1.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Eq. (2) uncorrected Born term",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/sodium-cation/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 2.8232,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 2 Na+ row; Table 4 salts",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/sodium-cation/packing_diameter",
+     "family": "packing_diameter",
+     "value": {
+      "magnitude": 2.484416,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "held-2014",
+      "locator": "Held 2014 Eq. (21) d_ion = 0.88 sigma_ion",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/sodium-cation/debye_huckel_diameter",
+     "family": "debye_huckel_diameter",
+     "value": {
+      "magnitude": 2.484416,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "unified d_i = 0.88 sigma; reproduces the corrigendum revised curves",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/sodium-cation/born_diameter",
+     "family": "born_diameter",
+     "value": {
+      "magnitude": 2.484416,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Sec. 2.1 Born a_i = ePC-SAFT ion diameter; 0.88 sigma reproduces Fig. 3",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/sodium-cation/relative_permittivity",
+     "family": "relative_permittivity",
+     "value": {
+      "magnitude": 8.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 2 Na+ row; Table 4 salts",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "potassium-cation",
+   "aliases": [],
+   "fixed": {
+    "charge_number": {
+     "value": {
+      "magnitude": 1,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 2 K+ row; Table 4 salts",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/potassium-cation/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 1.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 2 K+ row; Table 4 salts",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/potassium-cation/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 200.0,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 2 K+ row; Table 4 salts",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/potassium-cation/solvation_factor",
+     "family": "solvation_factor",
+     "value": {
+      "magnitude": 1.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Eq. (2) uncorrected Born term",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/potassium-cation/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.3417,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 2 K+ row; Table 4 salts",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/potassium-cation/packing_diameter",
+     "family": "packing_diameter",
+     "value": {
+      "magnitude": 2.940696,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "held-2014",
+      "locator": "Held 2014 Eq. (21) d_ion = 0.88 sigma_ion",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/potassium-cation/debye_huckel_diameter",
+     "family": "debye_huckel_diameter",
+     "value": {
+      "magnitude": 2.940696,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "unified d_i = 0.88 sigma; reproduces the corrigendum revised curves",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/potassium-cation/born_diameter",
+     "family": "born_diameter",
+     "value": {
+      "magnitude": 2.940696,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Sec. 2.1 Born a_i = ePC-SAFT ion diameter; 0.88 sigma reproduces Fig. 3",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/potassium-cation/relative_permittivity",
+     "family": "relative_permittivity",
+     "value": {
+      "magnitude": 8.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 2 K+ row; Table 4 salts",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "fluoride-anion",
+   "aliases": [],
+   "fixed": {
+    "charge_number": {
+     "value": {
+      "magnitude": -1,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 2 F- row; Table 4 salts",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/fluoride-anion/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 1.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 2 F- row; Table 4 salts",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/fluoride-anion/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 275.0,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 2 F- row; Table 4 salts",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/fluoride-anion/solvation_factor",
+     "family": "solvation_factor",
+     "value": {
+      "magnitude": 1.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Eq. (2) uncorrected Born term",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/fluoride-anion/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 1.7712,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 2 F- row; Table 4 salts",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/fluoride-anion/packing_diameter",
+     "family": "packing_diameter",
+     "value": {
+      "magnitude": 1.558656,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "held-2014",
+      "locator": "Held 2014 Eq. (21) d_ion = 0.88 sigma_ion",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/fluoride-anion/debye_huckel_diameter",
+     "family": "debye_huckel_diameter",
+     "value": {
+      "magnitude": 1.558656,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "unified d_i = 0.88 sigma; reproduces the corrigendum revised curves",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/fluoride-anion/born_diameter",
+     "family": "born_diameter",
+     "value": {
+      "magnitude": 1.558656,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Sec. 2.1 Born a_i = ePC-SAFT ion diameter; 0.88 sigma reproduces Fig. 3",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/fluoride-anion/relative_permittivity",
+     "family": "relative_permittivity",
+     "value": {
+      "magnitude": 8.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 2 F- row; Table 4 salts",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "chloride-anion",
+   "aliases": [],
+   "fixed": {
+    "charge_number": {
+     "value": {
+      "magnitude": -1,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 2 Cl- row; Table 4 salts",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/chloride-anion/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 1.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 2 Cl- row; Table 4 salts",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/chloride-anion/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 170.0,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 2 Cl- row; Table 4 salts",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/chloride-anion/solvation_factor",
+     "family": "solvation_factor",
+     "value": {
+      "magnitude": 1.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Eq. (2) uncorrected Born term",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/chloride-anion/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 2.756,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 2 Cl- row; Table 4 salts",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/chloride-anion/packing_diameter",
+     "family": "packing_diameter",
+     "value": {
+      "magnitude": 2.42528,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "held-2014",
+      "locator": "Held 2014 Eq. (21) d_ion = 0.88 sigma_ion",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/chloride-anion/debye_huckel_diameter",
+     "family": "debye_huckel_diameter",
+     "value": {
+      "magnitude": 2.42528,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "unified d_i = 0.88 sigma; reproduces the corrigendum revised curves",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/chloride-anion/born_diameter",
+     "family": "born_diameter",
+     "value": {
+      "magnitude": 2.42528,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Sec. 2.1 Born a_i = ePC-SAFT ion diameter; 0.88 sigma reproduces Fig. 3",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/chloride-anion/relative_permittivity",
+     "family": "relative_permittivity",
+     "value": {
+      "magnitude": 8.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 2 Cl- row; Table 4 salts",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "bromide-anion",
+   "aliases": [],
+   "fixed": {
+    "charge_number": {
+     "value": {
+      "magnitude": -1,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 2 Br- row; Table 4 salts",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/bromide-anion/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 1.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 2 Br- row; Table 4 salts",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/bromide-anion/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 190.0,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 2 Br- row; Table 4 salts",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/bromide-anion/solvation_factor",
+     "family": "solvation_factor",
+     "value": {
+      "magnitude": 1.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Eq. (2) uncorrected Born term",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/bromide-anion/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.0707,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 2 Br- row; Table 4 salts",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/bromide-anion/packing_diameter",
+     "family": "packing_diameter",
+     "value": {
+      "magnitude": 2.702216,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "held-2014",
+      "locator": "Held 2014 Eq. (21) d_ion = 0.88 sigma_ion",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/bromide-anion/debye_huckel_diameter",
+     "family": "debye_huckel_diameter",
+     "value": {
+      "magnitude": 2.702216,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "unified d_i = 0.88 sigma; reproduces the corrigendum revised curves",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/bromide-anion/born_diameter",
+     "family": "born_diameter",
+     "value": {
+      "magnitude": 2.702216,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Sec. 2.1 Born a_i = ePC-SAFT ion diameter; 0.88 sigma reproduces Fig. 3",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/bromide-anion/relative_permittivity",
+     "family": "relative_permittivity",
+     "value": {
+      "magnitude": 8.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 2 Br- row; Table 4 salts",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "iodide-anion",
+   "aliases": [],
+   "fixed": {
+    "charge_number": {
+     "value": {
+      "magnitude": -1,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 2 I- row; Table 4 salts",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/iodide-anion/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 1.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 2 I- row; Table 4 salts",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/iodide-anion/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 200.0,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 2 I- row; Table 4 salts",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/iodide-anion/solvation_factor",
+     "family": "solvation_factor",
+     "value": {
+      "magnitude": 1.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Eq. (2) uncorrected Born term",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/iodide-anion/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.6672,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 2 I- row; Table 4 salts",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/iodide-anion/packing_diameter",
+     "family": "packing_diameter",
+     "value": {
+      "magnitude": 3.227136,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "held-2014",
+      "locator": "Held 2014 Eq. (21) d_ion = 0.88 sigma_ion",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/iodide-anion/debye_huckel_diameter",
+     "family": "debye_huckel_diameter",
+     "value": {
+      "magnitude": 3.227136,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "unified d_i = 0.88 sigma; reproduces the corrigendum revised curves",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/iodide-anion/born_diameter",
+     "family": "born_diameter",
+     "value": {
+      "magnitude": 3.227136,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Sec. 2.1 Born a_i = ePC-SAFT ion diameter; 0.88 sigma reproduces Fig. 3",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "component/iodide-anion/relative_permittivity",
+     "family": "relative_permittivity",
+     "value": {
+      "magnitude": 8.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 2 I- row; Table 4 salts",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    }
+   ]
+  }
+ ],
+ "pairs": [
+  {
+   "component_id_a": "water",
+   "component_id_b": "methanol",
+   "coefficients": [
+    {
+     "identity": "pair/water/methanol/k_ij",
+     "family": "k_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 2 k_ion,water",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "pair/water/methanol/l_ij",
+     "family": "l_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "the paper uses no l_ij",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    }
+   ]
+  },
+  {
+   "component_id_a": "water",
+   "component_id_b": "ethanol",
+   "coefficients": [
+    {
+     "identity": "pair/water/ethanol/k_ij",
+     "family": "k_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 2 k_ion,water",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "pair/water/ethanol/l_ij",
+     "family": "l_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "the paper uses no l_ij",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    }
+   ]
+  },
+  {
+   "component_id_a": "water",
+   "component_id_b": "lithium-cation",
+   "coefficients": [
+    {
+     "identity": "pair/water/lithium-cation/k_ij",
+     "family": "k_ij",
+     "value": {
+      "magnitude": -0.25,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 2 k_ion,water",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "pair/water/lithium-cation/l_ij",
+     "family": "l_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "the paper uses no l_ij",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    }
+   ]
+  },
+  {
+   "component_id_a": "water",
+   "component_id_b": "sodium-cation",
+   "coefficients": [
+    {
+     "identity": "pair/water/sodium-cation/k_ij",
+     "family": "k_ij",
+     "value": {
+      "magnitude": 0.0045,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 2 k_ion,water",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "pair/water/sodium-cation/l_ij",
+     "family": "l_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "the paper uses no l_ij",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    }
+   ]
+  },
+  {
+   "component_id_a": "water",
+   "component_id_b": "potassium-cation",
+   "coefficients": [
+    {
+     "identity": "pair/water/potassium-cation/k_ij",
+     "family": "k_ij",
+     "value": {
+      "magnitude": 0.1997,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 2 k_ion,water",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "pair/water/potassium-cation/l_ij",
+     "family": "l_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "the paper uses no l_ij",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    }
+   ]
+  },
+  {
+   "component_id_a": "water",
+   "component_id_b": "fluoride-anion",
+   "coefficients": [
+    {
+     "identity": "pair/water/fluoride-anion/k_ij",
+     "family": "k_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 2 k_ion,water",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "pair/water/fluoride-anion/l_ij",
+     "family": "l_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "the paper uses no l_ij",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    }
+   ]
+  },
+  {
+   "component_id_a": "water",
+   "component_id_b": "chloride-anion",
+   "coefficients": [
+    {
+     "identity": "pair/water/chloride-anion/k_ij",
+     "family": "k_ij",
+     "value": {
+      "magnitude": -0.25,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 2 k_ion,water",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "pair/water/chloride-anion/l_ij",
+     "family": "l_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "the paper uses no l_ij",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    }
+   ]
+  },
+  {
+   "component_id_a": "water",
+   "component_id_b": "bromide-anion",
+   "coefficients": [
+    {
+     "identity": "pair/water/bromide-anion/k_ij",
+     "family": "k_ij",
+     "value": {
+      "magnitude": -0.25,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 2 k_ion,water",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "pair/water/bromide-anion/l_ij",
+     "family": "l_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "the paper uses no l_ij",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    }
+   ]
+  },
+  {
+   "component_id_a": "water",
+   "component_id_b": "iodide-anion",
+   "coefficients": [
+    {
+     "identity": "pair/water/iodide-anion/k_ij",
+     "family": "k_ij",
+     "value": {
+      "magnitude": -0.25,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 2 k_ion,water",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "pair/water/iodide-anion/l_ij",
+     "family": "l_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "the paper uses no l_ij",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    }
+   ]
+  },
+  {
+   "component_id_a": "methanol",
+   "component_id_b": "ethanol",
+   "coefficients": [
+    {
+     "identity": "pair/methanol/ethanol/k_ij",
+     "family": "k_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Sec. 3.1: k_ij = 0 for ion-organic solvent and solvent-solvent pairs",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "pair/methanol/ethanol/l_ij",
+     "family": "l_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "the paper uses no l_ij",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    }
+   ]
+  },
+  {
+   "component_id_a": "methanol",
+   "component_id_b": "lithium-cation",
+   "coefficients": [
+    {
+     "identity": "pair/methanol/lithium-cation/k_ij",
+     "family": "k_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Sec. 3.1: k_ij = 0 for ion-organic solvent and solvent-solvent pairs",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "pair/methanol/lithium-cation/l_ij",
+     "family": "l_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "the paper uses no l_ij",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    }
+   ]
+  },
+  {
+   "component_id_a": "methanol",
+   "component_id_b": "sodium-cation",
+   "coefficients": [
+    {
+     "identity": "pair/methanol/sodium-cation/k_ij",
+     "family": "k_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Sec. 3.1: k_ij = 0 for ion-organic solvent and solvent-solvent pairs",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "pair/methanol/sodium-cation/l_ij",
+     "family": "l_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "the paper uses no l_ij",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    }
+   ]
+  },
+  {
+   "component_id_a": "methanol",
+   "component_id_b": "potassium-cation",
+   "coefficients": [
+    {
+     "identity": "pair/methanol/potassium-cation/k_ij",
+     "family": "k_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Sec. 3.1: k_ij = 0 for ion-organic solvent and solvent-solvent pairs",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "pair/methanol/potassium-cation/l_ij",
+     "family": "l_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "the paper uses no l_ij",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    }
+   ]
+  },
+  {
+   "component_id_a": "methanol",
+   "component_id_b": "fluoride-anion",
+   "coefficients": [
+    {
+     "identity": "pair/methanol/fluoride-anion/k_ij",
+     "family": "k_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Sec. 3.1: k_ij = 0 for ion-organic solvent and solvent-solvent pairs",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "pair/methanol/fluoride-anion/l_ij",
+     "family": "l_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "the paper uses no l_ij",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    }
+   ]
+  },
+  {
+   "component_id_a": "methanol",
+   "component_id_b": "chloride-anion",
+   "coefficients": [
+    {
+     "identity": "pair/methanol/chloride-anion/k_ij",
+     "family": "k_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Sec. 3.1: k_ij = 0 for ion-organic solvent and solvent-solvent pairs",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "pair/methanol/chloride-anion/l_ij",
+     "family": "l_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "the paper uses no l_ij",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    }
+   ]
+  },
+  {
+   "component_id_a": "methanol",
+   "component_id_b": "bromide-anion",
+   "coefficients": [
+    {
+     "identity": "pair/methanol/bromide-anion/k_ij",
+     "family": "k_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Sec. 3.1: k_ij = 0 for ion-organic solvent and solvent-solvent pairs",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "pair/methanol/bromide-anion/l_ij",
+     "family": "l_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "the paper uses no l_ij",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    }
+   ]
+  },
+  {
+   "component_id_a": "methanol",
+   "component_id_b": "iodide-anion",
+   "coefficients": [
+    {
+     "identity": "pair/methanol/iodide-anion/k_ij",
+     "family": "k_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Sec. 3.1: k_ij = 0 for ion-organic solvent and solvent-solvent pairs",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "pair/methanol/iodide-anion/l_ij",
+     "family": "l_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "the paper uses no l_ij",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    }
+   ]
+  },
+  {
+   "component_id_a": "ethanol",
+   "component_id_b": "lithium-cation",
+   "coefficients": [
+    {
+     "identity": "pair/ethanol/lithium-cation/k_ij",
+     "family": "k_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Sec. 3.1: k_ij = 0 for ion-organic solvent and solvent-solvent pairs",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "pair/ethanol/lithium-cation/l_ij",
+     "family": "l_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "the paper uses no l_ij",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    }
+   ]
+  },
+  {
+   "component_id_a": "ethanol",
+   "component_id_b": "sodium-cation",
+   "coefficients": [
+    {
+     "identity": "pair/ethanol/sodium-cation/k_ij",
+     "family": "k_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Sec. 3.1: k_ij = 0 for ion-organic solvent and solvent-solvent pairs",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "pair/ethanol/sodium-cation/l_ij",
+     "family": "l_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "the paper uses no l_ij",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    }
+   ]
+  },
+  {
+   "component_id_a": "ethanol",
+   "component_id_b": "potassium-cation",
+   "coefficients": [
+    {
+     "identity": "pair/ethanol/potassium-cation/k_ij",
+     "family": "k_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Sec. 3.1: k_ij = 0 for ion-organic solvent and solvent-solvent pairs",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "pair/ethanol/potassium-cation/l_ij",
+     "family": "l_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "the paper uses no l_ij",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    }
+   ]
+  },
+  {
+   "component_id_a": "ethanol",
+   "component_id_b": "fluoride-anion",
+   "coefficients": [
+    {
+     "identity": "pair/ethanol/fluoride-anion/k_ij",
+     "family": "k_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Sec. 3.1: k_ij = 0 for ion-organic solvent and solvent-solvent pairs",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "pair/ethanol/fluoride-anion/l_ij",
+     "family": "l_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "the paper uses no l_ij",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    }
+   ]
+  },
+  {
+   "component_id_a": "ethanol",
+   "component_id_b": "chloride-anion",
+   "coefficients": [
+    {
+     "identity": "pair/ethanol/chloride-anion/k_ij",
+     "family": "k_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Sec. 3.1: k_ij = 0 for ion-organic solvent and solvent-solvent pairs",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "pair/ethanol/chloride-anion/l_ij",
+     "family": "l_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "the paper uses no l_ij",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    }
+   ]
+  },
+  {
+   "component_id_a": "ethanol",
+   "component_id_b": "bromide-anion",
+   "coefficients": [
+    {
+     "identity": "pair/ethanol/bromide-anion/k_ij",
+     "family": "k_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Sec. 3.1: k_ij = 0 for ion-organic solvent and solvent-solvent pairs",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "pair/ethanol/bromide-anion/l_ij",
+     "family": "l_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "the paper uses no l_ij",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    }
+   ]
+  },
+  {
+   "component_id_a": "ethanol",
+   "component_id_b": "iodide-anion",
+   "coefficients": [
+    {
+     "identity": "pair/ethanol/iodide-anion/k_ij",
+     "family": "k_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Sec. 3.1: k_ij = 0 for ion-organic solvent and solvent-solvent pairs",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "pair/ethanol/iodide-anion/l_ij",
+     "family": "l_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "the paper uses no l_ij",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    }
+   ]
+  },
+  {
+   "component_id_a": "lithium-cation",
+   "component_id_b": "fluoride-anion",
+   "coefficients": [
+    {
+     "identity": "pair/lithium-cation/fluoride-anion/k_ij",
+     "family": "k_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 3 cation-anion k_ij",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "pair/lithium-cation/fluoride-anion/l_ij",
+     "family": "l_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "the paper uses no l_ij",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    }
+   ]
+  },
+  {
+   "component_id_a": "lithium-cation",
+   "component_id_b": "chloride-anion",
+   "coefficients": [
+    {
+     "identity": "pair/lithium-cation/chloride-anion/k_ij",
+     "family": "k_ij",
+     "value": {
+      "magnitude": 0.669,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 3 cation-anion k_ij",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "pair/lithium-cation/chloride-anion/l_ij",
+     "family": "l_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "the paper uses no l_ij",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    }
+   ]
+  },
+  {
+   "component_id_a": "lithium-cation",
+   "component_id_b": "bromide-anion",
+   "coefficients": [
+    {
+     "identity": "pair/lithium-cation/bromide-anion/k_ij",
+     "family": "k_ij",
+     "value": {
+      "magnitude": 0.591,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 3 cation-anion k_ij",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "pair/lithium-cation/bromide-anion/l_ij",
+     "family": "l_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "the paper uses no l_ij",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    }
+   ]
+  },
+  {
+   "component_id_a": "lithium-cation",
+   "component_id_b": "iodide-anion",
+   "coefficients": [
+    {
+     "identity": "pair/lithium-cation/iodide-anion/k_ij",
+     "family": "k_ij",
+     "value": {
+      "magnitude": 0.002,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 3 cation-anion k_ij",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "pair/lithium-cation/iodide-anion/l_ij",
+     "family": "l_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "the paper uses no l_ij",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    }
+   ]
+  },
+  {
+   "component_id_a": "sodium-cation",
+   "component_id_b": "fluoride-anion",
+   "coefficients": [
+    {
+     "identity": "pair/sodium-cation/fluoride-anion/k_ij",
+     "family": "k_ij",
+     "value": {
+      "magnitude": 0.665,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 3 cation-anion k_ij",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "pair/sodium-cation/fluoride-anion/l_ij",
+     "family": "l_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "the paper uses no l_ij",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    }
+   ]
+  },
+  {
+   "component_id_a": "sodium-cation",
+   "component_id_b": "chloride-anion",
+   "coefficients": [
+    {
+     "identity": "pair/sodium-cation/chloride-anion/k_ij",
+     "family": "k_ij",
+     "value": {
+      "magnitude": 0.317,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 3 cation-anion k_ij",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "pair/sodium-cation/chloride-anion/l_ij",
+     "family": "l_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "the paper uses no l_ij",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    }
+   ]
+  },
+  {
+   "component_id_a": "sodium-cation",
+   "component_id_b": "bromide-anion",
+   "coefficients": [
+    {
+     "identity": "pair/sodium-cation/bromide-anion/k_ij",
+     "family": "k_ij",
+     "value": {
+      "magnitude": 0.29,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 3 cation-anion k_ij",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "pair/sodium-cation/bromide-anion/l_ij",
+     "family": "l_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "the paper uses no l_ij",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    }
+   ]
+  },
+  {
+   "component_id_a": "sodium-cation",
+   "component_id_b": "iodide-anion",
+   "coefficients": [
+    {
+     "identity": "pair/sodium-cation/iodide-anion/k_ij",
+     "family": "k_ij",
+     "value": {
+      "magnitude": 0.018,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 3 cation-anion k_ij",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "pair/sodium-cation/iodide-anion/l_ij",
+     "family": "l_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "the paper uses no l_ij",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    }
+   ]
+  },
+  {
+   "component_id_a": "potassium-cation",
+   "component_id_b": "fluoride-anion",
+   "coefficients": [
+    {
+     "identity": "pair/potassium-cation/fluoride-anion/k_ij",
+     "family": "k_ij",
+     "value": {
+      "magnitude": 1.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 3 cation-anion k_ij",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "pair/potassium-cation/fluoride-anion/l_ij",
+     "family": "l_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "the paper uses no l_ij",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    }
+   ]
+  },
+  {
+   "component_id_a": "potassium-cation",
+   "component_id_b": "chloride-anion",
+   "coefficients": [
+    {
+     "identity": "pair/potassium-cation/chloride-anion/k_ij",
+     "family": "k_ij",
+     "value": {
+      "magnitude": 0.064,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 3 cation-anion k_ij",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "pair/potassium-cation/chloride-anion/l_ij",
+     "family": "l_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "the paper uses no l_ij",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    }
+   ]
+  },
+  {
+   "component_id_a": "potassium-cation",
+   "component_id_b": "bromide-anion",
+   "coefficients": [
+    {
+     "identity": "pair/potassium-cation/bromide-anion/k_ij",
+     "family": "k_ij",
+     "value": {
+      "magnitude": -0.102,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 3 cation-anion k_ij",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "pair/potassium-cation/bromide-anion/l_ij",
+     "family": "l_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "the paper uses no l_ij",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    }
+   ]
+  },
+  {
+   "component_id_a": "potassium-cation",
+   "component_id_b": "iodide-anion",
+   "coefficients": [
+    {
+     "identity": "pair/potassium-cation/iodide-anion/k_ij",
+     "family": "k_ij",
+     "value": {
+      "magnitude": -0.312,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "Table 3 cation-anion k_ij",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    },
+    {
+     "identity": "pair/potassium-cation/iodide-anion/l_ij",
+     "family": "l_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "bulow-2020",
+      "locator": "the paper uses no l_ij",
+      "domain_id": "bulow-2020-298-15-k-1-bar"
+     }
+    }
+   ]
+  }
+ ],
+ "model_families": [
+  {
+   "family_id": "model/association",
+   "kind": "association",
+   "choice": "general-site",
+   "provenance": {
+    "source_id": "bulow-2020",
+    "locator": "Table 1: all solvents 2B",
+    "domain_id": "bulow-2020-298-15-k-1-bar"
+   }
+  },
+  {
+   "family_id": "model/base",
+   "kind": "base",
+   "choice": "pc-saft",
+   "provenance": {
+    "source_id": "bulow-2020",
+    "locator": "Eq. (11)",
+    "domain_id": "bulow-2020-298-15-k-1-bar"
+   }
+  },
+  {
+   "family_id": "model/electrolyte",
+   "kind": "electrolyte",
+   "choice": "born",
+   "ionic_dispersion": "exclude-same-sign-ion-pairs",
+   "provenance": {
+    "source_id": "bulow-2020",
+    "locator": "Eq. (11); Held 2014 like-ion rule",
+    "domain_id": "bulow-2020-298-15-k-1-bar"
+   },
+   "c_shell": 0.0,
+   "c_dielectric": 0.0
+  },
+  {
+   "family_id": "model/relative_permittivity",
+   "kind": "permittivity",
+   "choice": "component-permittivity-mixing",
+   "provenance": {
+    "source_id": "bulow-2020",
+    "locator": "Sec. 3.1 linear mole-fraction rule, Table 4",
+    "domain_id": "bulow-2020-298-15-k-1-bar"
+   }
+  }
+ ],
+ "model_coefficients": [
+  {
+   "identity": "model/relative_permittivity/ionic_region_relative_permittivity",
+   "family": "ionic_region_relative_permittivity",
+   "value": {
+    "magnitude": 1.0,
+    "unit": "dimensionless"
+   },
+   "provenance": {
+    "source_id": "bulow-2020",
+    "locator": "uncorrected Born term, Eq. (2)",
+    "domain_id": "bulow-2020-298-15-k-1-bar"
+   }
+  }
+ ],
+ "correlations": [
+  {
+   "correlation_id": "component/water/segment_diameter/constant-plus-sum-of-exponentials",
+   "component_id": "water",
+   "family": "segment_diameter",
+   "form": "constant-plus-sum-of-exponentials",
+   "independent_variables": [
+    "temperature"
+   ],
+   "constant": {
+    "identity": "component/water/segment_diameter/constant-plus-sum-of-exponentials/constant",
+    "value": {
+     "magnitude": 2.7927,
+     "unit": "angstrom"
+    }
+   },
+   "provenance": {
+    "source_id": "bulow-2020",
+    "locator": "Table 1 footnote *",
+    "domain_id": "bulow-2020-298-15-k-1-bar"
+   },
+   "terms": [
+    {
+     "amplitude": {
+      "identity": "component/water/segment_diameter/constant-plus-sum-of-exponentials/term-0/amplitude",
+      "value": {
+       "magnitude": 10.11,
+       "unit": "angstrom"
+      }
+     },
+     "exponent_coefficient": {
+      "identity": "component/water/segment_diameter/constant-plus-sum-of-exponentials/term-0/exponent_coefficient",
+      "value": {
+       "magnitude": -0.01775,
+       "unit": "1 / kelvin"
+      }
+     }
+    },
+    {
+     "amplitude": {
+      "identity": "component/water/segment_diameter/constant-plus-sum-of-exponentials/term-1/amplitude",
+      "value": {
+       "magnitude": -1.417,
+       "unit": "angstrom"
+      }
+     },
+     "exponent_coefficient": {
+      "identity": "component/water/segment_diameter/constant-plus-sum-of-exponentials/term-1/exponent_coefficient",
+      "value": {
+       "magnitude": -0.01146,
+       "unit": "1 / kelvin"
+      }
+     }
+    }
+   ]
+  }
+ ],
+ "topology": {
+  "presets": [],
+  "sites": [
+   {
+    "component_id": "water",
+    "site_id": "a",
+    "site_role": "donor",
+    "multiplicity": 1,
+    "provenance": {
+     "source_id": "bulow-2020",
+     "locator": "Table 1 water 2B scheme",
+     "domain_id": "bulow-2020-298-15-k-1-bar"
+    }
+   },
+   {
+    "component_id": "water",
+    "site_id": "b",
+    "site_role": "acceptor",
+    "multiplicity": 1,
+    "provenance": {
+     "source_id": "bulow-2020",
+     "locator": "Table 1 water 2B scheme",
+     "domain_id": "bulow-2020-298-15-k-1-bar"
+    }
+   },
+   {
+    "component_id": "methanol",
+    "site_id": "a",
+    "site_role": "donor",
+    "multiplicity": 1,
+    "provenance": {
+     "source_id": "bulow-2020",
+     "locator": "Table 1 methanol 2B scheme",
+     "domain_id": "bulow-2020-298-15-k-1-bar"
+    }
+   },
+   {
+    "component_id": "methanol",
+    "site_id": "b",
+    "site_role": "acceptor",
+    "multiplicity": 1,
+    "provenance": {
+     "source_id": "bulow-2020",
+     "locator": "Table 1 methanol 2B scheme",
+     "domain_id": "bulow-2020-298-15-k-1-bar"
+    }
+   },
+   {
+    "component_id": "ethanol",
+    "site_id": "a",
+    "site_role": "donor",
+    "multiplicity": 1,
+    "provenance": {
+     "source_id": "bulow-2020",
+     "locator": "Table 1 ethanol 2B scheme",
+     "domain_id": "bulow-2020-298-15-k-1-bar"
+    }
+   },
+   {
+    "component_id": "ethanol",
+    "site_id": "b",
+    "site_role": "acceptor",
+    "multiplicity": 1,
+    "provenance": {
+     "source_id": "bulow-2020",
+     "locator": "Table 1 ethanol 2B scheme",
+     "domain_id": "bulow-2020-298-15-k-1-bar"
+    }
+   }
+  ],
+  "edges": [
+   {
+    "endpoint_a": {
+     "component_id": "water",
+     "site_id": "a"
+    },
+    "endpoint_b": {
+     "component_id": "water",
+     "site_id": "b"
+    },
+    "energy_over_k": {
+     "identity": "association/water/a/water/b/energy_over_k",
+     "value": {
+      "magnitude": 2425.7,
+      "unit": "kelvin"
+     }
+    },
+    "volume": {
+     "identity": "association/water/a/water/b/volume",
+     "value": {
+      "magnitude": 0.04509,
+      "unit": "dimensionless"
+     }
+    },
+    "source": {
+     "kind": "explicit",
+     "provenance": [
+      {
+       "source_id": "bulow-2020",
+       "locator": "Table 1 water association",
+       "domain_id": "bulow-2020-298-15-k-1-bar"
+      }
+     ]
+    }
+   },
+   {
+    "endpoint_a": {
+     "component_id": "methanol",
+     "site_id": "a"
+    },
+    "endpoint_b": {
+     "component_id": "methanol",
+     "site_id": "b"
+    },
+    "energy_over_k": {
+     "identity": "association/methanol/a/methanol/b/energy_over_k",
+     "value": {
+      "magnitude": 2899.5,
+      "unit": "kelvin"
+     }
+    },
+    "volume": {
+     "identity": "association/methanol/a/methanol/b/volume",
+     "value": {
+      "magnitude": 0.03518,
+      "unit": "dimensionless"
+     }
+    },
+    "source": {
+     "kind": "explicit",
+     "provenance": [
+      {
+       "source_id": "bulow-2020",
+       "locator": "Table 1 methanol association",
+       "domain_id": "bulow-2020-298-15-k-1-bar"
+      }
+     ]
+    }
+   },
+   {
+    "endpoint_a": {
+     "component_id": "ethanol",
+     "site_id": "a"
+    },
+    "endpoint_b": {
+     "component_id": "ethanol",
+     "site_id": "b"
+    },
+    "energy_over_k": {
+     "identity": "association/ethanol/a/ethanol/b/energy_over_k",
+     "value": {
+      "magnitude": 2653.4,
+      "unit": "kelvin"
+     }
+    },
+    "volume": {
+     "identity": "association/ethanol/a/ethanol/b/volume",
+     "value": {
+      "magnitude": 0.03238,
+      "unit": "dimensionless"
+     }
+    },
+    "source": {
+     "kind": "explicit",
+     "provenance": [
+      {
+       "source_id": "bulow-2020",
+       "locator": "Table 1 ethanol association",
+       "domain_id": "bulow-2020-298-15-k-1-bar"
+      }
+     ]
+    }
+   }
+  ]
+ }
+}

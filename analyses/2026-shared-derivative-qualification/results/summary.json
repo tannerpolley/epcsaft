@@ -1,0 +1,37 @@
+{
+ "question": "Do the admitted real selections keep complete pressure-closed derivative chains, and is neutral-solvent density adequate before salt-density errors are attributed to ions?",
+ "engine_version": "0.2.0.dev0",
+ "extension_sha256": "9e57d24c72ae1e5c5c6c912d652e2684260ffde1322e070597ea123338b162d3",
+ "engine_tree": "3c401a29ac67fc0241ccfaf845a964f23937e153",
+ "packets": {
+  "figiel-yu-held-2025/3": "3d37235cd8217e056f55005bfdf2b65dcf7c4a8621e239bdd40a70c273a9be8c",
+  "held-cameretti-sadowski-2008/3": "79259c245dd748121d557ccd5c931306005a0ae01e21f6d9173a6a8de6db892d",
+  "ascani-2022-case-study-2-electrolyte-lle/3": "382b2e634bccf3312fa0fb164e1d2449192a13d0396f0fe46ef674ff56d34b94",
+  "mea-co2-h2o-nine-species-estimation/4": "7f87d3a81be71aae05be80c94eaf7af36554f96d07c8beb17d64da13e83f4c25"
+ },
+ "actions": {
+  "pass": 36,
+  "fail": 0,
+  "unavailable": 0,
+  "reference_unresolved": 0
+ },
+ "worst_scaled_action_error_by_order": {
+  "1": 4.838622190371074e-10,
+  "2": 2.3417485103155053e-06,
+  "3": 0.00016955032314020025
+ },
+ "worst_uncertainty_over_criterion": 0.5208841112332585,
+ "max_reduced_pressure_residual": 2.6623408495895614e-13,
+ "solvent_max_abs_relative_deviation": {
+  "water@figiel-yu-held-2025/3": 0.00042590996094449274,
+  "water@held-cameretti-sadowski-2008/3": 0.00045732379254892486,
+  "water@mea-co2-h2o-nine-species-estimation/4": 0.0004247993206445422,
+  "methanol@figiel-yu-held-2025/3": 0.007263943881048673
+ },
+ "claim_limits": [
+  "Finite states and directions; exact differentiation does not establish physical accuracy.",
+  "Figiel/Held/Ascani packets report 298.15 K and 1 bar; other temperatures are extrapolation.",
+  "Parameter directions and the DensityTemperature/DipolarPerturbation forms are qualified by native.properties.issue26, not by these public-API rows.",
+  "Criteria are tolerance x term_scale, the sum of |thermal, mechanical, composition sub-direction terms| of each action; a pass also needs the reference uncertainty (Newton-polished node closure, rounding and |D(h)-D(2h)|/3 truncation) below that criterion."
+ ]
+}

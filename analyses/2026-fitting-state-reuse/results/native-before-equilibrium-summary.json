@@ -1,0 +1,7 @@
+{
+  "points": 8,
+  "values_file": "results/before-equilibrium-values.csv",
+  "values_sha256": "2e71924b9a39d358ec2a5f4b501258b3343b5b94094a08406de4e156568626b3",
+  "instrumentation_source": "scripts/pinned-hessian-packing-profile.cpp",
+  "instrumentation_source_sha256": "282543f164927d902f5c59ce955e8f62675b5d3a818a8c08955a22e82ec13435"
+}

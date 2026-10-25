@@ -1,0 +1,112 @@
+check,phase,component,quantity,a,b,a_minus_b,relative
+Helmholtz term: Clapeyron (a) vs Engine (b),water-rich,,association,-5.0272156423819725,-5.027215642381972,-8.881784197001252e-16,-1.766740245260879e-16
+Helmholtz term: Clapeyron (a) vs Engine (b),water-rich,,born,-11.766444714817649,-11.766444930018862,2.1520121329388076e-07,1.8289399608275377e-08
+Helmholtz term: Clapeyron (a) vs Engine (b),water-rich,,bulk_relative_permittivity,49.98854485980592,49.98854485980591,7.105427357601002e-15,1.4214111207934429e-16
+Helmholtz term: Clapeyron (a) vs Engine (b),water-rich,,debye_huckel,-0.08313186590800258,-0.08313186777819814,1.8701955678546156e-09,2.2496734619802278e-08
+Helmholtz term: Clapeyron (a) vs Engine (b),water-rich,,dispersion,-9.036798734391992,-9.03679873439199,-1.7763568394002505e-15,-1.9656925993491949e-16
+Helmholtz term: Clapeyron (a) vs Engine (b),water-rich,,hard_chain,4.516124966389417,4.516124966389417,0.0,0.0
+Helmholtz term: Clapeyron (a) vs Engine (b),water-rich,,pressure,100000.04738048311,100000.00000703927,0.047373443841934204,4.737344383859946e-07
+Helmholtz term: Clapeyron (a) vs Engine (b),water-rich,,residual_helmholtz,-21.3974659911102,-21.397466208181605,2.1707140618332232e-07,1.0144724803926654e-08
+Helmholtz term: Clapeyron (a) vs Engine (b),organic,,association,-3.429266448989276,-3.4292664489892766,4.440892098500626e-16,1.2949976808624802e-16
+Helmholtz term: Clapeyron (a) vs Engine (b),organic,,born,-0.06553384915012941,-0.0655338503487042,1.1985747810916436e-09,1.8289399672292307e-08
+Helmholtz term: Clapeyron (a) vs Engine (b),organic,,bulk_relative_permittivity,24.92934672178565,24.929346721785652,-3.552713678800501e-15,-1.42511302780983e-16
+Helmholtz term: Clapeyron (a) vs Engine (b),organic,,debye_huckel,-0.00011115575756717662,-0.0001111557605480926,2.980915983345246e-12,2.6817467386726433e-08
+Helmholtz term: Clapeyron (a) vs Engine (b),organic,,dispersion,-11.472509063633884,-11.472509063633892,7.105427357601002e-15,6.193437998775808e-16
+Helmholtz term: Clapeyron (a) vs Engine (b),organic,,hard_chain,6.09739210177888,6.097392101778885,-5.329070518200751e-15,-8.739917704564253e-16
+Helmholtz term: Clapeyron (a) vs Engine (b),organic,,pressure,100000.00005137948,100000.00000003423,5.134525417815894e-05,5.134525417814136e-10
+Helmholtz term: Clapeyron (a) vs Engine (b),organic,,residual_helmholtz,-8.870028415751978,-8.870028416953536,1.2015579642365992e-09,1.3546269614424543e-10
+perturbed water-rich composition: Clapeyron (a) vs Engine (b),solved state,,eps,49.98854485980592,49.98854485980591,7.105427357601002e-15,1.4214111207934429e-16
+perturbed water-rich composition: Clapeyron (a) vs Engine (b),solved state,,dh,-0.08313186590800258,-0.08313186777819814,1.8701955678546156e-09,2.2496734619802278e-08
+perturbed water-rich composition: Clapeyron (a) vs Engine (b),solved state,,born,-11.766444714817649,-11.766444930018862,2.1520121329388076e-07,1.8289399608275377e-08
+perturbed water-rich composition: Clapeyron (a) vs Engine (b),+0.05 mol water,,eps,50.866259789812915,50.866259789812915,0.0,0.0
+perturbed water-rich composition: Clapeyron (a) vs Engine (b),+0.05 mol water,,dh,-0.07749543805256599,-0.07749543979739333,1.7448273381681645e-09,2.251522596335861e-08
+perturbed water-rich composition: Clapeyron (a) vs Engine (b),+0.05 mol water,,born,-11.210084986996248,-11.210085192021976,2.0502572795066953e-07,1.8289399628879073e-08
+perturbed water-rich composition: Clapeyron (a) vs Engine (b),+0.05 mol ethanol,,eps,46.660080160487205,46.6600801604872,7.105427357601002e-15,1.5228065046527796e-16
+perturbed water-rich composition: Clapeyron (a) vs Engine (b),+0.05 mol ethanol,,dh,-0.0861643208265629,-0.08616432275868512,1.932122212222609e-09,2.2423691736471712e-08
+perturbed water-rich composition: Clapeyron (a) vs Engine (b),+0.05 mol ethanol,,born,-11.189820087926813,-11.18982029258191,2.046550964251992e-07,1.8289399746738705e-08
+perturbed water-rich composition: Clapeyron (a) vs Engine (b),+0.05 mol isobutanol,,eps,43.65768809867871,43.65768809867872,-7.105427357601002e-15,-1.6275317514616732e-16
+perturbed water-rich composition: Clapeyron (a) vs Engine (b),+0.05 mol isobutanol,,dh,-0.0934729759976915,-0.09347297808713541,2.0894439095586748e-09,2.235345393201121e-08
+perturbed water-rich composition: Clapeyron (a) vs Engine (b),+0.05 mol isobutanol,,born,-11.1729664715742,-11.172966675921051,2.0434685055192858e-07,1.8289399447715e-08
+"term mu_i/RT at constant V,T: Clapeyron automatic (a) vs Engine central difference (b)",water-rich,water,hard_chain,14.802939546251718,14.802939549252159,-3.0004407847172843e-09,-2.0269222709004887e-10
+"term mu_i/RT at constant V,T: Clapeyron automatic (a) vs Engine central difference (b)",water-rich,ethanol,hard_chain,35.607794398775404,35.60779440059392,-1.8185133399128972e-09,-5.107065378591844e-11
+"term mu_i/RT at constant V,T: Clapeyron automatic (a) vs Engine central difference (b)",water-rich,isobutanol,hard_chain,55.34873919662111,55.34873919810224,-1.4811263326919288e-09,-2.67598928927854e-11
+"term mu_i/RT at constant V,T: Clapeyron automatic (a) vs Engine central difference (b)",water-rich,sodium-cation,hard_chain,9.963051580800226,9.963051580630378,1.6984813555609435e-10,1.704780249118692e-11
+"term mu_i/RT at constant V,T: Clapeyron automatic (a) vs Engine central difference (b)",water-rich,chloride-anion,hard_chain,9.50819565383021,9.508195653484819,3.453912711393059e-10,3.6325637768372763e-11
+"term mu_i/RT at constant V,T: Clapeyron automatic (a) vs Engine central difference (b)",water-rich,water,dispersion,-17.371820492275617,-17.371820495881707,3.6060896491107997e-09,2.0758271419887663e-10
+"term mu_i/RT at constant V,T: Clapeyron automatic (a) vs Engine central difference (b)",water-rich,ethanol,dispersion,-29.742288936354,-29.742288933043426,-3.310574925308174e-09,-1.1130868013423654e-10
+"term mu_i/RT at constant V,T: Clapeyron automatic (a) vs Engine central difference (b)",water-rich,isobutanol,dispersion,-47.08844007270721,-47.08844007161872,-1.088487522338255e-09,-2.311581187830241e-11
+"term mu_i/RT at constant V,T: Clapeyron automatic (a) vs Engine central difference (b)",water-rich,sodium-cation,dispersion,-14.94215423209084,-14.942154236585736,4.4948968991320726e-09,3.0081987027856774e-10
+"term mu_i/RT at constant V,T: Clapeyron automatic (a) vs Engine central difference (b)",water-rich,chloride-anion,dispersion,-12.34699191290984,-12.346991913325667,4.1582737253520463e-10,3.3678435642807626e-11
+"term mu_i/RT at constant V,T: Clapeyron automatic (a) vs Engine central difference (b)",water-rich,water,association,-8.434822782150944,-8.434822782898976,7.480327468556425e-10,8.868387233602909e-11
+"term mu_i/RT at constant V,T: Clapeyron automatic (a) vs Engine central difference (b)",water-rich,ethanol,association,-12.71047945073485,-12.71047945072823,-6.6204819404447335e-12,-5.208679944850878e-13
+"term mu_i/RT at constant V,T: Clapeyron automatic (a) vs Engine central difference (b)",water-rich,isobutanol,association,-14.163101555207138,-14.163101555553226,3.460876030203508e-10,2.4435862558978328e-11
+"term mu_i/RT at constant V,T: Clapeyron automatic (a) vs Engine central difference (b)",water-rich,sodium-cation,association,-1.231372102936064,-1.231372102505901,-4.301630163183745e-10,-3.493363341941662e-10
+"term mu_i/RT at constant V,T: Clapeyron automatic (a) vs Engine central difference (b)",water-rich,chloride-anion,association,-1.1556972165082984,-1.1556972170367885,5.284901405389064e-10,4.5729117691739095e-10
+"term mu_i/RT at constant V,T: Clapeyron automatic (a) vs Engine central difference (b)",water-rich,water,debye_huckel,0.030135147767531914,0.03706750592580299,-0.006932358158271076,-0.18701981655165545
+"term mu_i/RT at constant V,T: Clapeyron automatic (a) vs Engine central difference (b)",water-rich,ethanol,debye_huckel,-0.12633100606536007,-0.15539247900236974,0.02906147293700967,0.1870198166834476
+"term mu_i/RT at constant V,T: Clapeyron automatic (a) vs Engine central difference (b)",water-rich,isobutanol,debye_huckel,-0.2578151698737753,-0.3171235598981026,0.05930839002432731,0.1870198166398742
+"term mu_i/RT at constant V,T: Clapeyron automatic (a) vs Engine central difference (b)",water-rich,sodium-cation,debye_huckel,-1.7149721057607763,-1.7149721428244558,3.706367945888189e-08,2.1611825949452594e-08
+"term mu_i/RT at constant V,T: Clapeyron automatic (a) vs Engine central difference (b)",water-rich,chloride-anion,debye_huckel,-1.728683291299802,-1.728683328733327,3.74335249464508e-08,2.1654356425060103e-08
+"term mu_i/RT at constant V,T: Clapeyron automatic (a) vs Engine central difference (b)",water-rich,water,born,-0.08706758850345864,-0.0870675904707241,1.967265461644274e-09,2.259469282437251e-08
+"term mu_i/RT at constant V,T: Clapeyron automatic (a) vs Engine central difference (b)",water-rich,ethanol,born,0.3650002361421105,0.3650002415866993,-5.444588779823789e-09,-1.4916671715491247e-08
+"term mu_i/RT at constant V,T: Clapeyron automatic (a) vs Engine central difference (b)",water-rich,isobutanol,born,0.7448891670842901,0.7448891796713042,-1.258701409767582e-08,-1.6897834525170665e-08
+"term mu_i/RT at constant V,T: Clapeyron automatic (a) vs Engine central difference (b)",water-rich,sodium-cation,born,-161.15378932605668,-161.1537922734385,2.9473818301539723e-06,1.8289248974997668e-08
+"term mu_i/RT at constant V,T: Clapeyron automatic (a) vs Engine central difference (b)",water-rich,chloride-anion,born,-135.24892833793945,-135.2489308121818,2.4742423647694523e-06,1.829398835104579e-08
+"term mu_i/RT at constant V,T: Clapeyron automatic (a) vs Engine central difference (b)",organic,water,hard_chain,7.820788859588564,7.820788861412353,-1.823789119725916e-09,-2.331975906835258e-10
+"term mu_i/RT at constant V,T: Clapeyron automatic (a) vs Engine central difference (b)",organic,ethanol,hard_chain,17.796892331011783,17.796892331833902,-8.221192615565087e-10,-4.6194540385343356e-11
+"term mu_i/RT at constant V,T: Clapeyron automatic (a) vs Engine central difference (b)",organic,isobutanol,hard_chain,26.910495473396097,26.910495471987872,1.4082246480029426e-09,5.2329941285132246e-11
+"term mu_i/RT at constant V,T: Clapeyron automatic (a) vs Engine central difference (b)",organic,sodium-cation,hard_chain,5.487793223401837,5.487793223846182,-4.4434500523493625e-10,-8.096970623895191e-11
+"term mu_i/RT at constant V,T: Clapeyron automatic (a) vs Engine central difference (b)",organic,chloride-anion,hard_chain,5.269831816777103,5.269831818921489,-2.144386002100873e-09,-4.0691735064511755e-10
+"term mu_i/RT at constant V,T: Clapeyron automatic (a) vs Engine central difference (b)",organic,water,dispersion,-11.151693044681549,-11.151693041888677,-2.7928717116765256e-09,-2.504437399044045e-10
+"term mu_i/RT at constant V,T: Clapeyron automatic (a) vs Engine central difference (b)",organic,ethanol,dispersion,-19.428886886737985,-19.42888688510891,-1.629075541131897e-09,-8.384811496228777e-11
+"term mu_i/RT at constant V,T: Clapeyron automatic (a) vs Engine central difference (b)",organic,isobutanol,dispersion,-31.114639166596966,-31.114639165608082,-9.888836416394042e-10,-3.178194149628597e-11
+"term mu_i/RT at constant V,T: Clapeyron automatic (a) vs Engine central difference (b)",organic,sodium-cation,dispersion,-7.859800390801125,-7.859800389198313,-1.6028121052613642e-09,-2.0392529401434946e-10
+"term mu_i/RT at constant V,T: Clapeyron automatic (a) vs Engine central difference (b)",organic,chloride-anion,dispersion,-6.40721625264387,-6.407216252668491,2.462030579408747e-11,3.842590108275736e-12
+"term mu_i/RT at constant V,T: Clapeyron automatic (a) vs Engine central difference (b)",organic,water,association,-5.504470713198865,-5.504470713013632,-1.8523316214213992e-10,-3.365140297762198e-11
+"term mu_i/RT at constant V,T: Clapeyron automatic (a) vs Engine central difference (b)",organic,ethanol,association,-7.267032534093207,-7.2670325339529995,-1.4020784533386177e-10,-1.9293686202556994e-11
+"term mu_i/RT at constant V,T: Clapeyron automatic (a) vs Engine central difference (b)",organic,isobutanol,association,-6.244367470911033,-6.2443674706536,-2.574331858795631e-10,-4.1226463222962356e-11
+"term mu_i/RT at constant V,T: Clapeyron automatic (a) vs Engine central difference (b)",organic,sodium-cation,association,-0.33970120979131924,-0.33970120938420223,-4.071170067732055e-10,-1.19845615949149e-09
+"term mu_i/RT at constant V,T: Clapeyron automatic (a) vs Engine central difference (b)",organic,chloride-anion,association,-0.31928110534260457,-0.3192811051100364,-2.3256818693084824e-10,-7.284119956008559e-10
+"term mu_i/RT at constant V,T: Clapeyron automatic (a) vs Engine central difference (b)",organic,water,debye_huckel,8.103353961678937e-05,0.00011881824657603316,-3.7784706959243793e-05,-0.31800424638538094
+"term mu_i/RT at constant V,T: Clapeyron automatic (a) vs Engine central difference (b)",organic,ethanol,debye_huckel,-1.4807977382285493e-07,-2.171271111040332e-07,6.904733728117828e-08,0.3180042184971331
+"term mu_i/RT at constant V,T: Clapeyron automatic (a) vs Engine central difference (b)",organic,isobutanol,debye_huckel,-4.8480009763701915e-05,-7.108550087540216e-05,2.260549111170025e-05,0.3180042460602886
+"term mu_i/RT at constant V,T: Clapeyron automatic (a) vs Engine central difference (b)",organic,sodium-cation,debye_huckel,-0.36439133953158587,-0.3643912702964956,-6.923509027201291e-08,-1.9000205525142833e-07
+"term mu_i/RT at constant V,T: Clapeyron automatic (a) vs Engine central difference (b)",organic,chloride-anion,debye_huckel,-0.36479398560725607,-0.36479391629787505,-6.930938101223916e-08,-1.8999598928520533e-07
+"term mu_i/RT at constant V,T: Clapeyron automatic (a) vs Engine central difference (b)",organic,water,born,-0.0019964924928220773,-0.001996492540734529,4.791245178381587e-11,2.3998312443575876e-08
+"term mu_i/RT at constant V,T: Clapeyron automatic (a) vs Engine central difference (b)",organic,ethanol,born,3.6483678014648246e-06,3.648366331265862e-06,1.4701989625720557e-12,4.02974599883983e-07
+"term mu_i/RT at constant V,T: Clapeyron automatic (a) vs Engine central difference (b)",organic,isobutanol,born,0.001194443387304761,0.0011944434122335146,-2.4928753505903956e-11,-2.0870602366410278e-08
+"term mu_i/RT at constant V,T: Clapeyron automatic (a) vs Engine central difference (b)",organic,sodium-cation,born,-158.80618491190785,-158.80618781642653,2.9045186806797574e-06,1.8289707224993414e-08
+"term mu_i/RT at constant V,T: Clapeyron automatic (a) vs Engine central difference (b)",organic,chloride-anion,born,-133.43287254838182,-133.43287498882722,2.440445399543023e-06,1.8289686104323012e-08
+Engine lnphi: exact (a) vs central difference of its Helmholtz terms (b),water-rich,water,lnphi,-3.8199720087776505,-3.819972010513487,1.7358363635366914e-09,4.5441075451842314e-10
+Engine lnphi: exact (a) vs central difference of its Helmholtz terms (b),water-rich,ethanol,lnphi,0.5983655790567086,0.5983655829665508,-3.909842227756144e-09,-6.534203067583029e-09
+Engine lnphi: exact (a) vs central difference of its Helmholtz terms (b),water-rich,isobutanol,lnphi,1.7586949930489366,1.7586949942634513,-1.2145147110231846e-09,-6.905772262869426e-10
+Engine lnphi: exact (a) vs central difference of its Helmholtz terms (b),water-rich,sodium-cation,lnphi,-161.84550736695803,-161.84550737116427,4.206242465443211e-09,2.5989244519447374e-11
+Engine lnphi: exact (a) vs central difference of its Helmholtz terms (b),water-rich,chloride-anion,lnphi,-133.7383758123191,-133.73837581423282,1.913718961077393e-09,1.430942277731572e-11
+Engine lnphi: exact (a) vs central difference of its Helmholtz terms (b),organic,water,lnphi,-2.8911755335711486,-2.89117552878058,-4.790568830514985e-09,-1.6569622919212789e-09
+Engine lnphi: exact (a) vs central difference of its Helmholtz terms (b),organic,ethanol,lnphi,-2.952946619575158,-2.952946616985252,-2.5899060673850727e-09,-8.770582077197122e-10
+Engine lnphi: exact (a) vs central difference of its Helmholtz terms (b),organic,isobutanol,lnphi,-4.501310767200119,-4.501310767358917,1.587983078366051e-10,3.527823695002908e-11
+Engine lnphi: exact (a) vs central difference of its Helmholtz terms (b),organic,sodium-cation,lnphi,-155.93621050379585,-155.93621042245582,-8.134003337545437e-08,-5.216237662509008e-10
+Engine lnphi: exact (a) vs central difference of its Helmholtz terms (b),organic,chloride-anion,lnphi,-129.3082574863158,-129.3082574049786,-8.133719120451133e-08,-6.290177660485563e-10
+"Engine mu/RT equality between phases, exact: water-rich (a) vs organic (b)",,water,mu/RT,7.608404604145063,7.6084046041449405,1.2256862191861728e-13,1.610963510692423e-14
+"Engine mu/RT equality between phases, exact: water-rich (a) vs organic (b)",,ethanol,mu/RT,5.265602369027,5.265602369026787,2.1316282072803006e-13,4.048213400652731e-14
+"Engine mu/RT equality between phases, exact: water-rich (a) vs organic (b)",,isobutanol,mu/RT,6.499885024140976,6.4998850241406885,2.877698079828406e-13,4.427306127940085e-14
+"Engine mu/RT equality between phases, exact: water-rich (a) vs organic (b)",,NaCl (cation + anion),mu/RT,-279.0244001637378,-279.02440016373805,2.2737367544323206e-13,8.14888143509327e-16
+"Engine mu/RT equality between phases, central difference: water-rich (a) vs organic (b)",,water,mu/RT,-0.19027630355419056,-0.19027629702790705,-6.526283513608178e-09,-3.429898319206303e-08
+"Engine mu/RT equality between phases, central difference: water-rich (a) vs organic (b)",,ethanol,mu/RT,-2.5330785330265746,-2.533078534346724,1.3201493231917993e-09,5.211639928614623e-10
+"Engine mu/RT equality between phases, central difference: water-rich (a) vs organic (b)",,isobutanol,mu/RT,-1.2987958806079263,-1.298795881981528,1.3736016768461923e-09,1.0575962673599917e-09
+"Engine mu/RT equality between phases, central difference: water-rich (a) vs organic (b)",,NaCl (cation + anion),mu/RT,-294.62176198178463,-294.62176181298764,-1.6879698705452029e-07,-5.729277634340699e-10
+Clapeyron mu/RT difference between phases at the Engine solved states (a),,water,mu/RT,-0.006894572252949871,0.0,-0.006894572252949871,
+Clapeyron mu/RT difference between phases at the Engine solved states (a),,ethanol,mu/RT,0.0290613961567594,0.0,0.0290613961567594,
+Clapeyron mu/RT difference between phases at the Engine solved states (a),,isobutanol,mu/RT,0.05928576921334816,0.0,0.05928576921334816,
+Clapeyron mu/RT difference between phases at the Engine solved states (a),,sodium-cation,mu/RT,-0.7395891984836851,0.0,-0.7395891984836851,
+Clapeyron mu/RT difference between phases at the Engine solved states (a),,chloride-anion,mu/RT,0.7395893292981839,0.0,0.7395893292981839,
+Clapeyron mu/RT difference between phases at its own solved states (a),,water,mu/RT,-1.9160122377570588e-09,0.0,-1.9160122377570588e-09,
+Clapeyron mu/RT difference between phases at its own solved states (a),,ethanol,mu/RT,-1.9160655284622408e-09,0.0,-1.9160655284622408e-09,
+Clapeyron mu/RT difference between phases at its own solved states (a),,isobutanol,mu/RT,-1.9159411834834827e-09,0.0,-1.9159411834834827e-09,
+Clapeyron mu/RT difference between phases at its own solved states (a),,sodium-cation,mu/RT,-0.7429416316756488,0.0,-0.7429416316756488,
+Clapeyron mu/RT difference between phases at its own solved states (a),,chloride-anion,mu/RT,0.7429416278436918,0.0,0.7429416278436918,
+Clapeyron permittivity gradient: automatic (a) vs central difference (b),water-rich,water,d eps_r / d n_i,18.120755134994944,18.120755143513634,-8.518689753600484e-09,-4.701067745871379e-10
+Clapeyron permittivity gradient: automatic (a) vs central difference (b),water-rich,ethanol,d eps_r / d n_i,-75.96489137957326,-75.96489137640106,-3.172203832946252e-09,-4.1758814834976725e-11
+Clapeyron permittivity gradient: automatic (a) vs central difference (b),water-rich,isobutanol,d eps_r / d n_i,-155.0284604346054,-155.02846043702334,2.4179485080821905e-09,1.5596803975644365e-11
+Clapeyron permittivity gradient: automatic (a) vs central difference (b),water-rich,sodium-cation,d eps_r / d n_i,-207.86803766129455,-207.86803766270623,1.4116778856987366e-09,6.791221495963576e-12
+Clapeyron permittivity gradient: automatic (a) vs central difference (b),water-rich,chloride-anion,d eps_r / d n_i,-207.86803766129455,-207.86803766270623,1.4116778856987366e-09,6.791221495963576e-12

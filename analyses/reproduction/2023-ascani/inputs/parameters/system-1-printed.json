@@ -1,0 +1,1235 @@
+{
+ "schema": "epcsaft.parameters",
+ "schema_version": 1,
+ "document_id": "ascani-2023-system-1-printed",
+ "document_version": 1,
+ "purpose": "external-document",
+ "sources": [
+  {
+   "source_id": "ascani-2023",
+   "citation": "Ascani, M.; Sadowski, G.; Held, C. Simultaneous Predictions of Chemical and Phase Equilibria in Systems with an Esterification Reaction Using PC-SAFT. Molecules 2023, 28, 1768.",
+   "doi": "10.3390/molecules28041768",
+   "use_basis": "Tables 1, 2 and 4; Appendix A Eqs. A4-A8"
+  }
+ ],
+ "domains": [
+  {
+   "domain_id": "system-1-318.15-K-1-bar",
+   "kind": "reported-conditions",
+   "temperature_min": {
+    "magnitude": 318.15,
+    "unit": "kelvin"
+   },
+   "temperature_max": {
+    "magnitude": 318.15,
+    "unit": "kelvin"
+   },
+   "pressure_min": {
+    "magnitude": 1,
+    "unit": "bar"
+   },
+   "pressure_max": {
+    "magnitude": 1,
+    "unit": "bar"
+   }
+  }
+ ],
+ "components": [
+  {
+   "component_id": "acetic-acid",
+   "aliases": [],
+   "coefficients": [
+    {
+     "identity": "component/acetic-acid/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 1.3402,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "Table 1 acetic-acid row",
+      "domain_id": "system-1-318.15-K-1-bar"
+     }
+    },
+    {
+     "identity": "component/acetic-acid/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 311.59,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "Table 1 acetic-acid row",
+      "domain_id": "system-1-318.15-K-1-bar"
+     }
+    },
+    {
+     "identity": "component/acetic-acid/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.8582,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "Table 1 acetic-acid row",
+      "domain_id": "system-1-318.15-K-1-bar"
+     }
+    }
+   ],
+   "fixed": {
+    "charge_number": {
+     "value": {
+      "magnitude": 0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "neutral",
+      "domain_id": "system-1-318.15-K-1-bar"
+     }
+    },
+    "molar_mass": {
+     "value": {
+      "magnitude": 60.05196,
+      "unit": "gram / mole"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "IUPAC atomic weights",
+      "domain_id": "system-1-318.15-K-1-bar"
+     }
+    }
+   }
+  },
+  {
+   "component_id": "1-pentanol",
+   "aliases": [],
+   "coefficients": [
+    {
+     "identity": "component/1-pentanol/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 3.626,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "Table 1 1-pentanol row",
+      "domain_id": "system-1-318.15-K-1-bar"
+     }
+    },
+    {
+     "identity": "component/1-pentanol/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 247.28,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "Table 1 1-pentanol row",
+      "domain_id": "system-1-318.15-K-1-bar"
+     }
+    },
+    {
+     "identity": "component/1-pentanol/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.4508,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "Table 1 1-pentanol row",
+      "domain_id": "system-1-318.15-K-1-bar"
+     }
+    }
+   ],
+   "fixed": {
+    "charge_number": {
+     "value": {
+      "magnitude": 0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "neutral",
+      "domain_id": "system-1-318.15-K-1-bar"
+     }
+    },
+    "molar_mass": {
+     "value": {
+      "magnitude": 88.14818,
+      "unit": "gram / mole"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "IUPAC atomic weights",
+      "domain_id": "system-1-318.15-K-1-bar"
+     }
+    }
+   }
+  },
+  {
+   "component_id": "pentyl-acetate",
+   "aliases": [],
+   "coefficients": [
+    {
+     "identity": "component/pentyl-acetate/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 4.7077,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "Table 1 pentyl-acetate row",
+      "domain_id": "system-1-318.15-K-1-bar"
+     }
+    },
+    {
+     "identity": "component/pentyl-acetate/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 234.57,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "Table 1 pentyl-acetate row",
+      "domain_id": "system-1-318.15-K-1-bar"
+     }
+    },
+    {
+     "identity": "component/pentyl-acetate/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.4729,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "Table 1 pentyl-acetate row",
+      "domain_id": "system-1-318.15-K-1-bar"
+     }
+    }
+   ],
+   "fixed": {
+    "charge_number": {
+     "value": {
+      "magnitude": 0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "neutral",
+      "domain_id": "system-1-318.15-K-1-bar"
+     }
+    },
+    "molar_mass": {
+     "value": {
+      "magnitude": 130.18486,
+      "unit": "gram / mole"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "IUPAC atomic weights",
+      "domain_id": "system-1-318.15-K-1-bar"
+     }
+    }
+   }
+  },
+  {
+   "component_id": "water",
+   "aliases": [],
+   "coefficients": [
+    {
+     "identity": "component/water/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 1.2047,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "Table 1 water row",
+      "domain_id": "system-1-318.15-K-1-bar"
+     }
+    },
+    {
+     "identity": "component/water/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 353.95,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "Table 1 water row",
+      "domain_id": "system-1-318.15-K-1-bar"
+     }
+    }
+   ],
+   "fixed": {
+    "charge_number": {
+     "value": {
+      "magnitude": 0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "neutral",
+      "domain_id": "system-1-318.15-K-1-bar"
+     }
+    },
+    "molar_mass": {
+     "value": {
+      "magnitude": 18.01528,
+      "unit": "gram / mole"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "IUPAC atomic weights",
+      "domain_id": "system-1-318.15-K-1-bar"
+     }
+    }
+   }
+  }
+ ],
+ "pairs": [
+  {
+   "component_id_a": "acetic-acid",
+   "component_id_b": "1-pentanol",
+   "coefficients": [
+    {
+     "identity": "pair/acetic-acid/1-pentanol/k_ij",
+     "family": "k_ij",
+     "value": {
+      "magnitude": -0.1,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "Table 2, Eq. A8 at 318.15 K",
+      "domain_id": "system-1-318.15-K-1-bar"
+     }
+    },
+    {
+     "identity": "pair/acetic-acid/1-pentanol/l_ij",
+     "family": "l_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "Eq. A4 has no l_ij",
+      "domain_id": "system-1-318.15-K-1-bar"
+     }
+    }
+   ]
+  },
+  {
+   "component_id_a": "acetic-acid",
+   "component_id_b": "pentyl-acetate",
+   "coefficients": [
+    {
+     "identity": "pair/acetic-acid/pentyl-acetate/k_ij",
+     "family": "k_ij",
+     "value": {
+      "magnitude": -0.1,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "Table 2, Eq. A8 at 318.15 K",
+      "domain_id": "system-1-318.15-K-1-bar"
+     }
+    },
+    {
+     "identity": "pair/acetic-acid/pentyl-acetate/l_ij",
+     "family": "l_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "Eq. A4 has no l_ij",
+      "domain_id": "system-1-318.15-K-1-bar"
+     }
+    }
+   ]
+  },
+  {
+   "component_id_a": "acetic-acid",
+   "component_id_b": "water",
+   "coefficients": [
+    {
+     "identity": "pair/acetic-acid/water/k_ij",
+     "family": "k_ij",
+     "value": {
+      "magnitude": -0.1247,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "Table 2, Eq. A8 at 318.15 K",
+      "domain_id": "system-1-318.15-K-1-bar"
+     }
+    },
+    {
+     "identity": "pair/acetic-acid/water/l_ij",
+     "family": "l_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "Eq. A4 has no l_ij",
+      "domain_id": "system-1-318.15-K-1-bar"
+     }
+    }
+   ]
+  },
+  {
+   "component_id_a": "1-pentanol",
+   "component_id_b": "pentyl-acetate",
+   "coefficients": [
+    {
+     "identity": "pair/1-pentanol/pentyl-acetate/k_ij",
+     "family": "k_ij",
+     "value": {
+      "magnitude": -0.0095,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "Table 2, Eq. A8 at 318.15 K",
+      "domain_id": "system-1-318.15-K-1-bar"
+     }
+    },
+    {
+     "identity": "pair/1-pentanol/pentyl-acetate/l_ij",
+     "family": "l_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "Eq. A4 has no l_ij",
+      "domain_id": "system-1-318.15-K-1-bar"
+     }
+    }
+   ]
+  },
+  {
+   "component_id_a": "1-pentanol",
+   "component_id_b": "water",
+   "coefficients": [
+    {
+     "identity": "pair/1-pentanol/water/k_ij",
+     "family": "k_ij",
+     "value": {
+      "magnitude": 0.004804,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "Table 2, Eq. A8 at 318.15 K",
+      "domain_id": "system-1-318.15-K-1-bar"
+     }
+    },
+    {
+     "identity": "pair/1-pentanol/water/l_ij",
+     "family": "l_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "Eq. A4 has no l_ij",
+      "domain_id": "system-1-318.15-K-1-bar"
+     }
+    }
+   ]
+  },
+  {
+   "component_id_a": "pentyl-acetate",
+   "component_id_b": "water",
+   "coefficients": [
+    {
+     "identity": "pair/pentyl-acetate/water/k_ij",
+     "family": "k_ij",
+     "value": {
+      "magnitude": -0.0228,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "Table 2, Eq. A8 at 318.15 K",
+      "domain_id": "system-1-318.15-K-1-bar"
+     }
+    },
+    {
+     "identity": "pair/pentyl-acetate/water/l_ij",
+     "family": "l_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "Eq. A4 has no l_ij",
+      "domain_id": "system-1-318.15-K-1-bar"
+     }
+    }
+   ]
+  }
+ ],
+ "model_families": [
+  {
+   "family_id": "model/association",
+   "kind": "association",
+   "choice": "general-site",
+   "provenance": {
+    "source_id": "ascani-2023",
+    "locator": "Table 1 two-site association",
+    "domain_id": "system-1-318.15-K-1-bar"
+   }
+  },
+  {
+   "family_id": "model/base",
+   "kind": "base",
+   "choice": "pc-saft",
+   "provenance": {
+    "source_id": "ascani-2023",
+    "locator": "Eq. A3",
+    "domain_id": "system-1-318.15-K-1-bar"
+   }
+  },
+  {
+   "family_id": "model/electrolyte",
+   "kind": "electrolyte",
+   "choice": "none",
+   "provenance": {
+    "source_id": "ascani-2023",
+    "locator": "neutral components",
+    "domain_id": "system-1-318.15-K-1-bar"
+   }
+  },
+  {
+   "family_id": "model/permittivity",
+   "kind": "permittivity",
+   "choice": "none",
+   "provenance": {
+    "source_id": "ascani-2023",
+    "locator": "neutral components",
+    "domain_id": "system-1-318.15-K-1-bar"
+   }
+  }
+ ],
+ "model_coefficients": [],
+ "correlations": [
+  {
+   "correlation_id": "component/water/segment_diameter/constant-plus-sum-of-exponentials",
+   "component_id": "water",
+   "family": "segment_diameter",
+   "form": "constant-plus-sum-of-exponentials",
+   "independent_variables": [
+    "temperature"
+   ],
+   "constant": {
+    "identity": "component/water/segment_diameter/constant-plus-sum-of-exponentials/constant",
+    "value": {
+     "magnitude": 2.7927,
+     "unit": "angstrom"
+    }
+   },
+   "provenance": {
+    "source_id": "ascani-2023",
+    "locator": "Table 1 water sigma footnote",
+    "domain_id": "system-1-318.15-K-1-bar"
+   },
+   "terms": [
+    {
+     "amplitude": {
+      "identity": "component/water/segment_diameter/constant-plus-sum-of-exponentials/term-0/amplitude",
+      "value": {
+       "magnitude": 10.11,
+       "unit": "angstrom"
+      }
+     },
+     "exponent_coefficient": {
+      "identity": "component/water/segment_diameter/constant-plus-sum-of-exponentials/term-0/exponent_coefficient",
+      "value": {
+       "magnitude": -0.01775,
+       "unit": "1 / kelvin"
+      }
+     }
+    },
+    {
+     "amplitude": {
+      "identity": "component/water/segment_diameter/constant-plus-sum-of-exponentials/term-1/amplitude",
+      "value": {
+       "magnitude": -1.417,
+       "unit": "angstrom"
+      }
+     },
+     "exponent_coefficient": {
+      "identity": "component/water/segment_diameter/constant-plus-sum-of-exponentials/term-1/exponent_coefficient",
+      "value": {
+       "magnitude": -0.01146,
+       "unit": "1 / kelvin"
+      }
+     }
+    }
+   ]
+  }
+ ],
+ "topology": {
+  "presets": [],
+  "sites": [
+   {
+    "component_id": "acetic-acid",
+    "site_id": "a",
+    "site_role": "donor",
+    "multiplicity": 1,
+    "provenance": {
+     "source_id": "ascani-2023",
+     "locator": "Table 1 acetic-acid N_i = 2",
+     "domain_id": "system-1-318.15-K-1-bar"
+    }
+   },
+   {
+    "component_id": "acetic-acid",
+    "site_id": "b",
+    "site_role": "acceptor",
+    "multiplicity": 1,
+    "provenance": {
+     "source_id": "ascani-2023",
+     "locator": "Table 1 acetic-acid N_i = 2",
+     "domain_id": "system-1-318.15-K-1-bar"
+    }
+   },
+   {
+    "component_id": "1-pentanol",
+    "site_id": "a",
+    "site_role": "donor",
+    "multiplicity": 1,
+    "provenance": {
+     "source_id": "ascani-2023",
+     "locator": "Table 1 1-pentanol N_i = 2",
+     "domain_id": "system-1-318.15-K-1-bar"
+    }
+   },
+   {
+    "component_id": "1-pentanol",
+    "site_id": "b",
+    "site_role": "acceptor",
+    "multiplicity": 1,
+    "provenance": {
+     "source_id": "ascani-2023",
+     "locator": "Table 1 1-pentanol N_i = 2",
+     "domain_id": "system-1-318.15-K-1-bar"
+    }
+   },
+   {
+    "component_id": "pentyl-acetate",
+    "site_id": "a",
+    "site_role": "donor",
+    "multiplicity": 1,
+    "provenance": {
+     "source_id": "ascani-2023",
+     "locator": "Table 1 pentyl-acetate N_i = 2",
+     "domain_id": "system-1-318.15-K-1-bar"
+    }
+   },
+   {
+    "component_id": "pentyl-acetate",
+    "site_id": "b",
+    "site_role": "acceptor",
+    "multiplicity": 1,
+    "provenance": {
+     "source_id": "ascani-2023",
+     "locator": "Table 1 pentyl-acetate N_i = 2",
+     "domain_id": "system-1-318.15-K-1-bar"
+    }
+   },
+   {
+    "component_id": "water",
+    "site_id": "a",
+    "site_role": "donor",
+    "multiplicity": 1,
+    "provenance": {
+     "source_id": "ascani-2023",
+     "locator": "Table 1 water N_i = 2",
+     "domain_id": "system-1-318.15-K-1-bar"
+    }
+   },
+   {
+    "component_id": "water",
+    "site_id": "b",
+    "site_role": "acceptor",
+    "multiplicity": 1,
+    "provenance": {
+     "source_id": "ascani-2023",
+     "locator": "Table 1 water N_i = 2",
+     "domain_id": "system-1-318.15-K-1-bar"
+    }
+   }
+  ],
+  "edges": [
+   {
+    "endpoint_a": {
+     "component_id": "acetic-acid",
+     "site_id": "a"
+    },
+    "endpoint_b": {
+     "component_id": "acetic-acid",
+     "site_id": "b"
+    },
+    "energy_over_k": {
+     "identity": "association/acetic-acid/a/acetic-acid/b/energy_over_k",
+     "value": {
+      "magnitude": 3044.4,
+      "unit": "kelvin"
+     }
+    },
+    "volume": {
+     "identity": "association/acetic-acid/a/acetic-acid/b/volume",
+     "value": {
+      "magnitude": 0.07555,
+      "unit": "dimensionless"
+     }
+    },
+    "source": {
+     "kind": "explicit",
+     "provenance": [
+      {
+       "source_id": "ascani-2023",
+       "locator": "Table 1 acetic-acid association",
+       "domain_id": "system-1-318.15-K-1-bar"
+      }
+     ]
+    }
+   },
+   {
+    "endpoint_a": {
+     "component_id": "1-pentanol",
+     "site_id": "a"
+    },
+    "endpoint_b": {
+     "component_id": "1-pentanol",
+     "site_id": "b"
+    },
+    "energy_over_k": {
+     "identity": "association/1-pentanol/a/1-pentanol/b/energy_over_k",
+     "value": {
+      "magnitude": 2252.1,
+      "unit": "kelvin"
+     }
+    },
+    "volume": {
+     "identity": "association/1-pentanol/a/1-pentanol/b/volume",
+     "value": {
+      "magnitude": 0.01033,
+      "unit": "dimensionless"
+     }
+    },
+    "source": {
+     "kind": "explicit",
+     "provenance": [
+      {
+       "source_id": "ascani-2023",
+       "locator": "Table 1 1-pentanol association",
+       "domain_id": "system-1-318.15-K-1-bar"
+      }
+     ]
+    }
+   },
+   {
+    "endpoint_a": {
+     "component_id": "pentyl-acetate",
+     "site_id": "a"
+    },
+    "endpoint_b": {
+     "component_id": "pentyl-acetate",
+     "site_id": "b"
+    },
+    "energy_over_k": {
+     "identity": "association/pentyl-acetate/a/pentyl-acetate/b/energy_over_k",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "kelvin"
+     }
+    },
+    "volume": {
+     "identity": "association/pentyl-acetate/a/pentyl-acetate/b/volume",
+     "value": {
+      "magnitude": 0.04509,
+      "unit": "dimensionless"
+     }
+    },
+    "source": {
+     "kind": "explicit",
+     "provenance": [
+      {
+       "source_id": "ascani-2023",
+       "locator": "Table 1 pentyl-acetate association",
+       "domain_id": "system-1-318.15-K-1-bar"
+      }
+     ]
+    }
+   },
+   {
+    "endpoint_a": {
+     "component_id": "water",
+     "site_id": "a"
+    },
+    "endpoint_b": {
+     "component_id": "water",
+     "site_id": "b"
+    },
+    "energy_over_k": {
+     "identity": "association/water/a/water/b/energy_over_k",
+     "value": {
+      "magnitude": 2425.7,
+      "unit": "kelvin"
+     }
+    },
+    "volume": {
+     "identity": "association/water/a/water/b/volume",
+     "value": {
+      "magnitude": 0.04509,
+      "unit": "dimensionless"
+     }
+    },
+    "source": {
+     "kind": "explicit",
+     "provenance": [
+      {
+       "source_id": "ascani-2023",
+       "locator": "Table 1 water association",
+       "domain_id": "system-1-318.15-K-1-bar"
+      }
+     ]
+    }
+   },
+   {
+    "endpoint_a": {
+     "component_id": "acetic-acid",
+     "site_id": "a"
+    },
+    "endpoint_b": {
+     "component_id": "1-pentanol",
+     "site_id": "b"
+    },
+    "energy_over_k": {
+     "identity": "association/acetic-acid/a/1-pentanol/b/energy_over_k",
+     "value": {
+      "magnitude": 2648.25,
+      "unit": "kelvin"
+     }
+    },
+    "volume": {
+     "identity": "association/acetic-acid/a/1-pentanol/b/volume",
+     "value": {
+      "magnitude": 0.02784940934583932,
+      "unit": "dimensionless"
+     }
+    },
+    "source": {
+     "kind": "explicit",
+     "provenance": [
+      {
+       "source_id": "ascani-2023",
+       "locator": "Eqs. A6-A7 as printed (exponent 2), water sigma at 318.15 K",
+       "domain_id": "system-1-318.15-K-1-bar"
+      }
+     ]
+    }
+   },
+   {
+    "endpoint_a": {
+     "component_id": "acetic-acid",
+     "site_id": "b"
+    },
+    "endpoint_b": {
+     "component_id": "1-pentanol",
+     "site_id": "a"
+    },
+    "energy_over_k": {
+     "identity": "association/acetic-acid/b/1-pentanol/a/energy_over_k",
+     "value": {
+      "magnitude": 2648.25,
+      "unit": "kelvin"
+     }
+    },
+    "volume": {
+     "identity": "association/acetic-acid/b/1-pentanol/a/volume",
+     "value": {
+      "magnitude": 0.02784940934583932,
+      "unit": "dimensionless"
+     }
+    },
+    "source": {
+     "kind": "explicit",
+     "provenance": [
+      {
+       "source_id": "ascani-2023",
+       "locator": "Eqs. A6-A7 as printed (exponent 2), water sigma at 318.15 K",
+       "domain_id": "system-1-318.15-K-1-bar"
+      }
+     ]
+    }
+   },
+   {
+    "endpoint_a": {
+     "component_id": "acetic-acid",
+     "site_id": "a"
+    },
+    "endpoint_b": {
+     "component_id": "pentyl-acetate",
+     "site_id": "b"
+    },
+    "energy_over_k": {
+     "identity": "association/acetic-acid/a/pentyl-acetate/b/energy_over_k",
+     "value": {
+      "magnitude": 1522.2,
+      "unit": "kelvin"
+     }
+    },
+    "volume": {
+     "identity": "association/acetic-acid/a/pentyl-acetate/b/volume",
+     "value": {
+      "magnitude": 0.05820443410811945,
+      "unit": "dimensionless"
+     }
+    },
+    "source": {
+     "kind": "explicit",
+     "provenance": [
+      {
+       "source_id": "ascani-2023",
+       "locator": "Eqs. A6-A7 as printed (exponent 2), water sigma at 318.15 K",
+       "domain_id": "system-1-318.15-K-1-bar"
+      }
+     ]
+    }
+   },
+   {
+    "endpoint_a": {
+     "component_id": "acetic-acid",
+     "site_id": "b"
+    },
+    "endpoint_b": {
+     "component_id": "pentyl-acetate",
+     "site_id": "a"
+    },
+    "energy_over_k": {
+     "identity": "association/acetic-acid/b/pentyl-acetate/a/energy_over_k",
+     "value": {
+      "magnitude": 1522.2,
+      "unit": "kelvin"
+     }
+    },
+    "volume": {
+     "identity": "association/acetic-acid/b/pentyl-acetate/a/volume",
+     "value": {
+      "magnitude": 0.05820443410811945,
+      "unit": "dimensionless"
+     }
+    },
+    "source": {
+     "kind": "explicit",
+     "provenance": [
+      {
+       "source_id": "ascani-2023",
+       "locator": "Eqs. A6-A7 as printed (exponent 2), water sigma at 318.15 K",
+       "domain_id": "system-1-318.15-K-1-bar"
+      }
+     ]
+    }
+   },
+   {
+    "endpoint_a": {
+     "component_id": "acetic-acid",
+     "site_id": "a"
+    },
+    "endpoint_b": {
+     "component_id": "water",
+     "site_id": "b"
+    },
+    "energy_over_k": {
+     "identity": "association/acetic-acid/a/water/b/energy_over_k",
+     "value": {
+      "magnitude": 2735.05,
+      "unit": "kelvin"
+     }
+    },
+    "volume": {
+     "identity": "association/acetic-acid/a/water/b/volume",
+     "value": {
+      "magnitude": 0.05686339209809261,
+      "unit": "dimensionless"
+     }
+    },
+    "source": {
+     "kind": "explicit",
+     "provenance": [
+      {
+       "source_id": "ascani-2023",
+       "locator": "Eqs. A6-A7 as printed (exponent 2), water sigma at 318.15 K",
+       "domain_id": "system-1-318.15-K-1-bar"
+      }
+     ]
+    }
+   },
+   {
+    "endpoint_a": {
+     "component_id": "acetic-acid",
+     "site_id": "b"
+    },
+    "endpoint_b": {
+     "component_id": "water",
+     "site_id": "a"
+    },
+    "energy_over_k": {
+     "identity": "association/acetic-acid/b/water/a/energy_over_k",
+     "value": {
+      "magnitude": 2735.05,
+      "unit": "kelvin"
+     }
+    },
+    "volume": {
+     "identity": "association/acetic-acid/b/water/a/volume",
+     "value": {
+      "magnitude": 0.05686339209809261,
+      "unit": "dimensionless"
+     }
+    },
+    "source": {
+     "kind": "explicit",
+     "provenance": [
+      {
+       "source_id": "ascani-2023",
+       "locator": "Eqs. A6-A7 as printed (exponent 2), water sigma at 318.15 K",
+       "domain_id": "system-1-318.15-K-1-bar"
+      }
+     ]
+    }
+   },
+   {
+    "endpoint_a": {
+     "component_id": "1-pentanol",
+     "site_id": "a"
+    },
+    "endpoint_b": {
+     "component_id": "pentyl-acetate",
+     "site_id": "b"
+    },
+    "energy_over_k": {
+     "identity": "association/1-pentanol/a/pentyl-acetate/b/energy_over_k",
+     "value": {
+      "magnitude": 1126.05,
+      "unit": "kelvin"
+     }
+    },
+    "volume": {
+     "identity": "association/1-pentanol/a/pentyl-acetate/b/volume",
+     "value": {
+      "magnitude": 0.02158171005511797,
+      "unit": "dimensionless"
+     }
+    },
+    "source": {
+     "kind": "explicit",
+     "provenance": [
+      {
+       "source_id": "ascani-2023",
+       "locator": "Eqs. A6-A7 as printed (exponent 2), water sigma at 318.15 K",
+       "domain_id": "system-1-318.15-K-1-bar"
+      }
+     ]
+    }
+   },
+   {
+    "endpoint_a": {
+     "component_id": "1-pentanol",
+     "site_id": "b"
+    },
+    "endpoint_b": {
+     "component_id": "pentyl-acetate",
+     "site_id": "a"
+    },
+    "energy_over_k": {
+     "identity": "association/1-pentanol/b/pentyl-acetate/a/energy_over_k",
+     "value": {
+      "magnitude": 1126.05,
+      "unit": "kelvin"
+     }
+    },
+    "volume": {
+     "identity": "association/1-pentanol/b/pentyl-acetate/a/volume",
+     "value": {
+      "magnitude": 0.02158171005511797,
+      "unit": "dimensionless"
+     }
+    },
+    "source": {
+     "kind": "explicit",
+     "provenance": [
+      {
+       "source_id": "ascani-2023",
+       "locator": "Eqs. A6-A7 as printed (exponent 2), water sigma at 318.15 K",
+       "domain_id": "system-1-318.15-K-1-bar"
+      }
+     ]
+    }
+   },
+   {
+    "endpoint_a": {
+     "component_id": "1-pentanol",
+     "site_id": "a"
+    },
+    "endpoint_b": {
+     "component_id": "water",
+     "site_id": "b"
+    },
+    "energy_over_k": {
+     "identity": "association/1-pentanol/a/water/b/energy_over_k",
+     "value": {
+      "magnitude": 2338.8999999999996,
+      "unit": "kelvin"
+     }
+    },
+    "volume": {
+     "identity": "association/1-pentanol/a/water/b/volume",
+     "value": {
+      "magnitude": 0.021341087457223958,
+      "unit": "dimensionless"
+     }
+    },
+    "source": {
+     "kind": "explicit",
+     "provenance": [
+      {
+       "source_id": "ascani-2023",
+       "locator": "Eqs. A6-A7 as printed (exponent 2), water sigma at 318.15 K",
+       "domain_id": "system-1-318.15-K-1-bar"
+      }
+     ]
+    }
+   },
+   {
+    "endpoint_a": {
+     "component_id": "1-pentanol",
+     "site_id": "b"
+    },
+    "endpoint_b": {
+     "component_id": "water",
+     "site_id": "a"
+    },
+    "energy_over_k": {
+     "identity": "association/1-pentanol/b/water/a/energy_over_k",
+     "value": {
+      "magnitude": 2338.8999999999996,
+      "unit": "kelvin"
+     }
+    },
+    "volume": {
+     "identity": "association/1-pentanol/b/water/a/volume",
+     "value": {
+      "magnitude": 0.021341087457223958,
+      "unit": "dimensionless"
+     }
+    },
+    "source": {
+     "kind": "explicit",
+     "provenance": [
+      {
+       "source_id": "ascani-2023",
+       "locator": "Eqs. A6-A7 as printed (exponent 2), water sigma at 318.15 K",
+       "domain_id": "system-1-318.15-K-1-bar"
+      }
+     ]
+    }
+   },
+   {
+    "endpoint_a": {
+     "component_id": "pentyl-acetate",
+     "site_id": "a"
+    },
+    "endpoint_b": {
+     "component_id": "water",
+     "site_id": "b"
+    },
+    "energy_over_k": {
+     "identity": "association/pentyl-acetate/a/water/b/energy_over_k",
+     "value": {
+      "magnitude": 1212.85,
+      "unit": "kelvin"
+     }
+    },
+    "volume": {
+     "identity": "association/pentyl-acetate/a/water/b/volume",
+     "value": {
+      "magnitude": 0.04455631309050417,
+      "unit": "dimensionless"
+     }
+    },
+    "source": {
+     "kind": "explicit",
+     "provenance": [
+      {
+       "source_id": "ascani-2023",
+       "locator": "Eqs. A6-A7 as printed (exponent 2), water sigma at 318.15 K",
+       "domain_id": "system-1-318.15-K-1-bar"
+      }
+     ]
+    }
+   },
+   {
+    "endpoint_a": {
+     "component_id": "pentyl-acetate",
+     "site_id": "b"
+    },
+    "endpoint_b": {
+     "component_id": "water",
+     "site_id": "a"
+    },
+    "energy_over_k": {
+     "identity": "association/pentyl-acetate/b/water/a/energy_over_k",
+     "value": {
+      "magnitude": 1212.85,
+      "unit": "kelvin"
+     }
+    },
+    "volume": {
+     "identity": "association/pentyl-acetate/b/water/a/volume",
+     "value": {
+      "magnitude": 0.04455631309050417,
+      "unit": "dimensionless"
+     }
+    },
+    "source": {
+     "kind": "explicit",
+     "provenance": [
+      {
+       "source_id": "ascani-2023",
+       "locator": "Eqs. A6-A7 as printed (exponent 2), water sigma at 318.15 K",
+       "domain_id": "system-1-318.15-K-1-bar"
+      }
+     ]
+    }
+   }
+  ]
+ }
+}

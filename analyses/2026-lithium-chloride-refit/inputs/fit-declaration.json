@@ -1,0 +1,1103 @@
+{
+  "base_packet": "figiel-2025-chloride-mixture-refit/1",
+  "base_packet_sha256": "1c27b1b14b17f59c931444574c41ffb71f4977e423ca7960bd0263b6afc1cc33",
+  "coordinates": [
+    "segment_diameter (packing_diameter = 0.88 x)",
+    "debye_huckel_diameter",
+    "born_diameter",
+    "k_ij/water",
+    "k_ij/chloride-anion"
+  ],
+  "bounds": {
+    "diameter_floor_angstrom": 1.38,
+    "diameter_floor_source": "Marcus 1991 Table 1 crystal diameter 2r, r(Li+) = 0.069 nm (Zotero 9J34P8R4)",
+    "diameter_numerical_upper_angstrom": 30.0,
+    "k_ij_upper": 1.0,
+    "k_ij_upper_reason": "keeps sqrt(u_i u_j)(1 - k_ij) >= 0",
+    "k_ij_numerical_lower": -50.0,
+    "numerical_box_rule": "an optimum within 1e-6 of a numerical-box limit is reported as unbounded, covariance withheld"
+  },
+  "starts": [
+    {
+      "id": "grid-00",
+      "values": [
+        2.0,
+        2.0,
+        2.0,
+        -0.66,
+        0.7
+      ]
+    },
+    {
+      "id": "grid-01",
+      "values": [
+        2.0,
+        2.0,
+        2.0,
+        -0.66,
+        -5.0
+      ]
+    },
+    {
+      "id": "grid-02",
+      "values": [
+        2.0,
+        2.0,
+        2.0,
+        -2.0,
+        0.7
+      ]
+    },
+    {
+      "id": "grid-03",
+      "values": [
+        2.0,
+        2.0,
+        2.0,
+        -2.0,
+        -5.0
+      ]
+    },
+    {
+      "id": "grid-04",
+      "values": [
+        2.845,
+        2.845,
+        2.845,
+        -0.66,
+        0.7
+      ]
+    },
+    {
+      "id": "grid-05",
+      "values": [
+        2.845,
+        2.845,
+        2.845,
+        -0.66,
+        -5.0
+      ]
+    },
+    {
+      "id": "grid-06",
+      "values": [
+        2.845,
+        2.845,
+        2.845,
+        -2.0,
+        0.7
+      ]
+    },
+    {
+      "id": "grid-07",
+      "values": [
+        2.845,
+        2.845,
+        2.845,
+        -2.0,
+        -5.0
+      ]
+    },
+    {
+      "id": "grid-08",
+      "values": [
+        3.6,
+        3.6,
+        3.6,
+        -0.66,
+        0.7
+      ]
+    },
+    {
+      "id": "grid-09",
+      "values": [
+        3.6,
+        3.6,
+        3.6,
+        -0.66,
+        -5.0
+      ]
+    },
+    {
+      "id": "grid-10",
+      "values": [
+        3.6,
+        3.6,
+        3.6,
+        -2.0,
+        0.7
+      ]
+    },
+    {
+      "id": "grid-11",
+      "values": [
+        3.6,
+        3.6,
+        3.6,
+        -2.0,
+        -5.0
+      ]
+    },
+    {
+      "id": "grid-12",
+      "values": [
+        4.8,
+        4.8,
+        4.8,
+        -0.66,
+        0.7
+      ]
+    },
+    {
+      "id": "grid-13",
+      "values": [
+        4.8,
+        4.8,
+        4.8,
+        -0.66,
+        -5.0
+      ]
+    },
+    {
+      "id": "grid-14",
+      "values": [
+        4.8,
+        4.8,
+        4.8,
+        -2.0,
+        0.7
+      ]
+    },
+    {
+      "id": "grid-15",
+      "values": [
+        4.8,
+        4.8,
+        4.8,
+        -2.0,
+        -5.0
+      ]
+    },
+    {
+      "id": "current-packet",
+      "values": [
+        2.8449,
+        2.503512,
+        2.845386882935731,
+        -0.6599959436133305,
+        0.7034856484526162
+      ]
+    }
+  ],
+  "starts_rule": "16-point grid sigma {2.0, 2.845, 3.6, 4.8} A x k_water {-0.66, -2} x k_Cl {+0.7, -5}, all three diameters at sigma clipped to the 1.38 A floor, plus the current packet values (design section 4).",
+  "controls": {
+    "maximum_iterations": 300,
+    "maximum_elapsed_time_seconds": 900,
+    "shared_iterations": 5100,
+    "shared_seconds": 15300,
+    "workers": 0,
+    "OMP_NUM_THREADS": 1
+  },
+  "optimum_selection": {
+    "rule": "lowest final cost among converged starts; distinct optima with cost <= 1.10 x that lowest are marked within band",
+    "distinct": "two converged starts are the same optimum when every physical coordinate agrees within 1e-3"
+  },
+  "run": "issue-640-stage-A",
+  "design_sha256": "debf886a7d16091be41257102a7cf32216f47680206b3ac47fa7ef8fc550b2b0",
+  "research_sha256": "8612149d26877c0ad38022b9d03657c42ff0dade1716dfc209c94fbcf03d4748",
+  "conditions": {
+    "temperature_K": 298.15,
+    "pressure_Pa": 100000.0,
+    "components": [
+      "water",
+      "lithium-cation",
+      "sodium-cation",
+      "magnesium-cation",
+      "calcium-cation",
+      "chloride-anion",
+      "potassium-cation"
+    ]
+  },
+  "D6": "A",
+  "D4": "Frozen #556 limits, no source-agreement relaxation",
+  "fixed": "Everything except five Li coordinates byte-identical to figiel-2025-chloride-mixture-refit/1, including u_Li/k=360 K; packing tied at 0.88 sigma.",
+  "training": [
+    {
+      "source": "Hamer-Wu",
+      "path": "analyses/2026-lithium-chloride-refit/inputs/hamer-wu-1972-licl.csv",
+      "rows": 29,
+      "scale": 0.8853156407653622
+    },
+    {
+      "source": "El Guendouzi",
+      "path": "data/packets/el-guendouzi-2004-licl-nacl-observations/1/observations/el-guendouzi-2004-licl-nacl-from-lassin2015-fig22.csv",
+      "rows": 45,
+      "scale": 1.1028219331407116
+    }
+  ],
+  "objective": "(Phi_model-Phi_observed)/sqrt(n_source/37), equal total source weight; 17 native Ceres starts, serial with OMP_NUM_THREADS=1.",
+  "compute_limit_seconds": 300,
+  "row_lists": {
+    "Hamer-Wu": [
+      "Table 9 p.1063 m=0.001",
+      "Table 9 p.1063 m=.002",
+      "Table 9 p.1063 m=.005",
+      "Table 9 p.1063 m=.010",
+      "Table 9 p.1063 m=.020",
+      "Table 9 p.1063 m=.050",
+      "Table 9 p.1063 m=.100",
+      "Table 9 p.1063 m=.200",
+      "Table 9 p.1063 m=.300",
+      "Table 9 p.1063 m=.400",
+      "Table 9 p.1063 m=.500",
+      "Table 9 p.1063 m=.600",
+      "Table 9 p.1063 m=.700",
+      "Table 9 p.1063 m=.800",
+      "Table 9 p.1063 m=.900",
+      "Table 9 p.1063 m=1.000",
+      "Table 9 p.1063 m=1.200",
+      "Table 9 p.1063 m=1.400",
+      "Table 9 p.1063 m=1.600",
+      "Table 9 p.1063 m=1.800",
+      "Table 9 p.1063 m=2.000",
+      "Table 9 p.1063 m=2.500",
+      "Table 9 p.1063 m=3.000",
+      "Table 9 p.1063 m=3.500",
+      "Table 9 p.1063 m=4.000",
+      "Table 9 p.1063 m=4.500",
+      "Table 9, printed page 1063, PDF page 18, row m=5.000",
+      "Table 9, printed page 1063, PDF page 18, row m=5.500",
+      "Table 9, printed page 1063, PDF page 18, row m=6.000"
+    ],
+    "El Guendouzi": [
+      {
+        "csv_row": 1,
+        "locator": "Lassin 2015 Fig.22 p.244 circle point 1"
+      },
+      {
+        "csv_row": 2,
+        "locator": "Lassin 2015 Fig.22 p.244 circle point 2"
+      },
+      {
+        "csv_row": 3,
+        "locator": "Lassin 2015 Fig.22 p.244 circle point 3"
+      },
+      {
+        "csv_row": 4,
+        "locator": "Lassin 2015 Fig.22 p.244 circle point 4"
+      },
+      {
+        "csv_row": 5,
+        "locator": "Lassin 2015 Fig.22 p.244 circle point 5"
+      },
+      {
+        "csv_row": 6,
+        "locator": "Lassin 2015 Fig.22 p.244 circle point 6"
+      },
+      {
+        "csv_row": 7,
+        "locator": "Lassin 2015 Fig.22 p.244 circle point 7"
+      },
+      {
+        "csv_row": 8,
+        "locator": "Lassin 2015 Fig.22 p.244 circle point 8"
+      },
+      {
+        "csv_row": 9,
+        "locator": "Lassin 2015 Fig.22 p.244 circle point 9"
+      },
+      {
+        "csv_row": 10,
+        "locator": "Lassin 2015 Fig.22 p.244 circle point 10"
+      },
+      {
+        "csv_row": 11,
+        "locator": "Lassin 2015 Fig.22 p.244 circle point 11"
+      },
+      {
+        "csv_row": 12,
+        "locator": "Lassin 2015 Fig.22 p.244 circle point 12"
+      },
+      {
+        "csv_row": 13,
+        "locator": "Lassin 2015 Fig.22 p.244 circle point 13"
+      },
+      {
+        "csv_row": 14,
+        "locator": "Lassin 2015 Fig.22 p.244 circle point 14"
+      },
+      {
+        "csv_row": 15,
+        "locator": "Lassin 2015 Fig.22 p.244 circle point 15"
+      },
+      {
+        "csv_row": 16,
+        "locator": "Lassin 2015 Fig.22 p.244 square point 16"
+      },
+      {
+        "csv_row": 17,
+        "locator": "Lassin 2015 Fig.22 p.244 square point 17"
+      },
+      {
+        "csv_row": 18,
+        "locator": "Lassin 2015 Fig.22 p.244 square point 18"
+      },
+      {
+        "csv_row": 19,
+        "locator": "Lassin 2015 Fig.22 p.244 square point 19"
+      },
+      {
+        "csv_row": 20,
+        "locator": "Lassin 2015 Fig.22 p.244 square point 20"
+      },
+      {
+        "csv_row": 21,
+        "locator": "Lassin 2015 Fig.22 p.244 square point 21"
+      },
+      {
+        "csv_row": 22,
+        "locator": "Lassin 2015 Fig.22 p.244 square point 22"
+      },
+      {
+        "csv_row": 23,
+        "locator": "Lassin 2015 Fig.22 p.244 square point 23"
+      },
+      {
+        "csv_row": 24,
+        "locator": "Lassin 2015 Fig.22 p.244 square point 24"
+      },
+      {
+        "csv_row": 25,
+        "locator": "Lassin 2015 Fig.22 p.244 square point 25"
+      },
+      {
+        "csv_row": 26,
+        "locator": "Lassin 2015 Fig.22 p.244 square point 26"
+      },
+      {
+        "csv_row": 27,
+        "locator": "Lassin 2015 Fig.22 p.244 square point 27"
+      },
+      {
+        "csv_row": 28,
+        "locator": "Lassin 2015 Fig.22 p.244 square point 28"
+      },
+      {
+        "csv_row": 29,
+        "locator": "Lassin 2015 Fig.22 p.244 square point 29"
+      },
+      {
+        "csv_row": 30,
+        "locator": "Lassin 2015 Fig.22 p.244 square point 30"
+      },
+      {
+        "csv_row": 31,
+        "locator": "Lassin 2015 Fig.22 p.244 diamond point 31"
+      },
+      {
+        "csv_row": 32,
+        "locator": "Lassin 2015 Fig.22 p.244 diamond point 32"
+      },
+      {
+        "csv_row": 33,
+        "locator": "Lassin 2015 Fig.22 p.244 diamond point 33"
+      },
+      {
+        "csv_row": 34,
+        "locator": "Lassin 2015 Fig.22 p.244 diamond point 34"
+      },
+      {
+        "csv_row": 35,
+        "locator": "Lassin 2015 Fig.22 p.244 diamond point 35"
+      },
+      {
+        "csv_row": 36,
+        "locator": "Lassin 2015 Fig.22 p.244 diamond point 36"
+      },
+      {
+        "csv_row": 37,
+        "locator": "Lassin 2015 Fig.22 p.244 diamond point 37"
+      },
+      {
+        "csv_row": 38,
+        "locator": "Lassin 2015 Fig.22 p.244 diamond point 38"
+      },
+      {
+        "csv_row": 39,
+        "locator": "Lassin 2015 Fig.22 p.244 diamond point 39"
+      },
+      {
+        "csv_row": 40,
+        "locator": "Lassin 2015 Fig.22 p.244 diamond point 40"
+      },
+      {
+        "csv_row": 41,
+        "locator": "Lassin 2015 Fig.22 p.244 diamond point 41"
+      },
+      {
+        "csv_row": 42,
+        "locator": "Lassin 2015 Fig.22 p.244 diamond point 42"
+      },
+      {
+        "csv_row": 43,
+        "locator": "Lassin 2015 Fig.22 p.244 diamond point 43"
+      },
+      {
+        "csv_row": 44,
+        "locator": "Lassin 2015 Fig.22 p.244 diamond point 44"
+      },
+      {
+        "csv_row": 45,
+        "locator": "Lassin 2015 Fig.22 p.244 diamond point 45"
+      }
+    ],
+    "Yao": [
+      {
+        "csv_row": 1,
+        "locator": "Table 1 p.841 set 1 row 1",
+        "role": "endpoint"
+      },
+      {
+        "csv_row": 2,
+        "locator": "Table 1 p.841 set 1 row 2",
+        "role": "I<=3"
+      },
+      {
+        "csv_row": 3,
+        "locator": "Table 1 p.841 set 1 row 3",
+        "role": "I<=3"
+      },
+      {
+        "csv_row": 4,
+        "locator": "Table 1 p.841 set 1 row 4",
+        "role": "I<=3"
+      },
+      {
+        "csv_row": 5,
+        "locator": "Table 1 p.841 set 1 row 5",
+        "role": "endpoint"
+      },
+      {
+        "csv_row": 6,
+        "locator": "Table 1 p.841 set 2 row 1",
+        "role": "endpoint"
+      },
+      {
+        "csv_row": 7,
+        "locator": "Table 1 p.841 set 2 row 2",
+        "role": "I<=3"
+      },
+      {
+        "csv_row": 8,
+        "locator": "Table 1 p.841 set 2 row 3",
+        "role": "I<=3"
+      },
+      {
+        "csv_row": 9,
+        "locator": "Table 1 p.841 set 2 row 4",
+        "role": "I<=3"
+      },
+      {
+        "csv_row": 10,
+        "locator": "Table 1 p.841 set 2 row 5",
+        "role": "endpoint"
+      },
+      {
+        "csv_row": 11,
+        "locator": "Table 1 p.841 set 3 row 1",
+        "role": "endpoint"
+      },
+      {
+        "csv_row": 12,
+        "locator": "Table 1 p.841 set 3 row 2",
+        "role": "I<=3"
+      },
+      {
+        "csv_row": 13,
+        "locator": "Table 1 p.841 set 3 row 3",
+        "role": "I<=3"
+      },
+      {
+        "csv_row": 14,
+        "locator": "Table 1 p.841 set 3 row 4",
+        "role": "I<=3"
+      },
+      {
+        "csv_row": 15,
+        "locator": "Table 1 p.841 set 3 row 5",
+        "role": "endpoint"
+      },
+      {
+        "csv_row": 16,
+        "locator": "Table 1 p.841 set 4 row 1",
+        "role": "endpoint"
+      },
+      {
+        "csv_row": 17,
+        "locator": "Table 1 p.841 set 4 row 2",
+        "role": "I<=3"
+      },
+      {
+        "csv_row": 18,
+        "locator": "Table 1 p.841 set 4 row 3",
+        "role": "3<I<=8.3"
+      },
+      {
+        "csv_row": 19,
+        "locator": "Table 1 p.841 set 4 row 4",
+        "role": "3<I<=8.3"
+      },
+      {
+        "csv_row": 20,
+        "locator": "Table 1 p.841 set 4 row 5",
+        "role": "endpoint"
+      },
+      {
+        "csv_row": 21,
+        "locator": "Table 1 p.841 set 5 row 1",
+        "role": "endpoint"
+      },
+      {
+        "csv_row": 22,
+        "locator": "Table 1 p.841 set 5 row 2",
+        "role": "excluded"
+      },
+      {
+        "csv_row": 23,
+        "locator": "Table 1 p.841 set 5 row 3",
+        "role": "3<I<=8.3"
+      },
+      {
+        "csv_row": 24,
+        "locator": "Table 1 p.841 set 5 row 4",
+        "role": "3<I<=8.3"
+      },
+      {
+        "csv_row": 25,
+        "locator": "Table 1 p.841 set 5 row 5",
+        "role": "endpoint"
+      },
+      {
+        "csv_row": 26,
+        "locator": "Table 1 p.841 set 6 row 1",
+        "role": "endpoint"
+      },
+      {
+        "csv_row": 27,
+        "locator": "Table 1 p.841 set 6 row 2",
+        "role": "3<I<=8.3"
+      },
+      {
+        "csv_row": 28,
+        "locator": "Table 1 p.841 set 6 row 3",
+        "role": "3<I<=8.3"
+      },
+      {
+        "csv_row": 29,
+        "locator": "Table 1 p.841 set 6 row 4",
+        "role": "3<I<=8.3"
+      },
+      {
+        "csv_row": 30,
+        "locator": "Table 1 p.841 set 6 row 5",
+        "role": "endpoint"
+      },
+      {
+        "csv_row": 31,
+        "locator": "Table 1 p.841 set 7 row 1",
+        "role": "endpoint"
+      },
+      {
+        "csv_row": 32,
+        "locator": "Table 1 p.841 set 7 row 2",
+        "role": "3<I<=8.3"
+      },
+      {
+        "csv_row": 33,
+        "locator": "Table 1 p.841 set 7 row 3",
+        "role": "3<I<=8.3"
+      },
+      {
+        "csv_row": 34,
+        "locator": "Table 1 p.841 set 7 row 4",
+        "role": "3<I<=8.3"
+      },
+      {
+        "csv_row": 35,
+        "locator": "Table 1 p.841 set 7 row 5",
+        "role": "endpoint"
+      },
+      {
+        "csv_row": 36,
+        "locator": "Table 1 p.841 set 8 row 1",
+        "role": "endpoint"
+      },
+      {
+        "csv_row": 37,
+        "locator": "Table 1 p.841 set 8 row 2",
+        "role": "3<I<=8.3"
+      },
+      {
+        "csv_row": 38,
+        "locator": "Table 1 p.841 set 8 row 3",
+        "role": "3<I<=8.3"
+      },
+      {
+        "csv_row": 39,
+        "locator": "Table 1 p.841 set 8 row 4",
+        "role": "report-only"
+      },
+      {
+        "csv_row": 40,
+        "locator": "Table 1 p.841 set 8 row 5",
+        "role": "endpoint"
+      },
+      {
+        "csv_row": 41,
+        "locator": "Table 1 p.841 set 9 row 1",
+        "role": "endpoint"
+      },
+      {
+        "csv_row": 42,
+        "locator": "Table 1 p.841 set 9 row 2",
+        "role": "report-only"
+      },
+      {
+        "csv_row": 43,
+        "locator": "Table 1 p.841 set 9 row 3",
+        "role": "report-only"
+      },
+      {
+        "csv_row": 44,
+        "locator": "Table 1 p.841 set 9 row 4",
+        "role": "report-only"
+      },
+      {
+        "csv_row": 45,
+        "locator": "Table 1 p.841 set 9 row 5",
+        "role": "endpoint"
+      },
+      {
+        "csv_row": 46,
+        "locator": "Table 1 p.841 set 10 row 1",
+        "role": "endpoint"
+      },
+      {
+        "csv_row": 47,
+        "locator": "Table 1 p.841 set 10 row 2",
+        "role": "report-only"
+      },
+      {
+        "csv_row": 48,
+        "locator": "Table 1 p.841 set 10 row 3",
+        "role": "report-only"
+      },
+      {
+        "csv_row": 49,
+        "locator": "Table 1 p.841 set 10 row 4",
+        "role": "report-only"
+      },
+      {
+        "csv_row": 50,
+        "locator": "Table 1 p.841 set 10 row 5",
+        "role": "endpoint"
+      },
+      {
+        "csv_row": 51,
+        "locator": "Table 1 p.841 set 11 row 1",
+        "role": "endpoint"
+      },
+      {
+        "csv_row": 52,
+        "locator": "Table 1 p.841 set 11 row 2",
+        "role": "report-only"
+      },
+      {
+        "csv_row": 53,
+        "locator": "Table 1 p.841 set 11 row 3",
+        "role": "report-only"
+      },
+      {
+        "csv_row": 54,
+        "locator": "Table 1 p.841 set 11 row 4",
+        "role": "report-only"
+      },
+      {
+        "csv_row": 55,
+        "locator": "Table 1 p.841 set 11 row 5",
+        "role": "endpoint"
+      },
+      {
+        "csv_row": 56,
+        "locator": "Table 1 p.841 set 12 row 1",
+        "role": "endpoint"
+      },
+      {
+        "csv_row": 57,
+        "locator": "Table 1 p.841 set 12 row 2",
+        "role": "report-only"
+      },
+      {
+        "csv_row": 58,
+        "locator": "Table 1 p.841 set 12 row 3",
+        "role": "report-only"
+      },
+      {
+        "csv_row": 59,
+        "locator": "Table 1 p.841 set 12 row 4",
+        "role": "report-only"
+      },
+      {
+        "csv_row": 60,
+        "locator": "Table 1 p.841 set 12 row 5",
+        "role": "endpoint"
+      },
+      {
+        "csv_row": 61,
+        "locator": "Table 1 p.841 set 13 row 1",
+        "role": "endpoint"
+      },
+      {
+        "csv_row": 62,
+        "locator": "Table 1 p.841 set 13 row 2",
+        "role": "report-only"
+      },
+      {
+        "csv_row": 63,
+        "locator": "Table 1 p.841 set 13 row 3",
+        "role": "report-only"
+      },
+      {
+        "csv_row": 64,
+        "locator": "Table 1 p.841 set 13 row 4",
+        "role": "report-only"
+      },
+      {
+        "csv_row": 65,
+        "locator": "Table 1 p.841 set 13 row 5",
+        "role": "endpoint"
+      },
+      {
+        "csv_row": 66,
+        "locator": "Table 1 p.841 set 14 row 1",
+        "role": "endpoint"
+      },
+      {
+        "csv_row": 67,
+        "locator": "Table 1 p.841 set 14 row 2",
+        "role": "report-only"
+      },
+      {
+        "csv_row": 68,
+        "locator": "Table 1 p.841 set 14 row 3",
+        "role": "report-only"
+      },
+      {
+        "csv_row": 69,
+        "locator": "Table 1 p.841 set 14 row 4",
+        "role": "report-only"
+      },
+      {
+        "csv_row": 70,
+        "locator": "Table 1 p.841 set 15 row 1",
+        "role": "endpoint"
+      },
+      {
+        "csv_row": 71,
+        "locator": "Table 1 p.841 set 15 row 2",
+        "role": "report-only"
+      },
+      {
+        "csv_row": 72,
+        "locator": "Table 1 p.841 set 15 row 3",
+        "role": "report-only"
+      },
+      {
+        "csv_row": 73,
+        "locator": "Table 1 p.841 set 15 row 4",
+        "role": "report-only"
+      },
+      {
+        "csv_row": 74,
+        "locator": "Table 1 p.841 set 16 row 1",
+        "role": "endpoint"
+      },
+      {
+        "csv_row": 75,
+        "locator": "Table 1 p.841 set 16 row 2",
+        "role": "report-only"
+      },
+      {
+        "csv_row": 76,
+        "locator": "Table 1 p.841 set 17 row 1",
+        "role": "endpoint"
+      },
+      {
+        "csv_row": 77,
+        "locator": "Table 1 p.841 set 17 row 2",
+        "role": "report-only"
+      },
+      {
+        "csv_row": 78,
+        "locator": "Table 1 p.841 set 17 row 3",
+        "role": "report-only"
+      },
+      {
+        "csv_row": 79,
+        "locator": "Table 1 p.841 set 17 row 4",
+        "role": "report-only"
+      },
+      {
+        "csv_row": 80,
+        "locator": "Table 1 p.841 set 17 row 5",
+        "role": "report-only"
+      },
+      {
+        "csv_row": 81,
+        "locator": "Table 1 p.841 set 18 row 1",
+        "role": "endpoint"
+      },
+      {
+        "csv_row": 82,
+        "locator": "Table 1 p.841 set 18 row 2",
+        "role": "report-only"
+      },
+      {
+        "csv_row": 83,
+        "locator": "Table 1 p.841 set 18 row 3",
+        "role": "report-only"
+      },
+      {
+        "csv_row": 84,
+        "locator": "Table 1 p.841 set 18 row 4",
+        "role": "report-only"
+      },
+      {
+        "csv_row": 85,
+        "locator": "Table 1 p.841 set 18 row 5",
+        "role": "report-only"
+      },
+      {
+        "csv_row": 86,
+        "locator": "Table 1 p.841 set 19 row 1",
+        "role": "endpoint"
+      },
+      {
+        "csv_row": 87,
+        "locator": "Table 1 p.841 set 19 row 2",
+        "role": "report-only"
+      },
+      {
+        "csv_row": 88,
+        "locator": "Table 1 p.841 set 19 row 3",
+        "role": "report-only"
+      },
+      {
+        "csv_row": 89,
+        "locator": "Table 1 p.841 set 19 row 4",
+        "role": "report-only"
+      },
+      {
+        "csv_row": 90,
+        "locator": "Table 1 p.841 set 19 row 5",
+        "role": "report-only"
+      },
+      {
+        "csv_row": 91,
+        "locator": "Table 1 p.841 set 20 row 1",
+        "role": "endpoint"
+      },
+      {
+        "csv_row": 92,
+        "locator": "Table 1 p.841 set 20 row 2",
+        "role": "report-only"
+      },
+      {
+        "csv_row": 93,
+        "locator": "Table 1 p.841 set 20 row 3",
+        "role": "report-only"
+      },
+      {
+        "csv_row": 94,
+        "locator": "Table 1 p.841 set 20 row 4",
+        "role": "report-only"
+      },
+      {
+        "csv_row": 95,
+        "locator": "Table 1 p.841 set 21 row 1",
+        "role": "endpoint"
+      },
+      {
+        "csv_row": 96,
+        "locator": "Table 1 p.841 set 21 row 2",
+        "role": "report-only"
+      },
+      {
+        "csv_row": 97,
+        "locator": "Table 1 p.841 set 21 row 3",
+        "role": "report-only"
+      }
+    ],
+    "Robinson-Covington": [
+      "Table 1 p.240 set 1 row 1",
+      "Table 1 p.240 set 1 row 2",
+      "Table 1 p.240 set 1 row 3",
+      "Table 1 p.240 set 1 row 4",
+      "Table 1 p.240 set 1 row 5",
+      "Table 1 p.240 set 1 row 6",
+      "Table 1 p.240 set 1 row 7",
+      "Table 1 p.240 set 2 row 1",
+      "Table 1 p.240 set 2 row 2",
+      "Table 1 p.240 set 2 row 3",
+      "Table 1 p.240 set 2 row 4",
+      "Table 1 p.240 set 3 row 1",
+      "Table 1 p.240 set 3 row 2",
+      "Table 1 p.240 set 3 row 3",
+      "Table 1 p.240 set 3 row 4",
+      "Table 1 p.240 set 3 row 5",
+      "Table 1 p.240 set 3 row 6",
+      "Table 1 p.240 set 3 row 7",
+      "Table 1 p.240 set 4 row 1",
+      "Table 1 p.240 set 4 row 2",
+      "Table 1 p.240 set 4 row 3",
+      "Table 1 p.240 set 4 row 4",
+      "Table 1 p.240 set 4 row 5",
+      "Table 1 p.240 set 4 row 6",
+      "Table 1 p.240 set 4 row 7",
+      "Table 1 p.240 set 5 row 1",
+      "Table 1 p.240 set 5 row 2",
+      "Table 1 p.240 set 5 row 3",
+      "Table 1 p.240 set 5 row 4",
+      "Table 1 p.240 set 5 row 5",
+      "Table 1 p.240 set 5 row 6",
+      "Table 1 p.240 set 6 row 1",
+      "Table 1 p.240 set 6 row 2",
+      "Table 1 p.240 set 6 row 3",
+      "Table 1 p.240 set 6 row 4",
+      "Table 1 p.240 set 6 row 5",
+      "Table 1 p.240 set 6 row 6",
+      "Table 1 p.240 set 6 row 7",
+      "Table 1 p.240 set 7 row 1",
+      "Table 1 p.240 set 7 row 2",
+      "Table 1 p.240 set 7 row 3",
+      "Table 1 p.240 set 7 row 4",
+      "Table 1 p.240 set 7 row 5",
+      "Table 1 p.240 set 7 row 6",
+      "Table 1 p.240 set 7 row 7",
+      "Table 1 p.240 set 8 row 1",
+      "Table 1 p.240 set 8 row 2",
+      "Table 1 p.240 set 8 row 3",
+      "Table 1 p.240 set 8 row 4",
+      "Table 1 p.240 set 8 row 5",
+      "Table 1 p.240 set 8 row 6",
+      "Table 1 p.240 set 8 row 7",
+      "Table 1 p.240 set 9 row 1",
+      "Table 1 p.240 set 9 row 2",
+      "Table 1 p.240 set 9 row 3",
+      "Table 1 p.240 set 9 row 4",
+      "Table 1 p.240 set 9 row 5",
+      "Table 1 p.240 set 9 row 6",
+      "Table 1 p.240 set 9 row 7",
+      "Table 1 p.240 set 10 row 1",
+      "Table 1 p.240 set 10 row 2",
+      "Table 1 p.240 set 10 row 3",
+      "Table 1 p.240 set 10 row 4",
+      "Table 1 p.240 set 10 row 5",
+      "Table 1 p.240 set 10 row 6",
+      "Table 1 p.240 set 10 row 7"
+    ]
+  },
+  "held_out_paths": {
+    "Yao": "data/packets/yao-1992-licl-mgcl2-observations/1/observations/yao1992-licl-mgcl2-table1.csv",
+    "Robinson-Covington": "data/packets/robinson-covington-1968-kcl-cacl2-observations/1/observations/robinson-covington-1968-table1.csv"
+  },
+  "limits": {
+    "Phi": {
+      "RMS": 0.01,
+      "maximum_absolute_error": 0.03
+    },
+    "aw": {
+      "RMS": 0.0013,
+      "maximum_absolute_error": 0.004
+    },
+    "F3_abs_theta_kg_mol": 0.04,
+    "Lithium_abs_decade": 0.15,
+    "F4_change_decade": 0.01
+  },
+  "F3": {
+    "comparator": "bound; no measured comparator transcribed",
+    "molality_NaCl": [
+      1,
+      3,
+      6
+    ],
+    "molality_LiCl": 1e-06,
+    "interpretation": "partly in-sample",
+    "Song_2010_report_only": {
+      "zotero": "W3AX2GHK",
+      "theta_Li_Na": 0.02016,
+      "psi_Li_Na_Cl": -0.007416,
+      "theta_Li_Mg": 0.010196,
+      "psi_Li_Mg_Cl": -0.0005947
+    }
+  },
+  "reference_model_aw_residual": {
+    "I<=3": {
+      "rows": 27,
+      "RMS": 0.00144,
+      "maximum_absolute_error": 0.00413
+    },
+    "I>3": {
+      "rows": 18,
+      "RMS": 0.00307,
+      "maximum_absolute_error": 0.00758
+    },
+    "meaning": "Pitzer-Mayorga 1973 binaries plus Song 2010 mixing; reference-model residual, not measured noise floor; design r2 R3"
+  },
+  "Hamer_Wu_guard": {
+    "RMS": 0.01,
+    "maximum_absolute_error": 0.03,
+    "stage0_RMS": 0.008736291849903472,
+    "stage0_maximum": 0.025007141724453508,
+    "failure": "stop for weighting/form diagnosis, not a stage-B trigger"
+  },
+  "mixing_residual": "r_mix=r_row-[x*r_MgCl2+(1-x)*r_LiCl], x=3*m_MgCl2/(2*m_LiCl+3*m_MgCl2); pure endpoints from the same Yao set; raw residual decides qualification. End-member-accounted failure does not trigger stage B.",
+  "stage_B_trigger": "F3 fails OR (an F1-Yao mixing bucket fails AND El Guendouzi training aw RMS or maximum exceeds its reference-model residual in either bucket). Stage B needs owner approval. Other failures go to diagnosis.",
+  "F6": "Robinson-Covington only; all mixed observations including starred rows; pure endpoints as reference checks; Robinson 1961 KCl-NaCl not evaluated (unavailable). Failure returns to owner before any K refit.",
+  "missing": [
+    "F1 Li-Ca",
+    "F1-prime",
+    "F6 KCl-NaCl"
+  ],
+  "rounding": "Each source separately: nominal, each nonzero printed m and Phi at +/-0.00005, source-wide joint endpoints. Structural zero stays zero. Recompute I and ion fraction; fixed nominal bucket membership; same numerical limits every realization. Finite cases, not exhaustive interval corners or statistical uncertainty.",
+  "lithium": {
+    "path": "inputs/lithium-f0-states.csv",
+    "origin": "/home/tnnrpolley21/Workspaces/Engineering/Lithium_Extraction/analyses/prototypes/d2ehdtpa_buphen_ms2_prototype/inputs/f0_states.csv",
+    "commit": "425e8e7756816c989e2c7ad5662af4b24c944fc5",
+    "water": "Engine: frozen 55.508 mol water, Sr lumped into Ca; Pitzer: 1 kg water, explicit Sr, native Reaktoro 2.13 equilibrium, as Lithium #188. Here both at 1 bar per #640 design."
+  },
+  "packet_domain": "Only if all checks pass: LiCl-MgCl2 over passing Yao buckets; LiCl-NaCl fitted to total 6 mol/kg conditional on F3, guard and reference-model residual check. No Li-Ca or Li-Na-K domain; Na-rich Li-minor above I=6 remains model comparison.",
+  "pdf_sha256": {
+    "song-2010-sci-sin-chim-40-1286.pdf": "2cb6b78cb6849b6a36e02112efe4845ea945764900d5a1162f70b4ea26e5e495",
+    "yao-1992-acta-chim-sinica-50-839.pdf": "66750a694c48d525635488a20fe5d757a29a481f359e3a302d6fc866852510ab",
+    "lassin-2015-am-j-sci-315-204.pdf": "63d7731244ac310731965bf5d5a4619f6c0ea3cacd00cf754206d731eea30cec",
+    "Robinson and Covington - 1968 - The thermodynamics of the ternary system Water-potassium chloride-calcium chloride at 25 C.pdf": "cadcbbdfa200bf45db99fad932148b0faf8cb85e6eda230dd6ccf1cb6beb409d",
+    "Hamer and Wu - 1972 - Osmotic Coefficients and Mean Activity Coefficients of Uni univalent Electrolytes in Water at 25°C.pdf": "a20e0029c929b4e1df2cc8cd7aba10ecbbada3dd0f35689a102d16d18fc34ca6"
+  },
+  "inputs_sha256": {
+    "analyses/2026-lithium-chloride-refit/inputs/hamer-wu-1972-licl.csv": "d6bd62adde57d94eadf882ebb1366c798ff6f7d4ce9c17ced922bf9685843233",
+    "data/packets/el-guendouzi-2004-licl-nacl-observations/1/observations/el-guendouzi-2004-licl-nacl-from-lassin2015-fig22.csv": "28b511d458f0ada0b10fe7f571ceedd3db548d61997fbbb1e529bec7147154ac",
+    "data/packets/yao-1992-licl-mgcl2-observations/1/observations/yao1992-licl-mgcl2-table1.csv": "edbae25ae607f9c22cd4a34dad93bb9c622165737b5691e109ed2363660d4f8b",
+    "data/packets/robinson-covington-1968-kcl-cacl2-observations/1/observations/robinson-covington-1968-table1.csv": "2275421545191812af30b5a31585954f44f3ff19bfc6a6cbbad380b6788b63ee",
+    "analyses/2026-lithium-chloride-refit/inputs/lithium-f0-states.csv": "338612553e3387194bb5fb6560ee5b22b2c25127e825f261172fbf17df3515ef",
+    "analyses/2026-lithium-chloride-refit/inputs/frozen-realizations.csv": "3028cf12973644b15481c2db749a0059b22ded1971181d1181d44aa11b1d9338",
+    "analyses/2026-mixed-chloride-water-activity/scripts/compare.py": "25f12a40288f2637061bbc4b62c91c4473a2aa017592399a1350b483a68b0cfd",
+    "analyses/2026-chloride-brine-refit/scripts/fit.py": "10b6660022842c0516d95124ca5792c94c552baeb95819b99b9010bebd0b70a4"
+  },
+  "source_data_csv_sha256": {
+    "el-guendouzi-2004-licl-nacl-from-lassin2015-fig22.csv": "28b511d458f0ada0b10fe7f571ceedd3db548d61997fbbb1e529bec7147154ac",
+    "yao1992-licl-mgcl2-table1.csv": "edbae25ae607f9c22cd4a34dad93bb9c622165737b5691e109ed2363660d4f8b",
+    "lassin2015-fig22-raw-markers.csv": "febb9253a5e5e0ba99f6e0985bd8803395912831e35c3ad940cf35ff2a97d735"
+  },
+  "freeze_rule": "All contents written and hashed before the first stage-A fit; no weights, starts, limits, rows or comparator changes after residuals exist."
+}

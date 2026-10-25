@@ -1,0 +1,415 @@
+salt,observable,row_id,molality_mol_kg,literature_value,model_value,residual,absolute_residual,relative_abs_error_percent,printed_rounding_agreement,status,cause,evidence,haslam_selection
+LiCl,osmotic_coefficient,HW1972-T9-LiCl-m0.001,0.001,0.988,0.9884290861723846,0.00042908617238457403,0.00042908617238457403,0.04342977453285162,True,evaluated,,physical comparison,not independently established
+LiCl,gamma_pm_m,HW1972-T9-LiCl-m0.001,0.001,0.965,0.9650445569861558,4.455698615579706e-05,4.455698615579706e-05,0.004617304264849437,True,evaluated,,physical comparison,not independently established
+LiCl,osmotic_coefficient,HW1972-T9-LiCl-m0.002,0.002,0.984,0.9841282066491175,0.00012820664911750157,0.00012820664911750157,0.013029131007876176,True,evaluated,,physical comparison,not independently established
+LiCl,gamma_pm_m,HW1972-T9-LiCl-m0.002,0.002,0.952,0.9518737688629791,-0.0001262311370208158,0.0001262311370208158,0.013259573216472247,True,evaluated,,physical comparison,not independently established
+LiCl,osmotic_coefficient,HW1972-T9-LiCl-m0.005,0.005,0.976,0.9763913508137338,0.0003913508137338706,0.0003913508137338706,0.040097419439945756,True,evaluated,,physical comparison,not independently established
+LiCl,gamma_pm_m,HW1972-T9-LiCl-m0.005,0.005,0.928,0.927784162755729,-0.00021583724427109985,0.00021583724427109985,0.023258323736109896,True,evaluated,,physical comparison,not independently established
+LiCl,osmotic_coefficient,HW1972-T9-LiCl-m0.01,0.01,0.969,0.9688623602384394,-0.00013763976156055957,0.00013763976156055957,0.01420430975857168,True,evaluated,,physical comparison,not independently established
+LiCl,gamma_pm_m,HW1972-T9-LiCl-m0.01,0.01,0.904,0.9035912271074493,-0.0004087728925507017,0.0004087728925507017,0.045218240326405056,True,evaluated,,physical comparison,not independently established
+LiCl,osmotic_coefficient,HW1972-T9-LiCl-m0.02,0.02,0.96,0.960183460371661,0.00018346037166105944,0.00018346037166105944,0.01911045538136036,True,evaluated,,physical comparison,not independently established
+LiCl,gamma_pm_m,HW1972-T9-LiCl-m0.02,0.02,0.874,0.8740643079810948,6.430798109480218e-05,6.430798109480218e-05,0.007357892573775993,True,evaluated,,physical comparison,not independently established
+LiCl,osmotic_coefficient,HW1972-T9-LiCl-m0.05,0.05,0.947,0.9489215833415621,0.0019215833415621164,0.0019215833415621164,0.2029127076623143,False,evaluated,,physical comparison,not independently established
+LiCl,gamma_pm_m,HW1972-T9-LiCl-m0.05,0.05,0.827,0.8288861481542988,0.0018861481542988834,0.0018861481542988834,0.2280711190204212,False,evaluated,,physical comparison,not independently established
+LiCl,osmotic_coefficient,HW1972-T9-LiCl-m0.1,0.1,0.94,0.9441145982804129,0.00411459828041294,0.00411459828041294,0.43772322132052555,False,evaluated,,physical comparison,not independently established
+LiCl,gamma_pm_m,HW1972-T9-LiCl-m0.1,0.1,0.789,0.7946252132073883,0.005625213207388291,0.005625213207388291,0.7129547791366655,False,evaluated,,physical comparison,not independently established
+LiCl,osmotic_coefficient,HW1972-T9-LiCl-m0.2,0.2,0.94,0.9484027981787118,0.008402798178711812,0.008402798178711812,0.8939146998629588,False,evaluated,,physical comparison,not independently established
+LiCl,gamma_pm_m,HW1972-T9-LiCl-m0.2,0.2,0.756,0.7682891513705398,0.012289151370539764,0.012289151370539764,1.6255491230872703,False,evaluated,,physical comparison,not independently established
+LiCl,osmotic_coefficient,HW1972-T9-LiCl-m0.3,0.3,0.946,0.9584968649595704,0.012496864959570475,0.012496864959570475,1.3210216659165408,False,evaluated,,physical comparison,not independently established
+LiCl,gamma_pm_m,HW1972-T9-LiCl-m0.3,0.3,0.743,0.7613888388443051,0.01838883884430509,0.01838883884430509,2.4749446627597695,False,evaluated,,physical comparison,not independently established
+LiCl,osmotic_coefficient,HW1972-T9-LiCl-m0.4,0.4,0.954,0.9705981058237444,0.016598105823744436,0.016598105823744436,1.7398433777509892,False,evaluated,,physical comparison,not independently established
+LiCl,gamma_pm_m,HW1972-T9-LiCl-m0.4,0.4,0.739,0.7627528770786358,0.023752877078635826,0.023752877078635826,3.214191756243008,False,evaluated,,physical comparison,not independently established
+LiCl,osmotic_coefficient,HW1972-T9-LiCl-m0.5,0.5,0.964,0.9835028330039292,0.019502833003929188,0.019502833003929188,2.023115456839127,False,evaluated,,physical comparison,not independently established
+LiCl,gamma_pm_m,HW1972-T9-LiCl-m0.5,0.5,0.739,0.7686650529684689,0.029665052968468886,0.029665052968468886,4.014215557302961,False,evaluated,,physical comparison,not independently established
+LiCl,osmotic_coefficient,HW1972-T9-LiCl-m0.6,0.6,0.974,0.9967067397636489,0.022706739763648898,0.022706739763648898,2.331287450066622,False,evaluated,,physical comparison,not independently established
+LiCl,gamma_pm_m,HW1972-T9-LiCl-m0.6,0.6,0.742,0.7774476305776585,0.03544763057765854,0.03544763057765854,4.777308703188482,False,evaluated,,physical comparison,not independently established
+LiCl,osmotic_coefficient,HW1972-T9-LiCl-m0.7,0.7,0.985,1.0099687550274459,0.024968755027445888,0.024968755027445888,2.534898987557958,False,evaluated,,physical comparison,not independently established
+LiCl,gamma_pm_m,HW1972-T9-LiCl-m0.7,0.7,0.748,0.7882117652361219,0.04021176523612191,0.04021176523612191,5.375904443331805,False,evaluated,,physical comparison,not independently established
+LiCl,osmotic_coefficient,HW1972-T9-LiCl-m0.8,0.8,0.996,1.023165868375685,0.02716586837568502,0.02716586837568502,2.727496824867974,False,evaluated,,physical comparison,not independently established
+LiCl,gamma_pm_m,HW1972-T9-LiCl-m0.8,0.8,0.756,0.8004369115275315,0.044436911527531486,0.044436911527531486,5.877898350202577,False,evaluated,,physical comparison,not independently established
+LiCl,osmotic_coefficient,HW1972-T9-LiCl-m0.9,0.9,1.008,1.0362340575273492,0.0282340575273492,0.0282340575273492,2.800997770570357,False,evaluated,,physical comparison,not independently established
+LiCl,gamma_pm_m,HW1972-T9-LiCl-m0.9,0.9,0.765,0.8137965685828454,0.04879656858284542,0.04879656858284542,6.378636416058225,False,evaluated,,physical comparison,not independently established
+LiCl,osmotic_coefficient,HW1972-T9-LiCl-m1,1,1.02,1.0491409359562565,0.029140935956256442,0.029140935956256442,2.8569545055153376,False,evaluated,,physical comparison,not independently established
+LiCl,gamma_pm_m,HW1972-T9-LiCl-m1,1,0.775,0.8280755857865553,0.053075585786555246,0.053075585786555246,6.8484626821361605,False,evaluated,,physical comparison,not independently established
+LiCl,osmotic_coefficient,HW1972-T9-LiCl-m1.2,1.2,1.044,1.0744225880491742,0.030422588049174193,0.030422588049174193,2.914041000878754,False,evaluated,,physical comparison,not independently established
+LiCl,gamma_pm_m,HW1972-T9-LiCl-m1.2,1.2,0.798,0.858847332798058,0.060847332798057985,0.060847332798057985,7.624979047375686,False,evaluated,,physical comparison,not independently established
+LiCl,osmotic_coefficient,HW1972-T9-LiCl-m1.4,1.4,1.068,1.0989933591052432,0.030993359105243146,0.030993359105243146,2.901999916221268,False,evaluated,,physical comparison,not independently established
+LiCl,gamma_pm_m,HW1972-T9-LiCl-m1.4,1.4,0.825,0.8920197847388741,0.06701978473887416,0.06701978473887416,8.123610271378686,False,evaluated,,physical comparison,not independently established
+LiCl,osmotic_coefficient,HW1972-T9-LiCl-m1.6,1.6,1.093,1.122899882669168,0.0298998826691681,0.0298998826691681,2.7355793841873832,False,evaluated,,physical comparison,not independently established
+LiCl,gamma_pm_m,HW1972-T9-LiCl-m1.6,1.6,0.855,0.9272110586639952,0.07221105866399524,0.07221105866399524,8.44573785543804,False,evaluated,,physical comparison,not independently established
+LiCl,osmotic_coefficient,HW1972-T9-LiCl-m1.8,1.8,1.119,1.1462080054775496,0.027208005477549646,0.027208005477549646,2.431457147234106,False,evaluated,,physical comparison,not independently established
+LiCl,gamma_pm_m,HW1972-T9-LiCl-m1.8,1.8,0.888,0.964216744927554,0.07621674492755404,0.07621674492755404,8.58296677112095,False,evaluated,,physical comparison,not independently established
+LiCl,osmotic_coefficient,HW1972-T9-LiCl-m2,2,1.145,1.168985647369843,0.02398564736984299,0.02398564736984299,2.0948163641784268,False,evaluated,,physical comparison,not independently established
+LiCl,gamma_pm_m,HW1972-T9-LiCl-m2,2,0.924,1.0029305416477214,0.0789305416477214,0.0789305416477214,8.54226641209106,False,evaluated,,physical comparison,not independently established
+LiCl,osmotic_coefficient,HW1972-T9-LiCl-m2.5,2.5,1.213,1.2240081001567094,0.011008100156709277,0.011008100156709277,0.907510317948003,False,evaluated,,physical comparison,not independently established
+LiCl,gamma_pm_m,HW1972-T9-LiCl-m2.5,2.5,1.029,1.1069559161727598,0.07795591617275988,0.07795591617275988,7.57589078452477,False,evaluated,,physical comparison,not independently established
+LiCl,osmotic_coefficient,HW1972-T9-LiCl-m3,3,1.284,1.2768936883589936,-0.007106311641006391,0.007106311641006391,0.5534510623836753,False,evaluated,,physical comparison,not independently established
+LiCl,gamma_pm_m,HW1972-T9-LiCl-m3,3,1.157,1.2214555868980885,0.0644555868980885,0.0644555868980885,5.570923673127788,False,evaluated,,physical comparison,not independently established
+LiBr,osmotic_coefficient,HW1972-T10-LiBr-m0.001,0.001,0.989,0.9884707410716524,-0.0005292589283475424,0.0005292589283475424,0.05351455291683947,False,evaluated,,physical comparison,not independently established
+LiBr,gamma_pm_m,HW1972-T10-LiBr-m0.001,0.001,0.965,0.9651254475588116,0.00012544755881160885,0.00012544755881160885,0.012999747027109727,True,evaluated,,physical comparison,not independently established
+LiBr,osmotic_coefficient,HW1972-T10-LiBr-m0.002,0.002,0.984,0.9842103191644764,0.00021031916447644683,0.00021031916447644683,0.0213738988289072,True,evaluated,,physical comparison,not independently established
+LiBr,gamma_pm_m,HW1972-T10-LiBr-m0.002,0.002,0.952,0.9520314225349131,3.1422534913172484e-05,3.1422534913172484e-05,0.0033006864404592946,True,evaluated,,physical comparison,not independently established
+LiBr,osmotic_coefficient,HW1972-T10-LiBr-m0.005,0.005,0.977,0.9765910948198847,-0.000408905180115271,0.000408905180115271,0.04185314023697759,True,evaluated,,physical comparison,not independently established
+LiBr,gamma_pm_m,HW1972-T10-LiBr-m0.005,0.005,0.929,0.9281596198501207,-0.0008403801498793051,0.0008403801498793051,0.09046072657473682,False,evaluated,,physical comparison,not independently established
+LiBr,osmotic_coefficient,HW1972-T10-LiBr-m0.01,0.01,0.97,0.9692505266890931,-0.0007494733109069118,0.0007494733109069118,0.07726528978421772,False,evaluated,,physical comparison,not independently established
+LiBr,gamma_pm_m,HW1972-T10-LiBr-m0.01,0.01,0.905,0.9043050980322729,-0.0006949019677271462,0.0006949019677271462,0.07678474781515428,False,evaluated,,physical comparison,not independently established
+LiBr,osmotic_coefficient,HW1972-T10-LiBr-m0.02,0.02,0.961,0.9609314451917405,-6.855480825951332e-05,6.855480825951332e-05,0.007133694928149149,True,evaluated,,physical comparison,not independently established
+LiBr,gamma_pm_m,HW1972-T10-LiBr-m0.02,0.02,0.877,0.8754026944175831,-0.0015973055824168858,0.0015973055824168858,0.18213290563476464,False,evaluated,,physical comparison,not independently established
+LiBr,osmotic_coefficient,HW1972-T10-LiBr-m0.05,0.05,0.95,0.9506769694451808,0.0006769694451808084,0.0006769694451808084,0.07125994159797983,False,evaluated,,physical comparison,not independently established
+LiBr,gamma_pm_m,HW1972-T10-LiBr-m0.05,0.05,0.832,0.8318929288988955,-0.00010707110110441675,0.00010707110110441675,0.012869122728896246,True,evaluated,,physical comparison,not independently established
+LiBr,osmotic_coefficient,HW1972-T10-LiBr-m0.1,0.1,0.944,0.947430026260683,0.0034300262606830056,0.0034300262606830056,0.363350239479132,False,evaluated,,physical comparison,not independently established
+LiBr,gamma_pm_m,HW1972-T10-LiBr-m0.1,0.1,0.797,0.8001129999366813,0.0031129999366812378,0.0031129999366812378,0.3905897034731791,False,evaluated,,physical comparison,not independently established
+LiBr,osmotic_coefficient,HW1972-T10-LiBr-m0.2,0.2,0.944,0.9546365839320574,0.010636583932057464,0.010636583932057464,1.1267567724637144,False,evaluated,,physical comparison,not independently established
+LiBr,gamma_pm_m,HW1972-T10-LiBr-m0.2,0.2,0.767,0.7783460624912913,0.011346062491291331,0.011346062491291331,1.4792780301553234,False,evaluated,,physical comparison,not independently established
+LiBr,osmotic_coefficient,HW1972-T10-LiBr-m0.3,0.3,0.951,0.9675144695618653,0.016514469561865308,0.016514469561865308,1.736537283056289,False,evaluated,,physical comparison,not independently established
+LiBr,gamma_pm_m,HW1972-T10-LiBr-m0.3,0.3,0.755,0.775874076506816,0.02087407650681594,0.02087407650681594,2.7647783452736348,False,evaluated,,physical comparison,not independently established
+LiBr,osmotic_coefficient,HW1972-T10-LiBr-m0.4,0.4,0.96,0.9823218149456755,0.022321814945675533,0.022321814945675533,2.3251890568412015,False,evaluated,,physical comparison,not independently established
+LiBr,gamma_pm_m,HW1972-T10-LiBr-m0.4,0.4,0.752,0.781685570259529,0.029685570259529004,0.029685570259529004,3.947549236639495,False,evaluated,,physical comparison,not independently established
+LiBr,osmotic_coefficient,HW1972-T10-LiBr-m0.5,0.5,0.97,0.9978776878794781,0.027877687879478086,0.027877687879478086,2.873988441183308,False,evaluated,,physical comparison,not independently established
+LiBr,gamma_pm_m,HW1972-T10-LiBr-m0.5,0.5,0.754,0.7921309394972778,0.03813093949727775,0.03813093949727775,5.057153779479807,False,evaluated,,physical comparison,not independently established
+LiBr,osmotic_coefficient,HW1972-T10-LiBr-m0.6,0.6,0.982,1.01368860425541,0.03168860425541009,0.03168860425541009,3.2269454435244493,False,evaluated,,physical comparison,not independently established
+LiBr,gamma_pm_m,HW1972-T10-LiBr-m0.6,0.6,0.759,0.8055671727098987,0.04656717270989874,0.04656717270989874,6.135332372845684,False,evaluated,,physical comparison,not independently established
+LiBr,osmotic_coefficient,HW1972-T10-LiBr-m0.7,0.7,0.994,1.0295190307982371,0.03551903079823715,0.03551903079823715,3.573343138655649,False,evaluated,,physical comparison,not independently established
+LiBr,gamma_pm_m,HW1972-T10-LiBr-m0.7,0.7,0.767,0.8211260455377415,0.054126045537741474,0.054126045537741474,7.05685078718924,False,evaluated,,physical comparison,not independently established
+LiBr,osmotic_coefficient,HW1972-T10-LiBr-m0.8,0.8,1.007,1.045248841007914,0.038248841007914036,0.038248841007914036,3.798296028591265,False,evaluated,,physical comparison,not independently established
+LiBr,gamma_pm_m,HW1972-T10-LiBr-m0.8,0.8,0.778,0.838300430914747,0.060300430914747016,0.060300430914747016,7.750698061021467,False,evaluated,,physical comparison,not independently established
+LiBr,osmotic_coefficient,HW1972-T10-LiBr-m0.9,0.9,1.021,1.060815460000384,0.03981546000038416,0.03981546000038416,3.89965328113459,False,evaluated,,physical comparison,not independently established
+LiBr,gamma_pm_m,HW1972-T10-LiBr-m0.9,0.9,0.789,0.8567732147907897,0.06777321479078968,0.06777321479078968,8.589761063471443,False,evaluated,,physical comparison,not independently established
+LiBr,osmotic_coefficient,HW1972-T10-LiBr-m1,1,1.035,1.0761871359181894,0.041187135918189455,0.041187135918189455,3.9794334220472907,False,evaluated,,physical comparison,not independently established
+LiBr,gamma_pm_m,HW1972-T10-LiBr-m1,1,0.803,0.8763362306311752,0.07333623063117511,0.07333623063117511,9.13278090051994,False,evaluated,,physical comparison,not independently established
+LiBr,osmotic_coefficient,HW1972-T10-LiBr-m1.2,1.2,1.064,1.1062978760275186,0.042297876027518555,0.042297876027518555,3.9753642883006157,False,evaluated,,physical comparison,not independently established
+LiBr,gamma_pm_m,HW1972-T10-LiBr-m1.2,1.2,0.834,0.9182095840131735,0.08420958401317358,0.08420958401317358,10.097072423641915,False,evaluated,,physical comparison,not independently established
+LiBr,osmotic_coefficient,HW1972-T10-LiBr-m1.4,1.4,1.095,1.1355623409319906,0.040562340931990626,0.040562340931990626,3.704323372784532,False,evaluated,,physical comparison,not independently established
+LiBr,gamma_pm_m,HW1972-T10-LiBr-m1.4,1.4,0.871,0.9632223950724114,0.09222239507241137,0.09222239507241137,10.588105059978343,False,evaluated,,physical comparison,not independently established
+LiBr,osmotic_coefficient,HW1972-T10-LiBr-m1.6,1.6,1.127,1.1640244439234497,0.037024443923449724,0.037024443923449724,3.285221288682318,False,evaluated,,physical comparison,not independently established
+LiBr,gamma_pm_m,HW1972-T10-LiBr-m1.6,1.6,0.913,1.0110198566219435,0.09801985662194346,0.09801985662194346,10.736019345229295,False,evaluated,,physical comparison,not independently established
+LiBr,osmotic_coefficient,HW1972-T10-LiBr-m1.8,1.8,1.16,1.1917471925437049,0.03174719254370495,0.03174719254370495,2.7368269434228405,False,evaluated,,physical comparison,not independently established
+LiBr,gamma_pm_m,HW1972-T10-LiBr-m1.8,1.8,0.96,1.0614216075128036,0.1014216075128036,0.1014216075128036,10.56475078258371,False,evaluated,,physical comparison,not independently established
+LiBr,osmotic_coefficient,HW1972-T10-LiBr-m2,2,1.195,1.2187960756006417,0.023796075600641675,0.023796075600641675,1.9913033975432364,False,evaluated,,physical comparison,not independently established
+LiBr,gamma_pm_m,HW1972-T10-LiBr-m2,2,1.012,1.1143443173752665,0.1023443173752665,0.1023443173752665,10.113074839453212,False,evaluated,,physical comparison,not independently established
+LiBr,osmotic_coefficient,HW1972-T10-LiBr-m2.5,2.5,1.284,1.2838588353776348,-0.00014116462236524185,0.00014116462236524185,0.010994129467697964,True,evaluated,,physical comparison,not independently established
+LiBr,gamma_pm_m,HW1972-T10-LiBr-m2.5,2.5,1.166,1.2575992261304203,0.09159922613042037,0.09159922613042037,7.855851297634682,False,evaluated,,physical comparison,not independently established
+LiBr,osmotic_coefficient,HW1972-T10-LiBr-m3,3,1.377,1.34586681062204,-0.031133189377960058,0.031133189377960058,2.2609433099462644,False,evaluated,,physical comparison,not independently established
+LiBr,gamma_pm_m,HW1972-T10-LiBr-m3,3,1.359,1.416924503555991,0.05792450355599099,0.05792450355599099,4.26228870905011,False,evaluated,,physical comparison,not independently established
+LiI,osmotic_coefficient,HW1972-T11-LiI-m0.001,0.001,0.989,,,,,,not_evaluated,No source-backed Li+/I- pair in selected Figiel packets,physical comparison,not independently established
+LiI,gamma_pm_m,HW1972-T11-LiI-m0.001,0.001,0.966,,,,,,not_evaluated,No source-backed Li+/I- pair in selected Figiel packets,physical comparison,not independently established
+LiI,osmotic_coefficient,HW1972-T11-LiI-m0.002,0.002,0.985,,,,,,not_evaluated,No source-backed Li+/I- pair in selected Figiel packets,physical comparison,not independently established
+LiI,gamma_pm_m,HW1972-T11-LiI-m0.002,0.002,0.953,,,,,,not_evaluated,No source-backed Li+/I- pair in selected Figiel packets,physical comparison,not independently established
+LiI,osmotic_coefficient,HW1972-T11-LiI-m0.005,0.005,0.978,,,,,,not_evaluated,No source-backed Li+/I- pair in selected Figiel packets,physical comparison,not independently established
+LiI,gamma_pm_m,HW1972-T11-LiI-m0.005,0.005,0.93,,,,,,not_evaluated,No source-backed Li+/I- pair in selected Figiel packets,physical comparison,not independently established
+LiI,osmotic_coefficient,HW1972-T11-LiI-m0.01,0.01,0.971,,,,,,not_evaluated,No source-backed Li+/I- pair in selected Figiel packets,physical comparison,not independently established
+LiI,gamma_pm_m,HW1972-T11-LiI-m0.01,0.01,0.908,,,,,,not_evaluated,No source-backed Li+/I- pair in selected Figiel packets,physical comparison,not independently established
+LiI,osmotic_coefficient,HW1972-T11-LiI-m0.02,0.02,0.964,,,,,,not_evaluated,No source-backed Li+/I- pair in selected Figiel packets,physical comparison,not independently established
+LiI,gamma_pm_m,HW1972-T11-LiI-m0.02,0.02,0.882,,,,,,not_evaluated,No source-backed Li+/I- pair in selected Figiel packets,physical comparison,not independently established
+LiI,osmotic_coefficient,HW1972-T11-LiI-m0.05,0.05,0.956,,,,,,not_evaluated,No source-backed Li+/I- pair in selected Figiel packets,physical comparison,not independently established
+LiI,gamma_pm_m,HW1972-T11-LiI-m0.05,0.05,0.843,,,,,,not_evaluated,No source-backed Li+/I- pair in selected Figiel packets,physical comparison,not independently established
+LiI,osmotic_coefficient,HW1972-T11-LiI-m0.1,0.1,0.956,,,,,,not_evaluated,No source-backed Li+/I- pair in selected Figiel packets,physical comparison,not independently established
+LiI,gamma_pm_m,HW1972-T11-LiI-m0.1,0.1,0.817,,,,,,not_evaluated,No source-backed Li+/I- pair in selected Figiel packets,physical comparison,not independently established
+LiI,osmotic_coefficient,HW1972-T11-LiI-m0.2,0.2,0.965,,,,,,not_evaluated,No source-backed Li+/I- pair in selected Figiel packets,physical comparison,not independently established
+LiI,gamma_pm_m,HW1972-T11-LiI-m0.2,0.2,0.802,,,,,,not_evaluated,No source-backed Li+/I- pair in selected Figiel packets,physical comparison,not independently established
+LiI,osmotic_coefficient,HW1972-T11-LiI-m0.3,0.3,0.978,,,,,,not_evaluated,No source-backed Li+/I- pair in selected Figiel packets,physical comparison,not independently established
+LiI,gamma_pm_m,HW1972-T11-LiI-m0.3,0.3,0.803,,,,,,not_evaluated,No source-backed Li+/I- pair in selected Figiel packets,physical comparison,not independently established
+LiI,osmotic_coefficient,HW1972-T11-LiI-m0.4,0.4,0.993,,,,,,not_evaluated,No source-backed Li+/I- pair in selected Figiel packets,physical comparison,not independently established
+LiI,gamma_pm_m,HW1972-T11-LiI-m0.4,0.4,0.811,,,,,,not_evaluated,No source-backed Li+/I- pair in selected Figiel packets,physical comparison,not independently established
+LiI,osmotic_coefficient,HW1972-T11-LiI-m0.5,0.5,1.008,,,,,,not_evaluated,No source-backed Li+/I- pair in selected Figiel packets,physical comparison,not independently established
+LiI,gamma_pm_m,HW1972-T11-LiI-m0.5,0.5,0.824,,,,,,not_evaluated,No source-backed Li+/I- pair in selected Figiel packets,physical comparison,not independently established
+LiI,osmotic_coefficient,HW1972-T11-LiI-m0.6,0.6,1.023,,,,,,not_evaluated,No source-backed Li+/I- pair in selected Figiel packets,physical comparison,not independently established
+LiI,gamma_pm_m,HW1972-T11-LiI-m0.6,0.6,0.838,,,,,,not_evaluated,No source-backed Li+/I- pair in selected Figiel packets,physical comparison,not independently established
+LiI,osmotic_coefficient,HW1972-T11-LiI-m0.7,0.7,1.037,,,,,,not_evaluated,No source-backed Li+/I- pair in selected Figiel packets,physical comparison,not independently established
+LiI,gamma_pm_m,HW1972-T11-LiI-m0.7,0.7,0.855,,,,,,not_evaluated,No source-backed Li+/I- pair in selected Figiel packets,physical comparison,not independently established
+LiI,osmotic_coefficient,HW1972-T11-LiI-m0.8,0.8,1.052,,,,,,not_evaluated,No source-backed Li+/I- pair in selected Figiel packets,physical comparison,not independently established
+LiI,gamma_pm_m,HW1972-T11-LiI-m0.8,0.8,0.872,,,,,,not_evaluated,No source-backed Li+/I- pair in selected Figiel packets,physical comparison,not independently established
+LiI,osmotic_coefficient,HW1972-T11-LiI-m0.9,0.9,1.067,,,,,,not_evaluated,No source-backed Li+/I- pair in selected Figiel packets,physical comparison,not independently established
+LiI,gamma_pm_m,HW1972-T11-LiI-m0.9,0.9,0.892,,,,,,not_evaluated,No source-backed Li+/I- pair in selected Figiel packets,physical comparison,not independently established
+LiI,osmotic_coefficient,HW1972-T11-LiI-m1,1,1.082,,,,,,not_evaluated,No source-backed Li+/I- pair in selected Figiel packets,physical comparison,not independently established
+LiI,gamma_pm_m,HW1972-T11-LiI-m1,1,0.912,,,,,,not_evaluated,No source-backed Li+/I- pair in selected Figiel packets,physical comparison,not independently established
+LiI,osmotic_coefficient,HW1972-T11-LiI-m1.2,1.2,1.112,,,,,,not_evaluated,No source-backed Li+/I- pair in selected Figiel packets,physical comparison,not independently established
+LiI,gamma_pm_m,HW1972-T11-LiI-m1.2,1.2,0.957,,,,,,not_evaluated,No source-backed Li+/I- pair in selected Figiel packets,physical comparison,not independently established
+LiI,osmotic_coefficient,HW1972-T11-LiI-m1.4,1.4,1.143,,,,,,not_evaluated,No source-backed Li+/I- pair in selected Figiel packets,physical comparison,not independently established
+LiI,gamma_pm_m,HW1972-T11-LiI-m1.4,1.4,1.007,,,,,,not_evaluated,No source-backed Li+/I- pair in selected Figiel packets,physical comparison,not independently established
+LiI,osmotic_coefficient,HW1972-T11-LiI-m1.6,1.6,1.176,,,,,,not_evaluated,No source-backed Li+/I- pair in selected Figiel packets,physical comparison,not independently established
+LiI,gamma_pm_m,HW1972-T11-LiI-m1.6,1.6,1.063,,,,,,not_evaluated,No source-backed Li+/I- pair in selected Figiel packets,physical comparison,not independently established
+LiI,osmotic_coefficient,HW1972-T11-LiI-m1.8,1.8,1.211,,,,,,not_evaluated,No source-backed Li+/I- pair in selected Figiel packets,physical comparison,not independently established
+LiI,gamma_pm_m,HW1972-T11-LiI-m1.8,1.8,1.126,,,,,,not_evaluated,No source-backed Li+/I- pair in selected Figiel packets,physical comparison,not independently established
+LiI,osmotic_coefficient,HW1972-T11-LiI-m2,2,1.249,,,,,,not_evaluated,No source-backed Li+/I- pair in selected Figiel packets,physical comparison,not independently established
+LiI,gamma_pm_m,HW1972-T11-LiI-m2,2,1.197,,,,,,not_evaluated,No source-backed Li+/I- pair in selected Figiel packets,physical comparison,not independently established
+LiI,osmotic_coefficient,HW1972-T11-LiI-m2.5,2.5,1.353,,,,,,not_evaluated,No source-backed Li+/I- pair in selected Figiel packets,physical comparison,not independently established
+LiI,gamma_pm_m,HW1972-T11-LiI-m2.5,2.5,1.42,,,,,,not_evaluated,No source-backed Li+/I- pair in selected Figiel packets,physical comparison,not independently established
+LiI,osmotic_coefficient,HW1972-T11-LiI-m3,3,1.471,,,,,,not_evaluated,No source-backed Li+/I- pair in selected Figiel packets,physical comparison,not independently established
+LiI,gamma_pm_m,HW1972-T11-LiI-m3,3,1.722,,,,,,not_evaluated,No source-backed Li+/I- pair in selected Figiel packets,physical comparison,not independently established
+NaCl,osmotic_coefficient,HW1972-T16-NaCl-m0.001,0.001,0.988,0.988346993871167,0.00034699387116698954,0.00034699387116698954,0.03512083716265076,True,evaluated,,physical comparison,not independently established
+NaCl,gamma_pm_m,HW1972-T16-NaCl-m0.001,0.001,0.965,0.9648860769821511,-0.00011392301784884928,0.00011392301784884928,0.011805494077600962,True,evaluated,,physical comparison,not independently established
+NaCl,osmotic_coefficient,HW1972-T16-NaCl-m0.002,0.002,0.984,0.9839641399529709,-3.5860047029045994e-05,3.5860047029045994e-05,0.0036443137224640237,True,evaluated,,physical comparison,not independently established
+NaCl,gamma_pm_m,HW1972-T16-NaCl-m0.002,0.002,0.952,0.9515613492831354,-0.0004386507168645526,0.0004386507168645526,0.046076755973167294,True,evaluated,,physical comparison,not independently established
+NaCl,osmotic_coefficient,HW1972-T16-NaCl-m0.005,0.005,0.976,0.9759817464276667,-1.8253572333315482e-05,1.8253572333315482e-05,0.0018702430669380618,True,evaluated,,physical comparison,not independently established
+NaCl,gamma_pm_m,HW1972-T16-NaCl-m0.005,0.005,0.928,0.9270239473502612,-0.0009760526497388788,0.0009760526497388788,0.1051780872563447,False,evaluated,,physical comparison,not independently established
+NaCl,osmotic_coefficient,HW1972-T16-NaCl-m0.01,0.01,0.968,0.9680443547368404,4.435473684039071e-05,4.435473684039071e-05,0.0045821009132635026,True,evaluated,,physical comparison,not independently established
+NaCl,gamma_pm_m,HW1972-T16-NaCl-m0.01,0.01,0.903,0.9021128893598594,-0.0008871106401405759,0.0008871106401405759,0.09824038096794861,False,evaluated,,physical comparison,not independently established
+NaCl,osmotic_coefficient,HW1972-T16-NaCl-m0.02,0.02,0.959,0.9585506668397031,-0.00044933316029682757,0.00044933316029682757,0.04685434413939808,True,evaluated,,physical comparison,not independently established
+NaCl,gamma_pm_m,HW1972-T16-NaCl-m0.02,0.02,0.872,0.871211357112003,-0.0007886428879969598,0.0007886428879969598,0.09044069816478897,False,evaluated,,physical comparison,not independently established
+NaCl,osmotic_coefficient,HW1972-T16-NaCl-m0.05,0.05,0.944,0.9448544720280799,0.0008544720280799778,0.0008544720280799778,0.09051610466948917,False,evaluated,,physical comparison,not independently established
+NaCl,gamma_pm_m,HW1972-T16-NaCl-m0.05,0.05,0.822,0.8221598239451082,0.0001598239451082728,0.0001598239451082728,0.0194433023246074,True,evaluated,,physical comparison,not independently established
+NaCl,osmotic_coefficient,HW1972-T16-NaCl-m0.1,0.1,0.933,0.9360122412352024,0.003012241235202384,0.003012241235202384,0.3228554378566328,False,evaluated,,physical comparison,not independently established
+NaCl,gamma_pm_m,HW1972-T16-NaCl-m0.1,0.1,0.779,0.7818232343197423,0.002823234319742296,0.002823234319742296,0.36241775606447957,False,evaluated,,physical comparison,not independently established
+NaCl,osmotic_coefficient,HW1972-T16-NaCl-m0.2,0.2,0.924,0.9322886753007406,0.008288675300740511,0.008288675300740511,0.8970427814654233,False,evaluated,,physical comparison,not independently established
+NaCl,gamma_pm_m,HW1972-T16-NaCl-m0.2,0.2,0.734,0.7438459305951266,0.009845930595126617,0.009845930595126617,1.3414074380281495,False,evaluated,,physical comparison,not independently established
+NaCl,osmotic_coefficient,HW1972-T16-NaCl-m0.3,0.3,0.921,0.9344358954493153,0.013435895449315227,0.013435895449315227,1.4588377252242375,False,evaluated,,physical comparison,not independently established
+NaCl,gamma_pm_m,HW1972-T16-NaCl-m0.3,0.3,0.709,0.7254751618785968,0.016475161878596878,0.016475161878596878,2.3237181775171902,False,evaluated,,physical comparison,not independently established
+NaCl,osmotic_coefficient,HW1972-T16-NaCl-m0.4,0.4,0.92,0.9386491983000087,0.018649198300008663,0.018649198300008663,2.027086771740072,False,evaluated,,physical comparison,not independently established
+NaCl,gamma_pm_m,HW1972-T16-NaCl-m0.4,0.4,0.693,0.7153166035498305,0.02231660354983056,0.02231660354983056,3.2202891125296627,False,evaluated,,physical comparison,not independently established
+NaCl,osmotic_coefficient,HW1972-T16-NaCl-m0.5,0.5,0.921,0.9437222065994431,0.022722206599443018,0.022722206599443018,2.4671234092772005,False,evaluated,,physical comparison,not independently established
+NaCl,gamma_pm_m,HW1972-T16-NaCl-m0.5,0.5,0.681,0.7095586780627792,0.02855867806277912,0.02855867806277912,4.193638482052734,False,evaluated,,physical comparison,not independently established
+NaCl,osmotic_coefficient,HW1972-T16-NaCl-m0.6,0.6,0.923,0.9491491112421825,0.026149111242182443,0.026149111242182443,2.8330564726091487,False,evaluated,,physical comparison,not independently established
+NaCl,gamma_pm_m,HW1972-T16-NaCl-m0.6,0.6,0.673,0.7064737545950535,0.03347375459505342,0.03347375459505342,4.973811975490849,False,evaluated,,physical comparison,not independently established
+NaCl,osmotic_coefficient,HW1972-T16-NaCl-m0.7,0.7,0.926,0.9546878785830373,0.02868787858303723,0.02868787858303723,3.0980430435245387,False,evaluated,,physical comparison,not independently established
+NaCl,gamma_pm_m,HW1972-T16-NaCl-m0.7,0.7,0.667,0.7051436919758103,0.038143691975810246,0.038143691975810246,5.718694449146963,False,evaluated,,physical comparison,not independently established
+NaCl,osmotic_coefficient,HW1972-T16-NaCl-m0.8,0.8,0.929,0.9602148163826969,0.031214816382696853,0.031214816382696853,3.36004482052711,False,evaluated,,physical comparison,not independently established
+NaCl,gamma_pm_m,HW1972-T16-NaCl-m0.8,0.8,0.662,0.7050292709630085,0.04302927096300846,0.04302927096300846,6.499889873566232,False,evaluated,,physical comparison,not independently established
+NaCl,osmotic_coefficient,HW1972-T16-NaCl-m0.9,0.9,0.932,0.9656653797915561,0.03366537979155604,0.03366537979155604,3.61216521368627,False,evaluated,,physical comparison,not independently established
+NaCl,gamma_pm_m,HW1972-T16-NaCl-m0.9,0.9,0.659,0.7057912457956378,0.04679124579563776,0.04679124579563776,7.100340788412407,False,evaluated,,physical comparison,not independently established
+NaCl,osmotic_coefficient,HW1972-T16-NaCl-m1,1,0.936,0.9710067556436319,0.03500675564363187,0.03500675564363187,3.740037996114516,False,evaluated,,physical comparison,not independently established
+NaCl,gamma_pm_m,HW1972-T16-NaCl-m1,1,0.657,0.7072051972542952,0.050205197254295175,0.050205197254295175,7.641582534900331,False,evaluated,,physical comparison,not independently established
+NaCl,osmotic_coefficient,HW1972-T16-NaCl-m1.2,1.2,0.944,0.9813123459337164,0.03731234593371646,0.03731234593371646,3.952579018402168,False,evaluated,,physical comparison,not independently established
+NaCl,gamma_pm_m,HW1972-T16-NaCl-m1.2,1.2,0.655,0.7114172489711182,0.05641724897111822,0.05641724897111822,8.613320453605834,False,evaluated,,physical comparison,not independently established
+NaCl,osmotic_coefficient,HW1972-T16-NaCl-m1.4,1.4,0.953,0.9911115861117226,0.038111586111722606,0.038111586111722606,3.99911711560573,False,evaluated,,physical comparison,not independently established
+NaCl,gamma_pm_m,HW1972-T16-NaCl-m1.4,1.4,0.656,0.7168881336690354,0.06088813366903534,0.06088813366903534,9.281727693450508,False,evaluated,,physical comparison,not independently established
+NaCl,osmotic_coefficient,HW1972-T16-NaCl-m1.6,1.6,0.962,1.0004488762431007,0.03844887624310078,0.03844887624310078,3.9967646822350087,False,evaluated,,physical comparison,not independently established
+NaCl,gamma_pm_m,HW1972-T16-NaCl-m1.6,1.6,0.658,0.72319909435063,0.06519909435062998,0.06519909435062998,9.90867695298328,False,evaluated,,physical comparison,not independently established
+NaCl,osmotic_coefficient,HW1972-T16-NaCl-m1.8,1.8,0.973,1.0093879657060103,0.03638796570601033,0.03638796570601033,3.7397703706074337,False,evaluated,,physical comparison,not independently established
+NaCl,gamma_pm_m,HW1972-T16-NaCl-m1.8,1.8,0.662,0.7301107254041844,0.06811072540418439,0.06811072540418439,10.288629215133593,False,evaluated,,physical comparison,not independently established
+NaCl,osmotic_coefficient,HW1972-T16-NaCl-m2,2,0.984,1.0179947352966678,0.033994735296667855,0.033994735296667855,3.454749522019091,False,evaluated,,physical comparison,not independently established
+NaCl,gamma_pm_m,HW1972-T16-NaCl-m2,2,0.668,0.7374808904028344,0.06948089040283434,0.06948089040283434,10.401330898627894,False,evaluated,,physical comparison,not independently established
+NaCl,osmotic_coefficient,HW1972-T16-NaCl-m2.5,2.5,1.013,1.0384437066521066,0.025443706652106712,0.025443706652106712,2.511718326960189,False,evaluated,,physical comparison,not independently established
+NaCl,gamma_pm_m,HW1972-T16-NaCl-m2.5,2.5,0.688,0.7574254148405639,0.06942541484056397,0.06942541484056397,10.090903319849415,False,evaluated,,physical comparison,not independently established
+NaCl,osmotic_coefficient,HW1972-T16-NaCl-m3,3,1.045,1.0579499741268406,0.012949974126840624,0.012949974126840624,1.239231973860347,False,evaluated,,physical comparison,not independently established
+NaCl,gamma_pm_m,HW1972-T16-NaCl-m3,3,0.714,0.7791272850214005,0.06512728502140053,0.06512728502140053,9.121468490392232,False,evaluated,,physical comparison,not independently established
+NaBr,osmotic_coefficient,HW1972-T17-NaBr-m0.001,0.001,0.988,0.9883967489850984,0.0003967489850984496,0.0003967489850984496,0.04015677986826413,True,evaluated,,physical comparison,not independently established
+NaBr,gamma_pm_m,HW1972-T17-NaBr-m0.001,0.001,0.965,0.9649825878005464,-1.741219945361472e-05,1.741219945361472e-05,0.0018043730003745823,True,evaluated,,physical comparison,not independently established
+NaBr,osmotic_coefficient,HW1972-T17-NaBr-m0.002,0.002,0.984,0.9840624529284182,6.245292841822181e-05,6.245292841822181e-05,0.00634684231892498,True,evaluated,,physical comparison,not independently established
+NaBr,gamma_pm_m,HW1972-T17-NaBr-m0.002,0.002,0.952,0.9517497887184061,-0.0002502112815938595,0.0002502112815938595,0.026282697646413816,True,evaluated,,physical comparison,not independently established
+NaBr,osmotic_coefficient,HW1972-T17-NaBr-m0.005,0.005,0.976,0.9762219889788194,0.0002219889788194207,0.0002219889788194207,0.022744772420022614,True,evaluated,,physical comparison,not independently established
+NaBr,gamma_pm_m,HW1972-T17-NaBr-m0.005,0.005,0.928,0.9274742185688304,-0.0005257814311696585,0.0005257814311696585,0.05665748180707526,False,evaluated,,physical comparison,not independently established
+NaBr,osmotic_coefficient,HW1972-T17-NaBr-m0.01,0.01,0.969,0.9685135096425997,-0.0004864903574002266,0.0004864903574002266,0.05020540324047747,True,evaluated,,physical comparison,not independently established
+NaBr,gamma_pm_m,HW1972-T17-NaBr-m0.01,0.01,0.903,0.9029718489165709,-2.8151083429128754e-05,2.8151083429128754e-05,0.003117506470556894,True,evaluated,,physical comparison,not independently established
+NaBr,osmotic_coefficient,HW1972-T17-NaBr-m0.02,0.02,0.959,0.9594605954940364,0.00046059549403643096,0.00046059549403643096,0.048028727219648695,True,evaluated,,physical comparison,not independently established
+NaBr,gamma_pm_m,HW1972-T17-NaBr-m0.02,0.02,0.873,0.8728280566813836,-0.00017194331861636325,0.00017194331861636325,0.01969568369030507,True,evaluated,,physical comparison,not independently established
+NaBr,osmotic_coefficient,HW1972-T17-NaBr-m0.05,0.05,0.945,0.9470144885160025,0.0020144885160024995,0.0020144885160024995,0.21317338793677243,False,evaluated,,physical comparison,not independently established
+NaBr,gamma_pm_m,HW1972-T17-NaBr-m0.05,0.05,0.824,0.8258103897041116,0.0018103897041116257,0.0018103897041116257,0.2197074883630614,False,evaluated,,physical comparison,not independently established
+NaBr,osmotic_coefficient,HW1972-T17-NaBr-m0.1,0.1,0.935,0.9401362283803046,0.005136228380304586,0.005136228380304586,0.5493292385352498,False,evaluated,,physical comparison,not independently established
+NaBr,gamma_pm_m,HW1972-T17-NaBr-m0.1,0.1,0.783,0.7884972359832839,0.005497235983283888,0.005497235983283888,0.7020735610835106,False,evaluated,,physical comparison,not independently established
+NaBr,osmotic_coefficient,HW1972-T17-NaBr-m0.2,0.2,0.929,0.9401370026293522,0.011137002629352133,0.011137002629352133,1.1988162141390886,False,evaluated,,physical comparison,not independently established
+NaBr,gamma_pm_m,HW1972-T17-NaBr-m0.2,0.2,0.742,0.7560221903629663,0.014022190362966258,0.014022190362966258,1.88978306778521,False,evaluated,,physical comparison,not independently established
+NaBr,osmotic_coefficient,HW1972-T17-NaBr-m0.3,0.3,0.928,0.9458717045737014,0.017871704573701352,0.017871704573701352,1.9258302342350595,False,evaluated,,physical comparison,not independently established
+NaBr,gamma_pm_m,HW1972-T17-NaBr-m0.3,0.3,0.72,0.7428654478184663,0.022865447818466333,0.022865447818466333,3.1757566414536575,False,evaluated,,physical comparison,not independently established
+NaBr,osmotic_coefficient,HW1972-T17-NaBr-m0.4,0.4,0.929,0.9535925905403473,0.024592590540347237,0.024592590540347237,2.647211037712297,False,evaluated,,physical comparison,not independently established
+NaBr,gamma_pm_m,HW1972-T17-NaBr-m0.4,0.4,0.706,0.7378147273018922,0.031814727301892276,0.031814727301892276,4.506335311882759,False,evaluated,,physical comparison,not independently established
+NaBr,osmotic_coefficient,HW1972-T17-NaBr-m0.5,0.5,0.932,0.9621161345114547,0.030116134511454673,0.030116134511454673,3.2313449046625182,False,evaluated,,physical comparison,not independently established
+NaBr,gamma_pm_m,HW1972-T17-NaBr-m0.5,0.5,0.697,0.7371322820774054,0.04013228207740549,0.04013228207740549,5.757859695467072,False,evaluated,,physical comparison,not independently established
+NaBr,osmotic_coefficient,HW1972-T17-NaBr-m0.6,0.6,0.936,0.9709474254469653,0.034947425446965275,0.034947425446965275,3.733699299889452,False,evaluated,,physical comparison,not independently established
+NaBr,gamma_pm_m,HW1972-T17-NaBr-m0.6,0.6,0.692,0.7391270184804369,0.04712701848043699,0.04712701848043699,6.810262786190316,False,evaluated,,physical comparison,not independently established
+NaBr,osmotic_coefficient,HW1972-T17-NaBr-m0.7,0.7,0.941,0.9798500301219382,0.03885003012193822,0.03885003012193822,4.128589811045507,False,evaluated,,physical comparison,not independently established
+NaBr,gamma_pm_m,HW1972-T17-NaBr-m0.7,0.7,0.688,0.7429007848195828,0.054900784819582826,0.054900784819582826,7.979765235404481,False,evaluated,,physical comparison,not independently established
+NaBr,osmotic_coefficient,HW1972-T17-NaBr-m0.8,0.8,0.946,0.9887031935909352,0.04270319359093522,0.04270319359093522,4.514079660775393,False,evaluated,,physical comparison,not independently established
+NaBr,gamma_pm_m,HW1972-T17-NaBr-m0.8,0.8,0.687,0.7479259163076748,0.06092591630767474,0.06092591630767474,8.868401209268521,False,evaluated,,physical comparison,not independently established
+NaBr,osmotic_coefficient,HW1972-T17-NaBr-m0.9,0.9,0.951,0.9974438645121761,0.04644386451217619,0.04644386451217619,4.883687120102649,False,evaluated,,physical comparison,not independently established
+NaBr,gamma_pm_m,HW1972-T17-NaBr-m0.9,0.9,0.686,0.7538700301215807,0.06787003012158066,0.06787003012158066,9.893590396731874,False,evaluated,,physical comparison,not independently established
+NaBr,osmotic_coefficient,HW1972-T17-NaBr-m1,1,0.957,1.0060399044610608,0.04903990446106088,0.04903990446106088,5.124336934280134,False,evaluated,,physical comparison,not independently established
+NaBr,gamma_pm_m,HW1972-T17-NaBr-m1,1,0.687,0.7605128051116183,0.07351280511161828,0.07351280511161828,10.700553873598002,False,evaluated,,physical comparison,not independently established
+NaBr,osmotic_coefficient,HW1972-T17-NaBr-m1.2,1.2,0.969,1.0227490176456522,0.05374901764565221,0.05374901764565221,5.546854246197339,False,evaluated,,physical comparison,not independently established
+NaBr,gamma_pm_m,HW1972-T17-NaBr-m1.2,1.2,0.691,0.7753311136708503,0.08433111367085033,0.08433111367085033,12.20421326640381,False,evaluated,,physical comparison,not independently established
+NaBr,osmotic_coefficient,HW1972-T17-NaBr-m1.4,1.4,0.983,1.0388095034991347,0.055809503499134716,0.055809503499134716,5.677467293909941,False,evaluated,,physical comparison,not independently established
+NaBr,gamma_pm_m,HW1972-T17-NaBr-m1.4,1.4,0.697,0.7916122243452837,0.09461222434528371,0.09461222434528371,13.574207223139702,False,evaluated,,physical comparison,not independently established
+NaBr,osmotic_coefficient,HW1972-T17-NaBr-m1.6,1.6,0.997,1.0542632074711273,0.05726320747112734,0.05726320747112734,5.743551401316684,False,evaluated,,physical comparison,not independently established
+NaBr,gamma_pm_m,HW1972-T17-NaBr-m1.6,1.6,0.706,0.8089385004229723,0.10293850042297237,0.10293850042297237,14.580524139231214,False,evaluated,,physical comparison,not independently established
+NaBr,osmotic_coefficient,HW1972-T17-NaBr-m1.8,1.8,1.012,1.0691711543765898,0.05717115437658982,0.05717115437658982,5.649323554998993,False,evaluated,,physical comparison,not independently established
+NaBr,gamma_pm_m,HW1972-T17-NaBr-m1.8,1.8,0.717,0.8270688038287524,0.11006880382875239,0.11006880382875239,15.351297605125858,False,evaluated,,physical comparison,not independently established
+NaBr,osmotic_coefficient,HW1972-T17-NaBr-m2,2,1.027,1.083596865116885,0.05659686511688511,0.05659686511688511,5.510892416444509,False,evaluated,,physical comparison,not independently established
+NaBr,gamma_pm_m,HW1972-T17-NaBr-m2,2,0.73,0.8458584920117643,0.11585849201176435,0.11585849201176435,15.871026302981418,False,evaluated,,physical comparison,not independently established
+NaBr,osmotic_coefficient,HW1972-T17-NaBr-m2.5,2.5,1.068,1.1179269619089591,0.04992696190895907,0.04992696190895907,4.67480916750553,False,evaluated,,physical comparison,not independently established
+NaBr,gamma_pm_m,HW1972-T17-NaBr-m2.5,2.5,0.768,0.8952166372568702,0.12721663725687016,0.12721663725687016,16.564666309488302,False,evaluated,,physical comparison,not independently established
+NaBr,osmotic_coefficient,HW1972-T17-NaBr-m3,3,1.112,1.1503554800878377,0.03835548008783762,0.03835548008783762,3.4492338208487068,False,evaluated,,physical comparison,not independently established
+NaBr,gamma_pm_m,HW1972-T17-NaBr-m3,3,0.816,0.9475556157234417,0.13155561572344177,0.13155561572344177,16.12201173081394,False,evaluated,,physical comparison,not independently established
+NaI,osmotic_coefficient,HW1972-T18-NaI-m0.001,0.001,0.989,0.9884378572041612,-0.0005621427958387715,0.0005621427958387715,0.0568395142405229,False,evaluated,,physical comparison,not independently established
+NaI,gamma_pm_m,HW1972-T18-NaI-m0.001,0.001,0.965,0.9650629752003279,6.297520032794157e-05,6.297520032794157e-05,0.0065259274951234795,True,evaluated,,physical comparison,not independently established
+NaI,osmotic_coefficient,HW1972-T18-NaI-m0.002,0.002,0.984,0.9841421224742398,0.00014212247423983637,0.00014212247423983637,0.014443340878032151,True,evaluated,,physical comparison,not independently established
+NaI,gamma_pm_m,HW1972-T18-NaI-m0.002,0.002,0.952,0.9519042626251376,-9.573737486234801e-05,9.573737486234801e-05,0.010056446939322271,True,evaluated,,physical comparison,not independently established
+NaI,osmotic_coefficient,HW1972-T18-NaI-m0.005,0.005,0.977,0.9764094434401714,-0.0005905565598285367,0.0005905565598285367,0.060445911957885026,False,evaluated,,physical comparison,not independently established
+NaI,gamma_pm_m,HW1972-T18-NaI-m0.005,0.005,0.928,0.9278320545777217,-0.0001679454222783816,0.0001679454222783816,0.018097567055860086,True,evaluated,,physical comparison,not independently established
+NaI,osmotic_coefficient,HW1972-T18-NaI-m0.01,0.01,0.969,0.9688646264124892,-0.00013537358751081197,0.00013537358751081197,0.013970442467576054,True,evaluated,,physical comparison,not independently established
+NaI,gamma_pm_m,HW1972-T18-NaI-m0.01,0.01,0.904,0.9036316776506333,-0.00036832234936667874,0.00036832234936667874,0.040743622717552955,True,evaluated,,physical comparison,not independently established
+NaI,osmotic_coefficient,HW1972-T18-NaI-m0.02,0.02,0.96,0.9601037352157041,0.00010373521570417044,0.00010373521570417044,0.010805751635851088,True,evaluated,,physical comparison,not independently established
+NaI,gamma_pm_m,HW1972-T18-NaI-m0.02,0.02,0.874,0.8740138249832743,1.3824983274290936e-05,1.3824983274290936e-05,0.0015818058666236768,True,evaluated,,physical comparison,not independently established
+NaI,osmotic_coefficient,HW1972-T18-NaI-m0.05,0.05,0.947,0.9483862420526877,0.0013862420526877806,0.0013862420526877806,0.14638247652458083,False,evaluated,,physical comparison,not independently established
+NaI,gamma_pm_m,HW1972-T18-NaI-m0.05,0.05,0.827,0.828267889664137,0.0012678896641370452,0.0012678896641370452,0.15331193036723642,False,evaluated,,physical comparison,not independently established
+NaI,osmotic_coefficient,HW1972-T18-NaI-m0.1,0.1,0.939,0.9424821066196333,0.0034821066196333295,0.0034821066196333295,0.37083137589279336,False,evaluated,,physical comparison,not independently established
+NaI,gamma_pm_m,HW1972-T18-NaI-m0.1,0.1,0.789,0.7926138915257124,0.0036138915257123427,0.0036138915257123427,0.45803441390523986,False,evaluated,,physical comparison,not independently established
+NaI,osmotic_coefficient,HW1972-T18-NaI-m0.2,0.2,0.936,0.9440272608472621,0.008027260847262019,0.008027260847262019,0.8576133383826943,False,evaluated,,physical comparison,not independently established
+NaI,gamma_pm_m,HW1972-T18-NaI-m0.2,0.2,0.753,0.7627603018666074,0.009760301866607368,0.009760301866607368,1.296188826906689,False,evaluated,,physical comparison,not independently established
+NaI,osmotic_coefficient,HW1972-T18-NaI-m0.3,0.3,0.938,0.9510362975683585,0.013036297568358557,0.013036297568358557,1.389797182127778,False,evaluated,,physical comparison,not independently established
+NaI,gamma_pm_m,HW1972-T18-NaI-m0.3,0.3,0.735,0.7518126879133704,0.016812687913370428,0.016812687913370428,2.2874405324313507,False,evaluated,,physical comparison,not independently established
+NaI,osmotic_coefficient,HW1972-T18-NaI-m0.4,0.4,0.943,0.9598739782345737,0.016873978234573705,0.016873978234573705,1.7893932380247832,False,evaluated,,physical comparison,not independently established
+NaI,gamma_pm_m,HW1972-T18-NaI-m0.4,0.4,0.726,0.7487638165793901,0.022763816579390084,0.022763816579390084,3.135511925535824,False,evaluated,,physical comparison,not independently established
+NaI,osmotic_coefficient,HW1972-T18-NaI-m0.5,0.5,0.95,0.9694022273010849,0.019402227301084984,0.019402227301084984,2.0423397159036827,False,evaluated,,physical comparison,not independently established
+NaI,gamma_pm_m,HW1972-T18-NaI-m0.5,0.5,0.722,0.7499558470231567,0.027955847023156677,0.027955847023156677,3.872000972736382,False,evaluated,,physical comparison,not independently established
+NaI,osmotic_coefficient,HW1972-T18-NaI-m0.6,0.6,0.957,0.9791484436802413,0.02214844368024138,0.02214844368024138,2.3143619310597057,False,evaluated,,physical comparison,not independently established
+NaI,gamma_pm_m,HW1972-T18-NaI-m0.6,0.6,0.721,0.7537360327085781,0.03273603270857817,0.03273603270857817,4.540365146820828,False,evaluated,,physical comparison,not independently established
+NaI,osmotic_coefficient,HW1972-T18-NaI-m0.7,0.7,0.964,0.9888883361466434,0.02488833614664343,0.02488833614664343,2.58177760857297,False,evaluated,,physical comparison,not independently established
+NaI,gamma_pm_m,HW1972-T18-NaI-m0.7,0.7,0.722,0.7592265633562555,0.037226563356255515,0.037226563356255515,5.156033705852565,False,evaluated,,physical comparison,not independently established
+NaI,osmotic_coefficient,HW1972-T18-NaI-m0.8,0.8,0.972,0.998508195876045,0.026508195876045026,0.026508195876045026,2.727180645683645,False,evaluated,,physical comparison,not independently established
+NaI,gamma_pm_m,HW1972-T18-NaI-m0.8,0.8,0.725,0.7659110686497086,0.040911068649708615,0.040911068649708615,5.6429060206494634,False,evaluated,,physical comparison,not independently established
+NaI,osmotic_coefficient,HW1972-T18-NaI-m0.9,0.9,0.981,1.007949246852783,0.026949246852783104,0.026949246852783104,2.747119964605821,False,evaluated,,physical comparison,not independently established
+NaI,gamma_pm_m,HW1972-T18-NaI-m0.9,0.9,0.729,0.773463459558999,0.044463459558999,0.044463459558999,6.09923999437572,False,evaluated,,physical comparison,not independently established
+NaI,osmotic_coefficient,HW1972-T18-NaI-m1,1,0.989,1.0171820380651035,0.028182038065103554,0.028182038065103554,2.849548843792068,False,evaluated,,physical comparison,not independently established
+NaI,gamma_pm_m,HW1972-T18-NaI-m1,1,0.734,0.7816667565771914,0.04766675657719144,0.04766675657719144,6.494108525502922,False,evaluated,,physical comparison,not independently established
+NaI,osmotic_coefficient,HW1972-T18-NaI-m1.2,1.2,1.007,1.0349801890092685,0.027980189009268575,0.027980189009268575,2.7785689184973763,False,evaluated,,physical comparison,not independently established
+NaI,gamma_pm_m,HW1972-T18-NaI-m1.2,1.2,0.747,0.7994677362174435,0.052467736217443495,0.052467736217443495,7.023793335668473,False,evaluated,,physical comparison,not independently established
+NaI,osmotic_coefficient,HW1972-T18-NaI-m1.4,1.4,1.025,1.05189005935078,0.02689005935078015,0.02689005935078015,2.623420424466356,False,evaluated,,physical comparison,not independently established
+NaI,gamma_pm_m,HW1972-T18-NaI-m1.4,1.4,0.763,0.8185457624962716,0.05554576249627163,0.05554576249627163,7.279916447742022,False,evaluated,,physical comparison,not independently established
+NaI,osmotic_coefficient,HW1972-T18-NaI-m1.6,1.6,1.044,1.0679582619165782,0.023958261916578127,0.023958261916578127,2.2948526740017363,False,evaluated,,physical comparison,not independently established
+NaI,gamma_pm_m,HW1972-T18-NaI-m1.6,1.6,0.781,0.8384747045756683,0.05747470457566828,0.05747470457566828,7.3591171031585505,False,evaluated,,physical comparison,not independently established
+NaI,osmotic_coefficient,HW1972-T18-NaI-m1.8,1.8,1.063,1.0832494731470972,0.02024947314709724,0.02024947314709724,1.9049363261615468,False,evaluated,,physical comparison,not independently established
+NaI,gamma_pm_m,HW1972-T18-NaI-m1.8,1.8,0.801,0.8590010083222294,0.05800100832222932,0.05800100832222932,7.24107469690753,False,evaluated,,physical comparison,not independently established
+NaI,osmotic_coefficient,HW1972-T18-NaI-m2,2,1.083,1.0978307856269172,0.014830785626917198,0.014830785626917198,1.3694169553940165,False,evaluated,,physical comparison,not independently established
+NaI,gamma_pm_m,HW1972-T18-NaI-m2,2,0.823,0.879965957028103,0.05696595702810303,0.05696595702810303,6.921744474860636,False,evaluated,,physical comparison,not independently established
+NaI,osmotic_coefficient,HW1972-T18-NaI-m2.5,2.5,1.134,1.1315805853676344,-0.002419414632365502,0.002419414632365502,0.21335226034969154,False,evaluated,,physical comparison,not independently established
+NaI,gamma_pm_m,HW1972-T18-NaI-m2.5,2.5,0.887,0.9337005529255918,0.04670055292559183,0.04670055292559183,5.26500032982997,False,evaluated,,physical comparison,not independently established
+NaI,osmotic_coefficient,HW1972-T18-NaI-m3,3,1.187,1.1621048639723215,-0.024895136027678566,0.024895136027678566,2.0973155878414964,False,evaluated,,physical comparison,not independently established
+NaI,gamma_pm_m,HW1972-T18-NaI-m3,3,0.963,0.9887207365525872,0.02572073655258722,0.02572073655258722,2.670896838274893,False,evaluated,,physical comparison,not independently established
+KCl,osmotic_coefficient,HW1972-T28-KCl-m0.001,0.001,0.988,0.9883208900702464,0.0003208900702463824,0.0003208900702463824,0.03247875204922899,True,evaluated,,physical comparison,not independently established
+KCl,gamma_pm_m,HW1972-T28-KCl-m0.001,0.001,0.965,0.964836538498766,-0.00016346150123391912,0.00016346150123391912,0.016939015671908718,True,evaluated,,physical comparison,not independently established
+KCl,osmotic_coefficient,HW1972-T28-KCl-m0.002,0.002,0.984,0.9839098997583301,-9.010024166988817e-05,9.010024166988817e-05,0.009156528624988636,True,evaluated,,physical comparison,not independently established
+KCl,gamma_pm_m,HW1972-T28-KCl-m0.002,0.002,0.951,0.9514603709166358,0.00046037091663586605,0.00046037091663586605,0.04840913949903954,True,evaluated,,physical comparison,not independently established
+KCl,osmotic_coefficient,HW1972-T28-KCl-m0.005,0.005,0.976,0.9758367878544206,-0.00016321214557935004,0.00016321214557935004,0.01672255589952357,True,evaluated,,physical comparison,not independently established
+KCl,gamma_pm_m,HW1972-T28-KCl-m0.005,0.005,0.927,0.9267632424130319,-0.00023675758696817262,0.00023675758696817262,0.02554019276895066,True,evaluated,,physical comparison,not independently established
+KCl,osmotic_coefficient,HW1972-T28-KCl-m0.01,0.01,0.967,0.9677354428101606,0.0007354428101605803,0.0007354428101605803,0.07605406516655433,False,evaluated,,physical comparison,not independently established
+KCl,gamma_pm_m,HW1972-T28-KCl-m0.01,0.01,0.901,0.901576033074195,0.0005760330741949593,0.0005760330741949593,0.06393263864538949,False,evaluated,,physical comparison,not independently established
+KCl,osmotic_coefficient,HW1972-T28-KCl-m0.02,0.02,0.957,0.9578857678397069,0.0008857678397069524,0.0008857678397069524,0.09255672306237747,False,evaluated,,physical comparison,not independently established
+KCl,gamma_pm_m,HW1972-T28-KCl-m0.02,0.02,0.869,0.870103070998994,0.0011030709989939824,0.0011030709989939824,0.12693567307180464,False,evaluated,,physical comparison,not independently established
+KCl,osmotic_coefficient,HW1972-T28-KCl-m0.05,0.05,0.94,0.9430059440365414,0.003005944036541419,0.003005944036541419,0.3197812804831297,False,evaluated,,physical comparison,not independently established
+KCl,gamma_pm_m,HW1972-T28-KCl-m0.05,0.05,0.816,0.8192735355728571,0.0032735355728571447,0.0032735355728571447,0.4011685751050423,False,evaluated,,physical comparison,not independently established
+KCl,osmotic_coefficient,HW1972-T28-KCl-m0.1,0.1,0.927,0.9320101680556964,0.005010168055696318,0.005010168055696318,0.540471203419236,False,evaluated,,physical comparison,not independently established
+KCl,gamma_pm_m,HW1972-T28-KCl-m0.1,0.1,0.768,0.7759009692747657,0.00790096927476569,0.00790096927476569,1.028772040985116,False,evaluated,,physical comparison,not independently established
+KCl,osmotic_coefficient,HW1972-T28-KCl-m0.2,0.2,0.913,0.9237108264966755,0.01071082649667543,0.01071082649667543,1.1731463851780317,False,evaluated,,physical comparison,not independently established
+KCl,gamma_pm_m,HW1972-T28-KCl-m0.2,0.2,0.717,0.7317866791693162,0.014786679169316197,0.014786679169316197,2.0622983499743652,False,evaluated,,physical comparison,not independently established
+KCl,osmotic_coefficient,HW1972-T28-KCl-m0.3,0.3,0.906,0.9211470631537315,0.015147063153731488,0.015147063153731488,1.6718612752463011,False,evaluated,,physical comparison,not independently established
+KCl,gamma_pm_m,HW1972-T28-KCl-m0.3,0.3,0.687,0.7072644764158099,0.020264476415809862,0.020264476415809862,2.9497054462605328,False,evaluated,,physical comparison,not independently established
+KCl,osmotic_coefficient,HW1972-T28-KCl-m0.4,0.4,0.902,0.9206074510999871,0.01860745109998707,0.01860745109998707,2.062910321506327,False,evaluated,,physical comparison,not independently established
+KCl,gamma_pm_m,HW1972-T28-KCl-m0.4,0.4,0.665,0.6909564006310187,0.025956400631018672,0.025956400631018672,3.903218140002808,False,evaluated,,physical comparison,not independently established
+KCl,osmotic_coefficient,HW1972-T28-KCl-m0.5,0.5,0.9,0.9209224626484791,0.02092246264847908,0.02092246264847908,2.3247180720532308,False,evaluated,,physical comparison,not independently established
+KCl,gamma_pm_m,HW1972-T28-KCl-m0.5,0.5,0.649,0.6790532458116347,0.03005324581163471,0.03005324581163471,4.630700433225687,False,evaluated,,physical comparison,not independently established
+KCl,osmotic_coefficient,HW1972-T28-KCl-m0.6,0.6,0.899,0.921603500379546,0.02260350037954595,0.02260350037954595,2.514293701840484,False,evaluated,,physical comparison,not independently established
+KCl,gamma_pm_m,HW1972-T28-KCl-m0.6,0.6,0.636,0.6698272777185577,0.03382727771855765,0.03382727771855765,5.318754358263781,False,evaluated,,physical comparison,not independently established
+KCl,osmotic_coefficient,HW1972-T28-KCl-m0.7,0.7,0.898,0.9224170832670735,0.02441708326707348,0.02441708326707348,2.7190515887609665,False,evaluated,,physical comparison,not independently established
+KCl,gamma_pm_m,HW1972-T28-KCl-m0.7,0.7,0.626,0.66235981232319,0.036359812323189966,0.036359812323189966,5.808276728944084,False,evaluated,,physical comparison,not independently established
+KCl,osmotic_coefficient,HW1972-T28-KCl-m0.8,0.8,0.898,0.923243736580347,0.025243736580346954,0.025243736580346954,2.8111065234239367,False,evaluated,,physical comparison,not independently established
+KCl,gamma_pm_m,HW1972-T28-KCl-m0.8,0.8,0.617,0.6561110622170294,0.039111062217029424,0.039111062217029424,6.338907976828108,False,evaluated,,physical comparison,not independently established
+KCl,osmotic_coefficient,HW1972-T28-KCl-m0.9,0.9,0.898,0.9240207907939235,0.0260207907939235,0.0260207907939235,2.8976381730427057,False,evaluated,,physical comparison,not independently established
+KCl,gamma_pm_m,HW1972-T28-KCl-m0.9,0.9,0.61,0.6507412468457326,0.04074124684573266,0.04074124684573266,6.6788929255299445,False,evaluated,,physical comparison,not independently established
+KCl,osmotic_coefficient,HW1972-T28-KCl-m1,1,0.898,0.9247159837486897,0.026715983748689665,0.026715983748689665,2.9750538695645505,False,evaluated,,physical comparison,not independently established
+KCl,gamma_pm_m,HW1972-T28-KCl-m1,1,0.604,0.6460254261623093,0.04202542616230931,0.04202542616230931,6.9578520136273685,False,evaluated,,physical comparison,not independently established
+KCl,osmotic_coefficient,HW1972-T28-KCl-m1.2,1.2,0.9,0.9258098851608904,0.025809885160890333,0.025809885160890333,2.8677650178767036,False,evaluated,,physical comparison,not independently established
+KCl,gamma_pm_m,HW1972-T28-KCl-m1.2,1.2,0.594,0.6379818060203609,0.04398180602036095,0.04398180602036095,7.404344447872214,False,evaluated,,physical comparison,not independently established
+KCl,osmotic_coefficient,HW1972-T28-KCl-m1.4,1.4,0.902,0.9264994942598661,0.024499494259866084,0.024499494259866084,2.71613018402063,False,evaluated,,physical comparison,not independently established
+KCl,gamma_pm_m,HW1972-T28-KCl-m1.4,1.4,0.586,0.6311980880757246,0.045198088075724674,0.045198088075724674,7.712984313263596,False,evaluated,,physical comparison,not independently established
+KCl,osmotic_coefficient,HW1972-T28-KCl-m1.6,1.6,0.905,0.9268208192730546,0.02182081927305457,0.02182081927305457,2.411140251166251,False,evaluated,,physical comparison,not independently established
+KCl,gamma_pm_m,HW1972-T28-KCl-m1.6,1.6,0.58,0.6252497835560027,0.04524978355600273,0.04524978355600273,7.801686820000472,False,evaluated,,physical comparison,not independently established
+KCl,osmotic_coefficient,HW1972-T28-KCl-m1.8,1.8,0.908,0.9268289509219829,0.01882895092198289,0.01882895092198289,2.0736730090289526,False,evaluated,,physical comparison,not independently established
+KCl,gamma_pm_m,HW1972-T28-KCl-m1.8,1.8,0.576,0.6198908076704585,0.0438908076704585,0.0438908076704585,7.6199318872323785,False,evaluated,,physical comparison,not independently established
+KCl,osmotic_coefficient,HW1972-T28-KCl-m2,2,0.912,0.9265817003951117,0.01458170039511164,0.01458170039511164,1.5988706573587326,False,evaluated,,physical comparison,not independently established
+KCl,gamma_pm_m,HW1972-T28-KCl-m2,2,0.573,0.6149715184801448,0.0419715184801448,0.0419715184801448,7.324872335103805,False,evaluated,,physical comparison,not independently established
+KCl,osmotic_coefficient,HW1972-T28-KCl-m2.5,2.5,0.923,0.925187542690893,0.0021875426908929407,0.0021875426908929407,0.23700354180855263,False,evaluated,,physical comparison,not independently established
+KCl,gamma_pm_m,HW1972-T28-KCl-m2.5,2.5,0.568,0.6040552992326287,0.036055299232628735,0.036055299232628735,6.347763949406468,False,evaluated,,physical comparison,not independently established
+KCl,osmotic_coefficient,HW1972-T28-KCl-m3,3,0.936,0.9232028826606704,-0.012797117339329644,0.012797117339329644,1.3672133909540218,False,evaluated,,physical comparison,not independently established
+KCl,gamma_pm_m,HW1972-T28-KCl-m3,3,0.568,0.5945891445353447,0.026589144535344778,0.026589144535344778,4.6811874181945035,False,evaluated,,physical comparison,not independently established
+KBr,osmotic_coefficient,HW1972-T29-KBr-m0.001,0.001,0.988,0.9883362728990313,0.00033627289903126467,0.00033627289903126467,0.03403571852543165,True,evaluated,,physical comparison,not independently established
+KBr,gamma_pm_m,HW1972-T29-KBr-m0.001,0.001,0.965,0.9648667120239262,-0.00013328797607381482,0.00013328797607381482,0.013812225499877184,True,evaluated,,physical comparison,not independently established
+KBr,osmotic_coefficient,HW1972-T29-KBr-m0.002,0.002,0.984,0.9839394707618014,-6.052923819854783e-05,6.052923819854783e-05,0.0061513453453808774,True,evaluated,,physical comparison,not independently established
+KBr,gamma_pm_m,HW1972-T29-KBr-m0.002,0.002,0.952,0.9515179603401686,-0.0004820396598314014,0.0004820396598314014,0.050634418049516954,True,evaluated,,physical comparison,not independently established
+KBr,osmotic_coefficient,HW1972-T29-KBr-m0.005,0.005,0.976,0.9759051959236845,-9.480407631545784e-05,9.480407631545784e-05,0.00971353240937068,True,evaluated,,physical comparison,not independently established
+KBr,gamma_pm_m,HW1972-T29-KBr-m0.005,0.005,0.927,0.9268947714778911,-0.00010522852210892442,0.00010522852210892442,0.011351512633109429,True,evaluated,,physical comparison,not independently established
+KBr,osmotic_coefficient,HW1972-T29-KBr-m0.01,0.01,0.968,0.9678609998175062,-0.00013900018249379809,0.00013900018249379809,0.014359522984896497,True,evaluated,,physical comparison,not independently established
+KBr,gamma_pm_m,HW1972-T29-KBr-m0.01,0.01,0.902,0.9018144817836644,-0.00018551821633561172,0.00018551821633561172,0.02056742974895917,True,evaluated,,physical comparison,not independently established
+KBr,osmotic_coefficient,HW1972-T29-KBr-m0.02,0.02,0.958,0.9581087967145063,0.00010879671450636508,0.00010879671450636508,0.011356650783545415,True,evaluated,,physical comparison,not independently established
+KBr,gamma_pm_m,HW1972-T29-KBr-m0.02,0.02,0.87,0.8705207157077987,0.0005207157077986579,0.0005207157077986579,0.059852380206742294,False,evaluated,,physical comparison,not independently established
+KBr,osmotic_coefficient,HW1972-T29-KBr-m0.05,0.05,0.942,0.9434510516909841,0.0014510516909841398,0.0014510516909841398,0.15403945764162844,False,evaluated,,physical comparison,not independently established
+KBr,gamma_pm_m,HW1972-T29-KBr-m0.05,0.05,0.817,0.820092095172791,0.003092095172791076,0.003092095172791076,0.3784694213942566,False,evaluated,,physical comparison,not independently established
+KBr,osmotic_coefficient,HW1972-T29-KBr-m0.1,0.1,0.928,0.9327125284232672,0.004712528423267193,0.004712528423267193,0.5078155628520682,False,evaluated,,physical comparison,not independently established
+KBr,gamma_pm_m,HW1972-T29-KBr-m0.1,0.1,0.771,0.777181392424232,0.006181392424231991,0.006181392424231991,0.8017370200041493,False,evaluated,,physical comparison,not independently established
+KBr,osmotic_coefficient,HW1972-T29-KBr-m0.2,0.2,0.916,0.9247499160594657,0.008749916059465623,0.008749916059465623,0.9552310108586924,False,evaluated,,physical comparison,not independently established
+KBr,gamma_pm_m,HW1972-T29-KBr-m0.2,0.2,0.722,0.7336805514550194,0.01168055145501945,0.01168055145501945,1.6178049106675139,False,evaluated,,physical comparison,not independently established
+KBr,osmotic_coefficient,HW1972-T29-KBr-m0.3,0.3,0.91,0.9224211641003726,0.012421164100372528,0.012421164100372528,1.364963087953025,False,evaluated,,physical comparison,not independently established
+KBr,gamma_pm_m,HW1972-T29-KBr-m0.3,0.3,0.693,0.7095934717440676,0.016593471744067667,0.016593471744067667,2.3944403671093317,False,evaluated,,physical comparison,not independently established
+KBr,osmotic_coefficient,HW1972-T29-KBr-m0.4,0.4,0.907,0.9220721254780538,0.01507212547805381,0.01507212547805381,1.6617558410202657,False,evaluated,,physical comparison,not independently established
+KBr,gamma_pm_m,HW1972-T29-KBr-m0.4,0.4,0.673,0.6936366058520379,0.02063660585203786,0.02063660585203786,3.066360453497453,False,evaluated,,physical comparison,not independently established
+KBr,osmotic_coefficient,HW1972-T29-KBr-m0.5,0.5,0.906,0.9225562099605122,0.016556209960512214,0.016556209960512214,1.8273962428821426,False,evaluated,,physical comparison,not independently established
+KBr,gamma_pm_m,HW1972-T29-KBr-m0.5,0.5,0.658,0.6820379895764317,0.024037989576431662,0.024037989576431662,3.653189905232775,False,evaluated,,physical comparison,not independently established
+KBr,osmotic_coefficient,HW1972-T29-KBr-m0.6,0.6,0.905,0.9233956994591239,0.018395699459123893,0.018395699459123893,2.0326739733838557,False,evaluated,,physical comparison,not independently established
+KBr,gamma_pm_m,HW1972-T29-KBr-m0.6,0.6,0.646,0.6730880386048697,0.027088038604869635,0.027088038604869635,4.193194830475176,False,evaluated,,physical comparison,not independently established
+KBr,osmotic_coefficient,HW1972-T29-KBr-m0.7,0.7,0.905,0.9243626379111037,0.01936263791110371,0.01936263791110371,2.139518001226929,False,evaluated,,physical comparison,not independently established
+KBr,gamma_pm_m,HW1972-T29-KBr-m0.7,0.7,0.637,0.6658779306944307,0.028877930694430676,0.028877930694430676,4.533427110585663,False,evaluated,,physical comparison,not independently established
+KBr,osmotic_coefficient,HW1972-T29-KBr-m0.8,0.8,0.905,0.92534037788401,0.020340377884009997,0.020340377884009997,2.2475555672939223,False,evaluated,,physical comparison,not independently established
+KBr,gamma_pm_m,HW1972-T29-KBr-m0.8,0.8,0.629,0.6598735789394176,0.030873578939417556,0.030873578939417556,4.908359131862887,False,evaluated,,physical comparison,not independently established
+KBr,osmotic_coefficient,HW1972-T29-KBr-m0.9,0.9,0.906,0.9262676103926353,0.02026761039263525,0.02026761039263525,2.23704308969484,False,evaluated,,physical comparison,not independently established
+KBr,gamma_pm_m,HW1972-T29-KBr-m0.9,0.9,0.622,0.6547386109278435,0.03273861092784347,0.03273861092784347,5.263442271357471,False,evaluated,,physical comparison,not independently established
+KBr,osmotic_coefficient,HW1972-T29-KBr-m1,1,0.907,0.9271125986676642,0.020112598667664128,0.020112598667664128,2.217486071407291,False,evaluated,,physical comparison,not independently established
+KBr,gamma_pm_m,HW1972-T29-KBr-m1,1,0.617,0.6502501499218724,0.03325014992187236,0.03325014992187236,5.389003228828584,False,evaluated,,physical comparison,not independently established
+KBr,osmotic_coefficient,HW1972-T29-KBr-m1.2,1.2,0.91,0.9285048100645107,0.018504810064510657,0.018504810064510657,2.0334956114846876,False,evaluated,,physical comparison,not independently established
+KBr,gamma_pm_m,HW1972-T29-KBr-m1.2,1.2,0.608,0.642643222925094,0.03464322292509403,0.03464322292509403,5.697898507416782,False,evaluated,,physical comparison,not independently established
+KBr,osmotic_coefficient,HW1972-T29-KBr-m1.4,1.4,0.913,0.9294886358248694,0.01648863582486937,0.01648863582486937,1.805984208638485,False,evaluated,,physical comparison,not independently established
+KBr,gamma_pm_m,HW1972-T29-KBr-m1.4,1.4,0.602,0.636275403677854,0.03427540367785398,0.03427540367785398,5.6935886508063085,False,evaluated,,physical comparison,not independently established
+KBr,osmotic_coefficient,HW1972-T29-KBr-m1.6,1.6,0.917,0.9300960170999544,0.013096017099954338,0.013096017099954338,1.4281370883265363,False,evaluated,,physical comparison,not independently established
+KBr,gamma_pm_m,HW1972-T29-KBr-m1.6,1.6,0.598,0.6307231174250867,0.03272311742508671,0.03272311742508671,5.472093214897444,False,evaluated,,physical comparison,not independently established
+KBr,osmotic_coefficient,HW1972-T29-KBr-m1.8,1.8,0.922,0.9303777238270395,0.008377723827039496,0.008377723827039496,0.9086468359045006,False,evaluated,,physical comparison,not independently established
+KBr,gamma_pm_m,HW1972-T29-KBr-m1.8,1.8,0.595,0.6257396341281171,0.030739634128117088,0.030739634128117088,5.166325063549091,False,evaluated,,physical comparison,not independently established
+KBr,osmotic_coefficient,HW1972-T29-KBr-m2,2,0.927,0.9303875443696173,0.0033875443696173013,0.0033875443696173013,0.36543089208385127,False,evaluated,,physical comparison,not independently established
+KBr,gamma_pm_m,HW1972-T29-KBr-m2,2,0.593,0.6211741091598271,0.0281741091598271,0.0281741091598271,4.7511145294818045,False,evaluated,,physical comparison,not independently established
+KBr,osmotic_coefficient,HW1972-T29-KBr-m2.5,2.5,0.94,0.9295421344624434,-0.010457865537556565,0.010457865537556565,1.1125388869741029,False,evaluated,,physical comparison,not independently established
+KBr,gamma_pm_m,HW1972-T29-KBr-m2.5,2.5,0.592,0.6110390615040142,0.019039061504014243,0.019039061504014243,3.2160576864888926,False,evaluated,,physical comparison,not independently established
+KBr,osmotic_coefficient,HW1972-T29-KBr-m3,3,0.954,0.9279423918256378,-0.0260576081743622,0.0260576081743622,2.731405469010713,False,evaluated,,physical comparison,not independently established
+KBr,gamma_pm_m,HW1972-T29-KBr-m3,3,0.595,0.6021950314150151,0.007195031415015096,0.007195031415015096,1.2092489773134616,False,evaluated,,physical comparison,not independently established
+KI,osmotic_coefficient,HW1972-T30-KI-m0.001,0.001,0.988,0.9883852684589522,0.00038526845895225925,0.00038526845895225925,0.03899478329476308,True,evaluated,,physical comparison,not independently established
+KI,gamma_pm_m,HW1972-T30-KI-m0.001,0.001,0.965,0.9649623120424,-3.768795759995225e-05,3.768795759995225e-05,0.003905487834191943,True,evaluated,,physical comparison,not independently established
+KI,osmotic_coefficient,HW1972-T30-KI-m0.002,0.002,0.984,0.9840349132826789,3.491328267890559e-05,3.491328267890559e-05,0.003548097833222113,True,evaluated,,physical comparison,not independently established
+KI,gamma_pm_m,HW1972-T30-KI-m0.002,0.002,0.952,0.9517024202223084,-0.00029757977769151456,0.00029757977769151456,0.031258380009612875,True,evaluated,,physical comparison,not independently established
+KI,osmotic_coefficient,HW1972-T30-KI-m0.005,0.005,0.976,0.9761320726440056,0.0001320726440056097,0.0001320726440056097,0.013532033197296076,True,evaluated,,physical comparison,not independently established
+KI,gamma_pm_m,HW1972-T30-KI-m0.005,0.005,0.927,0.9273255037140653,0.00032550371406525613,0.00032550371406525613,0.03511366926270292,True,evaluated,,physical comparison,not independently established
+KI,osmotic_coefficient,HW1972-T30-KI-m0.01,0.01,0.968,0.9682909334301845,0.00029093343018449236,0.00029093343018449236,0.030055106424017805,True,evaluated,,physical comparison,not independently established
+KI,gamma_pm_m,HW1972-T30-KI-m0.01,0.01,0.902,0.9026157625945238,0.0006157625945237832,0.0006157625945237832,0.06826636302924426,False,evaluated,,physical comparison,not independently established
+KI,osmotic_coefficient,HW1972-T30-KI-m0.02,0.02,0.958,0.9589094900853427,0.0009094900853426902,0.0009094900853426902,0.09493633458691965,False,evaluated,,physical comparison,not independently established
+KI,gamma_pm_m,HW1972-T30-KI-m0.02,0.02,0.871,0.8719781494259686,0.000978149425968633,0.000978149425968633,0.11230188587469954,False,evaluated,,physical comparison,not independently established
+KI,osmotic_coefficient,HW1972-T30-KI-m0.05,0.05,0.943,0.9452164084280098,0.002216408428009853,0.002216408428009853,0.23503800933296426,False,evaluated,,physical comparison,not independently established
+KI,gamma_pm_m,HW1972-T30-KI-m0.05,0.05,0.82,0.8231805557295985,0.003180555729598522,0.003180555729598522,0.3878726499510393,False,evaluated,,physical comparison,not independently established
+KI,osmotic_coefficient,HW1972-T30-KI-m0.1,0.1,0.932,0.9358457093580638,0.0038457093580637203,0.0038457093580637203,0.412629759448897,False,evaluated,,physical comparison,not independently established
+KI,gamma_pm_m,HW1972-T30-KI-m0.1,0.1,0.776,0.7824702043570108,0.006470204357010734,0.006470204357010734,0.8337892212642698,False,evaluated,,physical comparison,not independently established
+KI,osmotic_coefficient,HW1972-T30-KI-m0.2,0.2,0.922,0.9302185983269639,0.00821859832696381,0.00821859832696381,0.891388104876769,False,evaluated,,physical comparison,not independently established
+KI,gamma_pm_m,HW1972-T30-KI-m0.2,0.2,0.731,0.7425578868912425,0.011557886891242486,0.011557886891242486,1.581106277871749,False,evaluated,,physical comparison,not independently established
+KI,osmotic_coefficient,HW1972-T30-KI-m0.3,0.3,0.919,0.9299624567522129,0.010962456752212857,0.010962456752212857,1.1928679817424217,False,evaluated,,physical comparison,not independently established
+KI,gamma_pm_m,HW1972-T30-KI-m0.3,0.3,0.705,0.7215541647624834,0.016554164762483392,0.016554164762483392,2.348108476947999,False,evaluated,,physical comparison,not independently established
+KI,osmotic_coefficient,HW1972-T30-KI-m0.4,0.4,0.918,0.9315369368064099,0.013536936806409883,0.013536936806409883,1.4746118525500962,False,evaluated,,physical comparison,not independently established
+KI,gamma_pm_m,HW1972-T30-KI-m0.4,0.4,0.688,0.7084097936783064,0.02040979367830642,0.02040979367830642,2.966539778823608,False,evaluated,,physical comparison,not independently established
+KI,osmotic_coefficient,HW1972-T30-KI-m0.5,0.5,0.918,0.9338416035654566,0.015841603565456608,0.015841603565456608,1.725664876411395,False,evaluated,,physical comparison,not independently established
+KI,gamma_pm_m,HW1972-T30-KI-m0.5,0.5,0.676,0.6994467838420475,0.02344678384204746,0.02344678384204746,3.4684591482318723,False,evaluated,,physical comparison,not independently established
+KI,osmotic_coefficient,HW1972-T30-KI-m0.6,0.6,0.919,0.9364214876047086,0.01742148760470852,0.01742148760470852,1.895700501056422,False,evaluated,,physical comparison,not independently established
+KI,gamma_pm_m,HW1972-T30-KI-m0.6,0.6,0.666,0.6930023546295035,0.02700235462950351,0.02700235462950351,4.054407602027554,False,evaluated,,physical comparison,not independently established
+KI,osmotic_coefficient,HW1972-T30-KI-m0.7,0.7,0.921,0.9390610677914771,0.018061067791477092,0.018061067791477092,1.961027990388392,False,evaluated,,physical comparison,not independently established
+KI,gamma_pm_m,HW1972-T30-KI-m0.7,0.7,0.659,0.688193897705496,0.029193897705495964,0.029193897705495964,4.430030000833985,False,evaluated,,physical comparison,not independently established
+KI,osmotic_coefficient,HW1972-T30-KI-m0.8,0.8,0.923,0.9416509454128846,0.01865094541288459,0.01865094541288459,2.020687477018915,False,evaluated,,physical comparison,not independently established
+KI,gamma_pm_m,HW1972-T30-KI-m0.8,0.8,0.654,0.6845031549082373,0.030503154908237295,0.030503154908237295,4.664090964562277,False,evaluated,,physical comparison,not independently established
+KI,osmotic_coefficient,HW1972-T30-KI-m0.9,0.9,0.925,0.9441342281879803,0.019134228187980273,0.019134228187980273,2.0685652095113807,False,evaluated,,physical comparison,not independently established
+KI,gamma_pm_m,HW1972-T30-KI-m0.9,0.9,0.65,0.6816038373525055,0.03160383735250549,0.03160383735250549,4.862128823462383,False,evaluated,,physical comparison,not independently established
+KI,osmotic_coefficient,HW1972-T30-KI-m1,1,0.928,0.9464819636841624,0.018481963684162328,0.018481963684162328,1.9915909142416302,False,evaluated,,physical comparison,not independently established
+KI,gamma_pm_m,HW1972-T30-KI-m1,1,0.646,0.6792797657436767,0.03327976574367664,0.03327976574367664,5.151666523788953,False,evaluated,,physical comparison,not independently established
+KI,osmotic_coefficient,HW1972-T30-KI-m1.2,1.2,0.933,0.9507264061192263,0.017726406119226268,0.017726406119226268,1.8999363471839514,False,evaluated,,physical comparison,not independently established
+KI,gamma_pm_m,HW1972-T30-KI-m1.2,1.2,0.641,0.6758049457725468,0.03480494577254678,0.03480494577254678,5.42978873206658,False,evaluated,,physical comparison,not independently established
+KI,osmotic_coefficient,HW1972-T30-KI-m1.4,1.4,0.939,0.9543645393277703,0.015364539327770377,0.015364539327770377,1.636266169091627,False,evaluated,,physical comparison,not independently established
+KI,gamma_pm_m,HW1972-T30-KI-m1.4,1.4,0.639,0.6733248446886214,0.0343248446886214,0.0343248446886214,5.371650186012739,False,evaluated,,physical comparison,not independently established
+KI,osmotic_coefficient,HW1972-T30-KI-m1.6,1.6,0.945,0.9574329611541824,0.012432961154182465,0.012432961154182465,1.3156572649928535,False,evaluated,,physical comparison,not independently established
+KI,gamma_pm_m,HW1972-T30-KI-m1.6,1.6,0.638,0.6714294242361069,0.03342942423610684,0.03342942423610684,5.239721667101386,False,evaluated,,physical comparison,not independently established
+KI,osmotic_coefficient,HW1972-T30-KI-m1.8,1.8,0.951,0.9599857460524778,0.008985746052477817,0.008985746052477817,0.9448734019429881,False,evaluated,,physical comparison,not independently established
+KI,gamma_pm_m,HW1972-T30-KI-m1.8,1.8,0.637,0.6698810668628408,0.03288106686284076,0.03288106686284076,5.161862929802317,False,evaluated,,physical comparison,not independently established
+KI,osmotic_coefficient,HW1972-T30-KI-m2,2,0.957,0.962079719250701,0.005079719250701054,0.005079719250701054,0.5307961599478636,False,evaluated,,physical comparison,not independently established
+KI,gamma_pm_m,HW1972-T30-KI-m2,2,0.638,0.6685360980919154,0.030536098091915376,0.030536098091915376,4.78622227146009,False,evaluated,,physical comparison,not independently established
+KI,osmotic_coefficient,HW1972-T30-KI-m2.5,2.5,0.972,0.9656487919367469,-0.0063512080632530665,0.0063512080632530665,0.653416467412867,False,evaluated,,physical comparison,not independently established
+KI,gamma_pm_m,HW1972-T30-KI-m2.5,2.5,0.643,0.6655550022793877,0.02255500227938767,0.02255500227938767,3.5077764042593578,False,evaluated,,physical comparison,not independently established
+KI,osmotic_coefficient,HW1972-T30-KI-m3,3,0.987,0.9673757395214803,-0.01962426047851973,0.01962426047851973,1.988273604713245,False,evaluated,,physical comparison,not independently established
+KI,gamma_pm_m,HW1972-T30-KI-m3,3,0.65,0.6626596598619996,0.012659659861999573,0.012659659861999573,1.947639978769165,False,evaluated,,physical comparison,not independently established

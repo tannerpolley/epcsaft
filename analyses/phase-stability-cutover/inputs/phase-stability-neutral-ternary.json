@@ -1,0 +1,334 @@
+{
+  "schema": "epcsaft.parameters",
+  "schema_version": 1,
+  "document_id": "neutral-ternary-immiscible-fixture",
+  "document_version": 1,
+  "purpose": "package-test-fixture",
+  "sources": [
+    {
+      "source_id": "engine-numerical-fixture",
+      "citation": "Project-authored compact numerical EOS fixture.",
+      "use_basis": "Numerical invariants and independent equation oracles."
+    }
+  ],
+  "domains": [
+    {
+      "domain_id": "engine-numerical-fixture-domain",
+      "kind": "unknown"
+    }
+  ],
+  "components": [
+    {
+      "component_id": "alpha",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 0.03,
+            "unit": "kilogram / mole"
+          },
+          "provenance": {
+            "source_id": "engine-numerical-fixture",
+            "locator": "compact numerical fixture values",
+            "domain_id": "engine-numerical-fixture-domain"
+          }
+        },
+        "charge_number": {
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "engine-numerical-fixture",
+            "locator": "compact numerical fixture values",
+            "domain_id": "engine-numerical-fixture-domain"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/alpha/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 300.0,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "engine-numerical-fixture",
+            "locator": "compact numerical fixture values",
+            "domain_id": "engine-numerical-fixture-domain"
+          }
+        },
+        {
+          "identity": "component/alpha/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 1.5,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "engine-numerical-fixture",
+            "locator": "compact numerical fixture values",
+            "domain_id": "engine-numerical-fixture-domain"
+          }
+        },
+        {
+          "identity": "component/alpha/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 3.5,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "engine-numerical-fixture",
+            "locator": "compact numerical fixture values",
+            "domain_id": "engine-numerical-fixture-domain"
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "beta",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 0.03,
+            "unit": "kilogram / mole"
+          },
+          "provenance": {
+            "source_id": "engine-numerical-fixture",
+            "locator": "compact numerical fixture values",
+            "domain_id": "engine-numerical-fixture-domain"
+          }
+        },
+        "charge_number": {
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "engine-numerical-fixture",
+            "locator": "compact numerical fixture values",
+            "domain_id": "engine-numerical-fixture-domain"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/beta/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 300.0,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "engine-numerical-fixture",
+            "locator": "compact numerical fixture values",
+            "domain_id": "engine-numerical-fixture-domain"
+          }
+        },
+        {
+          "identity": "component/beta/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 1.5,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "engine-numerical-fixture",
+            "locator": "compact numerical fixture values",
+            "domain_id": "engine-numerical-fixture-domain"
+          }
+        },
+        {
+          "identity": "component/beta/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 3.7,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "engine-numerical-fixture",
+            "locator": "compact numerical fixture values",
+            "domain_id": "engine-numerical-fixture-domain"
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "gamma",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 0.03,
+            "unit": "kilogram / mole"
+          },
+          "provenance": {
+            "source_id": "engine-numerical-fixture",
+            "locator": "compact numerical fixture values",
+            "domain_id": "engine-numerical-fixture-domain"
+          }
+        },
+        "charge_number": {
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "engine-numerical-fixture",
+            "locator": "compact numerical fixture values",
+            "domain_id": "engine-numerical-fixture-domain"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/gamma/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 300.0,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "engine-numerical-fixture",
+            "locator": "compact numerical fixture values",
+            "domain_id": "engine-numerical-fixture-domain"
+          }
+        },
+        {
+          "identity": "component/gamma/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 1.5,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "engine-numerical-fixture",
+            "locator": "compact numerical fixture values",
+            "domain_id": "engine-numerical-fixture-domain"
+          }
+        },
+        {
+          "identity": "component/gamma/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 3.9,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "engine-numerical-fixture",
+            "locator": "compact numerical fixture values",
+            "domain_id": "engine-numerical-fixture-domain"
+          }
+        }
+      ]
+    }
+  ],
+  "pairs": [
+    {
+      "component_id_a": "alpha",
+      "component_id_b": "beta",
+      "coefficients": [
+        {
+          "identity": "pair/alpha/beta/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0.2,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "engine-numerical-fixture",
+            "locator": "compact numerical fixture values",
+            "domain_id": "engine-numerical-fixture-domain"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "alpha",
+      "component_id_b": "gamma",
+      "coefficients": [
+        {
+          "identity": "pair/alpha/gamma/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0.2,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "engine-numerical-fixture",
+            "locator": "compact numerical fixture values",
+            "domain_id": "engine-numerical-fixture-domain"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "beta",
+      "component_id_b": "gamma",
+      "coefficients": [
+        {
+          "identity": "pair/beta/gamma/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0.2,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "engine-numerical-fixture",
+            "locator": "compact numerical fixture values",
+            "domain_id": "engine-numerical-fixture-domain"
+          }
+        }
+      ]
+    }
+  ],
+  "model_families": [
+    {
+      "family_id": "model/association",
+      "kind": "association",
+      "choice": "none",
+      "provenance": {
+        "source_id": "engine-numerical-fixture",
+        "locator": "compact numerical fixture values",
+        "domain_id": "engine-numerical-fixture-domain"
+      }
+    },
+    {
+      "family_id": "model/base",
+      "kind": "base",
+      "choice": "pc-saft",
+      "provenance": {
+        "source_id": "engine-numerical-fixture",
+        "locator": "compact numerical fixture values",
+        "domain_id": "engine-numerical-fixture-domain"
+      }
+    },
+    {
+      "family_id": "model/electrolyte",
+      "kind": "electrolyte",
+      "choice": "none",
+      "provenance": {
+        "source_id": "engine-numerical-fixture",
+        "locator": "compact numerical fixture values",
+        "domain_id": "engine-numerical-fixture-domain"
+      }
+    },
+    {
+      "family_id": "model/relative_permittivity",
+      "kind": "permittivity",
+      "choice": "none",
+      "provenance": {
+        "source_id": "engine-numerical-fixture",
+        "locator": "compact numerical fixture values",
+        "domain_id": "engine-numerical-fixture-domain"
+      }
+    }
+  ],
+  "model_coefficients": [],
+  "correlations": [],
+  "topology": {
+    "presets": [],
+    "sites": [],
+    "edges": []
+  }
+}

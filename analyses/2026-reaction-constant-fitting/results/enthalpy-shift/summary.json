@@ -1,0 +1,104 @@
+{
+  "columns": 192,
+  "temperatures": [
+    293.15,
+    313.15,
+    353.15,
+    393.15
+  ],
+  "steps": [
+    25.0,
+    12.5,
+    6.25,
+    3.125
+  ],
+  "families": {
+    "pressure": {
+      "resolved_relative_max": 2.5845367315270523e-09,
+      "absolute_max": 2.01169983449212e-10,
+      "physical_relative_max": 6.214095588881303e-07
+    },
+    "species": {
+      "resolved_relative_max": 1.6797382562043095e-06,
+      "absolute_max": 4.890908850336585e-11,
+      "physical_relative_max": 1.6797561293189905e-06
+    },
+    "kim-addition": {
+      "resolved_relative_max": 2.656858948795649e-07,
+      "absolute_max": 7.556241504724781e-08,
+      "physical_relative_max": 2.656858979492677e-07
+    }
+  },
+  "pivot_max": 7.105427357601002e-15,
+  "enthalpy_direction_max": 1.1102230246251565e-16,
+  "slope_max": 1.859401521642212e-12,
+  "source_replay_max": 3.552713678800501e-15,
+  "enthalpy_replay_max": 9.915947641400441e-12,
+  "combined_max": 4.731767888267714e-16,
+  "solver_residual_max": 5.684341886080801e-13,
+  "timing": {
+    "0": {
+      "A": {
+        "cpu_median": 21.745465,
+        "wall_median": 21.751671907,
+        "wall_range": [
+          21.193734705,
+          22.386252857
+        ]
+      },
+      "B": {
+        "cpu_median": 21.557060999999997,
+        "wall_median": 21.56644093,
+        "wall_range": [
+          21.202314465,
+          22.958577118
+        ]
+      }
+    },
+    "16": {
+      "A": {
+        "cpu_median": 563.2213519999999,
+        "wall_median": 49.066729555,
+        "wall_range": [
+          49.066729555,
+          49.066729555
+        ]
+      },
+      "B": {
+        "cpu_median": 568.4361540000001,
+        "wall_median": 48.430364356,
+        "wall_range": [
+          48.430364356,
+          48.430364356
+        ]
+      }
+    },
+    "32": {
+      "A": {
+        "cpu_median": 874.9735974999999,
+        "wall_median": 43.213807305,
+        "wall_range": [
+          42.019622317,
+          44.407992293
+        ]
+      },
+      "B": {
+        "cpu_median": 877.526527,
+        "wall_median": 43.643916479,
+        "wall_range": [
+          43.643916479,
+          43.643916479
+        ]
+      }
+    }
+  },
+  "original_packet_sha256": "862ecf1e5d2756b7639493ea9d08444e890c66af6f427e5d9ee436910783a8db",
+  "thermal_293_label": "numerical extrapolation for derivative verification; no physical-validity claim",
+  "limits": [
+    "Numerical verification only; no MEA parameter adoption or physical validation.",
+    "293.15 K heat uses the separate lower-endpoint extrapolation; other temperatures use the original calorics.",
+    "#449 permanent gate and its serial CPU ceiling remain open.",
+    "Sequence/minimax deliberately refuse the new coordinate.",
+    "Owner confirmation of proposed ceilings is required before merge."
+  ]
+}

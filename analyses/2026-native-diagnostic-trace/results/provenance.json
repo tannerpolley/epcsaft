@@ -1,0 +1,229 @@
+{
+  "base": "9fdfe7cec1526420b6a5d1da6a43db9db2a94441",
+  "wheel_A_sha256": "cf18c81ca57db461ecbba64708159f00882991dbe148a1ace04423df323e03dc",
+  "wheel_B_sha256": "ba215c7e151f11456edefbe78ee596ba9830a973ebebc9441b7cc11f234a8a52",
+  "inputs": {
+    "analyses/2026-native-diagnostic-trace/inputs/endpoint_declarations.py": "c331d298b5517f94c0725bb11b30af2b22a976d9b5de6230bc9c91ab5f9e01e6",
+    "analyses/2026-native-diagnostic-trace/inputs/declarations.py": "d84eec36b017a72cd2f88077fed5199e8514265f9eb4ca0c1c8bb71fcfaf7026",
+    "analyses/2026-native-diagnostic-trace/inputs/site-trace-input.json": "6d668b8628223dde8faed8df26c8e45ab96793acba6465c5de62ad8a633525be",
+    "analyses/2026-native-diagnostic-trace/inputs/site-trace-50.csv": "7fd2052a602bc2dc45b637873c8b36903c94d8792609267d6b117201d42f0c53"
+  },
+  "native_rows": {
+    "total": 478,
+    "bit_identical": 478,
+    "candidate_metadata": {
+      "rows": 478,
+      "recorded_at_revision": "854d5b725ae1399ac13dcec6ceb6fded61af43db",
+      "build_fingerprint": "b8ce5b9068d4dd31b615874f39f5f74c456483961ae4a3cf19c9898f4dd4c022",
+      "wheel_sha256": "ba215c7e151f11456edefbe78ee596ba9830a973ebebc9441b7cc11f234a8a52",
+      "commands": [
+        {
+          "command": "properties_checks P3",
+          "exit": 0
+        },
+        {
+          "command": "properties_checks P4",
+          "exit": 0
+        },
+        {
+          "command": "equilibrium_checks S2",
+          "exit": 0
+        },
+        {
+          "command": "equilibrium_checks E5-1",
+          "exit": 0
+        },
+        {
+          "command": "equilibrium_checks E5-3",
+          "exit": 0
+        },
+        {
+          "command": "equilibrium_checks E5-5",
+          "exit": 0
+        },
+        {
+          "command": "equilibrium_checks E5-7",
+          "exit": 0
+        },
+        {
+          "command": "equilibrium_checks E5-8",
+          "exit": 0
+        },
+        {
+          "command": "equilibrium_checks E5-10",
+          "exit": 0
+        },
+        {
+          "command": "regression_checks R2-J2",
+          "exit": 0
+        },
+        {
+          "command": "regression_checks D86",
+          "exit": 0
+        },
+        {
+          "command": "surface_example",
+          "exit": 0
+        }
+      ],
+      "failed_native_comparisons": [],
+      "value": "the native check's unrounded model operand; its own reference and criterion stay with the native owner",
+      "claim_limit": "identical explicit inputs through one build; transport agreement, not model validity"
+    },
+    "table_sha256": "1f2f34269d0c8f8f15fd970cd8646588b318b4cc19981167513f51fa4c89c4b5"
+  },
+  "disabled": {
+    "case_modes": 34,
+    "readouts": 5776,
+    "binary64_readouts": 2806
+  },
+  "limits": "Numerical verification and shared-host timing; no physical validation, new stopping rule or cryogenic root certification.",
+  "qualification_commands": "build/issue-284 contains the scoped compile commands, native input generation, fault overlay and complete logs; no instrumentation is compiled into wheel B.",
+  "native_counts_scope": "work0/1/2 are driver iterations/evaluations/Hessians for allocation case 0; otherwise model forward/reverse/Hessians. Optional endpoint inspection work is excluded from numerical equality.",
+  "shared_records": {
+    "ordinary/case-6-figure-2-point-7-capture.json": "ordinary/case-1-two-liquid-capture.json",
+    "ordinary/case-7-flash-5918.5286-Pa-capture.json": "ordinary/case-1-two-liquid-capture.json",
+    "ordinary/discovery-capture.json": "ordinary/case-1-two-liquid-capture.json",
+    "ordinary/discovery-state.csv.gz": "off/discovery-state.csv.gz",
+    "ordinary/masking-capture.json": "ordinary/case-1-two-liquid-capture.json",
+    "ordinary/site-skip-capture.json": "ordinary/case-1-two-liquid-capture.json",
+    "detailed/case-1-two-liquid-capture.json": "ordinary/case-1-two-liquid-capture.json",
+    "detailed/case-6-figure-2-point-7-capture.json": "ordinary/case-1-two-liquid-capture.json",
+    "detailed/case-7-flash-5918.5286-Pa-capture.json": "ordinary/case-1-two-liquid-capture.json",
+    "detailed/discovery-capture.json": "ordinary/case-1-two-liquid-capture.json",
+    "detailed/masking-capture.json": "ordinary/case-1-two-liquid-capture.json",
+    "detailed/site-skip-capture.json": "ordinary/case-1-two-liquid-capture.json",
+    "detailed/site-skip-state.csv.gz": "ordinary/site-skip-state.csv.gz",
+    "next/case-1-two-liquid-state.csv.gz": "ordinary/case-1-two-liquid-state.csv.gz",
+    "next/case-6-figure-2-point-7-state.csv.gz": "ordinary/case-6-figure-2-point-7-state.csv.gz",
+    "next/case-7-flash-5918.5286-Pa-state.csv.gz": "ordinary/case-7-flash-5918.5286-Pa-state.csv.gz",
+    "next/discovery-state.csv.gz": "off/discovery-state.csv.gz",
+    "next/masking-state.csv.gz": "ordinary/masking-state.csv.gz",
+    "next/site-skip-state.csv.gz": "ordinary/site-skip-state.csv.gz",
+    "endpoints/mea-zero-capture.json": "ordinary/case-1-two-liquid-capture.json",
+    "endpoints/propane-bubble-capture.json": "ordinary/case-1-two-liquid-capture.json"
+  },
+  "qualification_source_lines": {
+    "native_verification": 99,
+    "python_reader": 46,
+    "native_counter_reader": 14,
+    "native_design_allowance": 80,
+    "native_allowance_excess": 19,
+    "amendment": "Original lead approval covered 91 native verification lines; the R1 request adds 8 net lines for payload construction faults, an ionic declaration and capture-absent checks.",
+    "prior_native_approved_allowance": 91
+  },
+  "allocation": {
+    "baseline_cases": 9,
+    "fault_configurations": 92,
+    "injected": 66,
+    "incomplete": 65
+  },
+  "timing_final": "timing-r2-final/summary.json",
+  "gates": {
+    "check-all": {
+      "exit": 0,
+      "log": "build/issue-284/r1-check-all.log",
+      "sha256": "abc8aab464b7f03fd74f93c825bd288deac9fa830200cfe1f66728189aaa577a"
+    },
+    "prior_candidate_checks": {
+      "check-affected": {
+        "exit": 0,
+        "log": "build/issue-284/check-affected-delivered.log",
+        "sha256": "1617ffc968c009722225a983e5432207a4a1097035ffc144ed33618f379b1a59"
+      },
+      "khudaida": {
+        "exit": 0,
+        "log": "build/issue-284/khudaida-delivered.log",
+        "sha256": "fa6ebac397ceca1c7aa8439723c545a826d5a5b0ec78bd325e150bbaf06f96c1"
+      }
+    }
+  },
+  "runtime_diff": {
+    "gross_added": 252,
+    "deleted": 68,
+    "net_added": 184,
+    "task_ceiling": 260,
+    "sha256": "0d8180cbae79ee9bb4c4fb56932f69c17885b0f7bc8163cc302b27ed5abe997d"
+  },
+  "ordinary_transport": "Completed ordinary records are retained once in events/spans CSVs. Flattened readouts used for binary comparison remain with build/issue-284 qualification logs.",
+  "R1": {
+    "prior_candidate": "bdf19ca323b7f93081b8213eb0a1fe4d217738a1",
+    "runtime_added": 19,
+    "runtime_removed": 18,
+    "runtime_source_sha256": "d23c6eac3764329f689b69922dbfff9bc3ad193e25da563294477bcd8a605cf8",
+    "mathematics": "ALG-ASSOCIATION, ALG-DENSITY and ALG-EQUILIBRIUM revalidated; equations, methods, tolerances and numerical decisions unchanged.",
+    "qualification_sha256": "b35ec388f2f0672fe4f9e522502db77f77c3760d1be0495fbceee0fb5444ccbf",
+    "qualification_overlay": {
+      "builder": "build/issue-284/build_fault_probe.py",
+      "builder_sha256": "7b687a54a00868028f6520843551d1c21fb4fda76b5d333eaa3ae53f74774d80",
+      "trace_header_sha256": "2e5ef60a8db1ed9349ff6c9a1efc8850cff08be8426c058ea35e96ef87fd172c",
+      "properties_source_sha256": "0995e22e645f912e43af85a9a3b5113d2bba914aff26fade8ba59ffe2c7eb5ac",
+      "log": "build/issue-284/r1-fault.log",
+      "log_sha256": "40a5483cb4ea59cae0d6e80851712061a2139d70a29d4bbd53786e355541accc"
+    },
+    "accounting": {
+      "base": "9fdfe7cec1526420b6a5d1da6a43db9db2a94441",
+      "report": "build/issue-284/r1-change-accounting.json",
+      "runtime_gross": 252,
+      "runtime_removed": 68,
+      "runtime_net": 184,
+      "nonruntime_executable_gross": 212,
+      "documents_gross": 239
+    }
+  },
+  "retained_prior_evidence": {
+    "commit": "bdf19ca323b7f93081b8213eb0a1fe4d217738a1",
+    "wheel_B_sha256": "57e108a172921714b7d41d16b88085ba91a7b736e2e625169f152ac73964e92f",
+    "scope": "disabled-identity.csv, native-counters.csv, starts.csv, off/ordinary/detailed/next/endpoints records and pre-R1 timing directories; not rerun for R1."
+  },
+  "R2": {
+    "base": "9fdfe7ce",
+    "branch_before": "854d5b72",
+    "candidate_wheel_sha256": "ba215c7e151f11456edefbe78ee596ba9830a973ebebc9441b7cc11f234a8a52",
+    "qualification_sha256": "a8fe7dbe32574ddd8b0e0c4cd702104c69a0b4c34d3bbe61c19a7c9779f8aa9b",
+    "overlay_builder": "analyses/2026-native-diagnostic-trace/scripts/build_fault_probe.py",
+    "overlay_builder_sha256": "75902f8fd943bfa31cde8fe953bfd8e30784ff9302137e53d1a9311b6df608d1",
+    "ipopt_callsite_refresh": "build/issue-284/r2-rebuild-ipopt.py; only GibbsMinimizer and qualification translation units rebuilt after adding independent call-site allocation detection; unchanged EOS/fit qualification objects reused",
+    "qualification_log_sha256": "c93b7f3d930878aefbafd8fbd79f0e3aa620ebd5c4658b3ac7bbac4d1207d7da",
+    "runtime_gross": 257,
+    "runtime_removed": 73,
+    "runtime_net": 184,
+    "payload_rule": "payload-rule.json",
+    "fit_returned": "fit-returned.csv",
+    "accounting": {
+      "report": "build/issue-284/r2-change-accounting.json",
+      "executable_gross": 640,
+      "runtime_gross": 257,
+      "nonruntime_executable_gross": 383,
+      "documents_gross": 274
+    },
+    "gates": {
+      "native_rows_bit_identical": 478,
+      "check_all": "121 Python tests, 6 native groups, packets, docs synchronization, budgets, project map, ruff, mypy, analysis layout and 16 architecture rules; passed",
+      "work_identical": true,
+      "max_relative_state_difference": 0.0,
+      "timing_pairs": 7,
+      "delivered_review": "pending accountable lead"
+    }
+  },
+  "timing_same_wheel_first": "timing-r2/summary.json",
+  "report_declarations": {
+    "masking": {
+      "source": "engine/tests/equilibrium/test_trace_reliability.py:test_trace_inventory_below_the_composition_box; inputs/declarations.py",
+      "reactive_inventory_mol": 1e-12,
+      "pressure_Pa": 200000.0,
+      "row_tolerance": 1e-10
+    },
+    "derivative_q": {
+      "2": 1e+26,
+      "128": 1e+27
+    },
+    "derivative_source": "scripts/qualify.cpp: association derivative loop",
+    "relative_tolerance": 1e-12,
+    "tolerance_source": "scripts/qualify.cpp:100 and prior notebook scalar/sequence comparison declaration; no comparison rerun",
+    "baseline_runtime_lines": 22416,
+    "runtime_source": "build/issue-284/baseline-budgets.txt; final total = baseline + R2.runtime_net",
+    "endpoint_condition_relative_difference": 0.0,
+    "endpoint_comparison_source": "prior notebook comparison to #269 native endpoint calculation; reported result preserved without rerunning Engine"
+  }
+}

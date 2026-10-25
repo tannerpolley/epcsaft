@@ -1,0 +1,406 @@
+{
+  "schema_version": 2,
+  "repository": "tannerpolley/ePC-SAFT",
+  "packet_root": "data/packets",
+  "packets": [
+    {
+      "packet_id": "ascani-2022-case-study-2-electrolyte-lle",
+      "packet_version": "2",
+      "packet_path": "data/packets/ascani-2022-case-study-2-electrolyte-lle/2",
+      "packet_fingerprint": "f6b3774774a68ab193de8c7d2c6eac928038d49bda16bee73c88b165d0ee32dd",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "ascani-2022-case-study-2-electrolyte-lle",
+      "packet_version": "3",
+      "packet_path": "data/packets/ascani-2022-case-study-2-electrolyte-lle/3",
+      "packet_fingerprint": "d444b517c6c341eaebdcfaeb43a24b1eae0a39326c16273adbb9deab169243d8",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "crespo-2021-deea",
+      "packet_version": "2",
+      "packet_path": "data/packets/crespo-2021-deea/2",
+      "packet_fingerprint": "ba2848e954f77a96b3d965d90aea1155ad06f7456c05a84871dfd1081d6a4bc4",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "crespo-2021-deea",
+      "packet_version": "3",
+      "packet_path": "data/packets/crespo-2021-deea/3",
+      "packet_fingerprint": "7b1313dcff06cca794bccfb301f017b0150c788f1aba90b0c98b5f56b38af8f7",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "dielectric-response-records",
+      "packet_version": "1",
+      "packet_path": "data/packets/dielectric-response-records/1",
+      "packet_fingerprint": "4100b757771565b00c37ff116c4aa1da7b8dac5e71f5e509697e7ddce0735630",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "figiel-2025-aqueous-iodides",
+      "packet_version": "2",
+      "packet_path": "data/packets/figiel-2025-aqueous-iodides/2",
+      "packet_fingerprint": "40db4c770a04f29eb09674005ad32f8f7539d3599322d2cba60eca61063359ed",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "figiel-2025-aqueous-iodides",
+      "packet_version": "3",
+      "packet_path": "data/packets/figiel-2025-aqueous-iodides/3",
+      "packet_fingerprint": "5f49e6206658b60d41729cedb64eafdf47a199ceff815eb31ff88c1769e0f4bf",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "figiel-2025-chloride-activity-refit",
+      "packet_version": "2",
+      "packet_path": "data/packets/figiel-2025-chloride-activity-refit/2",
+      "packet_fingerprint": "d79865152abaf527b4602c13b20e3e2c46db8eb0b3f2b294b138b8bdde65a865",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "figiel-2025-reference-electrolytes",
+      "packet_version": "2",
+      "packet_path": "data/packets/figiel-2025-reference-electrolytes/2",
+      "packet_fingerprint": "bce1faecebd668fd2dd982a4713a13377e6e87b1e993cf4315c607e2ded25d03",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "figiel-2025-reference-electrolytes",
+      "packet_version": "3",
+      "packet_path": "data/packets/figiel-2025-reference-electrolytes/3",
+      "packet_fingerprint": "06356afa716ce28953158a4efe46f493bc1fc9639cf4a1a15f6d6b4b1be2611c",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "figiel-2025-reference-electrolytes",
+      "packet_version": "4",
+      "packet_path": "data/packets/figiel-2025-reference-electrolytes/4",
+      "packet_fingerprint": "690fe5a1bc1f74c04dfb308b8f9a6e9ae7744662c442f03f3422fe0ecd5d3ca8",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "figiel-2025-validation-parameters",
+      "packet_version": "2",
+      "packet_path": "data/packets/figiel-2025-validation-parameters/2",
+      "packet_fingerprint": "813c104f1b9f422475296663d927a8f10baf71ad806c4176abd4527b5950db63",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "figiel-2025-validation-parameters",
+      "packet_version": "3",
+      "packet_path": "data/packets/figiel-2025-validation-parameters/3",
+      "packet_fingerprint": "e4f3ce8ce75424be7871080cb824b3fb672bc2d774b3a8e1dba6f86624a7f537",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "figiel-yu-held-2025",
+      "packet_version": "2",
+      "packet_path": "data/packets/figiel-yu-held-2025/2",
+      "packet_fingerprint": "02a55e65f1a6a80c54668880d9f8a3c5c9b4ecd560b3cd80d7c12d5b45fd3520",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "figiel-yu-held-2025",
+      "packet_version": "3",
+      "packet_path": "data/packets/figiel-yu-held-2025/3",
+      "packet_fingerprint": "9d7aba59c7cdb83bcdef07f8bcb96e8a0ed20ba8c952291fd5dae3dece69aa7d",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "figiel-yu-held-2025",
+      "packet_version": "4",
+      "packet_path": "data/packets/figiel-yu-held-2025/4",
+      "packet_fingerprint": "d376ddc75bb67b5560652eae94c852723b8fbab00826e91a397ccd8e2e2e52c5",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "gross-2001-methane-ethane",
+      "packet_version": "2",
+      "packet_path": "data/packets/gross-2001-methane-ethane/2",
+      "packet_fingerprint": "0007890df92c43ede99f978c0558ea420becd29131e6681dc2d4b51d8f87d207",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "gross-2001-methane-ethane",
+      "packet_version": "3",
+      "packet_path": "data/packets/gross-2001-methane-ethane/3",
+      "packet_fingerprint": "1356ac151a3e57622578dd5382a125c6772b76331f1eeeca9904976bba29b0bf",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "gross-2001-propane",
+      "packet_version": "2",
+      "packet_path": "data/packets/gross-2001-propane/2",
+      "packet_fingerprint": "4593b9dbd813004096c7e396fc65df6ae3f4c1c65933c36918a6d316111326e2",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "gross-2001-propane",
+      "packet_version": "3",
+      "packet_path": "data/packets/gross-2001-propane/3",
+      "packet_fingerprint": "92634acb2bb24e3e83f938f4cf6239564940a1fdc88cba956ebcb0b7db041d5a",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "gross-sadowski-2001",
+      "packet_version": "2",
+      "packet_path": "data/packets/gross-sadowski-2001/2",
+      "packet_fingerprint": "d26b819571172306039d87e085777c601e7c6cd992276774cbc226aa8fe61ea1",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "gross-2005",
+      "packet_version": "1",
+      "packet_path": "data/packets/gross-2005/1",
+      "packet_fingerprint": "34f86df6c97080c4d3f3537fa88f08bd93c51959e32c9dfa864d7efc661957bb",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "gross-sadowski-2001",
+      "packet_version": "3",
+      "packet_path": "data/packets/gross-sadowski-2001/3",
+      "packet_fingerprint": "6367bac8415bb4dd19373196ab51726f96e9670c0fb93506896d0db9be9928ea",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "gross-vrabec-2006",
+      "packet_version": "1",
+      "packet_path": "data/packets/gross-vrabec-2006/1",
+      "packet_fingerprint": "bbbdb6915bf20e34c1c741df46544a21dbfb154d5e2364b52c164721a494d00b",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "hamer-wu-1972-aqueous-alkali-halides",
+      "packet_version": "1",
+      "packet_path": "data/packets/hamer-wu-1972-aqueous-alkali-halides/1",
+      "packet_fingerprint": "41df247ea3c3de03df9f17daa69dc8f9c834d5de61a7270a986e2a89db9e4bdc",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "hda-pc-saft",
+      "packet_version": "1",
+      "packet_path": "data/packets/hda-pc-saft/1",
+      "packet_fingerprint": "696126801725fa46102757c04c3d078fcc338ca945bd03f63aa38522c11cf4e2",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "held-cameretti-sadowski-2008",
+      "packet_version": "2",
+      "packet_path": "data/packets/held-cameretti-sadowski-2008/2",
+      "packet_fingerprint": "abb954b1e76183947fc09ba1c86a5204479829f842a1b13f7a21933b24898d81",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "held-cameretti-sadowski-2008",
+      "packet_version": "3",
+      "packet_path": "data/packets/held-cameretti-sadowski-2008/3",
+      "packet_fingerprint": "23dd06664f38338230d5ec5c553f1ebfabdc02a3831f8d53de12cf73012a1720",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "hydrogen-binary-vle",
+      "packet_version": "2",
+      "packet_path": "data/packets/hydrogen-binary-vle/2",
+      "packet_fingerprint": "e551600d2f932655593837f15ccdf9d85b4d122c0bef2945c95825574bb2767b",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "khudaida-2026-figure-2-electrolyte-lle",
+      "packet_version": "5",
+      "packet_path": "data/packets/khudaida-2026-figure-2-electrolyte-lle/5",
+      "packet_fingerprint": "52b7f5c6db76447e1262c70937e21e7c523f13ab965c6c483afe58ad2fc509a2",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "khudaida-2026-figure-2-electrolyte-lle",
+      "packet_version": "6",
+      "packet_path": "data/packets/khudaida-2026-figure-2-electrolyte-lle/6",
+      "packet_fingerprint": "60e1912fb91ccbf052420d7d94d0b40374b3b2be6e851be4caf7c633bbcfc29e",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "khudaida-2026-figure-2-electrolyte-lle",
+      "packet_version": "7",
+      "packet_path": "data/packets/khudaida-2026-figure-2-electrolyte-lle/7",
+      "packet_fingerprint": "23eb6e97e126f827f453b7e748548f5a7123828acac5ff8877e0c60902a3b418",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "mea-co2-h2o-nine-species-estimation",
+      "packet_version": "2",
+      "packet_path": "data/packets/mea-co2-h2o-nine-species-estimation/2",
+      "packet_fingerprint": "f58eabf45a149ecce312a1c49e4095a57bb6f399fa7d6da731439597058dabd0",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "mea-co2-h2o-nine-species-estimation",
+      "packet_version": "3",
+      "packet_path": "data/packets/mea-co2-h2o-nine-species-estimation/3",
+      "packet_fingerprint": "056288b6967b4d7c8421183cb9e1f7d2db61bac6cf91d8b56be914ca628e442f",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "mea-co2-h2o-nine-species-estimation",
+      "packet_version": "4",
+      "packet_path": "data/packets/mea-co2-h2o-nine-species-estimation/4",
+      "packet_fingerprint": "1e6281f51531ec956c82056da4923d030e0deaf29789f592e195fcb39c2d6ff3",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "mea-co2-h2o-nine-species-estimation",
+      "packet_version": "5",
+      "packet_path": "data/packets/mea-co2-h2o-nine-species-estimation/5",
+      "packet_fingerprint": "76315ac4e4961782d089c3c4504fb49667e120b9e31d46fe2a8e99837b8e0a45",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "nasa-glenn-2002-hda-species",
+      "packet_version": "1",
+      "packet_path": "data/packets/nasa-glenn-2002-hda-species/1",
+      "packet_fingerprint": "0d386e412da8a1e285a91d6f9ead1fa0c2e86cd8a6ca767cf5ef1684751bac88",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "zuber-2014-electrolyte-permittivity",
+      "packet_version": "1",
+      "packet_path": "data/packets/zuber-2014-electrolyte-permittivity/1",
+      "packet_fingerprint": "84951da9b6aff197c07d874a2283263d9f1466c3db7dc9f9b5e2dfccb68747ef",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "held-cameretti-sadowski-2008",
+      "packet_version": "4",
+      "packet_path": "data/packets/held-cameretti-sadowski-2008/4",
+      "packet_fingerprint": "3a9bed6bb3c20302615ae388b6b2fbd1bbd14c6153a2dd32faf0fe08c4cdb1e7",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "held-2014-strategy2",
+      "packet_version": "1",
+      "packet_path": "data/packets/held-2014-strategy2/1",
+      "packet_fingerprint": "ed48d4398ada6597ad530ccde64c2672842870aa75fa2f243be27c245250232e",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "held-2014-strategy2",
+      "packet_version": "2",
+      "packet_path": "data/packets/held-2014-strategy2/2",
+      "packet_fingerprint": "36f57f713a7b148725eb1164127016df7e995a57c5838dc1786549e90bbafde1",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "mixed-chloride-water-observations",
+      "packet_version": "1",
+      "packet_path": "data/packets/mixed-chloride-water-observations/1",
+      "packet_fingerprint": "2234735befdff30e54b82250b1b2a8d69daaca95af98abb65a1490c9dafd3679",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "feos-gross-sadowski-2001",
+      "packet_version": "1",
+      "packet_path": "data/packets/feos-gross-sadowski-2001/1",
+      "packet_fingerprint": "75f8c9327337043642db49d785ccf7dd68714909a810cf4fd2bc3aad1487bcb3",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "feos-gross-sadowski-2002",
+      "packet_version": "1",
+      "packet_path": "data/packets/feos-gross-sadowski-2002/1",
+      "packet_fingerprint": "2cf03c941d839b4d2cbdd501351233efc7ae73ef6e8d73deec0f55f561ba7934",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "feos-esper-2023",
+      "packet_version": "1",
+      "packet_path": "data/packets/feos-esper-2023/1",
+      "packet_fingerprint": "fe1d01dd6dfefcdf1bacdae5652b921512cc13d94794a52985eb63f5d28b6345",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "feos-rehner-2023",
+      "packet_version": "1",
+      "packet_path": "data/packets/feos-rehner-2023/1",
+      "packet_fingerprint": "eec880e1b87dbdef52e681469c51d4c4367f47690e2df50beae3b44aa4dc777f",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "saad-padova-marcus-1980-nacl-kcl-cacl2-observations",
+      "packet_version": "1",
+      "packet_path": "data/packets/saad-padova-marcus-1980-nacl-kcl-cacl2-observations/1",
+      "packet_fingerprint": "7719154a02443a0745a369e559b0ea01991b093241519f18603a6f64749e9696",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "held-2014-chloride-mixture-refit",
+      "packet_version": "1",
+      "packet_path": "data/packets/held-2014-chloride-mixture-refit/1",
+      "packet_fingerprint": "991c6e7442cb6968d5d1985b6565c1275659dbd13c8b513643a10443a7482256",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "figiel-2025-chloride-mixture-refit",
+      "packet_version": "1",
+      "packet_path": "data/packets/figiel-2025-chloride-mixture-refit/1",
+      "packet_fingerprint": "ad1194a1dab24e5cd748e8992500e91b664715be59892cdd82ac5888a7b85004",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "figiel-2025-chloride-mixture-refit",
+      "packet_version": "2",
+      "packet_path": "data/packets/figiel-2025-chloride-mixture-refit/2",
+      "packet_fingerprint": "43386c94e67c1d2b8b822e1396c3d36c9e54099ba160c7177f8a96f2b68ef1df",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "yao-1992-licl-mgcl2-observations",
+      "packet_version": "1",
+      "packet_path": "data/packets/yao-1992-licl-mgcl2-observations/1",
+      "packet_fingerprint": "07084b69b26934602cd4be8b7a96c23194092620cb6d536b69f4034bcd4ca2ab",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "el-guendouzi-2004-licl-nacl-observations",
+      "packet_version": "1",
+      "packet_path": "data/packets/el-guendouzi-2004-licl-nacl-observations/1",
+      "packet_fingerprint": "020992ba5ec1f655206cecc0c7dae1f02dca422a0f2c4122dfd5add07a5924e6",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "robinson-covington-1968-kcl-cacl2-observations",
+      "packet_version": "1",
+      "packet_path": "data/packets/robinson-covington-1968-kcl-cacl2-observations/1",
+      "packet_fingerprint": "2b40b11665854d49403957ba1a5dcd4a486cccc6f17ced07f52a2a20faa31a3e",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "schick-2023-co2-thf",
+      "packet_version": "1",
+      "packet_path": "data/packets/schick-2023-co2-thf/1",
+      "packet_fingerprint": "69f0d49548046c6c25f235c460a9ba19c88cec4ac9593cc3df78fb3556073301",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "nasrifar-2010-mdea",
+      "packet_version": "1",
+      "packet_path": "data/packets/nasrifar-2010-mdea/1",
+      "packet_fingerprint": "88ebdcef83fdf6d1ac35c1db2ba2c6c106d811a13e37ab2f5fa6f80f43811868",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "held-2012-alcohols",
+      "packet_version": "1",
+      "packet_path": "data/packets/held-2012-alcohols/1",
+      "packet_fingerprint": "df387b167bef0af9c60216137b13fd2b90241553ecb0402fde4ccfcd1b0b3d35",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "pahlavanzadeh-2013-mdea",
+      "packet_version": "1",
+      "packet_path": "data/packets/pahlavanzadeh-2013-mdea/1",
+      "packet_fingerprint": "d7c29cdb4377bde7649b0c445bacba65b3b000f99395dc9e6a5b7a0c08050a73",
+      "materialization": "byte-for-byte"
+    }
+  ]
+}

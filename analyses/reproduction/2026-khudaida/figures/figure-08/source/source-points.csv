@@ -1,0 +1,48 @@
+dataset,series,point_id,tie_line,phase,temperature_K,salt_wtfrac,x_water,x_ethanol,x_isobutanol,x_nacl,x_water_salt_free,x_ethanol_salt_free,x_isobutanol_salt_free,source_method,source_reference
+source_metric,separation,1,,aqueous,293.15,0.0,,,,,,0.0046,,published_figure_trace,published Figure 8/9 trace retained in source_points.csv
+source_metric,separation,2,,aqueous,293.15,0.0,,,,,,0.0069,,published_figure_trace,published Figure 8/9 trace retained in source_points.csv
+source_metric,separation,3,,aqueous,293.15,0.0,,,,,,0.0096,,published_figure_trace,published Figure 8/9 trace retained in source_points.csv
+source_metric,separation,4,,aqueous,293.15,0.0,,,,,,0.0148,,published_figure_trace,published Figure 8/9 trace retained in source_points.csv
+source_metric,separation,5,,aqueous,293.15,0.0,,,,,,0.0205,,published_figure_trace,published Figure 8/9 trace retained in source_points.csv
+source_metric,separation,6,,aqueous,293.15,0.0,,,,,,0.0243,,published_figure_trace,published Figure 8/9 trace retained in source_points.csv
+source_metric,separation,7,,aqueous,293.15,0.0,,,,,,0.0265,,published_figure_trace,published Figure 8/9 trace retained in source_points.csv
+source_metric,separation,8,,aqueous,293.15,0.0,,,,,,0.032,,published_figure_trace,published Figure 8/9 trace retained in source_points.csv
+source_metric,separation,9,,aqueous,293.15,0.05,,,,,,0.003,,paper_table,shared/source/table_s1_s2_distribution_separation.csv
+source_metric,separation,10,,aqueous,293.15,0.05,,,,,,0.0044,,paper_table,shared/source/table_s1_s2_distribution_separation.csv
+source_metric,separation,11,,aqueous,293.15,0.05,,,,,,0.0056,,paper_table,shared/source/table_s1_s2_distribution_separation.csv
+source_metric,separation,12,,aqueous,293.15,0.05,,,,,,0.0073,,paper_table,shared/source/table_s1_s2_distribution_separation.csv
+source_metric,separation,13,,aqueous,293.15,0.05,,,,,,0.0092,,paper_table,shared/source/table_s1_s2_distribution_separation.csv
+source_metric,separation,14,,aqueous,293.15,0.05,,,,,,0.011,,paper_table,shared/source/table_s1_s2_distribution_separation.csv
+source_metric,separation,15,,aqueous,293.15,0.05,,,,,,0.0121,,paper_table,shared/source/table_s1_s2_distribution_separation.csv
+source_metric,separation,16,,aqueous,293.15,0.05,,,,,,0.0159,,paper_table,shared/source/table_s1_s2_distribution_separation.csv
+source_metric,separation,17,,aqueous,293.15,0.1,,,,,,0.0003,,paper_table,shared/source/table_s1_s2_distribution_separation.csv
+source_metric,separation,18,,aqueous,293.15,0.1,,,,,,0.0014,,paper_table,shared/source/table_s1_s2_distribution_separation.csv
+source_metric,separation,19,,aqueous,293.15,0.1,,,,,,0.0025,,paper_table,shared/source/table_s1_s2_distribution_separation.csv
+source_metric,separation,20,,aqueous,293.15,0.1,,,,,,0.0033,,paper_table,shared/source/table_s1_s2_distribution_separation.csv
+source_metric,separation,21,,aqueous,293.15,0.1,,,,,,0.0044,,paper_table,shared/source/table_s1_s2_distribution_separation.csv
+source_metric,separation,22,,aqueous,303.15,0.05,,,,,,0.0026,,paper_table,shared/source/table_s1_s2_distribution_separation.csv
+source_metric,separation,23,,aqueous,303.15,0.05,,,,,,0.0043,,paper_table,shared/source/table_s1_s2_distribution_separation.csv
+source_metric,separation,24,,aqueous,303.15,0.05,,,,,,0.0055,,paper_table,shared/source/table_s1_s2_distribution_separation.csv
+source_metric,separation,25,,aqueous,303.15,0.05,,,,,,0.0069,,paper_table,shared/source/table_s1_s2_distribution_separation.csv
+source_metric,separation,26,,aqueous,303.15,0.05,,,,,,0.0081,,paper_table,shared/source/table_s1_s2_distribution_separation.csv
+source_metric,separation,27,,aqueous,303.15,0.05,,,,,,0.0099,,paper_table,shared/source/table_s1_s2_distribution_separation.csv
+source_metric,separation,28,,aqueous,303.15,0.05,,,,,,0.0124,,paper_table,shared/source/table_s1_s2_distribution_separation.csv
+source_metric,separation,29,,aqueous,303.15,0.05,,,,,,0.0149,,paper_table,shared/source/table_s1_s2_distribution_separation.csv
+source_metric,separation,30,,aqueous,303.15,0.1,,,,,,0.0005,,paper_table,shared/source/table_s1_s2_distribution_separation.csv
+source_metric,separation,31,,aqueous,303.15,0.1,,,,,,0.0014,,paper_table,shared/source/table_s1_s2_distribution_separation.csv
+source_metric,separation,32,,aqueous,303.15,0.1,,,,,,0.0025,,paper_table,shared/source/table_s1_s2_distribution_separation.csv
+source_metric,separation,33,,aqueous,303.15,0.1,,,,,,0.0038,,paper_table,shared/source/table_s1_s2_distribution_separation.csv
+source_metric,separation,34,,aqueous,303.15,0.1,,,,,,0.0049,,paper_table,shared/source/table_s1_s2_distribution_separation.csv
+source_metric,separation,35,,aqueous,313.15,0.05,,,,,,0.0029,,paper_table,shared/source/table_s1_s2_distribution_separation.csv
+source_metric,separation,36,,aqueous,313.15,0.05,,,,,,0.0043,,paper_table,shared/source/table_s1_s2_distribution_separation.csv
+source_metric,separation,37,,aqueous,313.15,0.05,,,,,,0.0051,,paper_table,shared/source/table_s1_s2_distribution_separation.csv
+source_metric,separation,38,,aqueous,313.15,0.05,,,,,,0.0064,,paper_table,shared/source/table_s1_s2_distribution_separation.csv
+source_metric,separation,39,,aqueous,313.15,0.05,,,,,,0.0079,,paper_table,shared/source/table_s1_s2_distribution_separation.csv
+source_metric,separation,40,,aqueous,313.15,0.05,,,,,,0.0101,,paper_table,shared/source/table_s1_s2_distribution_separation.csv
+source_metric,separation,41,,aqueous,313.15,0.05,,,,,,0.0122,,paper_table,shared/source/table_s1_s2_distribution_separation.csv
+source_metric,separation,42,,aqueous,313.15,0.1,,,,,,0.0005,,paper_table,shared/source/table_s1_s2_distribution_separation.csv
+source_metric,separation,43,,aqueous,313.15,0.1,,,,,,0.0015,,paper_table,shared/source/table_s1_s2_distribution_separation.csv
+source_metric,separation,44,,aqueous,313.15,0.1,,,,,,0.0022,,paper_table,shared/source/table_s1_s2_distribution_separation.csv
+source_metric,separation,45,,aqueous,313.15,0.1,,,,,,0.0028,,paper_table,shared/source/table_s1_s2_distribution_separation.csv
+source_metric,separation,46,,aqueous,313.15,0.1,,,,,,0.0042,,paper_table,shared/source/table_s1_s2_distribution_separation.csv
+source_metric,separation,47,,aqueous,313.15,0.1,,,,,,0.0057,,paper_table,shared/source/table_s1_s2_distribution_separation.csv

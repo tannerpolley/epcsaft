@@ -1,0 +1,24 @@
+{
+  "reference_wheel_sha256": "e28d258df06eac39711c59a79f9ce2b69fc8ac7565637bfba0dbef21863d8dc7",
+  "first_candidate_wheel_sha256": "5b02eb6a5045f0ef3e28a7690084e50d538f9e5cd12a641cb8245dd0f8823d2a",
+  "conditions": {
+    "temperature_K": 298.15,
+    "pressure_Pa": 100000,
+    "branch": "liquid",
+    "molality_mol_kg": 0
+  },
+  "source": "Figiel reference electrolytes /4; eight species; in-memory methanol-ethanol k_ij=0",
+  "optimizer": [
+    -0.6599959436133305,
+    -0.27587411094495873,
+    -0.16478475605835785,
+    0.7034856484526162,
+    0.9955856997158054,
+    0.018140408942425867,
+    4.84869223079712
+  ],
+  "cause": "fit_sequence pre-solves holds at the retained Ceres starting point and passes its parameters as the fit baseline; a fresh reader uses original source Born seeds",
+  "owner": "engine/native/regression/fit.cpp:691",
+  "new_reader_disposition": "Retain energy <=1e-6 J/mol and correction <=1e-10 angstrom for all three holds; compare physical rows/predictions/columns against their matching references at unchanged 1e-12; remove the unrequested cross-seed diagnostic snapshot",
+  "evidence_type": "numerical verification of different root starting inputs; no refit"
+}

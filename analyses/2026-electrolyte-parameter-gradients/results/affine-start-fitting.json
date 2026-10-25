@@ -1,0 +1,121 @@
+{
+  "evidence_type": "numerical verification; manufactured observations, no physical validation",
+  "reference_source": "77899419 before the two input-producer corrections; matching wheel and physical inputs",
+  "wheel_sha256": "9c59846dba0ead1e5dc396581514dd4322e62a2de9e1b8ce5469b96f8ed35b06",
+  "parameter_source": "figiel-2025-reference-electrolytes/4",
+  "parameter_document_sha256": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+  "components": [
+    "water",
+    "sodium-cation",
+    "chloride-anion"
+  ],
+  "temperature_K": 298.15,
+  "pressure_Pa": 100000,
+  "formula_unit_molalities_mol_kg_water": [
+    0.1,
+    1,
+    4.5
+  ],
+  "observation_kinds": [
+    "mean_ionic_activity_coefficient",
+    "osmotic_coefficient"
+  ],
+  "physical_input_order": [
+    "k(Na,water)",
+    "k(Na,Cl)",
+    "shared ion suppression coefficient"
+  ],
+  "physical_input_unit": "1",
+  "physical_inputs": [
+    -0.25,
+    0.9,
+    6.01
+  ],
+  "optimizer_before": [
+    -1.25,
+    4.5,
+    3.005
+  ],
+  "optimizer_after": [
+    -1.25,
+    4.5,
+    3.005
+  ],
+  "optimizer_unit": "1",
+  "chart_origins": [
+    0,
+    0,
+    0
+  ],
+  "chart_scales": [
+    0.2,
+    0.2,
+    2
+  ],
+  "target_coefficients": "1; reciprocal pairs and both suppression slots retained",
+  "declaration": "Native unit-chart evaluation without holds creates parameters; native scaled-chart start reads them; original source parameters still seed hydration solves.",
+  "hydration": {
+    "target_J_mol": -381930,
+    "bracket_angstrom": [
+      1,
+      8
+    ],
+    "energy_tolerance_J_mol": 1e-06,
+    "diameter_tolerance_angstrom": 1e-10,
+    "maximum_iterations": 50
+  },
+  "comparison": {
+    "rows_before": 217,
+    "rows_after": 217,
+    "bit_identical": true,
+    "max_numeric_change": 0,
+    "operands_csv": "affine-start-fitting.csv",
+    "operands_sha256": "57d63a05a61a1dcbb7c3503b8a2d2e63c94e4aa5a41d17d58cb538d23d523ff1",
+    "scope": "Predictions, physical/prediction columns, optimizer results, residuals, Jacobians and covariance; no timing comparison.",
+    "captured_reference_sha256": "1b75687d994251e118a4878e00e3fa1385c4b521a8e115e9145c6ebd52d1b0dd"
+  },
+  "script_sha256_before": "8fed1d66031f141f928bca7de47c811ba6ad63338e378508685e6a30cf680507",
+  "script_sha256_after": "db6c413ea84549cd0426951bad156ee307dd14168f79e66b8c7409d08b2ca8f9",
+  "controls": {
+    "function_tolerance": 1e-15,
+    "gradient_tolerance": 1e-14,
+    "parameter_tolerance": 1e-14
+  },
+  "weights": [
+    471.5292425290347,
+    471.5292425290347,
+    471.5292425290347,
+    471.5292425290347,
+    471.5292425290347,
+    471.5292425290347
+  ],
+  "fit": {
+    "status": "converged",
+    "final_cost": 2.3501596760174448e-24,
+    "maximum_log10_ratio": 3.0853854013109135e-14,
+    "maximum_optimizer_recovery_error": 1.1288552315136258e-09
+  },
+  "checks": {
+    "affected_test_passed": 1,
+    "full_python_passed": 116,
+    "full_python_deselected": 1,
+    "native_suites_passed": 6,
+    "check_all": "passed"
+  },
+  "trace": "Two new native declaration scopes (evaluate_coordinates and coordinate_start) change trace hashes; trace equality is not a numerical criterion.",
+  "restore": {
+    "wheel_sha256": "e28d258df06eac39711c59a79f9ce2b69fc8ac7565637bfba0dbef21863d8dc7",
+    "verified_after_each_lease": true
+  },
+  "limits": [
+    "Single manufactured aqueous NaCl case at the stated conditions.",
+    "No new parameter identifiability or physical validation claim.",
+    "Mg/Ca stage-2 fitting not executed."
+  ],
+  "manufactured_observations": "affine-start-fitting.csv: fitting/219-observations predictions/0 through predictions/5, ordered molality then gamma/Phi",
+  "delivered_review": {
+    "status": "Supported",
+    "revision": "9c7286a3",
+    "authority": "owner confirmation of delivered re-review"
+  }
+}

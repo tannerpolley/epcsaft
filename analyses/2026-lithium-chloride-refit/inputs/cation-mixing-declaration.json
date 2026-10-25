@@ -1,0 +1,1650 @@
+{
+  "decision_rule": "CLEAR PASS requires one converged grid point to satisfy every limit together:\nYao Phi RMS <= 0.009 and maximum absolute error <= 0.027 in BOTH frozen buckets,\non nominal values and all 455 printed-rounding realizations; Hamer-Wu Phi RMS/max\n<= 0.01/0.03; El Guendouzi water activity RMS/max <= 0.00144/0.00413 at I <= 3\nand <= 0.00307/0.00758 at I > 3; F3 |theta_eff| <= 0.04 kg/mol at 1, 3, 6 mol/kg\nNaCl with 1e-6 mol/kg LiCl; all four Lithium F4 transfers change by <= 0.01 decade\nagainst frozen /1 (and remain within 0.15 decade of Pitzer); both F2 transfers\nare within 0.15 decade of Pitzer. If no point satisfies everything, including the\nYao 10 percent margins, the verdict is MARGINAL/FAIL and work stops. Missing or\nnonconverged results cannot count as passes or establish physical infeasibility.",
+  "grid": {
+    "theta_values_kg_per_mol": [
+      -0.238,
+      -0.2355,
+      -0.233,
+      -0.2305,
+      -0.228,
+      -0.2255,
+      -0.223,
+      -0.2205,
+      -0.218,
+      -0.2155,
+      -0.213,
+      -0.2105,
+      -0.208,
+      -0.2055,
+      -0.203,
+      -0.2005,
+      -0.198
+    ],
+    "psi_values_kg2_per_mol2": [
+      0.019,
+      0.0195,
+      0.02,
+      0.0205,
+      0.021,
+      0.0215,
+      0.022,
+      0.0225,
+      0.023,
+      0.0235,
+      0.024,
+      0.0245,
+      0.025,
+      0.0255,
+      0.026,
+      0.0265,
+      0.027
+    ],
+    "points": [
+      {
+        "id": "t00-p00",
+        "theta_kg_per_mol": -0.238,
+        "psi_kg2_per_mol2": 0.019
+      },
+      {
+        "id": "t00-p01",
+        "theta_kg_per_mol": -0.238,
+        "psi_kg2_per_mol2": 0.0195
+      },
+      {
+        "id": "t00-p02",
+        "theta_kg_per_mol": -0.238,
+        "psi_kg2_per_mol2": 0.02
+      },
+      {
+        "id": "t00-p03",
+        "theta_kg_per_mol": -0.238,
+        "psi_kg2_per_mol2": 0.0205
+      },
+      {
+        "id": "t00-p04",
+        "theta_kg_per_mol": -0.238,
+        "psi_kg2_per_mol2": 0.021
+      },
+      {
+        "id": "t00-p05",
+        "theta_kg_per_mol": -0.238,
+        "psi_kg2_per_mol2": 0.0215
+      },
+      {
+        "id": "t00-p06",
+        "theta_kg_per_mol": -0.238,
+        "psi_kg2_per_mol2": 0.022
+      },
+      {
+        "id": "t00-p07",
+        "theta_kg_per_mol": -0.238,
+        "psi_kg2_per_mol2": 0.0225
+      },
+      {
+        "id": "t00-p08",
+        "theta_kg_per_mol": -0.238,
+        "psi_kg2_per_mol2": 0.023
+      },
+      {
+        "id": "t00-p09",
+        "theta_kg_per_mol": -0.238,
+        "psi_kg2_per_mol2": 0.0235
+      },
+      {
+        "id": "t00-p10",
+        "theta_kg_per_mol": -0.238,
+        "psi_kg2_per_mol2": 0.024
+      },
+      {
+        "id": "t00-p11",
+        "theta_kg_per_mol": -0.238,
+        "psi_kg2_per_mol2": 0.0245
+      },
+      {
+        "id": "t00-p12",
+        "theta_kg_per_mol": -0.238,
+        "psi_kg2_per_mol2": 0.025
+      },
+      {
+        "id": "t00-p13",
+        "theta_kg_per_mol": -0.238,
+        "psi_kg2_per_mol2": 0.0255
+      },
+      {
+        "id": "t00-p14",
+        "theta_kg_per_mol": -0.238,
+        "psi_kg2_per_mol2": 0.026
+      },
+      {
+        "id": "t00-p15",
+        "theta_kg_per_mol": -0.238,
+        "psi_kg2_per_mol2": 0.0265
+      },
+      {
+        "id": "t00-p16",
+        "theta_kg_per_mol": -0.238,
+        "psi_kg2_per_mol2": 0.027
+      },
+      {
+        "id": "t01-p00",
+        "theta_kg_per_mol": -0.2355,
+        "psi_kg2_per_mol2": 0.019
+      },
+      {
+        "id": "t01-p01",
+        "theta_kg_per_mol": -0.2355,
+        "psi_kg2_per_mol2": 0.0195
+      },
+      {
+        "id": "t01-p02",
+        "theta_kg_per_mol": -0.2355,
+        "psi_kg2_per_mol2": 0.02
+      },
+      {
+        "id": "t01-p03",
+        "theta_kg_per_mol": -0.2355,
+        "psi_kg2_per_mol2": 0.0205
+      },
+      {
+        "id": "t01-p04",
+        "theta_kg_per_mol": -0.2355,
+        "psi_kg2_per_mol2": 0.021
+      },
+      {
+        "id": "t01-p05",
+        "theta_kg_per_mol": -0.2355,
+        "psi_kg2_per_mol2": 0.0215
+      },
+      {
+        "id": "t01-p06",
+        "theta_kg_per_mol": -0.2355,
+        "psi_kg2_per_mol2": 0.022
+      },
+      {
+        "id": "t01-p07",
+        "theta_kg_per_mol": -0.2355,
+        "psi_kg2_per_mol2": 0.0225
+      },
+      {
+        "id": "t01-p08",
+        "theta_kg_per_mol": -0.2355,
+        "psi_kg2_per_mol2": 0.023
+      },
+      {
+        "id": "t01-p09",
+        "theta_kg_per_mol": -0.2355,
+        "psi_kg2_per_mol2": 0.0235
+      },
+      {
+        "id": "t01-p10",
+        "theta_kg_per_mol": -0.2355,
+        "psi_kg2_per_mol2": 0.024
+      },
+      {
+        "id": "t01-p11",
+        "theta_kg_per_mol": -0.2355,
+        "psi_kg2_per_mol2": 0.0245
+      },
+      {
+        "id": "t01-p12",
+        "theta_kg_per_mol": -0.2355,
+        "psi_kg2_per_mol2": 0.025
+      },
+      {
+        "id": "t01-p13",
+        "theta_kg_per_mol": -0.2355,
+        "psi_kg2_per_mol2": 0.0255
+      },
+      {
+        "id": "t01-p14",
+        "theta_kg_per_mol": -0.2355,
+        "psi_kg2_per_mol2": 0.026
+      },
+      {
+        "id": "t01-p15",
+        "theta_kg_per_mol": -0.2355,
+        "psi_kg2_per_mol2": 0.0265
+      },
+      {
+        "id": "t01-p16",
+        "theta_kg_per_mol": -0.2355,
+        "psi_kg2_per_mol2": 0.027
+      },
+      {
+        "id": "t02-p00",
+        "theta_kg_per_mol": -0.233,
+        "psi_kg2_per_mol2": 0.019
+      },
+      {
+        "id": "t02-p01",
+        "theta_kg_per_mol": -0.233,
+        "psi_kg2_per_mol2": 0.0195
+      },
+      {
+        "id": "t02-p02",
+        "theta_kg_per_mol": -0.233,
+        "psi_kg2_per_mol2": 0.02
+      },
+      {
+        "id": "t02-p03",
+        "theta_kg_per_mol": -0.233,
+        "psi_kg2_per_mol2": 0.0205
+      },
+      {
+        "id": "t02-p04",
+        "theta_kg_per_mol": -0.233,
+        "psi_kg2_per_mol2": 0.021
+      },
+      {
+        "id": "t02-p05",
+        "theta_kg_per_mol": -0.233,
+        "psi_kg2_per_mol2": 0.0215
+      },
+      {
+        "id": "t02-p06",
+        "theta_kg_per_mol": -0.233,
+        "psi_kg2_per_mol2": 0.022
+      },
+      {
+        "id": "t02-p07",
+        "theta_kg_per_mol": -0.233,
+        "psi_kg2_per_mol2": 0.0225
+      },
+      {
+        "id": "t02-p08",
+        "theta_kg_per_mol": -0.233,
+        "psi_kg2_per_mol2": 0.023
+      },
+      {
+        "id": "t02-p09",
+        "theta_kg_per_mol": -0.233,
+        "psi_kg2_per_mol2": 0.0235
+      },
+      {
+        "id": "t02-p10",
+        "theta_kg_per_mol": -0.233,
+        "psi_kg2_per_mol2": 0.024
+      },
+      {
+        "id": "t02-p11",
+        "theta_kg_per_mol": -0.233,
+        "psi_kg2_per_mol2": 0.0245
+      },
+      {
+        "id": "t02-p12",
+        "theta_kg_per_mol": -0.233,
+        "psi_kg2_per_mol2": 0.025
+      },
+      {
+        "id": "t02-p13",
+        "theta_kg_per_mol": -0.233,
+        "psi_kg2_per_mol2": 0.0255
+      },
+      {
+        "id": "t02-p14",
+        "theta_kg_per_mol": -0.233,
+        "psi_kg2_per_mol2": 0.026
+      },
+      {
+        "id": "t02-p15",
+        "theta_kg_per_mol": -0.233,
+        "psi_kg2_per_mol2": 0.0265
+      },
+      {
+        "id": "t02-p16",
+        "theta_kg_per_mol": -0.233,
+        "psi_kg2_per_mol2": 0.027
+      },
+      {
+        "id": "t03-p00",
+        "theta_kg_per_mol": -0.2305,
+        "psi_kg2_per_mol2": 0.019
+      },
+      {
+        "id": "t03-p01",
+        "theta_kg_per_mol": -0.2305,
+        "psi_kg2_per_mol2": 0.0195
+      },
+      {
+        "id": "t03-p02",
+        "theta_kg_per_mol": -0.2305,
+        "psi_kg2_per_mol2": 0.02
+      },
+      {
+        "id": "t03-p03",
+        "theta_kg_per_mol": -0.2305,
+        "psi_kg2_per_mol2": 0.0205
+      },
+      {
+        "id": "t03-p04",
+        "theta_kg_per_mol": -0.2305,
+        "psi_kg2_per_mol2": 0.021
+      },
+      {
+        "id": "t03-p05",
+        "theta_kg_per_mol": -0.2305,
+        "psi_kg2_per_mol2": 0.0215
+      },
+      {
+        "id": "t03-p06",
+        "theta_kg_per_mol": -0.2305,
+        "psi_kg2_per_mol2": 0.022
+      },
+      {
+        "id": "t03-p07",
+        "theta_kg_per_mol": -0.2305,
+        "psi_kg2_per_mol2": 0.0225
+      },
+      {
+        "id": "t03-p08",
+        "theta_kg_per_mol": -0.2305,
+        "psi_kg2_per_mol2": 0.023
+      },
+      {
+        "id": "t03-p09",
+        "theta_kg_per_mol": -0.2305,
+        "psi_kg2_per_mol2": 0.0235
+      },
+      {
+        "id": "t03-p10",
+        "theta_kg_per_mol": -0.2305,
+        "psi_kg2_per_mol2": 0.024
+      },
+      {
+        "id": "t03-p11",
+        "theta_kg_per_mol": -0.2305,
+        "psi_kg2_per_mol2": 0.0245
+      },
+      {
+        "id": "t03-p12",
+        "theta_kg_per_mol": -0.2305,
+        "psi_kg2_per_mol2": 0.025
+      },
+      {
+        "id": "t03-p13",
+        "theta_kg_per_mol": -0.2305,
+        "psi_kg2_per_mol2": 0.0255
+      },
+      {
+        "id": "t03-p14",
+        "theta_kg_per_mol": -0.2305,
+        "psi_kg2_per_mol2": 0.026
+      },
+      {
+        "id": "t03-p15",
+        "theta_kg_per_mol": -0.2305,
+        "psi_kg2_per_mol2": 0.0265
+      },
+      {
+        "id": "t03-p16",
+        "theta_kg_per_mol": -0.2305,
+        "psi_kg2_per_mol2": 0.027
+      },
+      {
+        "id": "t04-p00",
+        "theta_kg_per_mol": -0.228,
+        "psi_kg2_per_mol2": 0.019
+      },
+      {
+        "id": "t04-p01",
+        "theta_kg_per_mol": -0.228,
+        "psi_kg2_per_mol2": 0.0195
+      },
+      {
+        "id": "t04-p02",
+        "theta_kg_per_mol": -0.228,
+        "psi_kg2_per_mol2": 0.02
+      },
+      {
+        "id": "t04-p03",
+        "theta_kg_per_mol": -0.228,
+        "psi_kg2_per_mol2": 0.0205
+      },
+      {
+        "id": "t04-p04",
+        "theta_kg_per_mol": -0.228,
+        "psi_kg2_per_mol2": 0.021
+      },
+      {
+        "id": "t04-p05",
+        "theta_kg_per_mol": -0.228,
+        "psi_kg2_per_mol2": 0.0215
+      },
+      {
+        "id": "t04-p06",
+        "theta_kg_per_mol": -0.228,
+        "psi_kg2_per_mol2": 0.022
+      },
+      {
+        "id": "t04-p07",
+        "theta_kg_per_mol": -0.228,
+        "psi_kg2_per_mol2": 0.0225
+      },
+      {
+        "id": "t04-p08",
+        "theta_kg_per_mol": -0.228,
+        "psi_kg2_per_mol2": 0.023
+      },
+      {
+        "id": "t04-p09",
+        "theta_kg_per_mol": -0.228,
+        "psi_kg2_per_mol2": 0.0235
+      },
+      {
+        "id": "t04-p10",
+        "theta_kg_per_mol": -0.228,
+        "psi_kg2_per_mol2": 0.024
+      },
+      {
+        "id": "t04-p11",
+        "theta_kg_per_mol": -0.228,
+        "psi_kg2_per_mol2": 0.0245
+      },
+      {
+        "id": "t04-p12",
+        "theta_kg_per_mol": -0.228,
+        "psi_kg2_per_mol2": 0.025
+      },
+      {
+        "id": "t04-p13",
+        "theta_kg_per_mol": -0.228,
+        "psi_kg2_per_mol2": 0.0255
+      },
+      {
+        "id": "t04-p14",
+        "theta_kg_per_mol": -0.228,
+        "psi_kg2_per_mol2": 0.026
+      },
+      {
+        "id": "t04-p15",
+        "theta_kg_per_mol": -0.228,
+        "psi_kg2_per_mol2": 0.0265
+      },
+      {
+        "id": "t04-p16",
+        "theta_kg_per_mol": -0.228,
+        "psi_kg2_per_mol2": 0.027
+      },
+      {
+        "id": "t05-p00",
+        "theta_kg_per_mol": -0.2255,
+        "psi_kg2_per_mol2": 0.019
+      },
+      {
+        "id": "t05-p01",
+        "theta_kg_per_mol": -0.2255,
+        "psi_kg2_per_mol2": 0.0195
+      },
+      {
+        "id": "t05-p02",
+        "theta_kg_per_mol": -0.2255,
+        "psi_kg2_per_mol2": 0.02
+      },
+      {
+        "id": "t05-p03",
+        "theta_kg_per_mol": -0.2255,
+        "psi_kg2_per_mol2": 0.0205
+      },
+      {
+        "id": "t05-p04",
+        "theta_kg_per_mol": -0.2255,
+        "psi_kg2_per_mol2": 0.021
+      },
+      {
+        "id": "t05-p05",
+        "theta_kg_per_mol": -0.2255,
+        "psi_kg2_per_mol2": 0.0215
+      },
+      {
+        "id": "t05-p06",
+        "theta_kg_per_mol": -0.2255,
+        "psi_kg2_per_mol2": 0.022
+      },
+      {
+        "id": "t05-p07",
+        "theta_kg_per_mol": -0.2255,
+        "psi_kg2_per_mol2": 0.0225
+      },
+      {
+        "id": "t05-p08",
+        "theta_kg_per_mol": -0.2255,
+        "psi_kg2_per_mol2": 0.023
+      },
+      {
+        "id": "t05-p09",
+        "theta_kg_per_mol": -0.2255,
+        "psi_kg2_per_mol2": 0.0235
+      },
+      {
+        "id": "t05-p10",
+        "theta_kg_per_mol": -0.2255,
+        "psi_kg2_per_mol2": 0.024
+      },
+      {
+        "id": "t05-p11",
+        "theta_kg_per_mol": -0.2255,
+        "psi_kg2_per_mol2": 0.0245
+      },
+      {
+        "id": "t05-p12",
+        "theta_kg_per_mol": -0.2255,
+        "psi_kg2_per_mol2": 0.025
+      },
+      {
+        "id": "t05-p13",
+        "theta_kg_per_mol": -0.2255,
+        "psi_kg2_per_mol2": 0.0255
+      },
+      {
+        "id": "t05-p14",
+        "theta_kg_per_mol": -0.2255,
+        "psi_kg2_per_mol2": 0.026
+      },
+      {
+        "id": "t05-p15",
+        "theta_kg_per_mol": -0.2255,
+        "psi_kg2_per_mol2": 0.0265
+      },
+      {
+        "id": "t05-p16",
+        "theta_kg_per_mol": -0.2255,
+        "psi_kg2_per_mol2": 0.027
+      },
+      {
+        "id": "t06-p00",
+        "theta_kg_per_mol": -0.223,
+        "psi_kg2_per_mol2": 0.019
+      },
+      {
+        "id": "t06-p01",
+        "theta_kg_per_mol": -0.223,
+        "psi_kg2_per_mol2": 0.0195
+      },
+      {
+        "id": "t06-p02",
+        "theta_kg_per_mol": -0.223,
+        "psi_kg2_per_mol2": 0.02
+      },
+      {
+        "id": "t06-p03",
+        "theta_kg_per_mol": -0.223,
+        "psi_kg2_per_mol2": 0.0205
+      },
+      {
+        "id": "t06-p04",
+        "theta_kg_per_mol": -0.223,
+        "psi_kg2_per_mol2": 0.021
+      },
+      {
+        "id": "t06-p05",
+        "theta_kg_per_mol": -0.223,
+        "psi_kg2_per_mol2": 0.0215
+      },
+      {
+        "id": "t06-p06",
+        "theta_kg_per_mol": -0.223,
+        "psi_kg2_per_mol2": 0.022
+      },
+      {
+        "id": "t06-p07",
+        "theta_kg_per_mol": -0.223,
+        "psi_kg2_per_mol2": 0.0225
+      },
+      {
+        "id": "t06-p08",
+        "theta_kg_per_mol": -0.223,
+        "psi_kg2_per_mol2": 0.023
+      },
+      {
+        "id": "t06-p09",
+        "theta_kg_per_mol": -0.223,
+        "psi_kg2_per_mol2": 0.0235
+      },
+      {
+        "id": "t06-p10",
+        "theta_kg_per_mol": -0.223,
+        "psi_kg2_per_mol2": 0.024
+      },
+      {
+        "id": "t06-p11",
+        "theta_kg_per_mol": -0.223,
+        "psi_kg2_per_mol2": 0.0245
+      },
+      {
+        "id": "t06-p12",
+        "theta_kg_per_mol": -0.223,
+        "psi_kg2_per_mol2": 0.025
+      },
+      {
+        "id": "t06-p13",
+        "theta_kg_per_mol": -0.223,
+        "psi_kg2_per_mol2": 0.0255
+      },
+      {
+        "id": "t06-p14",
+        "theta_kg_per_mol": -0.223,
+        "psi_kg2_per_mol2": 0.026
+      },
+      {
+        "id": "t06-p15",
+        "theta_kg_per_mol": -0.223,
+        "psi_kg2_per_mol2": 0.0265
+      },
+      {
+        "id": "t06-p16",
+        "theta_kg_per_mol": -0.223,
+        "psi_kg2_per_mol2": 0.027
+      },
+      {
+        "id": "t07-p00",
+        "theta_kg_per_mol": -0.2205,
+        "psi_kg2_per_mol2": 0.019
+      },
+      {
+        "id": "t07-p01",
+        "theta_kg_per_mol": -0.2205,
+        "psi_kg2_per_mol2": 0.0195
+      },
+      {
+        "id": "t07-p02",
+        "theta_kg_per_mol": -0.2205,
+        "psi_kg2_per_mol2": 0.02
+      },
+      {
+        "id": "t07-p03",
+        "theta_kg_per_mol": -0.2205,
+        "psi_kg2_per_mol2": 0.0205
+      },
+      {
+        "id": "t07-p04",
+        "theta_kg_per_mol": -0.2205,
+        "psi_kg2_per_mol2": 0.021
+      },
+      {
+        "id": "t07-p05",
+        "theta_kg_per_mol": -0.2205,
+        "psi_kg2_per_mol2": 0.0215
+      },
+      {
+        "id": "t07-p06",
+        "theta_kg_per_mol": -0.2205,
+        "psi_kg2_per_mol2": 0.022
+      },
+      {
+        "id": "t07-p07",
+        "theta_kg_per_mol": -0.2205,
+        "psi_kg2_per_mol2": 0.0225
+      },
+      {
+        "id": "t07-p08",
+        "theta_kg_per_mol": -0.2205,
+        "psi_kg2_per_mol2": 0.023
+      },
+      {
+        "id": "t07-p09",
+        "theta_kg_per_mol": -0.2205,
+        "psi_kg2_per_mol2": 0.0235
+      },
+      {
+        "id": "t07-p10",
+        "theta_kg_per_mol": -0.2205,
+        "psi_kg2_per_mol2": 0.024
+      },
+      {
+        "id": "t07-p11",
+        "theta_kg_per_mol": -0.2205,
+        "psi_kg2_per_mol2": 0.0245
+      },
+      {
+        "id": "t07-p12",
+        "theta_kg_per_mol": -0.2205,
+        "psi_kg2_per_mol2": 0.025
+      },
+      {
+        "id": "t07-p13",
+        "theta_kg_per_mol": -0.2205,
+        "psi_kg2_per_mol2": 0.0255
+      },
+      {
+        "id": "t07-p14",
+        "theta_kg_per_mol": -0.2205,
+        "psi_kg2_per_mol2": 0.026
+      },
+      {
+        "id": "t07-p15",
+        "theta_kg_per_mol": -0.2205,
+        "psi_kg2_per_mol2": 0.0265
+      },
+      {
+        "id": "t07-p16",
+        "theta_kg_per_mol": -0.2205,
+        "psi_kg2_per_mol2": 0.027
+      },
+      {
+        "id": "t08-p00",
+        "theta_kg_per_mol": -0.218,
+        "psi_kg2_per_mol2": 0.019
+      },
+      {
+        "id": "t08-p01",
+        "theta_kg_per_mol": -0.218,
+        "psi_kg2_per_mol2": 0.0195
+      },
+      {
+        "id": "t08-p02",
+        "theta_kg_per_mol": -0.218,
+        "psi_kg2_per_mol2": 0.02
+      },
+      {
+        "id": "t08-p03",
+        "theta_kg_per_mol": -0.218,
+        "psi_kg2_per_mol2": 0.0205
+      },
+      {
+        "id": "t08-p04",
+        "theta_kg_per_mol": -0.218,
+        "psi_kg2_per_mol2": 0.021
+      },
+      {
+        "id": "t08-p05",
+        "theta_kg_per_mol": -0.218,
+        "psi_kg2_per_mol2": 0.0215
+      },
+      {
+        "id": "t08-p06",
+        "theta_kg_per_mol": -0.218,
+        "psi_kg2_per_mol2": 0.022
+      },
+      {
+        "id": "t08-p07",
+        "theta_kg_per_mol": -0.218,
+        "psi_kg2_per_mol2": 0.0225
+      },
+      {
+        "id": "t08-p08",
+        "theta_kg_per_mol": -0.218,
+        "psi_kg2_per_mol2": 0.023
+      },
+      {
+        "id": "t08-p09",
+        "theta_kg_per_mol": -0.218,
+        "psi_kg2_per_mol2": 0.0235
+      },
+      {
+        "id": "t08-p10",
+        "theta_kg_per_mol": -0.218,
+        "psi_kg2_per_mol2": 0.024
+      },
+      {
+        "id": "t08-p11",
+        "theta_kg_per_mol": -0.218,
+        "psi_kg2_per_mol2": 0.0245
+      },
+      {
+        "id": "t08-p12",
+        "theta_kg_per_mol": -0.218,
+        "psi_kg2_per_mol2": 0.025
+      },
+      {
+        "id": "t08-p13",
+        "theta_kg_per_mol": -0.218,
+        "psi_kg2_per_mol2": 0.0255
+      },
+      {
+        "id": "t08-p14",
+        "theta_kg_per_mol": -0.218,
+        "psi_kg2_per_mol2": 0.026
+      },
+      {
+        "id": "t08-p15",
+        "theta_kg_per_mol": -0.218,
+        "psi_kg2_per_mol2": 0.0265
+      },
+      {
+        "id": "t08-p16",
+        "theta_kg_per_mol": -0.218,
+        "psi_kg2_per_mol2": 0.027
+      },
+      {
+        "id": "t09-p00",
+        "theta_kg_per_mol": -0.2155,
+        "psi_kg2_per_mol2": 0.019
+      },
+      {
+        "id": "t09-p01",
+        "theta_kg_per_mol": -0.2155,
+        "psi_kg2_per_mol2": 0.0195
+      },
+      {
+        "id": "t09-p02",
+        "theta_kg_per_mol": -0.2155,
+        "psi_kg2_per_mol2": 0.02
+      },
+      {
+        "id": "t09-p03",
+        "theta_kg_per_mol": -0.2155,
+        "psi_kg2_per_mol2": 0.0205
+      },
+      {
+        "id": "t09-p04",
+        "theta_kg_per_mol": -0.2155,
+        "psi_kg2_per_mol2": 0.021
+      },
+      {
+        "id": "t09-p05",
+        "theta_kg_per_mol": -0.2155,
+        "psi_kg2_per_mol2": 0.0215
+      },
+      {
+        "id": "t09-p06",
+        "theta_kg_per_mol": -0.2155,
+        "psi_kg2_per_mol2": 0.022
+      },
+      {
+        "id": "t09-p07",
+        "theta_kg_per_mol": -0.2155,
+        "psi_kg2_per_mol2": 0.0225
+      },
+      {
+        "id": "t09-p08",
+        "theta_kg_per_mol": -0.2155,
+        "psi_kg2_per_mol2": 0.023
+      },
+      {
+        "id": "t09-p09",
+        "theta_kg_per_mol": -0.2155,
+        "psi_kg2_per_mol2": 0.0235
+      },
+      {
+        "id": "t09-p10",
+        "theta_kg_per_mol": -0.2155,
+        "psi_kg2_per_mol2": 0.024
+      },
+      {
+        "id": "t09-p11",
+        "theta_kg_per_mol": -0.2155,
+        "psi_kg2_per_mol2": 0.0245
+      },
+      {
+        "id": "t09-p12",
+        "theta_kg_per_mol": -0.2155,
+        "psi_kg2_per_mol2": 0.025
+      },
+      {
+        "id": "t09-p13",
+        "theta_kg_per_mol": -0.2155,
+        "psi_kg2_per_mol2": 0.0255
+      },
+      {
+        "id": "t09-p14",
+        "theta_kg_per_mol": -0.2155,
+        "psi_kg2_per_mol2": 0.026
+      },
+      {
+        "id": "t09-p15",
+        "theta_kg_per_mol": -0.2155,
+        "psi_kg2_per_mol2": 0.0265
+      },
+      {
+        "id": "t09-p16",
+        "theta_kg_per_mol": -0.2155,
+        "psi_kg2_per_mol2": 0.027
+      },
+      {
+        "id": "t10-p00",
+        "theta_kg_per_mol": -0.213,
+        "psi_kg2_per_mol2": 0.019
+      },
+      {
+        "id": "t10-p01",
+        "theta_kg_per_mol": -0.213,
+        "psi_kg2_per_mol2": 0.0195
+      },
+      {
+        "id": "t10-p02",
+        "theta_kg_per_mol": -0.213,
+        "psi_kg2_per_mol2": 0.02
+      },
+      {
+        "id": "t10-p03",
+        "theta_kg_per_mol": -0.213,
+        "psi_kg2_per_mol2": 0.0205
+      },
+      {
+        "id": "t10-p04",
+        "theta_kg_per_mol": -0.213,
+        "psi_kg2_per_mol2": 0.021
+      },
+      {
+        "id": "t10-p05",
+        "theta_kg_per_mol": -0.213,
+        "psi_kg2_per_mol2": 0.0215
+      },
+      {
+        "id": "t10-p06",
+        "theta_kg_per_mol": -0.213,
+        "psi_kg2_per_mol2": 0.022
+      },
+      {
+        "id": "t10-p07",
+        "theta_kg_per_mol": -0.213,
+        "psi_kg2_per_mol2": 0.0225
+      },
+      {
+        "id": "t10-p08",
+        "theta_kg_per_mol": -0.213,
+        "psi_kg2_per_mol2": 0.023
+      },
+      {
+        "id": "t10-p09",
+        "theta_kg_per_mol": -0.213,
+        "psi_kg2_per_mol2": 0.0235
+      },
+      {
+        "id": "t10-p10",
+        "theta_kg_per_mol": -0.213,
+        "psi_kg2_per_mol2": 0.024
+      },
+      {
+        "id": "t10-p11",
+        "theta_kg_per_mol": -0.213,
+        "psi_kg2_per_mol2": 0.0245
+      },
+      {
+        "id": "t10-p12",
+        "theta_kg_per_mol": -0.213,
+        "psi_kg2_per_mol2": 0.025
+      },
+      {
+        "id": "t10-p13",
+        "theta_kg_per_mol": -0.213,
+        "psi_kg2_per_mol2": 0.0255
+      },
+      {
+        "id": "t10-p14",
+        "theta_kg_per_mol": -0.213,
+        "psi_kg2_per_mol2": 0.026
+      },
+      {
+        "id": "t10-p15",
+        "theta_kg_per_mol": -0.213,
+        "psi_kg2_per_mol2": 0.0265
+      },
+      {
+        "id": "t10-p16",
+        "theta_kg_per_mol": -0.213,
+        "psi_kg2_per_mol2": 0.027
+      },
+      {
+        "id": "t11-p00",
+        "theta_kg_per_mol": -0.2105,
+        "psi_kg2_per_mol2": 0.019
+      },
+      {
+        "id": "t11-p01",
+        "theta_kg_per_mol": -0.2105,
+        "psi_kg2_per_mol2": 0.0195
+      },
+      {
+        "id": "t11-p02",
+        "theta_kg_per_mol": -0.2105,
+        "psi_kg2_per_mol2": 0.02
+      },
+      {
+        "id": "t11-p03",
+        "theta_kg_per_mol": -0.2105,
+        "psi_kg2_per_mol2": 0.0205
+      },
+      {
+        "id": "t11-p04",
+        "theta_kg_per_mol": -0.2105,
+        "psi_kg2_per_mol2": 0.021
+      },
+      {
+        "id": "t11-p05",
+        "theta_kg_per_mol": -0.2105,
+        "psi_kg2_per_mol2": 0.0215
+      },
+      {
+        "id": "t11-p06",
+        "theta_kg_per_mol": -0.2105,
+        "psi_kg2_per_mol2": 0.022
+      },
+      {
+        "id": "t11-p07",
+        "theta_kg_per_mol": -0.2105,
+        "psi_kg2_per_mol2": 0.0225
+      },
+      {
+        "id": "t11-p08",
+        "theta_kg_per_mol": -0.2105,
+        "psi_kg2_per_mol2": 0.023
+      },
+      {
+        "id": "t11-p09",
+        "theta_kg_per_mol": -0.2105,
+        "psi_kg2_per_mol2": 0.0235
+      },
+      {
+        "id": "t11-p10",
+        "theta_kg_per_mol": -0.2105,
+        "psi_kg2_per_mol2": 0.024
+      },
+      {
+        "id": "t11-p11",
+        "theta_kg_per_mol": -0.2105,
+        "psi_kg2_per_mol2": 0.0245
+      },
+      {
+        "id": "t11-p12",
+        "theta_kg_per_mol": -0.2105,
+        "psi_kg2_per_mol2": 0.025
+      },
+      {
+        "id": "t11-p13",
+        "theta_kg_per_mol": -0.2105,
+        "psi_kg2_per_mol2": 0.0255
+      },
+      {
+        "id": "t11-p14",
+        "theta_kg_per_mol": -0.2105,
+        "psi_kg2_per_mol2": 0.026
+      },
+      {
+        "id": "t11-p15",
+        "theta_kg_per_mol": -0.2105,
+        "psi_kg2_per_mol2": 0.0265
+      },
+      {
+        "id": "t11-p16",
+        "theta_kg_per_mol": -0.2105,
+        "psi_kg2_per_mol2": 0.027
+      },
+      {
+        "id": "t12-p00",
+        "theta_kg_per_mol": -0.208,
+        "psi_kg2_per_mol2": 0.019
+      },
+      {
+        "id": "t12-p01",
+        "theta_kg_per_mol": -0.208,
+        "psi_kg2_per_mol2": 0.0195
+      },
+      {
+        "id": "t12-p02",
+        "theta_kg_per_mol": -0.208,
+        "psi_kg2_per_mol2": 0.02
+      },
+      {
+        "id": "t12-p03",
+        "theta_kg_per_mol": -0.208,
+        "psi_kg2_per_mol2": 0.0205
+      },
+      {
+        "id": "t12-p04",
+        "theta_kg_per_mol": -0.208,
+        "psi_kg2_per_mol2": 0.021
+      },
+      {
+        "id": "t12-p05",
+        "theta_kg_per_mol": -0.208,
+        "psi_kg2_per_mol2": 0.0215
+      },
+      {
+        "id": "t12-p06",
+        "theta_kg_per_mol": -0.208,
+        "psi_kg2_per_mol2": 0.022
+      },
+      {
+        "id": "t12-p07",
+        "theta_kg_per_mol": -0.208,
+        "psi_kg2_per_mol2": 0.0225
+      },
+      {
+        "id": "t12-p08",
+        "theta_kg_per_mol": -0.208,
+        "psi_kg2_per_mol2": 0.023
+      },
+      {
+        "id": "t12-p09",
+        "theta_kg_per_mol": -0.208,
+        "psi_kg2_per_mol2": 0.0235
+      },
+      {
+        "id": "t12-p10",
+        "theta_kg_per_mol": -0.208,
+        "psi_kg2_per_mol2": 0.024
+      },
+      {
+        "id": "t12-p11",
+        "theta_kg_per_mol": -0.208,
+        "psi_kg2_per_mol2": 0.0245
+      },
+      {
+        "id": "t12-p12",
+        "theta_kg_per_mol": -0.208,
+        "psi_kg2_per_mol2": 0.025
+      },
+      {
+        "id": "t12-p13",
+        "theta_kg_per_mol": -0.208,
+        "psi_kg2_per_mol2": 0.0255
+      },
+      {
+        "id": "t12-p14",
+        "theta_kg_per_mol": -0.208,
+        "psi_kg2_per_mol2": 0.026
+      },
+      {
+        "id": "t12-p15",
+        "theta_kg_per_mol": -0.208,
+        "psi_kg2_per_mol2": 0.0265
+      },
+      {
+        "id": "t12-p16",
+        "theta_kg_per_mol": -0.208,
+        "psi_kg2_per_mol2": 0.027
+      },
+      {
+        "id": "t13-p00",
+        "theta_kg_per_mol": -0.2055,
+        "psi_kg2_per_mol2": 0.019
+      },
+      {
+        "id": "t13-p01",
+        "theta_kg_per_mol": -0.2055,
+        "psi_kg2_per_mol2": 0.0195
+      },
+      {
+        "id": "t13-p02",
+        "theta_kg_per_mol": -0.2055,
+        "psi_kg2_per_mol2": 0.02
+      },
+      {
+        "id": "t13-p03",
+        "theta_kg_per_mol": -0.2055,
+        "psi_kg2_per_mol2": 0.0205
+      },
+      {
+        "id": "t13-p04",
+        "theta_kg_per_mol": -0.2055,
+        "psi_kg2_per_mol2": 0.021
+      },
+      {
+        "id": "t13-p05",
+        "theta_kg_per_mol": -0.2055,
+        "psi_kg2_per_mol2": 0.0215
+      },
+      {
+        "id": "t13-p06",
+        "theta_kg_per_mol": -0.2055,
+        "psi_kg2_per_mol2": 0.022
+      },
+      {
+        "id": "t13-p07",
+        "theta_kg_per_mol": -0.2055,
+        "psi_kg2_per_mol2": 0.0225
+      },
+      {
+        "id": "t13-p08",
+        "theta_kg_per_mol": -0.2055,
+        "psi_kg2_per_mol2": 0.023
+      },
+      {
+        "id": "t13-p09",
+        "theta_kg_per_mol": -0.2055,
+        "psi_kg2_per_mol2": 0.0235
+      },
+      {
+        "id": "t13-p10",
+        "theta_kg_per_mol": -0.2055,
+        "psi_kg2_per_mol2": 0.024
+      },
+      {
+        "id": "t13-p11",
+        "theta_kg_per_mol": -0.2055,
+        "psi_kg2_per_mol2": 0.0245
+      },
+      {
+        "id": "t13-p12",
+        "theta_kg_per_mol": -0.2055,
+        "psi_kg2_per_mol2": 0.025
+      },
+      {
+        "id": "t13-p13",
+        "theta_kg_per_mol": -0.2055,
+        "psi_kg2_per_mol2": 0.0255
+      },
+      {
+        "id": "t13-p14",
+        "theta_kg_per_mol": -0.2055,
+        "psi_kg2_per_mol2": 0.026
+      },
+      {
+        "id": "t13-p15",
+        "theta_kg_per_mol": -0.2055,
+        "psi_kg2_per_mol2": 0.0265
+      },
+      {
+        "id": "t13-p16",
+        "theta_kg_per_mol": -0.2055,
+        "psi_kg2_per_mol2": 0.027
+      },
+      {
+        "id": "t14-p00",
+        "theta_kg_per_mol": -0.203,
+        "psi_kg2_per_mol2": 0.019
+      },
+      {
+        "id": "t14-p01",
+        "theta_kg_per_mol": -0.203,
+        "psi_kg2_per_mol2": 0.0195
+      },
+      {
+        "id": "t14-p02",
+        "theta_kg_per_mol": -0.203,
+        "psi_kg2_per_mol2": 0.02
+      },
+      {
+        "id": "t14-p03",
+        "theta_kg_per_mol": -0.203,
+        "psi_kg2_per_mol2": 0.0205
+      },
+      {
+        "id": "t14-p04",
+        "theta_kg_per_mol": -0.203,
+        "psi_kg2_per_mol2": 0.021
+      },
+      {
+        "id": "t14-p05",
+        "theta_kg_per_mol": -0.203,
+        "psi_kg2_per_mol2": 0.0215
+      },
+      {
+        "id": "t14-p06",
+        "theta_kg_per_mol": -0.203,
+        "psi_kg2_per_mol2": 0.022
+      },
+      {
+        "id": "t14-p07",
+        "theta_kg_per_mol": -0.203,
+        "psi_kg2_per_mol2": 0.0225
+      },
+      {
+        "id": "t14-p08",
+        "theta_kg_per_mol": -0.203,
+        "psi_kg2_per_mol2": 0.023
+      },
+      {
+        "id": "t14-p09",
+        "theta_kg_per_mol": -0.203,
+        "psi_kg2_per_mol2": 0.0235
+      },
+      {
+        "id": "t14-p10",
+        "theta_kg_per_mol": -0.203,
+        "psi_kg2_per_mol2": 0.024
+      },
+      {
+        "id": "t14-p11",
+        "theta_kg_per_mol": -0.203,
+        "psi_kg2_per_mol2": 0.0245
+      },
+      {
+        "id": "t14-p12",
+        "theta_kg_per_mol": -0.203,
+        "psi_kg2_per_mol2": 0.025
+      },
+      {
+        "id": "t14-p13",
+        "theta_kg_per_mol": -0.203,
+        "psi_kg2_per_mol2": 0.0255
+      },
+      {
+        "id": "t14-p14",
+        "theta_kg_per_mol": -0.203,
+        "psi_kg2_per_mol2": 0.026
+      },
+      {
+        "id": "t14-p15",
+        "theta_kg_per_mol": -0.203,
+        "psi_kg2_per_mol2": 0.0265
+      },
+      {
+        "id": "t14-p16",
+        "theta_kg_per_mol": -0.203,
+        "psi_kg2_per_mol2": 0.027
+      },
+      {
+        "id": "t15-p00",
+        "theta_kg_per_mol": -0.2005,
+        "psi_kg2_per_mol2": 0.019
+      },
+      {
+        "id": "t15-p01",
+        "theta_kg_per_mol": -0.2005,
+        "psi_kg2_per_mol2": 0.0195
+      },
+      {
+        "id": "t15-p02",
+        "theta_kg_per_mol": -0.2005,
+        "psi_kg2_per_mol2": 0.02
+      },
+      {
+        "id": "t15-p03",
+        "theta_kg_per_mol": -0.2005,
+        "psi_kg2_per_mol2": 0.0205
+      },
+      {
+        "id": "t15-p04",
+        "theta_kg_per_mol": -0.2005,
+        "psi_kg2_per_mol2": 0.021
+      },
+      {
+        "id": "t15-p05",
+        "theta_kg_per_mol": -0.2005,
+        "psi_kg2_per_mol2": 0.0215
+      },
+      {
+        "id": "t15-p06",
+        "theta_kg_per_mol": -0.2005,
+        "psi_kg2_per_mol2": 0.022
+      },
+      {
+        "id": "t15-p07",
+        "theta_kg_per_mol": -0.2005,
+        "psi_kg2_per_mol2": 0.0225
+      },
+      {
+        "id": "t15-p08",
+        "theta_kg_per_mol": -0.2005,
+        "psi_kg2_per_mol2": 0.023
+      },
+      {
+        "id": "t15-p09",
+        "theta_kg_per_mol": -0.2005,
+        "psi_kg2_per_mol2": 0.0235
+      },
+      {
+        "id": "t15-p10",
+        "theta_kg_per_mol": -0.2005,
+        "psi_kg2_per_mol2": 0.024
+      },
+      {
+        "id": "t15-p11",
+        "theta_kg_per_mol": -0.2005,
+        "psi_kg2_per_mol2": 0.0245
+      },
+      {
+        "id": "t15-p12",
+        "theta_kg_per_mol": -0.2005,
+        "psi_kg2_per_mol2": 0.025
+      },
+      {
+        "id": "t15-p13",
+        "theta_kg_per_mol": -0.2005,
+        "psi_kg2_per_mol2": 0.0255
+      },
+      {
+        "id": "t15-p14",
+        "theta_kg_per_mol": -0.2005,
+        "psi_kg2_per_mol2": 0.026
+      },
+      {
+        "id": "t15-p15",
+        "theta_kg_per_mol": -0.2005,
+        "psi_kg2_per_mol2": 0.0265
+      },
+      {
+        "id": "t15-p16",
+        "theta_kg_per_mol": -0.2005,
+        "psi_kg2_per_mol2": 0.027
+      },
+      {
+        "id": "t16-p00",
+        "theta_kg_per_mol": -0.198,
+        "psi_kg2_per_mol2": 0.019
+      },
+      {
+        "id": "t16-p01",
+        "theta_kg_per_mol": -0.198,
+        "psi_kg2_per_mol2": 0.0195
+      },
+      {
+        "id": "t16-p02",
+        "theta_kg_per_mol": -0.198,
+        "psi_kg2_per_mol2": 0.02
+      },
+      {
+        "id": "t16-p03",
+        "theta_kg_per_mol": -0.198,
+        "psi_kg2_per_mol2": 0.0205
+      },
+      {
+        "id": "t16-p04",
+        "theta_kg_per_mol": -0.198,
+        "psi_kg2_per_mol2": 0.021
+      },
+      {
+        "id": "t16-p05",
+        "theta_kg_per_mol": -0.198,
+        "psi_kg2_per_mol2": 0.0215
+      },
+      {
+        "id": "t16-p06",
+        "theta_kg_per_mol": -0.198,
+        "psi_kg2_per_mol2": 0.022
+      },
+      {
+        "id": "t16-p07",
+        "theta_kg_per_mol": -0.198,
+        "psi_kg2_per_mol2": 0.0225
+      },
+      {
+        "id": "t16-p08",
+        "theta_kg_per_mol": -0.198,
+        "psi_kg2_per_mol2": 0.023
+      },
+      {
+        "id": "t16-p09",
+        "theta_kg_per_mol": -0.198,
+        "psi_kg2_per_mol2": 0.0235
+      },
+      {
+        "id": "t16-p10",
+        "theta_kg_per_mol": -0.198,
+        "psi_kg2_per_mol2": 0.024
+      },
+      {
+        "id": "t16-p11",
+        "theta_kg_per_mol": -0.198,
+        "psi_kg2_per_mol2": 0.0245
+      },
+      {
+        "id": "t16-p12",
+        "theta_kg_per_mol": -0.198,
+        "psi_kg2_per_mol2": 0.025
+      },
+      {
+        "id": "t16-p13",
+        "theta_kg_per_mol": -0.198,
+        "psi_kg2_per_mol2": 0.0255
+      },
+      {
+        "id": "t16-p14",
+        "theta_kg_per_mol": -0.198,
+        "psi_kg2_per_mol2": 0.026
+      },
+      {
+        "id": "t16-p15",
+        "theta_kg_per_mol": -0.198,
+        "psi_kg2_per_mol2": 0.0265
+      },
+      {
+        "id": "t16-p16",
+        "theta_kg_per_mol": -0.198,
+        "psi_kg2_per_mol2": 0.027
+      }
+    ],
+    "count": 289,
+    "sensitivity_from_retained_nominal_rows": {
+      "I<=3": {
+        "dPhi_dtheta": {
+          "rows": 10,
+          "bias": 0.1428597811894648,
+          "RMS": 0.1579055222019378,
+          "maximum_absolute_error": 0.26015830103462634
+        },
+        "dPhi_dpsi": {
+          "rows": 10,
+          "bias": 0.22649209600104828,
+          "RMS": 0.28888151160961373,
+          "maximum_absolute_error": 0.5847580373697422
+        }
+      },
+      "3<I<=8.3": {
+        "dPhi_dtheta": {
+          "rows": 12,
+          "bias": 0.4216294901149957,
+          "RMS": 0.45578524384631774,
+          "maximum_absolute_error": 0.8612166508621523
+        },
+        "dPhi_dpsi": {
+          "rows": 12,
+          "bias": 1.7229275555092043,
+          "RMS": 2.1553716482618706,
+          "maximum_absolute_error": 5.191758458057398
+        }
+      }
+    },
+    "spacing_reason": "RMS upper-bucket Phi changes per step before Li refit: 0.00113946 in theta and 0.00107769 in psi. The rectangle encloses both retained probe optima; it is not a proof over the continuous plane."
+  },
+  "frozen_at_utc": "2026-10-19T22:52:02.382424+00:00",
+  "T_K": 298.15,
+  "P_Pa": 100000.0,
+  "basis": "figiel-2025-chloride-mixture-refit/1; Na/Mg/Ca/K/Cl/water and all other parameters fixed",
+  "Li_coordinates": [
+    "segment_diameter (packing_diameter = 0.88 x)",
+    "debye_huckel_diameter",
+    "born_diameter",
+    "k_ij/water",
+    "k_ij/chloride-anion"
+  ],
+  "Li_bounds": {
+    "diameter_floor_angstrom": 1.38,
+    "diameter_floor_source": "Marcus 1991 Table 1 crystal diameter 2r, r(Li+) = 0.069 nm (Zotero 9J34P8R4)",
+    "diameter_numerical_upper_angstrom": 30.0,
+    "k_ij_upper": 1.0,
+    "k_ij_upper_reason": "keeps sqrt(u_i u_j)(1 - k_ij) >= 0",
+    "k_ij_numerical_lower": -50.0,
+    "numerical_box_rule": "an optimum within 1e-6 of a numerical-box limit is reported as unbounded, covariance withheld"
+  },
+  "start_physical": [
+    3.671853254763634,
+    3.2312308641919976,
+    13.56906735571716,
+    1.38,
+    -2.983421843157207,
+    -8.862058355359212
+  ],
+  "start_optimizer": [
+    3.671853254763634,
+    13.56906735571716,
+    1.38,
+    -2.983421843157207,
+    -8.862058355359212
+  ],
+  "method": "ONE native Ceres fit per fixed grid point, same single Li start at every point, no warm-start continuation, adaptive grid, coefficient solve or Python optimizer. D7 is subtracted from nominal Yao observation targets exactly; density and non-Yao training targets are unchanged.",
+  "training_counts": {
+    "Hamer-Wu": 29,
+    "El Guendouzi": 45,
+    "Yao_I<=3": 10,
+    "Yao_3<I<=8.3": 12
+  },
+  "observation_scales": {
+    "Hamer-Wu": 0.8853156407653622,
+    "El Guendouzi": 2.808541596118184,
+    "I<=3": 0.5950754093863982,
+    "3<I<=8.3": 0.6518724502751037
+  },
+  "weight_basis": "Exact Stage B re-declared Hamer-Wu and El Guendouzi scales (Phi observations); Yao buckets use the SAME sqrt(n/37)*delta_s/0.008736291849903472 formula with delta_s=0.01, n=10 or 12. No inverse water-activity weighting from the earlier li-probe is substituted. These are working discrepancy weights, not measurement uncertainties.",
+  "controls": {
+    "maximum_iterations": 200,
+    "maximum_elapsed_time_seconds": 90,
+    "parameter_tolerance": 1e-10,
+    "function_tolerance": 1e-12,
+    "gradient_tolerance": 1e-10,
+    "workers": 1
+  },
+  "budget_wall_seconds": 1800,
+  "process_count": 32,
+  "parallelism": "One external process per logical CPU, one native fit worker per process; OMP/BLAS threads=1; nice=10. Budget covers fits and all numerical evaluations.",
+  "selection": "Among converged complete points: minimize the largest ratio of any requested absolute metric to its limit, then sum of squared ratios, then native objective, then grid id. F4 ratios use absolute changes and absolute Pitzer differences. This only reads grid results.",
+  "rounding": "Reuse complete existing Yao reader: 455 realizations, frozen nominal buckets; no refit. 22 scored mixtures, 34 endpoints, 40 high-I report-only mixtures; one illegible row excluded as declared.",
+  "limits": {
+    "Yao_Phi": {
+      "RMS": 0.009,
+      "maximum_absolute_error": 0.027
+    },
+    "Yao_original_Phi": {
+      "RMS": 0.01,
+      "maximum_absolute_error": 0.03
+    },
+    "Hamer_Wu": {
+      "RMS": 0.01,
+      "maximum_absolute_error": 0.03
+    },
+    "El_Guendouzi_aw": {
+      "I<=3": {
+        "rows": 27,
+        "RMS": 0.00144,
+        "maximum_absolute_error": 0.00413
+      },
+      "I>3": {
+        "rows": 18,
+        "RMS": 0.00307,
+        "maximum_absolute_error": 0.00758
+      },
+      "meaning": "Pitzer-Mayorga 1973 binaries plus Song 2010 mixing; reference-model residual, not measured noise floor; design r2 R3"
+    },
+    "F3_abs_theta_eff": 0.04,
+    "F4_change_decade": 0.01,
+    "Lithium_abs_decade": 0.15
+  },
+  "evidence_limits": "Exploratory design evidence and Yao calibration comparison; no qualifying fit, production path, independent physical validation, continuous feasibility proof, packet or tracked change.",
+  "execution": {
+    "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-640-refit-li-and-k-jointly-with-the-6/.venv/bin/python",
+    "native_extension": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-640-refit-li-and-k-jointly-with-the-6/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so",
+    "native_extension_sha256": "130661a3bd877b979db21c800032da234e23b0e48beac4401be4ae5659635839",
+    "worker_checkout": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-640-refit-li-and-k-jointly-with-the-16",
+    "commit": "89e7fa2052a70700763b99c4426b0afd8423cc71",
+    "script_sha256": "0d4691a77b5d02e15204bca9c73e7b11ec10f5835ff1779e9b4d18b0f3275124",
+    "environment": {
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1"
+    },
+    "nice": 10
+  },
+  "inputs_sha256": {
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-658/design.md": "314839dd367abe9187d180b6a6c060b4ae94136a8d37758276adc145ba144f9a",
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-658/probe-results.json": "5bf88ee5b37e2c5761572d599c414913dd7d52d43deebf939a6e7a3bdd52b76e",
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-658/li-probe-results.json": "4a64f8d54450a38388e18e31ace8573b6d5ab1fded4557132f843d74831f48b3",
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/analyses/2026-lithium-chloride-refit/inputs/stage-b-declaration.json": "8944055ad4d0af9b816a411c641784221d0ed4429d911842ceb9fc09add065e1",
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-640/diagnosis/inverse-discrepancy/results/fit.json": "5f530192756abf963cb72884998ea3c94d512df8a1576bb9f500ca8b8d7dd960",
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-640-refit-li-and-k-jointly-with-the-16/analyses/2026-lithium-chloride-refit/scripts/fit.py": "7b93c74c6e2f2fc81a06687b9c5544feeead87ed8f4a0897386f60986a54db27",
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-640-refit-li-and-k-jointly-with-the-16/analyses/2026-lithium-chloride-refit/scripts/evaluate.py": "224bdc6e70ceab0dbbd52653f36b1d4abbd6a4f8f9db67b42c43ffb955132a08",
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-640-refit-li-and-k-jointly-with-the-16/analyses/2026-lithium-chloride-refit/scripts/trace_activity.py": "bff2075153b6e3bce61ca87f1aa1a77069709e5a4c2635ee686e8fe2d693d981",
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-640-refit-li-and-k-jointly-with-the-16/analyses/2026-lithium-chloride-refit/inputs/fit-declaration.json": "7a51ef0526a89635daece010d95f0f13cf20e1542fb0e1b20cfe4147bbe170ca",
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-640-refit-li-and-k-jointly-with-the-16/analyses/2026-lithium-chloride-refit/inputs/frozen-realizations.csv": "3028cf12973644b15481c2db749a0059b22ded1971181d1181d44aa11b1d9338",
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-640-refit-li-and-k-jointly-with-the-16/analyses/2026-lithium-chloride-refit/results/pitzer.json": "c1361905cd9d09374270ad89d348d6a9b29cd0c4043f6f15e921975a01f5f402",
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-640-refit-li-and-k-jointly-with-the-16/analyses/2026-lithium-chloride-refit/inputs/lithium-f0-states.csv": "338612553e3387194bb5fb6560ee5b22b2c25127e825f261172fbf17df3515ef",
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-640-refit-li-and-k-jointly-with-the-16/data/packets/figiel-2025-chloride-mixture-refit/1/parameters/parameters.json": "1c27b1b14b17f59c931444574c41ffb71f4977e423ca7960bd0263b6afc1cc33",
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-640-refit-li-and-k-jointly-with-the-16/analyses/2026-lithium-chloride-refit/inputs/hamer-wu-1972-licl.csv": "d6bd62adde57d94eadf882ebb1366c798ff6f7d4ce9c17ced922bf9685843233",
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-640-refit-li-and-k-jointly-with-the-16/data/packets/el-guendouzi-2004-licl-nacl-observations/1/observations/el-guendouzi-2004-licl-nacl-from-lassin2015-fig22.csv": "28b511d458f0ada0b10fe7f571ceedd3db548d61997fbbb1e529bec7147154ac",
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-640-refit-li-and-k-jointly-with-the-16/data/packets/yao-1992-licl-mgcl2-observations/1/observations/yao1992-licl-mgcl2-table1.csv": "edbae25ae607f9c22cd4a34dad93bb9c622165737b5691e109ed2363660d4f8b",
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-640-refit-li-and-k-jointly-with-the-16/data/packets/robinson-covington-1968-kcl-cacl2-observations/1/observations/robinson-covington-1968-table1.csv": "2275421545191812af30b5a31585954f44f3ff19bfc6a6cbbad380b6788b63ee",
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-640-refit-li-and-k-jointly-with-the-16/analyses/2026-mixed-chloride-water-activity/scripts/compare.py": "25f12a40288f2637061bbc4b62c91c4473a2aa017592399a1350b483a68b0cfd",
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-640-refit-li-and-k-jointly-with-the-16/analyses/2026-chloride-brine-refit/scripts/fit.py": "10b6660022842c0516d95124ca5792c94c552baeb95819b99b9010bebd0b70a4"
+  }
+}

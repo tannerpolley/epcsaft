@@ -1,0 +1,81 @@
+{
+  "checks": {
+    "affected": {
+      "state": "passed",
+      "command": "tools/check-affected.sh origin/main",
+      "log": "build/issue-676/check-affected-r3.log"
+    },
+    "all": {
+      "state": "passed",
+      "command": "tools/check-all.sh",
+      "log": "build/issue-676/check-all-r3.log"
+    },
+    "properties": {
+      "state": "passed",
+      "command": "engine/tools/run-native-tests.sh properties",
+      "log": "build/issue-676/properties-r3.log"
+    },
+    "key_aa": {
+      "state": "retained passing evidence; no runtime change in this correction",
+      "command": "tools/time-key-solves A A --fit",
+      "summary": "../r2/key-aa.json"
+    },
+    "key_ab": {
+      "state": "retained passing evidence; no runtime change in this correction",
+      "command": "tools/time-key-solves A B --fit --control A=A",
+      "summary": "../r2/key-ab.json",
+      "log": "build/issue-676/key-ab-r2-frozen.log"
+    },
+    "corpora": {
+      "state": "retained passing evidence; no runtime change in this correction",
+      "command": "tools/check-equilibrium-corpora A B",
+      "summary": "../r2/corpora.json",
+      "differences": "../r2/corpora-differences.json",
+      "identities": "../r2/corpora-identities.json",
+      "log": "build/issue-676/corpora-r2.log"
+    },
+    "layout": {
+      "state": "passed",
+      "command": "tools/check-analysis-layout.py",
+      "log": "build/issue-676/layout-r3.log"
+    },
+    "numbers": {
+      "state": "passed",
+      "command": "tools/check-notebook-numbers.py notebook.qmd README.md",
+      "log": "build/issue-676/notebook-numbers-r3.log"
+    },
+    "render": {
+      "state": "passed",
+      "path": "build/issue-556/quarto/2026-hydrochloric-acid-chloride-basis/notebook.html",
+      "log": "build/issue-676/notebook-render-r3.log"
+    },
+    "native_pr": {
+      "state": "final exact-head gate reported in PR body; this numerical record predates that gate",
+      "command": "tools/check-pr-native --pr N --head HEAD --base 382289ddb8edb4468b5736610992c3a0c102d831"
+    },
+    "hcl": {
+      "state": "passed binary scalar/vector, old/new scalar and trace/background comparisons",
+      "command": "scripts/run.py --verify-only",
+      "values": "activity-verification.csv",
+      "identity": "activity-identity.json"
+    },
+    "falsification": {
+      "state": "three injected divergences rejected; source restored and verification passed",
+      "evidence": "falsification.json"
+    }
+  },
+  "fit_outcome": "incomplete at four coordinates; no adopted parameters or /3",
+  "qualification": "not opened because no identified endpoint; unchanged-basis /2 replay is conditional on identification and accuracy",
+  "measurement_attempts": [
+    {
+      "path": "build/issue-676/key-ab-r2",
+      "cause": "baseline host timing invalid while native compilation overlapped"
+    },
+    {
+      "path": "build/issue-676/key-ab-r2-quiet",
+      "cause": "candidate source identity changed during notebook preparation; discarded comparison"
+    }
+  ],
+  "delivered_review": "Prior review d5c12bd8e6dd36c18b83244f000e5d3cfc1439453902c379811945ca6c4beeb1: Not supported due to missing HCl verification. The correction awaits owner independent delivered review; no investigator promotion.",
+  "identity_note": "This correction changes verification and presentation only. Native source hashes and the full fit branch match the prior delivered head. The same retained key-solve and corpus comparisons remain applicable; no fit, key-solve or corpus rerun was performed."
+}

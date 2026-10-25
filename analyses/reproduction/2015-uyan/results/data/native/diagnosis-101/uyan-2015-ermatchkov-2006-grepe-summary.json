@@ -1,0 +1,22 @@
+{
+  "wheel_sha256": "84dbd5d062ccff3e6b539c4fe1e6498f54002c67823dc8cc15baadf253233bbe",
+  "maximum_original_row": 6.306066779870889e-14,
+  "source_row_count": 101,
+  "evaluated_row_count": 81,
+  "failed_row_count": 20,
+  "grepe_ard_percent": 460.3370498963903,
+  "grepe_ard_by_temperature_percent": {
+    "313.15": 1627.2445700061862,
+    "353.15": 174.57196239493658,
+    "393.15": 35.39047936381185
+  },
+  "liquid_denser_than_vapor_count": 81,
+  "retried_row_count": 27,
+  "wall_time_s": 156.46666460699998,
+  "phase_topology": [
+    "finite reacting liquid",
+    "incipient neutral vapor"
+  ],
+  "parameter_lane": "Uyan 2015 transfer reconstruction with explicit Archer-Wang water approximation and Hsieh ThermoML pure-MDEA fit",
+  "interpretation": "Direct source-data GREPE reconstruction; not an exact author-code replay."
+}

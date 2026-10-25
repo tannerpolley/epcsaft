@@ -1,0 +1,364 @@
+{
+  "identity": {
+    "wheel": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/build/issue-680-release-PRNBCX/epcsaft-0.2.0.dev0-cp313-cp313-manylinux_2_39_x86_64.whl",
+    "wheel_sha256": "8897a0caab9f2508ed642f42c8b5226957fbe7035ed7bfdad71e4166798785b3",
+    "script_sha256": "f202f233816f53e68930e66c9ce55d9ec00bc309a4d6d555fbedd1403e913b17",
+    "baseline_script_sha256": "aab4c8de340158479fd4d30bffc5793b3cf96c48a4edb0c113b5b4cebdc62a10",
+    "source_mtimes": {
+      "engine/native/equilibrium/gibbs_minimizer.cpp": 1792476232919382804,
+      "engine/native/equilibrium/request_compile.cpp": 1792476232921382796
+    },
+    "thread_environment": {
+      "OMP_NUM_THREADS": null,
+      "OPENBLAS_NUM_THREADS": null
+    }
+  },
+  "inputs": {
+    "ionic/parameters": {
+      "analyses/2026-khudaida-idaes-settler/inputs/data/khudaida-2026-figure-2-electrolyte-lle/7/parameters/parameters.json": "8babed899e7347e58c403c7aff24a7fdd6d60411af3b4d81eb6aa90c2431dfa4",
+      "data/packets/mea-co2-h2o-nine-species-estimation/3/parameters/parameters.json": "2ea3b41485a98d2cf49add620b87bb05fc5a275cdd132c1cdbb0cfc5f07f2ca4"
+    },
+    "case-6/figure-2-point-7": {
+      "components": [
+        "water",
+        "ethanol",
+        "isobutanol",
+        "sodium-cation",
+        "chloride-anion"
+      ],
+      "T": 293.15,
+      "P": 100000.0,
+      "feed": {
+        "water": 0.646925133827633,
+        "ethanol": 0.07045345803743744,
+        "isobutanol": 0.22564721508764596,
+        "sodium-cation": 0.028487096523641797,
+        "chloride-anion": 0.028487096523641797
+      },
+      "row_tolerance": 1e-10,
+      "phases": [
+        {
+          "name": "phase-0",
+          "kind": "liquid",
+          "support": [
+            "water",
+            "ethanol",
+            "isobutanol",
+            "sodium-cation",
+            "chloride-anion"
+          ],
+          "amount": {
+            "kind": "Free",
+            "value": null
+          },
+          "composition_guess": [
+            0.8,
+            0.05,
+            0.05,
+            0.05,
+            0.05
+          ],
+          "packing_guess": null
+        },
+        {
+          "name": "phase-1",
+          "kind": "liquid",
+          "support": [
+            "water",
+            "ethanol",
+            "isobutanol",
+            "sodium-cation",
+            "chloride-anion"
+          ],
+          "amount": {
+            "kind": "Free",
+            "value": null
+          },
+          "composition_guess": [
+            0.2,
+            0.1,
+            0.6998,
+            0.0001,
+            0.0001
+          ],
+          "packing_guess": null
+        }
+      ]
+    },
+    "case-7/reactions": {
+      "species": [
+        "carbon-dioxide",
+        "monoethanolamine",
+        "water",
+        "protonated-monoethanolamine",
+        "carbamate-anion",
+        "bicarbonate-anion",
+        "carbonate-anion",
+        "hydronium-cation",
+        "hydroxide-anion"
+      ],
+      "stoichiometry": [
+        {
+          "water": -2.0,
+          "hydronium-cation": 1.0,
+          "hydroxide-anion": 1.0
+        },
+        {
+          "carbon-dioxide": -1.0,
+          "water": -2.0,
+          "bicarbonate-anion": 1.0,
+          "hydronium-cation": 1.0
+        },
+        {
+          "water": -1.0,
+          "bicarbonate-anion": -1.0,
+          "carbonate-anion": 1.0,
+          "hydronium-cation": 1.0
+        },
+        {
+          "monoethanolamine": 1.0,
+          "water": -1.0,
+          "carbamate-anion": -1.0,
+          "bicarbonate-anion": 1.0
+        },
+        {
+          "protonated-monoethanolamine": -1.0,
+          "water": -1.0,
+          "monoethanolamine": 1.0,
+          "hydronium-cation": 1.0
+        }
+      ],
+      "ln_k": [
+        -605.348,
+        -587.8,
+        -948.2312,
+        -25.1014,
+        -298.6415
+      ],
+      "T_ref": 318.15,
+      "T_min": 250.0,
+      "T_max": 450.0,
+      "standard_state": "eos-helmholtz-coordinate-basis"
+    },
+    "case-7/bubble": {
+      "components": [
+        "carbon-dioxide",
+        "monoethanolamine",
+        "water",
+        "protonated-monoethanolamine",
+        "carbamate-anion",
+        "bicarbonate-anion",
+        "carbonate-anion",
+        "hydronium-cation",
+        "hydroxide-anion"
+      ],
+      "T": 318.15,
+      "P": {
+        "kind": "Free",
+        "value": 7398.16
+      },
+      "feed": {
+        "carbon-dioxide": 2.4865902751371616,
+        "monoethanolamine": 9.7292821,
+        "water": 76.9751925
+      },
+      "row_tolerance": 1e-10,
+      "phases": [
+        {
+          "name": "L",
+          "kind": "liquid",
+          "support": null,
+          "amount": {
+            "kind": "Free",
+            "value": null
+          },
+          "composition_guess": [],
+          "packing_guess": null
+        },
+        {
+          "name": "V",
+          "kind": "vapor",
+          "support": [
+            "carbon-dioxide",
+            "monoethanolamine",
+            "water"
+          ],
+          "amount": {
+            "kind": "Pinned",
+            "value": 0.0
+          },
+          "composition_guess": [],
+          "packing_guess": null
+        }
+      ]
+    },
+    "case-7/flash-5918.5286-Pa": {
+      "components": [
+        "carbon-dioxide",
+        "monoethanolamine",
+        "water",
+        "protonated-monoethanolamine",
+        "carbamate-anion",
+        "bicarbonate-anion",
+        "carbonate-anion",
+        "hydronium-cation",
+        "hydroxide-anion"
+      ],
+      "T": 318.15,
+      "P": 5918.5286,
+      "feed": {
+        "carbon-dioxide": 2.4865902751371616,
+        "monoethanolamine": 9.7292821,
+        "water": 76.9751925
+      },
+      "row_tolerance": 1e-10,
+      "phases": [
+        {
+          "name": "L",
+          "kind": "liquid",
+          "support": null,
+          "amount": {
+            "kind": "Free",
+            "value": null
+          },
+          "composition_guess": [],
+          "packing_guess": null
+        },
+        {
+          "name": "V",
+          "kind": "vapor",
+          "support": [
+            "carbon-dioxide",
+            "monoethanolamine",
+            "water"
+          ],
+          "amount": {
+            "kind": "Free",
+            "value": null
+          },
+          "composition_guess": [],
+          "packing_guess": null
+        }
+      ]
+    },
+    "case-7/liquid-8877.7929-Pa": {
+      "components": [
+        "carbon-dioxide",
+        "monoethanolamine",
+        "water",
+        "protonated-monoethanolamine",
+        "carbamate-anion",
+        "bicarbonate-anion",
+        "carbonate-anion",
+        "hydronium-cation",
+        "hydroxide-anion"
+      ],
+      "T": 318.15,
+      "P": 8877.7929,
+      "feed": {
+        "carbon-dioxide": 2.4865902751371616,
+        "monoethanolamine": 9.7292821,
+        "water": 76.9751925
+      },
+      "row_tolerance": 1e-10,
+      "phases": [
+        {
+          "name": "L",
+          "kind": "liquid",
+          "support": null,
+          "amount": {
+            "kind": "Free",
+            "value": null
+          },
+          "composition_guess": [],
+          "packing_guess": null
+        }
+      ]
+    },
+    "case-6/aqueous-salt-one-liquid": {
+      "components": [
+        "water",
+        "sodium-cation",
+        "chloride-anion"
+      ],
+      "T": 298.15,
+      "P": 100000.0,
+      "feed": {
+        "water": 0.98,
+        "sodium-cation": 0.01,
+        "chloride-anion": 0.01
+      },
+      "row_tolerance": 1e-10,
+      "phases": [
+        {
+          "name": "L",
+          "kind": "liquid",
+          "support": null,
+          "amount": {
+            "kind": "Free",
+            "value": null
+          },
+          "composition_guess": [],
+          "packing_guess": null
+        }
+      ]
+    }
+  },
+  "costs": {
+    "csv": "ionic-costs.csv",
+    "sha256": "c23926364ceb6e1b24f467017c29bf316f087cda02f6d45467561dc233c9ef96",
+    "samples": 48,
+    "first_report_work": "sample 0 native work references the identical reported CSV operands",
+    "count_aliases": "iterations/evaluations/Hessian counts alias native work where that map is present"
+  },
+  "failure": null,
+  "failures": [],
+  "unresolved": [
+    {
+      "case": "case-7/bubble/explicit-test",
+      "trial": 1,
+      "seed": "near-pure-0",
+      "evidence": "unresolved",
+      "message": "; charged trial outside the condensed domain of density-independent permittivity"
+    },
+    {
+      "case": "case-7/flash-5918.5286-Pa/explicit-test",
+      "trial": 1,
+      "seed": "near-pure-0",
+      "evidence": "unresolved",
+      "message": "; charged trial outside the condensed domain of density-independent permittivity"
+    },
+    {
+      "case": "case-7/flash-5918.5286-Pa/discover/round-0",
+      "trial": 1,
+      "seed": "near-pure-0",
+      "evidence": "unresolved",
+      "message": "; charged trial outside the condensed domain of density-independent permittivity"
+    },
+    {
+      "case": "case-7/flash-5918.5286-Pa",
+      "operation": "discover",
+      "message": "resolved descent without an admitted lower-G declaration"
+    },
+    {
+      "case": "case-7/liquid-8877.7929-Pa/explicit-test",
+      "trial": 1,
+      "seed": "near-pure-0",
+      "evidence": "unresolved",
+      "message": "; charged trial outside the condensed domain of density-independent permittivity"
+    },
+    {
+      "case": "case-7/liquid-8877.7929-Pa/discover/round-0",
+      "trial": 1,
+      "seed": "near-pure-0",
+      "evidence": "unresolved",
+      "message": "; charged trial outside the condensed domain of density-independent permittivity"
+    }
+  ],
+  "limits": [
+    "numerical verification of the supplied model and finite trial set",
+    "estimated uncertainty is not a rigorous bound",
+    "Condensed-domain refusal applies per trial; unsuccessful discovery remains unresolved.",
+    "no physical validation or global stability certificate"
+  ]
+}

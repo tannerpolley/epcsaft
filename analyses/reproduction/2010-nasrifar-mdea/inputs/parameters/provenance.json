@@ -1,0 +1,10 @@
+{
+  "packet_id": "nasrifar-2010-mdea",
+  "packet_version": "1",
+  "packet_path": "data/packets/nasrifar-2010-mdea/1",
+  "packet_fingerprint": "88ebdcef83fdf6d1ac35c1db2ba2c6c106d811a13e37ab2f5fa6f80f43811868",
+  "materialization": "byte-for-byte",
+  "destination": "analyses/reproduction/2010-nasrifar-mdea/inputs/parameters/parameters.json",
+  "sha256": "2847b41e3106810d15913c99986094debc5f9a98671a30657120ba7d15bc648b",
+  "packet_member": "parameters/parameters.json"
+}

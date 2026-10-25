@@ -1,0 +1,37 @@
+{
+  "authority": "Accountable lead decision in the 2026-10-06 build assignment: re-baseline current-wheel predictions; preserve /1 and 1e-12 rule.",
+  "reason": "PR #273 density.cpp::refine retains the pressure-closest endpoint; reproduced bisection improves closure in every moved row, with individual Phi identity errors improving or worsening as retained in diagnosis.json.",
+  "reference": "stage1-reference.csv",
+  "rows": 948,
+  "wheel_sha256": "fdf3fbb51244eb4991f0743a6acd377dc0296d5909b77e896d050c6e36fdf57c",
+  "source_commit": "71c8a69c3feefd01c0b1aa77b00e9418180cca29",
+  "merged_origin_main": "ec0bafa71b5022821f1774b2b9fffb06622be87c",
+  "original_reference": "analyses/2026-figiel-divalent-chlorides/results/stage2-combined-stage1-preservation.csv",
+  "original_reference_sha256": "08f14b2e61c40cc6bf63087bd62d9e9a031f123e75cf026cd59245e14000e738",
+  "original_reference_wheel_sha256": "71ee347fb606352dff9b69df1ddd930b62a7ddbdacb0cec7a0c9f4aece94cfcc",
+  "reference_sha256": "68c5eb84bbc73fafb2d70c703f6a216a680eb8b3d221a951c72e8db03bca1747",
+  "stage1_parameters_sha256": "cec1bfc9c833f7196c7bc11d51d21aa8bc224cc388b04f165712acc5c4473626",
+  "density_correction": "https://github.com/tannerpolley/ePC-SAFT/pull/273",
+  "diagnosis": "diagnosis.json",
+  "diagnosis_sha256": "cdc857ed2e2f015e57ac21e91cf8b21469c9f6075ab09e630f00864555b47c6e",
+  "preservation_rule": "abs(candidate-reference) <= 1e-12*abs(reference) for nonzero reference, otherwise <=1e-12.",
+  "evidence_type": "Numerical preservation reference; not absolute 1e-12 accuracy or physical validation.",
+  "maximum_original_change": 2.8484037351006464e-10,
+  "original_preservation_failures": 40,
+  "conditions": {
+    "temperature_K": 298.15,
+    "pressure_Pa": 100000.0,
+    "phase": "liquid",
+    "basis": "Original eight-species stage-1 declarations, formula-unit molality; unchanged /1 parameters."
+  },
+  "diagnosis_retention": {
+    "original_commit": "71c8a69c3feefd01c0b1aa77b00e9418180cca29",
+    "retained_tables": [
+      "diagnosis.json",
+      "bisect-results.csv",
+      "old-new-identities.csv",
+      "merge-inventory.json"
+    ],
+    "untracked_remainder": "build/issue-209-bisect/ (files left on disk)"
+  }
+}

@@ -1,0 +1,116 @@
+schema_version = 2
+packet_id = "figiel-2025-aqueous-iodides"
+packet_version = "1"
+title = "figiel-2025-aqueous-iodides source parameter packet"
+description = "Reusable parameter packet for figiel-2025-aqueous-iodides, copied byte-for-byte from the admitted EOS source bundle and retained with source/domain metadata."
+license_or_use_basis = "Source-traceable numeric parameter transcription and project-authored packet metadata retained for scientific verification under the source-specific use bases listed below; no full paper content is included."
+tolerance_rationale = "The packet preserves source values byte-for-byte and asserts no new numerical acceptance tolerance. Any validation tolerance or uncertainty must be declared by the consuming campaign."
+
+[[sources]]
+source_id = "figiel-yu-held-2025"
+citation = "Figiel, P.; Yu, G.; Held, C. Predicting Thermodynamic Properties of Ions in Single Solvents and in Mixed Solvents Using a Modified Born Term within the ePC-SAFT Framework. Industrial & Engineering Chemistry Research 2025, 64, 9406-9418."
+doi = "10.1021/acs.iecr.5c00475"
+use_basis = "source-complete aqueous sodium-iodide and potassium-iodide reference states; Tables 3-5 verified against retained Markdown SHA-256 ce80533925a91bc59d8d0d8056113c40611ca26c2edf04aced76986d50bd4bae"
+
+[[sources]]
+source_id = "nist-srd-69-water"
+citation = "NIST Chemistry WebBook, SRD 69, Water, CAS 7732-18-5."
+use_basis = "water identity and molecular weight"
+
+[[domains]]
+domain_id = "figiel-298-k-1-bar"
+kind = "reported-conditions"
+temperature_min = 298.15
+temperature_max = 298.15
+temperature_unit = "kelvin"
+pressure_min = 1
+pressure_max = 1
+pressure_unit = "bar"
+ion_mole_fraction_max = 0.38
+description = "Source-defined reported-conditions domain figiel-298-k-1-bar (temperature 298.15–298.15 kelvin; pressure 1–1 bar); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "nist-water-identity"
+kind = "unknown"
+description = "Source-defined domain nist-water-identity has no numeric range stated in the origin bundle; retain the cited source limits and do not infer a broader range."
+
+[[files]]
+path = "parameters/bundle.toml"
+role = "parameters"
+media_type = "application/toml"
+sha256 = "489f01bc0405bc790c60914143539cc74021e4fbc295f730def9437e5b278df3"
+source_refs = ["figiel-yu-held-2025", "nist-srd-69-water"]
+domain_refs = ["figiel-298-k-1-bar", "nist-water-identity"]
+units_basis = "Bundle identity, file membership, and source metadata are non-numeric identifiers."
+
+[[files]]
+path = "parameters/components.csv"
+role = "parameters"
+media_type = "text/csv"
+sha256 = "d3b806247632be44c2b677b2f08d873f5f88a439bc94519eb93e40a5cd9a583f"
+source_refs = ["figiel-yu-held-2025", "nist-srd-69-water"]
+domain_refs = ["figiel-298-k-1-bar", "nist-water-identity"]
+units_basis = "Numeric units and conventions are declared by the retained source bundle and its source-specific metadata."
+
+[[files]]
+path = "parameters/single.csv"
+role = "parameters"
+media_type = "text/csv"
+sha256 = "0210788ace7fc4f8eb0063553026e12f96e3bb2045851a0f2c0ad5606b2e7a96"
+source_refs = ["figiel-yu-held-2025", "nist-srd-69-water"]
+domain_refs = ["figiel-298-k-1-bar", "nist-water-identity"]
+units_basis = "Numeric units and conventions are declared by the retained source bundle and its source-specific metadata."
+
+[[files]]
+path = "parameters/pair.csv"
+role = "parameters"
+media_type = "text/csv"
+sha256 = "536e84357c4e9ff032f20be07f01385fdf367d8e8c89e2330d5e913db05b6a64"
+source_refs = ["figiel-yu-held-2025", "nist-srd-69-water"]
+domain_refs = ["figiel-298-k-1-bar", "nist-water-identity"]
+units_basis = "Numeric units and conventions are declared by the retained source bundle and its source-specific metadata."
+
+[[files]]
+path = "parameters/sites.csv"
+role = "parameters"
+media_type = "text/csv"
+sha256 = "055986a059fde29e46ede801b67ad9c80388b0345ff63d09cadb67da38c5c29b"
+source_refs = ["figiel-yu-held-2025", "nist-srd-69-water"]
+domain_refs = ["figiel-298-k-1-bar", "nist-water-identity"]
+units_basis = "Numeric units and conventions are declared by the retained source bundle and its source-specific metadata."
+
+[[files]]
+path = "parameters/association.csv"
+role = "parameters"
+media_type = "text/csv"
+sha256 = "b331bad69383b8a4b310332adf508569807fffa7ccd0d5edbbcb4aac4ed63f68"
+source_refs = ["figiel-yu-held-2025", "nist-srd-69-water"]
+domain_refs = ["figiel-298-k-1-bar", "nist-water-identity"]
+units_basis = "Numeric units and conventions are declared by the retained source bundle and its source-specific metadata."
+
+[[files]]
+path = "parameters/model.csv"
+role = "parameters"
+media_type = "text/csv"
+sha256 = "ce1f9d985725f86ca8d2f4e2f9f786c4e942e1d32f207bc1b20957311102525e"
+source_refs = ["figiel-yu-held-2025", "nist-srd-69-water"]
+domain_refs = ["figiel-298-k-1-bar", "nist-water-identity"]
+units_basis = "Numeric units and conventions are declared by the retained source bundle and its source-specific metadata."
+
+[[files]]
+path = "parameters/correlations.toml"
+role = "parameters"
+media_type = "application/toml"
+sha256 = "0c241c0492e06212efe013fc03e3cc2d827e5aa072d212edc62f2ac0176a3f4a"
+source_refs = ["figiel-yu-held-2025", "nist-srd-69-water"]
+domain_refs = ["figiel-298-k-1-bar", "nist-water-identity"]
+units_basis = "Numeric units and conventions are declared by the retained source bundle and its source-specific metadata."
+
+[[files]]
+path = "provenance/source-origin.toml"
+role = "provenance"
+media_type = "application/toml"
+sha256 = "31a33f28a6ed45515288fc9d7119b9b881236827630f345cc6e09fb093c1eb15"
+source_refs = ["figiel-yu-held-2025", "nist-srd-69-water"]
+domain_refs = ["figiel-298-k-1-bar", "nist-water-identity"]
+units_basis = "Origin repository, commit, tree, path, and hash metadata are non-numeric identifiers."

@@ -1,0 +1,5 @@
+source,citation_key,component,m,sigma_A,epsilon_over_k_K,association_sites,kappa_assoc,epsilon_assoc_over_k_K,notes
+Rezaee2026_Table4,Rezaee2026,DES,10.9898,3.1570,305.09,2,0.15,6900,Paper-reported associating PC-SAFT parameter set for TBAC:DA 1:2 DES.
+Rezaee2026_Table6,Rezaee2026,TOPO,13.2090,3.7550,395.55,1,0.01,1520,Paper-reported associating PC-SAFT parameter set for TOPO.
+Rezaee2026_Table8,Rezaee2026,RLi,11.1223,3.8327,392.09,0,0,0,Paper-reported fitted metal-complex pseudo-component.
+Rezaee2026_Table8,Rezaee2026,RNa,11.1504,4.0254,427.44,0,0,0,Paper-reported fitted metal-complex pseudo-component.

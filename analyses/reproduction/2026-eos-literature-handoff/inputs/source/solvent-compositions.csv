@@ -1,0 +1,2 @@
+case_id,water_mole_fraction,ethanol_mole_fraction,water_molar_mass_kg_per_mol,ethanol_molar_mass_kg_per_mol,source_locator,transformation
+esteso-nacl-60wt-0.5m,0.6302882875610789,0.3697117124389211,0.0180153,0.046069,"Esteso 1989 Table I, 60 wt% ethanol; Figiel 2025 Table 2 molar masses","input transcription: normalize (0.4/0.0180153, 0.6/0.046069) once; native execution reads these declared fractions"

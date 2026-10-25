@@ -1,0 +1,184 @@
+{
+  "method": "Native supplied-trial evaluation at the five approved boundary points; Python declares inputs and reads results.",
+  "rows": [
+    {
+      "name": "aqueous-liquid",
+      "temperature_K": 298.15,
+      "pressure_Pa": 100000.0,
+      "composition": [
+        0.98,
+        0.010000000000000004,
+        0.010000000000000004
+      ],
+      "input_density_mol_m3": 55794.73521720492,
+      "expected": "admitted",
+      "evidence": "evaluated",
+      "message": "",
+      "quantities": {
+        "arithmetic_error_estimate_over_rt": 7.558692000449316e-15,
+        "association_energy_estimate_over_rt": 7.630939591149286e-11,
+        "association_residual": 2.3063299975516747e-16,
+        "association_site_pivot_ratio": 12.020583092846813,
+        "association_site_rank": 2.0,
+        "charge_residual": 0.0,
+        "condensed_root_log_displacement": 4.440892098500625e-16,
+        "condensed_root_residual": 7.680379769670065e-15,
+        "descent_error_estimate_over_rt": 1.5267774113915672e-10,
+        "donor_capacity_mol": 0.9999999999999997,
+        "donor_chemical_contraction_over_rt": -2.6212753431969267,
+        "donor_correction_over_rt": -5.832435974081892e-15,
+        "donor_pressure_row": -4.056079134681641e-15,
+        "donor_slope_over_rt": 2.1611698032192353e-15,
+        "euler_defect_over_rt": 0.0,
+        "feasibility_error_estimate_over_rt": 1.968409375117007e-15,
+        "g_over_rt": -2.6212753431969205,
+        "gradient_floor_max_si_columns": 7.630802825506509e-11,
+        "input_reconstruction_l1": 0.0,
+        "molar_density_mol_m3": 55794.73521720492,
+        "negative_slope_density_mol_m3": 16305.75817599504,
+        "normalization_residual": -1.0408340855860843e-17,
+        "packing_fraction": 0.45509688686618927,
+        "pressure_row": 2.2033997233363195e-15,
+        "reconstruction_l1": 0.0,
+        "standard_error_estimate_over_rt": 0.0,
+        "summation_estimate_over_rt": 4.942221479539767e-14,
+        "tpd_over_rt": 7.993605777301127e-15,
+        "volume_m3_per_mol": 1.792283799012705e-05
+      },
+      "resolved_descent": false,
+      "checks": {
+        "availability": true
+      }
+    },
+    {
+      "name": "aqueous-vapor",
+      "temperature_K": 298.15,
+      "pressure_Pa": 100000.0,
+      "composition": [
+        0.98,
+        0.010000000000000004,
+        0.010000000000000004
+      ],
+      "input_density_mol_m3": 43.84923272352185,
+      "expected": "unresolved",
+      "evidence": "unresolved",
+      "message": "; charged trial outside the condensed domain of density-independent permittivity",
+      "quantities": {
+        "condensed_root_log_displacement": 3.33066907387547e-16,
+        "condensed_root_residual": 0.0
+      },
+      "resolved_descent": false,
+      "checks": {
+        "unresolved": true,
+        "absent_tpd": true,
+        "cause": true,
+        "no_resolved_descent": true
+      }
+    },
+    {
+      "name": "salt-rich-liquid",
+      "temperature_K": 298.15,
+      "pressure_Pa": 100000.0,
+      "composition": [
+        0.1,
+        0.45,
+        0.45
+      ],
+      "input_density_mol_m3": 37443.56745756262,
+      "expected": "admitted",
+      "evidence": "evaluated",
+      "message": "",
+      "quantities": {
+        "arithmetic_error_estimate_over_rt": 3.3283462413726365e-13,
+        "association_energy_estimate_over_rt": 1.5174378775210352e-11,
+        "association_residual": 6.678043426411043e-16,
+        "association_site_pivot_ratio": 2.373345241280176,
+        "association_site_rank": 2.0,
+        "charge_residual": 0.0,
+        "condensed_root_log_displacement": 2.7755575615628953e-15,
+        "condensed_root_residual": 9.514958265732787e-16,
+        "descent_error_estimate_over_rt": 9.215633910175024e-11,
+        "donor_capacity_mol": 0.022222222222222223,
+        "donor_chemical_contraction_over_rt": -127.63296933534335,
+        "donor_correction_over_rt": -4.440892098500626e-15,
+        "donor_pressure_row": -4.056079134681641e-15,
+        "donor_slope_over_rt": 5.4842703679759195,
+        "euler_defect_over_rt": 2.842170943040401e-14,
+        "feasibility_error_estimate_over_rt": 1.968409375117007e-15,
+        "g_over_rt": -122.14869896736742,
+        "gradient_floor_max_si_columns": 1.5173973526069942e-11,
+        "input_reconstruction_l1": 1.3877787807814457e-17,
+        "molar_density_mol_m3": 37443.56745756261,
+        "negative_slope_density_mol_m3": 97.38009472904,
+        "normalization_residual": 0.0,
+        "packing_fraction": 0.18807299563818336,
+        "pressure_row": -2.0114944997143552e-17,
+        "reconstruction_l1": 0.0,
+        "standard_error_estimate_over_rt": 0.0,
+        "summation_estimate_over_rt": 3.0933967210420464e-13,
+        "tpd_over_rt": 5.484270367975924,
+        "volume_m3_per_mol": 2.6706856955693905e-05
+      },
+      "resolved_descent": false,
+      "checks": {
+        "availability": true
+      }
+    },
+    {
+      "name": "salt-rich-half-density",
+      "temperature_K": 298.15,
+      "pressure_Pa": 100000.0,
+      "composition": [
+        0.1,
+        0.45,
+        0.45
+      ],
+      "input_density_mol_m3": 18721.78372878131,
+      "expected": "unresolved",
+      "evidence": "unresolved",
+      "message": "; charged trial outside the condensed domain of density-independent permittivity",
+      "quantities": {
+        "condensed_root_log_displacement": 0.6931471805599425,
+        "condensed_root_residual": 9.514958265732787e-16
+      },
+      "resolved_descent": false,
+      "checks": {
+        "unresolved": true,
+        "absent_tpd": true,
+        "cause": true,
+        "no_resolved_descent": true
+      }
+    },
+    {
+      "name": "historical-loop-less-mea",
+      "temperature_K": 318.15,
+      "pressure_Pa": 5918.5286,
+      "composition": [
+        1.0000089750087851e-08,
+        9.999999999999975e-09,
+        0.013114074902182795,
+        0.6564261769862499,
+        1.2752725534061876e-06,
+        0.0011291321611987134,
+        0.3259671004360369,
+        3.257806322811101e-07,
+        0.0033618944610563258
+      ],
+      "input_density_mol_m3": 2.321466537657592,
+      "expected": "unresolved",
+      "evidence": "unresolved",
+      "message": "; charged trial outside the condensed domain of density-independent permittivity",
+      "quantities": {
+        "condensed_root_log_displacement": 0.0,
+        "condensed_root_residual": 0.0
+      },
+      "resolved_descent": false,
+      "checks": {
+        "unresolved": true,
+        "absent_tpd": true,
+        "cause": true,
+        "no_resolved_descent": true
+      }
+    }
+  ]
+}

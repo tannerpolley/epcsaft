@@ -1,0 +1,259 @@
+{
+  "schema_version": 1,
+  "dataset_id": "figiel-2025-regression-target-ledger-v1",
+  "format_note": "This file uses the JSON-compatible subset of YAML 1.2 for stdlib-only validation.",
+  "migration_binding": {
+    "decision": "D-023",
+    "gate_commit": "9ceb1dae796b44fad7789762efcca9c11491e9c2",
+    "gate_tree": "6757a261bffb9486a25f45194bde870605094bb0"
+  },
+  "citation": {
+    "authors": ["Paul Figiel", "Gangqiang Yu", "Christoph Held"],
+    "title": "Predicting Thermodynamic Properties of Ions in Single Solvents and in Mixed Solvents Using a Modified Born Term within the ePC-SAFT Framework",
+    "journal": "Industrial & Engineering Chemistry Research",
+    "year": 2025,
+    "main_doi": "10.1021/acs.iecr.5c00475",
+    "supporting_information_doi": "10.1021/acs.iecr.5c00475.s001",
+    "supporting_information_locators": [
+      "SI Table S4, PDF page 8 of 10",
+      "SI Table S5, PDF page 9 of 10"
+    ],
+    "main_paper_locators": [
+      "Equation 11 and Figures 2-3: dielectric correlation and validation",
+      "Equation 19 and Figure 6: water-to-organic transfer construction",
+      "Figures 5, 7, and 8: aqueous, methanol, and ethanol MIAC targets",
+      "Model Parameters section: regression order and target roles"
+    ]
+  },
+  "official_sources": {
+    "figshare_article_api": {
+      "url": "https://api.figshare.com/v2/articles/28888514",
+      "article_id": 28888514,
+      "retrieved_on": "2026-07-20",
+      "sha256": "d178efc729b8463e2e1d3ac4875049ef1a09f5640e9100c362d22a83c173f2f6",
+      "role": "Authoritative ACS Figshare article identity and SI DOI binding; exact retrieved response bytes are hash-bound but not retained."
+    },
+    "figshare_file_api": {
+      "url": "https://api.figshare.com/v2/articles/28888514/files/54030209",
+      "file_id": 54030209,
+      "retrieved_on": "2026-07-20",
+      "sha256": "2c1c429b1c5ab5f06e42c6589998b41bbe5d979f5cd0361e4b418aa6df2fb924",
+      "role": "Authoritative file identity, name, size, MIME type, download URL, and supplied MD5 binding; exact retrieved response bytes are hash-bound but not retained."
+    },
+    "official_si_pdf": {
+      "url": "https://ndownloader.figshare.com/files/54030209",
+      "figshare_article_id": 28888514,
+      "figshare_file_id": 54030209,
+      "filename": "ie5c00475_si_001.pdf",
+      "retrieved_on": "2026-07-20",
+      "size_bytes": 396182,
+      "mime_type": "application/pdf",
+      "pages": 10,
+      "md5": "4c3d3964d6e61b908c3ce3b17bb4e6b0",
+      "sha256": "005b38ed566ec3c09b87e1ca3a9dd6eeafc9ba75e1a30b9322291d770bb93895",
+      "license": "CC BY-NC 4.0",
+      "download_command": "curl --fail --location --silent --show-error https://ndownloader.figshare.com/files/54030209 --output ie5c00475_si_001.pdf",
+      "retention": "The PDF is not retained in Validation because this repository is not a paper archive. The exact official bytes remain reproducible through the immutable Figshare file ID and are bound by size, MD5, and SHA-256."
+    },
+    "retained_lab_main_markdown": {
+      "execution_locators": [
+        "not-retained-source-document",
+        "not-retained-source-document"
+      ],
+      "size_bytes": 71826,
+      "sha256": "ce80533925a91bc59d8d0d8056113c40611ca26c2edf04aced76986d50bd4bae",
+      "role": "The two byte-identical local paths are read-only execution metadata, not authority and not a runtime dependency. Durable authority is the DOI plus table/equation/line locators and this artifact hash. This Markdown is not the controlling numerical source for SI Tables S4-S5."
+    },
+    "hamer_wu_official_pdf": {
+      "url": "https://srd.nist.gov/jpcrdreprint/1.3253108.pdf",
+      "doi": "10.1063/1.3253108",
+      "sha256": "8399084b29b4db4ce35ab47ed679446dbedb9bf1686f99f43fce7b2073ee4beb",
+      "retained_csv": "data/reference/1972-hamer-wu/hamer-wu-1972-aqueous-alkali-halides.csv",
+      "retained_csv_sha256": "2f63e13f06a5b0f4e8bca2980b6a8d9d7fb0f839153c43e3a71952daf9796595",
+      "role": "Existing Validation-owned aqueous MIAC source packet used by Figiel main-paper ref 71."
+    }
+  },
+  "extraction_record": {
+    "official_si": "Downloaded the official SI PDF from ACS Figshare file 54030209, verified the API-supplied MD5 and byte count, extracted layout text with Poppler pdftotext 24.02.0, and visually audited rendered PDF pages 8 and 9 against the retained transcription.",
+    "table_s5": "Transcribe only the 37 literature values and 10 reported averages from SI Table S5. Preserve every sign and the x-treatment at 298.15 K and 1 bar. Exclude the modeled column. Do not replace a reported average with a locally recomputed value. For the active tracer, only the Li+, Na+, K+, Cl-, and Br- reported averages are Regression residual targets; their 27 underlying SI values are provenance/support, and the remaining five averages are later-gate provenance.",
+    "table_s4": "Transcribe the 22 rho_exp values and the five reported phi_exp values from SI Table S4. Exclude all ePC-SAFT and ARD columns. The 1 bar condition is stated in SI Figures S7-S8. No pointwise or method uncertainty is reported.",
+    "aqueous_miac": "Reuse the existing hash-bound Hamer-Wu Validation packet without copying or changing its 164 rows. NaBr rows carry both the solvent-factor and aqueous-interaction roles; the other five salts carry the aqueous-interaction role.",
+    "organic_miac": "Copy the exact 18 methanol-NaBr and 18 ethanol-NaBr retained lab values and bind their source files. Because those CSVs contain no primary-paper extraction result, classify all 36 rows as missing-primary-source.",
+    "transfer_and_construction": "Copy 43 retained Figure 6 digitized transfer values. For each row, construct a mixed-solvent solvation value using main-paper equation 19 as Delta G_solv(mixture) = the SI Table S5 reported water average + Delta G_transfer, using exact decimal addition.",
+    "dielectric": "Copy 29 retained Figure 2 water values and 18 explicitly retained Figure 3 digitizations. Water and methanol rows are correlation-fit inputs; ethanol rows are validation inputs. No row is used to infer or refit the published coefficient 7.01 in this packet.",
+    "uncertainty": "Every retained value has blank uncertainty fields because no controlling source in this packet reports a traceable pointwise uncertainty for it. No comparison allowance or numerical model threshold is created."
+  },
+  "regression_order": {
+    "a": "SI Table S5 single-ion water solvation Gibbs energies and separately retained reported averages",
+    "b": "NaBr aqueous, methanol, and ethanol MIAC targets for solvent solvation factors",
+    "c": "Aqueous alkali-halide MIAC targets for ion-water and cation-anion interactions",
+    "d": "Water-to-organic transfer inputs, water-solvation averages, and equation-19 constructed mixed-solvent solvation targets",
+    "e": "Dielectric data for epsilon_mix = epsilon_salt-free/(1 + 7.01 x_ion): water and methanol fit; ethanol validation",
+    "f": "SI Table S4 direct density and osmotic-coefficient targets for the V3+/VO2+ tail"
+  },
+  "ledger_audit": {
+    "rows": 407,
+    "classification_counts": {
+      "direct": 191,
+      "table-derived": 47,
+      "digitized": 90,
+      "constructed": 43,
+      "missing-primary-source": 36
+    },
+    "quantity_counts": {
+      "stoichiometric_mean_ionic_activity_coefficient": 200,
+      "single_ion_solvation_gibbs_energy": 90,
+      "single_ion_transfer_gibbs_energy": 43,
+      "relative_dielectric_constant": 29,
+      "relative_dielectric_constant_ratio": 18,
+      "solution_mass_density": 22,
+      "osmotic_coefficient": 5
+    },
+    "tracer_counts": {
+      "first_tracer_support": 32,
+      "later_capability_gate": 375
+    },
+    "first_tracer_contract": {
+      "ions": ["Li+", "Na+", "K+", "Cl-", "Br-"],
+      "solvent": "water",
+      "support": "Exactly 32 official-SI Table S5 rows: five reported averages used as Regression residual targets and their 27 separately retained underlying literature values used only as provenance/support.",
+      "residual_target_role": "reported_average_target",
+      "residual_target_species": ["Li+", "Na+", "K+", "Cl-", "Br-"],
+      "later_family_rows": "All 164 Hamer-Wu aqueous MIAC rows belong to later f_k/k_ij recovery families and are labeled later_capability_gate.",
+      "exclusions": ["H+", "I-", "SO4^2-", "VO^2+", "V^3+", "methanol", "ethanol"]
+    }
+  },
+  "parameter_provenance_audit": {
+    "retained_file": "analyses/reproduction/2025-figiel/inputs/source/figiel-2025-parameter-provenance.csv",
+    "sha256": "932e8baa90fcefbaa8c3a8730cdeadd83a4c01f0a3b109f4e4cd0319aee9312b",
+    "rows": 122,
+    "scope": "All Table 2 cells plus association-scheme footnotes; all Table 3 cells plus fixed segment-count footnotes; every Table 4 matrix cell; every Table 5 matrix cell; and the stage-B equation-11 coefficient.",
+    "provenance_counts": {
+      "fitted-in-Figiel-2025": 57,
+      "inherited-from-cited-source": 33,
+      "fixed-or-assumed": 13,
+      "blank-or-unpublished": 19
+    },
+    "recovery_target_counts": {"true": 90, "false": 32},
+    "zero_and_blank_rule": "The five explicit published zero cells K+-Cl-, K+-I-, VO2+-SO4^2-, Br--ethanol, and H+-water are fitted-in-Figiel-2025 recovery targets because the Table 4 caption and Table 5 footnote classify their reported ion interactions as fitted. Blank cells remain blank-or-unpublished with recovery_target=false; no zero is inferred, mirrored, or created from a blank/default absence.",
+    "first_tracer_rule": "Only the five stage-A current-catalog Born diameters Li+, Na+, K+, Cl-, and Br- are active. Parameter provenance does not authorize recovery of any other family."
+  },
+  "staged_parameter_recovery": {
+    "A": {
+      "family": "remaining current-catalog Born diameters",
+      "active_scope": ["Li+", "Na+", "K+", "Cl-", "Br-"],
+      "required_source_packet": "Official SI Table S5 reported averages and underlying values, x-treatment definition, exact main-paper Table 3 published d_Born values, and the immutable installed Provider/Regression candidate when separately authorized."
+    },
+    "B": {
+      "family": "dielectric suppression coefficient 7.01",
+      "required_source_packet": "Primary static-permittivity tables from main-paper refs 41 and 53-60 with salt identity, total-ion mole fraction, values, uncertainties, and temperature/pressure; water and methanol predeclared fit, ethanol predeclared validation."
+    },
+    "C": {
+      "family": "solvent f_k",
+      "required_source_packet": "NaBr molality-scale MIAC in water from Hamer-Wu and primary-verified NaBr MIAC in methanol and ethanol from Ye et al. 1994, including composition convention and any reported uncertainty."
+    },
+    "D": {
+      "family": "aqueous ion-water and cation-anion k_ij",
+      "required_source_packet": "The primary-verified aqueous MIAC matrix at 298.15 K and 1 bar for each published Table 4 pair and Table 5 ion-water cell classified as fitted, including explicit published zeros; row-to-parameter sensitivity/rank plan required before fitting. Blank cells are excluded."
+    },
+    "E": {
+      "family": "organic-solvent ion k_ij",
+      "required_source_packet": "Primary water-solvation and water-to-methanol/ethanol transfer tables sufficient to construct each ion's x-treatment organic-solvent target through equation 19. Figure-only digitizations remain descriptive until the reviews and underlying primary tables are supplied."
+    },
+    "F": {
+      "family": "inherited neutral-solvent and ordinary-ion parameters",
+      "required_source_packets": [
+        "Cameretti and Sadowski 2008, Modeling of aqueous amino acid and polypeptide solutions with PC-SAFT, DOI 10.1016/j.cep.2007.02.034: original water parameter datasets, objective, units, scales, bounds, partitions, and starts.",
+        "Gross and Sadowski 2002, Application of the Perturbed-Chain SAFT Equation of State to Associating Systems, DOI 10.1021/ie010954d: original methanol/ethanol pure-component vapor-pressure and liquid-density datasets and objective.",
+        "Held et al. 2014, ePC-SAFT revised, DOI 10.1016/j.cherd.2014.05.017: original ordinary-ion sigma and epsilon/k recovery datasets, objective, units, scales, bounds, partitions, and starts.",
+        "Held and Sadowski 2017, Manual e-PC-SAFT 1.0, main-paper ref 65: exact manual plus the original source dataset/objective behind water-methanol k_ij = -0.0878.",
+        "Dohrn et al. 2020, Thermodynamic Modeling of Solvent-Impact on Phase Separation in Amorphous Solid Dispersions during Drying, DOI 10.1021/acs.molpharmaceut.0c00418: original source dataset/objective behind water-ethanol k_ij = -0.0617."
+      ]
+    },
+    "G": {
+      "family": "expanded H+/I-/SO4^2-/V3+/VO2+ scope",
+      "required_source_packet": "Primary-verified S5 literature chains for expanded-ion solvation, SI Table S4 direct VCl3/VOSO4 density and osmotic data, primary MIAC/transfer sources for every published interaction classified as fitted including explicit zeros, and a separately approved Provider species/catalog seam. Blank cells are excluded."
+    },
+    "H": {
+      "family": "joint published Tables 2-5 tuple replay and confirmation",
+      "required_source_packet": "All prior stage packets plus a frozen joint replay contract. The outcome may confirm local recovery and observable reproduction but cannot claim global uniqueness or global identifiability."
+    }
+  },
+  "eventual_recovery_proof_contract": {
+    "pre_model_declarations": [
+      "source packet hashes and row roles",
+      "objective definition and observable units",
+      "residual scales or weights",
+      "parameter units and bounds",
+      "training, held-out, stress, and negative-control partitions where possible",
+      "deterministic seeds and multistart schedule",
+      "family-specific exact public Provider seam"
+    ],
+    "retained_numerical_evidence": [
+      "objective and residual tables",
+      "derivative/Jacobian evidence",
+      "local rank and conditioning diagnostics",
+      "active-bound report",
+      "multistart outcomes",
+      "fitted-versus-published parameter comparison",
+      "observable reproduction on training and any held-out/negative controls"
+    ],
+    "separate_statuses": ["solver", "numerical", "physical", "predictive"],
+    "claim_boundary": "A family or joint replay can establish only the predeclared local recovery and observable-reproduction claims. It cannot establish global uniqueness, global identifiability, catalog admission, predictive validity without a held-out contract, or authority transfer."
+  },
+  "retained_lab_series": {
+    "nabr_methanol": {"path": "analyses/reproduction/2025-figiel/figures/figure-07/source/methanol-nabr.csv", "sha256": "7a0b56d881c12f27d27f224423da98d3b6027e2a66234d99442967f09e531328", "rows": 18},
+    "nabr_ethanol": {"path": "analyses/reproduction/2025-figiel/figures/figure-08/source/ethanol-nabr.csv", "sha256": "d4a094a60e05c58e10fa8985a7744107a1d109668c3086ec546f93062f449970", "rows": 18},
+    "transfer_k_methanol": {"path": "analyses/reproduction/2025-figiel/figures/figure-06/source/k.csv", "sha256": "4809e91890def4a87fd9e3ffc3e4b3fc813b8eae7386c09d2c884733d9a41c84", "rows": 11},
+    "transfer_br_methanol": {"path": "analyses/reproduction/2025-figiel/figures/figure-06/source/br.csv", "sha256": "9d82e0a1bcff2e67cb5ff37b245ecb648295063684a5c665656a845be34489a7", "rows": 11},
+    "transfer_na_ethanol": {"path": "analyses/reproduction/2025-figiel/figures/figure-06/source/na.csv", "sha256": "681c4de0774bfd5d126871b467099128677e8d31bf4451dfdb5927c34e3c6fac", "rows": 10},
+    "transfer_cl_ethanol": {"path": "analyses/reproduction/2025-figiel/figures/figure-06/source/cl.csv", "sha256": "fad99a2a8c2ea3e39e2b13c5d08228d2182794d2507f1e3ceb6c16327a6e758c", "rows": 11},
+    "dielectric_water": {"path": "analyses/reproduction/2025-figiel/figures/figure-02/source/dielc-salts-in-water.csv", "sha256": "f6ab40cc0090deeaf5e7de5f583adc4585a5ed0eba713b36ec9aa20b18b88383", "rows": 29},
+    "dielectric_organic": {"path": "analyses/reproduction/2025-figiel/figures/figure-03/source/dielc-single-solvent-digitized.csv", "sha256": "b0f6215da60fa7b3359c1e9415ac88cdc039fecc312cb611fd047f0e05c3950e", "rows": 18}
+  },
+  "missing_primary_source_requests": [
+    {"scope": "SI Table S5 underlying values", "request": "Fawcett, Thermodynamic Parameters for the Solvation of Monatomic Ions in Water, J. Phys. Chem. B 1999, DOI 10.1021/jp991802n, including the exact ion table and standard-state treatment."},
+    {"scope": "SI Table S5 underlying values", "request": "Tissandier et al., The Proton's Absolute Aqueous Enthalpy and Gibbs Free Energy of Solvation from Cluster-Ion Solvation Data, J. Phys. Chem. A 1998, DOI 10.1021/jp982638r, including the exact proton value and basis."},
+    {"scope": "SI Table S5 underlying values", "request": "Pliego and Riveros, Gibbs energy of solvation of organic ions in aqueous and dimethyl sulfoxide solutions, PCCP 2002, DOI 10.1039/B109595A, including the inorganic-ion values reused by Figiel."},
+    {"scope": "SI Table S5 underlying values", "request": "Schmid, Miah, and Sapunov, A new table of the thermodynamic quantities of ionic hydration, PCCP 2000, DOI 10.1039/A907160A, including the exact table and convention."},
+    {"scope": "SI Table S5 underlying values", "request": "Marcus, Thermodynamics of solvation of ions. Part 5, J. Chem. Soc. Faraday Trans. 1991, DOI 10.1039/FT9918702995, including the exact ion table and convention."},
+    {"scope": "SI Table S5 underlying values", "request": "Conway, The evaluation and use of properties of individual ions in solution, J. Solution Chem. 1978, DOI 10.1007/BF00643580, including the exact ion table and convention."},
+    {"scope": "SI Table S5 underlying values", "request": "Sepehr and Paddison, The solvation structure and thermodynamics of aqueous vanadium cations, Chem. Phys. Lett. 2013, DOI 10.1016/j.cplett.2013.08.089, including the VO2+ target and convention."},
+    {"scope": "NaBr methanol and ethanol MIAC", "request": "Ye, Xans, and Lagourette, Modification of the Pitzer model to calculate the mean activity coefficients of electrolytes in a water-alcohol mixed solvent solution, J. Solution Chem. 1994, DOI 10.1007/BF00974183, including the primary tables used for pure methanol and ethanol."},
+    {"scope": "water-to-organic transfer", "request": "Marcus, Gibbs energies of transfer of anions from water to mixed aqueous organic solvents, Chem. Rev. 2007, 107, 3880-3897, including the tables and citations for Br- in water-methanol and Cl- in water-ethanol."},
+    {"scope": "water-to-organic transfer", "request": "Kalidas, Hefter, and Marcus, Gibbs energies of transfer of cations from water to mixed aqueous organic solvents, Chem. Rev. 2000, 100, 819-852, including the tables and citations for K+ in water-methanol and Na+ in water-ethanol."},
+    {"scope": "dielectric correlation/validation", "request": "Hasted, Ritson, and Collie, Dielectric Properties of Aqueous Ionic Solutions, J. Chem. Phys. 1948, 16, 1-21, with the exact data tables used in Figiel Figure 3."},
+    {"scope": "dielectric correlation/validation", "request": "Nortemann, Hilland, and Kaatze, Dielectric Properties of Aqueous NaCl Solutions at Microwave Frequencies, J. Phys. Chem. A 1997, 101, 6864-6869, with the static-permittivity table and uncertainties."},
+    {"scope": "dielectric correlation/validation", "request": "Wei and Sridhar, Dielectric spectroscopy up to 20 GHz of LiCl/H2O solutions, J. Chem. Phys. 1990, 92, 923-928, with the static-permittivity table and uncertainties."},
+    {"scope": "dielectric correlation/validation", "request": "Haggis, Hasted, and Buchanan, The Dielectric Properties of Water in Solutions, J. Chem. Phys. 1952, 20, 1452-1465, with the NaBr values and uncertainties."},
+    {"scope": "dielectric correlation/validation", "request": "Buchner, Hefter, and May, Dielectric Relaxation of Aqueous NaCl Solutions, J. Phys. Chem. A 1999, 103, 1-9, with the static-permittivity table and uncertainties."},
+    {"scope": "dielectric correlation/validation", "request": "Kaatze et al., Static Permittivity and Dielectric Relaxation of Solutions of Ions in Methanol, Ber. Bunsenges. Phys. Chem. 1980, 84, 1198-1203, with salt identities, compositions, values, and uncertainties."},
+    {"scope": "dielectric correlation/validation", "request": "Winsor and Cole, Dielectric properties of electrolyte solutions. 2. Alkali halides in methanol, J. Phys. Chem. 1982, 86, 2491-2494, with salt identities, compositions, values, and uncertainties."},
+    {"scope": "dielectric correlation/validation", "request": "Barthel et al., Electrolyte Data Collection 2a: Dielectric Properties of Nonaqueous Electrolyte Solutions, DECHEMA 1996, exact ethanol tables/pages cited by Figiel ref 59."},
+    {"scope": "dielectric correlation/validation", "request": "Hasted and Roderick, Dielectric Properties of Aqueous and Alcoholic Electrolytic Solutions, J. Chem. Phys. 1958, 29, 17-26, with ethanol salt identities, compositions, values, and uncertainties."}
+  ],
+  "source_readiness": {
+    "status": "ready_for_provider_regression_design",
+    "basis": "The first tracer support subset is exactly the 32 applicable official Figiel SI Table S5 rows. The five current-catalog reported averages are the only active Regression residual targets; their 27 underlying values are provenance/support. Hamer-Wu belongs only to later f_k/k_ij families. Every later-stage value presently available from the main paper, SI, or retained lab is captured with its true classification and locator. Missing primary chains are enumerated and cannot silently become direct evidence.",
+    "later_stage_gate": "Organic MIAC, transfer, dielectric, and underlying SI Table S5 literature values require the listed papers before they can be promoted from missing/digitized/table-derived evidence to primary-verified targets."
+  },
+  "comparison_contract": {
+    "model_acceptance_threshold": null,
+    "uncertainty_multiplier": null,
+    "fitted_parameter_values": null,
+    "interpretation": "This is a source and target ledger only. It defines no numerical acceptance threshold, fitted parameter, model result, provider admission, regression admission, or promotion result."
+  },
+  "retained_files": {
+    "target_ledger": {
+      "path": "analyses/reproduction/2025-figiel/inputs/source/figiel-2025-regression-target-ledger.csv",
+      "rows": 407,
+      "sha256": "4d6ce439f732d44c6cee08d9d800cef6f844eb297a30ebf935daa1c65403c5e7"
+    },
+    "parameter_provenance": {
+      "path": "analyses/reproduction/2025-figiel/inputs/source/figiel-2025-parameter-provenance.csv",
+      "rows": 122,
+      "sha256": "932e8baa90fcefbaa8c3a8730cdeadd83a4c01f0a3b109f4e4cd0319aee9312b"
+    }
+  },
+  "claim_boundary": "This packet supports source-faithful Provider/Regression design for the frozen first water-ion tracer and preserves later Figiel targets with explicit provenance limits. It does not validate an EOS, fit a parameter, approve model agreement, establish predictive validity, create a tolerance, admit a catalog species, publish evidence, or transfer authority."
+}

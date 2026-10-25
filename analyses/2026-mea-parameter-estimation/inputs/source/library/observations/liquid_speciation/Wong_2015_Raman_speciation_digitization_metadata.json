@@ -1,0 +1,625 @@
+{
+  "source_key": "Wong2015",
+  "source_pdf_attachment": "C:\\Users\\Tanner\\Zotero\\storage\\FHFPHJDQ\\Wong et al. - 2015 - Chemical speciation of CO2 absorption in aqueous monoethanolamine investigated by in situ Raman spec.pdf",
+  "source_markdown": "docs/papers/md/Wong et al. - 2015 - Chemical speciation of CO2 absorption in aqueous monoethanolamine investigated by in situ Raman spec.md",
+  "source_crop_url": "https://cdn.mathpix.com/cropped/3ca702fc-ea63-4671-b3bf-53aae22fd8ac-8.jpg?height=681&width=883&top_left_y=1821&top_left_x=1042",
+  "figure": "Fig. 8",
+  "figure_caption_lines": [
+    432,
+    435
+  ],
+  "axis_calibration": {
+    "x_left_pixel": 106,
+    "x_left_value": 0.0,
+    "x_right_pixel": 854,
+    "x_right_value": 1.2,
+    "x_scale": "linear",
+    "y_top_pixel": 20,
+    "y_top_value": 10.0,
+    "y_bottom_pixel": 526,
+    "y_bottom_value": 0.001,
+    "y_scale": "log10"
+  },
+  "extraction_method": "Color-thresholded marker centers from local Markdown Mathpix crop, manually post-filtered for marker overlap; y values converted using log10 axis calibration.",
+  "limitations": [
+    "The figure is a raster crop; values are digitized, not source-table transcriptions.",
+    "Some high-loading markers overlap; affected rows are flagged row_status=ambiguous.",
+    "Pressure values are not transcribed into the digitized CSV because Fig. 8 plots concentration against loading only.",
+    "MEACOO- around loading near 0.97 was visually overlapped and not promoted as a row."
+  ],
+  "row_count": 71,
+  "row_status_counts": {
+    "ambiguous": 5,
+    "extracted": 66
+  },
+  "species_counts": {
+    "CO2(aq)": 12,
+    "CO3^2-": 12,
+    "HCO3-": 10,
+    "MEAH+": 13,
+    "MEACOO-": 11,
+    "MEA": 13
+  },
+  "points": {
+    "CO2(aq)": [
+      {
+        "co2_loading_mol_per_mol_mea": 0.1268,
+        "value_mol_per_kg": 0.0093953,
+        "pixel_x": 185.1,
+        "pixel_y": 402.9,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 0.2285,
+        "value_mol_per_kg": 0.015171,
+        "pixel_x": 248.4,
+        "pixel_y": 376.6,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 0.331,
+        "value_mol_per_kg": 0.034752,
+        "pixel_x": 312.4,
+        "pixel_y": 331.1,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 0.429,
+        "value_mol_per_kg": 0.053975,
+        "pixel_x": 373.4,
+        "pixel_y": 306.9,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 0.5268,
+        "value_mol_per_kg": 0.073327,
+        "pixel_x": 434.4,
+        "pixel_y": 290.0,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 0.6432,
+        "value_mol_per_kg": 0.15975,
+        "pixel_x": 506.9,
+        "pixel_y": 247.3,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 0.7472,
+        "value_mol_per_kg": 0.51652,
+        "pixel_x": 571.8,
+        "pixel_y": 182.8,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 0.8242,
+        "value_mol_per_kg": 0.56883,
+        "pixel_x": 619.7,
+        "pixel_y": 177.5,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 0.9723,
+        "value_mol_per_kg": 1.0885,
+        "pixel_x": 712.1,
+        "pixel_y": 141.8,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 1.0347,
+        "value_mol_per_kg": 1.2252,
+        "pixel_x": 751.0,
+        "pixel_y": 135.3,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 1.1169,
+        "value_mol_per_kg": 1.4156,
+        "pixel_x": 802.2,
+        "pixel_y": 127.4,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 1.1876,
+        "value_mol_per_kg": 1.6279,
+        "pixel_x": 846.3,
+        "pixel_y": 119.7,
+        "row_status": "extracted",
+        "note": ""
+      }
+    ],
+    "CO3^2-": [
+      {
+        "co2_loading_mol_per_mol_mea": 0.1267,
+        "value_mol_per_kg": 0.039468,
+        "pixel_x": 185.0,
+        "pixel_y": 324.1,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 0.2286,
+        "value_mol_per_kg": 0.06393,
+        "pixel_x": 248.5,
+        "pixel_y": 297.6,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 0.3305,
+        "value_mol_per_kg": 0.071622,
+        "pixel_x": 312.0,
+        "pixel_y": 291.3,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 0.4291,
+        "value_mol_per_kg": 0.1113,
+        "pixel_x": 373.5,
+        "pixel_y": 267.1,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 0.5262,
+        "value_mol_per_kg": 0.15478,
+        "pixel_x": 434.0,
+        "pixel_y": 249.0,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 0.6435,
+        "value_mol_per_kg": 0.2061,
+        "pixel_x": 507.1,
+        "pixel_y": 233.3,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 0.7476,
+        "value_mol_per_kg": 0.24398,
+        "pixel_x": 572.0,
+        "pixel_y": 224.0,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 0.8246,
+        "value_mol_per_kg": 0.31479,
+        "pixel_x": 620.0,
+        "pixel_y": 210.0,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 0.9722,
+        "value_mol_per_kg": 0.34682,
+        "pixel_x": 712.0,
+        "pixel_y": 204.7,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 1.0351,
+        "value_mol_per_kg": 0.42094,
+        "pixel_x": 751.2,
+        "pixel_y": 194.0,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 1.1166,
+        "value_mol_per_kg": 0.39899,
+        "pixel_x": 802.0,
+        "pixel_y": 197.0,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 1.1874,
+        "value_mol_per_kg": 0.39883,
+        "pixel_x": 846.1,
+        "pixel_y": 197.0,
+        "row_status": "extracted",
+        "note": ""
+      }
+    ],
+    "HCO3-": [
+      {
+        "co2_loading_mol_per_mol_mea": 0.1266,
+        "value_mol_per_kg": 0.048545,
+        "pixel_x": 184.9,
+        "pixel_y": 312.7,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 0.4291,
+        "value_mol_per_kg": 0.14694,
+        "pixel_x": 373.5,
+        "pixel_y": 251.9,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 0.5269,
+        "value_mol_per_kg": 0.82462,
+        "pixel_x": 434.4,
+        "pixel_y": 157.1,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 0.6436,
+        "value_mol_per_kg": 1.2437,
+        "pixel_x": 507.2,
+        "pixel_y": 134.5,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 0.747,
+        "value_mol_per_kg": 1.552,
+        "pixel_x": 571.2,
+        "pixel_y": 122.5,
+        "row_status": "ambiguous",
+        "note": "partially overlapped marker reconstructed from split color-threshold components"
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 0.8245,
+        "value_mol_per_kg": 1.8278,
+        "pixel_x": 620.0,
+        "pixel_y": 113.4,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 0.9725,
+        "value_mol_per_kg": 2.0581,
+        "pixel_x": 712.2,
+        "pixel_y": 106.8,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 1.0344,
+        "value_mol_per_kg": 2.2525,
+        "pixel_x": 750.8,
+        "pixel_y": 101.9,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 1.1171,
+        "value_mol_per_kg": 2.4997,
+        "pixel_x": 802.3,
+        "pixel_y": 96.2,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 1.1877,
+        "value_mol_per_kg": 2.7132,
+        "pixel_x": 846.3,
+        "pixel_y": 91.7,
+        "row_status": "extracted",
+        "note": ""
+      }
+    ],
+    "MEAH+": [
+      {
+        "co2_loading_mol_per_mol_mea": 0.0007,
+        "value_mol_per_kg": 0.38563,
+        "pixel_x": 106.4,
+        "pixel_y": 198.8,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 0.1271,
+        "value_mol_per_kg": 0.92589,
+        "pixel_x": 185.2,
+        "pixel_y": 150.7,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 0.2273,
+        "value_mol_per_kg": 1.2895,
+        "pixel_x": 247.7,
+        "pixel_y": 132.5,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 0.3318,
+        "value_mol_per_kg": 1.3139,
+        "pixel_x": 312.8,
+        "pixel_y": 131.5,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 0.4291,
+        "value_mol_per_kg": 1.5597,
+        "pixel_x": 373.5,
+        "pixel_y": 122.1,
+        "row_status": "ambiguous",
+        "note": "marker has nearby overlapping components"
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 0.5265,
+        "value_mol_per_kg": 2.1766,
+        "pixel_x": 434.2,
+        "pixel_y": 103.8,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 0.6433,
+        "value_mol_per_kg": 2.5577,
+        "pixel_x": 507.0,
+        "pixel_y": 94.9,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 0.7473,
+        "value_mol_per_kg": 2.8217,
+        "pixel_x": 571.8,
+        "pixel_y": 89.5,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 0.8257,
+        "value_mol_per_kg": 3.178,
+        "pixel_x": 620.7,
+        "pixel_y": 83.0,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 0.9732,
+        "value_mol_per_kg": 3.5636,
+        "pixel_x": 712.6,
+        "pixel_y": 76.7,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 1.0349,
+        "value_mol_per_kg": 3.8524,
+        "pixel_x": 751.1,
+        "pixel_y": 72.4,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 1.1154,
+        "value_mol_per_kg": 4.0081,
+        "pixel_x": 801.3,
+        "pixel_y": 70.2,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 1.186,
+        "value_mol_per_kg": 4.2283,
+        "pixel_x": 845.3,
+        "pixel_y": 67.3,
+        "row_status": "extracted",
+        "note": ""
+      }
+    ],
+    "MEACOO-": [
+      {
+        "co2_loading_mol_per_mol_mea": 0.1266,
+        "value_mol_per_kg": 0.65137,
+        "pixel_x": 184.9,
+        "pixel_y": 170.1,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 0.2287,
+        "value_mol_per_kg": 1.0852,
+        "pixel_x": 248.6,
+        "pixel_y": 142.0,
+        "row_status": "ambiguous",
+        "note": "marker split by thresholding; center averaged from adjacent components"
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 0.331,
+        "value_mol_per_kg": 1.665,
+        "pixel_x": 312.3,
+        "pixel_y": 118.5,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 0.4287,
+        "value_mol_per_kg": 1.9742,
+        "pixel_x": 373.2,
+        "pixel_y": 109.1,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 0.527,
+        "value_mol_per_kg": 1.6522,
+        "pixel_x": 434.5,
+        "pixel_y": 118.9,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 0.6433,
+        "value_mol_per_kg": 1.5673,
+        "pixel_x": 507.0,
+        "pixel_y": 121.8,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 0.7469,
+        "value_mol_per_kg": 1.4123,
+        "pixel_x": 571.6,
+        "pixel_y": 127.5,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 0.8243,
+        "value_mol_per_kg": 1.2302,
+        "pixel_x": 619.8,
+        "pixel_y": 135.1,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 1.0347,
+        "value_mol_per_kg": 0.84659,
+        "pixel_x": 751.0,
+        "pixel_y": 155.6,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 1.1165,
+        "value_mol_per_kg": 0.69315,
+        "pixel_x": 801.9,
+        "pixel_y": 166.6,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 1.1877,
+        "value_mol_per_kg": 0.56806,
+        "pixel_x": 846.3,
+        "pixel_y": 177.6,
+        "row_status": "extracted",
+        "note": ""
+      }
+    ],
+    "MEA": [
+      {
+        "co2_loading_mol_per_mol_mea": 0.0006,
+        "value_mol_per_kg": 4.5748,
+        "pixel_x": 106.4,
+        "pixel_y": 63.0,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 0.1267,
+        "value_mol_per_kg": 3.4856,
+        "pixel_x": 185.0,
+        "pixel_y": 77.9,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 0.2286,
+        "value_mol_per_kg": 2.6923,
+        "pixel_x": 248.5,
+        "pixel_y": 92.1,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 0.3312,
+        "value_mol_per_kg": 2.1189,
+        "pixel_x": 312.5,
+        "pixel_y": 105.2,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 0.429,
+        "value_mol_per_kg": 1.5255,
+        "pixel_x": 373.0,
+        "pixel_y": 123.3,
+        "row_status": "ambiguous",
+        "note": "marker split by thresholding; center averaged from adjacent components"
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 0.5268,
+        "value_mol_per_kg": 1.2135,
+        "pixel_x": 434.3,
+        "pixel_y": 135.9,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 0.6432,
+        "value_mol_per_kg": 0.92819,
+        "pixel_x": 506.9,
+        "pixel_y": 150.6,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 0.7469,
+        "value_mol_per_kg": 0.81682,
+        "pixel_x": 571.6,
+        "pixel_y": 157.6,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 0.8225,
+        "value_mol_per_kg": 0.70629,
+        "pixel_x": 618.7,
+        "pixel_y": 165.6,
+        "row_status": "ambiguous",
+        "note": "small visible component near overlapping orange and blue markers"
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 0.9727,
+        "value_mol_per_kg": 0.46313,
+        "pixel_x": 712.3,
+        "pixel_y": 188.8,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 1.0348,
+        "value_mol_per_kg": 0.3471,
+        "pixel_x": 751.0,
+        "pixel_y": 204.6,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 1.1172,
+        "value_mol_per_kg": 0.23648,
+        "pixel_x": 802.4,
+        "pixel_y": 225.7,
+        "row_status": "extracted",
+        "note": ""
+      },
+      {
+        "co2_loading_mol_per_mol_mea": 1.1879,
+        "value_mol_per_kg": 0.10561,
+        "pixel_x": 846.5,
+        "pixel_y": 270.0,
+        "row_status": "extracted",
+        "note": ""
+      }
+    ]
+  }
+}

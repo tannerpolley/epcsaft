@@ -1,0 +1,103 @@
+{
+  "source_image": "data/reference/MEA/observations/liquid_speciation/digitization/Fan_2009_Figure3_crop.png",
+  "config": {
+    "axis": {
+      "x1_pixel": [
+        18,
+        421
+      ],
+      "x2_pixel": [
+        534,
+        421
+      ],
+      "x1_value": 0.0,
+      "x2_value": 1.0,
+      "x_scale": "linear",
+      "y1_pixel": [
+        18,
+        421
+      ],
+      "y2_pixel": [
+        18,
+        17
+      ],
+      "y1_value": 0.0,
+      "y2_value": 100.0,
+      "y_scale": "linear"
+    },
+    "roi": [
+      18,
+      17,
+      535,
+      422
+    ],
+    "series": [
+      {
+        "name": "MEA",
+        "mode": "points",
+        "hsv_lower": [
+          150,
+          90,
+          70
+        ],
+        "hsv_upper": [
+          170,
+          255,
+          255
+        ],
+        "morph_kernel": 2,
+        "min_area": 12
+      },
+      {
+        "name": "MEAH+",
+        "mode": "points",
+        "hsv_lower": [
+          105,
+          80,
+          50
+        ],
+        "hsv_upper": [
+          130,
+          255,
+          255
+        ],
+        "morph_kernel": 2,
+        "min_area": 12
+      },
+      {
+        "name": "MEACOO-",
+        "mode": "points",
+        "hsv_lower": [
+          20,
+          80,
+          70
+        ],
+        "hsv_upper": [
+          40,
+          255,
+          255
+        ],
+        "morph_kernel": 2,
+        "min_area": 12
+      }
+    ],
+    "source": {
+      "citation": "Fan et al. 2009",
+      "doi": "10.1021/ie8015895",
+      "pdf_attachment_key": "3CPQ99GD",
+      "pdf_page": 2,
+      "figure": "Figure 3",
+      "render_dpi": 220,
+      "crop_from_full_page_pixels": [
+        1060,
+        120,
+        1610,
+        560
+      ],
+      "measurement_notes": "Carbamate is NMR-integrated; MEA and MEAH+ are separated using measured pH and a source equilibrium-constant correlation."
+    }
+  },
+  "row_count": 25,
+  "csv": "data/reference/MEA/observations/liquid_speciation/digitization/Fan_2009_Figure3_digitized.csv",
+  "overlay": "data/reference/MEA/observations/liquid_speciation/digitization/Fan_2009_Figure3_qa_overlay.png"
+}

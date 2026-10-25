@@ -1,0 +1,32 @@
+{
+  "selected": null,
+  "extents": [
+    0.005,
+    0.02,
+    0.05,
+    0.1,
+    0.2,
+    0.3
+  ],
+  "causes": [
+    "infeasible: residual 1.0000003705549763 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 101 iterations, contraction absent, floor 2.8079567023418522e-10, amplification 0",
+    "infeasible: residual 1.0000004104245022 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 143 iterations, contraction absent, floor 2.7985558692381079e-10, amplification 0",
+    "infeasible: residual 0.016879825405312139 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 98 iterations, contraction absent, floor 1.80798572074057e-10, amplification 0",
+    "infeasible: residual 0.01687982694959617 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 102 iterations, contraction absent, floor 1.8079856065623043e-10, amplification 0",
+    "budget_exhausted: residual 0.28388157366789168 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 200 iterations, contraction absent, floor 2.2597357900440967e-10, amplification 348.57941503322081; trial preparation failed: reference_unavailable: reaction R1 neutral reference temperature or system pressure is invalid",
+    "infeasible: residual 0.01687984156660622 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 91 iterations, contraction absent, floor 1.807948393051101e-10, amplification 0"
+  ],
+  "iterations": 735,
+  "seconds": 36.519462975,
+  "attempt_seconds": [
+    5.063140605,
+    7.222315393,
+    4.873616406,
+    4.703165548,
+    9.770933645,
+    4.839582079
+  ],
+  "overrun_seconds": 0.0,
+  "budget_exhausted": false,
+  "wheel_sha256": "84dbd5d062ccff3e6b539c4fe1e6498f54002c67823dc8cc15baadf253233bbe"
+}

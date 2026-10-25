@@ -1,0 +1,6 @@
+{
+  "source": "3f5ee19f0c040c458799fb2ab59b4df02c227118",
+  "wheel_sha256": "79ce38e0a447b1f9045fb9ea0c7a61b141d5c17b764ca9883b0947a1fc7813c9",
+  "meaning": "Pre-Build Case N endpoint regularity only; no qualification of the candidate enthalpy derivatives",
+  "feed_failure": "Pure ethane at 200 K, 1e10 Pa, liquid: no stable density root (count 0)"
+}

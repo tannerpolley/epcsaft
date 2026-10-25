@@ -1,0 +1,21 @@
+{
+  "execution_run_id": "cc1f2d8c-8a43-4c66-89e4-572f6f7485d9",
+  "native_evaluations": 11942,
+  "unqualified": 0,
+  "maximum_density_residual_ratio": 0.2701869760909914,
+  "maximum_equilibrium_residual_ratio": 0.0005861977570020827,
+  "minimum_liquid_pressure_slope": 43648.122916982415,
+  "maximum_reference_change": 1.1938716681925143e-10,
+  "maximum_normalization_error": 1.1102230246251565e-16,
+  "maximum_composition_sum_error": 2.220446049250313e-16,
+  "maximum_charge_error": 0.0,
+  "table4_counts": {
+    "density": 97,
+    "mean_ionic_activity_coefficient_molal": 105,
+    "vapor_pressure": 37
+  },
+  "table4_printed_activity_count": 106,
+  "table4_visible_activity_count": 105,
+  "shared_gamma_error": 0.0,
+  "shared_osmotic_error": 0.0
+}

@@ -1,0 +1,82 @@
+{
+  "adapter_source_sha256": "b20a69d283aa8fb532f638be4a4afd78d952d1e0ee46dbbf0935209206d8ec80",
+  "asl_library": "/home/tnnrpolley21/.codex/worktrees/9dd4/ePC-SAFT-greenfield/.venv/lib/python3.13/site-packages/epcsaft/libepcsaft_asl.so",
+  "asl_library_identity": {
+    "exports": [
+      "funcadd_ASL"
+    ],
+    "needed": [
+      "libm.so.6",
+      "libstdc++.so.6",
+      "libgcc_s.so.1",
+      "libc.so.6",
+      "ld-linux-x86-64.so.2"
+    ],
+    "runpaths": []
+  },
+  "asl_library_sha256": "d4bf537f84dae4a59167005a88b3fd0f5cacaa04c633bdf72281fa1eb31c57c6",
+  "asl_version": "20231111",
+  "attempt_id": "20260922T052648-63",
+  "error": "KeyboardInterrupt()",
+  "error_type": "KeyboardInterrupt",
+  "idaes_version": "2.12.0",
+  "ipopt": "/home/tnnrpolley21/.local/share/micromamba/envs/ipopt-viz/bin/ipopt",
+  "ipopt_preflight": {
+    "all_required_options_supported": true,
+    "asl_version": "20231111",
+    "required_options": [
+      "acceptable_iter",
+      "bound_relax_factor",
+      "compl_inf_tol",
+      "constr_viol_tol",
+      "derivative_test",
+      "derivative_test_perturbation",
+      "derivative_test_tol",
+      "dual_inf_tol",
+      "hessian_approximation",
+      "max_iter",
+      "nlp_scaling_method",
+      "point_perturbation_radius",
+      "tol"
+    ],
+    "sha256": "938c17f31b2cf9fe91cef527bef3c62f303a3012851ad8498f91cd7501d1c9d2",
+    "supported_options": {
+      "acceptable_iter": true,
+      "bound_relax_factor": true,
+      "compl_inf_tol": true,
+      "constr_viol_tol": true,
+      "derivative_test": true,
+      "derivative_test_perturbation": true,
+      "derivative_test_tol": true,
+      "dual_inf_tol": true,
+      "hessian_approximation": true,
+      "max_iter": true,
+      "nlp_scaling_method": true,
+      "point_perturbation_radius": true,
+      "tol": true
+    },
+    "version": "Ipopt 3.14.19 (Linux x86_64), ASL(20231111)"
+  },
+  "ipopt_sha256": "938c17f31b2cf9fe91cef527bef3c62f303a3012851ad8498f91cd7501d1c9d2",
+  "ipopt_version": "Ipopt 3.14.19 (Linux x86_64), ASL(20231111)",
+  "materialization_sha256": "875e762ec4f003c720c6d0c84829021ebe6d6eba713c460ae4a647ec0fb09674",
+  "materialized_path": "analyses/2026-idaes-asl-adapter/inputs/data/gross-2001-propane/2",
+  "packet_fingerprint": "4593b9dbd813004096c7e396fc65df6ae3f4c1c65933c36918a6d316111326e2",
+  "packet_path": "data/packets/gross-2001-propane/2",
+  "parameter_strings": [
+    "2.002",
+    "3.6184",
+    "208.11",
+    "0.044096"
+  ],
+  "partial_rows": {
+    "derivatives": 9
+  },
+  "pyomo_version": "6.10.1",
+  "source_commit": "ec5bfdbadb5d642ac5cb41809fa9b330a30e9c41",
+  "source_dirty": false,
+  "stage": "interrupted",
+  "status": "failed attempt",
+  "wheel": "/home/tnnrpolley21/.codex/worktrees/9dd4/ePC-SAFT-greenfield/build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+  "wheel_sha256": "9f73aeb466c54eff80c89a8776c90d49cb9c9c2d130f0eb15bf0311c1f76e606"
+}

@@ -1,0 +1,108 @@
+---
+title: "Reactive extraction: shared-center first responses"
+date: 2026-09-22
+format:
+  html:
+    toc: true
+execute:
+  enabled: false
+---
+
+## Result and scope
+
+For the adopted nine-species, two-reaction, two-liquid extraction case,
+requesting three independent exact first responses in one batch reduced median
+wall time from **4.045 ms to 2.076 ms (48.7%)** on the same installed Engine wheel.
+The batch reuses the central state and its linear factorization; it does not
+replace the single IPOPT equilibrium driver or accelerate the initial solve.
+This is current-main integration evidence for [issue #104](https://github.com/tannerpolley/ePC-SAFT/issues/104),
+not an external-package comparison or a demonstrated flowsheet speedup.
+
+![Three independent first-response directions on the same wheel. Colored points show all five measurements; black crosses and whiskers show the median and inclusive p10–p90. Both workloads include one problem compilation and exclude the already completed central solve.](figures/first-response-runtime.png){#fig-response-runtime}
+
+| Workload | Wall median (ms) | Wall p10–p90 (ms) | CPU median (ms) |
+|---|---:|---:|---:|
+| Three separate exact first-response requests | 4.045 | 3.837–4.210 | 4.045 |
+| One batch of three exact first responses | 2.076 | 2.040–2.358 | 2.077 |
+| Three central finite differences (six equilibrium solves) | 786.728 | 753.039–836.817 | 786.476 |
+| Equilibrium from declared guesses, warmed model tapes | 142.662 | 138.782–143.688 | 142.656 |
+| Equilibrium with initially empty model tapes | 142.507 | 140.993–152.294 | 142.498 |
+| Equilibrium from the previous converged state | 114.637 | 113.360–138.425 | 114.640 |
+
+Each workload has one discarded warmup and five retained samples with alternating
+execution order. Model construction and import are excluded from all timed rows;
+the empty-tape row includes first recordings. The first solve after initial model
+construction took 138.448 ms. These few samples support a local timing comparison,
+not a machine-independent latency guarantee. Historical timings from the old
+performance branch are not current-main results; no causal diagnosis of their
+difference is claimed here. Raw rows are in [timings.csv](results/timings.csv).
+
+## Physical model and falsifying checks
+
+The retained [case](inputs/case.json) and [parameters](inputs/parameters.json)
+define the adopted H1/dodecane apparent HBTA/TOPO Li/Na extraction model at
+298.15 K and 101325 Pa, with explicitly declared aqueous and organic supports.
+The reference point uses organic/aqueous feed-volume ratio 1.0. Independent
+directions change organic inventory, LiCl inventory, and NaCl inventory; outputs
+are organic Li-carrier moles, organic Na-carrier moles, and aqueous hydrogen-ion
+moles. The two reactions couple metal loading, carrier availability, and acidity
+within the same constrained equilibrium calculation.
+
+The apparent reaction constants and molecular pseudo-components are calibrated
+inputs, not independent physical validation. At feed-volume ratio 1.5, the
+calibration check returns distribution ratios 33.7000000034 (Li) and
+0.0160000000151 (Na), within the unchanged relative tolerance of 1e-7.
+The [inventory sweep](results/inventory-sweep.csv) and
+[reaction control](results/reaction-control.csv) retain the other states.
+Freezing chemistry is a different constraint set: its original reaction
+affinities need not vanish and are not treated as reactive-equilibrium acceptance.
+
+All 67 central, finite-difference, and timing-state rows in
+[physical-checks.csv](results/physical-checks.csv) passed the existing screens:
+conserved-moiety error at most 1.42e-14 mol, charge error 8.67e-15 mol, zero
+off-support amounts, reaction log-affinity error 1.09e-13, relative pressure error
+5.65e-11, and KKT residual 1.82e-12. Each had full state rank and positive reduced
+curvature. The central independently resolved density-root relative error was
+5.55e-16. The producer checks other sweep/control rows separately, including
+independent liquid roots; no criterion was relaxed.
+
+The [18 derivative comparisons](results/derivatives.csv) cover both central
+finite-difference steps, 0.001 and 0.0005 (O/A units or mol as recorded).
+At the finer step, the maximum relative difference from exact A1 was
+3.515e-6, below the existing 5e-6 criterion. Native tests separately compare
+batched and independent calls, check a single factorization, and retain
+direction-local reference/thermal refusals and the existing mixed A1–A3 behavior.
+
+## Reproduction and qualification
+
+Run [scripts/run.py](scripts/run.py) using the repository's non-editable installed
+wheel, then [scripts/render.py](scripts/render.py) to render the retained timings.
+The figure script imports no Engine code and does not rerun the model. Numerical
+execution used CPU 0, nice 19, one thread per numerical library, a serialized
+heavy-work lock, and a 700000 KiB virtual-memory ceiling. The producer's peak RSS
+was 40440 KiB. The combined fast checks, native equilibrium/branch checks, study,
+and figure render took 68.35 s and peaked at 279628 KiB RSS.
+
+The tested source was `80f23237e2fde391e83e5d88c951c36e655f08d2`, incorporating
+main's `f2d1e01f` and its fixed-source-pressure reference reuse. Engine source was
+clean when measured; unrelated checkout files were not included. The complete
+[provenance](results/provenance.json) records input hashes, environment, timings,
+and an empty failure list. Installed-wheel SHA-256:
+`78a2695fe0cc7c286f61c404ac0178050ad69335fc1a50598a4c140b2a4e7075`.
+Build fingerprint:
+`1c716148c02874703bfa2802669516b9085f37a8fa0027ad09907c02fd400acc`.
+
+`bash tools/check-all.sh` passed (62 Python tests, six native suites, lint,
+typing, layout, architecture, and code budgets). The separately requested native
+equilibrium suite and E4-P branch-admission checks also passed. These checks
+qualify this implementation boundary; they do not establish global phase
+stability, phase discovery, general electrolyte accuracy, or application-level
+optimization performance. The [trace profile](results/profile.csv) is retained
+for interpretation, not used as an untraced performance estimate.
+
+Independent ordinary source and delivered-evidence review (Godel, 2026-09-22)
+supports this integration with the stated scientific limits and no material
+blocker. The native equilibrium record contains 6173 true comparisons and
+973 observations, with no false comparisons, errors, or failures. Same-source
+HTML and all 27 local links/anchors were checked; the retained figure was
+visually inspected. Review does not extend the numerical claim beyond this case.

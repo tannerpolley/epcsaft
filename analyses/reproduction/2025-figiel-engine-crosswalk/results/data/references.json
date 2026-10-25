@@ -1,0 +1,134 @@
+[
+  {
+    "convention": "exclusion",
+    "salt": "LiCl",
+    "molality": 1e-14,
+    "chart": "reference",
+    "log_fugacity": [
+      -196.46086118663672,
+      -127.07688856032178
+    ],
+    "convergence_error": 1.9468870959826745e-11
+  },
+  {
+    "convention": "exclusion",
+    "salt": "LiBr",
+    "molality": 1e-14,
+    "chart": "reference",
+    "log_fugacity": [
+      -196.4608611866367,
+      -117.26807614692169
+    ],
+    "convergence_error": 1.972466634470038e-11
+  },
+  {
+    "convention": "exclusion",
+    "salt": "NaCl",
+    "molality": 1e-14,
+    "chart": "reference",
+    "log_fugacity": [
+      -154.0679643055528,
+      -127.07688856032175
+    ],
+    "convergence_error": 1.7024603948812e-11
+  },
+  {
+    "convention": "exclusion",
+    "salt": "NaBr",
+    "molality": 1e-14,
+    "chart": "reference",
+    "log_fugacity": [
+      -154.0679643055528,
+      -117.26807614692169
+    ],
+    "convergence_error": 1.7607248992135283e-11
+  },
+  {
+    "convention": "exclusion",
+    "salt": "KCl",
+    "molality": 1e-14,
+    "chart": "reference",
+    "log_fugacity": [
+      -124.60499741846593,
+      -127.07688856032145
+    ],
+    "convergence_error": 1.7337242752546445e-11
+  },
+  {
+    "convention": "exclusion",
+    "salt": "KBr",
+    "molality": 1e-14,
+    "chart": "reference",
+    "log_fugacity": [
+      -124.60499741846608,
+      -117.26807614692137
+    ],
+    "convergence_error": 1.6839862837514374e-11
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "LiCl",
+    "molality": 1e-14,
+    "chart": "reference",
+    "log_fugacity": [
+      -196.4608611866367,
+      -127.07688856032175
+    ],
+    "convergence_error": 1.7109869077103212e-11
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "LiBr",
+    "molality": 1e-14,
+    "chart": "reference",
+    "log_fugacity": [
+      -196.46086118663666,
+      -117.26807614692169
+    ],
+    "convergence_error": 1.7479351299698465e-11
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "NaCl",
+    "molality": 1e-14,
+    "chart": "reference",
+    "log_fugacity": [
+      -154.0679643055528,
+      -127.07688856032175
+    ],
+    "convergence_error": 1.5546675058430992e-11
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "NaBr",
+    "molality": 1e-14,
+    "chart": "reference",
+    "log_fugacity": [
+      -154.0679643055528,
+      -117.26807614692171
+    ],
+    "convergence_error": 1.6015633264032658e-11
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "KCl",
+    "molality": 1e-14,
+    "chart": "reference",
+    "log_fugacity": [
+      -124.6049974184659,
+      -127.07688856032142
+    ],
+    "convergence_error": 1.5234036254696548e-11
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "KBr",
+    "molality": 1e-14,
+    "chart": "reference",
+    "log_fugacity": [
+      -124.60499741846606,
+      -117.26807614692136
+    ],
+    "convergence_error": 1.4850343177386094e-11
+  }
+]

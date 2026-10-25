@@ -1,0 +1,38 @@
+[
+  {
+    "corpus": "Cameretti 2005 default start",
+    "A": "1,800/1,800",
+    "B": "1,800/1,800",
+    "comparator failures": "0"
+  },
+  {
+    "corpus": "Gross 2002 default start",
+    "A": "721/724",
+    "B": "721/724",
+    "comparator failures": "0"
+  },
+  {
+    "corpus": "neutral methane/ethane sweep",
+    "A": "63/70",
+    "B": "63/70",
+    "comparator failures": "0"
+  },
+  {
+    "corpus": "#243 matrix",
+    "A": "42/42",
+    "B": "42/42",
+    "comparator failures": "0"
+  },
+  {
+    "corpus": "replay rows (4 sections)",
+    "A": "4,386",
+    "B": "4,386",
+    "comparator failures": "0"
+  },
+  {
+    "corpus": "MEA flash family",
+    "A": "73/73",
+    "B": "73/73",
+    "comparator failures": "0"
+  }
+]

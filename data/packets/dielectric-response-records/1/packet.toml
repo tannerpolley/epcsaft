@@ -1,0 +1,50 @@
+schema_version = 2
+packet_id = "dielectric-response-records"
+packet_version = "1"
+title = "Density-dependent relative-permittivity records for water, Na+ and Cl-"
+description = "Source records of the Schreckenberg density-temperature relation (full EOS 6.2) and the Rueben perturbation-theory relation (full EOS 6.4) for water and the Na+/Cl- ions. They are formulation records, not a complete parameterization: each consumer pairs them with a named base parameter packet and states that pairing."
+license_or_use_basis = "Numerical parameter values transcribed from published tables and one open-source (MIT/Apache) implementation fixture; no publisher full text is included."
+tolerance_rationale = "The packet asserts no tolerance. The values are fitted coefficients reported without uncertainty; Rueben et al. fitted the ion records to 298.15 K MIAC data with Held 2014 ePC-SAFT parameters, and Schreckenberg's water records were fitted to pure-water permittivity."
+
+[[sources]]
+source_id = "yang-2024-dielectric"
+citation = "Yang, F.; et al. Composition-dependence of relative static permittivity in ePPC-SAFT for mixed-solvent alkali halides. Fluid Phase Equilibria 583 (2024) 114103."
+doi = "10.1016/j.fluid.2024.114103"
+use_basis = "Eqs. (1a), (2a), (2b) and Table 6 preset water d_v, d_T (from Schreckenberg et al.); inspected PDF SHA-256 41308287f07a5b928677dd857621a1f2eb1aac80205606fffc4b75a1a6319290"
+
+[[sources]]
+source_id = "rueben-2024"
+citation = "Rueben, L.; et al. Permittivity Modeling in Electrolyte PC-SAFT. Journal of Chemical & Engineering Data (2024)."
+doi = "10.1021/acs.jced.4c00347"
+use_basis = "Eqs. (4)-(6), Section 2.3 ion scheme P and Table 1 PT2,ion values; inspected PDF SHA-256 b770751874e296787544b0039a85e531fdf83655e42bd19e0c7c047dbe38f0ee"
+
+[[sources]]
+source_id = "feos-epcsaft-water-fixture"
+citation = "FeOs ePC-SAFT parameter fixture, feos-org/feos commit 5f2a88fc26f350bf8a86aec3a5f831004ffc8f9a, crates/feos/src/epcsaft/parameters.rs."
+use_basis = "Secondary source: the source authors' implementation fixture pairs the Held 2014 water record with the perturbation-theory water record. The primary table (Rueben et al., J. Chem. Eng. Data 69 (2024) 414-426) is not retained here."
+
+[[domains]]
+domain_id = "aqueous-298-15-k"
+kind = "reported-conditions"
+temperature_min = 298.15
+temperature_max = 298.15
+temperature_unit = "kelvin"
+description = "Rueben ion records were fitted to aqueous MIAC at 298.15 K up to 10 mol/kg; the Schreckenberg water relation is a pure-water correlation. Neither record is validated here beyond the consuming analysis."
+
+[[files]]
+path = "parameters/dielectric-records.csv"
+role = "parameters"
+media_type = "text/csv"
+sha256 = "799138464224807d833b9c6c563a4d4e1526285eccb3d716a075cc7515b18616"
+source_refs = ["yang-2024-dielectric", "rueben-2024", "feos-epcsaft-water-fixture"]
+domain_refs = ["aqueous-298-15-k"]
+units_basis = "Each row carries its unit: d_v in liter / mole, d_T in kelvin, dipole scaling in debye ** 2, polarizability scaling in angstrom ** 3; the correlation-integral parameter is dimensionless."
+
+[[files]]
+path = "provenance/source-origin.toml"
+role = "provenance"
+media_type = "application/toml"
+sha256 = "c511b315bc448f84a9ed9930686c56d002800c8cb83fde2dd26a9d2e1fe385bd"
+source_refs = ["yang-2024-dielectric", "rueben-2024", "feos-epcsaft-water-fixture"]
+domain_refs = ["aqueous-298-15-k"]
+units_basis = "Origin locators and hashes are non-numeric provenance."

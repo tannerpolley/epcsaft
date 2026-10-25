@@ -1,0 +1,13 @@
+Traceback (most recent call last):
+  File "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-750-720-part-b-diagnose-the-changed-results/analyses/2026-figiel-divalent-chlorides/scripts/stage1_fit.py", line 318, in <module>
+    main()
+    ~~~~^^
+  File "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-750-720-part-b-diagnose-the-changed-results/analyses/2026-figiel-divalent-chlorides/scripts/stage1_fit.py", line 245, in main
+    q=Parameters.from_json(SOURCE,components=("water",solvent,*IONS))
+  File "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-750-720-part-b-diagnose-the-changed-results/engine/src/epcsaft/parameters.py", line 326, in from_json
+    return cls.from_mapping(cast(Mapping[str, object], json.loads(Path(path).read_text())), components=components)
+           ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-750-720-part-b-diagnose-the-changed-results/engine/src/epcsaft/parameters.py", line 693, in from_mapping
+    result = cls(_core.build_parameters(native_document), selected_ids, tuple(site_ids))
+                 ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+epcsaft._core.ParameterError: missing cross association or no_cross_association: water/methanol

@@ -1,0 +1,36 @@
+{
+  "source_repository": "tannerpolley/Lithium_Extraction",
+  "source_path": "data/reference/produced_water/smackover_selected_base_feed_ms2.csv",
+  "source_file_sha256": "fa80e502b2e45082a8d1fd27bfd45fc5fd316a7f28bb2aa690824987b74b4c88",
+  "source_record": "USGS southern-Arkansas Smackover 2022, site MS-2, sample 2022-08-24",
+  "water_mass_basis": "One liter: density proxy 1.21 kg/L minus TDS 0.305 kg/L = 0.905 kg water/L. Formal fully dissociated major-ion inventory, without speciation or charge reconciliation.",
+  "source_temperature_degC": 61.67,
+  "molar_masses_g_mol": {
+    "Na": 22.98976928,
+    "Mg": 24.305,
+    "Ca": 40.078,
+    "Li": 6.94,
+    "K": 39.0983,
+    "Sr": 87.62,
+    "Ba": 137.327,
+    "Cl": 35.45,
+    "Br": 79.904,
+    "SO4": 96.06
+  },
+  "charges": {
+    "Na": 1,
+    "Mg": 2,
+    "Ca": 2,
+    "Li": 1,
+    "K": 1,
+    "Sr": 2,
+    "Ba": 2,
+    "Cl": -1,
+    "Br": -1,
+    "SO4": -2
+  },
+  "limit": "Raw inventory only; no defined conditioned extraction inlet and no claim that ternary water-property agreement validates the full feed.",
+  "source_commit": "0faea01ed3bdcd38893d75d0343134259107e5a0",
+  "source_file_dirty": false,
+  "original_retained_record": "data/reference/smackover_sar_li/input/usgs_southAR/southAR_brines_2022.txt, source row MS-2"
+}

@@ -1,0 +1,38 @@
+provenance_kind = "repository-migration-v1"
+origin_repository = "ePC-SAFT/ePC-SAFT-eos"
+origin_commit = "e5cd64697d3fb33890f42e87b8779ddda4b52c6a"
+origin_tree = "7de4e53f5d81422039d621536053a66a3840d0f9"
+copy_mode = "byte-for-byte"
+scope = "Reusable parameter packet only; generated campaign results, scripts, receipts, plots, and full paper content remain in the origin repository."
+source_bundle_manifest_path = "src/epcsaft/data/bundles/crespo-2021-deea/1/bundle.toml"
+source_bundle_manifest_sha256 = "4df6ebe59da6f42b3e443297fe0de3d9c60ba4b6c67938e9214dd0f7d6cc8a47"
+
+[[files]]
+retained_path = "parameters/bundle.toml"
+origin_path = "src/epcsaft/data/bundles/crespo-2021-deea/1/bundle.toml"
+sha256 = "4df6ebe59da6f42b3e443297fe0de3d9c60ba4b6c67938e9214dd0f7d6cc8a47"
+
+[[files]]
+retained_path = "parameters/components.csv"
+origin_path = "src/epcsaft/data/bundles/crespo-2021-deea/1/components.csv"
+sha256 = "583400eaad85e00c78f4c1c191eb291b545740c03aa6fef03afed43352cd62da"
+
+[[files]]
+retained_path = "parameters/single.csv"
+origin_path = "src/epcsaft/data/bundles/crespo-2021-deea/1/single.csv"
+sha256 = "06307513e911e2b1ae2c7e72754e0321b184ce8f6838fbe4c7eed7ed94e7af93"
+
+[[files]]
+retained_path = "parameters/sites.csv"
+origin_path = "src/epcsaft/data/bundles/crespo-2021-deea/1/sites.csv"
+sha256 = "a3a81de464bd107699f50b98a4da32a2a1ae63b9cc1eeb2fb3eedc1a960dd008"
+
+[[files]]
+retained_path = "parameters/association.csv"
+origin_path = "src/epcsaft/data/bundles/crespo-2021-deea/1/association.csv"
+sha256 = "6a723961728b2e3b5e0d916f96fa3592dca082bc079c20c336d76bd321f4eace"
+
+[[files]]
+retained_path = "parameters/model.csv"
+origin_path = "src/epcsaft/data/bundles/crespo-2021-deea/1/model.csv"
+sha256 = "bb8626ba803319f1e1b29e8887402e640233b536be6902138c9555a64f70bc4c"

@@ -1,0 +1,8 @@
+section,key,value,unit,notes
+provenance,paper,Khudaida 2026,,
+provenance,figure,figure-01,,
+provenance,source_image,analyses/reproduction/2026-khudaida/figures/figure-01/source/figure-01.png,,
+basis,composition,salt-free ternary projection,,
+model,route,source-data recreation,,Figure 1 is a source comparison of salt effects; the paper caption has no ePC-SAFT model curve.
+model,package_route_scope,figures_02_07_and_s2_s3,,Internal electrolyte diagnostics start with the model-comparable Khudaida figures; no public route is admitted.
+parameters,figiel_2025_snapshot,out_of_scope_for_figure-01_source_recreation,,Figure 1 does not consume fitted ePC-SAFT parameters because it reproduces the experimental salt-effect comparison only.

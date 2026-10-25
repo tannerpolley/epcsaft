@@ -1,0 +1,4535 @@
+{
+  "candidates": [
+    {
+      "association": {
+        "combining_rule": "arithmetic-energy-geometric-volume",
+        "mea_site_multiplicities": {
+          "a": 1,
+          "b": 1
+        },
+        "source_sha256": "sha256:12e380a27eb615e25bae580f8c1ec852020879917b08fa16a5821ae76311550d"
+      },
+      "complete_refit": {
+        "bounds": {
+          "active": false,
+          "interval": [
+            -0.5,
+            0.5
+          ],
+          "pass": true
+        },
+        "converged": true,
+        "exact_curvature": 893276.1136769194,
+        "exact_gradient": -3.169718090778595e-07,
+        "failures": 0,
+        "gradient_pass": true,
+        "iterations": 5,
+        "native": {
+          "active_bounds": [],
+          "covariance_status": "available",
+          "failures": [],
+          "iterations": 5,
+          "k_ij": -0.07352749585113796,
+          "mean_scaled_square": 4.394998939877014,
+          "message": "Parameter tolerance reached. Relative step_norm: 1.647994e-11 <= 1.000000e-10.",
+          "optimizer_covariance": [
+            1.1194746895042127e-06
+          ],
+          "projected_gradient_norm": 3.169641084599384e-07,
+          "rank": 1,
+          "singular_values": [
+            945.1328550404542
+          ],
+          "sse": 219.74994699385067,
+          "status": "converged",
+          "usable": true,
+          "variance_factor": 4.484692795792871
+        },
+        "objective": 109.87497349692534,
+        "phase_success": true,
+        "records": [
+          {
+            "attempted": true,
+            "identity": "cai1996_10133_002",
+            "liquid_water_mole_fraction": 0.0736,
+            "observed_temperature_k": 431.85,
+            "observed_vapor_water_mole_fraction": 0.3411,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 433.830446908954,
+            "predicted_vapor_water_mole_fraction": 0.3286192491092833,
+            "pressure_pa": 101330.0,
+            "scaled_temperature_residual": 1.9804469089539793,
+            "scaled_vapor_water_residual": -1.2480750890716708,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_10133_003",
+            "liquid_water_mole_fraction": 0.1322,
+            "observed_temperature_k": 424.76,
+            "observed_vapor_water_mole_fraction": 0.5129,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 426.92464280052167,
+            "predicted_vapor_water_mole_fraction": 0.5034471881065165,
+            "pressure_pa": 101330.0,
+            "scaled_temperature_residual": 2.1646428005216762,
+            "scaled_vapor_water_residual": -0.945281189348357,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_10133_004",
+            "liquid_water_mole_fraction": 0.1799,
+            "observed_temperature_k": 420.42,
+            "observed_vapor_water_mole_fraction": 0.6252,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 421.88169866387307,
+            "predicted_vapor_water_mole_fraction": 0.6080634233031147,
+            "pressure_pa": 101330.0,
+            "scaled_temperature_residual": 1.461698663873051,
+            "scaled_vapor_water_residual": -1.7136576696885286,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_10133_005",
+            "liquid_water_mole_fraction": 0.2522,
+            "observed_temperature_k": 415.92,
+            "observed_vapor_water_mole_fraction": 0.7344,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 415.06961269800587,
+            "predicted_vapor_water_mole_fraction": 0.7229176534536028,
+            "pressure_pa": 101330.0,
+            "scaled_temperature_residual": -0.8503873019941466,
+            "scaled_vapor_water_residual": -1.1482346546397237,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_10133_006",
+            "liquid_water_mole_fraction": 0.2948,
+            "observed_temperature_k": 410.94,
+            "observed_vapor_water_mole_fraction": 0.7878,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 411.45284657211243,
+            "predicted_vapor_water_mole_fraction": 0.7730902568000837,
+            "pressure_pa": 101330.0,
+            "scaled_temperature_residual": 0.5128465721124371,
+            "scaled_vapor_water_residual": -1.4709743199916248,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_10133_007",
+            "liquid_water_mole_fraction": 0.3322,
+            "observed_temperature_k": 406.83,
+            "observed_vapor_water_mole_fraction": 0.8312,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 408.4842196265527,
+            "predicted_vapor_water_mole_fraction": 0.8093079162715099,
+            "pressure_pa": 101330.0,
+            "scaled_temperature_residual": 1.654219626552731,
+            "scaled_vapor_water_residual": -2.1892083728490164,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_10133_008",
+            "liquid_water_mole_fraction": 0.4694,
+            "observed_temperature_k": 394.88,
+            "observed_vapor_water_mole_fraction": 0.9146,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 398.9185236071732,
+            "predicted_vapor_water_mole_fraction": 0.8997323283334355,
+            "pressure_pa": 101330.0,
+            "scaled_temperature_residual": 4.038523607173204,
+            "scaled_vapor_water_residual": -1.4867671666564442,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_10133_009",
+            "liquid_water_mole_fraction": 0.508,
+            "observed_temperature_k": 393.25,
+            "observed_vapor_water_mole_fraction": 0.9293,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 396.52757043224915,
+            "predicted_vapor_water_mole_fraction": 0.9168881279779701,
+            "pressure_pa": 101330.0,
+            "scaled_temperature_residual": 3.2775704322491492,
+            "scaled_vapor_water_residual": -1.2411872022029868,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_10133_010",
+            "liquid_water_mole_fraction": 0.6125,
+            "observed_temperature_k": 387.85,
+            "observed_vapor_water_mole_fraction": 0.9596,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 390.5475856568144,
+            "predicted_vapor_water_mole_fraction": 0.9517500383665334,
+            "pressure_pa": 101330.0,
+            "scaled_temperature_residual": 2.6975856568143968,
+            "scaled_vapor_water_residual": -0.7849961633466629,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_10133_011",
+            "liquid_water_mole_fraction": 0.8238,
+            "observed_temperature_k": 378.37,
+            "observed_vapor_water_mole_fraction": 0.9883,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 380.04922320244316,
+            "predicted_vapor_water_mole_fraction": 0.9893222229185165,
+            "pressure_pa": 101330.0,
+            "scaled_temperature_residual": 1.6792232024431542,
+            "scaled_vapor_water_residual": 0.10222229185165022,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_10133_012",
+            "liquid_water_mole_fraction": 0.8615,
+            "observed_temperature_k": 376.88,
+            "observed_vapor_water_mole_fraction": 0.9914,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 378.36584463566214,
+            "predicted_vapor_water_mole_fraction": 0.9929044746050854,
+            "pressure_pa": 101330.0,
+            "scaled_temperature_residual": 1.485844635662147,
+            "scaled_vapor_water_residual": 0.1504474605085404,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_10133_013",
+            "liquid_water_mole_fraction": 0.9517,
+            "observed_temperature_k": 374.09,
+            "observed_vapor_water_mole_fraction": 0.9974,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 374.69984572322323,
+            "predicted_vapor_water_mole_fraction": 0.9985273104707734,
+            "pressure_pa": 101330.0,
+            "scaled_temperature_residual": 0.609845723223259,
+            "scaled_vapor_water_residual": 0.11273104707734127,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_06666_002",
+            "liquid_water_mole_fraction": 0.0967,
+            "observed_temperature_k": 420.53,
+            "observed_vapor_water_mole_fraction": 0.3589,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 417.877638978422,
+            "predicted_vapor_water_mole_fraction": 0.4343274622405322,
+            "pressure_pa": 66660.0,
+            "scaled_temperature_residual": -2.652361021577974,
+            "scaled_vapor_water_residual": 7.542746224053221,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_06666_003",
+            "liquid_water_mole_fraction": 0.1332,
+            "observed_temperature_k": 416.6,
+            "observed_vapor_water_mole_fraction": 0.4945,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 413.62620927868545,
+            "predicted_vapor_water_mole_fraction": 0.5371638444871886,
+            "pressure_pa": 66660.0,
+            "scaled_temperature_residual": -2.973790721314572,
+            "scaled_vapor_water_residual": 4.266384448718857,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_06666_004",
+            "liquid_water_mole_fraction": 0.1695,
+            "observed_temperature_k": 413.33,
+            "observed_vapor_water_mole_fraction": 0.5813,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 409.7382258831117,
+            "predicted_vapor_water_mole_fraction": 0.6183457719169945,
+            "pressure_pa": 66660.0,
+            "scaled_temperature_residual": -3.5917741168883026,
+            "scaled_vapor_water_residual": 3.704577191699443,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_06666_005",
+            "liquid_water_mole_fraction": 0.2107,
+            "observed_temperature_k": 407.18,
+            "observed_vapor_water_mole_fraction": 0.6781,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 405.6861440260232,
+            "predicted_vapor_water_mole_fraction": 0.6912595692922917,
+            "pressure_pa": 66660.0,
+            "scaled_temperature_residual": -1.4938559739767925,
+            "scaled_vapor_water_residual": 1.3159569292291673,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_06666_006",
+            "liquid_water_mole_fraction": 0.2589,
+            "observed_temperature_k": 403.3,
+            "observed_vapor_water_mole_fraction": 0.7537,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 401.36598185245464,
+            "predicted_vapor_water_mole_fraction": 0.75729110126686,
+            "pressure_pa": 66660.0,
+            "scaled_temperature_residual": -1.9340181475453733,
+            "scaled_vapor_water_residual": 0.35911012668599085,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_06666_007",
+            "liquid_water_mole_fraction": 0.3362,
+            "observed_temperature_k": 395.37,
+            "observed_vapor_water_mole_fraction": 0.8425,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 395.2170883382926,
+            "predicted_vapor_water_mole_fraction": 0.8331896216883043,
+            "pressure_pa": 66660.0,
+            "scaled_temperature_residual": -0.15291166170737824,
+            "scaled_vapor_water_residual": -0.9310378311695677,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_06666_008",
+            "liquid_water_mole_fraction": 0.3861,
+            "observed_temperature_k": 391.37,
+            "observed_vapor_water_mole_fraction": 0.8848,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 391.6635446723343,
+            "predicted_vapor_water_mole_fraction": 0.8686459262122639,
+            "pressure_pa": 66660.0,
+            "scaled_temperature_residual": 0.29354467233429204,
+            "scaled_vapor_water_residual": -1.6154073787736145,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_06666_009",
+            "liquid_water_mole_fraction": 0.4477,
+            "observed_temperature_k": 385.73,
+            "observed_vapor_water_mole_fraction": 0.921,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 387.6388748247502,
+            "predicted_vapor_water_mole_fraction": 0.9023532661820952,
+            "pressure_pa": 66660.0,
+            "scaled_temperature_residual": 1.9088748247501712,
+            "scaled_vapor_water_residual": -1.8646733817904826,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_06666_010",
+            "liquid_water_mole_fraction": 0.5419,
+            "observed_temperature_k": 380.82,
+            "observed_vapor_water_mole_fraction": 0.9542,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 382.1002695266322,
+            "predicted_vapor_water_mole_fraction": 0.9389673180815689,
+            "pressure_pa": 66660.0,
+            "scaled_temperature_residual": 1.2802695266321962,
+            "scaled_vapor_water_residual": -1.523268191843119,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_06666_011",
+            "liquid_water_mole_fraction": 0.6359,
+            "observed_temperature_k": 375.17,
+            "observed_vapor_water_mole_fraction": 0.9732,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 377.1390778037438,
+            "predicted_vapor_water_mole_fraction": 0.9634950037618778,
+            "pressure_pa": 66660.0,
+            "scaled_temperature_residual": 1.9690778037438008,
+            "scaled_vapor_water_residual": -0.9704996238122154,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_06666_012",
+            "liquid_water_mole_fraction": 0.8363,
+            "observed_temperature_k": 367.96,
+            "observed_vapor_water_mole_fraction": 0.9921,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 367.87063274458967,
+            "predicted_vapor_water_mole_fraction": 0.9919936255251998,
+            "pressure_pa": 66660.0,
+            "scaled_temperature_residual": -0.0893672554103091,
+            "scaled_vapor_water_residual": -0.010637447480021933,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_06666_013",
+            "liquid_water_mole_fraction": 0.855,
+            "observed_temperature_k": 365.6,
+            "observed_vapor_water_mole_fraction": 0.9937,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 367.086012875473,
+            "predicted_vapor_water_mole_fraction": 0.9934898609012321,
+            "pressure_pa": 66660.0,
+            "scaled_temperature_residual": 1.4860128754729658,
+            "scaled_vapor_water_residual": -0.021013909876788084,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_06666_014",
+            "liquid_water_mole_fraction": 0.9509,
+            "observed_temperature_k": 362.81,
+            "observed_vapor_water_mole_fraction": 0.9982,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 363.3954355399508,
+            "predicted_vapor_water_mole_fraction": 0.9987329370527528,
+            "pressure_pa": 66660.0,
+            "scaled_temperature_residual": 0.5854355399508222,
+            "scaled_vapor_water_residual": 0.05329370527528132,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          }
+        ],
+        "scaled_rmse": 2.0964252764830453,
+        "uncertainty": {
+          "confidence_interval": [
+            -0.07791916445071073,
+            -0.0691358272515652
+          ],
+          "confidence_level": 0.95,
+          "degrees_of_freedom": 49,
+          "limitation": "conditional on the selected topology, frozen residual scales, and local linearization",
+          "method": "local-linearized-covariance-with-residual-variance",
+          "pass": true,
+          "standard_error": 0.002240647244679984
+        },
+        "usable": true,
+        "value": -0.07352749585113796
+      },
+      "eligible": true,
+      "folds": [
+        {
+          "fit": {
+            "bounds": {
+              "active": false,
+              "interval": [
+                -0.5,
+                0.5
+              ],
+              "pass": true
+            },
+            "converged": true,
+            "exact_curvature": 419156.9174687866,
+            "exact_gradient": 7.983250317755708e-09,
+            "failures": 0,
+            "gradient_pass": true,
+            "iterations": 7,
+            "native": {
+              "active_bounds": [],
+              "covariance_status": "available",
+              "failures": [],
+              "iterations": 7,
+              "k_ij": -0.06325728919426449,
+              "mean_scaled_square": 1.179881915173032,
+              "message": "Parameter tolerance reached. Relative step_norm: 1.658400e-12 <= 1.000000e-10.",
+              "optimizer_covariance": [
+                2.385741373514294e-06
+              ],
+              "projected_gradient_norm": 7.86568149502287e-09,
+              "rank": 1,
+              "singular_values": [
+                647.42329079883
+              ],
+              "sse": 28.317165964152768,
+              "status": "converged",
+              "usable": true,
+              "variance_factor": 1.2311811288762073
+            },
+            "objective": 14.158582982076384,
+            "phase_success": true,
+            "records": [
+              {
+                "attempted": true,
+                "identity": "cai1996_10133_002",
+                "liquid_water_mole_fraction": 0.0736,
+                "observed_temperature_k": 431.85,
+                "observed_vapor_water_mole_fraction": 0.3411,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 432.95706625907235,
+                "predicted_vapor_water_mole_fraction": 0.3477990584566835,
+                "pressure_pa": 101330.0,
+                "scaled_temperature_residual": 1.107066259072326,
+                "scaled_vapor_water_residual": 0.6699058456683504,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_10133_003",
+                "liquid_water_mole_fraction": 0.1322,
+                "observed_temperature_k": 424.76,
+                "observed_vapor_water_mole_fraction": 0.5129,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 425.5992269718863,
+                "predicted_vapor_water_mole_fraction": 0.5256241151024816,
+                "pressure_pa": 101330.0,
+                "scaled_temperature_residual": 0.839226971886319,
+                "scaled_vapor_water_residual": 1.2724115102481615,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_10133_004",
+                "liquid_water_mole_fraction": 0.1799,
+                "observed_temperature_k": 420.42,
+                "observed_vapor_water_mole_fraction": 0.6252,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 420.310332995749,
+                "predicted_vapor_water_mole_fraction": 0.6292275765955766,
+                "pressure_pa": 101330.0,
+                "scaled_temperature_residual": -0.10966700425103681,
+                "scaled_vapor_water_residual": 0.4027576595576621,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_10133_005",
+                "liquid_water_mole_fraction": 0.2522,
+                "observed_temperature_k": 415.92,
+                "observed_vapor_water_mole_fraction": 0.7344,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 413.281795902208,
+                "predicted_vapor_water_mole_fraction": 0.7403010826761572,
+                "pressure_pa": 101330.0,
+                "scaled_temperature_residual": -2.638204097792027,
+                "scaled_vapor_water_residual": 0.5901082676157188,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_10133_006",
+                "liquid_water_mole_fraction": 0.2948,
+                "observed_temperature_k": 410.94,
+                "observed_vapor_water_mole_fraction": 0.7878,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 409.60512523915736,
+                "predicted_vapor_water_mole_fraction": 0.78789413463937,
+                "pressure_pa": 101330.0,
+                "scaled_temperature_residual": -1.334874760842638,
+                "scaled_vapor_water_residual": 0.009413463937002486,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_10133_007",
+                "liquid_water_mole_fraction": 0.3322,
+                "observed_temperature_k": 406.83,
+                "observed_vapor_water_mole_fraction": 0.8312,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 406.6163988666475,
+                "predicted_vapor_water_mole_fraction": 0.8218902722337988,
+                "pressure_pa": 101330.0,
+                "scaled_temperature_residual": -0.21360113335248343,
+                "scaled_vapor_water_residual": -0.9309727766201203,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_10133_008",
+                "liquid_water_mole_fraction": 0.4694,
+                "observed_temperature_k": 394.88,
+                "observed_vapor_water_mole_fraction": 0.9146,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 397.1717942212921,
+                "predicted_vapor_water_mole_fraction": 0.9055109472227255,
+                "pressure_pa": 101330.0,
+                "scaled_temperature_residual": 2.2917942212920934,
+                "scaled_vapor_water_residual": -0.9089052777274453,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_10133_009",
+                "liquid_water_mole_fraction": 0.508,
+                "observed_temperature_k": 393.25,
+                "observed_vapor_water_mole_fraction": 0.9293,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 394.85799136979944,
+                "predicted_vapor_water_mole_fraction": 0.9212104763840999,
+                "pressure_pa": 101330.0,
+                "scaled_temperature_residual": 1.6079913697994357,
+                "scaled_vapor_water_residual": -0.8089523615900096,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_10133_010",
+                "liquid_water_mole_fraction": 0.6125,
+                "observed_temperature_k": 387.85,
+                "observed_vapor_water_mole_fraction": 0.9596,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 389.160500755027,
+                "predicted_vapor_water_mole_fraction": 0.9530942814803459,
+                "pressure_pa": 101330.0,
+                "scaled_temperature_residual": 1.3105007550269647,
+                "scaled_vapor_water_residual": -0.6505718519654091,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_10133_011",
+                "liquid_water_mole_fraction": 0.8238,
+                "observed_temperature_k": 378.37,
+                "observed_vapor_water_mole_fraction": 0.9883,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 379.4798924856808,
+                "predicted_vapor_water_mole_fraction": 0.9883436400762967,
+                "pressure_pa": 101330.0,
+                "scaled_temperature_residual": 1.1098924856808026,
+                "scaled_vapor_water_residual": 0.004364007629675815,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_10133_012",
+                "liquid_water_mole_fraction": 0.8615,
+                "observed_temperature_k": 376.88,
+                "observed_vapor_water_mole_fraction": 0.9914,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 377.9574711419088,
+                "predicted_vapor_water_mole_fraction": 0.9919615605410628,
+                "pressure_pa": 101330.0,
+                "scaled_temperature_residual": 1.077471141908802,
+                "scaled_vapor_water_residual": 0.056156054106282216,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_10133_013",
+                "liquid_water_mole_fraction": 0.9517,
+                "observed_temperature_k": 374.09,
+                "observed_vapor_water_mole_fraction": 0.9974,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 374.6215287308741,
+                "predicted_vapor_water_mole_fraction": 0.9981023411383525,
+                "pressure_pa": 101330.0,
+                "scaled_temperature_residual": 0.531528730874129,
+                "scaled_vapor_water_residual": 0.07023411383525469,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              }
+            ],
+            "scaled_rmse": 1.0862236948129202,
+            "uncertainty": {
+              "confidence_interval": [
+                -0.0666164340134439,
+                -0.05989814437508507
+              ],
+              "confidence_level": 0.95,
+              "degrees_of_freedom": 23,
+              "limitation": "conditional on the selected topology, frozen residual scales, and local linearization",
+              "method": "local-linearized-covariance-with-residual-variance",
+              "pass": true,
+              "standard_error": 0.0017138493975405197
+            },
+            "usable": true,
+            "value": -0.06325728919426449
+          },
+          "held_pressure_pa": 66660.0,
+          "held_records": [
+            {
+              "attempted": true,
+              "identity": "cai1996_06666_002",
+              "liquid_water_mole_fraction": 0.0967,
+              "observed_temperature_k": 420.53,
+              "observed_vapor_water_mole_fraction": 0.3589,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 416.75358136347336,
+              "predicted_vapor_water_mole_fraction": 0.45713793370365324,
+              "pressure_pa": 66660.0,
+              "scaled_temperature_residual": -3.776418636526614,
+              "scaled_vapor_water_residual": 9.823793370365324,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_06666_003",
+              "liquid_water_mole_fraction": 0.1332,
+              "observed_temperature_k": 416.6,
+              "observed_vapor_water_mole_fraction": 0.4945,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 412.2469195894817,
+              "predicted_vapor_water_mole_fraction": 0.5604852332220686,
+              "pressure_pa": 66660.0,
+              "scaled_temperature_residual": -4.3530804105183165,
+              "scaled_vapor_water_residual": 6.598523322206856,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_06666_004",
+              "liquid_water_mole_fraction": 0.1695,
+              "observed_temperature_k": 413.33,
+              "observed_vapor_water_mole_fraction": 0.5813,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 408.17242472821295,
+              "predicted_vapor_water_mole_fraction": 0.6405214659771377,
+              "pressure_pa": 66660.0,
+              "scaled_temperature_residual": -5.157575271787039,
+              "scaled_vapor_water_residual": 5.922146597713762,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_06666_005",
+              "liquid_water_mole_fraction": 0.2107,
+              "observed_temperature_k": 407.18,
+              "observed_vapor_water_mole_fraction": 0.6781,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 403.97408221383597,
+              "predicted_vapor_water_mole_fraction": 0.7111637986828911,
+              "pressure_pa": 66660.0,
+              "scaled_temperature_residual": -3.2059177861640364,
+              "scaled_vapor_water_residual": 3.306379868289111,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_06666_006",
+              "liquid_water_mole_fraction": 0.2589,
+              "observed_temperature_k": 403.3,
+              "observed_vapor_water_mole_fraction": 0.7537,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 399.55242237125987,
+              "predicted_vapor_water_mole_fraction": 0.7740714308682082,
+              "pressure_pa": 66660.0,
+              "scaled_temperature_residual": -3.747577628740146,
+              "scaled_vapor_water_residual": 2.037143086820814,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_06666_007",
+              "liquid_water_mole_fraction": 0.3362,
+              "observed_temperature_k": 395.37,
+              "observed_vapor_water_mole_fraction": 0.8425,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 393.35715929468785,
+              "predicted_vapor_water_mole_fraction": 0.8450835386513952,
+              "pressure_pa": 66660.0,
+              "scaled_temperature_residual": -2.0128407053121578,
+              "scaled_vapor_water_residual": 0.25835386513951564,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_06666_008",
+              "liquid_water_mole_fraction": 0.3861,
+              "observed_temperature_k": 391.37,
+              "observed_vapor_water_mole_fraction": 0.8848,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 389.83066251453687,
+              "predicted_vapor_water_mole_fraction": 0.8777858656540128,
+              "pressure_pa": 66660.0,
+              "scaled_temperature_residual": -1.539337485463136,
+              "scaled_vapor_water_residual": -0.7014134345987189,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_06666_009",
+              "liquid_water_mole_fraction": 0.4477,
+              "observed_temperature_k": 385.73,
+              "observed_vapor_water_mole_fraction": 0.921,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 385.88633823089634,
+              "predicted_vapor_water_mole_fraction": 0.9086225344607392,
+              "pressure_pa": 66660.0,
+              "scaled_temperature_residual": 0.15633823089632415,
+              "scaled_vapor_water_residual": -1.237746553926089,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_06666_010",
+              "liquid_water_mole_fraction": 0.5419,
+              "observed_temperature_k": 380.82,
+              "observed_vapor_water_mole_fraction": 0.9542,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 380.55018160464664,
+              "predicted_vapor_water_mole_fraction": 0.941925447027784,
+              "pressure_pa": 66660.0,
+              "scaled_temperature_residual": -0.2698183953533544,
+              "scaled_vapor_water_residual": -1.2274552972216024,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_06666_011",
+              "liquid_water_mole_fraction": 0.6359,
+              "observed_temperature_k": 375.17,
+              "observed_vapor_water_mole_fraction": 0.9732,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 375.8683236296103,
+              "predicted_vapor_water_mole_fraction": 0.9642758444655414,
+              "pressure_pa": 66660.0,
+              "scaled_temperature_residual": 0.6983236296102859,
+              "scaled_vapor_water_residual": -0.8924155534458578,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_06666_012",
+              "liquid_water_mole_fraction": 0.8363,
+              "observed_temperature_k": 367.96,
+              "observed_vapor_water_mole_fraction": 0.9921,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 367.37644925728574,
+              "predicted_vapor_water_mole_fraction": 0.9911196925096626,
+              "pressure_pa": 66660.0,
+              "scaled_temperature_residual": -0.5835507427142375,
+              "scaled_vapor_water_residual": -0.09803074903373954,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_06666_013",
+              "liquid_water_mole_fraction": 0.855,
+              "observed_temperature_k": 365.6,
+              "observed_vapor_water_mole_fraction": 0.9937,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 366.66886520672216,
+              "predicted_vapor_water_mole_fraction": 0.9926376653130761,
+              "pressure_pa": 66660.0,
+              "scaled_temperature_residual": 1.068865206722137,
+              "scaled_vapor_water_residual": -0.10623346869239603,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_06666_014",
+              "liquid_water_mole_fraction": 0.9509,
+              "observed_temperature_k": 362.81,
+              "observed_vapor_water_mole_fraction": 0.9982,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 363.3194926448917,
+              "predicted_vapor_water_mole_fraction": 0.9983528147439322,
+              "pressure_pa": 66660.0,
+              "scaled_temperature_residual": 0.5094926448916794,
+              "scaled_vapor_water_residual": 0.015281474393225025,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            }
+          ],
+          "held_scaled_mean_square": 11.057627771904283
+        },
+        {
+          "fit": {
+            "bounds": {
+              "active": false,
+              "interval": [
+                -0.5,
+                0.5
+              ],
+              "pass": true
+            },
+            "converged": true,
+            "exact_curvature": 475618.66799145006,
+            "exact_gradient": 0.0005838142768363752,
+            "failures": 0,
+            "gradient_pass": true,
+            "iterations": 13,
+            "native": {
+              "active_bounds": [],
+              "covariance_status": "available",
+              "failures": [],
+              "iterations": 13,
+              "k_ij": -0.08221554872817591,
+              "mean_scaled_square": 4.2537641734261324,
+              "message": "Parameter tolerance reached. Relative step_norm: 4.788129e-13 <= 1.000000e-10.",
+              "optimizer_covariance": [
+                2.102524705817426e-06
+              ],
+              "projected_gradient_norm": 0.0005838143055869327,
+              "rank": 1,
+              "singular_values": [
+                689.6511204887948
+              ],
+              "sse": 110.59786850907943,
+              "status": "converged",
+              "usable": true,
+              "variance_factor": 4.423914740363177
+            },
+            "objective": 55.29893425453972,
+            "phase_success": true,
+            "records": [
+              {
+                "attempted": true,
+                "identity": "cai1996_06666_002",
+                "liquid_water_mole_fraction": 0.0967,
+                "observed_temperature_k": 420.53,
+                "observed_vapor_water_mole_fraction": 0.3589,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 418.77924382728764,
+                "predicted_vapor_water_mole_fraction": 0.41546811217039686,
+                "pressure_pa": 66660.0,
+                "scaled_temperature_residual": -1.7507561727123289,
+                "scaled_vapor_water_residual": 5.656811217039687,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_06666_003",
+                "liquid_water_mole_fraction": 0.1332,
+                "observed_temperature_k": 416.6,
+                "observed_vapor_water_mole_fraction": 0.4945,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 414.74103436343427,
+                "predicted_vapor_water_mole_fraction": 0.517577291139833,
+                "pressure_pa": 66660.0,
+                "scaled_temperature_residual": -1.858965636565756,
+                "scaled_vapor_water_residual": 2.3077291139832976,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_06666_004",
+                "liquid_water_mole_fraction": 0.1695,
+                "observed_temperature_k": 413.33,
+                "observed_vapor_water_mole_fraction": 0.5813,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 411.012611029839,
+                "predicted_vapor_water_mole_fraction": 0.5994732716650727,
+                "pressure_pa": 66660.0,
+                "scaled_temperature_residual": -2.317388970161005,
+                "scaled_vapor_water_residual": 1.8173271665072654,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_06666_005",
+                "liquid_water_mole_fraction": 0.2107,
+                "observed_temperature_k": 407.18,
+                "observed_vapor_water_mole_fraction": 0.6781,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 407.08937658426544,
+                "predicted_vapor_water_mole_fraction": 0.6741102184828378,
+                "pressure_pa": 66660.0,
+                "scaled_temperature_residual": -0.09062341573456933,
+                "scaled_vapor_water_residual": -0.39897815171622275,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_06666_006",
+                "liquid_water_mole_fraction": 0.2589,
+                "observed_temperature_k": 403.3,
+                "observed_vapor_water_mole_fraction": 0.7537,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 402.86296621395434,
+                "predicted_vapor_water_mole_fraction": 0.7426725369740048,
+                "pressure_pa": 66660.0,
+                "scaled_temperature_residual": -0.43703378604567433,
+                "scaled_vapor_water_residual": -1.102746302599522,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_06666_007",
+                "liquid_water_mole_fraction": 0.3362,
+                "observed_temperature_k": 395.37,
+                "observed_vapor_water_mole_fraction": 0.8425,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 396.76637109891624,
+                "predicted_vapor_water_mole_fraction": 0.8227131939887523,
+                "pressure_pa": 66660.0,
+                "scaled_temperature_residual": 1.3963710989162337,
+                "scaled_vapor_water_residual": -1.9786806011247715,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_06666_008",
+                "liquid_water_mole_fraction": 0.3861,
+                "observed_temperature_k": 391.37,
+                "observed_vapor_water_mole_fraction": 0.8848,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 393.19733359524287,
+                "predicted_vapor_water_mole_fraction": 0.860569850098765,
+                "pressure_pa": 66660.0,
+                "scaled_temperature_residual": 1.8273335952428624,
+                "scaled_vapor_water_residual": -2.4230149901235065,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_06666_009",
+                "liquid_water_mole_fraction": 0.4477,
+                "observed_temperature_k": 385.73,
+                "observed_vapor_water_mole_fraction": 0.921,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 389.11206294485146,
+                "predicted_vapor_water_mole_fraction": 0.8968144261724846,
+                "pressure_pa": 66660.0,
+                "scaled_temperature_residual": 3.382062944851441,
+                "scaled_vapor_water_residual": -2.4185573827515405,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_06666_010",
+                "liquid_water_mole_fraction": 0.5419,
+                "observed_temperature_k": 380.82,
+                "observed_vapor_water_mole_fraction": 0.9542,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 383.4094990976064,
+                "predicted_vapor_water_mole_fraction": 0.9363770379590448,
+                "pressure_pa": 66660.0,
+                "scaled_temperature_residual": 2.5894990976063923,
+                "scaled_vapor_water_residual": -1.7822962040955237,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_06666_011",
+                "liquid_water_mole_fraction": 0.6359,
+                "observed_temperature_k": 375.17,
+                "observed_vapor_water_mole_fraction": 0.9732,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 378.2149535584482,
+                "predicted_vapor_water_mole_fraction": 0.9628256031349441,
+                "pressure_pa": 66660.0,
+                "scaled_temperature_residual": 3.044953558448185,
+                "scaled_vapor_water_residual": -1.0374396865055813,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_06666_012",
+                "liquid_water_mole_fraction": 0.8363,
+                "observed_temperature_k": 367.96,
+                "observed_vapor_water_mole_fraction": 0.9921,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 368.28689715162625,
+                "predicted_vapor_water_mole_fraction": 0.9926660090510341,
+                "pressure_pa": 66660.0,
+                "scaled_temperature_residual": 0.32689715162626953,
+                "scaled_vapor_water_residual": 0.05660090510340998,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_06666_013",
+                "liquid_water_mole_fraction": 0.855,
+                "observed_temperature_k": 365.6,
+                "observed_vapor_water_mole_fraction": 0.9937,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 367.4367616224979,
+                "predicted_vapor_water_mole_fraction": 0.9941340072536948,
+                "pressure_pa": 66660.0,
+                "scaled_temperature_residual": 1.8367616224978747,
+                "scaled_vapor_water_residual": 0.04340072536948014,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_06666_014",
+                "liquid_water_mole_fraction": 0.9509,
+                "observed_temperature_k": 362.81,
+                "observed_vapor_water_mole_fraction": 0.9982,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 363.4577335278433,
+                "predicted_vapor_water_mole_fraction": 0.9989854571565739,
+                "pressure_pa": 66660.0,
+                "scaled_temperature_residual": 0.6477335278432861,
+                "scaled_vapor_water_residual": 0.07854571565739654,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              }
+            ],
+            "scaled_rmse": 2.0624655569066195,
+            "uncertainty": {
+              "confidence_interval": [
+                -0.08819319207402282,
+                -0.076237905382329
+              ],
+              "confidence_level": 0.95,
+              "degrees_of_freedom": 25,
+              "limitation": "conditional on the selected topology, frozen residual scales, and local linearization",
+              "method": "local-linearized-covariance-with-residual-variance",
+              "pass": true,
+              "standard_error": 0.0030498180335953593
+            },
+            "usable": true,
+            "value": -0.08221554872817591
+          },
+          "held_pressure_pa": 101330.0,
+          "held_records": [
+            {
+              "attempted": true,
+              "identity": "cai1996_10133_002",
+              "liquid_water_mole_fraction": 0.0736,
+              "observed_temperature_k": 431.85,
+              "observed_vapor_water_mole_fraction": 0.3411,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 434.52839362159636,
+              "predicted_vapor_water_mole_fraction": 0.31296916420236065,
+              "pressure_pa": 101330.0,
+              "scaled_temperature_residual": 2.678393621596342,
+              "scaled_vapor_water_residual": -2.813083579763936,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_10133_003",
+              "liquid_water_mole_fraction": 0.1322,
+              "observed_temperature_k": 424.76,
+              "observed_vapor_water_mole_fraction": 0.5129,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 427.99601609272617,
+              "predicted_vapor_water_mole_fraction": 0.4849137066305228,
+              "pressure_pa": 101330.0,
+              "scaled_temperature_residual": 3.2360160927261745,
+              "scaled_vapor_water_residual": -2.798629336947722,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_10133_004",
+              "liquid_water_mole_fraction": 0.1799,
+              "observed_temperature_k": 420.42,
+              "observed_vapor_water_mole_fraction": 0.6252,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 423.16261037891644,
+              "predicted_vapor_water_mole_fraction": 0.5900930585995751,
+              "pressure_pa": 101330.0,
+              "scaled_temperature_residual": 2.7426103789164245,
+              "scaled_vapor_water_residual": -3.510694140042492,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_10133_005",
+              "liquid_water_mole_fraction": 0.2522,
+              "observed_temperature_k": 415.92,
+              "observed_vapor_water_mole_fraction": 0.7344,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 416.5429554260278,
+              "predicted_vapor_water_mole_fraction": 0.7078878461925113,
+              "pressure_pa": 101330.0,
+              "scaled_temperature_residual": 0.6229554260277723,
+              "scaled_vapor_water_residual": -2.6512153807488725,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_10133_006",
+              "liquid_water_mole_fraction": 0.2948,
+              "observed_temperature_k": 410.94,
+              "observed_vapor_water_mole_fraction": 0.7878,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 412.983805239109,
+              "predicted_vapor_water_mole_fraction": 0.7601942201217671,
+              "pressure_pa": 101330.0,
+              "scaled_temperature_residual": 2.0438052391090196,
+              "scaled_vapor_water_residual": -2.7605779878232872,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_10133_007",
+              "liquid_water_mole_fraction": 0.3322,
+              "observed_temperature_k": 406.83,
+              "observed_vapor_water_mole_fraction": 0.8312,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 410.0382807133914,
+              "predicted_vapor_water_mole_fraction": 0.7982943923597567,
+              "pressure_pa": 101330.0,
+              "scaled_temperature_residual": 3.208280713391389,
+              "scaled_vapor_water_residual": -3.2905607640243306,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_10133_008",
+              "liquid_water_mole_fraction": 0.4694,
+              "observed_temperature_k": 394.88,
+              "observed_vapor_water_mole_fraction": 0.9146,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 400.3881641114231,
+              "predicted_vapor_water_mole_fraction": 0.8946537804098839,
+              "pressure_pa": 101330.0,
+              "scaled_temperature_residual": 5.5081641114231275,
+              "scaled_vapor_water_residual": -1.994621959011611,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_10133_009",
+              "liquid_water_mole_fraction": 0.508,
+              "observed_temperature_k": 393.25,
+              "observed_vapor_water_mole_fraction": 0.9293,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 397.9352878451371,
+              "predicted_vapor_water_mole_fraction": 0.913099748045354,
+              "pressure_pa": 101330.0,
+              "scaled_temperature_residual": 4.685287845137111,
+              "scaled_vapor_water_residual": -1.6200251954646028,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_10133_010",
+              "liquid_water_mole_fraction": 0.6125,
+              "observed_temperature_k": 387.85,
+              "observed_vapor_water_mole_fraction": 0.9596,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 391.7214534896063,
+              "predicted_vapor_water_mole_fraction": 0.9505918636829426,
+              "pressure_pa": 101330.0,
+              "scaled_temperature_residual": 3.8714534896062673,
+              "scaled_vapor_water_residual": -0.9008136317057436,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_10133_011",
+              "liquid_water_mole_fraction": 0.8238,
+              "observed_temperature_k": 378.37,
+              "observed_vapor_water_mole_fraction": 0.9883,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 380.529068002384,
+              "predicted_vapor_water_mole_fraction": 0.9900862709972463,
+              "pressure_pa": 101330.0,
+              "scaled_temperature_residual": 2.1590680023840036,
+              "scaled_vapor_water_residual": 0.17862709972463753,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_10133_012",
+              "liquid_water_mole_fraction": 0.8615,
+              "observed_temperature_k": 376.88,
+              "observed_vapor_water_mole_fraction": 0.9914,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 378.70870584292135,
+              "predicted_vapor_water_mole_fraction": 0.9936162152745289,
+              "pressure_pa": 101330.0,
+              "scaled_temperature_residual": 1.8287058429213516,
+              "scaled_vapor_water_residual": 0.22162152745289765,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_10133_013",
+              "liquid_water_mole_fraction": 0.9517,
+              "observed_temperature_k": 374.09,
+              "observed_vapor_water_mole_fraction": 0.9974,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 374.7638407922713,
+              "predicted_vapor_water_mole_fraction": 0.9988119740100967,
+              "pressure_pa": 101330.0,
+              "scaled_temperature_residual": 0.673840792271335,
+              "scaled_vapor_water_residual": 0.14119740100967393,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            }
+          ],
+          "held_scaled_mean_square": 7.367884030642518
+        }
+      ],
+      "gates": {
+        "bounds": true,
+        "optimizer_convergence": true,
+        "phase_success": true,
+        "uncertainty": true
+      },
+      "grouped_mean_score": 9.2127559012734,
+      "grouped_standard_error": 1.8448718706308822,
+      "scheme": "2B"
+    },
+    {
+      "association": {
+        "combining_rule": "arithmetic-energy-geometric-volume",
+        "mea_site_multiplicities": {
+          "a": 1,
+          "b": 2
+        },
+        "source_sha256": "sha256:12e380a27eb615e25bae580f8c1ec852020879917b08fa16a5821ae76311550d"
+      },
+      "complete_refit": {
+        "bounds": {
+          "active": false,
+          "interval": [
+            -0.5,
+            0.5
+          ],
+          "pass": true
+        },
+        "converged": true,
+        "exact_curvature": 926454.4590525462,
+        "exact_gradient": -0.0008406620349175054,
+        "failures": 0,
+        "gradient_pass": true,
+        "iterations": 15,
+        "native": {
+          "active_bounds": [],
+          "covariance_status": "available",
+          "failures": [],
+          "iterations": 15,
+          "k_ij": -0.03011411914146659,
+          "mean_scaled_square": 95.49804036182637,
+          "message": "Function tolerance reached. |cost_change|/cost: 9.523700e-16 <= 1.000000e-15",
+          "optimizer_covariance": [
+            1.0793838706574597e-06
+          ],
+          "projected_gradient_norm": 0.0008406618975315416,
+          "rank": 1,
+          "singular_values": [
+            962.5250433378583
+          ],
+          "sse": 4774.9020180913185,
+          "status": "converged",
+          "usable": true,
+          "variance_factor": 97.44697996104732
+        },
+        "objective": 2387.4510090456592,
+        "phase_success": true,
+        "records": [
+          {
+            "attempted": true,
+            "identity": "cai1996_10133_002",
+            "liquid_water_mole_fraction": 0.0736,
+            "observed_temperature_k": 431.85,
+            "observed_vapor_water_mole_fraction": 0.3411,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 453.65784048159657,
+            "predicted_vapor_water_mole_fraction": 0.47868119274663556,
+            "pressure_pa": 101330.0,
+            "scaled_temperature_residual": 21.807840481596543,
+            "scaled_vapor_water_residual": 13.758119274663555,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_10133_003",
+            "liquid_water_mole_fraction": 0.1322,
+            "observed_temperature_k": 424.76,
+            "observed_vapor_water_mole_fraction": 0.5129,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 441.9463250403371,
+            "predicted_vapor_water_mole_fraction": 0.6709998515131111,
+            "pressure_pa": 101330.0,
+            "scaled_temperature_residual": 17.186325040337124,
+            "scaled_vapor_water_residual": 15.809985151311112,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_10133_004",
+            "liquid_water_mole_fraction": 0.1799,
+            "observed_temperature_k": 420.42,
+            "observed_vapor_water_mole_fraction": 0.6252,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 433.9632904136453,
+            "predicted_vapor_water_mole_fraction": 0.7664488242736979,
+            "pressure_pa": 101330.0,
+            "scaled_temperature_residual": 13.543290413645309,
+            "scaled_vapor_water_residual": 14.124882427369789,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_10133_005",
+            "liquid_water_mole_fraction": 0.2522,
+            "observed_temperature_k": 415.92,
+            "observed_vapor_water_mole_fraction": 0.7344,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 423.83000508597064,
+            "predicted_vapor_water_mole_fraction": 0.8552595456976548,
+            "pressure_pa": 101330.0,
+            "scaled_temperature_residual": 7.910005085970624,
+            "scaled_vapor_water_residual": 12.085954569765478,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_10133_006",
+            "liquid_water_mole_fraction": 0.2948,
+            "observed_temperature_k": 410.94,
+            "observed_vapor_water_mole_fraction": 0.7878,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 418.70794602575097,
+            "predicted_vapor_water_mole_fraction": 0.8889894408696093,
+            "pressure_pa": 101330.0,
+            "scaled_temperature_residual": 7.767946025750973,
+            "scaled_vapor_water_residual": 10.118944086960935,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_10133_007",
+            "liquid_water_mole_fraction": 0.3322,
+            "observed_temperature_k": 406.83,
+            "observed_vapor_water_mole_fraction": 0.8312,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 414.618849935,
+            "predicted_vapor_water_mole_fraction": 0.9114455050225351,
+            "pressure_pa": 101330.0,
+            "scaled_temperature_residual": 7.78884993500003,
+            "scaled_vapor_water_residual": 8.024550502253502,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_10133_008",
+            "liquid_water_mole_fraction": 0.4694,
+            "observed_temperature_k": 394.88,
+            "observed_vapor_water_mole_fraction": 0.9146,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 402.04690022603046,
+            "predicted_vapor_water_mole_fraction": 0.9603870309374517,
+            "pressure_pa": 101330.0,
+            "scaled_temperature_residual": 7.166900226030464,
+            "scaled_vapor_water_residual": 4.578703093745173,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_10133_009",
+            "liquid_water_mole_fraction": 0.508,
+            "observed_temperature_k": 393.25,
+            "observed_vapor_water_mole_fraction": 0.9293,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 399.0358155646072,
+            "predicted_vapor_water_mole_fraction": 0.9684386100970502,
+            "pressure_pa": 101330.0,
+            "scaled_temperature_residual": 5.785815564607219,
+            "scaled_vapor_water_residual": 3.913861009705022,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_10133_010",
+            "liquid_water_mole_fraction": 0.6125,
+            "observed_temperature_k": 387.85,
+            "observed_vapor_water_mole_fraction": 0.9596,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 391.7392027417874,
+            "predicted_vapor_water_mole_fraction": 0.9833739109814918,
+            "pressure_pa": 101330.0,
+            "scaled_temperature_residual": 3.889202741787358,
+            "scaled_vapor_water_residual": 2.377391098149184,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_10133_011",
+            "liquid_water_mole_fraction": 0.8238,
+            "observed_temperature_k": 378.37,
+            "observed_vapor_water_mole_fraction": 0.9883,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 379.9635710359051,
+            "predicted_vapor_water_mole_fraction": 0.996770433903101,
+            "pressure_pa": 101330.0,
+            "scaled_temperature_residual": 1.5935710359050859,
+            "scaled_vapor_water_residual": 0.8470433903101093,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_10133_012",
+            "liquid_water_mole_fraction": 0.8615,
+            "observed_temperature_k": 376.88,
+            "observed_vapor_water_mole_fraction": 0.9914,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 378.23885259941636,
+            "predicted_vapor_water_mole_fraction": 0.9978592884639954,
+            "pressure_pa": 101330.0,
+            "scaled_temperature_residual": 1.358852599416366,
+            "scaled_vapor_water_residual": 0.6459288463995461,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_10133_013",
+            "liquid_water_mole_fraction": 0.9517,
+            "observed_temperature_k": 374.09,
+            "observed_vapor_water_mole_fraction": 0.9974,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 374.6534061182183,
+            "predicted_vapor_water_mole_fraction": 0.9995260858667535,
+            "pressure_pa": 101330.0,
+            "scaled_temperature_residual": 0.5634061182183245,
+            "scaled_vapor_water_residual": 0.21260858667535576,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_06666_002",
+            "liquid_water_mole_fraction": 0.0967,
+            "observed_temperature_k": 420.53,
+            "observed_vapor_water_mole_fraction": 0.3589,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 434.32702516327913,
+            "predicted_vapor_water_mole_fraction": 0.6041614937107296,
+            "pressure_pa": 66660.0,
+            "scaled_temperature_residual": 13.797025163279159,
+            "scaled_vapor_water_residual": 24.526149371072957,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_06666_003",
+            "liquid_water_mole_fraction": 0.1332,
+            "observed_temperature_k": 416.6,
+            "observed_vapor_water_mole_fraction": 0.4945,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 427.34356013520625,
+            "predicted_vapor_water_mole_fraction": 0.7068444864283091,
+            "pressure_pa": 66660.0,
+            "scaled_temperature_residual": 10.743560135206224,
+            "scaled_vapor_water_residual": 21.23444864283091,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_06666_004",
+            "liquid_water_mole_fraction": 0.1695,
+            "observed_temperature_k": 413.33,
+            "observed_vapor_water_mole_fraction": 0.5813,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 421.26943747592645,
+            "predicted_vapor_water_mole_fraction": 0.7779040506585501,
+            "pressure_pa": 66660.0,
+            "scaled_temperature_residual": 7.939437475926468,
+            "scaled_vapor_water_residual": 19.660405065855002,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_06666_005",
+            "liquid_water_mole_fraction": 0.2107,
+            "observed_temperature_k": 407.18,
+            "observed_vapor_water_mole_fraction": 0.6781,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 415.21805323846814,
+            "predicted_vapor_water_mole_fraction": 0.8345631664285387,
+            "pressure_pa": 66660.0,
+            "scaled_temperature_residual": 8.038053238468137,
+            "scaled_vapor_water_residual": 15.646316642853863,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_06666_006",
+            "liquid_water_mole_fraction": 0.2589,
+            "observed_temperature_k": 403.3,
+            "observed_vapor_water_mole_fraction": 0.7537,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 409.0368801263676,
+            "predicted_vapor_water_mole_fraction": 0.8802465572979603,
+            "pressure_pa": 66660.0,
+            "scaled_temperature_residual": 5.736880126367566,
+            "scaled_vapor_water_residual": 12.654655729796026,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_06666_007",
+            "liquid_water_mole_fraction": 0.3362,
+            "observed_temperature_k": 395.37,
+            "observed_vapor_water_mole_fraction": 0.8425,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 400.6389406642183,
+            "predicted_vapor_water_mole_fraction": 0.9262953100507295,
+            "pressure_pa": 66660.0,
+            "scaled_temperature_residual": 5.268940664218292,
+            "scaled_vapor_water_residual": 8.379531005072948,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_06666_008",
+            "liquid_water_mole_fraction": 0.3861,
+            "observed_temperature_k": 391.37,
+            "observed_vapor_water_mole_fraction": 0.8848,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 395.9651483009035,
+            "predicted_vapor_water_mole_fraction": 0.9454166871407826,
+            "pressure_pa": 66660.0,
+            "scaled_temperature_residual": 4.595148300903475,
+            "scaled_vapor_water_residual": 6.061668714078261,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_06666_009",
+            "liquid_water_mole_fraction": 0.4477,
+            "observed_temperature_k": 385.73,
+            "observed_vapor_water_mole_fraction": 0.921,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 390.8096222067999,
+            "predicted_vapor_water_mole_fraction": 0.9621091039743507,
+            "pressure_pa": 66660.0,
+            "scaled_temperature_residual": 5.079622206799854,
+            "scaled_vapor_water_residual": 4.110910397435063,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_06666_010",
+            "liquid_water_mole_fraction": 0.5419,
+            "observed_temperature_k": 380.82,
+            "observed_vapor_water_mole_fraction": 0.9542,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 383.9411170605737,
+            "predicted_vapor_water_mole_fraction": 0.9784311266582769,
+            "pressure_pa": 66660.0,
+            "scaled_temperature_residual": 3.121117060573681,
+            "scaled_vapor_water_residual": 2.423112665827687,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_06666_011",
+            "liquid_water_mole_fraction": 0.6359,
+            "observed_temperature_k": 375.17,
+            "observed_vapor_water_mole_fraction": 0.9732,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 378.02623068311055,
+            "predicted_vapor_water_mole_fraction": 0.9881171896663105,
+            "pressure_pa": 66660.0,
+            "scaled_temperature_residual": 2.856230683110539,
+            "scaled_vapor_water_residual": 1.4917189666310504,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_06666_012",
+            "liquid_water_mole_fraction": 0.8363,
+            "observed_temperature_k": 367.96,
+            "observed_vapor_water_mole_fraction": 0.9921,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 367.78981450158085,
+            "predicted_vapor_water_mole_fraction": 0.9976770222464632,
+            "pressure_pa": 66660.0,
+            "scaled_temperature_residual": -0.17018549841913,
+            "scaled_vapor_water_residual": 0.557702224646317,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_06666_013",
+            "liquid_water_mole_fraction": 0.855,
+            "observed_temperature_k": 365.6,
+            "observed_vapor_water_mole_fraction": 0.9937,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 366.98653394360986,
+            "predicted_vapor_water_mole_fraction": 0.9981148587075402,
+            "pressure_pa": 66660.0,
+            "scaled_temperature_residual": 1.3865339436098338,
+            "scaled_vapor_water_residual": 0.44148587075402146,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_06666_014",
+            "liquid_water_mole_fraction": 0.9509,
+            "observed_temperature_k": 362.81,
+            "observed_vapor_water_mole_fraction": 0.9982,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 363.35304537841876,
+            "predicted_vapor_water_mole_fraction": 0.9996132436179157,
+            "pressure_pa": 66660.0,
+            "scaled_temperature_residual": 0.5430453784187534,
+            "scaled_vapor_water_residual": 0.1413243617915727,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          }
+        ],
+        "scaled_rmse": 9.772309878520348,
+        "uncertainty": {
+          "confidence_interval": [
+            -0.050215607997472406,
+            -0.010012630285460778
+          ],
+          "confidence_level": 0.95,
+          "degrees_of_freedom": 49,
+          "limitation": "conditional on the selected topology, frozen residual scales, and local linearization",
+          "method": "local-linearized-covariance-with-residual-variance",
+          "pass": true,
+          "standard_error": 0.010255861661227455
+        },
+        "usable": true,
+        "value": -0.03011411914146659
+      },
+      "eligible": true,
+      "folds": [
+        {
+          "fit": {
+            "bounds": {
+              "active": false,
+              "interval": [
+                -0.5,
+                0.5
+              ],
+              "pass": true
+            },
+            "converged": true,
+            "exact_curvature": 445143.73147499707,
+            "exact_gradient": -5.6830592077838915e-06,
+            "failures": 0,
+            "gradient_pass": true,
+            "iterations": 12,
+            "native": {
+              "active_bounds": [],
+              "covariance_status": "available",
+              "failures": [],
+              "iterations": 12,
+              "k_ij": -0.017176426639403823,
+              "mean_scaled_square": 90.56143461134165,
+              "message": "Function tolerance reached. |cost_change|/cost: 4.184520e-16 <= 1.000000e-15",
+              "optimizer_covariance": [
+                2.246465420700121e-06
+              ],
+              "projected_gradient_norm": 5.6831527515122104e-06,
+              "rank": 1,
+              "singular_values": [
+                667.1909258038486
+              ],
+              "sse": 2173.4744306721996,
+              "status": "converged",
+              "usable": true,
+              "variance_factor": 94.49888829009564
+            },
+            "objective": 1086.7372153360998,
+            "phase_success": true,
+            "records": [
+              {
+                "attempted": true,
+                "identity": "cai1996_10133_002",
+                "liquid_water_mole_fraction": 0.0736,
+                "observed_temperature_k": 431.85,
+                "observed_vapor_water_mole_fraction": 0.3411,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 451.98788026686066,
+                "predicted_vapor_water_mole_fraction": 0.5061817218496689,
+                "pressure_pa": 101330.0,
+                "scaled_temperature_residual": 20.137880266860634,
+                "scaled_vapor_water_residual": 16.50817218496689,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_10133_003",
+                "liquid_water_mole_fraction": 0.1322,
+                "observed_temperature_k": 424.76,
+                "observed_vapor_water_mole_fraction": 0.5129,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 439.6179798587541,
+                "predicted_vapor_water_mole_fraction": 0.6963942782631052,
+                "pressure_pa": 101330.0,
+                "scaled_temperature_residual": 14.857979858754106,
+                "scaled_vapor_water_residual": 18.349427826310517,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_10133_004",
+                "liquid_water_mole_fraction": 0.1799,
+                "observed_temperature_k": 420.42,
+                "observed_vapor_water_mole_fraction": 0.6252,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 431.3635576497797,
+                "predicted_vapor_water_mole_fraction": 0.7872374060880089,
+                "pressure_pa": 101330.0,
+                "scaled_temperature_residual": 10.943557649779677,
+                "scaled_vapor_water_residual": 16.20374060880089,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_10133_005",
+                "liquid_water_mole_fraction": 0.2522,
+                "observed_temperature_k": 415.92,
+                "observed_vapor_water_mole_fraction": 0.7344,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 421.0834679167086,
+                "predicted_vapor_water_mole_fraction": 0.8693872288637756,
+                "pressure_pa": 101330.0,
+                "scaled_temperature_residual": 5.163467916708612,
+                "scaled_vapor_water_residual": 13.498722886377557,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_10133_006",
+                "liquid_water_mole_fraction": 0.2948,
+                "observed_temperature_k": 410.94,
+                "observed_vapor_water_mole_fraction": 0.7878,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 415.96808285192583,
+                "predicted_vapor_water_mole_fraction": 0.8999585868926058,
+                "pressure_pa": 101330.0,
+                "scaled_temperature_residual": 5.028082851925831,
+                "scaled_vapor_water_residual": 11.215858689260582,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_10133_007",
+                "liquid_water_mole_fraction": 0.3322,
+                "observed_temperature_k": 406.83,
+                "observed_vapor_water_mole_fraction": 0.8312,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 411.92268318021365,
+                "predicted_vapor_water_mole_fraction": 0.9201216469132751,
+                "pressure_pa": 101330.0,
+                "scaled_temperature_residual": 5.092683180213669,
+                "scaled_vapor_water_residual": 8.892164691327508,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_10133_008",
+                "liquid_water_mole_fraction": 0.4694,
+                "observed_temperature_k": 394.88,
+                "observed_vapor_water_mole_fraction": 0.9146,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 399.70544869776813,
+                "predicted_vapor_water_mole_fraction": 0.9636196975848036,
+                "pressure_pa": 101330.0,
+                "scaled_temperature_residual": 4.825448697768138,
+                "scaled_vapor_water_residual": 4.901969758480362,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_10133_009",
+                "liquid_water_mole_fraction": 0.508,
+                "observed_temperature_k": 393.25,
+                "observed_vapor_water_mole_fraction": 0.9293,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 396.8327631600109,
+                "predicted_vapor_water_mole_fraction": 0.9707476995421922,
+                "pressure_pa": 101330.0,
+                "scaled_temperature_residual": 3.582763160010927,
+                "scaled_vapor_water_residual": 4.1447699542192185,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_10133_010",
+                "liquid_water_mole_fraction": 0.6125,
+                "observed_temperature_k": 387.85,
+                "observed_vapor_water_mole_fraction": 0.9596,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 389.9724733337341,
+                "predicted_vapor_water_mole_fraction": 0.9840338607728126,
+                "pressure_pa": 101330.0,
+                "scaled_temperature_residual": 2.122473333734092,
+                "scaled_vapor_water_residual": 2.443386077281262,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_10133_011",
+                "liquid_water_mole_fraction": 0.8238,
+                "observed_temperature_k": 378.37,
+                "observed_vapor_water_mole_fraction": 0.9883,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 379.2767052177031,
+                "predicted_vapor_water_mole_fraction": 0.9963952991310525,
+                "pressure_pa": 101330.0,
+                "scaled_temperature_residual": 0.9067052177031201,
+                "scaled_vapor_water_residual": 0.8095299131052558,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_10133_012",
+                "liquid_water_mole_fraction": 0.8615,
+                "observed_temperature_k": 376.88,
+                "observed_vapor_water_mole_fraction": 0.9914,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 377.75141281481075,
+                "predicted_vapor_water_mole_fraction": 0.9974956984781359,
+                "pressure_pa": 101330.0,
+                "scaled_temperature_residual": 0.8714128148107534,
+                "scaled_vapor_water_residual": 0.6095698478135958,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_10133_013",
+                "liquid_water_mole_fraction": 0.9517,
+                "observed_temperature_k": 374.09,
+                "observed_vapor_water_mole_fraction": 0.9974,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 374.5651368142142,
+                "predicted_vapor_water_mole_fraction": 0.9993479711040281,
+                "pressure_pa": 101330.0,
+                "scaled_temperature_residual": 0.47513681421423826,
+                "scaled_vapor_water_residual": 0.19479711040281122,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              }
+            ],
+            "scaled_rmse": 9.51637717891329,
+            "uncertainty": {
+              "confidence_interval": [
+                -0.045733867759973894,
+                0.011381014481166248
+              ],
+              "confidence_level": 0.95,
+              "degrees_of_freedom": 23,
+              "limitation": "conditional on the selected topology, frozen residual scales, and local linearization",
+              "method": "local-linearized-covariance-with-residual-variance",
+              "pass": true,
+              "standard_error": 0.014570123020699016
+            },
+            "usable": true,
+            "value": -0.017176426639403823
+          },
+          "held_pressure_pa": 66660.0,
+          "held_records": [
+            {
+              "attempted": true,
+              "identity": "cai1996_06666_002",
+              "liquid_water_mole_fraction": 0.0967,
+              "observed_temperature_k": 420.53,
+              "observed_vapor_water_mole_fraction": 0.3589,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 432.2589819093472,
+              "predicted_vapor_water_mole_fraction": 0.6326498525706753,
+              "pressure_pa": 66660.0,
+              "scaled_temperature_residual": 11.728981909347226,
+              "scaled_vapor_water_residual": 27.37498525706753,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_06666_003",
+              "liquid_water_mole_fraction": 0.1332,
+              "observed_temperature_k": 416.6,
+              "observed_vapor_water_mole_fraction": 0.4945,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 424.94557957375787,
+              "predicted_vapor_water_mole_fraction": 0.7320330764860595,
+              "pressure_pa": 66660.0,
+              "scaled_temperature_residual": 8.345579573757846,
+              "scaled_vapor_water_residual": 23.753307648605954,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_06666_004",
+              "liquid_water_mole_fraction": 0.1695,
+              "observed_temperature_k": 413.33,
+              "observed_vapor_water_mole_fraction": 0.5813,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 418.6779543194718,
+              "predicted_vapor_water_mole_fraction": 0.799054003863357,
+              "pressure_pa": 66660.0,
+              "scaled_temperature_residual": 5.347954319471796,
+              "scaled_vapor_water_residual": 21.775400386335697,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_06666_005",
+              "liquid_water_mole_fraction": 0.2107,
+              "observed_temperature_k": 407.18,
+              "observed_vapor_water_mole_fraction": 0.6781,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 412.5164423746802,
+              "predicted_vapor_water_mole_fraction": 0.8513897183461323,
+              "pressure_pa": 66660.0,
+              "scaled_temperature_residual": 5.336442374680189,
+              "scaled_vapor_water_residual": 17.328971834613228,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_06666_006",
+              "liquid_water_mole_fraction": 0.2589,
+              "observed_temperature_k": 403.3,
+              "observed_vapor_water_mole_fraction": 0.7537,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 406.3043264841003,
+              "predicted_vapor_water_mole_fraction": 0.8928427163625914,
+              "pressure_pa": 66660.0,
+              "scaled_temperature_residual": 3.004326484100261,
+              "scaled_vapor_water_residual": 13.914271636259134,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_06666_007",
+              "liquid_water_mole_fraction": 0.3362,
+              "observed_temperature_k": 395.37,
+              "observed_vapor_water_mole_fraction": 0.8425,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 397.992597701437,
+              "predicted_vapor_water_mole_fraction": 0.9339516885909867,
+              "pressure_pa": 66660.0,
+              "scaled_temperature_residual": 2.6225977014369732,
+              "scaled_vapor_water_residual": 9.145168859098662,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_06666_008",
+              "liquid_water_mole_fraction": 0.3861,
+              "observed_temperature_k": 391.37,
+              "observed_vapor_water_mole_fraction": 0.8848,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 393.4312953456252,
+              "predicted_vapor_water_mole_fraction": 0.950839081476795,
+              "pressure_pa": 66660.0,
+              "scaled_temperature_residual": 2.061295345625183,
+              "scaled_vapor_water_residual": 6.603908147679493,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_06666_009",
+              "liquid_water_mole_fraction": 0.4477,
+              "observed_temperature_k": 385.73,
+              "observed_vapor_water_mole_fraction": 0.921,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 388.4563462923295,
+              "predicted_vapor_water_mole_fraction": 0.9655197056362043,
+              "pressure_pa": 66660.0,
+              "scaled_temperature_residual": 2.726346292329481,
+              "scaled_vapor_water_residual": 4.451970563620422,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_06666_010",
+              "liquid_water_mole_fraction": 0.5419,
+              "observed_temperature_k": 380.82,
+              "observed_vapor_water_mole_fraction": 0.9542,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 381.93059594937694,
+              "predicted_vapor_water_mole_fraction": 0.979877804818693,
+              "pressure_pa": 66660.0,
+              "scaled_temperature_residual": 1.1105959493769433,
+              "scaled_vapor_water_residual": 2.5677804818692973,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_06666_011",
+              "liquid_water_mole_fraction": 0.6359,
+              "observed_temperature_k": 375.17,
+              "observed_vapor_water_mole_fraction": 0.9732,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 376.42121792630076,
+              "predicted_vapor_water_mole_fraction": 0.9884812451059064,
+              "pressure_pa": 66660.0,
+              "scaled_temperature_residual": 1.2512179263007397,
+              "scaled_vapor_water_residual": 1.528124510590645,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_06666_012",
+              "liquid_water_mole_fraction": 0.8363,
+              "observed_temperature_k": 367.96,
+              "observed_vapor_water_mole_fraction": 0.9921,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 367.19257397224374,
+              "predicted_vapor_water_mole_fraction": 0.9973547157007604,
+              "pressure_pa": 66660.0,
+              "scaled_temperature_residual": -0.7674260277562439,
+              "scaled_vapor_water_residual": 0.5254715700760415,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_06666_013",
+              "liquid_water_mole_fraction": 0.855,
+              "observed_temperature_k": 365.6,
+              "observed_vapor_water_mole_fraction": 0.9937,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 366.4846897627021,
+              "predicted_vapor_water_mole_fraction": 0.9977999224489665,
+              "pressure_pa": 66660.0,
+              "scaled_temperature_residual": 0.8846897627020667,
+              "scaled_vapor_water_residual": 0.40999224489665087,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_06666_014",
+              "liquid_water_mole_fraction": 0.9509,
+              "observed_temperature_k": 362.81,
+              "observed_vapor_water_mole_fraction": 0.9982,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 363.26623788095657,
+              "predicted_vapor_water_mole_fraction": 0.9994619925042229,
+              "pressure_pa": 66660.0,
+              "scaled_temperature_residual": 0.45623788095656437,
+              "scaled_vapor_water_residual": 0.12619925042228752,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            }
+          ],
+          "held_scaled_mean_square": 105.16895659994512
+        },
+        {
+          "fit": {
+            "bounds": {
+              "active": false,
+              "interval": [
+                -0.5,
+                0.5
+              ],
+              "pass": true
+            },
+            "converged": true,
+            "exact_curvature": 484402.46054650913,
+            "exact_gradient": -0.0003423591483939087,
+            "failures": 0,
+            "gradient_pass": true,
+            "iterations": 15,
+            "native": {
+              "active_bounds": [],
+              "covariance_status": "available",
+              "failures": [],
+              "iterations": 15,
+              "k_ij": -0.04198684291243011,
+              "mean_scaled_square": 95.35248869235781,
+              "message": "Function tolerance reached. |cost_change|/cost: 1.834276e-16 <= 1.000000e-15",
+              "optimizer_covariance": [
+                2.0643990925888084e-06
+              ],
+              "projected_gradient_norm": 0.00034235922774747407,
+              "rank": 1,
+              "singular_values": [
+                695.9902733131472
+              ],
+              "sse": 2479.164706001303,
+              "status": "converged",
+              "usable": true,
+              "variance_factor": 99.16658824005212
+            },
+            "objective": 1239.5823530006514,
+            "phase_success": true,
+            "records": [
+              {
+                "attempted": true,
+                "identity": "cai1996_06666_002",
+                "liquid_water_mole_fraction": 0.0967,
+                "observed_temperature_k": 420.53,
+                "observed_vapor_water_mole_fraction": 0.3589,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 436.1231394164794,
+                "predicted_vapor_water_mole_fraction": 0.5779302169738857,
+                "pressure_pa": 66660.0,
+                "scaled_temperature_residual": 15.593139416479403,
+                "scaled_vapor_water_residual": 21.903021697388567,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_06666_003",
+                "liquid_water_mole_fraction": 0.1332,
+                "observed_temperature_k": 416.6,
+                "observed_vapor_water_mole_fraction": 0.4945,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 429.4499890796753,
+                "predicted_vapor_water_mole_fraction": 0.683090418343762,
+                "pressure_pa": 66660.0,
+                "scaled_temperature_residual": 12.849989079675254,
+                "scaled_vapor_water_residual": 18.859041834376207,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_06666_004",
+                "liquid_water_mole_fraction": 0.1695,
+                "observed_temperature_k": 413.33,
+                "observed_vapor_water_mole_fraction": 0.5813,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 423.5670284316295,
+                "predicted_vapor_water_mole_fraction": 0.7575965669353093,
+                "pressure_pa": 66660.0,
+                "scaled_temperature_residual": 10.23702843162954,
+                "scaled_vapor_water_residual": 17.629656693530926,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_06666_005",
+                "liquid_water_mole_fraction": 0.2107,
+                "observed_temperature_k": 407.18,
+                "observed_vapor_water_mole_fraction": 0.6781,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 417.6334644136627,
+                "predicted_vapor_water_mole_fraction": 0.8181668849437075,
+                "pressure_pa": 66660.0,
+                "scaled_temperature_residual": 10.453464413662687,
+                "scaled_vapor_water_residual": 14.006688494370744,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_06666_006",
+                "liquid_water_mole_fraction": 0.2589,
+                "observed_temperature_k": 403.3,
+                "observed_vapor_water_mole_fraction": 0.7537,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 411.4984314344142,
+                "predicted_vapor_water_mole_fraction": 0.8678338076072827,
+                "pressure_pa": 66660.0,
+                "scaled_temperature_residual": 8.198431434414204,
+                "scaled_vapor_water_residual": 11.413380760728264,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_06666_007",
+                "liquid_water_mole_fraction": 0.3362,
+                "observed_temperature_k": 395.37,
+                "observed_vapor_water_mole_fraction": 0.8425,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 403.04295484129966,
+                "predicted_vapor_water_mole_fraction": 0.9186909432146644,
+                "pressure_pa": 66660.0,
+                "scaled_temperature_residual": 7.672954841299656,
+                "scaled_vapor_water_residual": 7.619094321466435,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_06666_008",
+                "liquid_water_mole_fraction": 0.3861,
+                "observed_temperature_k": 391.37,
+                "observed_vapor_water_mole_fraction": 0.8848,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 398.2756042669792,
+                "predicted_vapor_water_mole_fraction": 0.9400320864799058,
+                "pressure_pa": 66660.0,
+                "scaled_temperature_residual": 6.905604266979196,
+                "scaled_vapor_water_residual": 5.5232086479905735,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_06666_009",
+                "liquid_water_mole_fraction": 0.4477,
+                "observed_temperature_k": 385.73,
+                "observed_vapor_water_mole_fraction": 0.921,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 392.9626146038339,
+                "predicted_vapor_water_mole_fraction": 0.9587394801826414,
+                "pressure_pa": 66660.0,
+                "scaled_temperature_residual": 7.232614603833895,
+                "scaled_vapor_water_residual": 3.7739480182641394,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_06666_010",
+                "liquid_water_mole_fraction": 0.5419,
+                "observed_temperature_k": 380.82,
+                "observed_vapor_water_mole_fraction": 0.9542,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 385.7863100604374,
+                "predicted_vapor_water_mole_fraction": 0.9770272824111397,
+                "pressure_pa": 66660.0,
+                "scaled_temperature_residual": 4.966310060437422,
+                "scaled_vapor_water_residual": 2.2827282411139627,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_06666_011",
+                "liquid_water_mole_fraction": 0.6359,
+                "observed_temperature_k": 375.17,
+                "observed_vapor_water_mole_fraction": 0.9732,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 379.50122247740046,
+                "predicted_vapor_water_mole_fraction": 0.9877750096606315,
+                "pressure_pa": 66660.0,
+                "scaled_temperature_residual": 4.331222477400445,
+                "scaled_vapor_water_residual": 1.4575009660631522,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_06666_012",
+                "liquid_water_mole_fraction": 0.8363,
+                "observed_temperature_k": 367.96,
+                "observed_vapor_water_mole_fraction": 0.9921,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 368.33699729202,
+                "predicted_vapor_water_mole_fraction": 0.9979382330842806,
+                "pressure_pa": 66660.0,
+                "scaled_temperature_residual": 0.37699729202000754,
+                "scaled_vapor_water_residual": 0.5838233084280664,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_06666_013",
+                "liquid_water_mole_fraction": 0.855,
+                "observed_temperature_k": 365.6,
+                "observed_vapor_water_mole_fraction": 0.9937,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 367.4458861818118,
+                "predicted_vapor_water_mole_fraction": 0.9983642343148779,
+                "pressure_pa": 66660.0,
+                "scaled_temperature_residual": 1.8458861818117498,
+                "scaled_vapor_water_residual": 0.46642343148778354,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_06666_014",
+                "liquid_water_mole_fraction": 0.9509,
+                "observed_temperature_k": 362.81,
+                "observed_vapor_water_mole_fraction": 0.9982,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 363.4315063205318,
+                "predicted_vapor_water_mole_fraction": 0.999714449915958,
+                "pressure_pa": 66660.0,
+                "scaled_temperature_residual": 0.6215063205318074,
+                "scaled_vapor_water_residual": 0.15144499159580604,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              }
+            ],
+            "scaled_rmse": 9.764859891076666,
+            "uncertainty": {
+              "confidence_interval": [
+                -0.07003056063691786,
+                -0.013943125187942357
+              ],
+              "confidence_level": 0.95,
+              "degrees_of_freedom": 25,
+              "limitation": "conditional on the selected topology, frozen residual scales, and local linearization",
+              "method": "local-linearized-covariance-with-residual-variance",
+              "pass": true,
+              "standard_error": 0.014308019247187628
+            },
+            "usable": true,
+            "value": -0.04198684291243011
+          },
+          "held_pressure_pa": 101330.0,
+          "held_records": [
+            {
+              "attempted": true,
+              "identity": "cai1996_10133_002",
+              "liquid_water_mole_fraction": 0.0736,
+              "observed_temperature_k": 431.85,
+              "observed_vapor_water_mole_fraction": 0.3411,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 455.09643165036334,
+              "predicted_vapor_water_mole_fraction": 0.4539877835472614,
+              "pressure_pa": 101330.0,
+              "scaled_temperature_residual": 23.24643165036332,
+              "scaled_vapor_water_residual": 11.288778354726137,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_10133_003",
+              "liquid_water_mole_fraction": 0.1322,
+              "observed_temperature_k": 424.76,
+              "observed_vapor_water_mole_fraction": 0.5129,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 443.98800574192063,
+              "predicted_vapor_water_mole_fraction": 0.6472927060783331,
+              "pressure_pa": 101330.0,
+              "scaled_temperature_residual": 19.22800574192064,
+              "scaled_vapor_water_residual": 13.43927060783331,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_10133_004",
+              "liquid_water_mole_fraction": 0.1799,
+              "observed_temperature_k": 420.42,
+              "observed_vapor_water_mole_fraction": 0.6252,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 436.26936131298294,
+              "predicted_vapor_water_mole_fraction": 0.7466022328162689,
+              "pressure_pa": 101330.0,
+              "scaled_temperature_residual": 15.849361312982921,
+              "scaled_vapor_water_residual": 12.140223281626893,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_10133_005",
+              "liquid_water_mole_fraction": 0.2522,
+              "observed_temperature_k": 415.92,
+              "observed_vapor_water_mole_fraction": 0.7344,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 426.2978642963766,
+              "predicted_vapor_water_mole_fraction": 0.8414812929839309,
+              "pressure_pa": 101330.0,
+              "scaled_temperature_residual": 10.377864296376572,
+              "scaled_vapor_water_residual": 10.708129298393088,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_10133_006",
+              "liquid_water_mole_fraction": 0.2948,
+              "observed_temperature_k": 410.94,
+              "observed_vapor_water_mole_fraction": 0.7878,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 421.18350777495385,
+              "predicted_vapor_water_mole_fraction": 0.8782160909403899,
+              "pressure_pa": 101330.0,
+              "scaled_temperature_residual": 10.243507774953855,
+              "scaled_vapor_water_residual": 9.041609094038993,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_10133_007",
+              "liquid_water_mole_fraction": 0.3322,
+              "observed_temperature_k": 406.83,
+              "observed_vapor_water_mole_fraction": 0.8312,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 417.0645003548572,
+              "predicted_vapor_water_mole_fraction": 0.9028947821563656,
+              "pressure_pa": 101330.0,
+              "scaled_temperature_residual": 10.234500354857232,
+              "scaled_vapor_water_residual": 7.16947821563656,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_10133_008",
+              "liquid_water_mole_fraction": 0.4694,
+              "observed_temperature_k": 394.88,
+              "observed_vapor_water_mole_fraction": 0.9146,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 404.19015514617394,
+              "predicted_vapor_water_mole_fraction": 0.9572179737702258,
+              "pressure_pa": 101330.0,
+              "scaled_temperature_residual": 9.31015514617394,
+              "scaled_vapor_water_residual": 4.26179737702258,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_10133_009",
+              "liquid_water_mole_fraction": 0.508,
+              "observed_temperature_k": 393.25,
+              "observed_vapor_water_mole_fraction": 0.9293,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 401.05535935067945,
+              "predicted_vapor_water_mole_fraction": 0.9661889574102205,
+              "pressure_pa": 101330.0,
+              "scaled_temperature_residual": 7.805359350679453,
+              "scaled_vapor_water_residual": 3.688895741022047,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_10133_010",
+              "liquid_water_mole_fraction": 0.6125,
+              "observed_temperature_k": 387.85,
+              "observed_vapor_water_mole_fraction": 0.9596,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 393.3624797249894,
+              "predicted_vapor_water_mole_fraction": 0.9827487890077051,
+              "pressure_pa": 101330.0,
+              "scaled_temperature_residual": 5.512479724989362,
+              "scaled_vapor_water_residual": 2.3148789007705117,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_10133_011",
+              "liquid_water_mole_fraction": 0.8238,
+              "observed_temperature_k": 378.37,
+              "observed_vapor_water_mole_fraction": 0.9883,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 380.5930475693878,
+              "predicted_vapor_water_mole_fraction": 0.9970803345706017,
+              "pressure_pa": 101330.0,
+              "scaled_temperature_residual": 2.223047569387802,
+              "scaled_vapor_water_residual": 0.8780334570601789,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_10133_012",
+              "liquid_water_mole_fraction": 0.8615,
+              "observed_temperature_k": 376.88,
+              "observed_vapor_water_mole_fraction": 0.9914,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 378.6846407500766,
+              "predicted_vapor_water_mole_fraction": 0.9981466104953726,
+              "pressure_pa": 101330.0,
+              "scaled_temperature_residual": 1.8046407500766009,
+              "scaled_vapor_water_residual": 0.6746610495372618,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_10133_013",
+              "liquid_water_mole_fraction": 0.9517,
+              "observed_temperature_k": 374.09,
+              "observed_vapor_water_mole_fraction": 0.9974,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 374.73296487009515,
+              "predicted_vapor_water_mole_fraction": 0.9996465488148385,
+              "pressure_pa": 101330.0,
+              "scaled_temperature_residual": 0.6429648700951702,
+              "scaled_vapor_water_residual": 0.22465488148385448,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            }
+          ],
+          "held_scaled_mean_square": 100.28956166808683
+        }
+      ],
+      "gates": {
+        "bounds": true,
+        "optimizer_convergence": true,
+        "phase_success": true,
+        "uncertainty": true
+      },
+      "grouped_mean_score": 102.72925913401598,
+      "grouped_standard_error": 2.439697465929143,
+      "scheme": "3B"
+    },
+    {
+      "association": {
+        "combining_rule": "arithmetic-energy-geometric-volume",
+        "mea_site_multiplicities": {
+          "a": 2,
+          "b": 2
+        },
+        "source_sha256": "sha256:12e380a27eb615e25bae580f8c1ec852020879917b08fa16a5821ae76311550d"
+      },
+      "complete_refit": {
+        "bounds": {
+          "active": false,
+          "interval": [
+            -0.5,
+            0.5
+          ],
+          "pass": true
+        },
+        "converged": true,
+        "exact_curvature": 1252602.6694501685,
+        "exact_gradient": -0.0011024406531914242,
+        "failures": 0,
+        "gradient_pass": true,
+        "iterations": 12,
+        "native": {
+          "active_bounds": [],
+          "covariance_status": "available",
+          "failures": [],
+          "iterations": 12,
+          "k_ij": 0.0031822660575807488,
+          "mean_scaled_square": 387.06411117907135,
+          "message": "Function tolerance reached. |cost_change|/cost: 1.879781e-16 <= 1.000000e-15",
+          "optimizer_covariance": [
+            7.983377525763632e-07
+          ],
+          "projected_gradient_norm": 0.0011024403028902577,
+          "rank": 1,
+          "singular_values": [
+            1119.197332667554
+          ],
+          "sse": 19353.205558953567,
+          "status": "converged",
+          "usable": true,
+          "variance_factor": 394.9633787541544
+        },
+        "objective": 9676.602779476783,
+        "phase_success": true,
+        "records": [
+          {
+            "attempted": true,
+            "identity": "cai1996_10133_002",
+            "liquid_water_mole_fraction": 0.0736,
+            "observed_temperature_k": 431.85,
+            "observed_vapor_water_mole_fraction": 0.3411,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 465.90951934137394,
+            "predicted_vapor_water_mole_fraction": 0.8923517514646235,
+            "pressure_pa": 101330.0,
+            "scaled_temperature_residual": 34.059519341373914,
+            "scaled_vapor_water_residual": 55.125175146462354,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_10133_003",
+            "liquid_water_mole_fraction": 0.1322,
+            "observed_temperature_k": 424.76,
+            "observed_vapor_water_mole_fraction": 0.5129,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 441.40110080980617,
+            "predicted_vapor_water_mole_fraction": 0.964595591073156,
+            "pressure_pa": 101330.0,
+            "scaled_temperature_residual": 16.641100809806176,
+            "scaled_vapor_water_residual": 45.16955910731559,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_10133_004",
+            "liquid_water_mole_fraction": 0.1799,
+            "observed_temperature_k": 420.42,
+            "observed_vapor_water_mole_fraction": 0.6252,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 428.71539259142196,
+            "predicted_vapor_water_mole_fraction": 0.9816428026120935,
+            "pressure_pa": 101330.0,
+            "scaled_temperature_residual": 8.295392591421944,
+            "scaled_vapor_water_residual": 35.644280261209346,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_10133_005",
+            "liquid_water_mole_fraction": 0.2522,
+            "observed_temperature_k": 415.92,
+            "observed_vapor_water_mole_fraction": 0.7344,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 415.4223102984005,
+            "predicted_vapor_water_mole_fraction": 0.9914963296793062,
+            "pressure_pa": 101330.0,
+            "scaled_temperature_residual": -0.4976897015995405,
+            "scaled_vapor_water_residual": 25.709632967930617,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_10133_006",
+            "liquid_water_mole_fraction": 0.2948,
+            "observed_temperature_k": 410.94,
+            "observed_vapor_water_mole_fraction": 0.7878,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 409.55436996103714,
+            "predicted_vapor_water_mole_fraction": 0.9941523772233896,
+            "pressure_pa": 101330.0,
+            "scaled_temperature_residual": -1.3856300389628586,
+            "scaled_vapor_water_residual": 20.63523772233896,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_10133_007",
+            "liquid_water_mole_fraction": 0.3322,
+            "observed_temperature_k": 406.83,
+            "observed_vapor_water_mole_fraction": 0.8312,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 405.19517190518667,
+            "predicted_vapor_water_mole_fraction": 0.9956508427707056,
+            "pressure_pa": 101330.0,
+            "scaled_temperature_residual": -1.6348280948133151,
+            "scaled_vapor_water_residual": 16.445084277070553,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_10133_008",
+            "liquid_water_mole_fraction": 0.4694,
+            "observed_temperature_k": 394.88,
+            "observed_vapor_water_mole_fraction": 0.9146,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 393.31544830899446,
+            "predicted_vapor_water_mole_fraction": 0.9982620938139664,
+            "pressure_pa": 101330.0,
+            "scaled_temperature_residual": -1.5645516910055335,
+            "scaled_vapor_water_residual": 8.366209381396638,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_10133_009",
+            "liquid_water_mole_fraction": 0.508,
+            "observed_temperature_k": 393.25,
+            "observed_vapor_water_mole_fraction": 0.9293,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 390.7810713705724,
+            "predicted_vapor_water_mole_fraction": 0.9986143180209809,
+            "pressure_pa": 101330.0,
+            "scaled_temperature_residual": -2.4689286294275803,
+            "scaled_vapor_water_residual": 6.9314318020980865,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_10133_010",
+            "liquid_water_mole_fraction": 0.6125,
+            "observed_temperature_k": 387.85,
+            "observed_vapor_water_mole_fraction": 0.9596,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 385.12724943827726,
+            "predicted_vapor_water_mole_fraction": 0.9992194874432332,
+            "pressure_pa": 101330.0,
+            "scaled_temperature_residual": -2.722750561722762,
+            "scaled_vapor_water_residual": 3.961948744323318,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_10133_011",
+            "liquid_water_mole_fraction": 0.8238,
+            "observed_temperature_k": 378.37,
+            "observed_vapor_water_mole_fraction": 0.9883,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 377.51149830042726,
+            "predicted_vapor_water_mole_fraction": 0.9997503789827813,
+            "pressure_pa": 101330.0,
+            "scaled_temperature_residual": -0.8585016995727415,
+            "scaled_vapor_water_residual": 1.145037898278134,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_10133_012",
+            "liquid_water_mole_fraction": 0.8615,
+            "observed_temperature_k": 376.88,
+            "observed_vapor_water_mole_fraction": 0.9914,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 376.52783919924667,
+            "predicted_vapor_water_mole_fraction": 0.9998044505220306,
+            "pressure_pa": 101330.0,
+            "scaled_temperature_residual": -0.35216080075332457,
+            "scaled_vapor_water_residual": 0.8404450522030649,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_10133_013",
+            "liquid_water_mole_fraction": 0.9517,
+            "observed_temperature_k": 374.09,
+            "observed_vapor_water_mole_fraction": 0.9974,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 374.36884620325924,
+            "predicted_vapor_water_mole_fraction": 0.999923423999247,
+            "pressure_pa": 101330.0,
+            "scaled_temperature_residual": 0.27884620325926335,
+            "scaled_vapor_water_residual": 0.25234239992470986,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_06666_002",
+            "liquid_water_mole_fraction": 0.0967,
+            "observed_temperature_k": 420.53,
+            "observed_vapor_water_mole_fraction": 0.3589,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 436.68021858265917,
+            "predicted_vapor_water_mole_fraction": 0.9553337188699639,
+            "pressure_pa": 66660.0,
+            "scaled_temperature_residual": 16.150218582659193,
+            "scaled_vapor_water_residual": 59.643371886996384,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_06666_003",
+            "liquid_water_mole_fraction": 0.1332,
+            "observed_temperature_k": 416.6,
+            "observed_vapor_water_mole_fraction": 0.4945,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 424.06421470202133,
+            "predicted_vapor_water_mole_fraction": 0.9768011536147198,
+            "pressure_pa": 66660.0,
+            "scaled_temperature_residual": 7.464214702021309,
+            "scaled_vapor_water_residual": 48.230115361471974,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_06666_004",
+            "liquid_water_mole_fraction": 0.1695,
+            "observed_temperature_k": 413.33,
+            "observed_vapor_water_mole_fraction": 0.5813,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 414.8493963424484,
+            "predicted_vapor_water_mole_fraction": 0.9862074030186947,
+            "pressure_pa": 66660.0,
+            "scaled_temperature_residual": 1.519396342448431,
+            "scaled_vapor_water_residual": 40.490740301869465,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_06666_005",
+            "liquid_water_mole_fraction": 0.2107,
+            "observed_temperature_k": 407.18,
+            "observed_vapor_water_mole_fraction": 0.6781,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 406.8143575369671,
+            "predicted_vapor_water_mole_fraction": 0.9915360369694997,
+            "pressure_pa": 66660.0,
+            "scaled_temperature_residual": -0.3656424630328843,
+            "scaled_vapor_water_residual": 31.343603696949963,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_06666_006",
+            "liquid_water_mole_fraction": 0.2589,
+            "observed_temperature_k": 403.3,
+            "observed_vapor_water_mole_fraction": 0.7537,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 399.49141700372013,
+            "predicted_vapor_water_mole_fraction": 0.9947626528205504,
+            "pressure_pa": 66660.0,
+            "scaled_temperature_residual": -3.808582996279881,
+            "scaled_vapor_water_residual": 24.106265282055038,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_06666_007",
+            "liquid_water_mole_fraction": 0.3362,
+            "observed_temperature_k": 395.37,
+            "observed_vapor_water_mole_fraction": 0.8425,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 390.6456203863389,
+            "predicted_vapor_water_mole_fraction": 0.9972333083955728,
+            "pressure_pa": 66660.0,
+            "scaled_temperature_residual": -4.724379613661085,
+            "scaled_vapor_water_residual": 15.473330839557276,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_06666_008",
+            "liquid_water_mole_fraction": 0.3861,
+            "observed_temperature_k": 391.37,
+            "observed_vapor_water_mole_fraction": 0.8848,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 386.1818033955507,
+            "predicted_vapor_water_mole_fraction": 0.9980593913042162,
+            "pressure_pa": 66660.0,
+            "scaled_temperature_residual": -5.188196604449331,
+            "scaled_vapor_water_residual": 11.325939130421613,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_06666_009",
+            "liquid_water_mole_fraction": 0.4477,
+            "observed_temperature_k": 385.73,
+            "observed_vapor_water_mole_fraction": 0.921,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 381.6008571345731,
+            "predicted_vapor_water_mole_fraction": 0.9986936084645136,
+            "pressure_pa": 66660.0,
+            "scaled_temperature_residual": -4.1291428654269,
+            "scaled_vapor_water_residual": 7.769360846451356,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_06666_010",
+            "liquid_water_mole_fraction": 0.5419,
+            "observed_temperature_k": 380.82,
+            "observed_vapor_water_mole_fraction": 0.9542,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 376.04112384659146,
+            "predicted_vapor_water_mole_fraction": 0.9992414463852931,
+            "pressure_pa": 66660.0,
+            "scaled_temperature_residual": -4.7788761534085324,
+            "scaled_vapor_water_residual": 4.504144638529306,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_06666_011",
+            "liquid_water_mole_fraction": 0.6359,
+            "observed_temperature_k": 375.17,
+            "observed_vapor_water_mole_fraction": 0.9732,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 371.766192498787,
+            "predicted_vapor_water_mole_fraction": 0.9995386110543311,
+            "pressure_pa": 66660.0,
+            "scaled_temperature_residual": -3.4038075012130093,
+            "scaled_vapor_water_residual": 2.6338611054331107,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_06666_012",
+            "liquid_water_mole_fraction": 0.8363,
+            "observed_temperature_k": 367.96,
+            "observed_vapor_water_mole_fraction": 0.9921,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 365.5632138135834,
+            "predicted_vapor_water_mole_fraction": 0.9998404862890619,
+            "pressure_pa": 66660.0,
+            "scaled_temperature_residual": -2.396786186416591,
+            "scaled_vapor_water_residual": 0.7740486289061876,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_06666_013",
+            "liquid_water_mole_fraction": 0.855,
+            "observed_temperature_k": 365.6,
+            "observed_vapor_water_mole_fraction": 0.9937,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 365.12936777965353,
+            "predicted_vapor_water_mole_fraction": 0.9998581995158281,
+            "pressure_pa": 66660.0,
+            "scaled_temperature_residual": -0.4706322203464879,
+            "scaled_vapor_water_residual": 0.6158199515828078,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          },
+          {
+            "attempted": true,
+            "identity": "cai1996_06666_014",
+            "liquid_water_mole_fraction": 0.9509,
+            "observed_temperature_k": 362.81,
+            "observed_vapor_water_mole_fraction": 0.9982,
+            "outcome": "evaluated",
+            "predicted_temperature_k": 363.0549547790796,
+            "predicted_vapor_water_mole_fraction": 0.9999445219738394,
+            "pressure_pa": 66660.0,
+            "scaled_temperature_residual": 0.24495477907959184,
+            "scaled_vapor_water_residual": 0.17445219738394524,
+            "statuses": [
+              "ObservationStatus.Available",
+              "ObservationStatus.Available"
+            ]
+          }
+        ],
+        "scaled_rmse": 19.67394498261778,
+        "uncertainty": {
+          "confidence_interval": [
+            -0.031621626527544494,
+            0.03798615864270599
+          ],
+          "confidence_level": 0.95,
+          "degrees_of_freedom": 49,
+          "limitation": "conditional on the selected topology, frozen residual scales, and local linearization",
+          "method": "local-linearized-covariance-with-residual-variance",
+          "pass": true,
+          "standard_error": 0.01775708805363533
+        },
+        "usable": true,
+        "value": 0.0031822660575807488
+      },
+      "eligible": true,
+      "folds": [
+        {
+          "fit": {
+            "bounds": {
+              "active": false,
+              "interval": [
+                -0.5,
+                0.5
+              ],
+              "pass": true
+            },
+            "converged": true,
+            "exact_curvature": 619287.8850720401,
+            "exact_gradient": -0.0016924998708689742,
+            "failures": 0,
+            "gradient_pass": true,
+            "iterations": 12,
+            "native": {
+              "active_bounds": [],
+              "covariance_status": "available",
+              "failures": [],
+              "iterations": 12,
+              "k_ij": 0.013487721082459637,
+              "mean_scaled_square": 388.2777251213547,
+              "message": "Function tolerance reached. |cost_change|/cost: 7.807940e-16 <= 1.000000e-15",
+              "optimizer_covariance": [
+                1.614757892258255e-06
+              ],
+              "projected_gradient_norm": 0.0016924996406473686,
+              "rank": 1,
+              "singular_values": [
+                786.9484640508806
+              ],
+              "sse": 9318.665402912513,
+              "status": "converged",
+              "usable": true,
+              "variance_factor": 405.1593653440223
+            },
+            "objective": 4659.3327014562565,
+            "phase_success": true,
+            "records": [
+              {
+                "attempted": true,
+                "identity": "cai1996_10133_002",
+                "liquid_water_mole_fraction": 0.0736,
+                "observed_temperature_k": 431.85,
+                "observed_vapor_water_mole_fraction": 0.3411,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 462.7271447849191,
+                "predicted_vapor_water_mole_fraction": 0.905286614131527,
+                "pressure_pa": 101330.0,
+                "scaled_temperature_residual": 30.877144784919096,
+                "scaled_vapor_water_residual": 56.418661413152705,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_10133_003",
+                "liquid_water_mole_fraction": 0.1322,
+                "observed_temperature_k": 424.76,
+                "observed_vapor_water_mole_fraction": 0.5129,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 438.11634339722895,
+                "predicted_vapor_water_mole_fraction": 0.9695470219539096,
+                "pressure_pa": 101330.0,
+                "scaled_temperature_residual": 13.356343397228954,
+                "scaled_vapor_water_residual": 45.66470219539096,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_10133_004",
+                "liquid_water_mole_fraction": 0.1799,
+                "observed_temperature_k": 420.42,
+                "observed_vapor_water_mole_fraction": 0.6252,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 425.5664934779878,
+                "predicted_vapor_water_mole_fraction": 0.9842677487559996,
+                "pressure_pa": 101330.0,
+                "scaled_temperature_residual": 5.1464934779878035,
+                "scaled_vapor_water_residual": 35.906774875599965,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_10133_005",
+                "liquid_water_mole_fraction": 0.2522,
+                "observed_temperature_k": 415.92,
+                "observed_vapor_water_mole_fraction": 0.7344,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 412.5388818534859,
+                "predicted_vapor_water_mole_fraction": 0.9926849373899673,
+                "pressure_pa": 101330.0,
+                "scaled_temperature_residual": -3.3811181465140976,
+                "scaled_vapor_water_residual": 25.828493738996727,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_10133_006",
+                "liquid_water_mole_fraction": 0.2948,
+                "observed_temperature_k": 410.94,
+                "observed_vapor_water_mole_fraction": 0.7878,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 406.83404581580527,
+                "predicted_vapor_water_mole_fraction": 0.9949432837338703,
+                "pressure_pa": 101330.0,
+                "scaled_temperature_residual": -4.105954184194729,
+                "scaled_vapor_water_residual": 20.714328373387037,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_10133_007",
+                "liquid_water_mole_fraction": 0.3322,
+                "observed_temperature_k": 406.83,
+                "observed_vapor_water_mole_fraction": 0.8312,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 402.6189566382795,
+                "predicted_vapor_water_mole_fraction": 0.9962164324515147,
+                "pressure_pa": 101330.0,
+                "scaled_temperature_residual": -4.211043361720499,
+                "scaled_vapor_water_residual": 16.501643245151463,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_10133_008",
+                "liquid_water_mole_fraction": 0.4694,
+                "observed_temperature_k": 394.88,
+                "observed_vapor_water_mole_fraction": 0.9146,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 391.2753418846664,
+                "predicted_vapor_water_mole_fraction": 0.9984388575881347,
+                "pressure_pa": 101330.0,
+                "scaled_temperature_residual": -3.6046581153336206,
+                "scaled_vapor_water_residual": 8.38388575881347,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_10133_009",
+                "liquid_water_mole_fraction": 0.508,
+                "observed_temperature_k": 393.25,
+                "observed_vapor_water_mole_fraction": 0.9293,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 388.895463883305,
+                "predicted_vapor_water_mole_fraction": 0.9987402641634942,
+                "pressure_pa": 101330.0,
+                "scaled_temperature_residual": -4.354536116694987,
+                "scaled_vapor_water_residual": 6.944026416349414,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_10133_010",
+                "liquid_water_mole_fraction": 0.6125,
+                "observed_temperature_k": 387.85,
+                "observed_vapor_water_mole_fraction": 0.9596,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 383.672340007469,
+                "predicted_vapor_water_mole_fraction": 0.9992611836383012,
+                "pressure_pa": 101330.0,
+                "scaled_temperature_residual": -4.177659992531005,
+                "scaled_vapor_water_residual": 3.966118363830118,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_10133_011",
+                "liquid_water_mole_fraction": 0.8238,
+                "observed_temperature_k": 378.37,
+                "observed_vapor_water_mole_fraction": 0.9883,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 376.97560331027734,
+                "predicted_vapor_water_mole_fraction": 0.9997283480471533,
+                "pressure_pa": 101330.0,
+                "scaled_temperature_residual": -1.3943966897226687,
+                "scaled_vapor_water_residual": 1.1428348047153314,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_10133_012",
+                "liquid_water_mole_fraction": 0.8615,
+                "observed_temperature_k": 376.88,
+                "observed_vapor_water_mole_fraction": 0.9914,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 376.1506114801531,
+                "predicted_vapor_water_mole_fraction": 0.9997786346861891,
+                "pressure_pa": 101330.0,
+                "scaled_temperature_residual": -0.729388519846907,
+                "scaled_vapor_water_residual": 0.8378634686189157,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_10133_013",
+                "liquid_water_mole_fraction": 0.9517,
+                "observed_temperature_k": 374.09,
+                "observed_vapor_water_mole_fraction": 0.9974,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 374.3026422481945,
+                "predicted_vapor_water_mole_fraction": 0.9999012190358315,
+                "pressure_pa": 101330.0,
+                "scaled_temperature_residual": 0.21264224819452693,
+                "scaled_vapor_water_residual": 0.2501219035831559,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              }
+            ],
+            "scaled_rmse": 19.704764020950737,
+            "uncertainty": {
+              "confidence_interval": [
+                -0.036645166534842684,
+                0.06362060869976197
+              ],
+              "confidence_level": 0.95,
+              "degrees_of_freedom": 23,
+              "limitation": "conditional on the selected topology, frozen residual scales, and local linearization",
+              "method": "local-linearized-covariance-with-residual-variance",
+              "pass": true,
+              "standard_error": 0.025578003886378736
+            },
+            "usable": true,
+            "value": 0.013487721082459637
+          },
+          "held_pressure_pa": 66660.0,
+          "held_records": [
+            {
+              "attempted": true,
+              "identity": "cai1996_06666_002",
+              "liquid_water_mole_fraction": 0.0967,
+              "observed_temperature_k": 420.53,
+              "observed_vapor_water_mole_fraction": 0.3589,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 433.39398437056053,
+              "predicted_vapor_water_mole_fraction": 0.9617609619292758,
+              "pressure_pa": 66660.0,
+              "scaled_temperature_residual": 12.863984370560559,
+              "scaled_vapor_water_residual": 60.28609619292759,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_06666_003",
+              "liquid_water_mole_fraction": 0.1332,
+              "observed_temperature_k": 416.6,
+              "observed_vapor_water_mole_fraction": 0.4945,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 420.84801105974174,
+              "predicted_vapor_water_mole_fraction": 0.9802887766559933,
+              "pressure_pa": 66660.0,
+              "scaled_temperature_residual": 4.248011059741714,
+              "scaled_vapor_water_residual": 48.578877665599336,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_06666_004",
+              "liquid_water_mole_fraction": 0.1695,
+              "observed_temperature_k": 413.33,
+              "observed_vapor_water_mole_fraction": 0.5813,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 411.75390180842794,
+              "predicted_vapor_water_mole_fraction": 0.9883023325582494,
+              "pressure_pa": 66660.0,
+              "scaled_temperature_residual": -1.5760981915720436,
+              "scaled_vapor_water_residual": 40.700233255824934,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_06666_005",
+              "liquid_water_mole_fraction": 0.2107,
+              "observed_temperature_k": 407.18,
+              "observed_vapor_water_mole_fraction": 0.6781,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 403.8708976383276,
+              "predicted_vapor_water_mole_fraction": 0.9928107289867679,
+              "pressure_pa": 66660.0,
+              "scaled_temperature_residual": -3.3091023616723874,
+              "scaled_vapor_water_residual": 31.471072898676788,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_06666_006",
+              "liquid_water_mole_fraction": 0.2589,
+              "observed_temperature_k": 403.3,
+              "observed_vapor_water_mole_fraction": 0.7537,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 396.72932147728875,
+              "predicted_vapor_water_mole_fraction": 0.9955299882537234,
+              "pressure_pa": 66660.0,
+              "scaled_temperature_residual": -6.570678522711262,
+              "scaled_vapor_water_residual": 24.182998825372337,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_06666_007",
+              "liquid_water_mole_fraction": 0.3362,
+              "observed_temperature_k": 395.37,
+              "observed_vapor_water_mole_fraction": 0.8425,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 388.17340355292447,
+              "predicted_vapor_water_mole_fraction": 0.9976088774173616,
+              "pressure_pa": 66660.0,
+              "scaled_temperature_residual": -7.196596447075535,
+              "scaled_vapor_water_residual": 15.510887741736157,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_06666_008",
+              "liquid_water_mole_fraction": 0.3861,
+              "observed_temperature_k": 391.37,
+              "observed_vapor_water_mole_fraction": 0.8848,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 383.8965803790436,
+              "predicted_vapor_water_mole_fraction": 0.998304644356694,
+              "pressure_pa": 66660.0,
+              "scaled_temperature_residual": -7.473419620956406,
+              "scaled_vapor_water_residual": 11.350464435669394,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_06666_009",
+              "liquid_water_mole_fraction": 0.4477,
+              "observed_temperature_k": 385.73,
+              "observed_vapor_water_mole_fraction": 0.921,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 379.54837224219517,
+              "predicted_vapor_water_mole_fraction": 0.9988401173618806,
+              "pressure_pa": 66660.0,
+              "scaled_temperature_residual": -6.181627757804847,
+              "scaled_vapor_water_residual": 7.784011736188057,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_06666_010",
+              "liquid_water_mole_fraction": 0.5419,
+              "observed_temperature_k": 380.82,
+              "observed_vapor_water_mole_fraction": 0.9542,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 374.3530374204114,
+              "predicted_vapor_water_mole_fraction": 0.9993050041646632,
+              "pressure_pa": 66660.0,
+              "scaled_temperature_residual": -6.466962579588596,
+              "scaled_vapor_water_residual": 4.510500416466312,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_06666_011",
+              "liquid_water_mole_fraction": 0.6359,
+              "observed_temperature_k": 375.17,
+              "observed_vapor_water_mole_fraction": 0.9732,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 370.4564654099721,
+              "predicted_vapor_water_mole_fraction": 0.9995593554316081,
+              "pressure_pa": 66660.0,
+              "scaled_temperature_residual": -4.713534590027905,
+              "scaled_vapor_water_residual": 2.6359355431608167,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_06666_012",
+              "liquid_water_mole_fraction": 0.8363,
+              "observed_temperature_k": 367.96,
+              "observed_vapor_water_mole_fraction": 0.9921,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 365.0969911080616,
+              "predicted_vapor_water_mole_fraction": 0.9998235505731167,
+              "pressure_pa": 66660.0,
+              "scaled_temperature_residual": -2.863008891938364,
+              "scaled_vapor_water_residual": 0.7723550573116689,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_06666_013",
+              "liquid_water_mole_fraction": 0.855,
+              "observed_temperature_k": 365.6,
+              "observed_vapor_water_mole_fraction": 0.9937,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 364.7390045559853,
+              "predicted_vapor_water_mole_fraction": 0.999839879568829,
+              "pressure_pa": 66660.0,
+              "scaled_temperature_residual": -0.8609954440147476,
+              "scaled_vapor_water_residual": 0.6139879568828999,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_06666_014",
+              "liquid_water_mole_fraction": 0.9509,
+              "observed_temperature_k": 362.81,
+              "observed_vapor_water_mole_fraction": 0.9982,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 362.98922408046366,
+              "predicted_vapor_water_mole_fraction": 0.9999278079668922,
+              "pressure_pa": 66660.0,
+              "scaled_temperature_residual": 0.1792240804636549,
+              "scaled_vapor_water_residual": 0.1727807966892203,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            }
+          ],
+          "held_scaled_mean_square": 390.1301460731951
+        },
+        {
+          "fit": {
+            "bounds": {
+              "active": false,
+              "interval": [
+                -0.5,
+                0.5
+              ],
+              "pass": true
+            },
+            "converged": true,
+            "exact_curvature": 634817.1336599787,
+            "exact_gradient": -0.0010944619349401268,
+            "failures": 0,
+            "gradient_pass": true,
+            "iterations": 11,
+            "native": {
+              "active_bounds": [],
+              "covariance_status": "available",
+              "failures": [],
+              "iterations": 11,
+              "k_ij": -0.00615909004308017,
+              "mean_scaled_square": 382.18387617571284,
+              "message": "Function tolerance reached. |cost_change|/cost: 0.000000e+00 <= 1.000000e-15",
+              "optimizer_covariance": [
+                1.5752567896751543e-06
+              ],
+              "projected_gradient_norm": 0.001094461651445229,
+              "rank": 1,
+              "singular_values": [
+                796.7541237169581
+              ],
+              "sse": 9936.780780568533,
+              "status": "converged",
+              "usable": true,
+              "variance_factor": 397.4712312227413
+            },
+            "objective": 4968.390390284267,
+            "phase_success": true,
+            "records": [
+              {
+                "attempted": true,
+                "identity": "cai1996_06666_002",
+                "liquid_water_mole_fraction": 0.0967,
+                "observed_temperature_k": 420.53,
+                "observed_vapor_water_mole_fraction": 0.3589,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 439.61727151324345,
+                "predicted_vapor_water_mole_fraction": 0.9488034291952241,
+                "pressure_pa": 66660.0,
+                "scaled_temperature_residual": 19.08727151324348,
+                "scaled_vapor_water_residual": 58.990342919522405,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_06666_003",
+                "liquid_water_mole_fraction": 0.1332,
+                "observed_temperature_k": 416.6,
+                "observed_vapor_water_mole_fraction": 0.4945,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 426.9564228939699,
+                "predicted_vapor_water_mole_fraction": 0.9732086527599323,
+                "pressure_pa": 66660.0,
+                "scaled_temperature_residual": 10.356422893969864,
+                "scaled_vapor_water_residual": 47.87086527599323,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_06666_004",
+                "liquid_water_mole_fraction": 0.1695,
+                "observed_temperature_k": 413.33,
+                "observed_vapor_water_mole_fraction": 0.5813,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 417.6415862776195,
+                "predicted_vapor_water_mole_fraction": 0.9840376406345412,
+                "pressure_pa": 66660.0,
+                "scaled_temperature_residual": 4.31158627761954,
+                "scaled_vapor_water_residual": 40.27376406345412,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_06666_005",
+                "liquid_water_mole_fraction": 0.2107,
+                "observed_temperature_k": 407.18,
+                "observed_vapor_water_mole_fraction": 0.6781,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 409.47452543727024,
+                "predicted_vapor_water_mole_fraction": 0.9902140209487375,
+                "pressure_pa": 66660.0,
+                "scaled_temperature_residual": 2.294525437270238,
+                "scaled_vapor_water_residual": 31.21140209487374,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_06666_006",
+                "liquid_water_mole_fraction": 0.2589,
+                "observed_temperature_k": 403.3,
+                "observed_vapor_water_mole_fraction": 0.7537,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 401.9909633449735,
+                "predicted_vapor_water_mole_fraction": 0.9939685559195038,
+                "pressure_pa": 66660.0,
+                "scaled_temperature_residual": -1.309036655026489,
+                "scaled_vapor_water_residual": 24.02685559195038,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_06666_007",
+                "liquid_water_mole_fraction": 0.3362,
+                "observed_temperature_k": 395.37,
+                "observed_vapor_water_mole_fraction": 0.8425,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 392.88555966462354,
+                "predicted_vapor_water_mole_fraction": 0.9968480824436939,
+                "pressure_pa": 66660.0,
+                "scaled_temperature_residual": -2.484440335376462,
+                "scaled_vapor_water_residual": 15.43480824436939,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_06666_008",
+                "liquid_water_mole_fraction": 0.3861,
+                "observed_temperature_k": 391.37,
+                "observed_vapor_water_mole_fraction": 0.8848,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 388.25336879915255,
+                "predicted_vapor_water_mole_fraction": 0.9978099682816864,
+                "pressure_pa": 66660.0,
+                "scaled_temperature_residual": -3.1166312008474506,
+                "scaled_vapor_water_residual": 11.30099682816864,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_06666_009",
+                "liquid_water_mole_fraction": 0.4477,
+                "observed_temperature_k": 385.73,
+                "observed_vapor_water_mole_fraction": 0.921,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 383.4623088420075,
+                "predicted_vapor_water_mole_fraction": 0.998546584500189,
+                "pressure_pa": 66660.0,
+                "scaled_temperature_residual": -2.2676911579925445,
+                "scaled_vapor_water_residual": 7.7546584500188915,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_06666_010",
+                "liquid_water_mole_fraction": 0.5419,
+                "observed_temperature_k": 380.82,
+                "observed_vapor_water_mole_fraction": 0.9542,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 377.5728081208711,
+                "predicted_vapor_water_mole_fraction": 0.9991793614591867,
+                "pressure_pa": 66660.0,
+                "scaled_temperature_residual": -3.247191879128877,
+                "scaled_vapor_water_residual": 4.497936145918668,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_06666_011",
+                "liquid_water_mole_fraction": 0.6359,
+                "observed_temperature_k": 375.17,
+                "observed_vapor_water_mole_fraction": 0.9732,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 372.95479597596443,
+                "predicted_vapor_water_mole_fraction": 0.9995190789146325,
+                "pressure_pa": 66660.0,
+                "scaled_temperature_residual": -2.215204024035586,
+                "scaled_vapor_water_residual": 2.6319078914632588,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_06666_012",
+                "liquid_water_mole_fraction": 0.8363,
+                "observed_temperature_k": 367.96,
+                "observed_vapor_water_mole_fraction": 0.9921,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 365.9858398373315,
+                "predicted_vapor_water_mole_fraction": 0.9998544290239197,
+                "pressure_pa": 66660.0,
+                "scaled_temperature_residual": -1.9741601626684542,
+                "scaled_vapor_water_residual": 0.7754429023919762,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_06666_013",
+                "liquid_water_mole_fraction": 0.855,
+                "observed_temperature_k": 365.6,
+                "observed_vapor_water_mole_fraction": 0.9937,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 365.483120970073,
+                "predicted_vapor_water_mole_fraction": 0.9998729926929565,
+                "pressure_pa": 66660.0,
+                "scaled_temperature_residual": -0.11687902992701993,
+                "scaled_vapor_water_residual": 0.6172992692956458,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              },
+              {
+                "attempted": true,
+                "identity": "cai1996_06666_014",
+                "liquid_water_mole_fraction": 0.9509,
+                "observed_temperature_k": 362.81,
+                "observed_vapor_water_mole_fraction": 0.9982,
+                "outcome": "evaluated",
+                "predicted_temperature_k": 363.1143212087318,
+                "predicted_vapor_water_mole_fraction": 0.9999563146602359,
+                "pressure_pa": 66660.0,
+                "scaled_temperature_residual": 0.30432120873177837,
+                "scaled_vapor_water_residual": 0.1756314660235958,
+                "statuses": [
+                  "ObservationStatus.Available",
+                  "ObservationStatus.Available"
+                ]
+              }
+            ],
+            "scaled_rmse": 19.549523681555847,
+            "uncertainty": {
+              "confidence_interval": [
+                -0.0552029452406102,
+                0.04288476515444986
+              ],
+              "confidence_level": 0.95,
+              "degrees_of_freedom": 25,
+              "limitation": "conditional on the selected topology, frozen residual scales, and local linearization",
+              "method": "local-linearized-covariance-with-residual-variance",
+              "pass": true,
+              "standard_error": 0.02502237510078063
+            },
+            "usable": true,
+            "value": -0.00615909004308017
+          },
+          "held_pressure_pa": 101330.0,
+          "held_records": [
+            {
+              "attempted": true,
+              "identity": "cai1996_10133_002",
+              "liquid_water_mole_fraction": 0.0736,
+              "observed_temperature_k": 431.85,
+              "observed_vapor_water_mole_fraction": 0.3411,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 468.7168596015585,
+              "predicted_vapor_water_mole_fraction": 0.8797002562292792,
+              "pressure_pa": 101330.0,
+              "scaled_temperature_residual": 36.866859601558474,
+              "scaled_vapor_water_residual": 53.86002562292791,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_10133_003",
+              "liquid_water_mole_fraction": 0.1322,
+              "observed_temperature_k": 424.76,
+              "observed_vapor_water_mole_fraction": 0.5129,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 444.34618438826425,
+              "predicted_vapor_water_mole_fraction": 0.9595690110872889,
+              "pressure_pa": 101330.0,
+              "scaled_temperature_residual": 19.586184388264257,
+              "scaled_vapor_water_residual": 44.66690110872889,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_10133_004",
+              "liquid_water_mole_fraction": 0.1799,
+              "observed_temperature_k": 420.42,
+              "observed_vapor_water_mole_fraction": 0.6252,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 431.5528051012811,
+              "predicted_vapor_water_mole_fraction": 0.978953293579361,
+              "pressure_pa": 101330.0,
+              "scaled_temperature_residual": 11.132805101281065,
+              "scaled_vapor_water_residual": 35.3753293579361,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_10133_005",
+              "liquid_water_mole_fraction": 0.2522,
+              "observed_temperature_k": 415.92,
+              "observed_vapor_water_mole_fraction": 0.7344,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 418.02925427933,
+              "predicted_vapor_water_mole_fraction": 0.9902768633305733,
+              "pressure_pa": 101330.0,
+              "scaled_temperature_residual": 2.1092542793300026,
+              "scaled_vapor_water_residual": 25.587686333057324,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_10133_006",
+              "liquid_water_mole_fraction": 0.2948,
+              "observed_temperature_k": 410.94,
+              "observed_vapor_water_mole_fraction": 0.7878,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 412.016442154551,
+              "predicted_vapor_water_mole_fraction": 0.9933433296712296,
+              "pressure_pa": 101330.0,
+              "scaled_temperature_residual": 1.076442154550989,
+              "scaled_vapor_water_residual": 20.554332967122967,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_10133_007",
+              "liquid_water_mole_fraction": 0.3322,
+              "observed_temperature_k": 406.83,
+              "observed_vapor_water_mole_fraction": 0.8312,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 407.52835936675996,
+              "predicted_vapor_water_mole_fraction": 0.9950746811534588,
+              "pressure_pa": 101330.0,
+              "scaled_temperature_residual": 0.6983593667599735,
+              "scaled_vapor_water_residual": 16.38746811534587,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_10133_008",
+              "liquid_water_mole_fraction": 0.4694,
+              "observed_temperature_k": 394.88,
+              "observed_vapor_water_mole_fraction": 0.9146,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 395.16572419573066,
+              "predicted_vapor_water_mole_fraction": 0.9980865796330568,
+              "pressure_pa": 101330.0,
+              "scaled_temperature_residual": 0.28572419573066554,
+              "scaled_vapor_water_residual": 8.348657963305683,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_10133_009",
+              "liquid_water_mole_fraction": 0.508,
+              "observed_temperature_k": 393.25,
+              "observed_vapor_water_mole_fraction": 0.9293,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 392.4916255865874,
+              "predicted_vapor_water_mole_fraction": 0.998490522729729,
+              "pressure_pa": 101330.0,
+              "scaled_temperature_residual": -0.7583744134125823,
+              "scaled_vapor_water_residual": 6.919052272972903,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_10133_010",
+              "liquid_water_mole_fraction": 0.6125,
+              "observed_temperature_k": 387.85,
+              "observed_vapor_water_mole_fraction": 0.9596,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 386.44757340526485,
+              "predicted_vapor_water_mole_fraction": 0.9991799215458573,
+              "pressure_pa": 101330.0,
+              "scaled_temperature_residual": -1.402426594735175,
+              "scaled_vapor_water_residual": 3.957992154585732,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_10133_011",
+              "liquid_water_mole_fraction": 0.8238,
+              "observed_temperature_k": 378.37,
+              "observed_vapor_water_mole_fraction": 0.9883,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 377.9973435523661,
+              "predicted_vapor_water_mole_fraction": 0.9997687989625301,
+              "pressure_pa": 101330.0,
+              "scaled_temperature_residual": -0.3726564476339149,
+              "scaled_vapor_water_residual": 1.146879896253017,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_10133_012",
+              "liquid_water_mole_fraction": 0.8615,
+              "observed_temperature_k": 376.88,
+              "observed_vapor_water_mole_fraction": 0.9914,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 376.8696139400402,
+              "predicted_vapor_water_mole_fraction": 0.9998252509517371,
+              "pressure_pa": 101330.0,
+              "scaled_temperature_residual": -0.010386059959785143,
+              "scaled_vapor_water_residual": 0.8425250951737184,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            },
+            {
+              "attempted": true,
+              "identity": "cai1996_10133_013",
+              "liquid_water_mole_fraction": 0.9517,
+              "observed_temperature_k": 374.09,
+              "observed_vapor_water_mole_fraction": 0.9974,
+              "outcome": "evaluated",
+              "predicted_temperature_k": 374.42859764869485,
+              "predicted_vapor_water_mole_fraction": 0.9999392230615902,
+              "pressure_pa": 101330.0,
+              "scaled_temperature_residual": 0.3385976486948721,
+              "scaled_vapor_water_residual": 0.2539223061590268,
+              "statuses": [
+                "ObservationStatus.Available",
+                "ObservationStatus.Available"
+              ]
+            }
+          ],
+          "held_scaled_mean_square": 396.0096822999829
+        }
+      ],
+      "gates": {
+        "bounds": true,
+        "optimizer_convergence": true,
+        "phase_success": true,
+        "uncertainty": true
+      },
+      "grouped_mean_score": 393.069914186589,
+      "grouped_standard_error": 2.93976811339391,
+      "scheme": "4C"
+    }
+  ],
+  "claim_boundary": "Cai MEA-water VLE only; the fitted k_ij is correlation evidence, not reactive-mixture or holdout validation",
+  "classification": "MODERN_REFIT",
+  "comparison": {
+    "base_commit": "f4075c0f",
+    "claim_changes": [
+      "4C now passes all fit gates and has a grouped score; its historical complete and first-fold fits stopped at the 350-460 K bracket. The retained witness in batch1-diagnosis.json lies above that bracket. 2B remains the only one-SE topology. This is candidate extrapolation, not physical validation."
+    ],
+    "failed_comparisons": 114,
+    "historical_engine_commit": "0def56adc38e133f5fcd1ad031649f41529a8888",
+    "historical_incomplete_fits": [
+      "4C complete",
+      "4C hold_66660.0"
+    ],
+    "old_selection": {
+      "falsification_condition": "reopen if a topology outside the retained one-SE set passes all gates under the frozen Cai rows and scoring, or if the selected fit loses phase success, interior bounds, or finite interior uncertainty",
+      "one_se_threshold": 11.057627979747423,
+      "selected_k_mea_water": -0.07352749874985018,
+      "selected_scheme": "2B",
+      "status": "selected_without_one_se_ambiguity",
+      "within_one_se": [
+        "2B"
+      ]
+    },
+    "old_wheel_sha256": "sha256:d59abedb354fbd163ea918d3cc96b607f6e8ce8ec7c1f730d12b9653a1541e5d",
+    "score_comparison_limits": "Held-pressure scores can change when training coordinates satisfy the same stopping criterion at different points. Native-at-historical-coordinate rows separate state/residual changes from parameter stopping differences; all comparison misses remain in the table.",
+    "table": "batch1-before-after.csv"
+  },
+  "domain": {
+    "historical_execution_candidate_temperature_max_k": 460.0,
+    "historical_temperature_bracket_k": [
+      350.0,
+      460.0
+    ],
+    "native_free_temperature": "unbounded driver solve; predictions above 393.15 K are candidate extrapolation; historical 350-460 K bracket is a comparison limit",
+    "override_reason": "the admitted Cai rows extend above the provisional packet's 393.15 K candidate range",
+    "packet_candidate_temperature_max_k": 393.15,
+    "pressure_pa": [
+      66660.0,
+      101330.0
+    ],
+    "qualification": "candidate_extrapolation above 393.15 K; no claim outside the admitted Cai observations",
+    "row_count": 25,
+    "selected_coordinate_evidence_range": "the admitted Cai observation range only",
+    "temperature_k": [
+      362.81,
+      431.85
+    ]
+  },
+  "engine_subject_commit": "f4075c0f56774c301ba21e5601aa351360c3a08f",
+  "engine_tree": "1fd143838503c2d764f1c237a03ccfc7f1ec36d4",
+  "fit": {
+    "bounds": [
+      -0.5,
+      0.5
+    ],
+    "coordinate": "pair/monoethanolamine/water/k_ij",
+    "groups": "leave-one-pressure-level-out",
+    "native_controls": {
+      "function_tolerance": 1e-15,
+      "gradient_tolerance": 1e-12,
+      "parameter_tolerance": "native default (1e-10; historical step cutoff was 1e-9)",
+      "reason": "diagnosed premature function stopping; frozen exact scaled-gradient criterion unchanged"
+    },
+    "origin": -0.052,
+    "origin_role": "frozen pre-selection numerical start; not a fitted result",
+    "residual_scales": {
+      "temperature_k": 1.0,
+      "vapor_water_mole_fraction": 0.01
+    },
+    "selection": "simplest eligible topology within the best grouped mean plus its standard error"
+  },
+  "inputs": {
+    "cai": {
+      "path": "analyses/2026-mea-parameter-estimation/inputs/source/library/observations/vapor_liquid_equilibrium/Cai_1996_MEA_H2O_VLE.csv",
+      "sha256": "sha256:c7857f045757881662f1836913e25216f808bc9fdcf5c74f3b4d03c76c134a8b"
+    },
+    "parameters": {
+      "path": "analyses/2026-mea-parameter-estimation/inputs/data/mea-co2-h2o-nine-species-estimation/1/parameters/parameters.json",
+      "sha256": "sha256:12e380a27eb615e25bae580f8c1ec852020879917b08fa16a5821ae76311550d"
+    },
+    "reactive_or_holdout_rows_used": 0,
+    "roles_used": [
+      "binary_model_selection",
+      "binary_training"
+    ],
+    "source": "Cai et al. (1996), Tables 2-3, DOI 10.1021/je960118o"
+  },
+  "schema": "epcsaft.validation.neutral-mea-water",
+  "schema_version": 1,
+  "selection": {
+    "falsification_condition": "reopen if a topology outside the retained one-SE set passes all gates under the frozen Cai rows and scoring, or if the selected fit loses phase success, interior bounds, or finite interior uncertainty",
+    "one_se_threshold": 11.057627771904283,
+    "selected_k_mea_water": -0.07352749585113796,
+    "selected_scheme": "2B",
+    "status": "selected_without_one_se_ambiguity",
+    "within_one_se": [
+      "2B"
+    ]
+  },
+  "wheel_sha256": "sha256:298a360e532f6f4c5e7ef70c5be45e8b9852310d1c388d6225c504714c3dc410"
+}

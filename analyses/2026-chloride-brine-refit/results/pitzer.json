@@ -1,0 +1,77 @@
+{
+  "reaktoro": "2.13.0",
+  "database": "PHREEQC pitzer.dat",
+  "water_molar_mass_kg_mol": 0.018016,
+  "buckets": [
+    {
+      "source": "dinane-mounir-2003",
+      "role": "mixture",
+      "quantity": "aw",
+      "I_bucket": "I<=3",
+      "count": 10,
+      "bias": 0.0004805201807178916,
+      "RMS": 0.0007162285910292038,
+      "maximum_absolute_error": 0.001677423099880393
+    },
+    {
+      "source": "dinane-mounir-2003",
+      "role": "mixture",
+      "quantity": "aw",
+      "I_bucket": "I>3",
+      "count": 9,
+      "bias": 0.0021940370053723144,
+      "RMS": 0.0025393094302033395,
+      "maximum_absolute_error": 0.004301106457461401
+    },
+    {
+      "source": "rard-miller-1987",
+      "role": "mixture",
+      "quantity": "Phi",
+      "I_bucket": "I<=3",
+      "count": 112,
+      "bias": 0.0002787051144377233,
+      "RMS": 0.0038297666104354514,
+      "maximum_absolute_error": 0.008072101141820665
+    },
+    {
+      "source": "rard-miller-1987",
+      "role": "mixture",
+      "quantity": "Phi",
+      "I_bucket": "I>3",
+      "count": 175,
+      "bias": -0.005917664232638074,
+      "RMS": 0.007315158631679846,
+      "maximum_absolute_error": 0.015353883867568419
+    },
+    {
+      "source": "robinson-bower-1966",
+      "role": "CaCl2 endpoint",
+      "quantity": "Phi",
+      "I_bucket": "",
+      "count": 16,
+      "bias": 0.0027038046305864413,
+      "RMS": 0.005158830907827699,
+      "maximum_absolute_error": 0.009375049683592707
+    },
+    {
+      "source": "robinson-bower-1966",
+      "role": "mixture",
+      "quantity": "Phi",
+      "I_bucket": "I<=3",
+      "count": 29,
+      "bias": 0.0006908337238568556,
+      "RMS": 0.0012732186215122013,
+      "maximum_absolute_error": 0.0024436537942041925
+    },
+    {
+      "source": "robinson-bower-1966",
+      "role": "mixture",
+      "quantity": "Phi",
+      "I_bucket": "I>3",
+      "count": 24,
+      "bias": -0.002947991929422439,
+      "RMS": 0.008472705753367105,
+      "maximum_absolute_error": 0.020144899738104183
+    }
+  ]
+}

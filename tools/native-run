@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# Rebuild one native program in this checkout's Meson build directory and run it,
+# whole or for one case (#317). Python is not involved; check-all.sh still gates review.
+# Run as: tools/native-run equilibrium_checks caloric-admission
+set -euo pipefail
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+# Meson regeneration finds python3 on PATH; it needs the .venv one with nanobind.
+export PATH="$PWD/.venv/bin:$PATH" NINJA="$PWD/tools/locked-ninja"
+(($# >= 1 && $# <= 2)) || { echo "usage: tools/native-run <program> [case|--list] | <meson test name>" >&2; exit 2; }
+[[ -f build/environment-wheel/build-jobs ]] || bash .codex/environments/setup.sh >&2
+build_dir="$(<build/environment-wheel/meson-build-dir)"
+if (($# == 1)); then
+    # A Meson test name as run-native-tests.sh prints it (equilibrium/Automatic_fast/e5-neutral) runs that test's program and arguments.
+    test_cmd="$(.venv/bin/meson introspect "$build_dir" --tests | .venv/bin/python -c '
+import json, os, sys
+print(*[" ".join([os.path.basename(t["cmd"][0]), *t["cmd"][1:]]) for t in json.load(sys.stdin) if t["name"] == sys.argv[1]])' "$1")"
+    [[ -z "$test_cmd" ]] || set -- $test_cmd
+fi
+.venv/bin/meson compile -C "$build_dir" -j "$(<build/environment-wheel/build-jobs)" "$1" >&2
+exec "$build_dir/$1" "${@:2}"

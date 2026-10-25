@@ -1,0 +1,1 @@
+Selected **$k_{Ba,\mathrm{water}}=-0.232931275287173$**, from initial **0**, with binary cost **2.3424372780019**. The cost increment is **0.00023424372780019001**, and **$h=0.0005743927386217167$**, against limit **0.051**. Maximum comparable-endpoint separation is **2.430028400723927e-12**, against limit **0.051**.

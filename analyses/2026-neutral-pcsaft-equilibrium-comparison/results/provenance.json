@@ -1,0 +1,101 @@
+{
+  "case": {
+    "component": "propane",
+    "temperature_K": 300.0,
+    "m": 2.002,
+    "sigma_Angstrom": 3.6184,
+    "epsilon_over_k_K": 208.11,
+    "association": false,
+    "polarity": false,
+    "electrolyte": false
+  },
+  "commands": [
+    [
+      "/home/tnnrpolley21/.codex/worktrees/7a8a/ePC-SAFT-greenfield/.venv/bin/python",
+      "/home/tnnrpolley21/.codex/worktrees/7a8a/ePC-SAFT-greenfield/analyses/2026-neutral-pcsaft-equilibrium-comparison/scripts/collect_results.py",
+      "engine"
+    ],
+    [
+      "/tmp/epcsaft-equilibrium-comparison/bin/python",
+      "/home/tnnrpolley21/.codex/worktrees/7a8a/ePC-SAFT-greenfield/analyses/2026-neutral-pcsaft-equilibrium-comparison/scripts/collect_results.py",
+      "python"
+    ],
+    [
+      "/tmp/teqp-python312/bin/python",
+      "/home/tnnrpolley21/.codex/worktrees/7a8a/ePC-SAFT-greenfield/analyses/2026-neutral-pcsaft-equilibrium-comparison/scripts/collect_results.py",
+      "teqp"
+    ]
+  ],
+  "records": [
+    {
+      "implementation": "ePC-SAFT",
+      "solver": "Engine saturation + solve_equilibrium (max_abs_residual=1.834e-13)",
+      "temperature_K": 300.0,
+      "pressure_Pa": 998660.8957396769,
+      "rho_liquid_mol_m3": 11100.251233209596,
+      "rho_vapor_mol_m3": 482.51212681502574,
+      "phase_pressure_rel_error": null,
+      "source": {
+        "path": "/home/tnnrpolley21/.codex/worktrees/7a8a/ePC-SAFT-greenfield",
+        "commit": "2f44dfc171dec80cf7a28c699039326a4b74bf7f",
+        "dirty": true
+      }
+    },
+    {
+      "implementation": "FeOs",
+      "solver": "PhaseEquilibrium.pure",
+      "temperature_K": 300.0,
+      "pressure_Pa": 998660.8955481462,
+      "rho_liquid_mol_m3": 11100.251234176576,
+      "rho_vapor_mol_m3": 482.5121267017387,
+      "phase_pressure_rel_error": 1.7683884890128453e-13,
+      "source": {
+        "path": "/home/tnnrpolley21/Workspaces/Engineering/Forks-Clones/feos",
+        "commit": "a508463cb4a41a15411cb90e9b4146c44b47d688",
+        "dirty": true
+      }
+    },
+    {
+      "implementation": "ThermoPack",
+      "solver": "pcsaft.get_pure_fluid_saturation_curve",
+      "temperature_K": 300.0,
+      "pressure_Pa": 998660.895732584,
+      "rho_liquid_mol_m3": 11100.251233209041,
+      "rho_vapor_mol_m3": 482.51212681063595,
+      "phase_pressure_rel_error": null,
+      "source": {
+        "path": "/home/tnnrpolley21/Workspaces/Engineering/Forks-Clones/thermopack",
+        "commit": "d68c794c7342bfc6938eb424a1fbb88b7780b738",
+        "dirty": false
+      }
+    },
+    {
+      "implementation": "teqp",
+      "solver": "PCSAFTEOS.pure_VLE_T",
+      "temperature_K": 300.0,
+      "pressure_Pa": 998660.8957398997,
+      "rho_liquid_mol_m3": 11100.25123320962,
+      "rho_vapor_mol_m3": 482.5121268150332,
+      "phase_pressure_rel_error": 1.0258285234228744e-14,
+      "source": {
+        "path": "/home/tnnrpolley21/Workspaces/Engineering/Forks-Clones/teqp",
+        "commit": "5f62a6f515d517e39c3fb035c11a03524ffa3ad6",
+        "dirty": false
+      }
+    },
+    {
+      "implementation": "Clapeyron",
+      "solver": "saturation_pressure(PCSAFT)",
+      "temperature_K": 300.0,
+      "pressure_Pa": 998660.8946430682,
+      "rho_liquid_mol_m3": 11100.251233071715,
+      "rho_vapor_mol_m3": 482.51212615670687,
+      "phase_pressure_rel_error": null,
+      "source": {
+        "path": "/home/tnnrpolley21/Workspaces/Engineering/Forks-Clones/Clapeyron.jl",
+        "commit": "6b8a694749bc5a7e427c20d9f1dfc6002d1e1194",
+        "dirty": true
+      }
+    }
+  ]
+}

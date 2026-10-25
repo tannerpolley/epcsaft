@@ -1,0 +1,92 @@
+---
+title: "Cleeton CO₂/H₂S in MDEA: bounded model replay and physical discrepancies"
+format: html
+execute:
+  enabled: false
+---
+
+The retained native translation follows much of Cleeton's Figure 16 under the
+primary convention, with unresolved curve mismatches and large deviations from
+Dicko's measured gas partial pressures. This is useful evidence for a bounded
+model replay and its limits; it is unsuitable as an accurate absorption-prediction
+success.
+
+**Claim class:** reproduction of a published model, numerical verification of
+its translation, and fixed-parameter physical comparison. No ternary or
+quaternary parameter is fitted to Dicko in this replay or the source declaration.
+Inherited pure/binary fitted parameters remain calibration evidence. Model-curve
+agreement does not establish physical validation.
+
+## Question, declarations and data roles
+
+How closely does the declared native model reproduce Cleeton Figure 16 and its
+reported deviations against Dicko Table 1? The
+[README](README.md) specifies the printed pure and binary
+parameters, water/MDEA association sites, one-segment ions, reaction constants,
+standard states, inferred water-only permittivity and omitted pressure term.
+The native declaration is CH₄-free, while the source Dicko states contain methane.
+This difference limits direct physical interpretation of their comparison.
+
+The primary lane uses the declared reduced ion diameter for both packing and
+Debye–Hückel terms. Diagnostic lanes use the full diameter or change the MDEA
+reference. Those alternatives are different model readings, not extra
+experimental observations. The primary curve check uses caption loadings.
+Using Dicko group loadings is a separate interpretation added after the first
+run, and does not replace the primary check.
+
+## Retained model and measurement comparisons
+
+![Retained Cleeton Figure 16 replay: digitized source model curves are lines, Dicko observations are open symbols, and discrete native model evaluations are crosses. Colours distinguish second-gas loading groups; the source curve states are not fully printed.](results/rendered/cleeton-2020-figure-16-native.png)
+
+{{< include figures/notebook-metrics.md >}}
+
+The primary Figure 16 curve checks retain both matches and misses. The
+group-loading interpretation reduces systematic bias but still leaves
+unresolved misses; it was not a successful full reproduction of all curves.
+The exact row-level logarithmic deviations and their individual criteria are
+in `results/data/cleeton-2020-figure-16-gate.csv`. The tolerance includes
+digitization and loading-reading allowances, rather than measurement uncertainty.
+
+The ordinary average absolute relative deviation divides each absolute pressure
+difference by the measured pressure. The symmetric deviation instead divides
+twice the absolute difference by the sum of model and measured pressure.
+Cleeton does not print its formula. The symmetric reading was inferred after
+the first run from the digitized paper curves, independently of the native
+values. Its closer match to the published deviations does not erase the
+failure under the originally specified ordinary formula or the large physical
+disagreement in either metric. The selected CO₂ and H₂S cohorts differ, as the
+retained summary's Figure 16 subset names specify.
+
+## Component checks, uncertainty and limitations
+
+{{< include figures/notebook-ladder.md >}}
+
+The ladder uses digitized subsets rather than the complete original fitting
+datasets, so its comparison with published aggregate deviations is approximate.
+The pure-MDEA density discrepancy remains despite the bounded alternative
+declarations described in the README. Agreement with an independent code on
+the same equations is numerical verification, not evidence that the source's
+unavailable code uses precisely those equations or parameters.
+
+The source code and supporting information are unavailable. Second-gas curve
+loadings, the deviation formula and water-permittivity transfer remain inferred.
+The pressure term and the printed reaction-constant digit are not replayed.
+Figure digitization is uncertain; no full predictive uncertainty is established.
+Loaded liquid density is a reported model output without measured-density
+validation. The optional Kuranov comparison was not run, and the reaction
+correlation's admitted temperature range constrains extensions.
+
+## Provenance and presentation boundary
+
+`results/data/cleeton-2020-summary.json` retains the wheel identity and per-lane
+metrics; the Dicko-row and gate CSVs retain the physical and curve operands.
+The older fixed-topology output contains unavailable parameter-construction
+attempts and supplies no numerical result to this notebook. The retained Figure
+16 PNG is reused without modifying its source files.
+
+`nice -n 10 .venv/bin/python tools/present-paper-evidence.py` formats the retained
+summary into the included tables without importing the Engine. The readiness
+finding is batch C of the issue-501 promotion review. The earlier Supported
+model-replay judgment is bounded by the stated unresolved discrepancies; this
+new notebook presentation has not been independently reviewed or promoted for
+manuscript use.

@@ -1,0 +1,46 @@
+\section{Limitations and conclusions}
+\label{sec:conclusions}
+% P:conclusions-01
+The package connects a selected electrolyte Helmholtz energy to state properties, phase and reaction equilibrium, exact solved-state derivatives and parameter estimation in one native calculation.
+The physical comparisons span saturation, mixture phase behavior, electrolyte activities, solvation and reacting liquid splits, with calibration and withheld prediction distinguished at the point of use.
+They support useful descriptions in selected domains and also expose unsuccessful mixture transfer and large reactive-amine pressure errors.
+Numerical agreement with independent matched implementations and refined references establishes the bounded correctness of the calculation separately from those physical-model errors.
+The settler example shows that the solved-state derivatives reach an equation-oriented model without changing their values.
+For serial calls on the measured host and cases, the fixed-density property bundle costs less than in FeOs and Clapeyron.jl, the two declared mixture equilibria take times between those of the two comparators, propane saturation and explicit discovery cost more, and density closure against Clapeyron.jl is a tie within the observed spread (Section~\ref{sec:performance}).
+Exact first-order actions cost less than the package's central differences on the two solved states tested, with the central solve excluded; no overall speed advantage is claimed.
+
+% P:conclusions-02
+Several mathematical limits apply to every use.
+A declared solve returns a stationary state on fixed supports, and a finite phase search supplies no global stability certificate or complete root enumeration.
+Derivatives require a regular branch and cannot cross phase appearance, a singular pressure inverse, or an unavailable ionic insertion at zero ionic strength.
+Local fitting and local covariance do not establish unique physical parameters, and predictive uncertainty has not been validated.
+The corrected Born and ion-suppression values lack an independent same-equation code check, even where derivative and identity checks are available.
+Mathematical input admission is independent of the physical applicability of a source parameter set.
+No claim is made for a polar contribution combined with ions.
+
+% P:conclusions-03
+The physical evidence also leaves specific gaps.
+It does not establish MEA accuracy, full lithium-extraction accuracy, measured solid equilibria or physical caloric accuracy.
+Electrolyte temperature dependence has only bounded source comparisons, and electrolyte vapor--liquid equilibrium with speciation lacks a qualifying physical accuracy demonstration here.
+The MDEA failures, mixed-brine exception, source-line ambiguities and mixed-solvent fitting overlap prevent general transferability claims.
+Within these limits, a user can compute electrolyte phase and reaction equilibria and their exact derivatives from one parameter record, check the numerical solution against the verification of Section~\ref{sec:verification}, and judge the physical accuracy for an intended use from the comparisons of Section~\ref{sec:physical}.
+
+\section*{Data and code availability}
+% P:statements-01
+ePC-SAFT is distributed under the GNU General Public License, version~3.
+The source code and parameter records are available as release \todo{release version} at \todo{public repository address and archive identifier}.
+The numerical tables behind the figures are in the \texttt{analyses/} directory of that release, in each study's \texttt{results/} folder.
+
+\section*{Funding and competing interests}
+% P:statements-02
+This work received no external funding.
+The author declares no competing interests.
+
+\section*{Author contributions}
+% P:statements-03
+T.~W. Polley: conceptualization, methodology, software, formal analysis, investigation, data curation, visualization, writing (original draft, review and editing).
+
+\section*{Use of AI assistance}
+% P:statements-04
+The author used AI coding and writing assistants, Claude models (Anthropic) and GPT models (OpenAI), to write and review source code, to run and check calculations, and to draft and revise this manuscript.
+The author reviewed all code, results and text, and takes full responsibility for the content of this article.

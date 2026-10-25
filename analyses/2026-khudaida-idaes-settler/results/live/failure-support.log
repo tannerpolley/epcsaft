@@ -1,0 +1,4 @@
+PROBE_JSON={"case": "support", "error": "\"epcsaft_equilibrium:defining_equations_not_satisfied:phase[0].amount[0]", "nonfinite_outputs": true, "cache_recovery_fgh": true}
+epcsaft_equilibrium diagnostic: invalid ASL affine feed/phase contract
+epcsaft_equilibrium failure: epcsaft_equilibrium:defining_equations_not_satisfied:phase[0].amount[0] controls=0.71989465130214836,0.033778333292233328,0.21864518731791907,0.027681828087699221
+epcsaft_equilibrium prepared record 1 of at most 16

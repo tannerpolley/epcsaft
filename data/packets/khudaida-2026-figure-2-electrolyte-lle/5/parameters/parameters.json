@@ -1,0 +1,1308 @@
+{
+  "schema": "epcsaft.parameters",
+  "schema_version": 1,
+  "document_id": "khudaida-2026-figure-2-electrolyte-lle",
+  "document_version": 5,
+  "purpose": "user-provided",
+  "sources": [
+    {
+      "source_id": "khudaida-et-al-2026",
+      "citation": "Khudaida, S. H.; Rahayu, S. D.; Figiel, P.; Held, C.; Tiwikrama, A. H. Upgrading the Extraction of Ethanol and Isobutanol from an Aqueous Solution in the Presence of Sodium Chloride with Molecular Interaction Studies. Journal of Chemical & Engineering Data 2026, 71, 708-717.",
+      "doi": "10.1021/acs.jced.5c00780",
+      "use_basis": "Figure 2 and Tables 2, 5, 6, and 7 model inputs for the 293.15 K, 0.1 MPa, 5 wt% NaCl electrolyte-LLE challenge"
+    },
+    {
+      "source_id": "figiel-yu-held-2025",
+      "citation": "Figiel, P.; Yu, G.; Held, C. Predicting Thermodynamic Properties of Ions in Single Solvents and in Mixed Solvents Using a Modified Born Term within the ePC-SAFT Framework. Industrial & Engineering Chemistry Research 2025, 64, 9406-9418.",
+      "doi": "10.1021/acs.iecr.5c00475",
+      "use_basis": "Khudaida cited ref. 21 convention that the corrected Born SSM+DS solvation factor equals one for ions"
+    },
+    {
+      "source_id": "held-et-al-2014",
+      "citation": "Held, C.; Reschke, T.; Mohammad, S.; Luza, A.; Sadowski, G. ePC-SAFT revised. Chemical Engineering Research and Design 2014, 92, 2884-2897.",
+      "doi": "10.1016/j.cherd.2014.05.017",
+      "use_basis": "Khudaida cited ref. 30 spherical-ion structural convention"
+    },
+    {
+      "source_id": "gross-sadowski-2002",
+      "citation": "Gross, J.; Sadowski, G. Application of the Perturbed-Chain SAFT Equation of State to Associating Systems. Industrial & Engineering Chemistry Research 2002, 41, 5510-5515.",
+      "doi": "10.1021/ie010954d",
+      "use_basis": "Eqs. 2-3 cross-association combining rules evaluated once at 293.15 K with no binary correction parameter"
+    }
+  ],
+  "domains": [
+    {
+      "domain_id": "khudaida-293-15-k-0-1-mpa",
+      "kind": "reported-conditions",
+      "temperature_min": {
+        "magnitude": 293.15,
+        "unit": "kelvin"
+      },
+      "temperature_max": {
+        "magnitude": 293.15,
+        "unit": "kelvin"
+      },
+      "pressure_min": {
+        "magnitude": 0.1,
+        "unit": "megapascal"
+      },
+      "pressure_max": {
+        "magnitude": 0.1,
+        "unit": "megapascal"
+      }
+    }
+  ],
+  "components": [
+    {
+      "component_id": "chloride-anion",
+      "aliases": [],
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 35.45,
+            "unit": "gram / mole"
+          },
+          "provenance": {
+            "source_id": "khudaida-et-al-2026",
+            "locator": "Table 2 NaCl identity split into explicit runtime ions by the retained compact source packet; the rendered table publishes only salt MW",
+            "domain_id": "khudaida-293-15-k-0-1-mpa"
+          }
+        },
+        "charge_number": {
+          "value": {
+            "magnitude": -1,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "khudaida-et-al-2026",
+            "locator": "Table 5 Cl- species identity",
+            "domain_id": "khudaida-293-15-k-0-1-mpa"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/chloride-anion/born_diameter",
+          "family": "born_diameter",
+          "value": {
+            "magnitude": 4.1,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "khudaida-et-al-2026",
+            "locator": "Table 5, Cl- d_i^Born row",
+            "domain_id": "khudaida-293-15-k-0-1-mpa"
+          }
+        },
+        {
+          "identity": "component/chloride-anion/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 2.42528,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "khudaida-et-al-2026",
+            "locator": "Table 5, Cl- sigma_i row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
+            "domain_id": "khudaida-293-15-k-0-1-mpa"
+          }
+        },
+        {
+          "identity": "component/chloride-anion/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 170.0,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "khudaida-et-al-2026",
+            "locator": "Table 5, Cl- u_i/k_B row",
+            "domain_id": "khudaida-293-15-k-0-1-mpa"
+          }
+        },
+        {
+          "identity": "component/chloride-anion/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 2.42528,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "khudaida-et-al-2026",
+            "locator": "Table 5, Cl- sigma_i row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
+            "domain_id": "khudaida-293-15-k-0-1-mpa"
+          }
+        },
+        {
+          "identity": "component/chloride-anion/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "held-et-al-2014",
+            "locator": "Khudaida cited ref 30, spherical-ion structural convention; the rendered Khudaida Table 5 cell is blank",
+            "domain_id": "khudaida-293-15-k-0-1-mpa"
+          }
+        },
+        {
+          "identity": "component/chloride-anion/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 2.756,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "khudaida-et-al-2026",
+            "locator": "Table 5, Cl- sigma_i row",
+            "domain_id": "khudaida-293-15-k-0-1-mpa"
+          }
+        },
+        {
+          "identity": "component/chloride-anion/solvation_factor",
+          "family": "solvation_factor",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Khudaida cited ref 21 corrected Born SSM+DS convention: f_k=1 for ions; the rendered Khudaida Table 5 cell is blank",
+            "domain_id": "khudaida-293-15-k-0-1-mpa"
+          }
+        }
+      ],
+      "name": "chloride anion",
+      "formula": "Cl-"
+    },
+    {
+      "component_id": "ethanol",
+      "aliases": [],
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 46.068,
+            "unit": "gram / mole"
+          },
+          "provenance": {
+            "source_id": "khudaida-et-al-2026",
+            "locator": "Table 2, ethanol MW row",
+            "domain_id": "khudaida-293-15-k-0-1-mpa"
+          }
+        },
+        "charge_number": {
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "khudaida-et-al-2026",
+            "locator": "Table 5 identifies ethanol as a solvent and separately lists Na+ and Cl-",
+            "domain_id": "khudaida-293-15-k-0-1-mpa"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/ethanol/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 198.24,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "khudaida-et-al-2026",
+            "locator": "Table 5, ethanol u_i/k_B row",
+            "domain_id": "khudaida-293-15-k-0-1-mpa"
+          }
+        },
+        {
+          "identity": "component/ethanol/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 2.3827,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "khudaida-et-al-2026",
+            "locator": "Table 5, ethanol m_i^seg row",
+            "domain_id": "khudaida-293-15-k-0-1-mpa"
+          }
+        },
+        {
+          "identity": "component/ethanol/solvation_factor",
+          "family": "solvation_factor",
+          "value": {
+            "magnitude": 1.6,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "khudaida-et-al-2026",
+            "locator": "Table 5, ethanol f_k row",
+            "domain_id": "khudaida-293-15-k-0-1-mpa"
+          }
+        }
+      ],
+      "name": "ethanol",
+      "cas": "64-17-5",
+      "formula": "C2H6O"
+    },
+    {
+      "component_id": "isobutanol",
+      "aliases": [
+        "isobutyl alcohol",
+        "Butanol"
+      ],
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 74.1216,
+            "unit": "gram / mole"
+          },
+          "provenance": {
+            "source_id": "khudaida-et-al-2026",
+            "locator": "Table 2, isobutanol MW row",
+            "domain_id": "khudaida-293-15-k-0-1-mpa"
+          }
+        },
+        "charge_number": {
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "khudaida-et-al-2026",
+            "locator": "Table 5 identifies isobutanol as a solvent and separately lists Na+ and Cl-",
+            "domain_id": "khudaida-293-15-k-0-1-mpa"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/isobutanol/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 257.13,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "khudaida-et-al-2026",
+            "locator": "Table 5, isobutanol u_i/k_B row",
+            "domain_id": "khudaida-293-15-k-0-1-mpa"
+          }
+        },
+        {
+          "identity": "component/isobutanol/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 2.844,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "khudaida-et-al-2026",
+            "locator": "Table 5, isobutanol m_i^seg row",
+            "domain_id": "khudaida-293-15-k-0-1-mpa"
+          }
+        },
+        {
+          "identity": "component/isobutanol/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 3.5561,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "khudaida-et-al-2026",
+            "locator": "Table 5, isobutanol sigma_i row",
+            "domain_id": "khudaida-293-15-k-0-1-mpa"
+          }
+        },
+        {
+          "identity": "component/isobutanol/solvation_factor",
+          "family": "solvation_factor",
+          "value": {
+            "magnitude": 1.5,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "khudaida-et-al-2026",
+            "locator": "Table 5, isobutanol f_k row",
+            "domain_id": "khudaida-293-15-k-0-1-mpa"
+          }
+        }
+      ],
+      "name": "isobutanol",
+      "cas": "78-83-1",
+      "formula": "C4H10O"
+    },
+    {
+      "component_id": "sodium-cation",
+      "aliases": [],
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 22.98,
+            "unit": "gram / mole"
+          },
+          "provenance": {
+            "source_id": "khudaida-et-al-2026",
+            "locator": "Table 2 NaCl identity split into explicit runtime ions by the retained compact source packet; the rendered table publishes only salt MW",
+            "domain_id": "khudaida-293-15-k-0-1-mpa"
+          }
+        },
+        "charge_number": {
+          "value": {
+            "magnitude": 1,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "khudaida-et-al-2026",
+            "locator": "Table 5 Na+ species identity",
+            "domain_id": "khudaida-293-15-k-0-1-mpa"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/sodium-cation/born_diameter",
+          "family": "born_diameter",
+          "value": {
+            "magnitude": 3.445,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "khudaida-et-al-2026",
+            "locator": "Table 5, Na+ d_i^Born row",
+            "domain_id": "khudaida-293-15-k-0-1-mpa"
+          }
+        },
+        {
+          "identity": "component/sodium-cation/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 2.484416,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "khudaida-et-al-2026",
+            "locator": "Table 5, Na+ sigma_i row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
+            "domain_id": "khudaida-293-15-k-0-1-mpa"
+          }
+        },
+        {
+          "identity": "component/sodium-cation/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 230.0,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "khudaida-et-al-2026",
+            "locator": "Table 5, Na+ u_i/k_B row",
+            "domain_id": "khudaida-293-15-k-0-1-mpa"
+          }
+        },
+        {
+          "identity": "component/sodium-cation/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 2.484416,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "khudaida-et-al-2026",
+            "locator": "Table 5, Na+ sigma_i row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
+            "domain_id": "khudaida-293-15-k-0-1-mpa"
+          }
+        },
+        {
+          "identity": "component/sodium-cation/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "held-et-al-2014",
+            "locator": "Khudaida cited ref 30, spherical-ion structural convention; the rendered Khudaida Table 5 cell is blank",
+            "domain_id": "khudaida-293-15-k-0-1-mpa"
+          }
+        },
+        {
+          "identity": "component/sodium-cation/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 2.8232,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "khudaida-et-al-2026",
+            "locator": "Table 5, Na+ sigma_i row",
+            "domain_id": "khudaida-293-15-k-0-1-mpa"
+          }
+        },
+        {
+          "identity": "component/sodium-cation/solvation_factor",
+          "family": "solvation_factor",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Khudaida cited ref 21 corrected Born SSM+DS convention: f_k=1 for ions; the rendered Khudaida Table 5 cell is blank",
+            "domain_id": "khudaida-293-15-k-0-1-mpa"
+          }
+        }
+      ],
+      "name": "sodium cation",
+      "formula": "Na+"
+    },
+    {
+      "component_id": "water",
+      "aliases": [],
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 18.01528,
+            "unit": "gram / mole"
+          },
+          "provenance": {
+            "source_id": "khudaida-et-al-2026",
+            "locator": "Table 2, water MW row",
+            "domain_id": "khudaida-293-15-k-0-1-mpa"
+          }
+        },
+        "charge_number": {
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "khudaida-et-al-2026",
+            "locator": "Table 5 identifies water as a solvent and separately lists Na+ and Cl-",
+            "domain_id": "khudaida-293-15-k-0-1-mpa"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/water/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 353.95,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "khudaida-et-al-2026",
+            "locator": "Table 5, water u_i/k_B row",
+            "domain_id": "khudaida-293-15-k-0-1-mpa"
+          }
+        },
+        {
+          "identity": "component/water/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 1.2047,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "khudaida-et-al-2026",
+            "locator": "Table 5, water m_i^seg row",
+            "domain_id": "khudaida-293-15-k-0-1-mpa"
+          }
+        },
+        {
+          "identity": "component/water/solvation_factor",
+          "family": "solvation_factor",
+          "value": {
+            "magnitude": 1.5,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "khudaida-et-al-2026",
+            "locator": "Table 5, water f_k row",
+            "domain_id": "khudaida-293-15-k-0-1-mpa"
+          }
+        }
+      ],
+      "name": "water",
+      "cas": "7732-18-5",
+      "formula": "H2O"
+    }
+  ],
+  "pairs": [
+    {
+      "component_id_a": "chloride-anion",
+      "component_id_b": "ethanol",
+      "coefficients": [
+        {
+          "identity": "pair/chloride-anion/ethanol/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0.8,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "khudaida-et-al-2026",
+            "locator": "Table 7, ethanol/Cl- row, cited ref 31",
+            "domain_id": "khudaida-293-15-k-0-1-mpa"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "chloride-anion",
+      "component_id_b": "isobutanol",
+      "coefficients": [
+        {
+          "identity": "pair/chloride-anion/isobutanol/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "khudaida-et-al-2026",
+            "locator": "Table 7, published isobutanol/Cl- zero cell; no cited origin supplied",
+            "domain_id": "khudaida-293-15-k-0-1-mpa"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "chloride-anion",
+      "component_id_b": "sodium-cation",
+      "coefficients": [
+        {
+          "identity": "pair/chloride-anion/sodium-cation/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0.317,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "khudaida-et-al-2026",
+            "locator": "Table 7, Na+/Cl- row, cited ref 30",
+            "domain_id": "khudaida-293-15-k-0-1-mpa"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "chloride-anion",
+      "component_id_b": "water",
+      "coefficients": [
+        {
+          "identity": "pair/chloride-anion/water/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": -0.3,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "khudaida-et-al-2026",
+            "locator": "Table 7, water/Cl- row, cited ref 31",
+            "domain_id": "khudaida-293-15-k-0-1-mpa"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "ethanol",
+      "component_id_b": "isobutanol",
+      "coefficients": [
+        {
+          "identity": "pair/ethanol/isobutanol/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0.00154,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "khudaida-et-al-2026",
+            "locator": "Table 7, ethanol/isobutanol row, cited ref 19",
+            "domain_id": "khudaida-293-15-k-0-1-mpa"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "ethanol",
+      "component_id_b": "sodium-cation",
+      "coefficients": [
+        {
+          "identity": "pair/ethanol/sodium-cation/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0.05,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "khudaida-et-al-2026",
+            "locator": "Table 7, ethanol/Na+ row, cited ref 31",
+            "domain_id": "khudaida-293-15-k-0-1-mpa"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "ethanol",
+      "component_id_b": "water",
+      "coefficients": [
+        {
+          "identity": "pair/ethanol/water/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": -0.06167,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "khudaida-et-al-2026",
+            "locator": "Table 7, ethanol/water row, cited ref 39",
+            "domain_id": "khudaida-293-15-k-0-1-mpa"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "isobutanol",
+      "component_id_b": "sodium-cation",
+      "coefficients": [
+        {
+          "identity": "pair/isobutanol/sodium-cation/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "khudaida-et-al-2026",
+            "locator": "Table 7, published isobutanol/Na+ zero cell; no cited origin supplied",
+            "domain_id": "khudaida-293-15-k-0-1-mpa"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "isobutanol",
+      "component_id_b": "water",
+      "coefficients": [
+        {
+          "identity": "pair/isobutanol/water/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": -0.0071,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "khudaida-et-al-2026",
+            "locator": "Table 7, water/isobutanol row, cited ref 34",
+            "domain_id": "khudaida-293-15-k-0-1-mpa"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "sodium-cation",
+      "component_id_b": "water",
+      "coefficients": [
+        {
+          "identity": "pair/sodium-cation/water/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": -0.3,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "khudaida-et-al-2026",
+            "locator": "Table 7, water/Na+ row, cited ref 31",
+            "domain_id": "khudaida-293-15-k-0-1-mpa"
+          }
+        }
+      ]
+    }
+  ],
+  "model_families": [
+    {
+      "family_id": "model/association",
+      "kind": "association",
+      "choice": "general-site",
+      "provenance": {
+        "source_id": "khudaida-et-al-2026",
+        "locator": "Table 5, water 2B association scheme expanded as one A site",
+        "domain_id": "khudaida-293-15-k-0-1-mpa"
+      }
+    },
+    {
+      "family_id": "model/base",
+      "kind": "base",
+      "choice": "pc-saft",
+      "provenance": {
+        "source_id": "khudaida-et-al-2026",
+        "locator": "Table 5, water m_i^seg row",
+        "domain_id": "khudaida-293-15-k-0-1-mpa"
+      }
+    },
+    {
+      "family_id": "model/electrolyte",
+      "kind": "electrolyte",
+      "choice": "born",
+      "c_shell": 1.0,
+      "c_dielectric": 1.0,
+      "provenance": {
+        "source_id": "khudaida-et-al-2026",
+        "locator": "Table 5 identifies water as a solvent and separately lists Na+ and Cl-",
+        "domain_id": "khudaida-293-15-k-0-1-mpa"
+      }
+    },
+    {
+      "family_id": "model/relative_permittivity",
+      "kind": "permittivity",
+      "choice": "ion-fraction-suppression",
+      "provenance": {
+        "source_id": "khudaida-et-al-2026",
+        "locator": "Eq. 4, bulk relative-permittivity formulation",
+        "domain_id": "khudaida-293-15-k-0-1-mpa"
+      }
+    }
+  ],
+  "model_coefficients": [
+    {
+      "identity": "model/relative_permittivity/ion_fraction_suppression_coefficient",
+      "family": "ion_fraction_suppression_coefficient",
+      "value": {
+        "magnitude": 7.01,
+        "unit": "dimensionless"
+      },
+      "provenance": {
+        "source_id": "khudaida-et-al-2026",
+        "locator": "Eq. 4, denominator coefficient multiplying x_ion",
+        "domain_id": "khudaida-293-15-k-0-1-mpa"
+      }
+    },
+    {
+      "identity": "model/relative_permittivity/ionic_region_relative_permittivity",
+      "family": "ionic_region_relative_permittivity",
+      "value": {
+        "magnitude": 8.0,
+        "unit": "dimensionless"
+      },
+      "provenance": {
+        "source_id": "khudaida-et-al-2026",
+        "locator": "Table 6, NaCl ions dielectric constant row",
+        "domain_id": "khudaida-293-15-k-0-1-mpa"
+      }
+    }
+  ],
+  "correlations": [
+    {
+      "correlation_id": "component/ethanol/relative_permittivity/constant",
+      "component_id": "ethanol",
+      "family": "relative_permittivity",
+      "form": "constant",
+      "independent_variables": [],
+      "constant": {
+        "identity": "component/ethanol/relative_permittivity/constant/constant",
+        "value": {
+          "magnitude": 24.88,
+          "unit": "dimensionless"
+        }
+      },
+      "provenance": {
+        "source_id": "khudaida-et-al-2026",
+        "locator": "Table 6, ethanol row",
+        "domain_id": "khudaida-293-15-k-0-1-mpa"
+      }
+    },
+    {
+      "correlation_id": "component/ethanol/segment_diameter/constant",
+      "component_id": "ethanol",
+      "family": "segment_diameter",
+      "form": "constant",
+      "independent_variables": [],
+      "constant": {
+        "identity": "component/ethanol/segment_diameter/constant/constant",
+        "value": {
+          "magnitude": 3.1771,
+          "unit": "angstrom"
+        }
+      },
+      "provenance": {
+        "source_id": "khudaida-et-al-2026",
+        "locator": "Table 5, ethanol sigma_i row",
+        "domain_id": "khudaida-293-15-k-0-1-mpa"
+      }
+    },
+    {
+      "correlation_id": "component/isobutanol/relative_permittivity/constant",
+      "component_id": "isobutanol",
+      "family": "relative_permittivity",
+      "form": "constant",
+      "independent_variables": [],
+      "constant": {
+        "identity": "component/isobutanol/relative_permittivity/constant/constant",
+        "value": {
+          "magnitude": 17.2,
+          "unit": "dimensionless"
+        }
+      },
+      "provenance": {
+        "source_id": "khudaida-et-al-2026",
+        "locator": "Table 6, isobutanol row",
+        "domain_id": "khudaida-293-15-k-0-1-mpa"
+      }
+    },
+    {
+      "correlation_id": "component/water/relative_permittivity/constant",
+      "component_id": "water",
+      "family": "relative_permittivity",
+      "form": "constant",
+      "independent_variables": [],
+      "constant": {
+        "identity": "component/water/relative_permittivity/constant/constant",
+        "value": {
+          "magnitude": 78.09,
+          "unit": "dimensionless"
+        }
+      },
+      "provenance": {
+        "source_id": "khudaida-et-al-2026",
+        "locator": "Table 6, water row",
+        "domain_id": "khudaida-293-15-k-0-1-mpa"
+      }
+    },
+    {
+      "correlation_id": "component/water/segment_diameter/constant-plus-sum-of-exponentials",
+      "component_id": "water",
+      "family": "segment_diameter",
+      "form": "constant-plus-sum-of-exponentials",
+      "independent_variables": [
+        "temperature"
+      ],
+      "constant": {
+        "identity": "component/water/segment_diameter/constant-plus-sum-of-exponentials/constant",
+        "value": {
+          "magnitude": 2.7927,
+          "unit": "angstrom"
+        }
+      },
+      "provenance": {
+        "source_id": "khudaida-et-al-2026",
+        "locator": "Table 5 footnote a, water sigma(T) correlation",
+        "domain_id": "khudaida-293-15-k-0-1-mpa"
+      },
+      "terms": [
+        {
+          "amplitude": {
+            "identity": "component/water/segment_diameter/constant-plus-sum-of-exponentials/term-0/amplitude",
+            "value": {
+              "magnitude": 10.11,
+              "unit": "angstrom"
+            }
+          },
+          "exponent_coefficient": {
+            "identity": "component/water/segment_diameter/constant-plus-sum-of-exponentials/term-0/exponent_coefficient",
+            "value": {
+              "magnitude": -0.01775,
+              "unit": "1 / kelvin"
+            }
+          }
+        },
+        {
+          "amplitude": {
+            "identity": "component/water/segment_diameter/constant-plus-sum-of-exponentials/term-1/amplitude",
+            "value": {
+              "magnitude": -1.417,
+              "unit": "angstrom"
+            }
+          },
+          "exponent_coefficient": {
+            "identity": "component/water/segment_diameter/constant-plus-sum-of-exponentials/term-1/exponent_coefficient",
+            "value": {
+              "magnitude": -0.01146,
+              "unit": "1 / kelvin"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "topology": {
+    "presets": [],
+    "sites": [
+      {
+        "component_id": "ethanol",
+        "site_id": "a",
+        "site_role": "donor",
+        "multiplicity": 1,
+        "provenance": {
+          "source_id": "khudaida-et-al-2026",
+          "locator": "Table 5, ethanol 2B association scheme expanded as one A site",
+          "domain_id": "khudaida-293-15-k-0-1-mpa"
+        }
+      },
+      {
+        "component_id": "ethanol",
+        "site_id": "b",
+        "site_role": "acceptor",
+        "multiplicity": 1,
+        "provenance": {
+          "source_id": "khudaida-et-al-2026",
+          "locator": "Table 5, ethanol 2B association scheme expanded as one B site",
+          "domain_id": "khudaida-293-15-k-0-1-mpa"
+        }
+      },
+      {
+        "component_id": "isobutanol",
+        "site_id": "a",
+        "site_role": "donor",
+        "multiplicity": 1,
+        "provenance": {
+          "source_id": "khudaida-et-al-2026",
+          "locator": "Table 5, isobutanol 2B association scheme expanded as one A site",
+          "domain_id": "khudaida-293-15-k-0-1-mpa"
+        }
+      },
+      {
+        "component_id": "isobutanol",
+        "site_id": "b",
+        "site_role": "acceptor",
+        "multiplicity": 1,
+        "provenance": {
+          "source_id": "khudaida-et-al-2026",
+          "locator": "Table 5, isobutanol 2B association scheme expanded as one B site",
+          "domain_id": "khudaida-293-15-k-0-1-mpa"
+        }
+      },
+      {
+        "component_id": "water",
+        "site_id": "a",
+        "site_role": "donor",
+        "multiplicity": 1,
+        "provenance": {
+          "source_id": "khudaida-et-al-2026",
+          "locator": "Table 5, water 2B association scheme expanded as one A site",
+          "domain_id": "khudaida-293-15-k-0-1-mpa"
+        }
+      },
+      {
+        "component_id": "water",
+        "site_id": "b",
+        "site_role": "acceptor",
+        "multiplicity": 1,
+        "provenance": {
+          "source_id": "khudaida-et-al-2026",
+          "locator": "Table 5, water 2B association scheme expanded as one B site",
+          "domain_id": "khudaida-293-15-k-0-1-mpa"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "endpoint_a": {
+          "component_id": "ethanol",
+          "site_id": "a"
+        },
+        "endpoint_b": {
+          "component_id": "ethanol",
+          "site_id": "b"
+        },
+        "energy_over_k": {
+          "identity": "association/ethanol/a/ethanol/b/energy_over_k",
+          "value": {
+            "magnitude": 2653.4,
+            "unit": "kelvin"
+          }
+        },
+        "volume": {
+          "identity": "association/ethanol/a/ethanol/b/volume",
+          "value": {
+            "magnitude": 0.03238,
+            "unit": "dimensionless"
+          }
+        },
+        "source": {
+          "kind": "explicit",
+          "provenance": [
+            {
+              "source_id": "khudaida-et-al-2026",
+              "locator": "Table 5, ethanol epsilon^AiBi/k_B row",
+              "domain_id": "khudaida-293-15-k-0-1-mpa"
+            },
+            {
+              "source_id": "khudaida-et-al-2026",
+              "locator": "Table 5, ethanol kappa^AiBi row",
+              "domain_id": "khudaida-293-15-k-0-1-mpa"
+            }
+          ]
+        }
+      },
+      {
+        "endpoint_a": {
+          "component_id": "ethanol",
+          "site_id": "a"
+        },
+        "endpoint_b": {
+          "component_id": "isobutanol",
+          "site_id": "b"
+        },
+        "source": {
+          "kind": "combining-rule",
+          "rule_id": "arithmetic-energy-geometric-volume",
+          "inputs": {
+            "energy_over_k": [
+              "association/ethanol/a/ethanol/b/energy_over_k",
+              "association/isobutanol/a/isobutanol/b/energy_over_k"
+            ],
+            "volume": [
+              "association/ethanol/a/ethanol/b/volume",
+              "association/isobutanol/a/isobutanol/b/volume"
+            ]
+          },
+          "provenance": [
+            {
+              "source_id": "gross-sadowski-2002",
+              "locator": "Eqs. 2-3 applied to Khudaida 2026 Table 5 pure values at 293.15 K with k_hb=0",
+              "domain_id": "khudaida-293-15-k-0-1-mpa"
+            }
+          ]
+        }
+      },
+      {
+        "endpoint_a": {
+          "component_id": "ethanol",
+          "site_id": "a"
+        },
+        "endpoint_b": {
+          "component_id": "water",
+          "site_id": "b"
+        },
+        "source": {
+          "kind": "combining-rule",
+          "rule_id": "arithmetic-energy-geometric-volume",
+          "inputs": {
+            "energy_over_k": [
+              "association/ethanol/a/ethanol/b/energy_over_k",
+              "association/water/a/water/b/energy_over_k"
+            ],
+            "volume": [
+              "association/ethanol/a/ethanol/b/volume",
+              "association/water/a/water/b/volume"
+            ]
+          },
+          "provenance": [
+            {
+              "source_id": "gross-sadowski-2002",
+              "locator": "Eqs. 2-3 applied to Khudaida 2026 Table 5 pure values at 293.15 K with k_hb=0",
+              "domain_id": "khudaida-293-15-k-0-1-mpa"
+            }
+          ]
+        }
+      },
+      {
+        "endpoint_a": {
+          "component_id": "ethanol",
+          "site_id": "b"
+        },
+        "endpoint_b": {
+          "component_id": "isobutanol",
+          "site_id": "a"
+        },
+        "source": {
+          "kind": "combining-rule",
+          "rule_id": "arithmetic-energy-geometric-volume",
+          "inputs": {
+            "energy_over_k": [
+              "association/ethanol/a/ethanol/b/energy_over_k",
+              "association/isobutanol/a/isobutanol/b/energy_over_k"
+            ],
+            "volume": [
+              "association/ethanol/a/ethanol/b/volume",
+              "association/isobutanol/a/isobutanol/b/volume"
+            ]
+          },
+          "provenance": [
+            {
+              "source_id": "gross-sadowski-2002",
+              "locator": "Eqs. 2-3 applied to Khudaida 2026 Table 5 pure values at 293.15 K with k_hb=0",
+              "domain_id": "khudaida-293-15-k-0-1-mpa"
+            }
+          ]
+        }
+      },
+      {
+        "endpoint_a": {
+          "component_id": "ethanol",
+          "site_id": "b"
+        },
+        "endpoint_b": {
+          "component_id": "water",
+          "site_id": "a"
+        },
+        "source": {
+          "kind": "combining-rule",
+          "rule_id": "arithmetic-energy-geometric-volume",
+          "inputs": {
+            "energy_over_k": [
+              "association/ethanol/a/ethanol/b/energy_over_k",
+              "association/water/a/water/b/energy_over_k"
+            ],
+            "volume": [
+              "association/ethanol/a/ethanol/b/volume",
+              "association/water/a/water/b/volume"
+            ]
+          },
+          "provenance": [
+            {
+              "source_id": "gross-sadowski-2002",
+              "locator": "Eqs. 2-3 applied to Khudaida 2026 Table 5 pure values at 293.15 K with k_hb=0",
+              "domain_id": "khudaida-293-15-k-0-1-mpa"
+            }
+          ]
+        }
+      },
+      {
+        "endpoint_a": {
+          "component_id": "isobutanol",
+          "site_id": "a"
+        },
+        "endpoint_b": {
+          "component_id": "isobutanol",
+          "site_id": "b"
+        },
+        "energy_over_k": {
+          "identity": "association/isobutanol/a/isobutanol/b/energy_over_k",
+          "value": {
+            "magnitude": 2514.3,
+            "unit": "kelvin"
+          }
+        },
+        "volume": {
+          "identity": "association/isobutanol/a/isobutanol/b/volume",
+          "value": {
+            "magnitude": 0.00391,
+            "unit": "dimensionless"
+          }
+        },
+        "source": {
+          "kind": "explicit",
+          "provenance": [
+            {
+              "source_id": "khudaida-et-al-2026",
+              "locator": "Table 5, isobutanol epsilon^AiBi/k_B row",
+              "domain_id": "khudaida-293-15-k-0-1-mpa"
+            },
+            {
+              "source_id": "khudaida-et-al-2026",
+              "locator": "Table 5, isobutanol kappa^AiBi row",
+              "domain_id": "khudaida-293-15-k-0-1-mpa"
+            }
+          ]
+        }
+      },
+      {
+        "endpoint_a": {
+          "component_id": "isobutanol",
+          "site_id": "a"
+        },
+        "endpoint_b": {
+          "component_id": "water",
+          "site_id": "b"
+        },
+        "source": {
+          "kind": "combining-rule",
+          "rule_id": "arithmetic-energy-geometric-volume",
+          "inputs": {
+            "energy_over_k": [
+              "association/isobutanol/a/isobutanol/b/energy_over_k",
+              "association/water/a/water/b/energy_over_k"
+            ],
+            "volume": [
+              "association/isobutanol/a/isobutanol/b/volume",
+              "association/water/a/water/b/volume"
+            ]
+          },
+          "provenance": [
+            {
+              "source_id": "gross-sadowski-2002",
+              "locator": "Eqs. 2-3 applied to Khudaida 2026 Table 5 pure values at 293.15 K with k_hb=0",
+              "domain_id": "khudaida-293-15-k-0-1-mpa"
+            }
+          ]
+        }
+      },
+      {
+        "endpoint_a": {
+          "component_id": "isobutanol",
+          "site_id": "b"
+        },
+        "endpoint_b": {
+          "component_id": "water",
+          "site_id": "a"
+        },
+        "source": {
+          "kind": "combining-rule",
+          "rule_id": "arithmetic-energy-geometric-volume",
+          "inputs": {
+            "energy_over_k": [
+              "association/isobutanol/a/isobutanol/b/energy_over_k",
+              "association/water/a/water/b/energy_over_k"
+            ],
+            "volume": [
+              "association/isobutanol/a/isobutanol/b/volume",
+              "association/water/a/water/b/volume"
+            ]
+          },
+          "provenance": [
+            {
+              "source_id": "gross-sadowski-2002",
+              "locator": "Eqs. 2-3 applied to Khudaida 2026 Table 5 pure values at 293.15 K with k_hb=0",
+              "domain_id": "khudaida-293-15-k-0-1-mpa"
+            }
+          ]
+        }
+      },
+      {
+        "endpoint_a": {
+          "component_id": "water",
+          "site_id": "a"
+        },
+        "endpoint_b": {
+          "component_id": "water",
+          "site_id": "b"
+        },
+        "energy_over_k": {
+          "identity": "association/water/a/water/b/energy_over_k",
+          "value": {
+            "magnitude": 2425.7,
+            "unit": "kelvin"
+          }
+        },
+        "volume": {
+          "identity": "association/water/a/water/b/volume",
+          "value": {
+            "magnitude": 0.04509,
+            "unit": "dimensionless"
+          }
+        },
+        "source": {
+          "kind": "explicit",
+          "provenance": [
+            {
+              "source_id": "khudaida-et-al-2026",
+              "locator": "Table 5, water epsilon^AiBi/k_B row",
+              "domain_id": "khudaida-293-15-k-0-1-mpa"
+            },
+            {
+              "source_id": "khudaida-et-al-2026",
+              "locator": "Table 5, water kappa^AiBi row",
+              "domain_id": "khudaida-293-15-k-0-1-mpa"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

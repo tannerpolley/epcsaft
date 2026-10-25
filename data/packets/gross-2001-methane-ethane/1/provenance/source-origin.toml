@@ -1,0 +1,33 @@
+provenance_kind = "repository-migration-v1"
+origin_repository = "ePC-SAFT/ePC-SAFT-eos"
+origin_commit = "e5cd64697d3fb33890f42e87b8779ddda4b52c6a"
+origin_tree = "7de4e53f5d81422039d621536053a66a3840d0f9"
+copy_mode = "byte-for-byte"
+scope = "Reusable parameter packet only; generated campaign results, scripts, receipts, plots, and full paper content remain in the origin repository."
+source_bundle_manifest_path = "src/epcsaft/data/bundles/gross-2001-methane-ethane/1/bundle.toml"
+source_bundle_manifest_sha256 = "e853027b0ab6ecbc8d5b125d234caa04b6965c007ddcc85cfcc2f3e07fd4e01e"
+
+[[files]]
+retained_path = "parameters/bundle.toml"
+origin_path = "src/epcsaft/data/bundles/gross-2001-methane-ethane/1/bundle.toml"
+sha256 = "e853027b0ab6ecbc8d5b125d234caa04b6965c007ddcc85cfcc2f3e07fd4e01e"
+
+[[files]]
+retained_path = "parameters/components.csv"
+origin_path = "src/epcsaft/data/bundles/gross-2001-methane-ethane/1/components.csv"
+sha256 = "bff9dffd036f3a7e496b57240e70d806938f26dd2495f6db8faec0b5cf9c9614"
+
+[[files]]
+retained_path = "parameters/single.csv"
+origin_path = "src/epcsaft/data/bundles/gross-2001-methane-ethane/1/single.csv"
+sha256 = "17c26e8e0db5eb6e29e26ae898b28621f7ead148faf7855814827a73dbcd8c85"
+
+[[files]]
+retained_path = "parameters/pair.csv"
+origin_path = "src/epcsaft/data/bundles/gross-2001-methane-ethane/1/pair.csv"
+sha256 = "747e8281c7a1e4240ee4badbc0bedd047521fb303726699b38c99fccf7f74c2a"
+
+[[files]]
+retained_path = "parameters/model.csv"
+origin_path = "src/epcsaft/data/bundles/gross-2001-methane-ethane/1/model.csv"
+sha256 = "5f3eb00bdcaa9f352285221b95fa58fc303386e380cd3794920bcc8924381c43"

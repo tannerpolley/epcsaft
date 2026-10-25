@@ -1,0 +1,184 @@
+{
+  "1e-10": {
+    "success": true,
+    "message": "converged: residual 1.3683498778505054e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 4 iterations, contraction absent, floor 6.8541869440744025e-11, amplification 0",
+    "charge_rows": [
+      [
+        1,
+        0
+      ]
+    ],
+    "rows": [
+      [
+        "RowKind.Chemical",
+        0,
+        0
+      ],
+      [
+        "RowKind.Chemical",
+        0,
+        1
+      ],
+      [
+        "RowKind.Chemical",
+        0,
+        2
+      ],
+      [
+        "RowKind.Pressure",
+        0,
+        0
+      ],
+      [
+        "RowKind.Chemical",
+        1,
+        0
+      ],
+      [
+        "RowKind.Chemical",
+        1,
+        1
+      ],
+      [
+        "RowKind.Chemical",
+        1,
+        2
+      ],
+      [
+        "RowKind.Pressure",
+        1,
+        0
+      ],
+      [
+        "RowKind.Electro",
+        1,
+        0
+      ],
+      [
+        "RowKind.Moiety",
+        0,
+        0
+      ],
+      [
+        "RowKind.Moiety",
+        0,
+        1
+      ],
+      [
+        "RowKind.Moiety",
+        0,
+        2
+      ],
+      [
+        "RowKind.Normalization",
+        0,
+        0
+      ],
+      [
+        "RowKind.Normalization",
+        1,
+        0
+      ]
+    ]
+  },
+  "1e-11": {
+    "success": true,
+    "message": "converged: residual 1.3683498778505054e-14 against EQUILIBRIUM_ROW_RESIDUAL 9.9999999999999994e-12 after 4 iterations, contraction absent, floor 6.8541869440744025e-11, amplification 0",
+    "charge_rows": [
+      [
+        1,
+        0
+      ]
+    ],
+    "rows": [
+      [
+        "RowKind.Chemical",
+        0,
+        0
+      ],
+      [
+        "RowKind.Chemical",
+        0,
+        1
+      ],
+      [
+        "RowKind.Chemical",
+        0,
+        2
+      ],
+      [
+        "RowKind.Pressure",
+        0,
+        0
+      ],
+      [
+        "RowKind.Chemical",
+        1,
+        0
+      ],
+      [
+        "RowKind.Chemical",
+        1,
+        1
+      ],
+      [
+        "RowKind.Chemical",
+        1,
+        2
+      ],
+      [
+        "RowKind.Pressure",
+        1,
+        0
+      ],
+      [
+        "RowKind.Electro",
+        1,
+        0
+      ],
+      [
+        "RowKind.Moiety",
+        0,
+        0
+      ],
+      [
+        "RowKind.Moiety",
+        0,
+        1
+      ],
+      [
+        "RowKind.Moiety",
+        0,
+        2
+      ],
+      [
+        "RowKind.Normalization",
+        0,
+        0
+      ],
+      [
+        "RowKind.Normalization",
+        1,
+        0
+      ]
+    ]
+  },
+  "identity": {
+    "input": "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json",
+    "input_sha256": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+    "provenance": [
+      "96e947030c15fac5361ed1249b57b52f364ab36f",
+      false
+    ],
+    "native_library_sha256": "23998d76ffdc7c8631f2d5ca57f5e9f32d2c05913537e92123b44c9a1b45fd67",
+    "extension_sha256": "0954372a1b5a726bf95c4592f0db781bcbb89061d00f1457a6fe01da88527498"
+  },
+  "conditions": {
+    "temperature_K": 298.15,
+    "each_ion_molality_mol_kg": 5.6,
+    "water_mass_kg": 1.0,
+    "neutral_salt_gap": "full cation-plus-anion chemical potential sum per formula unit"
+  },
+  "qualification": "incomplete: manufactured trace log recovery fails; allowed row scaling did not repair it",
+  "source_diff_sha256": "75a4ada5643f3e5a9ad9d546c755ae1305e8b8f3228929670c3b0a6d12bdba36"
+}

@@ -1,0 +1,8 @@
+{
+  "changed_members": [
+    "epcsaft/libepcsaft_asl.so",
+    "epcsaft/_core.cpython-313-x86_64-linux-gnu.so",
+    "epcsaft-0.2.0.dev0.dist-info/RECORD"
+  ],
+  "other_members_byte_identical": true
+}

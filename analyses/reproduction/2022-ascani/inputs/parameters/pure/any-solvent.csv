@@ -1,0 +1,10 @@
+component,m,s,e,e_assoc,vol_a,assoc_scheme,z,dielc,d_born,f_solv,MW,source
+H2O,1.2047,2.7927+(10.11*exp(-0.01775*T)-1.417*exp(-0.01146*T)),353.95,2425.7,0.04509,2B,0,78.09,0,1.5,0.01801528,2022_Ascani reference dataset
+Hexane,3.0578,3.7983,236.77,0,0,,0,2.00,0,1.0,0.086178,2022_Ascani reference dataset
+Dodecane,5.3060,3.8959,249.21,0,0,,0,2.00,0,1.0,0.170334,2022_Ascani reference dataset
+Butanol,2.7510,3.6139,259.59,2544.56,0.00669,2B,0,17.51,0,1.0,0.0741216,2022_Ascani reference dataset
+Propanol,3.0000,3.2522,233.40,2276.78,0.01527,2B,0,20.47,0,1.0,0.060095,2022_Ascani reference dataset
+Na+,1,2.8232,230.00,0,0,,1,8.0,3.445,1.0,0.02298,2022_Ascani reference dataset
+K+,1,3.3417,200.00,0,0,,1,8.0,4.150,1.0,0.0391,2022_Ascani reference dataset
+NH4+,1,3.5740,230.00,0,0,,1,8.0,3.000,1.0,0.018038,2022_Ascani reference dataset
+Cl-,1,2.7560,170.00,0,0,,-1,8.0,4.100,1.0,0.03545,2022_Ascani reference dataset

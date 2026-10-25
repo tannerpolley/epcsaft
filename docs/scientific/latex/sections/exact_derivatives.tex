@@ -1,0 +1,126 @@
+\section{Exact derivatives and equilibrium calorics}
+\label{sec:derivatives}
+\subsection{Derivatives of the Helmholtz energy}
+% P:derivatives-01
+The package represents the residual Helmholtz energy of Eq.~\eqref{eq:residual} as an operation sequence of the CppAD algorithmic-differentiation library~\citep{bellCppADPackageAlgorithmic2025}, with temperature, volume, species amounts and the active parameters as independent variables.
+Directional derivatives, called actions below, follow by forward propagation of Taylor coefficients through that sequence, with mixed derivatives obtained by polarization, which recovers a mixed derivative from derivatives along sums and differences of directions.
+The interface supplies selected actions through third order on admitted smooth branches; the orders needed by each quantity and their availability are specified below.
+The model reuses at most two recordings keyed by support, electrolyte predicates, thermal interval and output availability, and refreshes the numerical state on every call.
+Property, equilibrium, fitting and process-model requests share this one evaluation, so a pressure, a chemical potential and an equilibrium Jacobian of the same state come from the same derivative chain.
+
+% P:derivatives-02
+The association site fractions of Eq.~\eqref{eq:mass-action} are solved by a native Newton iteration before the energy is evaluated.
+For the mass-action residual $\mathbf{r}(\mathbf{X};\xi)=0$ on a branch where $\partial\mathbf{r}/\partial\mathbf{X}$ is nonsingular,
+\begin{equation}
+\frac{\partial\mathbf{r}}{\partial\mathbf{X}}\,\frac{\mathrm{d}\mathbf{X}}{\mathrm{d}\xi}=-\frac{\partial\mathbf{r}}{\partial\xi},
+\label{eq:implicit}
+\end{equation}
+where $\xi$ is a temperature, density, composition or parameter direction; higher orders follow by differentiating Eq.~\eqref{eq:implicit} again.
+A pressure-specified state is treated the same way: its density solves $P(T,\rho,\mathbf{x})=P$ on a branch with $\partial P/\partial\rho>0$, and the derivatives of every property at fixed pressure include the implicit response of the density.
+The Born diameters held by declared hydration energies during parameter estimation (Section~\ref{sec:estimation}) are a third implicit system of this kind.
+
+% P:derivatives-03
+Exact here means that the derivatives are those of the stated discrete equations, obtained without finite differences.
+They still carry floating-point rounding, the residual error of the converged association, density and hydration closures, and the conditioning of every linear solve; the comparisons of Section~\ref{sec:verification} measure these effects on the tested cases.
+Finite differences are used only as references to verify exact derivatives.
+
+\subsection{Derivatives of a solved state}
+% P:derivatives-04
+Let $\mathbf{F}(\mathbf{y},\boldsymbol\theta)=0$ collect the rows of Section~\ref{sec:equilibrium} that define a returned state: balances, electroneutrality, normalization, stationarity, pressure, pinned amounts and any caloric rows.
+For fluid-phase declarations, the state coordinates $\mathbf{y}$ comprise phase amounts, logarithmic compositions and packing fractions, free intensive variables, and balance and charge multipliers.
+The inputs $\boldsymbol\theta$ comprise temperature, pressure, feed amounts, active model parameters and reaction-law coefficients.
+On a smooth branch with fixed supports and nonsingular $\mathbf{F}_\mathbf{y}$, the first and second directional actions along input directions $a$ and $b$ solve~\citep{pirnayOptimalSensitivityBased2012}
+\begin{equation}
+\mathbf{F}_\mathbf{y}\,\mathbf{y}_a=-\mathbf{F}_a,\qquad
+\mathbf{F}_\mathbf{y}\,\mathbf{y}_{ab}=-\bigl(\mathbf{F}_{ab}+\mathbf{F}_{a\mathbf{y}}\mathbf{y}_b+\mathbf{F}_{\mathbf{y}b}\mathbf{y}_a+\mathbf{F}_{\mathbf{y}\mathbf{y}}[\mathbf{y}_a,\mathbf{y}_b]\bigr).
+\label{eq:solved-actions}
+\end{equation}
+Third-order actions follow from the same recursion applied to the Taylor coefficients of $\mathbf{y}$ along a straight input path, with mixed directions recovered by polarization.
+Each action uses linear solves with the shared central Jacobian factorization after row and column equilibration.
+The inverse of the equilibrated Jacobian is formed only for the condition estimate; the linear-solve residual and that estimate are reported with the result.
+The derivative of an observable adds its direct dependence on $\boldsymbol\theta$ to its dependence through $\mathbf{y}$.
+At a given returned state, the actions depend on the shared defining rows and their derivatives, not on the iteration history used to obtain that state.
+
+% P:derivatives-05
+Each derivative order of a solved state needs one more order of the Helmholtz energy than the rows contain (Table~\ref{tab:orders}).
+The stationarity rows contain first derivatives of the energy, so a first action needs second energy derivatives and a third action needs fourth.
+Caloric observables add their own order: the enthalpy is a first derivative of the energy and the fixed-composition heat capacity a second.
+The table states mathematical requirements; Section~\ref{sec:verification} states which observables and directions were verified.
+
+\begin{table}[pos=htbp]
+\centering
+\caption{Order of Helmholtz-energy derivatives required by a value and its directional actions on a smooth branch. A table entry is a mathematical requirement, not evidence that every direction is verified.}
+\label{tab:orders}
+\small
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+Quantity & Value & First action & Second action & Third action \\
+\midrule
+$P$, $\mu_i$, residual $h$, $u$, $s$ & 1 & 2 & 3 & 4 \\
+Fixed-composition $c_p$, $c_v$ & 2 & 3 & 4 & 5 \\
+Solved state $\mathbf{y}$ & 1 & 2 & 3 & 4 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{algorithm}[tbp]
+\caption{One request for exact actions of a solved equilibrium}
+\label{alg:actions}
+\begin{algorithmic}[1]
+\Require Admitted central state, observables, input directions and requested orders
+\State Recompute the classified defining-row residual and require it to be no larger than $\min(\tau_{\mathrm{row}},10^{-10})$.
+\State Select support, thermal interval and reaction-reference derivatives for this request.
+\State Assemble $\mathbf{F}_{\mathbf{y}}$, equilibrate its columns and rows by powers of two, and factor it once.
+\State Refuse singular systems and directions that cross an unavailable support or reference domain.
+\For{each required Taylor coefficient, in increasing order}
+\State Propagate known lower coefficients through the common energy and reference equations.
+\State Form the coefficient residual with the unknown highest state coefficient set to zero.
+\State Solve with the central factorization for that highest coefficient.
+\State Check backward error and the condition-based forward-error estimate.
+\EndFor
+\State Compose each observable with the state coefficients and its direct input dependence.
+\State Recover mixed actions by polarization and report units, errors and unavailable causes.
+\end{algorithmic}
+\end{algorithm}
+
+% P:derivatives-04b
+Algorithm~\ref{alg:actions} differentiates the defining equations, independently of optimizer history.
+Every highest unknown Taylor coefficient multiplies the same central Jacobian; known lower coefficients form the right-hand side.
+One factorization therefore serves several directions and observables.
+Action units follow the physical direction, and condition-based error estimates accompany the linear residual.
+
+
+\subsection{Where derivatives are unavailable}
+\label{sec:availability}
+% P:derivatives-06
+An action is returned only where Eq.~\eqref{eq:solved-actions} holds.
+No action crosses a change of phase support, so no derivative describes the appearance or disappearance of a phase.
+At a critical-equation candidate first- and second-order actions are available but third-order actions are unavailable, and pressure-specified quantities that divide by $\partial P/\partial\rho=0$ are unavailable.
+With reactions referenced to a molality, infinite-dilution or pure-liquid basis, third-order actions admit only feed directions at fixed temperature and pressure, and second-order actions admit at most one parameter or reaction-law direction.
+Because $a^{\mathrm{DH}}$ varies as the three-halves power of the ion amounts, second derivatives along an arbitrary ionic insertion direction are not finite at zero ionic strength.
+Chemical potentials, fugacities and parameter columns of absent charged species are therefore reported as unavailable with that cause rather than as zero, while central values remain available.
+Derivatives along the insertion of an association site that is absent from the support are not established.
+Every unavailable action is reported with its cause and never as a number.
+
+\subsection{Calorics of solved reacting equilibria}
+% P:derivatives-07
+On declared reacting branches with thermal records, the package returns caloric values of the solved equilibrium and their actions, including the completion of the reaction reference to fourth order in temperature and pressure and the apparent isobaric heat capacity
+\begin{equation}
+c_{P,\mathrm{eq}}=\frac{1}{N_{\mathrm{f}}}\left(\frac{\mathrm{d}H}{\mathrm{d}T}\right)_{P},
+\label{eq:cpeq}
+\end{equation}
+where $H$ is the extensive enthalpy of all phases along the solved fixed-pressure path and $N_{\mathrm{f}}$ the feed amount.
+$c_{P,\mathrm{eq}}$ contains the heat absorbed by the shift of the reactions and phase split with temperature, so it differs from the fixed-composition heat capacity of a phase.
+It is a first-order action of $H$, its first temperature action is the second-order action, and higher actions of $c_{P,\mathrm{eq}}$ are not provided; it requires driven temperature and pressure.
+It is not a reacting constant-volume heat capacity, and no internal-energy--volume specification is provided.
+
+% P:derivatives-08
+Reference completion contributes its own derivatives: a molality-based reaction law changes with the reference solvent state and its charge-neutral dilution limit as temperature or pressure changes.
+The calculation determines neutral ionic combinations, not independent single-ion standards.
+Finite-addition enthalpy columns likewise include both solved endpoints and the declared feed enthalpy.
+
+
+% P:derivatives-09
+At fixed pressure and feed, integrating $N_{\mathrm f}c_{P,\mathrm{eq}}$ should recover the independently solved enthalpy increment; integrating its temperature derivative should recover the heat-capacity increment.
+Section~\ref{sec:derivative-verification} tests these numerical identities.
+Measured calorimetry would be required to establish physical accuracy.

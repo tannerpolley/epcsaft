@@ -1,0 +1,9 @@
+{
+  "engine_provenance": [
+    "388ed38b12d618e711c64a3c05c7f88653f84d6a",
+    true
+  ],
+  "script_sha256": "2038d139b3122ec0052fcc2cbcc6f049ce13b1dc6c0df31c780879c53fa47ab5",
+  "conditions": "298.15 K, 100000 Pa, fully dissociated chloride in pure water",
+  "limits": "No original Lobo fitting rows or verified Goldberg-Nuttall grid; no exact reproduction of Held Table4 AAD; no refit."
+}

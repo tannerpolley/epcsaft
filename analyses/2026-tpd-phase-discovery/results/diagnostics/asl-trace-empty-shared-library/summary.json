@@ -1,0 +1,499 @@
+{
+  "identity": {
+    "wheel": "/home/tnnrpolley21/.cache/epcsaft/wheels/2e922005366d9708710f6cc9e087efd26ee59597e79553fecad2260a7533efc5/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+    "wheel_sha256": "298a360e532f6f4c5e7ef70c5be45e8b9852310d1c388d6225c504714c3dc410",
+    "installed_files_checked": 11,
+    "mismatches": [],
+    "installed_core_sha256": "0f72ef9c8b52a277626e3a140dc872a093f6e51e7a77aca0affdcfdad17d7869"
+  },
+  "work": [
+    {
+      "case": "asl/anchor/ASL/phase-0/component-0",
+      "feed": [
+        0.7198946513021484,
+        0.03377833329223333,
+        0.21864518731791907,
+        0.02768182808769922
+      ],
+      "fgh": 2,
+      "driver_finalizations": 0,
+      "iterations": 0,
+      "evaluations": 0,
+      "hessian_calls": 0,
+      "tangent_plane_trials": 0,
+      "spans": 0
+    },
+    {
+      "case": "asl/anchor/ASL/phase-0/component-1",
+      "feed": [
+        0.7198946513021484,
+        0.03377833329223333,
+        0.21864518731791907,
+        0.02768182808769922
+      ],
+      "fgh": 2,
+      "driver_finalizations": 0,
+      "iterations": 0,
+      "evaluations": 0,
+      "hessian_calls": 0,
+      "tangent_plane_trials": 0,
+      "spans": 0
+    },
+    {
+      "case": "asl/anchor/ASL/phase-0/component-2",
+      "feed": [
+        0.7198946513021484,
+        0.03377833329223333,
+        0.21864518731791907,
+        0.02768182808769922
+      ],
+      "fgh": 2,
+      "driver_finalizations": 0,
+      "iterations": 0,
+      "evaluations": 0,
+      "hessian_calls": 0,
+      "tangent_plane_trials": 0,
+      "spans": 0
+    },
+    {
+      "case": "asl/anchor/ASL/phase-0/component-3",
+      "feed": [
+        0.7198946513021484,
+        0.03377833329223333,
+        0.21864518731791907,
+        0.02768182808769922
+      ],
+      "fgh": 2,
+      "driver_finalizations": 0,
+      "iterations": 0,
+      "evaluations": 0,
+      "hessian_calls": 0,
+      "tangent_plane_trials": 0,
+      "spans": 0
+    },
+    {
+      "case": "asl/anchor/ASL/phase-0/component-4",
+      "feed": [
+        0.7198946513021484,
+        0.03377833329223333,
+        0.21864518731791907,
+        0.02768182808769922
+      ],
+      "fgh": 2,
+      "driver_finalizations": 0,
+      "iterations": 0,
+      "evaluations": 0,
+      "hessian_calls": 0,
+      "tangent_plane_trials": 0,
+      "spans": 0
+    },
+    {
+      "case": "asl/anchor/ASL/phase-1/component-0",
+      "feed": [
+        0.7198946513021484,
+        0.03377833329223333,
+        0.21864518731791907,
+        0.02768182808769922
+      ],
+      "fgh": 2,
+      "driver_finalizations": 0,
+      "iterations": 0,
+      "evaluations": 0,
+      "hessian_calls": 0,
+      "tangent_plane_trials": 0,
+      "spans": 0
+    },
+    {
+      "case": "asl/anchor/ASL/phase-1/component-1",
+      "feed": [
+        0.7198946513021484,
+        0.03377833329223333,
+        0.21864518731791907,
+        0.02768182808769922
+      ],
+      "fgh": 2,
+      "driver_finalizations": 0,
+      "iterations": 0,
+      "evaluations": 0,
+      "hessian_calls": 0,
+      "tangent_plane_trials": 0,
+      "spans": 0
+    },
+    {
+      "case": "asl/anchor/ASL/phase-1/component-2",
+      "feed": [
+        0.7198946513021484,
+        0.03377833329223333,
+        0.21864518731791907,
+        0.02768182808769922
+      ],
+      "fgh": 2,
+      "driver_finalizations": 0,
+      "iterations": 0,
+      "evaluations": 0,
+      "hessian_calls": 0,
+      "tangent_plane_trials": 0,
+      "spans": 0
+    },
+    {
+      "case": "asl/anchor/ASL/phase-1/component-3",
+      "feed": [
+        0.7198946513021484,
+        0.03377833329223333,
+        0.21864518731791907,
+        0.02768182808769922
+      ],
+      "fgh": 2,
+      "driver_finalizations": 0,
+      "iterations": 0,
+      "evaluations": 0,
+      "hessian_calls": 0,
+      "tangent_plane_trials": 0,
+      "spans": 0
+    },
+    {
+      "case": "asl/anchor/ASL/phase-1/component-4",
+      "feed": [
+        0.7198946513021484,
+        0.03377833329223333,
+        0.21864518731791907,
+        0.02768182808769922
+      ],
+      "fgh": 2,
+      "driver_finalizations": 0,
+      "iterations": 0,
+      "evaluations": 0,
+      "hessian_calls": 0,
+      "tangent_plane_trials": 0,
+      "spans": 0
+    },
+    {
+      "case": "asl/start-0.9/ASL/phase-0/component-0",
+      "feed": [
+        0.7198946513021484,
+        0.03377833329223333,
+        0.19678066858612717,
+        0.0249136452789293
+      ],
+      "fgh": 2,
+      "driver_finalizations": 0,
+      "iterations": 0,
+      "evaluations": 0,
+      "hessian_calls": 0,
+      "tangent_plane_trials": 0,
+      "spans": 0
+    },
+    {
+      "case": "asl/start-0.9/ASL/phase-0/component-1",
+      "feed": [
+        0.7198946513021484,
+        0.03377833329223333,
+        0.19678066858612717,
+        0.0249136452789293
+      ],
+      "fgh": 2,
+      "driver_finalizations": 0,
+      "iterations": 0,
+      "evaluations": 0,
+      "hessian_calls": 0,
+      "tangent_plane_trials": 0,
+      "spans": 0
+    },
+    {
+      "case": "asl/start-0.9/ASL/phase-0/component-2",
+      "feed": [
+        0.7198946513021484,
+        0.03377833329223333,
+        0.19678066858612717,
+        0.0249136452789293
+      ],
+      "fgh": 2,
+      "driver_finalizations": 0,
+      "iterations": 0,
+      "evaluations": 0,
+      "hessian_calls": 0,
+      "tangent_plane_trials": 0,
+      "spans": 0
+    },
+    {
+      "case": "asl/start-0.9/ASL/phase-0/component-3",
+      "feed": [
+        0.7198946513021484,
+        0.03377833329223333,
+        0.19678066858612717,
+        0.0249136452789293
+      ],
+      "fgh": 2,
+      "driver_finalizations": 0,
+      "iterations": 0,
+      "evaluations": 0,
+      "hessian_calls": 0,
+      "tangent_plane_trials": 0,
+      "spans": 0
+    },
+    {
+      "case": "asl/start-0.9/ASL/phase-0/component-4",
+      "feed": [
+        0.7198946513021484,
+        0.03377833329223333,
+        0.19678066858612717,
+        0.0249136452789293
+      ],
+      "fgh": 2,
+      "driver_finalizations": 0,
+      "iterations": 0,
+      "evaluations": 0,
+      "hessian_calls": 0,
+      "tangent_plane_trials": 0,
+      "spans": 0
+    },
+    {
+      "case": "asl/start-0.9/ASL/phase-1/component-0",
+      "feed": [
+        0.7198946513021484,
+        0.03377833329223333,
+        0.19678066858612717,
+        0.0249136452789293
+      ],
+      "fgh": 2,
+      "driver_finalizations": 0,
+      "iterations": 0,
+      "evaluations": 0,
+      "hessian_calls": 0,
+      "tangent_plane_trials": 0,
+      "spans": 0
+    },
+    {
+      "case": "asl/start-0.9/ASL/phase-1/component-1",
+      "feed": [
+        0.7198946513021484,
+        0.03377833329223333,
+        0.19678066858612717,
+        0.0249136452789293
+      ],
+      "fgh": 2,
+      "driver_finalizations": 0,
+      "iterations": 0,
+      "evaluations": 0,
+      "hessian_calls": 0,
+      "tangent_plane_trials": 0,
+      "spans": 0
+    },
+    {
+      "case": "asl/start-0.9/ASL/phase-1/component-2",
+      "feed": [
+        0.7198946513021484,
+        0.03377833329223333,
+        0.19678066858612717,
+        0.0249136452789293
+      ],
+      "fgh": 2,
+      "driver_finalizations": 0,
+      "iterations": 0,
+      "evaluations": 0,
+      "hessian_calls": 0,
+      "tangent_plane_trials": 0,
+      "spans": 0
+    },
+    {
+      "case": "asl/start-0.9/ASL/phase-1/component-3",
+      "feed": [
+        0.7198946513021484,
+        0.03377833329223333,
+        0.19678066858612717,
+        0.0249136452789293
+      ],
+      "fgh": 2,
+      "driver_finalizations": 0,
+      "iterations": 0,
+      "evaluations": 0,
+      "hessian_calls": 0,
+      "tangent_plane_trials": 0,
+      "spans": 0
+    },
+    {
+      "case": "asl/start-0.9/ASL/phase-1/component-4",
+      "feed": [
+        0.7198946513021484,
+        0.03377833329223333,
+        0.19678066858612717,
+        0.0249136452789293
+      ],
+      "fgh": 2,
+      "driver_finalizations": 0,
+      "iterations": 0,
+      "evaluations": 0,
+      "hessian_calls": 0,
+      "tangent_plane_trials": 0,
+      "spans": 0
+    },
+    {
+      "case": "asl/start-1.1/ASL/phase-0/component-0",
+      "feed": [
+        0.7198946513021484,
+        0.03377833329223333,
+        0.240509706049711,
+        0.030450010896469145
+      ],
+      "fgh": 2,
+      "driver_finalizations": 0,
+      "iterations": 0,
+      "evaluations": 0,
+      "hessian_calls": 0,
+      "tangent_plane_trials": 0,
+      "spans": 0
+    },
+    {
+      "case": "asl/start-1.1/ASL/phase-0/component-1",
+      "feed": [
+        0.7198946513021484,
+        0.03377833329223333,
+        0.240509706049711,
+        0.030450010896469145
+      ],
+      "fgh": 2,
+      "driver_finalizations": 0,
+      "iterations": 0,
+      "evaluations": 0,
+      "hessian_calls": 0,
+      "tangent_plane_trials": 0,
+      "spans": 0
+    },
+    {
+      "case": "asl/start-1.1/ASL/phase-0/component-2",
+      "feed": [
+        0.7198946513021484,
+        0.03377833329223333,
+        0.240509706049711,
+        0.030450010896469145
+      ],
+      "fgh": 2,
+      "driver_finalizations": 0,
+      "iterations": 0,
+      "evaluations": 0,
+      "hessian_calls": 0,
+      "tangent_plane_trials": 0,
+      "spans": 0
+    },
+    {
+      "case": "asl/start-1.1/ASL/phase-0/component-3",
+      "feed": [
+        0.7198946513021484,
+        0.03377833329223333,
+        0.240509706049711,
+        0.030450010896469145
+      ],
+      "fgh": 2,
+      "driver_finalizations": 0,
+      "iterations": 0,
+      "evaluations": 0,
+      "hessian_calls": 0,
+      "tangent_plane_trials": 0,
+      "spans": 0
+    },
+    {
+      "case": "asl/start-1.1/ASL/phase-0/component-4",
+      "feed": [
+        0.7198946513021484,
+        0.03377833329223333,
+        0.240509706049711,
+        0.030450010896469145
+      ],
+      "fgh": 2,
+      "driver_finalizations": 0,
+      "iterations": 0,
+      "evaluations": 0,
+      "hessian_calls": 0,
+      "tangent_plane_trials": 0,
+      "spans": 0
+    },
+    {
+      "case": "asl/start-1.1/ASL/phase-1/component-0",
+      "feed": [
+        0.7198946513021484,
+        0.03377833329223333,
+        0.240509706049711,
+        0.030450010896469145
+      ],
+      "fgh": 2,
+      "driver_finalizations": 0,
+      "iterations": 0,
+      "evaluations": 0,
+      "hessian_calls": 0,
+      "tangent_plane_trials": 0,
+      "spans": 0
+    },
+    {
+      "case": "asl/start-1.1/ASL/phase-1/component-1",
+      "feed": [
+        0.7198946513021484,
+        0.03377833329223333,
+        0.240509706049711,
+        0.030450010896469145
+      ],
+      "fgh": 2,
+      "driver_finalizations": 0,
+      "iterations": 0,
+      "evaluations": 0,
+      "hessian_calls": 0,
+      "tangent_plane_trials": 0,
+      "spans": 0
+    },
+    {
+      "case": "asl/start-1.1/ASL/phase-1/component-2",
+      "feed": [
+        0.7198946513021484,
+        0.03377833329223333,
+        0.240509706049711,
+        0.030450010896469145
+      ],
+      "fgh": 2,
+      "driver_finalizations": 0,
+      "iterations": 0,
+      "evaluations": 0,
+      "hessian_calls": 0,
+      "tangent_plane_trials": 0,
+      "spans": 0
+    },
+    {
+      "case": "asl/start-1.1/ASL/phase-1/component-3",
+      "feed": [
+        0.7198946513021484,
+        0.03377833329223333,
+        0.240509706049711,
+        0.030450010896469145
+      ],
+      "fgh": 2,
+      "driver_finalizations": 0,
+      "iterations": 0,
+      "evaluations": 0,
+      "hessian_calls": 0,
+      "tangent_plane_trials": 0,
+      "spans": 0
+    },
+    {
+      "case": "asl/start-1.1/ASL/phase-1/component-4",
+      "feed": [
+        0.7198946513021484,
+        0.03377833329223333,
+        0.240509706049711,
+        0.030450010896469145
+      ],
+      "fgh": 2,
+      "driver_finalizations": 0,
+      "iterations": 0,
+      "evaluations": 0,
+      "hessian_calls": 0,
+      "tangent_plane_trials": 0,
+      "spans": 0
+    }
+  ],
+  "failure": "RuntimeError: ASL shared-library calls expose no underlying driver trace to the installed epcsaft Capture",
+  "numerical_operand_rows": 1478,
+  "numerical_operands_sha256": "f5eb36978a35833f003badec578eb1ac5a9b452f4e509bfcd74bc85de87679ad",
+  "numerical_operands_identical": true,
+  "limits": [
+    "native trace measurements on the original installed wheel",
+    "zero visible trial spans is sufficient only when the ASL driver trace is visible"
+  ]
+}

@@ -1,0 +1,369 @@
+---
+title: "Acetic acid + water + toluene: dissociation with liquid–liquid equilibrium"
+date: 2026-10-08
+format:
+  html:
+    toc: true
+execute:
+  enabled: true
+  echo: false
+---
+
+```{python}
+import csv
+import json
+import math
+from pathlib import Path
+
+results, inputs = Path("results"), Path("inputs")
+def rows(path):
+    with path.open(newline="") as stream:
+        return list(csv.DictReader(stream))
+def column(data, key):
+    return [float(r[key]) for r in data if r.get(key)]
+def e(v, d=1):  # 3.4e-13 style
+    m, x = f"{v:.{d}e}".split("e")
+    return f"{m}e{int(x)}".replace("-", "−", v < 0)
+def order(v):
+    return f"1e{math.floor(math.log10(v))}"
+def s(v, d):  # signed, typographic minus
+    return f"{v:+.{d}f}".replace("-", "−")
+def u(v, d):
+    return f"{v:.{d}f}".replace("-", "−")
+def pct(v, d=1):
+    return s(100 * v, d)
+
+prov = json.loads((results / "provenance.json").read_text())
+conv = json.loads((results / "conventions.json").read_text())
+declared = json.loads((inputs / "declared-constants.json").read_text())
+tol = declared["tolerances"]
+limit_m = " and ".join(e(m, 0) for m in declared["reference_limit_molalities_mol_per_kg"])
+summary = {r["case"]: r for r in rows(results / "summary.csv")}
+def f(case, key):
+    return float(summary[case][key])
+CASES = ("aq-literal", "aq-constant-sigma", "aq-cr1-cross", "aq-organic-eps", "both-organic-eps")
+def worst(key, cases=CASES):
+    return max(f(c, key) for c in cases)
+comparison = [{k: float(v) for k, v in r.items()} for r in rows(results / "comparison.csv")]
+X = "x_acetic_acid_aq"
+both = rows(results / "sweep-both-organic-eps.csv")
+aq_eps = rows(results / "sweep-aq-organic-eps.csv")
+literal = rows(results / "sweep-aq-literal.csv")
+baseline = rows(results / "baseline.csv")
+timing = rows(results / "timing.csv")
+
+def document(variant):
+    return json.loads((inputs / f"parameters-{variant}.json").read_text())
+def coefficient(variant, component, family):
+    c = next(c for c in document(variant)["components"] if c["component_id"] == component)
+    return next(k["value"]["magnitude"] for k in c["coefficients"] if k["family"] == family)
+sigma_water = document("literal")["correlations"][0]
+(a0, b0), (a1, b1) = ((t["amplitude"]["value"]["magnitude"], -t["exponent_coefficient"]["value"]["magnitude"])
+                      for t in sigma_water["terms"])
+eps_water = coefficient("literal", "water", "relative_permittivity")
+eps_ion = coefficient("literal", "hydrogen-cation", "relative_permittivity")
+eps_acid = coefficient("organic-eps", "acetic-acid", "relative_permittivity")
+eps_toluene = coefficient("organic-eps", "toluene", "relative_permittivity")
+T = prov["T_K"]
+solves = sum(int(f(c, "solves")) for c in CASES)
+
+# Literal reading against the ESI model values (19 ESI points).
+d_lit = [(r[X], r["pH_aq-literal_minus_esi"]) for r in comparison]
+dilute = [p for p in d_lit if p[0] < 0.019]
+dilute_miss = [p for p in dilute if abs(p[1]) > tol["pH_against_esi_model"]]
+worst_ph = min(d_lit, key=lambda p: p[1])
+k_lit = [(r[X], r["K_aq-literal_rel_esi"]) for r in comparison]
+best_k, worst_k = min(k_lit, key=lambda p: p[1]), max(k_lit, key=lambda p: p[1])
+ph_both_vs_aq = max(abs(float(a["pH_aq"]) - float(b["pH_aq"])) for a, b in zip(aq_eps, both))
+x_ac_org, x_h_org = column(both, "x_acetate-anion_org"), column(both, "x_hydrogen-cation_org")
+x_pair = (f("both-organic-eps", "x_ion_org_reconstructed_min"), f("both-organic-eps", "x_ion_org_reconstructed_max"))
+mean_shift = [f(c, "dpH_esi_mean") - f("aq-literal", "dpH_esi_mean") for c in CASES[1:]]
+last = max(comparison, key=lambda r: r[X])
+end_shift = [last[f"pH_{c}"] - last["pH_aq-literal"] for c in CASES[1:]]
+pair = next((a, b) for a, b in zip(comparison, comparison[1:]) if a[X] == b[X] and a["pH_esi_model"] != b["pH_esi_model"])
+jump = [next(r for r in comparison if f"{r[X]:.4f}" == key) for key in ("0.0267", "0.0283")]
+esi_fall = 1 - jump[1]["K_esi_model"] / jump[0]["K_esi_model"]
+engine_fall = 1 - jump[1]["K_aq-literal"] / jump[0]["K_aq-literal"]
+offset = column(both, "electrochemical_offset")
+ph_org = (f("both-organic-eps", "pH_org_reconstructed_min"), f("both-organic-eps", "pH_org_reconstructed_max"))
+ph_aq_both = column(both, "pH_aq")
+neutral = "nonreactive-literal"
+x_oh = max(column(literal, "x_hydroxide-anion_aq"))
+feeds = column(both, "n_acid_feed")
+```
+
+## Result and scope
+
+The Engine solves acetic acid and water dissociation together with the
+water/toluene liquid split at `{python} f"{T:g}"` K and `{python} f"{prov['P_Pa'] / 1e5:g}"` bar, using the ePC-SAFT advanced
+parameters of Ascani et al. (2022) ESI Tables S1–S5. It does so with ions
+confined to the aqueous liquid, as the ESI did, and with ions allowed in both
+liquids ([issue #374](https://github.com/tannerpolley/ePC-SAFT/issues/374)).
+
+- **Aqueous pH against their ePC-SAFT advanced values (numerical
+  verification).** Within the stated `{python} f"{tol['pH_against_esi_model']:g}"` tolerance for `{python} f"{f('aq-literal', 'dpH_within_0p005'):.0f}"` of `{python} len(comparison)` ESI points
+  under the literal ESI reading. Below x_acid = 0.019, two of the nine
+  points exceed it slightly (`{python} s(dilute_miss[0][1], 6)` at x_acid = `{python} f"{dilute_miss[0][0]:.5f}"` and `{python} s(dilute_miss[1][1], 6)` at
+  `{python} f"{dilute_miss[1][0]:.5f}"`). Above x_acid ≈ 0.019 every point misses, by up to `{python} s(worst_ph[1], 4)` at
+  x_acid = `{python} f"{worst_ph[0]:.4f}"`; the mean is `{python} s(f('aq-literal', 'dpH_esi_mean'), 4)`.
+- **Acid partition coefficient K = x_aq/x_org (numerical verification).**
+  Within 1 % for `{python} f"{f('aq-literal', 'dK_within_1pct'):.0f}"` of `{python} len(comparison)` points (best `{python} pct(best_k[1], 2)` %, at x_acid = `{python} f"{best_k[0]:.5f}"`). The
+  difference grows to `{python} pct(worst_k[1])` % at x_acid = `{python} f"{worst_k[0]:.3f}"`.
+- **Experimental pH (physical comparison with literature parameters).** AARD
+  is `{python} f"{f('aq-literal', 'AARD_pH_exp_percent'):.2f}"` % with mean bias `{python} s(f('aq-literal', 'bias_pH_exp'), 3)`. The ESI model gives `{python} f"{f('esi-model', 'AARD_pH_exp_percent'):.2f}"` % and `{python} s(f('esi-model', 'bias_pH_exp'), 3)` on
+  the same `{python} len(comparison)` points.
+- **Reaction equilibrium (numerical verification).** The density-basis
+  log-affinity of both reactions, recomputed from public state potentials
+  against the solve's compiled targets, is ≤ `{python} e(worst('affinity_density_H2O_aq_max'))` in the aqueous liquid
+  and ≤ `{python} e(f('both-organic-eps', 'affinity_density_H2O_org_max'))` in the organic liquid (tolerance `{python} e(tol['density_log_affinity'], 0)`).
+- **Ions in the organic liquid (new capability).** The solve converges with
+  ions permitted in the toluene-rich liquid, and aqueous pH is unchanged from
+  the aqueous-only solve to `{python} e(ph_both_vs_aq)`. The returned organic fractions are
+  x(Ac⁻) = `{python} e(min(x_ac_org))` to `{python} e(max(x_ac_org))` and x(H⁺) = `{python} e(min(x_h_org))` to `{python} e(max(x_h_org))`: the organic
+  cation/anion split is not resolved (#375). A reconstructed electroneutral
+  estimate puts each ion at `{python} e(x_pair[0])` to `{python} e(x_pair[1])` (see below). Both are
+  negligible against x(H⁺) ≈ `{python} order(max(column(both, 'x_hydrogen-cation_aq')))` in water, consistent with the ESI's
+  statement that organic-phase electrolytes are negligible here.
+
+![Aqueous pH and acid partition coefficient against the aqueous analytical acid mole fraction. Lines: Engine sweeps over 161 feeds (solid, literal ESI reading, ions aqueous only; dashed, ions in both liquids with CRC organic permittivities). Open circles: ESI Tables S11–S12 model values. Triangles: experimental data cited by the ESI. Values are in results/sweep-*.csv and results/comparison.csv.](figures/ph-and-partition.png){#fig-ph}
+
+## Model and conventions
+
+Species: water, toluene, acetic acid, H⁺ (the ESI's notation for H₃O⁺), Ac⁻
+and OH⁻. Reactions follow ESI page 2: HAc ⇌ H⁺ + Ac⁻ with pKa = `{python} f"{prov['pKa']:g}"`
+(Table S4), and H₂O ⇌ H⁺ + OH⁻ with pKw = `{python} f"{prov['pKw']:g}"`. Both are on the molality
+scale with the infinite-dilution-in-water reference
+(`CommonMolalityInfiniteDilution`, `NeutralReference` solvent water). The
+Engine compiles each into a density-basis target
+ln K_ρ = ln K_m + A_r + C_r (EqID `neutral_reaction_reference_transfer`),
+with C_r the √m limit of the reference compositions at `{python} limit_m` mol/kg
+(EqID `reference_limit_terminal_pair`). pH
+follows the main paper's Eqs. 4–5 (Thomsen); ESI Eq. 5 is a
+phase-equilibrium equation:
+
+$$
+\mathrm{pH}=-\log_{10}\frac{x_{H^+}\,\varphi_{H^+}}{\varphi^{\infty,w}_{H^+}\,M_w\,\tilde m^0},
+$$
+
+with φ^∞,w from the Engine's infinite-dilution reference in pure water.
+Parameters are written by [scripts/parameters.py](scripts/parameters.py)
+into `inputs/parameters-*.json`.
+
+| Convention | ESI statement | Engine mapping | Resolution |
+|---|---|---|---|
+| Ion phase support | Ions forced into the aqueous phase (ESI p. 4) | Aqueous support only (reproduction); both supports (extension) | Both run |
+| Reaction form | HAc ⇌ Ac⁻ + H⁺ (ESI p. 2); main text Eq. 3 writes HA + H₂O ⇌ A⁻ + H₃O⁺ | ESI form; water does not enter the acid law | ESI form |
+| Born term | Eq. 11 with a_i = ion diameter | `born`, c_shell = c_dielectric = 0, d_Born = d_DH = d_pack = σ_i | Exact |
+| Permittivity | Concentration dependent; Table S5 lists water and salts only | Ascani–Held 2021 Eq. 13 (`component-permittivity-mixing`); water `{python} f"{eps_water:.4f}"`, ions `{python} f"{eps_ion:g}"` | Literal: water is the only dielectric solvent |
+| Organic permittivity | Not given | CRC Handbook correlations: acetic acid `{python} f"{eps_acid:.3f}"`, toluene `{python} f"{eps_toluene:.3f}"` | Needed for the extension; `{python} s(mean_shift[2], 4)` pH effect in the aqueous phase |
+| Water σ | Prints `{python} f"{sigma_water['constant']['value']['magnitude']:g}"`, ref. Fuchs 2006 | `{python} f"{sigma_water['constant']['value']['magnitude']:g}"` + `{python} f"{a0:g}"` e^(−`{python} f"{b0:g}"`T) − `{python} f"{-a1:g}"` e^(−`{python} f"{b1:g}"`T) | Temperature dependent (pure water `{python} f"{conv['water_density_kg_m3']['literal']:.2f}"` against `{python} f"{conv['water_density_kg_m3']['constant-sigma']:.2f}"` kg/m³ for constant σ) |
+| Water–acid cross-association | Not stated | Wolbach–Sandler (group convention in the Ascani 2022 JCED packet) | Retained; no cross-association moves all acid to toluene (aqueous x ≈ `{python} e(conv['no_cross_x_acid_molecular_aq_min'], 0)`, [results/conventions.json](results/conventions.json)) |
+| Like-charged ion dispersion | Not stated | Excluded (Held 2014 rule, kept by ePC-SAFT advanced) | Retained; only the trace OH⁻/Ac⁻ pair is affected |
+| k_ij,T for water–toluene | `{python} f"{declared['kij_T_water_toluene_per_K']['value']:g}"`, temperature form not stated | Zero at `{python} f"{T:g}"` K | ESI states 298 K; ΔT = `{python} f"{T - 298:.2f}"` K changes k_ij by `{python} e((T - 298) * declared['kij_T_water_toluene_per_K']['value'], 0)` |
+| pKw | f(T,p), refs. 30–31 (Li and Duan 2007, 2011); correlation not printed | Substitute: IAPWS R11-07 formulation (Bandura and Lvov 2006, J. Phys. Chem. Ref. Data 35, 15), evaluated here at `{python} f"{T:g}"` K and the IAPWS-95 water density `{python} f"{declared['pKw_iapws_r11_07']['water_density_kg_m3']:g}"` kg/m³ (0.1 MPa): `{python} f"{declared['pKw_iapws_r11_07']['value']:g}"`, used as `{python} f"{prov['pKw']:g}"` | Li–Duan correlation not evaluated; OH⁻ ~ `{python} order(x_oh)`, no pH effect at this scale |
+| x_acid in Tables S11–S12 | Aqueous acid mole fraction | Analytical acid, HAc + Ac⁻ | A molecular-only key shifted ΔpH by up to about +0.003 |
+
+## Sensitivity to the open conventions
+
+Each row changes one convention from the literal reading. Statistics are taken
+over the `{python} len(comparison)` ESI points ([results/summary.csv](results/summary.csv)).
+
+```{python}
+#| output: asis
+labels = {"aq-literal": "Literal (reported result)",
+          "aq-constant-sigma": f"Constant water σ = {coefficient('constant-sigma', 'water', 'segment_diameter'):g}",
+          "aq-cr1-cross": "Arithmetic/geometric cross rule", "aq-organic-eps": "CRC organic permittivities",
+          "both-organic-eps": "Ions in both liquids, CRC permittivities"}
+print("| Case | ΔpH mean (range) vs ESI model | ≤ 0.005 | ΔK mean (range) vs ESI model | ≤ 1 % | AARD vs exp. |")
+print("|---|---|---:|---|---:|---:|")
+for c in CASES:
+    print(f"| {labels[c]} | {s(f(c, 'dpH_esi_mean'), 4)} ({s(f(c, 'dpH_esi_min'), 4)}, {s(f(c, 'dpH_esi_max'), 4)}) "
+          f"| {f(c, 'dpH_within_0p005'):.0f} | {pct(f(c, 'dK_esi_mean'))} % ({pct(f(c, 'dK_esi_min'))}, {pct(f(c, 'dK_esi_max'))}) "
+          f"| {f(c, 'dK_within_1pct'):.0f} | {f(c, 'AARD_pH_exp_percent'):.2f} % |")
+print(f"| ESI model | — | — | — | — | {f('esi-model', 'AARD_pH_exp_percent'):.2f} % |")
+```
+
+No reading tested closes the growing pH difference above x_acid ≈ 0.019. The
+mean pH offset moves by at most `{python} f"{max(map(abs, mean_shift)):.2g}"` across all variants (`{python} f"{max(map(abs, end_shift)):.1g}"` at the
+largest x), so it does not come
+from the dielectric set, the water σ form or the cross-association rule.
+Two features of the ESI values limit what can be matched:
+
+- **Scatter in their own model values.** Their rows at the identical
+  x = `{python} f"{pair[0][X]!r}"` give pH `{python} f"{pair[0]['pH_esi_model']:.3f}"` and `{python} f"{pair[1]['pH_esi_model']:.3f}"` and K `{python} f"{pair[0]['K_esi_model']:.3f}"` and `{python} f"{pair[1]['K_esi_model']:.3f}"`. Their K
+  falls `{python} f"{100 * esi_fall:.1f}"` % between x = `{python} f"{jump[0][X]:.4f}"` and `{python} f"{jump[1][X]:.4f}"`, where the smooth Engine curve
+  falls `{python} f"{100 * engine_fall:.1f}"` %. Their model states were therefore not functions of the
+  tabulated x alone, and the ESI does not give the feeds they solved.
+- **Untested hypothesis.** A molality on a total-solvent mass basis (water +
+  acid + toluene) instead of water only would raise their pH by about
+  0.5 log₁₀(Σx_sM_s/x_wM_w). That is about 0.024 at x = 0.033 and 0.002 at
+  x = 0.003: the same sign and growth, but larger than observed. Main-paper Eq. 4
+  writes γ = γ*·x_w, the water-only basis, and the Engine's reaction basis
+  cannot test this alternative without a new declaration.
+
+The non-reactive ternary differs from the ESI's *reactive* K values by
+`{python} pct(f(neutral, 'dK_esi_mean'))` % on average (`{python} pct(f(neutral, 'dK_esi_min'))` % to `{python} pct(f(neutral, 'dK_esi_max'))` %). A K difference of the same sign and
+growth is therefore present without reactions. That comparison mixes a
+neutral Engine split with their reactive values, so it shows a discrepancy
+without reactions but does not isolate the cause of the high-acid pH
+difference. It suggests looking at the neutral-phase thermodynamics first.
+Acid self-association in toluene is one hypothesis, not tested here. The
+cause of the pH divergence above x_acid ≈ 0.019 is unresolved.
+
+## Ions in both liquids
+
+With both supports declared, every solve converges and the mean-ionic
+transfer identity ln f(H⁺) + ln f(Ac⁻) (organic − aqueous) holds to
+`{python} e(f('both-organic-eps', 'mean_ionic_transfer_max'))`.
+
+**Returned values.** The Engine's per-phase charge row is absolute
+(Σ z_i n_i to `{python} e(tol['row'], 0)` mol). At these amounts it accepts any cation/anion
+split. The returned organic states carry x(Ac⁻) = `{python} e(min(x_ac_org))` to `{python} e(max(x_ac_org))` and
+x(H⁺) = `{python} e(min(x_h_org))` to `{python} e(max(x_h_org))` over the sweep. The relative charge imbalance is
+`{python} f"{f('both-organic-eps', 'charge_relative_org_max'):.1f}"`, while the absolute imbalance is ≤ `{python} e(f('both-organic-eps', 'charge_org_mol_max'))` mol. The organic split is
+therefore not resolved (#375). The resulting "electrochemical offset" of `{python} u(max(offset), 1)`
+to `{python} u(min(offset), 1)` reflects that unresolved split, not a physical Galvani potential.
+
+**Reconstructed model estimates.** The values below are not returned by the
+solver. They impose electroneutrality on the returned product
+x(H⁺)·x(Ac⁻), which the mean-ionic identity fixes. That makes each ion
+fraction the geometric mean √(x(H⁺)·x(Ac⁻)), `{python} e(x_pair[0])` to `{python} e(x_pair[1])` over the
+sweep. The organic pH combines that reconstructed concentration with φ(H⁺)
+from the returned, charge-unresolved state, on the aqueous
+infinite-dilution reference. It therefore assumes φ(H⁺) does not depend on
+the split at these amounts. It also depends on the CRC organic permittivities
+(acetic acid `{python} f"{eps_acid:.3f}"`, toluene `{python} f"{eps_toluene:.3f}"`) through Eq. 13 mixing, which the ESI does
+not give. Representative states (sweep `both-organic-eps`):
+
+```{python}
+#| output: asis
+print("| x_acid (aq) | pH (aq) | x H⁺ (aq) | Reconstructed ion x (org) | Reconstructed ion n (org), mol | Reconstructed pH (org) | Iterations |")
+print("|---:|---:|---:|---:|---:|---:|---:|")
+for target in (0.00309, 0.01238, 0.03611):
+    r = min(both, key=lambda r: abs(float(r["x_acid_total_aq"]) - target))
+    print(f"| {float(r['x_acid_total_aq']):.5f} | {float(r['pH_aq']):.3f} | {e(float(r['x_hydrogen-cation_aq']), 2)} "
+          f"| {e(float(r['x_ion_org_reconstructed']))} | {e(float(r['n_ion_org_reconstructed_mol']))} "
+          f"| {u(float(r['pH_org_reconstructed']), 2)} | {r['iterations']} |")
+```
+
+The reconstructed organic pH is `{python} u(ph_org[1], 2)` to `{python} u(ph_org[0], 2)`, not the aqueous `{python} f"{min(ph_aq_both):.1f}"`–`{python} f"{max(ph_aq_both):.1f}"`.
+The ESI's statement that proton activity is equal in both phases applies to
+the electrochemical activity; the chemical single-ion activity differs by the
+inner-potential term. Under the reconstruction, H⁺ (σ = `{python} f"{coefficient('literal', 'hydrogen-cation', 'segment_diameter'):.2f}"` Å) is more
+strongly Born-excluded from toluene (ε_r ≈ `{python} f"{eps_toluene:.1f}"`) than Ac⁻ (σ = `{python} f"{coefficient('literal', 'acetate-anion', 'segment_diameter'):.2f}"` Å). This
+organic pH is a model single-ion quantity and is not measurable. Local
+stability along the trace-ion directions is not qualified (see below).
+
+## Solution quality
+
+```{python}
+#| output: asis
+b = "both-organic-eps"
+aq_only = CASES[:4]
+quality = [
+    ("Converged, requested tolerance met", f"{sum(int(f(c, 'tolerance_met')) for c in CASES)}/{solves}; no topology events", "all"),
+    ("Classified row residual", f"≤ {e(worst('classified_residual_max'))}", f"≤ {e(tol['row'], 0)}"),
+    ("Aqueous charge, Σ z n", f"≤ {e(worst('charge_aq_mol_max'))} mol", f"≤ {e(tol['charge_mol'], 0)} mol"),
+    ("Organic charge, Σ z n", f"≤ {e(f(b, 'charge_org_mol_max'))} mol absolute; relative {f(b, 'charge_relative_org_max'):.1f} (both supports)",
+     f"≤ {e(tol['charge_mol'], 0)} mol; relative not met"),
+    ("Density-basis log-affinity, acid dissociation, aqueous liquid", f"≤ {e(worst('affinity_density_HAc_aq_max'))}", f"≤ {e(tol['density_log_affinity'], 0)}"),
+    ("Density-basis log-affinity, water autoprotolysis, aqueous liquid", f"≤ {e(worst('affinity_density_H2O_aq_max'))}", f"≤ {e(tol['density_log_affinity'], 0)}"),
+    ("Density-basis log-affinity, organic liquid (both supports): acid; water",
+     f"≤ {e(f(b, 'affinity_density_HAc_org_max'))}; ≤ {e(f(b, 'affinity_density_H2O_org_max'))}", f"≤ {e(tol['density_log_affinity'], 0)}"),
+    (f"Reference contraction C_r recomputed as the √m limit of public states at {limit_m} mol/kg, minus the compiled C_r",
+     f"≤ {e(worst('contraction_recomputed_minus_compiled_max'))}", "—"),
+    ("Reference terminal change (`reference_limit_terminal_pair`)", f"≤ {e(worst('reference_terminal_change_max'), 2)}",
+     f"≤ {e(tol['reference_terminal_change'], 0)} (Engine acceptance rule; a convergence diagnostic, not an error bound)"),
+    ("Reference-consistency diagnostic: acid law on molality activities with φ∞ from a separate public reference path",
+     f"≤ {e(worst('acid_law_residual_max'), 2)} in ln K", "— (compares two reference constructions; not the reaction check)"),
+    ("Reduced Hessian minimum", f"≥ {e(min(f(c, 'reduced_hessian_min') for c in aq_only))} (aqueous-only ions); "
+     f"{e(f(b, 'reduced_hessian_min'))} in {f(b, 'negative_reduced_hessian'):.0f}/{f(b, 'solves'):.0f} (both supports)", "> 0"),
+    (f"Coarse/fine interpolation differences at ESI x ({(prov['feeds'] + 1) // 2} against {prov['feeds']} feeds)",
+     f"≤ {e(worst('coarse_fine_pH_max'))} pH, ≤ {e(worst('coarse_fine_K_max'))} relative K", f"≤ {e(tol['coarse_fine_interpolation'], 0)}"),
+] + [(f"Work, {name}", f"{f(c, 'iterations_median'):.0f} median, {f(c, 'iterations_max'):.0f} max iterations; "
+      f"≤ {f(c, 'evaluations_max'):.0f} evaluations; {f(c, 'solve_ms_median'):.1f} ms median solve", "—")
+     for name, c in (("literal", "aq-literal"), ("both supports", b))]
+print(f"| Check | Result (all {solves} reactive solves) | Criterion |")
+print("|---|---|---|")
+for row in quality:
+    print("| " + " | ".join(row) + " |")
+```
+
+The affinity is Σ_i ν_ri [ln(ρ x_i / 1 mol m⁻³) + μ_i^res/RT] − ln K_ρ,r,
+evaluated from each solved phase's public state. The target uses the
+returned compiled contraction C_r (`terminal_contraction`), ln K_m = −pK ln 10
+and A_r = (Σ_{i≠w} ν_ri) ln(M_w m°). An independent √m limit, (10 f(m₂) − f(m₁))/9
+from public states in water at the declared solute molality ratios (H⁺ at 2m, every other solute at m), m₁, m₂ = `{python} limit_m` mol/kg, reproduces C_r to
+`{python} e(worst('contraction_recomputed_minus_compiled_max'))`. The `{python} e(worst('acid_law_residual_max'), 2)` molality-basis value comes from a different
+reference path (the ion pair's √m limit and trace HAc, each alone in water). It
+measures consistency between the two reference constructions, not the
+solved reaction residual.
+
+The reduced-Hessian minimum is set by trace directions (OH⁻ at `{python} order(x_oh)` and
+returned organic ions at `{python} order(min(x_h_org))` to `{python} order(max(x_ac_org))`), whose curvature lies at rounding. Local stability is
+therefore shown at rounding only, not established for the trace-ion
+directions. The non-reactive baseline has a minimum of `{python} e(f(neutral, 'reduced_hessian_min'))`. No
+tangent-plane test was run: charged trial phases require a permittivity form
+with a vacuum limit, and Eq. 13 mixing has none. The water + toluene binary
+gives x(toluene, aq) = `{python} e(f(neutral, 'x_toluene_aq'), 2)` and x(water, org) = `{python} e(f(neutral, 'x_water_org'), 2)`. The ESI reports
+no binary values to compare.
+
+## Limits
+
+- One temperature (`{python} f"{T:g}"` K) and one feed family (`{python} f"{prov['feed_water_mol']:g}"` mol water, `{python} f"{prov['feed_toluene_mol']:g}"` mol
+  toluene, `{python} f"{min(feeds):g}"`–`{python} f"{max(feeds):g}"` mol acid); no global phase-stability claim.
+- The comparison with their model is limited by the ESI's own model scatter
+  and missing feeds. The high-acid difference is unexplained, and its listed
+  candidates (total-solvent molality, acid self-association in toluene) are
+  untested.
+- Organic ion amounts and pH are reconstructed model estimates, not returned
+  values. The organic charge split is unresolved (#375), and local stability
+  along the trace-ion directions is not qualified.
+- pKw substitutes the IAPWS value for the ESI's Li–Duan correlation.
+- The CRC organic permittivities come from the table copy shipped with the
+  `chemicals` package, not from the printed Handbook. They affect only the
+  extension and the sensitivity row.
+- Citric and oxalic acid + MIBK were not run: acetic acid did not meet the
+  stated tolerance, which was the issue's condition for adding them. The ESI
+  also prints Table S14's x column identical to Table S12's.
+
+## Provenance and wall-clock cost
+
+Run as the editable checkout install at `{python} prov['engine'][0][:8]`
+(`epcsaft.provenance()` reports uncommitted analysis files). The ESI is not
+redistributed; its sha256 is in
+[results/provenance.json](results/provenance.json). From the repository root:
+
+```bash
+.venv/bin/python analyses/2026-ascani-carboxylic-acid-lle/scripts/parameters.py
+.venv/bin/python analyses/2026-ascani-carboxylic-acid-lle/scripts/run.py 161
+.venv/bin/python analyses/2026-ascani-carboxylic-acid-lle/scripts/conventions.py
+.venv/bin/python analyses/2026-ascani-carboxylic-acid-lle/scripts/render.py
+quarto render analyses/2026-ascani-carboxylic-acid-lle/notebook.qmd
+```
+
+`scripts/conventions.py` retains the pure-water densities and the
+no-cross-association sweep quoted in the conventions table. It declares each
+dropped cross pair as `no_cross_association`, which the Engine now requires.
+On the current Engine, `{python} conv['no_cross_success']` of
+`{python} conv['no_cross_solves']` feeds of that sweep converge, including two
+that did not converge in the 2026-10-08 run; both lie between their neighbours.
+
+| Step | Wall clock |
+|---|---:|
+| Issue and scientific-record reading; ESI fetch (Cloudflare blocked curl; Chrome on a virtual display succeeded) | 4.8 min |
+| ESI reading | 1.3 min |
+| Engine survey and convention mapping (permittivity, Born, reference, existing Ascani packet) | 5.6 min |
+| Parameter documents and stated tolerances | 3.1 min |
+| Single-point probe of both topologies | 2.2 min |
+| First full run and quality screens | 1.9 min |
+| Convention tests, reruns, organic-phase analysis, figure | 6.8 min |
+| Notebook and commit | about 6 min |
+| Final Engine run (`{python} solves` reactive + `{python} f"{f(neutral, 'solves'):.0f}"` neutral solves), after review | `{python} f"{sum(float(r['wall_s']) for r in timing):.1f}"` s |
+
+Convention work totals about 15.5 minutes, inside the issue's one-hour
+allowance. One independent review (verdict Revise) required the density-basis
+reaction check, weaker causal wording, labeling of reconstructed organic
+values and source corrections. This revision applies them and has not been
+re-reviewed. The rerun reproduced every retained pH, K and organic fraction
+exactly.

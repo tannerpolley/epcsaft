@@ -1,0 +1,42 @@
+{
+  "base_commit": "ec0bafa7",
+  "main_wheel_sha256": "fdf3fbb51244eb4991f0743a6acd377dc0296d5909b77e896d050c6e36fdf57c",
+  "candidate_wheel_sha256": "711f24eb5d56949b3039032bae41fd84890d32d5375064a2eaeef9089fd72eee",
+  "default_rows": 10595,
+  "default_bitwise_equal": true,
+  "omitted_equals_explicit_false": true,
+  "source_hashes": {
+    "engine/native/equilibrium/gibbs_minimizer.cpp": "f6ae8aa9247bd97b08b05a05cc1b7b177bb3cea428a9279357c6339576f20b72",
+    "engine/native/equilibrium/problem.hpp": "ad591677683b88fd3fe31d309c8239032ba33f7ded7bea6dfc1b5ccd79ac3eed",
+    "engine/native/bindings/equilibrium_bindings.cpp": "d209f64330811af8bf546a8eebfeaf7bee30ecdec9152ead45c0e05f0e85524a",
+    "engine/src/epcsaft/_core.pyi": "10cb0d4dd2400ab3587f7095794268ece26d67c3555b5e002bed42c125cfbbac",
+    "engine/tests/native/equilibrium_checks.cpp": "b363a4bb78fad37a1389f42b9279cea1cbf3e82d9010e8f1be12130101f98255",
+    "engine/tests/equilibrium/test_problem.py": "e6ea5f7a69775e5b4c4a9c5e83cbf664ad02e0edd2d982ff38c6d06f150c4e9c",
+    "analyses/2026-tpd-phase-discovery/scripts/baseline.py": "db6c413ea84549cd0426951bad156ee307dd14168f79e66b8c7409d08b2ca8f9",
+    "analyses/2026-tpd-phase-discovery/scripts/qualify.py": "713dff4f4993d0a8c430381cf43279351e9f189f0037d8b9a144b0a73c4b26a3",
+    "data/packets/khudaida-2026-figure-2-electrolyte-lle/7/parameters/parameters.json": "8babed899e7347e58c403c7aff24a7fdd6d60411af3b4d81eb6aa90c2431dfa4",
+    "analyses/phase-stability-cutover/inputs/phase-stability-neutral-ternary.json": "ce87eb12ae9fe16c5e266cc0db83841049d49c2aa732eaf4f904cd878ec55b73",
+    "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19"
+  },
+  "reproduction_hashes": {
+    "qualify-installed.py": "cce35c47d3e9cc0df9b944a0cf0aa72288407ca7eabe91d50008af9fddaeaa92",
+    "compare-replays.cpp": "b893aa6d60edc81ea2adde16060022ea742dfe8f1d9ae87b9fdfb5c9aaf024ec"
+  },
+  "default_operands": "build/issue-300/main/default.csv",
+  "default_sha256": "cbae06e120b705373b43329f9b4d992b8b32502dcf086849d1d9ae273c3313b6",
+  "evaluation_operands": "build/issue-300/candidate/evaluated.csv",
+  "evaluation_sha256": "b66810f77b94673978c4c725498c119282c0b6964ca1e5bd5456beecb4a863df",
+  "limits": [
+    "fixed-T/P fixture numerical verification",
+    "no physical validation",
+    "no stability conclusion",
+    "does not complete #234 historical candidate comparisons",
+    "independent delivered review pending"
+  ],
+  "native_same_final_point_bitwise_equal": 8,
+  "evaluated_rows": 13108,
+  "no_optimizer_quantities": true,
+  "no_driver_or_split_work": true,
+  "native_comparison_rows": 50,
+  "qualification_rows": 168
+}

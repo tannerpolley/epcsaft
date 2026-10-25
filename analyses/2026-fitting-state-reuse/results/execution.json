@@ -1,0 +1,14 @@
+{
+  "baseline": {
+    "recorded_command": "$ /bin/bash -lc \"/usr/bin/time -f 'elapsed=%e user=%U system=%S peak_rss_kib=%M' -o /tmp/epcsaft-fit-audit-20260929/current-initial-time.txt env OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 NUMEXPR_NUM_THREADS=1 nice -n 10 flock /tmp/epcsaft-roadmap-build.lock .venv/bin/python /tmp/epcsaft-fit-audit-20260929/current_probe.py fit /tmp/epcsaft-fit-audit-20260929/current-initial.json\"",
+    "source_thread": "c2f6bc19-74c2-4047-a0fa-24f18c8e4bed",
+    "source_item": "turn-item:provider:codex:native-item:exec-6ce8bc00-583d-4b1c-b4a5-40406fc2572b"
+  },
+  "candidate": {
+    "recorded_command": "/usr/bin/time -f 'elapsed=%e user=%U system=%S peak_rss_kib=%M' -o build/fit-audit-20260929/candidate-initial-time.txt env OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 NUMEXPR_NUM_THREADS=1 nice -n 10 flock /tmp/epcsaft-roadmap-build.lock .venv/bin/python build/fit-audit-20260929/current_probe.py fit build/fit-audit-20260929/candidate-initial.json > build/fit-audit-20260929/candidate-initial.log 2>&1",
+    "elapsed_s": 25.84,
+    "user_s": 25.16,
+    "system_s": 0.50
+  },
+  "limit": "Commands record requested thread settings, scheduling priority and lock invocation; runtime BLAS thread counts were not independently measured."
+}

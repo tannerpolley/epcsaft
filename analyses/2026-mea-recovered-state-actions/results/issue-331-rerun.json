@@ -1,0 +1,458 @@
+{
+ "rerun": {
+  "sweep": {
+   "requests": 79,
+   "paths": {
+    "cold-packet-start": {
+     "attempts": 79,
+     "accepted": 79,
+     "same_branch": 79,
+     "iterations": 212,
+     "criteria_ok": 79,
+     "max": {
+      "balance_rel": 1.8957389467147723e-16,
+      "charge_rel": 7.589327376762165e-17,
+      "raw_row_max": 5.684341886080801e-13,
+      "trace_row_max": 2.5579538487363607e-13,
+      "affinity_max": 1.7053025658242404e-13,
+      "fugacity_max": 1.2789769243681803e-13,
+      "reduced_pressure_residual_liquid": 4.1128412623810674e-14,
+      "reduced_pressure_residual_vapor": 3.997552112825229e-14
+     }
+    },
+    "same-temperature-anchor": {
+     "attempts": 79,
+     "accepted": 79,
+     "same_branch": 79,
+     "iterations": 196,
+     "criteria_ok": 79,
+     "max": {
+      "balance_rel": 2.295961732689257e-16,
+      "charge_rel": 7.836610354245454e-17,
+      "raw_row_max": 8.498010162429038e-13,
+      "trace_row_max": 2.2737367544323206e-13,
+      "affinity_max": 1.9895196601282805e-13,
+      "fugacity_max": 1.6076029396572267e-13,
+      "reduced_pressure_residual_liquid": 5.011816502989456e-14,
+      "reduced_pressure_residual_vapor": 8.7728141756183e-13
+     }
+    },
+    "cross-temperature-anchor": {
+     "attempts": 79,
+     "accepted": 79,
+     "same_branch": 79,
+     "iterations": 211,
+     "criteria_ok": 79,
+     "max": {
+      "balance_rel": 1.7966683033070826e-16,
+      "charge_rel": 7.814140763783133e-17,
+      "raw_row_max": 3.979039320256561e-13,
+      "trace_row_max": 2.5579538487363607e-13,
+      "affinity_max": 1.5631940186722204e-13,
+      "fugacity_max": 1.7497114868092467e-13,
+      "reduced_pressure_residual_liquid": 5.660063357417532e-14,
+      "reduced_pressure_residual_vapor": 1.7285753214004116e-13
+     }
+    },
+    "feed-continuation": {
+     "attempts": 79,
+     "accepted": 76,
+     "same_branch": 76,
+     "iterations": 2309,
+     "criteria_ok": 76,
+     "max": {
+      "balance_rel": 2.0781707782292953e-16,
+      "charge_rel": 7.98329522200242e-17,
+      "raw_row_max": 4.547473508864641e-13,
+      "trace_row_max": 2.2737367544323206e-13,
+      "affinity_max": 1.7053025658242404e-13,
+      "fugacity_max": 1.6697754290362354e-13,
+      "reduced_pressure_residual_liquid": 4.994196377957063e-14,
+      "reduced_pressure_residual_vapor": 1.2814806762499619e-15
+     },
+     "step_too_small": 3
+    },
+    "feed-continuation-fine": {
+     "attempts": 79,
+     "accepted": 79,
+     "same_branch": 79,
+     "iterations": 2797,
+     "criteria_ok": 79,
+     "max": {
+      "balance_rel": 2.0781707782292953e-16,
+      "charge_rel": 7.98329522200242e-17,
+      "raw_row_max": 4.547473508864641e-13,
+      "trace_row_max": 2.2737367544323206e-13,
+      "affinity_max": 1.7053025658242404e-13,
+      "fugacity_max": 1.6697754290362354e-13,
+      "reduced_pressure_residual_liquid": 4.994196377957063e-14,
+      "reduced_pressure_residual_vapor": 1.2814806762499619e-15
+     }
+    }
+   },
+   "wall_s": 692.8,
+   "provenance": {
+    "wheel": "epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+    "wheel_sha256": "c921e015d791c68496527238fc8197c69a4eac6e91e10e630888afdf87a8ce23",
+    "mea_commit": "04a932835ae32f3855390ef9d2acd64a2877f63b",
+    "parameters_sha256": "868a501831b87e95dedf18ce40e9e7ac949f7c6a4aaf137f717cc493ecfcb7be",
+    "state_packet_sha256": "86f60041b28ec4493729b04c0238f44e86fba4becf33d6ddf47d86b7efb82448"
+   }
+  },
+  "actions": {
+   "states": [
+    {
+     "state": "B050",
+     "recovery": "cold packet start (#142 state)",
+     "recovered_ok": true,
+     "recovered_code": "",
+     "without_recovery_ok": true,
+     "without_recovery_code": "",
+     "pressure_pa": 101325.0,
+     "work": [
+      13,
+      28
+     ],
+     "wall_s": 0.138,
+     "classified_residual_max": 1.5765166949677223e-14,
+     "balance_rel": 4.91891997464855e-15,
+     "charge_rel": 3.2202737887990104e-15,
+     "raw_row_max": 1.9895196601282805e-13,
+     "trace_row_max": 1.9895196601282805e-13,
+     "trace_species": "hydronium-cation;hydroxide-anion",
+     "affinity_max": 5.1159076974727215e-14,
+     "min_liquid_x": 3.9062781603556634e-10,
+     "eta_liquid": 0.44636512434938214,
+     "dPdrho_min": 75443.42645570656,
+     "reduced_pressure_residual_liquid": 6.433665431844646e-14,
+     "reduced_hessian_minimum": 3.481022987080971e-09,
+     "criteria_ok": true
+    },
+    {
+     "state": "R360",
+     "recovery": "345 K liquid anchor",
+     "recovered_ok": true,
+     "recovered_code": "",
+     "without_recovery_ok": true,
+     "without_recovery_code": "",
+     "pressure_pa": 101325.0,
+     "work": [
+      14,
+      26
+     ],
+     "wall_s": 0.119,
+     "classified_residual_max": 4.707380898734889e-14,
+     "balance_rel": 1.4034008486871753e-16,
+     "charge_rel": 5.29947101638639e-17,
+     "raw_row_max": 1.7053025658242404e-13,
+     "trace_row_max": 5.684341886080802e-14,
+     "trace_species": "hydronium-cation;hydroxide-anion",
+     "affinity_max": 6.394884621840902e-14,
+     "min_liquid_x": 3.9891266809546785e-09,
+     "eta_liquid": 0.4284962917074358,
+     "dPdrho_min": 64744.815472771385,
+     "reduced_pressure_residual_liquid": 4.057408171557345e-16,
+     "reduced_hessian_minimum": 3.55677979509109e-08,
+     "criteria_ok": true
+    },
+    {
+     "state": "vle_obs_0128",
+     "recovery": "packet start (#152 native speciated seed)",
+     "recovered_ok": true,
+     "recovered_code": "",
+     "without_recovery_ok": true,
+     "without_recovery_code": "",
+     "pressure_pa": 6620.53272784682,
+     "work": [
+      3,
+      5
+     ],
+     "wall_s": 0.358,
+     "classified_residual_max": 2.2737367544323206e-13,
+     "balance_rel": 1.8855971827691815e-16,
+     "charge_rel": 2.2868738852431467e-17,
+     "raw_row_max": 2.2737367544323206e-13,
+     "trace_row_max": 0.0,
+     "trace_species": "carbon-dioxide;hydronium-cation",
+     "affinity_max": 7.815970093361102e-14,
+     "min_liquid_x": 6.645093322755744e-11,
+     "eta_liquid": 0.44731037257882506,
+     "dPdrho_min": 2584.3175663503484,
+     "reduced_pressure_residual_liquid": 1.679187531107548e-14,
+     "reduced_hessian_minimum": 0.0,
+     "fugacity_max": 8.171241461241152e-14,
+     "eta_vapor": 2.1048834379749103e-05,
+     "reduced_pressure_residual_vapor": 2.73725308218587e-16,
+     "vapor_support_ok": true,
+     "criteria_ok": true
+    },
+    {
+     "state": "vle_obs_0145",
+     "recovery": "packet start (#152 native speciated seed)",
+     "recovered_ok": true,
+     "recovered_code": "",
+     "without_recovery_ok": true,
+     "without_recovery_code": "",
+     "pressure_pa": 17897.85449931427,
+     "work": [
+      3,
+      5
+     ],
+     "wall_s": 0.325,
+     "classified_residual_max": 3.979039320256561e-13,
+     "balance_rel": 8.714207882100897e-17,
+     "charge_rel": 5.6896842149280694e-18,
+     "raw_row_max": 3.979039320256561e-13,
+     "trace_row_max": 2.842170943040401e-14,
+     "trace_species": "hydronium-cation",
+     "affinity_max": 9.947598300641403e-14,
+     "min_liquid_x": 1.5761587949272662e-10,
+     "eta_liquid": 0.43997980220845795,
+     "dPdrho_min": 2736.2213503885837,
+     "reduced_pressure_residual_liquid": 4.0163480025591526e-15,
+     "reduced_hessian_minimum": 0.0,
+     "fugacity_max": 4.6629367034256575e-15,
+     "eta_vapor": 5.345452264100484e-05,
+     "reduced_pressure_residual_vapor": 2.02019723803195e-16,
+     "vapor_support_ok": true,
+     "criteria_ok": true
+    },
+    {
+     "state": "vle_obs_0227",
+     "recovery": "packet start (#152 native speciated seed)",
+     "recovered_ok": true,
+     "recovered_code": "",
+     "without_recovery_ok": true,
+     "without_recovery_code": "",
+     "pressure_pa": 177605.39582444367,
+     "work": [
+      3,
+      5
+     ],
+     "wall_s": 0.32,
+     "classified_residual_max": 1.1368683772161603e-13,
+     "balance_rel": 2.631376591288454e-17,
+     "charge_rel": 1.2245973736115273e-17,
+     "raw_row_max": 1.1368683772161603e-13,
+     "trace_row_max": 0.0,
+     "trace_species": "hydronium-cation",
+     "affinity_max": 4.263256414560601e-14,
+     "min_liquid_x": 5.959882762529959e-10,
+     "eta_liquid": 0.4166654924001038,
+     "dPdrho_min": 3138.9186565416103,
+     "reduced_pressure_residual_liquid": 1.1108801245714213e-14,
+     "reduced_hessian_minimum": 0.0,
+     "fugacity_max": 3.241851231905457e-14,
+     "eta_vapor": 0.00045199389463171293,
+     "reduced_pressure_residual_vapor": 4.817338888676818e-16,
+     "vapor_support_ok": true,
+     "criteria_ok": true
+    }
+   ],
+   "actions": 405,
+   "passed": 405,
+   "unresolved_references": 0,
+   "by_direction": {
+    "T": {
+     "rows": 111,
+     "passed": 111,
+     "max_rel_error": 8.394465849380346e-08
+    },
+    "P": {
+     "rows": 42,
+     "passed": 42,
+     "max_rel_error": 4.921664126289427e-06
+    },
+    "feed": {
+     "rows": 111,
+     "passed": 111,
+     "max_rel_error": 1.3967895590600604e-06
+    },
+    "kij": {
+     "rows": 111,
+     "passed": 111,
+     "max_rel_error": 2.73047432099683e-05
+    },
+    "T:caloric": {
+     "rows": 15,
+     "passed": 15,
+     "max_rel_error": 8.84643100969958e-08
+    },
+    "feed:caloric": {
+     "rows": 15,
+     "passed": 15,
+     "max_rel_error": 5.5329042878305025e-08
+    }
+   },
+   "gibbs_helmholtz": [
+    {
+     "state": "B050:liquid-TP",
+     "heat_kJ_per_mol": 72.84352817640692,
+     "identity_rel": 1.7220130931155015e-13,
+     "cp_equilibrium_J_per_mol_K": 76.57293602110568
+    },
+    {
+     "state": "R360:liquid-TP",
+     "heat_kJ_per_mol": 73.66682416989276,
+     "identity_rel": 2.5679795498239896e-14,
+     "cp_equilibrium_J_per_mol_K": 73.53215189859131
+    },
+    {
+     "state": "vle_obs_0128:liquid-TP",
+     "heat_kJ_per_mol": 82.29072790923284,
+     "identity_rel": 3.303285599388948e-13,
+     "cp_equilibrium_J_per_mol_K": 74.84392171464614
+    },
+    {
+     "state": "vle_obs_0145:liquid-TP",
+     "heat_kJ_per_mol": 83.48112092224741,
+     "identity_rel": 1.8878189485496495e-13,
+     "cp_equilibrium_J_per_mol_K": 73.52676063710175
+    },
+    {
+     "state": "vle_obs_0227:liquid-TP",
+     "heat_kJ_per_mol": 96.09147953432804,
+     "identity_rel": 1.0343225173698054e-13,
+     "cp_equilibrium_J_per_mol_K": 79.00243581567472
+    }
+   ],
+   "identity_passed": 5,
+   "max_error_over_criterion": 0.4397901363413837,
+   "wall_s": 31.5,
+   "provenance": {
+    "wheel": "epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+    "wheel_sha256": "c921e015d791c68496527238fc8197c69a4eac6e91e10e630888afdf87a8ce23",
+    "mea_commit": "799b2011e562a84c1bd93778cd43eb8340dae362",
+    "parameters_sha256": "868a501831b87e95dedf18ce40e9e7ac949f7c6a4aaf137f717cc493ecfcb7be",
+    "state_packet_sha256": "86f60041b28ec4493729b04c0238f44e86fba4becf33d6ddf47d86b7efb82448"
+   }
+  }
+ },
+ "comparison_with_308": {
+  "retained_308_wheel_sha256": "4181cdf3d1b0f918709ddb8e6a4c5f117f963e9cd7f153099867ea5110e2cff6",
+  "sweep_rows": 395,
+  "accepted": 392,
+  "criteria_ok": 392,
+  "criteria_ok_308": 390,
+  "flag_changes": [
+   [
+    "vle_obs_0188",
+    "feed-continuation",
+    "vle_obs_0131",
+    "criteria_ok",
+    "False",
+    "True"
+   ],
+   [
+    "vle_obs_0188",
+    "feed-continuation-fine",
+    "vle_obs_0131",
+    "criteria_ok",
+    "False",
+    "True"
+   ]
+  ],
+  "other_criterion_flips": [],
+  "rows_with_same_iterations_and_evaluations": 393,
+  "largest_relative_value_movement": {
+   "pressure_pa": [
+    1.7313374425259682e-13,
+    [
+     "vle_obs_0202",
+     "cross-temperature-anchor",
+     "vle_obs_0213"
+    ]
+   ],
+   "min_liquid_x": [
+    2.523984972360892e-13,
+    [
+     "vle_obs_0127",
+     "cross-temperature-anchor",
+     "vle_obs_0145"
+    ]
+   ],
+   "eta_liquid": [
+    2.606331706633114e-15,
+    [
+     "vle_obs_0132",
+     "cold-packet-start",
+     ""
+    ]
+   ],
+   "eta_vapor": [
+    1.856699081718833e-13,
+    [
+     "vle_obs_0202",
+     "cross-temperature-anchor",
+     "vle_obs_0213"
+    ]
+   ]
+  },
+  "largest_reduced_pressure_residual": {
+   "liquid": {
+    "value": 5.660063357417532e-14,
+    "row": [
+     "vle_obs_0125",
+     "cross-temperature-anchor",
+     "vle_obs_0196"
+    ]
+   },
+   "vapor": {
+    "value": 8.7728141756183e-13,
+    "row": [
+     "vle_obs_0130",
+     "same-temperature-anchor",
+     "vle_obs_0129"
+    ]
+   }
+  },
+  "row_0188": {
+   "cold-packet-start": {
+    "reduced_pressure_residual_liquid": 2.6608346633096332e-14,
+    "reduced_pressure_residual_vapor": 1.345720009909434e-16,
+    "pressure_rel_308": 2.5812130211022577e-11,
+    "criteria_ok": "True",
+    "criteria_ok_308": "True"
+   },
+   "same-temperature-anchor": {
+    "reduced_pressure_residual_liquid": 1.5832396288507538e-14,
+    "reduced_pressure_residual_vapor": 5.382880039637572e-16,
+    "pressure_rel_308": 2.695788037243574e-10,
+    "criteria_ok": "True",
+    "criteria_ok_308": "True"
+   },
+   "cross-temperature-anchor": {
+    "reduced_pressure_residual_liquid": 2.943984101238226e-14,
+    "reduced_pressure_residual_vapor": 1.2003822488391968e-13,
+    "pressure_rel_308": 1.1217560214049627e-10,
+    "criteria_ok": "True",
+    "criteria_ok_308": "True"
+   },
+   "feed-continuation": {
+    "reduced_pressure_residual_liquid": 3.9254942654715377e-14,
+    "reduced_pressure_residual_vapor": 2.691440019818814e-16,
+    "pressure_rel_308": 1.3105825313886044e-09,
+    "criteria_ok": "True",
+    "criteria_ok_308": "False"
+   },
+   "feed-continuation-fine": {
+    "reduced_pressure_residual_liquid": 3.9254942654715377e-14,
+    "reduced_pressure_residual_vapor": 2.691440019818814e-16,
+    "pressure_rel_308": 1.3105825313886044e-09,
+    "criteria_ok": "True",
+    "criteria_ok_308": "False"
+   }
+  },
+  "largest_pressure_rel_308": 1.3105825313886044e-09,
+  "actions": {
+   "rows": 405,
+   "rows_308": 405,
+   "passed": 405,
+   "available": 405,
+   "largest_relative_movement": {
+    "value": 8.530022076753125e-13,
+    "action": 1.3053021053294434e-12
+   }
+  }
+ }
+}

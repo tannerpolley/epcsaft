@@ -1,0 +1,6 @@
+component_id,segment_count,sigma_A,u_K,assoc_energy_K,assoc_volume,molar_mass_g_mol,kij_water_constant,kij_water_slope_per_K,kij_water_reference_K,lij_water,khb_water,relative_permittivity,note
+1-butanol,2.7515,3.6139,259.59,2544.6,0.0067,74.1216,-0.102,2.94e-4,0,-0.0044,0.026,17.51,"Nann 2013a; footnote b lij, khb; permittivity Chu 1987 (Section 2.4)"
+benzene,2.4653,3.6478,287.35,,,78.1118,0.0255,6.07e-4,298.15,0,0,,Gross 2001; no permittivity (water-only dielectric)
+toluene,2.8149,3.7169,285.69,,,92.1384,0.021,7.26e-4,298.15,0,0,,Gross 2001; no permittivity (water-only dielectric)
+glycine,4.8507,2.3270,216.96,2598.1,0.0393,75.0666,-0.0612,0,0,0,0,,Held 2011; 2 sites (Ni=2)
+alanine,5.4647,2.5222,287.59,3176.6,0.0819,89.0932,-0.14796,2.91e-4,0,0,0,,Held 2011; 2 sites (Ni=2)

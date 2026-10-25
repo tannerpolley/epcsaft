@@ -1,0 +1,54 @@
+{
+  "case": 2,
+  "target": 2.0,
+  "criterion": 1e-10,
+  "structural_ln_cutoff": -46.051701859880914,
+  "requested_log_spacing": 0.1,
+  "CPU_budget_s": 140.0,
+  "CPU_s": 134.239324288,
+  "wall_s": 134.66529489099776,
+  "native_evaluations": 8425,
+  "attempt_count": 200,
+  "root_witness_count": 0,
+  "completed_passes": [
+    [
+      7,
+      "ascending",
+      25,
+      -12.0,
+      -0.7341508114309597,
+      0.46941038285704373
+    ],
+    [
+      7,
+      "descending",
+      25,
+      -12.0,
+      -0.7341508114309597,
+      0.46941038285704373
+    ],
+    [
+      5,
+      "ascending",
+      25,
+      -12.0,
+      -2.6304711034242576,
+      0.3903970373573227
+    ],
+    [
+      5,
+      "descending",
+      25,
+      -12.0,
+      -2.6304711034242576,
+      0.3903970373573227
+    ]
+  ],
+  "stopped": null,
+  "method": "fixed parameter; carbon row omitted only for chart correction; original 20 rows retained",
+  "limits": "finite seeded charts; failed corrections and intervals between samples do not exclude roots",
+  "corrector_CPU_cap_s": null,
+  "Newton_step_cap": 50,
+  "trust_region_evaluation_cap": 100,
+  "grid": "25 points per chart from ln x=-12 to the inventory upper limit; preliminary method probe, not full-range scan"
+}

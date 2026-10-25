@@ -1,0 +1,690 @@
+{
+  "baseline": {
+    "charge": 0.0,
+    "complementarity": 0.0,
+    "elapsed_s": 0.12874696800281527,
+    "feasibility": 5.692061405548898e-19,
+    "flows": [
+      0.5523292065598151,
+      0.0011469392066018602,
+      0.0006845822053071042,
+      0.027550728116338026,
+      0.027550728116338026,
+      0.16756544474233317,
+      0.03263139408563146,
+      0.21796060511261195,
+      0.00013109997136120412,
+      0.00013109997136120412
+    ],
+    "lambda": {
+      "fs.settler.feed_links[2]": -0.0,
+      "fs.settler.feed_links[3]": -0.0,
+      "fs.settler.feed_links[4]": -0.0,
+      "fs.settler.live_outlets[0,0]": -0.0,
+      "fs.settler.live_outlets[0,1]": -0.0,
+      "fs.settler.live_outlets[0,2]": -0.0,
+      "fs.settler.live_outlets[0,3]": -0.0,
+      "fs.settler.live_outlets[0,4]": -0.0,
+      "fs.settler.live_outlets[1,0]": -0.0,
+      "fs.settler.live_outlets[1,1]": -0.0,
+      "fs.settler.live_outlets[1,2]": -0.0,
+      "fs.settler.live_outlets[1,3]": -0.0,
+      "fs.settler.live_outlets[1,4]": -0.0,
+      "fs.settler.pressure_mapping[aqueous]": -0.0,
+      "fs.settler.pressure_mapping[organic]": -0.0,
+      "fs.settler.temperature_mapping[aqueous]": -0.0,
+      "fs.settler.temperature_mapping[organic]": -0.0,
+      "recovery": -0.0
+    },
+    "material": 8.326672684688674e-17,
+    "multiplier_sign": 0.0,
+    "nl_sha256": "ab03dc1fbc1476968e846cde0f677f1afa51e3b80628df8f7b87b2d8b0e7db68",
+    "objective": 2.0,
+    "option_file_sha256": "e0e7b3b26c7f1ce776d6a3f90e9b3751c9d56568bfc7dbffc467ec3d6ac41440",
+    "options": {
+      "acceptable_iter": 0,
+      "bound_relax_factor": 0,
+      "compl_inf_tol": 1e-07,
+      "constr_viol_tol": 1e-08,
+      "dual_inf_tol": 1e-07,
+      "file_print_level": 5,
+      "hessian_approximation": "exact",
+      "max_iter": 200,
+      "nlp_scaling_method": "none",
+      "output_file": "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-461-diagnose-build-route-change-moved-d5d8a30d/analyses/2026-khudaida-idaes-settler/results/live/baseline/ipopt.log",
+      "point_perturbation_radius": 0,
+      "print_user_options": "yes",
+      "tol": 1e-09
+    },
+    "recovery": 0.9660451213895275,
+    "si": 1.0,
+    "ss": 1.0,
+    "stationarity": 0.0,
+    "termination": "optimal",
+    "zL": {
+      "fs.settler.flow_mol_aqueous[chloride-anion]": 0.0,
+      "fs.settler.flow_mol_aqueous[ethanol]": 0.0,
+      "fs.settler.flow_mol_aqueous[isobutanol]": 0.0,
+      "fs.settler.flow_mol_aqueous[sodium-cation]": 0.0,
+      "fs.settler.flow_mol_aqueous[water]": 0.0,
+      "fs.settler.flow_mol_in[chloride-anion]": 0.0,
+      "fs.settler.flow_mol_in[isobutanol]": 0.0,
+      "fs.settler.flow_mol_in[sodium-cation]": 0.0,
+      "fs.settler.flow_mol_organic[chloride-anion]": 0.0,
+      "fs.settler.flow_mol_organic[ethanol]": 0.0,
+      "fs.settler.flow_mol_organic[isobutanol]": 0.0,
+      "fs.settler.flow_mol_organic[sodium-cation]": 0.0,
+      "fs.settler.flow_mol_organic[water]": 0.0,
+      "fs.settler.pressure_out[aqueous]": 0.0,
+      "fs.settler.pressure_out[organic]": 0.0,
+      "fs.settler.temperature_out[aqueous]": 0.0,
+      "fs.settler.temperature_out[organic]": 0.0
+    },
+    "zU": {
+      "fs.settler.flow_mol_aqueous[chloride-anion]": -0.0,
+      "fs.settler.flow_mol_aqueous[ethanol]": -0.0,
+      "fs.settler.flow_mol_aqueous[isobutanol]": -0.0,
+      "fs.settler.flow_mol_aqueous[sodium-cation]": -0.0,
+      "fs.settler.flow_mol_aqueous[water]": -0.0,
+      "fs.settler.flow_mol_in[chloride-anion]": -0.0,
+      "fs.settler.flow_mol_in[isobutanol]": -0.0,
+      "fs.settler.flow_mol_in[sodium-cation]": -0.0,
+      "fs.settler.flow_mol_organic[chloride-anion]": -0.0,
+      "fs.settler.flow_mol_organic[ethanol]": -0.0,
+      "fs.settler.flow_mol_organic[isobutanol]": -0.0,
+      "fs.settler.flow_mol_organic[sodium-cation]": -0.0,
+      "fs.settler.flow_mol_organic[water]": -0.0,
+      "fs.settler.pressure_out[aqueous]": -0.0,
+      "fs.settler.pressure_out[organic]": -0.0,
+      "fs.settler.temperature_out[aqueous]": -0.0,
+      "fs.settler.temperature_out[organic]": -0.0
+    }
+  },
+  "certificates": {
+    "anchor": {
+      "classified_residual": 1.710186015516489e-14,
+      "dimension": 20,
+      "rank": 20,
+      "reduced_hessian_minimum": 0.00010989253544469737,
+      "requested_tolerance_met": true,
+      "statuses": [
+        "Available"
+      ],
+      "steps": 0,
+      "water_gap": 0.5060820013663587
+    },
+    "optimum": {
+      "classified_residual": 2.171202605786002e-14,
+      "dimension": 20,
+      "rank": 20,
+      "reduced_hessian_minimum": 0.00011053975044799396,
+      "requested_tolerance_met": true,
+      "statuses": [
+        "Available"
+      ],
+      "steps": 4,
+      "water_gap": 0.5085666148341201
+    },
+    "start-0.9": {
+      "classified_residual": 1.1433941718606009e-14,
+      "dimension": 20,
+      "rank": 20,
+      "reduced_hessian_minimum": 9.37376128373488e-05,
+      "requested_tolerance_met": true,
+      "statuses": [
+        "Available"
+      ],
+      "steps": 4,
+      "water_gap": 0.5057594375501295
+    },
+    "start-1.0": {
+      "classified_residual": 1.710186015516489e-14,
+      "dimension": 20,
+      "rank": 20,
+      "reduced_hessian_minimum": 0.00010989253544469737,
+      "requested_tolerance_met": true,
+      "statuses": [
+        "Available"
+      ],
+      "steps": 0,
+      "water_gap": 0.5060820013663587
+    },
+    "start-1.1": {
+      "classified_residual": 1.2130287046689638e-14,
+      "dimension": 20,
+      "rank": 20,
+      "reduced_hessian_minimum": 0.00012698470766926443,
+      "requested_tolerance_met": true,
+      "statuses": [
+        "Available"
+      ],
+      "steps": 4,
+      "water_gap": 0.5059063301818916
+    }
+  },
+  "failures": [
+    {
+      "case": "determinism",
+      "cold_warm_reordered_fgh": true
+    },
+    {
+      "cache_recovery_fgh": true,
+      "case": "version",
+      "error": "\"epcsaft_equilibrium:defining_equations_not_satisfied:phase[0].amount[0]",
+      "nonfinite_outputs": true
+    },
+    {
+      "cache_recovery_fgh": true,
+      "case": "truncated",
+      "error": "\"epcsaft_equilibrium:defining_equations_not_satisfied:phase[0].amount[0]",
+      "nonfinite_outputs": true
+    },
+    {
+      "cache_recovery_fgh": true,
+      "case": "feed_map",
+      "error": "\"epcsaft_equilibrium:defining_equations_not_satisfied:phase[0].amount[0]",
+      "nonfinite_outputs": true
+    },
+    {
+      "cache_recovery_fgh": true,
+      "case": "record_change",
+      "error": "\"epcsaft_equilibrium:defining_equations_not_satisfied:phase[0].amount[0]",
+      "nonfinite_outputs": true
+    },
+    {
+      "cache_recovery_fgh": true,
+      "case": "selector",
+      "error": "\"epcsaft_equilibrium:defining_equations_not_satisfied:request",
+      "nonfinite_outputs": true
+    },
+    {
+      "cache_recovery_fgh": true,
+      "case": "negative",
+      "error": "\"epcsaft_equilibrium:outside_interval:phase[0].amount[0]",
+      "nonfinite_outputs": true
+    },
+    {
+      "cache_recovery_fgh": true,
+      "case": "nonfinite",
+      "error": "\"epcsaft_equilibrium:nonfinite:phase[0].amount[0]",
+      "nonfinite_outputs": true
+    },
+    {
+      "cache_recovery_fgh": true,
+      "case": "phase_swap",
+      "error": "\"epcsaft_equilibrium:phase_boundary_not_differentiable:phase[0].amount[0]",
+      "nonfinite_outputs": true
+    },
+    {
+      "cache_recovery_fgh": true,
+      "case": "support",
+      "error": "\"epcsaft_equilibrium:defining_equations_not_satisfied:phase[0].amount[0]",
+      "nonfinite_outputs": true
+    },
+    {
+      "cache_recovery_fgh": true,
+      "case": "boundary",
+      "error": "\"epcsaft_equilibrium:phase_boundary_not_differentiable:phase[0].amount[0]",
+      "nonfinite_outputs": true
+    },
+    {
+      "cache_recovery_fgh": true,
+      "case": "unavailable",
+      "error": "\"epcsaft_equilibrium:central_solve_unavailable:phase[0].amount[0]",
+      "nonfinite_outputs": true
+    }
+  ],
+  "identity": {
+    "dependencies": {
+      "exports": [
+        "funcadd_ASL"
+      ],
+      "needed": [
+        "libipopt.so.1",
+        "libstdc++.so.6",
+        "libm.so.6",
+        "libgcc_s.so.1",
+        "libc.so.6",
+        "ld-linux-x86-64.so.2"
+      ],
+      "runpaths": []
+    },
+    "engine_wheel": "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-461-diagnose-build-route-change-moved-d5d8a30d/build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+    "engine_wheel_sha256": "2751a0dd8f8341940db4d865086d206477435458f3b9c5ee95318e6c33e6072b",
+    "epcsaft_core_import": "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-461-diagnose-build-route-change-moved-d5d8a30d/.venv/lib/python3.13/site-packages/epcsaft/_core.cpython-313-x86_64-linux-gnu.so",
+    "epcsaft_import": "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-461-diagnose-build-route-change-moved-d5d8a30d/.venv/lib/python3.13/site-packages/epcsaft/__init__.py",
+    "epcsaft_version": "0.2.0.dev0",
+    "hardware": {
+      "machine": "x86_64",
+      "node": "tnnrpolley21-MS-7C95",
+      "processor": "x86_64",
+      "release": "7.0.0-38-generic",
+      "system": "Linux",
+      "version": "#38~24.04.4-Ubuntu SMP PREEMPT_DYNAMIC Mon Sep 14 16:37:11 UTC 2"
+    },
+    "idaes_version": "2.12.0",
+    "inputs": {
+      "packet": {
+        "computed_fingerprint": "23eb6e97e126f827f453b7e748548f5a7123828acac5ff8877e0c60902a3b418",
+        "files": [
+          {
+            "path": "packet.toml",
+            "sha256": "6ff2684d816df92dc0c5a26b52dbce68d628e9961512fad479433edbfc92ee41"
+          },
+          {
+            "path": "parameters/parameters.json",
+            "sha256": "8babed899e7347e58c403c7aff24a7fdd6d60411af3b4d81eb6aa90c2431dfa4"
+          },
+          {
+            "path": "provenance/source-origin.toml",
+            "sha256": "cd12c9af98c214c5d68355823bf47662e27c4585ddce6cf5c29f592f29c50c8e"
+          }
+        ],
+        "materialization": "byte-for-byte",
+        "materialized_path": "analyses/2026-khudaida-idaes-settler/inputs/data/khudaida-2026-figure-2-electrolyte-lle/7",
+        "packet_fingerprint": "23eb6e97e126f827f453b7e748548f5a7123828acac5ff8877e0c60902a3b418",
+        "packet_id": "khudaida-2026-figure-2-electrolyte-lle",
+        "packet_path": "data/packets/khudaida-2026-figure-2-electrolyte-lle/7",
+        "packet_version": "7"
+      },
+      "source_files": {
+        "experimental_tie_lines": {
+          "path": "analyses/reproduction/2026-khudaida/inputs/source/table-3-4-experimental-tielines.csv",
+          "sha256": "8f69d4fd5b01e4b9c9abaa94eb0698e685b1ec5a9936468de15fdec4509458b1"
+        },
+        "experimental_uncertainties": {
+          "path": "analyses/reproduction/2026-khudaida/inputs/source/table-3-standard-uncertainties.csv",
+          "sha256": "124e65d33243fb5a06b3299aaf584553c516a70ba645e5f37caa1b8d409e3c87"
+        },
+        "feed_to_tie_lines": {
+          "path": "analyses/reproduction/2026-khudaida/inputs/source/figure-02-feed-to-table-3-tie-lines.csv",
+          "sha256": "00c5c669046dc933b8f5827eece16d1174866a038370ebf311a47aa3a091e706"
+        },
+        "paper_epcsaft_curve": {
+          "path": "analyses/reproduction/2026-khudaida/figures/figure-02/source/paper-epcsaft-points.csv",
+          "sha256": "d00008864de1c505dd54fe3d32612911f997f5c83402869cfc1e6d7739de321d"
+        },
+        "paper_table_9": {
+          "path": "analyses/reproduction/2026-khudaida/results/tables/table-009/source/table-009.csv",
+          "sha256": "defc0b23ac71bfd9fa0267354053711b13fa41e7ad7f991c65d3ef145b295ba8"
+        },
+        "source_feed": {
+          "path": "analyses/reproduction/2026-khudaida/figures/figure-02/source/source-points.csv",
+          "sha256": "21cf58a5373b2e2c337b6baf5a0423d0ab5d7cea9639bb727b061f5844ef78d7"
+        }
+      }
+    },
+    "library": "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-461-diagnose-build-route-change-moved-d5d8a30d/.venv/lib/python3.13/site-packages/epcsaft/libepcsaft_asl.so",
+    "library_sha256": "56332a7c5d9e1d8ff5b84041acd01335a352d1b8f0aaa7888dd60dd2775d1d43",
+    "pyomo_version": "6.10.1",
+    "python": "3.13.14 (main, Jun 23 2026, 15:18:27) [Clang 22.1.3 ]",
+    "record_sha256": "32d32c0f4625dc79249affe7c82b59a5efcaf1542cda8c35099df3e03017de85",
+    "solver": {
+      "executable": "/home/tnnrpolley21/.idaes/bin/ipopt",
+      "sha256": "8f8711b709b5f265ff7cb8b352c037bb999d88628384be8390f26530f08de94e",
+      "version": "Ipopt 3.13.2 (x86_64-pc-linux-gnu), ASL(20190605)"
+    },
+    "source_commit": "ebc845474edff19454fb7de9c7121da80160b3ed",
+    "source_dirty": false,
+    "source_hashes": {
+      "analyses/2026-idaes-asl-adapter/scripts/run.py": "35bde84186a5bde9a195263c6c5c43db55049060cb0d6e3ba8b82ee2ae978102",
+      "analyses/2026-khudaida-idaes-settler/scripts/run_fixed_settler.py": "86b3508b682c8a47fdb1f05c322f384dd93e40afe0ad754ab032baab0f1f1b95",
+      "analyses/2026-khudaida-idaes-settler/scripts/run_live_settler.py": "2e5be337daf5cdffe40317c5614b0ddf13b594a2ef8f471fb5dc691094beb214",
+      "engine/native/bindings/asl_adapter.cpp": "0ce2ea80d7bc347aed98873176d13f268ebe44123fab1fe1c13cbbe66757cc7a",
+      "engine/native/bindings/equilibrium_bindings.cpp": "c625462d610f012d29d2ea2ce8587e1a6f95bf10eb9d747372840846f7b2441a",
+      "engine/native/bindings/equilibrium_record.hpp": "92614b7bc2b49379c4297fce9ff94692f53c15b6f0ffd72a55b9816c2b0ee310",
+      "engine/src/epcsaft/equilibrium/__init__.py": "71e4ce17b8819e1878ddcee2f5935f61059d34102050d82df1a5512bae0558f8",
+      "engine/src/epcsaft/parameters.py": "539d1f7760035d7334c8f2722acef92aefecb6dae962d4ad2f29d901af581772"
+    },
+    "threads": {
+      "MKL_NUM_THREADS": null,
+      "OMP_NUM_THREADS": null,
+      "OPENBLAS_NUM_THREADS": null
+    },
+    "time_basis_s": 1.0,
+    "units": {
+      "composition": "mol/mol",
+      "density": "mol/m^3",
+      "flows": "mol/s",
+      "pressure": "Pa",
+      "temperature": "K"
+    },
+    "writer_options": {
+      "linear_presolve": false,
+      "scale_model": false,
+      "skip_trivial_constraints": false,
+      "symbolic_solver_labels": true
+    }
+  },
+  "limits": "Declared local two-liquid branch, fixed T/P and stated feed box; no discovery, global optimum, calorics or reactive Lithium qualification.",
+  "optimization": [
+    {
+      "charge": 0.0,
+      "complementarity": 9.091158215437178e-11,
+      "elapsed_s": 10.666691459999129,
+      "feasibility": 1.4627188349436437e-14,
+      "flows": [
+        0.5414645205833098,
+        0.0011822416650817428,
+        0.0007325001205985416,
+        0.025204165671185247,
+        0.025204165671185247,
+        0.17843013071883848,
+        0.03259609162715159,
+        0.23111904046984466,
+        0.00013131001423466237,
+        0.00013131001423466237
+      ],
+      "lambda": {
+        "fs.settler.feed_links[2]": 4.57361999525067,
+        "fs.settler.feed_links[3]": 36.124781778366476,
+        "fs.settler.feed_links[4]": 3.5882181559650257e-09,
+        "fs.settler.live_outlets[0,0]": 1.6789398940964752e-10,
+        "fs.settler.live_outlets[0,1]": 7.689551516725257e-08,
+        "fs.settler.live_outlets[0,2]": 1.2410782387222234e-07,
+        "fs.settler.live_outlets[0,3]": 3.6069122877487245e-09,
+        "fs.settler.live_outlets[0,4]": 3.6069122877487245e-09,
+        "fs.settler.live_outlets[1,0]": 5.09492469171008e-10,
+        "fs.settler.live_outlets[1,1]": 620.8607706299905,
+        "fs.settler.live_outlets[1,2]": 3.9334171709745303e-10,
+        "fs.settler.live_outlets[1,3]": 6.923239245113624e-07,
+        "fs.settler.live_outlets[1,4]": 6.923239245113624e-07,
+        "fs.settler.pressure_mapping[aqueous]": -0.0,
+        "fs.settler.pressure_mapping[organic]": -0.0,
+        "fs.settler.temperature_mapping[aqueous]": -0.0,
+        "fs.settler.temperature_mapping[organic]": -0.0,
+        "recovery": 20.971642038318443
+      },
+      "material": 4.119968255444917e-17,
+      "multiplier_sign": 0.0,
+      "nl_sha256": "0b7b7c73a577e29b08f120194791bda99fd264b7cd2f4936d4d2b8e27c19a036",
+      "nl_transport_max_abs": 4.440892098500626e-16,
+      "objective": 1.975639372755174,
+      "option_file_sha256": "d51d06d32d3a56ee0e740fe011430c1c275a9b20fd17d35c18fc0dd9b47db473",
+      "options": {
+        "acceptable_iter": 0,
+        "bound_relax_factor": 0,
+        "compl_inf_tol": 1e-07,
+        "constr_viol_tol": 1e-08,
+        "derivative_test": "second-order",
+        "derivative_test_perturbation": 1e-06,
+        "derivative_test_tol": 0.0001,
+        "dual_inf_tol": 1e-07,
+        "file_print_level": 5,
+        "hessian_approximation": "exact",
+        "max_iter": 200,
+        "nlp_scaling_method": "none",
+        "output_file": "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-461-diagnose-build-route-change-moved-d5d8a30d/analyses/2026-khudaida-idaes-settler/results/live/start-0.9/ipopt.log",
+        "point_perturbation_radius": 0,
+        "print_user_options": "yes",
+        "tol": 1e-09
+      },
+      "recovery": 0.965000000004335,
+      "si": 1.060400841356373,
+      "ss": 0.9152385313988008,
+      "stationarity": 3.665966266010231e-12,
+      "termination": "optimal",
+      "zL": {
+        "fs.settler.flow_mol_aqueous[chloride-anion]": 3.6069131968396333e-09,
+        "fs.settler.flow_mol_aqueous[ethanol]": 7.689551607634381e-08,
+        "fs.settler.flow_mol_aqueous[isobutanol]": 1.2410782478131316e-07,
+        "fs.settler.flow_mol_aqueous[sodium-cation]": 3.6069131968396333e-09,
+        "fs.settler.flow_mol_aqueous[water]": 1.678948985005563e-10,
+        "fs.settler.flow_mol_in[chloride-anion]": 3.5882190650559345e-09,
+        "fs.settler.flow_mol_in[isobutanol]": 3.920999195953362e-10,
+        "fs.settler.flow_mol_in[sodium-cation]": 3.5882190650559212e-09,
+        "fs.settler.flow_mol_organic[chloride-anion]": 6.923239254204523e-07,
+        "fs.settler.flow_mol_organic[ethanol]": 2.78895679387378e-09,
+        "fs.settler.flow_mol_organic[isobutanol]": 3.933426261883618e-10,
+        "fs.settler.flow_mol_organic[sodium-cation]": 6.923239254204523e-07,
+        "fs.settler.flow_mol_organic[water]": 5.094933782619184e-10,
+        "fs.settler.pressure_out[aqueous]": 0.0,
+        "fs.settler.pressure_out[organic]": 0.0,
+        "fs.settler.temperature_out[aqueous]": 0.0,
+        "fs.settler.temperature_out[organic]": 0.0,
+        "si": 4.3207281438060464e-10,
+        "ss": 1.393519086842941e-09
+      },
+      "zU": {
+        "fs.settler.flow_mol_aqueous[chloride-anion]": -0.0,
+        "fs.settler.flow_mol_aqueous[ethanol]": -0.0,
+        "fs.settler.flow_mol_aqueous[isobutanol]": -0.0,
+        "fs.settler.flow_mol_aqueous[sodium-cation]": -0.0,
+        "fs.settler.flow_mol_aqueous[water]": -0.0,
+        "fs.settler.flow_mol_in[chloride-anion]": -0.0,
+        "fs.settler.flow_mol_in[isobutanol]": -0.0,
+        "fs.settler.flow_mol_in[sodium-cation]": -0.0,
+        "fs.settler.flow_mol_organic[chloride-anion]": -0.0,
+        "fs.settler.flow_mol_organic[ethanol]": -0.0,
+        "fs.settler.flow_mol_organic[isobutanol]": -0.0,
+        "fs.settler.flow_mol_organic[sodium-cation]": -0.0,
+        "fs.settler.flow_mol_organic[water]": -0.0,
+        "fs.settler.pressure_out[aqueous]": -0.0,
+        "fs.settler.pressure_out[organic]": -0.0,
+        "fs.settler.temperature_out[aqueous]": -0.0,
+        "fs.settler.temperature_out[organic]": -0.0,
+        "si": 1.0146358316623687e-09,
+        "ss": 3.872378307339669e-10
+      }
+    },
+    {
+      "charge": 0.0,
+      "complementarity": 9.091158215437259e-11,
+      "elapsed_s": 9.439894782997726,
+      "feasibility": 5.10702591327572e-15,
+      "flows": [
+        0.5414645205833227,
+        0.0011822416650817478,
+        0.000732500120598543,
+        0.02520416567118678,
+        0.02520416567118678,
+        0.17843013071882574,
+        0.03259609162715159,
+        0.23111904046983917,
+        0.0001313100142346514,
+        0.0001313100142346514
+      ],
+      "lambda": {
+        "fs.settler.feed_links[2]": 4.57361999525067,
+        "fs.settler.feed_links[3]": 36.124781778366476,
+        "fs.settler.feed_links[4]": 3.5882181559629346e-09,
+        "fs.settler.live_outlets[0,0]": 1.6789398940960782e-10,
+        "fs.settler.live_outlets[0,1]": 7.689551516722589e-08,
+        "fs.settler.live_outlets[0,2]": 1.2410782387212705e-07,
+        "fs.settler.live_outlets[0,3]": 3.606912287746607e-09,
+        "fs.settler.live_outlets[0,4]": 3.606912287746607e-09,
+        "fs.settler.live_outlets[1,0]": 5.094924691713835e-10,
+        "fs.settler.live_outlets[1,1]": 620.8607706299962,
+        "fs.settler.live_outlets[1,2]": 3.933417170975523e-10,
+        "fs.settler.live_outlets[1,3]": 6.923239245130801e-07,
+        "fs.settler.live_outlets[1,4]": 6.923239245130801e-07,
+        "fs.settler.pressure_mapping[aqueous]": -0.0,
+        "fs.settler.pressure_mapping[organic]": -0.0,
+        "fs.settler.temperature_mapping[aqueous]": -0.0,
+        "fs.settler.temperature_mapping[organic]": -0.0,
+        "recovery": 20.97164203831863
+      },
+      "material": 1.1102230246251565e-16,
+      "multiplier_sign": 0.0,
+      "nl_sha256": "de60e21dc4b04384b573f4486a4fae9dd01fb29de2c7e66999c6ca29e99282eb",
+      "nl_transport_max_abs": 1.3322676295501878e-15,
+      "objective": 1.9756393727552035,
+      "option_file_sha256": "985dd11a2dbc34c5e9d10ce74ee223897b24895b124abd6e70ab94389a9cd7fe",
+      "options": {
+        "acceptable_iter": 0,
+        "bound_relax_factor": 0,
+        "compl_inf_tol": 1e-07,
+        "constr_viol_tol": 1e-08,
+        "derivative_test": "second-order",
+        "derivative_test_perturbation": 1e-06,
+        "derivative_test_tol": 0.0001,
+        "dual_inf_tol": 1e-07,
+        "file_print_level": 5,
+        "hessian_approximation": "exact",
+        "max_iter": 200,
+        "nlp_scaling_method": "none",
+        "output_file": "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-461-diagnose-build-route-change-moved-d5d8a30d/analyses/2026-khudaida-idaes-settler/results/live/start-1.0/ipopt.log",
+        "point_perturbation_radius": 0,
+        "print_user_options": "yes",
+        "tol": 1e-09
+      },
+      "recovery": 0.965000000004335,
+      "si": 1.0604008413563477,
+      "ss": 0.9152385313988558,
+      "stationarity": 1.7057368184140043e-12,
+      "termination": "optimal",
+      "zL": {
+        "fs.settler.flow_mol_aqueous[chloride-anion]": 3.6069131968375157e-09,
+        "fs.settler.flow_mol_aqueous[ethanol]": 7.689551607631713e-08,
+        "fs.settler.flow_mol_aqueous[isobutanol]": 1.2410782478121786e-07,
+        "fs.settler.flow_mol_aqueous[sodium-cation]": 3.6069131968375157e-09,
+        "fs.settler.flow_mol_aqueous[water]": 1.678948985005166e-10,
+        "fs.settler.flow_mol_in[chloride-anion]": 3.5882190650538434e-09,
+        "fs.settler.flow_mol_in[isobutanol]": 3.9209991959543545e-10,
+        "fs.settler.flow_mol_in[sodium-cation]": 3.5882190650538434e-09,
+        "fs.settler.flow_mol_organic[chloride-anion]": 6.923239254221735e-07,
+        "fs.settler.flow_mol_organic[ethanol]": 2.78895679387378e-09,
+        "fs.settler.flow_mol_organic[isobutanol]": 3.9334262618846107e-10,
+        "fs.settler.flow_mol_organic[sodium-cation]": 6.923239254221735e-07,
+        "fs.settler.flow_mol_organic[water]": 5.094933782622939e-10,
+        "fs.settler.pressure_out[aqueous]": 0.0,
+        "fs.settler.pressure_out[organic]": 0.0,
+        "fs.settler.temperature_out[aqueous]": 0.0,
+        "fs.settler.temperature_out[organic]": 0.0,
+        "si": 4.320728143811671e-10,
+        "ss": 1.393519086831764e-09
+      },
+      "zU": {
+        "fs.settler.flow_mol_aqueous[chloride-anion]": -0.0,
+        "fs.settler.flow_mol_aqueous[ethanol]": -0.0,
+        "fs.settler.flow_mol_aqueous[isobutanol]": -0.0,
+        "fs.settler.flow_mol_aqueous[sodium-cation]": -0.0,
+        "fs.settler.flow_mol_aqueous[water]": -0.0,
+        "fs.settler.flow_mol_in[chloride-anion]": -0.0,
+        "fs.settler.flow_mol_in[isobutanol]": -0.0,
+        "fs.settler.flow_mol_in[sodium-cation]": -0.0,
+        "fs.settler.flow_mol_organic[chloride-anion]": -0.0,
+        "fs.settler.flow_mol_organic[ethanol]": -0.0,
+        "fs.settler.flow_mol_organic[isobutanol]": -0.0,
+        "fs.settler.flow_mol_organic[sodium-cation]": -0.0,
+        "fs.settler.flow_mol_organic[water]": -0.0,
+        "fs.settler.pressure_out[aqueous]": -0.0,
+        "fs.settler.pressure_out[organic]": -0.0,
+        "fs.settler.temperature_out[aqueous]": -0.0,
+        "fs.settler.temperature_out[organic]": -0.0,
+        "si": 1.0146358316592784e-09,
+        "ss": 3.872378307348338e-10
+      }
+    },
+    {
+      "charge": 0.0,
+      "complementarity": 9.091158215437184e-11,
+      "elapsed_s": 10.80770298200514,
+      "feasibility": 1.3322676295501878e-15,
+      "flows": [
+        0.5414645205833194,
+        0.0011822416650817578,
+        0.0007325001205985665,
+        0.025204165671186163,
+        0.025204165671186163,
+        0.17843013071882904,
+        0.03259609162715159,
+        0.2311190404698425,
+        0.00013131001423464318,
+        0.00013131001423464318
+      ],
+      "lambda": {
+        "fs.settler.feed_links[2]": 4.57361999525067,
+        "fs.settler.feed_links[3]": 36.124781778366476,
+        "fs.settler.feed_links[4]": 3.5882181559605523e-09,
+        "fs.settler.live_outlets[0,0]": 1.6789398940954495e-10,
+        "fs.settler.live_outlets[0,1]": 7.68955151672043e-08,
+        "fs.settler.live_outlets[0,2]": 1.2410782387200465e-07,
+        "fs.settler.live_outlets[0,3]": 3.606912287744119e-09,
+        "fs.settler.live_outlets[0,4]": 3.606912287744119e-09,
+        "fs.settler.live_outlets[1,0]": 5.094924691719443e-10,
+        "fs.settler.live_outlets[1,1]": 620.860770629991,
+        "fs.settler.live_outlets[1,2]": 3.933417170975738e-10,
+        "fs.settler.live_outlets[1,3]": 6.923239245156754e-07,
+        "fs.settler.live_outlets[1,4]": 6.923239245156754e-07,
+        "fs.settler.pressure_mapping[aqueous]": -0.0,
+        "fs.settler.pressure_mapping[organic]": -0.0,
+        "fs.settler.temperature_mapping[aqueous]": -0.0,
+        "fs.settler.temperature_mapping[organic]": -0.0,
+        "recovery": 20.971642038318457
+      },
+      "material": 8.326672684688674e-17,
+      "multiplier_sign": 0.0,
+      "nl_sha256": "6631fbdbd2954d0f824321109165dc4c72ddd840820a38ea51435c1576faff07",
+      "nl_transport_max_abs": 6.661338147750939e-16,
+      "objective": 1.9756393727551962,
+      "option_file_sha256": "2148d9bd1082b2e2eaecafc07cecf26adda34b476a2297d46c8a07a7a8eae6c9",
+      "options": {
+        "acceptable_iter": 0,
+        "bound_relax_factor": 0,
+        "compl_inf_tol": 1e-07,
+        "constr_viol_tol": 1e-08,
+        "derivative_test": "second-order",
+        "derivative_test_perturbation": 1e-06,
+        "derivative_test_tol": 0.0001,
+        "dual_inf_tol": 1e-07,
+        "file_print_level": 5,
+        "hessian_approximation": "exact",
+        "max_iter": 200,
+        "nlp_scaling_method": "none",
+        "output_file": "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-461-diagnose-build-route-change-moved-d5d8a30d/analyses/2026-khudaida-idaes-settler/results/live/start-1.1/ipopt.log",
+        "point_perturbation_radius": 0,
+        "print_user_options": "yes",
+        "tol": 1e-09
+      },
+      "recovery": 0.965000000004335,
+      "si": 1.0604008413563633,
+      "ss": 0.915238531398833,
+      "stationarity": 5.404467341497201e-13,
+      "termination": "optimal",
+      "zL": {
+        "fs.settler.flow_mol_aqueous[chloride-anion]": 3.6069131968350276e-09,
+        "fs.settler.flow_mol_aqueous[ethanol]": 7.689551607629511e-08,
+        "fs.settler.flow_mol_aqueous[isobutanol]": 1.2410782478109547e-07,
+        "fs.settler.flow_mol_aqueous[sodium-cation]": 3.6069131968350276e-09,
+        "fs.settler.flow_mol_aqueous[water]": 1.6789489850045373e-10,
+        "fs.settler.flow_mol_in[chloride-anion]": 3.588219065051461e-09,
+        "fs.settler.flow_mol_in[isobutanol]": 3.9209991959545365e-10,
+        "fs.settler.flow_mol_in[sodium-cation]": 3.588219065051461e-09,
+        "fs.settler.flow_mol_organic[chloride-anion]": 6.923239254247688e-07,
+        "fs.settler.flow_mol_organic[ethanol]": 2.78895679387378e-09,
+        "fs.settler.flow_mol_organic[isobutanol]": 3.933426261884826e-10,
+        "fs.settler.flow_mol_organic[sodium-cation]": 6.923239254247688e-07,
+        "fs.settler.flow_mol_organic[water]": 5.094933782628531e-10,
+        "fs.settler.pressure_out[aqueous]": 0.0,
+        "fs.settler.pressure_out[organic]": 0.0,
+        "fs.settler.temperature_out[aqueous]": 0.0,
+        "fs.settler.temperature_out[organic]": 0.0,
+        "si": 4.320728143812581e-10,
+        "ss": 1.3935190868186285e-09
+      },
+      "zU": {
+        "fs.settler.flow_mol_aqueous[chloride-anion]": -0.0,
+        "fs.settler.flow_mol_aqueous[ethanol]": -0.0,
+        "fs.settler.flow_mol_aqueous[isobutanol]": -0.0,
+        "fs.settler.flow_mol_aqueous[sodium-cation]": -0.0,
+        "fs.settler.flow_mol_aqueous[water]": -0.0,
+        "fs.settler.flow_mol_in[chloride-anion]": -0.0,
+        "fs.settler.flow_mol_in[isobutanol]": -0.0,
+        "fs.settler.flow_mol_in[sodium-cation]": -0.0,
+        "fs.settler.flow_mol_organic[chloride-anion]": -0.0,
+        "fs.settler.flow_mol_organic[ethanol]": -0.0,
+        "fs.settler.flow_mol_organic[isobutanol]": -0.0,
+        "fs.settler.flow_mol_organic[sodium-cation]": -0.0,
+        "fs.settler.flow_mol_organic[water]": -0.0,
+        "fs.settler.pressure_out[aqueous]": -0.0,
+        "fs.settler.pressure_out[organic]": -0.0,
+        "fs.settler.temperature_out[aqueous]": -0.0,
+        "fs.settler.temperature_out[organic]": -0.0,
+        "si": 1.0146358316587655e-09,
+        "ss": 3.872378307358463e-10
+      }
+    }
+  ],
+  "status": "accepted"
+}

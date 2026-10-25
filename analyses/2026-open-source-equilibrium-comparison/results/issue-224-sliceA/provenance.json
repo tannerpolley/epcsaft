@@ -1,0 +1,112 @@
+{
+  "issue": "https://github.com/tannerpolley/ePC-SAFT/issues/224",
+  "base_commit": "1218dc7840b4215f57af36221cd81eaa23121a6c",
+  "wheel_sha256": "f83fdd5b834168e4a5c45b9a0fce96854be7f3d166b4c1b70b63b03275cd84d8",
+  "wheel_build_sha256": "c8af8fb5c2aa435cc7b2b618bd96009aa8ad5ba209d701ebe1e820738ef47e44",
+  "reference": {
+    "name": "FeOs",
+    "version": "0.10.1",
+    "commit": "c658aeab484f7a7096bfbf5425e40effd60da167",
+    "source": "https://github.com/feos-org/feos/blob/v0.10.1/crates/feos/src/ideal_gas/dippr.rs",
+    "R_J_per_mol_K": 8.31446261815324,
+    "tolerance": 1e-12,
+    "max_iter": 1000,
+    "DIPPR107_conversion": "A/B/D * 1000; C/E unchanged; native reference input owner"
+  },
+  "inputs": {
+    "packets": [
+      "gross-2001-methane-ethane/3",
+      "gross-2001-propane/3"
+    ],
+    "thermal_source": "engine/tests/native/caloric_specification_inputs.hpp",
+    "thermal_sha256": "41c073544ec0a5f2477ee80e44161b9ad9ae4f49c8c8683183e80c0d99a9f317",
+    "basis": "resolved extensive feed amounts in mol; H in J; S in J/K",
+    "T_ref_K": 298.15,
+    "P0_Pa": 100000,
+    "T_interval_K": [
+      100,
+      550
+    ],
+    "H_anchor_J_per_mol": 0,
+    "S_anchor_J_per_mol_K": 0,
+    "classification": "manufactured numerical inputs, no physical adoption",
+    "packet_file_sha256": {
+      "data/packets/gross-2001-methane-ethane/3/packet.toml": "b3d47ea998138345f96264d570432e56e4da85dabc0f756f829a9c8af3fe8b4b",
+      "data/packets/gross-2001-methane-ethane/3/parameters/parameters.json": "109cfe8e80c4fcefadcbb4975ebe7436d371710ed9d20f2c7bd6d30d9c581bf2",
+      "data/packets/gross-2001-propane/3/packet.toml": "8b6d329e6be7c15db0db3a0507869ac38b57719a09051437b2dc35fde250f1b3",
+      "data/packets/gross-2001-propane/3/parameters/parameters.json": "6dc4d60f10ef4364c01cbccf9821447ff9c4c815cc8e94284b853d1cdee71ccb"
+    }
+  },
+  "criteria": {
+    "row": 1e-11,
+    "closure": 1e-10,
+    "central": 1e-08,
+    "amount_scaling": 1e-09,
+    "first_identity": 1e-08,
+    "mixed_action": 1e-06,
+    "Jacobian": 1e-06,
+    "Hessian": 1e-05,
+    "FeOs": 1e-08
+  },
+  "commands": [
+    "tools/heavy bash tools/check-affected.sh origin/main",
+    "tools/heavy bash tools/check-all.sh",
+    "tools/heavy <prepared-build>/equilibrium_checks caloric-specification",
+    "tools/heavy <prepared-build>/equilibrium_checks S10",
+    "tools/heavy tools/time-key-solves <main-wheel> <candidate-wheel>"
+  ],
+  "key_solve_results": "analyses/2026-open-source-equilibrium-comparison/results/issue-224-sliceA/key-solves",
+  "key_solve_summary_sha256": "99260654b8087c252779ded35e9eee0f4530519a0d120d6966f9c1660306841c",
+  "qualification_log": "build/issue-224/qualification-fix1.log",
+  "qualification_log_sha256": "830c636c31dfbd1a7962ac7f54b67b195ef4870392165d5be7a0ee1ec5ad45b4",
+  "comparison_compile": "Reuse prepared boundary_checks compile/link commands; substitute caloric_comparison.cpp and add engine/tests/native include path. Comparison driver compiled at O0; linked native Engine archive at O3, bound to the qualified wheel.",
+  "limits": [
+    "Numerical verification and implementation agreement only.",
+    "Neutral ordinary smooth PH/PS, declared supports; pure saturation equality roots distinct from strict Gibbs minima.",
+    "No physical validation, global stability, charged calorics, critical points or envelopes.",
+    "Independent delivered review and manuscript promotion pending."
+  ],
+  "retained_csv_sha256": {
+    "key-solves/pairs.csv": "276b6ce83682cc10aa17840ba55530a2a4ffa652ba2904c89f5c0c35bdf47570",
+    "key-solves/starts.csv": "3d9d954422a0082879d06fe183d32df87162a278208f4eb6e610f87302a3c6b7",
+    "key-solves/states.csv": "064109fe6608f8a0ca1b8171cca5a479a780d46ee98a555e76be80310200c270",
+    "key-solves/work.csv": "5b34a9957f5272eac714c032fe390a68d3212da29e7e7eda75b9c45554d13f3b",
+    "native-comparisons.csv": "4e239431c83c6d87adf490ebb30445f0de99c664852adaacaf38d1b6fc97fa55",
+    "qualification.csv": "858792f73aea5c448bf461c2270aa1087a86fc9957a47e8f7f0ed9a3864e3671",
+    "reference/baselines.csv": "499176e3cb9c483fd5d1e28a5784ea8bf06efd7febbc73be908c139c1c3dbe3e",
+    "reference/comparisons.csv": "b5710f48b185ab858e9d0ec0fdec6396fccea851b86aaa6e298efeafad6440cd",
+    "reference/engine-baselines.csv": "d42157679e6177d31da49df49262a1a9a04a21e506123d3ab544c4ffb28bf330",
+    "reference/flashes.csv": "2148aad57f5d9a53fd5158e136fcc0f7ba57dd0bf253ef6d168d205c2238eed7"
+  },
+  "verification_build_fingerprint": "9d464ffa2daa9447fabfdd1d92c046f450e84950eeac1dd96e3a6d598696dd32",
+  "reference_input_sha256": "4868a199b531846332229f0ed0177dd6a2482555d366ab8043f5a9a56eb38564",
+  "comparison_source_sha256": "d6eb95ed173f68e614becfd72fc5fe29be7d7591aae64d5e59796ab556d85296",
+  "reference_reader_sha256": "cd779b5e2278a16024023dc4abc5b021ad03fdae60de32664c240e478d95ee07",
+  "check_results": {
+    "all": {
+      "status": "Passed",
+      "log": "build/issue-224/check-all-fix1.log",
+      "sha256": "4943a4d6fdcaa340dcffc2845bb4cb5e788ce7bb0e860a695a764c2e7cbd6e5f"
+    },
+    "affected": {
+      "status": "Passed except the equilibrium program at the unchanged 600 s Meson deadline",
+      "base": "1218dc7840b4215f57af36221cd81eaa23121a6c",
+      "log": "build/issue-224/check-affected-fix1.log",
+      "sha256": "e4d90e22104cca6cd8238fa73aaed6dcd1413c00dcb0faa25c556c4f1d074ce0"
+    },
+    "equilibrium_direct": {
+      "status": "Passed, 51 of 51 cases, 356.58 s wall, no deadline",
+      "log": "build/issue-224/equilibrium-full-fix1.log",
+      "sha256": "b7b0a61b0c96a84a51e00f0eff4f91029bbf1dd4591cb0c6fc09603bae5cb0f5"
+    }
+  },
+  "prior_run_logs": {
+    "build/issue-224/qualification-1.log": "961986518ed90e66eece257f49ba45eecfce32646cac607a4ac4b7b406192ef9",
+    "build/issue-224/qualification-2.log": "acbfac4e7fb11c041dfc348ba0c1491de1923e37a378da931f05ca8390d011e8",
+    "build/issue-224/qualification-3.log": "b17d9ab56a2b57e4e247b6ef98b4d5959ae7abd603a6ecb3eb64e8003d32f835",
+    "build/issue-224/qualification-final.log": "c0331153de7ffae6f2627d6d2669a5bb9a9e430f7d29993f2f2d9311ecaba72a",
+    "build/issue-224/qualification-delivery.log": "20df5fdd3f61dc4ae0aa75d8f1b0a1ec01943e60a12e1385d9b23930007f0a33"
+  },
+  "key_solve_main_wheel_sha256": "dad141bae630ce8eef63106ba2ae3714d994a5c1543928b455f4ba8ecf464adf",
+  "flat_split_rows": "PH3/PS3 flat-split rows record the declared analytic zero Gibbs split curvature as observations; they are not falsifier comparisons."
+}

@@ -1,0 +1,67 @@
+{
+  "candidate": 4,
+  "git_commit": "ebcbdb2e1a780d515d90c7761b07c1530393c51d",
+  "wheel_sha256": "sha256:909e7c03786316cba04d7e679c52a58f20b5cc6f5a2a8ee48a92c4e308010c9f",
+  "input_sha256": "sha256:044e9e35d636034a0881c019fa5aa375353a3a54b8d2edfc09a097962176a367",
+  "endpoint_origin": "candidate-4-mixed-n8-result.json retained simultaneous_sparse_full_space final_physical",
+  "endpoint_source_result_sha256": "sha256:17c98fdb6f458a790a5074391a65ec5ebd2881b37a320d800e01f14441d6dab9",
+  "endpoint_source_result_digest": "sha256:da432579b6a7116e97cd3cce819e7b9d075be3dd0741dcb6a6c772d5510bd3d9",
+  "evaluation_method": "public epcsaft equilibrium.solve at an immutable ActiveParameterSet for all eight states on the identified installed wheel; measured targets used only after each prediction",
+  "final_physical": [
+    -0.40336777692211245,
+    3.321232652149628,
+    4.995826740336512,
+    -0.0001515506981442094,
+    -2500.066616658451,
+    3250.0377068617563,
+    -2.7835674818788014e-05,
+    -3.07498705152758e-08,
+    999.9236194899254
+  ],
+  "provider_domain_constraints": [
+    {
+      "temperature_k": 293.15,
+      "value": -0.18551930989537246,
+      "upper": 1.0
+    },
+    {
+      "temperature_k": 393.15,
+      "value": -1.053117522402349,
+      "upper": 1.0
+    }
+  ],
+  "rows": [
+    {"identity": "vle_obs_0119-pco2", "observed": 5.7, "predicted": 0.2971144341243642, "scaled_residual": -59.08208178293845, "half_squared_contribution": 1745.346193902914, "status": "evaluated"},
+    {"identity": "vle_obs_0143-pco2", "observed": 19.400000000000002, "predicted": 0.8809424194038262, "scaled_residual": -61.840721589522474, "half_squared_contribution": 1912.1374233564154, "status": "evaluated"},
+    {"identity": "vle_obs_0203-pco2", "observed": 2.96, "predicted": 0.09361371787203737, "scaled_residual": -69.07535232222529, "half_squared_contribution": 2385.702149219777, "status": "evaluated"},
+    {"identity": "vle_obs_0225-pco2", "observed": 22.1, "predicted": 1.0932225495535952, "scaled_residual": -60.12895613114926, "half_squared_contribution": 1807.745682710836, "status": "evaluated"},
+    {"identity": "Bottinger2008_state_030::MEA + MEAH+", "observed": 0.1054, "predicted": null, "scaled_residual": null, "half_squared_contribution": null, "status": "physical_rejection"},
+    {"identity": "Bottinger2008_state_030::MEACOO-", "observed": 0.0086, "predicted": null, "scaled_residual": null, "half_squared_contribution": null, "status": "physical_rejection"},
+    {"identity": "Bottinger2008_state_042::MEA + MEAH+", "observed": 0.1009, "predicted": 0.09820682041097767, "scaled_residual": -0.269317958902233, "half_squared_contribution": 0.0362660785359101, "status": "evaluated"},
+    {"identity": "Bottinger2008_state_042::MEACOO-", "observed": 0.0144, "predicted": 0.014012047934054942, "scaled_residual": -0.0387952065945058, "half_squared_contribution": 0.0007525345281898, "status": "evaluated"},
+    {"identity": "Bottinger2008_state_055::MEA + MEAH+", "observed": 0.0974, "predicted": 0.09753276346040197, "scaled_residual": 0.013276346040197, "half_squared_contribution": 0.0000881306796788, "status": "evaluated"},
+    {"identity": "Bottinger2008_state_055::MEACOO-", "observed": 0.0147, "predicted": 0.014686099581380174, "scaled_residual": -0.0013900418619826, "half_squared_contribution": 9.6600819424e-07, "status": "evaluated"},
+    {"identity": "Bottinger2008_state_063::MEA + MEAH+", "observed": 0.1084, "predicted": 0.10504468010852386, "scaled_residual": -0.335531989147614, "half_squared_contribution": 0.0562908598708409, "status": "evaluated"},
+    {"identity": "Bottinger2008_state_063::MEACOO-", "observed": 0.0068, "predicted": 0.007174177260678321, "scaled_residual": 0.0374177260678321, "half_squared_contribution": 0.000699999107791, "status": "evaluated"}
+  ],
+  "local_certificates": [
+    {"identity": "vle_obs_0119", "balance_inf_norm": 1.3877787807814457e-17, "pressure_relative_inf_norm": 2.1617979914022145e-10, "reaction_affinity_inf_norm": 1.1368683772161603e-13, "bubble_log_closure_abs": 1.0088596624768797e-12, "status": "passed"},
+    {"identity": "vle_obs_0143", "balance_inf_norm": 1.491791945162436e-17, "pressure_relative_inf_norm": 7.017972687473559e-12, "reaction_affinity_inf_norm": 5.684341886080802e-14, "bubble_log_closure_abs": 1.3533618670180658e-12, "status": "passed"},
+    {"identity": "vle_obs_0203", "balance_inf_norm": 1.4051260155412137e-16, "pressure_relative_inf_norm": 1.923211793200165e-11, "reaction_affinity_inf_norm": 4.547473508864641e-13, "bubble_log_closure_abs": 4.574118861455645e-14, "status": "passed"},
+    {"identity": "vle_obs_0225", "balance_inf_norm": 3.209238430557093e-17, "pressure_relative_inf_norm": 4.137223171319197e-13, "reaction_affinity_inf_norm": 5.684341886080802e-14, "bubble_log_closure_abs": 3.1796787425264483e-13, "status": "passed"},
+    {"identity": "Bottinger2008_state_030", "balance_inf_norm": 2.539318087340197e-17, "pressure_relative_inf_norm": 7.104695251392136e-13, "reaction_affinity_inf_norm": 8.526512829121202e-14, "transfer_chemical_potential_inf_norm": 0.0, "kkt_stationarity_inf_norm": 1.1546319456101628e-14, "phase_distinctness": 0.0, "minimum_amount_mol": 1.4621395111978944e-13, "minimum_bound_margin": 0.48519934449588625, "reduced_hessian_min_eigenvalue": 9.761051411410636e-07, "reduced_hessian_scale": 3.3367215794816785, "reduced_hessian_threshold": 3.3367215794816784e-10, "status": "failed_minimum_amount_floor"},
+    {"identity": "Bottinger2008_state_042", "balance_inf_norm": 1.3332298589782687e-16, "pressure_relative_inf_norm": 1.3441043634077017e-12, "reaction_affinity_inf_norm": 3.126388037344441e-13, "transfer_chemical_potential_inf_norm": 0.0, "kkt_stationarity_inf_norm": 2.842170943040401e-14, "phase_distinctness": 0.0, "reduced_hessian_min_eigenvalue": 2.803850663710085e-06, "status": "passed"},
+    {"identity": "Bottinger2008_state_055", "balance_inf_norm": 8.326672684688674e-17, "pressure_relative_inf_norm": 6.171189709972106e-13, "reaction_affinity_inf_norm": 1.1368683772161603e-13, "transfer_chemical_potential_inf_norm": 0.0, "kkt_stationarity_inf_norm": 2.842170943040401e-14, "phase_distinctness": 0.0, "reduced_hessian_min_eigenvalue": 1.0930979774664909e-05, "status": "passed"},
+    {"identity": "Bottinger2008_state_063", "balance_inf_norm": 9.71445146547012e-17, "pressure_relative_inf_norm": 4.014073828106129e-13, "reaction_affinity_inf_norm": 8.526512829121202e-14, "transfer_chemical_potential_inf_norm": 0.0, "kkt_stationarity_inf_norm": 1.0658141036401503e-14, "phase_distinctness": 0.0, "reduced_hessian_min_eigenvalue": 0.00014465468368920367, "status": "passed"}
+  ],
+  "certificate_tolerances": {
+    "balance_inf_norm_max": 1e-09,
+    "pressure_relative_inf_norm_max": 1e-08,
+    "affinity_inf_norm_max": 1e-06,
+    "kkt_stationarity_inf_norm_max": 1e-07,
+    "minimum_amount_mol_min_exclusive": 1e-12,
+    "bound_margin_min_exclusive": 1e-07,
+    "strict_minimum_scale_factor": 1e-10
+  },
+  "conclusion": "provider-domain admissible numerical warm start; not an exactly certified candidate point because Bottinger2008_state_030 violates the unchanged strict amount floor"
+}

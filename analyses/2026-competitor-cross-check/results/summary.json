@@ -1,0 +1,272 @@
+{
+  "base": "5146596d9feab8ee2afe4f07fbd383bac64af851",
+  "wheel_sha256": "da56e55eab2dac8b75c2497da07e4895d838d82d2d78b305e4a30b81bfef3950",
+  "wheel": "build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+  "input_sha256": "30e9ee4b832eb1e569c980a621a922bf559feaf8112d7f347519b4f5f985c797",
+  "host": {
+    "system": "Linux",
+    "node": "tnnrpolley21-MS-7C95",
+    "release": "7.0.0-34-generic",
+    "version": "#34~24.04.1-Ubuntu SMP PREEMPT_DYNAMIC Fri Sep  4 15:38:29 UTC 2",
+    "machine": "x86_64",
+    "processor": "x86_64"
+  },
+  "cpu": 0,
+  "hardware": {
+    "Architecture": "x86_64",
+    "CPU(s)": "12",
+    "On-line CPU(s) list": "0-11",
+    "Model name": "AMD Ryzen 5 5500",
+    "Thread(s) per core": "2",
+    "Core(s) per socket": "6",
+    "Socket(s)": "1",
+    "CPU(s) scaling MHz": "96%",
+    "CPU max MHz": "4268.5718",
+    "CPU min MHz": "411.4290"
+  },
+  "governor": "performance",
+  "memory": [
+    "MemTotal:       32749024 kB",
+    "MemFree:         1487628 kB",
+    "MemAvailable:    9050884 kB"
+  ],
+  "threads": {
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1",
+    "JULIA_NUM_THREADS": "1"
+  },
+  "failures": [],
+  "absent_diagnostics": {
+    "Engine": [],
+    "FeOs": [
+      {
+        "quantity": "C4-assoc-298.15.phases[0].lnphi[0]",
+        "reason": "Native nonfinite value; retain state for diagnosis"
+      },
+      {
+        "quantity": "C4-assoc-298.15.phases[0].lnphi[1]",
+        "reason": "Native nonfinite value; retain state for diagnosis"
+      },
+      {
+        "quantity": "C4-assoc-323.15.phases[0].lnphi[0]",
+        "reason": "Native nonfinite value; retain state for diagnosis"
+      },
+      {
+        "quantity": "C4-assoc-323.15.phases[0].lnphi[1]",
+        "reason": "Native nonfinite value; retain state for diagnosis"
+      },
+      {
+        "quantity": "C5-fixed-300-13300.phases[0].lnphi[0]",
+        "reason": "Native nonfinite value; retain state for diagnosis"
+      },
+      {
+        "id": "C3-sigma-0.01",
+        "reason": "FeOs revised Ionic uses 0.88sigma packing diameters; no sigma screening option"
+      },
+      {
+        "id": "C3-sigma-0.1",
+        "reason": "FeOs revised Ionic uses 0.88sigma packing diameters; no sigma screening option"
+      },
+      {
+        "id": "C3-sigma-0.5",
+        "reason": "FeOs revised Ionic uses 0.88sigma packing diameters; no sigma screening option"
+      },
+      {
+        "id": "C3-sigma-1",
+        "reason": "FeOs revised Ionic uses 0.88sigma packing diameters; no sigma screening option"
+      },
+      {
+        "id": "C3-sigma-2",
+        "reason": "FeOs revised Ionic uses 0.88sigma packing diameters; no sigma screening option"
+      },
+      {
+        "id": "C3-sigma-4",
+        "reason": "FeOs revised Ionic uses 0.88sigma packing diameters; no sigma screening option"
+      },
+      {
+        "id": "C3-ref-sigma-0",
+        "reason": "FeOs revised Ionic uses 0.88sigma packing diameters; no sigma screening option"
+      },
+      {
+        "id": "C3-ref-sigma-0.0001",
+        "reason": "FeOs revised Ionic uses 0.88sigma packing diameters; no sigma screening option"
+      },
+      {
+        "id": "C3-ref-sigma-1e-06",
+        "reason": "FeOs revised Ionic uses 0.88sigma packing diameters; no sigma screening option"
+      },
+      {
+        "id": "C3-ref-sigma-1e-08",
+        "reason": "FeOs revised Ionic uses 0.88sigma packing diameters; no sigma screening option"
+      },
+      {
+        "id": "C3-ref-sigma-1e-10",
+        "reason": "FeOs revised Ionic uses 0.88sigma packing diameters; no sigma screening option"
+      },
+      {
+        "id": "C3-ref-sigma-1e-12",
+        "reason": "FeOs revised Ionic uses 0.88sigma packing diameters; no sigma screening option"
+      },
+      {
+        "id": "C3-ref-sigma-1e-20",
+        "reason": "FeOs revised Ionic uses 0.88sigma packing diameters; no sigma screening option"
+      },
+      {
+        "id": "C3-diagnosis-original",
+        "reason": "FeOs revised Ionic uses 0.88sigma packing diameters; no sigma screening option"
+      },
+      {
+        "id": "C3-literal-sigma",
+        "reason": "FeOs revised Ionic uses 0.88sigma packing diameters; no sigma screening option"
+      },
+      {
+        "id": "C3-sigma-0.01-common-liquid",
+        "reason": "FeOs revised Ionic uses 0.88sigma packing diameters; no sigma screening option"
+      },
+      {
+        "id": "C3-sigma-0.1-common-liquid",
+        "reason": "FeOs revised Ionic uses 0.88sigma packing diameters; no sigma screening option"
+      },
+      {
+        "id": "C3-sigma-0.5-common-liquid",
+        "reason": "FeOs revised Ionic uses 0.88sigma packing diameters; no sigma screening option"
+      },
+      {
+        "id": "C3-sigma-1-common-liquid",
+        "reason": "FeOs revised Ionic uses 0.88sigma packing diameters; no sigma screening option"
+      },
+      {
+        "id": "C3-sigma-2-common-liquid",
+        "reason": "FeOs revised Ionic uses 0.88sigma packing diameters; no sigma screening option"
+      },
+      {
+        "id": "C3-sigma-4-common-liquid",
+        "reason": "FeOs revised Ionic uses 0.88sigma packing diameters; no sigma screening option"
+      },
+      {
+        "id": "C3-diagnosis-original-common-liquid",
+        "reason": "FeOs revised Ionic uses 0.88sigma packing diameters; no sigma screening option"
+      },
+      {
+        "id": "C3-literal-sigma-common-liquid",
+        "reason": "FeOs revised Ionic uses 0.88sigma packing diameters; no sigma screening option"
+      },
+      {
+        "quantity": "C5-fixed-300-13300-matched.phases[0].lnphi[0]",
+        "reason": "Native nonfinite value; retain state for diagnosis"
+      },
+      {
+        "reason": "FeOs Python exposes no achieved density/association/equilibrium residual, iterations, site fractions or Delta matrix; AD returns only convergence boolean"
+      }
+    ],
+    "Clapeyron": [
+      "Clapeyron solver iteration/residual and association mass-action residual are not exposed by these returned values",
+      "D6: Clapeyron gradients excluded; no gradient availability claim",
+      "C1-gradient: diagnostic finite FeOs reference or adopted D6 exclusion",
+      "C2-gradient: diagnostic finite FeOs reference or adopted D6 exclusion",
+      "C3-diagnosis-finite: diagnostic finite FeOs reference or adopted D6 exclusion"
+    ]
+  },
+  "controls": {
+    "CLOSE_PACKING_FRACTION": 0.7404804896930609,
+    "SITE_FRACTION_FLOOR": 0.0,
+    "SITE_FRACTION_CEILING": 1.0,
+    "ASSOCIATION_RESIDUAL": 2e-13,
+    "ASSOCIATION_ACTION_RESIDUAL": 1e-10,
+    "ASSOCIATION_MAX_ITERATIONS": 50.0,
+    "ASSOCIATION_BOUNDARY_FRACTION": 0.9,
+    "ASSOCIATION_JACOBIAN_CONDITION": 1e-13,
+    "ASSOCIATION_JACOBIAN_RANK": 2.220446049250313e-16,
+    "DENSITY_ROOT_RESIDUAL": 1e-12,
+    "DENSITY_MAX_ITERATIONS": 60.0,
+    "DENSITY_BRACKET_INTERVALS": 40.0,
+    "DENSITY_LOWER_FRACTION": 1e-08,
+    "DENSITY_UPPER_FRACTION": 0.999,
+    "DENSITY_BISECTION_FRACTION": 0.5,
+    "DENSITY_ANCHOR_LOG_WINDOW": 0.009950330853168083,
+    "DENSITY_ANCHOR_SCAN_INTERVALS": 5.0,
+    "COMPOSITION_SUM_TOLERANCE": 1e-12,
+    "REFERENCE_MOLALITY_ONE": 1e-06,
+    "OSMOTIC_MOLALITY_FLOOR": 1e-08,
+    "REFERENCE_MOLALITY_TWO": 1e-08,
+    "REFERENCE_MOLALITY_THREE": 1e-10,
+    "REFERENCE_MOLALITY_FOUR": 1e-12,
+    "REFERENCE_CONVERGENCE_WITNESS": 1e-14,
+    "REFERENCE_CONVERGENCE_TOLERANCE": 5e-05,
+    "REFERENCE_HEAT_CAPACITY_TOLERANCE": 0.01,
+    "EQUILIBRIUM_COMPOSITION_BOX": 1e-08,
+    "EQUILIBRIUM_BOX_INVENTORY_FRACTION": 0.01,
+    "STABILITY_COMPOSITION_FLOOR": 1e-20,
+    "STABILITY_PHASE_AMOUNT_FLOOR": 1e-08,
+    "FIT_FUNCTION_TOLERANCE": 1e-12,
+    "FIT_GRADIENT_TOLERANCE": 1e-12,
+    "FIT_PARAMETER_TOLERANCE": 1e-10,
+    "FIT_ACTIVE_BOUND_DISTANCE": 0.0001,
+    "LOG_RATIO_NEAR_UNITY": 0.5,
+    "FIT_RANK_RECIPROCAL_CONDITION": 1e-14,
+    "ADDITION_MATERIAL_BALANCE": 1e-12,
+    "EQUILIBRIUM_ROW_RESIDUAL": 1e-10,
+    "EQUILIBRIUM_ACTION_BACKWARD_ERROR": 1e-10,
+    "EQUILIBRIUM_ACTION_FORWARD_ERROR": 1e-06,
+    "EQUILIBRIUM_INNER_TOLERANCE_FACTOR": 0.1,
+    "EQUILIBRIUM_POLISH_STEPS": 3.0,
+    "EQUILIBRIUM_START_SPECIATION_STEP": 1e-06,
+    "EQUILIBRIUM_MAX_ITERATIONS": 200.0,
+    "PHASE_COINCIDENCE_DISTANCE": 1e-06,
+    "PACKING_FRACTION_CEILING": 0.74,
+    "PACKING_FRACTION_FLOOR": 1e-12,
+    "SCREENING_SERIES_SWITCH": 0.2,
+    "FLOOR_MARGIN": 10.0,
+    "STALL_WINDOW": 5.0
+  },
+  "locks": {
+    "inputs/Project.toml": "5227aef4f460b6bb233087c9dd46a18aa40ffffcb502555b2b1d765fd1425efc",
+    "inputs/Manifest.toml": "cd7c2cc2632477bfbd11bda09b30c9e51ce89d15987ce1d3a7db58727d244dd5",
+    "inputs/requirements-feos.lock": "0157a230977e39eff54f32e4d67ad9c53f509fd06dc337db03f819f609550189"
+  },
+  "controls_source": "native tolerances(); engine/native/core/numerical_policy.hpp",
+  "source_sha256": {
+    "src/models/SAFT/association.jl": "691901b9493e1cf1dcdd4bf9e47459005701a8acd7371b16c085afde831aa834",
+    "src/methods/property_solvers/volume.jl": "018e56b5a6290fec0d605f38104a0fb35c0b4c254b2b63ccbbfd32e3469713d4"
+  },
+  "limits": [
+    "Raw and source-adjusted strict target misses remain false.",
+    "C3 Engine pressure and C4 Clapeyron pressure/chemical closure miss 1e-10.",
+    "No Engine runtime or numerical-policy change authorized.",
+    "Case-output costs are not equal algorithms; D6 excludes Clapeyron T3, not its gradient capability.",
+    "Documented C4 native volume reseed meets closure target as a separate diagnostic, not a replacement workload."
+  ],
+  "reproduction_script_sha256": {
+    "feos.py": "966e5195ab321b69fb62a6c9ef432e4d6a27be2bd1607538a58381b612d2ec56",
+    "engine.py": "5331ece73b25c513b5041e25f4574986a2690e07140c99afb1aff6cd961d2ae1",
+    "run.py": "6d44c42ecff029cea5b35d38939ef667bff2e50c52bba6c9da66e5fa8bcf6d5e",
+    "clapeyron.jl": "1a2a212703d264f9adbc0669db59e0862fa97412571ca45cf470bc3b645770d5",
+    "dispersion.jl": "a6c46529ca88cc2a7796499738f486c817f6adee2969518d944bf4dede18c491",
+    "plot.py": "44030b1841ba2c7d4c3971261a1c3b6aca1a3c94fbf73c50737f93f5e2494ef0"
+  },
+  "input_table_sha256": {
+    "dispersion-coefficients.csv": "6f4a15ee7d53ec9c7915b1ac93aeb34dec33f15190d9aaeba30dbba9e1946ea6",
+    "states.csv": "5941804e1db3f0f88ae1c055b810b53dfa229172270f2b20c7ec2ebfc814094b",
+    "dipole-coefficients.csv": "ed6958341c171ab9b926797a5aea511d47094d7e1ee20900631c641dc5383981"
+  },
+  "native_result_counts": {
+    "Engine": 99,
+    "FeOs": 76,
+    "Clapeyron": 96
+  },
+  "feos_binary_sha256": {
+    "lib/python3.13/site-packages/feos/feos.abi3.so": "8bd879f02abeae2a9534e0a399a2e37a544d86e5b5483146e4568422cc856973"
+  },
+  "timed_output_limits": [
+    "642 original comparator first-call fields checked (306 FeOs, 336 Clapeyron); original Engine timing records are empty.",
+    "No per-warm-sample numerical values retained in original timing files.",
+    "Governor snapshot belongs to qualification; timing processes have no separate governor record."
+  ],
+  "historical_density_probe": {
+    "path": "results/density-closure-probe.csv",
+    "commit": "08c9ef8e",
+    "producer": "generating command unavailable",
+    "disposition": "historical initialization-sensitivity evidence; no fresh remedy qualification"
+  }
+}

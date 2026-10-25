@@ -1,0 +1,738 @@
+{
+  "candidate_provenance_normalization": {
+    "field_mutations": [
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[0].coefficients[0].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[0].coefficients[1].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "carbon-dioxide-fit-range",
+        "json_path": "$.components[0].coefficients[2].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[0].coefficients[3].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[0].coefficients[4].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[0].fixed.charge_number.provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[0].fixed.molar_mass.provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[1].coefficients[0].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[1].coefficients[1].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[1].coefficients[2].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[1].coefficients[3].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[1].coefficients[4].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[1].fixed.charge_number.provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[1].fixed.molar_mass.provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[2].coefficients[0].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[2].coefficients[1].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[2].coefficients[2].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[2].fixed.charge_number.provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[2].fixed.molar_mass.provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[3].coefficients[0].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[3].coefficients[1].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[3].coefficients[2].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[3].coefficients[3].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[3].coefficients[4].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[3].coefficients[5].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[3].coefficients[6].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[3].coefficients[7].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[3].fixed.charge_number.provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[3].fixed.molar_mass.provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[4].coefficients[0].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[4].coefficients[1].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[4].coefficients[2].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[4].coefficients[3].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[4].coefficients[4].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[4].coefficients[5].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[4].coefficients[6].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[4].coefficients[7].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[4].fixed.charge_number.provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[4].fixed.molar_mass.provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[5].coefficients[0].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[5].coefficients[1].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[5].coefficients[2].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[5].coefficients[3].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[5].coefficients[4].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[5].coefficients[5].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[5].coefficients[6].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[5].coefficients[7].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[5].fixed.charge_number.provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[5].fixed.molar_mass.provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[6].coefficients[0].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[6].coefficients[1].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[6].coefficients[2].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[6].coefficients[3].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[6].coefficients[4].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[6].coefficients[5].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[6].coefficients[6].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[6].coefficients[7].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[6].fixed.charge_number.provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[6].fixed.molar_mass.provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[7].coefficients[0].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[7].coefficients[1].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[7].coefficients[2].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[7].coefficients[3].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[7].coefficients[4].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[7].coefficients[5].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[7].coefficients[6].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[7].coefficients[7].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[7].fixed.charge_number.provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[7].fixed.molar_mass.provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[8].coefficients[0].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[8].coefficients[1].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[8].coefficients[2].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[8].coefficients[3].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[8].coefficients[4].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[8].coefficients[5].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[8].coefficients[6].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[8].coefficients[7].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[8].fixed.charge_number.provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.components[8].fixed.molar_mass.provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.correlations[0].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.correlations[1].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.model_coefficients[0].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-provider-source-qualified-313-15-k",
+        "json_path": "$.model_families[0].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-provider-source-qualified-313-15-k",
+        "json_path": "$.model_families[1].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-provider-source-qualified-313-15-k",
+        "json_path": "$.model_families[2].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-provider-source-qualified-313-15-k",
+        "json_path": "$.model_families[3].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.pairs[0].coefficients[0].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.pairs[1].coefficients[0].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.pairs[2].coefficients[0].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.pairs[3].coefficients[0].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.pairs[4].coefficients[0].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.pairs[5].coefficients[0].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.pairs[6].coefficients[0].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.pairs[7].coefficients[0].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.pairs[8].coefficients[0].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.pairs[9].coefficients[0].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.pairs[10].coefficients[0].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.pairs[11].coefficients[0].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.pairs[12].coefficients[0].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.pairs[13].coefficients[0].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.pairs[14].coefficients[0].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.pairs[15].coefficients[0].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.pairs[16].coefficients[0].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.pairs[17].coefficients[0].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.pairs[18].coefficients[0].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.pairs[19].coefficients[0].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.pairs[20].coefficients[0].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.pairs[21].coefficients[0].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.pairs[22].coefficients[0].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.pairs[23].coefficients[0].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.pairs[24].coefficients[0].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.pairs[25].coefficients[0].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.pairs[26].coefficients[0].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.pairs[27].coefficients[0].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.pairs[28].coefficients[0].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.pairs[29].coefficients[0].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.pairs[30].coefficients[0].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.pairs[31].coefficients[0].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.pairs[32].coefficients[0].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.pairs[33].coefficients[0].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.pairs[34].coefficients[0].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.pairs[35].coefficients[0].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.topology.sites[0].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.topology.sites[1].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.topology.sites[2].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.topology.sites[3].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.topology.sites[4].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      },
+      {
+        "from": "mea-diagnostic-293-15-to-393-15-k",
+        "json_path": "$.topology.sites[5].provenance.domain_id",
+        "to": "mea-candidate-293-15-to-393-15-k"
+      }
+    ],
+    "mutation_count": 128,
+    "resolved_candidate_temperature_k": [
+      293.15,
+      393.17
+    ],
+    "status": "analysis-only; physical values and topology unchanged"
+  },
+  "co2_segment_count": 2.0729,
+  "engine_import": ".venv/lib/python3.13/site-packages/epcsaft/__init__.py",
+  "engine_version": "0.2.0.dev0",
+  "historical_segment_count_not_executed": 2.079,
+  "installed_distribution_direct_url_wheel": "build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+  "installed_wheel": "build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+  "installed_wheel_sha256": "298a360e532f6f4c5e7ef70c5be45e8b9852310d1c388d6225c504714c3dc410",
+  "native_declarations": {
+    "controls": {
+      "function_tolerance": 1e-11,
+      "gradient_tolerance": 1e-11,
+      "maximum_iterations": 40,
+      "parameter_tolerance": 1e-11,
+      "shared_iterations": 40,
+      "shared_seconds": 600.0
+    },
+    "coordinates": {
+      "bounds": [
+        [
+          -1.0,
+          -1000.0
+        ],
+        [
+          1.0,
+          1000.0
+        ]
+      ],
+      "origins": [
+        0.0,
+        0.0
+      ],
+      "reference_temperature_k": 353.11,
+      "scales": [
+        1.0,
+        1000.0
+      ]
+    },
+    "feed_basis": "1 mol, carbon-dioxide = row liquid mole fraction, water = 1-x",
+    "ionic_dispersion_admission": "exclude-same-sign-ion-pairs added only for current packet admission; native selection removes ionic choices from the uncharged binary",
+    "observation_row_count": 39,
+    "phases": [
+      {
+        "amount": "free",
+        "composition_guess": "row liquid feed",
+        "kind": "liquid",
+        "name": "liquid"
+      },
+      {
+        "amount": 0.0,
+        "composition_guess": [
+          0.99,
+          0.01
+        ],
+        "kind": "vapor",
+        "name": "vapor"
+      }
+    ],
+    "pressure": "free, guess = row observed pressure Pa",
+    "residual": "EquilibriumPressure LogRatio, unit weights, holds=()",
+    "starts_physical": {
+      "constant_k": [
+        [
+          0.02
+        ],
+        [
+          0.013262879176919628
+        ]
+      ],
+      "reciprocal_temperature_k": [
+        [
+          0.013262879176919628,
+          -30.0
+        ],
+        [
+          0.021594554222477753,
+          -30.896965151000746
+        ]
+      ]
+    }
+  },
+  "observations": "analyses/2026-mea-parameter-estimation/inputs/source/library/observations/physical_co2_water/kiepe_2002_table_1.csv",
+  "observations_sha256": "ec28659dc696643c49bca771b65c79c7852b4c2e24296c9aa79b555ffdc7b9bd",
+  "parameter_document": "analyses/2026-mea-parameter-estimation/inputs/data/mea-co2-h2o-nine-species-estimation/1/parameters/parameters.json",
+  "parameter_document_sha256": "12e380a27eb615e25bae580f8c1ec852020879917b08fa16a5821ae76311550d",
+  "schema_version": 1,
+  "temperature_extension": "393.15 K active ceiling extended to 393.17 K only to execute the six retained top-temperature rows"
+}

@@ -1,0 +1,13 @@
+figure_id,panel_id,series_id,series_label,source_type,category,x_name,x_value,x_units,y_name,y_value,y_units,source_file,display_order,notes
+figure-04,main,literature,Literature,literature,Li,ion,0.0,category,-G_solv,486.4864865,kJ mol^-1,campaigns/2025-figiel/figures/figure-04/source/water.csv,0,
+figure-04,main,model_provider,Provider (fresh installed artifact),model,Li,ion,0.0,category,-G_solv,487.01803530521005,kJ mol^-1,,0,
+figure-04,main,literature,Literature,literature,Na,ion,1.0,category,-G_solv,378.3783784,kJ mol^-1,campaigns/2025-figiel/figures/figure-04/source/water.csv,1,
+figure-04,main,model_provider,Provider (fresh installed artifact),model,Na,ion,1.0,category,-G_solv,381.92786594082037,kJ mol^-1,,1,
+figure-04,main,literature,Literature,literature,K,ion,2.0,category,-G_solv,306.3063063,kJ mol^-1,campaigns/2025-figiel/figures/figure-04/source/water.csv,2,
+figure-04,main,model_provider,Provider (fresh installed artifact),model,K,ion,2.0,category,-G_solv,308.89043731225456,kJ mol^-1,,2,
+figure-04,main,literature,Literature,literature,Cl,ion,3.0,category,-G_solv,312.8834356,kJ mol^-1,campaigns/2025-figiel/figures/figure-04/source/water.csv,3,
+figure-04,main,model_provider,Provider (fresh installed artifact),model,Cl,ion,3.0,category,-G_solv,315.0181491285515,kJ mol^-1,,3,
+figure-04,main,literature,Literature,literature,Br,ion,4.0,category,-G_solv,289.5705521,kJ mol^-1,campaigns/2025-figiel/figures/figure-04/source/water.csv,4,
+figure-04,main,model_provider,Provider (fresh installed artifact),model,Br,ion,4.0,category,-G_solv,290.7025245853784,kJ mol^-1,,4,
+figure-04,main,literature,Literature,literature,I,ion,5.0,category,-G_solv,251.5337423,kJ mol^-1,campaigns/2025-figiel/figures/figure-04/source/water.csv,5,
+figure-04,main,model_provider,Provider (fresh installed artifact),model,I,ion,5.0,category,-G_solv,253.48457669456013,kJ mol^-1,,5,

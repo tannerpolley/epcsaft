@@ -1,0 +1,12 @@
+component_id,charge,molar_mass_g_mol,segment_count,sigma_angstrom,u_over_k_K,association_energy_K,association_volume,relative_permittivity_298_15,parameter_locator,permittivity_locator,molar_mass_basis,hard_sphere_diameter
+water,0,18.01528,1.2047,2.7927,353.95,2425.7,0.04509,78.092826,Table 1 (2B; sigma is the constant of the Fuchs 2006 [32] correlation),Table 5: -105.2 ln T + 677.480 at 298.15 K,NIST water,temperature-dependent
+methanol,0,32.04186,1.5255,3.2300,188.90,2899.5,0.03518,32.8452,Table 1 (2B),Table 5: -0.192 T + 90.09 at 298.15 K,CH4O standard atomic weights,temperature-dependent
+ethanol,0,46.06844,2.3827,3.1771,198.24,2653.4,0.03238,24.9401,Table 1 (2B),Table 5: -0.146 T + 68.47 at 298.15 K,C2H6O standard atomic weights,temperature-dependent
+lithium-cation,1,6.94,1,2.8449,360.00,,,8,Table 3,Table 5 salts,standard atomic weight,sigma
+sodium-cation,1,22.98977,1,2.8232,230.00,,,8,Table 3,Table 5 salts,standard atomic weight,sigma
+potassium-cation,1,39.0983,1,3.3417,200.00,,,8,Table 3,Table 5 salts,standard atomic weight,sigma
+chloride-anion,-1,35.453,1,2.7560,170.00,,,8,Table 3,Table 5 salts,standard atomic weight,sigma
+bromide-anion,-1,79.904,1,3.0707,190.00,,,8,Table 3,Table 5 salts,standard atomic weight,sigma
+iodide-anion,-1,126.90447,1,3.6672,200.00,,,8,Table 3,Table 5 salts,standard atomic weight,sigma
+c4mim-cation,1,139.22,2.4805,3.6371,218.1441,,,13.2,Table 2 (Ji 2012 Table 5; constant sigma),Table 5 [C4mim][TfO] 13.2,C8H15N2 standard atomic weights,temperature-dependent
+triflate-anion,-1,149.07,3.7432,3.8771,509.3113,,,13.2,Table 2 (Ji and Held 2016 Table 2; constant sigma),Table 5 [C4mim][TfO] 13.2,Ji and Held 2016 Table 2,temperature-dependent

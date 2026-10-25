@@ -1,0 +1,6 @@
+implementation,solver,temperature_K,pressure_Pa,rho_liquid_mol_m3,rho_vapor_mol_m3,phase_pressure_rel_error
+ePC-SAFT,Engine saturation + solve_equilibrium (max_abs_residual=4.441e-15),300.0,998660.8957399072,11100.251233209618,482.5121268150313,
+FeOs,PhaseEquilibrium.pure,300.0,998660.8955481574,11100.251234176576,482.51212670173845,1.8849599121514428e-13
+ThermoPack,pcsaft.get_pure_fluid_saturation_curve,300.0,998660.895732584,11100.251233209041,482.51212681063595,
+teqp,PCSAFTEOS.pure_VLE_T,300.0,998660.8957398997,11100.25123320962,482.5121268150332,1.0258285234228744e-14
+Clapeyron,saturation_pressure(PCSAFT),300.0,998660.8946430682,11100.251233071715,482.51212615670687,

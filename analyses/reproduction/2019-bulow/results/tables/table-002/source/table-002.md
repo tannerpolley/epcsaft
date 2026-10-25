@@ -1,0 +1,10 @@
+<!-- source: docs/papers/md/Bulow - 2019 - Incorporating a concentration-dependent dielectric constant into.md lines 191-198 -->
+
+| Parameter | Unit | value |
+| :--- | :--- | :--- |
+| Segment number $m_{\text {seg }}$ | [-] | 1.2047 |
+| Segment diameter $\sigma_{i}$ | [Å] | 2.7927 |
+| Dispersion-energy parameter $u_{i j} / k_{B}$ | [K] | 353.9449 |
+| Association-energy parameter $\varepsilon^{A i B i} / k_{B}$ | [K] | 2425.6714 |
+| Association-volume parameter $\kappa^{A i B i}$ | [-] | 0.04509 |
+| Association scheme | [-] | 2B |

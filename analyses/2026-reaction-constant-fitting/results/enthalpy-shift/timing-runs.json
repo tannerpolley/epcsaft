@@ -1,0 +1,90 @@
+[
+  {
+    "side": "A",
+    "mode": "time",
+    "workers": 0,
+    "file": "timing-00-baseline-time-0.csv",
+    "cpu": "22.337481",
+    "wall": "22.386252856999999"
+  },
+  {
+    "side": "B",
+    "mode": "time",
+    "workers": 0,
+    "file": "timing-01-candidate-time-0.csv",
+    "cpu": "21.190348",
+    "wall": "21.202314465000001"
+  },
+  {
+    "side": "A",
+    "mode": "time",
+    "workers": 0,
+    "file": "timing-02-baseline-time-0.csv",
+    "cpu": "21.186676000000002",
+    "wall": "21.193734705000001"
+  },
+  {
+    "side": "A",
+    "mode": "time",
+    "workers": 0,
+    "file": "timing-03-baseline-time-0.csv",
+    "cpu": "21.745464999999999",
+    "wall": "21.751671906999999"
+  },
+  {
+    "side": "B",
+    "mode": "time",
+    "workers": 0,
+    "file": "timing-04-candidate-time-0.csv",
+    "cpu": "22.941178000000001",
+    "wall": "22.958577118000001"
+  },
+  {
+    "side": "B",
+    "mode": "time",
+    "workers": 0,
+    "file": "timing-05-candidate-time-0.csv",
+    "cpu": "21.557060999999997",
+    "wall": "21.566440929999999"
+  },
+  {
+    "side": "A",
+    "mode": "fit",
+    "workers": 16,
+    "file": "timing-06-baseline-fit-16.csv",
+    "cpu": "563.22135199999991",
+    "wall": "49.066729555000002"
+  },
+  {
+    "side": "B",
+    "mode": "fit",
+    "workers": 16,
+    "file": "timing-07-candidate-fit-16.csv",
+    "cpu": "568.4361540000001",
+    "wall": "48.430364355999998"
+  },
+  {
+    "side": "A",
+    "mode": "fit",
+    "workers": 32,
+    "file": "timing-08-baseline-fit-32.csv",
+    "cpu": "872.08867399999997",
+    "wall": "44.407992293"
+  },
+  {
+    "side": "B",
+    "mode": "fit",
+    "workers": 32,
+    "file": "timing-09-candidate-fit-32.csv",
+    "cpu": "877.52652699999999",
+    "wall": "43.643916478999998"
+  },
+  {
+    "side": "A",
+    "mode": "fit",
+    "workers": 32,
+    "file": "timing-10-baseline-fit-32.csv",
+    "cpu": "877.85852099999988",
+    "wall": "42.019622317"
+  }
+]

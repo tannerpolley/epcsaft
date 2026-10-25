@@ -1,0 +1,26 @@
+{
+ "wheel_sha256": "2a8f09043596bc3aae734eedc211918dc9df85f2f77330f5ba546165aafc7a7e",
+ "mea_commit": "e522dc4a9f7a59567ab94f21541d37a3e692a9ab",
+ "record_sha256": "868a501831b87e95dedf18ce40e9e7ac949f7c6a4aaf137f717cc493ecfcb7be",
+ "state_packet_sha256": "86f60041b28ec4493729b04c0238f44e86fba4becf33d6ddf47d86b7efb82448",
+ "omp_num_threads": "1",
+ "summary": {
+  "4": {
+   "separate_s": {
+    "n": 100,
+    "median": 0.3379457139990336,
+    "p90": 0.3529729130004853,
+    "max": 0.40563477400064585,
+    "sum": 29.842419654003606
+   },
+   "batched_s": {
+    "n": 100,
+    "median": 0.22465678850039694,
+    "p90": 0.2340345829998114,
+    "max": 0.2922019449997606,
+    "sum": 21.4715376300137
+   }
+  }
+ },
+ "unsolved_or_unavailable": []
+}

@@ -1,0 +1,348 @@
+{
+  "wheel_sha256": "ceb6ab8a48b671fbb48330ff1195b14e2b9372c3829edb3f4a49d268e3895707",
+  "packet_sha256": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+  "conditions": {
+    "T_K": 298.15,
+    "P_Pa": 100000,
+    "branch": "liquid"
+  },
+  "rows": 383,
+  "debye_limit": {
+    "A": 1.1809464684653184,
+    "density": 55340.379252153296,
+    "density_column": 27.77275588632708,
+    "expected": -0.00029633098315125087,
+    "columns": [
+      -0.0002924327103802169,
+      -0.00029482673695824317
+    ]
+  },
+  "checks": {
+    "status": "converged",
+    "acceptance": "unavailable",
+    "objective_cost": 0.0,
+    "groups": [
+      {
+        "name": "fail",
+        "maximum": 0.030000000000000013,
+        "mean": 0.02,
+        "status": "fail",
+        "argmax": 2,
+        "failed_rows": [
+          2
+        ]
+      },
+      {
+        "name": "pass",
+        "maximum": 0.01500000000000003,
+        "mean": 0.010000000000000012,
+        "status": "pass",
+        "argmax": 4,
+        "failed_rows": []
+      },
+      {
+        "name": "energy",
+        "maximum": 4.0,
+        "mean": 3.0,
+        "status": "pass",
+        "argmax": 6,
+        "failed_rows": []
+      },
+      {
+        "name": "epsilon",
+        "maximum": 0.20000000000000284,
+        "mean": 0.15000000000000213,
+        "status": "fail",
+        "argmax": 8,
+        "failed_rows": []
+      },
+      {
+        "name": "baseline",
+        "maximum": 0.030000000000000013,
+        "mean": 0.02,
+        "status": "pass",
+        "argmax": 2,
+        "failed_rows": []
+      },
+      {
+        "name": "unavailable-report",
+        "maximum": 381931.0,
+        "mean": 381931.0,
+        "status": "unavailable",
+        "argmax": 9,
+        "failed_rows": [
+          9
+        ]
+      },
+      {
+        "name": "unavailable-guard",
+        "maximum": 381931.0,
+        "mean": 381931.0,
+        "status": "unavailable",
+        "argmax": 9,
+        "failed_rows": [
+          9
+        ]
+      }
+    ],
+    "report_only_acceptance": "pass"
+  },
+  "native_failure_cases": [
+    {
+      "case": "hydration-failure/no-root",
+      "inputs": {
+        "target_J_per_mol": -381930,
+        "cause": "hydration ion 1: hydration root outside bracket",
+        "optimizer": -0.4999999999999998
+      }
+    },
+    {
+      "case": "hydration-failure/reuse-no-root",
+      "inputs": {
+        "raw": [
+          "{}"
+        ]
+      }
+    },
+    {
+      "case": "hydration-failure/singular",
+      "inputs": {
+        "target_J_per_mol": 1121.092677120663,
+        "cause": "hydration ion 1: singular hydration derivative",
+        "optimizer": -1.4999999999999998
+      }
+    },
+    {
+      "case": "hydration-failure/reuse-singular",
+      "inputs": {
+        "raw": [
+          "{}"
+        ]
+      }
+    }
+  ],
+  "charts": {
+    "maximum_root_uncertainty_angstrom": 7.846794882268056e-12,
+    "scales": [
+      0.2,
+      0.4,
+      0.5,
+      0.25,
+      0.3,
+      0.6,
+      2.0
+    ]
+  },
+  "timings": [
+    {
+      "group": 0,
+      "rows": 156,
+      "columns": 13,
+      "exact_value_columns_seconds": 1.8248912480012223,
+      "central_difference_value_columns_seconds": 14.352205068011244
+    },
+    {
+      "group": 1,
+      "rows": 52,
+      "columns": 3,
+      "exact_value_columns_seconds": 0.34001319899834925,
+      "central_difference_value_columns_seconds": 0.6499338440044085
+    },
+    {
+      "group": 2,
+      "rows": 52,
+      "columns": 3,
+      "exact_value_columns_seconds": 0.3404100900006597,
+      "central_difference_value_columns_seconds": 0.6607436909980606
+    },
+    {
+      "group": 3,
+      "rows": 52,
+      "columns": 3,
+      "exact_value_columns_seconds": 0.3374007009988418,
+      "central_difference_value_columns_seconds": 0.7095741950033698
+    },
+    {
+      "group": 4,
+      "rows": 11,
+      "columns": 7,
+      "exact_value_columns_seconds": 0.13989622400185908,
+      "central_difference_value_columns_seconds": 0.9568262960019638
+    },
+    {
+      "group": 5,
+      "rows": 10,
+      "columns": 7,
+      "exact_value_columns_seconds": 0.1467631560008158,
+      "central_difference_value_columns_seconds": 1.0820288009999786
+    },
+    {
+      "group": 6,
+      "rows": 3,
+      "columns": 13,
+      "exact_value_columns_seconds": 0.02751463900131057,
+      "central_difference_value_columns_seconds": 0.7457564180003828
+    },
+    {
+      "group": 7,
+      "rows": 29,
+      "columns": 13,
+      "exact_value_columns_seconds": 0.10000778800167609,
+      "central_difference_value_columns_seconds": 2.3985889890027465
+    },
+    {
+      "group": 8,
+      "rows": 7,
+      "columns": 6,
+      "exact_value_columns_seconds": 0.023825901000236627,
+      "central_difference_value_columns_seconds": 0.31112100899554207
+    },
+    {
+      "group": 9,
+      "rows": 11,
+      "columns": 6,
+      "exact_value_columns_seconds": 0.038311389998852974,
+      "central_difference_value_columns_seconds": 0.48608937099561444
+    }
+  ],
+  "fits": {
+    "F2": {
+      "status": "converged",
+      "optimizer": [
+        -0.3500000000027962,
+        0.8999999999940498,
+        -0.24999999999873315,
+        0.9000000000020605,
+        -0.05000000002590653,
+        0.09999999992650155,
+        6.010000000002149
+      ],
+      "physical": [
+        -0.3500000000027962,
+        0.8999999999940498,
+        -0.24999999999873315,
+        0.9000000000020605,
+        -0.05000000002590653,
+        0.09999999992650155,
+        6.010000000002149,
+        6.010000000002149,
+        6.010000000002149,
+        6.010000000002149,
+        2.772553393954756,
+        3.4313392827859026,
+        4.126203653336961
+      ],
+      "cost": 1.2481803992115273e-18,
+      "covariance_status": "available",
+      "active_bounds": [],
+      "projected_gradient_norm": 3.3790429482261075e-10,
+      "iterations": 20,
+      "value_evaluations": 20,
+      "column_evaluations": 12,
+      "seconds": 9.117915822000214,
+      "singular_values": [
+        86.24655493047823,
+        64.4012933538974,
+        53.97851976629596,
+        2.2349164378961786,
+        0.2770695765680411,
+        0.19132333718012634,
+        0.08399544460285065
+      ],
+      "holds": [
+        {
+          "energy_error": -1.7462298274040222e-10,
+          "correction": 1.0172266436732523e-15,
+          "uncertainty": 1.0172266436732523e-15
+        },
+        {
+          "energy_error": 0.0,
+          "correction": 0.0,
+          "uncertainty": 0.0
+        },
+        {
+          "energy_error": 0.0,
+          "correction": 0.0,
+          "uncertainty": 0.0
+        }
+      ],
+      "failures": []
+    },
+    "F3": {
+      "status": "converged",
+      "optimizer": [
+        -0.8693806486625577,
+        -0.1281420726568562,
+        -0.19287042719954633,
+        1.0,
+        -0.4452924515452788,
+        -1.0,
+        6.318723171227296
+      ],
+      "physical": [
+        -0.8693806486625577,
+        -0.1281420726568562,
+        -0.19287042719954633,
+        1.0,
+        -0.4452924515452788,
+        -1.0,
+        6.318723171227296,
+        6.318723171227296,
+        6.318723171227296,
+        6.318723171227296,
+        2.897322156794895,
+        3.415910726285188,
+        4.323258262209246
+      ],
+      "cost": 0.3330779850441218,
+      "covariance_status": "active_bound",
+      "active_bounds": [
+        3,
+        5
+      ],
+      "projected_gradient_norm": 1.1669776256439945e-10,
+      "iterations": 34,
+      "value_evaluations": 34,
+      "column_evaluations": 18,
+      "seconds": 15.571518200002174,
+      "singular_values": [
+        81.83310104748587,
+        61.5597622010404,
+        54.10896861519344,
+        2.2750003659386584,
+        0.34411559589392415,
+        0.16913046233918289,
+        0.06697885737910002
+      ],
+      "holds": [
+        {
+          "energy_error": 1.1641532182693481e-10,
+          "correction": 7.405599236712233e-16,
+          "uncertainty": 7.405599236712233e-16
+        },
+        {
+          "energy_error": 0.0,
+          "correction": 0.0,
+          "uncertainty": 0.0
+        },
+        {
+          "energy_error": 0.0,
+          "correction": 0.0,
+          "uncertainty": 0.0
+        }
+      ],
+      "failures": []
+    },
+    "manufactured_truth": [
+      -0.35000000000000003,
+      0.9,
+      -0.25,
+      0.9,
+      -0.05,
+      0.1,
+      6.01
+    ]
+  },
+  "failures": [],
+  "seconds": 89.48202531700008
+}

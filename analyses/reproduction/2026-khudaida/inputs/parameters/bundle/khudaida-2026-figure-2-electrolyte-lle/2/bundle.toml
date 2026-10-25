@@ -1,0 +1,39 @@
+schema_version = 1
+bundle_id = "khudaida-2026-figure-2-electrolyte-lle"
+bundle_version = 2
+purpose = "user-provided"
+files = ["components.csv", "single.csv", "pair.csv", "sites.csv", "association.csv", "model.csv", "correlations.toml"]
+
+[[sources]]
+source_id = "khudaida-et-al-2026"
+citation = "Khudaida, S. H.; Rahayu, S. D.; Figiel, P.; Held, C.; Tiwikrama, A. H. Upgrading the Extraction of Ethanol and Isobutanol from an Aqueous Solution in the Presence of Sodium Chloride with Molecular Interaction Studies. Journal of Chemical & Engineering Data 2026, 71, 708-717."
+doi = "10.1021/acs.jced.5c00780"
+use_basis = "Figure 2 and Tables 2, 5, 6, and 7 model inputs for the 293.15 K, 0.1 MPa, 5 wt% NaCl electrolyte-LLE challenge"
+
+[[sources]]
+source_id = "figiel-yu-held-2025"
+citation = "Figiel, P.; Yu, G.; Held, C. Predicting Thermodynamic Properties of Ions in Single Solvents and in Mixed Solvents Using a Modified Born Term within the ePC-SAFT Framework. Industrial & Engineering Chemistry Research 2025, 64, 9406-9418."
+doi = "10.1021/acs.iecr.5c00475"
+use_basis = "Khudaida cited ref. 21 convention that the corrected Born SSM+DS solvation factor equals one for ions"
+
+[[sources]]
+source_id = "held-et-al-2014"
+citation = "Held, C.; Reschke, T.; Mohammad, S.; Luza, A.; Sadowski, G. ePC-SAFT revised. Chemical Engineering Research and Design 2014, 92, 2884-2897."
+doi = "10.1016/j.cherd.2014.05.017"
+use_basis = "Khudaida cited ref. 30 spherical-ion structural convention"
+
+[[sources]]
+source_id = "gross-sadowski-2002"
+citation = "Gross, J.; Sadowski, G. Application of the Perturbed-Chain SAFT Equation of State to Associating Systems. Industrial & Engineering Chemistry Research 2002, 41, 5510-5515."
+doi = "10.1021/ie010954d"
+use_basis = "Eqs. 2-3 cross-association combining rules evaluated once at 293.15 K with no binary correction parameter"
+
+[[domains]]
+domain_id = "khudaida-293-15-k-0-1-mpa"
+kind = "reported-conditions"
+temperature_min = 293.15
+temperature_max = 293.15
+temperature_unit = "kelvin"
+pressure_min = 0.1
+pressure_max = 0.1
+pressure_unit = "megapascal"

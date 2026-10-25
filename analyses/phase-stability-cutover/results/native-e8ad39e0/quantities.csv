@@ -1,0 +1,1429 @@
+case,entry,quantity,value
+NEUTRAL_SINGLETON/1 vapor,work,driver_invocations,7.0
+NEUTRAL_SINGLETON/1 vapor,work,energy_evaluations,559.0
+NEUTRAL_SINGLETON/1 vapor,work,evaluations,103.0
+NEUTRAL_SINGLETON/1 vapor,work,hessian_calls,65.0
+NEUTRAL_SINGLETON/1 vapor,work,iterations,58.0
+NEUTRAL_SINGLETON/1 vapor,work,reconstruction_evaluations,14.0
+NEUTRAL_SINGLETON/1 vapor,work,root_calls,7.0
+NEUTRAL_SINGLETON/1 vapor,work,root_evaluations,419.0
+NEUTRAL_SINGLETON/1 vapor,work,trial_driver_invocations,7.0
+NEUTRAL_SINGLETON/1 vapor,work,trial_invocations,7.0
+NEUTRAL_SINGLETON/1 vapor,present-0,association_energy_estimate_over_rt,0.0
+NEUTRAL_SINGLETON/1 vapor,present-0,charge_residual,0.0
+NEUTRAL_SINGLETON/1 vapor,present-0,chemical_plus_electric_contraction,0.0
+NEUTRAL_SINGLETON/1 vapor,present-0,correction_l1_mol,0.0
+NEUTRAL_SINGLETON/1 vapor,present-0,euler_defect_over_rt,0.0
+NEUTRAL_SINGLETON/1 vapor,present-0,feasibility_estimate_over_rt,0.0
+NEUTRAL_SINGLETON/1 vapor,present-0,g_over_rt,2.9937667134865924
+NEUTRAL_SINGLETON/1 vapor,present-0,gradient_floor_max_si_columns,0.0
+NEUTRAL_SINGLETON/1 vapor,present-0,normalization_residual,0.0
+NEUTRAL_SINGLETON/1 vapor,present-0,present_identity_defect_over_rt,2.676066124179243e-16
+NEUTRAL_SINGLETON/1 vapor,present-0,pressure_row,-1.764825974321383e-16
+NEUTRAL_SINGLETON/1 vapor,present-0,summation_estimate_over_rt,5.333067212575766e-15
+NEUTRAL_SINGLETON/1 vapor,present-0,tpd_over_rt,4.440892098500626e-16
+NEUTRAL_SINGLETON/1 vapor,present-0,volume_m3_per_mol,0.024837717501023603
+NEUTRAL_SINGLETON/1 vapor,trial-0,association_energy_estimate_over_rt,0.0
+NEUTRAL_SINGLETON/1 vapor,trial-0,charge_residual,0.0
+NEUTRAL_SINGLETON/1 vapor,trial-0,euler_defect_over_rt,0.0
+NEUTRAL_SINGLETON/1 vapor,trial-0,g_over_rt,2.9937667134865924
+NEUTRAL_SINGLETON/1 vapor,trial-0,gradient_floor_max_si_columns,0.0
+NEUTRAL_SINGLETON/1 vapor,trial-0,normalization_residual,0.0
+NEUTRAL_SINGLETON/1 vapor,trial-0,pressure_row,-5.294477922964151e-16
+NEUTRAL_SINGLETON/1 vapor,trial-0,raw_objective_over_rt,4.440892098500626e-16
+NEUTRAL_SINGLETON/1 vapor,trial-0,reconstruction_l1,0.0
+NEUTRAL_SINGLETON/1 vapor,trial-0,summation_estimate_over_rt,5.333067212575766e-15
+NEUTRAL_SINGLETON/1 vapor,trial-0,tpd_over_rt,4.440892098500626e-16
+NEUTRAL_SINGLETON/1 vapor,trial-0,trial_dual_over_rt,1.7648259743213828e-16
+NEUTRAL_SINGLETON/1 vapor,trial-0,trial_identity_defect_over_rt,2.6760661241792434e-16
+NEUTRAL_SINGLETON/1 vapor,trial-0,volume_m3_per_mol,0.02483771750102361
+NEUTRAL_SINGLETON/1 vapor,trial-1,association_energy_estimate_over_rt,0.0
+NEUTRAL_SINGLETON/1 vapor,trial-1,charge_residual,0.0
+NEUTRAL_SINGLETON/1 vapor,trial-1,euler_defect_over_rt,0.0
+NEUTRAL_SINGLETON/1 vapor,trial-1,g_over_rt,2.9937667134865924
+NEUTRAL_SINGLETON/1 vapor,trial-1,gradient_floor_max_si_columns,0.0
+NEUTRAL_SINGLETON/1 vapor,trial-1,normalization_residual,1.1102230246251565e-16
+NEUTRAL_SINGLETON/1 vapor,trial-1,pressure_row,-5.294477922964151e-16
+NEUTRAL_SINGLETON/1 vapor,trial-1,raw_objective_over_rt,4.440892098500626e-16
+NEUTRAL_SINGLETON/1 vapor,trial-1,reconstruction_l1,0.0
+NEUTRAL_SINGLETON/1 vapor,trial-1,summation_estimate_over_rt,5.333067212575766e-15
+NEUTRAL_SINGLETON/1 vapor,trial-1,tpd_over_rt,4.440892098500626e-16
+NEUTRAL_SINGLETON/1 vapor,trial-1,trial_dual_over_rt,2.5770573586622053e-16
+NEUTRAL_SINGLETON/1 vapor,trial-1,trial_identity_defect_over_rt,1.8638347398384209e-16
+NEUTRAL_SINGLETON/1 vapor,trial-1,volume_m3_per_mol,0.02483771750102361
+NEUTRAL_SINGLETON/1 vapor,trial-2,association_energy_estimate_over_rt,0.0
+NEUTRAL_SINGLETON/1 vapor,trial-2,charge_residual,0.0
+NEUTRAL_SINGLETON/1 vapor,trial-2,euler_defect_over_rt,0.0
+NEUTRAL_SINGLETON/1 vapor,trial-2,g_over_rt,2.9937667134865924
+NEUTRAL_SINGLETON/1 vapor,trial-2,gradient_floor_max_si_columns,0.0
+NEUTRAL_SINGLETON/1 vapor,trial-2,normalization_residual,0.0
+NEUTRAL_SINGLETON/1 vapor,trial-2,pressure_row,-5.294477922964151e-16
+NEUTRAL_SINGLETON/1 vapor,trial-2,raw_objective_over_rt,4.440892098500626e-16
+NEUTRAL_SINGLETON/1 vapor,trial-2,reconstruction_l1,0.0
+NEUTRAL_SINGLETON/1 vapor,trial-2,summation_estimate_over_rt,5.333067212575766e-15
+NEUTRAL_SINGLETON/1 vapor,trial-2,tpd_over_rt,4.440892098500626e-16
+NEUTRAL_SINGLETON/1 vapor,trial-2,trial_dual_over_rt,1.7648259743213828e-16
+NEUTRAL_SINGLETON/1 vapor,trial-2,trial_identity_defect_over_rt,2.6760661241792434e-16
+NEUTRAL_SINGLETON/1 vapor,trial-2,volume_m3_per_mol,0.02483771750102361
+NEUTRAL_SINGLETON/1 vapor,trial-3,association_energy_estimate_over_rt,0.0
+NEUTRAL_SINGLETON/1 vapor,trial-3,charge_residual,0.0
+NEUTRAL_SINGLETON/1 vapor,trial-3,euler_defect_over_rt,0.0
+NEUTRAL_SINGLETON/1 vapor,trial-3,g_over_rt,2.9937667134865924
+NEUTRAL_SINGLETON/1 vapor,trial-3,gradient_floor_max_si_columns,0.0
+NEUTRAL_SINGLETON/1 vapor,trial-3,normalization_residual,0.0
+NEUTRAL_SINGLETON/1 vapor,trial-3,pressure_row,-5.294477922964151e-16
+NEUTRAL_SINGLETON/1 vapor,trial-3,raw_objective_over_rt,4.440892098500626e-16
+NEUTRAL_SINGLETON/1 vapor,trial-3,reconstruction_l1,0.0
+NEUTRAL_SINGLETON/1 vapor,trial-3,summation_estimate_over_rt,5.333067212575766e-15
+NEUTRAL_SINGLETON/1 vapor,trial-3,tpd_over_rt,4.440892098500626e-16
+NEUTRAL_SINGLETON/1 vapor,trial-3,trial_dual_over_rt,1.7648259743213828e-16
+NEUTRAL_SINGLETON/1 vapor,trial-3,trial_identity_defect_over_rt,2.6760661241792434e-16
+NEUTRAL_SINGLETON/1 vapor,trial-3,volume_m3_per_mol,0.02483771750102361
+NEUTRAL_SINGLETON/1 vapor,trial-4,association_energy_estimate_over_rt,0.0
+NEUTRAL_SINGLETON/1 vapor,trial-4,charge_residual,0.0
+NEUTRAL_SINGLETON/1 vapor,trial-4,euler_defect_over_rt,0.0
+NEUTRAL_SINGLETON/1 vapor,trial-4,g_over_rt,2.9937667134865924
+NEUTRAL_SINGLETON/1 vapor,trial-4,gradient_floor_max_si_columns,0.0
+NEUTRAL_SINGLETON/1 vapor,trial-4,normalization_residual,1.1102230246251565e-16
+NEUTRAL_SINGLETON/1 vapor,trial-4,pressure_row,-5.294477922964151e-16
+NEUTRAL_SINGLETON/1 vapor,trial-4,raw_objective_over_rt,4.440892098500626e-16
+NEUTRAL_SINGLETON/1 vapor,trial-4,reconstruction_l1,0.0
+NEUTRAL_SINGLETON/1 vapor,trial-4,summation_estimate_over_rt,5.333067212575766e-15
+NEUTRAL_SINGLETON/1 vapor,trial-4,tpd_over_rt,4.440892098500626e-16
+NEUTRAL_SINGLETON/1 vapor,trial-4,trial_dual_over_rt,2.5770573586622053e-16
+NEUTRAL_SINGLETON/1 vapor,trial-4,trial_identity_defect_over_rt,1.8638347398384209e-16
+NEUTRAL_SINGLETON/1 vapor,trial-4,volume_m3_per_mol,0.02483771750102361
+NEUTRAL_SINGLETON/1 vapor,trial-5,association_energy_estimate_over_rt,0.0
+NEUTRAL_SINGLETON/1 vapor,trial-5,charge_residual,0.0
+NEUTRAL_SINGLETON/1 vapor,trial-5,euler_defect_over_rt,0.0
+NEUTRAL_SINGLETON/1 vapor,trial-5,g_over_rt,2.9937667134865924
+NEUTRAL_SINGLETON/1 vapor,trial-5,gradient_floor_max_si_columns,0.0
+NEUTRAL_SINGLETON/1 vapor,trial-5,normalization_residual,0.0
+NEUTRAL_SINGLETON/1 vapor,trial-5,pressure_row,-5.294477922964151e-16
+NEUTRAL_SINGLETON/1 vapor,trial-5,raw_objective_over_rt,4.440892098500626e-16
+NEUTRAL_SINGLETON/1 vapor,trial-5,reconstruction_l1,0.0
+NEUTRAL_SINGLETON/1 vapor,trial-5,summation_estimate_over_rt,5.333067212575766e-15
+NEUTRAL_SINGLETON/1 vapor,trial-5,tpd_over_rt,4.440892098500626e-16
+NEUTRAL_SINGLETON/1 vapor,trial-5,trial_dual_over_rt,1.7648259743213828e-16
+NEUTRAL_SINGLETON/1 vapor,trial-5,trial_identity_defect_over_rt,2.6760661241792434e-16
+NEUTRAL_SINGLETON/1 vapor,trial-5,volume_m3_per_mol,0.02483771750102361
+NEUTRAL_SINGLETON/1 vapor,trial-6,association_energy_estimate_over_rt,0.0
+NEUTRAL_SINGLETON/1 vapor,trial-6,charge_residual,0.0
+NEUTRAL_SINGLETON/1 vapor,trial-6,euler_defect_over_rt,0.0
+NEUTRAL_SINGLETON/1 vapor,trial-6,g_over_rt,2.9937667134865924
+NEUTRAL_SINGLETON/1 vapor,trial-6,gradient_floor_max_si_columns,0.0
+NEUTRAL_SINGLETON/1 vapor,trial-6,normalization_residual,0.0
+NEUTRAL_SINGLETON/1 vapor,trial-6,pressure_row,-5.294477922964151e-16
+NEUTRAL_SINGLETON/1 vapor,trial-6,raw_objective_over_rt,4.440892098500626e-16
+NEUTRAL_SINGLETON/1 vapor,trial-6,reconstruction_l1,0.0
+NEUTRAL_SINGLETON/1 vapor,trial-6,summation_estimate_over_rt,5.333067212575766e-15
+NEUTRAL_SINGLETON/1 vapor,trial-6,tpd_over_rt,4.440892098500626e-16
+NEUTRAL_SINGLETON/1 vapor,trial-6,trial_dual_over_rt,1.7648259743213828e-16
+NEUTRAL_SINGLETON/1 vapor,trial-6,trial_identity_defect_over_rt,2.6760661241792434e-16
+NEUTRAL_SINGLETON/1 vapor,trial-6,volume_m3_per_mol,0.02483771750102361
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,work,driver_invocations,9.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,work,energy_evaluations,697.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,work,evaluations,168.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,work,hessian_calls,118.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,work,iterations,109.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,work,reconstruction_evaluations,18.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,work,root_calls,9.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,work,root_evaluations,482.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,work,trial_driver_invocations,9.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,work,trial_invocations,9.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,present-0,association_energy_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,present-0,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,present-0,chemical_plus_electric_contraction,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,present-0,correction_l1_mol,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,present-0,euler_defect_over_rt,1.734723475976807e-18
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,present-0,feasibility_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,present-0,g_over_rt,2.579514598168006
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,present-0,gradient_floor_max_si_columns,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,present-0,normalization_residual,-1.1102230246251565e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,present-0,present_identity_defect_over_rt,4.440892098500626e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,present-0,pressure_row,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,present-0,summation_estimate_over_rt,5.785875294336284e-15
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,present-0,tpd_over_rt,4.440892098500626e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,present-0,volume_m3_per_mol,0.024616988274789506
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-0,association_energy_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-0,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-0,euler_defect_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-0,g_over_rt,4.448200153215308
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-0,gradient_floor_max_si_columns,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-0,normalization_residual,1.1102230246251565e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-0,pressure_row,-1.3624151254463565e-15
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-0,raw_objective_over_rt,1.8706171220861432
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-0,reconstruction_l1,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-0,summation_estimate_over_rt,2.5876465167544626e-14
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-0,tpd_over_rt,1.8706171220861418
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-0,trial_dual_over_rt,1.8706171220861423
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-0,trial_identity_defect_over_rt,-4.440892098500626e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-0,volume_m3_per_mol,7.165279628274639e-05
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-1,association_energy_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-1,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-1,euler_defect_over_rt,8.881784197001252e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-1,g_over_rt,4.448200153215305
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-1,gradient_floor_max_si_columns,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-1,normalization_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-1,pressure_row,7.229557093175732e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-1,raw_objective_over_rt,1.8706171220861396
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-1,reconstruction_l1,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-1,summation_estimate_over_rt,2.587646516754463e-14
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-1,tpd_over_rt,1.8706171220861392
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-1,trial_dual_over_rt,1.8706171220861425
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-1,trial_identity_defect_over_rt,-3.3306690738754696e-15
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-1,volume_m3_per_mol,7.165279628274638e-05
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-2,association_energy_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-2,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-2,euler_defect_over_rt,4.440892098500626e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-2,g_over_rt,4.605586975367143
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-2,gradient_floor_max_si_columns,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-2,normalization_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-2,pressure_row,-1.4477903630366435e-15
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-2,raw_objective_over_rt,2.026050530152019
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-2,reconstruction_l1,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-2,summation_estimate_over_rt,2.5631066656833264e-14
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-2,tpd_over_rt,2.0260505301520193
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-2,trial_dual_over_rt,2.026050530152019
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-2,trial_identity_defect_over_rt,4.440892098500626e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-2,volume_m3_per_mol,6.39141716934836e-05
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-3,association_energy_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-3,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-3,euler_defect_over_rt,4.440892098500626e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-3,g_over_rt,4.448200153215308
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-3,gradient_floor_max_si_columns,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-3,normalization_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-3,pressure_row,8.532913864903186e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-3,raw_objective_over_rt,1.8706171220861414
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-3,reconstruction_l1,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-3,summation_estimate_over_rt,2.5876465167544626e-14
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-3,tpd_over_rt,1.8706171220861414
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-3,trial_dual_over_rt,1.8706171220861405
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-3,trial_identity_defect_over_rt,8.881784197001252e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-3,volume_m3_per_mol,7.165279628274636e-05
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-4,association_energy_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-4,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-4,euler_defect_over_rt,1.734723475976807e-18
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-4,g_over_rt,2.579514598168006
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-4,gradient_floor_max_si_columns,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-4,normalization_residual,-5.551115123125783e-17
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-4,pressure_row,1.7491422194943242e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-4,raw_objective_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-4,reconstruction_l1,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-4,summation_estimate_over_rt,5.7858752943362865e-15
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-4,tpd_over_rt,4.440892098500626e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-4,trial_dual_over_rt,-1.5846459512524483e-17
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-4,trial_identity_defect_over_rt,4.599356693625871e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-4,volume_m3_per_mol,0.024616988274789503
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-5,association_energy_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-5,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-5,euler_defect_over_rt,1.734723475976807e-18
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-5,g_over_rt,2.579514598168006
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-5,gradient_floor_max_si_columns,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-5,normalization_residual,-5.551115123125783e-17
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-5,pressure_row,1.7491422194943242e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-5,raw_objective_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-5,reconstruction_l1,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-5,summation_estimate_over_rt,5.7858752943362865e-15
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-5,tpd_over_rt,4.440892098500626e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-5,trial_dual_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-5,trial_identity_defect_over_rt,4.440892098500626e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-5,volume_m3_per_mol,0.024616988274789503
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-6,association_energy_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-6,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-6,euler_defect_over_rt,1.734723475976807e-18
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-6,g_over_rt,2.579514598168006
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-6,gradient_floor_max_si_columns,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-6,normalization_residual,-5.551115123125783e-17
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-6,pressure_row,1.7491422194943242e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-6,raw_objective_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-6,reconstruction_l1,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-6,summation_estimate_over_rt,5.7858752943362865e-15
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-6,tpd_over_rt,4.440892098500626e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-6,trial_dual_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-6,trial_identity_defect_over_rt,4.440892098500626e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-6,volume_m3_per_mol,0.024616988274789503
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-7,association_energy_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-7,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-7,euler_defect_over_rt,1.734723475976807e-18
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-7,g_over_rt,2.579514598168006
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-7,gradient_floor_max_si_columns,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-7,normalization_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-7,pressure_row,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-7,raw_objective_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-7,reconstruction_l1,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-7,summation_estimate_over_rt,5.785875294336286e-15
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-7,tpd_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-7,trial_dual_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-7,trial_identity_defect_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-7,volume_m3_per_mol,0.024616988274789506
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-8,association_energy_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-8,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-8,euler_defect_over_rt,1.734723475976807e-18
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-8,g_over_rt,2.5795145981680054
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-8,gradient_floor_max_si_columns,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-8,normalization_residual,-1.1102230246251565e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-8,pressure_row,1.7491422194943242e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-8,raw_objective_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-8,reconstruction_l1,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-8,summation_estimate_over_rt,5.785875294336286e-15
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-8,tpd_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-8,trial_dual_over_rt,1.2778383897383366e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-8,trial_identity_defect_over_rt,-1.2778383897383366e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-8,volume_m3_per_mol,0.024616988274789503
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,work,driver_invocations,9.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,work,energy_evaluations,724.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,work,evaluations,184.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,work,finite_split_evaluations,11.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,work,hessian_calls,130.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,work,iterations,121.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,work,reconstruction_evaluations,18.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,work,root_calls,9.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,work,root_evaluations,482.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,work,trial_driver_invocations,9.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,work,trial_invocations,9.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,present-0,association_energy_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,present-0,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,present-0,chemical_plus_electric_contraction,-8.881784197001252e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,present-0,correction_l1_mol,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,present-0,euler_defect_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,present-0,feasibility_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,present-0,g_over_rt,4.6261042934671295
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,present-0,gradient_floor_max_si_columns,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,present-0,normalization_residual,-1.1102230246251565e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,present-0,present_identity_defect_over_rt,1.98775056973253e-15
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,present-0,pressure_row,-6.767846893678459e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,present-0,summation_estimate_over_rt,2.3020244558871695e-14
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,present-0,tpd_over_rt,1.7763568394002505e-15
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,present-0,volume_m3_per_mol,6.82299264605813e-05
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-0,arithmetic_error_estimate_over_rt,1.232696764857469e-14
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-0,association_energy_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-0,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-0,descent_error_estimate_over_rt,3.8483317271709576e-14
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-0,donor_capacity_mol,1.2098048560374124
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-0,donor_chemical_contraction_over_rt,4.64054289246904
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-0,donor_correction_over_rt,2.1163626406917047e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-0,donor_pressure_row,-6.767846893678459e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-0,donor_slope_over_rt,-0.028464633483235923
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-0,euler_defect_over_rt,4.440892098500626e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-0,feasibility_error_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-0,g_over_rt,4.612078258985805
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-0,gradient_floor_max_si_columns,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-0,normalization_residual,1.1102230246251565e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-0,pressure_row,1.673909623377287e-15
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-0,raw_objective_over_rt,-0.028464633483236128
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-0,reconstruction_l1,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-0,split_beta_mol,0.6049024280187062
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-0,split_delta_g_over_rt,-0.006860982826299988
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-0,split_error_estimate_over_rt,1.7845228824413817e-13
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-0,standard_error_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-0,summation_estimate_over_rt,2.5712260413284826e-14
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-0,tpd_over_rt,-0.028464633483236135
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-0,trial_dual_over_rt,-0.028464633483237023
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-0,trial_identity_defect_over_rt,8.881784197001252e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-0,volume_m3_per_mol,6.326042860578206e-05
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-0/split-0,admitted,1.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-0/split-0,beta_mol,0.6049024280187062
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-0/split-0,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-0/split-0,component_error_mol,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-0/split-0,delta_g_over_rt,-0.006860982826299988
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-0/split-0,error_estimate_over_rt,1.7845228824413817e-13
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-0/split-0,moiety_error_mol,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-0/split-0,normalization_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-1,arithmetic_error_estimate_over_rt,1.2818475472057175e-14
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-1,association_energy_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-1,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-1,descent_error_estimate_over_rt,4.019625581769254e-14
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-1,donor_capacity_mol,1.0987876073290899
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-1,donor_chemical_contraction_over_rt,4.832516211837071
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-1,donor_correction_over_rt,1.096345236817342e-15
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-1,donor_pressure_row,-6.767846893678459e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-1,donor_slope_over_rt,-0.043485530438399214
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-1,euler_defect_over_rt,4.440892098500626e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-1,feasibility_error_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-1,g_over_rt,4.789030681398672
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-1,gradient_floor_max_si_columns,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-1,normalization_residual,7.632783294297951e-17
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-1,pressure_row,-1.3293321412688369e-15
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-1,raw_objective_over_rt,-0.043485530438398534
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-1,reconstruction_l1,1.249000902703301e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-1,split_beta_mol,0.27469690183227247
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-1,split_delta_g_over_rt,-0.006760306005880068
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-1,split_error_estimate_over_rt,1.7649821593520465e-13
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-1,standard_error_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-1,summation_estimate_over_rt,2.6933691135785302e-14
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-1,tpd_over_rt,-0.04348553043840031
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-1,trial_dual_over_rt,-0.04348553043839983
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-1,trial_identity_defect_over_rt,-4.787836793695988e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-1,volume_m3_per_mol,5.432255132177299e-05
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-1/split-0,admitted,1.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-1/split-0,beta_mol,0.5493938036645449
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-1/split-0,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-1/split-0,component_error_mol,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-1/split-0,delta_g_over_rt,0.0044945856187794675
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-1/split-0,error_estimate_over_rt,1.792234932034801e-13
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-1/split-0,moiety_error_mol,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-1/split-0,normalization_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-1/split-1,admitted,1.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-1/split-1,beta_mol,0.27469690183227247
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-1/split-1,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-1/split-1,component_error_mol,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-1/split-1,delta_g_over_rt,-0.006760306005880068
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-1/split-1,error_estimate_over_rt,1.7649821593520465e-13
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-1/split-1,moiety_error_mol,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-1/split-1,normalization_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-2,arithmetic_error_estimate_over_rt,1.2326967648574689e-14
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-2,association_energy_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-2,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-2,descent_error_estimate_over_rt,3.8483317271709576e-14
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-2,donor_capacity_mol,1.2098048560374122
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-2,donor_chemical_contraction_over_rt,4.64054289246904
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-2,donor_correction_over_rt,1.0998146837692957e-15
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-2,donor_pressure_row,-6.767846893678459e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-2,donor_slope_over_rt,-0.0284646334832377
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-2,euler_defect_over_rt,4.440892098500626e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-2,feasibility_error_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-2,g_over_rt,4.612078258985803
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-2,gradient_floor_max_si_columns,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-2,normalization_residual,1.249000902703301e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-2,pressure_row,-5.124213132787613e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-2,raw_objective_over_rt,-0.0284646334832388
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-2,reconstruction_l1,4.163336342344337e-17
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-2,split_beta_mol,0.6049024280187061
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-2,split_delta_g_over_rt,-0.006860982826298212
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-2,split_error_estimate_over_rt,1.7738865125588321e-13
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-2,standard_error_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-2,summation_estimate_over_rt,2.5712260413284826e-14
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-2,tpd_over_rt,-0.0284646334832388
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-2,trial_dual_over_rt,-0.028464633483240246
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-2,trial_identity_defect_over_rt,1.4467593789646571e-15
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-2,volume_m3_per_mol,6.326042860578206e-05
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-2/split-0,admitted,1.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-2/split-0,beta_mol,0.6049024280187061
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-2/split-0,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-2/split-0,component_error_mol,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-2/split-0,delta_g_over_rt,-0.006860982826298212
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-2/split-0,error_estimate_over_rt,1.7738865125588321e-13
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-2/split-0,moiety_error_mol,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-2/split-0,normalization_residual,-1.1102230246251565e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-3,arithmetic_error_estimate_over_rt,1.1973168463898461e-14
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-3,association_energy_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-3,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-3,descent_error_estimate_over_rt,3.6794714467144076e-14
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-3,donor_capacity_mol,1.4325372355466004
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-3,donor_chemical_contraction_over_rt,4.49825478831567
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-3,donor_correction_over_rt,2.1163626406917047e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-3,donor_pressure_row,-6.767846893678459e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-3,donor_slope_over_rt,-0.009450071221805311
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-3,euler_defect_over_rt,4.440892098500626e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-3,feasibility_error_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-3,g_over_rt,4.488804717093865
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-3,gradient_floor_max_si_columns,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-3,normalization_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-3,pressure_row,1.6235361032784176e-15
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-3,raw_objective_over_rt,-0.009450071221808186
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-3,reconstruction_l1,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-3,split_beta_mol,0.3581343088866501
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-3,split_delta_g_over_rt,-0.002176272437989013
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-3,split_error_estimate_over_rt,1.7687828116087115e-13
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-3,standard_error_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-3,summation_estimate_over_rt,2.437745679339555e-14
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-3,tpd_over_rt,-0.009450071221805523
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-3,trial_dual_over_rt,-0.009450071221807169
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-3,trial_identity_defect_over_rt,1.64625257870199e-15
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-3,volume_m3_per_mol,7.113710878879231e-05
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-3/split-0,admitted,1.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-3/split-0,beta_mol,0.7162686177733002
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-3/split-0,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-3/split-0,component_error_mol,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-3/split-0,delta_g_over_rt,0.0018739736032369336
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-3/split-0,error_estimate_over_rt,1.7649266630858545e-13
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-3/split-0,moiety_error_mol,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-3/split-0,normalization_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-3/split-1,admitted,1.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-3/split-1,beta_mol,0.3581343088866501
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-3/split-1,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-3/split-1,component_error_mol,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-3/split-1,delta_g_over_rt,-0.002176272437989013
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-3/split-1,error_estimate_over_rt,1.7687828116087115e-13
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-3/split-1,moiety_error_mol,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-3/split-1,normalization_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-4,arithmetic_error_estimate_over_rt,9.674297701099458e-15
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-4,association_energy_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-4,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-4,descent_error_estimate_over_rt,1.5503755436281287e-14
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-4,donor_capacity_mol,2.416567567943328
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-4,donor_chemical_contraction_over_rt,4.663321394131329
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-4,donor_correction_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-4,donor_pressure_row,-6.767846893678459e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-4,donor_slope_over_rt,-2.0651155346388763
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-4,euler_defect_over_rt,3.469446951953614e-18
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-4,feasibility_error_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-4,g_over_rt,2.5982058594924538
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-4,gradient_floor_max_si_columns,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-4,normalization_residual,5.551115123125783e-17
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-4,pressure_row,-1.7496951824624114e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-4,raw_objective_over_rt,-2.065115534638877
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-4,reconstruction_l1,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-4,split_beta_mol,1.208283783971664
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-4,split_delta_g_over_rt,-2.4923733934737555
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-4,split_error_estimate_over_rt,1.5116932321728186e-13
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-4,standard_error_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-4,summation_estimate_over_rt,5.825988288229876e-15
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-4,tpd_over_rt,-2.0651155346388763
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-4,trial_dual_over_rt,-2.0651155346388763
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-4,trial_identity_defect_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-4,volume_m3_per_mol,0.024624770536717713
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-4/split-0,admitted,1.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-4/split-0,beta_mol,1.208283783971664
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-4/split-0,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-4/split-0,component_error_mol,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-4/split-0,delta_g_over_rt,-2.4923733934737555
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-4/split-0,error_estimate_over_rt,1.5116932321728186e-13
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-4/split-0,moiety_error_mol,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-4/split-0,normalization_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-5,arithmetic_error_estimate_over_rt,9.674297701099458e-15
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-5,association_energy_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-5,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-5,descent_error_estimate_over_rt,1.550202071280531e-14
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-5,donor_capacity_mol,2.4165675679433285
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-5,donor_chemical_contraction_over_rt,4.663321394131329
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-5,donor_correction_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-5,donor_pressure_row,-6.767846893678459e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-5,donor_slope_over_rt,-2.0651155346388763
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-5,euler_defect_over_rt,1.734723475976807e-18
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-5,feasibility_error_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-5,g_over_rt,2.5982058594924538
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-5,gradient_floor_max_si_columns,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-5,normalization_residual,-1.1102230246251565e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-5,pressure_row,-1.7496951824624114e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-5,raw_objective_over_rt,-2.0651155346388776
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-5,reconstruction_l1,2.220446049250313e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-5,split_beta_mol,1.2082837839716642
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-5,split_delta_g_over_rt,-2.492373393473752
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-5,split_error_estimate_over_rt,1.5116722717903614e-13
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-5,standard_error_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-5,summation_estimate_over_rt,5.825988288229876e-15
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-5,tpd_over_rt,-2.0651155346388763
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-5,trial_dual_over_rt,-2.0651155346388768
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-5,trial_identity_defect_over_rt,4.440892098500626e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-5,volume_m3_per_mol,0.024624770536717713
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-5/split-0,admitted,1.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-5/split-0,beta_mol,1.2082837839716642
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-5/split-0,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-5/split-0,component_error_mol,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-5/split-0,delta_g_over_rt,-2.492373393473752
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-5/split-0,error_estimate_over_rt,1.5116722717903614e-13
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-5/split-0,moiety_error_mol,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-5/split-0,normalization_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-6,arithmetic_error_estimate_over_rt,9.674297701099458e-15
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-6,association_energy_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-6,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-6,descent_error_estimate_over_rt,1.5503755436281287e-14
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-6,donor_capacity_mol,2.4165675679433285
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-6,donor_chemical_contraction_over_rt,4.66332139413133
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-6,donor_correction_over_rt,-8.881784197001252e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-6,donor_pressure_row,-6.767846893678459e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-6,donor_slope_over_rt,-2.0651155346388768
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-6,euler_defect_over_rt,3.469446951953614e-18
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-6,feasibility_error_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-6,g_over_rt,2.598205859492454
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-6,gradient_floor_max_si_columns,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-6,normalization_residual,5.551115123125783e-17
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-6,pressure_row,-1.7496951824624117e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-6,raw_objective_over_rt,-2.0651155346388768
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-6,reconstruction_l1,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-6,split_beta_mol,1.2082837839716642
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-6,split_delta_g_over_rt,-2.492373393473752
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-6,split_error_estimate_over_rt,1.5116932321728186e-13
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-6,standard_error_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-6,summation_estimate_over_rt,5.825988288229877e-15
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-6,tpd_over_rt,-2.065115534638876
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-6,trial_dual_over_rt,-2.0651155346388768
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-6,trial_identity_defect_over_rt,8.881784197001252e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-6,volume_m3_per_mol,0.024624770536717716
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-6/split-0,admitted,1.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-6/split-0,beta_mol,1.2082837839716642
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-6/split-0,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-6/split-0,component_error_mol,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-6/split-0,delta_g_over_rt,-2.492373393473752
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-6/split-0,error_estimate_over_rt,1.5116932321728186e-13
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-6/split-0,moiety_error_mol,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-6/split-0,normalization_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-7,arithmetic_error_estimate_over_rt,9.674297701099458e-15
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-7,association_energy_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-7,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-7,descent_error_estimate_over_rt,1.550202071280531e-14
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-7,donor_capacity_mol,2.4165675679433285
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-7,donor_chemical_contraction_over_rt,4.66332139413133
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-7,donor_correction_over_rt,-8.881784197001252e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-7,donor_pressure_row,-6.767846893678459e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-7,donor_slope_over_rt,-2.0651155346388768
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-7,euler_defect_over_rt,1.734723475976807e-18
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-7,feasibility_error_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-7,g_over_rt,2.598205859492454
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-7,gradient_floor_max_si_columns,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-7,normalization_residual,5.551115123125783e-17
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-7,pressure_row,-3.499390364924824e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-7,raw_objective_over_rt,-2.0651155346388763
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-7,reconstruction_l1,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-7,split_beta_mol,1.2082837839716642
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-7,split_delta_g_over_rt,-2.492373393473752
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-7,split_error_estimate_over_rt,1.5116722717903614e-13
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-7,standard_error_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-7,summation_estimate_over_rt,5.825988288229876e-15
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-7,tpd_over_rt,-2.065115534638876
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-7,trial_dual_over_rt,-2.0651155346388763
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-7,trial_identity_defect_over_rt,4.440892098500626e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-7,volume_m3_per_mol,0.02462477053671772
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-7/split-0,admitted,1.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-7/split-0,beta_mol,1.2082837839716642
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-7/split-0,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-7/split-0,component_error_mol,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-7/split-0,delta_g_over_rt,-2.492373393473752
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-7/split-0,error_estimate_over_rt,1.5116722717903614e-13
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-7/split-0,moiety_error_mol,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-7/split-0,normalization_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-8,arithmetic_error_estimate_over_rt,9.674297701099458e-15
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-8,association_energy_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-8,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-8,descent_error_estimate_over_rt,1.550202071280531e-14
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-8,donor_capacity_mol,2.4165675679433285
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-8,donor_chemical_contraction_over_rt,4.66332139413133
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-8,donor_correction_over_rt,-8.881784197001252e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-8,donor_pressure_row,-6.767846893678459e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-8,donor_slope_over_rt,-2.065115534638877
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-8,euler_defect_over_rt,1.734723475976807e-18
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-8,feasibility_error_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-8,g_over_rt,2.5982058594924538
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-8,gradient_floor_max_si_columns,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-8,normalization_residual,-5.551115123125783e-17
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-8,pressure_row,-1.7496951824624114e-16
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-8,raw_objective_over_rt,-2.0651155346388768
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-8,reconstruction_l1,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-8,split_beta_mol,1.2082837839716642
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-8,split_delta_g_over_rt,-2.4923733934737538
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-8,split_error_estimate_over_rt,1.5196290901768772e-13
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-8,standard_error_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-8,summation_estimate_over_rt,5.825988288229876e-15
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-8,tpd_over_rt,-2.0651155346388763
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-8,trial_dual_over_rt,-2.0651155346388763
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-8,trial_identity_defect_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-8,volume_m3_per_mol,0.024624770536717713
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-8/split-0,admitted,1.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-8/split-0,beta_mol,1.2082837839716642
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-8/split-0,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-8/split-0,component_error_mol,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-8/split-0,delta_g_over_rt,-2.4923733934737538
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-8/split-0,error_estimate_over_rt,1.5196290901768772e-13
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-8/split-0,moiety_error_mol,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-8/split-0,normalization_residual,2.220446049250313e-16
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),work,driver_invocations,9.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),work,energy_evaluations,707.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),work,evaluations,170.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),work,finite_split_evaluations,8.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),work,hessian_calls,125.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),work,iterations,116.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),work,reconstruction_evaluations,18.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),work,root_calls,9.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),work,root_evaluations,480.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),work,trial_driver_invocations,9.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),work,trial_invocations,9.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),present-0,association_energy_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),present-0,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),present-0,chemical_plus_electric_contraction,-7.12061517952416e-15
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),present-0,correction_l1_mol,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),present-0,euler_defect_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),present-0,feasibility_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),present-0,g_over_rt,4.784012445214973
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),present-0,gradient_floor_max_si_columns,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),present-0,normalization_residual,3.469446951953614e-17
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),present-0,present_identity_defect_over_rt,4.156325372214074e-16
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),present-0,pressure_row,-4.9286258029025014e-15
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),present-0,summation_estimate_over_rt,2.6686081681581767e-14
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),present-0,tpd_over_rt,-1.7763568394002505e-15
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),present-0,volume_m3_per_mol,5.479008029571563e-05
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),present-1,association_energy_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),present-1,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),present-1,chemical_plus_electric_contraction,9.301952792754475e-16
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),present-1,correction_l1_mol,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),present-1,euler_defect_over_rt,4.440892098500626e-16
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),present-1,feasibility_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),present-1,g_over_rt,4.602852185195425
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),present-1,gradient_floor_max_si_columns,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),present-1,normalization_residual,1.1102230246251565e-16
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),present-1,present_identity_defect_over_rt,-4.767843392316034e-16
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),present-1,pressure_row,-4.3476747965628105e-16
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),present-1,summation_estimate_over_rt,2.306060569597591e-14
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),present-1,tpd_over_rt,8.881784197001252e-16
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),present-1,volume_m3_per_mol,6.921728858077054e-05
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-0,arithmetic_error_estimate_over_rt,1.1949923423013941e-14
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-0,association_energy_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-0,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-0,descent_error_estimate_over_rt,3.698730872985899e-14
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-0,donor_capacity_mol,1.3547508463514957
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-0,donor_chemical_contraction_over_rt,4.4927010423048195
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-0,donor_correction_over_rt,-1.321859288694327e-15
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-0,donor_pressure_row,-4.3476747965628105e-16
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-0,donor_slope_over_rt,-0.01579030544439285
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-0,euler_defect_over_rt,4.440892098500626e-16
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-0,feasibility_error_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-0,g_over_rt,4.476910736860427
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-0,gradient_floor_max_si_columns,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-0,normalization_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-0,pressure_row,1.7574586841046547e-15
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-0,raw_objective_over_rt,-0.015790305444391528
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-0,reconstruction_l1,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-0,split_beta_mol,0.6773754231757478
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-0,split_delta_g_over_rt,-0.008696431911719316
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-0,split_error_estimate_over_rt,1.579698657900659e-13
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-0,standard_error_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-0,summation_estimate_over_rt,2.4593296096994988e-14
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-0,tpd_over_rt,-0.015790305444391528
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-0,trial_dual_over_rt,-0.01579030544439048
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-0,trial_identity_defect_over_rt,-1.0477729794899915e-15
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-0,volume_m3_per_mol,7.132073849168077e-05
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-0/split-0,admitted,1.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-0/split-0,beta_mol,0.6773754231757478
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-0/split-0,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-0/split-0,component_error_mol,1.1102230246251565e-16
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-0/split-0,delta_g_over_rt,-0.008696431911719316
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-0/split-0,error_estimate_over_rt,1.579698657900659e-13
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-0/split-0,moiety_error_mol,1.1102230246251565e-16
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-0/split-0,normalization_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-1,arithmetic_error_estimate_over_rt,1.2747169840250324e-14
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-1,association_energy_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-1,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-1,descent_error_estimate_over_rt,3.9877340731682174e-14
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-1,donor_capacity_mol,0.7825496565278545
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-1,donor_chemical_contraction_over_rt,4.784012445214978
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-1,donor_correction_over_rt,-3.987481158456783e-15
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-1,donor_pressure_row,-4.3476747965628105e-16
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-1,donor_slope_over_rt,-7.540194837257284e-15
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-1,euler_defect_over_rt,4.440892098500626e-16
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-1,feasibility_error_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-1,g_over_rt,4.784012445214971
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-1,gradient_floor_max_si_columns,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-1,normalization_residual,2.0816681711721685e-17
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-1,pressure_row,2.2470796314654976e-15
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-1,raw_objective_over_rt,-5.329070518200751e-15
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-1,reconstruction_l1,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-1,standard_error_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-1,summation_estimate_over_rt,2.668608168158179e-14
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-1,tpd_over_rt,-3.552713678800501e-15
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-1,trial_dual_over_rt,-3.0118618648873992e-15
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-1,trial_identity_defect_over_rt,-5.408518139131017e-16
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-1,volume_m3_per_mol,5.479008029571556e-05
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-2,arithmetic_error_estimate_over_rt,1.234662002600702e-14
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-2,association_energy_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-2,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-2,descent_error_estimate_over_rt,3.8732854530559515e-14
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-2,donor_capacity_mol,1.1540731734101801
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-2,donor_chemical_contraction_over_rt,4.657148997308403
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-2,donor_correction_over_rt,-2.213507155346406e-15
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-2,donor_pressure_row,-4.3476747965628105e-16
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-2,donor_slope_over_rt,-0.04692576988176577
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-2,euler_defect_over_rt,4.440892098500626e-16
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-2,feasibility_error_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-2,g_over_rt,4.610223227426638
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-2,gradient_floor_max_si_columns,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-2,normalization_residual,-5.551115123125783e-17
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-2,pressure_row,2.0133617804794213e-15
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-2,raw_objective_over_rt,-0.04692576988176355
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-2,reconstruction_l1,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-2,split_beta_mol,0.5770365867050901
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-2,split_delta_g_over_rt,-0.023971153270151646
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-2,split_error_estimate_over_rt,1.5975384660437083e-13
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-2,standard_error_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-2,summation_estimate_over_rt,2.594214529470243e-14
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-2,tpd_over_rt,-0.04692576988176356
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-2,trial_dual_over_rt,-0.04692576988176683
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-2,trial_identity_defect_over_rt,3.2751579226442118e-15
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-2,volume_m3_per_mol,6.308002674427537e-05
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-2/split-0,admitted,1.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-2/split-0,beta_mol,0.5770365867050901
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-2/split-0,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-2/split-0,component_error_mol,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-2/split-0,delta_g_over_rt,-0.023971153270151646
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-2/split-0,error_estimate_over_rt,1.5975384660437083e-13
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-2/split-0,moiety_error_mol,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-2/split-0,normalization_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-3,arithmetic_error_estimate_over_rt,1.194992342301394e-14
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-3,association_energy_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-3,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-3,descent_error_estimate_over_rt,3.654321952000892e-14
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-3,donor_capacity_mol,1.3547508463514988
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-3,donor_chemical_contraction_over_rt,4.4927010423048195
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-3,donor_correction_over_rt,-4.3368086899420177e-16
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-3,donor_pressure_row,-4.3476747965628105e-16
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-3,donor_slope_over_rt,-0.015790305444393738
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-3,euler_defect_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-3,feasibility_error_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-3,g_over_rt,4.476910736860426
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-3,gradient_floor_max_si_columns,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-3,normalization_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-3,pressure_row,2.5358486895212484e-15
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-3,raw_objective_over_rt,-0.015790305444392413
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-3,reconstruction_l1,1.6653345369377348e-16
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-3,split_beta_mol,0.6773754231757494
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-3,split_delta_g_over_rt,-0.008696431911721092
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-3,split_error_estimate_over_rt,1.5766905067361593e-13
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-3,standard_error_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-3,summation_estimate_over_rt,2.459329609699498e-14
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-3,tpd_over_rt,-0.015790305444393304
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-3,trial_dual_over_rt,-0.015790305444391674
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-3,trial_identity_defect_over_rt,-1.6306400674181987e-15
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-3,volume_m3_per_mol,7.132073849168075e-05
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-3/split-0,admitted,1.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-3/split-0,beta_mol,0.6773754231757494
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-3/split-0,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-3/split-0,component_error_mol,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-3/split-0,delta_g_over_rt,-0.008696431911721092
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-3/split-0,error_estimate_over_rt,1.5766905067361593e-13
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-3/split-0,moiety_error_mol,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-3/split-0,normalization_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-4,arithmetic_error_estimate_over_rt,9.651294406420683e-15
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-4,association_energy_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-4,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-4,descent_error_estimate_over_rt,1.5470145767749247e-14
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-4,donor_capacity_mol,1.7630655642810387
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-4,donor_chemical_contraction_over_rt,4.65090957899949
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-4,donor_correction_over_rt,-1.3322676295501878e-15
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-4,donor_pressure_row,-4.3476747965628105e-16
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-4,donor_slope_over_rt,-2.0575581759324657
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-4,euler_defect_over_rt,3.469446951953614e-18
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-4,feasibility_error_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-4,g_over_rt,2.5933514030670244
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-4,gradient_floor_max_si_columns,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-4,normalization_residual,5.551115123125783e-17
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-4,pressure_row,1.7496264983331594e-16
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-4,raw_objective_over_rt,-2.057558175932464
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-4,reconstruction_l1,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-4,split_beta_mol,0.8815327821405193
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-4,split_delta_g_over_rt,-1.8060806119357196
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-4,split_error_estimate_over_rt,1.393929906647976e-13
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-4,standard_error_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-4,summation_estimate_over_rt,5.815381914376609e-15
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-4,tpd_over_rt,-2.0575581759324644
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-4,trial_dual_over_rt,-2.057558175932464
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-4,trial_identity_defect_over_rt,-4.440892098500626e-16
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-4,volume_m3_per_mol,0.024623803893533632
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-4/split-0,admitted,1.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-4/split-0,beta_mol,0.8815327821405193
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-4/split-0,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-4/split-0,component_error_mol,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-4/split-0,delta_g_over_rt,-1.8060806119357196
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-4/split-0,error_estimate_over_rt,1.393929906647976e-13
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-4/split-0,moiety_error_mol,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-4/split-0,normalization_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-5,arithmetic_error_estimate_over_rt,9.651294406420683e-15
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-5,association_energy_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-5,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-5,descent_error_estimate_over_rt,1.546841104427327e-14
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-5,donor_capacity_mol,1.763065564281038
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-5,donor_chemical_contraction_over_rt,4.6509095789994905
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-5,donor_correction_over_rt,-2.220446049250313e-15
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-5,donor_pressure_row,-4.3476747965628105e-16
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-5,donor_slope_over_rt,-2.0575581759324666
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-5,euler_defect_over_rt,1.734723475976807e-18
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-5,feasibility_error_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-5,g_over_rt,2.5933514030670244
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-5,gradient_floor_max_si_columns,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-5,normalization_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-5,pressure_row,1.7496264983331594e-16
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-5,raw_objective_over_rt,-2.0575581759324644
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-5,reconstruction_l1,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-5,split_beta_mol,0.881532782140519
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-5,split_delta_g_over_rt,-1.8060806119357125
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-5,split_error_estimate_over_rt,1.3939146144918559e-13
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-5,standard_error_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-5,summation_estimate_over_rt,5.8153819143766105e-15
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-5,tpd_over_rt,-2.0575581759324644
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-5,trial_dual_over_rt,-2.0575581759324644
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-5,trial_identity_defect_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-5,volume_m3_per_mol,0.024623803893533632
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-5/split-0,admitted,1.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-5/split-0,beta_mol,0.881532782140519
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-5/split-0,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-5/split-0,component_error_mol,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-5/split-0,delta_g_over_rt,-1.8060806119357125
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-5/split-0,error_estimate_over_rt,1.3939146144918559e-13
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-5/split-0,moiety_error_mol,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-5/split-0,normalization_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-6,arithmetic_error_estimate_over_rt,9.651294406420683e-15
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-6,association_energy_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-6,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-6,descent_error_estimate_over_rt,1.5470145767749247e-14
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-6,donor_capacity_mol,1.7630655642810384
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-6,donor_chemical_contraction_over_rt,4.65090957899949
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-6,donor_correction_over_rt,-2.220446049250313e-15
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-6,donor_pressure_row,-4.3476747965628105e-16
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-6,donor_slope_over_rt,-2.0575581759324657
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-6,euler_defect_over_rt,3.469446951953614e-18
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-6,feasibility_error_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-6,g_over_rt,2.5933514030670244
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-6,gradient_floor_max_si_columns,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-6,normalization_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-6,pressure_row,1.7496264983331594e-16
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-6,raw_objective_over_rt,-2.0575581759324644
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-6,reconstruction_l1,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-6,split_beta_mol,0.8815327821405192
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-6,split_delta_g_over_rt,-1.806080611935716
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-6,split_error_estimate_over_rt,1.4018393616285945e-13
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-6,standard_error_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-6,summation_estimate_over_rt,5.815381914376609e-15
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-6,tpd_over_rt,-2.0575581759324635
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-6,trial_dual_over_rt,-2.0575581759324644
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-6,trial_identity_defect_over_rt,8.881784197001252e-16
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-6,volume_m3_per_mol,0.024623803893533632
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-6/split-0,admitted,1.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-6/split-0,beta_mol,0.8815327821405192
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-6/split-0,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-6/split-0,component_error_mol,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-6/split-0,delta_g_over_rt,-1.806080611935716
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-6/split-0,error_estimate_over_rt,1.4018393616285945e-13
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-6/split-0,moiety_error_mol,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-6/split-0,normalization_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-7,arithmetic_error_estimate_over_rt,9.651294406420685e-15
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-7,association_energy_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-7,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-7,descent_error_estimate_over_rt,1.546841104427327e-14
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-7,donor_capacity_mol,1.763065564281038
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-7,donor_chemical_contraction_over_rt,4.65090957899949
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-7,donor_correction_over_rt,-1.3322676295501878e-15
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-7,donor_pressure_row,-4.3476747965628105e-16
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-7,donor_slope_over_rt,-2.0575581759324657
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-7,euler_defect_over_rt,1.734723475976807e-18
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-7,feasibility_error_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-7,g_over_rt,2.5933514030670244
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-7,gradient_floor_max_si_columns,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-7,normalization_residual,5.551115123125783e-17
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-7,pressure_row,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-7,raw_objective_over_rt,-2.057558175932464
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-7,reconstruction_l1,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-7,split_beta_mol,0.881532782140519
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-7,split_delta_g_over_rt,-1.8060806119357125
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-7,split_error_estimate_over_rt,1.4018240694724744e-13
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-7,standard_error_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-7,summation_estimate_over_rt,5.8153819143766105e-15
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-7,tpd_over_rt,-2.0575581759324644
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-7,trial_dual_over_rt,-2.0575581759324635
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-7,trial_identity_defect_over_rt,-8.881784197001252e-16
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-7,volume_m3_per_mol,0.024623803893533636
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-7/split-0,admitted,1.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-7/split-0,beta_mol,0.881532782140519
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-7/split-0,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-7/split-0,component_error_mol,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-7/split-0,delta_g_over_rt,-1.8060806119357125
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-7/split-0,error_estimate_over_rt,1.4018240694724744e-13
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-7/split-0,moiety_error_mol,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-7/split-0,normalization_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-8,arithmetic_error_estimate_over_rt,9.651294406420683e-15
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-8,association_energy_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-8,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-8,descent_error_estimate_over_rt,1.5466676320797294e-14
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-8,donor_capacity_mol,1.7630655642810384
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-8,donor_chemical_contraction_over_rt,4.65090957899949
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-8,donor_correction_over_rt,-1.3322676295501878e-15
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-8,donor_pressure_row,-4.3476747965628105e-16
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-8,donor_slope_over_rt,-2.0575581759324657
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-8,euler_defect_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-8,feasibility_error_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-8,g_over_rt,2.5933514030670244
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-8,gradient_floor_max_si_columns,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-8,normalization_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-8,pressure_row,1.7496264983331594e-16
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-8,raw_objective_over_rt,-2.0575581759324644
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-8,reconstruction_l1,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-8,split_beta_mol,0.8815327821405192
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-8,split_delta_g_over_rt,-1.8060806119357142
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-8,split_error_estimate_over_rt,1.401808777316354e-13
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-8,standard_error_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-8,summation_estimate_over_rt,5.8153819143766105e-15
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-8,tpd_over_rt,-2.0575581759324644
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-8,trial_dual_over_rt,-2.057558175932464
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-8,trial_identity_defect_over_rt,-4.440892098500626e-16
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-8,volume_m3_per_mol,0.024623803893533632
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-8/split-0,admitted,1.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-8/split-0,beta_mol,0.8815327821405192
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-8/split-0,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-8/split-0,component_error_mol,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-8/split-0,delta_g_over_rt,-1.8060806119357142
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-8/split-0,error_estimate_over_rt,1.401808777316354e-13
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-8/split-0,moiety_error_mol,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-8/split-0,normalization_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,work,driver_invocations,9.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,work,energy_evaluations,711.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,work,evaluations,177.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,work,finite_split_evaluations,5.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,work,hessian_calls,121.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,work,iterations,112.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,work,reconstruction_evaluations,18.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,work,root_calls,9.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,work,root_evaluations,478.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,work,trial_driver_invocations,9.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,work,trial_invocations,9.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,present-0,association_energy_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,present-0,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,present-0,chemical_plus_electric_contraction,-3.0257017923887386e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,present-0,correction_l1_mol,3.885780586188049e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,present-0,euler_defect_over_rt,4.440892098500626e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,present-0,feasibility_estimate_over_rt,1.7702919710630112e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,present-0,g_over_rt,4.786739207759866
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,present-0,gradient_floor_max_si_columns,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,present-0,normalization_residual,-6.938893903907228e-17
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,present-0,present_identity_defect_over_rt,1.3035714336003802e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,present-0,pressure_row,5.422648061189224e-17
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,present-0,summation_estimate_over_rt,2.683624066242206e-14
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,present-0,tpd_over_rt,-1.7763568394002505e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,present-0,volume_m3_per_mol,5.451213345476145e-05
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,present-1,association_energy_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,present-1,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,present-1,chemical_plus_electric_contraction,-4.612431791190149e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,present-1,correction_l1_mol,3.885780586188049e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,present-1,euler_defect_over_rt,4.440892098500626e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,present-1,feasibility_estimate_over_rt,1.7702919710630112e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,present-1,g_over_rt,4.610912363522684
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,present-1,gradient_floor_max_si_columns,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,present-1,normalization_residual,9.71445146547012e-17
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,present-1,present_identity_defect_over_rt,-4.566287101863644e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,present-1,pressure_row,-6.281684028758872e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,present-1,summation_estimate_over_rt,2.5697593799685678e-14
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,present-1,tpd_over_rt,-4.440892098500626e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,present-1,volume_m3_per_mol,6.33286843015259e-05
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,present-2,association_energy_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,present-2,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,present-2,chemical_plus_electric_contraction,6.223081789480494e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,present-2,correction_l1_mol,3.885780586188049e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,present-2,euler_defect_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,present-2,feasibility_estimate_over_rt,1.7702919710630112e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,present-2,g_over_rt,4.474624893046724
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,present-2,gradient_floor_max_si_columns,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,present-2,normalization_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,present-2,present_identity_defect_over_rt,6.61540421984909e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,present-2,pressure_row,4.220086952365027e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,present-2,summation_estimate_over_rt,2.4682363688164287e-14
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,present-2,tpd_over_rt,2.6645352591003757e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,present-2,volume_m3_per_mol,7.128233777207688e-05
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-0,association_energy_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-0,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-0,euler_defect_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-0,g_over_rt,4.4746248930467205
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-0,gradient_floor_max_si_columns,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-0,normalization_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-0,pressure_row,-2.5223275351389627e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-0,raw_objective_over_rt,2.6645352591003757e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-0,reconstruction_l1,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-0,summation_estimate_over_rt,2.4682363688164334e-14
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-0,tpd_over_rt,8.881784197001252e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-0,trial_dual_over_rt,1.8166746686917968e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-0,trial_identity_defect_over_rt,-9.284962489916716e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-0,volume_m3_per_mol,7.12823377720769e-05
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-1,arithmetic_error_estimate_over_rt,1.2754435395194377e-14
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-1,association_energy_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-1,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-1,descent_error_estimate_over_rt,4.180505723852951e-14
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-1,donor_capacity_mol,0.7933377290555798
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-1,donor_chemical_contraction_over_rt,4.786739207759864
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-1,donor_correction_over_rt,3.6069401594123935e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-1,donor_pressure_row,5.422648061189224e-17
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-1,donor_slope_over_rt,1.8305833200121426e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-1,euler_defect_over_rt,4.440892098500626e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-1,feasibility_error_estimate_over_rt,1.7702919710630112e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-1,g_over_rt,4.786739207759866
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-1,gradient_floor_max_si_columns,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-1,normalization_residual,-6.938893903907228e-18
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-1,pressure_row,-3.4240149186366257e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-1,raw_objective_over_rt,-2.6645352591003757e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-1,reconstruction_l1,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-1,standard_error_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-1,summation_estimate_over_rt,2.6836240662422053e-14
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-1,tpd_over_rt,-1.7763568394002505e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-1,trial_dual_over_rt,-4.506046051870041e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-1,trial_identity_defect_over_rt,2.7296892124697907e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-1,volume_m3_per_mol,5.451213345476148e-05
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-2,arithmetic_error_estimate_over_rt,1.2285938569228058e-14
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-2,association_energy_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-2,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-2,descent_error_estimate_over_rt,3.975382433997673e-14
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-2,donor_capacity_mol,0.98219128427994
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-2,donor_chemical_contraction_over_rt,4.610912363522683
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-2,donor_correction_over_rt,3.8127236956247395e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-2,donor_pressure_row,-6.281684028758872e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-2,donor_slope_over_rt,2.924545275924614e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-2,euler_defect_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-2,feasibility_error_estimate_over_rt,1.7702919710630112e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-2,g_over_rt,4.6109123635226865
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-2,gradient_floor_max_si_columns,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-2,normalization_residual,5.551115123125783e-17
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-2,pressure_row,-3.392829339315324e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-2,raw_objective_over_rt,-1.7763568394002505e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-2,reconstruction_l1,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-2,standard_error_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-2,summation_estimate_over_rt,2.569759379968566e-14
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-2,tpd_over_rt,-8.881784197001252e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-2,trial_dual_over_rt,2.705339026301152e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-2,trial_identity_defect_over_rt,-3.593517446001277e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-2,volume_m3_per_mol,6.332868430152594e-05
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-3,association_energy_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-3,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-3,euler_defect_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-3,g_over_rt,4.474624893046723
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-3,gradient_floor_max_si_columns,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-3,normalization_residual,1.1102230246251565e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-3,pressure_row,2.0057062327611028e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-3,raw_objective_over_rt,3.5527136788005005e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-3,reconstruction_l1,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-3,summation_estimate_over_rt,2.4682363688164343e-14
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-3,tpd_over_rt,3.552713678800501e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-3,trial_dual_over_rt,3.2951602928516592e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-3,trial_identity_defect_over_rt,2.575533859488417e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-3,volume_m3_per_mol,7.12823377720769e-05
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-4,arithmetic_error_estimate_over_rt,9.627885746165433e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-4,association_energy_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-4,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-4,descent_error_estimate_over_rt,1.7218273264675496e-14
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-4,donor_capacity_mol,0.4353706186286018
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-4,donor_chemical_contraction_over_rt,4.631969483691372
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-4,donor_correction_over_rt,-6.217248937900877e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-4,donor_pressure_row,4.220086952365027e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-4,donor_slope_over_rt,-2.037248524250028
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-4,euler_defect_over_rt,1.734723475976807e-18
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-4,feasibility_error_estimate_over_rt,1.7702919710630112e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-4,g_over_rt,2.59472095944134
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-4,gradient_floor_max_si_columns,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-4,normalization_residual,1.1102230246251565e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-4,pressure_row,-1.749651208935698e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-4,raw_objective_over_rt,-2.0372485242500216
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-4,reconstruction_l1,1.6653345369377348e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-4,split_beta_mol,0.2176853093143009
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-4,split_delta_g_over_rt,-0.4337465700514054
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-4,split_error_estimate_over_rt,7.355075935876805e-14
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-4,standard_error_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-4,summation_estimate_over_rt,5.8183608239710745e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-4,tpd_over_rt,-2.0372485242500216
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-4,trial_dual_over_rt,-2.037248524250021
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-4,trial_identity_defect_over_rt,-4.440892098500626e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-4,volume_m3_per_mol,0.024624151664347334
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-4/split-0,admitted,1.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-4/split-0,beta_mol,0.2176853093143009
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-4/split-0,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-4/split-0,component_error_mol,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-4/split-0,delta_g_over_rt,-0.4337465700514054
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-4/split-0,error_estimate_over_rt,7.355075935876805e-14
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-4/split-0,moiety_error_mol,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-4/split-0,normalization_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-5,arithmetic_error_estimate_over_rt,9.627885746165433e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-5,association_energy_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-5,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-5,descent_error_estimate_over_rt,1.7220007988151473e-14
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-5,donor_capacity_mol,0.4353706186286018
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-5,donor_chemical_contraction_over_rt,4.631969483691373
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-5,donor_correction_over_rt,-7.105427357601002e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-5,donor_pressure_row,4.220086952365027e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-5,donor_slope_over_rt,-2.0372485242500282
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-5,euler_defect_over_rt,3.469446951953614e-18
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-5,feasibility_error_estimate_over_rt,1.7702919710630112e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-5,g_over_rt,2.5947209594413403
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-5,gradient_floor_max_si_columns,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-5,normalization_residual,1.6653345369377348e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-5,pressure_row,-3.4993024178713963e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-5,raw_objective_over_rt,-2.037248524250022
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-5,reconstruction_l1,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-5,split_beta_mol,0.2176853093143009
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-5,split_delta_g_over_rt,-0.4337465700514054
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-5,split_error_estimate_over_rt,7.35511369825845e-14
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-5,standard_error_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-5,summation_estimate_over_rt,5.8183608239710745e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-5,tpd_over_rt,-2.037248524250021
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-5,trial_dual_over_rt,-2.0372485242500216
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-5,trial_identity_defect_over_rt,4.440892098500626e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-5,volume_m3_per_mol,0.024624151664347338
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-5/split-0,admitted,1.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-5/split-0,beta_mol,0.2176853093143009
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-5/split-0,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-5/split-0,component_error_mol,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-5/split-0,delta_g_over_rt,-0.4337465700514054
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-5/split-0,error_estimate_over_rt,7.35511369825845e-14
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-5/split-0,moiety_error_mol,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-5/split-0,normalization_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-6,arithmetic_error_estimate_over_rt,9.627885746165433e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-6,association_energy_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-6,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-6,descent_error_estimate_over_rt,1.7218273264675496e-14
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-6,donor_capacity_mol,0.4353706186286018
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-6,donor_chemical_contraction_over_rt,4.631969483691372
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-6,donor_correction_over_rt,-6.217248937900877e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-6,donor_pressure_row,4.220086952365027e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-6,donor_slope_over_rt,-2.037248524250028
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-6,euler_defect_over_rt,1.734723475976807e-18
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-6,feasibility_error_estimate_over_rt,1.7702919710630112e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-6,g_over_rt,2.59472095944134
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-6,gradient_floor_max_si_columns,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-6,normalization_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-6,pressure_row,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-6,raw_objective_over_rt,-2.0372485242500216
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-6,reconstruction_l1,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-6,split_beta_mol,0.2176853093143009
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-6,split_delta_g_over_rt,-0.4337465700514036
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-6,split_error_estimate_over_rt,7.355075935876807e-14
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-6,standard_error_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-6,summation_estimate_over_rt,5.818360823971074e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-6,tpd_over_rt,-2.0372485242500216
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-6,trial_dual_over_rt,-2.0372485242500216
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-6,trial_identity_defect_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-6,volume_m3_per_mol,0.02462415166434733
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-6/split-0,admitted,1.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-6/split-0,beta_mol,0.2176853093143009
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-6/split-0,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-6/split-0,component_error_mol,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-6/split-0,delta_g_over_rt,-0.4337465700514036
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-6/split-0,error_estimate_over_rt,7.355075935876807e-14
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-6/split-0,moiety_error_mol,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-6/split-0,normalization_residual,2.220446049250313e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-7,arithmetic_error_estimate_over_rt,9.627885746165433e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-7,association_energy_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-7,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-7,descent_error_estimate_over_rt,1.7218273264675496e-14
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-7,donor_capacity_mol,0.4353706186286018
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-7,donor_chemical_contraction_over_rt,4.631969483691372
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-7,donor_correction_over_rt,-6.217248937900877e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-7,donor_pressure_row,4.220086952365027e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-7,donor_slope_over_rt,-2.037248524250028
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-7,euler_defect_over_rt,1.734723475976807e-18
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-7,feasibility_error_estimate_over_rt,1.7702919710630112e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-7,g_over_rt,2.59472095944134
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-7,gradient_floor_max_si_columns,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-7,normalization_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-7,pressure_row,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-7,raw_objective_over_rt,-2.037248524250021
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-7,reconstruction_l1,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-7,split_beta_mol,0.2176853093143009
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-7,split_delta_g_over_rt,-0.4337465700514036
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-7,split_error_estimate_over_rt,7.355075935876807e-14
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-7,standard_error_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-7,summation_estimate_over_rt,5.818360823971074e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-7,tpd_over_rt,-2.0372485242500216
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-7,trial_dual_over_rt,-2.037248524250021
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-7,trial_identity_defect_over_rt,-4.440892098500626e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-7,volume_m3_per_mol,0.02462415166434733
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-7/split-0,admitted,1.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-7/split-0,beta_mol,0.2176853093143009
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-7/split-0,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-7/split-0,component_error_mol,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-7/split-0,delta_g_over_rt,-0.4337465700514036
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-7/split-0,error_estimate_over_rt,7.355075935876807e-14
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-7/split-0,moiety_error_mol,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-7/split-0,normalization_residual,2.220446049250313e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-8,arithmetic_error_estimate_over_rt,9.627885746165433e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-8,association_energy_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-8,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-8,descent_error_estimate_over_rt,1.7218273264675496e-14
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-8,donor_capacity_mol,0.4353706186286018
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-8,donor_chemical_contraction_over_rt,4.631969483691372
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-8,donor_correction_over_rt,-6.217248937900877e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-8,donor_pressure_row,4.220086952365027e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-8,donor_slope_over_rt,-2.037248524250028
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-8,euler_defect_over_rt,1.734723475976807e-18
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-8,feasibility_error_estimate_over_rt,1.7702919710630112e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-8,g_over_rt,2.59472095944134
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-8,gradient_floor_max_si_columns,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-8,normalization_residual,1.1102230246251565e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-8,pressure_row,-1.749651208935698e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-8,raw_objective_over_rt,-2.0372485242500216
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-8,reconstruction_l1,1.6653345369377348e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-8,split_beta_mol,0.2176853093143009
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-8,split_delta_g_over_rt,-0.4337465700514054
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-8,split_error_estimate_over_rt,7.355075935876805e-14
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-8,standard_error_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-8,summation_estimate_over_rt,5.8183608239710745e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-8,tpd_over_rt,-2.0372485242500216
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-8,trial_dual_over_rt,-2.0372485242500216
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-8,trial_identity_defect_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-8,volume_m3_per_mol,0.024624151664347334
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-8/split-0,admitted,1.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-8/split-0,beta_mol,0.2176853093143009
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-8/split-0,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-8/split-0,component_error_mol,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-8/split-0,delta_g_over_rt,-0.4337465700514054
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-8/split-0,error_estimate_over_rt,7.355075935876805e-14
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-8/split-0,moiety_error_mol,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-8/split-0,normalization_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,work,driver_invocations,9.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,work,energy_evaluations,1173.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,work,evaluations,239.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,work,hessian_calls,134.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,work,iterations,125.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,work,reconstruction_evaluations,18.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,work,root_calls,9.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,work,root_evaluations,883.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,work,trial_driver_invocations,9.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,work,trial_invocations,9.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,present-0,association_energy_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,present-0,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,present-0,chemical_plus_electric_contraction,-2.7213320505514737e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,present-0,correction_l1_mol,1.249000902703301e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,present-0,euler_defect_over_rt,4.440892098500626e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,present-0,feasibility_estimate_over_rt,6.107316491445796e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,present-0,g_over_rt,5.003199978661757
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,present-0,gradient_floor_max_si_columns,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,present-0,normalization_residual,3.469446951953614e-17
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,present-0,present_identity_defect_over_rt,1.6584348314379383e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,present-0,pressure_row,-2.839254058513786e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,present-0,summation_estimate_over_rt,2.750827254310354e-14
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,present-0,tpd_over_rt,1.7763568394002505e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,present-0,volume_m3_per_mol,5.336398036830952e-05
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,present-1,association_energy_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,present-1,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,present-1,chemical_plus_electric_contraction,-4.066557075638497e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,present-1,correction_l1_mol,1.249000902703301e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,present-1,euler_defect_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,present-1,feasibility_estimate_over_rt,6.107316491445796e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,present-1,g_over_rt,4.858256633810222
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,present-1,gradient_floor_max_si_columns,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,present-1,normalization_residual,3.469446951953614e-17
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,present-1,present_identity_defect_over_rt,2.529875801992448e-17
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,present-1,pressure_row,-1.3767230585181966e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,present-1,summation_estimate_over_rt,2.6559139939848273e-14
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,present-1,tpd_over_rt,-2.6645352591003757e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,present-1,volume_m3_per_mol,6.178461269665696e-05
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,present-2,association_energy_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,present-2,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,present-2,chemical_plus_electric_contraction,-2.851398511481426e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,present-2,correction_l1_mol,1.249000902703301e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,present-2,euler_defect_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,present-2,feasibility_estimate_over_rt,6.107316491445796e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,present-2,g_over_rt,4.743333793686631
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,present-2,gradient_floor_max_si_columns,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,present-2,normalization_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,present-2,present_identity_defect_over_rt,-3.7630276576295207e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,present-2,pressure_row,-2.437799456311345e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,present-2,summation_estimate_over_rt,2.571069514354497e-14
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,present-2,tpd_over_rt,1.7763568394002505e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,present-2,volume_m3_per_mol,6.962048956883987e-05
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-0,association_energy_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-0,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-0,euler_defect_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-0,g_over_rt,4.743333793686629
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-0,gradient_floor_max_si_columns,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-0,normalization_residual,-1.1102230246251565e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-0,pressure_row,9.497919959654588e-17
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-0,raw_objective_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-0,reconstruction_l1,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-0,summation_estimate_over_rt,2.571069514354498e-14
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-0,tpd_over_rt,8.881784197001252e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-0,trial_dual_over_rt,3.579906047387868e-17
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-0,trial_identity_defect_over_rt,8.523793592262465e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-0,volume_m3_per_mol,6.962048956883984e-05
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-1,association_energy_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-1,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-1,euler_defect_over_rt,4.440892098500626e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-1,g_over_rt,5.003199978661756
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-1,gradient_floor_max_si_columns,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-1,normalization_residual,-2.0816681711721685e-17
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-1,pressure_row,-5.654240988322328e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-1,raw_objective_over_rt,1.7763568394002505e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-1,reconstruction_l1,1.3183898417423734e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-1,summation_estimate_over_rt,2.7508272543103536e-14
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-1,tpd_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-1,trial_dual_over_rt,-3.984317611391715e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-1,trial_identity_defect_over_rt,3.984317611391715e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-1,volume_m3_per_mol,5.336398036830954e-05
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-2,association_energy_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-2,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-2,euler_defect_over_rt,4.440892098500626e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-2,g_over_rt,4.858256633810225
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-2,gradient_floor_max_si_columns,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-2,normalization_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-2,pressure_row,-1.9386508375052166e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-2,raw_objective_over_rt,-8.881784197001252e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-2,reconstruction_l1,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-2,summation_estimate_over_rt,2.655913993984825e-14
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-2,tpd_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-2,trial_dual_over_rt,-1.4351223541837423e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-2,trial_identity_defect_over_rt,1.4351223541837423e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-2,volume_m3_per_mol,6.1784612696657e-05
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-3,association_energy_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-3,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-3,euler_defect_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-3,g_over_rt,4.743333793686631
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-3,gradient_floor_max_si_columns,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-3,normalization_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-3,pressure_row,2.501118922709042e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-3,raw_objective_over_rt,1.7763568394002505e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-3,reconstruction_l1,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-3,summation_estimate_over_rt,2.5710695143544976e-14
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-3,tpd_over_rt,1.7763568394002505e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-3,trial_dual_over_rt,-2.9143605729202257e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-3,trial_identity_defect_over_rt,2.067792896692273e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-3,volume_m3_per_mol,6.962048956883985e-05
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-4,association_energy_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-4,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-4,euler_defect_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-4,g_over_rt,4.743333793686629
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-4,gradient_floor_max_si_columns,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-4,normalization_residual,-1.1102230246251565e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-4,pressure_row,9.497919959654588e-17
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-4,raw_objective_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-4,reconstruction_l1,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-4,summation_estimate_over_rt,2.571069514354498e-14
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-4,tpd_over_rt,8.881784197001252e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-4,trial_dual_over_rt,3.579906047387868e-17
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-4,trial_identity_defect_over_rt,8.523793592262465e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-4,volume_m3_per_mol,6.962048956883984e-05
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-5,association_energy_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-5,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-5,euler_defect_over_rt,4.440892098500626e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-5,g_over_rt,5.003199978661756
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-5,gradient_floor_max_si_columns,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-5,normalization_residual,-2.0816681711721685e-17
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-5,pressure_row,-5.654240988322328e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-5,raw_objective_over_rt,1.7763568394002505e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-5,reconstruction_l1,1.3183898417423734e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-5,summation_estimate_over_rt,2.7508272543103536e-14
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-5,tpd_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-5,trial_dual_over_rt,-3.984317611391715e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-5,trial_identity_defect_over_rt,3.984317611391715e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-5,volume_m3_per_mol,5.336398036830954e-05
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-6,association_energy_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-6,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-6,euler_defect_over_rt,4.440892098500626e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-6,g_over_rt,4.858256633810225
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-6,gradient_floor_max_si_columns,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-6,normalization_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-6,pressure_row,-1.9386508375052166e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-6,raw_objective_over_rt,-8.881784197001252e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-6,reconstruction_l1,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-6,summation_estimate_over_rt,2.655913993984825e-14
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-6,tpd_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-6,trial_dual_over_rt,-1.4351223541837423e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-6,trial_identity_defect_over_rt,1.4351223541837423e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-6,volume_m3_per_mol,6.1784612696657e-05
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-7,association_energy_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-7,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-7,euler_defect_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-7,g_over_rt,4.743333793686631
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-7,gradient_floor_max_si_columns,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-7,normalization_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-7,pressure_row,2.501118922709042e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-7,raw_objective_over_rt,1.7763568394002505e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-7,reconstruction_l1,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-7,summation_estimate_over_rt,2.5710695143544976e-14
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-7,tpd_over_rt,1.7763568394002505e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-7,trial_dual_over_rt,-2.9143605729202257e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-7,trial_identity_defect_over_rt,2.067792896692273e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-7,volume_m3_per_mol,6.962048956883985e-05
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-8,association_energy_estimate_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-8,charge_residual,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-8,euler_defect_over_rt,4.440892098500626e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-8,g_over_rt,4.743333793686629
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-8,gradient_floor_max_si_columns,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-8,normalization_residual,1.1102230246251565e-16
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-8,pressure_row,2.1212021243228582e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-8,raw_objective_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-8,reconstruction_l1,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-8,summation_estimate_over_rt,2.5710695143544983e-14
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-8,tpd_over_rt,0.0
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-8,trial_dual_over_rt,-1.0203709566673544e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-8,trial_identity_defect_over_rt,1.0203709566673544e-15
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-8,volume_m3_per_mol,6.962048956883985e-05

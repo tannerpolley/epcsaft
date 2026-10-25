@@ -1,0 +1,31 @@
+{
+  "base": "29fc98dd503527a4c2aef8b4a91017d76c0abdee",
+  "engine_runtime_changed": false,
+  "tolerances_changed": false,
+  "unchanged_runs": [
+    {
+      "producer": "divalent",
+      "command": [
+        ".venv/bin/python",
+        "-B",
+        "analyses/2026-divalent-chloride-activity/scripts/run.py"
+      ],
+      "exit": 1
+    }
+  ],
+  "qualification_base": "8ffd627f0f7e4e68fdf9db634773ff00e058d85e",
+  "producer_head": "388ed38b12d618e711c64a3c05c7f88653f84d6a",
+  "final_runs": [
+    {
+      "producer": "divalent",
+      "command": [
+        ".venv/bin/python",
+        "-B",
+        "analyses/2026-divalent-chloride-activity/scripts/run.py"
+      ],
+      "exit": 0,
+      "seconds": 0.23665326599984837,
+      "producer_sha256": "2038d139b3122ec0052fcc2cbcc6f049ce13b1dc6c0df31c780879c53fa47ab5"
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+<!-- source: docs/papers/md/Gross, Sadowski - 2001 - PC-SAFT An equation of state based on a perturbation theory for chain molec.md lines 369-380 -->
+
+Table 3. Percent Absolute Average Deviation (AAD\%) in Heat Capacities of the PC-SAFT and SAFT Equation of State
+
+|  | AAD\% |  | T range [ ${ }^{\circ} \mathrm{C}$ ] | no. of points | ref ${ }^{\text {a }}$ |  |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+|  | PCSAFT |  |  |  |  |  |
+|  |  | SAFT |  |  | $c_{p}$ | $c_{p}^{\text {ideal }}$ |
+| isobutane | 0.96 | 8.65 | -50 to -25 | 2 | 1 | 2 |
+| 2,3-dimethylbutane | 2.99 | 4.59 | -50 to 20 | 4 | 1 | 2 |
+| propylene | 3.78 | 7.62 | -50 to 50 | 4 | 1 | 2 |
+| 1-octene | 0.66 | 8.55 | -50 to 100 | 5 | 2 | 2 |
+| cyclopentane | 0.51 | 12.45 | -50 to 20 | 4 | 1 | 2 |
+| benzene | 1.75 | 1.87 | 50 to 200 | 4 | 3 | 2 |
+| n-butylbenzene | 1.28 | 6.40 | -50 to 150 | 5 | 1 | 2 |
+| overall average ${ }^{\text {b }}$ | 1.7 | 7.1 |  |  |  |  |

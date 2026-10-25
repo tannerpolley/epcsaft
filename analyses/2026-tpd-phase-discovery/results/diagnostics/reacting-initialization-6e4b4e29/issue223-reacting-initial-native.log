@@ -1,0 +1,167 @@
+PARAM sigma_term_component 0 0
+PARAM sigma_term_amplitude 10.109999999999999 -1.417
+PARAM sigma_term_exponent -0.017749999999999998 -0.01146
+PARAM molar_mass_kg_per_mol 0.018015300000000001 0 0
+PARAM k_ij_reference_temperature_k 0 0 0 0 0 0 0 0 0
+PARAM site_component 0 0
+PARAM site_multiplicity 1 1
+PARAM association_active 0 1 1 0
+PARAM charge_number 0 1 -1
+PARAM solvation_factor 1.5 1 1
+PARAM relative_permittivity 0 0 0
+PARAM permittivity_term_component
+PARAM permittivity_term_coefficient
+PARAM permittivity_term_power
+PARAM permittivity_reference_temperature_k 0 0 0
+PARAM dielectric_volume_m3_per_mol 0.00037769999999999997 0 0
+PARAM dielectric_temperature_k 1403 0 0
+PARAM dipole_scaling_debye2 0 0 0
+PARAM polarizability_scaling_angstrom3 0 0 0
+PARAM correlation_integral_parameter 0 0 0
+PARAM dipole_moment_debye
+PARAM dipole_count
+PARAM packing_diameter_angstrom 0 2.484416 2.4252799999999999
+PARAM debye_huckel_diameter_angstrom 0 2.484416 2.4252799999999999
+PARAM born_diameter_angstrom 0 3.4449999999999998 4.0999999999999996
+PARAM ion_suppression_coefficient 0 0 0
+PARAM segment_count 1.2047000000000001 1 1
+PARAM sigma_constant 2.7927 2.8231999999999999 2.7559999999999998
+PARAM dispersion_energy_over_k 353.94999999999999 230 170
+PARAM k_ij 0 -0.29999999999999999 -0.29999999999999999 -0.29999999999999999 0 0.80000000000000004 -0.29999999999999999 0.80000000000000004 0
+PARAM k_ij_reciprocal_temperature_slope 0 0 0 0 0 0 0 0 0
+PARAM l_ij 0 0 0 0 0 0 0 0 0
+PARAM association_energy_over_k 0 2425.6999999999998 2425.6999999999998 0
+PARAM association_volume 0 0.045089999999999998 0.045089999999999998 0
+PARAM scalar ionic_region=8 born_shell=1 born_dielectric=1 form=DensityTemperature
+UNCHANGED_DISCOVERY_BOUNDARY
+seed_coordinates 0 -59.177597964631786 -inf 2.000000000718452 -0.85659703494764339 0 0
+cutoff=9.9999999999999995e-21 optimizer_box=1e-08
+raw_x 0 1
+raw_x 1 1.9929470107860502e-26
+raw_x 2 0
+seed_prepare_exception=invalid composition
+DISCOVERY_POSITIVE_BASE 0.33333333333333331 0.33333333333333331 0.33333333333333331
+DISCOVERY_BASE_PLUS_EXISTING_SPECIATION
+seed_coordinates -0.013805095110985249 -4.9827593312871965 -4.9827593312871965 2.0000000006608416 -0.79253566442912993 0 0
+cutoff=9.9999999999999995e-21 optimizer_box=1e-08
+raw_x 0 0.98628975822639631
+raw_x 1 0.0068551208868018404
+raw_x 2 0.0068551208868018404
+seed_x 0.98628975822639631 0.0068551208868018404 0.0068551208868018404
+seed_amount 2.0000000006608416
+seed_volume 1.8067392311586586e-05
+seed_rows -0.18176653107429527 -0.44302024034280407 -0.43913490481696726 -0.18686708523746523 3.304206908083529e-10 0 0
+
+******************************************************************************
+This program contains Ipopt, a library for large-scale nonlinear optimization.
+ Ipopt is released as open source code under the Eclipse Public License (EPL).
+         For more information visit http://projects.coin-or.org/Ipopt
+******************************************************************************
+
+CORRECTED_INITIAL_DRIVER success=1 message=converged: residual 1.0441577530190186e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 8 iterations, contraction absent, floor 7.6383355746340591e-11, amplification 0 status=SUCCESS convergence=converged: residual 1.0441577530190186e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 8 iterations, contraction absent, floor 7.6383355746340591e-11, amplification 0 iterations=8 evaluations=16 hessians=9 GRT=4.8494541715626838e-13
+coordinates -0.020202707317522561 -4.6051701859879408 -4.6051701859879408 2 -0.78682495521418994 2.4127474467487795e-13 2.5172175981004835e-13
+rows -1.0320599977229706e-14 4.0736250635877165e-15 -3.4540540964753815e-15 -1.0441577530190186e-14 0 0 -1.1102230246251565e-16
+classified -1.0114187977685081e-14 4.0736250635883298e-17 -3.4540540964759018e-17 -1.0441577530190186e-14 0 0 -1.1102230246251565e-16
+amounts 2
+composition 0.9799999999999971 0.010000000000001508 0.010000000000001508
+density 55818.173331512262
+initial_attempt -0.020202707317522561 -4.6051701859879408 -4.6051701859879408 2 -0.78682495521418994 2.4127474467487795e-13 2.5172175981004835e-13
+BRANCH accepted=1 message=
+AMOUNT_ERROR 5.773159728050814e-15
+STABILITY completed=1 message=no witness in the recorded trial set; unresolved trials 1 trial_count=4
+WORK association_diagnostic_evaluations 5
+WORK driver_invocations 4
+WORK energy_evaluations 570
+WORK evaluations 276
+WORK hessian_calls 46
+WORK iterations 42
+WORK reconstruction_evaluations 9
+WORK root_calls 5
+WORK root_evaluations 313
+WORK trial_driver_invocations 4
+WORK trial_invocations 4
+TRIAL 0 seed=positive-neutral-base evidence=no_resolved_descent success=1
+trial_x 0.97999999999999754 0.010000000000001277 0.010000000000001277
+Q 0 association_energy_estimate_over_rt 7.6384724178003528e-11
+Q 0 association_residual 3.4694469519536142e-18
+Q 0 association_site_pivot_ratio 12.028348217155195
+Q 0 association_site_rank 2
+Q 0 charge_residual 0
+Q 0 euler_defect_over_rt 1.7763568394002505e-15
+Q 0 g_over_rt 2.446931546273845e-13
+Q 0 gradient_floor_max_si_columns 7.638335574634072e-11
+Q 0 normalization_residual 9.3675067702747583e-17
+Q 0 pressure_row -2.4901633585153535e-15
+Q 0 raw_objective_over_rt 6.2172489379008758e-15
+Q 0 reconstruction_l1 1.1449174941446927e-16
+Q 0 summation_estimate_over_rt 5.5251590311230393e-14
+Q 0 tpd_over_rt 3.4184099525066058e-15
+Q 0 trial_dual_over_rt 3.1071881098075903e-16
+Q 0 trial_identity_defect_over_rt 3.1076911415258467e-15
+Q 0 volume_m3_per_mol 1.7915312170121615e-05
+TRIAL 1 seed=near-pure-0 evidence=indeterminate success=1
+trial_x 0.9799999999999971 0.010000000000001461 0.010000000000001461
+Q 1 arithmetic_error_estimate_over_rt 6.368474489354592e-28
+Q 1 association_energy_estimate_over_rt 7.6384724178003515e-11
+Q 1 association_residual 3.4694469519536142e-18
+Q 1 association_site_pivot_ratio 12.028348217155155
+Q 1 association_site_rank 2
+Q 1 charge_residual 0
+Q 1 descent_error_estimate_over_rt 1.5282647630315754e-10
+Q 1 donor_capacity_mol 1.9999999999999998
+Q 1 donor_chemical_contraction_over_rt 2.3145096950116799e-13
+Q 1 donor_correction_over_rt -4.8745130448560769e-16
+Q 1 donor_pressure_row -1.0311226478195516e-14
+Q 1 donor_slope_over_rt -5.5067363391301916e-15
+Q 1 euler_defect_over_rt 1.7763568394002505e-15
+Q 1 feasibility_error_estimate_over_rt 3.3034834359426116e-30
+Q 1 g_over_rt 2.3625545964023331e-13
+Q 1 gradient_floor_max_si_columns 7.6383355746340707e-11
+Q 1 normalization_residual 1.7347234759768071e-17
+Q 1 pressure_row 8.8503781650208784e-15
+Q 1 raw_objective_over_rt -4.8849813083506888e-15
+Q 1 reconstruction_l1 0
+Q 1 standard_error_estimate_over_rt 0
+Q 1 summation_estimate_over_rt 5.525159031123062e-14
+Q 1 tpd_over_rt -5.0192850346445839e-15
+Q 1 trial_dual_over_rt -9.2496034240706359e-16
+Q 1 trial_identity_defect_over_rt -4.0943246922375201e-15
+Q 1 volume_m3_per_mol 1.7915312170121611e-05
+TRIAL 2 seed=positive-neutral-base evidence=no_resolved_descent success=1
+trial_x 1 0 0
+Q 2 association_energy_estimate_over_rt 7.726429468190306e-11
+Q 2 association_residual 5.2041704279304213e-18
+Q 2 association_site_pivot_ratio 12.089879695704587
+Q 2 association_site_rank 2
+Q 2 charge_residual 0
+Q 2 euler_defect_over_rt 0
+Q 2 g_over_rt 0.017951210107371801
+Q 2 gradient_floor_max_si_columns 7.726289854223821e-11
+Q 2 normalization_residual 0
+Q 2 pressure_row 1.1786659944192319e-16
+Q 2 raw_objective_over_rt 0.017951210107130522
+Q 2 reconstruction_l1 0
+Q 2 summation_estimate_over_rt 4.3041390927254688e-14
+Q 2 tpd_over_rt 0.017951210107130525
+Q 2 trial_dual_over_rt 0.017951210107130182
+Q 2 trial_identity_defect_over_rt 3.434752482434078e-16
+Q 2 volume_m3_per_mol 1.8069988198736137e-05
+TRIAL 3 seed=positive-neutral-base evidence=no_resolved_descent success=1
+trial_x 1 0 0
+Q 3 association_energy_estimate_over_rt 2.8320821170088229e-15
+Q 3 association_residual 4.3368086899420177e-19
+Q 3 association_site_pivot_ratio 1.0058421693661772
+Q 3 association_site_rank 2
+Q 3 charge_residual 0
+Q 3 euler_defect_over_rt 2.7755575615628914e-17
+Q 3 g_over_rt 3.3910410508400965
+Q 3 gradient_floor_max_si_columns 2.769128954549158e-15
+Q 3 normalization_residual 0
+Q 3 pressure_row 0
+Q 3 raw_objective_over_rt 3.3910410508398554
+Q 3 reconstruction_l1 0
+Q 3 summation_estimate_over_rt 7.9247756567789777e-15
+Q 3 tpd_over_rt 3.3910410508398554
+Q 3 trial_dual_over_rt 3.3910410508398554
+Q 3 trial_identity_defect_over_rt 0
+Q 3 volume_m3_per_mol 0.022733922288539505

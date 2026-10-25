@@ -1,0 +1,20 @@
+{
+  "engine": [
+    "3884a6fd712f86c5fcce3b8309d5669dfafd87ad",
+    true
+  ],
+  "native_library": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-789-live-literature-reproductions-the-4/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so",
+  "native_library_sha256": "bd27e11eb164394549e31714682bd8624eceb8bae0915c0ea53b4213da75b1ac",
+  "packet_water_mass": {
+    "magnitude": 18.01528,
+    "unit": "gram / mole"
+  },
+  "admitted_water_mass_kg_mol": 0.018015268,
+  "source_sha256": {
+    "analyses/reproduction/2019-iapws/inputs/cases/water-self-ionization/source/source.json": "0ca6f84527481db34e9a0b4bc5a3679c29d1e0f5e4d816438fe2126b02706b12",
+    "analyses/reproduction/2019-iapws/inputs/live-reproduction.json": "e90d18b8ceae1be604c1d6a4bfdd661129d06fdc3a486bda8fa02d3494c0f956",
+    "analyses/reproduction/2019-iapws/inputs/water_self_ionization_iapws_r11_07_2019.json": "61c2b39566fa5b25e43102b6ad3938e7bf1231900730db0b86bc6d126026fe87",
+    "data/packets/held-cameretti-sadowski-2008/4/parameters/parameters.json": "8f0313b6ebecb891873866a2181b32f8aeb44a49860487f34aeab8aecfa596f9"
+  },
+  "unavailable": "source molalities, activities and independent ln Q unavailable pending #793"
+}

@@ -1,0 +1,3 @@
+record_id,component_id_a,site_id_a,component_id_b,site_id_b,family,value,unit,source_id,locator,domain_id
+water-association-energy,water,a,water,b,association_energy_over_k,2425.7,kelvin,figiel-yu-held-2025,"Table 2, water column, epsilon^AiBi/k_B row",figiel-298-k-1-bar
+water-association-volume,water,a,water,b,association_volume,0.04509,,figiel-yu-held-2025,"Table 2, water column, kappa^AiBi row",figiel-298-k-1-bar

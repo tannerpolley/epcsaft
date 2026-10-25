@@ -1,0 +1,19 @@
+<!-- source: docs/papers/md/Cameretti, Sadowski, Mollerup - 2005 - Modeling of Aqueous Electrolyte Solutions with Perturbed-Chai.md lines 290-304 -->
+
+Table 4. Average and Maximum Relative Errors of Vapor Pressures and Densities of Aqueous Solutions of Alkali Halides Calculated by $\boldsymbol{\Delta}=\mathbf{1}$ - Model/Expt
+
+| salt | $\Delta p[\%]$ |  |  | $\Delta \rho[\%]$ |  |  |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+|  | $m_{\text {max }}{ }^{a}$ | average | max | $m_{\text {max }}{ }^{a}$ | average | max |
+| NaCl | 6.2 | 0.5 | 1.7 | 5.7 | 0.4 | 0.9 |
+| NaBr | 8.0 | 3.6 | 7.8 | 8.0 | 0.9 | 1.7 |
+| NaI | 8.4 | 0.4 | 1.9 | 10.0 | 0.3 | 0.6 |
+| LiCl | 12.7 | 4.1 | 8.0 | 19.3 | 1.1 | 2.6 |
+| LiBr | 13.8 | 7.3 | 18.9 | 21.4 | 1.6 | 2.7 |
+| LiI | 7.5 | 1.8 | 5.1 | 13.9 | 0.6 | 1.4 |
+| KCl | 4.8 | 1.8 | 7.7 | 4.5 | 0.8 | 1.8 |
+| KBr | 5.0 | 3.5 | 8.5 | 5.6 | 1.0 | 1.7 |
+| KI | 8.5 | 0.9 | 6.0 | 9.0 | 0.4 | 0.9 |
+| $\mathrm{Li}_{2} \mathrm{SO}_{4}$ | 3.2 | 3.8 | 10.5 | 3.0 | 0.3 | 1.5 |
+| $\mathrm{Na}_{2} \mathrm{SO}_{4}$ | 3.5 | 0.7 | 4.6 | 2.3 | 0.9 | 0.8 |
+| $\mathrm{K}_{2} \mathrm{SO}_{4}$ | 1.0 | 0.7 | 2.2 | 0.6 | 0.2 | 0.6 |

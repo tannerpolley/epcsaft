@@ -1,0 +1,3 @@
+optimum,source,realization,bucket,rows,bias,RMS,maximum_absolute_error,passed,mixing_RMS,mixing_maximum,mixing_passed,scored,realizations,passing_realizations,all_passed,worst_RMS,worst_maximum,mixing_all_passed,worst_mixing_RMS,worst_mixing_maximum
+unchanged-K-Ca,Robinson-Covington,nominal,I<=3,18,0.008291128973119887,0.011467608785707368,0.020070364266443597,False,,,,True,381,0,False,0.01149951186785209,0.02012036426644359,,,
+unchanged-K-Ca,Robinson-Covington,nominal,I>3,39,-0.011467832311826002,0.015019424121275991,0.03165055138567574,False,,,,True,381,0,False,0.015049774243959705,0.031700551385675846,,,

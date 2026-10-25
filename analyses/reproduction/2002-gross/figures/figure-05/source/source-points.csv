@@ -1,0 +1,15 @@
+figure_id,series,source_role,system,component_order,T_K,P_bar,x_alcohol,y_alcohol,source_kind,source_reference,source_x_px,source_y_px,uncertainty_P_bar,uncertainty_composition
+figure-05,2-propanol-benzene,bubble_curve,2-propanol/benzene,"benzene,2-propanol",313.15,0.145,1.00000,,calibrated_curve_trace,Gross2002 Figure5 solid PC-SAFT curve center,142.000,396.000,0.004,0.010
+figure-05,2-propanol-benzene,bubble_curve,2-propanol/benzene,"benzene,2-propanol",313.15,0.262,0.65000,,calibrated_curve_trace,Gross2002 Figure5 solid PC-SAFT curve center,374.000,154.000,0.004,0.010
+figure-05,2-propanol-benzene,bubble_curve,2-propanol/benzene,"benzene,2-propanol",313.15,0.303,0.25000,,calibrated_curve_trace,Gross2002 Figure5 solid PC-SAFT curve center,639.000,69.000,0.004,0.010
+figure-05,2-propanol-benzene,bubble_curve,2-propanol/benzene,"benzene,2-propanol",313.15,0.248,0.00000,,calibrated_curve_trace,Gross2002 Figure5 solid PC-SAFT curve center,804.000,182.000,0.004,0.010
+figure-05,2-propanol-benzene,dew_curve,2-propanol/benzene,"benzene,2-propanol",313.15,0.145,,1.00000,calibrated_curve_trace,Gross2002 Figure5 solid PC-SAFT curve center,142.000,396.000,0.004,0.010
+figure-05,2-propanol-benzene,dew_curve,2-propanol/benzene,"benzene,2-propanol",313.15,0.215,,0.60000,calibrated_curve_trace,Gross2002 Figure5 solid PC-SAFT curve center,407.000,251.000,0.004,0.010
+figure-05,2-propanol-benzene,dew_curve,2-propanol/benzene,"benzene,2-propanol",313.15,0.248,,0.00000,calibrated_curve_trace,Gross2002 Figure5 solid PC-SAFT curve center,804.000,182.000,0.004,0.010
+figure-05,1-propanol-benzene,bubble_curve,1-propanol/benzene,"benzene,1-propanol",313.15,0.071,1.00000,,calibrated_curve_trace,Gross2002 Figure5 solid PC-SAFT curve center,142.000,548.000,0.004,0.010
+figure-05,1-propanol-benzene,bubble_curve,1-propanol/benzene,"benzene,1-propanol",313.15,0.198,0.75000,,calibrated_curve_trace,Gross2002 Figure5 solid PC-SAFT curve center,307.000,287.000,0.004,0.010
+figure-05,1-propanol-benzene,bubble_curve,1-propanol/benzene,"benzene,1-propanol",313.15,0.252,0.30000,,calibrated_curve_trace,Gross2002 Figure5 solid PC-SAFT curve center,605.000,176.000,0.004,0.010
+figure-05,1-propanol-benzene,bubble_curve,1-propanol/benzene,"benzene,1-propanol",313.15,0.248,0.00000,,calibrated_curve_trace,Gross2002 Figure5 solid PC-SAFT curve center,804.000,182.000,0.004,0.010
+figure-05,1-propanol-benzene,dew_curve,1-propanol/benzene,"benzene,1-propanol",313.15,0.071,,1.00000,calibrated_curve_trace,Gross2002 Figure5 solid PC-SAFT curve center,142.000,548.000,0.004,0.010
+figure-05,1-propanol-benzene,dew_curve,1-propanol/benzene,"benzene,1-propanol",313.15,0.112,,0.55000,calibrated_curve_trace,Gross2002 Figure5 solid PC-SAFT curve center,440.000,464.000,0.004,0.010
+figure-05,1-propanol-benzene,dew_curve,1-propanol/benzene,"benzene,1-propanol",313.15,0.248,,0.00000,calibrated_curve_trace,Gross2002 Figure5 solid PC-SAFT curve center,804.000,182.000,0.004,0.010

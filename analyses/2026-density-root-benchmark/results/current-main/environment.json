@@ -1,0 +1,110 @@
+[
+  {
+    "engine_identity": "5e0a5c935de915765b24781f160c0c5577fc3b12b0fde944f7ddeaaabb564ba4",
+    "engine_detail": {
+      "prepared_stage": "editable",
+      "interpreter": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-750-720-part-b-diagnose-the-changed-results/.venv/bin/python",
+      "python": "3.13.14 (main, Jun 23 2026, 15:18:27) [Clang 22.1.3 ]",
+      "version": "0.2.0.dev0",
+      "direct_url": {
+        "url": "file:///home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-750-720-part-b-diagnose-the-changed-results/engine",
+        "dir_info": {
+          "editable": true
+        }
+      },
+      "wheel": null,
+      "wheel_sha256": null,
+      "source_root": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-750-720-part-b-diagnose-the-changed-results",
+      "source_revision": "388ed38b12d618e711c64a3c05c7f88653f84d6a",
+      "source_diff_sha256": "aa5e97a6ed20b09e071671ca661aada4e98701387d486ae4a67b1f4d6cf073d3",
+      "lock_sha256": "4604743e8d99eb511d24a7570569b1a0cd1c1fbdba13e143eec9cd3a516e7fc2",
+      "meson_build_dir": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-750-720-part-b-diagnose-the-changed-results/build/engine-meson/shared",
+      "meson_configuration_sha256": "c34ffc6868baa00dd4dd5982a3eab0b1a75b9cb17aeb5053224fd343578e699c",
+      "build_configuration": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-750-720-part-b-diagnose-the-changed-results/build/engine-meson/shared/meson-info/intro-buildoptions.json",
+      "build_configuration_sha256": "01cf489fdb8807070613c20d9b9ad615cd8551275cd452f8aea092795a15fe91",
+      "epcsaft": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-750-720-part-b-diagnose-the-changed-results/engine/src/epcsaft/__init__.py",
+      "epcsaft_sha256": "27391292b6f6889e7df6fed6dda4e0d98cb15ab68f89b19ed25c0f9f7280644d",
+      "extension": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-750-720-part-b-diagnose-the-changed-results/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so",
+      "extension_sha256": "0954372a1b5a726bf95c4592f0db781bcbb89061d00f1457a6fe01da88527498",
+      "native_library": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-750-720-part-b-diagnose-the-changed-results/build/engine-meson/shared/libepcsaft_native.so",
+      "native_library_sha256": "5e0a5c935de915765b24781f160c0c5577fc3b12b0fde944f7ddeaaabb564ba4",
+      "asl_library": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-750-720-part-b-diagnose-the-changed-results/build/engine-meson/shared/libepcsaft_asl.so",
+      "asl_library_sha256": "dbb24f779d20b8afc0924bbbd6ef9f469c3d2a31c73c2ead94cc2f590fc314e9"
+    },
+    "engine_tree": "a3b98ff00c4847bd6a7cb665595392f09922fe6e",
+    "nice": 10,
+    "pid": 1109704
+  },
+  {
+    "engine_identity": "5e0a5c935de915765b24781f160c0c5577fc3b12b0fde944f7ddeaaabb564ba4",
+    "engine_detail": {
+      "prepared_stage": "editable",
+      "interpreter": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-750-720-part-b-diagnose-the-changed-results/.venv/bin/python",
+      "python": "3.13.14 (main, Jun 23 2026, 15:18:27) [Clang 22.1.3 ]",
+      "version": "0.2.0.dev0",
+      "direct_url": {
+        "url": "file:///home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-750-720-part-b-diagnose-the-changed-results/engine",
+        "dir_info": {
+          "editable": true
+        }
+      },
+      "wheel": null,
+      "wheel_sha256": null,
+      "source_root": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-750-720-part-b-diagnose-the-changed-results",
+      "source_revision": "388ed38b12d618e711c64a3c05c7f88653f84d6a",
+      "source_diff_sha256": "aa5e97a6ed20b09e071671ca661aada4e98701387d486ae4a67b1f4d6cf073d3",
+      "lock_sha256": "4604743e8d99eb511d24a7570569b1a0cd1c1fbdba13e143eec9cd3a516e7fc2",
+      "meson_build_dir": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-750-720-part-b-diagnose-the-changed-results/build/engine-meson/shared",
+      "meson_configuration_sha256": "c34ffc6868baa00dd4dd5982a3eab0b1a75b9cb17aeb5053224fd343578e699c",
+      "build_configuration": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-750-720-part-b-diagnose-the-changed-results/build/engine-meson/shared/meson-info/intro-buildoptions.json",
+      "build_configuration_sha256": "01cf489fdb8807070613c20d9b9ad615cd8551275cd452f8aea092795a15fe91",
+      "epcsaft": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-750-720-part-b-diagnose-the-changed-results/engine/src/epcsaft/__init__.py",
+      "epcsaft_sha256": "27391292b6f6889e7df6fed6dda4e0d98cb15ab68f89b19ed25c0f9f7280644d",
+      "extension": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-750-720-part-b-diagnose-the-changed-results/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so",
+      "extension_sha256": "0954372a1b5a726bf95c4592f0db781bcbb89061d00f1457a6fe01da88527498",
+      "native_library": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-750-720-part-b-diagnose-the-changed-results/build/engine-meson/shared/libepcsaft_native.so",
+      "native_library_sha256": "5e0a5c935de915765b24781f160c0c5577fc3b12b0fde944f7ddeaaabb564ba4",
+      "asl_library": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-750-720-part-b-diagnose-the-changed-results/build/engine-meson/shared/libepcsaft_asl.so",
+      "asl_library_sha256": "dbb24f779d20b8afc0924bbbd6ef9f469c3d2a31c73c2ead94cc2f590fc314e9"
+    },
+    "engine_tree": "a3b98ff00c4847bd6a7cb665595392f09922fe6e",
+    "nice": 10,
+    "pid": 1109705
+  },
+  {
+    "engine_identity": "5e0a5c935de915765b24781f160c0c5577fc3b12b0fde944f7ddeaaabb564ba4",
+    "engine_detail": {
+      "prepared_stage": "editable",
+      "interpreter": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-750-720-part-b-diagnose-the-changed-results/.venv/bin/python",
+      "python": "3.13.14 (main, Jun 23 2026, 15:18:27) [Clang 22.1.3 ]",
+      "version": "0.2.0.dev0",
+      "direct_url": {
+        "url": "file:///home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-750-720-part-b-diagnose-the-changed-results/engine",
+        "dir_info": {
+          "editable": true
+        }
+      },
+      "wheel": null,
+      "wheel_sha256": null,
+      "source_root": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-750-720-part-b-diagnose-the-changed-results",
+      "source_revision": "388ed38b12d618e711c64a3c05c7f88653f84d6a",
+      "source_diff_sha256": "aa5e97a6ed20b09e071671ca661aada4e98701387d486ae4a67b1f4d6cf073d3",
+      "lock_sha256": "4604743e8d99eb511d24a7570569b1a0cd1c1fbdba13e143eec9cd3a516e7fc2",
+      "meson_build_dir": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-750-720-part-b-diagnose-the-changed-results/build/engine-meson/shared",
+      "meson_configuration_sha256": "c34ffc6868baa00dd4dd5982a3eab0b1a75b9cb17aeb5053224fd343578e699c",
+      "build_configuration": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-750-720-part-b-diagnose-the-changed-results/build/engine-meson/shared/meson-info/intro-buildoptions.json",
+      "build_configuration_sha256": "01cf489fdb8807070613c20d9b9ad615cd8551275cd452f8aea092795a15fe91",
+      "epcsaft": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-750-720-part-b-diagnose-the-changed-results/engine/src/epcsaft/__init__.py",
+      "epcsaft_sha256": "27391292b6f6889e7df6fed6dda4e0d98cb15ab68f89b19ed25c0f9f7280644d",
+      "extension": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-750-720-part-b-diagnose-the-changed-results/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so",
+      "extension_sha256": "0954372a1b5a726bf95c4592f0db781bcbb89061d00f1457a6fe01da88527498",
+      "native_library": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-750-720-part-b-diagnose-the-changed-results/build/engine-meson/shared/libepcsaft_native.so",
+      "native_library_sha256": "5e0a5c935de915765b24781f160c0c5577fc3b12b0fde944f7ddeaaabb564ba4",
+      "asl_library": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-750-720-part-b-diagnose-the-changed-results/build/engine-meson/shared/libepcsaft_asl.so",
+      "asl_library_sha256": "dbb24f779d20b8afc0924bbbd6ef9f469c3d2a31c73c2ead94cc2f590fc314e9"
+    },
+    "engine_tree": "a3b98ff00c4847bd6a7cb665595392f09922fe6e",
+    "nice": 10,
+    "pid": 1109706
+  }
+]

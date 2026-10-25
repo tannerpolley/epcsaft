@@ -1,0 +1,3 @@
+index,series,old_reference,corrected_reference,input_coordinate,native_pixel_x,native_pixel_y,classification,evidence,source_link
+1,pressure_series_high,374.25,371.1278830963665,0.72,1462,693,extraction error,Same source composition; solid PC-SAFT line selected by PDF legend. Earlier output-coordinate extraction does not land on that curve.,https://doi.org/10.1021/ie010954d#figure3
+6,pressure_series_low,348.15,347.30481832543444,0.72,1462,1070,extraction error,Same source composition; solid PC-SAFT line selected by PDF legend. Earlier output-coordinate extraction does not land on that curve.,https://doi.org/10.1021/ie010954d#figure3

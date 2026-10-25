@@ -1,0 +1,33 @@
+{
+  "dataset_id": "perdomo-2025-figure3-model-curve-v1",
+  "citation": {
+    "article_doi": "10.1016/j.compchemeng.2024.108977",
+    "supporting_data_doi": "10.5281/zenodo.13646853",
+    "title": "Phase stability criteria and fluid phase equilibria in strong-electrolyte systems"
+  },
+  "source": {
+    "file": "Zenodo_file_reviewed_NoExp (1).xlsx",
+    "license": "CC-BY-4.0",
+    "md5": "33e91ae54e63a63fa55baebe15db9719",
+    "sha256": "c659847256044fb783c3fe090454103e109cd13cb5696bb715910428f9935834",
+    "sheet": "FIGURE 3 & 4",
+    "range": "A5:F37"
+  },
+  "retained_csv": {
+    "path": "perdomo-2025-figure-03-paper-model-curve.csv",
+    "sha256": "8154e9c78d64b4c73302ceb65f2999cdf465e4c7ef413486014979cc18f4d646",
+    "tie_line_count": 33,
+    "row_count": 66
+  },
+  "conditions": {
+    "temperature_K": 298.15,
+    "pressure_Pa": 101300.0,
+    "basis": "formula-component mass fraction",
+    "components": ["water", "1-butanol", "LiCl"]
+  },
+  "claim_boundary": [
+    "The retained rows are the authors' HELD plus SAFT-gamma Mie GC model curve, not direct experimental measurements.",
+    "The ePC-SAFT campaign uses a declared cross-EOS screening hypothesis and cannot reproduce the authors' EOS parameterization.",
+    "Every finite HELD2 search retains globality_certificate=not_guaranteed."
+  ]
+}

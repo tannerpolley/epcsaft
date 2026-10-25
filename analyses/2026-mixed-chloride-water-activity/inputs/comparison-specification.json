@@ -1,0 +1,113 @@
+{
+  "question": "Do the complete Held /1 and provisional Figiel /2 declarations reproduce the independent mixed-chloride water observations, and does Figiel improve every primary source/system/ionic-strength bucket?",
+  "authority": "Engine issue #556 and binding lead resolution comment 6204697972; Stage A accepted at 2aca2f656407c51e37abe0cd314619a92954cc6f by delivered review round 2 (#558). Lead Stage B instruction clarifies the MS-2 extrapolation as composition, not ionic strength.",
+  "freeze_rule": "Commit this specification, the explicit frozen-realizations.csv, acceptance rules and input hashes before computing any comparison residual. Later outputs record their specification hash and commit. No realization is selected using residuals.",
+  "conditions": {
+    "temperature_K": 298.15,
+    "pressure_Pa": 100000.0,
+    "branch": "liquid",
+    "dissociation": "complete",
+    "reference": "pure liquid solvent at the same T/P, complete parameter declaration and permittivity model; evaluated permittivity may differ with composition"
+  },
+  "native_call": "Reference.solvent_activity(x=complete_model_order_fractions); Python declares compositions and reads native water activity, osmotic coefficient and diagnostics. No Python thermodynamic subtraction, solver, optimizer or refit.",
+  "declarations": [
+    {
+      "packet_id": "held-2014-strategy2",
+      "version": "1",
+      "fingerprint": "ed48d4398ada6597ad530ccde64c2672842870aa75fa2f243be27c245250232e"
+    },
+    {
+      "packet_id": "figiel-2025-chloride-activity-refit",
+      "version": "2",
+      "fingerprint": "d79865152abaf527b4602c13b20e3e2c46db8eb0b3f2b294b138b8bdde65a865"
+    }
+  ],
+  "primary_buckets": [
+    {
+      "source": "robinson-bower-1966",
+      "system": "NaCl-CaCl2-water",
+      "quantity": "Phi",
+      "I_bucket": "I<=3"
+    },
+    {
+      "source": "robinson-bower-1966",
+      "system": "NaCl-CaCl2-water",
+      "quantity": "Phi",
+      "I_bucket": "I>3"
+    },
+    {
+      "source": "rard-miller-1987",
+      "system": "NaCl-MgCl2-water",
+      "quantity": "Phi",
+      "I_bucket": "I<=3"
+    },
+    {
+      "source": "rard-miller-1987",
+      "system": "NaCl-MgCl2-water",
+      "quantity": "Phi",
+      "I_bucket": "I>3"
+    },
+    {
+      "source": "dinane-mounir-2003",
+      "system": "NaCl-MgCl2-water",
+      "quantity": "aw",
+      "I_bucket": "I<=3"
+    },
+    {
+      "source": "dinane-mounir-2003",
+      "system": "NaCl-MgCl2-water",
+      "quantity": "aw",
+      "I_bucket": "I>3"
+    }
+  ],
+  "bucket_membership": "Use nominal source-composition ionic strength in mol/kg water, with I=3 included in the lower bucket. Keep the identical observed rows in each bucket for all realizations and both declarations; retain perturbed I and any boundary crossings explicitly.",
+  "primary_limits": {
+    "Phi": {
+      "RMS": 0.01,
+      "maximum_absolute_error": 0.03
+    },
+    "aw": {
+      "RMS": 0.0013,
+      "maximum_absolute_error": 0.004
+    }
+  },
+  "activity_limit_meaning": "Separate water-activity error limits calibrated at one Dinane endpoint; not equivalent coefficient limits throughout the dataset or under RMS transformation. An aw pass implies no Phi pass.",
+  "metrics": [
+    "signed_bias_model_minus_observed",
+    "mean_absolute_error",
+    "root_mean_square_error",
+    "maximum_absolute_error",
+    "valid_count",
+    "total_count",
+    "native_failure_count"
+  ],
+  "metric_grouping": "Each declaration, source, system and ionic-strength bucket; also full range and exact nominal source mixing-fraction labels. Robinson uses its printed particle-fraction labels, Rard its source-column ionic-strength fractions, and Dinane fractions derived from the explicit molalities. Do not pool quantities or source residuals.",
+  "absolute_qualification": "Every mandatory nominal bucket and every frozen realization must pass both primary limits, with no native failure omitted and Robinson reconstruction sensitivity <=0.001 Phi. A failed or sensitivity-dependent bucket prevents qualification of the declaration. Source-flag omission is additional sensitivity and cannot erase the full-row result.",
+  "transfer_test": {
+    "Phi_resolution": 1e-08,
+    "aw_resolution": 1e-10,
+    "rule": "In every primary bucket and every frozen realization, require RMS_Held-RMS_Figiel > quantity resolution and max_error_Figiel <= max_error_Held+resolution. A tie, reversal, native failure, unavailable result or unresolved numerical ordering means transfer is unproven. This is separate from absolute qualification."
+  },
+  "rounding": "Half of the last printed decimal place, derived from the original text token, on independent primary inputs only. Structural zeros stay zero. Derived I, q, y, R and salt molalities are recomputed from the perturbed independent inputs; diagnostic printed derived labels are never independently perturbed.",
+  "finite_sensitivity_scope": "The explicit finite cases are one independent input/group at a time in each direction, shared reference/fraction/stock cases, source-wide joint primary rounding in each direction, Robinson observation alternatives and the source-flag omission. They are conditional finite scenarios, not exhaustive corners of all rounding intervals and not a probabilistic uncertainty interval.",
+  "operations": {
+    "nominal": "All primary inputs unchanged.",
+    "round_input": "Add amount to the named printed field in rows matching the exact selector. Robinson m_N/m_Ca, Rard m_T, and Dinane m_N/m_Mg/aw are independent; recompute all source-derived quantities and native composition. A change in observed aw alone does not change the model input.",
+    "round_shared_reference": "Add amount to the named reference field in all rows matching the selector. Robinson groups by set/subseries; Rard by physical table/row across every fraction cell. For Robinson also shift the Table 2 mean-M_B anchor of that set by amount divided by its number of distinct subseries; retain its nominal printed rounding offset. Reinterpolate from those adjusted anchor coordinates. Mean-M_B is derived and is not an additional independent rounding variable.",
+    "round_reference_anchor": "Add amount to the selected Robinson Table 2 reference Phi anchor and reinterpolate every affected Table 1 reference.",
+    "round_shared_fraction": "Move the Rard source-column y by amount for every cell in that table/column, then derive m_N and m_Mg from y and m_T.",
+    "joint_primary_rounding": "For the selected source, move every independent primary input to its signed half-last-place endpoint. Reference copies and source fraction columns move together. Robinson anchor mean coordinates follow the average of the signed subseries-M_B shifts and reference Phi anchors move by their own half-last-place. No derived quantity or diagnostic ratio is perturbed independently.",
+    "observation_alternative": "Use the retained Robinson quadratic-reference or printed-R alternative directly. For the combined case use retained printed-R Phi times retained quadratic_reference_phi/linear_reference_phi. These change only the reconstructed observation, with the same native composition.",
+    "common_concentration_scale": "Multiply both mixture formula-salt molalities and the shared reference molality by 1+amount, retaining reference Phi. Select all rows, one whole table, or all NaCl-reference physical rows with nominal m_ref<=1.2590. Candidate low-reference rows are varied together; do not invent which five equilibrations had the reported 0.12-0.13% uncertainty.",
+    "Mg_stock_scale": "Multiply mixture MgCl2 molality by 1+amount across the selected complete table(s), with NaCl unchanged. Recompute m_T, y, I and q. Values come from the adopted stock and its two reported analyses and the larger reported analytical uncertainty. Shared whole-source and whole-table scenarios bracket unknown stock assignments; they do not assign independent row errors.",
+    "Na_stock_scale": "Multiply mixture NaCl and any NaCl reference molality by 1+amount across selected complete table(s); MgCl2 and CaCl2 references stay unchanged. The stated stock-1 analytical values and uncertainty define the finite scenarios. Stock-2 uncertainty and exact stock-to-series assignment are unavailable; these scenarios are not a complete stock uncertainty bound.",
+    "Ca_reference_Phi_scale": "Multiply reference Phi by 1+amount for every CaCl2-reference row in the selected table(s); NaCl-reference rows stay unchanged. This is a shared reference component, using the reported 0.2% and 0.4% magnitudes.",
+    "reference_change_Phi_offset": "For the selected Rard table/y series, add amount to mixture Phi only on its CaCl2-reference rows. The common offsets use the largest reported low-Na-fraction 0.003 or high-Na-fraction 0.004 discrepancy; all affected source cells move together.",
+    "omit_source_flagged": "Omit only the one explicitly source-zero-weight row from this additional sensitivity, retaining it in nominal and every other realization. Never omit a native failure."
+  },
+  "uncertainty_reporting": "No invented pointwise sigmas, weights, chi-squared confidence or claim of agreement within experimental uncertainty. Rard: show relative Phi residuals and ratios to reported scatter/concentration/reference components without treating them as equivalent errors or independent noise. Dinane: label ratios to reported 0.0006 aw and 0.028 Phi with their unresolved fit/measurement meanings. Robinson: uncertainty remains absent and the reconstruction sensitivity is shown separately.",
+  "reference_checks": "Keep 16 pure-Ca endpoints, 10 NaCl reference anchors and 4 binary-Mg checks separate from mixture scores. R and Engine-Pitzer differences are diagnostics without a separate limit; no Pitzer recalculation or mixture refit is authorized.",
+  "failure_reporting": "Retain every row and its native availability cause, pressure closure, density slope, branch and input/specification hashes. Any native failure triggers diagnosis before changing approach; failed rows never disappear into partial statistics.",
+  "numerical_resolution": "Repeat nominal native predictions on identical inputs; require differences below the quantity comparison resolution. Stage A identities and columns are numerical verification; measured-mixture comparison is physical validation only for the stated quantities and tested domain.",
+  "application_limit": "MS-2 raw major-ion ionic strength is approximately 6.7 mol/kg on the retained specific-gravity/TDS water-mass proxy. This ionic strength lies inside the measured ranges: Rard-Miller extends to about 9.87 mol/kg and Robinson-Bower to about 8.55 mol/kg. Show the one-liter water basis, formal molalities, charge imbalance and chloride projections from the retained inventory. The extrapolation is in composition: two ternary systems do not qualify a simultaneous Na/Ca/Mg feed. The source temperature differs from 298.15 K and the conditioned inlet is undefined. Individual-ion activities, extraction chemistry, solids, carbonate chemistry, temperature dependence and calorics remain unqualified."
+}

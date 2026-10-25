@@ -1,0 +1,15 @@
+provenance_kind = "repository-migration-v1"
+origin_repository = "ePC-SAFT/ePC-SAFT-eos"
+origin_commit = "e5cd64697d3fb33890f42e87b8779ddda4b52c6a"
+origin_tree = "7de4e53f5d81422039d621536053a66a3840d0f9"
+copy_mode = "strict-schema-translation"
+scope = "Canonical Parameters translation of the immutable accepted gross-sadowski-2001 packet; coefficient values, units, domains, citations, and source locators retain their accepted meaning."
+source_bundle_manifest_path = "src/epcsaft/data/bundles/gross-sadowski-2001/1/bundle.toml"
+source_bundle_manifest_sha256 = "b722fad31f6157ab2cd5fae9c54bbbfcbd996eda64503e108a71ac8d2b7ec26f"
+source_packet = "packets/gross-sadowski-2001/1"
+source_packet_fingerprint = "a138aaee4ccde627dad82f6a25b48467cc0849af3018c3a8db97a32b9654b548"
+
+[[files]]
+retained_path = "parameters/parameters.json"
+origin_path = "packets/gross-sadowski-2001/1/parameters/{bundle.toml,components.csv,model.csv,pair.csv,single.csv}"
+sha256 = "21933a45b9ce7c4178d9061cf2e5e79ccd7886631c6f56e1ce408b67b7125db8"

@@ -1,0 +1,256 @@
+{
+  "wheels": {
+    "main": {
+      "source_commit": "8f5f56855ccafbeb2b73329f7bc7ec0b62265ddc",
+      "wheel_sha256": "0c329ac7d5d10063d0315791815f83bd63b7413b0ffce13266810f52bc605bc0",
+      "thread_environment": {
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1"
+      },
+      "nice": 10
+    },
+    "branch": {
+      "source_commit": "bf1d61ab6960b3763fef1076ff01c5b2e044f8a7",
+      "wheel_sha256": "08f335ae3dee404fc86607d981820275d47bc287bcc90ba2e1dd5b579f8c1a96",
+      "thread_environment": {
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1"
+      },
+      "nice": 10
+    }
+  },
+  "inputs": {
+    "case-6/figure-2-point-7": {
+      "components": [
+        "water",
+        "ethanol",
+        "isobutanol",
+        "sodium-cation",
+        "chloride-anion"
+      ],
+      "T": 293.15,
+      "P": 100000.0,
+      "feed": {
+        "water": 0.646925133827633,
+        "ethanol": 0.07045345803743744,
+        "isobutanol": 0.22564721508764596,
+        "sodium-cation": 0.028487096523641797,
+        "chloride-anion": 0.028487096523641797
+      },
+      "row_tolerance": 1e-10,
+      "phases": [
+        {
+          "name": "phase-0",
+          "kind": "liquid",
+          "support": [
+            "water",
+            "ethanol",
+            "isobutanol",
+            "sodium-cation",
+            "chloride-anion"
+          ],
+          "amount": {
+            "kind": "Free",
+            "value": null
+          },
+          "composition_guess": [
+            0.8,
+            0.05,
+            0.05,
+            0.05,
+            0.05
+          ],
+          "packing_guess": null
+        },
+        {
+          "name": "phase-1",
+          "kind": "liquid",
+          "support": [
+            "water",
+            "ethanol",
+            "isobutanol",
+            "sodium-cation",
+            "chloride-anion"
+          ],
+          "amount": {
+            "kind": "Free",
+            "value": null
+          },
+          "composition_guess": [
+            0.2,
+            0.1,
+            0.6998,
+            0.0001,
+            0.0001
+          ],
+          "packing_guess": null
+        }
+      ]
+    },
+    "case-7/reactions": {
+      "species": [
+        "carbon-dioxide",
+        "monoethanolamine",
+        "water",
+        "protonated-monoethanolamine",
+        "carbamate-anion",
+        "bicarbonate-anion",
+        "carbonate-anion",
+        "hydronium-cation",
+        "hydroxide-anion"
+      ],
+      "stoichiometry": [
+        {
+          "water": -2.0,
+          "hydronium-cation": 1.0,
+          "hydroxide-anion": 1.0
+        },
+        {
+          "carbon-dioxide": -1.0,
+          "water": -2.0,
+          "bicarbonate-anion": 1.0,
+          "hydronium-cation": 1.0
+        },
+        {
+          "water": -1.0,
+          "bicarbonate-anion": -1.0,
+          "carbonate-anion": 1.0,
+          "hydronium-cation": 1.0
+        },
+        {
+          "monoethanolamine": 1.0,
+          "water": -1.0,
+          "carbamate-anion": -1.0,
+          "bicarbonate-anion": 1.0
+        },
+        {
+          "protonated-monoethanolamine": -1.0,
+          "water": -1.0,
+          "monoethanolamine": 1.0,
+          "hydronium-cation": 1.0
+        }
+      ],
+      "ln_k": [
+        -605.348,
+        -587.8,
+        -948.2312,
+        -25.1014,
+        -298.6415
+      ],
+      "T_ref": 318.15,
+      "T_min": 250.0,
+      "T_max": 450.0,
+      "standard_state": "eos-helmholtz-coordinate-basis"
+    },
+    "case-7/flash-5918.5286-Pa": {
+      "components": [
+        "carbon-dioxide",
+        "monoethanolamine",
+        "water",
+        "protonated-monoethanolamine",
+        "carbamate-anion",
+        "bicarbonate-anion",
+        "carbonate-anion",
+        "hydronium-cation",
+        "hydroxide-anion"
+      ],
+      "T": 318.15,
+      "P": 5918.5286,
+      "feed": {
+        "carbon-dioxide": 2.4865902751371616,
+        "monoethanolamine": 9.7292821,
+        "water": 76.9751925
+      },
+      "row_tolerance": 1e-10,
+      "phases": [
+        {
+          "name": "L",
+          "kind": "liquid",
+          "support": null,
+          "amount": {
+            "kind": "Free",
+            "value": null
+          },
+          "composition_guess": [],
+          "packing_guess": null
+        },
+        {
+          "name": "V",
+          "kind": "vapor",
+          "support": [
+            "carbon-dioxide",
+            "monoethanolamine",
+            "water"
+          ],
+          "amount": {
+            "kind": "Free",
+            "value": null
+          },
+          "composition_guess": [],
+          "packing_guess": null
+        }
+      ]
+    }
+  },
+  "input_files": {
+    "analyses/2026-khudaida-idaes-settler/inputs/data/khudaida-2026-figure-2-electrolyte-lle/7/parameters/parameters.json": "8babed899e7347e58c403c7aff24a7fdd6d60411af3b4d81eb6aa90c2431dfa4",
+    "data/packets/mea-co2-h2o-nine-species-estimation/3/parameters/parameters.json": "2ea3b41485a98d2cf49add620b87bb05fc5a275cdd132c1cdbb0cfc5f07f2ca4",
+    "analyses/2026-khudaida-idaes-settler/scripts/run_fixed_settler.py": "2dabb36cea32bd22feb71b041d0e6577ec38d8cd6f7a41db50c13313f84f3589",
+    "engine/tests/equilibrium/test_trace_reliability.py": "01d51690d604086f8e672b5d8d903fdc9023c77e84bf4213ecdb7e5e3d27f236"
+  },
+  "states": {
+    "rows": 1182,
+    "identical": true,
+    "path": "analyses/2026-addition-enthalpy-fitting/results/incipient-cost-states.csv",
+    "sha256": "e36874e2264845e8c1f18a44f1fb9952295fc61bc88dba60504b3546baffb0d7"
+  },
+  "cost_sha256": "8d02511225792da2d1695c40abfbd7a3fb370b167128a3d5b99f435ed14769ac",
+  "cases": {
+    "case-6/figure-2-point-7": {
+      "main_best_s": 0.05753702699803398,
+      "candidate_best_s": 0.0535979310006951,
+      "main_work": [
+        16,
+        49,
+        17
+      ],
+      "candidate_work": [
+        16,
+        49,
+        17
+      ]
+    },
+    "case-7/flash-5918.5286-Pa": {
+      "main_best_s": 0.10334383800000069,
+      "candidate_best_s": 0.09439822100102901,
+      "main_work": [
+        43,
+        57,
+        44
+      ],
+      "candidate_work": [
+        43,
+        57,
+        44
+      ]
+    }
+  },
+  "host": {
+    "main": {
+      "utc": "2026-10-06T00:47:03Z",
+      "load_before": "13.97 12.65 13.23 7/4022 1719056",
+      "load_after": "12.67 12.42 13.15 7/4055 1719725",
+      "available_memory_kib": 16844320,
+      "scope_nproc": 1
+    },
+    "branch": {
+      "utc": "2026-10-06T00:47:11Z",
+      "load_before": "12.67 12.42 13.15 5/4052 1719793",
+      "load_after": "12.67 12.42 13.15 5/4042 1720053",
+      "available_memory_kib": 16366468,
+      "scope_nproc": 1
+    }
+  },
+  "admission": "Shared lock first; six agent-heavy slots, >=4 GB available memory; 8 GB kill ceiling, 30 minute timeout, one OMP/OpenBLAS/MKL thread, EPCSAFT_BUILD_JOBS=2.",
+  "limits": "Best of three on a shared host. Identical work and state rows; elapsed differences do not identify causal speedup or bound sub-percent overhead."
+}

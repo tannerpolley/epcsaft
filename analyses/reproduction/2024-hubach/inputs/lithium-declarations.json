@@ -1,0 +1,275 @@
+{
+  "outcome": "A",
+  "meaning": "Reduced S1/S6 comparison using Lithium benchmark assumptions; no published-model parity or charged-exchange claim.",
+  "declaration_url": "https://github.com/tannerpolley/Lithium_Extraction/issues/237#issuecomment-6355298159",
+  "source_repository": "tannerpolley/Lithium_Extraction",
+  "source_commit": "351b2c8904408f63b6909152637d3674e7fa96e5",
+  "evidence": [
+    {
+      "path": "analyses/engine_benchmarks/hubach_2024_split_epcsaft_benchmark/data/input/hubach_2024_parameters.json",
+      "commit": "351b2c8904408f63b6909152637d3674e7fa96e5",
+      "sha256": "8cd3cdf7e85a045b02f48157033b6286413db26e197fc5327bdffd09a8a28c80",
+      "locator": "Tables 2-4 declaration; source_model diameter choices"
+    },
+    {
+      "path": "analyses/engine_benchmarks/hubach_2024_split_epcsaft_benchmark/scripts/run_benchmark.py",
+      "commit": "351b2c8904408f63b6909152637d3674e7fa96e5",
+      "sha256": "34f2e4892a61de12a2a9e5f304cb898d0d4328ac040c9ab90ef7e8f1bb9668b1",
+      "locator": "_subsystem_feed; _run_subsystem_gate; _solve_subsystem_row; _association_topology"
+    },
+    {
+      "path": "analyses/engine_benchmarks/hubach_2024_split_epcsaft_benchmark/README.md",
+      "commit": "351b2c8904408f63b6909152637d3674e7fa96e5",
+      "sha256": "59646989c595d631d3223f51e24143aaed4ea25036e8924f408a1846060aaa22",
+      "locator": "Reproduction boundary and exploratory subsystem feed basis"
+    }
+  ],
+  "parameters": {
+    "association_energy_over_k_k": [
+      2425.7,
+      5000.0,
+      5000.0,
+      0.0,
+      null
+    ],
+    "association_scheme": [
+      "2B",
+      "2B",
+      "2B",
+      "2B",
+      null
+    ],
+    "association_volume": [
+      0.0451,
+      0.01,
+      0.1,
+      1.0,
+      null
+    ],
+    "charge_number": [
+      0,
+      0,
+      0,
+      1,
+      -1
+    ],
+    "component_ids": [
+      "water",
+      "tbp",
+      "emim-tcb",
+      "lithium-cation",
+      "chloride-anion"
+    ],
+    "dispersion_energy_over_k_k": [
+      353.95,
+      217.09,
+      338.1,
+      360.0,
+      170.0
+    ],
+    "k_hb_ij": [
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        -0.68,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      [
+        1.0,
+        -0.68,
+        1.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    ],
+    "k_ij": [
+      [
+        0.0,
+        -0.0475,
+        -0.0175,
+        0.0,
+        0.0
+      ],
+      [
+        -0.0475,
+        0.0,
+        0.0,
+        -0.01,
+        -0.01
+      ],
+      [
+        -0.0175,
+        0.0,
+        0.0,
+        -0.035,
+        -0.035
+      ],
+      [
+        0.0,
+        -0.01,
+        -0.035,
+        0.0,
+        0.669
+      ],
+      [
+        0.0,
+        -0.01,
+        -0.035,
+        0.669,
+        0.0
+      ]
+    ],
+    "molar_mass_kg_mol": [
+      0.01801528,
+      0.26632,
+      0.22605,
+      0.00694,
+      0.03545
+    ],
+    "paper_component_labels": [
+      "H2O",
+      "TBP",
+      "[emim][tcb]",
+      "Li+",
+      "Cl-"
+    ],
+    "relative_permittivity": [
+      {
+        "a": -105.2,
+        "b": 677.48,
+        "form": "a_ln_temperature_plus_b"
+      },
+      {
+        "form": "constant",
+        "value": 11.0
+      },
+      {
+        "form": "constant",
+        "value": 11.0
+      },
+      {
+        "form": "constant",
+        "value": 8.0
+      },
+      {
+        "form": "constant",
+        "value": 8.0
+      }
+    ],
+    "segment_count": [
+      1.2047,
+      10.796,
+      7.1807,
+      1.0,
+      1.0
+    ],
+    "segment_diameter_angstrom": [
+      {
+        "constant": 2.7927,
+        "form": "constant_plus_sum_of_exponentials",
+        "terms": [
+          {
+            "amplitude": 10.11,
+            "exponent_coefficient_per_k": -0.01775
+          },
+          {
+            "amplitude": -1.417,
+            "exponent_coefficient_per_k": -0.01146
+          }
+        ]
+      },
+      {
+        "form": "constant",
+        "value": 3.251
+      },
+      {
+        "form": "constant",
+        "value": 3.568
+      },
+      {
+        "form": "constant",
+        "value": 2.8449
+      },
+      {
+        "form": "constant",
+        "value": 2.756
+      }
+    ],
+    "source_locators": {
+      "association_and_binary_parameters": "Hubach et al. (2024), Tables 3-4 and Section 4.3.1",
+      "dielectric_parameters": "Hubach et al. (2024), Table 2 and Equation 4",
+      "pure_parameters": "Hubach et al. (2024), Table 3"
+    },
+    "source_model": {
+      "debye_huckel_ion_diameter_multiplier": 0.88,
+      "born_ion_diameter_multiplier": 0.88,
+      "ionic_packing_diameter_basis": "sigma_i",
+      "permittivity_formulation": "component-permittivity-mixing"
+    }
+  },
+  "assumptions": {
+    "label": "Lithium's benchmark assumed",
+    "neutral_ionic_liquid": "[emim][tcb]",
+    "aqueous_solution_mass_kg": 1.0,
+    "pure_solvent_mass_kg": 1.0,
+    "temperature_K": 294.15,
+    "pressure_Pa": 101300.0,
+    "pressure_limit": "Lithium benchmark condition; SI S1/S6 state 100000 Pa. Differences are descriptive and do not establish source parity.",
+    "emim_cation_molar_mass_kg_mol": 0.11116,
+    "phase_declaration": "Two liquid phases with all four subsystem species explicitly supported; no reactions.",
+    "ionic_liquid_definition_limit": "Neutral pseudo-component; no separate emim+ or tcb- model species.",
+    "association_edges": "Water/solvent donor-acceptor self edges; unlike donor-acceptor edges with the printed k_hb, arithmetic energy, geometric volume and diameter correction; Li-TBP only among ion-association edges; no chloride sites.",
+    "ionic_packing_diameter": "sigma_i",
+    "debye_huckel_diameter": "0.88 sigma_i",
+    "born_diameter": "0.88 sigma_i",
+    "born_form": "Original Born; no shell/dielectric correction",
+    "permittivity_form": "component-permittivity-mixing",
+    "dispersion_rule": "Lithium's benchmark assumption: u_ij = sqrt(u_i u_j) (1-k_ij), using the printed k_ij unchanged in the Engine. Hubach Eq. (6), PDF CBJZ36VC p. 3 (article p. 2257), prints u_ij = sqrt(u_i u_j (1-k_ij)). No coefficient remapping or source-parity claim."
+  },
+  "cases": [
+    {
+      "table": "S1",
+      "solvent": "emim-tcb",
+      "w_LiCl": [
+        0.0087,
+        0.0317
+      ],
+      "quantity": "aqueous emim-cation-equivalent mass fraction"
+    },
+    {
+      "table": "S6",
+      "solvent": "tbp",
+      "w_LiCl": [
+        0.0085,
+        0.0323
+      ],
+      "quantity": "organic TBP mole fraction"
+    }
+  ],
+  "exclusions": {
+    "zero_salt_rows": "Retained, not evaluated. The older Lithium benchmark assumed w_effective=0.0001; no trace-salt substitution is part of this reduced design.",
+    "extraction": "S11 and charged cation exchange excluded; source feed ratio and split-ion/complex parameters not decided in Lithium."
+  }
+}

@@ -1,0 +1,7 @@
+source_locator,ethanol_mass_percent,reference_molality_mol_kg,gamma_pm_reference,gamma_pm_reference_uncertainty,temperature_K,temperature_uncertainty_K,emf_resolution_mV,gamma_print_half_unit
+Table I footnotes p.281; section 3.4 p.285; uncertainty p.287; sections 2.3 pp.278-279,20,0.09987,0.723,0.003,298.15,0.002,0.1,0.0005
+Table I footnotes p.281; section 3.4 p.285; uncertainty p.287; sections 2.3 pp.278-279,40,0.09988,0.648,0.003,298.15,0.002,0.1,0.0005
+Table I footnotes p.281; section 3.4 p.285; uncertainty p.287; sections 2.3 pp.278-279,60,0.1000,0.565,0.003,298.15,0.002,0.1,0.0005
+Table I footnotes p.281; section 3.4 p.285; uncertainty p.287; sections 2.3 pp.278-279,70,0.1000,0.500,0.003,298.15,0.002,0.1,0.0005
+Table I footnotes p.281; section 3.4 p.285; uncertainty p.287; sections 2.3 pp.278-279,80,0.1000,0.411,0.003,298.15,0.002,0.1,0.0005
+Table I footnotes p.281; section 3.4 p.285; uncertainty p.287; sections 2.3 pp.278-279,90,0.01005,0.609,0.003,298.15,0.002,0.1,0.0005

@@ -1,0 +1,81 @@
+---
+title: "Why two engines disagree on Figiel activity coefficients"
+format:
+  html:
+    embed-resources: true
+    toc: true
+jupyter: python3
+---
+
+The current native calculations recover both historical conventions and isolate their difference to dispersion at identical temperature, density and composition.
+Excluding same-sign ion pairs also reproduces the published LiBr model line within its digitization envelope; including them does not.
+This is numerical verification of historical implementation values and a published model curve, not physical validation.
+The report has not been independently reviewed or promoted for manuscript use.
+
+```{python}
+#| echo: false
+#| output: asis
+import json, os
+from pathlib import Path
+import pandas as pd
+p = Path(os.environ.get('FIGIEL_CROSSWALK_LEAF', '.')).resolve()
+read = lambda name: json.loads((p / 'results/data' / name).read_text())
+c = json.loads((p / 'inputs/comparison.json').read_text()); run = read('run.json')
+states, activities, refs, failures = (read(n+'.json') for n in ['states','activities','references','failures'])
+checks = pd.read_csv(p / 'results/data/crosswalk.csv')
+def table(title, frame):
+    print('\n### '+title+'\n\n'+frame.to_markdown(index=False, floatfmt='.10g')+'\n')
+print(f"The states use {c['temperature_K']} K and {c['pressure_Pa']} Pa, with formula molality in mol salt/kg water. Native execution returned {run['state_calls']} explicit states, {run['activity_calls']} activities and {run['reference_calls']} references in {run['wall_seconds']:.6g} s; {run['failed_calls']} native failures were retained.")
+table('Fixed comparison criteria', pd.DataFrame(c['tolerances'].items(), columns=['criterion','value']))
+print('Pressure roots use each returned native convergence criterion. Figure 5 uses the mean relative digitization uncertainty as the aggregate error bar. '+c['packet_resolution'])
+table('Historical replay and consistency', checks.groupby(['group','quantity'], sort=False).agg(rows=('passed','size'), passing=('passed','sum'), max_absolute_error=('absolute_error','max'), minimum_tolerance=('tolerance','min'), maximum_tolerance=('tolerance','max')).reset_index())
+a = pd.DataFrame(activities); curve = a[a.chart == 'figure-5'].copy(); summary = []
+for choice, group in curve.groupby('convention', sort=False):
+    error = group.absolute_relative_error.mean(); envelope = (group.uncertainty/group.source_gamma).mean()
+    summary.append(dict(convention=choice, points=len(group), mean_absolute_relative_error=error, envelope=envelope, maximum_uncertainty_ratio=group.uncertainty_ratio.max(), reproduced=bool(error <= envelope)))
+table('Figure 5 model-line verification', pd.DataFrame(summary))
+table('Every digitized model-line comparison', curve[['convention','molality','source_gamma','uncertainty','gamma','signed_relative_error','absolute_relative_error','uncertainty_ratio']])
+gamma = checks[checks.group == 'gamma'].copy(); gamma['relative_error'] = gamma.delta/gamma.reference
+table('Every historical activity comparison', gamma[['convention','salt','molality','native','reference','delta','relative_error','passed']])
+r = pd.DataFrame(refs); table('Native infinite-dilution diagnostics', r[['convention','salt','log_fugacity','molality','convergence_error']])
+table('Historical reference comparisons', checks[checks.group == 'reference'][['convention','salt','quantity','native','reference','delta','passed']])
+s = pd.DataFrame(states); paired = s[s.chart == 'exclusion-density'].pivot(index=['salt','molality'], columns='convention', values=['hard_chain','dispersion','association','born','debye_huckel','residual_helmholtz','bulk_relative_permittivity'])
+diff = paired.xs('all-pairs', axis=1, level=1)-paired.xs('exclusion', axis=1, level=1)
+table('Matched-density all-pairs minus exclusion, reduced energies', diff.reset_index())
+witness = s[(s.salt == 'KCl') & (s.molality == c['molalities_mol_kg'][-1]) & (s.chart == 'exclusion-density')]
+table('KCl witness and off-root pressure', witness[['convention','molality','molar_density','dispersion','pressure','compressibility_factor','log_fugacity_unavailable_cause']])
+root = s[s.chart == 'pressure']; table('Native pressure-root diagnostics', root[['convention','salt','molality','pressure_error_Pa','pressure_density_derivative']])
+print(f"Euler operands exist for {len(checks[checks.group == 'euler'])} explicit states. At {sum(s.compressibility_factor <= 0)} off-root states, nonpositive compressibility makes ln(Z) undefined; their reduced terms remain available. These are density-chart evaluations, not failed pressure solves.")
+print('Native failures: '+json.dumps(failures)+'. Historical replay, isolation and native-consistency failures: '+checks[checks.passed != True].to_json(orient='records')+'.')
+normalization = []
+for choice, path in c['historical'].items():
+    old = json.loads((p.parents[2]/path).read_text()); rows = [v for salt in old.values() for v in salt['rows']]
+    normalization.append(dict(convention=choice, archived_ares_unit='J/mol' if choice=='exclusion' else 'dimensionless', maximum_basis_check_error=max(abs(v['ares']/(run['gas_constant_J_per_mol_K']*c['temperature_K'])-sum(v[k] for k in ['hard_chain','dispersion','association','born','debye_huckel'])) if choice=='exclusion' else abs(v['ares']-sum(v[k] for k in ['hard_chain','dispersion','association','born','debye_huckel'])) for v in rows)))
+table('Archived Helmholtz bases, compared as reduced quantities', pd.DataFrame(normalization))
+print('Engine source commit: `'+run['source_commit']+'`. Engine provenance: `'+str(run['engine'])+'`. Loaded extension SHA-256: `'+run['extension_sha256']+'`.')
+table('Effective native solver settings', pd.DataFrame(run['solver_options']))
+table('Consumed input identities', pd.DataFrame(run['input_hashes'].items(),columns=['path','sha256']))
+```
+
+At fixed density, the unchanged hard-chain, association, Debye–Hückel and Born contributions, together with the total-energy balance, support an isolated dispersion cause.
+The changed dispersion also changes pressure closure and ionic fugacities; the native activity calls use each declaration's own infinite-dilution reference.
+The per-state operands, convergence criterion and component availability are retained in [states.json](results/data/states.json); all signed historical comparisons are in [crosswalk.csv](results/data/crosswalk.csv).
+The tables answer the scalar replay and term-isolation checks directly; a plot would not strengthen those checks.
+
+The independent paper comparator is the orange LiBr **model line** in Figure 5, right panel, article PDF page 7, of [Figiel, Yu and Held (2025)](https://doi.org/10.1021/acs.iecr.5c00475).
+The [digitization method](../2025-figiel/figures/figure-05/source/libr-model-digitized.md) owns its calibration and row uncertainties; no experimental markers or occluded concentrations are reconstructed.
+The aggregate envelope is a source-resolution criterion, not a confidence interval or a guarantee that each point lies within its uncertainty.
+The maximum pointwise uncertainty ratio therefore remains visible even for the passing declaration.
+Tables 1–5, Eqs. (1)–(4), (11), and (20)–(22) of that article supply the model inputs and conventions; the Born term uses [the correction to Eq. (7)](https://doi.org/10.1021/acs.iecr.6c01415) already owned by the Engine.
+
+The archived binaries and their exact installed commits are unidentified.
+Their raw outputs remain byte-for-byte in [superseded.json](results/data/superseded.json) and [greenfield.json](results/data/greenfield.json), with original packet fingerprints where available.
+Agreement with these values supports a historical numerical replay, without establishing execution of the old binary or equation-by-equation equivalence.
+The former comparison subtracted unlike Helmholtz bases; the current table compares the archived five-term reduced sums and preserves the original dimensional values separately.
+The earlier rounded same-density README values used a slightly different water molar mass and are superseded by exact archived compositions here.
+Terminal reference changes describe the native stopping diagnostic, not a rigorous bound on total reference error.
+Published fitted-parameter rounding, digitization and physical model adequacy remain separate limits.
+
+The [README](README.md) gives the rerun command; [comparison.json](inputs/comparison.json) owns the fixed criteria and source paths, and [run.json](results/data/run.json) records input hashes, policy defaults, source identity and timing.
+The [historical literature audit](results/like-ion-dispersion-convention.md) remains provenance for the earlier diagnosis; the present evidence is the native paired experiment above.
+The broader Figiel reproduction belongs to issue #748 and is outside this comparison.

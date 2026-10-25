@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-750-720-part-b-diagnose-the-changed-results/analyses/2026-figiel-divalent-chlorides/scripts/stage2_fit.py", line 401, in <module>
+    print(salt, 'Held start', chart.physical, [(h.energy_error, h.cause) for h in chart.holds], flush=True)
+                                                                ^^^^^^^
+AttributeError: 'epcsaft._core.HoldResult' object has no attribute 'cause'

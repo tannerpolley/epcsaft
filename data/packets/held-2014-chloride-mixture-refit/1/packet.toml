@@ -1,0 +1,87 @@
+schema_version = 2
+packet_id = "held-2014-chloride-mixture-refit"
+packet_version = "1"
+title = "Held 2014 strategy 2 chloride brine refit (issue #575 stage A)"
+description = "Unqualified stage-A candidate: Na+, Mg2+ and Ca2+ refit jointly on Hamer-Wu NaCl, Goldberg-Nuttall MgCl2/CaCl2 (<= 3.3 mol/kg), Rard-Miller 1987 NaCl-MgCl2 and Saad-Padova-Marcus 1980 NaCl-KCl-CaCl2 mixture osmotic coefficients at 298.15 K on held-2014-strategy2/2; water, Cl-, K+, Li+ and every u_i unchanged. Held-out water properties under the frozen #556 limits, Dinane-Mounir judged by source agreement (owner amendment 2026-10-16: per realization, the larger of the frozen limit and the Rard-Miller/Dinane-Mounir disagreement) (RMS/max, robust over 1,467 realizations): robinson-bower-1966 I<=3 0.0105/0.0189 fail (0/1,467 realizations pass; failing: 1467 realizations); robinson-bower-1966 I>3 0.0097/0.0183 pass; dinane-mounir-2003 I<=3 0.0008/0.0016 fail (1,466/1,467 realizations pass; failing: r1408); dinane-mounir-2003 I>3 0.0014/0.0024 pass. 298.15 K only; no K+/Li+ mixture, temperature or physical-validation claim."
+license_or_use_basis = "Project-derived parameters for private scientific verification; no full paper content."
+tolerance_rationale = "Held-out errors under the frozen #556 limits, with the owner's 2026-10-16 source-agreement limit for Dinane-Mounir, are stated in the description; numerical fitting, no physical validation."
+
+[[sources]]
+source_id = "held-2014"
+citation = "Held, C.; Reschke, T.; Mohammad, S.; Luza, A.; Sadowski, G. ePC-SAFT revised. Chemical Engineering Research and Design 2014, 92, 2884-2897."
+doi = "10.1016/j.cherd.2014.05.017"
+use_basis = "Tables 1-3 strategy 2 and Eqs. (1), (15)-(22); Zotero 3DIW87Q5/TD5T732H; PDF SHA-256 dea9aa05e2ee8eb1c675873fa9d8737943312484874d844f01b45613da261acf."
+
+[[sources]]
+source_id = "figiel-yu-held-2025"
+citation = "Figiel, P.; Yu, G.; Held, C. Predicting Thermodynamic Properties of Ions in Single Solvents and in Mixed Solvents Using a Modified Born Term within the ePC-SAFT Framework. Industrial & Engineering Chemistry Research 2025, 64, 9406-9418."
+doi = "10.1021/acs.iecr.5c00475"
+use_basis = "numeric water relative permittivity 78.09 used to instantiate the Held 2008 concentration-independent solvent dielectric; main PDF SHA-256 a3c940895c530f72f47f22f8c0f4796b5ad37918a4edd274f85497c6dd81ad1f"
+
+[[sources]]
+source_id = "nist-srd-69-water"
+citation = "NIST Chemistry WebBook, SRD 69, Water, CAS 7732-18-5."
+use_basis = "water identity and molecular weight"
+
+[[sources]]
+source_id = "issue-575-stage-a-joint-fit"
+citation = "ePC-SAFT issue 575 stage-A native joint fit, 2026-10-16"
+use_basis = "Unqualified stage-A candidate: Na+, Mg2+ and Ca2+ refit jointly on Hamer-Wu NaCl, Goldberg-Nuttall MgCl2/CaCl2 (<= 3.3 mol/kg), Rard-Miller 1987 NaCl-MgCl2 and Saad-Padova-Marcus 1980 NaCl-KCl-CaCl2 mixture osmotic coefficients at 298.15 K on held-2014-strategy2/2; water, Cl-, K+, Li+ and every u_i unchanged. Held-out water properties under the frozen #556 limits, Dinane-Mounir judged by source agreement (owner amendment 2026-10-16: per realization, the larger of the frozen limit and the Rard-Miller/Dinane-Mounir disagreement) (RMS/max, robust over 1,467 realizations): robinson-bower-1966 I<=3 0.0105/0.0189 fail (0/1,467 realizations pass; failing: 1467 realizations); robinson-bower-1966 I>3 0.0097/0.0183 pass; dinane-mounir-2003 I<=3 0.0008/0.0016 fail (1,466/1,467 realizations pass; failing: r1408); dinane-mounir-2003 I>3 0.0014/0.0024 pass. 298.15 K only; no K+/Li+ mixture, temperature or physical-validation claim."
+
+[[sources]]
+source_id = "goldberg-nuttall-1978"
+citation = "Goldberg and Nuttall, J. Phys. Chem. Ref. Data 1978, 7, 263."
+doi = "10.1063/1.555569"
+use_basis = "Evaluated MgCl2 Table 17 and CaCl2 Table 20 osmotic coefficients <= 3.3 mol/kg"
+
+[[sources]]
+source_id = "hamer-wu-1972"
+citation = "Hamer and Wu, J. Phys. Chem. Ref. Data 1972, 1, 1047."
+doi = "10.1063/1.3253108"
+use_basis = "Evaluated NaCl Table 16 osmotic coefficients"
+
+[[sources]]
+source_id = "rard-miller-1987"
+citation = "Rard and Miller 1987, NaCl-MgCl2 isopiestic mixtures; packet mixed-chloride-water-observations/1"
+use_basis = "287 mixture osmotic coefficients, nominal #556 conversion"
+
+[[sources]]
+source_id = "marcus-1991"
+citation = "Marcus, Y. J. Chem. Soc., Faraday Trans. 1991, 87, 2995-2999."
+doi = "10.1039/FT9918702995"
+use_basis = "Table 1 crystal diameters 2r as lower bounds of fitted diameters"
+
+[[sources]]
+source_id = "saad-padova-marcus-1980"
+citation = "Saad, Padova and Marcus, J. Solution Chem. 1980, 9, 259-268; packet saad-padova-marcus-1980-nacl-kcl-cacl2-observations/1"
+doi = "10.1007/BF00644551"
+use_basis = "56 balance-consistent NaCl-KCl-CaCl2 mixture osmotic coefficients (training; K+ at settled values)"
+
+[[domains]]
+domain_id = "issue-575-chloride-brine-298-15-k"
+kind = "reported-conditions"
+temperature_min = 298.15
+temperature_max = 298.15
+temperature_unit = "kelvin"
+pressure_min = 1
+pressure_max = 1
+pressure_unit = "bar"
+description = "Aqueous NaCl-MgCl2-CaCl2 at 298.15 K and 1 bar, ionic strength <= 9.9 mol/kg."
+
+[[files]]
+path = "parameters/parameters.json"
+role = "parameters"
+media_type = "application/json"
+sha256 = "f95312bec834225e0396ad792231c619cb85c9fc4df980440f446847a41e8e34"
+source_refs = ["held-2014", "figiel-yu-held-2025", "nist-srd-69-water", "issue-575-stage-a-joint-fit", "goldberg-nuttall-1978", "hamer-wu-1972", "rard-miller-1987", "marcus-1991", "saad-padova-marcus-1980"]
+domain_refs = ["issue-575-chloride-brine-298-15-k"]
+units_basis = "Explicit units per coefficient; sigma, DH, Born and packing lengths in angstrom, energies in kelvin, segment counts and k_ij dimensionless."
+
+[[files]]
+path = "provenance/source-origin.toml"
+role = "provenance"
+media_type = "application/toml"
+sha256 = "257aba2c3f70d68c499d3ef36dcab2cd078d1ac24cfa73d8c344c42addc035ff"
+source_refs = ["held-2014", "figiel-yu-held-2025", "nist-srd-69-water", "issue-575-stage-a-joint-fit", "goldberg-nuttall-1978", "hamer-wu-1972", "rard-miller-1987", "marcus-1991", "saad-padova-marcus-1980"]
+domain_refs = ["issue-575-chloride-brine-298-15-k"]
+units_basis = "Non-numeric source identities and SHA-256 hashes."

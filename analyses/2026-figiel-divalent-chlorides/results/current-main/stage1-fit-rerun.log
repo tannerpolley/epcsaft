@@ -1,0 +1,21 @@
+native multistart: 20 starts, 347 declared rows
+0 converged 3.807327913525459 fail Function tolerance reached. |cost_change|/cost: 7.558314e-13 <= 1.000000e-12
+1 converged 3.807327913474629 fail Function tolerance reached. |cost_change|/cost: 5.149685e-13 <= 1.000000e-12
+2 converged 3.8073279134655116 fail Function tolerance reached. |cost_change|/cost: 9.879463e-14 <= 1.000000e-12
+3 converged 3.8073279134838955 fail Parameter tolerance reached. Relative step_norm: 4.974887e-15 <= 1.000000e-12.
+4 converged 3.8073279135059153 fail Function tolerance reached. |cost_change|/cost: 8.686229e-13 <= 1.000000e-12
+5 converged 3.8073279135069127 fail Function tolerance reached. |cost_change|/cost: 2.169516e-14 <= 1.000000e-12
+6 converged 3.807327913523754 fail Function tolerance reached. |cost_change|/cost: 6.016325e-13 <= 1.000000e-12
+7 converged 3.807327913528887 fail Function tolerance reached. |cost_change|/cost: 8.461113e-13 <= 1.000000e-12
+8 converged 3.807327913460587 fail Function tolerance reached. |cost_change|/cost: 2.763217e-13 <= 1.000000e-12
+9 initial_evaluation_failed 0.0 not_evaluated
+10 converged 3.8073279134916405 fail Parameter tolerance reached. Relative step_norm: 2.140472e-13 <= 1.000000e-12.
+11 converged 3.8073279134725952 fail Function tolerance reached. |cost_change|/cost: 2.463451e-13 <= 1.000000e-12
+12 converged 3.8073279135123426 fail Parameter tolerance reached. Relative step_norm: 3.539983e-13 <= 1.000000e-12.
+13 initial_evaluation_failed 0.0 not_evaluated
+14 converged 3.8073279134858877 fail Function tolerance reached. |cost_change|/cost: 7.910569e-13 <= 1.000000e-12
+15 converged 3.807327913482172 fail Function tolerance reached. |cost_change|/cost: 7.355360e-13 <= 1.000000e-12
+16 converged 3.8073279135145657 fail Parameter tolerance reached. Relative step_norm: 2.614852e-13 <= 1.000000e-12.
+17 converged 3.807327913502184 fail Function tolerance reached. |cost_change|/cost: 5.576590e-13 <= 1.000000e-12
+18 converged 3.8073279134761946 fail Function tolerance reached. |cost_change|/cost: 4.455673e-14 <= 1.000000e-12
+19 converged 3.8073279134913642 fail Parameter tolerance reached. Relative step_norm: 3.726919e-14 <= 1.000000e-12.

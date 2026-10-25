@@ -1,0 +1,13 @@
+{
+  "start_utc": "2026-10-10T00:59:48+00:00",
+  "first_checks_recorded_utc": "2026-10-10T01:17:07.621049+00:00",
+  "elapsed_seconds": 1332.886325,
+  "basis": "Recorded study preparation through calculation, source calibration, final checks, and presentation preparation; starts immediately before setup and excludes final render and commit.",
+  "end_utc": "2026-10-10T01:22:00.886325+00:00",
+  "revision": {
+    "start_utc": "2026-10-10T01:38:24.913000+00:00",
+    "end_utc": "2026-10-10T01:52:31.835983+00:00",
+    "elapsed_seconds": 846.922983,
+    "basis": "Revision source inspection, retracing and overlay checks, native probes, reporting, primary checks and coverage correction; excludes the final render verification and final commit."
+  }
+}

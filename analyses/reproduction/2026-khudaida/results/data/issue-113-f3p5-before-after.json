@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "case": {
+    "figure_id": 3,
+    "point_id": 5,
+    "temperature_K": 303.15
+  },
+  "acceptance_contract": {
+    "target_seconds": 30.0,
+    "hard_ceiling_seconds": 35.0,
+    "optimized_decision": "PASS"
+  },
+  "baseline": {
+    "eos": {
+      "source_commit": "20e5d2868f78cda5e2367457f032ae71ba42112c",
+      "wheel_sha256": "9fe54c16adcaae176e240b9149b6083f023ba86e7c5c8f2a3a17cb96db4e8cbd"
+    },
+    "equilibrium": {
+      "source_commit": "9b7876d486f10d52b567a3e640ba98beafcb8fbe",
+      "wheel_sha256": "25893fbf06fa8e435399d13b406a8cd433d3aff7af35a4a0c573e274fc74309f"
+    },
+    "result_csv_sha256": "2b9be4e72bae52bb5b04a4fa2853bc62938c6f842cf8a650814d3211784503b3",
+    "receipt_sha256": "8a9fcf318f78faf2cd838eedcc79bf14356f1417dbf9698c6377796ff2d23e34",
+    "case_decision": "PASS",
+    "wall_seconds": 49.014837561990134,
+    "optimizer_solves": 309,
+    "provider_evaluations": 13134,
+    "step5_starts_consumed": 193,
+    "step8_invocations": 66,
+    "step8_optimizer_solves": 46,
+    "step8_termination_reasons": {
+      "problem_67_infeasible": 25,
+      "step8_complete": 10,
+      "unchanged_problem_67": 31
+    }
+  },
+  "optimized": {
+    "eos": {
+      "source_commit": "02104702e822e1f062bf829f0fe2280e801bbbc4",
+      "wheel_sha256": "3073c100e065252d922481f3fda0a173973f1f7da2d86ec380738285df65e227"
+    },
+    "equilibrium": {
+      "source_commit": "49d55482d0d92a24a7fe01f61a040f6db9ae4d26",
+      "wheel_sha256": "c93d2167397dc27626895ab56f05e12eb553aa6546ddef701bce052fe55cb90b"
+    },
+    "result_csv_sha256": "c6c717ab21390746f7b019fc5219e1d1fa710982af38aa3700ed1857ebbc38bb",
+    "receipt_sha256": "a88e506e92a27be69e827d7f0d91b4d8c708ecad45867713cb5ee815303871b7",
+    "case_decision": "PASS",
+    "wall_seconds": 23.19398056200589,
+    "optimizer_solves": 308,
+    "provider_evaluations": 13659,
+    "step5_starts_consumed": 193,
+    "step8_invocations": 66,
+    "step8_optimizer_solves": 45,
+    "step8_termination_reasons": {
+      "cached_problem_67": 32,
+      "problem_67_infeasible": 24,
+      "step8_complete": 10
+    }
+  },
+  "interpretation": {
+    "accepted_solution_preserved": true,
+    "wall_time_reduction_seconds": 25.820856999984244,
+    "wall_time_reduction_fraction": 0.5267967473589613,
+    "step8_optimizer_solves_removed": 1,
+    "provider_evaluation_totals_comparable": false,
+    "provider_evaluation_note": "Provider accounting was corrected by the optimized artifact, so the before/after totals must not be interpreted as a regression or improvement."
+  }
+}

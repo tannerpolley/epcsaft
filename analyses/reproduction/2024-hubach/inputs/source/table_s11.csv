@@ -1,0 +1,6 @@
+rw_oa,e_li_exp_pct,e_li_paper_calc_pct,role
+0.522,75.39,78.16,prediction
+0.985,89.01,88.58,prediction
+1.976,93.50,95.02,cross_association_calibration
+3.015,96.81,97.05,prediction
+3.933,98.33,97.04,prediction

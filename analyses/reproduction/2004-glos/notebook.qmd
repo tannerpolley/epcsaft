@@ -1,0 +1,171 @@
+---
+title: "Propane saturation: fixed PC-SAFT against Glos measurements"
+format:
+  html:
+    embed-resources: true
+    toc: true
+jupyter: python3
+execute:
+  echo: false
+  warning: false
+---
+
+```{python}
+import json
+from pathlib import Path
+import pandas as pd
+import matplotlib.pyplot as plt
+from IPython.display import Image, Markdown, display
+root = Path.cwd()
+e = json.loads((root / 'results/execution.json').read_text())
+g = pd.read_csv(root / 'results/propane-saturation.csv')
+n = pd.read_csv(root / 'results/nist-comparison.csv')
+nm = json.loads((root / 'inputs/source/nist-srd69-propane-reference-eos.yaml').read_text())
+gm = json.loads((root / 'inputs/source/glos-2004-propane-saturation.yaml').read_text())
+f = pd.read_csv(root / 'results/refinement.csv')
+a = pd.concat([g, n])
+def table(frame):
+    display(Markdown(frame.to_markdown(index=False, floatfmt='.8g')))
+```
+
+## Question and result
+
+How closely does neutral PC-SAFT with the fixed Gross–Sadowski propane parameters reproduce the Glos propane coexistence measurements?
+The principal evidence is **physical comparison** with Glos measurements, with numerical verification of source extraction, native closure and refinement only.
+
+```{python}
+display(Markdown(f"All {len(g)} Glos observations and {len(n)} supplementary NIST values have finite positive native predictions meeting their requested closure criterion. Glos spans {g.T_K.min():g}–{g.T_K.max():g} K. The {len(f)} preselected refinements pass, with maximum relative change {f.relative_change.max():.8g}. No numerical failure was found in this execution."))
+summary = []
+for name, data in [('Glos physical comparison', g), ('NIST supplementary comparison', n)]:
+    for quantity, group in data.groupby('quantity', sort=False):
+        summary.append(dict(source=name, quantity=quantity, observations=len(group), numerically_qualified=int(group.qualified.sum()), within_supplied_uncertainty=int(group.within_uncertainty.eq(True).sum()), uncertainty_not_supplied=int(group.uncertainty.isna().sum()), minimum_relative_error=group.relative_error.min(), maximum_relative_error=group.relative_error.max()))
+table(pd.DataFrame(summary))
+```
+
+“Within supplied uncertainty” describes an interval comparison; no model accuracy allowance is imposed.
+Resolved differences outside those intervals are discrepancies of this fixed PC-SAFT model against the specified source.
+These calculations do not separate parameter error from model-form error or establish predictive accuracy on independent measurements.
+
+## Interpretation of the discrepancies
+
+```{python}
+pressure_rows = g[g.quantity.eq('pressure')].sort_values('T_K')
+vapor_rows = g[g.quantity.eq('vapor_density')].sort_values('T_K')
+worst_pressure = pressure_rows.loc[pressure_rows.relative_error.idxmin()]
+first_vapor, last_vapor = vapor_rows.iloc[0], vapor_rows.iloc[-1]
+vapor_pressures = pressure_rows[pressure_rows.T_K.isin(vapor_rows.T_K)]
+domain = e['parameter_domain']
+table(pressure_rows.head(3)[['T_K', 'observed', 'uncertainty', 'predicted', 'signed_error', 'relative_error', 'error_over_uncertainty', 'within_uncertainty']])
+display(Markdown(f"The largest relative pressure difference is {100*worst_pressure.relative_error:.6g}% at {worst_pressure.T_K:g} K: {worst_pressure.predicted:.8g} Pa predicted against {worst_pressure.observed:g} Pa observed, with expanded uncertainty {worst_pressure.uncertainty:g} Pa. Its signed difference is {worst_pressure.signed_error:.8g} Pa ({worst_pressure.error_over_uncertainty:.6g} times the expanded uncertainty), inside the supplied interval."))
+display(Markdown(f"The Glos temperatures lie within the reported combined parameter-data interval of {domain['temperature_min']['magnitude']:g}–{domain['temperature_max']['magnitude']:g} K (Gross and Sadowski, Table 2). The retained NIST lower saturation bound is {nm['source_audit']['query_domain']['nist_minimum_temperature_k']:g} K, the triple-point temperature in Lemmon–McLinden–Wagner, Table 1. The cold states are above this boundary; their small pressures make relative differences sensitive to the experimental pressure uncertainty."))
+display(Markdown(f"Vapor-density differences grow from {100*first_vapor.relative_error:.6g}% at {first_vapor.T_K:g} K to {100*last_vapor.relative_error:.6g}% at {last_vapor.T_K:g} K; {int(vapor_rows.within_uncertainty.eq(False).sum())}/{len(vapor_rows)} lie outside the supplied intervals. At these temperatures pressure differences are {100*vapor_pressures.relative_error.min():.6g}% to {100*vapor_pressures.relative_error.max():.6g}%."))
+```
+
+The inspected parameter source does not establish extrapolation below its fitted range for these observations.
+The vapor-density bias grows toward the warm end while pressure differences remain small and positive.
+This is a resolved fixed-model discrepancy; the respective contributions of parameter error and model-form error remain undetermined.
+The closure and refinement evidence does not identify an Engine numerical defect.
+
+## Physical basis and source authority
+
+The [canonical neutral Helmholtz model](https://github.com/tannerpolley/ePC-SAFT/blob/main/engine/docs/science/full-eos.md) supplies hard-chain and dispersion contributions.
+The native [equilibrium formulation](https://github.com/tannerpolley/ePC-SAFT/blob/main/engine/docs/equilibrium/formulation.md) enforces equal pressure and fugacity for a liquid phase and its incipient vapor at fixed temperature; pressure is free.
+The vapor amount is pinned to zero, while its density remains an observable.
+No association, electrolyte, relative-permittivity or multipole contribution is introduced.
+Mass densities use the packet molar mass; no caloric reference is needed for these observables.
+
+```{python}
+table(pd.DataFrame(e['parameters']))
+table(pd.DataFrame([{'contribution': k, 'choice': v} for k, v in e['model'].items()]))
+display(Markdown(f"The parameter owner is `{e['parameter_path']}`, SHA-256 `{e['parameter_sha256']}`. The packet's source temperature interval is {e['parameter_domain']['temperature_min']['magnitude']}–{e['parameter_domain']['temperature_max']['magnitude']} K (Gross and Sadowski, §3.1 and Table 2, footnote b): the combined temperature range of the original parameter-regression data, including supercritical density data. The inspected source does not give a separate propane vapor-pressure-only fitting interval."))
+```
+
+[Glos, Kleinrahm and Wagner (2004)](https://doi.org/10.1016/j.jct.2004.07.017) is the measurement source; Gross and Sadowski [PC-SAFT (2001)](https://doi.org/10.1021/ie0003887), Table 2, is the parameter source.
+ThermoML datasets 1–3 control: each result carries the dataset, temperature and property locator joined from `inputs/source/glos-2004-propane-source-locators.csv`.
+Table 2 (locator inherited from retained source audit; PDF not available and table/page not independently verified in this review).
+All source values and expanded uncertainties were checked for exact decimal equality against the hash-verified [official ThermoML JSON](https://trc.nist.gov/ThermoML/10.1016/j.jct.2004.07.017.json).
+The source checker remains enabled; its stale metadata payload digest was corrected without changing source values, units or historical fitting partitions.
+Those historical fitting partitions do not select rows for this fixed-parameter comparison.
+
+Glos pressure is converted from kPa to Pa by the exact SI factor; densities remain in kg/m³.
+Pointwise ThermoML uncertainties are compiler-evaluated expanded uncertainties, not standard deviations; their confidence level is read below from the source metadata.
+No pointwise temperature uncertainty is supplied.
+Significant digits and half of the last printed place are retained separately; printed resolution adds no uncertainty allowance.
+The liquid-density-only states use a positive pressure seed with pressure still free; it is neither an observation nor an imposed pressure.
+
+```{python}
+display(Markdown(f"ThermoML expanded-uncertainty confidence: {gm['source_audit']['uncertainty_meaning']['confidence_percent']}%."))
+table(g[(g.quantity == 'liquid_density') & ~g.T_K.isin(g[g.quantity == 'pressure'].T_K)][['T_K', 'pressure_seed_Pa', 'observed', 'predicted', 'unit', 'relative_error', 'closure']])
+```
+
+## Model and measurement comparison
+
+```{python}
+fig, axes = plt.subplots(1, 3, figsize=(13, 4), constrained_layout=True)
+for ax, (quantity, group) in zip(axes, g.groupby('quantity', sort=False)):
+    ax.errorbar(group.T_K, group.observed, yerr=group.uncertainty, fmt='o', color='#0072B2', markersize=4, label='Glos, expanded uncertainty')
+    ax.plot(group.T_K, group.predicted, 'x', color='#D55E00', label='Fixed PC-SAFT')
+    ax.set(xlabel='Temperature / K', ylabel=f'{quantity.replace("_", " ")} / {group.unit.iloc[0]}')
+    if quantity == 'pressure': ax.set_yscale('log')
+    ax.grid(alpha=.2)
+axes[0].legend(fontsize=7)
+fig.savefig(root / 'propane-saturation.png', dpi=180)
+display(Image(filename=str(root / 'propane-saturation.png')))
+plt.close(fig)
+```
+
+Observations and model values are discrete points at the retained temperatures; no interpolated model curve is implied.
+Pressure uses a logarithmic scale to show the full range; density axes are linear.
+Expanded uncertainty bars may be smaller than the symbols.
+The tables expose signed differences that are visually small on these axes.
+
+```{python}
+for quantity, group in g.groupby('quantity', sort=False):
+    display(Markdown(f"### Glos {quantity.replace('_', ' ')} ({group.unit.iloc[0]})"))
+    table(group[['T_K', 'observed', 'uncertainty', 'predicted', 'signed_error', 'relative_error', 'error_over_uncertainty', 'within_uncertainty', 'closure']])
+```
+
+## Native closure and tighter-closure checks
+
+```{python}
+display(Markdown(f"Baseline requested dimensionless row tolerance: {e['baseline_tolerance']:.1e}; achieved maximum over primary and supplementary calls: {a.closure.max():.8g}. Refinement tolerance: {e['refined_tolerance']:.1e}; relative value-change limit: {e['refinement_relative_limit']:.1e}. Qualified baseline results: {int(a.qualified.sum())}/{len(a)}. Maximum refinement closure: {f.closure.max():.8g}."))
+table(f[['T_K', 'quantity', 'baseline_value', 'predicted', 'closure', 'criterion', 'relative_change', 'refinement_pass']])
+assert a.qualified.all() and f.qualified.all() and f.refinement_pass.all()
+```
+
+The native convergence record supplies the achieved dimensionless residual, actual criterion and stop reason for each call.
+The declared log-ratio observation residual is a model/source difference, distinct from equilibrium closure.
+Refinements repeat the preselected low, middle and upper-temperature declarations with the tighter criterion.
+No failed, nonfinite, floor-limited or topology-failed row occurred, so a numerical root-cause correction was not needed.
+Closure and refinement are numerical verification for these declarations, not independent verification of every PC-SAFT equation or a global stability certificate.
+
+## Supplementary NIST reference equation
+
+The label for every row is **supplementary reference-equation comparison; different equations of state, not independent experimental validation**.
+The NIST SRD 69 packet supplies reference values from the [Lemmon–McLinden–Wagner (2009) equation](https://doi.org/10.1021/je900217v).
+That equation used Glos measurements among its construction data (Introduction; see the source page range below), so it is not statistically independent of the principal source.
+Its formulation differs from PC-SAFT, and disagreement alone is not an Engine defect.
+The original query, retrieval date, output precision and domain-dependent uncertainty statements remain in `inputs/source/nist-srd69-propane-reference-eos.yaml`.
+Missing source uncertainties stay missing; no interpolation or universal PC-SAFT accuracy tolerance is introduced.
+
+```{python}
+display(Markdown(f"Source reference-equation page range: {nm['reference_equation']['pages']}."))
+for quantity, group in n.groupby('quantity', sort=False):
+    display(Markdown(f"### NIST {quantity.replace('_', ' ')} ({group.unit.iloc[0]})"))
+    table(group[['T_K', 'observed', 'uncertainty', 'predicted', 'relative_error', 'error_over_uncertainty', 'within_uncertainty', 'closure']])
+```
+
+## Execution identity and limits
+
+```{python}
+display(Markdown(f"Execution `{e['execution_id']}` at {e['utc']}; native declarations took {e['wall_seconds']:.8g} s (excludes import and setup). Loaded Engine provenance: `{e['engine_provenance']}`; native module SHA-256 `{e['native_sha256']}`. Interpreter: `{e['interpreter']}`. Runner SHA-256: `{e['runner_sha256']}`."))
+table(pd.DataFrame([{'input': k, 'sha256': v} for k, v in e['inputs'].items()]))
+```
+
+Each primary, supplementary and refinement row has its own call identifier linked to this execution and source locator.
+`results/execution.json` records the loaded module paths and digest, source commit, complete input and packet digests, fixed physical choices and criteria.
+A comparison-only refresh reads those results and preserves their execution identity.
+Rendering reads retained CSV/JSON only and imports no Engine code.
+No parameters were fitted, no additional experimental observations were inferred, and no other compounds or homogeneous-fluid measurements are covered.
+The historical frozen source record remains traceable through the earlier Git history cited in the leaf README.
+This notebook has not yet received independent delivered review or investigator promotion for manuscript writing.

@@ -1,0 +1,2767 @@
+{
+  "components": [
+    {
+      "aliases": [
+        "CO2"
+      ],
+      "coefficients": [
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "dispersion_energy_over_k",
+          "identity": "component/carbon-dioxide/dispersion_energy_over_k",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "analyses/mea_parameter_bundle/results/best-in-slot-campaign/final-full-validation-evaluations.csv:scenario=local-p0.15-db-350-eps+0.025",
+            "source_id": "mea-best-in-slot-campaign-2026-09-02"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:ea1c1f8d6ade0a6e94bbc71d8289f1bc1f0924abefad0ed3cadf6f79a432fa4a",
+          "value": {
+            "magnitude": 173.44025,
+            "unit": "kelvin"
+          }
+        },
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "segment_count",
+          "identity": "component/carbon-dioxide/segment_count",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=CO2:family=segment_count:status=retained-literature-lineage",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 2.0729,
+            "unit": "dimensionless"
+          }
+        },
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "segment_diameter",
+          "identity": "component/carbon-dioxide/segment_diameter",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=CO2:family=segment_diameter:status=retained-literature-lineage",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 2.7852,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "solvation_factor",
+          "identity": "component/carbon-dioxide/solvation_factor",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=CO2:family=solvation_factor:status=retained-literature-lineage",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id": "carbon-dioxide",
+      "fixed": {
+        "charge_number": {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=CO2:family=charge_number:status=retained-literature-lineage",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          }
+        },
+        "molar_mass": {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=CO2:family=molar_mass:status=retained-literature-lineage",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 0.04401,
+            "unit": "kilogram / mole"
+          }
+        }
+      },
+      "name": "CO2"
+    },
+    {
+      "aliases": [
+        "MEA"
+      ],
+      "coefficients": [
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "dispersion_energy_over_k",
+          "identity": "component/monoethanolamine/dispersion_energy_over_k",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=MEA:family=dispersion_energy_over_k:status=retained-literature-lineage",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 277.174,
+            "unit": "kelvin"
+          }
+        },
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "relative_permittivity",
+          "identity": "component/monoethanolamine/relative_permittivity",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=MEA:family=relative_permittivity:status=retained-literature-lineage",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 32.0,
+            "unit": "dimensionless"
+          }
+        },
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "segment_count",
+          "identity": "component/monoethanolamine/segment_count",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=MEA:family=segment_count:status=retained-literature-lineage",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 3.0353,
+            "unit": "dimensionless"
+          }
+        },
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "segment_diameter",
+          "identity": "component/monoethanolamine/segment_diameter",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=MEA:family=segment_diameter:status=retained-literature-lineage",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 3.0435,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "solvation_factor",
+          "identity": "component/monoethanolamine/solvation_factor",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=MEA:family=solvation_factor:status=retained-literature-lineage",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id": "monoethanolamine",
+      "fixed": {
+        "charge_number": {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=MEA:family=charge_number:status=retained-literature-lineage",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          }
+        },
+        "molar_mass": {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=MEA:family=molar_mass:status=retained-literature-lineage",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 0.06108,
+            "unit": "kilogram / mole"
+          }
+        }
+      },
+      "name": "MEA"
+    },
+    {
+      "aliases": [
+        "H2O"
+      ],
+      "coefficients": [
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "dispersion_energy_over_k",
+          "identity": "component/water/dispersion_energy_over_k",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=H2O:family=dispersion_energy_over_k:status=retained-literature-lineage",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 353.95,
+            "unit": "kelvin"
+          }
+        },
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "segment_count",
+          "identity": "component/water/segment_count",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=H2O:family=segment_count:status=retained-literature-lineage",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 1.2047,
+            "unit": "dimensionless"
+          }
+        },
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "solvation_factor",
+          "identity": "component/water/solvation_factor",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=H2O:family=solvation_factor:status=retained-literature-lineage",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 1.5,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id": "water",
+      "fixed": {
+        "charge_number": {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=H2O:family=charge_number:status=retained-literature-lineage",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          }
+        },
+        "molar_mass": {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=H2O:family=molar_mass:status=retained-literature-lineage",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 0.01801528,
+            "unit": "kilogram / mole"
+          }
+        }
+      },
+      "name": "H2O"
+    },
+    {
+      "aliases": [
+        "MEAH+"
+      ],
+      "coefficients": [
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "born_diameter",
+          "identity": "component/protonated-monoethanolamine/born_diameter",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=MEAH+:family=born_diameter:status=provisional-historical-evaluation",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 3.53322927146,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "debye_huckel_diameter",
+          "identity": "component/protonated-monoethanolamine/debye_huckel_diameter",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=MEAH+:family=segment_diameter:status=provisional-historical-evaluation:derived-debye_huckel_diameter=0.88-sigma:fixed-ssm-diameter-convention",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 3.0668752979568,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "dispersion_energy_over_k",
+          "identity": "component/protonated-monoethanolamine/dispersion_energy_over_k",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=MEAH+:family=dispersion_energy_over_k:status=provisional-historical-evaluation",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 232.687201645,
+            "unit": "kelvin"
+          }
+        },
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "packing_diameter",
+          "identity": "component/protonated-monoethanolamine/packing_diameter",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=MEAH+:family=segment_diameter:status=provisional-historical-evaluation:derived-packing_diameter=0.88-sigma:fixed-ssm-diameter-convention",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 3.0668752979568,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "segment_count",
+          "identity": "component/protonated-monoethanolamine/segment_count",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=MEAH+:family=segment_count:status=provisional-historical-evaluation",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          }
+        },
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "segment_diameter",
+          "identity": "component/protonated-monoethanolamine/segment_diameter",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=MEAH+:family=segment_diameter:status=provisional-historical-evaluation",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 3.48508556586,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "solvation_factor",
+          "identity": "component/protonated-monoethanolamine/solvation_factor",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=MEAH+:family=solvation_factor:status=provisional-historical-evaluation",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id": "protonated-monoethanolamine",
+      "fixed": {
+        "charge_number": {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=MEAH+:family=charge_number:status=provisional-historical-evaluation",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 1,
+            "unit": "elementary-charge"
+          }
+        },
+        "molar_mass": {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=MEAH+:family=molar_mass:status=provisional-historical-evaluation",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 0.06209,
+            "unit": "kilogram / mole"
+          }
+        }
+      },
+      "name": "MEAH+"
+    },
+    {
+      "aliases": [
+        "MEACOO-"
+      ],
+      "coefficients": [
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "born_diameter",
+          "identity": "component/carbamate-anion/born_diameter",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=MEACOO-:family=born_diameter:status=provisional-historical-evaluation",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 3.54107030822,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "debye_huckel_diameter",
+          "identity": "component/carbamate-anion/debye_huckel_diameter",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=MEACOO-:family=segment_diameter:status=provisional-historical-evaluation:derived-debye_huckel_diameter=0.88-sigma:fixed-ssm-diameter-convention",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 3.1111830263448,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "dispersion_energy_over_k",
+          "identity": "component/carbamate-anion/dispersion_energy_over_k",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=MEACOO-:family=dispersion_energy_over_k:status=provisional-historical-evaluation",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 453.265244384,
+            "unit": "kelvin"
+          }
+        },
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "packing_diameter",
+          "identity": "component/carbamate-anion/packing_diameter",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=MEACOO-:family=segment_diameter:status=provisional-historical-evaluation:derived-packing_diameter=0.88-sigma:fixed-ssm-diameter-convention",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 3.1111830263448,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "segment_count",
+          "identity": "component/carbamate-anion/segment_count",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=MEACOO-:family=segment_count:status=provisional-historical-evaluation",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          }
+        },
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "segment_diameter",
+          "identity": "component/carbamate-anion/segment_diameter",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=MEACOO-:family=segment_diameter:status=provisional-historical-evaluation",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 3.53543525721,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "solvation_factor",
+          "identity": "component/carbamate-anion/solvation_factor",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=MEACOO-:family=solvation_factor:status=provisional-historical-evaluation",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id": "carbamate-anion",
+      "fixed": {
+        "charge_number": {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=MEACOO-:family=charge_number:status=provisional-historical-evaluation",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": -1,
+            "unit": "elementary-charge"
+          }
+        },
+        "molar_mass": {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=MEACOO-:family=molar_mass:status=provisional-historical-evaluation",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 0.10408,
+            "unit": "kilogram / mole"
+          }
+        }
+      },
+      "name": "MEACOO-"
+    },
+    {
+      "aliases": [
+        "HCO3-"
+      ],
+      "coefficients": [
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "born_diameter",
+          "identity": "component/bicarbonate-anion/born_diameter",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=HCO3-:family=born_diameter:status=transferred-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 3.0,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "debye_huckel_diameter",
+          "identity": "component/bicarbonate-anion/debye_huckel_diameter",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=HCO3-:family=segment_diameter:status=transferred-diagnostic:derived-debye_huckel_diameter=0.88-sigma:fixed-ssm-diameter-convention",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 2.5780480000000003,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "dispersion_energy_over_k",
+          "identity": "component/bicarbonate-anion/dispersion_energy_over_k",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=HCO3-:family=dispersion_energy_over_k:status=transferred-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 70.0,
+            "unit": "kelvin"
+          }
+        },
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "packing_diameter",
+          "identity": "component/bicarbonate-anion/packing_diameter",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=HCO3-:family=segment_diameter:status=transferred-diagnostic:derived-packing_diameter=0.88-sigma:fixed-ssm-diameter-convention",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 2.5780480000000003,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "segment_count",
+          "identity": "component/bicarbonate-anion/segment_count",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=HCO3-:family=segment_count:status=transferred-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          }
+        },
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "segment_diameter",
+          "identity": "component/bicarbonate-anion/segment_diameter",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=HCO3-:family=segment_diameter:status=transferred-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 2.9296,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "solvation_factor",
+          "identity": "component/bicarbonate-anion/solvation_factor",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=HCO3-:family=solvation_factor:status=transferred-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id": "bicarbonate-anion",
+      "fixed": {
+        "charge_number": {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=HCO3-:family=charge_number:status=transferred-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": -1,
+            "unit": "elementary-charge"
+          }
+        },
+        "molar_mass": {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=HCO3-:family=molar_mass:status=transferred-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 0.0610168,
+            "unit": "kilogram / mole"
+          }
+        }
+      },
+      "name": "HCO3-"
+    },
+    {
+      "aliases": [
+        "CO3^2-"
+      ],
+      "coefficients": [
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "born_diameter",
+          "identity": "component/carbonate-anion/born_diameter",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=CO3^2-:family=born_diameter:status=transferred-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 3.0,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "debye_huckel_diameter",
+          "identity": "component/carbonate-anion/debye_huckel_diameter",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=CO3^2-:family=segment_diameter:status=transferred-diagnostic:derived-debye_huckel_diameter=0.88-sigma:fixed-ssm-diameter-convention",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 2.149136,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "dispersion_energy_over_k",
+          "identity": "component/carbonate-anion/dispersion_energy_over_k",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=CO3^2-:family=dispersion_energy_over_k:status=transferred-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 249.26,
+            "unit": "kelvin"
+          }
+        },
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "packing_diameter",
+          "identity": "component/carbonate-anion/packing_diameter",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=CO3^2-:family=segment_diameter:status=transferred-diagnostic:derived-packing_diameter=0.88-sigma:fixed-ssm-diameter-convention",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 2.149136,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "segment_count",
+          "identity": "component/carbonate-anion/segment_count",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=CO3^2-:family=segment_count:status=transferred-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          }
+        },
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "segment_diameter",
+          "identity": "component/carbonate-anion/segment_diameter",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=CO3^2-:family=segment_diameter:status=transferred-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 2.4422,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "solvation_factor",
+          "identity": "component/carbonate-anion/solvation_factor",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=CO3^2-:family=solvation_factor:status=transferred-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id": "carbonate-anion",
+      "fixed": {
+        "charge_number": {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=CO3^2-:family=charge_number:status=transferred-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": -2,
+            "unit": "elementary-charge"
+          }
+        },
+        "molar_mass": {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=CO3^2-:family=molar_mass:status=transferred-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 0.06001,
+            "unit": "kilogram / mole"
+          }
+        }
+      },
+      "name": "CO3^2-"
+    },
+    {
+      "aliases": [
+        "H3O+"
+      ],
+      "coefficients": [
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "born_diameter",
+          "identity": "component/hydronium-cation/born_diameter",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=H3O+:family=born_diameter:status=transferred-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 1.218,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "debye_huckel_diameter",
+          "identity": "component/hydronium-cation/debye_huckel_diameter",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=H3O+:family=segment_diameter:status=transferred-diagnostic:derived-debye_huckel_diameter=0.88-sigma:fixed-ssm-diameter-convention",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 3.049552,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "dispersion_energy_over_k",
+          "identity": "component/hydronium-cation/dispersion_energy_over_k",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=H3O+:family=dispersion_energy_over_k:status=transferred-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 500.0,
+            "unit": "kelvin"
+          }
+        },
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "packing_diameter",
+          "identity": "component/hydronium-cation/packing_diameter",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=H3O+:family=segment_diameter:status=transferred-diagnostic:derived-packing_diameter=0.88-sigma:fixed-ssm-diameter-convention",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 3.049552,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "segment_count",
+          "identity": "component/hydronium-cation/segment_count",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=H3O+:family=segment_count:status=transferred-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          }
+        },
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "segment_diameter",
+          "identity": "component/hydronium-cation/segment_diameter",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=H3O+:family=segment_diameter:status=transferred-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 3.4654,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "solvation_factor",
+          "identity": "component/hydronium-cation/solvation_factor",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=H3O+:family=solvation_factor:status=transferred-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id": "hydronium-cation",
+      "fixed": {
+        "charge_number": {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=H3O+:family=charge_number:status=transferred-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 1,
+            "unit": "elementary-charge"
+          }
+        },
+        "molar_mass": {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=H3O+:family=molar_mass:status=transferred-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 0.01902,
+            "unit": "kilogram / mole"
+          }
+        }
+      },
+      "name": "H3O+"
+    },
+    {
+      "aliases": [
+        "OH-"
+      ],
+      "coefficients": [
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "born_diameter",
+          "identity": "component/hydroxide-anion/born_diameter",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=OH-:family=born_diameter:status=transferred-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 3.08107689400404,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "debye_huckel_diameter",
+          "identity": "component/hydroxide-anion/debye_huckel_diameter",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=OH-:family=segment_diameter:status=transferred-diagnostic:derived-debye_huckel_diameter=0.88-sigma:fixed-ssm-diameter-convention",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 1.775576,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "dispersion_energy_over_k",
+          "identity": "component/hydroxide-anion/dispersion_energy_over_k",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=OH-:family=dispersion_energy_over_k:status=transferred-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 650.0,
+            "unit": "kelvin"
+          }
+        },
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "packing_diameter",
+          "identity": "component/hydroxide-anion/packing_diameter",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=OH-:family=segment_diameter:status=transferred-diagnostic:derived-packing_diameter=0.88-sigma:fixed-ssm-diameter-convention",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 1.775576,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "segment_count",
+          "identity": "component/hydroxide-anion/segment_count",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=OH-:family=segment_count:status=transferred-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          }
+        },
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "segment_diameter",
+          "identity": "component/hydroxide-anion/segment_diameter",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=OH-:family=segment_diameter:status=transferred-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 2.0177,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "solvation_factor",
+          "identity": "component/hydroxide-anion/solvation_factor",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=OH-:family=solvation_factor:status=transferred-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id": "hydroxide-anion",
+      "fixed": {
+        "charge_number": {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=OH-:family=charge_number:status=transferred-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": -1,
+            "unit": "elementary-charge"
+          }
+        },
+        "molar_mass": {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=OH-:family=molar_mass:status=transferred-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 0.01701,
+            "unit": "kilogram / mole"
+          }
+        }
+      },
+      "name": "OH-"
+    }
+  ],
+  "correlations": [
+    {
+      "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+      "component_id": "water",
+      "constant": {
+        "identity": "component/water/segment_diameter/constant-plus-sum-of-exponentials/constant",
+        "value": {
+          "magnitude": 2.7927,
+          "unit": "angstrom"
+        }
+      },
+      "correlation_id": "component/water/segment_diameter/constant-plus-sum-of-exponentials",
+      "family": "segment_diameter",
+      "form": "constant-plus-sum-of-exponentials",
+      "independent_variables": [
+        "temperature"
+      ],
+      "provenance": {
+        "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+        "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=H2O:family=segment_diameter:status=retained-literature-lineage",
+        "source_id": "mea-retained-phase-two-artifact"
+      },
+      "qualification": "candidate_extrapolation",
+      "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+      "terms": [
+        {
+          "amplitude": {
+            "identity": "component/water/segment_diameter/constant-plus-sum-of-exponentials/term-0/amplitude",
+            "value": {
+              "magnitude": 10.11,
+              "unit": "angstrom"
+            }
+          },
+          "exponent_coefficient": {
+            "identity": "component/water/segment_diameter/constant-plus-sum-of-exponentials/term-0/exponent_coefficient",
+            "value": {
+              "magnitude": -0.01775,
+              "unit": "1 / kelvin"
+            }
+          }
+        },
+        {
+          "amplitude": {
+            "identity": "component/water/segment_diameter/constant-plus-sum-of-exponentials/term-1/amplitude",
+            "value": {
+              "magnitude": -1.417,
+              "unit": "angstrom"
+            }
+          },
+          "exponent_coefficient": {
+            "identity": "component/water/segment_diameter/constant-plus-sum-of-exponentials/term-1/exponent_coefficient",
+            "value": {
+              "magnitude": -0.01146,
+              "unit": "1 / kelvin"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+      "component_id": "water",
+      "constant": {
+        "identity": "component/water/relative_permittivity/constant-plus-polynomial-in-temperature/constant",
+        "value": {
+          "magnitude": 78.41043478578715,
+          "unit": "dimensionless"
+        }
+      },
+      "correlation_id": "component/water/relative_permittivity/constant-plus-polynomial-in-temperature",
+      "family": "relative_permittivity",
+      "form": "constant-plus-polynomial-in-temperature",
+      "independent_variables": [
+        "temperature"
+      ],
+      "provenance": {
+        "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+        "locator": "Engine Validation Archer-Wang water approximation at Tref=298.15 K",
+        "source_id": "uyan-2015-permittivity-transfer"
+      },
+      "qualification": "candidate_extrapolation",
+      "reference_temperature": {
+        "magnitude": 298.15,
+        "unit": "kelvin"
+      },
+      "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+      "terms": [
+        {
+          "coefficient": {
+            "identity": "component/water/relative_permittivity/constant-plus-polynomial-in-temperature/term-0/coefficient",
+            "value": {
+              "magnitude": -0.36133766233691506,
+              "unit": "1 / kelvin"
+            }
+          },
+          "power": 1
+        },
+        {
+          "coefficient": {
+            "identity": "component/water/relative_permittivity/constant-plus-polynomial-in-temperature/term-1/coefficient",
+            "value": {
+              "magnitude": 0.00076555618295,
+              "unit": "1 / kelvin ** 2"
+            }
+          },
+          "power": 2
+        }
+      ]
+    }
+  ],
+  "document_id": "mea-co2-h2o-nine-species-estimation-candidate-v1",
+  "document_version": 1,
+  "domains": [
+    {
+      "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+      "kind": "fit-range",
+      "pressure_max": {
+        "magnitude": 300000.0,
+        "unit": "pascal"
+      },
+      "pressure_min": {
+        "magnitude": 10.0,
+        "unit": "pascal"
+      },
+      "temperature_max": {
+        "magnitude": 393.15,
+        "unit": "kelvin"
+      },
+      "temperature_min": {
+        "magnitude": 293.15,
+        "unit": "kelvin"
+      }
+    },
+    {
+      "domain_id": "mea-provider-source-qualified-313-15-k",
+      "kind": "reported-conditions",
+      "pressure_max": {
+        "magnitude": 100000.0,
+        "unit": "pascal"
+      },
+      "pressure_min": {
+        "magnitude": 100000.0,
+        "unit": "pascal"
+      },
+      "temperature_max": {
+        "magnitude": 313.15,
+        "unit": "kelvin"
+      },
+      "temperature_min": {
+        "magnitude": 313.15,
+        "unit": "kelvin"
+      }
+    },
+    {
+      "domain_id": "mea-candidate-293-15-to-393-15-k",
+      "kind": "fit-range",
+      "pressure_max": {
+        "magnitude": 10000000.0,
+        "unit": "pascal"
+      },
+      "pressure_min": {
+        "magnitude": 1.0,
+        "unit": "pascal"
+      },
+      "temperature_max": {
+        "magnitude": 393.15,
+        "unit": "kelvin"
+      },
+      "temperature_min": {
+        "magnitude": 293.15,
+        "unit": "kelvin"
+      }
+    },
+    {
+      "domain_id": "cai-1996-neutral-refit",
+      "kind": "unknown"
+    }
+  ],
+  "model_coefficients": [
+    {
+      "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+      "family": "ionic_region_relative_permittivity",
+      "identity": "model/relative_permittivity/ionic_region_relative_permittivity",
+      "provenance": {
+        "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+        "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:ionic-dielc=8:status=transferred-diagnostic",
+        "source_id": "mea-retained-phase-two-artifact"
+      },
+      "qualification": "candidate_extrapolation",
+      "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+      "value": {
+        "magnitude": 8.0,
+        "unit": "dimensionless"
+      }
+    }
+  ],
+  "model_families": [
+    {
+      "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+      "choice": "pc-saft",
+      "family_id": "model/base",
+      "kind": "base",
+      "provenance": {
+        "domain_id": "mea-provider-source-qualified-313-15-k",
+        "locator": "data/reference/MEA/manifests/reactive_vle_model_configurations.json:diagnostic-explicit-model-switches",
+        "source_id": "mea-retained-phase-two-artifact"
+      },
+      "qualification": "candidate_extrapolation",
+      "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c"
+    },
+    {
+      "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+      "choice": "general-site",
+      "family_id": "model/association",
+      "kind": "association",
+      "provenance": {
+        "domain_id": "mea-provider-source-qualified-313-15-k",
+        "locator": "data/reference/MEA/manifests/reactive_vle_model_configurations.json:diagnostic-explicit-model-switches",
+        "source_id": "mea-retained-phase-two-artifact"
+      },
+      "qualification": "candidate_extrapolation",
+      "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c"
+    },
+    {
+      "c_dielectric": 0.0,
+      "c_shell": 0.0,
+      "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+      "choice": "born",
+      "family_id": "model/electrolyte",
+      "kind": "electrolyte",
+      "provenance": {
+        "domain_id": "mea-provider-source-qualified-313-15-k",
+        "locator": "data/reference/MEA/manifests/reactive_vle_model_configurations.json:diagnostic-explicit-model-switches",
+        "source_id": "mea-retained-phase-two-artifact"
+      },
+      "qualification": "candidate_extrapolation",
+      "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c"
+    },
+    {
+      "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+      "choice": "solvent-only",
+      "family_id": "model/relative_permittivity",
+      "kind": "permittivity",
+      "provenance": {
+        "domain_id": "mea-provider-source-qualified-313-15-k",
+        "locator": "data/reference/MEA/manifests/reactive_vle_model_configurations.json:diagnostic-explicit-model-switches",
+        "source_id": "mea-retained-phase-two-artifact"
+      },
+      "qualification": "candidate_extrapolation",
+      "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c"
+    }
+  ],
+  "pairs": [
+    {
+      "coefficients": [
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "k_ij",
+          "identity": "pair/bicarbonate-anion/carbonate-anion/k_ij",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/mixed/binary_interaction/k_ij.csv:row=HCO3-:column=CO3^2-:status=explicit-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "bicarbonate-anion",
+      "component_id_b": "carbonate-anion"
+    },
+    {
+      "coefficients": [
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "k_ij",
+          "identity": "pair/bicarbonate-anion/hydronium-cation/k_ij",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/mixed/binary_interaction/k_ij.csv:row=HCO3-:column=H3O+:status=explicit-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "bicarbonate-anion",
+      "component_id_b": "hydronium-cation"
+    },
+    {
+      "coefficients": [
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "k_ij",
+          "identity": "pair/bicarbonate-anion/hydroxide-anion/k_ij",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/mixed/binary_interaction/k_ij.csv:row=HCO3-:column=OH-:status=explicit-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "bicarbonate-anion",
+      "component_id_b": "hydroxide-anion"
+    },
+    {
+      "coefficients": [
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "k_ij",
+          "identity": "pair/bicarbonate-anion/carbamate-anion/k_ij",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/mixed/binary_interaction/k_ij.csv:row=MEACOO-:column=HCO3-:status=explicit-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "bicarbonate-anion",
+      "component_id_b": "carbamate-anion"
+    },
+    {
+      "coefficients": [
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "k_ij",
+          "identity": "pair/carbamate-anion/carbonate-anion/k_ij",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/mixed/binary_interaction/k_ij.csv:row=MEACOO-:column=CO3^2-:status=explicit-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "carbamate-anion",
+      "component_id_b": "carbonate-anion"
+    },
+    {
+      "coefficients": [
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "k_ij",
+          "identity": "pair/carbamate-anion/hydronium-cation/k_ij",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/mixed/binary_interaction/k_ij.csv:row=MEACOO-:column=H3O+:status=explicit-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "carbamate-anion",
+      "component_id_b": "hydronium-cation"
+    },
+    {
+      "coefficients": [
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "k_ij",
+          "identity": "pair/carbamate-anion/hydroxide-anion/k_ij",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/mixed/binary_interaction/k_ij.csv:row=MEACOO-:column=OH-:status=explicit-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "carbamate-anion",
+      "component_id_b": "hydroxide-anion"
+    },
+    {
+      "coefficients": [
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "k_ij",
+          "identity": "pair/bicarbonate-anion/carbon-dioxide/k_ij",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/mixed/binary_interaction/k_ij.csv:row=CO2:column=HCO3-:status=explicit-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "bicarbonate-anion",
+      "component_id_b": "carbon-dioxide"
+    },
+    {
+      "coefficients": [
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "k_ij",
+          "identity": "pair/carbamate-anion/carbon-dioxide/k_ij",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/mixed/binary_interaction/k_ij.csv:row=CO2:column=MEACOO-:status=explicit-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "carbamate-anion",
+      "component_id_b": "carbon-dioxide"
+    },
+    {
+      "coefficients": [
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "k_ij",
+          "identity": "pair/carbon-dioxide/carbonate-anion/k_ij",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/mixed/binary_interaction/k_ij.csv:row=CO2:column=CO3^2-:status=explicit-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "carbon-dioxide",
+      "component_id_b": "carbonate-anion"
+    },
+    {
+      "coefficients": [
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "k_ij",
+          "identity": "pair/carbon-dioxide/hydronium-cation/k_ij",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/mixed/binary_interaction/k_ij.csv:row=CO2:column=H3O+:status=explicit-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "carbon-dioxide",
+      "component_id_b": "hydronium-cation"
+    },
+    {
+      "coefficients": [
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "k_ij",
+          "identity": "pair/carbon-dioxide/hydroxide-anion/k_ij",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/mixed/binary_interaction/k_ij.csv:row=CO2:column=OH-:status=explicit-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "carbon-dioxide",
+      "component_id_b": "hydroxide-anion"
+    },
+    {
+      "coefficients": [
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "k_ij",
+          "identity": "pair/carbon-dioxide/monoethanolamine/k_ij",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/mixed/binary_interaction/k_ij.csv:row=CO2:column=MEA:status=explicit-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        },
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "k_ij_reciprocal_temperature_slope",
+          "identity": "pair/carbon-dioxide/monoethanolamine/k_ij/reciprocal_temperature_slope",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/mixed/binary_interaction/k_ij.csv:row=CO2:column=MEA:status=explicit-diagnostic; candidate-3 reciprocal-temperature extension at T_ref=313.15 K",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "reference_temperature": {
+            "magnitude": 313.15,
+            "unit": "kelvin"
+          },
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "kelvin"
+          }
+        }
+      ],
+      "component_id_a": "carbon-dioxide",
+      "component_id_b": "monoethanolamine"
+    },
+    {
+      "coefficients": [
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "k_ij",
+          "identity": "pair/carbon-dioxide/protonated-monoethanolamine/k_ij",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/mixed/binary_interaction/k_ij.csv:row=CO2:column=MEAH+:status=explicit-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "carbon-dioxide",
+      "component_id_b": "protonated-monoethanolamine"
+    },
+    {
+      "coefficients": [
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "k_ij",
+          "identity": "pair/carbon-dioxide/water/k_ij",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/mixed/binary_interaction/k_ij.csv:row=CO2:column=H2O:status=explicit-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 0.013262879176919628,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "carbon-dioxide",
+      "component_id_b": "water"
+    },
+    {
+      "coefficients": [
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "k_ij",
+          "identity": "pair/carbonate-anion/hydronium-cation/k_ij",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/mixed/binary_interaction/k_ij.csv:row=CO3^2-:column=H3O+:status=explicit-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "carbonate-anion",
+      "component_id_b": "hydronium-cation"
+    },
+    {
+      "coefficients": [
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "k_ij",
+          "identity": "pair/carbonate-anion/hydroxide-anion/k_ij",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/mixed/binary_interaction/k_ij.csv:row=CO3^2-:column=OH-:status=explicit-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "carbonate-anion",
+      "component_id_b": "hydroxide-anion"
+    },
+    {
+      "coefficients": [
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "k_ij",
+          "identity": "pair/hydronium-cation/hydroxide-anion/k_ij",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/mixed/binary_interaction/k_ij.csv:row=H3O+:column=OH-:status=explicit-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "hydronium-cation",
+      "component_id_b": "hydroxide-anion"
+    },
+    {
+      "coefficients": [
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "k_ij",
+          "identity": "pair/bicarbonate-anion/monoethanolamine/k_ij",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/mixed/binary_interaction/k_ij.csv:row=MEA:column=HCO3-:status=explicit-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "bicarbonate-anion",
+      "component_id_b": "monoethanolamine"
+    },
+    {
+      "coefficients": [
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "k_ij",
+          "identity": "pair/carbamate-anion/monoethanolamine/k_ij",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/mixed/binary_interaction/k_ij.csv:row=MEA:column=MEACOO-:status=explicit-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "carbamate-anion",
+      "component_id_b": "monoethanolamine"
+    },
+    {
+      "coefficients": [
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "k_ij",
+          "identity": "pair/carbonate-anion/monoethanolamine/k_ij",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/mixed/binary_interaction/k_ij.csv:row=MEA:column=CO3^2-:status=explicit-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "carbonate-anion",
+      "component_id_b": "monoethanolamine"
+    },
+    {
+      "coefficients": [
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "k_ij",
+          "identity": "pair/hydronium-cation/monoethanolamine/k_ij",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/mixed/binary_interaction/k_ij.csv:row=MEA:column=H3O+:status=explicit-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "hydronium-cation",
+      "component_id_b": "monoethanolamine"
+    },
+    {
+      "coefficients": [
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "k_ij",
+          "identity": "pair/hydroxide-anion/monoethanolamine/k_ij",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/mixed/binary_interaction/k_ij.csv:row=MEA:column=OH-:status=explicit-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "hydroxide-anion",
+      "component_id_b": "monoethanolamine"
+    },
+    {
+      "coefficients": [
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "k_ij",
+          "identity": "pair/monoethanolamine/protonated-monoethanolamine/k_ij",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/mixed/binary_interaction/k_ij.csv:row=MEA:column=MEAH+:status=explicit-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "monoethanolamine",
+      "component_id_b": "protonated-monoethanolamine"
+    },
+    {
+      "coefficients": [
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "k_ij",
+          "identity": "pair/monoethanolamine/water/k_ij",
+          "provenance": {
+            "domain_id": "cai-1996-neutral-refit",
+            "locator": "grouped pressure-level one-SE selection and complete 25-row refit",
+            "source_id": "cai-1996-neutral-refit"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": -0.07352749874985018,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "monoethanolamine",
+      "component_id_b": "water"
+    },
+    {
+      "coefficients": [
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "k_ij",
+          "identity": "pair/bicarbonate-anion/protonated-monoethanolamine/k_ij",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/mixed/binary_interaction/k_ij.csv:row=MEAH+:column=HCO3-:status=explicit-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "bicarbonate-anion",
+      "component_id_b": "protonated-monoethanolamine"
+    },
+    {
+      "coefficients": [
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "k_ij",
+          "identity": "pair/carbamate-anion/protonated-monoethanolamine/k_ij",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/mixed/binary_interaction/k_ij.csv:row=MEAH+:column=MEACOO-:status=provisional-historical-evaluation",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": -0.00201813457644,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "carbamate-anion",
+      "component_id_b": "protonated-monoethanolamine"
+    },
+    {
+      "coefficients": [
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "k_ij",
+          "identity": "pair/carbonate-anion/protonated-monoethanolamine/k_ij",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/mixed/binary_interaction/k_ij.csv:row=MEAH+:column=CO3^2-:status=explicit-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "carbonate-anion",
+      "component_id_b": "protonated-monoethanolamine"
+    },
+    {
+      "coefficients": [
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "k_ij",
+          "identity": "pair/hydronium-cation/protonated-monoethanolamine/k_ij",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/mixed/binary_interaction/k_ij.csv:row=MEAH+:column=H3O+:status=explicit-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "hydronium-cation",
+      "component_id_b": "protonated-monoethanolamine"
+    },
+    {
+      "coefficients": [
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "k_ij",
+          "identity": "pair/hydroxide-anion/protonated-monoethanolamine/k_ij",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/mixed/binary_interaction/k_ij.csv:row=MEAH+:column=OH-:status=explicit-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "hydroxide-anion",
+      "component_id_b": "protonated-monoethanolamine"
+    },
+    {
+      "coefficients": [
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "k_ij",
+          "identity": "pair/bicarbonate-anion/water/k_ij",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/mixed/binary_interaction/k_ij.csv:row=H2O:column=HCO3-:status=explicit-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "bicarbonate-anion",
+      "component_id_b": "water"
+    },
+    {
+      "coefficients": [
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "k_ij",
+          "identity": "pair/carbamate-anion/water/k_ij",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/mixed/binary_interaction/k_ij.csv:row=H2O:column=MEACOO-:status=explicit-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "carbamate-anion",
+      "component_id_b": "water"
+    },
+    {
+      "coefficients": [
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "k_ij",
+          "identity": "pair/carbonate-anion/water/k_ij",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/mixed/binary_interaction/k_ij.csv:row=H2O:column=CO3^2-:status=explicit-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": -0.25,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "carbonate-anion",
+      "component_id_b": "water"
+    },
+    {
+      "coefficients": [
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "k_ij",
+          "identity": "pair/hydronium-cation/water/k_ij",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/mixed/binary_interaction/k_ij.csv:row=H2O:column=H3O+:status=explicit-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 0.25,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "hydronium-cation",
+      "component_id_b": "water"
+    },
+    {
+      "coefficients": [
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "k_ij",
+          "identity": "pair/hydroxide-anion/water/k_ij",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/mixed/binary_interaction/k_ij.csv:row=H2O:column=OH-:status=explicit-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": -0.25,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "hydroxide-anion",
+      "component_id_b": "water"
+    },
+    {
+      "coefficients": [
+        {
+          "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+          "family": "k_ij",
+          "identity": "pair/protonated-monoethanolamine/water/k_ij",
+          "provenance": {
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/mixed/binary_interaction/k_ij.csv:row=H2O:column=MEAH+:status=explicit-diagnostic",
+            "source_id": "mea-retained-phase-two-artifact"
+          },
+          "qualification": "candidate_extrapolation",
+          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "protonated-monoethanolamine",
+      "component_id_b": "water"
+    }
+  ],
+  "purpose": "user-provided",
+  "reaction_correlations": [
+    {
+      "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+      "coefficients": [
+        {
+          "identity": "reaction:R4:correlation:a",
+          "name": "a",
+          "optimizer_domain": {
+            "lower": -20.0,
+            "upper": 20.0
+          },
+          "value": {
+            "magnitude": 3.3515778177997895,
+            "unit": "dimensionless"
+          }
+        },
+        {
+          "identity": "reaction:R4:correlation:b_k",
+          "name": "b_k",
+          "optimizer_domain": {
+            "lower": -10000.0,
+            "upper": 5000.0
+          },
+          "value": {
+            "magnitude": -1895.3,
+            "unit": "kelvin"
+          }
+        }
+      ],
+      "kind": "ln-k-a-plus-b-over-t",
+      "qualification": "candidate_extrapolation",
+      "reaction_id": "R4",
+      "source": {
+        "domain_id": "mea-provider-source-qualified-313-15-k",
+        "locator": "analyses/mea_parameter_bundle/results/best-in-slot-campaign/final-full-validation-evaluations.csv:scenario=local-p0.15-db-350-eps+0.025; initialized from Tong 2012 Table 5 K5 MEA and Aroua 1999",
+        "source_id": "mea-best-in-slot-campaign-2026-09-02"
+      },
+      "source_sha256": "sha256:ea1c1f8d6ade0a6e94bbc71d8289f1bc1f0924abefad0ed3cadf6f79a432fa4a"
+    },
+    {
+      "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+      "coefficients": [
+        {
+          "identity": "reaction:R5:correlation:a_k",
+          "name": "a_k",
+          "optimizer_domain": {
+            "lower": 500.0,
+            "upper": 6000.0
+          },
+          "value": {
+            "magnitude": 2677.91,
+            "unit": "kelvin"
+          }
+        },
+        {
+          "identity": "reaction:R5:correlation:b",
+          "name": "b",
+          "optimizer_domain": {
+            "lower": -10.0,
+            "upper": 10.0
+          },
+          "value": {
+            "magnitude": 0.3869,
+            "unit": "dimensionless"
+          }
+        },
+        {
+          "identity": "reaction:R5:correlation:c_per_k",
+          "name": "c_per_k",
+          "optimizer_domain": {
+            "lower": -0.01,
+            "upper": 0.01
+          },
+          "value": {
+            "magnitude": 0.0004277,
+            "unit": "1 / kelvin"
+          }
+        }
+      ],
+      "kind": "negative-log10-temperature-polynomial",
+      "qualification": "candidate_extrapolation",
+      "reaction_id": "R5",
+      "source": {
+        "domain_id": "mea-provider-source-qualified-313-15-k",
+        "locator": "Equation 7, p. 349",
+        "source_id": "bates-pinching-1951"
+      },
+      "source_sha256": "sha256:aff8621efd41dbce106bb189fd104840a1513d9d163f4f57dfb1abbf53a30db1"
+    }
+  ],
+  "schema": "epcsaft.parameters",
+  "schema_version": 1,
+  "sources": [
+    {
+      "citation": "MEA-Thermodynamics retained Phase 2 parameter artifact",
+      "source_id": "mea-retained-phase-two-artifact",
+      "use_basis": "authority-neutral regression starts and fixed model inputs; row-level literature lineage, transfer limits, and provisional statuses are audited in docs/ePC-SAFT/full-component-parameter-source-audit.md"
+    },
+    {
+      "citation": "Schick et al. (2023) using Pabsch et al. (2020)",
+      "source_id": "schick-2023-pabsch-2020-induced-association",
+      "use_basis": "CO2 2B sites and reciprocal CO2-water cross-association with the source combining rule"
+    },
+    {
+      "citation": "Zuber et al. (2014), Fluid Phase Equilibria 376, 116-123, doi:10.1016/j.fluid.2014.05.037",
+      "source_id": "zuber-et-al-2014",
+      "use_basis": "Ion-specific aqueous dielectric-suppression coefficients and charge-class fallback values"
+    },
+    {
+      "citation": "Uyan Eq. 5; Wangler campaign Archer-Wang approximation.",
+      "source_id": "uyan-2015-permittivity-transfer",
+      "use_basis": "Explicit transfer approximation, not an exact Floriano-Nascimento replay."
+    },
+    {
+      "citation": "Tong et al. (2012), Table 5 K5 MEA, via Aroua et al. (1999).",
+      "source_id": "tong-2012-aroua-1999",
+      "use_basis": "R4 carbamate hydrolysis source-centred correlation."
+    },
+    {
+      "citation": "Bates and Pinching (1951), equation 7.",
+      "source_id": "bates-pinching-1951",
+      "use_basis": "R5 monoethanolammonium dissociation source-centred correlation."
+    },
+    {
+      "citation": "Project-authored ePC-SAFT parameter fit result.",
+      "source_id": "cai-1996-neutral-refit",
+      "use_basis": "Accepted fitted coefficient values and exact numerical evidence."
+    },
+    {
+      "citation": "MEA-Thermodynamics bounded direct Engine campaign, 2026-09-02.",
+      "source_id": "mea-best-in-slot-campaign-2026-09-02",
+      "use_basis": "Current-best joint pressure/speciation calibration of the R4 correlation and carbon-dioxide dispersion energy; initialized from the retained literature bundle and not an independent validation."
+    }
+  ],
+  "topology": {
+    "edges": [
+      {
+        "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+        "endpoint_a": {
+          "component_id": "monoethanolamine",
+          "site_id": "a"
+        },
+        "endpoint_b": {
+          "component_id": "monoethanolamine",
+          "site_id": "b"
+        },
+        "energy_over_k": {
+          "identity": "association/monoethanolamine/a/monoethanolamine/b/energy_over_k",
+          "value": {
+            "magnitude": 2586.3,
+            "unit": "kelvin"
+          }
+        },
+        "qualification": "candidate_extrapolation",
+        "source": {
+          "kind": "explicit",
+          "provenance": [
+            {
+              "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+              "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=MEA:family=association_energy_over_k:status=retained-literature-lineage",
+              "source_id": "mea-retained-phase-two-artifact"
+            },
+            {
+              "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+              "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=MEA:family=association_volume:status=retained-literature-lineage",
+              "source_id": "mea-retained-phase-two-artifact"
+            }
+          ]
+        },
+        "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+        "volume": {
+          "identity": "association/monoethanolamine/a/monoethanolamine/b/volume",
+          "value": {
+            "magnitude": 0.03747,
+            "unit": "dimensionless"
+          }
+        }
+      },
+      {
+        "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+        "endpoint_a": {
+          "component_id": "water",
+          "site_id": "a"
+        },
+        "endpoint_b": {
+          "component_id": "water",
+          "site_id": "b"
+        },
+        "energy_over_k": {
+          "identity": "association/water/a/water/b/energy_over_k",
+          "value": {
+            "magnitude": 2425.7,
+            "unit": "kelvin"
+          }
+        },
+        "qualification": "candidate_extrapolation",
+        "source": {
+          "kind": "explicit",
+          "provenance": [
+            {
+              "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+              "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=H2O:family=association_energy_over_k:status=retained-literature-lineage",
+              "source_id": "mea-retained-phase-two-artifact"
+            },
+            {
+              "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+              "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=H2O:family=association_volume:status=retained-literature-lineage",
+              "source_id": "mea-retained-phase-two-artifact"
+            }
+          ]
+        },
+        "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+        "volume": {
+          "identity": "association/water/a/water/b/volume",
+          "value": {
+            "magnitude": 0.04509,
+            "unit": "dimensionless"
+          }
+        }
+      },
+      {
+        "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+        "endpoint_a": {
+          "component_id": "carbon-dioxide",
+          "site_id": "a"
+        },
+        "endpoint_b": {
+          "component_id": "water",
+          "site_id": "b"
+        },
+        "energy_over_k": {
+          "identity": "association/carbon-dioxide/a/water/b/energy_over_k",
+          "value": {
+            "magnitude": 1212.85,
+            "unit": "kelvin"
+          }
+        },
+        "qualification": "candidate_extrapolation",
+        "source": {
+          "kind": "explicit",
+          "provenance": [
+            {
+              "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+              "locator": "Schick et al. (2023), Table 1 and Section 2.4.2; Pabsch et al. (2020) CO2-water parameterization",
+              "source_id": "schick-2023-pabsch-2020-induced-association"
+            }
+          ]
+        },
+        "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+        "volume": {
+          "identity": "association/carbon-dioxide/a/water/b/volume",
+          "value": {
+            "magnitude": 0.04509,
+            "unit": "dimensionless"
+          }
+        }
+      },
+      {
+        "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+        "endpoint_a": {
+          "component_id": "carbon-dioxide",
+          "site_id": "b"
+        },
+        "endpoint_b": {
+          "component_id": "water",
+          "site_id": "a"
+        },
+        "energy_over_k": {
+          "identity": "association/carbon-dioxide/b/water/a/energy_over_k",
+          "value": {
+            "magnitude": 1212.85,
+            "unit": "kelvin"
+          }
+        },
+        "qualification": "candidate_extrapolation",
+        "source": {
+          "kind": "explicit",
+          "provenance": [
+            {
+              "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+              "locator": "Schick et al. (2023), Table 1 and Section 2.4.2; Pabsch et al. (2020) CO2-water parameterization",
+              "source_id": "schick-2023-pabsch-2020-induced-association"
+            }
+          ]
+        },
+        "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+        "volume": {
+          "identity": "association/carbon-dioxide/b/water/a/volume",
+          "value": {
+            "magnitude": 0.04509,
+            "unit": "dimensionless"
+          }
+        }
+      },
+      {
+        "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+        "endpoint_a": {
+          "component_id": "monoethanolamine",
+          "site_id": "a"
+        },
+        "endpoint_b": {
+          "component_id": "water",
+          "site_id": "b"
+        },
+        "qualification": "candidate_extrapolation",
+        "source": {
+          "inputs": {
+            "energy_over_k": [
+              "association/monoethanolamine/a/monoethanolamine/b/energy_over_k",
+              "association/water/a/water/b/energy_over_k"
+            ],
+            "volume": [
+              "association/monoethanolamine/a/monoethanolamine/b/volume",
+              "association/water/a/water/b/volume"
+            ]
+          },
+          "kind": "combining-rule",
+          "provenance": [
+            {
+              "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+              "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=H2O:family=association_energy_over_k:status=retained-literature-lineage",
+              "source_id": "mea-retained-phase-two-artifact"
+            },
+            {
+              "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+              "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=H2O:family=association_volume:status=retained-literature-lineage",
+              "source_id": "mea-retained-phase-two-artifact"
+            },
+            {
+              "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+              "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=MEA:family=association_energy_over_k:status=retained-literature-lineage",
+              "source_id": "mea-retained-phase-two-artifact"
+            },
+            {
+              "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+              "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=MEA:family=association_volume:status=retained-literature-lineage",
+              "source_id": "mea-retained-phase-two-artifact"
+            }
+          ],
+          "rule_id": "arithmetic-energy-geometric-volume"
+        },
+        "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c"
+      },
+      {
+        "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+        "endpoint_a": {
+          "component_id": "monoethanolamine",
+          "site_id": "b"
+        },
+        "endpoint_b": {
+          "component_id": "water",
+          "site_id": "a"
+        },
+        "qualification": "candidate_extrapolation",
+        "source": {
+          "inputs": {
+            "energy_over_k": [
+              "association/monoethanolamine/a/monoethanolamine/b/energy_over_k",
+              "association/water/a/water/b/energy_over_k"
+            ],
+            "volume": [
+              "association/monoethanolamine/a/monoethanolamine/b/volume",
+              "association/water/a/water/b/volume"
+            ]
+          },
+          "kind": "combining-rule",
+          "provenance": [
+            {
+              "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+              "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=H2O:family=association_energy_over_k:status=retained-literature-lineage",
+              "source_id": "mea-retained-phase-two-artifact"
+            },
+            {
+              "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+              "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=H2O:family=association_volume:status=retained-literature-lineage",
+              "source_id": "mea-retained-phase-two-artifact"
+            },
+            {
+              "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+              "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=MEA:family=association_energy_over_k:status=retained-literature-lineage",
+              "source_id": "mea-retained-phase-two-artifact"
+            },
+            {
+              "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+              "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=MEA:family=association_volume:status=retained-literature-lineage",
+              "source_id": "mea-retained-phase-two-artifact"
+            }
+          ],
+          "rule_id": "arithmetic-energy-geometric-volume"
+        },
+        "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c"
+      }
+    ],
+    "presets": [],
+    "sites": [
+      {
+        "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+        "component_id": "monoethanolamine",
+        "multiplicity": 1,
+        "provenance": {
+          "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+          "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=MEA:family=association_site_a:status=retained-literature-lineage",
+          "source_id": "mea-retained-phase-two-artifact"
+        },
+        "qualification": "candidate_extrapolation",
+        "site_id": "a",
+        "site_role": "donor",
+        "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c"
+      },
+      {
+        "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+        "component_id": "monoethanolamine",
+        "multiplicity": 1,
+        "provenance": {
+          "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+          "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=MEA:family=association_site_b:status=retained-literature-lineage",
+          "source_id": "mea-retained-phase-two-artifact"
+        },
+        "qualification": "candidate_extrapolation",
+        "site_id": "b",
+        "site_role": "acceptor",
+        "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c"
+      },
+      {
+        "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+        "component_id": "water",
+        "multiplicity": 1,
+        "provenance": {
+          "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+          "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=H2O:family=association_site_a:status=retained-literature-lineage",
+          "source_id": "mea-retained-phase-two-artifact"
+        },
+        "qualification": "candidate_extrapolation",
+        "site_id": "a",
+        "site_role": "donor",
+        "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c"
+      },
+      {
+        "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+        "component_id": "water",
+        "multiplicity": 1,
+        "provenance": {
+          "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+          "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=H2O:family=association_site_b:status=retained-literature-lineage",
+          "source_id": "mea-retained-phase-two-artifact"
+        },
+        "qualification": "candidate_extrapolation",
+        "site_id": "b",
+        "site_role": "acceptor",
+        "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c"
+      },
+      {
+        "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+        "component_id": "carbon-dioxide",
+        "multiplicity": 1,
+        "provenance": {
+          "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+          "locator": "Schick et al. (2023), Table 1 and Section 2.4.2; Pabsch et al. (2020) CO2-water parameterization",
+          "source_id": "schick-2023-pabsch-2020-induced-association"
+        },
+        "qualification": "candidate_extrapolation",
+        "site_id": "a",
+        "site_role": "donor",
+        "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c"
+      },
+      {
+        "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+        "component_id": "carbon-dioxide",
+        "multiplicity": 1,
+        "provenance": {
+          "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+          "locator": "Schick et al. (2023), Table 1 and Section 2.4.2; Pabsch et al. (2020) CO2-water parameterization",
+          "source_id": "schick-2023-pabsch-2020-induced-association"
+        },
+        "qualification": "candidate_extrapolation",
+        "site_id": "b",
+        "site_role": "acceptor",
+        "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c"
+      }
+    ]
+  }
+}

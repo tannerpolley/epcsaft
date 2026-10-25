@@ -1,0 +1,104 @@
+{
+  "source_base": "5c65bcb4db7757a27320819e29b4c486dccd4c4e",
+  "baseline_wheel_sha256": "28181e72e429c6e87fc6361082af1a7b21c8747e76bda65a1c30abb4a97402f2",
+  "candidate_wheel_sha256": "659b2606737be0c66b4bc764aee3adda2b4e983b8196659b8a824955a5fd47c0",
+  "heavy_command_prefix": "flock /tmp/t3-heavy-check.lock timeout <bounded cap> nice -n 10 env OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 EPCSAFT_BUILD_JOBS=2",
+  "checks": [
+    {
+      "name": "check-all",
+      "command": "bash tools/check-all.sh",
+      "exit_code": 0,
+      "log": "build/performance-129/check-all.log",
+      "log_sha256": "b6ddee372424824228d79f1fcbcc8acb44f8e57a8716d0bcadf441c82227a610",
+      "python_passed": 107,
+      "native_fast_groups": 6
+    },
+    {
+      "name": "native-required",
+      "command": "EPCSAFT_NATIVE_BUILD_READY=1 MESON_NUM_PROCESSES=2 MESON_TESTTHREADS=2 bash engine/tools/run-native-tests.sh equilibrium boundary regression_fit",
+      "exit_code": 0,
+      "log": "build/performance-129/native-slow.log",
+      "log_sha256": "b9ec06b52ad2f25c98e52089c5c151bb7d7495a393385dd67d7511ad9d433504",
+      "native_passed": [
+        "boundary",
+        "equilibrium",
+        "regression_fit"
+      ]
+    },
+    {
+      "name": "khudaida",
+      "command": "bash tools/run-slice.sh khudaida",
+      "exit_code": 0,
+      "log": "build/performance-129/khudaida-slice.log",
+      "log_sha256": "2d94131b5de955cb4d3cdb3b4dace3c33e3bfc4493f8de407ff9cb43136da6a4",
+      "qualification": "canonical run and numerical qualify both completed; script removes successful temporary outputs; matched retained equilibrium arrays are separate evidence"
+    },
+    {
+      "name": "source-affected",
+      "command": "EPCSAFT_CHECK_SOURCE_ONLY=1 bash tools/check-affected.sh HEAD",
+      "exit_code": 0,
+      "log": "build/performance-129/source-affected.log",
+      "log_sha256": "2b709becdfddb88251b62e6f3b64a2061f8cda4521650adbebd3333e14c5b527",
+      "mode": "source only; installed-wheel numerical gates recorded separately"
+    },
+    {
+      "name": "final-source-affected",
+      "command": "EPCSAFT_CHECK_SOURCE_ONLY=1 bash tools/check-affected.sh HEAD",
+      "exit_code": 0,
+      "log": "build/performance-129/source-affected-final.log",
+      "log_sha256": "03be769877cd1d4c9c54ea55226c164e9dcb1c63f9cc20739f0b40c3e3f7738c",
+      "mode": "source only; runtime unchanged since installed-wheel numerical gates"
+    }
+  ],
+  "runtime_lines": {
+    "Properties": 4223,
+    "Regression": 1298,
+    "Bindings": 1708,
+    "total": 18554
+  },
+  "scope": "Engine-owned frozen inputs only; initial evaluation and declared local equilibrium branch; numerical verification, not a calibrated fit or physical validation",
+  "candidate_runtime_patch_sha256": "920e9f05c9b4ec2db4ddf65ee8da44432d8112a6b0534493ca7d06b4bd50b338",
+  "fitting_input_sha256": "013f57c6390a821599942f33f22445e37904e50ee85f272ac153fd5073fe39ba",
+  "numerical_rows": {
+    "fit": "results/corrected-initial.csv",
+    "equilibrium": "results/before-equilibrium-values.csv",
+    "affine_rounding": "results/before-affine.csv",
+    "comparison": "Exact ordered decimal representations of binary64 values and statuses agree; no rounding tolerance. Row serialization retains Python round-trip float representations."
+  },
+  "contention": "Owner reports concurrent external MEA fits and Lithium jobs, including fits outside shared lock. No application files were consumed; per-run host load is retained with the interleaved timings.",
+  "timing_evidence": "results/paired-performance-summary.json",
+  "instrumentation": {
+    "compile": "c++ -std=c++17 -shared -fPIC -O2 -Iengine/native -I/usr/include/eigen3 analyses/2026-fitting-state-reuse/scripts/pinned-hessian-packing-profile.cpp -ldl -o build/performance-129/pinned-packing-profile.so",
+    "run_environment": "LD_PRELOAD=<absolute profile.so> EPCSAFT_PROFILE_CORE=<absolute installed _core .so> EPCSAFT_REPLAY_WHEEL=<immutable 28181e72 wheel> EPCSAFT_REPLAY_PROFILE=<profile csv>",
+    "fit": "replay.py initial <temporary result.json>",
+    "equilibrium": "performance.py equilibrium-once <temporary result.json>",
+    "condition": "28181e72 installed and verified in sole task environment first; all commands use bounded shared heavy lock; complete output tables agree with uninstrumented references",
+    "results": [
+      "results/native-before-fit-profile.csv",
+      "results/native-before-equilibrium-profile.csv"
+    ]
+  },
+  "render": {
+    "command": "python3 tools/render-notebook.py; CSE render.sh <selected notebook.qmd or algorithms.md> --no-execute (sequential under one timeout 240 s heavy lock)",
+    "model_execution": false,
+    "exit_code": 0,
+    "log": "build/performance-129/render-final.log",
+    "log_sha256": "39fec39b710bac1a2edc0ec4fad8a9ab727f979f5393a3adfae116f8f38e2c35",
+    "outputs": {
+      "analyses/2026-fitting-state-reuse/notebook.html": "faf2b788af259ad43900d798e09efb80e841e427d09390154d434aaf60445fba",
+      "engine/docs/science/algorithms.html": "40e75f35e2a4ea46723d64de248b08f51023e8eff0aafb23860fca2848f08287"
+    },
+    "view_check": "Rendered primary CPU ratio, load limit and exact objective match retained notebook. Standalone outputs/assets moved from source neighbors into task-owned build/companion cache; retained linked records copied there for viewing.",
+    "initial_failure": "Quarto project discovery required generated map include before invoking the pre-render hook; presentation-only render-notebook.py populated its owner first.",
+    "reviewed_implementation_commit": "7b02aa8abb50e1bcc38e7f0dcb7f13ea57a504b2",
+    "notebook_source_sha256": "e6779f9a3cf64f9c1b7655d2b4b5c006564aba886646d7d216e578410035fb27",
+    "notebook_review_status_refresh": {
+      "command": "CSE render.sh analyses/2026-fitting-state-reuse/notebook.qmd --no-execute",
+      "timeout_seconds": 120,
+      "exit_code": 0,
+      "log": "build/performance-129/render-reviewed.log",
+      "log_sha256": "98edc43c424e3a9d1347097644e4bbc5440f155449f5b54f455e73fc48b2703b",
+      "change": "Record independent Supported verdict; runtime and numerical rows unchanged"
+    }
+  }
+}

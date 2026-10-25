@@ -1,0 +1,91 @@
+source_row,start_index,pressure_seed_pa,actual_pressure_seed_pa,selected,cause,seconds,solver_status,iterations,maximum_original_row
+ermatchkov-2006-t1-r01,0,100000.0,100530.0,True,"converged: residual 1.9539925233402755e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 56 iterations, contraction absent, floor 1.9275765525499839e-10, amplification 0",2.392432151,SUCCESS,56,1.9539925233402755e-14
+ermatchkov-2006-t1-r01,1,300000.0,300000.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t1-r01,2,500000.0,500000.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t1-r02,0,100000.0,101110.0,True,"converged: residual 1.5543122344752192e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 51 iterations, contraction absent, floor 1.9275413896472087e-10, amplification 0",2.136867954,SUCCESS,51,1.554312234475219e-14
+ermatchkov-2006-t1-r02,1,300000.0,300000.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t1-r02,2,500000.0,500000.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t1-r04,0,100000.0,103170.0,True,"converged: residual 2.4868995751603507e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 117 iterations, contraction absent, floor 1.9271019216199622e-10, amplification 0",4.783489879,SUCCESS,117,2.4868995751603507e-14
+ermatchkov-2006-t1-r04,1,300000.0,300000.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t1-r04,2,500000.0,500000.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t1-r05,0,100000.0,105570.0,True,"converged: residual 3.1086244689504383e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 7 iterations, contraction absent, floor 1.9265002011435497e-10, amplification 0",0.295100129,SUCCESS,7,3.108624468950438e-14
+ermatchkov-2006-t1-r05,1,300000.0,300000.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t1-r05,2,500000.0,500000.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t1-r07,0,100000.0,109330.0,True,"converged: residual 7.3274719625260332e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 6 iterations, contraction absent, floor 1.9456641076188273e-10, amplification 0",0.29121233,SUCCESS,6,7.327471962526033e-15
+ermatchkov-2006-t1-r07,1,300000.0,300000.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t1-r07,2,500000.0,500000.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t1-r08,0,100000.0,113100.0,True,"converged: residual 3.4638958368304884e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 7 iterations, contraction absent, floor 1.9450179298549001e-10, amplification 0",0.352793455,SUCCESS,7,3.4638958368304884e-14
+ermatchkov-2006-t1-r08,1,300000.0,300000.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t1-r08,2,500000.0,500000.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t1-r09,0,100000.0,119900.0,True,"converged: residual 1.865174681370263e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 10 iterations, contraction absent, floor 1.9439674213124018e-10, amplification 0",0.480910245,SUCCESS,10,1.865174681370263e-14
+ermatchkov-2006-t1-r09,1,300000.0,300000.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t1-r09,2,500000.0,500000.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t1-r10,0,100000.0,121700.0,True,"converged: residual 2.6645352591003757e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 11 iterations, contraction absent, floor 1.9231315817397067e-10, amplification 0",0.498465648,SUCCESS,11,2.6645352591003757e-14
+ermatchkov-2006-t1-r10,1,300000.0,300000.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t1-r10,2,500000.0,500000.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t1-r11,0,100000.0,133700.0,True,"converged: residual 2.6645352591003757e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 12 iterations, contraction absent, floor 1.9424706098486397e-10, amplification 0",0.59063315,SUCCESS,12,2.6645352591003757e-15
+ermatchkov-2006-t1-r11,1,300000.0,300000.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t1-r11,2,500000.0,500000.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t1-r12,0,100000.0,158400.0,True,"converged: residual 8.3488771451811772e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 135 iterations, contraction absent, floor 1.9404918160049086e-10, amplification 0",6.572526908,SUCCESS,135,8.348877145181177e-14
+ermatchkov-2006-t1-r12,1,300000.0,300000.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t1-r12,2,500000.0,500000.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t2-r01,0,100000.0,100430.0,True,"converged: residual 2.5757174171303632e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 48 iterations, contraction absent, floor 1.7782097369114117e-10, amplification 0",2.597226049,SUCCESS,48,2.5757174171303632e-14
+ermatchkov-2006-t2-r01,1,300000.0,300000.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t2-r01,2,500000.0,500000.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t2-r02,0,100000.0,102200.0,True,"converged: residual 1.2878587085651816e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 48 iterations, contraction absent, floor 1.7780362997561563e-10, amplification 0",2.305915642,SUCCESS,48,1.2878587085651816e-14
+ermatchkov-2006-t2-r02,1,300000.0,300000.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t2-r02,2,500000.0,500000.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t2-r03,0,100000.0,105530.0,True,"converged: residual 2.9753977059954195e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 50 iterations, contraction absent, floor 1.7777573657260474e-10, amplification 0",2.511595768,SUCCESS,50,2.9753977059954195e-14
+ermatchkov-2006-t2-r03,1,300000.0,300000.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t2-r03,2,500000.0,500000.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t2-r04,0,100000.0,109140.0,True,"converged: residual 2.042810365310288e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 56 iterations, contraction absent, floor 1.7775219598366055e-10, amplification 0",2.533782992,SUCCESS,56,2.042810365310288e-14
+ermatchkov-2006-t2-r04,1,300000.0,300000.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t2-r04,2,500000.0,500000.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t2-r05,0,100000.0,112300.0,True,"converged: residual 1.5543122344752192e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 53 iterations, contraction absent, floor 1.7877650405365499e-10, amplification 0",2.331033419,SUCCESS,53,1.554312234475219e-14
+ermatchkov-2006-t2-r05,1,300000.0,300000.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t2-r05,2,500000.0,500000.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t2-r06,0,100000.0,119500.0,True,"converged: residual 2.3092638912203256e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 37 iterations, contraction absent, floor 1.787352195694663e-10, amplification 0",1.518106703,SUCCESS,37,2.3092638912203256e-14
+ermatchkov-2006-t2-r06,1,300000.0,300000.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t2-r06,2,500000.0,500000.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t2-r07,0,100000.0,124100.0,True,"converged: residual 2.6201263381153694e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 35 iterations, contraction absent, floor 1.7871072410199264e-10, amplification 0",1.522711978,SUCCESS,35,2.6201263381153694e-14
+ermatchkov-2006-t2-r07,1,300000.0,300000.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t2-r07,2,500000.0,500000.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t2-r08,0,100000.0,134300.0,True,"converged: residual 1.3322676295501878e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 36 iterations, contraction absent, floor 1.7865967590091129e-10, amplification 0",1.315803779,SUCCESS,36,1.3322676295501878e-14
+ermatchkov-2006-t2-r08,1,300000.0,300000.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t2-r08,2,500000.0,500000.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t2-r09,0,100000.0,143200.0,True,"converged: residual 9.7699626167013776e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 37 iterations, contraction absent, floor 1.7755177298283216e-10, amplification 0",1.296478013,SUCCESS,37,9.769962616701378e-15
+ermatchkov-2006-t2-r09,1,300000.0,300000.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t2-r09,2,500000.0,500000.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t2-r10,0,100000.0,146100.0,True,"converged: residual 1.8207657603852567e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 39 iterations, contraction absent, floor 1.7861030666194862e-10, amplification 0",1.388022388,SUCCESS,39,1.8207657603852567e-14
+ermatchkov-2006-t2-r10,1,300000.0,300000.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t2-r10,2,500000.0,500000.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t3-r01,0,300000.0,300000.0,True,"converged: residual 1.2878587085651816e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 6 iterations, contraction absent, floor 2.7251756485099972e-09, amplification 0",0.191824166,SUCCESS,6,1.2878587085651816e-14
+ermatchkov-2006-t3-r01,1,100000.0,100910.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t3-r01,2,500000.0,500000.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t3-r02,0,300000.0,300000.0,True,"converged: residual 1.6875389974302379e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 6 iterations, contraction absent, floor 2.6730222564339479e-09, amplification 0",0.221956957,SUCCESS,6,1.687538997430238e-14
+ermatchkov-2006-t3-r02,1,100000.0,103700.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t3-r02,2,500000.0,500000.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t3-r03,0,300000.0,300000.0,True,"converged: residual 2.3980817331903381e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 6 iterations, contraction absent, floor 2.6728398086022643e-09, amplification 0",0.228726799,SUCCESS,6,2.398081733190338e-14
+ermatchkov-2006-t3-r03,1,100000.0,105870.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t3-r03,2,500000.0,500000.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t3-r04,0,300000.0,300000.0,True,"converged: residual 4.4408920985006262e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 6 iterations, contraction absent, floor 2.564120275774091e-09, amplification 0",0.214321289,SUCCESS,6,4.440892098500626e-15
+ermatchkov-2006-t3-r04,1,100000.0,110200.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t3-r04,2,500000.0,500000.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t3-r05,0,300000.0,300000.0,True,"converged: residual 1.7319479184152442e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 6 iterations, contraction absent, floor 2.5638470633503992e-09, amplification 0",0.189617957,SUCCESS,6,1.7319479184152442e-14
+ermatchkov-2006-t3-r05,1,100000.0,115700.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t3-r05,2,500000.0,500000.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t3-r06,0,300000.0,300000.0,True,"converged: residual 1.2878587085651816e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 6 iterations, contraction absent, floor 2.4567532548275882e-09, amplification 0",0.251610283,SUCCESS,6,1.2878587085651816e-14
+ermatchkov-2006-t3-r06,1,100000.0,121500.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t3-r06,2,500000.0,500000.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t3-r07,0,300000.0,300000.0,True,"converged: residual 2.2204460492503131e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 6 iterations, contraction absent, floor 2.4297282220661156e-09, amplification 0",0.237161441,SUCCESS,6,2.220446049250313e-14
+ermatchkov-2006-t3-r07,1,100000.0,128800.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t3-r07,2,500000.0,500000.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t3-r08,0,300000.0,300000.0,True,"converged: residual 1.4210854715202004e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 6 iterations, contraction absent, floor 2.4042722286717872e-09, amplification 0",0.192112145,SUCCESS,6,1.4210854715202004e-14
+ermatchkov-2006-t3-r08,1,100000.0,133300.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t3-r08,2,500000.0,500000.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t3-r09,0,300000.0,300000.0,True,"converged: residual 1.6875389974302379e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 6 iterations, contraction absent, floor 2.268080415891667e-09, amplification 0",0.189432511,SUCCESS,6,1.687538997430238e-14
+ermatchkov-2006-t3-r09,1,100000.0,146900.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t3-r09,2,500000.0,500000.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t3-r10,0,300000.0,300000.0,True,"converged: residual 1.6875389974302379e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 6 iterations, contraction absent, floor 2.2698503912094181e-09, amplification 0",0.184891011,SUCCESS,6,1.687538997430238e-14
+ermatchkov-2006-t3-r10,1,100000.0,159800.0,False,unattempted,0.0,,0,
+ermatchkov-2006-t3-r10,2,500000.0,500000.0,False,unattempted,0.0,,0,

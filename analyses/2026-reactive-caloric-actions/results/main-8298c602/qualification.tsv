@@ -1,0 +1,48 @@
+test_id	comparisons	failed	observations	max_error_over_criterion	maximum_id	ratios_unavailable	previous_comparisons	previous_max_error_over_criterion
+native.regression.addition-enthalpy	103	0	5	0.11415460811348142	addition-f3/two_phase/reaction_b/coarse	19		
+native.regression.ionic-addition	10	0	0	0.00678208720453523	addition-ionic/column/0	4		
+native.properties.residual-cv-temperature-extraction	1	0	0	0.0003608224830031759	residual-cv/temperature-extraction/A1	0	1	0.002518818487118324
+native.properties.born-parameter	24	0	0	0.0001828530557179278	born-parameter/2/0.000000/2.000000/0	0	24	0.0001828530557179278
+native.properties.reference-f8	78	0	0	0.2599375717180226	F8/5000000/310	0	78	0.19583638298983064
+native.properties.reference-f9	264	0	36	0.418777177788089	F9/partial/100000/1/10/301	0	264	0.5738089616616313
+native.properties.reference-limits	143	0	6	0.6538019624600099	F9/lower-limit/1/100/0	13	143	0.653801958487854
+native.properties.p1	47	0	6	0.5998249450467341	dilute-limit/residual_enthalpy	2	47	0.5998249450467341
+native.properties.f1	6	0	0	0.6772206365909552	temperature-ladder/delta-0.1	0	6	0.6772207283165257
+native.properties.m2	93	0	4	0.20872192862952943	hessian-symmetry/3/4-8	0	210	0.2134958876354176
+native.properties.m3	5	0	0	6.124997408740292e-05	gradient/1	0	5	6.12495953160814e-05
+native.properties.m4	176	0	0	0.0007815970093361102	nine-hessian/4-8	0	176	0.0007549516567451064
+native.properties.m5	700	0	0	0.1332994665679358	hessian/3/6-8	0	700	0.133299466708163
+native.properties.m6	2	0	0	0.0		1	2	0.0
+native.properties.m7	1	0	0	1.3117515886955852e-05	parameter-gradient	0	3	0.005551115123125783
+native.properties.c2	6	0	0	9.403081294169044e-05	c2-scaling	0	6	9.403081294169044e-05
+native.properties.m8	16	0	2	0.009543291525915265	associating-pressure	3	18	0.010727089829742908
+native.properties.p2	171	0	0	0.3629247657954693	root-residual/liquid	31	80	0.24518283429171206
+native.properties.p3	110	0	25	0.000554486204095937	p3-endpoint/nasa7/350/u	15	218	0.03249927734335264
+native.properties.p4	347	0	0	1.9720469608212439	direct/refinement/14/1	173	329	0.04554271083480498
+native.properties.m9	62	0	0	0.0		0	62	0.0
+native.properties.issue26	144	0	0	7.201554756302705e-05	issue26/action/dipolar/P/1/2	54	124	0.0
+native.properties.electrolyte-coordinates	8	0	0	0.00406377669244809	electrolyte-coordinate/1/A3	0	8	0.4375655247967624
+native.properties.e5-ladder	22	0	0	0.0		22		
+native.properties.issue26e	15	0	0	0.0		15	15	0.0
+native.properties.issue10	4	0	0	8.569691190858939e-05	issue10-hessian/1	0	4	8.569677293393833e-05
+native.properties.log-fugacity	55	0	0	0.05109842534831365	log-fugacity/dense-liquid/sum/TPP	4		
+native.properties.temperature-laws	1199	0	0	0.6971630879637555	four-site/T=300/v00/a3/P/dTdu/over-T	12		
+native.properties.joule-thomson	4	0	0	0.0012912378882254756	joule-thomson/dense/volume	0		
+native.equilibrium.reactive-caloric-F2	8	0	80	1.959323828278275e-05	F2/E-sys/Cp-integral	0		
+native.regression.reactive-caloric-F6-addition	6	0	0	0.0053797231107380284	F6/free-T-addition/sys/column-0/rung-0	0	6	0.005715184771341496
+native.equilibrium.reactive-caloric-E-sys	900	0	144	0.0003916456228984885	F1/E-sys/A2/T+P+T+epsilon/ideal-cv_G/rung-0	24	951	0.0005002617093087434
+native.equilibrium.reactive-caloric-E-fix	964	0	157	4.7640731701484095e-05	F1/E-fix/value/P_EOS	24	944	0.0017658133442781281
+native.equilibrium.reactive-caloric-I-sys	1429	0	18	0.04314963990663079	F1/I-sys/A2/P+reaction-a/ln_a-0/rung-0	30	1405	0.04027619004265906
+native.equilibrium.reactive-caloric-I-fix	1432	0	18	0.024885634886013825	F1/I-fix/A2/P+reaction-a/ln_a-0/rung-0	30	1408	0.046301983521753645
+native.equilibrium.reactive-caloric-U	780	0	141	1.183203978126076e-05	F1/U/A3/water-feed+water-feed+water-feed/mu_res_RT-1/rung-0	0	780	0.00011687730110106955
+native.equilibrium.reactive-caloric-F6-E-T-sys	870	0	1146	0.055173934382153185	F6/E-bubble-T-sys/A2/P+feed+P+feed/total-cv_G/rung-0	1	924	0.8942208513512137
+native.equilibrium.reactive-caloric-F6-E-T-fix	870	0	1123	0.01592730837342521	F6/E-bubble-T-fix/A1/epsilon+coefficient/P_EOS/rung-0	1	924	0.0022204460443199323
+native.equilibrium.reactive-caloric-F6-E-P-sys	869	0	906	0.07951272191771967	F6/E-bubble-P-sys/A1/T+feed/total-cv_G/rung-0	0	923	0.25867186778615475
+native.equilibrium.reactive-caloric-F6-E-P-fix	869	0	924	0.0014802973639755949	F6/E-bubble-P-fix/A2/water-feed+water-feed/n/rung-0	0	923	0.00379410724913494
+native.equilibrium.reactive-caloric-F6-N-T-sys	998	0	1372	0.04272483341189483	F6/N-bubble-T-sys/A1/water-feed/P_EOS/rung-0	3	1060	0.051183839352289054
+native.equilibrium.reactive-caloric-F6-N-T-fix	998	0	1412	0.09511202727254692	F6/N-bubble-T-fix/A1/water-feed/P_EOS/rung-0	3	1060	0.0038725530801597538
+native.equilibrium.reactive-caloric-F6-N-P-sys	998	0	1626	0.0026012807760522664	F6/N-bubble-P-sys/fixed-center/x-0	3	1060	0.002297434962601671
+native.equilibrium.reactive-caloric-F6-N-P-fix	998	0	1608	0.002876435207774891	F6/N-bubble-P-fix/fixed-center/x-0	3	1060	0.002265254336364519
+native.equilibrium.reactive-cp-F1	60	0	0	0.06571345721004876	F1/I-sys/apparent-Cp/reaction-a	0		
+native.equilibrium.reactive-cp-F3	6	0	0	2.4640761761941237e-06	F3/U/apparent-Cp/value/T	0		
+native.regression.reactive-cp	115	0	23	0.0014827914289911033	F7/solution/T-275/physical-3/rung-0	12		

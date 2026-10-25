@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "diagnostic_id": "may-2015-row-012-public-provider-topology-v1",
+  "authority_effect": "none",
+  "classification_scope": "diagnostic-only installed-Provider model topology evidence",
+  "migration_gate": {
+    "commit": "bd1f8782b4d46df3f00dcc72568f851f6eac8125",
+    "tree": "6b4bd2f834f5a78f7776ede2f380b00be3cdb4c9"
+  },
+  "preserved_held_campaign": {
+    "commit": "93ff18541d2fe277a27671e4e6d12b6b009a58ed",
+    "tree": "5aa2bc81941d1e807ba4e579231c4af9b7be15d7",
+    "disposition": "APPROVE_NON_ADMISSION_EVIDENCE",
+    "immutable": true
+  },
+  "source": {
+    "row_id": "may2015-ch4-c2h6-012",
+    "citation_locator": "May et al. (2015), DOI 10.1021/acs.jced.5b00610, Table 5, page 3612 (PDF page 7), isothermal row T=243.60 K and p=6885 kPa",
+    "csv_path": "analyses/reproduction/2015-may/inputs/source/may-2015-methane-ethane-vle.csv",
+    "csv_sha256": "5cd1e74925a3c6504f5106dcf911f2cae2d6e99a5133fccc20454d8991bdbc7f",
+    "metadata_sha256": "d3fbd456f0285c022c2236c3966eb5e913f711a677d09191d99d5e2629a3b2e7",
+    "temperature_K": 243.60,
+    "pressure_Pa": 6885000.0,
+    "source_liquid_x_methane": 0.6218,
+    "source_vapor_y_methane": 0.7123,
+    "feed_z_methane": 0.66705,
+    "feed_derivation": "0.5*source_liquid_x_methane + 0.5*source_vapor_y_methane"
+  },
+  "artifact": {
+    "distribution": "epcsaft",
+    "provider_implementation_commit": "0cd75b96f1dddba024c324df500493bd1564bf5c",
+    "provider_candidate_commit": "25e597289b044ff3e5af70b3572279293555b9f9",
+    "wheel_sha256": "17c6735ee117469b13b76b6a669d0b4430071c8eaebdf1e405baefc9adcb838b",
+    "parameter_bundle": "gross-2001-methane-ethane@1",
+    "parameter_fingerprint": "sha256:307fcb28d535b94782f3e3caf4012c0c8c0dc87ee4239d6c316de56553543286",
+    "equilibrium_runtime_used": false,
+    "equilibrium_context_only": ["8318e755", "db6cef27"]
+  },
+  "objective": {
+    "public_route": "EPCSAFT.evaluate at specified pressure for phase=None, vapor, and liquid",
+    "gibbs_identity": "g_bar=sum_i x_i*(ln(x_i*rho/(1 mol/m3))-1)+a_residual+P/(rho*R*T)",
+    "support_slope": "five-point central finite difference of the homogeneous public pressure-state g_bar at feed",
+    "tpd_support": "g_bar(x,root)-g_bar(z,feed)-support_slope*(x-z)",
+    "mechanical_stability": "public density_diagnostics.stable is true and pressure_density_derivative is positive",
+    "root_identity": "public branch plus density; duplicate roots merge only within relative density 1e-9",
+    "source_composition_root_selection": "all distinct mechanically stable public roots at each explicit source composition",
+    "source_chord": "for every source-x/source-y stable-root pair, 0.5*g_bar(source x root)+0.5*g_bar(source y root)-g_bar(feed homogeneous root); retain every pair and the minimum chord"
+  },
+  "numerical_contract": {
+    "composition_domain": [1e-8, 0.99999999],
+    "initial_uniform_mesh_points": 1025,
+    "verification_uniform_mesh_points": 2049,
+    "public_branches": ["single", "vapor", "liquid"],
+    "feed_point_exclusion_absolute": 1e-10,
+    "support_derivative_steps": [0.001, 0.0005, 0.00025, 0.000125],
+    "adaptive_minimizer": "golden-section refinement of every interior mesh basin on each continuous public branch",
+    "golden_section_max_iterations": 96,
+    "golden_section_composition_width": 1e-12,
+    "root_topology_boundary_method": "bisection of every accepted/failed mesh transition",
+    "root_topology_boundary_width": 1e-10,
+    "root_topology_max_iterations": 64,
+    "sign_resolution_rule": "minimum is lower support only when negative by more than the retained numerical uncertainty from derivative-step and mesh/refinement convergence",
+    "globality": "finite adaptive evidence only; no mathematical global proof"
+  },
+  "expected_decision_layers": [
+    "artifact_integrity",
+    "solver",
+    "numerical",
+    "physical",
+    "predictive_topology",
+    "globality"
+  ]
+}

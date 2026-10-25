@@ -1,0 +1,89 @@
+{
+  "case": {
+    "index": 0,
+    "T_K": 300,
+    "P_Pa": 499330.4478698393,
+    "x": [
+      1
+    ],
+    "branch": "vapor",
+    "id": "A-propane-vapor"
+  },
+  "stop": "resolved_crossings",
+  "evaluations": 16575,
+  "roots": [
+    {
+      "molar_density": 217.30215263291302,
+      "packing_fraction": 0.006211105693635042,
+      "pressure": 499330.4478698403,
+      "pressure_density_derivative": 2105.711586469372,
+      "lower": 217.30215263291188,
+      "upper": 217.30215263291302,
+      "residual": 9.89530235528946e-10,
+      "mechanical_sign": 1,
+      "linked": false,
+      "declared": true,
+      "cause": "",
+      "stop": "bracket_tolerance"
+    },
+    {
+      "molar_density": 3695.754289022937,
+      "packing_fraction": 0.10563503503623242,
+      "pressure": 499330.4478698459,
+      "pressure_density_derivative": -1449.435084164199,
+      "lower": 3695.754289022937,
+      "upper": 3695.754289022956,
+      "residual": 6.577465683221817e-09,
+      "mechanical_sign": -1,
+      "linked": false,
+      "declared": true,
+      "cause": "",
+      "stop": "bracket_tolerance"
+    },
+    {
+      "molar_density": 11060.894710885648,
+      "packing_fraction": 0.3161514291647844,
+      "pressure": 499330.44786991394,
+      "pressure_density_derivative": 12491.893109744113,
+      "lower": 11060.89471088559,
+      "upper": 11060.894710885648,
+      "residual": 7.462222129106522e-08,
+      "mechanical_sign": 1,
+      "linked": false,
+      "declared": true,
+      "cause": "",
+      "stop": "bracket_tolerance"
+    }
+  ],
+  "spinodals": [
+    {
+      "molar_density": 1788.1207270153645,
+      "packing_fraction": 0.05110951131364813,
+      "pressure": 2003040.9706923503,
+      "pressure_density_derivative": -4.9846902314718e-12,
+      "lower": 1788.1207270153554,
+      "upper": 1788.1207270153645,
+      "residual": -1.9984014443252818e-15,
+      "mechanical_sign": 0,
+      "linked": false,
+      "declared": true,
+      "cause": "",
+      "stop": "bracket_tolerance"
+    },
+    {
+      "molar_density": 8944.794402084826,
+      "packing_fraction": 0.2556673404567513,
+      "pressure": -10110983.005955096,
+      "pressure_density_derivative": 5.6770083191762164e-11,
+      "lower": 8944.79440208478,
+      "upper": 8944.794402084826,
+      "residual": 2.275957200481571e-14,
+      "mechanical_sign": 0,
+      "linked": false,
+      "declared": true,
+      "cause": "",
+      "stop": "bracket_tolerance"
+    }
+  ],
+  "unresolved": []
+}

@@ -1,0 +1,3 @@
+{'salt': 'LiCl', 'n_rows': 26, 'max_abs_gamma_decade': 0.035761661703793364, 'gamma_worst_molality': 1.8, 'max_abs_osmotic_decade': 0.028738238168440025, 'osmotic_worst_molality': 4.5, 'gamma_fail_rows': 13, 'osmotic_fail_rows': 1}
+{'salt': 'NaCl', 'n_rows': 26, 'max_abs_gamma_decade': 0.042974287020730716, 'gamma_worst_molality': 2.0, 'max_abs_osmotic_decade': 0.017029640466168786, 'osmotic_worst_molality': 1.4, 'gamma_fail_rows': 14, 'osmotic_fail_rows': 0}
+{'salt': 'KCl', 'n_rows': 26, 'max_abs_gamma_decade': 0.032625546430505435, 'gamma_worst_molality': 1.6, 'max_abs_osmotic_decade': 0.029032584256811635, 'osmotic_worst_molality': 4.5, 'gamma_fail_rows': 11, 'osmotic_fail_rows': 2}

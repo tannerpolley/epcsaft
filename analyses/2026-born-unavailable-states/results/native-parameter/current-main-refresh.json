@@ -1,0 +1,154 @@
+{
+  "merge_commit": "4d6118b04513474ee0a4033d676ef2be5a30033e",
+  "main_commit": "8f5f56855ccafbeb2b73329f7bc7ec0b62265ddc",
+  "previous_review_commit": "34d5cbf4",
+  "wheel": {
+    "wheel": "epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+    "sha256": "33ef17f578714f55c65223e6b3d8b28e09344ac65cb317dfe9007bcfffc8db94"
+  },
+  "accepted_states": 490,
+  "maximum_accepted_row_residual": 2.8421709430404007e-13,
+  "historical_comparisons": 4500,
+  "maximum_historical_comparison_error": 3.33574570376877e-13,
+  "refresh_comparisons": 144540,
+  "maximum_refresh_scaled_error": 0.0,
+  "falsifiers": {
+    "born-columns": {
+      "comparisons": 24,
+      "maximum_absolute_error": 3.552713678800501e-15,
+      "maximum_reference_scaled_error": 1.8285305571792776e-16,
+      "maximum_refresh_absolute_change": 0.0
+    },
+    "manufactured-exchange": {
+      "comparisons": 83,
+      "maximum_absolute_error": 1.1102230246251565e-14,
+      "maximum_reference_scaled_error": 1.1102230246251565e-14,
+      "maximum_refresh_absolute_change": 0.0,
+      "maximum_amount_error": 8.881784197001252e-16,
+      "maximum_x_error": 4.440892098500626e-16,
+      "maximum_tangent_error": 4.246255451592755e-17
+    }
+  },
+  "claim_limits": "Numerical verification of the declared finite paths; neither c=0 nor epsilon=2 reached. No endpoint root existence, fold, global stability, parameter uncertainty or physical validation claim.",
+  "boundaries_table": "current-main-boundaries.csv",
+  "first_actions_table": "current-main-action-errors.csv",
+  "identical_path_csv_count": 30,
+  "inputs": {
+    "manifest": "../../inputs/manifest.json",
+    "reactive_temperature_K": 313.15,
+    "reactive_pressure": "free",
+    "case1_loading": 0.1529,
+    "case2_loading": 0.6419,
+    "case1_dimensionless_parameter": "c_dielectric: 1 to 0",
+    "case2_dimensionless_parameter": "ionic_region_relative_permittivity: 8 to 2",
+    "manufactured_temperature_K": 200,
+    "manufactured_pressure_Pa": 5000000,
+    "manufactured_dispersion_energy_over_k_K": [
+      191.42,
+      201.42
+    ]
+  },
+  "gates": {
+    "check-all": {
+      "python_passed": 121,
+      "python_deselected": 1,
+      "native_programs_passed": 6,
+      "status": "passed"
+    },
+    "khudaida": {
+      "status": "passed",
+      "accepted_points": 8,
+      "formula_comparisons": 64,
+      "maximum_raw_row_residual": 5.573319583618286e-14,
+      "maximum_classified_row_residual": 9.795338724153903e-15,
+      "grand_formula_aad": 0.011054929498369245,
+      "paper_grand_formula_aad": 0.0161,
+      "retained_qualification": "build/issue-240-refresh-8f5f5685/epcsaft-khudaida-qualification.tYrSD3/qualification.json"
+    },
+    "born-columns": "passed",
+    "six-ethane": "passed",
+    "first-actions": "passed",
+    "b7-batch-11": "passed",
+    "affine": {
+      "affine-columns": {
+        "comparisons": 101,
+        "maximum_error_over_tolerance": 0.27755575615628914,
+        "status": "passed"
+      },
+      "affine-recovery": {
+        "comparisons": 10,
+        "maximum_error_over_tolerance": 0.0020954757928848267,
+        "status": "passed"
+      }
+    },
+    "declared-ordinary-solves": {
+      "case-6/figure-2-point-7": {
+        "samples": 3,
+        "iterations": 16,
+        "evaluations": 49,
+        "hessian_calls": 17,
+        "maximum_raw_row_residual": 7.549516567451064e-14,
+        "maximum_classified_row_residual": 5.095730349116157e-15,
+        "status": "passed"
+      },
+      "case-7/flash-5918.5286-Pa": {
+        "samples": 3,
+        "iterations": 43,
+        "evaluations": 57,
+        "hessian_calls": 44,
+        "maximum_raw_row_residual": 1.1368683772161603e-13,
+        "maximum_classified_row_residual": 1.1786531508163992e-14,
+        "status": "passed"
+      }
+    }
+  },
+  "retained_replay_directory": "build/issue-240-refresh-8f5f5685",
+  "replay_sha256": {
+    "coarse/case1-coordinates.csv": "cdaee0accd82c827c373f75373f03da7253396456fd4db6492e0831400c33245",
+    "coarse/case1-rows.csv": "80f5e1021dfcf5588978cdee8ada93f1504c1900bc24f12872940371ff4419a1",
+    "coarse/case1-states.csv": "5743e0734e7bd938b647a39c79ae4456423ae85519cb94a21ec41211a7b7e56e",
+    "coarse/case1-terms.csv": "72186055b2e0d19673732a59ff8dbfe81fb7eac313ea54fae829898dab4ef4e2",
+    "coarse/case1-trace.csv": "6ca3799e3ff6657ffa44d0fddb9685be2daab17a50bddb413ef1915cf957941c",
+    "coarse/case2-coordinates.csv": "49a8e7e1a054d81357a0cc57a43abf7ee55750b15dd0716bd9be2ae0d3c40fcd",
+    "coarse/case2-rows.csv": "80cbc3aaf91339a4570d79b14f3263d7d1c7b29d4761698ba00999d7c620bb2f",
+    "coarse/case2-states.csv": "cdae6a54ba84d4c6477cf04b96844e0f7d979f49f06ffa99c896c4a22465fca4",
+    "coarse/case2-terms.csv": "ed37abc5d04ad11f671bf40df9da703da3b2cc63f0ac3d6ef808c04a561b6660",
+    "coarse/case2-trace.csv": "cb5346f3bf1499c60279aca01f1f4aacb70b62b71f88ab9c6f4689eece65a284",
+    "fine/case1-coordinates.csv": "9e9cc3e5a530bc0af5a6e4b8af469d2be5dbc60e2d85fc8392a2a6a7290da467",
+    "fine/case1-rows.csv": "d192a24341d99a91a19b330bf158cbb325792b6cd0d3d8eef09c3f6761191b88",
+    "fine/case1-states.csv": "fe89216c3c679531156cd94f4034929b010df1d32713927c448a787fa7b22ffb",
+    "fine/case1-terms.csv": "1a4936132f64213fb86c72db7a51c3ae32e57950760fed8c388fd3669f999a91",
+    "fine/case1-trace.csv": "c61ae4196bbf32d06e259b8d69d09add4bcb9683f4d5ca86e18f99b2f10fafc2",
+    "fine/case2-coordinates.csv": "45cf6ada74292ddf3996f7c685eafcea04bc34d97b9ab05c86f8c65dbc9bf1ff",
+    "fine/case2-rows.csv": "9ba6edbfb7e4ad9477d375d9c5ff5cc82f6415f966e2c1d1f60308841cb53345",
+    "fine/case2-states.csv": "51f8e7ddc250398502e57c1ec746b3abce47ded4223836b05c8d5751cfa3d56b",
+    "fine/case2-terms.csv": "f1e1176e0d77a2df03125ce222ed76c6df9b1c3f634f5b85e7b3852bc0f86f5e",
+    "fine/case2-trace.csv": "52e84139f066e195c3dd56e51584ca8b635fd6f97a6e0216a56edfc35286efc9",
+    "refined/case1-coordinates.csv": "af9749c5f4dfaac3cb32850489e45c0ea6e293dba4b70112f5126399ae29a3f6",
+    "refined/case1-rows.csv": "86ba86d49595eecd5d5e56a3cd5e778aec9cffe46b9898250c5edfd6859fb11a",
+    "refined/case1-states.csv": "57df66f3a37010fe7500c3509dca45bdad677cb8b1da86981b5e8f402877cf3e",
+    "refined/case1-terms.csv": "3e1d68ba28b54ba0d679d86c01428cb3300dc7f5070fb02dc6dcc343fcf77b7f",
+    "refined/case1-trace.csv": "9cfdf6d960049a2ac089ff8356cda624c4e184216310f51c4cbe5a98b503fef9",
+    "refined/case2-coordinates.csv": "d989959d6726d1aa7b49963ffcbae7b3c61660b0e0c5967c65fac545c482232a",
+    "refined/case2-rows.csv": "a30e6cc5f8ae1e97aa55db24ff578958a73f49e327e56887368d5504b841de1d",
+    "refined/case2-states.csv": "bb28d50da28ea5439031c1560c0e6d44bbd3fd289320456393a3c087da915818",
+    "refined/case2-terms.csv": "34c16d7b4828661c8f0133d89d4ec952cf9341b8595e03f08165d3c9660d7414",
+    "refined/case2-trace.csv": "210f6813d855be329bfd29fc3cf66d8c92e672957bd669a3187ddc12d4a81f94",
+    "parameter-actions.csv": "020d59f4d3fa7f06dfda875c2c16a50fab388a72121d799dd472d2f6cf6e23f0",
+    "parameter-action-diagnostics.csv": "51076a42faadcbf4804cc4268e17e7dc1f3a6ea50d6427419c215183d2badf8b",
+    "parameter-path-comparison.csv": "ac544d8cb10d22b6c456160b34ee65855e1d82aac8c2825034841cdc9899a900"
+  },
+  "previous_replay_merge_commit": "4d7763f2dcbfc83731ee5774b73e48f46bb741fd",
+  "runtime_change_against_main": {
+    "gross_added": 96,
+    "removed": 51,
+    "net": 45,
+    "total_lines": 22481,
+    "regression_lines": 2435,
+    "all_hard_ceilings_hold": true
+  },
+  "reference_wheel_restoration": {
+    "sha256": "e28d258df06eac39711c59a79f9ce2b69fc8ac7565637bfba0dbef21863d8dc7",
+    "record_hashes_matched": 14
+  }
+}

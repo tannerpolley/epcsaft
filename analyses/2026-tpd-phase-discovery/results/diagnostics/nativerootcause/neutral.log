@@ -1,0 +1,25 @@
+
+******************************************************************************
+This program contains Ipopt, a library for large-scale nonlinear optimization.
+ Ipopt is released as open source code under the Eclipse Public License (EPL).
+         For more information visit http://projects.coin-or.org/Ipopt
+******************************************************************************
+
+Traceback (most recent call last):
+  File "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-223-build-tpd-stability-test-and-phase-35ebff8f/analyses/2026-tpd-phase-discovery/scripts/qualify.py", line 244, in <module>
+    main()
+    ~~~~^^
+  File "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-223-build-tpd-stability-test-and-phase-35ebff8f/analyses/2026-tpd-phase-discovery/scripts/qualify.py", line 233, in main
+    globals()[args.stage]()
+    ~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-223-build-tpd-stability-test-and-phase-35ebff8f/analyses/2026-tpd-phase-discovery/scripts/qualify.py", line 192, in neutral
+    run_case(case, model, problem, len(problem.phases), True if case.startswith('case-1/') else None)
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-223-build-tpd-stability-test-and-phase-35ebff8f/analyses/2026-tpd-phase-discovery/scripts/qualify.py", line 148, in run_case
+    reference_report = timed(case, 'explicit-test', lambda: eq.stability_test(compiled, reference, eq.StabilityOptions()))
+  File "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-223-build-tpd-stability-test-and-phase-35ebff8f/analyses/2026-tpd-phase-discovery/scripts/qualify.py", line 57, in timed
+    result = operation()
+  File "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-223-build-tpd-stability-test-and-phase-35ebff8f/analyses/2026-tpd-phase-discovery/scripts/qualify.py", line 148, in <lambda>
+    reference_report = timed(case, 'explicit-test', lambda: eq.stability_test(compiled, reference, eq.StabilityOptions()))
+                                                            ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+epcsaft._core.ParameterError: invalid action order

@@ -1,0 +1,388 @@
+{
+  "components": [
+    {
+      "coefficients": [
+        {
+          "family": "dispersion_energy_over_k",
+          "identity": "component/solute/dispersion_energy_over_k",
+          "provenance": {
+            "domain_id": "engine-numerical-fixture-domain",
+            "locator": "compact numerical fixture values",
+            "source_id": "engine-numerical-fixture"
+          },
+          "value": {
+            "magnitude": 204.0438,
+            "unit": "kelvin"
+          }
+        },
+        {
+          "family": "segment_count",
+          "identity": "component/solute/segment_count",
+          "provenance": {
+            "domain_id": "engine-numerical-fixture-domain",
+            "locator": "compact numerical fixture values",
+            "source_id": "engine-numerical-fixture"
+          },
+          "value": {
+            "magnitude": 4.5354,
+            "unit": "dimensionless"
+          }
+        },
+        {
+          "family": "segment_diameter",
+          "identity": "component/solute/segment_diameter",
+          "provenance": {
+            "domain_id": "engine-numerical-fixture-domain",
+            "locator": "compact numerical fixture values",
+            "source_id": "engine-numerical-fixture"
+          },
+          "value": {
+            "magnitude": 2.6019,
+            "unit": "angstrom"
+          }
+        }
+      ],
+      "component_id": "solute",
+      "fixed": {
+        "molar_mass": {
+          "provenance": {
+            "domain_id": "engine-numerical-fixture-domain",
+            "locator": "compact numerical fixture values",
+            "source_id": "engine-numerical-fixture"
+          },
+          "value": {
+            "magnitude": 0.06108,
+            "unit": "kilogram / mole"
+          }
+        }
+      }
+    },
+    {
+      "coefficients": [
+        {
+          "family": "dispersion_energy_over_k",
+          "identity": "component/solvent/dispersion_energy_over_k",
+          "provenance": {
+            "domain_id": "engine-numerical-fixture-domain",
+            "locator": "compact numerical fixture values",
+            "source_id": "engine-numerical-fixture"
+          },
+          "value": {
+            "magnitude": 141.66,
+            "unit": "kelvin"
+          }
+        },
+        {
+          "family": "segment_count",
+          "identity": "component/solvent/segment_count",
+          "provenance": {
+            "domain_id": "engine-numerical-fixture-domain",
+            "locator": "compact numerical fixture values",
+            "source_id": "engine-numerical-fixture"
+          },
+          "value": {
+            "magnitude": 2.1945,
+            "unit": "dimensionless"
+          }
+        },
+        {
+          "family": "segment_diameter",
+          "identity": "component/solvent/segment_diameter",
+          "provenance": {
+            "domain_id": "engine-numerical-fixture-domain",
+            "locator": "compact numerical fixture values",
+            "source_id": "engine-numerical-fixture"
+          },
+          "value": {
+            "magnitude": 2.229,
+            "unit": "angstrom"
+          }
+        }
+      ],
+      "component_id": "solvent",
+      "fixed": {
+        "molar_mass": {
+          "provenance": {
+            "domain_id": "engine-numerical-fixture-domain",
+            "locator": "compact numerical fixture values",
+            "source_id": "engine-numerical-fixture"
+          },
+          "value": {
+            "magnitude": 0.01801528,
+            "unit": "kilogram / mole"
+          }
+        }
+      }
+    }
+  ],
+  "correlations": [],
+  "document_id": "strongly-associating-binary-fixture",
+  "document_version": 1,
+  "domains": [
+    {
+      "domain_id": "engine-numerical-fixture-domain",
+      "kind": "unknown"
+    }
+  ],
+  "model_coefficients": [],
+  "model_families": [
+    {
+      "choice": "general-site",
+      "family_id": "model/association",
+      "kind": "association",
+      "provenance": {
+        "domain_id": "engine-numerical-fixture-domain",
+        "locator": "compact numerical fixture values",
+        "source_id": "engine-numerical-fixture"
+      }
+    },
+    {
+      "choice": "pc-saft",
+      "family_id": "model/base",
+      "kind": "base",
+      "provenance": {
+        "domain_id": "engine-numerical-fixture-domain",
+        "locator": "compact numerical fixture values",
+        "source_id": "engine-numerical-fixture"
+      }
+    },
+    {
+      "choice": "none",
+      "family_id": "model/electrolyte",
+      "kind": "electrolyte",
+      "provenance": {
+        "domain_id": "engine-numerical-fixture-domain",
+        "locator": "compact numerical fixture values",
+        "source_id": "engine-numerical-fixture"
+      }
+    },
+    {
+      "choice": "none",
+      "family_id": "model/relative_permittivity",
+      "kind": "permittivity",
+      "provenance": {
+        "domain_id": "engine-numerical-fixture-domain",
+        "locator": "compact numerical fixture values",
+        "source_id": "engine-numerical-fixture"
+      }
+    }
+  ],
+  "pairs": [
+    {
+      "coefficients": [
+        {
+          "family": "k_ij",
+          "identity": "pair/solute/solvent/k_ij",
+          "provenance": {
+            "domain_id": "engine-numerical-fixture-domain",
+            "locator": "compact numerical fixture values",
+            "source_id": "engine-numerical-fixture"
+          },
+          "value": {
+            "magnitude": -0.052,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "solute",
+      "component_id_b": "solvent"
+    }
+  ],
+  "purpose": "package-test-fixture",
+  "schema": "epcsaft.parameters",
+  "schema_version": 1,
+  "sources": [
+    {
+      "citation": "Project-authored compact numerical EOS fixture.",
+      "source_id": "engine-numerical-fixture",
+      "use_basis": "Numerical invariants and independent equation oracles."
+    }
+  ],
+  "topology": {
+    "edges": [
+      {
+        "endpoint_a": {
+          "component_id": "solute",
+          "site_id": "a"
+        },
+        "endpoint_b": {
+          "component_id": "solute",
+          "site_id": "b"
+        },
+        "energy_over_k": {
+          "identity": "association/solute/a/solute/b/energy_over_k",
+          "value": {
+            "magnitude": 2383.4744,
+            "unit": "kelvin"
+          }
+        },
+        "source": {
+          "kind": "explicit",
+          "provenance": [
+            {
+              "domain_id": "engine-numerical-fixture-domain",
+              "locator": "compact numerical fixture values",
+              "source_id": "engine-numerical-fixture"
+            }
+          ]
+        },
+        "volume": {
+          "identity": "association/solute/a/solute/b/volume",
+          "value": {
+            "magnitude": 0.118488,
+            "unit": "dimensionless"
+          }
+        }
+      },
+      {
+        "endpoint_a": {
+          "component_id": "solute",
+          "site_id": "a"
+        },
+        "endpoint_b": {
+          "component_id": "solvent",
+          "site_id": "b"
+        },
+        "energy_over_k": {
+          "identity": "association/solute/a/solvent/b/energy_over_k",
+          "value": {
+            "magnitude": 2093.8222,
+            "unit": "kelvin"
+          }
+        },
+        "source": {
+          "kind": "explicit",
+          "provenance": [
+            {
+              "domain_id": "engine-numerical-fixture-domain",
+              "locator": "compact numerical fixture values",
+              "source_id": "engine-numerical-fixture"
+            }
+          ]
+        },
+        "volume": {
+          "identity": "association/solute/a/solvent/b/volume",
+          "value": {
+            "magnitude": 0.1540467874409226,
+            "unit": "dimensionless"
+          }
+        }
+      },
+      {
+        "endpoint_a": {
+          "component_id": "solute",
+          "site_id": "b"
+        },
+        "endpoint_b": {
+          "component_id": "solvent",
+          "site_id": "a"
+        },
+        "energy_over_k": {
+          "identity": "association/solute/b/solvent/a/energy_over_k",
+          "value": {
+            "magnitude": 2093.8222,
+            "unit": "kelvin"
+          }
+        },
+        "source": {
+          "kind": "explicit",
+          "provenance": [
+            {
+              "domain_id": "engine-numerical-fixture-domain",
+              "locator": "compact numerical fixture values",
+              "source_id": "engine-numerical-fixture"
+            }
+          ]
+        },
+        "volume": {
+          "identity": "association/solute/b/solvent/a/volume",
+          "value": {
+            "magnitude": 0.1540467874409226,
+            "unit": "dimensionless"
+          }
+        }
+      },
+      {
+        "endpoint_a": {
+          "component_id": "solvent",
+          "site_id": "a"
+        },
+        "endpoint_b": {
+          "component_id": "solvent",
+          "site_id": "b"
+        },
+        "energy_over_k": {
+          "identity": "association/solvent/a/solvent/b/energy_over_k",
+          "value": {
+            "magnitude": 1804.17,
+            "unit": "kelvin"
+          }
+        },
+        "source": {
+          "kind": "explicit",
+          "provenance": [
+            {
+              "domain_id": "engine-numerical-fixture-domain",
+              "locator": "compact numerical fixture values",
+              "source_id": "engine-numerical-fixture"
+            }
+          ]
+        },
+        "volume": {
+          "identity": "association/solvent/a/solvent/b/volume",
+          "value": {
+            "magnitude": 0.2039,
+            "unit": "dimensionless"
+          }
+        }
+      }
+    ],
+    "presets": [],
+    "sites": [
+      {
+        "component_id": "solute",
+        "multiplicity": 2,
+        "provenance": {
+          "domain_id": "engine-numerical-fixture-domain",
+          "locator": "compact numerical fixture values",
+          "source_id": "engine-numerical-fixture"
+        },
+        "site_id": "a",
+        "site_role": "donor"
+      },
+      {
+        "component_id": "solute",
+        "multiplicity": 1,
+        "provenance": {
+          "domain_id": "engine-numerical-fixture-domain",
+          "locator": "compact numerical fixture values",
+          "source_id": "engine-numerical-fixture"
+        },
+        "site_id": "b",
+        "site_role": "acceptor"
+      },
+      {
+        "component_id": "solvent",
+        "multiplicity": 2,
+        "provenance": {
+          "domain_id": "engine-numerical-fixture-domain",
+          "locator": "compact numerical fixture values",
+          "source_id": "engine-numerical-fixture"
+        },
+        "site_id": "a",
+        "site_role": "donor"
+      },
+      {
+        "component_id": "solvent",
+        "multiplicity": 2,
+        "provenance": {
+          "domain_id": "engine-numerical-fixture-domain",
+          "locator": "compact numerical fixture values",
+          "source_id": "engine-numerical-fixture"
+        },
+        "site_id": "b",
+        "site_role": "acceptor"
+      }
+    ]
+  }
+}

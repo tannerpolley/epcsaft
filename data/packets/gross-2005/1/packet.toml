@@ -1,0 +1,46 @@
+schema_version = 2
+packet_id = "gross-2005"
+packet_version = "1"
+title = "Gross 2005 PCP-SAFT quadrupolar parameters"
+description = "Table A1 PCP-SAFT records (m, sigma, epsilon/k, quadrupole moment Q, n_Q = 1) for carbon dioxide and nitrogen (literature-Q sets) and benzene, for the optional quadrupole-quadrupole family of ADR 0014. They are valid only with that family; they are not nonpolar PC-SAFT parameters. The source finds its mixing rule unsuitable for real mixtures with more than one quadrupolar component."
+license_or_use_basis = "Numerical parameter values transcribed from a published table; no publisher full text is included."
+tolerance_rationale = "The source reports fitted coefficients without uncertainty and AAD-% of vapor pressure and density against IUPAC, DIPPR and VDI data that are not retained here; the packet asserts no tolerance."
+
+[[sources]]
+source_id = "gross-2005"
+citation = "Gross, J. An Equation-of-State Contribution for Polar Components: Quadrupolar Molecules. AIChE Journal 2005, 51, 2556-2568."
+doi = "10.1002/aic.10502"
+use_basis = "Table A1 and the Eq. 9 n_Q statement; inspected PDF SHA-256 cfd73fa388bec051b91e4f51e1c2e16ddf2f2140b6c037996ab33290887c5d50"
+
+[[sources]]
+source_id = "explicit-neutral-model"
+citation = "Project declaration that every Table A1 species is neutral."
+use_basis = "Structural zero charge, not a fitted coefficient."
+
+[[domains]]
+domain_id = "gross2005-triple-to-critical"
+kind = "fit-range"
+description = "Table A1 parameters were fitted to vapor pressure and liquid density from triple point to critical point; the source states no numerical range."
+
+[[domains]]
+domain_id = "gross2005-formulation"
+kind = "formulation"
+description = "Quadrupole constants fitted to 2CLJ plus point-quadrupole simulations, elongations 0 to 0.8 and 0.5 to 0.99 of the critical temperature."
+
+[[files]]
+path = "parameters/parameters.json"
+role = "parameters"
+media_type = "application/json"
+sha256 = "b443666c4e8f29e56a863be8b183819d23a0675df78aebb2553f548c0c70a5ab"
+source_refs = ["gross-2005", "explicit-neutral-model"]
+domain_refs = ["gross2005-triple-to-critical", "gross2005-formulation"]
+units_basis = "Each value carries its unit: molar mass gram / mole, segment diameter angstrom, dispersion energy kelvin, quadrupole moment debye * angstrom; segment count and quadrupole count are dimensionless."
+
+[[files]]
+path = "provenance/source-origin.toml"
+role = "provenance"
+media_type = "application/toml"
+sha256 = "dfb7865ebb441bd1eff55716210108272cbc9114983ed646671a3e8fc2820e7e"
+source_refs = ["gross-2005"]
+domain_refs = ["gross2005-triple-to-critical"]
+units_basis = "Origin locators and hashes are non-numeric provenance."

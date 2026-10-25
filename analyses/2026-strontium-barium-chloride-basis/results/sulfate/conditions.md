@@ -1,0 +1,1 @@
+Conditions: **298.15 K**, **100000 Pa**; **44 scalar observations: 23 binary states and 21 LiCl–MgSO₄ mixtures**. The complete declared grid is shown below; fitting and evaluated-binary scoring were not reached.

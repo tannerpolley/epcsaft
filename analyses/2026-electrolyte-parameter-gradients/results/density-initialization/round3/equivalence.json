@@ -1,0 +1,74 @@
+[
+  {
+    "quantity": "density column",
+    "count": 1,
+    "maximum_relative_difference": 0.0,
+    "maximum_fraction_of_allowance": 0.0,
+    "criterion": "max(1e-12, 1e-10 max(abs(seeded), abs(cold)))",
+    "passed": true
+  },
+  {
+    "quantity": "density",
+    "count": 5,
+    "maximum_relative_difference": 1.709194086896383e-15,
+    "maximum_fraction_of_allowance": 1.709194086896383e-05,
+    "criterion": "max(1e-12, 1e-10 max(abs(seeded), abs(cold)))",
+    "passed": true
+  },
+  {
+    "quantity": "slope",
+    "count": 5,
+    "maximum_relative_difference": 1.2645302697712275e-14,
+    "maximum_fraction_of_allowance": 0.00012645302697712277,
+    "criterion": "max(1e-12, 1e-10 max(abs(seeded), abs(cold)))",
+    "passed": true
+  },
+  {
+    "quantity": "slope derivative",
+    "count": 5,
+    "maximum_relative_difference": 7.023974456736482e-10,
+    "maximum_fraction_of_allowance": 0.0007023974456736483,
+    "criterion": "1e-6 max(1, abs(reference))",
+    "passed": true
+  },
+  {
+    "quantity": "sites",
+    "count": 8,
+    "maximum_relative_difference": 6.338935173411087e-15,
+    "maximum_fraction_of_allowance": 6.338935173411087e-05,
+    "criterion": "max(1e-12, 1e-10 max(abs(seeded), abs(cold)))",
+    "passed": true
+  },
+  {
+    "quantity": "columns and observables",
+    "count": 28,
+    "maximum_relative_difference": 5.187483757216324e-13,
+    "maximum_fraction_of_allowance": 0.005187483757213634,
+    "criterion": "max(1e-12, 1e-10 max(abs(seeded), abs(cold)))",
+    "passed": true
+  },
+  {
+    "quantity": "same-point replay chart identity",
+    "count": 39,
+    "maximum_relative_difference": 0.0,
+    "maximum_fraction_of_allowance": 0.0,
+    "criterion": "max(1e-12, 1e-10 abs(cold))",
+    "passed": true
+  },
+  {
+    "quantity": "observables",
+    "count": 204,
+    "maximum_relative_difference": 1.0761669237992212e-10,
+    "maximum_fraction_of_allowance": 0.011049432916632185,
+    "criterion": "max(1e-12 or osmotic floor, 1e-10 abs(cold))",
+    "passed": true
+  },
+  {
+    "quantity": "physical columns",
+    "count": 2496,
+    "maximum_relative_difference": 1.3700032861635458e-12,
+    "maximum_fraction_of_allowance": 0.013700032861635458,
+    "criterion": "max(1e-12, 1e-10 abs(cold))",
+    "passed": true
+  }
+]

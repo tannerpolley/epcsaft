@@ -1,0 +1,22 @@
+{
+  "engine": [
+    "4066ca21d57bc4e038c2cc076a0cb806593eb9f7",
+    true
+  ],
+  "sha256": {
+    "analyses/reproduction/2026-rezaee/inputs/lithium-declarations.json": "e5fdc11f74f0489a85498253917012394a7a535873208929e06472a78db99d4a",
+    "analyses/reproduction/2026-rezaee/inputs/source/rezaee-2026-si-density-tables.csv": "2da4561b3dd4928ec24b17a228dda82563467a14cda40dcc3cc3d9b41da73da0",
+    "analyses/reproduction/2026-rezaee/inputs/source/rezaee-2026-reaction-constants.csv": "553716c6f86098dbc5159b87235247cadebd60c8834d1ee054a4787305c82757",
+    "analyses/reproduction/2026-rezaee/inputs/source/rezaee-2026-organic-pcsaft-parameters.csv": "332ad43261a58c6e2453f8a7432edd16e830b388b75bd2df39f9fc9095586b42",
+    "analyses/reproduction/2026-rezaee/inputs/source/rezaee-2026-organic-binary-interactions.csv": "b93b0465e2c35d31536e285cf20453db57eab14d3542a7b8e204b406b319f9a5",
+    "analyses/reproduction/2026-rezaee/inputs/source/rezaee-2026-epcsaft-species-dataset.json": "e9afd1241ebae7c2db961435b00a2ca203293f12a1b845a7c8a52f8931c4381a",
+    "analyses/reproduction/2026-rezaee/inputs/source/reference-limits.md": "7b37b451beb22d5f910ccda288223199472c8c21bed82f4498490853f07f1859",
+    "analyses/reproduction/2026-rezaee/inputs/source/combined-source-manifest.csv": "4926ed5dd6077f5c84433ad5f1513523b694b2933e82f7c2f43ebbbf2e1398b5",
+    "analyses/reproduction/2026-rezaee/inputs/source/combined-source-packet.md": "e6dd770ae41670ccf245e98329af6f428723ab3fe912847c912b48e9596ad3dd",
+    "analyses/reproduction/2026-rezaee/scripts/density.cpp": "ddae61ce1dbd4c6488356adca24c697cab3284530cacb7d00d46cf97096e4661",
+    "analyses/reproduction/2026-rezaee/scripts/reproduce.py": "81fe7877b42bd2463de8bcd2ebd1d11ea79a03d039eeb457e8353d71c8fa108b",
+    "analyses/reproduction/2026-rezaee/scripts/reproduce.sh": "8de8c6138798787166ed9ddb36c575cd33c61d65ac1e2a94282d4afd68245d10",
+    "build/engine-meson/shared/libepcsaft_native.so": "1d4ca41cee07553436e5411f9824345ac3723d90335b7346362a2fb47be3455c",
+    "build/issue-789/2026-rezaee/density.so": "a022bf6efebecb24fc15c0ef59ffefbc4a67806de3e5e007f35f9c4f4040ab89"
+  }
+}

@@ -1,0 +1,7 @@
+reaction_id,A,B,C,D,temperature_range_K,form,source_locator,zotero_parent_key,pdf_attachment_key,verification
+R1,132.899,-13445.9,-22.4773,0,273-498,ln(kx)=A+B/T+C ln(T)+D T,Table 1; PDF p.2; printed p.7621; R1 row,CBRPAXQG,3G4FGGY4,PDF image checked against text layer and Markdown; values retained as printed
+R2,231.456,-12092.1,-36.7816,0,273-498,ln(kx)=A+B/T+C ln(T)+D T,Table 1; PDF p.2; printed p.7621; R2 row,CBRPAXQG,3G4FGGY4,PDF image checked against text layer and Markdown; values retained as printed
+R3,216.049,-12431.7,-35.4819,0,273-498,ln(kx)=A+B/T+C ln(T)+D T,Table 1; PDF p.2; printed p.7621; R3 row,CBRPAXQG,3G4FGGY4,PDF image checked against text layer and Markdown; values retained as printed
+R4,214.582,-12995.4,-33.5471,0,273-423,ln(kx)=A+B/T+C ln(T)+D T,Table 1; PDF p.2; printed p.7621; R4 row,CBRPAXQG,3G4FGGY4,PDF image checked against text layer and Markdown; values retained as printed
+R5,-32.0,-3338.0,0,0,287-343,ln(kx)=A+B/T+C ln(T)+D T,Table 1; PDF p.2; printed p.7621; R5 row,CBRPAXQG,3G4FGGY4,PDF image checked against text layer and Markdown; values retained as printed
+R6,-9.4165,-4234.98,0,0,298-333,ln(kx)=A+B/T+C ln(T)+D T,Table 1; PDF p.2; printed p.7621; R6 row,CBRPAXQG,3G4FGGY4,PDF image checked against text layer and Markdown; values retained as printed

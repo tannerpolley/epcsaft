@@ -1,0 +1,65 @@
+{
+  "identity": {
+    "wheel": "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-223-build-tpd-stability-test-and-phase-35ebff8f/build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+    "wheel_sha256": "76b13fd361ec044590c5793b43e4c53796bb6f972fd1632f11055a813e51dfbb",
+    "executed_script_sha256": "775fdcc21eb93c38c2b3f7cc5ac317c88f88b0e799cb415cd46c8aecadd0d0f1",
+    "si_units_version": "0.11.5"
+  },
+  "feos_version": "0.10.1",
+  "feos_import": "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-223-build-tpd-stability-test-and-phase-35ebff8f/.venv/lib/python3.13/site-packages/feos/__init__.py",
+  "sources": {
+    "parameters": {
+      "url": "https://raw.githubusercontent.com/feos-org/feos/f1fd55d8/crates/feos/tests/pcsaft/test_parameters.json",
+      "sha256": "bd09af1cb49e4b525f4c589d66b10579ac13600634b889f551de9d533f843580"
+    },
+    "stability_source": {
+      "url": "https://raw.githubusercontent.com/feos-org/feos/v0.10.1/crates/feos-core/src/phase_equilibria/stability_analysis.rs",
+      "sha256": "dc32cb8a9514772b6d84eac264f5a836812beff434ff46d4ed93c4f1bdf2c506"
+    },
+    "version": "0.10.1",
+    "comparison": {
+      "T_K": 300.0,
+      "P_Pa": 100000.0,
+      "feed_mol": [
+        0.5,
+        0.5
+      ],
+      "components": [
+        "water_np",
+        "hexane"
+      ],
+      "k_ij": 0.0,
+      "refinements": [
+        {
+          "tol": 1e-10,
+          "max_iter": 1000
+        },
+        {
+          "tol": 1e-12,
+          "max_iter": 1000
+        }
+      ],
+      "composition_change_max_abs": 1e-08,
+      "density_change_max_relative": 1e-07,
+      "composition_comparison_max_abs": 1e-07,
+      "density_comparison_max_relative": 1e-06
+    }
+  },
+  "failure": null,
+  "costs": {
+    "csv": "feos-costs.csv",
+    "sha256": "d431b844212d60b6fd64ce8c660eb528f63eb48e8a080a706ff6e82f8fa298da",
+    "samples": 9,
+    "first_report_work": "sample 0 native work references the identical reported CSV operands",
+    "count_aliases": "iterations/evaluations/Hessian counts alias native work where that map is present"
+  },
+  "limits": [
+    "independent implementation comparison, not physical validation",
+    "FeOs negative-TPD stopping relaxation is retained in achieved residuals",
+    "native FeOs iteration output belongs in the retained run log"
+  ],
+  "retention": {
+    "original_json_sha256": "f51583dc72cbd21e894041b1c4a0b006a736df67b24d03d098a776838c540fc2",
+    "transformation": "timing/work samples moved to CSV without recalculation; medians are derived by present.py"
+  }
+}

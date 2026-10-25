@@ -1,0 +1,9 @@
+{
+  "elec_model": {
+    "differential_mode": "autodiff",
+    "relative_permittivity_rule": "constant",
+    "born_model": {
+      "enabled": false
+    }
+  }
+}

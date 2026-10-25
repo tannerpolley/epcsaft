@@ -1,0 +1,53 @@
+{
+  "limits": {
+    "RMS": 0.01,
+    "maximum_absolute_error": 0.03
+  },
+  "nominal_prediction_max_difference": 0.0,
+  "buckets": [
+    {
+      "source": "Robinson-Covington",
+      "realization": "nominal",
+      "bucket": "I<=3",
+      "rows": 18,
+      "bias": 0.008291128973119887,
+      "RMS": 0.011467608785707368,
+      "maximum_absolute_error": 0.020070364266443597,
+      "passed": false,
+      "mixing_RMS": null,
+      "mixing_maximum": null,
+      "mixing_passed": null,
+      "scored": true,
+      "realizations": 381,
+      "passing_realizations": 0,
+      "all_passed": false,
+      "worst_RMS": 0.01149951186785209,
+      "worst_maximum": 0.02012036426644359,
+      "mixing_all_passed": null,
+      "worst_mixing_RMS": null,
+      "worst_mixing_maximum": null
+    },
+    {
+      "source": "Robinson-Covington",
+      "realization": "nominal",
+      "bucket": "I>3",
+      "rows": 39,
+      "bias": -0.011467832311826002,
+      "RMS": 0.015019424121275991,
+      "maximum_absolute_error": 0.03165055138567574,
+      "passed": false,
+      "mixing_RMS": null,
+      "mixing_maximum": null,
+      "mixing_passed": null,
+      "scored": true,
+      "realizations": 381,
+      "passing_realizations": 0,
+      "all_passed": false,
+      "worst_RMS": 0.015049774243959705,
+      "worst_maximum": 0.031700551385675846,
+      "mixing_all_passed": null,
+      "worst_mixing_RMS": null,
+      "worst_mixing_maximum": null
+    }
+  ]
+}

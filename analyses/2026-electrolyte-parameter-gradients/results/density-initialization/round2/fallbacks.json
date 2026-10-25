@@ -1,0 +1,132 @@
+[
+  {
+    "schema_version": 1,
+    "comparison_id": "density-seed/missing-witness",
+    "quantity": "verdict",
+    "unit": "bool",
+    "model": 1,
+    "reference": 1,
+    "inputs": {
+      "offered_density": 17541.251290836924,
+      "cold_cause": "",
+      "anchor_cause": "ineligible"
+    },
+    "basis": "Relationship",
+    "method": "regression",
+    "claim": "ineligible offers stay cold; one failed anchor retains its cause through cold recovery or refusal",
+    "judgment": "Criterion satisfied",
+    "evidence_state": "Complete",
+    "criterion": "absolute",
+    "rule": "absolute",
+    "atol": 0,
+    "rtol": 0,
+    "verdict": true,
+    "comparison_group_id": "issue-245",
+    "point_id": "density-seed/missing-witness"
+  },
+  {
+    "schema_version": 1,
+    "comparison_id": "density-seed/wrong-side",
+    "quantity": "verdict",
+    "unit": "bool",
+    "model": 1,
+    "reference": 1,
+    "inputs": {
+      "offered_density": 17541.251290836924,
+      "cold_cause": "",
+      "anchor_cause": "ineligible"
+    },
+    "basis": "Relationship",
+    "method": "regression",
+    "claim": "ineligible offers stay cold; one failed anchor retains its cause through cold recovery or refusal",
+    "judgment": "Criterion satisfied",
+    "evidence_state": "Complete",
+    "criterion": "absolute",
+    "rule": "absolute",
+    "atol": 0,
+    "rtol": 0,
+    "verdict": true,
+    "comparison_group_id": "issue-245",
+    "point_id": "density-seed/wrong-side"
+  },
+  {
+    "schema_version": 1,
+    "comparison_id": "density-seed/irregular",
+    "quantity": "verdict",
+    "unit": "bool",
+    "model": 1,
+    "reference": 1,
+    "inputs": {
+      "offered_density": 17541.251290836924,
+      "cold_cause": "",
+      "anchor_cause": "ineligible"
+    },
+    "basis": "Relationship",
+    "method": "regression",
+    "claim": "ineligible offers stay cold; one failed anchor retains its cause through cold recovery or refusal",
+    "judgment": "Criterion satisfied",
+    "evidence_state": "Complete",
+    "criterion": "absolute",
+    "rule": "absolute",
+    "atol": 0,
+    "rtol": 0,
+    "verdict": true,
+    "comparison_group_id": "issue-245",
+    "point_id": "density-seed/irregular"
+  },
+  {
+    "schema_version": 1,
+    "comparison_id": "density-seed/outside-window",
+    "quantity": "verdict",
+    "unit": "bool",
+    "model": 1,
+    "reference": 1,
+    "inputs": {
+      "offered_density": 17892.076316653664,
+      "cold_cause": "",
+      "anchor_cause": [
+        "left_domain: residual 0.29079355672788315 against DENSITY_ROOT_RESIDUAL 9.9999999999999998e-13 after 1 iterations",
+        " contraction absent",
+        " floor 0",
+        " amplification 1133.4073493016037"
+      ]
+    },
+    "basis": "Relationship",
+    "method": "regression",
+    "claim": "ineligible offers stay cold; one failed anchor retains its cause through cold recovery or refusal",
+    "judgment": "Criterion satisfied",
+    "evidence_state": "Complete",
+    "criterion": "absolute",
+    "rule": "absolute",
+    "atol": 0,
+    "rtol": 0,
+    "verdict": true,
+    "comparison_group_id": "issue-245",
+    "point_id": "density-seed/outside-window"
+  },
+  {
+    "schema_version": 1,
+    "comparison_id": "density-seed/empty-domain",
+    "quantity": "verdict",
+    "unit": "bool",
+    "model": 1,
+    "reference": 1,
+    "inputs": {
+      "offered_density": 17541.251290836924,
+      "cold_cause": "density domain is empty",
+      "anchor_cause": "density domain is empty"
+    },
+    "basis": "Relationship",
+    "method": "regression",
+    "claim": "ineligible offers stay cold; one failed anchor retains its cause through cold recovery or refusal",
+    "judgment": "Criterion satisfied",
+    "evidence_state": "Complete",
+    "criterion": "absolute",
+    "rule": "absolute",
+    "atol": 0,
+    "rtol": 0,
+    "verdict": true,
+    "comparison_group_id": "issue-245",
+    "point_id": "density-seed/empty-domain"
+  }
+]

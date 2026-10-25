@@ -1,0 +1,25 @@
+Traceback (most recent call last):
+  File "/home/tnnrpolley21/.codex/worktrees/9dd4/ePC-SAFT-greenfield/analyses/2026-idaes-asl-adapter/scripts/run.py", line 2431, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "/home/tnnrpolley21/.codex/worktrees/9dd4/ePC-SAFT-greenfield/analyses/2026-idaes-asl-adapter/scripts/run.py", line 2421, in main
+    return run_campaign(args, attempt)
+  File "/home/tnnrpolley21/.codex/worktrees/9dd4/ePC-SAFT-greenfield/analyses/2026-idaes-asl-adapter/scripts/run.py", line 2168, in run_campaign
+    initial, numerical_elapsed = run_numerical_stage(
+                                 ~~~~~~~~~~~~~~~~~~~^
+        "initial", args.output_dir, ipopt, None, 120.0, total_deadline,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/tnnrpolley21/.codex/worktrees/9dd4/ePC-SAFT-greenfield/analyses/2026-idaes-asl-adapter/scripts/run.py", line 2101, in run_numerical_stage
+    collected = collect_child_output(
+        process, remaining, watch=observe_progress,
+        phase_deadline=lambda: phase_deadline,
+    )
+  File "/home/tnnrpolley21/.codex/worktrees/9dd4/ePC-SAFT-greenfield/analyses/2026-idaes-asl-adapter/scripts/run.py", line 1359, in collect_child_output
+    events = selector.select(min(remaining, 0.25))
+  File "/home/tnnrpolley21/.local/share/uv/python/cpython-3.13.14-linux-x86_64-gnu/lib/python3.13/selectors.py", line 452, in select
+    fd_event_list = self._selector.poll(timeout, max_ev)
+  File "/home/tnnrpolley21/.codex/worktrees/9dd4/ePC-SAFT-greenfield/analyses/2026-idaes-asl-adapter/scripts/run.py", line 1318, in interrupt_campaign
+    raise KeyboardInterrupt(f"campaign interrupted by {signal.Signals(signum).name}")
+KeyboardInterrupt: campaign interrupted by SIGTERM

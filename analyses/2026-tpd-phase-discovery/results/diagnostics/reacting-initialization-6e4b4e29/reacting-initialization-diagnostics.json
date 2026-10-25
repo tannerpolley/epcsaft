@@ -1,0 +1,29 @@
+{
+  "operands_csv": "reacting.csv",
+  "operands_sha256": "b4813dd9a13abcd4d8675a8d5116af9af94a420ebde0c210babb6be0c9291708",
+  "top_level_message": "discovery has no accepted initial candidate",
+  "string_diagnostics": {
+    "reacting/fixed-TP/discover/solver_status": "",
+    "reacting/fixed-TP/discover/declaration-0/solver_status": "INVALID_NUMBER_DETECTED",
+    "reacting/fixed-TP/discover/declaration-0/convergence/stop": "Stop.stalled"
+  },
+  "native_initial_message": {
+    "value": null,
+    "reason": "state() did not retain EquilibriumResult.message; the process ended before this field was read. Recovering it needs a separately authorized Engine diagnostic."
+  },
+  "numerical_fields": {
+    "work_csv_case": "reacting/fixed-TP/discover/work",
+    "initial_result_csv_case": "reacting/fixed-TP/discover/declaration-0",
+    "convergence_csv_case": "reacting/fixed-TP/discover/declaration-0/convergence",
+    "timing_csv": "reacting-costs.csv"
+  },
+  "raw_attempt": {
+    "value": null,
+    "reason": "No coordinate rows were emitted by discovery_rows; empty outer and empty inner attempt vectors were not distinguished by the original recorder."
+  },
+  "limits": [
+    "No new Engine call, probe or qualifier replay performed",
+    "No native message or unavailable optimizer point inferred from solver status",
+    "Frozen g/K remain owned by diagnostics/reacting-reaction-mapping/reacting.csv; no scientific inputs, starts or tolerances changed"
+  ]
+}

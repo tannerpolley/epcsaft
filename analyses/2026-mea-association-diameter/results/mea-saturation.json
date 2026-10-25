@@ -1,0 +1,91 @@
+{
+ "baygi_table_2_reported": {
+  "p_sat_aad_percent": 0.62,
+  "rho_liq_aad_percent": 0.12
+ },
+ "vs_correlations_baygi_range_303_443_k": {
+  "d3": {
+   "p_sat_aad_percent": 0.6134643620413877,
+   "p_sat_signed_range_percent": [
+    -0.9659507258923172,
+    1.0895621174465742
+   ],
+   "rho_liq_aad_percent": 0.109057599107829
+  },
+  "sigma3": {
+   "p_sat_aad_percent": 3.4508702536034788,
+   "p_sat_signed_range_percent": [
+    -4.152135080476704,
+    -1.2331716832048145
+   ],
+   "rho_liq_aad_percent": 0.12617652984391595
+  },
+  "converted": {
+   "p_sat_aad_percent": 1.105783303134505,
+   "p_sat_signed_range_percent": [
+    -1.5460058965878098,
+    1.7771068697009174
+   ],
+   "rho_liq_aad_percent": 0.11682076889124669
+  }
+ },
+ "vs_correlations_packet_domain_293_393_k": {
+  "d3": {
+   "p_sat_aad_percent": 0.7851185625823178,
+   "p_sat_signed_range_percent": [
+    -0.9659507258923172,
+    1.872360896100722
+   ],
+   "rho_liq_aad_percent": 0.06077667953176361
+  },
+  "sigma3": {
+   "p_sat_aad_percent": 3.0925882192570944,
+   "p_sat_signed_range_percent": [
+    -4.152135080476704,
+    -0.1469227238378057
+   ],
+   "rho_liq_aad_percent": 0.05743346802240111
+  },
+  "converted": {
+   "p_sat_aad_percent": 1.2230925323451909,
+   "p_sat_signed_range_percent": [
+    -1.5460058965878098,
+    2.9268297783314967
+   ],
+   "rho_liq_aad_percent": 0.061464694539966246
+  }
+ },
+ "vs_d3_model_packet_domain_293_393_k": {
+  "sigma3": {
+   "p_sat_aad_percent": 2.7950104564717315,
+   "p_sat_signed_range_percent": [
+    -3.526919848437582,
+    -1.982170239480363
+   ],
+   "rho_liq_aad_percent": 0.01423429653088636
+  },
+  "converted": {
+   "p_sat_aad_percent": 0.5251564862626679,
+   "p_sat_signed_range_percent": [
+    -0.9512582214225906,
+    1.0350882937779415
+   ],
+   "rho_liq_aad_percent": 0.002535959087468509
+  }
+ },
+ "conversion": {
+  "optimum": 0.03628703079972324,
+  "packet_v5": 0.036287,
+  "ratio_to_baygi": 0.9684280757939684,
+  "d_over_sigma_cubed_packet_domain": [
+   0.9790413120281911,
+   0.9571986915563548
+  ]
+ },
+ "identity": {
+  "wheel_sha256": "b55665901b881836f90af010c22bd16a51a687a4e83242ab6d7d5d10118e582a",
+  "packet_v4": "7f87d3a81be71aae05be80c94eaf7af36554f96d07c8beb17d64da13e83f4c25",
+  "packet_v5": "1ba95275f9e23264250e891aee3d6284d801f73205dad255101e6561b29aee5f"
+ },
+ "claim_limits": "Pure MEA, Baygi Table 2 2B set, 5 K grid 293.15-443.15 K against Baygi's Table 1 correlations (Avlund 2008 DIPPR), not raw measurements; Baygi's own point set is unstated. The conversion is a one-coordinate fit to the d^3 model with m, sigma, epsilon fixed."
+}

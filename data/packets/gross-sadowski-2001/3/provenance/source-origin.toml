@@ -1,0 +1,15 @@
+provenance_kind = "derived-record-provenance-v1"
+schema_version = 1
+transformations = ["Make the already selected neutral species explicit with fixed zero charge in elementary-charge units; preserve all predecessor coefficients, units, sites, correlations, source locators and domains. Increment document version and append the project declaration source."]
+
+[[records]]
+retained_path = "parameters/parameters.json"
+sha256 = "786c7d57b3e843c63bf12310e9982ac770e33e7195e6a7a95f981b35b4f2b4de"
+
+[[sources]]
+source_id = "predecessor-neutral-parameters"
+role = "Immutable accepted neutral model and complete parameter document"
+packet_id = "gross-sadowski-2001"
+packet_version = "2"
+packet_member = "parameters/parameters.json"
+sha256 = "21933a45b9ce7c4178d9061cf2e5e79ccd7886631c6f56e1ce408b67b7125db8"

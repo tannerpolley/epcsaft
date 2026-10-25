@@ -1,0 +1,16 @@
+schema_version = 1
+campaign_id = "2026-pure-saturation-regression"
+copy_mode = "byte-for-byte"
+transformation = "Selected rows retain the reported SI pressure and mass-density values."
+
+[[inputs]]
+component_id = "propane"
+path = "propane-baseline.csv"
+role = "Glos 2004 Table 2 calibration rows"
+sha256 = "b81e7bcd9bc298464b738b5fb7cd3d1ad11e10896813348eb8f32c07807f7dc5"
+citation = "Glos, Kleinrahm, and Wagner (2004), DOI 10.1016/j.jct.2004.07.017, Table 2."
+
+[[parameter_documents]]
+components = ["propane"]
+path = "../data/gross-2001-propane/3/parameters/parameters.json"
+sha256 = "6dc4d60f10ef4364c01cbccf9821447ff9c4c815cc8e94284b853d1cdee71ccb"

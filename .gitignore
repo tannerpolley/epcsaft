@@ -1,0 +1,37 @@
+/.venv
+/build/
+/.pytest_cache/
+/.mypy_cache/
+/.ruff_cache/
+/**/__pycache__/
+*.py[cod]
+
+# Serena code-navigation state, per checkout
+.serena/*
+!.serena/.gitignore
+!.serena/project.yml
+/compile_commands.json
+
+# Independent application clones/worktrees; only their setup guide is tracked
+/downstream/*
+!/downstream/README.md
+
+/.quarto/
+**/*.quarto_ipynb
+
+# Engine paper build products (the PDF is rebuilt from docs/scientific/latex/main.tex)
+/docs/scientific/latex/builds/
+
+# Notebook renders are derived from retained results; render into build/ (#341).
+analyses/**/*.html
+
+# Retained #510 notebook tables; restored raw campaign directories stay local.
+!analyses/2026-errors-in-variables/figures/mea-summary.html
+!analyses/2026-errors-in-variables/figures/mea-decision.html
+!analyses/2026-errors-in-variables/figures/mea-numerical-components.html
+!analyses/2026-errors-in-variables/figures/ionic-summary.html
+!analyses/2026-errors-in-variables/figures/ionic-decision.html
+!analyses/2026-errors-in-variables/figures/ionic-numerical-components.html
+analyses/2026-errors-in-variables/results/attempt-1/
+analyses/2026-errors-in-variables/results/mea/*/
+analyses/2026-errors-in-variables/results/ionic/*/

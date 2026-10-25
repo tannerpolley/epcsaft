@@ -1,0 +1,31 @@
+{
+  "wall_seconds": 0.07404357600171352,
+  "processes": 32,
+  "engine_provenance": [
+    "51ce7b9368203ea3a05604c5139ec0f449c1e900",
+    true
+  ],
+  "source_parent": "KXZN4KLQ",
+  "source_pdf_attachment": "ZAETGZK9",
+  "pdf_sha256": "373b1c6224407933ee8e123bdd78b186b8bf49cabe1f17dffc9bd631d660bc72",
+  "source_doi": "10.1021/ie0003887",
+  "git_base": "51ce7b9368203ea3a05604c5139ec0f449c1e900",
+  "total_rows": 200,
+  "successful_rows": 200,
+  "input_hashes": {
+    "inputs/tolerances.json": "232bd275e131ee60f58069282fcd9f50142b11c2ff2ca7f2aea768fb30165a42",
+    "inputs/phase-starts.json": "d4f8c2ddb27a5d9bbbbc448f7c46e7aca4ca4e5288e1725902ad195d5a4f7f3e",
+    "inputs/digitized/pixels.csv": "630847eff98db743a7b3abf07b5b44784100273ecd9c4745f829db3e6369bfb9",
+    "inputs/digitized/model-point-review.csv": "92efb679d2da8ab34d1176b21e655eafdca7296ea8a0d3c7ff02a9720ceeda3a",
+    "inputs/digitized/ternary-values.csv": "c2c8b528ce18d9b1c948a4d1480281a00296e04047f283982683f482be852bad",
+    "inputs/digitized/figure-values.csv": "7ae130f6e9947e5de911bba2dbcb43c1ab623e654cd602e8be2e6252fed0863d",
+    "inputs/digitized/calibration.json": "3e79bf71edf119131b0bc28dc704d65798d63d9f1bb97a04cb23170337686527",
+    "inputs/digitized/ternary-pixels.json": "86b39edb5d3c28e23feec40f4ba3c63197fe61ff68b4f37c9bde80cb9afdaeb0",
+    "inputs/source/figures-manifest.csv": "ccbd30b96cf5a7ccdedfb752f39e8290d2c7e17db266e71bedeaa77d44445823",
+    "inputs/source/source-manifest.csv": "585b32243392b8bf2b93032a3a425015be21678b234838818c009b303902dbe5",
+    "inputs/source/caloric-input-search.json": "15ad57691460662d1da1330281e8a078a6687b19546a33c9cb7f0ac94163129f",
+    "inputs/parameters/pure/any-solvent.csv": "6dc04cdf8b07cfbbca1c961ffd10e34fc9e1109d4930f8d75c6fa2c0582f847d",
+    "inputs/parameters/mixed/binary-interaction/source-manifest.csv": "640e5f947feaa71673e16a70290754e98201f72c4a1feb6bebcb5793129381b2",
+    "inputs/parameters/mixed/binary-interaction/k-ij.csv": "975b9a70db189056232acf7173aaa6d405fdc7b1b76988392c1aa7866dd7f3c4"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "question": "Does the analytic feed sensitivity of a boundary cell with a pinned phase amount agree with a centred difference after the Stage 5 repair (finding 1, the pinned-amount term)?",
+  "tree": "stage-05-repair 4dde17e, wheel installed from the coordinator's acceptance rebuild",
+  "packet": "gross-2001-methane-ethane/2",
+  "case": "methane-ethane, feed 0.5/0.5 mol, T = 180 K, V pinned at 0.2 of the feed, P free, lever: ethane feed amount",
+  "P_pa": 1278490.7311278468,
+  "analytic_dP_dn_ethane_pa_per_mol": -1748683.3776937025,
+  "central_difference_pa_per_mol": -1748683.3944451064,
+  "central_step_mol": 1.0e-4,
+  "relative_difference": 9.58e-09,
+  "before_repair_audit_value_pa_per_mol": -1361623,
+  "note": "The audit of 2026-09-03 measured -1,361,623 analytic against -1,748,683 central on the merged Stage 5 tree, 22 % apart; the repaired assembly agrees with the same central difference to 1e-8."
+}

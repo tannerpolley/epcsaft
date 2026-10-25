@@ -1,0 +1,56 @@
+{
+  "sources": {
+    "/tmp/charged_trial_probe.out": "42d773826e46e8768e6a96cd2bbb3e711b5122f686e73d472a3f9dfe9fed732d",
+    "/tmp/charged_trial_raw.out": "39fa1d044ffb5bc5e2dcf57fe217d15fa677392e5b5ea64315f2993a5139667d",
+    "/tmp/charged_trial_probe.cpp": "a60ecb934a2097365e337bdd52194f8a2f13c4edd5fef09d3dc6886bbd4b1d37"
+  },
+  "retained_source": "scripts/charged_trial_probe.cpp",
+  "messages": {
+    "charged/artificial-zero-plane": "stalled: residual 1.1934441300139901e-06 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 28 iterations, contraction absent, floor 1.5045136747207948e-22, amplification 0",
+    "charged/declared-liquid": "converged: residual 4.37927472063393e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 6 iterations, contraction absent, floor 7.6167636352239237e-11, amplification 0",
+    "charged/actual-candidate-plane": "converged: residual 2.7541801466832774e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 7 iterations, contraction absent, floor 7.6167636352239185e-11, amplification 0"
+  },
+  "unavailable_fields": [
+    {
+      "case": "charged/artificial-zero-plane",
+      "quantity": "coordinates"
+    },
+    {
+      "case": "charged/artificial-zero-plane",
+      "quantity": "multipliers"
+    },
+    {
+      "case": "charged/artificial-zero-plane",
+      "quantity": "composition"
+    },
+    {
+      "case": "charged/artificial-zero-plane",
+      "quantity": "density"
+    }
+  ],
+  "conditions": {
+    "temperature_K": 298.15,
+    "pressure_Pa": 100000.0,
+    "component_permutation": [
+      1,
+      2,
+      0
+    ],
+    "fixture": "properties_support::aqueous_electrolyte"
+  },
+  "interpretation": "The artificial zero plane drives the solvent toward the composition cutoff; the actual declared-candidate plane yields a stationary trial.",
+  "limits": [
+    "lead disposable native diagnosis, not physical validation",
+    "compile/link identity was not supplied with these probe files",
+    "read-only retention; no diagnostic is recompiled or rerun"
+  ],
+  "units": {
+    "composition": "mol/mol",
+    "density": "mol/m3",
+    "raw_volumes": "m3/mol",
+    "objective": "G/RT on the native trial basis",
+    "dual": "G/RT on the native trial basis",
+    "classified_rows": "dimensionless row-scaled residuals",
+    "coordinates": "native mixed coordinate layout: log composition, amount in mol, log packing and scaled multipliers"
+  }
+}

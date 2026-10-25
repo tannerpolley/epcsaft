@@ -1,0 +1,150 @@
+{
+  "active_bundle": {
+    "changed": false,
+    "path": "validation/campaigns/2026-mea-parameter-estimation/inputs/active-bundle.json",
+    "sha256": "7d32da2685b5d7d9e351eb566d52e54add38c0f7d96608f135cdc9b1d255fb28"
+  },
+  "classification_counts": {
+    "candidate": 19,
+    "fixed": 20,
+    "missing": 0,
+    "provisional": 10
+  },
+  "co2_segment_count_reconciliation": {
+    "absolute_difference": 0.006099999999999994,
+    "decision": "2.0729 fixed; 2.079 retired and unsupported by an exact retained source locator",
+    "installed_materialization_executable_temperature_k": [
+      216.0,
+      300.0
+    ],
+    "relative_difference_percent_of_source": 0.29427372280380115,
+    "retired_value": 2.079,
+    "source_domain_temperature_k": [
+      216.0,
+      304.0
+    ],
+    "source_upper_endpoint_check": {
+      "reason": "invalid-state (field=T, reason=outside-domain, value=304.0, minimum=216.0, maximum=300.0, unit=kelvin)",
+      "status": "rejected",
+      "temperature_k": 304.0
+    },
+    "source_value": 2.0729
+  },
+  "engine_subject_commit": "0def56adc38e133f5fcd1ad031649f41529a8888",
+  "files": {
+    "coordinates_csv": "validation/campaigns/2026-mea-parameter-estimation/analysis/pure-components/coordinates.csv",
+    "installed_wheel_evaluations_csv": "validation/campaigns/2026-mea-parameter-estimation/analysis/pure-components/installed-wheel-evaluations.csv",
+    "source_domain_plot_data_csv": "validation/campaigns/2026-mea-parameter-estimation/analysis/pure-components/figures/source-domain-coverage/output/source-domain-coverage.csv",
+    "source_families_csv": "validation/campaigns/2026-mea-parameter-estimation/analysis/pure-components/source-families.csv"
+  },
+  "fit_evidence": {
+    "co2": {
+      "bounds": null,
+      "covariance": null,
+      "reported_metrics": {
+        "liquid_density_aad_percent": 2.73,
+        "psat_aad_percent": 2.78
+      },
+      "row_residuals": null
+    },
+    "mea": {
+      "bounds": null,
+      "covariance": null,
+      "identifiability": "not established; three topology-specific parameter sets fit the same pure-property classes",
+      "objective": {
+        "form": "sum_i(abs(psat_exp-psat_calc)/psat_exp) + sum_i(abs(rhoL_exp-rhoL_calc)/rhoL_exp)",
+        "reported_explicit_weights": null,
+        "source_locator": "Baygi and Pahlavanzadeh (2015), Eq. (8)"
+      },
+      "reported_metrics_by_family": {
+        "2B": {
+          "liquid_density_aad_percent": 0.12,
+          "psat_aad_percent": 0.62
+        },
+        "3B": {
+          "liquid_density_aad_percent": 0.43,
+          "psat_aad_percent": 1.75
+        },
+        "4C": {
+          "liquid_density_aad_percent": 0.23,
+          "psat_aad_percent": 0.24
+        }
+      },
+      "row_residuals": null
+    },
+    "water": {
+      "reported_domain": {
+        "pressure_pa": [
+          100000.0,
+          100000.0
+        ],
+        "temperature_k": [
+          298.15,
+          298.15
+        ]
+      },
+      "role": "source transfer, not a fit owned by this tier"
+    }
+  },
+  "installed_wheel_checks": {
+    "density_mol_per_m3": 10.0,
+    "evaluated_rows": 14,
+    "purpose": "finite public-EOS source-family evaluation, not fit validation",
+    "temperature_span_k": [
+      216.0,
+      443.15
+    ]
+  },
+  "installed_wheel_sha256": "d59abedb354fbd163ea918d3cc96b607f6e8ce8ec7c1f730d12b9653a1541e5d",
+  "issue": 113,
+  "mea_family_authority": {
+    "families": [
+      "baygi-2015-mea-2b",
+      "baygi-2015-mea-3b",
+      "baygi-2015-mea-4c"
+    ],
+    "pure_fit_owner": "Baygi and Pahlavanzadeh (2015), Table 2",
+    "reason": "Pure-property evidence does not identify neutral-mixture association topology.",
+    "selection": null,
+    "selection_owner": "GitHub Issue #114",
+    "temperature_domain_k": [
+      303.15,
+      443.15
+    ],
+    "three_b_orientation": {
+      "alternative": "A=2/B=1",
+      "classification": "provisional",
+      "executed_convention": "A=1/B=2"
+    }
+  },
+  "missing_evidence": [
+    "CO2 2.079 exact primary-source locator",
+    "MEA parameter bounds, covariance, explicit per-observation weights, and row residuals",
+    "MEA neutral relative-permittivity and solvation-factor pure-source coordinates",
+    "water transferred-polynomial relative-permittivity source-qualified temperature domain",
+    "pure-evidence association-family selection; Issue #114 owns neutral-mixture discrimination"
+  ],
+  "parent_issue": 80,
+  "schema_version": 1,
+  "status": "complete_with_missing_evidence",
+  "water_transfer_reconciliation": {
+    "active_and_figiel_2025": {
+      "association_energy_over_k_kelvin": 2425.7,
+      "association_volume": 0.04509,
+      "dispersion_energy_over_k_kelvin": 353.95,
+      "segment_count": 1.2047
+    },
+    "decision": "active values are the Figiel 2025 rounded Held-compatible family, not exact Held 2008 digits",
+    "held_2008": {
+      "association_energy_over_k_kelvin": 2425.6714,
+      "association_volume": 0.0450989,
+      "dispersion_energy_over_k_kelvin": 353.9449,
+      "segment_count": 1.204659
+    },
+    "outside_reported_conditions": "candidate transfer",
+    "reported_conditions": {
+      "pressure_pa": 100000.0,
+      "temperature_k": 298.15
+    }
+  }
+}

@@ -1,0 +1,157 @@
+{
+  "identity": {
+    "wheel": "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-223-build-tpd-stability-test-and-phase-35ebff8f/build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+    "wheel_sha256": "00d824d1a04e951455c5afbb9d361f68dd05dd7dffc5be88e09e92f9b6ad24b6",
+    "script_sha256": "24904b7583758b2303bfe982951547d56966922cb6d0f271f281cc2e5568beb8"
+  },
+  "inputs": {
+    "case-7/reactions": {
+      "species": [
+        "carbon-dioxide",
+        "monoethanolamine",
+        "water",
+        "protonated-monoethanolamine",
+        "carbamate-anion",
+        "bicarbonate-anion",
+        "carbonate-anion",
+        "hydronium-cation",
+        "hydroxide-anion"
+      ],
+      "stoichiometry": [
+        {
+          "water": -2.0,
+          "hydronium-cation": 1.0,
+          "hydroxide-anion": 1.0
+        },
+        {
+          "carbon-dioxide": -1.0,
+          "water": -2.0,
+          "bicarbonate-anion": 1.0,
+          "hydronium-cation": 1.0
+        },
+        {
+          "water": -1.0,
+          "bicarbonate-anion": -1.0,
+          "carbonate-anion": 1.0,
+          "hydronium-cation": 1.0
+        },
+        {
+          "monoethanolamine": 1.0,
+          "water": -1.0,
+          "carbamate-anion": -1.0,
+          "bicarbonate-anion": 1.0
+        },
+        {
+          "protonated-monoethanolamine": -1.0,
+          "water": -1.0,
+          "monoethanolamine": 1.0,
+          "hydronium-cation": 1.0
+        }
+      ],
+      "ln_k": [
+        -605.348,
+        -587.8,
+        -948.2312,
+        -25.1014,
+        -298.6415
+      ],
+      "T_ref": 318.15,
+      "T_min": 250.0,
+      "T_max": 450.0,
+      "standard_state": "eos-helmholtz-coordinate-basis"
+    },
+    "case-1/two-liquid": {
+      "components": [
+        "water",
+        "isobutanol"
+      ],
+      "T": 293.15,
+      "P": 100000.0,
+      "feed": {
+        "water": 0.6,
+        "isobutanol": 0.4
+      },
+      "row_tolerance": 1e-10,
+      "phases": [
+        {
+          "name": "Lw",
+          "kind": "liquid",
+          "support": null,
+          "amount": {
+            "kind": "Free",
+            "value": null
+          },
+          "composition_guess": [
+            0.999,
+            0.001
+          ],
+          "packing_guess": null
+        },
+        {
+          "name": "Lo",
+          "kind": "liquid",
+          "support": null,
+          "amount": {
+            "kind": "Free",
+            "value": null
+          },
+          "composition_guess": [
+            0.3,
+            0.7
+          ],
+          "packing_guess": null
+        }
+      ]
+    }
+  },
+  "costs": [
+    {
+      "case": "case-1/two-liquid",
+      "role": "declared",
+      "sample": 0,
+      "seconds": 0.027231129999563564,
+      "trial_spans": 0,
+      "driver_finalizations": 1,
+      "hessian_calls": 27.0,
+      "iterations": 26,
+      "evaluations": 70
+    },
+    {
+      "case": "case-1/two-liquid",
+      "role": "declared",
+      "sample": 1,
+      "seconds": 0.02779323999857297,
+      "trial_spans": 0,
+      "driver_finalizations": 1,
+      "hessian_calls": 27.0,
+      "iterations": 26,
+      "evaluations": 70
+    },
+    {
+      "case": "case-1/two-liquid",
+      "role": "declared",
+      "sample": 2,
+      "seconds": 0.02652119400590891,
+      "trial_spans": 0,
+      "driver_finalizations": 1,
+      "hessian_calls": 27.0,
+      "iterations": 26,
+      "evaluations": 70
+    }
+  ],
+  "median3": [
+    {
+      "case": "case-1/two-liquid",
+      "role": "declared",
+      "seconds": 0.027231129999563564
+    }
+  ],
+  "failure": "ParameterError: invalid action order",
+  "failures": [],
+  "unresolved": [],
+  "limits": [
+    "numerical verification of the supplied model and finite trial set",
+    "estimated uncertainty is not a rigorous bound",
+    "no physical validation or global stability certificate"
+  ]
+}

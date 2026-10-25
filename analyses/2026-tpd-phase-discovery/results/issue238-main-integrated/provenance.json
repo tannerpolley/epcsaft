@@ -1,0 +1,19 @@
+{
+  "before_wheel_sha256": "ef77a399ac5bdd4e75a4efa5bd13e3ad0e5b85147e3d823437b888c5676024d6",
+  "wheel_sha256": "47686a364cfeb4d205d0ce03e29e2fd9f2e066f1d7cf729102cdb78f3c56d86a",
+  "base": "5fe2a70acd33b972e483545f0e56b31ef860c920",
+  "source": "8dc9b725 plus the 20-added/7-removed mapping repair",
+  "before_cause": "initialization: invalid declared seed",
+  "temperature_K": 200.0,
+  "pressure_Pa": 5000000.0,
+  "test_file": "engine/tests/equilibrium/test_declared_starts.py",
+  "test_sha256": "ba72da226d46a72298a9ed0ae793219b6ab2eb011b8f031b37bcc1c943a02679",
+  "limits": "Manufactured numerical verification only; no physical validation, global stability or uniqueness claim.",
+  "original_fraction_domain": "Every supplied value finite and in [0,1] before species restriction; surviving floor unchanged.",
+  "full_logs": "build/issue238-integration",
+  "before_logs": [
+    "build/issue238-integration/before-test.log",
+    "build/issue238-integration/domain-before-test.log"
+  ],
+  "projection_only_wheel_sha256": "10a6c7009821caca7aeae6ea29c8f00c7ba6e0aa361dca0efeee141d11e4aecc"
+}

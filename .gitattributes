@@ -1,0 +1,42 @@
+# Machine-generated views. `-diff` makes git report them as changed without a line
+# count, so a regeneration does not read as thousands of hand-written additions.
+# Regenerate with the script named in each file's header; never edit them.
+engine/docs/equations_registry.yaml                             -diff linguist-generated=true
+analyses/reproduction/*/results/data/*.json                     -diff linguist-generated=true
+
+# Measured data. Reviewed line by line when it lands, but it is evidence rather than
+# code, and it should not inflate a code diff.
+data/packets/**/parameters/parameters.json                      -diff linguist-generated=true
+
+# Language-aware diffs: hunk headers name the enclosing function instead of a stray
+# brace, so a C++ or Python diff reads as "what changed in solve_density" rather than
+# "@@ -180,7 +180,9 @@". Built-in drivers; no configuration needed.
+*.cpp   diff=cpp
+*.hpp   diff=cpp
+*.h     diff=cpp
+*.py    diff=python
+*.pyi   diff=python
+
+# Keep line endings sane and let git detect text properly.
+* text=auto
+
+# Retained numerical CSV hashes include their original line endings.
+analyses/2026-hydrochloric-acid-chloride-basis/inputs/*.csv -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+analyses/2026-strontium-barium-chloride-basis/inputs/robinson-bower1965-table1.csv -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+analyses/2026-tpd-phase-discovery/results/**/*.csv -text
+analyses/2026-mixed-chloride-water-activity/inputs/** -text
+data/packets/mixed-chloride-water-observations/** -text
+data/packets/el-guendouzi-2004-licl-nacl-observations/*/observations/*.csv -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+
+# Empty terminal TSV fields retain their tab delimiters.
+analyses/2026-reactive-caloric-actions/results/main-2026-10-06/*.tsv whitespace=-blank-at-eol
+analyses/2026-reactive-caloric-actions/results/slice4/*.tsv whitespace=-blank-at-eol
+
+# Named-release evidence keeps the producer's original CSV/TSV bytes.
+analyses/*/results/main-8298c602/*.csv -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+analyses/2026-tpd-phase-discovery/results/main-8298c602-ionic-qualification/*.csv -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+analyses/2026-addition-enthalpy-fitting/results/main-8298c602-columns.csv -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+analyses/2026-reactive-caloric-actions/results/main-8298c602/qualification.tsv -text whitespace=-blank-at-eol
+# Raw comparator logs retain trailing blanks and their final empty line.
+analyses/2026-tpd-phase-discovery/results/main-8298c602/feos.log whitespace=-blank-at-eol,-blank-at-eof
+analyses/2026-tpd-phase-discovery/results/main-8298c602/initial-output-failure/feos.log whitespace=-blank-at-eol,-blank-at-eof

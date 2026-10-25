@@ -1,0 +1,168 @@
+{
+  "source_image": "data/reference/MEA/observations/liquid_speciation/digitization/Wong_2016_Figure5_crop.png",
+  "config": {
+    "axis": {
+      "x1_pixel": [
+        34,
+        419
+      ],
+      "x2_pixel": [
+        511,
+        419
+      ],
+      "x1_value": 0.0,
+      "x2_value": 1.2,
+      "x_scale": "linear",
+      "y1_pixel": [
+        34,
+        419
+      ],
+      "y2_pixel": [
+        34,
+        25
+      ],
+      "y1_value": 0.0,
+      "y2_value": 4.5,
+      "y_scale": "linear"
+    },
+    "roi": [
+      34,
+      25,
+      512,
+      420
+    ],
+    "series": [
+      {
+        "name": "MEA",
+        "mode": "points",
+        "hsv_lower": [
+          104,
+          70,
+          40
+        ],
+        "hsv_upper": [
+          118,
+          255,
+          255
+        ],
+        "morph_kernel": 4,
+        "min_area": 12
+      },
+      {
+        "name": "MEAH+",
+        "mode": "points",
+        "hsv_lower": [
+          0,
+          70,
+          40
+        ],
+        "hsv_upper": [
+          3,
+          255,
+          200
+        ],
+        "morph_kernel": 7,
+        "min_area": 12
+      },
+      {
+        "name": "MEAH+",
+        "mode": "points",
+        "hsv_lower": [
+          176,
+          70,
+          40
+        ],
+        "hsv_upper": [
+          179,
+          255,
+          200
+        ],
+        "morph_kernel": 7,
+        "min_area": 12
+      },
+      {
+        "name": "MEACOO-",
+        "mode": "points",
+        "hsv_lower": [
+          38,
+          70,
+          40
+        ],
+        "hsv_upper": [
+          49,
+          255,
+          255
+        ],
+        "morph_kernel": 4,
+        "min_area": 12
+      },
+      {
+        "name": "HCO3-",
+        "mode": "points",
+        "hsv_lower": [
+          125,
+          60,
+          40
+        ],
+        "hsv_upper": [
+          136,
+          255,
+          255
+        ],
+        "morph_kernel": 4,
+        "min_area": 12
+      },
+      {
+        "name": "CO2",
+        "mode": "points",
+        "hsv_lower": [
+          93,
+          70,
+          40
+        ],
+        "hsv_upper": [
+          102,
+          255,
+          255
+        ],
+        "morph_kernel": 4,
+        "min_area": 12
+      },
+      {
+        "name": "CO3--",
+        "mode": "points",
+        "hsv_lower": [
+          8,
+          70,
+          40
+        ],
+        "hsv_upper": [
+          17,
+          255,
+          255
+        ],
+        "morph_kernel": 4,
+        "min_area": 12
+      }
+    ],
+    "source": {
+      "citation": "Wong et al. 2016",
+      "doi": "10.1039/C5RA22926J",
+      "pdf_attachment_key": "MYRT5FND",
+      "pdf_page": 6,
+      "figure": "Figure 5",
+      "render_dpi": 180,
+      "crop_from_full_page_pixels": [
+        180,
+        110,
+        720,
+        580
+      ],
+      "solution": "20 wt% aqueous MEA at 313.15 K",
+      "basis": "molality (mol/kg)"
+    }
+  },
+  "row_count": 55,
+  "csv": "data/reference/MEA/observations/liquid_speciation/digitization/Wong_2016_Figure5_digitized.csv",
+  "overlay": "data/reference/MEA/observations/liquid_speciation/digitization/Wong_2016_Figure5_qa_overlay.png"
+}

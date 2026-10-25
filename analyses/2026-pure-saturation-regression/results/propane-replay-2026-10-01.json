@@ -1,0 +1,334 @@
+{
+ "date": "2026-10-01",
+ "class": "MODERN_REFIT",
+ "wheel_sha256": "298a360e532f6f4c5e7ef70c5be45e8b9852310d1c388d6225c504714c3dc410",
+ "build_fingerprint": "c0b44c05b7a8d4c72e6d1d43161d3c8777173600638066b8a871ed22132d7702",
+ "sources": {
+  "training_csv": "analyses/2026-pure-saturation-regression/inputs/source/propane-baseline.csv",
+  "training_sha256": "b81e7bcd9bc298464b738b5fb7cd3d1ad11e10896813348eb8f32c07807f7dc5",
+  "fit_request_sha256": "f2b504cd7b17e64252dd886e12f6614556a66272bbf35903402f9f22c2add277",
+  "parameters_sha256": "6dc4d60f10ef4364c01cbccf9821447ff9c4c815cc8e94284b853d1cdee71ccb",
+  "holdout_csv": "analyses/reproduction/2004-glos/inputs/source/glos-2004-propane-saturation.csv",
+  "holdout_sha256": "ccd1cfa15ec44432b06cbf22316d168c61b282631c9b1e1591e497b8d48b5676"
+ },
+ "objective": "sum of ln(y_pred / y_obs)^2 over 3 pressures and 3 saturated-liquid mass densities, unit weights",
+ "reference_start": "origin",
+ "optimizer_starts": [
+  [
+   0.0,
+   0.0,
+   0.0
+  ],
+  [
+   -3.0,
+   1.9999999999999973,
+   -1.9999999999999973
+  ],
+  [
+   2.0,
+   -2.0000000000000018,
+   2.0000000000000018
+  ],
+  [
+   1.0,
+   1.0000000000000009,
+   -1.0000000000000009
+  ]
+ ],
+ "coordinates": {
+  "component/propane/dispersion_energy_over_k": {
+   "bounds": [
+    150.0,
+    260.0
+   ],
+   "origin": 221.0,
+   "scale": 10.0,
+   "unit": "kelvin"
+  },
+  "component/propane/segment_count": {
+   "bounds": [
+    1.5,
+    2.5
+   ],
+   "origin": 1.9489,
+   "scale": 0.1,
+   "unit": "dimensionless"
+  },
+  "component/propane/segment_diameter": {
+   "bounds": [
+    3.0,
+    4.2
+   ],
+   "origin": 3.7209,
+   "scale": 0.1,
+   "unit": "angstrom"
+  }
+ },
+ "starts": [
+  {
+   "start": "origin",
+   "values": [
+    221.0,
+    1.9489,
+    3.7209
+   ],
+   "status": "converged",
+   "iterations": 5,
+   "residual_evaluations": 5,
+   "jacobian_evaluations": 6,
+   "trial_failures": 0,
+   "initial_cost": 0.27411032277183384,
+   "final_cost": 3.7007902357561637e-06,
+   "sse": 7.4015804715123274e-06,
+   "covariance_status": "available",
+   "rank": 3,
+   "singular_values": [
+    0.8574614946547834,
+    0.17277279510879365,
+    0.01888620242128773
+   ],
+   "active_bounds": [],
+   "physical_covariance": [
+    57570.2007294066,
+    -947.8855896201516,
+    605.2912798887007,
+    -947.8855896201517,
+    15.698271625356108,
+    -10.137747954151987,
+    605.2912798887008,
+    -10.137747954151989,
+    6.928968572533432
+   ],
+   "variance_factor": 2.4671934905041093e-06,
+   "projected_gradient_norm": 3.839706330666104e-11,
+   "fitted": [
+    208.51124850488594,
+    1.9964556314228556,
+    3.6194290792310913
+   ]
+  },
+  {
+   "start": "confirmation-1",
+   "values": [
+    191.0,
+    2.1489,
+    3.5209
+   ],
+   "status": "converged",
+   "iterations": 6,
+   "residual_evaluations": 5,
+   "jacobian_evaluations": 6,
+   "trial_failures": 0,
+   "initial_cost": 0.21110570696992773,
+   "final_cost": 3.7007902357559803e-06,
+   "sse": 7.401580471511961e-06,
+   "covariance_status": "available",
+   "rank": 3,
+   "singular_values": [
+    0.8574614943065498,
+    0.17277279498673026,
+    0.018886202405071592
+   ],
+   "active_bounds": [],
+   "physical_covariance": [
+    57570.20108909018,
+    -947.8855920181422,
+    605.2912832318154,
+    -947.8855920181425,
+    15.698271606460558,
+    -10.137747971981582,
+    605.2912832318153,
+    -10.137747971981582,
+    6.928968604089177
+   ],
+   "variance_factor": 2.467193490503987e-06,
+   "projected_gradient_norm": 5.857536677922326e-13,
+   "fitted": [
+    208.5112487713874,
+    1.9964556270274576,
+    3.6194290820531263
+   ]
+  },
+  {
+   "start": "confirmation-2",
+   "values": [
+    241.0,
+    1.7489,
+    3.9209
+   ],
+   "status": "converged",
+   "iterations": 6,
+   "residual_evaluations": 6,
+   "jacobian_evaluations": 7,
+   "trial_failures": 0,
+   "initial_cost": 0.6619843003840512,
+   "final_cost": 3.7007902357553006e-06,
+   "sse": 7.401580471510601e-06,
+   "covariance_status": "available",
+   "rank": 3,
+   "singular_values": [
+    0.8574614943093556,
+    0.1727727949877199,
+    0.018886202405202814
+   ],
+   "active_bounds": [],
+   "physical_covariance": [
+    57570.20108616614,
+    -947.8855919986595,
+    605.2912832047023,
+    -947.8855919986595,
+    15.698271606614552,
+    -10.137747971837836,
+    605.2912832047022,
+    -10.137747971837836,
+    6.928968603834059
+   ],
+   "variance_factor": 2.4671934905035337e-06,
+   "projected_gradient_norm": 1.1071144001562061e-12,
+   "fitted": [
+    208.51124876921628,
+    1.99645562706314,
+    3.619429082030389
+   ]
+  },
+  {
+   "start": "confirmation-3",
+   "values": [
+    231.0,
+    2.0489,
+    3.6209
+   ],
+   "status": "converged",
+   "iterations": 6,
+   "residual_evaluations": 5,
+   "jacobian_evaluations": 6,
+   "trial_failures": 0,
+   "initial_cost": 1.7363341679087827,
+   "final_cost": 3.7007902357535087e-06,
+   "sse": 7.401580471507017e-06,
+   "covariance_status": "available",
+   "rank": 3,
+   "singular_values": [
+    0.8574614943072127,
+    0.17277279498696405,
+    0.018886202405102394
+   ],
+   "active_bounds": [],
+   "physical_covariance": [
+    57570.20108840069,
+    -947.8855920135607,
+    605.291283225423,
+    -947.8855920135604,
+    15.69827160649728,
+    -10.137747971947835,
+    605.291283225423,
+    -10.137747971947835,
+    6.928968604029037
+   ],
+   "variance_factor": 2.467193490502339e-06,
+   "projected_gradient_norm": 7.072120666862247e-13,
+   "fitted": [
+    208.51124877087454,
+    1.9964556270358884,
+    3.6194290820477524
+   ]
+  }
+ ],
+ "multistart_spread": {
+  "epsilon_K": 2.6650144491213723e-07,
+  "m": 4.395398045531351e-09,
+  "sigma_angstrom": 2.822035050087379e-09
+ },
+ "fitted": {
+  "identities": [
+   "component/propane/dispersion_energy_over_k",
+   "component/propane/segment_count",
+   "component/propane/segment_diameter"
+  ],
+  "values": [
+   208.51124850488594,
+   1.9964556314228556,
+   3.6194290792310913
+  ],
+  "units": [
+   "K",
+   "1",
+   "angstrom"
+  ],
+  "packet_values": [
+   208.11,
+   2.002,
+   3.6184
+  ],
+  "historical_fitted_2026_07": [
+   209.27852823846877,
+   1.9835426308533168,
+   3.627861545037305
+  ],
+  "historical_note": "the retained July result fitted eleven Glos rows from the packet start with another optimizer build; agreement is descriptive"
+ },
+ "covariance": {
+  "status": "available",
+  "assumption": "unit-variance weighted residuals, independent errors and a regular local linearization at an interior point; multiply by variance_factor for an unknown common variance; no claim under bounds, rank deficiency or model discrepancy",
+  "rank": 3,
+  "singular_values": [
+   0.8574614946547834,
+   0.17277279510879365,
+   0.01888620242128773
+  ],
+  "active_bounds": [],
+  "variance_factor": 2.4671934905041093e-06,
+  "physical": [
+   57570.2007294066,
+   -947.8855896201516,
+   605.2912798887007,
+   -947.8855896201517,
+   15.698271625356108,
+   -10.137747954151987,
+   605.2912798887008,
+   -10.137747954151989,
+   6.928968572533432
+  ],
+  "physical_std_scaled_by_variance_factor": [
+   0.3768777314814539,
+   0.006223397268875253,
+   0.004134622855601467
+  ],
+  "meaning": "rank and the conditional covariance describe local conditioning of the least-squares problem at the fitted point under the stated assumption; six residuals and three parameters leave three degrees of freedom, so the variance factor is a rough scale, not a validated uncertainty; neither establishes structural or global identifiability nor predictive accuracy"
+ },
+ "training_residuals": {
+  "weighted": [
+   -0.00012773549347836564,
+   -0.002091626792789539,
+   0.0002446771217682056,
+   0.0017015979247635034,
+   4.228135452443327e-05,
+   0.00023080591518949016
+  ],
+  "statuses": [
+   "Available",
+   "Available",
+   "Available",
+   "Available",
+   "Available",
+   "Available"
+  ]
+ },
+ "holdout": {
+  "rows": 24,
+  "csv": "analyses/2026-pure-saturation-regression/results/propane-replay-2026-10-01.csv",
+  "role_note": "roles come from the 2004-glos packet; its 150 K 'training' row is outside this replay's training set (210, 270, 330 K) and is a genuine holdout here",
+  "max_abs_relative_error_held_out_pressure": 0.10000149965145277,
+  "max_abs_held_out_pressure_error_in_expanded_uncertainties": 4.365465732710436,
+  "max_abs_relative_error_held_out_density": 0.003878101703164827,
+  "max_abs_held_out_density_error_in_expanded_uncertainties": 20.658292526800913
+ },
+ "failures": [],
+ "claim_limits": [
+  "the converged multistart spread measures optimizer reproducibility across those starts; rank and the conditional covariance (physical_std_scaled_by_variance_factor) describe local conditioning under the stated assumptions; neither establishes structural or global identifiability of the three parameters nor predictive accuracy",
+  "unit weights on log-ratio residuals treat every training value as equally uncertain in relative terms; the source expanded uncertainties were not used as weights and the covariance assumption therefore means unit variance in log space",
+  "held-out rows are descriptive comparisons against Glos 2004 with their expanded uncertainties; no accuracy bar or promotion",
+  "the stress row at 110 K lies outside the fitted domain and is retained whatever its error",
+  "no held-out predictive claim transfers to other fluids, mixtures or properties"
+ ]
+}

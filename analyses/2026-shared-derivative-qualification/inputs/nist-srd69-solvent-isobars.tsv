@@ -1,0 +1,17 @@
+solvent	T_K	P_MPa	mass_density_kg_m3	source
+water	278.15000	0.10000000	999.96598	NIST SRD 69 IAPWS-95 (Wagner and Pruss 2002), retrieved 2026-09-23
+water	288.15000	0.10000000	999.10200	NIST SRD 69 IAPWS-95 (Wagner and Pruss 2002), retrieved 2026-09-23
+water	298.15000	0.10000000	997.04704	NIST SRD 69 IAPWS-95 (Wagner and Pruss 2002), retrieved 2026-09-23
+water	308.15000	0.10000000	994.03273	NIST SRD 69 IAPWS-95 (Wagner and Pruss 2002), retrieved 2026-09-23
+water	318.15000	0.10000000	990.21232	NIST SRD 69 IAPWS-95 (Wagner and Pruss 2002), retrieved 2026-09-23
+water	328.15000	0.10000000	985.69251	NIST SRD 69 IAPWS-95 (Wagner and Pruss 2002), retrieved 2026-09-23
+water	338.15000	0.10000000	980.55025	NIST SRD 69 IAPWS-95 (Wagner and Pruss 2002), retrieved 2026-09-23
+water	348.15000	0.10000000	974.84227	NIST SRD 69 IAPWS-95 (Wagner and Pruss 2002), retrieved 2026-09-23
+water	358.15000	0.10000000	968.61084	NIST SRD 69 IAPWS-95 (Wagner and Pruss 2002), retrieved 2026-09-23
+water	368.15000	0.10000000	961.88730	NIST SRD 69 IAPWS-95 (Wagner and Pruss 2002), retrieved 2026-09-23
+methanol	278.15000	0.10000000	805.04398	NIST SRD 69 methanol (de Reuck and Craven 1993), retrieved 2026-09-23
+methanol	288.15000	0.10000000	795.68956	NIST SRD 69 methanol (de Reuck and Craven 1993), retrieved 2026-09-23
+methanol	298.15000	0.10000000	786.32536	NIST SRD 69 methanol (de Reuck and Craven 1993), retrieved 2026-09-23
+methanol	308.15000	0.10000000	776.90939	NIST SRD 69 methanol (de Reuck and Craven 1993), retrieved 2026-09-23
+methanol	318.15000	0.10000000	767.39335	NIST SRD 69 methanol (de Reuck and Craven 1993), retrieved 2026-09-23
+methanol	328.15000	0.10000000	757.72318	NIST SRD 69 methanol (de Reuck and Craven 1993), retrieved 2026-09-23

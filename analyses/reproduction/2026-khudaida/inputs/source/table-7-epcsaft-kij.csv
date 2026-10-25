@@ -1,0 +1,11 @@
+component_i,component_j,k_ij,source_reference,source_table
+Ethanol,H2O,-0.06167,39,Table 7
+Ethanol,Butanol,0.00154,19,Table 7
+Ethanol,Na+,0.05,31,Table 7
+Ethanol,Cl-,0.8,31,Table 7
+H2O,Butanol,-0.0071,34,Table 7
+H2O,Na+,-0.3,31,Table 7
+H2O,Cl-,-0.3,31,Table 7
+Butanol,Na+,0,,Table 7
+Butanol,Cl-,0,,Table 7
+Na+,Cl-,0.317,30,Table 7

@@ -1,0 +1,40 @@
+salt,source_table,locator,molality_mol_kg,statistic,value,scope
+MgCl2,Goldberg-Nuttall Table 17,p.288 footer,6.0,sigma_phi,.0049,standard deviation of calculated value at printed molality only
+MgCl2,Goldberg-Nuttall Table 17,p.288 footer,6.0,sigma_ln_gamma,.0076,standard deviation of calculated value at printed molality only
+MgCl2,Goldberg-Nuttall Table 17,p.288 footer,6.0,sigma_gamma,.2921,standard deviation of calculated value at printed molality only
+MgCl2,Goldberg-Nuttall Table 17,p.288 footer,3.0,sigma_phi,.0015,standard deviation of calculated value at printed molality only
+MgCl2,Goldberg-Nuttall Table 17,p.288 footer,3.0,sigma_ln_gamma,.0055,standard deviation of calculated value at printed molality only
+MgCl2,Goldberg-Nuttall Table 17,p.288 footer,3.0,sigma_gamma,.0130,standard deviation of calculated value at printed molality only
+MgCl2,Goldberg-Nuttall Table 17,p.288 footer,1.0,sigma_phi,.0012,standard deviation of calculated value at printed molality only
+MgCl2,Goldberg-Nuttall Table 17,p.288 footer,1.0,sigma_ln_gamma,.0050,standard deviation of calculated value at printed molality only
+MgCl2,Goldberg-Nuttall Table 17,p.288 footer,1.0,sigma_gamma,.0029,standard deviation of calculated value at printed molality only
+MgCl2,Goldberg-Nuttall Table 17,p.288 footer,.1,sigma_phi,.0014,standard deviation of calculated value at printed molality only
+MgCl2,Goldberg-Nuttall Table 17,p.288 footer,.1,sigma_ln_gamma,.0043,standard deviation of calculated value at printed molality only
+MgCl2,Goldberg-Nuttall Table 17,p.288 footer,.1,sigma_gamma,.0023,standard deviation of calculated value at printed molality only
+MgCl2,Goldberg-Nuttall Table 17,p.288 footer,.01,sigma_phi,.0005,standard deviation of calculated value at printed molality only
+MgCl2,Goldberg-Nuttall Table 17,p.288 footer,.01,sigma_ln_gamma,.0011,standard deviation of calculated value at printed molality only
+MgCl2,Goldberg-Nuttall Table 17,p.288 footer,.01,sigma_gamma,.0008,standard deviation of calculated value at printed molality only
+SrCl2,Goldberg-Nuttall Table 23,p.294 footer,4.0,sigma_phi,.0078,standard deviation of calculated value at printed molality only
+SrCl2,Goldberg-Nuttall Table 23,p.294 footer,4.0,sigma_ln_gamma,.0095,standard deviation of calculated value at printed molality only
+SrCl2,Goldberg-Nuttall Table 23,p.294 footer,4.0,sigma_gamma,.0185,standard deviation of calculated value at printed molality only
+SrCl2,Goldberg-Nuttall Table 23,p.294 footer,3.0,sigma_phi,.0032,standard deviation of calculated value at printed molality only
+SrCl2,Goldberg-Nuttall Table 23,p.294 footer,3.0,sigma_ln_gamma,.0052,standard deviation of calculated value at printed molality only
+SrCl2,Goldberg-Nuttall Table 23,p.294 footer,3.0,sigma_gamma,.0056,standard deviation of calculated value at printed molality only
+SrCl2,Goldberg-Nuttall Table 23,p.294 footer,1.0,sigma_phi,.0015,standard deviation of calculated value at printed molality only
+SrCl2,Goldberg-Nuttall Table 23,p.294 footer,1.0,sigma_ln_gamma,.0039,standard deviation of calculated value at printed molality only
+SrCl2,Goldberg-Nuttall Table 23,p.294 footer,1.0,sigma_gamma,.0018,standard deviation of calculated value at printed molality only
+SrCl2,Goldberg-Nuttall Table 23,p.294 footer,.1,sigma_phi,.0010,standard deviation of calculated value at printed molality only
+SrCl2,Goldberg-Nuttall Table 23,p.294 footer,.1,sigma_ln_gamma,.0030,standard deviation of calculated value at printed molality only
+SrCl2,Goldberg-Nuttall Table 23,p.294 footer,.1,sigma_gamma,.0015,standard deviation of calculated value at printed molality only
+SrCl2,Goldberg-Nuttall Table 23,p.294 footer,.01,sigma_phi,.0003,standard deviation of calculated value at printed molality only
+SrCl2,Goldberg-Nuttall Table 23,p.294 footer,.01,sigma_ln_gamma,.0007,standard deviation of calculated value at printed molality only
+SrCl2,Goldberg-Nuttall Table 23,p.294 footer,.01,sigma_gamma,.0005,standard deviation of calculated value at printed molality only
+LiCl,Hamer-Wu Table 9,p.1063 footer,,sigma_phi,.0107,aggregate statistic over full source fit; not a row uncertainty
+LiCl,Hamer-Wu Table 9,p.1063 footer,,sigma_gamma,.283,aggregate statistic over full source fit; not a row uncertainty
+LiCl,Hamer-Wu Table 9,p.1063 footer,,sigma_star_phi,.00431,aggregate source starred statistic; not a row uncertainty
+LiCl,Hamer-Wu Table 9,p.1063 footer,,sigma_star_gamma,.0104,aggregate source starred statistic; not a row uncertainty
+NaCl,Hamer-Wu Table 16,p.1067 footer,,sigma_phi,.000640,aggregate statistic over full source fit; not a row uncertainty
+NaCl,Hamer-Wu Table 16,p.1067 footer,,sigma_gamma,.000490,aggregate statistic over full source fit; not a row uncertainty
+NaCl,Hamer-Wu Table 16,p.1067 footer,,sigma_star_phi,.000660,aggregate source starred statistic; not a row uncertainty
+NaCl,Hamer-Wu Table 16,p.1067 footer,,sigma_star_gamma,.000680,aggregate source starred statistic; not a row uncertainty
+CaCl2,Goldberg-Nuttall Table 20,p.291 footer,,,Uncertainty referred to Staples-Nuttall 1977 ref.1; not supplied as row bounds in this table

@@ -1,0 +1,5 @@
+source,points,temperature_range_K,pressure_range_kPa,mdea_mole_fraction_range,co2_loading_range_mol_per_mol_mdea,reported_error_percent,reported_observable,source_table,source_pdf_page,source_printed_page,source_row,zotero_parent_key,pdf_attachment_key,verification
+Kuranov_et_al_1996,82,313-413,70-5000,0.035-0.067,0-1.32,26.42,total_pressure,6,7,220,1,DUAIHQ7Y,YAUNIZGX,PDF image and text layer checked
+Kamps_et_al_2001,23,313-393,200-6000,0.126,0.13-1.15,28.44,total_pressure,6,7,220,2,DUAIHQ7Y,YAUNIZGX,PDF image and text layer checked
+Mamun_et_al_2005,34,328-358,66-813,0.13,0.165-0.813,19.83,co2_partial_pressure,6,7,220,3,DUAIHQ7Y,YAUNIZGX,PDF image and text layer checked
+Lemoine_et_al_2000,13,298,0.0171-0.2625,0.04,0.02-1.64,31.65,co2_partial_pressure,6,7,220,4,DUAIHQ7Y,YAUNIZGX,PDF image and text layer checked

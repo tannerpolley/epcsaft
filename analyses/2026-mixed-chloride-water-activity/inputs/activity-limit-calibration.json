@@ -1,0 +1,26 @@
+{
+  "meaning": "Data-based tolerance conversion only; no Engine prediction or parameter-data comparison",
+  "source": "Dinane and Mounir2003 Table1 p18 I=6,mNaCl=3,mMgCl2=1,aw=.796",
+  "water_molar_mass_kg_mol": 0.0180153,
+  "q_mol_kg": 9.0,
+  "anchor_ionic_strength_mol_kg": 6,
+  "anchor_aw": 0.796,
+  "Phi_limits": {
+    "RMS": 0.01,
+    "maximum": 0.03
+  },
+  "aw_limits": {
+    "RMS": 0.0013,
+    "maximum": 0.004
+  },
+  "exact_anchor_aw_changes": {
+    "RMS": {
+      "increase_aw": 0.001291662945328549,
+      "decrease_aw": 0.0012895703696227257
+    },
+    "maximum": {
+      "increase_aw": 0.0038812801510377604,
+      "decrease_aw": 0.003862446936678756
+    }
+  }
+}

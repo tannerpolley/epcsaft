@@ -1,0 +1,29 @@
+{
+  "purpose": "Current-wheel equation and admission comparison to the donor numerical control",
+  "donor_commit": "45fbef5ca3f4f9ff7a72c31f17b49400034f0879",
+  "wheel_sha256": "dc1d18d02fa560a5b518f4fb20be7e2254e8aa79dd62b3f6dfddf2107005d2b2",
+  "wheel_path": "build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+  "parameter_json_sha256": {
+    "figiel-yu-held-2025": "3d37235cd8217e056f55005bfdf2b65dcf7c4a8621e239bdd40a70c273a9be8c",
+    "gross-2001-propane": "6dc4d60f10ef4364c01cbccf9821447ff9c4c815cc8e94284b853d1cdee71ccb",
+    "gross-2001-methane-ethane": "109cfe8e80c4fcefadcbb4975ebe7436d371710ed9d20f2c7bd6d30d9c581bf2",
+    "gross-sadowski-2001": "786c7d57b3e843c63bf12310e9982ac770e33e7195e6a7a95f981b35b4f2b4de",
+    "crespo-2021-deea": "a8d00fe1f3eda812295ef619e858129388262a62eef71095ce6adf63e3ace91a"
+  },
+  "criterion": {
+    "atol": 1e-12,
+    "rtol": 1e-12,
+    "rule": "abs(current-reference) <= max(atol, rtol*max(abs(current),abs(reference)))"
+  },
+  "groups": {
+    "figiel_fixed_density": {
+      "rows": 23,
+      "max_normalized_error": 0.024669801148883775
+    },
+    "neutral_charge": {
+      "rows": 410,
+      "max_normalized_error": 0.0008884018798097907
+    }
+  },
+  "claim_limit": "Numerical preservation at listed fixed-density states; no empirical validation or calibration-role attachment."
+}

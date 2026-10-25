@@ -1,0 +1,170 @@
+{
+  "issue": "https://github.com/tannerpolley/ePC-SAFT/issues/225",
+  "source_commit": "aa2cd7d0e59dd78fce4e7e495e1a29a6b68fa9cb",
+  "integrated_main_base": "a0adb1cd5ff5f4ee32b3608c78a02c756b06ebd9",
+  "branch": "issue-225-slice2",
+  "source_identity_evidence": "source-commit.txt, clean runtime/native-test files against this commit, build log, wheel modification before all six selectors, and matching reset-preserved preparation.json; no embedded source SHA in comparison rows",
+  "source_sha256": {
+    "engine/native/bindings/equilibrium_bindings.cpp": "c82c3fbc2ca53a3f8cab67de10c48743adbe32feeceb2a55a6bcbed31cb9277d",
+    "engine/native/contributions/electrolyte.hpp": "eee05a2d71e689fca74cbf4552f856d6e33bb050b4613b015ea15b721405dd32",
+    "engine/native/contributions/helmholtz.hpp": "3b7e9b0cdb45e2fde78a1bc7360eb024e329706413159c1231df73ed70dd6a89",
+    "engine/native/equilibrium/implicit_sensitivity.cpp": "cf88975e97b888ab717d49adaa753888f39529f8274fa0406ccef70df06819fb",
+    "engine/native/equilibrium/problem.hpp": "33edf1fa910a568db5635de8b17c6c3c6ff9e60e8a2a816bcd81a7a43a4ec51b",
+    "engine/native/equilibrium/request_compile.cpp": "fec08b1562ba59e5ae89e376f5ff27dc79b18ce6badaa70b189927f321dee6e1",
+    "engine/native/properties/helmholtz_model.cpp": "d5923e432a7578185aa8d5e1367622bc1ddb4481c519f7a98dc3ce5aff8eafe4",
+    "engine/native/properties/helmholtz_model.hpp": "f4eb7338ad14bd233741cd0d0e3be374c9f61f8fcc71da9db90caa5d1b7f2c31",
+    "engine/native/properties/thermochemistry.cpp": "ec1aa33f7bd9be71c06e079f2a3a4dd12503e62cbea59d0905d8be57b7bd3665",
+    "engine/native/properties/thermochemistry.hpp": "a2444204e7700a0abfdc88282891197934b9977ea516d4898fe6389883d8fb66",
+    "engine/src/epcsaft/_core.pyi": "c3d36a51d7631a11cb731624e96d224a42102ab668355d077630295fe3c3863f",
+    "engine/tests/native/equilibrium_checks.cpp": "0f50426156a702b7c44a84c2b7ba114ef6d6f81bae27d45d23df95bb22747f40",
+    "engine/tests/native/quad_base.hpp": "fe030be8c8c928e1b916fa6419c9c9580e049a3313f8ce378254e19ace258a82",
+    "engine/tests/native/reactive_caloric_checks.hpp": "4af1a504e6a9140d3634e8794d2aaf9f1ac17cdb274cffd1c6d19bc937111c4d",
+    "engine/tests/native/reactive_caloric_wide.hpp": "e146c117388e4d039638bb584e7e7c3501d597b3e031c02c50f1643ffc11c31f",
+    "engine/tests/native/reactive_caloric_wide_ionic.hpp": "d5a15fa5547983ccb4890082f73e52028699a812901d6d84196753e43f87e268",
+    "engine/tests/native/regression_checks.cpp": "878c2e44914150e3a09ae2fc78083fb53e96eb062b1917df43b154aae9685132"
+  },
+  "wheel": {
+    "build_dir": "build/engine-meson/cpython-313-linux-x86_64-x86_64-f6db693e21e289603ae71c78242a17b102f1e324061021d5dca361f47a0bfef7",
+    "build_fingerprint": "465e6039f7b6cb00d90e14f50695ba2d0c42dc44c33c14094397d68f77c5b2bb",
+    "schema_version": 1,
+    "wheel": "build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+    "wheel_sha256": "bd0a47aacb50974ecea2d646e65045af13db2a93befbc77a923a018e2b2693ff"
+  },
+  "wheel_last_modified_utc": "2026-10-02T22:58:37.325387+00:00",
+  "wheel_build_fingerprint": "bf1aff6b0d06576b8064c8decc81d8e25d3460693796e713bec0e133e30236aa",
+  "native_binary_sha256": "a727712fe7e8c6849332f89eec9353c96a1d0486c83a5f6988ff01f9d785f60d",
+  "selectors": [
+    {
+      "selector": "reference-caloric-identities",
+      "path": "build/slice2-final/reference-caloric-identities.log",
+      "sha256": "9cc8a8c68075066adc8c246492ef77ceba0e3a59a9a13c1403225444dd22650c",
+      "last_modified_utc": "2026-10-02T22:58:39.119383+00:00",
+      "native_row_count": 100,
+      "terminal_record": "EPCSAFT_CASE schema_version=1 test_id=native.equilibrium.reference-caloric-identities execution=Passed"
+    },
+    {
+      "selector": "reactive-caloric-E-sys",
+      "path": "build/slice2-final/reactive-caloric-E-sys.log",
+      "sha256": "ce81082d379888c8a497c0606a611f3b8e71f7f9aefe970234e0d9a5fbaf9844",
+      "last_modified_utc": "2026-10-02T22:58:45.618369+00:00",
+      "native_row_count": 1105,
+      "terminal_record": "EPCSAFT_CASE schema_version=1 test_id=native.equilibrium.reactive-caloric-E-sys execution=Passed"
+    },
+    {
+      "selector": "reactive-caloric-E-fix",
+      "path": "build/slice2-final/reactive-caloric-E-fix.log",
+      "sha256": "e67330c56117c7bd3e38d94cacd8b90956fbc124609377218a0bbb734f9f9e62",
+      "last_modified_utc": "2026-10-02T22:58:50.368358+00:00",
+      "native_row_count": 1111,
+      "terminal_record": "EPCSAFT_CASE schema_version=1 test_id=native.equilibrium.reactive-caloric-E-fix execution=Passed"
+    },
+    {
+      "selector": "reactive-caloric-I-sys",
+      "path": "build/slice2-final/reactive-caloric-I-sys.log",
+      "sha256": "c7945468efc3bdd7819108b2fc7892f06ad11e0bcbce2eee44e3fe99e6a16d09",
+      "last_modified_utc": "2026-10-02T22:59:17.758298+00:00",
+      "native_row_count": 1433,
+      "terminal_record": "EPCSAFT_CASE schema_version=1 test_id=native.equilibrium.reactive-caloric-I-sys execution=Passed"
+    },
+    {
+      "selector": "reactive-caloric-I-fix",
+      "path": "build/slice2-final/reactive-caloric-I-fix.log",
+      "sha256": "c60246f4546d6081148a368f6d5cc51482884dd3445f2a3757708a65fdf66551",
+      "last_modified_utc": "2026-10-02T22:59:39.980249+00:00",
+      "native_row_count": 1436,
+      "terminal_record": "EPCSAFT_CASE schema_version=1 test_id=native.equilibrium.reactive-caloric-I-fix execution=Passed"
+    },
+    {
+      "selector": "reactive-caloric-U",
+      "path": "build/slice2-final/reactive-caloric-U.log",
+      "sha256": "6f56951f079a49d2bfb5cc897224973ba6fcb789d138b4488c763f9b50b77faa",
+      "last_modified_utc": "2026-10-02T22:59:41.907245+00:00",
+      "native_row_count": 921,
+      "terminal_record": "EPCSAFT_CASE schema_version=1 test_id=native.equilibrium.reactive-caloric-U execution=Passed"
+    }
+  ],
+  "historical_checks": [
+    {
+      "name": "build",
+      "path": "build/slice2-final/build.log",
+      "sha256": "ec4909edc438cf8f1e0fab6b2b36b97a727e7667013c9ac218a47be7166ea8bd",
+      "last_modified_utc": "2026-10-02T22:58:38.595384+00:00",
+      "interpretation": "retained historical execution log; no new execution in evidence-completion task"
+    },
+    {
+      "name": "check-all",
+      "path": "build/slice2-final/check-all.log",
+      "sha256": "1fad04e2571ba0dc3c587896b0fe366fab755286789be512f966d4ca795a789b",
+      "last_modified_utc": "2026-10-02T23:00:13.295176+00:00",
+      "interpretation": "retained historical execution log; no new execution in evidence-completion task"
+    },
+    {
+      "name": "check-affected",
+      "path": "build/slice2-final/check-affected.log",
+      "sha256": "4f653ae3317542d08b510046eb9cf914e743ac2b16b441ca9f66a128328f5fa5",
+      "last_modified_utc": "2026-10-02T23:00:16.071169+00:00",
+      "interpretation": "retained historical execution log; no new execution in evidence-completion task"
+    },
+    {
+      "name": "check-affected-base",
+      "path": "build/slice2-final/check-affected-base.log",
+      "sha256": "84824d5dd8820a403ba222d105d01a4d2449c0f70e2f718559eb6e088ec15ec3",
+      "last_modified_utc": "2026-10-02T23:03:54.939670+00:00",
+      "interpretation": "retained historical execution log; no new execution in evidence-completion task"
+    }
+  ],
+  "collection_command": ".venv/bin/python analyses/2026-reactive-caloric-actions/scripts/collect.py build/slice2-final/reference-caloric-identities.log build/slice2-final/reactive-caloric-E-sys.log build/slice2-final/reactive-caloric-E-fix.log build/slice2-final/reactive-caloric-I-sys.log build/slice2-final/reactive-caloric-I-fix.log build/slice2-final/reactive-caloric-U.log",
+  "row_ownership": "comparisons.csv retains 417 original slice-1 native.properties records under results/provenance.json identity and 6021 unique slice-2 numerical records from six native.equilibrium logs. Only identical native numerical content is combined; the two distinct endpoint-isothermal-action results are both retained.",
+  "runtime_lines": {
+    "current_by_layer": {
+      "core": 917,
+      "contributions": 1547,
+      "properties": 4807,
+      "equilibrium": 7379,
+      "regression": 2398,
+      "surface": 532,
+      "bindings": 1944,
+      "python": 2727
+    },
+    "current_total": 22251,
+    "diff_against_integrated_main": {
+      "bindings": {
+        "added": 13,
+        "removed": 4,
+        "net": 9
+      },
+      "contributions": {
+        "added": 3,
+        "removed": 3,
+        "net": 0
+      },
+      "equilibrium": {
+        "added": 703,
+        "removed": 374,
+        "net": 329
+      },
+      "properties": {
+        "added": 60,
+        "removed": 16,
+        "net": 44
+      },
+      "python": {
+        "added": 3,
+        "removed": 1,
+        "net": 2
+      }
+    },
+    "accounting_command": "python3 tools/diffstat.py --budgets",
+    "authority": "ARCHITECTURE.yaml:code_budgets",
+    "remaining_limit": "Properties exceeds the recorded 4800 hard ceiling by seven lines. The sprint report-only flag remains; evidence completion does not grant runtime acceptance or a ceiling amendment."
+  },
+  "claim_limits": [
+    "Numerical verification on declared manufactured E/I/U single-liquid driven-intensive charts; not physical calorimetry, real dissociation chemistry, parameter validation or global equilibrium stability.",
+    "Independent rebuilt-value references share EOS kernels; they do not establish physical model accuracy.",
+    "No new Engine calculation, build or installation was run during evidence completion.",
+    "Free-intensive combinations, apparent-Cp fitting and integrated issue completion remain separate slices.",
+    "Final selectors reported Passed; standalone process exit-code records were not retained. Log modification times are file metadata, not measured durations.",
+    "Finite-terminal comparisons and observed dilution changes are not universal bounds at infinite dilution."
+  ],
+  "transport_verification": "Every retained numeric field and final input field compared exactly with the six native JSON logs; all original slice-1 fields compared exactly with the committed table. No derivative/comparison arithmetic was recomputed."
+}

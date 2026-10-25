@@ -1,0 +1,153 @@
+case,predicate,trials,productive,fired,rejected_caught,productive_caught
+caloric-action,bitwise identical,23,8,15,15,0
+caloric-action,all coordinates within one ulp,23,8,15,15,0
+caloric-action,repeat previous trial,23,8,10,10,0
+caloric-action,predicted gain <= norm rounding,23,8,15,15,0
+caloric-action,predicted gain <= assembly or native floor,23,8,15,15,0
+caloric-action,predicted gain <= active-row rounding,23,8,15,15,0
+caloric-action,all row changes <= own rounding,23,8,15,15,0
+caloric-action,predicted nonpositive gain,23,8,15,15,0
+case-6_figure-2-point-7,bitwise identical,7,2,0,0,0
+case-6_figure-2-point-7,all coordinates within one ulp,7,2,0,0,0
+case-6_figure-2-point-7,repeat previous trial,7,2,0,0,0
+case-6_figure-2-point-7,predicted gain <= norm rounding,7,2,4,3,1
+case-6_figure-2-point-7,predicted gain <= assembly or native floor,7,2,7,5,2
+case-6_figure-2-point-7,predicted gain <= active-row rounding,7,2,2,2,0
+case-6_figure-2-point-7,all row changes <= own rounding,7,2,0,0,0
+case-6_figure-2-point-7,predicted nonpositive gain,7,2,0,0,0
+case-7_flash-5918.5286-Pa,bitwise identical,3,3,0,0,0
+case-7_flash-5918.5286-Pa,all coordinates within one ulp,3,3,0,0,0
+case-7_flash-5918.5286-Pa,repeat previous trial,3,3,0,0,0
+case-7_flash-5918.5286-Pa,predicted gain <= norm rounding,3,3,0,0,0
+case-7_flash-5918.5286-Pa,predicted gain <= assembly or native floor,3,3,1,0,1
+case-7_flash-5918.5286-Pa,predicted gain <= active-row rounding,3,3,0,0,0
+case-7_flash-5918.5286-Pa,all row changes <= own rounding,3,3,0,0,0
+case-7_flash-5918.5286-Pa,predicted nonpositive gain,3,3,0,0,0
+fit,bitwise identical,111,55,0,0,0
+fit,all coordinates within one ulp,111,55,3,3,0
+fit,repeat previous trial,111,55,0,0,0
+fit,predicted gain <= norm rounding,111,55,51,33,18
+fit,predicted gain <= assembly or native floor,111,55,51,33,18
+fit,predicted gain <= active-row rounding,111,55,37,25,12
+fit,all row changes <= own rounding,111,55,20,11,9
+fit,predicted nonpositive gain,111,55,10,10,0
+free-P,bitwise identical,4,1,0,0,0
+free-P,all coordinates within one ulp,4,1,0,0,0
+free-P,repeat previous trial,4,1,0,0,0
+free-P,predicted gain <= norm rounding,4,1,3,3,0
+free-P,predicted gain <= assembly or native floor,4,1,3,3,0
+free-P,predicted gain <= active-row rounding,4,1,2,2,0
+free-P,all row changes <= own rounding,4,1,2,2,0
+free-P,predicted nonpositive gain,4,1,2,2,0
+free-T,bitwise identical,4,1,0,0,0
+free-T,all coordinates within one ulp,4,1,0,0,0
+free-T,repeat previous trial,4,1,0,0,0
+free-T,predicted gain <= norm rounding,4,1,2,2,0
+free-T,predicted gain <= assembly or native floor,4,1,2,2,0
+free-T,predicted gain <= active-row rounding,4,1,2,2,0
+free-T,all row changes <= own rounding,4,1,1,1,0
+free-T,predicted nonpositive gain,4,1,1,1,0
+isomerization,bitwise identical,12,8,0,0,0
+isomerization,all coordinates within one ulp,12,8,1,1,0
+isomerization,repeat previous trial,12,8,0,0,0
+isomerization,predicted gain <= norm rounding,12,8,6,4,2
+isomerization,predicted gain <= assembly or native floor,12,8,6,4,2
+isomerization,predicted gain <= active-row rounding,12,8,6,4,2
+isomerization,all row changes <= own rounding,12,8,4,3,1
+isomerization,predicted nonpositive gain,12,8,0,0,0
+khudaida-1,bitwise identical,3,3,0,0,0
+khudaida-1,all coordinates within one ulp,3,3,0,0,0
+khudaida-1,repeat previous trial,3,3,0,0,0
+khudaida-1,predicted gain <= norm rounding,3,3,0,0,0
+khudaida-1,predicted gain <= assembly or native floor,3,3,2,0,2
+khudaida-1,predicted gain <= active-row rounding,3,3,0,0,0
+khudaida-1,all row changes <= own rounding,3,3,0,0,0
+khudaida-1,predicted nonpositive gain,3,3,0,0,0
+khudaida-2,bitwise identical,5,3,0,0,0
+khudaida-2,all coordinates within one ulp,5,3,0,0,0
+khudaida-2,repeat previous trial,5,3,0,0,0
+khudaida-2,predicted gain <= norm rounding,5,3,0,0,0
+khudaida-2,predicted gain <= assembly or native floor,5,3,5,2,3
+khudaida-2,predicted gain <= active-row rounding,5,3,0,0,0
+khudaida-2,all row changes <= own rounding,5,3,0,0,0
+khudaida-2,predicted nonpositive gain,5,3,0,0,0
+khudaida-3,bitwise identical,3,3,0,0,0
+khudaida-3,all coordinates within one ulp,3,3,0,0,0
+khudaida-3,repeat previous trial,3,3,0,0,0
+khudaida-3,predicted gain <= norm rounding,3,3,0,0,0
+khudaida-3,predicted gain <= assembly or native floor,3,3,2,0,2
+khudaida-3,predicted gain <= active-row rounding,3,3,0,0,0
+khudaida-3,all row changes <= own rounding,3,3,0,0,0
+khudaida-3,predicted nonpositive gain,3,3,0,0,0
+khudaida-4,bitwise identical,5,3,0,0,0
+khudaida-4,all coordinates within one ulp,5,3,0,0,0
+khudaida-4,repeat previous trial,5,3,0,0,0
+khudaida-4,predicted gain <= norm rounding,5,3,2,1,1
+khudaida-4,predicted gain <= assembly or native floor,5,3,5,2,3
+khudaida-4,predicted gain <= active-row rounding,5,3,0,0,0
+khudaida-4,all row changes <= own rounding,5,3,0,0,0
+khudaida-4,predicted nonpositive gain,5,3,0,0,0
+khudaida-5,bitwise identical,6,2,0,0,0
+khudaida-5,all coordinates within one ulp,6,2,0,0,0
+khudaida-5,repeat previous trial,6,2,0,0,0
+khudaida-5,predicted gain <= norm rounding,6,2,2,2,0
+khudaida-5,predicted gain <= assembly or native floor,6,2,6,4,2
+khudaida-5,predicted gain <= active-row rounding,6,2,0,0,0
+khudaida-5,all row changes <= own rounding,6,2,0,0,0
+khudaida-5,predicted nonpositive gain,6,2,0,0,0
+khudaida-6,bitwise identical,5,3,0,0,0
+khudaida-6,all coordinates within one ulp,5,3,0,0,0
+khudaida-6,repeat previous trial,5,3,0,0,0
+khudaida-6,predicted gain <= norm rounding,5,3,3,1,2
+khudaida-6,predicted gain <= assembly or native floor,5,3,5,2,3
+khudaida-6,predicted gain <= active-row rounding,5,3,0,0,0
+khudaida-6,all row changes <= own rounding,5,3,0,0,0
+khudaida-6,predicted nonpositive gain,5,3,0,0,0
+khudaida-7,bitwise identical,3,3,0,0,0
+khudaida-7,all coordinates within one ulp,3,3,0,0,0
+khudaida-7,repeat previous trial,3,3,0,0,0
+khudaida-7,predicted gain <= norm rounding,3,3,0,0,0
+khudaida-7,predicted gain <= assembly or native floor,3,3,3,0,3
+khudaida-7,predicted gain <= active-row rounding,3,3,0,0,0
+khudaida-7,all row changes <= own rounding,3,3,0,0,0
+khudaida-7,predicted nonpositive gain,3,3,0,0,0
+khudaida-8,bitwise identical,4,1,0,0,0
+khudaida-8,all coordinates within one ulp,4,1,0,0,0
+khudaida-8,repeat previous trial,4,1,0,0,0
+khudaida-8,predicted gain <= norm rounding,4,1,2,2,0
+khudaida-8,predicted gain <= assembly or native floor,4,1,4,3,1
+khudaida-8,predicted gain <= active-row rounding,4,1,0,0,0
+khudaida-8,all row changes <= own rounding,4,1,0,0,0
+khudaida-8,predicted nonpositive gain,4,1,0,0,0
+masking,bitwise identical,3,3,0,0,0
+masking,all coordinates within one ulp,3,3,0,0,0
+masking,repeat previous trial,3,3,0,0,0
+masking,predicted gain <= norm rounding,3,3,1,0,1
+masking,predicted gain <= assembly or native floor,3,3,1,0,1
+masking,predicted gain <= active-row rounding,3,3,1,0,1
+masking,all row changes <= own rounding,3,3,0,0,0
+masking,predicted nonpositive gain,3,3,0,0,0
+mea-nominally-unloaded,bitwise identical,4,4,0,0,0
+mea-nominally-unloaded,all coordinates within one ulp,4,4,0,0,0
+mea-nominally-unloaded,repeat previous trial,4,4,0,0,0
+mea-nominally-unloaded,predicted gain <= norm rounding,4,4,0,0,0
+mea-nominally-unloaded,predicted gain <= assembly or native floor,4,4,0,0,0
+mea-nominally-unloaded,predicted gain <= active-row rounding,4,4,0,0,0
+mea-nominally-unloaded,all row changes <= own rounding,4,4,0,0,0
+mea-nominally-unloaded,predicted nonpositive gain,4,4,0,0,0
+small-positive-phase,bitwise identical,3,0,0,0,0
+small-positive-phase,all coordinates within one ulp,3,0,0,0,0
+small-positive-phase,repeat previous trial,3,0,0,0,0
+small-positive-phase,predicted gain <= norm rounding,3,0,3,3,0
+small-positive-phase,predicted gain <= assembly or native floor,3,0,3,3,0
+small-positive-phase,predicted gain <= active-row rounding,3,0,3,3,0
+small-positive-phase,all row changes <= own rounding,3,0,2,2,0
+small-positive-phase,predicted nonpositive gain,3,0,2,2,0
+two-phase-action,bitwise identical,12,9,0,0,0
+two-phase-action,all coordinates within one ulp,12,9,0,0,0
+two-phase-action,repeat previous trial,12,9,0,0,0
+two-phase-action,predicted gain <= norm rounding,12,9,0,0,0
+two-phase-action,predicted gain <= assembly or native floor,12,9,12,3,9
+two-phase-action,predicted gain <= active-row rounding,12,9,0,0,0
+two-phase-action,all row changes <= own rounding,12,9,0,0,0
+two-phase-action,predicted nonpositive gain,12,9,0,0,0

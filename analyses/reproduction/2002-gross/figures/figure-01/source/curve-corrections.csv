@@ -1,0 +1,2 @@
+source_csv_line,series,input_coordinate,quantity,old_reference,corrected_reference,engine_value,native_pixel_x,native_pixel_y,disposition,reason,source_link
+36,liquid,330.0,density_kg_m3,790.0,,789.2032233202067,1524,1056,omitted,Pentanol solid liquid-density curve is obscured by its filled symbols at 330 K. Coincident nonanol experimental coordinates are a different compound; experimental row retained.,https://doi.org/10.1021/ie010954d

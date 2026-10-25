@@ -1,0 +1,1818 @@
+{
+  "components": [
+    {
+      "coefficients": [
+        {
+          "family": "segment_count",
+          "identity": "component/water/segment_count",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 1.2046,
+            "unit": "dimensionless"
+          }
+        },
+        {
+          "family": "dispersion_energy_over_k",
+          "identity": "component/water/dispersion_energy_over_k",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 353.94,
+            "unit": "kelvin"
+          }
+        },
+        {
+          "family": "solvation_factor",
+          "identity": "component/water/solvation_factor",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id": "water",
+      "fixed": {
+        "charge_number": {
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          }
+        },
+        "molar_mass": {
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 0.01801528,
+            "unit": "kilogram / mole"
+          }
+        }
+      }
+    },
+    {
+      "coefficients": [
+        {
+          "family": "segment_count",
+          "identity": "component/mdea/segment_count",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 3.675,
+            "unit": "dimensionless"
+          }
+        },
+        {
+          "family": "dispersion_energy_over_k",
+          "identity": "component/mdea/dispersion_energy_over_k",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 228.71,
+            "unit": "kelvin"
+          }
+        },
+        {
+          "family": "segment_diameter",
+          "identity": "component/mdea/segment_diameter",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 3.563,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "family": "solvation_factor",
+          "identity": "component/mdea/solvation_factor",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id": "mdea",
+      "fixed": {
+        "charge_number": {
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          }
+        },
+        "molar_mass": {
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 0.119163,
+            "unit": "kilogram / mole"
+          }
+        }
+      }
+    },
+    {
+      "coefficients": [
+        {
+          "family": "segment_count",
+          "identity": "component/co2/segment_count",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 2.0729,
+            "unit": "dimensionless"
+          }
+        },
+        {
+          "family": "dispersion_energy_over_k",
+          "identity": "component/co2/dispersion_energy_over_k",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 169.21,
+            "unit": "kelvin"
+          }
+        },
+        {
+          "family": "segment_diameter",
+          "identity": "component/co2/segment_diameter",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 2.7852,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "family": "solvation_factor",
+          "identity": "component/co2/solvation_factor",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id": "co2",
+      "fixed": {
+        "charge_number": {
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          }
+        },
+        "molar_mass": {
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 0.0440095,
+            "unit": "kilogram / mole"
+          }
+        }
+      }
+    },
+    {
+      "coefficients": [
+        {
+          "family": "segment_count",
+          "identity": "component/h-cation/segment_count",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          }
+        },
+        {
+          "family": "dispersion_energy_over_k",
+          "identity": "component/h-cation/dispersion_energy_over_k",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 500.0,
+            "unit": "kelvin"
+          }
+        },
+        {
+          "family": "segment_diameter",
+          "identity": "component/h-cation/segment_diameter",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 3.4654,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "family": "packing_diameter",
+          "identity": "component/h-cation/packing_diameter",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 3.4654,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "family": "debye_huckel_diameter",
+          "identity": "component/h-cation/debye_huckel_diameter",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 3.4654,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "family": "solvation_factor",
+          "identity": "component/h-cation/solvation_factor",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          }
+        },
+        {
+          "family": "born_diameter",
+          "identity": "component/h-cation/born_diameter",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 3.4654,
+            "unit": "angstrom"
+          }
+        }
+      ],
+      "component_id": "h-cation",
+      "fixed": {
+        "charge_number": {
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 1,
+            "unit": "elementary-charge"
+          }
+        },
+        "molar_mass": {
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 0.00100794,
+            "unit": "kilogram / mole"
+          }
+        }
+      }
+    },
+    {
+      "coefficients": [
+        {
+          "family": "segment_count",
+          "identity": "component/oh-anion/segment_count",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          }
+        },
+        {
+          "family": "dispersion_energy_over_k",
+          "identity": "component/oh-anion/dispersion_energy_over_k",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 650.0,
+            "unit": "kelvin"
+          }
+        },
+        {
+          "family": "segment_diameter",
+          "identity": "component/oh-anion/segment_diameter",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 2.0177,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "family": "packing_diameter",
+          "identity": "component/oh-anion/packing_diameter",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 2.0177,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "family": "debye_huckel_diameter",
+          "identity": "component/oh-anion/debye_huckel_diameter",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 2.0177,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "family": "solvation_factor",
+          "identity": "component/oh-anion/solvation_factor",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          }
+        },
+        {
+          "family": "born_diameter",
+          "identity": "component/oh-anion/born_diameter",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 2.0177,
+            "unit": "angstrom"
+          }
+        }
+      ],
+      "component_id": "oh-anion",
+      "fixed": {
+        "charge_number": {
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": -1,
+            "unit": "elementary-charge"
+          }
+        },
+        "molar_mass": {
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 0.01700734,
+            "unit": "kilogram / mole"
+          }
+        }
+      }
+    },
+    {
+      "coefficients": [
+        {
+          "family": "segment_count",
+          "identity": "component/hco3-anion/segment_count",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          }
+        },
+        {
+          "family": "dispersion_energy_over_k",
+          "identity": "component/hco3-anion/dispersion_energy_over_k",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 70.0,
+            "unit": "kelvin"
+          }
+        },
+        {
+          "family": "segment_diameter",
+          "identity": "component/hco3-anion/segment_diameter",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 2.9296,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "family": "packing_diameter",
+          "identity": "component/hco3-anion/packing_diameter",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 2.9296,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "family": "debye_huckel_diameter",
+          "identity": "component/hco3-anion/debye_huckel_diameter",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 2.9296,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "family": "solvation_factor",
+          "identity": "component/hco3-anion/solvation_factor",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          }
+        },
+        {
+          "family": "born_diameter",
+          "identity": "component/hco3-anion/born_diameter",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 2.9296,
+            "unit": "angstrom"
+          }
+        }
+      ],
+      "component_id": "hco3-anion",
+      "fixed": {
+        "charge_number": {
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": -1,
+            "unit": "elementary-charge"
+          }
+        },
+        "molar_mass": {
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 0.06101684,
+            "unit": "kilogram / mole"
+          }
+        }
+      }
+    },
+    {
+      "coefficients": [
+        {
+          "family": "segment_count",
+          "identity": "component/carbonate-anion/segment_count",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          }
+        },
+        {
+          "family": "dispersion_energy_over_k",
+          "identity": "component/carbonate-anion/dispersion_energy_over_k",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 249.26,
+            "unit": "kelvin"
+          }
+        },
+        {
+          "family": "segment_diameter",
+          "identity": "component/carbonate-anion/segment_diameter",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 2.4422,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "family": "packing_diameter",
+          "identity": "component/carbonate-anion/packing_diameter",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 2.4422,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "family": "debye_huckel_diameter",
+          "identity": "component/carbonate-anion/debye_huckel_diameter",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 2.4422,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "family": "solvation_factor",
+          "identity": "component/carbonate-anion/solvation_factor",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          }
+        },
+        {
+          "family": "born_diameter",
+          "identity": "component/carbonate-anion/born_diameter",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 2.4422,
+            "unit": "angstrom"
+          }
+        }
+      ],
+      "component_id": "carbonate-anion",
+      "fixed": {
+        "charge_number": {
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": -2,
+            "unit": "elementary-charge"
+          }
+        },
+        "molar_mass": {
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 0.0600089,
+            "unit": "kilogram / mole"
+          }
+        }
+      }
+    },
+    {
+      "coefficients": [
+        {
+          "family": "segment_count",
+          "identity": "component/mdeah-cation/segment_count",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          }
+        },
+        {
+          "family": "dispersion_energy_over_k",
+          "identity": "component/mdeah-cation/dispersion_energy_over_k",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 228.71,
+            "unit": "kelvin"
+          }
+        },
+        {
+          "family": "segment_diameter",
+          "identity": "component/mdeah-cation/segment_diameter",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 3.563,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "family": "packing_diameter",
+          "identity": "component/mdeah-cation/packing_diameter",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 3.563,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "family": "debye_huckel_diameter",
+          "identity": "component/mdeah-cation/debye_huckel_diameter",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 3.563,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "family": "solvation_factor",
+          "identity": "component/mdeah-cation/solvation_factor",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          }
+        },
+        {
+          "family": "born_diameter",
+          "identity": "component/mdeah-cation/born_diameter",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 3.563,
+            "unit": "angstrom"
+          }
+        }
+      ],
+      "component_id": "mdeah-cation",
+      "fixed": {
+        "charge_number": {
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 1,
+            "unit": "elementary-charge"
+          }
+        },
+        "molar_mass": {
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 0.12017094,
+            "unit": "kilogram / mole"
+          }
+        }
+      }
+    }
+  ],
+  "correlations": [
+    {
+      "component_id": "water",
+      "constant": {
+        "identity": "component/water/segment_diameter/constant-plus-sum-of-exponentials/constant",
+        "value": {
+          "magnitude": 2.7927,
+          "unit": "angstrom"
+        }
+      },
+      "correlation_id": "component/water/segment_diameter/constant-plus-sum-of-exponentials",
+      "family": "segment_diameter",
+      "form": "constant-plus-sum-of-exponentials",
+      "independent_variables": [
+        "temperature"
+      ],
+      "provenance": {
+        "domain_id": "bulow-2021-sour-gas-293-413-k",
+        "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+        "source_id": "bulow-2021-sour-gas"
+      },
+      "terms": [
+        {
+          "amplitude": {
+            "identity": "component/water/segment_diameter/constant-plus-sum-of-exponentials/term-0/amplitude",
+            "value": {
+              "magnitude": 10.11,
+              "unit": "angstrom"
+            }
+          },
+          "exponent_coefficient": {
+            "identity": "component/water/segment_diameter/constant-plus-sum-of-exponentials/term-0/exponent_coefficient",
+            "value": {
+              "magnitude": -0.01775,
+              "unit": "1 / kelvin"
+            }
+          }
+        },
+        {
+          "amplitude": {
+            "identity": "component/water/segment_diameter/constant-plus-sum-of-exponentials/term-1/amplitude",
+            "value": {
+              "magnitude": -1.417,
+              "unit": "angstrom"
+            }
+          },
+          "exponent_coefficient": {
+            "identity": "component/water/segment_diameter/constant-plus-sum-of-exponentials/term-1/exponent_coefficient",
+            "value": {
+              "magnitude": -0.01146,
+              "unit": "1 / kelvin"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "water",
+      "constant": {
+        "identity": "component/water/relative_permittivity/constant-plus-polynomial-in-temperature/constant",
+        "value": {
+          "magnitude": 78.41043478578715,
+          "unit": "dimensionless"
+        }
+      },
+      "correlation_id": "component/water/relative_permittivity/constant-plus-polynomial-in-temperature",
+      "family": "relative_permittivity",
+      "form": "constant-plus-polynomial-in-temperature",
+      "independent_variables": [
+        "temperature"
+      ],
+      "provenance": {
+        "domain_id": "bulow-2021-sour-gas-293-413-k",
+        "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+        "source_id": "bulow-2021-sour-gas"
+      },
+      "reference_temperature": {
+        "magnitude": 298.15,
+        "unit": "kelvin"
+      },
+      "terms": [
+        {
+          "coefficient": {
+            "identity": "component/water/relative_permittivity/constant-plus-polynomial-in-temperature/term-0/coefficient",
+            "value": {
+              "magnitude": -0.36133766233691506,
+              "unit": "1 / kelvin ** 1"
+            }
+          },
+          "power": 1
+        },
+        {
+          "coefficient": {
+            "identity": "component/water/relative_permittivity/constant-plus-polynomial-in-temperature/term-1/coefficient",
+            "value": {
+              "magnitude": 0.00076555618295,
+              "unit": "1 / kelvin ** 2"
+            }
+          },
+          "power": 2
+        }
+      ]
+    },
+    {
+      "component_id": "mdea",
+      "constant": {
+        "identity": "component/mdea/relative_permittivity/constant-plus-polynomial-in-temperature/constant",
+        "value": {
+          "magnitude": 22.4,
+          "unit": "dimensionless"
+        }
+      },
+      "correlation_id": "component/mdea/relative_permittivity/constant-plus-polynomial-in-temperature",
+      "family": "relative_permittivity",
+      "form": "constant-plus-polynomial-in-temperature",
+      "independent_variables": [
+        "temperature"
+      ],
+      "provenance": {
+        "domain_id": "bulow-2021-sour-gas-293-413-k",
+        "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+        "source_id": "bulow-2021-sour-gas"
+      },
+      "reference_temperature": {
+        "magnitude": 298.15,
+        "unit": "kelvin"
+      },
+      "terms": [
+        {
+          "coefficient": {
+            "identity": "component/mdea/relative_permittivity/constant-plus-polynomial-in-temperature/term-0/coefficient",
+            "value": {
+              "magnitude": 0.0,
+              "unit": "1 / kelvin ** 1"
+            }
+          },
+          "power": 1
+        }
+      ]
+    }
+  ],
+  "document_id": "bulow-2021-sour-gas-explicit-ion",
+  "document_version": 1,
+  "domains": [
+    {
+      "domain_id": "bulow-2021-sour-gas-293-413-k",
+      "ion_mole_fraction_max": {
+        "magnitude": 0.5,
+        "unit": "dimensionless"
+      },
+      "kind": "reported-conditions",
+      "pressure_max": {
+        "magnitude": 18000000.0,
+        "unit": "pascal"
+      },
+      "pressure_min": {
+        "magnitude": 100.0,
+        "unit": "pascal"
+      },
+      "temperature_max": {
+        "magnitude": 413.0,
+        "unit": "kelvin"
+      },
+      "temperature_min": {
+        "magnitude": 293.0,
+        "unit": "kelvin"
+      }
+    }
+  ],
+  "model_coefficients": [
+    {
+      "family": "ionic_region_relative_permittivity",
+      "identity": "model/relative_permittivity/ionic_region_relative_permittivity",
+      "provenance": {
+        "domain_id": "bulow-2021-sour-gas-293-413-k",
+        "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+        "source_id": "bulow-2021-sour-gas"
+      },
+      "value": {
+        "magnitude": 1.0,
+        "unit": "dimensionless"
+      }
+    }
+  ],
+  "model_families": [
+    {
+      "choice": "general-site",
+      "family_id": "model/association",
+      "kind": "association",
+      "provenance": {
+        "domain_id": "bulow-2021-sour-gas-293-413-k",
+        "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+        "source_id": "bulow-2021-sour-gas"
+      }
+    },
+    {
+      "choice": "pc-saft",
+      "family_id": "model/base",
+      "kind": "base",
+      "provenance": {
+        "domain_id": "bulow-2021-sour-gas-293-413-k",
+        "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+        "source_id": "bulow-2021-sour-gas"
+      }
+    },
+    {
+      "c_dielectric": 0.0,
+      "c_shell": 0.0,
+      "choice": "born",
+      "family_id": "model/electrolyte",
+      "kind": "electrolyte",
+      "provenance": {
+        "domain_id": "bulow-2021-sour-gas-293-413-k",
+        "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+        "source_id": "bulow-2021-sour-gas"
+      }
+    },
+    {
+      "choice": "solvent-only",
+      "family_id": "model/relative_permittivity",
+      "kind": "permittivity",
+      "provenance": {
+        "domain_id": "bulow-2021-sour-gas-293-413-k",
+        "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+        "source_id": "bulow-2021-sour-gas"
+      }
+    },
+    {
+      "choice": "none",
+      "family_id": "model/polar",
+      "kind": "polar",
+      "provenance": {
+        "domain_id": "bulow-2021-sour-gas-293-413-k",
+        "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+        "source_id": "bulow-2021-sour-gas"
+      }
+    }
+  ],
+  "pairs": [
+    {
+      "coefficients": [
+        {
+          "family": "k_ij",
+          "identity": "pair/mdea/water/k_ij",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": -0.13193312499999998,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "mdea",
+      "component_id_b": "water"
+    },
+    {
+      "coefficients": [
+        {
+          "family": "k_ij",
+          "identity": "pair/co2/water/k_ij",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 0.0046949999999999995,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "co2",
+      "component_id_b": "water"
+    },
+    {
+      "coefficients": [
+        {
+          "family": "k_ij",
+          "identity": "pair/h-cation/water/k_ij",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 0.25,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "h-cation",
+      "component_id_b": "water"
+    },
+    {
+      "coefficients": [
+        {
+          "family": "k_ij",
+          "identity": "pair/oh-anion/water/k_ij",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": -0.25,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "oh-anion",
+      "component_id_b": "water"
+    },
+    {
+      "coefficients": [
+        {
+          "family": "k_ij",
+          "identity": "pair/hco3-anion/water/k_ij",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "hco3-anion",
+      "component_id_b": "water"
+    },
+    {
+      "coefficients": [
+        {
+          "family": "k_ij",
+          "identity": "pair/carbonate-anion/water/k_ij",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": -0.25,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "carbonate-anion",
+      "component_id_b": "water"
+    },
+    {
+      "coefficients": [
+        {
+          "family": "k_ij",
+          "identity": "pair/mdeah-cation/water/k_ij",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "mdeah-cation",
+      "component_id_b": "water"
+    },
+    {
+      "coefficients": [
+        {
+          "family": "k_ij",
+          "identity": "pair/co2/mdea/k_ij",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "co2",
+      "component_id_b": "mdea"
+    },
+    {
+      "coefficients": [
+        {
+          "family": "k_ij",
+          "identity": "pair/h-cation/mdea/k_ij",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "h-cation",
+      "component_id_b": "mdea"
+    },
+    {
+      "coefficients": [
+        {
+          "family": "k_ij",
+          "identity": "pair/mdea/oh-anion/k_ij",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "mdea",
+      "component_id_b": "oh-anion"
+    },
+    {
+      "coefficients": [
+        {
+          "family": "k_ij",
+          "identity": "pair/hco3-anion/mdea/k_ij",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "hco3-anion",
+      "component_id_b": "mdea"
+    },
+    {
+      "coefficients": [
+        {
+          "family": "k_ij",
+          "identity": "pair/carbonate-anion/mdea/k_ij",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "carbonate-anion",
+      "component_id_b": "mdea"
+    },
+    {
+      "coefficients": [
+        {
+          "family": "k_ij",
+          "identity": "pair/mdea/mdeah-cation/k_ij",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "mdea",
+      "component_id_b": "mdeah-cation"
+    },
+    {
+      "coefficients": [
+        {
+          "family": "k_ij",
+          "identity": "pair/co2/h-cation/k_ij",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "co2",
+      "component_id_b": "h-cation"
+    },
+    {
+      "coefficients": [
+        {
+          "family": "k_ij",
+          "identity": "pair/co2/oh-anion/k_ij",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "co2",
+      "component_id_b": "oh-anion"
+    },
+    {
+      "coefficients": [
+        {
+          "family": "k_ij",
+          "identity": "pair/co2/hco3-anion/k_ij",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "co2",
+      "component_id_b": "hco3-anion"
+    },
+    {
+      "coefficients": [
+        {
+          "family": "k_ij",
+          "identity": "pair/carbonate-anion/co2/k_ij",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "carbonate-anion",
+      "component_id_b": "co2"
+    },
+    {
+      "coefficients": [
+        {
+          "family": "k_ij",
+          "identity": "pair/co2/mdeah-cation/k_ij",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "co2",
+      "component_id_b": "mdeah-cation"
+    },
+    {
+      "coefficients": [
+        {
+          "family": "k_ij",
+          "identity": "pair/h-cation/oh-anion/k_ij",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "h-cation",
+      "component_id_b": "oh-anion"
+    },
+    {
+      "coefficients": [
+        {
+          "family": "k_ij",
+          "identity": "pair/h-cation/hco3-anion/k_ij",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "h-cation",
+      "component_id_b": "hco3-anion"
+    },
+    {
+      "coefficients": [
+        {
+          "family": "k_ij",
+          "identity": "pair/carbonate-anion/h-cation/k_ij",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "carbonate-anion",
+      "component_id_b": "h-cation"
+    },
+    {
+      "coefficients": [
+        {
+          "family": "k_ij",
+          "identity": "pair/mdeah-cation/oh-anion/k_ij",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "mdeah-cation",
+      "component_id_b": "oh-anion"
+    },
+    {
+      "coefficients": [
+        {
+          "family": "k_ij",
+          "identity": "pair/hco3-anion/mdeah-cation/k_ij",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "hco3-anion",
+      "component_id_b": "mdeah-cation"
+    },
+    {
+      "coefficients": [
+        {
+          "family": "k_ij",
+          "identity": "pair/carbonate-anion/mdeah-cation/k_ij",
+          "provenance": {
+            "domain_id": "bulow-2021-sour-gas-293-413-k",
+            "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+            "source_id": "bulow-2021-sour-gas"
+          },
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "carbonate-anion",
+      "component_id_b": "mdeah-cation"
+    }
+  ],
+  "purpose": "external-document",
+  "schema": "epcsaft.parameters",
+  "schema_version": 1,
+  "sources": [
+    {
+      "citation": "B\u00fclow et al., Ind. Eng. Chem. Res. 60 (2021) 6327-6336.",
+      "doi": "10.1021/acs.iecr.1c00176",
+      "source_id": "bulow-2021-sour-gas",
+      "use_basis": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1."
+    }
+  ],
+  "topology": {
+    "edges": [
+      {
+        "endpoint_a": {
+          "component_id": "water",
+          "site_id": "a"
+        },
+        "endpoint_b": {
+          "component_id": "water",
+          "site_id": "b"
+        },
+        "energy_over_k": {
+          "identity": "association/water/a/water/b/energy_over_k",
+          "value": {
+            "magnitude": 2425.6,
+            "unit": "kelvin"
+          }
+        },
+        "source": {
+          "kind": "explicit",
+          "provenance": [
+            {
+              "domain_id": "bulow-2021-sour-gas-293-413-k",
+              "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+              "source_id": "bulow-2021-sour-gas"
+            }
+          ]
+        },
+        "volume": {
+          "identity": "association/water/a/water/b/volume",
+          "value": {
+            "magnitude": 0.045,
+            "unit": "dimensionless"
+          }
+        }
+      },
+      {
+        "endpoint_a": {
+          "component_id": "mdea",
+          "site_id": "a"
+        },
+        "endpoint_b": {
+          "component_id": "mdea",
+          "site_id": "b"
+        },
+        "energy_over_k": {
+          "identity": "association/mdea/a/mdea/b/energy_over_k",
+          "value": {
+            "magnitude": 2046.6,
+            "unit": "kelvin"
+          }
+        },
+        "source": {
+          "kind": "explicit",
+          "provenance": [
+            {
+              "domain_id": "bulow-2021-sour-gas-293-413-k",
+              "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+              "source_id": "bulow-2021-sour-gas"
+            }
+          ]
+        },
+        "volume": {
+          "identity": "association/mdea/a/mdea/b/volume",
+          "value": {
+            "magnitude": 0.1238,
+            "unit": "dimensionless"
+          }
+        }
+      },
+      {
+        "endpoint_a": {
+          "component_id": "mdea",
+          "site_id": "b"
+        },
+        "endpoint_b": {
+          "component_id": "water",
+          "site_id": "a"
+        },
+        "energy_over_k": {
+          "identity": "association/mdea/b/water/a/energy_over_k",
+          "value": {
+            "magnitude": 2236.1,
+            "unit": "kelvin"
+          }
+        },
+        "source": {
+          "kind": "explicit",
+          "provenance": [
+            {
+              "domain_id": "bulow-2021-sour-gas-293-413-k",
+              "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+              "source_id": "bulow-2021-sour-gas"
+            }
+          ]
+        },
+        "volume": {
+          "identity": "association/mdea/b/water/a/volume",
+          "value": {
+            "magnitude": 0.07299974335309069,
+            "unit": "dimensionless"
+          }
+        }
+      },
+      {
+        "endpoint_a": {
+          "component_id": "mdea",
+          "site_id": "a"
+        },
+        "endpoint_b": {
+          "component_id": "water",
+          "site_id": "b"
+        },
+        "energy_over_k": {
+          "identity": "association/mdea/a/water/b/energy_over_k",
+          "value": {
+            "magnitude": 2236.1,
+            "unit": "kelvin"
+          }
+        },
+        "source": {
+          "kind": "explicit",
+          "provenance": [
+            {
+              "domain_id": "bulow-2021-sour-gas-293-413-k",
+              "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+              "source_id": "bulow-2021-sour-gas"
+            }
+          ]
+        },
+        "volume": {
+          "identity": "association/mdea/a/water/b/volume",
+          "value": {
+            "magnitude": 0.07299974335309069,
+            "unit": "dimensionless"
+          }
+        }
+      },
+      {
+        "endpoint_a": {
+          "component_id": "co2",
+          "site_id": "b"
+        },
+        "endpoint_b": {
+          "component_id": "water",
+          "site_id": "a"
+        },
+        "energy_over_k": {
+          "identity": "association/co2/b/water/a/energy_over_k",
+          "value": {
+            "magnitude": 1212.8,
+            "unit": "kelvin"
+          }
+        },
+        "source": {
+          "kind": "explicit",
+          "provenance": [
+            {
+              "domain_id": "bulow-2021-sour-gas-293-413-k",
+              "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+              "source_id": "bulow-2021-sour-gas"
+            }
+          ]
+        },
+        "volume": {
+          "identity": "association/co2/b/water/a/volume",
+          "value": {
+            "magnitude": 0.04499988389688737,
+            "unit": "dimensionless"
+          }
+        }
+      },
+      {
+        "endpoint_a": {
+          "component_id": "co2",
+          "site_id": "a"
+        },
+        "endpoint_b": {
+          "component_id": "water",
+          "site_id": "b"
+        },
+        "energy_over_k": {
+          "identity": "association/co2/a/water/b/energy_over_k",
+          "value": {
+            "magnitude": 1212.8,
+            "unit": "kelvin"
+          }
+        },
+        "source": {
+          "kind": "explicit",
+          "provenance": [
+            {
+              "domain_id": "bulow-2021-sour-gas-293-413-k",
+              "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+              "source_id": "bulow-2021-sour-gas"
+            }
+          ]
+        },
+        "volume": {
+          "identity": "association/co2/a/water/b/volume",
+          "value": {
+            "magnitude": 0.04499988389688737,
+            "unit": "dimensionless"
+          }
+        }
+      }
+    ],
+    "presets": [],
+    "sites": [
+      {
+        "component_id": "water",
+        "multiplicity": 1,
+        "provenance": {
+          "domain_id": "bulow-2021-sour-gas-293-413-k",
+          "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+          "source_id": "bulow-2021-sour-gas"
+        },
+        "site_id": "a",
+        "site_role": "donor"
+      },
+      {
+        "component_id": "water",
+        "multiplicity": 1,
+        "provenance": {
+          "domain_id": "bulow-2021-sour-gas-293-413-k",
+          "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+          "source_id": "bulow-2021-sour-gas"
+        },
+        "site_id": "b",
+        "site_role": "acceptor"
+      },
+      {
+        "component_id": "mdea",
+        "multiplicity": 2,
+        "provenance": {
+          "domain_id": "bulow-2021-sour-gas-293-413-k",
+          "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+          "source_id": "bulow-2021-sour-gas"
+        },
+        "site_id": "a",
+        "site_role": "donor"
+      },
+      {
+        "component_id": "mdea",
+        "multiplicity": 2,
+        "provenance": {
+          "domain_id": "bulow-2021-sour-gas-293-413-k",
+          "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+          "source_id": "bulow-2021-sour-gas"
+        },
+        "site_id": "b",
+        "site_role": "acceptor"
+      },
+      {
+        "component_id": "co2",
+        "multiplicity": 1,
+        "provenance": {
+          "domain_id": "bulow-2021-sour-gas-293-413-k",
+          "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+          "source_id": "bulow-2021-sour-gas"
+        },
+        "site_id": "a",
+        "site_role": "donor"
+      },
+      {
+        "component_id": "co2",
+        "multiplicity": 1,
+        "provenance": {
+          "domain_id": "bulow-2021-sour-gas-293-413-k",
+          "locator": "Tables 1-3, Eqs. 14 and 19-26, SI Table S1",
+          "source_id": "bulow-2021-sour-gas"
+        },
+        "site_id": "b",
+        "site_role": "acceptor"
+      }
+    ]
+  }
+}

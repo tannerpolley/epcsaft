@@ -1,0 +1,47 @@
+{
+ "wheel_sha256": "684b213ac8065fbe35950ca8998a33a5c05264fad5b174560110f112d60ef8ba",
+ "mea_commit": "e522dc4a9f7a59567ab94f21541d37a3e692a9ab",
+ "record_sha256": "868a501831b87e95dedf18ce40e9e7ac949f7c6a4aaf137f717cc493ecfcb7be",
+ "state_packet_sha256": "86f60041b28ec4493729b04c0238f44e86fba4becf33d6ddf47d86b7efb82448",
+ "omp_num_threads": "1",
+ "summary": {
+  "base_cold_s": {
+   "n": 123,
+   "median": 0.2625901330029592,
+   "p90": 0.3519137299954309,
+   "max": 2.1619689270009985,
+   "sum": 30.9184644149791
+  },
+  "trial_anchor_s": {
+   "n": 123,
+   "median": 0.255446324001241,
+   "p90": 0.30226825299905613,
+   "max": 0.33309248400473734,
+   "sum": 24.120559271039383
+  },
+  "trial_protocol_s": {
+   "n": 123,
+   "median": 0.255446324001241,
+   "p90": 0.30226825299905613,
+   "max": 0.33309248400473734,
+   "sum": 24.120559271039383
+  },
+  "child_s": {
+   "n": 123,
+   "median": 0.36322788200050127,
+   "p90": 0.4057892329947208,
+   "max": 0.451272094003798,
+   "sum": 35.37540768102917
+  }
+ },
+ "failures": {
+  "base_cold_ok": [
+   "Bottinger2008_state_042",
+   "Bottinger2008_state_046",
+   "Matin2012_state_016"
+  ],
+  "trial_anchor_ok": [],
+  "trial_cold_ok": [],
+  "child_ok": []
+ }
+}

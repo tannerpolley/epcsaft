@@ -1,0 +1,111 @@
+{
+  "disposition": "Current analytic-reference comparison accepted for issue #847; historical #730 record preserved.",
+  "replacement_source_path": "analyses/reproduction/1989-esteso/results/native-results.json.gz",
+  "replacement_source_sha256": "784a4fd7ddd10eed25a52da66296b4cdd3665ad941f68095c8758b9cdff8c577",
+  "quantity": {
+    "case_id": "esteso-nacl-60wt-0.5m",
+    "value": 0.44963691187839744,
+    "log_value": -0.7993148843989651,
+    "unit": "1",
+    "molality_mol_per_kg_mixed_solvent": 0.5,
+    "temperature_K": 298.15,
+    "pressure_Pa": 100000.0,
+    "component_ids": [
+      "water",
+      "ethanol",
+      "sodium-cation",
+      "chloride-anion"
+    ],
+    "solvent_fractions": [
+      0.6302882875610789,
+      0.3697117124389211,
+      0,
+      0
+    ],
+    "ions": [
+      "sodium-cation",
+      "chloride-anion"
+    ],
+    "stoichiometry": [
+      1,
+      1
+    ],
+    "packet_sha256": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+    "execution_identity": {
+      "run_id": "bd84f836-0345-418f-a7cd-ead77bc14c83",
+      "started_utc": "2026-10-24T23:13:46.262231+00:00",
+      "checkout_commit": "51ce7b9368203ea3a05604c5139ec0f449c1e900",
+      "checkout_status": " M analyses/reproduction/1989-esteso/scripts/reproduce.py\n M analyses/reproduction/2001-gross/scripts/diagnose.py\n?? analyses/reproduction/1989-esteso/results/shared-row-reference.json\n?? analyses/reproduction/2001-gross/results/historical/\n",
+      "engine_provenance": [
+        "51ce7b9368203ea3a05604c5139ec0f449c1e900",
+        true
+      ],
+      "extension_path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-847-diagnose-two-analysis-self-check-2/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so",
+      "extension_sha256": "f7d057be3e76b3db1acc37c076fa0d3caf11eecb2396414b10eb9b9c56bec195",
+      "interpreter": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-847-diagnose-two-analysis-self-check-2/.venv/bin/python",
+      "python_version": "3.13.14 (main, Jun 23 2026, 15:18:27) [Clang 22.1.3 ]",
+      "producer_sha256": "487064cf41730eac06a0683a7f3ceed1bb9df89b61e6c88e31610dc9925aa18c",
+      "input_hashes": {
+        "inputs/.gitattributes": "b95357803c03ba40f5e35ab78e3a42c0997a597f9bd46b4c65c50967364444ea",
+        "inputs/solvent-compositions.csv": "3a1d5b82f16c82605c18e31bd961c22837502d0c07bc128253b3f1ef012ca4ba",
+        "inputs/source/esteso-1989-reference-coefficients.csv": "f81774a2e21e0df47627fffa38f74cecf84339520b464ccff15632e0963895e5",
+        "inputs/source/esteso-1989-table-I.csv": "345c2a5b5c9b84ca369ea28afcf86dbbc3db4d8e41b9ebe1329c6ece5d81e066",
+        "inputs/source/esteso-1989-table-II.csv": "a0bd8e62e708e3d806237156a115957a375b6dda875234ecba54eda94beadeac",
+        "inputs/source/esteso-1989-table-III.csv": "b83bc44c7adf87cc29cc95ce9075765573ad914f389d67c03cb782e5cedab0e7",
+        "inputs/source/esteso-1989-table-IV.csv": "80f4efe2c4b6ea38d964f9d8e735ef863876de6e995be2ca51318b1571f9990a",
+        "inputs/source/esteso-1989-table-V.csv": "cb04fdfc72b43645d737ed0b193f42140078591c330172bb2b5a6bc04623bff4",
+        "inputs/source/esteso-1989-water-ethanol-nacl.csv": "9ee035f3f5fcdc3c86939a5735acc53cf68c24a83a0c520fd311739f43510962",
+        "inputs/source/esteso-1989-water-ethanol-nacl.yaml": "dd10ce5ccfa663c6448dbe0d390f71eb75ffb43b969824849b5de4280d1a0af8",
+        "inputs/source/issue-730-shared-row.json": "4dc0158f9a8e796b0fd29d1ad3132518352298b3fb2ed2100e25d1a07d6693e1",
+        "inputs/source/source-ledger.json": "79cd3355ce7ffdbab0c1058fbceda2ed77f465e241376448f2b8752a057444ef",
+        "inputs/source/source-verification.json": "114cdd19a1f9f9f920bfb96bbf96b2f174ceaf88e7c24c095d7f6d35f6e9e452"
+      },
+      "resolved_document_sha256": "87990c5039c51920827a1264b295e16930f748acca573bdf71a2941234231b26",
+      "packet": "figiel-2025-reference-electrolytes/4",
+      "packet_sha256": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d"
+    },
+    "reference": {
+      "attempt_id": "bd84f836-0345-418f-a7cd-ead77bc14c83/baseline/60/reference",
+      "run_id": "bd84f836-0345-418f-a7cd-ead77bc14c83",
+      "variant": "baseline",
+      "ethanol_mass_percent": "60",
+      "solvent_fractions": [
+        0.6302882875610789,
+        0.3697117124389211,
+        0,
+        0
+      ],
+      "started_utc": "2026-10-24T23:13:46.500463+00:00",
+      "requested_solver_options": {},
+      "molality": 0.0,
+      "convergence_error": null,
+      "log_fugacity": [
+        -150.19725891968685,
+        -121.6052866282307
+      ],
+      "solver_options": [
+        {
+          "name": "ASSOCIATION_RESIDUAL",
+          "value": 2e-13,
+          "unit": "1 (mass action)",
+          "default": 2e-13
+        },
+        {
+          "name": "DENSITY_ROOT_RESIDUAL",
+          "value": 1e-12,
+          "unit": "1 (reduced pressure)",
+          "default": 1e-12
+        },
+        {
+          "name": "EQUILIBRIUM_ROW_RESIDUAL",
+          "value": 1e-10,
+          "unit": "1 (classified rows)",
+          "default": 1e-10
+        }
+      ]
+    },
+    "activity_attempt_id": "bd84f836-0345-418f-a7cd-ead77bc14c83/baseline/60/18"
+  },
+  "preserved_historical_record": "inputs/source/issue-730-shared-row.json",
+  "numerical_resolution": "Baseline/refined difference within the existing 5e-6 allocation; analytic reference has no terminal-change estimate."
+}

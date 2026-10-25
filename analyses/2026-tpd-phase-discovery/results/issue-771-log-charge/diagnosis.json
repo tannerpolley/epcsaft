@@ -1,0 +1,87 @@
+{
+  "conditions": {
+    "temperature_K": 298.15,
+    "pressure_Pa": 1000,
+    "seed": [
+      0.99,
+      0.006,
+      0.002,
+      0.002
+    ],
+    "charge_numbers": [
+      0,
+      1,
+      -1,
+      -2
+    ]
+  },
+  "trial": {
+    "composition": [
+      0.9799473789225406,
+      0.01002631053872969,
+      0.01002631053872969,
+      1.242714520063673e-100
+    ],
+    "target": [
+      1,
+      1e-30,
+      1e-30,
+      1e-230
+    ],
+    "raw_coordinates": [
+      -0.020256403736116646,
+      -4.602542587278181,
+      -4.602542587278181,
+      -230.0412111833558,
+      1,
+      -5.976885171022989,
+      5.244640774892782,
+      -0.045287793716498
+    ],
+    "raw_rows": [
+      -6.288303211476887e-13,
+      -1.6289192217300297e-12,
+      -1.63069557856943e-12,
+      -8.836487097596546e-12,
+      -8.323012503547879e-13,
+      2.90878432451791e-14,
+      -2.485429040127418e-100,
+      2.90878432451791e-14
+    ],
+    "numerical_rows": [
+      -6.288303211476887e-13,
+      -1.6289192217300297e-12,
+      -1.63069557856943e-12,
+      -8.836487097596546e-12,
+      -8.323012503547879e-13,
+      2.90878432451791e-14,
+      0,
+      2.90878432451791e-14
+    ],
+    "cause": [
+      "reduced_hessian_stability is not positive definite: equilibrated minimum -3.1155438440951944",
+      " rounding band 4.2734515416920649e-14"
+    ],
+    " trial preparation failed": " phase V packing fraction outside the fluid domain",
+    "iterations": 19,
+    "evaluations": 48
+  },
+  "numerical_verification_only": true,
+  "limits": [
+    "Manufactured recovery failed; no charged-vapor numerical qualification",
+    "No discovery or physical vapor validation",
+    "Liquid manufactured-check limitation remains"
+  ],
+  "source_base": "83d6755d127cfa2a71bc8ec2b716c9179aa93047",
+  "probe_log_sha256": "87c72f596c7ddcc2ee70f890f2bb0b09a78c0130ae42707b9f3f968c81d481e9",
+  "probe_native_library_sha256": "69e1c14985307d03b025756937ca723d65ff3e4de5e3fb68efd620ec9d889f9d",
+  "native_probe": {
+    "charge_endpoint_ranks": "charge_endpoint_ranks values:8,8 ",
+    "target_ranks": "target_ranks 7 8",
+    "raw_density": "raw_density 307.50810561780338 slope -972.31130283056234 target_density 0.40375023150119677",
+    "own_vapor_density": "own_vapor_density 0.40885790491341528 raw_root_log_displacement 6.6228890506853562",
+    "log_charge_jacobian_max_fd_error": "log_charge_jacobian_max_fd_error 1.439959262938828e-11"
+  },
+  "supplied_points_json": "supplied-points.json",
+  "supplied_points_recheck_sha256": "ccea031a11d49555d9a886965567df85b031847814dd68bb8efa7319251b25bb"
+}

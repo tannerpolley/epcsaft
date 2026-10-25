@@ -1,0 +1,13 @@
+IL-Ions,ePC-SAFT including concentration-dependent $\varepsilon$,original ePC-SAFT
+,$k_{i j}$ with water,$k_{i j}$ with water
+IL-anions,,
+[ $\left.\mathrm{NTf}_{2}\right]^{-}$,0.11,-0.03
+$\left[\mathrm{BF}_{4}\right]^{-}$,-0.17,-0.01
+$\left[\mathrm{PF}_{6}\right]^{-}$,0.14,-0.01
+[TFO] ${ }^{-}$,-0.065,-0.065
+IL-cations,,
+[ $\left.\mathrm{C}_{\mathrm{n}} \mathrm{mim}\right]^{+}$,$0.0032 \cdot M w_{I L}-1.3054$,$-0.0006 \cdot M w_{I L}+0.2325$
+$\left[\mathrm{C}_{\mathrm{n}} \text { py }\right]^{+}$,$0.0007 \cdot M w_{I L}-0.1968$,$-0.0002 \cdot M w_{I L}+0.0292$
+[ $\mathrm{C}_{\mathrm{n}}$ mpy] ${ }^{+}$,$-0.0043 \cdot M w_{I L}-1.6408$,$-0.0014 \cdot M w_{I L}+0.6636$
+$\left[\mathrm{C}_{\mathrm{n}} \mathrm{mpyr}\right]^{+}$,$-0.0005 \cdot M w_{I L}+0.2941$,$-0.0016 \cdot M w_{I L}+0.7133$
+$\left[\mathrm{C}_{4} \mathrm{~m}_{4} \mathrm{py}\right]^{+}$,0.0718,-0.05

@@ -1,0 +1,1 @@
+Trial conditions: **298.15 K** and **100000 Pa**. Training: **30 evaluated states**, each with osmotic and mean ionic activity coefficients. Returned starts: **9**; converged starts: **7**. Per-start limits: **300 iterations** and **90 s**.

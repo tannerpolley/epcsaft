@@ -1,0 +1,9 @@
+record_id,component_id_a,site_id_a,component_id_b,site_id_b,family,value,unit,source_id,locator,domain_id
+water-association-energy,water,a,water,b,association_energy_over_k,2425.7,kelvin,ascani-et-al-2022,Supporting Information Table S1,perdomo-figure-03-298-15-k-101-3-kpa
+water-association-volume,water,a,water,b,association_volume,0.04509,,ascani-et-al-2022,Supporting Information Table S1,perdomo-figure-03-298-15-k-101-3-kpa
+butanol-association-energy,1-butanol,a,1-butanol,b,association_energy_over_k,2544.56,kelvin,ascani-et-al-2022,Supporting Information Table S1,perdomo-figure-03-298-15-k-101-3-kpa
+butanol-association-volume,1-butanol,a,1-butanol,b,association_volume,0.00669,,ascani-et-al-2022,Supporting Information Table S1,perdomo-figure-03-298-15-k-101-3-kpa
+water-a-butanol-b-energy,water,a,1-butanol,b,association_energy_over_k,2420.51662,kelvin,ascani-et-al-2022,SI Eq. S6 and Table S3 with k_hb=0.026,perdomo-figure-03-298-15-k-101-3-kpa
+water-a-butanol-b-volume,water,a,1-butanol,b,association_volume,0.016946922015303192,,ascani-et-al-2022,Wolbach-Sandler combining equation,perdomo-figure-03-298-15-k-101-3-kpa
+water-b-butanol-a-energy,water,b,1-butanol,a,association_energy_over_k,2420.51662,kelvin,ascani-et-al-2022,SI Eq. S6 and Table S3 with k_hb=0.026,perdomo-figure-03-298-15-k-101-3-kpa
+water-b-butanol-a-volume,water,b,1-butanol,a,association_volume,0.016946922015303192,,ascani-et-al-2022,Wolbach-Sandler combining equation,perdomo-figure-03-298-15-k-101-3-kpa

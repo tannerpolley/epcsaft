@@ -1,0 +1,84 @@
+---
+title: "Wangler MDEA: osmotic calibration does not transfer to bubble pressure"
+format: html
+execute:
+  enabled: false
+---
+
+The water–MDEAH⁺ interaction fits the retained aqueous MDEA/HCl osmotic
+coefficients, but its transferred value strongly underpredicts the withheld
+MDEA/CO₂ bubble pressures. This calibration-to-prediction failure is a
+model-reading and parameter-transfer limit, not a successful absorption prediction.
+It does not demonstrate failure of every MDEA model and is not an MEA result.
+
+**Claim class:** osmotic calibration followed by failed held-out pressure
+prediction. Numerical solution closure and admitted reference states are
+separate from physical agreement.
+
+## Question, conventions and data roles
+
+Can the interaction calibrated to Wangler Tables 8–9/Figure 10 reproduce the
+Table 10 pressures without adjusting to them? The osmotic observations are
+calibration data in both the source determination and this native fit. The
+pressure observations are withheld from those fitted interaction coordinates.
+Repeated lanes and allowance probes reuse the same observations.
+
+{{< include figures/notebook-domain.md >}}
+
+The [README](README.md#conventions-330-research-comment-6037145321) records the
+source interpretation: multi-segment MDEAH⁺, the Held packing and Debye–Hückel
+diameter conventions, fixed printed cross-association values, and water
+permittivity for the osmotic fit. S0 excludes ion self-dispersion and is the
+primary interpretation; S1 retains it as a diagnostic alternative.
+The native fit minimizes Wangler's relative osmotic-coefficient objective
+per isotherm using exact Jacobians. Linear interpolation transfers the fitted
+interaction to the pressure temperature. This is a declared interpolation,
+not an independently established temperature law.
+
+{{< include figures/notebook-metrics.md >}}
+
+The pressure declaration retains Table 2 constants on the unconverted
+mole-fraction basis, water at its pure-liquid reference and every other species
+at infinite dilution in water, the fixed concentrated-blend permittivity and
+a CO₂-rich second-phase start. `figures/figure-14/output/wangler-2018-table-10-native-summary.json:declaration`
+owns those conventions and source locators.
+
+## Withheld pressure failure
+
+![Wangler Table 10 pressure observations and discrete predictions after osmotic calibration. Error bars are source standard pressure uncertainties. The printed-interaction lane is a separate diagnostic. The log pressure axis exposes both underprediction and overprediction.](figures/notebook-comparison.png)
+
+{{< include figures/notebook-pressure.md >}}
+
+The pressure rows solve with small retained reaction affinities, but the
+fitted lanes miss the physical pressure comparison by far more than the
+interaction-allowance probes move the predictions. Numerical closure cannot
+turn this miss into physical validation. The printed-interaction lane strongly
+overpredicts and uses a different declared seed. The per-row interactions that
+would match pressure are diagnostic fits to the withheld observations and are
+never substituted into the prediction lanes.
+
+## Transfer diagnosis, uncertainty and limits
+
+The retained osmotic fit shows model discrepancy in the concentration trend.
+Its measurement-propagated interaction allowance is not the same quantity as
+residual-scaled covariance and does not include model-reading uncertainty.
+Source-allowed, source-contradicted and unsourced transfer probes must remain
+distinct; the README's transfer diagnosis reports that the examined alternatives
+did not close the pressure gap. The inferred difference in the water–MDEAH⁺
+cavity/attraction balance remains unresolved. A missing published fitted
+temperature dependence or implementation difference is a possible explanation,
+not a reproduced fact. No new parameter was tuned to Table 10 for this notebook.
+
+The numerical summaries and row files under `figures/figure-10/output/` and
+`figures/figure-14/output/` identify the native wheel. Earlier batch-5 and
+`grepe` outputs retain superseded conventions and do not enter the tables or
+figure above. No source code parity, loaded-density validation, global stability
+or general process-prediction claim follows.
+
+## Presentation and review boundary
+
+`nice -n 10 .venv/bin/python tools/present-paper-evidence.py` reads the retained
+osmotic and native-pressure summaries and native-pressure CSV. It prepares the
+displays without fitting or solving states. The readiness finding is batch C of
+the issue-501 promotion review. This notebook presentation has not been
+independently reviewed or promoted for manuscript use.

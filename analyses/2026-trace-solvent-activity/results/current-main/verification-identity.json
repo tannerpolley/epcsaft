@@ -1,0 +1,40 @@
+{
+  "engine_provenance": [
+    "388ed38b12d618e711c64a3c05c7f88653f84d6a",
+    true
+  ],
+  "source_base": "502e8099051c00bf169198c970f3525bbcfac7fd",
+  "prior_delivery": "c5ba43b1376777884620b3ad9aeea938dbbba116",
+  "diagnosis_base": "3f5ee19f",
+  "runtime_source_sha256": {
+    "engine/native/core/numerical_policy.hpp": "ee258c6ce645797fe53a7b2a832bd5622bea5a4e1fd0fce0492448fdcfd62e13",
+    "engine/native/properties/helmholtz_model.hpp": "3481675d79f452acbf5798b763860f0696b8ab29082f16119af49d437fd3ed69",
+    "engine/native/properties/infinite_dilution_reference.cpp": "24e660125b9cff8ca2ce630e80b01e7b16fedcd7ad4bdc4dcc1610e8eea4d1db",
+    "engine/src/epcsaft/_core.pyi": "e8a40e18d3d88e72a1acb6a26160d82de1ccd298cdbaff9d39001c3bb36d5a9e"
+  },
+  "script_sha256": "7c01c0d7ed833102e4617c9cc94cb45baa474e1fb6acf5edbf3f892f421c921a",
+  "retained_values_path": "analyses/2026-divalent-chloride-activity/results/model-curves.csv",
+  "retained_values_sha256": "5d3b72bf6b88af3b8cc19ad1556783fab8d262d063c2139da55ef9a9382773e3",
+  "current_values_path": "analyses/2026-divalent-chloride-activity/results/current-main/model-curves.csv",
+  "current_values_sha256": "efa3f7fe45016638b661a551ff9bbd0009f8678790f0d536071b20773e1924b8",
+  "input_sha256": {
+    "packet3": "79259c245dd748121d557ccd5c931306005a0ae01e21f6d9173a6a8de6db892d",
+    "packet4": "8f0313b6ebecb891873866a2181b32f8aeb44a49860487f34aeab8aecfa596f9"
+  },
+  "temperature_K": 298.15,
+  "pressure_Pa": 100000.0,
+  "resolved_row_count": 748,
+  "maximum_resolved_change": 9.474869059333813e-07,
+  "maximum_pressure_corrected_identity_error": 3.5214035969273336e-09,
+  "rounded_six_changed": 21,
+  "trace_debye_absolute_error": 1.34942896024004e-06,
+  "mixed_solvent_osmotic": "absent",
+  "mixed_input_path": "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json",
+  "mixed_input_sha256": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+  "debye_A_ln": 1.1809649178535302,
+  "falsifier_criteria": {
+    "trace_absolute": 0.0001,
+    "resolved_absolute": 1e-06,
+    "pressure_corrected_absolute": 5e-09
+  }
+}

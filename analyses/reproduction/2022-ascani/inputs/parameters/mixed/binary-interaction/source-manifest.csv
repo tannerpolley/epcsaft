@@ -1,0 +1,10 @@
+parameter,component_i,component_j,value,source,provenance_status
+k_ij,*,*,0,default zero for unpublished values,unresolved_default_zero
+k_ij,Butanol,H2O,2.94e-4*T-0.102,2022_Ascani k_ij.csv,source_backed
+k_ij,Cl-,K+,0.064,2022_Ascani k_ij.csv,source_backed
+k_ij,Cl-,NH4+,-0.566,2022_Ascani k_ij.csv,source_backed
+k_ij,Cl-,Na+,0.317,2022_Ascani k_ij.csv,source_backed
+l_ij,*,*,0,default zero for unpublished values,unresolved_default_zero
+l_ij,Butanol,H2O,-0.0044,2022_Ascani l_ij.csv,source_backed
+k_hb_ij,*,*,0,default zero for unpublished values,unresolved_default_zero
+k_hb_ij,Butanol,H2O,0.026,2022_Ascani k_hb_ij.csv,source_backed

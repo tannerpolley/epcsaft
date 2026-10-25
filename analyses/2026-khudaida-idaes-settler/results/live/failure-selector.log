@@ -1,0 +1,4 @@
+PROBE_JSON={"case": "selector", "error": "\"epcsaft_equilibrium:defining_equations_not_satisfied:request", "nonfinite_outputs": true, "cache_recovery_fgh": true}
+epcsaft_equilibrium prepared record 1 of at most 16
+epcsaft_equilibrium diagnostic: invalid observable selector
+epcsaft_equilibrium failure: epcsaft_equilibrium:defining_equations_not_satisfied:request controls=0.71989465130214836,0.033778333292233328,0.21864518731791907,0.027681828087699221

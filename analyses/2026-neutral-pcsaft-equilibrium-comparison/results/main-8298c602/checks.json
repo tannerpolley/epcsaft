@@ -1,0 +1,55 @@
+{
+  "affected": {
+    "command": "nice -n 10 bash tools/check-affected.sh origin/main",
+    "result": "passed",
+    "log": "build/issue-680-check-affected-final.log",
+    "sha256": "39d106cde04a5a5ed278ac271661603ac0ac223618dd2536d1568ab652817910"
+  },
+  "full_fast": {
+    "command": "nice -n 10 bash tools/check-all.sh",
+    "result": "passed",
+    "log": "build/issue-680-check-all-final.log",
+    "sha256": "5e525c379a301eb5d14a09d9bbd6999d368accff483b8de6a2d1d611336dd39b"
+  },
+  "rendered_notebooks": [
+    {
+      "file": "build/issue-680-notebooks/addition-enthalpy-fitting.html",
+      "sha256": "f1f6865f4675bbd46a3f777890955d7c4364aabd425d176de190e2c3648d5d4f",
+      "tables": 1
+    },
+    {
+      "file": "build/issue-680-notebooks/density-root-benchmark.html",
+      "sha256": "085a91f3622f90af312380f3b05174bdb48f9e97765d9c053e112f70526d4313",
+      "tables": 2
+    },
+    {
+      "file": "build/issue-680-notebooks/head-to-head-comparisons.html",
+      "sha256": "d8416648e8a256bc22b0344e734972716c89b47663cec26e583c35175d86e68e",
+      "tables": 7
+    },
+    {
+      "file": "build/issue-680-notebooks/mea-flash-family-seed.html",
+      "sha256": "8280687b8e0b08d51ab980d69189ab2a7e1e0e1b157fec5f364ff176a1ea4afd",
+      "tables": 4
+    },
+    {
+      "file": "build/issue-680-notebooks/neutral-pcsaft-equilibrium-comparison.html",
+      "sha256": "fee1eeb4d6f17efd0356c992c9a496d806c14b0dffa59963d6bfac1ef9e9e9bd",
+      "tables": 2
+    },
+    {
+      "file": "build/issue-680-notebooks/reactive-caloric-actions.html",
+      "sha256": "f1d13a2a8712789ac0590caa56550663c3f8af5a8a04f6d68aff7631d8eb8d0f",
+      "tables": 20
+    },
+    {
+      "file": "build/issue-680-notebooks/tpd-phase-discovery.html",
+      "sha256": "66e6c4cd35156e15dcbea2ec341b289b42ad5f7ee86799cd415a9ef26d4c3576",
+      "tables": 1
+    }
+  ],
+  "review": "Independent delivered review and owner promotion pending",
+  "runtime_changes": "none",
+  "manuscript_changes": "none",
+  "retained_table_bytes": "CSV/TSV blobs preserve original producer line endings and empty terminal fields; scoped .gitattributes records the retention convention."
+}

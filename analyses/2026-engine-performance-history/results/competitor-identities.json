@@ -1,0 +1,19 @@
+{
+  "Clapeyron": {
+    "julia": "1.13.1",
+    "pid": 3053899,
+    "version": "0.6.29"
+  },
+  "FeOs": {
+    "identity": {
+      "version": "0.10.1",
+      "python": "/home/tnnrpolley21/.cache/epcsaft-comparators/222/feos/bin/python",
+      "pid": 3053878,
+      "nice": 0,
+      "library": "FeOs",
+      "affinity": [
+        31
+      ]
+    }
+  }
+}

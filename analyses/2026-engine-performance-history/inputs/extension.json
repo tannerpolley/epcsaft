@@ -1,0 +1,79 @@
+{
+  "methane-discover/0": {
+    "kind": "discover",
+    "T_K": 200.0,
+    "P_Pa": 3000000.0,
+    "source": "analyses/2026-audit-timing-campaign/inputs/inputs.json:t4.methane_ethane",
+    "point": 0
+  },
+  "methane-discover/1": {
+    "kind": "discover",
+    "T_K": 220.0,
+    "P_Pa": 4000000.0,
+    "source": "analyses/2026-audit-timing-campaign/inputs/inputs.json:t4.methane_ethane",
+    "point": 1
+  },
+  "methane-discover/2": {
+    "kind": "discover",
+    "T_K": 240.0,
+    "P_Pa": 5000000.0,
+    "source": "analyses/2026-audit-timing-campaign/inputs/inputs.json:t4.methane_ethane",
+    "point": 2
+  },
+  "methane-discover/3": {
+    "kind": "discover",
+    "T_K": 190.0,
+    "P_Pa": 1000000.0,
+    "source": "analyses/2026-audit-timing-campaign/inputs/inputs.json:t4.methane_ethane",
+    "point": 3
+  },
+  "methane-discover/4": {
+    "kind": "discover",
+    "T_K": 250.0,
+    "P_Pa": 6500000.0,
+    "source": "analyses/2026-audit-timing-campaign/inputs/inputs.json:t4.methane_ethane",
+    "point": 4
+  },
+  "methane-discover/5": {
+    "kind": "discover",
+    "T_K": 200.0,
+    "P_Pa": 500000.0,
+    "source": "analyses/2026-audit-timing-campaign/inputs/inputs.json:t4.methane_ethane",
+    "point": 5
+  },
+  "propane-saturation/150-K": {
+    "kind": "saturation",
+    "T_K": 150.0,
+    "source": "issue #644; C1-300 parameters and default cold start"
+  },
+  "methane-bubble/230-K": {
+    "kind": "bubble",
+    "T_K": 230.0,
+    "source": "issue #644; Gross 2001 methane/ethane packet; equimolar feed and default cold start"
+  },
+  "methane-bubble/240-K": {
+    "kind": "bubble",
+    "T_K": 240.0,
+    "source": "issue #644; Gross 2001 methane/ethane packet; equimolar feed and default cold start"
+  },
+  "methane-bubble/250-K": {
+    "kind": "bubble",
+    "T_K": 250.0,
+    "source": "issue #644; Gross 2001 methane/ethane packet; equimolar feed and default cold start"
+  },
+  "methane-dew/230-K": {
+    "kind": "dew",
+    "T_K": 230.0,
+    "source": "issue #644; Gross 2001 methane/ethane packet; equimolar feed and default cold start"
+  },
+  "methane-dew/240-K": {
+    "kind": "dew",
+    "T_K": 240.0,
+    "source": "issue #644; Gross 2001 methane/ethane packet; equimolar feed and default cold start"
+  },
+  "methane-dew/250-K": {
+    "kind": "dew",
+    "T_K": 250.0,
+    "source": "issue #644; Gross 2001 methane/ethane packet; equimolar feed and default cold start"
+  }
+}

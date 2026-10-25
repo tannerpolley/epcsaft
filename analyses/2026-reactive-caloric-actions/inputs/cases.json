@@ -1,0 +1,76 @@
+{
+  "F8": {
+    "temperature_K": 260,
+    "source_pressures_Pa": [
+      3000000,
+      5000000
+    ],
+    "composition": [
+      1
+    ],
+    "stoichiometry": [
+      -1
+    ],
+    "parameter": "dispersion_energy_over_k[0]"
+  },
+  "F9": {
+    "temperature_K": 298.15,
+    "system_pressure_Pa": 100000,
+    "fixed_source_pressure_Pa": 200000,
+    "molalities_mol_kg": [
+      1e-10,
+      1e-12,
+      1e-14
+    ],
+    "solute_ratios": [
+      [
+        0,
+        1,
+        1
+      ],
+      [
+        0,
+        2,
+        2
+      ]
+    ],
+    "stoichiometry": [
+      -1,
+      1,
+      1
+    ],
+    "parameter": "water dispersion_energy_over_k",
+    "initial_steps": {
+      "temperature_K": 0.2,
+      "source_pressure_Pa": 20000,
+      "parameter_K": 0.02
+    },
+    "maximum_halvings": 6
+  },
+  "completion": {
+    "feed_mol": [
+      1,
+      1e-06,
+      1e-06
+    ],
+    "ln_K_source": "ln(1e-8)",
+    "source_basis": "common molality infinite dilution",
+    "water_record": {
+      "cp_J_mol_K": 33.59,
+      "h_J_mol": -241826,
+      "s_J_mol_K": 188.83,
+      "anchor_temperature_K": 298.15,
+      "standard_pressure_Pa": 100000,
+      "interval_K": [
+        200,
+        500
+      ]
+    }
+  },
+  "limits": {
+    "scaled_absolute_J_mol_K": 1e-07,
+    "F8_relative": 1e-09,
+    "F9_relative": 1e-06,
+    "ladder_change_J_mol_K": 0.01
+  }
+}

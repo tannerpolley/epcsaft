@@ -1,0 +1,8 @@
+{
+  "eps_ion": 8.0,
+  "eps_bulk": 78.0,
+  "shell_position": 1.0,
+  "domain_max": 2.0,
+  "paper_basis": "Scripted recreation of the Figure 1 dielectric step profile.",
+  "source_locator": "Figiel et al. (2025), Figure 1 dielectric-profile schematic"
+}

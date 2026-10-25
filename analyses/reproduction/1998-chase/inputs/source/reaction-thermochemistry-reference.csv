@@ -1,0 +1,5 @@
+reaction,temperature_k,delta_g_pressure_standard_j_per_mol,K_pressure,source_locator,reference_kind
+water-gas-shift,600.0,-16689.69329819322,28.375171784357107,analyses/reproduction/1998-chase/results/water-gas-shift-equilibrium.json#/rows/0,historical Shomate-derived reference; not a published reaction equilibrium table
+water-gas-shift,900.0,-6251.141244389544,2.3056835859980396,analyses/reproduction/1998-chase/results/water-gas-shift-equilibrium.json#/rows/1,historical Shomate-derived reference; not a published reaction equilibrium table
+water-gas-shift,1100.0,104.56124845529757,0.988632532954747,analyses/reproduction/1998-chase/results/water-gas-shift-equilibrium.json#/rows/2,historical Shomate-derived reference; not a published reaction equilibrium table
+n2o4-no2,500.0,-30375.9201906513,1490.3509615073785,analyses/reproduction/1998-chase/results/n2o4-no2-equilibrium.json#,historical Shomate-derived reference; not a published reaction equilibrium table

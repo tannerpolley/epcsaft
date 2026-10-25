@@ -1,0 +1,56 @@
+{
+  "accounting_base": "a8f8bdfa74f52cd307d1ac7796526a358b84090f",
+  "gross_added_analysis_executable_lines": 95,
+  "ceiling": 140,
+  "line_counts": {
+    "analyses/2026-hydrochloric-acid-chloride-basis/inputs/fit-declaration-issue-798-r2.json": {
+      "added": 17,
+      "removed": 0
+    },
+    "analyses/2026-hydrochloric-acid-chloride-basis/scripts/activity.cpp": {
+      "added": 20,
+      "removed": 45
+    },
+    "analyses/2026-hydrochloric-acid-chloride-basis/scripts/present.py": {
+      "added": 31,
+      "removed": 66
+    },
+    "analyses/2026-hydrochloric-acid-chloride-basis/scripts/run.py": {
+      "added": 27,
+      "removed": 18
+    }
+  },
+  "engine_lines_added": 0,
+  "checks": {
+    "tools/check-affected.sh origin/main": {
+      "exit_code": 0,
+      "log": "build/issue-798/check-affected.log",
+      "log_sha256": "6ee2c7786d5d29f73764d63b35a077cec3998faf31c5338a04f0ab6c5b894065"
+    },
+    "python3 tools/check-analysis-layout.py": {
+      "exit_code": 0,
+      "log": "build/issue-798/check-analysis-layout.log",
+      "log_sha256": "35a769a60eead75e0eeca0ed64cc147283eeca1d056e25120e1bd169e32c3b58"
+    },
+    "python3 tools/check-notebook-numbers.py": {
+      "exit_code": 0,
+      "log": "build/issue-798/check-notebook-numbers-command.log",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "python3 tools/check-notebook-numbers.py analyses/2026-hydrochloric-acid-chloride-basis/notebook.qmd": {
+      "exit_code": 0,
+      "log": "build/issue-798/check-notebook-numbers.log",
+      "log_sha256": "de8151218a4198c48eab9c985186f52c74e31c725f79302598878c8e568ca85b"
+    },
+    "bash tools/check-all.sh": {
+      "exit_code": 0,
+      "log": "build/issue-798/check-all.log",
+      "log_sha256": "ce59b848c3f63fa3abd89cef75e91adc43dfa8c46721fa67315e95165fd7a394"
+    }
+  },
+  "render": {
+    "command": "quarto render analyses/2026-hydrochloric-acid-chloride-basis/notebook.qmd --to html --no-execute",
+    "exit_code": 0
+  },
+  "limits": "Identification only. Qualification sources unopened; no packet; no basis replay. Independent delivered review remains with the lead."
+}

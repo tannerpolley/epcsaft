@@ -1,0 +1,204 @@
+{
+  "description": "Adopted H1/dodecane apparent HBTA/TOPO Li/Na extraction; calibrated molecular pseudo-components, not independent physical validation",
+  "source_root": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT-greenfield/downstream/.worktrees/Lithium_Extraction-63",
+  "source_commit": "28c0840a19b18bbde5a591fe17ed7c22bae42860",
+  "source_hashes": {
+    "analyses/hbta_topo_configured_reactive_lle/scripts/independent_network.py": "1a1173f1466f62da5d583381091b58774f2299edee07d5bcbff436165da403c3",
+    "analyses/hbta_topo_configured_reactive_lle/scripts/apparent_application.py": "0bf26cfff96f070d543ae455db0c57afeb077cff880ebb225a7d0e32a1b5487b",
+    "analyses/hbta_topo_configured_reactive_lle/scripts/hybrid_oracle.py": "983cd0a9d5ab4355df3ee07baca276a396551400eac548cf64dd46c36ab8a8a7",
+    "analyses/hbta_topo_calibrated_surrogate/results/application_parameter_fits.json": "711218400450b6f62da5d97b3bb7b98081bf6021500fd378818645556330c981"
+  },
+  "condition": {
+    "identity": "zhang_2017_table2",
+    "source_id": "zhang_2017_spt_188_167_173",
+    "role": "external_source_check",
+    "temperature_k": 298.15,
+    "aqueous_volume_l": 1.0,
+    "organic_volume_l": 1.0,
+    "li_mol_l_aqueous": 0.2256,
+    "na_mol_l_aqueous": 2.263,
+    "hbta_mol_l_organic": 0.3,
+    "topo_mol_l_organic": 0.3,
+    "li_mol_l_organic": null,
+    "na_mol_l_organic": null,
+    "observed_li_extraction_percent": null,
+    "observed_li_distribution": 33.7,
+    "observed_na_distribution": 0.016,
+    "initial_ph": 8.0,
+    "saponification_fraction": 0.0,
+    "hydrogen_mol_l_aqueous": null,
+    "chloride_mol_l_aqueous": null
+  },
+  "species": [
+    "water",
+    "diluent",
+    "lithium-cation",
+    "sodium-cation",
+    "hydrogen-cation",
+    "chloride-anion",
+    "free-carrier",
+    "sodium-carrier",
+    "lithium-carrier"
+  ],
+  "charges": [
+    0,
+    0,
+    1,
+    1,
+    1,
+    -1,
+    0,
+    0,
+    0
+  ],
+  "T_K": 298.15,
+  "P_Pa": 101325.0,
+  "feed_mol": {
+    "water": 55.508,
+    "diluent": 4.327698750059317,
+    "lithium-cation": 0.22335963,
+    "sodium-cation": 2.2629773699999998,
+    "hydrogen-cation": 0.0022630099999999998,
+    "chloride-anion": 2.48860001,
+    "free-carrier": 0.297737,
+    "sodium-carrier": 2.2630000000000046e-05,
+    "lithium-carrier": 0.0022403699999999998
+  },
+  "phases": [
+    {
+      "name": "aqueous",
+      "support": [
+        "water",
+        "lithium-cation",
+        "sodium-cation",
+        "hydrogen-cation",
+        "chloride-anion"
+      ],
+      "kind": "liquid"
+    },
+    {
+      "name": "organic",
+      "support": [
+        "diluent",
+        "free-carrier",
+        "sodium-carrier",
+        "lithium-carrier"
+      ],
+      "kind": "liquid"
+    }
+  ],
+  "reactions": [
+    {
+      "stoichiometry": {
+        "lithium-cation": -1.0,
+        "sodium-cation": 1.0,
+        "sodium-carrier": -1.0,
+        "lithium-carrier": 1.0
+      },
+      "ln_K_density_basis": 49.63787407925102
+    },
+    {
+      "stoichiometry": {
+        "sodium-cation": -1.0,
+        "hydrogen-cation": 1.0,
+        "free-carrier": -1.0,
+        "sodium-carrier": 1.0
+      },
+      "ln_K_density_basis": -0.32315919578025876
+    }
+  ],
+  "conserved_moieties": [
+    [
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      1.0,
+      1.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0
+    ]
+  ],
+  "fresh_organic_per_litre_mol": {
+    "diluent": 4.327698750059317,
+    "free-carrier": 0.3
+  },
+  "calibration": {
+    "organic_volume_l": 1.5,
+    "D_Li": 33.7,
+    "D_Na": 0.016,
+    "definition": "moles per originally charged organic/aqueous volume, not EOS equilibrium volumes"
+  },
+  "initialization_seed": [
+    0.001,
+    0.05,
+    0.2
+  ]
+}

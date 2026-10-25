@@ -1,0 +1,25 @@
+pair,evidence,T_min_K,T_max_K,P_min_Pa,P_max_Pa,state,state_T_K,state_P_Pa,temperature,pressure
+hydrogen/methane,"Benham-Katz 1957, Sagara 1972 (fit); Hong-Kobayashi 1981 (held out)",103.15,183.12,75200.0,28406000.0,feed,303.2-303.2,350000.0-350000.0,above,within
+hydrogen/methane,"Benham-Katz 1957, Sagara 1972 (fit); Hong-Kobayashi 1981 (held out)",103.15,183.12,75200.0,28406000.0,heater/reactor,500.0-800.0,350000.0-350000.0,above,within
+hydrogen/methane,"Benham-Katz 1957, Sagara 1972 (fit); Hong-Kobayashi 1981 (held out)",103.15,183.12,75200.0,28406000.0,F101,298.0-450.0,350000.0-350000.0,above,within
+hydrogen/methane,"Benham-Katz 1957, Sagara 1972 (fit); Hong-Kobayashi 1981 (held out)",103.15,183.12,75200.0,28406000.0,F102,298.0-450.0,105000.0-150000.0,above,within
+hydrogen/benzene,"Park 1996 Table 1 (323.2/423.2 K fit, 373.2 K held out)",323.2,423.2,2550000.0,15730000.0,feed,303.2-303.2,350000.0-350000.0,below,below
+hydrogen/benzene,"Park 1996 Table 1 (323.2/423.2 K fit, 373.2 K held out)",323.2,423.2,2550000.0,15730000.0,heater/reactor,500.0-800.0,350000.0-350000.0,above,below
+hydrogen/benzene,"Park 1996 Table 1 (323.2/423.2 K fit, 373.2 K held out)",323.2,423.2,2550000.0,15730000.0,F101,298.0-450.0,350000.0-350000.0,below+within+above,below
+hydrogen/benzene,"Park 1996 Table 1 (323.2/423.2 K fit, 373.2 K held out)",323.2,423.2,2550000.0,15730000.0,F102,298.0-450.0,105000.0-150000.0,below+within+above,below
+hydrogen/toluene,"Saajanlehto 2014 Table 6 (Simnick 1978, Laugier 1980 data)",502.15,575.15,,,feed,303.2-303.2,350000.0-350000.0,below,unstated
+hydrogen/toluene,"Saajanlehto 2014 Table 6 (Simnick 1978, Laugier 1980 data)",502.15,575.15,,,heater/reactor,500.0-800.0,350000.0-350000.0,below+within+above,unstated
+hydrogen/toluene,"Saajanlehto 2014 Table 6 (Simnick 1978, Laugier 1980 data)",502.15,575.15,,,F101,298.0-450.0,350000.0-350000.0,below,unstated
+hydrogen/toluene,"Saajanlehto 2014 Table 6 (Simnick 1978, Laugier 1980 data)",502.15,575.15,,,F102,298.0-450.0,105000.0-150000.0,below,unstated
+methane/benzene,Gross-Sadowski 2001 Table 4,421.15,501.15,,,feed,303.2-303.2,350000.0-350000.0,below,unstated
+methane/benzene,Gross-Sadowski 2001 Table 4,421.15,501.15,,,heater/reactor,500.0-800.0,350000.0-350000.0,within+above,unstated
+methane/benzene,Gross-Sadowski 2001 Table 4,421.15,501.15,,,F101,298.0-450.0,350000.0-350000.0,below+within,unstated
+methane/benzene,Gross-Sadowski 2001 Table 4,421.15,501.15,,,F102,298.0-450.0,105000.0-150000.0,below+within,unstated
+methane/toluene,Gross-Sadowski 2001 Table 4,422.15,543.15,,,feed,303.2-303.2,350000.0-350000.0,below,unstated
+methane/toluene,Gross-Sadowski 2001 Table 4,422.15,543.15,,,heater/reactor,500.0-800.0,350000.0-350000.0,within+above,unstated
+methane/toluene,Gross-Sadowski 2001 Table 4,422.15,543.15,,,F101,298.0-450.0,350000.0-350000.0,below+within,unstated
+methane/toluene,Gross-Sadowski 2001 Table 4,422.15,543.15,,,F102,298.0-450.0,105000.0-150000.0,below+within,unstated
+benzene/toluene,Yu 2026 Table S5 (DECHEMA infinite dilution),213.15,576.15,,,feed,303.2-303.2,350000.0-350000.0,within,unstated
+benzene/toluene,Yu 2026 Table S5 (DECHEMA infinite dilution),213.15,576.15,,,heater/reactor,500.0-800.0,350000.0-350000.0,within+above,unstated
+benzene/toluene,Yu 2026 Table S5 (DECHEMA infinite dilution),213.15,576.15,,,F101,298.0-450.0,350000.0-350000.0,within,unstated
+benzene/toluene,Yu 2026 Table S5 (DECHEMA infinite dilution),213.15,576.15,,,F102,298.0-450.0,105000.0-150000.0,within,unstated

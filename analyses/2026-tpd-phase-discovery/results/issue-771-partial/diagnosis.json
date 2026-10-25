@@ -1,0 +1,34 @@
+{
+  "unscaled_raw_composition": [
+    0.999999999999997,
+    3.278475983883247e-46,
+    3.0502016325192224e-15,
+    9.303741906137431e-200
+  ],
+  "row_equilibrated_raw_composition": [
+    0.999999999999999,
+    9.129888079076646e-46,
+    1.0953045188100509e-15,
+    1.1996929089985215e-200
+  ],
+  "raw_rank": 7,
+  "dimension": 8,
+  "rank_after_row_scaling": 7,
+  "basis": [
+    [
+      0.6666666666666669,
+      1,
+      0.3333333333333336,
+      0
+    ],
+    [
+      0.33333333333333337,
+      0,
+      0.6666666666666667,
+      1
+    ]
+  ],
+  "cause": "The reduced trial balance rows mix normalization and charge; both remain order one through the neutral coordinate. Their charge difference is unresolved at trace scale. Left row scaling alone does not expose that direction. A different charge chart or equivalent transformation requires Design authority.",
+  "retained_fix": false,
+  "physical_claim": false
+}

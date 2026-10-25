@@ -1,0 +1,30 @@
+{
+  "wheel_sha256": "28181e72e429c6e87fc6361082af1a7b21c8747e76bda65a1c30abb4a97402f2",
+  "candidate_source_patch_sha256": "1bdc588daf58a69f296f898073caf130aa68c991debb9032f6d318c51cad087d",
+  "guidance_base": "e01767aa78ffceb7d268ed262b4309da2147c51d",
+  "complete_gate": {
+    "command": "bash tools/check-all.sh",
+    "timeout_seconds": 1200,
+    "nice": 10,
+    "numerical_threads": 1,
+    "build_jobs": 2,
+    "native_test_processes": 1,
+    "python_passed": 107,
+    "native_groups_passed": 6,
+    "failed_checks": [],
+    "log_sha256": "1d4a818cc8433efc4356534dd0883f91e03ca7673b6dcb97421ec75c66acb923",
+    "installed_record_hashes_verified": 14
+  },
+  "native_fitting_check": {
+    "command": "regression_checks R2-J2",
+    "timeout_seconds": 90,
+    "failed_comparisons": [],
+    "log_sha256": "4eb622bab7fd80c8077d57e94fabea763a025b3f70b8bb3d6a7f9090ae5eebf4"
+  },
+  "initial_gate_failure": {
+    "comparison": "r4/recovery/variance_factor",
+    "cause": "Recorded native rows identified an older wheel. Current native and public values agree exactly and obey the residual-variance formula. Only r4 reference rows and case-specific provenance were refreshed; assertions, tolerances and runtime remained unchanged.",
+    "log_sha256": "5aee79e8d49706c405ee0e38ab895e2d40f9d315e8375b013338d2a9bc5f685b"
+  },
+  "claim_limit": "Readiness and same-build numerical checks supplement the bounded values/actions, promotion and constrained-fit evidence in the notebook; they do not establish application fit or physical validation."
+}

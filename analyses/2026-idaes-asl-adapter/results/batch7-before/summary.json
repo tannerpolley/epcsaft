@@ -1,0 +1,142 @@
+{
+  "adapter_source_sha256": "74e79fc7c624b2b7a7065406a47c57e63545614bf4987c3286a7d1090569565c",
+  "asl_library": "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-234-batches-6-7-manufactured-ln-k-chec-e261e278/.venv/lib/python3.13/site-packages/epcsaft/libepcsaft_asl.so",
+  "asl_library_identity": {
+    "exports": [
+      "funcadd_ASL"
+    ],
+    "needed": [
+      "libipopt.so.1",
+      "libstdc++.so.6",
+      "libm.so.6",
+      "libgcc_s.so.1",
+      "libc.so.6",
+      "ld-linux-x86-64.so.2"
+    ],
+    "runpaths": []
+  },
+  "asl_library_sha256": "fb7f999c4d88d99187f587dca4bf18654f3c55331cb72806de2a347bf6f75a7b",
+  "asl_version": "20231111",
+  "attempt_id": "20261002T012705-2271890",
+  "conditioning_state_count": 54,
+  "derivatives": {
+    "derivative_ladders_passed": 72,
+    "gradient_max_scaled_error": 6.271841255608979e-06,
+    "hessian_max_scaled_error": 2.9346729078477685e-05,
+    "maximum_estimated_floor": 6.089446597856707e-06,
+    "transport_max_scaled_gradient_error": 0.0,
+    "transport_max_scaled_hessian_error": 0.0,
+    "transport_max_scaled_value_error": 0.0,
+    "transport_passed": true,
+    "unit_pressure_chain": {
+      "max_gradient_error": 2.220446049250313e-16,
+      "max_hessian_error": 3.608224830031759e-16,
+      "max_value_error": 2.220446049250313e-16,
+      "passed": true,
+      "state_count": 9
+    }
+  },
+  "error": "RuntimeError(\"bounded failure probe did not prove post-entry timeout cleanup: {'termination': 'inconclusive-completed-before-cancellation', 'status': 'failed', 'timed_out': False, 'entry_observed': True, 'numeric_iteration_zero_line': '0 -1.7500000e-01 4.85e-01 1.15', 'solver_nl': None, 'signals': ['SIGTERM'], 'process_group_terminated': True, 'cap': 200000.0, 'start_rho': 60.0, 'start_Q': 0.0005, 'outer_elapsed_s': 1.4989962749968981, 'returncode': -15, 'process_group': 2274114, 'stdout_tail': '   0\\\\n   inequality constraints with lower and upper bounds:        0\\\\n        inequality constraints with only upper bounds:        0\\\\n\\\\niter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls\\\\n   0 -1.7500000e-01 4.85e-01 1.15e-01  -1.0 0.00e+00    -  0.00e+00 0.00e+00   0\\\\n   1 -7.3786728e-02 1.35e-02 2.71e-01  -1.7 2.11e-01    -  6.70e-01 1.00e+00h  1\\\\n   2 -9.0249691e-02 1.07e-03 5.29e-02  -1.7 7.44e-02    -  9.41e-01 1.00e+00h  1\\\\n   3 -1.5917872e-01 1.50e-03 1.69e-02  -2.5 2.15e-01    -  8.29e-01 1.00e+00f  1\\\\n   4 -1.8331824e-01 2.22e-03 2.15e-03  -3.8 7.64e-02    -  9.09e-01 8.88e-01h  1\\\\n   5 -1.8531666e-01 3.32e-06 6.71e-05  -3.8 7.91e-03    -  1.00e+00 1.00e+00h  1\\\\n   6 -1.8561788e-01 2.32e-07 1.41e-07  -5.7 8.11e-04    -  1.00e+00 1.00e+00h  1\\\\n   7 -1.8562181e-01 3.89e-11 1.41e-11  -8.6 9.83e-06    -  1.00e+00 1.00e+00h  1\\\\n   8 -1.8562182e-01 1.11e-16 1.44e-16 -10.0 1.28e-08    -  1.00e+00 1.00e+00h  1\\\\n\\\\nNumber of Iterations....: 8\\\\n\\\\n                                   (scaled)                 (unscaled)\\\\nObjective...............:  -1.8562181590475382e-01   -1.8562181590475382e-01\\\\nDual infeasibility......:   1.4431505239553475e-16    1.4431505239553475e-16\\\\nConstraint violation....:   1.1102230246251565e-16    1.1102230246251565e-16\\\\nVariable bound violation:   0.0000000000000000e+00    0.0000000000000000e+00\\\\nComplementarity.........:   9.0909140471592554e-11    9.0909140471592554e-11\\\\nOverall NLP error.......:   9.0909140471592554e-11    9.0909140471592554e-11\\\\n\\\\n\\\\nNumber of objective function evaluations             = 9\\\\nNumber of objective gradient evaluations             = 9\\\\nNumber of equality constraint evaluations            = 9\\\\nNumber of inequality constraint evaluations          = 0\\\\nNumber of equality constraint Jacobian evaluations   = 9\\\\nNumber of inequality constraint Jacobian evaluations = 0\\\\nNumber of Lagrangian Hessian evaluations             = 8\\\\nTotal seconds in IPOPT                               = 0.003\\\\n\\\\nEXIT: Optimal Solution Found.\\\\n', 'stderr_tail': '', 'parent_stdout_log': '/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-234-batches-6-7-manufactured-ln-k-chec-e261e278/analyses/2026-idaes-asl-adapter/results/batch7-before/solver/forced-post-entry-timeout/parent.stdout.log', 'parent_stderr_log': None, 'timeout_scope': 'none'}\")",
+  "error_type": "RuntimeError",
+  "idaes_version": "2.12.0",
+  "ipopt": "/home/tnnrpolley21/.local/share/micromamba/envs/ipopt-viz/bin/ipopt",
+  "ipopt_preflight": {
+    "all_required_options_supported": true,
+    "asl_version": "20231111",
+    "required_options": [
+      "acceptable_iter",
+      "bound_relax_factor",
+      "compl_inf_tol",
+      "constr_viol_tol",
+      "derivative_test",
+      "derivative_test_perturbation",
+      "derivative_test_tol",
+      "dual_inf_tol",
+      "hessian_approximation",
+      "max_iter",
+      "nlp_scaling_method",
+      "point_perturbation_radius",
+      "tol"
+    ],
+    "sha256": "938c17f31b2cf9fe91cef527bef3c62f303a3012851ad8498f91cd7501d1c9d2",
+    "supported_options": {
+      "acceptable_iter": true,
+      "bound_relax_factor": true,
+      "compl_inf_tol": true,
+      "constr_viol_tol": true,
+      "derivative_test": true,
+      "derivative_test_perturbation": true,
+      "derivative_test_tol": true,
+      "dual_inf_tol": true,
+      "hessian_approximation": true,
+      "max_iter": true,
+      "nlp_scaling_method": true,
+      "point_perturbation_radius": true,
+      "tol": true
+    },
+    "version": "Ipopt 3.14.19 (Linux x86_64), ASL(20231111)"
+  },
+  "ipopt_sha256": "938c17f31b2cf9fe91cef527bef3c62f303a3012851ad8498f91cd7501d1c9d2",
+  "ipopt_version": "Ipopt 3.14.19 (Linux x86_64), ASL(20231111)",
+  "materialization_sha256": "6fee9a5c31251d6e254f800fad7a650f64e5bb6dcc0b9973bc8958929a998f11",
+  "materialized_path": "analyses/2026-idaes-asl-adapter/inputs/data/gross-2001-propane/3",
+  "numerical_runtime_s": 3.8226408180016733,
+  "packet_fingerprint": "92634acb2bb24e3e83f938f4cf6239564940a1fdc88cba956ebcb0b7db041d5a",
+  "packet_path": "data/packets/gross-2001-propane/3",
+  "parameter_strings": [
+    "2.002",
+    "3.6184",
+    "208.11",
+    "0.044096"
+  ],
+  "partial_rows": {
+    "derivatives": 603,
+    "domain": 54,
+    "failures": 37,
+    "lagrangian": 1755,
+    "process": 8,
+    "references": 7
+  },
+  "pyomo_version": "6.10.1",
+  "references": {
+    "all_passed": true,
+    "groups": {
+      "dispersion": {
+        "all_passed": true,
+        "maximum_abs_errors": {
+          "error": 1.734723475976807e-18,
+          "q1_error": 0.0,
+          "q2_error": 0.0
+        },
+        "row_count": 3
+      },
+      "second_virial": {
+        "all_passed": true,
+        "maximum_abs_errors": {
+          "error": 0.0,
+          "q1_error": 2.1991281708849675e-08,
+          "q2_error": 6.597345430375823e-08
+        },
+        "row_count": 4
+      }
+    },
+    "row_count": 7
+  },
+  "source_commit": "f4075c0f56774c301ba21e5601aa351360c3a08f",
+  "source_dirty": false,
+  "stage": "failed",
+  "status": "failed attempt",
+  "wheel": "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-234-batches-6-7-manufactured-ln-k-chec-e261e278/build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+  "wheel_sha256": "298a360e532f6f4c5e7ef70c5be45e8b9852310d1c388d6225c504714c3dc410",
+  "whole_nlp": {
+    "cases": 216,
+    "changed_input_rejected": true,
+    "directions_per_case": 8,
+    "expected_step_rows": 1728,
+    "invalid_domain_rejected": true,
+    "matrix_cases": 27,
+    "maximum_estimated_floor": 1.0329772037742657e-09,
+    "maximum_scaled_lagrangian_hessian_error": 1.0329772037742657e-09,
+    "valid_after_failure": true
+  }
+}

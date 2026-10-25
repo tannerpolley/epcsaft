@@ -1,0 +1,10 @@
+runtime physical lines: current / floor target / soft / hard
+WARN core            917 /   700 /   850 /   917
+WARN contributions  1547 /  1100 /  1300 /  1547
+WARN properties     4784 /  2400 /  2900 /  4800
+WARN equilibrium    7566 /  5000 /  6000 /  8800
+WARN regression     2435 /   800 /  1000 /  2478
+ok   surface         532 /   450 /   550 /   650
+WARN bindings       1979 /   500 /   650 /  2100
+WARN python         2791 /  1350 /  1600 /  2850
+WARN total         22551 / 12300 / 14850 / 24000

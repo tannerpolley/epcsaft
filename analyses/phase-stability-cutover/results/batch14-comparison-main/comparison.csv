@@ -1,0 +1,481 @@
+group,case,index,before,after,difference,error,criterion,passes,reason
+candidate_G_over_RT_per_mol,NEUTRAL_SINGLETON/1 vapor,0,2.9937667134865924,2.9937667134865924,0.0,0.0,1e-07,True,
+candidate_objective_increase,NEUTRAL_SINGLETON/1 vapor,0,2.9937667134865924,2.9937667134865924,0.0,0.0,2.9937667134865925e-08,True,
+dmu_max_abs,NEUTRAL_SINGLETON/1 vapor,0,0.0,0.0,0.0,0.0,1e-07,True,
+material_max_abs,NEUTRAL_SINGLETON/1 vapor,0,0.0,0.0,0.0,0.0,1e-07,True,
+candidate_mole_fraction,NEUTRAL_SINGLETON/1 vapor,0/0,0.5,0.5,0.0,0.0,1e-07,True,Historical fractions rounded to eight decimal places; different solved coordinates.
+candidate_mole_fraction,NEUTRAL_SINGLETON/1 vapor,0/1,0.5,0.5,0.0,0.0,1e-07,True,Historical fractions rounded to eight decimal places; different solved coordinates.
+candidate_amount_fraction,NEUTRAL_SINGLETON/1 vapor,0,1.0,1.0,0.0,0.0,1e-07,True,
+fixed_candidate_prediction,NEUTRAL_SINGLETON/1 vapor,0,,,,,1e-07,,"No historical raw coordinates, densities or chemical plane retained; not an identical-point replay."
+candidate_pressure_relative,NEUTRAL_SINGLETON/1 vapor,0,,100000.0,,,1e-07,,Fixed pressure declaration only; historical central pressure readout absent.
+candidate_temperature_absolute,NEUTRAL_SINGLETON/1 vapor,0,,300.0,,,1e-06,,Fixed temperature declaration only; historical returned temperature readout absent.
+candidate_density_relative,NEUTRAL_SINGLETON/1 vapor,0,,40.26134848980338,,,1e-07,,Historical table has no density column.
+TPD_minimum,NEUTRAL_SINGLETON/1 vapor,liquid,-1.2508733318989333e-15,4.440892098500626e-16,1.694962541748996e-15,1.694962541748996e-15,1e-07,True,Different finite start sets and solved candidates; minimum comparison only.
+fixed_trial_prediction,NEUTRAL_SINGLETON/1 vapor,liquid,-1.2508733318989333e-15,,,,1e-07,,No supplied-composition TPD evaluation in stability_test; historical argmin rounded to six decimals.
+TPD_argmin_secondary,NEUTRAL_SINGLETON/1 vapor,liquid/0,0.5,0.5,0.0,0.0,1e-07,True,Rounded historical coordinates; nonunique minima can select different present phases.
+TPD_argmin_secondary,NEUTRAL_SINGLETON/1 vapor,liquid/1,0.5,0.5,0.0,0.0,1e-07,True,Rounded historical coordinates; nonunique minima can select different present phases.
+TPD_minimum,NEUTRAL_SINGLETON/1 vapor,vapor,-1.2508733318989333e-15,4.440892098500626e-16,1.694962541748996e-15,1.694962541748996e-15,1e-07,True,Different finite start sets and solved candidates; minimum comparison only.
+fixed_trial_prediction,NEUTRAL_SINGLETON/1 vapor,vapor,-1.2508733318989333e-15,,,,1e-07,,No supplied-composition TPD evaluation in stability_test; historical argmin rounded to six decimals.
+TPD_argmin_secondary,NEUTRAL_SINGLETON/1 vapor,vapor/0,0.5,0.5,0.0,0.0,1e-07,True,Rounded historical coordinates; nonunique minima can select different present phases.
+TPD_argmin_secondary,NEUTRAL_SINGLETON/1 vapor,vapor/1,0.5,0.5,0.0,0.0,1e-07,True,Rounded historical coordinates; nonunique minima can select different present phases.
+candidate_G_over_RT_per_mol,CHARGED_SINGLETON/1 liquid,0,-2.620948957932328,-2.620948958286618,-3.5428993072628145e-10,3.5428993072628145e-10,1e-07,True,
+candidate_objective_increase,CHARGED_SINGLETON/1 liquid,0,-2.620948957932328,-2.620948958286618,-3.5428993072628145e-10,0.0,1e-08,True,
+dmu_max_abs,CHARGED_SINGLETON/1 liquid,0,0.0,0.0,0.0,0.0,1e-07,True,
+material_max_abs,CHARGED_SINGLETON/1 liquid,0,0.0,3.469446951953614e-18,3.469446951953614e-18,3.469446951953614e-18,1e-07,True,
+candidate_mole_fraction,CHARGED_SINGLETON/1 liquid,0/0,0.98,0.98,0.0,0.0,1e-07,True,Historical fractions rounded to eight decimal places; different solved coordinates.
+candidate_mole_fraction,CHARGED_SINGLETON/1 liquid,0/1,0.01,0.010000000000000004,3.469446951953614e-18,3.469446951953614e-18,1e-07,True,Historical fractions rounded to eight decimal places; different solved coordinates.
+candidate_mole_fraction,CHARGED_SINGLETON/1 liquid,0/2,0.01,0.010000000000000004,3.469446951953614e-18,3.469446951953614e-18,1e-07,True,Historical fractions rounded to eight decimal places; different solved coordinates.
+candidate_amount_fraction,CHARGED_SINGLETON/1 liquid,0,1.0,1.0,0.0,0.0,1e-07,True,
+fixed_candidate_prediction,CHARGED_SINGLETON/1 liquid,0,,,,,1e-07,,"No historical raw coordinates, densities or chemical plane retained; not an identical-point replay."
+candidate_pressure_relative,CHARGED_SINGLETON/1 liquid,0,,100000.0,,,1e-07,,Fixed pressure declaration only; historical central pressure readout absent.
+candidate_temperature_absolute,CHARGED_SINGLETON/1 liquid,0,,298.15,,,1e-06,,Fixed temperature declaration only; historical returned temperature readout absent.
+candidate_density_relative,CHARGED_SINGLETON/1 liquid,0,,55794.213775453485,,,1e-07,,Historical table has no density column.
+TPD_minimum,CHARGED_SINGLETON/1 liquid,liquid,-7.503809285811026e-10,,,,1e-07,,permittivity model has no low-density limit; declare phases
+fixed_trial_prediction,CHARGED_SINGLETON/1 liquid,liquid,-7.503809285811026e-10,,,,1e-07,,permittivity model has no low-density limit; declare phases
+TPD_argmin_secondary,CHARGED_SINGLETON/1 liquid,liquid/0,0.989899,,,,1e-07,,permittivity model has no low-density limit; declare phases
+TPD_argmin_secondary,CHARGED_SINGLETON/1 liquid,liquid/1,0.010101,,,,1e-07,,permittivity model has no low-density limit; declare phases
+TPD_minimum,CHARGED_SINGLETON/1 liquid,vapor,2.938545864876539,,,,1e-07,,permittivity model has no low-density limit; declare phases
+fixed_trial_prediction,CHARGED_SINGLETON/1 liquid,vapor,2.938545864876539,,,,1e-07,,permittivity model has no low-density limit; declare phases
+TPD_argmin_secondary,CHARGED_SINGLETON/1 liquid,vapor/0,0.880845,,,,1e-07,,permittivity model has no low-density limit; declare phases
+TPD_argmin_secondary,CHARGED_SINGLETON/1 liquid,vapor/1,0.119155,,,,1e-07,,permittivity model has no low-density limit; declare phases
+candidate_G_over_RT_per_mol,NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,0,2.579514598168006,2.579514598168006,0.0,0.0,1e-07,True,
+candidate_objective_increase,NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,0,2.579514598168006,2.579514598168006,0.0,0.0,2.579514598168006e-08,True,
+dmu_max_abs,NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,0,0.0,0.0,0.0,0.0,1e-07,True,
+material_max_abs,NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,0,0.0,0.0,0.0,0.0,1e-07,True,
+candidate_mole_fraction,NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,0/0,0.33333333,0.3333333333333333,3.333333331578814e-09,3.333333331578814e-09,1e-07,True,Historical fractions rounded to eight decimal places; different solved coordinates.
+candidate_mole_fraction,NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,0/1,0.33333333,0.3333333333333333,3.333333331578814e-09,3.333333331578814e-09,1e-07,True,Historical fractions rounded to eight decimal places; different solved coordinates.
+candidate_mole_fraction,NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,0/2,0.33333333,0.3333333333333333,3.333333331578814e-09,3.333333331578814e-09,1e-07,True,Historical fractions rounded to eight decimal places; different solved coordinates.
+candidate_amount_fraction,NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,0,1.0,1.0,0.0,0.0,1e-07,True,
+fixed_candidate_prediction,NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,0,,,,,1e-07,,"No historical raw coordinates, densities or chemical plane retained; not an identical-point replay."
+candidate_pressure_relative,NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,0,,100000.0,,,1e-07,,Fixed pressure declaration only; historical central pressure readout absent.
+candidate_temperature_absolute,NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,0,,300.0,,,1e-06,,Fixed temperature declaration only; historical returned temperature readout absent.
+candidate_density_relative,NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,0,,40.6223535079679,,,1e-07,,Historical table has no density column.
+TPD_minimum,NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,liquid,1.8706171219945005,1.8706171220861392,9.163869663098012e-11,9.163869663098012e-11,1e-07,True,Different finite start sets and solved candidates; minimum comparison only.
+fixed_trial_prediction,NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,liquid,1.8706171219945005,,,,1e-07,,No supplied-composition TPD evaluation in stability_test; historical argmin rounded to six decimals.
+TPD_argmin_secondary,NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,liquid/0,0.068167,0.06816721570420675,2.157042067463255e-07,2.157042067463255e-07,1e-07,False,Rounded historical coordinates; nonunique minima can select different present phases.
+TPD_argmin_secondary,NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,liquid/1,0.069288,0.06928796629531564,-3.3704684362922954e-08,3.3704684362922954e-08,1e-07,True,Rounded historical coordinates; nonunique minima can select different present phases.
+TPD_argmin_secondary,NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,liquid/2,0.862545,0.8625448180004776,-1.819995224527915e-07,1.819995224527915e-07,1e-07,False,Rounded historical coordinates; nonunique minima can select different present phases.
+TPD_minimum,NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,vapor,-3.366489557272709e-15,0.0,3.366489557272709e-15,3.366489557272709e-15,1e-07,True,Different finite start sets and solved candidates; minimum comparison only.
+fixed_trial_prediction,NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,vapor,-3.366489557272709e-15,,,,1e-07,,No supplied-composition TPD evaluation in stability_test; historical argmin rounded to six decimals.
+TPD_argmin_secondary,NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,vapor/0,0.333333,0.3333333333333333,3.3333333332441484e-07,3.3333333332441484e-07,1e-07,False,Rounded historical coordinates; nonunique minima can select different present phases.
+TPD_argmin_secondary,NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,vapor/1,0.333333,0.3333333333333334,3.3333333343543714e-07,3.3333333343543714e-07,1e-07,False,Rounded historical coordinates; nonunique minima can select different present phases.
+TPD_argmin_secondary,NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,vapor/2,0.333333,0.3333333333333333,3.3333333332441484e-07,3.3333333332441484e-07,1e-07,False,Rounded historical coordinates; nonunique minima can select different present phases.
+candidate_G_over_RT_per_mol,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,0,4.626104293558033,4.6261042934671295,-9.090328489946842e-11,9.090328489946842e-11,1e-07,True,
+candidate_objective_increase,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,0,4.626104293558033,4.6261042934671295,-9.090328489946842e-11,0.0,4.626104293558033e-08,True,
+dmu_max_abs,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,0,0.0,0.0,0.0,0.0,1e-07,True,
+material_max_abs,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,0,0.0,0.0,0.0,0.0,1e-07,True,
+candidate_mole_fraction,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,0/0,0.33333333,0.3333333333333333,3.333333331578814e-09,3.333333331578814e-09,1e-07,True,Historical fractions rounded to eight decimal places; different solved coordinates.
+candidate_mole_fraction,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,0/1,0.33333333,0.3333333333333333,3.333333331578814e-09,3.333333331578814e-09,1e-07,True,Historical fractions rounded to eight decimal places; different solved coordinates.
+candidate_mole_fraction,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,0/2,0.33333333,0.3333333333333333,3.333333331578814e-09,3.333333331578814e-09,1e-07,True,Historical fractions rounded to eight decimal places; different solved coordinates.
+candidate_amount_fraction,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,0,1.0,1.0,0.0,0.0,1e-07,True,
+fixed_candidate_prediction,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,0,,,,,1e-07,,"No historical raw coordinates, densities or chemical plane retained; not an identical-point replay."
+candidate_pressure_relative,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,0,,100000.0,,,1e-07,,Fixed pressure declaration only; historical central pressure readout absent.
+candidate_temperature_absolute,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,0,,300.0,,,1e-06,,Fixed temperature declaration only; historical returned temperature readout absent.
+candidate_density_relative,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,0,,14656.325338086559,,,1e-07,,Historical table has no density column.
+TPD_minimum,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,liquid,-0.043485530421251306,-0.04348553043840031,-1.714900443872125e-11,1.714900443872125e-11,1e-07,True,Different finite start sets and solved candidates; minimum comparison only.
+fixed_trial_prediction,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,liquid,-0.043485530421251306,,,,1e-07,,No supplied-composition TPD evaluation in stability_test; historical argmin rounded to six decimals.
+TPD_argmin_secondary,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,liquid/0,0.910094,0.9100939920780315,-7.921968414592584e-09,7.921968414592584e-09,1e-07,True,Rounded historical coordinates; nonunique minima can select different present phases.
+TPD_argmin_secondary,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,liquid/1,0.052675,0.05267438992228959,-6.100777104126043e-07,6.100777104126043e-07,1e-07,False,Rounded historical coordinates; nonunique minima can select different present phases.
+TPD_argmin_secondary,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,liquid/2,0.037232,0.037231617999678945,-3.8200032105584203e-07,3.8200032105584203e-07,1e-07,False,Rounded historical coordinates; nonunique minima can select different present phases.
+TPD_minimum,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,vapor,-2.0651155347297894,-2.0651155346388763,9.091305486208512e-11,9.091305486208512e-11,1e-07,True,Different finite start sets and solved candidates; minimum comparison only.
+fixed_trial_prediction,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,vapor,-2.0651155347297894,,,,1e-07,,No supplied-composition TPD evaluation in stability_test; historical argmin rounded to six decimals.
+TPD_argmin_secondary,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,vapor/0,0.41381,0.41381007229649763,7.229649762185986e-08,7.229649762185986e-08,1e-07,True,Rounded historical coordinates; nonunique minima can select different present phases.
+TPD_argmin_secondary,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,vapor/1,0.328558,0.32855754220583694,-4.577941630778959e-07,4.577941630778959e-07,1e-07,False,Rounded historical coordinates; nonunique minima can select different present phases.
+TPD_argmin_secondary,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,vapor/2,0.257632,0.25763238549766543,3.854976654005249e-07,3.854976654005249e-07,1e-07,False,Rounded historical coordinates; nonunique minima can select different present phases.
+candidate_G_over_RT_per_mol,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),0,4.6232276597279895,4.623227659634857,-9.313261273291573e-11,9.313261273291573e-11,1e-07,True,
+candidate_objective_increase,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),0,4.6232276597279895,4.623227659634857,-9.313261273291573e-11,0.0,4.62322765972799e-08,True,
+dmu_max_abs,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),0,2.0802914946216333e-11,9.769962616701378e-15,-2.0793144983599632e-11,2.0793144983599632e-11,1e-07,True,
+material_max_abs,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),0,5.551115123125783e-17,0.0,-5.551115123125783e-17,5.551115123125783e-17,1e-07,True,
+candidate_mole_fraction,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),0/0,0.89288429,0.8928842887586174,-1.2413826633306257e-09,1.2413826633306257e-09,1e-07,True,Historical fractions rounded to eight decimal places; different solved coordinates.
+candidate_mole_fraction,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),0/1,0.06298717,0.06298717139025671,1.3902567153056822e-09,1.3902567153056822e-09,1e-07,True,Historical fractions rounded to eight decimal places; different solved coordinates.
+candidate_mole_fraction,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),0/2,0.04412854,0.04412853985112596,-1.4887403809726862e-10,1.4887403809726862e-10,1e-07,True,Historical fractions rounded to eight decimal places; different solved coordinates.
+candidate_mole_fraction,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),1/0,0.26242416,0.26242416025024323,2.502432150386369e-10,2.502432150386369e-10,1e-07,True,Historical fractions rounded to eight decimal places; different solved coordinates.
+candidate_mole_fraction,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),1/1,0.36759299,0.3675929885152294,-1.4847705842591097e-09,1.4847705842591097e-09,1e-07,True,Historical fractions rounded to eight decimal places; different solved coordinates.
+candidate_mole_fraction,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),1/2,0.36998285,0.3699828512345274,1.234527424731624e-09,1.234527424731624e-09,1e-07,True,Historical fractions rounded to eight decimal places; different solved coordinates.
+candidate_amount_fraction,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),0,0.1124720976,0.11247209756286476,-3.713523932802332e-11,3.713523932802332e-11,1e-07,True,
+candidate_amount_fraction,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),1,0.8875279024,0.8875279024371352,3.7135183816872086e-11,3.7135183816872086e-11,1e-07,True,
+fixed_candidate_prediction,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),0,,,,,1e-07,,"No historical raw coordinates, densities or chemical plane retained; not an identical-point replay."
+candidate_pressure_relative,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),0,,100000.0,,,1e-07,,Fixed pressure declaration only; historical central pressure readout absent.
+candidate_temperature_absolute,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),0,,300.0,,,1e-06,,Fixed temperature declaration only; historical returned temperature readout absent.
+candidate_density_relative,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),0,,18251.479001358497,,,1e-07,,Historical table has no density column.
+candidate_density_relative,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),1,,14447.257621671892,,,1e-07,,Historical table has no density column.
+TPD_minimum,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),liquid,-0.046925770095889656,-0.04692576988176356,2.1412609879645217e-10,2.1412609879645217e-10,1e-07,True,Different finite start sets and solved candidates; minimum comparison only.
+fixed_trial_prediction,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),liquid,-0.046925770095889656,,,,1e-07,,No supplied-composition TPD evaluation in stability_test; historical argmin rounded to six decimals.
+TPD_argmin_secondary,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),liquid/0,0.094264,0.09426410202864333,1.0202864332564676e-07,1.0202864332564676e-07,1e-07,False,Rounded historical coordinates; nonunique minima can select different present phases.
+TPD_argmin_secondary,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),liquid/1,0.84808,0.848080628414965,6.284149650648274e-07,6.284149650648274e-07,1e-07,False,Rounded historical coordinates; nonunique minima can select different present phases.
+TPD_argmin_secondary,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),liquid/2,0.057655,0.05765526955639161,2.695563916105259e-07,2.695563916105259e-07,1e-07,False,Rounded historical coordinates; nonunique minima can select different present phases.
+TPD_minimum,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),vapor,-2.0575581760440205,-2.0575581759324644,1.1155609769275543e-10,1.1155609769275543e-10,1e-07,True,Different finite start sets and solved candidates; minimum comparison only.
+fixed_trial_prediction,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),vapor,-2.0575581760440205,,,,1e-07,,No supplied-composition TPD evaluation in stability_test; historical argmin rounded to six decimals.
+TPD_argmin_secondary,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),vapor/0,0.396313,0.39631327821442025,2.782144202240211e-07,2.782144202240211e-07,1e-07,False,Rounded historical coordinates; nonunique minima can select different present phases.
+TPD_argmin_secondary,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),vapor/1,0.340196,0.3401955854447456,-4.1455525440214913e-07,4.1455525440214913e-07,1e-07,False,Rounded historical coordinates; nonunique minima can select different present phases.
+TPD_argmin_secondary,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),vapor/2,0.263491,0.26349113634083415,1.3634083417812803e-07,1.3634083417812803e-07,1e-07,False,Rounded historical coordinates; nonunique minima can select different present phases.
+candidate_G_over_RT_per_mol,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,0,4.601782368846268,4.601782368812828,-3.3439917501709715e-11,3.3439917501709715e-11,1e-07,True,
+candidate_objective_increase,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,0,4.601782368846268,4.601782368812828,-3.3439917501709715e-11,0.0,4.6017823688462684e-08,True,
+dmu_max_abs,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,0,2.1500712321653737e-10,8.881784197001252e-15,-2.1499824143234036e-10,2.1499824143234036e-10,1e-07,True,
+material_max_abs,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,0,0.0,7.401486830834377e-17,7.401486830834377e-17,7.401486830834377e-17,1e-07,True,
+candidate_mole_fraction,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,0/0,0.90355734,0.903557335848745,-4.1512550064126685e-09,4.1512550064126685e-09,1e-07,True,Historical fractions rounded to eight decimal places; different solved coordinates.
+candidate_mole_fraction,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,0/1,0.05557466,0.05557465652984155,-3.470158445317839e-09,3.470158445317839e-09,1e-07,True,Historical fractions rounded to eight decimal places; different solved coordinates.
+candidate_mole_fraction,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,0/2,0.04086801,0.040868007621413543,-2.378586459739207e-09,2.378586459739207e-09,1e-07,True,Historical fractions rounded to eight decimal places; different solved coordinates.
+candidate_mole_fraction,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,1/0,0.10824844,0.10824844069370014,6.937001389983877e-10,6.937001389983877e-10,1e-07,True,Historical fractions rounded to eight decimal places; different solved coordinates.
+candidate_mole_fraction,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,1/1,0.82594716,0.825947160275223,2.7522295553694676e-10,2.7522295553694676e-10,1e-07,True,Historical fractions rounded to eight decimal places; different solved coordinates.
+candidate_mole_fraction,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,1/2,0.0658044,0.06580439903107696,-9.689230390241832e-10,9.689230390241832e-10,1e-07,True,Historical fractions rounded to eight decimal places; different solved coordinates.
+candidate_mole_fraction,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,2/0,0.14443233,0.14443233204059508,2.0405950817981022e-09,2.0405950817981022e-09,1e-07,True,Historical fractions rounded to eight decimal places; different solved coordinates.
+candidate_mole_fraction,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,2/1,0.11815096,0.11815096288363104,2.8836310422830636e-09,2.8836310422830636e-09,1e-07,True,Historical fractions rounded to eight decimal places; different solved coordinates.
+candidate_mole_fraction,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,2/2,0.73741671,0.7374167050757738,-4.9242261379589536e-09,4.9242261379589536e-09,1e-07,True,Historical fractions rounded to eight decimal places; different solved coordinates.
+candidate_amount_fraction,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,0,0.2644459097,0.26444590968519394,-1.480604527870355e-11,1.480604527870355e-11,1e-07,True,
+candidate_amount_fraction,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,1,0.3273970948,0.3273970947599814,-4.001859954527731e-11,4.001859954527731e-11,1e-07,True,
+candidate_amount_fraction,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,2,0.4081569956,0.40815699555482454,-4.51754744723587e-11,4.51754744723587e-11,1e-07,True,
+fixed_candidate_prediction,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,0,,,,,1e-07,,"No historical raw coordinates, densities or chemical plane retained; not an identical-point replay."
+candidate_pressure_relative,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,0,,100000.0,,,1e-07,,Fixed pressure declaration only; historical central pressure readout absent.
+candidate_temperature_absolute,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,0,,300.0,,,1e-06,,Fixed temperature declaration only; historical returned temperature readout absent.
+candidate_density_relative,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,0,,18344.539768011105,,,1e-07,,Historical table has no density column.
+candidate_density_relative,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,1,,15790.632807697622,,,1e-07,,Historical table has no density column.
+candidate_density_relative,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,2,,14028.720595520725,,,1e-07,,Historical table has no density column.
+TPD_minimum,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,liquid,-2.1366792642329484e-10,-1.7763568394002505e-15,2.1366615006645544e-10,2.1366615006645544e-10,1e-07,True,Different finite start sets and solved candidates; minimum comparison only.
+fixed_trial_prediction,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,liquid,-2.1366792642329484e-10,,,,1e-07,,No supplied-composition TPD evaluation in stability_test; historical argmin rounded to six decimals.
+TPD_argmin_secondary,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,liquid/0,0.108249,0.9035573358487446,0.7953083358487446,0.7953083358487446,1e-07,False,Rounded historical coordinates; nonunique minima can select different present phases.
+TPD_argmin_secondary,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,liquid/1,0.825945,0.0555746565298416,-0.7703703434701584,0.7703703434701584,1e-07,False,Rounded historical coordinates; nonunique minima can select different present phases.
+TPD_argmin_secondary,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,liquid/2,0.065805,0.040868007621413745,-0.024936992378586258,0.024936992378586258,1e-07,False,Rounded historical coordinates; nonunique minima can select different present phases.
+TPD_minimum,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,vapor,-2.037248524365338,-2.0372485242500216,1.1531664512176576e-10,1.1531664512176576e-10,1e-07,True,Different finite start sets and solved candidates; minimum comparison only.
+fixed_trial_prediction,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,vapor,-2.037248524365338,,,,1e-07,,No supplied-composition TPD evaluation in stability_test; historical argmin rounded to six decimals.
+TPD_argmin_secondary,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,vapor/0,0.406213,0.4062129885500267,-1.1449973302823935e-08,1.1449973302823935e-08,1e-07,True,Rounded historical coordinates; nonunique minima can select different present phases.
+TPD_argmin_secondary,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,vapor/1,0.328364,0.3283637695866089,-2.3041339108909042e-07,2.3041339108909042e-07,1e-07,False,Rounded historical coordinates; nonunique minima can select different present phases.
+TPD_argmin_secondary,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,vapor/2,0.265423,0.26542324186336447,2.418633644474255e-07,2.418633644474255e-07,1e-07,False,Rounded historical coordinates; nonunique minima can select different present phases.
+candidate_G_over_RT_per_mol,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,0,4.8531731668193165,4.853173166818562,-7.549516567451064e-13,7.549516567451064e-13,1e-07,True,
+candidate_objective_increase,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,0,4.8531731668193165,4.853173166818562,-7.549516567451064e-13,0.0,4.853173166819317e-08,True,
+dmu_max_abs,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,0,2.375877272697835e-13,3.552713678800501e-15,-2.34035013590983e-13,2.34035013590983e-13,1e-07,True,
+material_max_abs,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,0,5.551115123125783e-17,3.700743415417188e-17,-1.8503717077085944e-17,1.8503717077085944e-17,1e-07,True,
+candidate_mole_fraction,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,0/0,0.91247511,0.9124751089221262,-1.0778737902228386e-09,1.0778737902228386e-09,1e-07,True,Historical fractions rounded to eight decimal places; different solved coordinates.
+candidate_mole_fraction,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,0/1,0.0504908,0.050490797760541516,-2.2394584867080347e-09,2.2394584867080347e-09,1e-07,True,Historical fractions rounded to eight decimal places; different solved coordinates.
+candidate_mole_fraction,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,0/2,0.03703409,0.037034093317332234,3.31733223529751e-09,3.31733223529751e-09,1e-07,True,Historical fractions rounded to eight decimal places; different solved coordinates.
+candidate_mole_fraction,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,1/0,0.09594092,0.09594092209275816,2.0927581612095736e-09,2.0927581612095736e-09,1e-07,True,Historical fractions rounded to eight decimal places; different solved coordinates.
+candidate_mole_fraction,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,1/1,0.8466636,0.8466635971115204,-2.888479566642843e-09,2.888479566642843e-09,1e-07,True,Historical fractions rounded to eight decimal places; different solved coordinates.
+candidate_mole_fraction,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,1/2,0.05739548,0.05739548079572147,7.957214678833147e-10,7.957214678833147e-10,1e-07,True,Historical fractions rounded to eight decimal places; different solved coordinates.
+candidate_mole_fraction,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,2/0,0.12527845,0.12527844570109983,-4.298900180277343e-09,4.298900180277343e-09,1e-07,True,Historical fractions rounded to eight decimal places; different solved coordinates.
+candidate_mole_fraction,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,2/1,0.10104191,0.10104191035062901,3.506290119359434e-10,3.506290119359434e-10,1e-07,True,Historical fractions rounded to eight decimal places; different solved coordinates.
+candidate_mole_fraction,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,2/2,0.77367964,0.7736796439482712,3.948271154463612e-09,3.948271154463612e-09,1e-07,True,Historical fractions rounded to eight decimal places; different solved coordinates.
+candidate_amount_fraction,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,0,0.2766079961,0.27660799609265135,-7.348621711145142e-12,7.348621711145142e-12,1e-07,True,
+candidate_amount_fraction,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,1,0.3302938599,0.3302938598880621,-1.193789511688692e-11,1.193789511688692e-11,1e-07,True,
+candidate_amount_fraction,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,2,0.393098144,0.3930981440192865,1.9286516828032063e-11,1.9286516828032063e-11,1e-07,True,
+fixed_candidate_prediction,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,0,,,,,1e-07,,"No historical raw coordinates, densities or chemical plane retained; not an identical-point replay."
+candidate_pressure_relative,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,0,,10000000.0,,,1e-07,,Fixed pressure declaration only; historical central pressure readout absent.
+candidate_temperature_absolute,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,0,,300.0,,,1e-06,,Fixed temperature declaration only; historical returned temperature readout absent.
+candidate_density_relative,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,0,,18739.231839494776,,,1e-07,,Historical table has no density column.
+candidate_density_relative,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,1,,16185.259668288058,,,1e-07,,Historical table has no density column.
+candidate_density_relative,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,2,,14363.587590277037,,,1e-07,,Historical table has no density column.
+TPD_minimum,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,liquid,-1.6074003636943127e-12,0.0,1.6074003636943127e-12,1.6074003636943127e-12,1e-07,True,Different finite start sets and solved candidates; minimum comparison only.
+fixed_trial_prediction,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,liquid,-1.6074003636943127e-12,,,,1e-07,,No supplied-composition TPD evaluation in stability_test; historical argmin rounded to six decimals.
+TPD_argmin_secondary,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,liquid/0,0.095941,0.9124751089221261,0.8165341089221261,0.8165341089221261,1e-07,False,Rounded historical coordinates; nonunique minima can select different present phases.
+TPD_argmin_secondary,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,liquid/1,0.846664,0.0504907977605415,-0.7961732022394584,0.7961732022394584,1e-07,False,Rounded historical coordinates; nonunique minima can select different present phases.
+TPD_argmin_secondary,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,liquid/2,0.057396,0.037034093317332345,-0.020361906682667658,0.020361906682667658,1e-07,False,Rounded historical coordinates; nonunique minima can select different present phases.
+TPD_minimum,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,vapor,-1.6074003636943127e-12,0.0,1.6074003636943127e-12,1.6074003636943127e-12,1e-07,True,Different finite start sets and solved candidates; minimum comparison only.
+fixed_trial_prediction,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,vapor,-1.6074003636943127e-12,,,,1e-07,,No supplied-composition TPD evaluation in stability_test; historical argmin rounded to six decimals.
+TPD_argmin_secondary,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,vapor/0,0.095941,0.9124751089221261,0.8165341089221261,0.8165341089221261,1e-07,False,Rounded historical coordinates; nonunique minima can select different present phases.
+TPD_argmin_secondary,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,vapor/1,0.846664,0.0504907977605415,-0.7961732022394584,0.7961732022394584,1e-07,False,Rounded historical coordinates; nonunique minima can select different present phases.
+TPD_argmin_secondary,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,vapor/2,0.057396,0.037034093317332345,-0.020361906682667658,0.020361906682667658,1e-07,False,Rounded historical coordinates; nonunique minima can select different present phases.
+candidate_G_over_RT_per_mol,KHUDAIDA_ROW_7/2 liquids,0,-8.667439231356273,-8.667439231470695,-1.1442224945312773e-10,1.1442224945312773e-10,1e-07,True,
+candidate_objective_increase,KHUDAIDA_ROW_7/2 liquids,0,-8.667439231356273,-8.667439231470695,-1.1442224945312773e-10,0.0,1e-08,True,
+dmu_max_abs,KHUDAIDA_ROW_7/2 liquids,0,8.915321814129129e-10,5.684341886080802e-14,-8.914753379940521e-10,8.914753379940521e-10,1e-07,True,
+material_max_abs,KHUDAIDA_ROW_7/2 liquids,0,1.1102230246251565e-16,2.775557561562892e-17,-8.326672684688674e-17,8.326672684688674e-17,1e-07,True,
+candidate_mole_fraction,KHUDAIDA_ROW_7/2 liquids,0/0,0.88379163,0.8837916277928544,-2.207145688437606e-09,2.207145688437606e-09,1e-07,True,Historical fractions rounded to eight decimal places; different solved coordinates.
+candidate_mole_fraction,KHUDAIDA_ROW_7/2 liquids,0/1,0.00218165,0.0021816535595533225,3.5595533226691345e-09,3.5595533226691345e-09,1e-07,True,Historical fractions rounded to eight decimal places; different solved coordinates.
+candidate_mole_fraction,KHUDAIDA_ROW_7/2 liquids,0/2,0.00074093,0.0007409250772280985,-4.922771901488127e-09,4.922771901488127e-09,1e-07,True,Historical fractions rounded to eight decimal places; different solved coordinates.
+candidate_mole_fraction,KHUDAIDA_ROW_7/2 liquids,0/3,0.0566429,0.056642896785182084,-3.214817918817392e-09,3.214817918817392e-09,1e-07,True,Historical fractions rounded to eight decimal places; different solved coordinates.
+candidate_mole_fraction,KHUDAIDA_ROW_7/2 liquids,0/4,0.0566429,0.056642896785182084,-3.214817918817392e-09,3.214817918817392e-09,1e-07,True,Historical fractions rounded to eight decimal places; different solved coordinates.
+candidate_mole_fraction,KHUDAIDA_ROW_7/2 liquids,1/0,0.41060317,0.41060317296145876,2.9614587448989482e-09,2.9614587448989482e-09,1e-07,True,Historical fractions rounded to eight decimal places; different solved coordinates.
+candidate_mole_fraction,KHUDAIDA_ROW_7/2 liquids,1/1,0.13856831,0.13856831225761498,2.2576149838471338e-09,2.2576149838471338e-09,1e-07,True,Historical fractions rounded to eight decimal places; different solved coordinates.
+candidate_mole_fraction,KHUDAIDA_ROW_7/2 liquids,1/2,0.45003647,0.4500364673480451,-2.6519549334302894e-09,2.6519549334302894e-09,1e-07,True,Historical fractions rounded to eight decimal places; different solved coordinates.
+candidate_mole_fraction,KHUDAIDA_ROW_7/2 liquids,1/3,0.00039602,0.00039602371644050985,3.7164405098299644e-09,3.7164405098299644e-09,1e-07,True,Historical fractions rounded to eight decimal places; different solved coordinates.
+candidate_mole_fraction,KHUDAIDA_ROW_7/2 liquids,1/4,0.00039602,0.00039602371644050985,3.7164405098299644e-09,3.7164405098299644e-09,1e-07,True,Historical fractions rounded to eight decimal places; different solved coordinates.
+candidate_amount_fraction,KHUDAIDA_ROW_7/2 liquids,0,0.4994246129,0.49942461286461304,-3.5386971131146083e-11,3.5386971131146083e-11,1e-07,True,
+candidate_amount_fraction,KHUDAIDA_ROW_7/2 liquids,1,0.5005753871,0.5005753871353871,3.5387026642297315e-11,3.5387026642297315e-11,1e-07,True,
+fixed_candidate_prediction,KHUDAIDA_ROW_7/2 liquids,0,,,,,1e-07,,"No historical raw coordinates, densities or chemical plane retained; not an identical-point replay."
+candidate_pressure_relative,KHUDAIDA_ROW_7/2 liquids,0,,100000.0,,,1e-07,,Fixed pressure declaration only; historical central pressure readout absent.
+candidate_temperature_absolute,KHUDAIDA_ROW_7/2 liquids,0,,293.15,,,1e-06,,Fixed temperature declaration only; historical returned temperature readout absent.
+candidate_density_relative,KHUDAIDA_ROW_7/2 liquids,0,,57611.05103644277,,,1e-07,,Historical table has no density column.
+candidate_density_relative,KHUDAIDA_ROW_7/2 liquids,1,,17657.22562467827,,,1e-07,,Historical table has no density column.
+TPD_minimum,KHUDAIDA_ROW_7/2 liquids,liquid,-3.668260819892854e-11,,,,1e-07,,permittivity model has no low-density limit; declare phases
+fixed_trial_prediction,KHUDAIDA_ROW_7/2 liquids,liquid,-3.668260819892854e-11,,,,1e-07,,permittivity model has no low-density limit; declare phases
+TPD_argmin_secondary,KHUDAIDA_ROW_7/2 liquids,liquid/0,0.936858,,,,1e-07,,permittivity model has no low-density limit; declare phases
+TPD_argmin_secondary,KHUDAIDA_ROW_7/2 liquids,liquid/1,0.002313,,,,1e-07,,permittivity model has no low-density limit; declare phases
+TPD_argmin_secondary,KHUDAIDA_ROW_7/2 liquids,liquid/2,0.000785,,,,1e-07,,permittivity model has no low-density limit; declare phases
+TPD_argmin_secondary,KHUDAIDA_ROW_7/2 liquids,liquid/3,0.060044,,,,1e-07,,permittivity model has no low-density limit; declare phases
+TPD_minimum,KHUDAIDA_ROW_7/2 liquids,vapor,1.837300061719756,,,,1e-07,,permittivity model has no low-density limit; declare phases
+fixed_trial_prediction,KHUDAIDA_ROW_7/2 liquids,vapor,1.837300061719756,,,,1e-07,,permittivity model has no low-density limit; declare phases
+TPD_argmin_secondary,KHUDAIDA_ROW_7/2 liquids,vapor/0,0.327424,,,,1e-07,,permittivity model has no low-density limit; declare phases
+TPD_argmin_secondary,KHUDAIDA_ROW_7/2 liquids,vapor/1,0.026332,,,,1e-07,,permittivity model has no low-density limit; declare phases
+TPD_argmin_secondary,KHUDAIDA_ROW_7/2 liquids,vapor/2,0.373778,,,,1e-07,,permittivity model has no low-density limit; declare phases
+TPD_argmin_secondary,KHUDAIDA_ROW_7/2 liquids,vapor/3,0.272467,,,,1e-07,,permittivity model has no low-density limit; declare phases
+classified_row_closure,NEUTRAL_SINGLETON/1 vapor,RowKind.Chemical/0/0,0.0,0.0,0.0,0.0,1e-10,True,
+classified_row_closure,NEUTRAL_SINGLETON/1 vapor,RowKind.Chemical/0/1,0.0,0.0,0.0,0.0,1e-10,True,
+classified_row_closure,NEUTRAL_SINGLETON/1 vapor,RowKind.Pressure/0/0,0.0,-1.764825974321383e-16,-1.764825974321383e-16,1.764825974321383e-16,1e-10,True,
+classified_row_closure,NEUTRAL_SINGLETON/1 vapor,RowKind.Moiety/0/0,0.0,0.0,0.0,0.0,1e-10,True,
+classified_row_closure,NEUTRAL_SINGLETON/1 vapor,RowKind.Moiety/0/1,0.0,0.0,0.0,0.0,1e-10,True,
+classified_row_closure,NEUTRAL_SINGLETON/1 vapor,RowKind.Normalization/0/0,0.0,0.0,0.0,0.0,1e-10,True,
+classified_row_closure,CHARGED_SINGLETON/1 liquid,RowKind.Chemical/0/0,0.0,9.329759187437503e-15,9.329759187437503e-15,9.329759187437503e-15,1e-10,True,
+classified_row_closure,CHARGED_SINGLETON/1 liquid,RowKind.Chemical/0/1,0.0,-2.842170943040402e-16,-2.842170943040402e-16,2.842170943040402e-16,1e-10,True,
+classified_row_closure,CHARGED_SINGLETON/1 liquid,RowKind.Chemical/0/2,0.0,2.842170943040402e-16,2.842170943040402e-16,2.842170943040402e-16,1e-10,True,
+classified_row_closure,CHARGED_SINGLETON/1 liquid,RowKind.Pressure/0/0,0.0,9.50621390006626e-15,9.50621390006626e-15,9.50621390006626e-15,1e-10,True,
+classified_row_closure,CHARGED_SINGLETON/1 liquid,RowKind.Moiety/0/0,0.0,0.0,0.0,0.0,1e-10,True,
+classified_row_closure,CHARGED_SINGLETON/1 liquid,RowKind.Moiety/0/1,0.0,3.469446951953614e-18,3.469446951953614e-18,3.469446951953614e-18,1e-10,True,
+classified_row_closure,CHARGED_SINGLETON/1 liquid,RowKind.Moiety/0/2,0.0,3.469446951953614e-18,3.469446951953614e-18,3.469446951953614e-18,1e-10,True,
+classified_row_closure,CHARGED_SINGLETON/1 liquid,RowKind.Normalization/0/0,0.0,0.0,0.0,0.0,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,RowKind.Chemical/0/0,0.0,0.0,0.0,0.0,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,RowKind.Chemical/0/1,0.0,0.0,0.0,0.0,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,RowKind.Chemical/0/2,0.0,0.0,0.0,0.0,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,RowKind.Pressure/0/0,0.0,0.0,0.0,0.0,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,RowKind.Moiety/0/0,0.0,0.0,0.0,0.0,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,RowKind.Moiety/0/1,0.0,0.0,0.0,0.0,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,RowKind.Moiety/0/2,0.0,0.0,0.0,0.0,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,RowKind.Normalization/0/0,0.0,0.0,0.0,0.0,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,RowKind.Chemical/0/0,0.0,-2.9605947323337506e-16,-2.9605947323337506e-16,2.9605947323337506e-16,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,RowKind.Chemical/0/1,0.0,-2.9605947323337506e-16,-2.9605947323337506e-16,2.9605947323337506e-16,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,RowKind.Chemical/0/2,0.0,-2.9605947323337506e-16,-2.9605947323337506e-16,2.9605947323337506e-16,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,RowKind.Pressure/0/0,0.0,-6.767846893678459e-16,-6.767846893678459e-16,6.767846893678459e-16,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,RowKind.Moiety/0/0,0.0,0.0,0.0,0.0,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,RowKind.Moiety/0/1,0.0,0.0,0.0,0.0,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,RowKind.Moiety/0/2,0.0,0.0,0.0,0.0,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,RowKind.Normalization/0/0,0.0,0.0,0.0,0.0,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),RowKind.Chemical/0/0,0.0,-6.243645439447737e-16,-6.243645439447737e-16,6.243645439447737e-16,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),RowKind.Chemical/0/1,0.0,-3.1460608721784293e-17,-3.1460608721784293e-17,3.1460608721784293e-17,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),RowKind.Chemical/0/2,0.0,-4.408233280133271e-18,-4.408233280133271e-18,4.408233280133271e-18,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),RowKind.Pressure/0/0,0.0,-4.4224029303037264e-16,-4.4224029303037264e-16,4.4224029303037264e-16,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),RowKind.Chemical/1/0,0.0,8.274581535364868e-16,8.274581535364868e-16,8.274581535364868e-16,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),RowKind.Chemical/1/1,0.0,2.897673514890182e-16,2.897673514890182e-16,2.897673514890182e-16,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),RowKind.Chemical/1/2,0.0,-2.916512399532418e-16,-2.916512399532418e-16,2.916512399532418e-16,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),RowKind.Pressure/1/0,0.0,-3.85868269267219e-16,-3.85868269267219e-16,3.85868269267219e-16,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),RowKind.Moiety/0/0,0.0,0.0,0.0,0.0,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),RowKind.Moiety/0/1,0.0,0.0,0.0,0.0,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),RowKind.Moiety/0/2,0.0,0.0,0.0,0.0,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),RowKind.Normalization/0/0,0.0,-1.1102230246251565e-16,-1.1102230246251565e-16,1.1102230246251565e-16,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),RowKind.Normalization/1/0,0.0,0.0,0.0,0.0,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,RowKind.Chemical/0/0,0.0,8.488926597438666e-16,8.488926597438666e-16,8.488926597438666e-16,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,RowKind.Chemical/0/1,0.0,1.4358416377312516e-16,1.4358416377312516e-16,1.4358416377312516e-16,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,RowKind.Chemical/0/2,0.0,6.719215598783901e-17,6.719215598783901e-17,6.719215598783901e-17,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,RowKind.Pressure/0/0,0.0,1.0632064208733596e-15,1.0632064208733596e-15,1.0632064208733596e-15,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,RowKind.Chemical/1/0,0.0,3.1477243030245084e-17,3.1477243030245084e-17,3.1477243030245084e-17,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,RowKind.Chemical/1/1,0.0,1.2008736258700235e-15,1.2008736258700235e-15,1.2008736258700235e-15,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,RowKind.Chemical/1/2,0.0,9.567533017041334e-17,9.567533017041334e-17,9.567533017041334e-17,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,RowKind.Pressure/1/0,0.0,1.491480662228443e-15,1.491480662228443e-15,1.491480662228443e-15,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,RowKind.Chemical/2/0,0.0,4.712315874044704e-16,4.712315874044704e-16,4.712315874044704e-16,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,RowKind.Chemical/2/1,0.0,5.568113494035756e-16,5.568113494035756e-16,5.568113494035756e-16,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,RowKind.Chemical/2/2,0.0,-8.019765833173746e-16,-8.019765833173746e-16,8.019765833173746e-16,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,RowKind.Pressure/2/0,0.0,-4.473594739310932e-16,-4.473594739310932e-16,4.473594739310932e-16,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,RowKind.Moiety/0/0,0.0,7.401486830834377e-17,7.401486830834377e-17,7.401486830834377e-17,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,RowKind.Moiety/0/1,0.0,0.0,0.0,0.0,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,RowKind.Moiety/0/2,0.0,-7.401486830834377e-17,-7.401486830834377e-17,7.401486830834377e-17,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,RowKind.Normalization/0/0,0.0,0.0,0.0,0.0,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,RowKind.Normalization/1/0,0.0,0.0,0.0,0.0,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,RowKind.Normalization/2/0,0.0,0.0,0.0,0.0,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,RowKind.Chemical/0/0,0.0,-6.72523134150999e-16,-6.72523134150999e-16,6.72523134150999e-16,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,RowKind.Chemical/0/1,0.0,-7.442664292687366e-17,-7.442664292687366e-17,7.442664292687366e-17,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,RowKind.Chemical/0/2,0.0,0.0,0.0,0.0,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,RowKind.Pressure/0/0,0.0,-7.853603755234258e-16,-7.853603755234258e-16,7.853603755234258e-16,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,RowKind.Chemical/1/0,0.0,0.0,0.0,0.0,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,RowKind.Chemical/1/1,0.0,-4.967542599783939e-16,-4.967542599783939e-16,4.967542599783939e-16,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,RowKind.Chemical/1/2,0.0,-1.6837531273372606e-17,-1.6837531273372606e-17,1.6837531273372606e-17,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,RowKind.Pressure/1/0,0.0,1.020807123049716e-16,1.020807123049716e-16,1.020807123049716e-16,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,RowKind.Chemical/2/0,0.0,-1.3121963380073424e-16,-1.3121963380073424e-16,1.3121963380073424e-16,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,RowKind.Chemical/2/1,0.0,-7.05558055127316e-17,-7.05558055127316e-17,7.05558055127316e-17,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,RowKind.Chemical/2/2,0.0,-1.080494030608633e-15,-1.080494030608633e-15,1.080494030608633e-15,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,RowKind.Pressure/2/0,0.0,-5.102606767851408e-16,-5.102606767851408e-16,5.102606767851408e-16,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,RowKind.Moiety/0/0,0.0,0.0,0.0,0.0,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,RowKind.Moiety/0/1,0.0,-3.700743415417188e-17,-3.700743415417188e-17,3.700743415417188e-17,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,RowKind.Moiety/0/2,0.0,-3.700743415417188e-17,-3.700743415417188e-17,3.700743415417188e-17,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,RowKind.Normalization/0/0,0.0,0.0,0.0,0.0,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,RowKind.Normalization/1/0,0.0,0.0,0.0,0.0,1e-10,True,
+classified_row_closure,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,RowKind.Normalization/2/0,0.0,0.0,0.0,0.0,1e-10,True,
+classified_row_closure,KHUDAIDA_ROW_7/2 liquids,RowKind.Chemical/0/0,0.0,-2.4501916693532993e-17,-2.4501916693532993e-17,2.4501916693532993e-17,1e-10,True,
+classified_row_closure,KHUDAIDA_ROW_7/2 liquids,RowKind.Chemical/0/1,0.0,8.225737972783962e-18,8.225737972783962e-18,8.225737972783962e-18,1e-10,True,
+classified_row_closure,KHUDAIDA_ROW_7/2 liquids,RowKind.Chemical/0/2,0.0,-5.669353690970555e-18,-5.669353690970555e-18,5.669353690970555e-18,1e-10,True,
+classified_row_closure,KHUDAIDA_ROW_7/2 liquids,RowKind.Chemical/0/3,0.0,8.040176680444176e-16,8.040176680444176e-16,8.040176680444176e-16,1e-10,True,
+classified_row_closure,KHUDAIDA_ROW_7/2 liquids,RowKind.Chemical/0/4,0.0,0.0,0.0,0.0,1e-10,True,
+classified_row_closure,KHUDAIDA_ROW_7/2 liquids,RowKind.Pressure/0/0,0.0,-2.8427906145863766e-15,-2.8427906145863766e-15,2.8427906145863766e-15,1e-10,True,
+classified_row_closure,KHUDAIDA_ROW_7/2 liquids,RowKind.Chemical/1/0,0.0,3.5369890961590807e-16,3.5369890961590807e-16,3.5369890961590807e-16,1e-10,True,
+classified_row_closure,KHUDAIDA_ROW_7/2 liquids,RowKind.Chemical/1/1,0.0,-3.388412892862208e-16,-3.388412892862208e-16,3.388412892862208e-16,1e-10,True,
+classified_row_closure,KHUDAIDA_ROW_7/2 liquids,RowKind.Chemical/1/2,0.0,-4.051748156606242e-15,-4.051748156606242e-15,4.051748156606242e-15,1e-10,True,
+classified_row_closure,KHUDAIDA_ROW_7/2 liquids,RowKind.Chemical/1/3,0.0,-4.2257338998013624e-18,-4.2257338998013624e-18,4.2257338998013624e-18,1e-10,True,
+classified_row_closure,KHUDAIDA_ROW_7/2 liquids,RowKind.Chemical/1/4,0.0,-1.408577966600454e-18,-1.408577966600454e-18,1.408577966600454e-18,1e-10,True,
+classified_row_closure,KHUDAIDA_ROW_7/2 liquids,RowKind.Pressure/1/0,0.0,-4.036778744462601e-15,-4.036778744462601e-15,4.036778744462601e-15,1e-10,True,
+classified_row_closure,KHUDAIDA_ROW_7/2 liquids,RowKind.Electro/1/0,0.0,0.0,0.0,0.0,1e-10,True,
+classified_row_closure,KHUDAIDA_ROW_7/2 liquids,RowKind.Moiety/0/0,0.0,0.0,0.0,0.0,1e-10,True,
+classified_row_closure,KHUDAIDA_ROW_7/2 liquids,RowKind.Moiety/0/1,0.0,1.387778780781446e-17,1.387778780781446e-17,1.387778780781446e-17,1e-10,True,
+classified_row_closure,KHUDAIDA_ROW_7/2 liquids,RowKind.Moiety/0/2,0.0,2.775557561562892e-17,2.775557561562892e-17,2.775557561562892e-17,1e-10,True,
+classified_row_closure,KHUDAIDA_ROW_7/2 liquids,RowKind.Moiety/0/3,0.0,0.0,0.0,0.0,1e-10,True,
+classified_row_closure,KHUDAIDA_ROW_7/2 liquids,RowKind.Moiety/0/4,0.0,0.0,0.0,0.0,1e-10,True,
+classified_row_closure,KHUDAIDA_ROW_7/2 liquids,RowKind.Normalization/0/0,0.0,0.0,0.0,0.0,1e-10,True,
+classified_row_closure,KHUDAIDA_ROW_7/2 liquids,RowKind.Normalization/1/0,0.0,2.220446049250313e-16,2.220446049250313e-16,2.220446049250313e-16,1e-10,True,
+charge_residual,NEUTRAL_SINGLETON/1 vapor,present-0,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_SINGLETON/1 vapor,present-0,0.0,0.0,0.0,0.0,1e-12,True,
+charge_residual,NEUTRAL_SINGLETON/1 vapor,trial-0,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_SINGLETON/1 vapor,trial-0,0.0,0.0,0.0,0.0,1e-12,True,
+charge_residual,NEUTRAL_SINGLETON/1 vapor,trial-1,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_SINGLETON/1 vapor,trial-1,0.0,1.1102230246251565e-16,1.1102230246251565e-16,1.1102230246251565e-16,1e-12,True,
+charge_residual,NEUTRAL_SINGLETON/1 vapor,trial-2,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_SINGLETON/1 vapor,trial-2,0.0,0.0,0.0,0.0,1e-12,True,
+charge_residual,NEUTRAL_SINGLETON/1 vapor,trial-3,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_SINGLETON/1 vapor,trial-3,0.0,0.0,0.0,0.0,1e-12,True,
+charge_residual,NEUTRAL_SINGLETON/1 vapor,trial-4,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_SINGLETON/1 vapor,trial-4,0.0,1.1102230246251565e-16,1.1102230246251565e-16,1.1102230246251565e-16,1e-12,True,
+charge_residual,NEUTRAL_SINGLETON/1 vapor,trial-5,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_SINGLETON/1 vapor,trial-5,0.0,0.0,0.0,0.0,1e-12,True,
+charge_residual,NEUTRAL_SINGLETON/1 vapor,trial-6,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_SINGLETON/1 vapor,trial-6,0.0,0.0,0.0,0.0,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,present-0,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,present-0,0.0,-1.1102230246251565e-16,-1.1102230246251565e-16,1.1102230246251565e-16,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-0,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-0,0.0,1.1102230246251565e-16,1.1102230246251565e-16,1.1102230246251565e-16,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-1,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-1,0.0,0.0,0.0,0.0,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-2,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-2,0.0,0.0,0.0,0.0,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-3,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-3,0.0,0.0,0.0,0.0,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-4,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-4,0.0,-5.551115123125783e-17,-5.551115123125783e-17,5.551115123125783e-17,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-5,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-5,0.0,-5.551115123125783e-17,-5.551115123125783e-17,5.551115123125783e-17,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-6,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-6,0.0,-5.551115123125783e-17,-5.551115123125783e-17,5.551115123125783e-17,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-7,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-7,0.0,0.0,0.0,0.0,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-8,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,trial-8,0.0,-1.1102230246251565e-16,-1.1102230246251565e-16,1.1102230246251565e-16,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,present-0,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,present-0,0.0,-1.1102230246251565e-16,-1.1102230246251565e-16,1.1102230246251565e-16,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-0,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-0,0.0,1.1102230246251565e-16,1.1102230246251565e-16,1.1102230246251565e-16,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-0/split-0,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-0/split-0,0.0,0.0,0.0,0.0,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-1,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-1,0.0,7.632783294297951e-17,7.632783294297951e-17,7.632783294297951e-17,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-1/split-0,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-1/split-0,0.0,0.0,0.0,0.0,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-1/split-1,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-1/split-1,0.0,0.0,0.0,0.0,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-2,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-2,0.0,1.249000902703301e-16,1.249000902703301e-16,1.249000902703301e-16,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-2/split-0,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-2/split-0,0.0,-1.1102230246251565e-16,-1.1102230246251565e-16,1.1102230246251565e-16,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-3,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-3,0.0,0.0,0.0,0.0,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-3/split-0,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-3/split-0,0.0,0.0,0.0,0.0,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-3/split-1,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-3/split-1,0.0,0.0,0.0,0.0,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-4,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-4,0.0,5.551115123125783e-17,5.551115123125783e-17,5.551115123125783e-17,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-4/split-0,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-4/split-0,0.0,0.0,0.0,0.0,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-5,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-5,0.0,-1.1102230246251565e-16,-1.1102230246251565e-16,1.1102230246251565e-16,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-5/split-0,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-5/split-0,0.0,0.0,0.0,0.0,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-6,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-6,0.0,5.551115123125783e-17,5.551115123125783e-17,5.551115123125783e-17,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-6/split-0,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-6/split-0,0.0,0.0,0.0,0.0,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-7,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-7,0.0,5.551115123125783e-17,5.551115123125783e-17,5.551115123125783e-17,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-7/split-0,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-7/split-0,0.0,0.0,0.0,0.0,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-8,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-8,0.0,-5.551115123125783e-17,-5.551115123125783e-17,5.551115123125783e-17,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-8/split-0,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,trial-8/split-0,0.0,2.220446049250313e-16,2.220446049250313e-16,2.220446049250313e-16,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),present-0,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),present-0,0.0,3.469446951953614e-17,3.469446951953614e-17,3.469446951953614e-17,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),present-1,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),present-1,0.0,1.1102230246251565e-16,1.1102230246251565e-16,1.1102230246251565e-16,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-0,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-0,0.0,0.0,0.0,0.0,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-0/split-0,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-0/split-0,0.0,0.0,0.0,0.0,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-1,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-1,0.0,2.0816681711721685e-17,2.0816681711721685e-17,2.0816681711721685e-17,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-2,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-2,0.0,-5.551115123125783e-17,-5.551115123125783e-17,5.551115123125783e-17,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-2/split-0,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-2/split-0,0.0,0.0,0.0,0.0,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-3,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-3,0.0,0.0,0.0,0.0,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-3/split-0,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-3/split-0,0.0,0.0,0.0,0.0,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-4,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-4,0.0,5.551115123125783e-17,5.551115123125783e-17,5.551115123125783e-17,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-4/split-0,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-4/split-0,0.0,0.0,0.0,0.0,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-5,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-5,0.0,0.0,0.0,0.0,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-5/split-0,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-5/split-0,0.0,0.0,0.0,0.0,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-6,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-6,0.0,0.0,0.0,0.0,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-6/split-0,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-6/split-0,0.0,0.0,0.0,0.0,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-7,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-7,0.0,5.551115123125783e-17,5.551115123125783e-17,5.551115123125783e-17,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-7/split-0,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-7/split-0,0.0,0.0,0.0,0.0,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-8,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-8,0.0,0.0,0.0,0.0,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-8/split-0,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),trial-8/split-0,0.0,0.0,0.0,0.0,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,present-0,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,present-0,0.0,-6.938893903907228e-17,-6.938893903907228e-17,6.938893903907228e-17,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,present-1,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,present-1,0.0,9.71445146547012e-17,9.71445146547012e-17,9.71445146547012e-17,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,present-2,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,present-2,0.0,0.0,0.0,0.0,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-0,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-0,0.0,0.0,0.0,0.0,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-1,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-1,0.0,-6.938893903907228e-18,-6.938893903907228e-18,6.938893903907228e-18,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-2,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-2,0.0,5.551115123125783e-17,5.551115123125783e-17,5.551115123125783e-17,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-3,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-3,0.0,1.1102230246251565e-16,1.1102230246251565e-16,1.1102230246251565e-16,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-4,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-4,0.0,1.1102230246251565e-16,1.1102230246251565e-16,1.1102230246251565e-16,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-4/split-0,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-4/split-0,0.0,0.0,0.0,0.0,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-5,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-5,0.0,1.6653345369377348e-16,1.6653345369377348e-16,1.6653345369377348e-16,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-5/split-0,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-5/split-0,0.0,0.0,0.0,0.0,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-6,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-6,0.0,0.0,0.0,0.0,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-6/split-0,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-6/split-0,0.0,2.220446049250313e-16,2.220446049250313e-16,2.220446049250313e-16,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-7,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-7,0.0,0.0,0.0,0.0,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-7/split-0,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-7/split-0,0.0,2.220446049250313e-16,2.220446049250313e-16,2.220446049250313e-16,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-8,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-8,0.0,1.1102230246251565e-16,1.1102230246251565e-16,1.1102230246251565e-16,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-8/split-0,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,trial-8/split-0,0.0,0.0,0.0,0.0,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,present-0,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,present-0,0.0,3.469446951953614e-17,3.469446951953614e-17,3.469446951953614e-17,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,present-1,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,present-1,0.0,3.469446951953614e-17,3.469446951953614e-17,3.469446951953614e-17,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,present-2,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,present-2,0.0,0.0,0.0,0.0,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-0,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-0,0.0,-1.1102230246251565e-16,-1.1102230246251565e-16,1.1102230246251565e-16,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-1,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-1,0.0,-2.0816681711721685e-17,-2.0816681711721685e-17,2.0816681711721685e-17,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-2,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-2,0.0,0.0,0.0,0.0,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-3,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-3,0.0,0.0,0.0,0.0,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-4,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-4,0.0,-1.1102230246251565e-16,-1.1102230246251565e-16,1.1102230246251565e-16,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-5,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-5,0.0,-2.0816681711721685e-17,-2.0816681711721685e-17,2.0816681711721685e-17,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-6,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-6,0.0,0.0,0.0,0.0,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-7,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-7,0.0,0.0,0.0,0.0,1e-12,True,
+charge_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-8,0.0,0.0,0.0,0.0,1e-12,True,
+normalization_residual,NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,trial-8,0.0,1.1102230246251565e-16,1.1102230246251565e-16,1.1102230246251565e-16,1e-12,True,

@@ -1,0 +1,91 @@
+{
+  "base": "29fc98dd503527a4c2aef8b4a91017d76c0abdee",
+  "engine_runtime_changed": false,
+  "tolerances_changed": false,
+  "unchanged_runs": [
+    {
+      "producer": "born-probe",
+      "command": [
+        ".venv/bin/python",
+        "-B",
+        "analyses/2026-born-unavailable-states/scripts/probe.py"
+      ],
+      "exit": 1
+    },
+    {
+      "producer": "born-parameter",
+      "command": [
+        ".venv/bin/python",
+        "-B",
+        "analyses/2026-born-unavailable-states/scripts/verify_parameter_continuation.py"
+      ],
+      "exit": 1
+    },
+    {
+      "producer": "born-global",
+      "command": [
+        ".venv/bin/python",
+        "-B",
+        "analyses/2026-born-unavailable-states/scripts/verify_global_scan.py"
+      ],
+      "exit": 1
+    },
+    {
+      "producer": "born-turning",
+      "command": [
+        ".venv/bin/python",
+        "-B",
+        "analyses/2026-born-unavailable-states/scripts/verify_turning.py"
+      ],
+      "exit": 1
+    }
+  ],
+  "qualification_base": "8ffd627f0f7e4e68fdf9db634773ff00e058d85e",
+  "producer_head": "388ed38b12d618e711c64a3c05c7f88653f84d6a",
+  "final_runs": [
+    {
+      "producer": "born-probe",
+      "command": [
+        ".venv/bin/python",
+        "-B",
+        "analyses/2026-born-unavailable-states/scripts/probe.py"
+      ],
+      "exit": 1,
+      "seconds": 0.22184925500005193,
+      "producer_sha256": "0293048395917c571dcf131c9b61d354b8cbad5a59ba466923688b280fe3aa27"
+    },
+    {
+      "producer": "born-parameter",
+      "command": [
+        ".venv/bin/python",
+        "-B",
+        "analyses/2026-born-unavailable-states/scripts/verify_parameter_continuation.py"
+      ],
+      "exit": 0,
+      "seconds": 1.6934216150002612,
+      "producer_sha256": "dd8ef05d0e500a972fd49a4c99ee75025e6fe0fdcd9fb9c8857365a6cb474729"
+    },
+    {
+      "producer": "born-global",
+      "command": [
+        ".venv/bin/python",
+        "-B",
+        "analyses/2026-born-unavailable-states/scripts/verify_global_scan.py"
+      ],
+      "exit": 1,
+      "seconds": 0.3364630779997242,
+      "producer_sha256": "62de0d45bc30dd83961f646bd35b5afa3980a3725a1fad4af59544442fad3666"
+    },
+    {
+      "producer": "born-turning",
+      "command": [
+        ".venv/bin/python",
+        "-B",
+        "analyses/2026-born-unavailable-states/scripts/verify_turning.py"
+      ],
+      "exit": 0,
+      "seconds": 1.732393342999785,
+      "producer_sha256": "9b904aae15b120af3b28e9e4b5d5669f995a680c8444efd5265df8ed422e5d6d"
+    }
+  ]
+}

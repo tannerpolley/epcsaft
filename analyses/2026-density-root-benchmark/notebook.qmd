@@ -1,0 +1,202 @@
+---
+title: "Density roots and spinodals on the named release"
+format: html
+execute:
+  enabled: true
+  echo: false
+---
+
+The independent native diagnostic retains pressure crossings and spinodals for
+the first declared propane state. Its pressure roots reproduce the previous
+retained densities exactly. The pressure-floor-dependent benchmark remains
+unavailable because the release emits no diagnostic operand required by its
+declared check. This notebook reads inputs and outputs retained in this analysis.
+
+## Named-release rerun (#680)
+
+This section reads only the retained named-release outputs. The evidence is
+**numerical verification** on the stated manufactured or shared-model inputs.
+It establishes no physical validation or global-stability certificate.
+Independent delivered review and owner promotion for manuscript use remain open.
+
+```{python}
+#| output: asis
+import csv as _csv
+import json as _json
+from pathlib import Path as _Path
+_rr = _Path("results/main-8298c602")
+_rp = _json.loads((_rr / "provenance.json").read_text())
+_rs = _json.loads((_rr / "summary.json").read_text())
+def _rt(headers, data):
+    print()
+    print("| " + " | ".join(headers) + " |")
+    print("| " + " | ".join("---" for _ in headers) + " |")
+    for row in data:
+        print("| " + " | ".join(str(x) for x in row) + " |")
+print("Release: `" + _rp["release"] + "`. Wheel SHA-256: `" + _rp["wheel_sha256"] + "`.")
+_rt(["Input or result", "Retained value"], [
+    ["Case", _rs['case']['id']], ["Temperature / K", _rs['case']['T_K']],
+    ["Pressure / Pa", _rs['case']['P_Pa']], ["Mole fractions", _rs['case']['x']],
+    ["Pressure crossings", _rs['root_count']], ["Positive-slope roots", _rs['stable_root_count']],
+    ["Spinodals", _rs['spinodal_count']],
+    ["Largest relative difference from previous pressure roots", _rs['max_relative_density_difference']],
+    ["Density comparison criterion", _rs['density_criterion']],
+    ["Largest spinodal log-bracket width", _rs['max_spinodal_bracket_log_width']],
+    ["Requested log tolerance", _rs['log_tolerance']],
+])
+print("\nNative root and spinodal operands:\n")
+_rc = list(_csv.DictReader((_rr / "root-spinodal-comparison.csv").open()))
+_rt(["Quantity", "Density / mol m⁻³", "Pressure / Pa", "Previous density / mol m⁻³", "Residual", "Residual unit", "Log-bracket width"],
+    [[r[k] for k in ('quantity','density_mol_m3','pressure_Pa','previous_density_mol_m3','residual','residual_unit','bracket_log_width')] for r in _rc])
+print("\n**Unavailable dependent part:** " + _rs['dependent_unavailable'])
+print("\n**Release output inspection:** " + _rs['replacement'])
+```
+
+[The native diagnostic](results/main-8298c602/A-propane-vapor-state-0-diagnostics.json),
+[the unchanged full input declaration](results/main-8298c602/cases-input.json),
+[the comparison operands](results/main-8298c602/root-spinodal-comparison.csv),
+[the exact stopping state and assertion](results/main-8298c602/prepare.log),
+and [the wheel identity](results/main-8298c602/provenance.json) retain this partial run.
+
+The diagnostic uses the study's declared nonadaptive log-density scan and native
+crossing refinement. The stable and unstable pressure crossings and the two
+spinodals are separate quantities; a positive-slope crossing is a local
+mechanical result. Finite sign scans do not certify complete root enumeration,
+global phase stability or physical validation. No previous spinodal operands
+at this same temperature were retained for a direct old/new comparison.
+
+The remaining changing-pressure states, application returns and comparator
+benchmark were not reached. Their earlier retained oracle remains historical;
+it supplies no named-release manuscript result. A follow-up design must settle
+how to expose the independent fixed-density pressure uncertainty before the
+dependent criterion can be evaluated again. No replacement floor or tolerance
+is selected here.
+
+## Direct pressure residual and nested density scans
+
+The full declared density study uses the calculated reduced pressure residual
+without an additive floor. For temperature $T$, pressure $P$, composition $x$
+and returned molar density $\rho$, the checked quantity is
+$|P_{\mathrm{calc}}-P|/(\rho RT)$. The native pressure and slope evaluator is
+shared by the production density request and the separate diagnostic crossing
+search. [ALG-DENSITY](../../engine/docs/science/algorithms.md#alg-density)
+owns both calculations; the searches differ, but the equation-of-state
+evaluator is shared. These comparisons provide **numerical verification**.
+They provide no physical validation, proof of complete root enumeration or
+global phase stability.
+
+The run preserves every declared temperature, composition, pressure and frozen
+selected density, branch and stable-root count. It does not recompute the
+critical or saturation inputs. The native diagnostic scans two nested
+log-density grids over identical bounds, then refines pressure and slope sign
+brackets. Each pressure request is compared separately with its frozen
+reference and the selected positive-slope root from each grid. The native
+fixed-density evaluation at the returned density is checked separately; the
+frozen-density pressure evaluation is retained as an additional comparison.
+The original floor-dependent run above remains a separate, stopped record.
+
+```{python}
+#| output: asis
+import hashlib as _hashlib
+_pr = _Path("results/main-8298c602-pressure-residual")
+_required = ("summary.json", "cases.json", "oracle-reproduction.csv", "provenance.json")
+assert all((_pr / name).is_file() for name in _required)
+_ps = _json.loads((_pr / "summary.json").read_text())
+_pd = _json.loads((_pr / "cases.json").read_text())
+_pp = _json.loads((_pr / "provenance.json").read_text())
+_paths = [_pr / f"{c['id']}-state-{s['index']}.json" for c in _pd["cases"] for s in c["states"]]
+assert all(p.is_file() for p in _paths)
+_records = [_json.loads(p.read_text()) for p in _paths]
+_pv = [dict(case=r["case"], state=r["state"]["index"], **v,
+            reduced_pressure_residual=abs(v["pressure_Pa"] - r["state"]["P_Pa"]) /
+                (v["rho_mol_m3"] * _pd["gas_constant_J_mol_K"] * r["state"]["T_K"]),
+            frozen_density_difference=abs(v["rho_mol_m3"] / r["state"]["oracle_rho_mol_m3"] - 1))
+       for r in _records for v in r["returns"]]
+_pb = [p for r in _records for scan in r["scans"] for quantity in ("roots", "spinodals") for p in scan[quantity]]
+_pn = [(a, b) for r in _records for quantity in ("roots", "spinodals")
+       for a, b in zip(r["scans"][0][quantity], r["scans"][1][quantity], strict=True)]
+_rt(["Comparison", "Population", "Largest difference or residual", "Required limit"], [
+    ["Pressure and both fixed-density returns", _ps["returns"], _ps["max_reduced_pressure_residual"], _ps["pressure_limit"]],
+    ["Frozen selected density", _ps["requests"], _ps["max_frozen_density_difference"], _ps["density_limit"]],
+    ["Selected root from either diagnostic grid", _ps["requests"], _ps["max_scan_density_difference"], _ps["density_limit"]],
+    ["Nested pressure and spinodal crossings", len(_pn), _ps["max_nested_density_difference"], _ps["density_limit"]],
+    ["Original state-zero oracle roots", _ps["oracle_comparisons"], _ps["max_oracle_density_difference"], _ps["density_limit"]],
+    ["Bracket-tolerance stops", len(_pb) - _ps["exact_numerical_zeros"], _ps["max_bracket_log_width"], 1e-14],
+])
+print(f"\n{_ps['requests']} branch-specific requests in {len(_pd['cases'])} sequences; "
+      f"{_ps['scans']} diagnostic scans; {_ps['pressure_crossings']} pressure crossings and "
+      f"{_ps['spinodals']} spinodals across both grids. "
+      f"{len(_ps['failures'])} failed comparisons; {_ps['mutation_rejections']} corrupt-return mutations rejected.")
+print(f"\nThe {_ps['exact_numerical_zeros']} exact numerical-zero stops retain their evaluated zeros "
+      f"and original brackets. Their largest log-bracket width is {_ps['max_exact_zero_log_width']}; "
+      "the bracket-width criterion is applied only to bracket-tolerance stops. "
+      "A numerical zero is not an analytically exact root.")
+_rt(["Sequence", "T / K", "Pressure interval / Pa", "Requests", "Largest reduced pressure residual", "Largest frozen-density difference"], [
+    [c["id"], c["T_K"], f"{min(s['P_Pa'] for s in c['states']):.9g} to {max(s['P_Pa'] for s in c['states']):.9g}",
+     len(c["states"]), max(float(v["reduced_pressure_residual"]) for v in _pv if v["case"] == c["id"]),
+     max(float(v["frozen_density_difference"]) for v in _pv if v["case"] == c["id"])] for c in _pd["cases"]
+])
+print("\nFailed states and causes: " + ("none" if not _ps["failures"] else str(_ps["failures"])))
+print("\nWheel identity: `" + _pp["release"] + "`; actual `epcsaft.provenance()` SHA-256: `" + _pp["actual_provenance"][1] + "`.")
+print("\nThe run-owned input/reference record has " + str((_pr / "cases.json").stat().st_size) +
+      " bytes and SHA-256 `" + _hashlib.sha256((_pr / "cases.json").read_bytes()).hexdigest() + "`.")
+```
+
+```{python}
+#| label: fig-direct-pressure-residual
+#| fig-cap: "Calculated reduced pressure residuals for the declared branch-specific states. Each point is a retained native return; the horizontal line is the declared comparison limit. The horizontal coordinate concatenates the sequences in the run record and does not imply a continuous thermodynamic path."
+import matplotlib.pyplot as _plt
+_case_index = {c["id"]: i for i, c in enumerate(_pd["cases"])}
+_fig, _ax = _plt.subplots(figsize=(10, 4))
+for _mode, _color, _marker in [("pressure", "#0072B2", "o"), ("returned-density", "#D55E00", "x"), ("frozen-density", "#009E73", "+")]:
+    _rows = [v for v in _pv if v["mode"] == _mode]
+    _ax.scatter([_case_index[v["case"]] * 32 + int(v["state"]) for v in _rows],
+                [float(v["reduced_pressure_residual"]) for v in _rows],
+                s=10, color=_color, marker=_marker, label=_mode, alpha=0.75)
+_ax.axhline(_ps["pressure_limit"], color="black", linestyle="--", linewidth=1, label="declared limit")
+_ax.set_yscale("symlog", linthresh=1e-16)
+_ax.set(xlabel="Declared request index (dimensionless)", ylabel="Reduced pressure residual (dimensionless)")
+_ax.grid(axis="y", alpha=0.2)
+_ax.legend(loc="upper center", ncol=2, frameon=False)
+_fig.tight_layout()
+_plt.show()
+```
+
+The returned pressure and fixed-density states have finite positive slope,
+match the frozen branch and stable-root count, and satisfy the density and
+pressure comparisons. The diagnostic grids reproduce ordered pressure and
+spinodal crossings; endpoint pressure or slope evaluations retain opposite
+signs or a numerical zero. A sole positive-slope root returns `Unspecified`,
+including the absent-vapor request. The first propane state reproduces the
+retained three pressure crossings and two spinodals. A positive slope is local
+mechanical evidence, including metastable roots; it does not establish global
+Gibbs stability or composition stability. Negative-pressure spinodals remain
+mathematical results of the equation of state.
+
+The bracket-tolerance comparison measures the final native numerical bracket,
+not a bound on exact-real equation-of-state error. The spinodal slope residuals
+are retained in units of $RT$ with their signs and brackets; no uniform slope
+uncertainty bound is asserted. Close to a fold, a small pressure residual alone
+does not bound density error, which is why the separate density comparisons
+remain required. Finite sampling can miss crossings, including double roots,
+and nested-grid agreement does not prove completeness. No experimental
+uncertainty, new application result, comparator result or speed claim is
+inferred from this study.
+
+The [run-owned inputs and both selected scan references](results/main-8298c602-pressure-residual/cases.json),
+[first-state native returns and brackets](results/main-8298c602-pressure-residual/A-propane-vapor-state-0.json),
+[original oracle comparisons](results/main-8298c602-pressure-residual/oracle-reproduction.csv),
+[scientific summary](results/main-8298c602-pressure-residual/summary.json)
+and [original calculation provenance](results/main-8298c602-pressure-residual/provenance.json)
+are retained under this analysis. Each state has its own native diagnostic
+and returned quantities; these canonical records supply the tables and figure. The notebook imports no Engine
+calculation and reads no numerical input from `build/`. It has not received
+independent delivered review or investigator promotion for manuscript use.
+
+## Current producer diagnosis (#750)
+
+The [current diagnosis](results/current-main/diagnosis.md) names the responsible
+Engine changes, retained comparisons, rerun outcomes and remaining limitations.
+Its numerical outputs are separate from the original results interpreted above.
+The minimax cold-replay failure, where applicable, remains an open Engine
+investigation; a completed fit or preflight does not establish physical validation.

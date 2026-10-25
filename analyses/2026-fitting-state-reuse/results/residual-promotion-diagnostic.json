@@ -1,0 +1,40 @@
+{
+  "verification": "native code",
+  "scale": 1e+308,
+  "origin_K": 148,
+  "physical_bounds_K": [
+    140,
+    170
+  ],
+  "failure_row": 0,
+  "failure": "nonfinite",
+  "message": "optimizer Jacobian not finite",
+  "jacobian_requested": true,
+  "prediction_residual_cost_identical": true,
+  "central_solve_counts": [
+    2,
+    0,
+    0,
+    2
+  ],
+  "compile_counts": [
+    2,
+    0,
+    0,
+    2
+  ],
+  "count_stage_order": [
+    "residual_before",
+    "jacobian_attempt",
+    "residual_after",
+    "changed_point"
+  ],
+  "runtime_sources_unchanged": true,
+  "native_archive_sha256": "5991bd81f7966efe0449e38fbe1dbe1190fc34f66c168b01ab594a3aa9db1f48",
+  "installed_wheel_sha256": "28181e72e429c6e87fc6361082af1a7b21c8747e76bda65a1c30abb4a97402f2",
+  "comparison_relative_criterion": 1e-10,
+  "maximum_changed_point_scalar_pressure_difference_Pa": 4.190951585769653e-09,
+  "executed_source_sha256": "66b8f4b7fe979a562b348e41ac6b46668060e87aadb1bd0d68f241cc7bec558e",
+  "retained_replay_source_sha256": "d317e0d5218258dfa4772f7e4fd1feb5a11f59cfa2e8c310a5f4aae4364159bb",
+  "source_relocation": "Only include paths changed from ../../engine to ../../../engine for the retained analysis/scripts location."
+}

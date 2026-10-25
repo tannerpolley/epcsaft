@@ -1,0 +1,7 @@
+species,charge,molality_mol_per_kgw,activity,temperature_K,pH,source_locator,comparison_classification
+HCO3-,-1,1.238E-3,8.359E-4,298.15,8.22,PHREEQC v3 manual Example 1 Table 11 lines 516-517,published PHREEQC broad-seawater output only
+CO3-2,-2,3.128E-5,6.506E-6,298.15,8.22,PHREEQC v3 manual Example 1 Table 11 lines 525-526,published PHREEQC broad-seawater output only
+CO2,0,9.887E-6,1.155E-5,298.15,8.22,PHREEQC v3 manual Example 1 Table 11 lines 531-532,published PHREEQC broad-seawater output only
+Ca+2,2,9.645E-3,2.412E-3,298.15,8.22,PHREEQC v3 manual Example 1 Table 11 lines 545-548,published PHREEQC broad-seawater output only
+CaHCO3+,1,3.717E-5,2.572E-5,298.15,8.22,PHREEQC v3 manual Example 1 Table 11 lines 551-552,published PHREEQC broad-seawater output only
+CaCO3,0,2.256E-5,2.636E-5,298.15,8.22,PHREEQC v3 manual Example 1 Table 11 lines 553-554,published PHREEQC broad-seawater output only

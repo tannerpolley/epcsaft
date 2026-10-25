@@ -1,0 +1,180 @@
+{
+  "11": {
+    "components": [
+      "heptane",
+      "butane",
+      "ethane"
+    ],
+    "vertices": [
+      [
+        64,
+        636
+      ],
+      [
+        777,
+        636
+      ],
+      [
+        421,
+        55
+      ]
+    ],
+    "temperature_k": 394.15,
+    "pairs": [
+      [
+        0,
+        1,
+        0
+      ],
+      [
+        0,
+        2,
+        0
+      ],
+      [
+        1,
+        2,
+        0
+      ]
+    ],
+    "points": [
+      {
+        "pressure_pa": 6900000,
+        "reference": "model",
+        "liquid_pixel": [
+          334,
+          278
+        ],
+        "vapor_pixel": [
+          407,
+          129
+        ]
+      },
+      {
+        "pressure_pa": 6900000,
+        "reference": "experiment",
+        "liquid_pixel": [
+          334,
+          285
+        ],
+        "vapor_pixel": [
+          408,
+          128
+        ]
+      },
+      {
+        "pressure_pa": 4800000,
+        "reference": "model",
+        "liquid_pixel": [
+          371,
+          467
+        ],
+        "vapor_pixel": [
+          470,
+          214
+        ]
+      },
+      {
+        "pressure_pa": 4800000,
+        "reference": "experiment",
+        "liquid_pixel": [
+          371,
+          463
+        ],
+        "vapor_pixel": [
+          467,
+          214
+        ]
+      }
+    ]
+  },
+  "14": {
+    "components": [
+      "CO2",
+      "ethane",
+      "methane"
+    ],
+    "vertices": [
+      [
+        44,
+        650
+      ],
+      [
+        791,
+        650
+      ],
+      [
+        417,
+        50
+      ]
+    ],
+    "temperature_k": 230,
+    "pairs": [
+      [
+        0,
+        1,
+        0.095
+      ],
+      [
+        0,
+        2,
+        0.065
+      ],
+      [
+        1,
+        2,
+        0
+      ]
+    ],
+    "points": [
+      {
+        "pressure_pa": 2530000,
+        "reference": "model",
+        "liquid_pixel": [
+          285,
+          577
+        ],
+        "vapor_pixel": [
+          350,
+          345
+        ]
+      },
+      {
+        "pressure_pa": 2530000,
+        "reference": "experiment",
+        "liquid_pixel": [
+          284,
+          572
+        ],
+        "vapor_pixel": [
+          350,
+          342
+        ]
+      },
+      {
+        "pressure_pa": 2530000,
+        "reference": "model",
+        "liquid_pixel": [
+          414,
+          557
+        ],
+        "vapor_pixel": [
+          389,
+          334
+        ]
+      },
+      {
+        "pressure_pa": 2530000,
+        "reference": "experiment",
+        "liquid_pixel": [
+          414,
+          554
+        ],
+        "vapor_pixel": [
+          389,
+          340
+        ]
+      }
+    ]
+  }
+}

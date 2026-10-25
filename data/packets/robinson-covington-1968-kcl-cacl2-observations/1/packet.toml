@@ -1,0 +1,39 @@
+schema_version = 2
+packet_id = "robinson-covington-1968-kcl-cacl2-observations"
+packet_version = "1"
+title = "Robinson-Covington 1968 KCl-CaCl2 isopiestic observations at 298.15 K"
+description = "Robinson-Covington 1968 KCl-CaCl2 isopiestic observations at 298.15 K"
+license_or_use_basis = "Factual numerical observations and project metadata for private scientific verification; no full article content."
+tolerance_rationale = "Printed precision is retained; no pointwise statistical uncertainty or model-acceptance tolerance is assigned."
+
+[[sources]]
+source_id = "robinson-covington-1968"
+citation = "Robinson and Covington (1968), The Thermodynamics of the Ternary System: Water-Potassium Chloride-Calcium Chloride at 25 °C, J. Res. NBS 72A, 239."
+doi = "10.6028/jres.072a.022"
+use_basis = "Zotero L43EDHNC/RXXNACBK; Table 1 p.240, PDF p.2. Observed Phi only; every measurement including starred rows retained. Dotted m(KCl) endpoints are structural zero."
+
+[[domains]]
+domain_id = "robinson-covington-1968-kcl-cacl2-observations-298-15-k"
+kind = "source-observation"
+temperature_min = 298.15
+temperature_max = 298.15
+temperature_unit = "kelvin"
+description = "Robinson-Covington 1968 KCl-CaCl2 isopiestic observations at 298.15 K"
+
+[[files]]
+path = "observations/robinson-covington-1968-table1.csv"
+role = "observations"
+media_type = "text/csv"
+sha256 = "2275421545191812af30b5a31585954f44f3ff19bfc6a6cbbad380b6788b63ee"
+source_refs = ["robinson-covington-1968"]
+domain_refs = ["robinson-covington-1968-kcl-cacl2-observations-298-15-k"]
+units_basis = "Molalities and ionic strength: mol/kg water; osmotic coefficient, activity and ratios: dimensionless; source locators retained."
+
+[[files]]
+path = "sources/source-records.json"
+role = "source"
+media_type = "application/json"
+sha256 = "8120392af981e7af2fc08d5da71eb6b51f1056089b8172ebe16c661a5bdc37c1"
+source_refs = ["robinson-covington-1968"]
+domain_refs = ["robinson-covington-1968-kcl-cacl2-observations-298-15-k"]
+units_basis = "Non-numeric source identities, locators, reading notes and PDF digest."

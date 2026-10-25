@@ -1,0 +1,313 @@
+record_id,component_id,family,value,unit,source_id,locator,domain_id
+methane-molar-mass,methane,molar_mass,0.016043,kg / mol,gross-sadowski-2001,"Table 2, methane row, M_i and T range columns",methane-fit-range
+methane-segment-count,methane,segment_count,1.0000,,gross-sadowski-2001,"Table 2, methane row, m_i^seg and T range columns",methane-fit-range
+methane-segment-diameter,methane,segment_diameter,3.7039,angstrom,gross-sadowski-2001,"Table 2, methane row, sigma_i and T range columns",methane-fit-range
+methane-dispersion-energy,methane,dispersion_energy_over_k,150.03,kelvin,gross-sadowski-2001,"Table 2, methane row, epsilon_i/k and T range columns",methane-fit-range
+ethane-molar-mass,ethane,molar_mass,0.03007,kg / mol,gross-sadowski-2001,"Table 2, ethane row, M_i and T range columns",ethane-fit-range
+ethane-segment-count,ethane,segment_count,1.6069,,gross-sadowski-2001,"Table 2, ethane row, m_i^seg and T range columns",ethane-fit-range
+ethane-segment-diameter,ethane,segment_diameter,3.5206,angstrom,gross-sadowski-2001,"Table 2, ethane row, sigma_i and T range columns",ethane-fit-range
+ethane-dispersion-energy,ethane,dispersion_energy_over_k,191.42,kelvin,gross-sadowski-2001,"Table 2, ethane row, epsilon_i/k and T range columns",ethane-fit-range
+propane-molar-mass,propane,molar_mass,0.044096,kg / mol,gross-sadowski-2001,"Table 2, propane row, M_i and T range columns",propane-fit-range
+propane-segment-count,propane,segment_count,2.0020,,gross-sadowski-2001,"Table 2, propane row, m_i^seg and T range columns",propane-fit-range
+propane-segment-diameter,propane,segment_diameter,3.6184,angstrom,gross-sadowski-2001,"Table 2, propane row, sigma_i and T range columns",propane-fit-range
+propane-dispersion-energy,propane,dispersion_energy_over_k,208.11,kelvin,gross-sadowski-2001,"Table 2, propane row, epsilon_i/k and T range columns",propane-fit-range
+butane-molar-mass,butane,molar_mass,0.058123,kg / mol,gross-sadowski-2001,"Table 2, butane row, M_i and T range columns",butane-fit-range
+butane-segment-count,butane,segment_count,2.3316,,gross-sadowski-2001,"Table 2, butane row, m_i^seg and T range columns",butane-fit-range
+butane-segment-diameter,butane,segment_diameter,3.7086,angstrom,gross-sadowski-2001,"Table 2, butane row, sigma_i and T range columns",butane-fit-range
+butane-dispersion-energy,butane,dispersion_energy_over_k,222.88,kelvin,gross-sadowski-2001,"Table 2, butane row, epsilon_i/k and T range columns",butane-fit-range
+pentane-molar-mass,pentane,molar_mass,0.072146,kg / mol,gross-sadowski-2001,"Table 2, pentane row, M_i and T range columns",pentane-fit-range
+pentane-segment-count,pentane,segment_count,2.6896,,gross-sadowski-2001,"Table 2, pentane row, m_i^seg and T range columns",pentane-fit-range
+pentane-segment-diameter,pentane,segment_diameter,3.7729,angstrom,gross-sadowski-2001,"Table 2, pentane row, sigma_i and T range columns",pentane-fit-range
+pentane-dispersion-energy,pentane,dispersion_energy_over_k,231.20,kelvin,gross-sadowski-2001,"Table 2, pentane row, epsilon_i/k and T range columns",pentane-fit-range
+hexane-molar-mass,hexane,molar_mass,0.086177,kg / mol,gross-sadowski-2001,"Table 2, hexane row, M_i and T range columns",hexane-fit-range
+hexane-segment-count,hexane,segment_count,3.0576,,gross-sadowski-2001,"Table 2, hexane row, m_i^seg and T range columns",hexane-fit-range
+hexane-segment-diameter,hexane,segment_diameter,3.7983,angstrom,gross-sadowski-2001,"Table 2, hexane row, sigma_i and T range columns",hexane-fit-range
+hexane-dispersion-energy,hexane,dispersion_energy_over_k,236.77,kelvin,gross-sadowski-2001,"Table 2, hexane row, epsilon_i/k and T range columns",hexane-fit-range
+heptane-molar-mass,heptane,molar_mass,0.100203,kg / mol,gross-sadowski-2001,"Table 2, heptane row, M_i and T range columns",heptane-fit-range
+heptane-segment-count,heptane,segment_count,3.4831,,gross-sadowski-2001,"Table 2, heptane row, m_i^seg and T range columns",heptane-fit-range
+heptane-segment-diameter,heptane,segment_diameter,3.8049,angstrom,gross-sadowski-2001,"Table 2, heptane row, sigma_i and T range columns",heptane-fit-range
+heptane-dispersion-energy,heptane,dispersion_energy_over_k,238.40,kelvin,gross-sadowski-2001,"Table 2, heptane row, epsilon_i/k and T range columns",heptane-fit-range
+octane-molar-mass,octane,molar_mass,0.114231,kg / mol,gross-sadowski-2001,"Table 2, octane row, M_i and T range columns",octane-fit-range
+octane-segment-count,octane,segment_count,3.8176,,gross-sadowski-2001,"Table 2, octane row, m_i^seg and T range columns",octane-fit-range
+octane-segment-diameter,octane,segment_diameter,3.8373,angstrom,gross-sadowski-2001,"Table 2, octane row, sigma_i and T range columns",octane-fit-range
+octane-dispersion-energy,octane,dispersion_energy_over_k,242.78,kelvin,gross-sadowski-2001,"Table 2, octane row, epsilon_i/k and T range columns",octane-fit-range
+nonane-molar-mass,nonane,molar_mass,0.12825,kg / mol,gross-sadowski-2001,"Table 2, nonane row, M_i and T range columns",nonane-fit-range
+nonane-segment-count,nonane,segment_count,4.2079,,gross-sadowski-2001,"Table 2, nonane row, m_i^seg and T range columns",nonane-fit-range
+nonane-segment-diameter,nonane,segment_diameter,3.8448,angstrom,gross-sadowski-2001,"Table 2, nonane row, sigma_i and T range columns",nonane-fit-range
+nonane-dispersion-energy,nonane,dispersion_energy_over_k,244.51,kelvin,gross-sadowski-2001,"Table 2, nonane row, epsilon_i/k and T range columns",nonane-fit-range
+decane-molar-mass,decane,molar_mass,0.142285,kg / mol,gross-sadowski-2001,"Table 2, decane row, M_i and T range columns",decane-fit-range
+decane-segment-count,decane,segment_count,4.6627,,gross-sadowski-2001,"Table 2, decane row, m_i^seg and T range columns",decane-fit-range
+decane-segment-diameter,decane,segment_diameter,3.8384,angstrom,gross-sadowski-2001,"Table 2, decane row, sigma_i and T range columns",decane-fit-range
+decane-dispersion-energy,decane,dispersion_energy_over_k,243.87,kelvin,gross-sadowski-2001,"Table 2, decane row, epsilon_i/k and T range columns",decane-fit-range
+undecane-molar-mass,undecane,molar_mass,0.156312,kg / mol,gross-sadowski-2001,"Table 2, undecane row, M_i and T range columns",undecane-fit-range
+undecane-segment-count,undecane,segment_count,4.9082,,gross-sadowski-2001,"Table 2, undecane row, m_i^seg and T range columns",undecane-fit-range
+undecane-segment-diameter,undecane,segment_diameter,3.8893,angstrom,gross-sadowski-2001,"Table 2, undecane row, sigma_i and T range columns",undecane-fit-range
+undecane-dispersion-energy,undecane,dispersion_energy_over_k,248.82,kelvin,gross-sadowski-2001,"Table 2, undecane row, epsilon_i/k and T range columns",undecane-fit-range
+dodecane-molar-mass,dodecane,molar_mass,0.170338,kg / mol,gross-sadowski-2001,"Table 2, dodecane row, M_i and T range columns",dodecane-fit-range
+dodecane-segment-count,dodecane,segment_count,5.3060,,gross-sadowski-2001,"Table 2, dodecane row, m_i^seg and T range columns",dodecane-fit-range
+dodecane-segment-diameter,dodecane,segment_diameter,3.8959,angstrom,gross-sadowski-2001,"Table 2, dodecane row, sigma_i and T range columns",dodecane-fit-range
+dodecane-dispersion-energy,dodecane,dispersion_energy_over_k,249.21,kelvin,gross-sadowski-2001,"Table 2, dodecane row, epsilon_i/k and T range columns",dodecane-fit-range
+tridecane-molar-mass,tridecane,molar_mass,0.184365,kg / mol,gross-sadowski-2001,"Table 2, tridecane row, M_i and T range columns",tridecane-fit-range
+tridecane-segment-count,tridecane,segment_count,5.6877,,gross-sadowski-2001,"Table 2, tridecane row, m_i^seg and T range columns",tridecane-fit-range
+tridecane-segment-diameter,tridecane,segment_diameter,3.9143,angstrom,gross-sadowski-2001,"Table 2, tridecane row, sigma_i and T range columns",tridecane-fit-range
+tridecane-dispersion-energy,tridecane,dispersion_energy_over_k,249.78,kelvin,gross-sadowski-2001,"Table 2, tridecane row, epsilon_i/k and T range columns",tridecane-fit-range
+tetradecane-molar-mass,tetradecane,molar_mass,0.198392,kg / mol,gross-sadowski-2001,"Table 2, tetradecane row, M_i and T range columns",tetradecane-fit-range
+tetradecane-segment-count,tetradecane,segment_count,5.9002,,gross-sadowski-2001,"Table 2, tetradecane row, m_i^seg and T range columns",tetradecane-fit-range
+tetradecane-segment-diameter,tetradecane,segment_diameter,3.9396,angstrom,gross-sadowski-2001,"Table 2, tetradecane row, sigma_i and T range columns",tetradecane-fit-range
+tetradecane-dispersion-energy,tetradecane,dispersion_energy_over_k,254.21,kelvin,gross-sadowski-2001,"Table 2, tetradecane row, epsilon_i/k and T range columns",tetradecane-fit-range
+pentadecane-molar-mass,pentadecane,molar_mass,0.212419,kg / mol,gross-sadowski-2001,"Table 2, pentadecane row, M_i and T range columns",pentadecane-fit-range
+pentadecane-segment-count,pentadecane,segment_count,6.2855,,gross-sadowski-2001,"Table 2, pentadecane row, m_i^seg and T range columns",pentadecane-fit-range
+pentadecane-segment-diameter,pentadecane,segment_diameter,3.9531,angstrom,gross-sadowski-2001,"Table 2, pentadecane row, sigma_i and T range columns",pentadecane-fit-range
+pentadecane-dispersion-energy,pentadecane,dispersion_energy_over_k,254.14,kelvin,gross-sadowski-2001,"Table 2, pentadecane row, epsilon_i/k and T range columns",pentadecane-fit-range
+hexadecane-molar-mass,hexadecane,molar_mass,0.226446,kg / mol,gross-sadowski-2001,"Table 2, hexadecane row, M_i and T range columns",hexadecane-fit-range
+hexadecane-segment-count,hexadecane,segment_count,6.6485,,gross-sadowski-2001,"Table 2, hexadecane row, m_i^seg and T range columns",hexadecane-fit-range
+hexadecane-segment-diameter,hexadecane,segment_diameter,3.9552,angstrom,gross-sadowski-2001,"Table 2, hexadecane row, sigma_i and T range columns",hexadecane-fit-range
+hexadecane-dispersion-energy,hexadecane,dispersion_energy_over_k,254.70,kelvin,gross-sadowski-2001,"Table 2, hexadecane row, epsilon_i/k and T range columns",hexadecane-fit-range
+heptadecane-molar-mass,heptadecane,molar_mass,0.240473,kg / mol,gross-sadowski-2001,"Table 2, heptadecane row, M_i and T range columns",heptadecane-fit-range
+heptadecane-segment-count,heptadecane,segment_count,6.9809,,gross-sadowski-2001,"Table 2, heptadecane row, m_i^seg and T range columns",heptadecane-fit-range
+heptadecane-segment-diameter,heptadecane,segment_diameter,3.9675,angstrom,gross-sadowski-2001,"Table 2, heptadecane row, sigma_i and T range columns",heptadecane-fit-range
+heptadecane-dispersion-energy,heptadecane,dispersion_energy_over_k,255.65,kelvin,gross-sadowski-2001,"Table 2, heptadecane row, epsilon_i/k and T range columns",heptadecane-fit-range
+octadecane-molar-mass,octadecane,molar_mass,0.2545,kg / mol,gross-sadowski-2001,"Table 2, octadecane row, M_i and T range columns",octadecane-fit-range
+octadecane-segment-count,octadecane,segment_count,7.3271,,gross-sadowski-2001,"Table 2, octadecane row, m_i^seg and T range columns",octadecane-fit-range
+octadecane-segment-diameter,octadecane,segment_diameter,3.9668,angstrom,gross-sadowski-2001,"Table 2, octadecane row, sigma_i and T range columns",octadecane-fit-range
+octadecane-dispersion-energy,octadecane,dispersion_energy_over_k,256.20,kelvin,gross-sadowski-2001,"Table 2, octadecane row, epsilon_i/k and T range columns",octadecane-fit-range
+nonadecane-molar-mass,nonadecane,molar_mass,0.268527,kg / mol,gross-sadowski-2001,"Table 2, nonadecane row, M_i and T range columns",nonadecane-fit-range
+nonadecane-segment-count,nonadecane,segment_count,7.7175,,gross-sadowski-2001,"Table 2, nonadecane row, m_i^seg and T range columns",nonadecane-fit-range
+nonadecane-segment-diameter,nonadecane,segment_diameter,3.9721,angstrom,gross-sadowski-2001,"Table 2, nonadecane row, sigma_i and T range columns",nonadecane-fit-range
+nonadecane-dispersion-energy,nonadecane,dispersion_energy_over_k,256.00,kelvin,gross-sadowski-2001,"Table 2, nonadecane row, epsilon_i/k and T range columns",nonadecane-fit-range
+eicosane-molar-mass,eicosane,molar_mass,0.282553,kg / mol,gross-sadowski-2001,"Table 2, eicosane row, M_i and T range columns",eicosane-fit-range
+eicosane-segment-count,eicosane,segment_count,7.9849,,gross-sadowski-2001,"Table 2, eicosane row, m_i^seg and T range columns",eicosane-fit-range
+eicosane-segment-diameter,eicosane,segment_diameter,3.9869,angstrom,gross-sadowski-2001,"Table 2, eicosane row, sigma_i and T range columns",eicosane-fit-range
+eicosane-dispersion-energy,eicosane,dispersion_energy_over_k,257.75,kelvin,gross-sadowski-2001,"Table 2, eicosane row, epsilon_i/k and T range columns",eicosane-fit-range
+isobutane-molar-mass,isobutane,molar_mass,0.058123,kg / mol,gross-sadowski-2001,"Table 2, isobutane row, M_i and T range columns",isobutane-fit-range
+isobutane-segment-count,isobutane,segment_count,2.2616,,gross-sadowski-2001,"Table 2, isobutane row, m_i^seg and T range columns",isobutane-fit-range
+isobutane-segment-diameter,isobutane,segment_diameter,3.7574,angstrom,gross-sadowski-2001,"Table 2, isobutane row, sigma_i and T range columns",isobutane-fit-range
+isobutane-dispersion-energy,isobutane,dispersion_energy_over_k,216.53,kelvin,gross-sadowski-2001,"Table 2, isobutane row, epsilon_i/k and T range columns",isobutane-fit-range
+isopentane-molar-mass,isopentane,molar_mass,0.07215,kg / mol,gross-sadowski-2001,"Table 2, isopentane row, M_i and T range columns",isopentane-fit-range
+isopentane-segment-count,isopentane,segment_count,2.5620,,gross-sadowski-2001,"Table 2, isopentane row, m_i^seg and T range columns",isopentane-fit-range
+isopentane-segment-diameter,isopentane,segment_diameter,3.8296,angstrom,gross-sadowski-2001,"Table 2, isopentane row, sigma_i and T range columns",isopentane-fit-range
+isopentane-dispersion-energy,isopentane,dispersion_energy_over_k,230.75,kelvin,gross-sadowski-2001,"Table 2, isopentane row, epsilon_i/k and T range columns",isopentane-fit-range
+neopentane-molar-mass,neopentane,molar_mass,0.07215,kg / mol,gross-sadowski-2001,"Table 2, neopentane row, M_i and T range columns",neopentane-fit-range
+neopentane-segment-count,neopentane,segment_count,2.3543,,gross-sadowski-2001,"Table 2, neopentane row, m_i^seg and T range columns",neopentane-fit-range
+neopentane-segment-diameter,neopentane,segment_diameter,3.9550,angstrom,gross-sadowski-2001,"Table 2, neopentane row, sigma_i and T range columns",neopentane-fit-range
+neopentane-dispersion-energy,neopentane,dispersion_energy_over_k,225.69,kelvin,gross-sadowski-2001,"Table 2, neopentane row, epsilon_i/k and T range columns",neopentane-fit-range
+2-methylpentane-molar-mass,2-methylpentane,molar_mass,0.086177,kg / mol,gross-sadowski-2001,"Table 2, 2-methylpentane row, M_i and T range columns",2-methylpentane-fit-range
+2-methylpentane-segment-count,2-methylpentane,segment_count,2.9317,,gross-sadowski-2001,"Table 2, 2-methylpentane row, m_i^seg and T range columns",2-methylpentane-fit-range
+2-methylpentane-segment-diameter,2-methylpentane,segment_diameter,3.8535,angstrom,gross-sadowski-2001,"Table 2, 2-methylpentane row, sigma_i and T range columns",2-methylpentane-fit-range
+2-methylpentane-dispersion-energy,2-methylpentane,dispersion_energy_over_k,235.58,kelvin,gross-sadowski-2001,"Table 2, 2-methylpentane row, epsilon_i/k and T range columns",2-methylpentane-fit-range
+2-2-dimethylbutane-molar-mass,2-2-dimethylbutane,molar_mass,0.086177,kg / mol,gross-sadowski-2001,"Table 2, 2,2-dimethylbutane row, M_i and T range columns",2-2-dimethylbutane-fit-range
+2-2-dimethylbutane-segment-count,2-2-dimethylbutane,segment_count,2.6008,,gross-sadowski-2001,"Table 2, 2,2-dimethylbutane row, m_i^seg and T range columns",2-2-dimethylbutane-fit-range
+2-2-dimethylbutane-segment-diameter,2-2-dimethylbutane,segment_diameter,4.0042,angstrom,gross-sadowski-2001,"Table 2, 2,2-dimethylbutane row, sigma_i and T range columns",2-2-dimethylbutane-fit-range
+2-2-dimethylbutane-dispersion-energy,2-2-dimethylbutane,dispersion_energy_over_k,243.51,kelvin,gross-sadowski-2001,"Table 2, 2,2-dimethylbutane row, epsilon_i/k and T range columns",2-2-dimethylbutane-fit-range
+2-3-dimethylbutane-molar-mass,2-3-dimethylbutane,molar_mass,0.086177,kg / mol,gross-sadowski-2001,"Table 2, 2,3-dimethylbutane row, M_i and T range columns",2-3-dimethylbutane-fit-range
+2-3-dimethylbutane-segment-count,2-3-dimethylbutane,segment_count,2.6853,,gross-sadowski-2001,"Table 2, 2,3-dimethylbutane row, m_i^seg and T range columns",2-3-dimethylbutane-fit-range
+2-3-dimethylbutane-segment-diameter,2-3-dimethylbutane,segment_diameter,3.9545,angstrom,gross-sadowski-2001,"Table 2, 2,3-dimethylbutane row, sigma_i and T range columns",2-3-dimethylbutane-fit-range
+2-3-dimethylbutane-dispersion-energy,2-3-dimethylbutane,dispersion_energy_over_k,246.07,kelvin,gross-sadowski-2001,"Table 2, 2,3-dimethylbutane row, epsilon_i/k and T range columns",2-3-dimethylbutane-fit-range
+3-methylpentane-molar-mass,3-methylpentane,molar_mass,0.086177,kg / mol,gross-sadowski-2001,"Table 2, 3-methylpentane row, M_i and T range columns",3-methylpentane-fit-range
+3-methylpentane-segment-count,3-methylpentane,segment_count,2.8852,,gross-sadowski-2001,"Table 2, 3-methylpentane row, m_i^seg and T range columns",3-methylpentane-fit-range
+3-methylpentane-segment-diameter,3-methylpentane,segment_diameter,3.8605,angstrom,gross-sadowski-2001,"Table 2, 3-methylpentane row, sigma_i and T range columns",3-methylpentane-fit-range
+3-methylpentane-dispersion-energy,3-methylpentane,dispersion_energy_over_k,240.48,kelvin,gross-sadowski-2001,"Table 2, 3-methylpentane row, epsilon_i/k and T range columns",3-methylpentane-fit-range
+2-methylhexane-molar-mass,2-methylhexane,molar_mass,0.100204,kg / mol,gross-sadowski-2001,"Table 2, 2-methylhexane row, M_i and T range columns",2-methylhexane-fit-range
+2-methylhexane-segment-count,2-methylhexane,segment_count,3.3478,,gross-sadowski-2001,"Table 2, 2-methylhexane row, m_i^seg and T range columns",2-methylhexane-fit-range
+2-methylhexane-segment-diameter,2-methylhexane,segment_diameter,3.8612,angstrom,gross-sadowski-2001,"Table 2, 2-methylhexane row, sigma_i and T range columns",2-methylhexane-fit-range
+2-methylhexane-dispersion-energy,2-methylhexane,dispersion_energy_over_k,237.42,kelvin,gross-sadowski-2001,"Table 2, 2-methylhexane row, epsilon_i/k and T range columns",2-methylhexane-fit-range
+cyclopentane-molar-mass,cyclopentane,molar_mass,0.07013,kg / mol,gross-sadowski-2001,"Table 2, cyclopentane row, M_i and T range columns",cyclopentane-fit-range
+cyclopentane-segment-count,cyclopentane,segment_count,2.3655,,gross-sadowski-2001,"Table 2, cyclopentane row, m_i^seg and T range columns",cyclopentane-fit-range
+cyclopentane-segment-diameter,cyclopentane,segment_diameter,3.7114,angstrom,gross-sadowski-2001,"Table 2, cyclopentane row, sigma_i and T range columns",cyclopentane-fit-range
+cyclopentane-dispersion-energy,cyclopentane,dispersion_energy_over_k,265.83,kelvin,gross-sadowski-2001,"Table 2, cyclopentane row, epsilon_i/k and T range columns",cyclopentane-fit-range
+cyclohexane-molar-mass,cyclohexane,molar_mass,0.084147,kg / mol,gross-sadowski-2001,"Table 2, cyclohexane row, M_i and T range columns",cyclohexane-fit-range
+cyclohexane-segment-count,cyclohexane,segment_count,2.5303,,gross-sadowski-2001,"Table 2, cyclohexane row, m_i^seg and T range columns",cyclohexane-fit-range
+cyclohexane-segment-diameter,cyclohexane,segment_diameter,3.8499,angstrom,gross-sadowski-2001,"Table 2, cyclohexane row, sigma_i and T range columns",cyclohexane-fit-range
+cyclohexane-dispersion-energy,cyclohexane,dispersion_energy_over_k,278.11,kelvin,gross-sadowski-2001,"Table 2, cyclohexane row, epsilon_i/k and T range columns",cyclohexane-fit-range
+methylcyclopentane-molar-mass,methylcyclopentane,molar_mass,0.084156,kg / mol,gross-sadowski-2001,"Table 2, methylcyclopentane row, M_i and T range columns",methylcyclopentane-fit-range
+methylcyclopentane-segment-count,methylcyclopentane,segment_count,2.6130,,gross-sadowski-2001,"Table 2, methylcyclopentane row, m_i^seg and T range columns",methylcyclopentane-fit-range
+methylcyclopentane-segment-diameter,methylcyclopentane,segment_diameter,3.8253,angstrom,gross-sadowski-2001,"Table 2, methylcyclopentane row, sigma_i and T range columns",methylcyclopentane-fit-range
+methylcyclopentane-dispersion-energy,methylcyclopentane,dispersion_energy_over_k,265.12,kelvin,gross-sadowski-2001,"Table 2, methylcyclopentane row, epsilon_i/k and T range columns",methylcyclopentane-fit-range
+methylcyclohexane-molar-mass,methylcyclohexane,molar_mass,0.098182,kg / mol,gross-sadowski-2001,"Table 2, methylcyclohexane row, M_i and T range columns",methylcyclohexane-fit-range
+methylcyclohexane-segment-count,methylcyclohexane,segment_count,2.6637,,gross-sadowski-2001,"Table 2, methylcyclohexane row, m_i^seg and T range columns",methylcyclohexane-fit-range
+methylcyclohexane-segment-diameter,methylcyclohexane,segment_diameter,3.9993,angstrom,gross-sadowski-2001,"Table 2, methylcyclohexane row, sigma_i and T range columns",methylcyclohexane-fit-range
+methylcyclohexane-dispersion-energy,methylcyclohexane,dispersion_energy_over_k,282.33,kelvin,gross-sadowski-2001,"Table 2, methylcyclohexane row, epsilon_i/k and T range columns",methylcyclohexane-fit-range
+ethylcyclopentane-molar-mass,ethylcyclopentane,molar_mass,0.098182,kg / mol,gross-sadowski-2001,"Table 2, ethylcyclopentane row, M_i and T range columns",ethylcyclopentane-fit-range
+ethylcyclopentane-segment-count,ethylcyclopentane,segment_count,2.9062,,gross-sadowski-2001,"Table 2, ethylcyclopentane row, m_i^seg and T range columns",ethylcyclopentane-fit-range
+ethylcyclopentane-segment-diameter,ethylcyclopentane,segment_diameter,3.8873,angstrom,gross-sadowski-2001,"Table 2, ethylcyclopentane row, sigma_i and T range columns",ethylcyclopentane-fit-range
+ethylcyclopentane-dispersion-energy,ethylcyclopentane,dispersion_energy_over_k,270.50,kelvin,gross-sadowski-2001,"Table 2, ethylcyclopentane row, epsilon_i/k and T range columns",ethylcyclopentane-fit-range
+ethylcyclohexane-molar-mass,ethylcyclohexane,molar_mass,0.112215,kg / mol,gross-sadowski-2001,"Table 2, ethylcyclohexane row, M_i and T range columns",ethylcyclohexane-fit-range
+ethylcyclohexane-segment-count,ethylcyclohexane,segment_count,2.8256,,gross-sadowski-2001,"Table 2, ethylcyclohexane row, m_i^seg and T range columns",ethylcyclohexane-fit-range
+ethylcyclohexane-segment-diameter,ethylcyclohexane,segment_diameter,4.1039,angstrom,gross-sadowski-2001,"Table 2, ethylcyclohexane row, sigma_i and T range columns",ethylcyclohexane-fit-range
+ethylcyclohexane-dispersion-energy,ethylcyclohexane,dispersion_energy_over_k,294.04,kelvin,gross-sadowski-2001,"Table 2, ethylcyclohexane row, epsilon_i/k and T range columns",ethylcyclohexane-fit-range
+ethylene-molar-mass,ethylene,molar_mass,0.02805,kg / mol,gross-sadowski-2001,"Table 2, ethylene row, M_i and T range columns",ethylene-fit-range
+ethylene-segment-count,ethylene,segment_count,1.5930,,gross-sadowski-2001,"Table 2, ethylene row, m_i^seg and T range columns",ethylene-fit-range
+ethylene-segment-diameter,ethylene,segment_diameter,3.4450,angstrom,gross-sadowski-2001,"Table 2, ethylene row, sigma_i and T range columns",ethylene-fit-range
+ethylene-dispersion-energy,ethylene,dispersion_energy_over_k,176.47,kelvin,gross-sadowski-2001,"Table 2, ethylene row, epsilon_i/k and T range columns",ethylene-fit-range
+propylene-molar-mass,propylene,molar_mass,0.042081,kg / mol,gross-sadowski-2001,"Table 2, propylene row, M_i and T range columns",propylene-fit-range
+propylene-segment-count,propylene,segment_count,1.9597,,gross-sadowski-2001,"Table 2, propylene row, m_i^seg and T range columns",propylene-fit-range
+propylene-segment-diameter,propylene,segment_diameter,3.5356,angstrom,gross-sadowski-2001,"Table 2, propylene row, sigma_i and T range columns",propylene-fit-range
+propylene-dispersion-energy,propylene,dispersion_energy_over_k,207.19,kelvin,gross-sadowski-2001,"Table 2, propylene row, epsilon_i/k and T range columns",propylene-fit-range
+1-butene-molar-mass,1-butene,molar_mass,0.056107,kg / mol,gross-sadowski-2001,"Table 2, 1-butene row, M_i and T range columns",1-butene-fit-range
+1-butene-segment-count,1-butene,segment_count,2.2864,,gross-sadowski-2001,"Table 2, 1-butene row, m_i^seg and T range columns",1-butene-fit-range
+1-butene-segment-diameter,1-butene,segment_diameter,3.6431,angstrom,gross-sadowski-2001,"Table 2, 1-butene row, sigma_i and T range columns",1-butene-fit-range
+1-butene-dispersion-energy,1-butene,dispersion_energy_over_k,222.00,kelvin,gross-sadowski-2001,"Table 2, 1-butene row, epsilon_i/k and T range columns",1-butene-fit-range
+1-pentene-molar-mass,1-pentene,molar_mass,0.070134,kg / mol,gross-sadowski-2001,"Table 2, 1-pentene row, M_i and T range columns",1-pentene-fit-range
+1-pentene-segment-count,1-pentene,segment_count,2.6006,,gross-sadowski-2001,"Table 2, 1-pentene row, m_i^seg and T range columns",1-pentene-fit-range
+1-pentene-segment-diameter,1-pentene,segment_diameter,3.7399,angstrom,gross-sadowski-2001,"Table 2, 1-pentene row, sigma_i and T range columns",1-pentene-fit-range
+1-pentene-dispersion-energy,1-pentene,dispersion_energy_over_k,231.99,kelvin,gross-sadowski-2001,"Table 2, 1-pentene row, epsilon_i/k and T range columns",1-pentene-fit-range
+1-hexene-molar-mass,1-hexene,molar_mass,0.084616,kg / mol,gross-sadowski-2001,"Table 2, 1-hexene row, M_i and T range columns",1-hexene-fit-range
+1-hexene-segment-count,1-hexene,segment_count,2.9853,,gross-sadowski-2001,"Table 2, 1-hexene row, m_i^seg and T range columns",1-hexene-fit-range
+1-hexene-segment-diameter,1-hexene,segment_diameter,3.7753,angstrom,gross-sadowski-2001,"Table 2, 1-hexene row, sigma_i and T range columns",1-hexene-fit-range
+1-hexene-dispersion-energy,1-hexene,dispersion_energy_over_k,236.81,kelvin,gross-sadowski-2001,"Table 2, 1-hexene row, epsilon_i/k and T range columns",1-hexene-fit-range
+1-octene-molar-mass,1-octene,molar_mass,0.112215,kg / mol,gross-sadowski-2001,"Table 2, 1-octene row, M_i and T range columns",1-octene-fit-range
+1-octene-segment-count,1-octene,segment_count,3.7424,,gross-sadowski-2001,"Table 2, 1-octene row, m_i^seg and T range columns",1-octene-fit-range
+1-octene-segment-diameter,1-octene,segment_diameter,3.8133,angstrom,gross-sadowski-2001,"Table 2, 1-octene row, sigma_i and T range columns",1-octene-fit-range
+1-octene-dispersion-energy,1-octene,dispersion_energy_over_k,243.02,kelvin,gross-sadowski-2001,"Table 2, 1-octene row, epsilon_i/k and T range columns",1-octene-fit-range
+cyclopentene-molar-mass,cyclopentene,molar_mass,0.068114,kg / mol,gross-sadowski-2001,"Table 2, cyclopentene row, M_i and T range columns",cyclopentene-fit-range
+cyclopentene-segment-count,cyclopentene,segment_count,2.2934,,gross-sadowski-2001,"Table 2, cyclopentene row, m_i^seg and T range columns",cyclopentene-fit-range
+cyclopentene-segment-diameter,cyclopentene,segment_diameter,3.6668,angstrom,gross-sadowski-2001,"Table 2, cyclopentene row, sigma_i and T range columns",cyclopentene-fit-range
+cyclopentene-dispersion-energy,cyclopentene,dispersion_energy_over_k,267.76,kelvin,gross-sadowski-2001,"Table 2, cyclopentene row, epsilon_i/k and T range columns",cyclopentene-fit-range
+benzene-molar-mass,benzene,molar_mass,0.078114,kg / mol,gross-sadowski-2001,"Table 2, benzene row, M_i and T range columns",benzene-fit-range
+benzene-segment-count,benzene,segment_count,2.4653,,gross-sadowski-2001,"Table 2, benzene row, m_i^seg and T range columns",benzene-fit-range
+benzene-segment-diameter,benzene,segment_diameter,3.6478,angstrom,gross-sadowski-2001,"Table 2, benzene row, sigma_i and T range columns",benzene-fit-range
+benzene-dispersion-energy,benzene,dispersion_energy_over_k,287.35,kelvin,gross-sadowski-2001,"Table 2, benzene row, epsilon_i/k and T range columns",benzene-fit-range
+toluene-molar-mass,toluene,molar_mass,0.092141,kg / mol,gross-sadowski-2001,"Table 2, toluene row, M_i and T range columns",toluene-fit-range
+toluene-segment-count,toluene,segment_count,2.8149,,gross-sadowski-2001,"Table 2, toluene row, m_i^seg and T range columns",toluene-fit-range
+toluene-segment-diameter,toluene,segment_diameter,3.7169,angstrom,gross-sadowski-2001,"Table 2, toluene row, sigma_i and T range columns",toluene-fit-range
+toluene-dispersion-energy,toluene,dispersion_energy_over_k,285.69,kelvin,gross-sadowski-2001,"Table 2, toluene row, epsilon_i/k and T range columns",toluene-fit-range
+ethylbenzene-molar-mass,ethylbenzene,molar_mass,0.106167,kg / mol,gross-sadowski-2001,"Table 2, ethylbenzene row, M_i and T range columns",ethylbenzene-fit-range
+ethylbenzene-segment-count,ethylbenzene,segment_count,3.0799,,gross-sadowski-2001,"Table 2, ethylbenzene row, m_i^seg and T range columns",ethylbenzene-fit-range
+ethylbenzene-segment-diameter,ethylbenzene,segment_diameter,3.7974,angstrom,gross-sadowski-2001,"Table 2, ethylbenzene row, sigma_i and T range columns",ethylbenzene-fit-range
+ethylbenzene-dispersion-energy,ethylbenzene,dispersion_energy_over_k,287.35,kelvin,gross-sadowski-2001,"Table 2, ethylbenzene row, epsilon_i/k and T range columns",ethylbenzene-fit-range
+m-xylene-molar-mass,m-xylene,molar_mass,0.106167,kg / mol,gross-sadowski-2001,"Table 2, m-xylene row, M_i and T range columns",m-xylene-fit-range
+m-xylene-segment-count,m-xylene,segment_count,3.1861,,gross-sadowski-2001,"Table 2, m-xylene row, m_i^seg and T range columns",m-xylene-fit-range
+m-xylene-segment-diameter,m-xylene,segment_diameter,3.7563,angstrom,gross-sadowski-2001,"Table 2, m-xylene row, sigma_i and T range columns",m-xylene-fit-range
+m-xylene-dispersion-energy,m-xylene,dispersion_energy_over_k,283.98,kelvin,gross-sadowski-2001,"Table 2, m-xylene row, epsilon_i/k and T range columns",m-xylene-fit-range
+o-xylene-molar-mass,o-xylene,molar_mass,0.106167,kg / mol,gross-sadowski-2001,"Table 2, o-xylene row, M_i and T range columns",o-xylene-fit-range
+o-xylene-segment-count,o-xylene,segment_count,3.1362,,gross-sadowski-2001,"Table 2, o-xylene row, m_i^seg and T range columns",o-xylene-fit-range
+o-xylene-segment-diameter,o-xylene,segment_diameter,3.7600,angstrom,gross-sadowski-2001,"Table 2, o-xylene row, sigma_i and T range columns",o-xylene-fit-range
+o-xylene-dispersion-energy,o-xylene,dispersion_energy_over_k,291.05,kelvin,gross-sadowski-2001,"Table 2, o-xylene row, epsilon_i/k and T range columns",o-xylene-fit-range
+p-xylene-molar-mass,p-xylene,molar_mass,0.106167,kg / mol,gross-sadowski-2001,"Table 2, p-xylene row, M_i and T range columns",p-xylene-fit-range
+p-xylene-segment-count,p-xylene,segment_count,3.1723,,gross-sadowski-2001,"Table 2, p-xylene row, m_i^seg and T range columns",p-xylene-fit-range
+p-xylene-segment-diameter,p-xylene,segment_diameter,3.7781,angstrom,gross-sadowski-2001,"Table 2, p-xylene row, sigma_i and T range columns",p-xylene-fit-range
+p-xylene-dispersion-energy,p-xylene,dispersion_energy_over_k,283.77,kelvin,gross-sadowski-2001,"Table 2, p-xylene row, epsilon_i/k and T range columns",p-xylene-fit-range
+n-propyl-benzene-molar-mass,n-propyl-benzene,molar_mass,0.120194,kg / mol,gross-sadowski-2001,"Table 2, n-propyl benzene row, M_i and T range columns",n-propyl-benzene-fit-range
+n-propyl-benzene-segment-count,n-propyl-benzene,segment_count,3.3438,,gross-sadowski-2001,"Table 2, n-propyl benzene row, m_i^seg and T range columns",n-propyl-benzene-fit-range
+n-propyl-benzene-segment-diameter,n-propyl-benzene,segment_diameter,3.8438,angstrom,gross-sadowski-2001,"Table 2, n-propyl benzene row, sigma_i and T range columns",n-propyl-benzene-fit-range
+n-propyl-benzene-dispersion-energy,n-propyl-benzene,dispersion_energy_over_k,288.13,kelvin,gross-sadowski-2001,"Table 2, n-propyl benzene row, epsilon_i/k and T range columns",n-propyl-benzene-fit-range
+tetralin-molar-mass,tetralin,molar_mass,0.132205,kg / mol,gross-sadowski-2001,"Table 2, tetralin row, M_i and T range columns",tetralin-fit-range
+tetralin-segment-count,tetralin,segment_count,3.3131,,gross-sadowski-2001,"Table 2, tetralin row, m_i^seg and T range columns",tetralin-fit-range
+tetralin-segment-diameter,tetralin,segment_diameter,3.8750,angstrom,gross-sadowski-2001,"Table 2, tetralin row, sigma_i and T range columns",tetralin-fit-range
+tetralin-dispersion-energy,tetralin,dispersion_energy_over_k,325.07,kelvin,gross-sadowski-2001,"Table 2, tetralin row, epsilon_i/k and T range columns",tetralin-fit-range
+n-butylbenzene-molar-mass,n-butylbenzene,molar_mass,0.134221,kg / mol,gross-sadowski-2001,"Table 2, n-butylbenzene row, M_i and T range columns",n-butylbenzene-fit-range
+n-butylbenzene-segment-count,n-butylbenzene,segment_count,3.7662,,gross-sadowski-2001,"Table 2, n-butylbenzene row, m_i^seg and T range columns",n-butylbenzene-fit-range
+n-butylbenzene-segment-diameter,n-butylbenzene,segment_diameter,3.8727,angstrom,gross-sadowski-2001,"Table 2, n-butylbenzene row, sigma_i and T range columns",n-butylbenzene-fit-range
+n-butylbenzene-dispersion-energy,n-butylbenzene,dispersion_energy_over_k,283.07,kelvin,gross-sadowski-2001,"Table 2, n-butylbenzene row, epsilon_i/k and T range columns",n-butylbenzene-fit-range
+biphenyl-molar-mass,biphenyl,molar_mass,0.154211,kg / mol,gross-sadowski-2001,"Table 2, biphenyl row, M_i and T range columns",biphenyl-fit-range
+biphenyl-segment-count,biphenyl,segment_count,3.8877,,gross-sadowski-2001,"Table 2, biphenyl row, m_i^seg and T range columns",biphenyl-fit-range
+biphenyl-segment-diameter,biphenyl,segment_diameter,3.8151,angstrom,gross-sadowski-2001,"Table 2, biphenyl row, sigma_i and T range columns",biphenyl-fit-range
+biphenyl-dispersion-energy,biphenyl,dispersion_energy_over_k,327.42,kelvin,gross-sadowski-2001,"Table 2, biphenyl row, epsilon_i/k and T range columns",biphenyl-fit-range
+carbon-monoxide-molar-mass,carbon-monoxide,molar_mass,0.02801,kg / mol,gross-sadowski-2001,"Table 2, carbon monoxide row, M_i and T range columns",carbon-monoxide-fit-range
+carbon-monoxide-segment-count,carbon-monoxide,segment_count,1.3097,,gross-sadowski-2001,"Table 2, carbon monoxide row, m_i^seg and T range columns",carbon-monoxide-fit-range
+carbon-monoxide-segment-diameter,carbon-monoxide,segment_diameter,3.2507,angstrom,gross-sadowski-2001,"Table 2, carbon monoxide row, sigma_i and T range columns",carbon-monoxide-fit-range
+carbon-monoxide-dispersion-energy,carbon-monoxide,dispersion_energy_over_k,92.15,kelvin,gross-sadowski-2001,"Table 2, carbon monoxide row, epsilon_i/k and T range columns",carbon-monoxide-fit-range
+nitrogen-molar-mass,nitrogen,molar_mass,0.02801,kg / mol,gross-sadowski-2001,"Table 2, nitrogen row, M_i and T range columns",nitrogen-fit-range
+nitrogen-segment-count,nitrogen,segment_count,1.2053,,gross-sadowski-2001,"Table 2, nitrogen row, m_i^seg and T range columns",nitrogen-fit-range
+nitrogen-segment-diameter,nitrogen,segment_diameter,3.3130,angstrom,gross-sadowski-2001,"Table 2, nitrogen row, sigma_i and T range columns",nitrogen-fit-range
+nitrogen-dispersion-energy,nitrogen,dispersion_energy_over_k,90.96,kelvin,gross-sadowski-2001,"Table 2, nitrogen row, epsilon_i/k and T range columns",nitrogen-fit-range
+argon-molar-mass,argon,molar_mass,0.039948,kg / mol,gross-sadowski-2001,"Table 2, argon row, M_i and T range columns",argon-fit-range
+argon-segment-count,argon,segment_count,0.9285,,gross-sadowski-2001,"Table 2, argon row, m_i^seg and T range columns",argon-fit-range
+argon-segment-diameter,argon,segment_diameter,3.4784,angstrom,gross-sadowski-2001,"Table 2, argon row, sigma_i and T range columns",argon-fit-range
+argon-dispersion-energy,argon,dispersion_energy_over_k,122.23,kelvin,gross-sadowski-2001,"Table 2, argon row, epsilon_i/k and T range columns",argon-fit-range
+carbon-dioxide-molar-mass,carbon-dioxide,molar_mass,0.04401,kg / mol,gross-sadowski-2001,"Table 2, carbon dioxide row, M_i and T range columns",carbon-dioxide-fit-range
+carbon-dioxide-segment-count,carbon-dioxide,segment_count,2.0729,,gross-sadowski-2001,"Table 2, carbon dioxide row, m_i^seg and T range columns",carbon-dioxide-fit-range
+carbon-dioxide-segment-diameter,carbon-dioxide,segment_diameter,2.7852,angstrom,gross-sadowski-2001,"Table 2, carbon dioxide row, sigma_i and T range columns",carbon-dioxide-fit-range
+carbon-dioxide-dispersion-energy,carbon-dioxide,dispersion_energy_over_k,169.21,kelvin,gross-sadowski-2001,"Table 2, carbon dioxide row, epsilon_i/k and T range columns",carbon-dioxide-fit-range
+sulfur-dioxide-molar-mass,sulfur-dioxide,molar_mass,0.064065,kg / mol,gross-sadowski-2001,"Table 2, sulfur dioxide row, M_i and T range columns",sulfur-dioxide-fit-range
+sulfur-dioxide-segment-count,sulfur-dioxide,segment_count,2.8611,,gross-sadowski-2001,"Table 2, sulfur dioxide row, m_i^seg and T range columns",sulfur-dioxide-fit-range
+sulfur-dioxide-segment-diameter,sulfur-dioxide,segment_diameter,2.6826,angstrom,gross-sadowski-2001,"Table 2, sulfur dioxide row, sigma_i and T range columns",sulfur-dioxide-fit-range
+sulfur-dioxide-dispersion-energy,sulfur-dioxide,dispersion_energy_over_k,205.35,kelvin,gross-sadowski-2001,"Table 2, sulfur dioxide row, epsilon_i/k and T range columns",sulfur-dioxide-fit-range
+chlorine-molar-mass,chlorine,molar_mass,0.070905,kg / mol,gross-sadowski-2001,"Table 2, chlorine row, M_i and T range columns",chlorine-fit-range
+chlorine-segment-count,chlorine,segment_count,1.5514,,gross-sadowski-2001,"Table 2, chlorine row, m_i^seg and T range columns",chlorine-fit-range
+chlorine-segment-diameter,chlorine,segment_diameter,3.3672,angstrom,gross-sadowski-2001,"Table 2, chlorine row, sigma_i and T range columns",chlorine-fit-range
+chlorine-dispersion-energy,chlorine,dispersion_energy_over_k,265.67,kelvin,gross-sadowski-2001,"Table 2, chlorine row, epsilon_i/k and T range columns",chlorine-fit-range
+carbon-disulfide-molar-mass,carbon-disulfide,molar_mass,0.076143,kg / mol,gross-sadowski-2001,"Table 2, carbon disulfide row, M_i and T range columns",carbon-disulfide-fit-range
+carbon-disulfide-segment-count,carbon-disulfide,segment_count,1.6919,,gross-sadowski-2001,"Table 2, carbon disulfide row, m_i^seg and T range columns",carbon-disulfide-fit-range
+carbon-disulfide-segment-diameter,carbon-disulfide,segment_diameter,3.6172,angstrom,gross-sadowski-2001,"Table 2, carbon disulfide row, sigma_i and T range columns",carbon-disulfide-fit-range
+carbon-disulfide-dispersion-energy,carbon-disulfide,dispersion_energy_over_k,334.82,kelvin,gross-sadowski-2001,"Table 2, carbon disulfide row, epsilon_i/k and T range columns",carbon-disulfide-fit-range
+methyl-chloride-molar-mass,methyl-chloride,molar_mass,0.050488,kg / mol,gross-sadowski-2001,"Table 2, methyl chloride row, M_i and T range columns",methyl-chloride-fit-range
+methyl-chloride-segment-count,methyl-chloride,segment_count,1.9297,,gross-sadowski-2001,"Table 2, methyl chloride row, m_i^seg and T range columns",methyl-chloride-fit-range
+methyl-chloride-segment-diameter,methyl-chloride,segment_diameter,3.2293,angstrom,gross-sadowski-2001,"Table 2, methyl chloride row, sigma_i and T range columns",methyl-chloride-fit-range
+methyl-chloride-dispersion-energy,methyl-chloride,dispersion_energy_over_k,240.56,kelvin,gross-sadowski-2001,"Table 2, methyl chloride row, epsilon_i/k and T range columns",methyl-chloride-fit-range
+chloroethane-molar-mass,chloroethane,molar_mass,0.064514,kg / mol,gross-sadowski-2001,"Table 2, chloroethane row, M_i and T range columns",chloroethane-fit-range
+chloroethane-segment-count,chloroethane,segment_count,2.2638,,gross-sadowski-2001,"Table 2, chloroethane row, m_i^seg and T range columns",chloroethane-fit-range
+chloroethane-segment-diameter,chloroethane,segment_diameter,3.4160,angstrom,gross-sadowski-2001,"Table 2, chloroethane row, sigma_i and T range columns",chloroethane-fit-range
+chloroethane-dispersion-energy,chloroethane,dispersion_energy_over_k,245.43,kelvin,gross-sadowski-2001,"Table 2, chloroethane row, epsilon_i/k and T range columns",chloroethane-fit-range
+2-chloropropane-molar-mass,2-chloropropane,molar_mass,0.078541,kg / mol,gross-sadowski-2001,"Table 2, 2-chloropropane row, M_i and T range columns",2-chloropropane-fit-range
+2-chloropropane-segment-count,2-chloropropane,segment_count,2.4151,,gross-sadowski-2001,"Table 2, 2-chloropropane row, m_i^seg and T range columns",2-chloropropane-fit-range
+2-chloropropane-segment-diameter,2-chloropropane,segment_diameter,3.6184,angstrom,gross-sadowski-2001,"Table 2, 2-chloropropane row, sigma_i and T range columns",2-chloropropane-fit-range
+2-chloropropane-dispersion-energy,2-chloropropane,dispersion_energy_over_k,251.47,kelvin,gross-sadowski-2001,"Table 2, 2-chloropropane row, epsilon_i/k and T range columns",2-chloropropane-fit-range
+1-chlorobutane-molar-mass,1-chlorobutane,molar_mass,0.092568,kg / mol,gross-sadowski-2001,"Table 2, 1-chlorobutane row, M_i and T range columns",1-chlorobutane-fit-range
+1-chlorobutane-segment-count,1-chlorobutane,segment_count,2.8585,,gross-sadowski-2001,"Table 2, 1-chlorobutane row, m_i^seg and T range columns",1-chlorobutane-fit-range
+1-chlorobutane-segment-diameter,1-chlorobutane,segment_diameter,3.6424,angstrom,gross-sadowski-2001,"Table 2, 1-chlorobutane row, sigma_i and T range columns",1-chlorobutane-fit-range
+1-chlorobutane-dispersion-energy,1-chlorobutane,dispersion_energy_over_k,258.66,kelvin,gross-sadowski-2001,"Table 2, 1-chlorobutane row, epsilon_i/k and T range columns",1-chlorobutane-fit-range
+chlorobenzene-molar-mass,chlorobenzene,molar_mass,0.112558,kg / mol,gross-sadowski-2001,"Table 2, chlorobenzene row, M_i and T range columns",chlorobenzene-fit-range
+chlorobenzene-segment-count,chlorobenzene,segment_count,2.6485,,gross-sadowski-2001,"Table 2, chlorobenzene row, m_i^seg and T range columns",chlorobenzene-fit-range
+chlorobenzene-segment-diameter,chlorobenzene,segment_diameter,3.7533,angstrom,gross-sadowski-2001,"Table 2, chlorobenzene row, sigma_i and T range columns",chlorobenzene-fit-range
+chlorobenzene-dispersion-energy,chlorobenzene,dispersion_energy_over_k,315.04,kelvin,gross-sadowski-2001,"Table 2, chlorobenzene row, epsilon_i/k and T range columns",chlorobenzene-fit-range
+bromobenzene-molar-mass,bromobenzene,molar_mass,0.15701,kg / mol,gross-sadowski-2001,"Table 2, bromobenzene row, M_i and T range columns",bromobenzene-fit-range
+bromobenzene-segment-count,bromobenzene,segment_count,2.6456,,gross-sadowski-2001,"Table 2, bromobenzene row, m_i^seg and T range columns",bromobenzene-fit-range
+bromobenzene-segment-diameter,bromobenzene,segment_diameter,3.8360,angstrom,gross-sadowski-2001,"Table 2, bromobenzene row, sigma_i and T range columns",bromobenzene-fit-range
+bromobenzene-dispersion-energy,bromobenzene,dispersion_energy_over_k,334.37,kelvin,gross-sadowski-2001,"Table 2, bromobenzene row, epsilon_i/k and T range columns",bromobenzene-fit-range
+dimethyl-ether-molar-mass,dimethyl-ether,molar_mass,0.046069,kg / mol,gross-sadowski-2001,"Table 2, dimethyl ether row, M_i and T range columns",dimethyl-ether-fit-range
+dimethyl-ether-segment-count,dimethyl-ether,segment_count,2.3071,,gross-sadowski-2001,"Table 2, dimethyl ether row, m_i^seg and T range columns",dimethyl-ether-fit-range
+dimethyl-ether-segment-diameter,dimethyl-ether,segment_diameter,3.2528,angstrom,gross-sadowski-2001,"Table 2, dimethyl ether row, sigma_i and T range columns",dimethyl-ether-fit-range
+dimethyl-ether-dispersion-energy,dimethyl-ether,dispersion_energy_over_k,211.06,kelvin,gross-sadowski-2001,"Table 2, dimethyl ether row, epsilon_i/k and T range columns",dimethyl-ether-fit-range
+diethyl-ether-molar-mass,diethyl-ether,molar_mass,0.074123,kg / mol,gross-sadowski-2001,"Table 2, diethyl ether row, M_i and T range columns",diethyl-ether-fit-range
+diethyl-ether-segment-count,diethyl-ether,segment_count,2.9686,,gross-sadowski-2001,"Table 2, diethyl ether row, m_i^seg and T range columns",diethyl-ether-fit-range
+diethyl-ether-segment-diameter,diethyl-ether,segment_diameter,3.5147,angstrom,gross-sadowski-2001,"Table 2, diethyl ether row, sigma_i and T range columns",diethyl-ether-fit-range
+diethyl-ether-dispersion-energy,diethyl-ether,dispersion_energy_over_k,220.09,kelvin,gross-sadowski-2001,"Table 2, diethyl ether row, epsilon_i/k and T range columns",diethyl-ether-fit-range
+methyl-n-propyl-ether-molar-mass,methyl-n-propyl-ether,molar_mass,0.074123,kg / mol,gross-sadowski-2001,"Table 2, methyl-n-propyl ether row, M_i and T range columns",methyl-n-propyl-ether-fit-range
+methyl-n-propyl-ether-segment-count,methyl-n-propyl-ether,segment_count,3.0087,,gross-sadowski-2001,"Table 2, methyl-n-propyl ether row, m_i^seg and T range columns",methyl-n-propyl-ether-fit-range
+methyl-n-propyl-ether-segment-diameter,methyl-n-propyl-ether,segment_diameter,3.4569,angstrom,gross-sadowski-2001,"Table 2, methyl-n-propyl ether row, sigma_i and T range columns",methyl-n-propyl-ether-fit-range
+methyl-n-propyl-ether-dispersion-energy,methyl-n-propyl-ether,dispersion_energy_over_k,222.73,kelvin,gross-sadowski-2001,"Table 2, methyl-n-propyl ether row, epsilon_i/k and T range columns",methyl-n-propyl-ether-fit-range
+methyl-methanoate-molar-mass,methyl-methanoate,molar_mass,0.060053,kg / mol,gross-sadowski-2001,"Table 2, methyl methanoate row, M_i and T range columns",methyl-methanoate-fit-range
+methyl-methanoate-segment-count,methyl-methanoate,segment_count,2.6784,,gross-sadowski-2001,"Table 2, methyl methanoate row, m_i^seg and T range columns",methyl-methanoate-fit-range
+methyl-methanoate-segment-diameter,methyl-methanoate,segment_diameter,3.0875,angstrom,gross-sadowski-2001,"Table 2, methyl methanoate row, sigma_i and T range columns",methyl-methanoate-fit-range
+methyl-methanoate-dispersion-energy,methyl-methanoate,dispersion_energy_over_k,242.63,kelvin,gross-sadowski-2001,"Table 2, methyl methanoate row, epsilon_i/k and T range columns",methyl-methanoate-fit-range
+ethyl-methanoate-molar-mass,ethyl-methanoate,molar_mass,0.074079,kg / mol,gross-sadowski-2001,"Table 2, ethyl methanoate row, M_i and T range columns",ethyl-methanoate-fit-range
+ethyl-methanoate-segment-count,ethyl-methanoate,segment_count,2.8876,,gross-sadowski-2001,"Table 2, ethyl methanoate row, m_i^seg and T range columns",ethyl-methanoate-fit-range
+ethyl-methanoate-segment-diameter,ethyl-methanoate,segment_diameter,3.3109,angstrom,gross-sadowski-2001,"Table 2, ethyl methanoate row, sigma_i and T range columns",ethyl-methanoate-fit-range
+ethyl-methanoate-dispersion-energy,ethyl-methanoate,dispersion_energy_over_k,246.47,kelvin,gross-sadowski-2001,"Table 2, ethyl methanoate row, epsilon_i/k and T range columns",ethyl-methanoate-fit-range
+n-propyl-methanoate-molar-mass,n-propyl-methanoate,molar_mass,0.088106,kg / mol,gross-sadowski-2001,"Table 2, n-propyl methanoate row, M_i and T range columns",n-propyl-methanoate-fit-range
+n-propyl-methanoate-segment-count,n-propyl-methanoate,segment_count,3.2088,,gross-sadowski-2001,"Table 2, n-propyl methanoate row, m_i^seg and T range columns",n-propyl-methanoate-fit-range
+n-propyl-methanoate-segment-diameter,n-propyl-methanoate,segment_diameter,3.4168,angstrom,gross-sadowski-2001,"Table 2, n-propyl methanoate row, sigma_i and T range columns",n-propyl-methanoate-fit-range
+n-propyl-methanoate-dispersion-energy,n-propyl-methanoate,dispersion_energy_over_k,246.46,kelvin,gross-sadowski-2001,"Table 2, n-propyl methanoate row, epsilon_i/k and T range columns",n-propyl-methanoate-fit-range
+ethyl-ethanoate-molar-mass,ethyl-ethanoate,molar_mass,0.088106,kg / mol,gross-sadowski-2001,"Table 2, ethyl ethanoate row, M_i and T range columns",ethyl-ethanoate-fit-range
+ethyl-ethanoate-segment-count,ethyl-ethanoate,segment_count,3.5375,,gross-sadowski-2001,"Table 2, ethyl ethanoate row, m_i^seg and T range columns",ethyl-ethanoate-fit-range
+ethyl-ethanoate-segment-diameter,ethyl-ethanoate,segment_diameter,3.3079,angstrom,gross-sadowski-2001,"Table 2, ethyl ethanoate row, sigma_i and T range columns",ethyl-ethanoate-fit-range
+ethyl-ethanoate-dispersion-energy,ethyl-ethanoate,dispersion_energy_over_k,230.80,kelvin,gross-sadowski-2001,"Table 2, ethyl ethanoate row, epsilon_i/k and T range columns",ethyl-ethanoate-fit-range
+n-propyl-ethanoate-molar-mass,n-propyl-ethanoate,molar_mass,0.102133,kg / mol,gross-sadowski-2001,"Table 2, n-propyl ethanoate row, M_i and T range columns",n-propyl-ethanoate-fit-range
+n-propyl-ethanoate-segment-count,n-propyl-ethanoate,segment_count,3.7861,,gross-sadowski-2001,"Table 2, n-propyl ethanoate row, m_i^seg and T range columns",n-propyl-ethanoate-fit-range
+n-propyl-ethanoate-segment-diameter,n-propyl-ethanoate,segment_diameter,3.4227,angstrom,gross-sadowski-2001,"Table 2, n-propyl ethanoate row, sigma_i and T range columns",n-propyl-ethanoate-fit-range
+n-propyl-ethanoate-dispersion-energy,n-propyl-ethanoate,dispersion_energy_over_k,235.76,kelvin,gross-sadowski-2001,"Table 2, n-propyl ethanoate row, epsilon_i/k and T range columns",n-propyl-ethanoate-fit-range
+n-butyl-ethanoate-molar-mass,n-butyl-ethanoate,molar_mass,0.11616,kg / mol,gross-sadowski-2001,"Table 2, n-butyl ethanoate row, M_i and T range columns",n-butyl-ethanoate-fit-range
+n-butyl-ethanoate-segment-count,n-butyl-ethanoate,segment_count,3.9808,,gross-sadowski-2001,"Table 2, n-butyl ethanoate row, m_i^seg and T range columns",n-butyl-ethanoate-fit-range
+n-butyl-ethanoate-segment-diameter,n-butyl-ethanoate,segment_diameter,3.5427,angstrom,gross-sadowski-2001,"Table 2, n-butyl ethanoate row, sigma_i and T range columns",n-butyl-ethanoate-fit-range
+n-butyl-ethanoate-dispersion-energy,n-butyl-ethanoate,dispersion_energy_over_k,242.52,kelvin,gross-sadowski-2001,"Table 2, n-butyl ethanoate row, epsilon_i/k and T range columns",n-butyl-ethanoate-fit-range
+isopropyl-ethanoate-molar-mass,isopropyl-ethanoate,molar_mass,0.102133,kg / mol,gross-sadowski-2001,"Table 2, isopropyl ethanoate row, M_i and T range columns",isopropyl-ethanoate-fit-range
+isopropyl-ethanoate-segment-count,isopropyl-ethanoate,segment_count,3.6084,,gross-sadowski-2001,"Table 2, isopropyl ethanoate row, m_i^seg and T range columns",isopropyl-ethanoate-fit-range
+isopropyl-ethanoate-segment-diameter,isopropyl-ethanoate,segment_diameter,3.4818,angstrom,gross-sadowski-2001,"Table 2, isopropyl ethanoate row, sigma_i and T range columns",isopropyl-ethanoate-fit-range
+isopropyl-ethanoate-dispersion-energy,isopropyl-ethanoate,dispersion_energy_over_k,231.91,kelvin,gross-sadowski-2001,"Table 2, isopropyl ethanoate row, epsilon_i/k and T range columns",isopropyl-ethanoate-fit-range
+methyl-propanoate-molar-mass,methyl-propanoate,molar_mass,0.088106,kg / mol,gross-sadowski-2001,"Table 2, methyl propanoate row, M_i and T range columns",methyl-propanoate-fit-range
+methyl-propanoate-segment-count,methyl-propanoate,segment_count,3.4793,,gross-sadowski-2001,"Table 2, methyl propanoate row, m_i^seg and T range columns",methyl-propanoate-fit-range
+methyl-propanoate-segment-diameter,methyl-propanoate,segment_diameter,3.3142,angstrom,gross-sadowski-2001,"Table 2, methyl propanoate row, sigma_i and T range columns",methyl-propanoate-fit-range
+methyl-propanoate-dispersion-energy,methyl-propanoate,dispersion_energy_over_k,234.96,kelvin,gross-sadowski-2001,"Table 2, methyl propanoate row, epsilon_i/k and T range columns",methyl-propanoate-fit-range
+ethyl-propanoate-molar-mass,ethyl-propanoate,molar_mass,0.102133,kg / mol,gross-sadowski-2001,"Table 2, ethyl propanoate row, M_i and T range columns",ethyl-propanoate-fit-range
+ethyl-propanoate-segment-count,ethyl-propanoate,segment_count,3.8371,,gross-sadowski-2001,"Table 2, ethyl propanoate row, m_i^seg and T range columns",ethyl-propanoate-fit-range
+ethyl-propanoate-segment-diameter,ethyl-propanoate,segment_diameter,3.4031,angstrom,gross-sadowski-2001,"Table 2, ethyl propanoate row, sigma_i and T range columns",ethyl-propanoate-fit-range
+ethyl-propanoate-dispersion-energy,ethyl-propanoate,dispersion_energy_over_k,232.78,kelvin,gross-sadowski-2001,"Table 2, ethyl propanoate row, epsilon_i/k and T range columns",ethyl-propanoate-fit-range
+n-propyl-propanoate-molar-mass,n-propyl-propanoate,molar_mass,0.11616,kg / mol,gross-sadowski-2001,"Table 2, n-propyl propanoate row, M_i and T range columns",n-propyl-propanoate-fit-range
+n-propyl-propanoate-segment-count,n-propyl-propanoate,segment_count,4.1155,,gross-sadowski-2001,"Table 2, n-propyl propanoate row, m_i^seg and T range columns",n-propyl-propanoate-fit-range
+n-propyl-propanoate-segment-diameter,n-propyl-propanoate,segment_diameter,3.4875,angstrom,gross-sadowski-2001,"Table 2, n-propyl propanoate row, sigma_i and T range columns",n-propyl-propanoate-fit-range
+n-propyl-propanoate-dispersion-energy,n-propyl-propanoate,dispersion_energy_over_k,235.60,kelvin,gross-sadowski-2001,"Table 2, n-propyl propanoate row, epsilon_i/k and T range columns",n-propyl-propanoate-fit-range
+methyl-butanoate-molar-mass,methyl-butanoate,molar_mass,0.102133,kg / mol,gross-sadowski-2001,"Table 2, methyl butanoate row, M_i and T range columns",methyl-butanoate-fit-range
+methyl-butanoate-segment-count,methyl-butanoate,segment_count,3.6758,,gross-sadowski-2001,"Table 2, methyl butanoate row, m_i^seg and T range columns",methyl-butanoate-fit-range
+methyl-butanoate-segment-diameter,methyl-butanoate,segment_diameter,3.4437,angstrom,gross-sadowski-2001,"Table 2, methyl butanoate row, sigma_i and T range columns",methyl-butanoate-fit-range
+methyl-butanoate-dispersion-energy,methyl-butanoate,dispersion_energy_over_k,240.62,kelvin,gross-sadowski-2001,"Table 2, methyl butanoate row, epsilon_i/k and T range columns",methyl-butanoate-fit-range

@@ -1,0 +1,104 @@
+{
+  "base": "fe00aa6a",
+  "wheel_sha256": "4aa1d115ca53c00209b73684935948c0a48396b08acea7ecadf43a25d500b9d1",
+  "native_log": "/tmp/issue-187-native-integrated.log",
+  "exchange_log": "/tmp/issue-187-exchange-integrated.log",
+  "recovery": {
+    "reaction-b1": {
+      "status": "converged",
+      "termination": "convergence",
+      "iterations": 4,
+      "residual_evaluations": 4,
+      "jacobian_evaluations": 5,
+      "trial_failures": 0,
+      "final_cost": 5.917124164231002e-26,
+      "covariance": "available"
+    },
+    "reaction-b2": {
+      "status": "converged",
+      "termination": "convergence",
+      "iterations": 6,
+      "residual_evaluations": 5,
+      "jacobian_evaluations": 6,
+      "trial_failures": 0,
+      "final_cost": 3.1348520771457548e-25,
+      "covariance": "available"
+    },
+    "reaction-b3/name_tying": {
+      "status": "converged",
+      "termination": "convergence",
+      "iterations": 5,
+      "residual_evaluations": 4,
+      "jacobian_evaluations": 5,
+      "trial_failures": 0,
+      "final_cost": 8.152273158784674e-28,
+      "covariance": "available"
+    }
+  },
+  "preparation": {
+    "supplied_lnK": 0.1,
+    "resolved_lnK": 0,
+    "log_prediction_change": 0.0925202900192624
+  },
+  "exchange": {
+    "T_K": 200.0,
+    "P_Pa": 5000000.0,
+    "engine_cost": 8.67930212814983e-26,
+    "scipy_cost": 2.2284911127248303e-31,
+    "engine_residuals": [
+      -3.2809388644373387e-13,
+      -2.567887151750304e-13
+    ],
+    "ratios": [
+      1.5511603706018249,
+      0.8512948608342034
+    ]
+  },
+  "rejections": [
+    {
+      "comparison": "reaction-rejection/affinity target",
+      "message": "reaction coordinate reaction_a: affinity target",
+      "passed": true
+    },
+    {
+      "comparison": "reaction-rejection/supplied standard Gibbs",
+      "message": "reaction coordinate reaction_a: supplied standard Gibbs values",
+      "passed": true
+    },
+    {
+      "comparison": "reaction-rejection/dependent reaction",
+      "message": "reaction coordinate reaction_a: dependent reaction set",
+      "passed": true
+    },
+    {
+      "comparison": "reaction-rejection/K fixed by thermochemistry",
+      "message": "reaction coordinate reaction_a: K fixed by thermochemistry",
+      "passed": true
+    },
+    {
+      "comparison": "reaction-rejection/referenced reaction at free temperature",
+      "message": "reaction coordinate reaction_a: referenced reaction at free temperature",
+      "passed": true
+    },
+    {
+      "comparison": "reaction-rejection/tied declarations or starts disagree",
+      "message": "reaction coordinate reaction_a: tied declarations or starts disagree",
+      "passed": true
+    },
+    {
+      "comparison": "reaction-rejection/scalar K admits only A",
+      "message": "reaction coordinate reaction_a: scalar K admits only A",
+      "passed": true
+    },
+    {
+      "comparison": "reaction-rejection/tied source bases disagree",
+      "message": "reaction coordinate reaction_a: tied source bases disagree",
+      "passed": true
+    },
+    {
+      "comparison": "reaction-rejection/tied declarations or starts disagree",
+      "message": "reaction coordinate reaction_a: tied declarations or starts disagree",
+      "passed": true
+    }
+  ]
+}

@@ -1,0 +1,64 @@
+{
+  "design_sha256": "b511f3a115f0660405959c0c2561012ac274cd5a019e87ad9ffeca6f13ab7b70",
+  "readiness_sha256": "b25a402b310ced59e034a30177018170633b723bb36d9f8d95ea749b469dd0e7",
+  "source_parent": "7170bdefb608b07551f93b3a33a952c2f4ee456a",
+  "comparison_main": "37f54f8d5903b3fa528822181d3bb5162c3b332b",
+  "source_diff_sha256": "04133f65e330153b43c3f713f57ebd84cf2c18bdc9e16dfaf7b2ae46453b2929",
+  "native_library_sha256": "fb745361dbdd690fa980d76f7e546203dcf210cf102dfbf8ffca6877d2650c15",
+  "probe_source_sha256": "94521cc8f44fbe7fe60c7a0bbcc4b18ff0110899117cccb46eae5a1298ce60be",
+  "probe_log_sha256": "b21039c01a52f68b18cd314cc510ea1d49f12232ea56e344d06cd34db13ce686",
+  "numbers": "branch-preserving.csv",
+  "conditions": "Manufactured four-species density-temperature Vapor trial; unchanged separated seed and frozen shifts in equilibrium_tpd_checks.cpp. Numeric conditions, coordinates, rows and work are retained in the CSV.",
+  "rejections": [
+    {
+      "inspection": 1,
+      "cause": "left_domain",
+      "message": "phase V corrected density left the anchored branch window"
+    },
+    {
+      "inspection": 2,
+      "cause": "left_domain",
+      "message": "phase V corrected density left the anchored branch window"
+    }
+  ],
+  "owner_approval": "Equilibrium +135 net / 196 gross, Python +6 / 14; every other runtime layer zero (owner approval, 2026-10-22).",
+  "limits": [
+    "Numerical verification only.",
+    "Explicit declared calculations and the scoped optimized trial; no charged-vapor discovery.",
+    "Physical vapor applicability and concentration uncertainty unvalidated.",
+    "Independent delivered review and investigator promotion remain pending."
+  ],
+  "bubble_preservation": {
+    "1e-10": {
+      "bit_identical": true,
+      "finite_arrays_sha256": "f59c9c2bcd58dc0d70acc868b298c4d59bd91f19b37b09f318248bf053f306ed",
+      "counters": [
+        4,
+        7,
+        5
+      ],
+      "guard_calls": 0,
+      "existing_root_calls": 9
+    },
+    "1e-11": {
+      "bit_identical": true,
+      "finite_arrays_sha256": "f59c9c2bcd58dc0d70acc868b298c4d59bd91f19b37b09f318248bf053f306ed",
+      "counters": [
+        4,
+        7,
+        5
+      ],
+      "guard_calls": 0,
+      "existing_root_calls": 9
+    },
+    "reference_native_sha256": "eb192e483ac0eda5be8deb4c5f49b6228614cc2f7e00607645f7c3b6797f130d",
+    "candidate_native_sha256": "fb745361dbdd690fa980d76f7e546203dcf210cf102dfbf8ffca6877d2650c15"
+  },
+  "supplied_points_bit_identical": true,
+  "supplied_points_guard_calls": 0,
+  "charge_residual": "The signed physical charge row from the native numerical system; Q_plus and Q_minus are separately summed sign groups. Their rounded difference can lose a smaller divalent contribution.",
+  "curvature_probe_log_sha256": "eb1eac73ad62081fe321d0588647a17e8be8aa03e1f1de192520139fec59be30",
+  "curvature_probe_source_sha256": "d9c820d52510f5cf393627786a2c3d93ea35d3b7c0f87e27b178fd3e8664e7b5",
+  "numerical_rows_sha256": "6dc5bb119932ed781b63cce3e50d755c02fa36a9203001192ad31f1b63a2e5dc",
+  "sanitizer_merge_correction": "Move molecular charge access inside the nonempty log-charge loop: the ideal mole-fraction model has no molecular model and no such rows. The existing ideal species-order/amount-transport test exposed the invalid read under UBSan. Recovery/branch probe output remains byte-identical, and bubble finite arrays and counters remain identical."
+}

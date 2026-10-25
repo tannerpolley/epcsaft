@@ -1,0 +1,22 @@
+{
+ "engine": [
+  "55a3daffc6e6ee917434cc99e51348a19666280d",
+  true
+ ],
+ "started": "2026-10-09T19:42:12-0600",
+ "pressure_pa": 100000.0,
+ "temperatures_k": {
+  "1": 318.15,
+  "2": 353.6
+ },
+ "k_a": {
+  "1": 43.99,
+  "2": 22.92
+ },
+ "tolerances": {
+  "row": 1e-10,
+  "independent_check": 1e-08,
+  "single_liquid_ln_ka": 1e-09
+ },
+ "cpu_count": 32
+}

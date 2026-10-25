@@ -1,0 +1,73 @@
+\section{Numerical evaluation of properties}
+\label{sec:state}
+\subsection{Association as an implicit calculation}
+% P:state-01
+A density-specified state takes temperature, molar density and normalized, charge-neutral species composition.
+For an associating fluid, the native calculation first solves the mass-action system of Eq.~\eqref{eq:mass-action}.
+Its unbonded-site fractions change with composition and molecular parameters, so their implicit response must enter both properties and fitting columns.
+
+% P:state-02
+The native association iteration starts at unit site fractions, with an analytic two-population estimate for sufficiently strong association.
+It solves the analytic mass-action Jacobian by full-pivot LU decomposition and damps a Newton step to preserve $0<X_A\le1$.
+When the Jacobian does not separate its pivots sufficiently, substitution supplies the update.
+The mass-action residual, rather than the step length alone, decides convergence.
+Table~\ref{tab:defaults} gives the default residual and work limits.
+The implicit derivative calculation subsequently uses the unweighted defining Jacobian at the converged fractions; a singular or ill-conditioned system makes the affected derivative unavailable.
+No composition floor is introduced to make that derivative appear regular.
+
+\subsection{Pressure closure and mechanical branches}
+% P:state-03
+A pressure-specified state adds the scalar equation
+\begin{equation}
+P(T,\rho,\mathbf{x})=\rho RT\left[1+\rho\left(\frac{\partial\ares}{\partial\rho}\right)_{T,\mathbf{x}}\right]=P_{\mathrm{target}}.
+\label{eq:pressure-closure}
+\end{equation}
+Pressure, its slope and, when required for root location, its curvature follow from the same energy~\citep{Gross2001}.
+The density search operates in a bounded packing domain and first inspects the liquid side.
+Resolved pressure brackets with positive slope can then identify a liquid root and a lower-density vapor root.
+The requested branch selects the highest or lowest resolved stable root; an unspecified branch is ambiguous when several stable roots remain.
+An anchor from a neighboring state instead defines a local window in which the root must be unique.
+These choices matter at subcritical conditions because the same temperature, pressure and composition can have several density roots.
+
+% P:state-04
+Slope and curvature samples can shorten root location when they are consistent with a single mechanical loop.
+Unresolved shape information returns the search to a finite logarithmic density scan, with spinodal bisection separating the stable pressure brackets.
+When a sample contradicts that assumed shape, the interval is subdivided, and a root is accepted only if successive finer subdivisions show the same sign changes of $P-P_{\mathrm{target}}$.
+Safeguarded Newton refinement remains inside each pressure bracket.
+With $r=(P-P_{\mathrm{target}})/(\rho RT)$ and bracket width $\Delta\rho$, termination requires $|r|\le\tau_\rho$ and $\Delta\rho\,|\mathrm{d}r/\mathrm{d}\rho|\le\tau_\rho$, with a finite nonzero derivative; an exactly zero computed residual is also accepted.
+An unresolved bracket at the refinement budget is reported as a failure.
+A small reduced residual does not imply the same relative pressure error at low compressibility factor: the latter is the reduced residual divided by $P_{\mathrm{target}}/(\rho RT)$.
+Association failures interrupt the relevant scan and preserve the failed density and cause, so a disconnected set of evaluable points cannot silently become a complete root search.
+
+\begin{algorithm}[tbp]
+\caption{Evaluation of a density- or pressure-specified state}
+\label{alg:state}
+\begin{algorithmic}[1]
+\Require Selected parameters, $T$, $\mathbf{x}$, density or pressure, branch and requested quantities
+\State Admit units, support, charge, topology and required thermal intervals.
+\State Select the contributions and the derivative recording (Section~\ref{sec:derivatives}) for these species and this temperature interval.
+\State At each trial density solve Eq.~\eqref{eq:mass-action}, preserving $0<X_A\le1$.
+\State Stop the site solve only when its residual meets the requested criterion; otherwise report its cause.
+\If{pressure is specified}
+\State Locate liquid-side evidence and the requested pressure bracket using analytic slopes and curvature.
+\State Use the logarithmic scan and spinodal subdivision when structured location is unresolved.
+\State Refine stable crossings by safeguarded Newton; require both reduced-residual and bracket-width criteria, or an exactly zero computed residual.
+\State Select the declared extreme root, or the unique root in the supplied anchor window.
+\EndIf
+\State Evaluate the requested ideal, residual or total quantities at this one state.
+\State Differentiate association and pressure closure implicitly for requested actions.
+\State Return values, achieved residuals and conditioning; keep failed quantities explicitly unavailable.
+\end{algorithmic}
+\end{algorithm}
+
+% P:state-05
+Algorithm~\ref{alg:state} returns a mechanically admitted state, distinguished from a globally stable phase.
+Supporting Information Fig.~\ref{fig:si-F2-density-roots-1} shows the roots and spinodals found for propane and aqueous NaCl and the pressure closure of the benchmark requests.
+Gibbs-energy comparisons across compositions belong to Section~\ref{sec:equilibrium}; finite density sampling cannot exclude every arbitrarily narrow additional loop.
+
+
+\subsection{Property assembly and reuse}
+% P:state-06
+Property requests reuse the converged density, sites and required energy derivatives.
+Selected quantities compute only their dependencies; total calorics consume thermal records, while residual quantities remain available without them.
+A new support or thermal interval selects a corresponding recording of the same equations and refreshes the numerical state.

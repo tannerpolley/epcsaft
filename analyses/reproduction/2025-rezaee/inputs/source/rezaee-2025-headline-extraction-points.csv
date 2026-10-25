@@ -1,0 +1,3 @@
+source,citation_key,doi,case_label,T_C,pH,li_extraction_pct,na_extraction_pct,k_extraction_pct,mg_extraction_pct,ca_extraction_pct,li_na_selectivity,notes
+Rezaee2025_ACS_abstract,Rezaee2025,10.1021/acs.iecr.4c03496,optimized_one_stage,23.0,10.4,48.57,,,,,4.41,"ACS abstract reports optimized one-stage lithium extraction and selectivity for TBAC(1):DA(2) DES with 10 wt pct TOPO."
+Rezaee2025_ACS_abstract,Rezaee2025,10.1021/acs.iecr.4c03496,iran_source_model_brine,,,51.63,9.97,3.11,4.38,2.29,,"ACS abstract reports extraction efficiencies from a model brine with the same composition as Iran sources."

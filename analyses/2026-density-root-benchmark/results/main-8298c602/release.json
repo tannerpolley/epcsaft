@@ -1,0 +1,151 @@
+{
+  "commit": "8298c6029ebb8b467929badc4a223c580ec591ab",
+  "numerical_evidence": [
+    "build/issue-660/label-delivered-review-r1.md",
+    "build/merged-gates-c8c8a778",
+    "build/wheels/key-solves-8298c602-20261019T223217/summary.json"
+  ],
+  "prepared_identity": {
+    "asl_library": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/engine-meson/shared/libepcsaft_asl.so",
+    "asl_library_sha256": "7638d6f776457564f69b992b15325a7c188ada9b325f357555711b2dc1d1c041",
+    "build_configuration": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/engine-meson/shared/meson-info/intro-buildoptions.json",
+    "build_configuration_sha256": "40ed0537245a36fa39331dbeeb5493ed0457acef8182a74a9897bace467913f7",
+    "direct_url": {
+      "dir_info": {
+        "editable": true
+      },
+      "url": "file:///home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/engine"
+    },
+    "epcsaft": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/engine/src/epcsaft/__init__.py",
+    "epcsaft_sha256": "07b5e222c0a533366429d3db99fee129f318c228cace9fec997109580e890b58",
+    "extension": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so",
+    "extension_sha256": "0954372a1b5a726bf95c4592f0db781bcbb89061d00f1457a6fe01da88527498",
+    "interpreter": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.venv/bin/python",
+    "lock_sha256": "224932fe5e61daa0ce55bc4f2ea716ecb4ecfa90557d4fa9bdd34668e4d5db29",
+    "meson_build_dir": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/engine-meson/shared",
+    "meson_configuration_sha256": "074100ecfbb81dbd7f4dc8a6ba1735f6bcf9368709f2ed0e88567119a1cf5c90",
+    "native_library": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/engine-meson/shared/libepcsaft_native.so",
+    "native_library_sha256": "ed78d488b776d2dba70fe5ed3a22519fd2d076e9d2c2ab7b9ade549c6f99a39b",
+    "prepared_stage": "editable",
+    "python": "3.13.14 (main, Jun 23 2026, 15:18:27) [Clang 22.1.3 ]",
+    "source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source_revision": "8298c6029ebb8b467929badc4a223c580ec591ab",
+    "source_root": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT",
+    "version": "0.2.0.dev0",
+    "wheel": null,
+    "wheel_sha256": null
+  },
+  "sha256": "8897a0caab9f2508ed642f42c8b5226957fbe7035ed7bfdad71e4166798785b3",
+  "tags": [
+    "cp313-cp313-manylinux_2_39_x86_64"
+  ],
+  "toolchain": {
+    "build": {
+      "c": {
+        "default_suffix": "c",
+        "exelist": [
+          "/usr/bin/ccache",
+          "cc"
+        ],
+        "file_suffixes": [
+          "c"
+        ],
+        "full_version": "cc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+        "id": "gcc",
+        "linker_exelist": [
+          "cc"
+        ],
+        "linker_id": "ld.bfd",
+        "version": "13.3.0"
+      },
+      "cpp": {
+        "default_suffix": "cpp",
+        "exelist": [
+          "/usr/bin/ccache",
+          "c++"
+        ],
+        "file_suffixes": [
+          "cpp",
+          "cppm",
+          "cc",
+          "cp",
+          "cxx",
+          "c++",
+          "hh",
+          "hp",
+          "hpp",
+          "ipp",
+          "hxx",
+          "h++",
+          "ino",
+          "ixx",
+          "CPP",
+          "C",
+          "HPP",
+          "H"
+        ],
+        "full_version": "c++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+        "id": "gcc",
+        "linker_exelist": [
+          "c++"
+        ],
+        "linker_id": "ld.bfd",
+        "version": "13.3.0"
+      }
+    },
+    "host": {
+      "c": {
+        "default_suffix": "c",
+        "exelist": [
+          "/usr/bin/ccache",
+          "cc"
+        ],
+        "file_suffixes": [
+          "c"
+        ],
+        "full_version": "cc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+        "id": "gcc",
+        "linker_exelist": [
+          "cc"
+        ],
+        "linker_id": "ld.bfd",
+        "version": "13.3.0"
+      },
+      "cpp": {
+        "default_suffix": "cpp",
+        "exelist": [
+          "/usr/bin/ccache",
+          "c++"
+        ],
+        "file_suffixes": [
+          "cpp",
+          "cppm",
+          "cc",
+          "cp",
+          "cxx",
+          "c++",
+          "hh",
+          "hp",
+          "hpp",
+          "ipp",
+          "hxx",
+          "h++",
+          "ino",
+          "ixx",
+          "CPP",
+          "C",
+          "HPP",
+          "H"
+        ],
+        "full_version": "c++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+        "id": "gcc",
+        "linker_exelist": [
+          "c++"
+        ],
+        "linker_id": "ld.bfd",
+        "version": "13.3.0"
+      }
+    }
+  },
+  "wheel": "epcsaft-0.2.0.dev0-cp313-cp313-manylinux_2_39_x86_64.whl"
+}

@@ -1,0 +1,76 @@
+{
+ "action_forward_bound": {
+  "rows": 32,
+  "unit_roundoff": 1.1102230246251565e-16,
+  "error_over_u_range": [
+   0.781249965783088,
+   43.64694203343582
+  ],
+  "rows_failing_2_kappa_eta_plus_eps": [
+   "cand/rung0",
+   "cand/rung12"
+  ],
+  "minimum_margin_2_kappa_eta_plus_eps": 0.3979249258470336,
+  "minimum_margin_kappa_eta_plus_jacobian_term": 2.5600000553402342,
+  "minimum_margin_11u_floor": 13.530287493735955,
+  "error_nonzero_iff_eta_jacobian_nonzero": true
+ },
+ "wide_ionic_closure": {
+  "pressure_limit": "128 eps_binary128 R T / v (max with 2^-100 P)",
+  "forward_limit": "2^-100 |dP/dv| v",
+  "distributions": {
+   "main/I-sys": {
+    "calls": 1475,
+    "pressure_ratio_median": 0.2344386,
+    "p99": 0.896078312,
+    "max": 0.9989185,
+    "above_one": 0,
+    "forward_ratio_max_2^-100": 0.0009454147,
+    "forward_check_calls": 1475
+   },
+   "main/I-fix": {
+    "calls": 1491,
+    "pressure_ratio_median": 0.1974341,
+    "p99": 0.9053176999999974,
+    "max": 0.9989737,
+    "above_one": 0,
+    "forward_ratio_max_2^-100": 0.0009455156,
+    "forward_check_calls": 1491
+   },
+   "cand/I-sys": {
+    "calls": 662,
+    "pressure_ratio_median": 0.2438962,
+    "p99": 0.8977405,
+    "max": 1.019191,
+    "above_one": 1,
+    "forward_ratio_max_2^-100": 0.0009647236,
+    "forward_check_calls": 1465
+   },
+   "cand/I-fix": {
+    "calls": 1488,
+    "pressure_ratio_median": 0.20585199999999998,
+    "p99": 0.8650521629999987,
+    "max": 0.9975139,
+    "above_one": 0,
+    "forward_ratio_max_2^-100": 0.0009439537,
+    "forward_check_calls": 1488
+   }
+  },
+  "failing_sample": {
+   "comparison_before": "F5/I-sys/u-product/A2/water-feed+salt-feed+",
+   "tape": "fluid",
+   "T_K": 298.15,
+   "P_Pa": 100000.0,
+   "y": 1.8226487999547664e-06,
+   "v_m3_per_mol": 1.80701455035361e-05,
+   "dP_dv": -250638900000000.0,
+   "limit_Pa": 3.381877e-24,
+   "two_cycle_residuals_Pa": [
+    3.446779e-24,
+    -3.702711e-24
+   ],
+   "iterations": 12,
+   "volume_relative_error": 7.6103269113363295e-34
+  }
+ }
+}

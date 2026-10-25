@@ -1,0 +1,5 @@
+record_id,component_id,site_id,site_class,multiplicity,source_id,locator,domain_id
+water-site-a,water,a,a,1,ascani-et-al-2022,Supporting Information Table S1 2B scheme,perdomo-figure-03-298-15-k-101-3-kpa
+water-site-b,water,b,b,1,ascani-et-al-2022,Supporting Information Table S1 2B scheme,perdomo-figure-03-298-15-k-101-3-kpa
+butanol-site-a,1-butanol,a,a,1,ascani-et-al-2022,Supporting Information Table S1 2B scheme,perdomo-figure-03-298-15-k-101-3-kpa
+butanol-site-b,1-butanol,b,b,1,ascani-et-al-2022,Supporting Information Table S1 2B scheme,perdomo-figure-03-298-15-k-101-3-kpa

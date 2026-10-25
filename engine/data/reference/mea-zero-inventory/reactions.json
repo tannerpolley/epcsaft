@@ -1,0 +1,147 @@
+[
+  {
+    "engine_correlation": {
+      "a": 3.7290977365566675,
+      "b": -13445.9,
+      "c": -22.4773,
+      "d": 0.0,
+      "reference_temperature": 313.15,
+      "standard_state_id": "aqueous-mole-fraction-infinite-dilution-water-v1",
+      "temperature_max": 353.15,
+      "temperature_min": 293.15
+    },
+    "engine_reference": {
+      "reference_pressure_pa": null,
+      "source_basis": "RawMoleFractionInfiniteDilution"
+    },
+    "parameter_role": "candidate",
+    "reaction_id": "R1",
+    "stoichiometry": [
+      0.0,
+      0.0,
+      -2.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      1.0
+    ]
+  },
+  {
+    "engine_correlation": {
+      "a": 27.998344727147323,
+      "b": -22980.627957394878,
+      "c": -102.76997889337368,
+      "d": 0.09863602092372929,
+      "reference_temperature": 313.15,
+      "standard_state_id": "aqueous-molality-infinite-dilution-water-v1",
+      "temperature_max": 353.15,
+      "temperature_min": 293.15
+    },
+    "engine_reference": {
+      "reference_pressure_pa": 101325.0,
+      "source_basis": "CommonMolalityInfiniteDilution"
+    },
+    "parameter_role": "candidate",
+    "reaction_id": "R2",
+    "stoichiometry": [
+      -1.0,
+      0.0,
+      -2.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      1.0,
+      0.0
+    ]
+  },
+  {
+    "engine_correlation": {
+      "a": 12.145792981306897,
+      "b": -12431.7,
+      "c": -35.4819,
+      "d": 0.0,
+      "reference_temperature": 313.15,
+      "standard_state_id": "aqueous-mole-fraction-infinite-dilution-water-v1",
+      "temperature_max": 353.15,
+      "temperature_min": 293.15
+    },
+    "engine_reference": {
+      "reference_pressure_pa": null,
+      "source_basis": "RawMoleFractionInfiniteDilution"
+    },
+    "parameter_role": "candidate",
+    "reaction_id": "R3",
+    "stoichiometry": [
+      0.0,
+      0.0,
+      -1.0,
+      0.0,
+      0.0,
+      -1.0,
+      1.0,
+      1.0,
+      0.0
+    ]
+  },
+  {
+    "engine_correlation": {
+      "a": 1.2825538047970388,
+      "b": -1301.9896825691826,
+      "c": 0.7970170552396649,
+      "d": 0.0003186685886413639,
+      "reference_temperature": 313.15,
+      "standard_state_id": "aqueous-molality-infinite-dilution-water-v1",
+      "temperature_max": 353.15,
+      "temperature_min": 293.15
+    },
+    "engine_reference": {
+      "reference_pressure_pa": 100000.0,
+      "source_basis": "CommonMolalityInfiniteDilution"
+    },
+    "parameter_role": "candidate",
+    "reaction_id": "R4",
+    "stoichiometry": [
+      0.0,
+      1.0,
+      -1.0,
+      0.0,
+      -1.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  {
+    "engine_correlation": {
+      "a": -6.607680532940861,
+      "b": 0.0,
+      "c": 33.42398310259077,
+      "d": -0.045427685333101375,
+      "reference_temperature": 313.15,
+      "standard_state_id": "aqueous-molality-infinite-dilution-water-v1",
+      "temperature_max": 353.15,
+      "temperature_min": 293.15
+    },
+    "engine_reference": {
+      "reference_pressure_pa": 100000.0,
+      "source_basis": "CommonMolalityInfiniteDilution"
+    },
+    "parameter_role": "candidate",
+    "reaction_id": "R5",
+    "stoichiometry": [
+      0.0,
+      1.0,
+      -1.0,
+      -1.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0
+    ]
+  }
+]

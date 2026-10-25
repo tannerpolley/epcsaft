@@ -1,0 +1,1791 @@
+{
+  "schema": "epcsaft.parameters",
+  "schema_version": 1,
+  "document_id": "hbta-topo-t1-mbta-topo-dodecane-independent",
+  "document_version": 1,
+  "purpose": "user-provided",
+  "sources": [
+    {
+      "source_id": "yu-2025",
+      "citation": "Yu et al., AIChE Journal 2025, DOI 10.1002/aic.18907.",
+      "doi": "10.1002/aic.18907",
+      "use_basis": "Water/DCM pure and binary parameters only."
+    },
+    {
+      "source_id": "figiel-yu-held-2025",
+      "citation": "Figiel, Yu, and Held, Industrial & Engineering Chemistry Research 2025, DOI 10.1021/acs.iecr.5c00475.",
+      "doi": "10.1021/acs.iecr.5c00475",
+      "use_basis": "Aqueous Li+, Na+, and Cl- parameters and electrolyte model only."
+    },
+    {
+      "source_id": "manufactured-li-na-oracle",
+      "citation": "Project-authored numerical capability oracle.",
+      "use_basis": "Carrier complexes, missing DCM permittivity, cross interactions, feed, and K sweep; no physical prediction."
+    },
+    {
+      "source_id": "gross-sadowski-2001",
+      "citation": "Gross and Sadowski, Ind. Eng. Chem. Res. 40 (2001) 1244-1260",
+      "use_basis": "Bounded normal-alkane diluent scenarios only; not kerosene identity."
+    },
+    {
+      "source_id": "hbta-topo-structural-prior",
+      "citation": "Project structural prior constrained by HBTA/TOPO formulas and Rezaee TOPO tuple.",
+      "use_basis": "Carrier size/dispersion prior only; not promoted pure-component evidence."
+    },
+    {
+      "source_id": "held-2014-hydrogen",
+      "citation": "Held et al., Chem. Eng. Res. Des. (2014)",
+      "doi": "10.1016/j.cherd.2014.05.017",
+      "use_basis": "Aqueous hydrogen-ion ePC-SAFT strategy-2 prior."
+    },
+    {
+      "source_id": "hbta-topo-independent-network",
+      "citation": "Shan 2025 NaBTA-TOPO/LiBTA-TOPO 1:1:1 mechanism",
+      "use_basis": "Declared model-form stoichiometry and shared ligand-derived free/Na/Li carrier priors; not unique pure-component parameters."
+    }
+  ],
+  "domains": [
+    {
+      "domain_id": "yu-2025-water-dcm-298-k",
+      "kind": "unknown"
+    },
+    {
+      "domain_id": "figiel-298-k-1-bar",
+      "kind": "unknown"
+    },
+    {
+      "domain_id": "manufactured-li-na-oracle-domain",
+      "kind": "unknown"
+    },
+    {
+      "domain_id": "gross-normal-alkane-scenario",
+      "kind": "unknown"
+    },
+    {
+      "domain_id": "hbta-topo-apparent-fit",
+      "kind": "unknown"
+    },
+    {
+      "domain_id": "hbta-topo-independent-network",
+      "kind": "unknown"
+    }
+  ],
+  "components": [
+    {
+      "component_id": "water",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 0.01801528,
+            "unit": "kilogram / mole"
+          },
+          "provenance": {
+            "source_id": "yu-2025",
+            "locator": "Article Tables 1-2 and Supporting Information Table S4",
+            "domain_id": "yu-2025-water-dcm-298-k"
+          }
+        },
+        "charge_number": {
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "yu-2025",
+            "locator": "Article Tables 1-2 and Supporting Information Table S4",
+            "domain_id": "yu-2025-water-dcm-298-k"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/water/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 1.2047,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "yu-2025",
+            "locator": "Article Tables 1-2 and Supporting Information Table S4",
+            "domain_id": "yu-2025-water-dcm-298-k"
+          }
+        },
+        {
+          "identity": "component/water/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 2.797059952289552,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "yu-2025",
+            "locator": "Article Tables 1-2 and Supporting Information Table S4",
+            "domain_id": "yu-2025-water-dcm-298-k"
+          }
+        },
+        {
+          "identity": "component/water/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 353.95,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "yu-2025",
+            "locator": "Article Tables 1-2 and Supporting Information Table S4",
+            "domain_id": "yu-2025-water-dcm-298-k"
+          }
+        },
+        {
+          "identity": "component/water/relative_permittivity",
+          "family": "relative_permittivity",
+          "value": {
+            "magnitude": 78.09282552212915,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "yu-2025",
+            "locator": "Article Tables 1-2 and Supporting Information Table S4",
+            "domain_id": "yu-2025-water-dcm-298-k"
+          }
+        },
+        {
+          "identity": "component/water/solvation_factor",
+          "family": "solvation_factor",
+          "value": {
+            "magnitude": 1.5,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Tables 1, 3-5 and Eq. 11",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "diluent",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 0.170338,
+            "unit": "kilogram / mole"
+          },
+          "provenance": {
+            "source_id": "gross-sadowski-2001",
+            "locator": "Gross and Sadowski (2001), Table 2 dodecane row",
+            "domain_id": "gross-normal-alkane-scenario"
+          }
+        },
+        "charge_number": {
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "gross-sadowski-2001",
+            "locator": "Gross and Sadowski (2001), Table 2 dodecane row",
+            "domain_id": "gross-normal-alkane-scenario"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/diluent/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 5.306,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-sadowski-2001",
+            "locator": "Gross and Sadowski (2001), Table 2 dodecane row",
+            "domain_id": "gross-normal-alkane-scenario"
+          }
+        },
+        {
+          "identity": "component/diluent/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 3.8959,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "gross-sadowski-2001",
+            "locator": "Gross and Sadowski (2001), Table 2 dodecane row",
+            "domain_id": "gross-normal-alkane-scenario"
+          }
+        },
+        {
+          "identity": "component/diluent/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 249.21,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "gross-sadowski-2001",
+            "locator": "Gross and Sadowski (2001), Table 2 dodecane row",
+            "domain_id": "gross-normal-alkane-scenario"
+          }
+        },
+        {
+          "identity": "component/diluent/relative_permittivity",
+          "family": "relative_permittivity",
+          "value": {
+            "magnitude": 2.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-sadowski-2001",
+            "locator": "Gross and Sadowski (2001), Table 2 dodecane row",
+            "domain_id": "gross-normal-alkane-scenario"
+          }
+        },
+        {
+          "identity": "component/diluent/solvation_factor",
+          "family": "solvation_factor",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-sadowski-2001",
+            "locator": "Gross and Sadowski (2001), Table 2 dodecane row",
+            "domain_id": "gross-normal-alkane-scenario"
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "lithium-cation",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 0.00694,
+            "unit": "kilogram / mole"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3, Li+ row; d_pack = d_DH = 0.88 sigma",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        "charge_number": {
+          "value": {
+            "magnitude": 1,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3, Li+ row; d_pack = d_DH = 0.88 sigma",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/lithium-cation/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3, Li+ row; d_pack = d_DH = 0.88 sigma",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/lithium-cation/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 2.8449,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3, Li+ row; d_pack = d_DH = 0.88 sigma",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/lithium-cation/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 360.0,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3, Li+ row; d_pack = d_DH = 0.88 sigma",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/lithium-cation/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 2.503512,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3, Li+ row; d_pack = d_DH = 0.88 sigma",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/lithium-cation/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 2.503512,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3, Li+ row; d_pack = d_DH = 0.88 sigma",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/lithium-cation/born_diameter",
+          "family": "born_diameter",
+          "value": {
+            "magnitude": 2.784,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3, Li+ row; d_pack = d_DH = 0.88 sigma",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/lithium-cation/solvation_factor",
+          "family": "solvation_factor",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3, Li+ row; d_pack = d_DH = 0.88 sigma",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "sodium-cation",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 0.02298977,
+            "unit": "kilogram / mole"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3, Na+ row; d_pack = d_DH = 0.88 sigma",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        "charge_number": {
+          "value": {
+            "magnitude": 1,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3, Na+ row; d_pack = d_DH = 0.88 sigma",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/sodium-cation/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3, Na+ row; d_pack = d_DH = 0.88 sigma",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/sodium-cation/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 2.8232,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3, Na+ row; d_pack = d_DH = 0.88 sigma",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/sodium-cation/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 230.0,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3, Na+ row; d_pack = d_DH = 0.88 sigma",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/sodium-cation/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 2.484416,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3, Na+ row; d_pack = d_DH = 0.88 sigma",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/sodium-cation/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 2.484416,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3, Na+ row; d_pack = d_DH = 0.88 sigma",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/sodium-cation/born_diameter",
+          "family": "born_diameter",
+          "value": {
+            "magnitude": 3.445,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3, Na+ row; d_pack = d_DH = 0.88 sigma",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/sodium-cation/solvation_factor",
+          "family": "solvation_factor",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3, Na+ row; d_pack = d_DH = 0.88 sigma",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "hydrogen-cation",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 0.00100794,
+            "unit": "kilogram / mole"
+          },
+          "provenance": {
+            "source_id": "held-2014-hydrogen",
+            "locator": "strategy-2 H+ row; electrolyte diameters 0.88 sigma",
+            "domain_id": "hbta-topo-independent-network"
+          }
+        },
+        "charge_number": {
+          "value": {
+            "magnitude": 1,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "held-2014-hydrogen",
+            "locator": "strategy-2 H+ row; electrolyte diameters 0.88 sigma",
+            "domain_id": "hbta-topo-independent-network"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/hydrogen-cation/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "held-2014-hydrogen",
+            "locator": "strategy-2 H+ row; electrolyte diameters 0.88 sigma",
+            "domain_id": "hbta-topo-independent-network"
+          }
+        },
+        {
+          "identity": "component/hydrogen-cation/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 3.4654,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-2014-hydrogen",
+            "locator": "strategy-2 H+ row; electrolyte diameters 0.88 sigma",
+            "domain_id": "hbta-topo-independent-network"
+          }
+        },
+        {
+          "identity": "component/hydrogen-cation/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 500.0,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "held-2014-hydrogen",
+            "locator": "strategy-2 H+ row; electrolyte diameters 0.88 sigma",
+            "domain_id": "hbta-topo-independent-network"
+          }
+        },
+        {
+          "identity": "component/hydrogen-cation/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 3.049552,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-2014-hydrogen",
+            "locator": "strategy-2 H+ row; electrolyte diameters 0.88 sigma",
+            "domain_id": "hbta-topo-independent-network"
+          }
+        },
+        {
+          "identity": "component/hydrogen-cation/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 3.049552,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-2014-hydrogen",
+            "locator": "strategy-2 H+ row; electrolyte diameters 0.88 sigma",
+            "domain_id": "hbta-topo-independent-network"
+          }
+        },
+        {
+          "identity": "component/hydrogen-cation/born_diameter",
+          "family": "born_diameter",
+          "value": {
+            "magnitude": 3.4654,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-2014-hydrogen",
+            "locator": "strategy-2 H+ row; electrolyte diameters 0.88 sigma",
+            "domain_id": "hbta-topo-independent-network"
+          }
+        },
+        {
+          "identity": "component/hydrogen-cation/solvation_factor",
+          "family": "solvation_factor",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "held-2014-hydrogen",
+            "locator": "strategy-2 H+ row; electrolyte diameters 0.88 sigma",
+            "domain_id": "hbta-topo-independent-network"
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "chloride-anion",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 0.03545,
+            "unit": "kilogram / mole"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3, Cl- row; d_pack = d_DH = 0.88 sigma",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        "charge_number": {
+          "value": {
+            "magnitude": -1,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3, Cl- row; d_pack = d_DH = 0.88 sigma",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/chloride-anion/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3, Cl- row; d_pack = d_DH = 0.88 sigma",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/chloride-anion/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 2.756,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3, Cl- row; d_pack = d_DH = 0.88 sigma",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/chloride-anion/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 170.0,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3, Cl- row; d_pack = d_DH = 0.88 sigma",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/chloride-anion/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 2.42528,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3, Cl- row; d_pack = d_DH = 0.88 sigma",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/chloride-anion/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 2.42528,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3, Cl- row; d_pack = d_DH = 0.88 sigma",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/chloride-anion/born_diameter",
+          "family": "born_diameter",
+          "value": {
+            "magnitude": 4.1,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3, Cl- row; d_pack = d_DH = 0.88 sigma",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/chloride-anion/solvation_factor",
+          "family": "solvation_factor",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3, Cl- row; d_pack = d_DH = 0.88 sigma",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "free-carrier",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 0.6027949,
+            "unit": "kilogram / mole"
+          },
+          "provenance": {
+            "source_id": "hbta-topo-independent-network",
+            "locator": "shared ligand-derived t1_mbta_topo structural prior",
+            "domain_id": "hbta-topo-independent-network"
+          }
+        },
+        "charge_number": {
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "hbta-topo-independent-network",
+            "locator": "shared ligand-derived t1_mbta_topo structural prior",
+            "domain_id": "hbta-topo-independent-network"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/free-carrier/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 20.6,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "hbta-topo-independent-network",
+            "locator": "shared ligand-derived t1_mbta_topo structural prior",
+            "domain_id": "hbta-topo-independent-network"
+          }
+        },
+        {
+          "identity": "component/free-carrier/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 3.7,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "hbta-topo-independent-network",
+            "locator": "shared ligand-derived t1_mbta_topo structural prior",
+            "domain_id": "hbta-topo-independent-network"
+          }
+        },
+        {
+          "identity": "component/free-carrier/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 360.0,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "hbta-topo-independent-network",
+            "locator": "shared ligand-derived t1_mbta_topo structural prior",
+            "domain_id": "hbta-topo-independent-network"
+          }
+        },
+        {
+          "identity": "component/free-carrier/relative_permittivity",
+          "family": "relative_permittivity",
+          "value": {
+            "magnitude": 4.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "hbta-topo-structural-prior",
+            "locator": "bounded organic-phase dielectric/solvation prior",
+            "domain_id": "hbta-topo-apparent-fit"
+          }
+        },
+        {
+          "identity": "component/free-carrier/solvation_factor",
+          "family": "solvation_factor",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "hbta-topo-structural-prior",
+            "locator": "bounded organic-phase dielectric/solvation prior",
+            "domain_id": "hbta-topo-apparent-fit"
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "sodium-carrier",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 0.6247767292799999,
+            "unit": "kilogram / mole"
+          },
+          "provenance": {
+            "source_id": "hbta-topo-independent-network",
+            "locator": "shared ligand-derived t1_mbta_topo structural prior",
+            "domain_id": "hbta-topo-independent-network"
+          }
+        },
+        "charge_number": {
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "manufactured-li-na-oracle",
+            "locator": "hybrid_li_na_oracle.json manufactured_inputs",
+            "domain_id": "manufactured-li-na-oracle-domain"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/sodium-carrier/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 20.6,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "hbta-topo-independent-network",
+            "locator": "shared ligand-derived t1_mbta_topo structural prior",
+            "domain_id": "hbta-topo-independent-network"
+          }
+        },
+        {
+          "identity": "component/sodium-carrier/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 3.7,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "hbta-topo-independent-network",
+            "locator": "shared ligand-derived t1_mbta_topo structural prior",
+            "domain_id": "hbta-topo-independent-network"
+          }
+        },
+        {
+          "identity": "component/sodium-carrier/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 360.0,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "hbta-topo-independent-network",
+            "locator": "shared ligand-derived t1_mbta_topo structural prior",
+            "domain_id": "hbta-topo-independent-network"
+          }
+        },
+        {
+          "identity": "component/sodium-carrier/relative_permittivity",
+          "family": "relative_permittivity",
+          "value": {
+            "magnitude": 4.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "hbta-topo-structural-prior",
+            "locator": "bounded organic-phase dielectric/solvation prior",
+            "domain_id": "hbta-topo-apparent-fit"
+          }
+        },
+        {
+          "identity": "component/sodium-carrier/solvation_factor",
+          "family": "solvation_factor",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "hbta-topo-structural-prior",
+            "locator": "bounded organic-phase dielectric/solvation prior",
+            "domain_id": "hbta-topo-apparent-fit"
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "lithium-carrier",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 0.6087269599999999,
+            "unit": "kilogram / mole"
+          },
+          "provenance": {
+            "source_id": "hbta-topo-independent-network",
+            "locator": "shared ligand-derived t1_mbta_topo structural prior",
+            "domain_id": "hbta-topo-independent-network"
+          }
+        },
+        "charge_number": {
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "manufactured-li-na-oracle",
+            "locator": "hybrid_li_na_oracle.json manufactured_inputs",
+            "domain_id": "manufactured-li-na-oracle-domain"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/lithium-carrier/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 20.6,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "hbta-topo-independent-network",
+            "locator": "shared ligand-derived t1_mbta_topo structural prior",
+            "domain_id": "hbta-topo-independent-network"
+          }
+        },
+        {
+          "identity": "component/lithium-carrier/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 3.7,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "hbta-topo-independent-network",
+            "locator": "shared ligand-derived t1_mbta_topo structural prior",
+            "domain_id": "hbta-topo-independent-network"
+          }
+        },
+        {
+          "identity": "component/lithium-carrier/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 360.0,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "hbta-topo-independent-network",
+            "locator": "shared ligand-derived t1_mbta_topo structural prior",
+            "domain_id": "hbta-topo-independent-network"
+          }
+        },
+        {
+          "identity": "component/lithium-carrier/relative_permittivity",
+          "family": "relative_permittivity",
+          "value": {
+            "magnitude": 4.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "hbta-topo-structural-prior",
+            "locator": "bounded organic-phase dielectric/solvation prior",
+            "domain_id": "hbta-topo-apparent-fit"
+          }
+        },
+        {
+          "identity": "component/lithium-carrier/solvation_factor",
+          "family": "solvation_factor",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "hbta-topo-structural-prior",
+            "locator": "bounded organic-phase dielectric/solvation prior",
+            "domain_id": "hbta-topo-apparent-fit"
+          }
+        }
+      ]
+    }
+  ],
+  "pairs": [
+    {
+      "component_id_a": "diluent",
+      "component_id_b": "water",
+      "coefficients": [
+        {
+          "identity": "pair/diluent/water/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "hbta-topo-structural-prior",
+            "locator": "zero cross-interaction prior before extraction correction",
+            "domain_id": "hbta-topo-apparent-fit"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "chloride-anion",
+      "component_id_b": "lithium-cation",
+      "coefficients": [
+        {
+          "identity": "pair/chloride-anion/lithium-cation/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0.8,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 4, Cl-/Li+ row",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "chloride-anion",
+      "component_id_b": "sodium-cation",
+      "coefficients": [
+        {
+          "identity": "pair/chloride-anion/sodium-cation/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0.8,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 4, Cl-/Na+ row",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "chloride-anion",
+      "component_id_b": "water",
+      "coefficients": [
+        {
+          "identity": "pair/chloride-anion/water/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": -0.3,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 5, Cl-/water row",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "lithium-cation",
+      "component_id_b": "water",
+      "coefficients": [
+        {
+          "identity": "pair/lithium-cation/water/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": -0.4,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 5, Li+/water row",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "sodium-cation",
+      "component_id_b": "water",
+      "coefficients": [
+        {
+          "identity": "pair/sodium-cation/water/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": -0.3,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 5, Na+/water row",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "diluent",
+      "component_id_b": "lithium-carrier",
+      "coefficients": [
+        {
+          "identity": "pair/diluent/lithium-carrier/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "hbta-topo-structural-prior",
+            "locator": "zero cross-interaction prior before extraction correction",
+            "domain_id": "hbta-topo-apparent-fit"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "diluent",
+      "component_id_b": "sodium-carrier",
+      "coefficients": [
+        {
+          "identity": "pair/diluent/sodium-carrier/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "hbta-topo-structural-prior",
+            "locator": "zero cross-interaction prior before extraction correction",
+            "domain_id": "hbta-topo-apparent-fit"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "lithium-carrier",
+      "component_id_b": "sodium-carrier",
+      "coefficients": [
+        {
+          "identity": "pair/lithium-carrier/sodium-carrier/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "hbta-topo-structural-prior",
+            "locator": "zero cross-interaction prior before extraction correction",
+            "domain_id": "hbta-topo-apparent-fit"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "lithium-carrier",
+      "component_id_b": "water",
+      "coefficients": [
+        {
+          "identity": "pair/lithium-carrier/water/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "hbta-topo-structural-prior",
+            "locator": "zero cross-interaction prior before extraction correction",
+            "domain_id": "hbta-topo-apparent-fit"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "sodium-carrier",
+      "component_id_b": "water",
+      "coefficients": [
+        {
+          "identity": "pair/sodium-carrier/water/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "hbta-topo-structural-prior",
+            "locator": "zero cross-interaction prior before extraction correction",
+            "domain_id": "hbta-topo-apparent-fit"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "diluent",
+      "component_id_b": "lithium-cation",
+      "coefficients": [
+        {
+          "identity": "pair/diluent/lithium-cation/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "hbta-topo-structural-prior",
+            "locator": "zero cross-interaction prior before extraction correction",
+            "domain_id": "hbta-topo-apparent-fit"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "diluent",
+      "component_id_b": "sodium-cation",
+      "coefficients": [
+        {
+          "identity": "pair/diluent/sodium-cation/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "hbta-topo-structural-prior",
+            "locator": "zero cross-interaction prior before extraction correction",
+            "domain_id": "hbta-topo-apparent-fit"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "chloride-anion",
+      "component_id_b": "diluent",
+      "coefficients": [
+        {
+          "identity": "pair/chloride-anion/diluent/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "hbta-topo-structural-prior",
+            "locator": "zero cross-interaction prior before extraction correction",
+            "domain_id": "hbta-topo-apparent-fit"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "lithium-cation",
+      "component_id_b": "sodium-carrier",
+      "coefficients": [
+        {
+          "identity": "pair/lithium-cation/sodium-carrier/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "hbta-topo-structural-prior",
+            "locator": "zero cross-interaction prior before extraction correction",
+            "domain_id": "hbta-topo-apparent-fit"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "lithium-carrier",
+      "component_id_b": "lithium-cation",
+      "coefficients": [
+        {
+          "identity": "pair/lithium-carrier/lithium-cation/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "hbta-topo-structural-prior",
+            "locator": "zero cross-interaction prior before extraction correction",
+            "domain_id": "hbta-topo-apparent-fit"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "sodium-carrier",
+      "component_id_b": "sodium-cation",
+      "coefficients": [
+        {
+          "identity": "pair/sodium-carrier/sodium-cation/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "hbta-topo-structural-prior",
+            "locator": "zero cross-interaction prior before extraction correction",
+            "domain_id": "hbta-topo-apparent-fit"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "lithium-carrier",
+      "component_id_b": "sodium-cation",
+      "coefficients": [
+        {
+          "identity": "pair/lithium-carrier/sodium-cation/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "hbta-topo-structural-prior",
+            "locator": "zero cross-interaction prior before extraction correction",
+            "domain_id": "hbta-topo-apparent-fit"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "chloride-anion",
+      "component_id_b": "sodium-carrier",
+      "coefficients": [
+        {
+          "identity": "pair/chloride-anion/sodium-carrier/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "hbta-topo-structural-prior",
+            "locator": "zero cross-interaction prior before extraction correction",
+            "domain_id": "hbta-topo-apparent-fit"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "chloride-anion",
+      "component_id_b": "lithium-carrier",
+      "coefficients": [
+        {
+          "identity": "pair/chloride-anion/lithium-carrier/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "hbta-topo-structural-prior",
+            "locator": "zero cross-interaction prior before extraction correction",
+            "domain_id": "hbta-topo-apparent-fit"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "free-carrier",
+      "component_id_b": "water",
+      "coefficients": [
+        {
+          "identity": "pair/free-carrier/water/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "hbta-topo-independent-network",
+            "locator": "zero cross-interaction prior before model-form correction",
+            "domain_id": "hbta-topo-independent-network"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "diluent",
+      "component_id_b": "free-carrier",
+      "coefficients": [
+        {
+          "identity": "pair/diluent/free-carrier/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "hbta-topo-independent-network",
+            "locator": "zero cross-interaction prior before model-form correction",
+            "domain_id": "hbta-topo-independent-network"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "free-carrier",
+      "component_id_b": "lithium-cation",
+      "coefficients": [
+        {
+          "identity": "pair/free-carrier/lithium-cation/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "hbta-topo-independent-network",
+            "locator": "zero cross-interaction prior before model-form correction",
+            "domain_id": "hbta-topo-independent-network"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "free-carrier",
+      "component_id_b": "sodium-cation",
+      "coefficients": [
+        {
+          "identity": "pair/free-carrier/sodium-cation/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "hbta-topo-independent-network",
+            "locator": "zero cross-interaction prior before model-form correction",
+            "domain_id": "hbta-topo-independent-network"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "free-carrier",
+      "component_id_b": "hydrogen-cation",
+      "coefficients": [
+        {
+          "identity": "pair/free-carrier/hydrogen-cation/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "hbta-topo-independent-network",
+            "locator": "zero cross-interaction prior before model-form correction",
+            "domain_id": "hbta-topo-independent-network"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "chloride-anion",
+      "component_id_b": "free-carrier",
+      "coefficients": [
+        {
+          "identity": "pair/chloride-anion/free-carrier/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "hbta-topo-independent-network",
+            "locator": "zero cross-interaction prior before model-form correction",
+            "domain_id": "hbta-topo-independent-network"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "free-carrier",
+      "component_id_b": "sodium-carrier",
+      "coefficients": [
+        {
+          "identity": "pair/free-carrier/sodium-carrier/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "hbta-topo-independent-network",
+            "locator": "zero cross-interaction prior before model-form correction",
+            "domain_id": "hbta-topo-independent-network"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "free-carrier",
+      "component_id_b": "lithium-carrier",
+      "coefficients": [
+        {
+          "identity": "pair/free-carrier/lithium-carrier/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "hbta-topo-independent-network",
+            "locator": "zero cross-interaction prior before model-form correction",
+            "domain_id": "hbta-topo-independent-network"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "hydrogen-cation",
+      "component_id_b": "water",
+      "coefficients": [
+        {
+          "identity": "pair/hydrogen-cation/water/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0.25,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "held-2014-hydrogen",
+            "locator": "Held 2014 strategy-2 water/H+ pair",
+            "domain_id": "hbta-topo-independent-network"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "diluent",
+      "component_id_b": "hydrogen-cation",
+      "coefficients": [
+        {
+          "identity": "pair/diluent/hydrogen-cation/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "hbta-topo-independent-network",
+            "locator": "zero cross-interaction prior outside validated aqueous pairs",
+            "domain_id": "hbta-topo-independent-network"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "chloride-anion",
+      "component_id_b": "hydrogen-cation",
+      "coefficients": [
+        {
+          "identity": "pair/chloride-anion/hydrogen-cation/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0.654,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "held-2014-hydrogen",
+            "locator": "Held 2014 strategy-2 H+/Cl- pair",
+            "domain_id": "hbta-topo-independent-network"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "hydrogen-cation",
+      "component_id_b": "sodium-carrier",
+      "coefficients": [
+        {
+          "identity": "pair/hydrogen-cation/sodium-carrier/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "hbta-topo-independent-network",
+            "locator": "zero cross-interaction prior outside validated aqueous pairs",
+            "domain_id": "hbta-topo-independent-network"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "hydrogen-cation",
+      "component_id_b": "lithium-carrier",
+      "coefficients": [
+        {
+          "identity": "pair/hydrogen-cation/lithium-carrier/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "hbta-topo-independent-network",
+            "locator": "zero cross-interaction prior outside validated aqueous pairs",
+            "domain_id": "hbta-topo-independent-network"
+          }
+        }
+      ]
+    }
+  ],
+  "model_families": [
+    {
+      "family_id": "model/association",
+      "kind": "association",
+      "choice": "general-site",
+      "provenance": {
+        "source_id": "yu-2025",
+        "locator": "Article Tables 1-2 and Supporting Information Table S4",
+        "domain_id": "yu-2025-water-dcm-298-k"
+      }
+    },
+    {
+      "family_id": "model/base",
+      "kind": "base",
+      "choice": "pc-saft",
+      "provenance": {
+        "source_id": "yu-2025",
+        "locator": "Article Tables 1-2 and Supporting Information Table S4",
+        "domain_id": "yu-2025-water-dcm-298-k"
+      }
+    },
+    {
+      "family_id": "model/electrolyte",
+      "kind": "electrolyte",
+      "choice": "born",
+      "provenance": {
+        "source_id": "figiel-yu-held-2025",
+        "locator": "Tables 1, 3-5 and Eq. 11",
+        "domain_id": "figiel-298-k-1-bar"
+      },
+      "c_shell": 1.0,
+      "c_dielectric": 1.0,
+      "ionic_dispersion": "exclude-same-sign-ion-pairs"
+    },
+    {
+      "family_id": "model/relative_permittivity",
+      "kind": "permittivity",
+      "choice": "ion-fraction-suppression",
+      "provenance": {
+        "source_id": "figiel-yu-held-2025",
+        "locator": "Tables 1, 3-5 and Eq. 11",
+        "domain_id": "figiel-298-k-1-bar"
+      }
+    }
+  ],
+  "model_coefficients": [
+    {
+      "identity": "model/relative_permittivity/ionic_region_relative_permittivity",
+      "family": "ionic_region_relative_permittivity",
+      "value": {
+        "magnitude": 8.0,
+        "unit": "dimensionless"
+      },
+      "provenance": {
+        "source_id": "figiel-yu-held-2025",
+        "locator": "Tables 1, 3-5 and Eq. 11",
+        "domain_id": "figiel-298-k-1-bar"
+      }
+    },
+    {
+      "identity": "model/relative_permittivity/ion_fraction_suppression_coefficient",
+      "family": "ion_fraction_suppression_coefficient",
+      "value": {
+        "magnitude": 7.01,
+        "unit": "dimensionless"
+      },
+      "provenance": {
+        "source_id": "figiel-yu-held-2025",
+        "locator": "Tables 1, 3-5 and Eq. 11",
+        "domain_id": "figiel-298-k-1-bar"
+      }
+    }
+  ],
+  "correlations": [],
+  "topology": {
+    "presets": [],
+    "sites": [
+      {
+        "component_id": "water",
+        "site_id": "a",
+        "site_role": "donor",
+        "multiplicity": 1,
+        "provenance": {
+          "source_id": "yu-2025",
+          "locator": "Article Tables 1-2 and Supporting Information Table S4",
+          "domain_id": "yu-2025-water-dcm-298-k"
+        }
+      },
+      {
+        "component_id": "water",
+        "site_id": "b",
+        "site_role": "acceptor",
+        "multiplicity": 1,
+        "provenance": {
+          "source_id": "yu-2025",
+          "locator": "Article Tables 1-2 and Supporting Information Table S4",
+          "domain_id": "yu-2025-water-dcm-298-k"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "endpoint_a": {
+          "component_id": "water",
+          "site_id": "a"
+        },
+        "endpoint_b": {
+          "component_id": "water",
+          "site_id": "b"
+        },
+        "energy_over_k": {
+          "identity": "association/water/a/water/b/energy_over_k",
+          "value": {
+            "magnitude": 2425.7,
+            "unit": "kelvin"
+          }
+        },
+        "volume": {
+          "identity": "association/water/a/water/b/volume",
+          "value": {
+            "magnitude": 0.0451,
+            "unit": "dimensionless"
+          }
+        },
+        "source": {
+          "kind": "explicit",
+          "provenance": [
+            {
+              "source_id": "yu-2025",
+              "locator": "Article Tables 1-2 and Supporting Information Table S4",
+              "domain_id": "yu-2025-water-dcm-298-k"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,144 @@
+[
+  {
+    "commit": "8f5f56855ccafbeb2b73329f7bc7ec0b62265ddc",
+    "title": "Merge pull request #270 from tannerpolley/issue-238-multistart",
+    "files": [
+      "engine/native/bindings/eos_bindings.cpp",
+      "engine/native/bindings/equilibrium_bindings.cpp",
+      "engine/native/equilibrium/gibbs_minimizer.cpp",
+      "engine/native/equilibrium/gibbs_minimizer.hpp",
+      "engine/native/equilibrium/ipopt.hpp",
+      "engine/native/equilibrium/phase_boundary.cpp",
+      "engine/native/equilibrium/problem.hpp",
+      "engine/native/equilibrium/request_compile.cpp",
+      "engine/src/epcsaft/_core.pyi",
+      "engine/src/epcsaft/equilibrium/__init__.py",
+      "engine/src/epcsaft/equilibrium/problem.py"
+    ]
+  },
+  {
+    "commit": "95988731bd35af522b5d4e986b8697545ad5fd98",
+    "title": "Merge pull request #271 from tannerpolley/issue-240-parameter-continuation",
+    "files": [
+      "engine/native/bindings/eos_bindings.cpp",
+      "engine/native/bindings/equilibrium_bindings.cpp",
+      "engine/native/core/parameters.hpp",
+      "engine/native/equilibrium/gibbs_minimizer.hpp",
+      "engine/native/equilibrium/phase_boundary.cpp",
+      "engine/native/properties/helmholtz_model.cpp",
+      "engine/native/properties/helmholtz_tape.hpp",
+      "engine/native/regression/coordinates.cpp",
+      "engine/src/epcsaft/_core.pyi",
+      "engine/src/epcsaft/equilibrium/problem.py",
+      "engine/src/epcsaft/regression.py"
+    ]
+  },
+  {
+    "commit": "19a0c8258c3f5f6fca2258395eb54e07503b7efb",
+    "title": "Merge pull request #273 from tannerpolley/issue-222-benchmark",
+    "files": [
+      "engine/native/core/numerical_policy.hpp",
+      "engine/native/properties/density.cpp"
+    ]
+  },
+  {
+    "commit": "c106702048e87d0c583a3a5516cb5746e7a6ac07",
+    "title": "Merge pull request #276 from tannerpolley/issue-269-zero-inventory-incipient",
+    "files": [
+      "engine/native/equilibrium/request_compile.cpp"
+    ]
+  },
+  {
+    "commit": "f302a653b80080e5b629096bc70a63a59a7dd7b5",
+    "title": "Merge pull request #277 from tannerpolley/issue-234-batches-11-13",
+    "files": []
+  },
+  {
+    "commit": "c938e399620b73143e9f5889c505e3541714c268",
+    "title": "Merge pull request #291 from tannerpolley/efficiency-steering",
+    "files": []
+  },
+  {
+    "commit": "112dd5e0669215aabb924a5cb46ca99c4e6fcd93",
+    "title": "Merge pull request #292 from tannerpolley/issue-285-timing-tool",
+    "files": []
+  },
+  {
+    "commit": "9fdfe7cec1526420b6a5d1da6a43db9db2a94441",
+    "title": "Merge pull request #293 from tannerpolley/issue-283-cuts",
+    "files": [
+      "engine/native/contributions/electrolyte.hpp",
+      "engine/native/contributions/helmholtz.hpp",
+      "engine/native/core/parameters.hpp",
+      "engine/native/core/scalar.hpp",
+      "engine/native/core/trace.hpp",
+      "engine/native/equilibrium/gibbs_minimizer.hpp",
+      "engine/native/equilibrium/request_compile.cpp",
+      "engine/native/equilibrium/stoichiometry.cpp",
+      "engine/native/properties/density.cpp",
+      "engine/native/properties/helmholtz_model.cpp",
+      "engine/native/properties/helmholtz_tape.hpp",
+      "engine/native/properties/infinite_dilution_reference.cpp"
+    ]
+  },
+  {
+    "commit": "984ff7326b4f67d2be05b9d9ff5817e4ca106dda",
+    "title": "Merge pull request #294 from tannerpolley/issue-286-checks",
+    "files": []
+  },
+  {
+    "commit": "94a6179e6cdd12372edcbe2cef1db3fab826ac46",
+    "title": "Merge pull request #295 from tannerpolley/issue-290-checkall",
+    "files": []
+  },
+  {
+    "commit": "ea7b3f63140ee84ed0bf1784eac5170567f1be3b",
+    "title": "Merge pull request #296 from tannerpolley/issue-282-context-pointer",
+    "files": []
+  },
+  {
+    "commit": "d259302e63c3d993d046e705b28fa192e4bd687c",
+    "title": "Merge pull request #297 from tannerpolley/issue-284-trace",
+    "files": [
+      "engine/native/bindings/diagnostics_bindings.cpp",
+      "engine/native/contributions/association.hpp",
+      "engine/native/core/trace.hpp",
+      "engine/native/equilibrium/gibbs_minimizer.cpp",
+      "engine/native/properties/density.cpp",
+      "engine/native/properties/helmholtz_model.cpp",
+      "engine/native/properties/infinite_dilution_reference.cpp",
+      "engine/native/regression/fit.cpp",
+      "engine/src/epcsaft/_core.pyi"
+    ]
+  },
+  {
+    "commit": "905b3d1e651af29e0b812434abf103ee11f27dba",
+    "title": "Merge pull request #298 from tannerpolley/issue-290-native-speed",
+    "files": []
+  },
+  {
+    "commit": "d7739584458aa43a265dc7cc8b6f0e1a097c1480",
+    "title": "Merge pull request #299 from tannerpolley/issue-290-target",
+    "files": []
+  },
+  {
+    "commit": "ec0bafa71b5022821f1774b2b9fffb06622be87c",
+    "title": "Merge pull request #301 from tannerpolley/issue-225-current-calorics",
+    "files": [
+      "engine/native/bindings/equilibrium_bindings.cpp",
+      "engine/native/contributions/electrolyte.hpp",
+      "engine/native/contributions/helmholtz.hpp",
+      "engine/native/equilibrium/implicit_sensitivity.cpp",
+      "engine/native/equilibrium/problem.hpp",
+      "engine/native/equilibrium/request_compile.cpp",
+      "engine/native/properties/helmholtz_model.cpp",
+      "engine/native/properties/helmholtz_model.hpp",
+      "engine/native/properties/infinite_dilution_reference.cpp",
+      "engine/native/properties/thermochemistry.cpp",
+      "engine/native/properties/thermochemistry.hpp",
+      "engine/native/regression/coordinates.cpp",
+      "engine/native/regression/observations.cpp",
+      "engine/src/epcsaft/_core.pyi"
+    ]
+  }
+]

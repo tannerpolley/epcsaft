@@ -1,0 +1,16 @@
+| quantity | <=1 | 1-1.785 |
+| --- | --- | --- |
+| states | 28 | 8 |
+| phi_RMS | 0.0124626433 | 0.0252198512 |
+| phi_RMS_limit | 0.01 | 0.01 |
+| phi_max | 0.0214463625 | 0.0329979647 |
+| phi_max_limit | 0.03 | 0.03 |
+| gamma_MARD_percent | 4.10246092 | 3.88682546 |
+| gamma_MARD_limit_percent | 2 | 2 |
+| gamma_max_percent | 7.92296053 | 5.3590461 |
+| gamma_max_limit_percent | 5 | 5 |
+| passes | False | False |
+| phi_RMS_passes | False | False |
+| phi_max_passes | True | False |
+| gamma_MARD_percent_passes | False | False |
+| gamma_max_percent_passes | False | False |

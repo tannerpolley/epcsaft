@@ -1,0 +1,17 @@
+{
+  "design_sha256": "f075b5cdb63ec1ecda1fd58bc3c20e7a1788b7e95dd22e57ade43b226f83b59a",
+  "readiness_sha256": "33ef5a66deac3c319e706be037e85c7debb9462435c829d054e5bbb3e445cfcb",
+  "amendment_sha256": "4e9cb84f892f1b7053f7886f8ba5a857fb10422184d0e328ecfaba7ec2617a83",
+  "temperature_K": 298.15, "pressure_Pa": 100000,
+  "maximum_iterations": 1500, "maximum_seconds": 450,
+  "total_maximum_iterations": 4500, "total_maximum_seconds": 1350,
+  "starts": [[0], [-1.5], [-3]],
+  "H_fixed": {"segment_diameter": 2.274, "dispersion_energy_over_k": 1616.4939, "packing_diameter": 2.0011200000000002, "debye_huckel_diameter": 2.0011200000000002, "born_diameter": 2.274},
+  "H_Cl_k": 1, "H_Cl_convention": "Explicit modelling assumption: no H-Cl dispersion (cross energy exactly zero)",
+  "coordinate": {"family": "k_ij", "pair": ["hydronium-cation", "water"], "origin": 0, "scale": 1, "bounds": [-50, 1]},
+  "identification": {"rank_ratio_strict": 1e-14, "bound_distance_strict": 1e-6, "cost_floor": 1e-10, "cost_fraction": 1e-4, "max_h": 0.051, "max_endpoint_distance": 0.051},
+  "training_states": 30,
+  "weights": "Unchanged four equal-total-weight groups, phi difference scale .01 and gamma log ratio with ln(1.02) scale",
+  "input_hashes": {"candidate.json": "bdf8038c1b16b2a68f11a51623fd23af739a851059d5d42855077a822531f2ad", "hamer-wu-hcl.csv": "04371336304c9ddc5625c314adcaee453bcce72c859be651999f831ef62233c2"},
+  "native_library": {"path": "build/engine-meson/shared/libepcsaft_native.so"}
+}

@@ -1,0 +1,15 @@
+solvent,salt,series,x_salt,x_salt_upper_bound,height_px,pixel_x
+C4mim-TfO,NaF,advanced,,0.000197,1.0,227
+C4mim-TfO,NaF,experiment,,0.000197,2.0,205
+C4mim-TfO,NaCl,advanced,0.001509,,23.0,293
+C4mim-TfO,NaCl,experiment,0.000984,,15.0,271
+C4mim-TfO,NaBr,advanced,0.006037,,92.0,359
+C4mim-TfO,NaBr,experiment,0.002231,,34.0,337
+C4mim-TfO,NaI,advanced,0.022638,,345.0,426
+C4mim-TfO,NaI,experiment,0.014042,,214.0,404
+C4mim-TfO,KF,advanced,0.002231,,34.0,492
+C4mim-TfO,KF,experiment,0.000919,,14.0,470
+C4mim-TfO,KCl,advanced,0.007808,,119.0,559
+C4mim-TfO,KCl,experiment,0.005052,,77.0,537
+C4mim-TfO,KBr,advanced,0.011549,,176.0,625
+C4mim-TfO,KBr,experiment,0.016273,,248.0,603

@@ -1,0 +1,35 @@
+model,group_or_solvent_a,site_a,group_or_solvent_b,site_b,quantity,printed_value,unit,source_locator,note
+SAFT-gamma-Mie,Cl-,,Li+,,unlike_dispersion_energy_over_k,8.2904,K,Perdomo 2025 Appendix D Table D.9; Cl-/Li+ row,
+SAFT-gamma-Mie,Cl-,,Li+,,unlike_repulsive_exponent,CR,1,Perdomo 2025 Appendix D Table D.9; Cl-/Li+ row,CR means source combining rule; not a numeric coefficient
+SAFT-gamma-Mie,Cl-,,Na+,,unlike_dispersion_energy_over_k,27.938,K,Perdomo 2025 Appendix D Table D.9; Cl-/Na+ row,
+SAFT-gamma-Mie,Cl-,,Na+,,unlike_repulsive_exponent,CR,1,Perdomo 2025 Appendix D Table D.9; Cl-/Na+ row,CR means source combining rule; not a numeric coefficient
+SAFT-gamma-Mie,Cl-,,CH2OH,,unlike_dispersion_energy_over_k,201.41,K,Perdomo 2025 Appendix D Table D.9; Cl-/CH2OH row,
+SAFT-gamma-Mie,Cl-,,CH2OH,,unlike_repulsive_exponent,CR,1,Perdomo 2025 Appendix D Table D.9; Cl-/CH2OH row,CR means source combining rule; not a numeric coefficient
+SAFT-gamma-Mie,Cl-,,H2O,,unlike_dispersion_energy_over_k,95.406,K,Perdomo 2025 Appendix D Table D.9; Cl-/H2O row,
+SAFT-gamma-Mie,Cl-,,H2O,,unlike_repulsive_exponent,CR,1,Perdomo 2025 Appendix D Table D.9; Cl-/H2O row,CR means source combining rule; not a numeric coefficient
+SAFT-gamma-Mie,Li+,,CH2OH,,unlike_dispersion_energy_over_k,1952.6,K,Perdomo 2025 Appendix D Table D.9; Li+/CH2OH row,
+SAFT-gamma-Mie,Li+,,CH2OH,,unlike_repulsive_exponent,CR,1,Perdomo 2025 Appendix D Table D.9; Li+/CH2OH row,CR means source combining rule; not a numeric coefficient
+SAFT-gamma-Mie,Li+,,H2O,,unlike_dispersion_energy_over_k,1023.1,K,Perdomo 2025 Appendix D Table D.9; Li+/H2O row,
+SAFT-gamma-Mie,Li+,,H2O,,unlike_repulsive_exponent,CR,1,Perdomo 2025 Appendix D Table D.9; Li+/H2O row,CR means source combining rule; not a numeric coefficient
+SAFT-gamma-Mie,Na+,,H2O,,unlike_dispersion_energy_over_k,539.68,K,Perdomo 2025 Appendix D Table D.9; Na+/H2O row,
+SAFT-gamma-Mie,Na+,,H2O,,unlike_repulsive_exponent,CR,1,Perdomo 2025 Appendix D Table D.9; Na+/H2O row,CR means source combining rule; not a numeric coefficient
+SAFT-gamma-Mie,CH2,,CH3,,unlike_dispersion_energy_over_k,350.77,K,Perdomo 2025 Appendix D Table D.9; CH2/CH3 row,
+SAFT-gamma-Mie,CH2,,CH3,,unlike_repulsive_exponent,CR,1,Perdomo 2025 Appendix D Table D.9; CH2/CH3 row,CR means source combining rule; not a numeric coefficient
+SAFT-gamma-Mie,CH2,,CH2OH,,unlike_dispersion_energy_over_k,423.17,K,Perdomo 2025 Appendix D Table D.9; CH2/CH2OH row,
+SAFT-gamma-Mie,CH2,,CH2OH,,unlike_repulsive_exponent,CR,1,Perdomo 2025 Appendix D Table D.9; CH2/CH2OH row,CR means source combining rule; not a numeric coefficient
+SAFT-gamma-Mie,CH2,,H2O,,unlike_dispersion_energy_over_k,423.63,K,Perdomo 2025 Appendix D Table D.9; CH2/H2O row,
+SAFT-gamma-Mie,CH2,,H2O,,unlike_repulsive_exponent,100.00,1,Perdomo 2025 Appendix D Table D.9; CH2/H2O row,
+SAFT-gamma-Mie,CH3,,CH2OH,,unlike_dispersion_energy_over_k,333.20,K,Perdomo 2025 Appendix D Table D.9; CH3/CH2OH row,
+SAFT-gamma-Mie,CH3,,CH2OH,,unlike_repulsive_exponent,CR,1,Perdomo 2025 Appendix D Table D.9; CH3/CH2OH row,CR means source combining rule; not a numeric coefficient
+SAFT-gamma-Mie,CH3,,H2O,,unlike_dispersion_energy_over_k,358.18,K,Perdomo 2025 Appendix D Table D.9; CH3/H2O row,
+SAFT-gamma-Mie,CH3,,H2O,,unlike_repulsive_exponent,100.00,1,Perdomo 2025 Appendix D Table D.9; CH3/H2O row,
+SAFT-gamma-Mie,CH2OH,,H2O,,unlike_dispersion_energy_over_k,353.37,K,Perdomo 2025 Appendix D Table D.9; CH2OH/H2O row,
+SAFT-gamma-Mie,CH2OH,,H2O,,unlike_repulsive_exponent,CR,1,Perdomo 2025 Appendix D Table D.9; CH2OH/H2O row,CR means source combining rule; not a numeric coefficient
+SAFT-gamma-Mie,CH2OH,e,H2O,H,association_energy_over_k,2153.2,K,Perdomo 2025 Appendix D Table D.10; CH2OH e/H2O H row,not dimensionless PC-SAFT association volume
+SAFT-gamma-Mie,CH2OH,e,H2O,H,bonding_volume,147.40,angstrom^3,Perdomo 2025 Appendix D Table D.10; CH2OH e/H2O H row,not dimensionless PC-SAFT association volume
+SAFT-gamma-Mie,CH2OH,H,H2O,e,association_energy_over_k,621.68,K,Perdomo 2025 Appendix D Table D.10; CH2OH H/H2O e row,not dimensionless PC-SAFT association volume
+SAFT-gamma-Mie,CH2OH,H,H2O,e,bonding_volume,425.00,angstrom^3,Perdomo 2025 Appendix D Table D.10; CH2OH H/H2O e row,not dimensionless PC-SAFT association volume
+Schreckenberg Eq.44,water,,,,dielectric_volume,0.3777,dm3/mol,Schreckenberg 2014 Table 1 p.2347; water Eq.44 row; Zotero PK4KVZXH PDF 3HLEYVC2,Perdomo Eqs.73-77 cite this correlation
+Schreckenberg Eq.44,water,,,,dielectric_temperature,1403.0,K,Schreckenberg 2014 Table 1 p.2347; water Eq.44 row; Zotero PK4KVZXH PDF 3HLEYVC2,Perdomo Eqs.73-77 cite this correlation
+Schreckenberg Eq.44,1-butanol,,,,dielectric_volume,1.515,dm3/mol,Schreckenberg 2014 Table 1 p.2347; 1-butanol Eq.44 row; Zotero PK4KVZXH PDF 3HLEYVC2,Perdomo Eqs.73-77 cite this correlation
+Schreckenberg Eq.44,1-butanol,,,,dielectric_temperature,593.3,K,Schreckenberg 2014 Table 1 p.2347; 1-butanol Eq.44 row; Zotero PK4KVZXH PDF 3HLEYVC2,Perdomo Eqs.73-77 cite this correlation

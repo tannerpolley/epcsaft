@@ -1,0 +1,55 @@
+# El Guendouzi, Benbiyi, Dinane & Azougen (2004) Calphad 28, 97-103, doi:10.1016/j.calphad.2004.05.004: hygrometric LiCl-NaCl-H2O, 298.15 K.
+# Read from the plotted points of Lassin, Christov, Andre & Azaroual (2015) Am. J. Sci. 315, 204-256, doi:10.2475/03.2015.02, Fig. 22, printed p. 244 (PDF p. 41),
+# open PDF https://ajsonline.org/article/65646 . The figure is vector art; marker centres come from the PDF drawing operators (extract_lassin2015_fig22.py).
+# Reading: x axis = m(LiCl) as labelled; the printed legend ratios are inverted (the 'Li/Na = 0.5' diamonds are Li-rich, m_LiCl/m_NaCl = 2), because
+#  (a) the diamond series reaches m(LiCl) = 4.0 at total 6.0, which with the printed ratio would need m(NaCl) = 8 > halite saturation (6.15 mol/kg), and
+#  (b) at the same total molality phi rises from circles to squares to diamonds, i.e. with LiCl fraction (pure LiCl phi exceeds pure NaCl phi).
+# Compositions: total Cl molality lies on the design grid 0.3-6.0 mol/kg stated by Lassin p. 233; m_LiCl_plotted is the plotted value (0.01 grid), m_LiCl/m_NaCl are design values.
+# phi is the plotted value snapped to its 0.001 grid (raw read within 3.5e-4 of the grid). a_w_from_phi = exp(-M_w * 2 m_total * phi) is arithmetic, not a source value.
+# Not verified against the El Guendouzi 2004 table itself (paywalled). Two diamond points share total 1.0 (duplicate composition, phi 0.945 and 0.973), as plotted.
+marker,legend_printed,m_LiCl_over_m_NaCl,m_total_Cl,m_LiCl_plotted,m_LiCl,m_NaCl,I,phi,a_w_from_phi,x_pt,y_pt
+circle,Li/Na = 2,0.5,0.3,0.10,0.1000,0.2000,0.3,0.929,0.9900,133.056,530.308
+circle,Li/Na = 2,0.5,0.4,0.13,0.1333,0.2667,0.4,0.948,0.9864,134.708,525.023
+circle,Li/Na = 2,0.5,0.6,0.20,0.2000,0.4000,0.6,0.934,0.9800,138.562,528.919
+circle,Li/Na = 2,0.5,0.9,0.30,0.3000,0.6000,0.9,0.948,0.9697,144.068,525.023
+circle,Li/Na = 2,0.5,1.0,0.33,0.3333,0.6667,1.0,0.958,0.9661,145.719,522.246
+circle,Li/Na = 2,0.5,1.5,0.50,0.5000,1.0000,1.5,0.987,0.9481,155.074,514.176
+circle,Li/Na = 2,0.5,2.0,0.67,0.6667,1.3333,2.0,1.035,0.9281,164.438,500.825
+circle,Li/Na = 2,0.5,2.5,0.83,0.8333,1.6667,2.5,1.054,0.9094,173.244,495.538
+circle,Li/Na = 2,0.5,3.0,1.00,1.0000,2.0000,3.0,1.105,0.8874,182.601,481.352
+circle,Li/Na = 2,0.5,3.5,1.17,1.1667,2.3333,3.5,1.182,0.8615,191.964,459.938
+circle,Li/Na = 2,0.5,4.0,1.33,1.3333,2.6667,4.0,1.221,0.8386,200.770,449.085
+circle,Li/Na = 2,0.5,4.5,1.50,1.5000,3.0000,4.5,1.275,0.8132,210.126,434.065
+circle,Li/Na = 2,0.5,5.0,1.67,1.6667,3.3333,5.0,1.345,0.7848,219.489,414.599
+circle,Li/Na = 2,0.5,5.5,1.83,1.8333,3.6667,5.5,1.377,0.7612,228.296,405.694
+circle,Li/Na = 2,0.5,6.0,2.00,2.0000,4.0000,6.0,1.429,0.7342,237.652,391.226
+square,Li/Na = 1,1,0.3,0.15,0.1500,0.1500,0.3,0.939,0.9899,135.810,527.524
+square,Li/Na = 1,1,0.4,0.20,0.2000,0.2000,0.4,0.937,0.9866,138.563,528.081
+square,Li/Na = 1,1,0.6,0.30,0.3000,0.3000,0.6,0.944,0.9798,144.068,526.133
+square,Li/Na = 1,1,0.9,0.45,0.4500,0.4500,0.9,0.965,0.9692,152.328,520.296
+square,Li/Na = 1,1,1.0,0.50,0.5000,0.5000,1.0,0.988,0.9650,155.076,513.896
+square,Li/Na = 1,1,1.5,0.75,0.7500,0.7500,1.5,1.024,0.9462,168.843,503.885
+square,Li/Na = 1,1,2.0,1.00,1.0000,1.0000,2.0,1.066,0.9261,182.601,492.204
+square,Li/Na = 1,1,2.5,1.25,1.2500,1.2500,2.5,1.093,0.9062,196.367,484.690
+square,Li/Na = 1,1,3.0,1.50,1.5000,1.5000,3.0,1.150,0.8831,210.127,468.835
+square,Li/Na = 1,1,3.5,1.75,1.7500,1.7500,3.5,1.211,0.8584,223.893,451.868
+square,Li/Na = 1,1,4.0,2.00,2.0000,2.0000,4.0,1.209,0.8401,237.652,452.425
+square,Li/Na = 1,1,4.5,2.25,2.2500,2.2500,4.5,1.326,0.8065,251.418,419.879
+square,Li/Na = 1,1,5.0,2.50,2.5000,2.5000,5.0,1.401,0.7769,265.177,399.022
+square,Li/Na = 1,1,5.5,2.75,2.7500,2.7500,5.5,1.459,0.7489,278.945,382.888
+square,Li/Na = 1,1,6.0,3.00,3.0000,3.0000,6.0,1.513,0.7210,292.703,367.868
+diamond,Li/Na = 0.5,2,0.3,0.20,0.2000,0.1000,0.3,0.941,0.9899,138.562,526.974
+diamond,Li/Na = 0.5,2,0.6,0.40,0.4000,0.2000,0.6,0.947,0.9797,149.572,525.304
+diamond,Li/Na = 0.5,2,0.9,0.60,0.6000,0.3000,0.9,0.971,0.9690,160.584,518.624
+diamond,Li/Na = 0.5,2,1.0,0.67,0.6667,0.3333,1.0,0.945,0.9665,164.438,525.861
+diamond,Li/Na = 0.5,2,1.0,0.67,0.6667,0.3333,1.0,0.973,0.9655,164.438,518.069
+diamond,Li/Na = 0.5,2,1.5,1.00,1.0000,0.5000,1.5,1.014,0.9467,182.601,506.667
+diamond,Li/Na = 0.5,2,2.0,1.33,1.3333,0.6667,2.0,1.063,0.9263,200.770,493.036
+diamond,Li/Na = 0.5,2,2.5,1.67,1.6667,0.8333,2.5,1.098,0.9058,219.489,483.304
+diamond,Li/Na = 0.5,2,3.0,2.00,2.0000,1.0000,3.0,1.167,0.8815,237.651,464.110
+diamond,Li/Na = 0.5,2,3.5,2.33,2.3333,1.1667,3.5,1.227,0.8566,255.822,447.419
+diamond,Li/Na = 0.5,2,4.0,2.67,2.6667,1.3333,4.0,1.314,0.8275,274.541,423.223
+diamond,Li/Na = 0.5,2,4.5,3.00,3.0000,1.5000,4.5,1.357,0.8025,292.703,411.256
+diamond,Li/Na = 0.5,2,5.0,3.33,3.3333,1.6667,5.0,1.428,0.7732,310.873,391.512
+diamond,Li/Na = 0.5,2,5.5,3.67,3.6667,1.8333,5.5,1.519,0.7401,329.592,366.195
+diamond,Li/Na = 0.5,2,6.0,4.00,4.0000,2.0000,6.0,1.575,0.7114,347.754,350.618

@@ -1,0 +1,62 @@
+{
+  "A": {
+    "asl_library": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-676-h-sr-ba-and-sulfate-on-the-qualified-4/build/issue-676/base-a/build/engine-meson/shared/libepcsaft_asl.so",
+    "asl_library_sha256": "ea51dd51f3317732a1781e588c5c5980e1ab0e1ff710e21e6fbeadff6f553548",
+    "build_configuration": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-676-h-sr-ba-and-sulfate-on-the-qualified-4/build/issue-676/base-a/build/engine-meson/shared/meson-info/intro-buildoptions.json",
+    "build_configuration_sha256": "b70e06696b0fdb8beaa93e734f2e54c6bab2180d843f14c9792679730d9dd6de",
+    "direct_url": {
+      "dir_info": {
+        "editable": true
+      },
+      "url": "file:///home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-676-h-sr-ba-and-sulfate-on-the-qualified-4/build/issue-676/base-a/engine"
+    },
+    "epcsaft": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-676-h-sr-ba-and-sulfate-on-the-qualified-4/build/issue-676/base-a/engine/src/epcsaft/__init__.py",
+    "epcsaft_sha256": "984ad28616d1eeb7fbb51cecf366ece0b79a29624306b2995da8f137e55bc873",
+    "extension": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-676-h-sr-ba-and-sulfate-on-the-qualified-4/build/issue-676/base-a/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so",
+    "extension_sha256": "bd27e11eb164394549e31714682bd8624eceb8bae0915c0ea53b4213da75b1ac",
+    "interpreter": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-676-h-sr-ba-and-sulfate-on-the-qualified-4/build/issue-676/base-a/.venv/bin/python",
+    "lock_sha256": "4604743e8d99eb511d24a7570569b1a0cd1c1fbdba13e143eec9cd3a516e7fc2",
+    "meson_build_dir": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-676-h-sr-ba-and-sulfate-on-the-qualified-4/build/issue-676/base-a/build/engine-meson/shared",
+    "meson_configuration_sha256": "c5a452d5a36bbf70083ea920465de33fa8104d9dda1028ae09771473cc78862a",
+    "native_library": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-676-h-sr-ba-and-sulfate-on-the-qualified-4/build/issue-676/base-a/build/engine-meson/shared/libepcsaft_native.so",
+    "native_library_sha256": "00d3ab7dad01aef879046a7446acc6a9408c849172589898d6351b50de36491b",
+    "prepared_stage": "editable",
+    "python": "3.13.14 (main, Jun 23 2026, 15:18:27) [Clang 22.1.3 ]",
+    "source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source_revision": "382289ddb8edb4468b5736610992c3a0c102d831",
+    "source_root": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-676-h-sr-ba-and-sulfate-on-the-qualified-4/build/issue-676/base-a",
+    "version": "0.2.0.dev0",
+    "wheel": null,
+    "wheel_sha256": null
+  },
+  "B": {
+    "asl_library": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-676-h-sr-ba-and-sulfate-on-the-qualified-4/build/engine-meson/shared/libepcsaft_asl.so",
+    "asl_library_sha256": "eeb1d1dc5335d4a2a4cfb5bc054f31517a1291ff4a94909cfd970cfe5514453a",
+    "build_configuration": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-676-h-sr-ba-and-sulfate-on-the-qualified-4/build/engine-meson/shared/meson-info/intro-buildoptions.json",
+    "build_configuration_sha256": "de165de948482bb200e8abedcf5387e384488cb4c9eea02a6fe5fef10db40fa7",
+    "direct_url": {
+      "dir_info": {
+        "editable": true
+      },
+      "url": "file:///home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-676-h-sr-ba-and-sulfate-on-the-qualified-4/engine"
+    },
+    "epcsaft": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-676-h-sr-ba-and-sulfate-on-the-qualified-4/engine/src/epcsaft/__init__.py",
+    "epcsaft_sha256": "984ad28616d1eeb7fbb51cecf366ece0b79a29624306b2995da8f137e55bc873",
+    "extension": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-676-h-sr-ba-and-sulfate-on-the-qualified-4/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so",
+    "extension_sha256": "d1461bdb2c6ece4db912e1246fe0048df265f6a1ab6a49b6a58cccaff36e985a",
+    "interpreter": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-676-h-sr-ba-and-sulfate-on-the-qualified-4/.venv/bin/python",
+    "lock_sha256": "4604743e8d99eb511d24a7570569b1a0cd1c1fbdba13e143eec9cd3a516e7fc2",
+    "meson_build_dir": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-676-h-sr-ba-and-sulfate-on-the-qualified-4/build/engine-meson/shared",
+    "meson_configuration_sha256": "5263106751e5fe18613718748af8e4e9e925b5db51ce5124980687f70535ff87",
+    "native_library": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-676-h-sr-ba-and-sulfate-on-the-qualified-4/build/engine-meson/shared/libepcsaft_native.so",
+    "native_library_sha256": "56738a230c027567b1866328b88d4343a7a65efd56e37eeb38edfcc14476d907",
+    "prepared_stage": "editable",
+    "python": "3.13.14 (main, Jun 23 2026, 15:18:27) [Clang 22.1.3 ]",
+    "source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source_revision": "dc66cc9b7c9b57d33a439fec6dc8fab59d7de47c",
+    "source_root": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-676-h-sr-ba-and-sulfate-on-the-qualified-4",
+    "version": "0.2.0.dev0",
+    "wheel": null,
+    "wheel_sha256": null
+  }
+}

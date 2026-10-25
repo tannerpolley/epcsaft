@@ -1,0 +1,88 @@
+{
+  "native_snapshot": "a0adb1cd",
+  "native_snapshot_basis": "Root verified main 62ed1b2b Engine/runtime byte-identical to a0; replay uses pinned a0 wheel",
+  "canonical_checkout": "62ed1b2b76bb5e08403e68709a573b13bed7c093",
+  "wheel_sha256": "398bcf8b90185b68cc796b5db258a9bfa3e919b9fb74bbb29171e003a03b3cc7",
+  "wheel": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+  "installed_identity": "14 wheel RECORD hashes matched immediately before replay; runner.log retains verification",
+  "case_driver_checkout": "b5a13cea11536e420f00c457f45391cd10fe1b08",
+  "script_sha256": {
+    "engine.py": "583a9b34b7ffd5c0ebc24140d7231b48a9b765a2dc8613acfac31b0346928db4",
+    "run.py": "777ce72837a71c0c3f0ffef06ea463a439de0c6b1b416c3ee286cca54cec8a5c"
+  },
+  "input_sha256": "30e9ee4b832eb1e569c980a621a922bf559feaf8112d7f347519b4f5f985c797",
+  "original_qualification": {
+    "wheel_sha256": "da56e55eab2dac8b75c2497da07e4895d838d82d2d78b305e4a30b81bfef3950",
+    "native_snapshot": "efcb50fc",
+    "summary_sha256": "8a99ad2284402c54bff55a8f5c43efce3870c3caa996d3ae7d637a6765166138",
+    "collector_checkout": "c1c29e94",
+    "timed_checks_original_sha256": "8560bfcb81ee75e242ba556dd1c60d3d4aa802639e2f71e166a1694b7b1d6d8c"
+  },
+  "controls": {
+    "process_repetitions": 3,
+    "warmups_per_selection": 5,
+    "samples_per_selection_per_repetition": 25,
+    "selected_records_per_repetition": 14,
+    "warm_samples_per_repetition": 350,
+    "inner_timeout_s": 180,
+    "numerical_outer_timeout_s": 600,
+    "runner_outer_timeout_s": 840,
+    "memory_scope_max_bytes": 6442450944,
+    "threads": {
+      "OMP_NUM_THREADS": 1,
+      "OPENBLAS_NUM_THREADS": 1,
+      "MKL_NUM_THREADS": 1,
+      "JULIA_NUM_THREADS": 1
+    },
+    "declared_nice_adjustment": 10,
+    "actual_niceness": [
+      19,
+      19,
+      19
+    ]
+  },
+  "runner": {
+    "path": "/tmp/epc-delivery-queue/run-222-replay.sh",
+    "sha256": "68d72edda0bc31e95e358febb8525b36f0f0eb6d64dfba744258a1343f235a20",
+    "command": "timeout --signal=TERM --kill-after=90s 840s bash /tmp/epc-delivery-queue/run-222-replay.sh",
+    "exit_code": 0,
+    "restored_wheel_sha256": "e28d258df06eac39711c59a79f9ce2b69fc8ac7565637bfba0dbef21863d8dc7",
+    "restoration_identity": "Original #231 wheel path restored; 14 installed RECORD hashes matched"
+  },
+  "checked_fields_by_campaign": {
+    "Engine_replay": 183,
+    "FeOs_original_first_call": 150,
+    "Clapeyron_original_first_call": 147
+  },
+  "numerical_misses": 0,
+  "max_difference_from_qualification": 0,
+  "warm_elapsed_s": 10.210353684,
+  "max_warm_sample_s": 0.057422367,
+  "raw_sha256": {
+    "results/engine-replay-raw/Engine-timing-replay-1.json.gz": "19deb7316984fcb1fb4102b05bb8e272d9d32c4f7f647f532ce7bfc4c0603e18",
+    "results/engine-replay-raw/Engine-timing-replay-2.json.gz": "aa3b3c7601568b5e9cfe4380fa166328946441cb9c70851499a47bdee4dc8eff",
+    "results/engine-replay-raw/Engine-timing-replay-3.json.gz": "ae4b35edf76ef7eff700a4fc9d1d285194d5579855c95e054d2533b91f1a349a",
+    "results/engine-replay-raw/Engine-timing-replay.log.gz": "32a31bfa05e4bfc115b599b1750d5f6abac8bb54e598c765d38f0709574dcc88",
+    "results/engine-replay-raw/runner.log": "bb8bc417d20e36d2ec0b2320d7b73ab96bcd61dd4ff393656f31737ad94dea99"
+  },
+  "limits": [
+    "Engine retains the last measured sample return, not every warm return.",
+    "Original Engine timing records remain empty and unqualified.",
+    "Comparator retained fields are original first-call outputs, not warm-return snapshots.",
+    "Actual niceness 19 differs from nominal +10 adjustment because of inherited process niceness; load was nonzero.",
+    "Fresh a0 timings are separate from original comparator campaign; no paired speed claim.",
+    "Original strict source/closure misses and absent internals remain unchanged."
+  ],
+  "identical_process_logs": {
+    "Engine-timing-replay-1.log": "results/engine-replay-raw/Engine-timing-replay.log.gz",
+    "Engine-timing-replay-2.log": "results/engine-replay-raw/Engine-timing-replay.log.gz",
+    "Engine-timing-replay-3.log": "results/engine-replay-raw/Engine-timing-replay.log.gz"
+  },
+  "process_log_uncompressed_sha256": "6c19a3fa7be096262c4d4124ee0e223e77f7e4b716636572bfdfad4a142b4b2b",
+  "raw_output_encoding": "gzip, lossless original JSON bytes; homogeneous timing rows are read in engine-timing-replay.csv",
+  "raw_output_uncompressed_sha256": {
+    "Engine-timing-replay-3.json": "31d165940b51822fcaa05eb7e4f91125af3d9fea3fe18575ae3b73ca23ca3559",
+    "Engine-timing-replay-1.json": "97c11041e37e737a2239fd2787dfddb59b0bd7e3c042e1be5e526a96b497400e",
+    "Engine-timing-replay-2.json": "3eca6f2ae814ee113216b43217ac29f5b8bb932898d4869942f77baec22cb47b"
+  }
+}

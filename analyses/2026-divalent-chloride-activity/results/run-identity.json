@@ -1,0 +1,6 @@
+{
+  "wheel_sha256": "093638fa8c8e1987792e0facaeb5c00d121c6965c69a3298754ee146f8610318",
+  "script_sha256": "b705a05b6738dd4e61a643a06e00a614db99e390aac333fababefc14f5d47bca",
+  "conditions": "298.15 K, 100000 Pa, fully dissociated chloride in pure water",
+  "limits": "No original Lobo fitting rows or verified Goldberg-Nuttall grid; no exact reproduction of Held Table4 AAD; no refit."
+}

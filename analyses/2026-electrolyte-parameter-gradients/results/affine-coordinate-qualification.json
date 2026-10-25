@@ -1,0 +1,144 @@
+{
+  "wheel_sha256": "9c59846dba0ead1e5dc396581514dd4322e62a2de9e1b8ce5469b96f8ed35b06",
+  "groups": {
+    "affine-columns": {
+      "comparisons": 101,
+      "passed": 101
+    },
+    "R1-F2": {
+      "comparisons": 27,
+      "passed": 27
+    },
+    "affine-recovery": {
+      "comparisons": 10,
+      "passed": 10
+    },
+    "R1-F3": {
+      "comparisons": 8,
+      "passed": 8
+    }
+  },
+  "coupled_inputs": {
+    "parameters": "properties_support::aqueous_electrolyte with explicit Na lengths",
+    "target_q_angstrom": 3.2,
+    "start_q_angstrom": 3.0,
+    "origin_angstrom": 3.0,
+    "scale_angstrom": 0.2,
+    "packing_and_DH_coefficient": 0.88,
+    "bounds_angstrom": [
+      2.4,
+      4.4
+    ],
+    "manufactured_Born_angstrom": 3.5,
+    "temperature_K": 298.15,
+    "pressure_Pa": 100000,
+    "molality_mol_kg": [
+      0.1,
+      1,
+      4.5
+    ],
+    "hold_energy_tolerance_J_mol": 1e-06,
+    "hold_diameter_tolerance_angstrom": 1e-10
+  },
+  "signed_inputs": {
+    "parameters": "properties_support::neutral_binary",
+    "temperature_K": 200,
+    "pressure_Pa": 100000,
+    "composition": [
+      0.4,
+      0.6
+    ],
+    "branch": "liquid",
+    "coefficient": -0.88,
+    "origin": 0.1,
+    "scale": 0.2,
+    "k_ij": -0.088,
+    "Difference_scale": 1,
+    "FD_steps_optimizer_units": [
+      0.001,
+      0.0005,
+      0.00025
+    ]
+  },
+  "identity_inputs": {
+    "parameters": "properties_support::associating_binary with tied sigma and reciprocal k",
+    "temperature_K": 300,
+    "density_mol_m3": 5000,
+    "composition": [
+      0.4,
+      0.6
+    ],
+    "sigma_origin_angstrom": 2.5,
+    "sigma_scale_angstrom": 0.1,
+    "optimizer": [
+      0.3,
+      -0.02
+    ]
+  },
+  "evidence_type": "numerical verification",
+  "limitations": [
+    "Manufactured and derivative numerical verification only; no physical parameter validation.",
+    "Stage-2 Mg/Ca fit unstarted; no investigator promotion for manuscript use."
+  ],
+  "environment_restored_wheel_sha256": "e28d258df06eac39711c59a79f9ce2b69fc8ac7565637bfba0dbef21863d8dc7",
+  "source_checkpoint": "main 9c31cb9a plus affine revision 2 and required start scope",
+  "readiness": "revision 2 Ready, owner confirmation 2026-10-05",
+  "derivative_basis": {
+    "optimizer_gradient": "prediction dy/dv",
+    "residual_optimizer_gradient": "unit-weight residual dr/dv"
+  },
+  "log_column_max_abs_error": 2.2900678272111397e-10,
+  "log_column_max_Richardson_uncertainty": 3.2860103527099227e-10,
+  "held_reference_max_energy_error_J_mol": 5.820766091346741e-11,
+  "checks": {
+    "python_passed": 116,
+    "native_suites_passed": 6,
+    "check_all_passed": true,
+    "khudaida_passed": true,
+    "stage1_preservation_passed": true
+  },
+  "delivered_review": {
+    "status": "Supported",
+    "revision": "9c7286a3",
+    "authority": "owner confirmation of delivered re-review"
+  },
+  "integration_gate": {
+    "merge_commit": "a31f05ae45d43abdfcf7014149f5fe2cae422f21",
+    "origin_main": "c3100e94",
+    "wheel_sha256": "71ee347fb606352dff9b69df1ddd930b62a7ddbdacb0cec7a0c9f4aece94cfcc",
+    "checks": {
+      "python_passed": 117,
+      "python_deselected": 1,
+      "native_suites_passed": 6,
+      "check_all": "passed"
+    },
+    "khudaida": {
+      "temperature_K": 293.15,
+      "pressure_Pa": 100000,
+      "accepted_cases": 8,
+      "formula_comparisons": 64,
+      "grand_formula_aad": 0.011054929498369245,
+      "paper_epcsaft_grand_aad": 0.0161,
+      "maximum_material_balance_error": 2.220446049250313e-16,
+      "maximum_phase_charge_error": 0.0,
+      "maximum_relative_pressure_error": 4.4170883484184743e-11,
+      "maximum_classified_residual": 9.795338724153903e-15,
+      "claim_limits": [
+        "fixed-parameter paper-correlation-scale agreement",
+        "not agreement within experimental uncertainty",
+        "declared local two-liquid branch",
+        "not reactive Lithium qualification"
+      ],
+      "retained_operands_sha256": {
+        "analyses/2026-khudaida-idaes-settler/results/fixed-feed/stage-results.csv": "fa39f166d6d2d671a59999dcff5e2a25deafbcd43ee08e43fbe227431aa61458",
+        "analyses/2026-khudaida-idaes-settler/results/fixed-feed/engine-residuals.csv": "e9a15992c8d3d628f67a1cb56f6636590a0732fca3526e0efb20161de99a90c3",
+        "analyses/2026-khudaida-idaes-settler/results/fixed-feed/qualification-comparison.csv": "a6a8ee82d3f682d954b3589faf5babb2ac0f875b2a201e4e17a99cc5ea977d0b"
+      },
+      "retained_outputs_identical": true
+    },
+    "environment": {
+      "lock_order": "environment lock then agent-heavy",
+      "reference_wheel_restored_and_verified": true
+    }
+  }
+}

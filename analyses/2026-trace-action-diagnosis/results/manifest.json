@@ -1,0 +1,10 @@
+{
+  "source": "f909bb21a93171c38465adba8777cd3b0bc6c53d",
+  "wheel_sha256": "9f73aeb466c54eff80c89a8776c90d49cb9c9c2d130f0eb15bf0311c1f76e606",
+  "engine_module": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT-greenfield/.venv/lib/python3.13/site-packages/epcsaft/__init__.py",
+  "elapsed_seconds": 0.06110902199998236,
+  "probe_sha256": "2164bcb84d66dcc74f7861b87e39cb8fbd81e0d7745550e19c125a3ea17fd126",
+  "input_helper_sha256": "b57273f450830d858c3753b3b2819d7ba09bc40a1bf75ae4315a4802bee15be3",
+  "rows": 22,
+  "failed_screens": 2
+}

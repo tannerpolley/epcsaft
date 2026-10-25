@@ -1,0 +1,43 @@
+dataset,point_id,phase,x_water_salt_free,x_ethanol_salt_free,x_isobutanol_salt_free,input_coordinate_sum,source,case_decision,parameter_domain_status
+active_epcsaft,1,aqueous,0.9956274520890608,0.003057433786346489,0.0013151141245928036,1.0,exploratory installed-artifact result,PASS,exploratory_parameter_extrapolation
+active_epcsaft,1,organic,0.44165556933270256,0.13439211974808096,0.4239523109192165,1.0,exploratory installed-artifact result,PASS,exploratory_parameter_extrapolation
+active_epcsaft,2,aqueous,0.9954443803880286,0.0030038709619147567,0.001551748650056621,1.0,exploratory installed-artifact result,PASS,exploratory_parameter_extrapolation
+active_epcsaft,2,organic,0.44221953789190194,0.11158914851284105,0.446191313595257,1.0,exploratory installed-artifact result,PASS,exploratory_parameter_extrapolation
+active_epcsaft,3,aqueous,0.9952209607739891,0.002924718775501071,0.0018543204505097257,0.9999999999999999,exploratory installed-artifact result,PASS,exploratory_parameter_extrapolation
+active_epcsaft,3,organic,0.44421106928988346,0.08982162655523417,0.4659673041548824,1.0,exploratory installed-artifact result,PASS,exploratory_parameter_extrapolation
+active_epcsaft,4,aqueous,0.9953998977959364,0.0026446593426306883,0.001955442861432973,1.0,exploratory installed-artifact result,PASS,exploratory_parameter_extrapolation
+active_epcsaft,4,organic,0.4423423231996577,0.07773677810455441,0.4799208986957879,1.0,exploratory installed-artifact result,PASS,exploratory_parameter_extrapolation
+active_epcsaft,5,aqueous,0.9955554171702922,0.0023615063941241736,0.002083076435583655,1.0,exploratory installed-artifact result,PASS,exploratory_parameter_extrapolation
+active_epcsaft,5,organic,0.44078001903687636,0.0654869830842615,0.49373299787886216,1.0,exploratory installed-artifact result,PASS,exploratory_parameter_extrapolation
+active_epcsaft,6,aqueous,0.9958966819284317,0.0018802544638454974,0.0022230636077227926,1.0,exploratory installed-artifact result,PASS,exploratory_parameter_extrapolation
+active_epcsaft,6,organic,0.4388336469762829,0.04933930691834047,0.5118270461053765,1.0,exploratory installed-artifact result,PASS,exploratory_parameter_extrapolation
+active_epcsaft,7,aqueous,0.9963306658125715,0.0012920755767495942,0.00237725861067894,1.0,exploratory installed-artifact result,PASS,exploratory_parameter_extrapolation
+active_epcsaft,7,organic,0.43641208407311255,0.03199948200914041,0.531588433917747,1.0,exploratory installed-artifact result,PASS,exploratory_parameter_extrapolation
+experimental,1,aqueous,0.9833768949294303,0.012754835337166755,0.0038682697334030324,0.9999999999999999,Khudaida Table 3,LITERATURE_OR_INPUT,NOT_APPLICABLE
+experimental,1,organic,0.4162324649298597,0.13156312625250502,0.45220440881763524,1.0,Khudaida Table 3,LITERATURE_OR_INPUT,NOT_APPLICABLE
+experimental,2,aqueous,0.9851588628762542,0.010556020066889632,0.004285117056856188,1.0,Khudaida Table 3,LITERATURE_OR_INPUT,NOT_APPLICABLE
+experimental,2,organic,0.4137032956025243,0.10958629670439747,0.47671040769307826,1.0,Khudaida Table 3,LITERATURE_OR_INPUT,NOT_APPLICABLE
+experimental,3,aqueous,0.9872638062428228,0.008247207432926194,0.004488986324250966,1.0,Khudaida Table 3,LITERATURE_OR_INPUT,NOT_APPLICABLE
+experimental,3,organic,0.40818982779335206,0.08670404485382459,0.5051061273528233,1.0,Khudaida Table 3,LITERATURE_OR_INPUT,NOT_APPLICABLE
+experimental,4,aqueous,0.9889617827762158,0.006664583984171614,0.0043736332396126214,1.0,Khudaida Table 3,LITERATURE_OR_INPUT,NOT_APPLICABLE
+experimental,4,organic,0.40975560897435903,0.07021233974358974,0.5200320512820513,1.0,Khudaida Table 3,LITERATURE_OR_INPUT,NOT_APPLICABLE
+experimental,5,aqueous,0.9901196047841914,0.00530421216848674,0.004576183047321894,1.0,Khudaida Table 3,LITERATURE_OR_INPUT,NOT_APPLICABLE
+experimental,5,organic,0.40834918410251275,0.057763539893883276,0.533887276003604,1.0,Khudaida Table 3,LITERATURE_OR_INPUT,NOT_APPLICABLE
+experimental,6,aqueous,0.9908561928512054,0.004467996674979219,0.0046758104738154616,1.0,Khudaida Table 3,LITERATURE_OR_INPUT,NOT_APPLICABLE
+experimental,6,organic,0.4017419161077184,0.048753628991891076,0.5495044549003905,1.0,Khudaida Table 3,LITERATURE_OR_INPUT,NOT_APPLICABLE
+experimental,7,aqueous,0.9922158796056045,0.0030098598858329007,0.004774260508562532,1.0,Khudaida Table 3,LITERATURE_OR_INPUT,NOT_APPLICABLE
+experimental,7,organic,0.39579579579579577,0.03423423423423424,0.56996996996997,1.0,Khudaida Table 3,LITERATURE_OR_INPUT,NOT_APPLICABLE
+feed,1,feed,0.6845768457684578,0.07680076800768007,0.23862238622386225,0.9999899999999999,Khudaida Figure 4 feed digitization,LITERATURE_OR_INPUT,NOT_APPLICABLE
+feed,2,feed,0.70516,0.05998,0.23486,1.0,Khudaida Figure 4 feed digitization,LITERATURE_OR_INPUT,NOT_APPLICABLE
+feed,3,feed,0.7311526884731152,0.04456955430445695,0.22427775722242776,1.00001,Khudaida Figure 4 feed digitization,LITERATURE_OR_INPUT,NOT_APPLICABLE
+feed,4,feed,0.7383173831738318,0.03755037550375504,0.22413224132241324,0.9999899999999999,Khudaida Figure 4 feed digitization,LITERATURE_OR_INPUT,NOT_APPLICABLE
+feed,5,feed,0.74791,0.03054,0.22155,1.0,Khudaida Figure 4 feed digitization,LITERATURE_OR_INPUT,NOT_APPLICABLE
+feed,6,feed,0.75821,0.02213,0.21966,1.0,Khudaida Figure 4 feed digitization,LITERATURE_OR_INPUT,NOT_APPLICABLE
+feed,7,feed,0.7697200000000001,0.013720000000000001,0.21656000000000003,0.9999999999999999,Khudaida Figure 4 feed digitization,LITERATURE_OR_INPUT,NOT_APPLICABLE
+paper_epcsaft,1,organic,0.42878,0.13684,0.43438,1.0,Khudaida Figure 4 digitization,LITERATURE_OR_INPUT,NOT_APPLICABLE
+paper_epcsaft,2,organic,0.43212,0.11297,0.45491,1.0,Khudaida Figure 4 digitization,LITERATURE_OR_INPUT,NOT_APPLICABLE
+paper_epcsaft,3,organic,0.43303,0.08909,0.47788,1.0,Khudaida Figure 4 digitization,LITERATURE_OR_INPUT,NOT_APPLICABLE
+paper_epcsaft,4,organic,0.43078,0.07645,0.49277,1.0,Khudaida Figure 4 digitization,LITERATURE_OR_INPUT,NOT_APPLICABLE
+paper_epcsaft,5,organic,0.43237,0.061,0.50663,1.0,Khudaida Figure 4 digitization,LITERATURE_OR_INPUT,NOT_APPLICABLE
+paper_epcsaft,6,organic,0.43204,0.04696,0.521,1.0,Khudaida Figure 4 digitization,LITERATURE_OR_INPUT,NOT_APPLICABLE
+paper_epcsaft,7,organic,0.4310143101431015,0.034310343103431035,0.5346753467534675,0.9999899999999999,Khudaida Figure 4 digitization,LITERATURE_OR_INPUT,NOT_APPLICABLE

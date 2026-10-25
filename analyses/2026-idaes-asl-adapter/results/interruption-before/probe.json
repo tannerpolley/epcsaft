@@ -1,0 +1,15 @@
+{
+  "signal": "SIGTERM",
+  "source_commit": "3dea92b2501f7b807139aef49694a752524eaf0b",
+  "parent_returncode": -15,
+  "child_group_alive": true,
+  "child_group": 63155,
+  "partial_numerical_rows": 9,
+  "partial_rows_preserved": true,
+  "summary_status": "running",
+  "summary_stage": "started",
+  "injection": "real numerical child paused after an atomic scalar checkpoint",
+  "checkpoint_csv": "../interruption-checkpoint.csv",
+  "checkpoint_sha256": "cbca178a3da1a2b036155204a7d8bef4c0d9178a0decf2feff84234418342761",
+  "checkpoint_prefix_rows": 9
+}

@@ -1,0 +1,80 @@
+---
+title: "Khudaida: Figure 2 declared two-liquid comparison"
+format:
+  html:
+    embed-resources: true
+execute:
+  echo: false
+  cache: false
+  daemon: false
+---
+
+```{python}
+import json, pandas as pd
+runs=json.load(open('results/figure-2-diagnostics.json'))
+assert all(len(r['states'])==2 and r['states'][1]['admitted'] for r in runs)
+limit=json.load(open('inputs/source/live-reproduction.json'))['grand_formula_aad_limit']
+source=pd.read_csv('figures/figure-02/source/source-points.csv')
+values=[]
+for r in runs:
+    for name,p in zip(('aqueous','organic'),r['states'][1]['phases']):
+        values.append((int(r['pairing']['experimental_tie_line_id']),name,*p['formula'][:4]))
+columns='tie_line phase water ethanol isobutanol nacl'.split()
+pred=pd.DataFrame(values,columns=columns).set_index(columns[:2])
+ref=source.query("dataset == 'experimental_tieline'").set_index(columns[:2])
+ref=ref.rename(columns=lambda x:x.removeprefix('x_')).loc[pred.index,pred.columns]
+error=(pred-ref).abs()
+assert error.size==64 and error.notna().all().all() and error.to_numpy().mean()<=limit
+table=pd.concat({'prediction':pred,'measurement':ref,'absolute_error':error},axis=1)
+display(table)
+table.to_csv('results/figure-2-comparison.csv')
+display(error.size,error.to_numpy().mean(),limit)
+u=pd.read_csv('inputs/source/table-3-standard-uncertainties.csv').set_index('component')
+display(error/u['standard_uncertainty_mole_fraction'])
+display(pd.json_normalize(runs),json.load(open('results/figure-2-run-identity.json')))
+```
+
+The scalar outputs report the complete coordinate count followed by the grand
+mean absolute deviation and its accepted limit. The displayed comparison uses the complete retained Figure 2 population and
+its exact reversed feed-to-Table-3 pairing. All native auxiliary feed mappings
+and declared two-liquid states pass the accepted numerical criteria. The grand
+formula-coordinate mean absolute deviation satisfies the approved
+paper-correlation-scale limit. The separate uncertainty-normalized errors show
+that this does not establish agreement within measurement uncertainty. A
+standard uncertainty is not a confidence interval.
+
+The source is Khudaida et al., DOI `10.1021/acs.jced.5c00780`, Figure 2 and
+Table 3. The source rows retain temperature and nominal salt loading. The
+unchanged parameter packet is identified and hashed in the computed run
+identity. Overall feed coordinates are manufactured declarations from
+user-supplied figure traces; they are not measured inventories. Measured
+endpoints enter only this retained-file comparison and never seed a solve.
+
+Each source feed first enters an auxiliary native one-liquid solve as formula
+amounts with equal sodium and chloride stoichiometry. Its native normalized
+fractions then declare the actual feed as one mole of explicit species.
+The auxiliary density is a normalization/readout vehicle, without a physical
+single-phase stability claim. Native phase-amount ratios verify the source
+formula fractions, sodium/chloride equality and positive denominators before
+the actual declared two-liquid comparison. All formula and salt-free output
+projections read the corresponding admitted result through validated
+`project_prediction` calls. No coordinate triggers another equilibrium solve.
+
+The retained diagnostics expose the original source feed, mapped species feed,
+actual states, raw and classified rows with equation/kind/phase/index,
+projection declarations/status/value/message, denominator reads, exact state
+identity checks and solve-span counts before and after projection. Amount,
+charge, composition, mechanical-slope, pressure, phase-distance and minor-phase
+criteria remain separate numerical checks. The table is the primary display
+for these discrete declared states and coordinate errors; no interpolation or
+unperformed stability search is inferred.
+
+This is physical comparison under a fixed source model and a declared local
+two-liquid branch. It does not identify the cause of each coordinate discrepancy,
+prove global stability, or establish predictive accuracy beyond these conditions.
+Paper traces have unresolved pixel uncertainty and gain no acceptance threshold.
+Figures 3–7 remain unexecuted pending their temperature/salt-domain and comparison
+decisions; all original feed identities and historical evidence remain retained.
+No IDAES process calculation or historical split-wheel result is replayed here.
+Independent delivered review is pending; this notebook is not promoted for
+manuscript use.

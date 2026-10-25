@@ -1,0 +1,2 @@
+solvent,temperature_K,pressure_reported,density_kg_m3,absolute_print_tolerance_kg_m3,instrument_maximum_uncertainty_kg_m3,evidence_label,locator,zotero_key,pdf_attachment_key,markdown_attachment_key,doi
+ethanol,298.15,ambient,785.54,0.005,0.0015,physical comparison,Section 2.2; p. 329; mean pure-ethanol density,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040

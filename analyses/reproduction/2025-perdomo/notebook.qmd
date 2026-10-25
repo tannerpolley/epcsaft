@@ -1,0 +1,120 @@
+---
+title: "Perdomo strong-electrolyte phase stability: current native comparison"
+format:
+  html:
+    embed-resources: true
+jupyter: python3
+execute:
+  daemon: false
+---
+
+```{python}
+#| echo: false
+import json, gzip, textwrap
+from pathlib import Path
+import pandas as pd
+import matplotlib.pyplot as plt
+from IPython.display import display
+leaf = Path.cwd() / 'analyses/reproduction/2025-perdomo'
+s, e, t = [pd.read_csv(leaf / f'results/current/{name}.csv') for name in ['summary', 'endpoints', 'table5-comparison']]
+c, notes, cases = [json.loads((leaf / f'inputs/current/{name}.json').read_text()) for name in ['criteria', 'source-notes', 'cases']]
+parameters = pd.read_csv(leaf / 'inputs/current/parameter-selection.csv'); source = pd.read_csv(leaf / 'inputs/source/tables-3-5-source.csv', dtype=str); historical_count = (parameters.source_status=='historical assumption').sum()
+```
+
+## Question, basis and claim
+
+At `{python} c['temperature_K']` K, the selected ePC-SAFT declarations give solvent-only NaCl–water bubbles and conditional LiCl–water–butanol liquid states. These are **numerical verification: comparison between different models**, against Perdomo's calculated SAFT-γ Mie values ([paper](https://doi.org/10.1016/j.compchemeng.2024.108977), [supporting workbook](https://doi.org/10.5281/zenodo.13646853)). They provide no physical validation. Neither SAFT-γ Mie nor the HELD implementation is implemented here. Converged discrepancies remain of undetermined cause: changing equations, parameters and assumptions together does not isolate a cause.
+
+The native Engine owns all roots, equilibrium solves, finite stability searches and refinement. The notebook reads retained outputs only. The primary input locators and distinct source versus historical roles are retained in [the source parameter table](inputs/source/epcsaft-parameters-r2-source.csv) and [current selected inputs](inputs/current/parameter-selection.csv). The packet and file byte checks are in [source identities](inputs/current/source-identities.json); [run identity](results/current/run-identity.json) binds the calculation inputs and Engine revision. Results have not received independent delivered review or investigator promotion for manuscript use.
+
+## Source inconsistencies and numerical criteria
+
+The figure caption gives `{python} notes['paper_caption_temperature_K']` K, whereas the selected workbook rows and tables give `{python} notes['selected_temperature_K']` K. The paper describes `{python} notes['paper_figure3_count']` Figure 3 tie lines; the supplied workbook contains `{python} notes['workbook_figure3_count']`. Table 3's nominal molality and pressure and the separate workbook boundary remain distinct. The legacy interpolated upper boundary is a derived reference with unknown interpolation error. The printed vapor volume and packing fraction are preserved; the edited Markdown's alternative values are not adopted.
+
+```{python}
+#| echo: false
+print(pd.Series(c).drop(['licl_label', 'reporting_masses_kg_per_mol']).to_string()); display(source[source.case_id.str.startswith('table3')]); print('Printed Table 3 liquid implied molality:', float(source.query("phase=='liquid' and quantity=='x_cation'").iloc[0].printed_value)/(float(source.query("phase=='liquid' and quantity=='x_water'").iloc[0].printed_value)*c['reporting_masses_kg_per_mol'][0])); print('Printed vapor Z:', float(source.query("case_id.str.startswith('table3') and quantity=='pressure'", engine='python').iloc[0].printed_value)*float(source.query("case_id.str.startswith('table3') and phase=='vapor' and quantity=='molar_volume'", engine='python').iloc[0].printed_value)/(notes['gas_constant_J_per_mol_K']*c['temperature_K']))
+```
+
+Source uncertainty is unknown. Pressure display agreement uses the retained display half-unit, separately from raw-value errors. Native row, charge, amount-balance, pressure and chemical-potential checks use the frozen criteria shown above. Refinement changes must meet both composition and pressure limits. The objective comparison is the absolute difference between two usable same-model objectives, divided by total feed moles; it is never a bound on the signed objective itself. Table 5 composition intervals propagate each printed component's rounding through normalization.
+
+## NaCl solvent-only vapor
+
+Both models select Figiel's latest retained ion records and explicit Born controls. The second replaces ion-fraction suppression with the complete density-temperature declaration. Vapor support contains water only. Vapor ions are structural zeros; this is not a prediction of trace-ion concentrations. The plotted calculated states are discrete samples. Their pressure errors exceed source display precision; the cause of each converged cross-model discrepancy is undetermined.
+
+```{python}
+#| echo: false
+b=s[s.kind=='bubble']; fig, ax=plt.subplots(figsize=(7,4)); ax.scatter(b[b.model=='nacl-ion-suppression'].molality,b[b.model=='nacl-ion-suppression'].source_pressure_Pa,label='Perdomo calculated source',marker='x')
+for name,g in b.groupby('model'): ax.scatter(g.molality,g.pressure_Pa,label=name,s=16)
+ax.set(xlabel='NaCl molality / mol kg⁻¹ water',ylabel='Solvent-only bubble pressure / Pa'); ax.legend(); plt.show(); display(b[['model','molality','pressure_Pa','pressure_error_Pa','display_error_Pa','source_half_unit_Pa','usable']])
+```
+
+The topology stress uses each historical source pressure bracket, rather than requiring it to straddle the Engine's different bubble boundary. Its returned phase counts and achieved residuals are retained below. Finite native searches preserve unavailable and unresolved trials; no absence of a resolved descent proves global stability.
+
+```{python}
+#| echo: false
+print(c['licl_label']); print(s[s.kind=='discover'].groupby(['model','phase_count']).size().to_string()); display(s[s.refined_usable.notna()][['case_id','refined_usable','refinement_pressure_Pa','refinement_pressure_limit_Pa','refinement_x']]); display(s[s.stability_message.notna()][['case_id','stability_message','resolved_descent','trial_count']])
+```
+
+The source endpoint diagnostics below use each declaration's own pressure root. The printed source liquid composition is not the nominal-feed bubble composition. The admitted direct trace-ion vapor state is a diagnostic, separate from an admitted charged equilibrium phase. Its packing fraction remains pending: the public direct state has no packing-fraction field, and the attempted explicit vapor declaration is refused under #771. Liquid packing fractions use public native single-liquid calculations. No salt chemical-potential residual is computed from structural zeros.
+
+```{python}
+#| echo: false
+state_rows=[]
+for case in [v for v in cases if v['kind']=='state']:
+    d=json.load(gzip.open(leaf / ('results/current/'+case['id']+'.json.gz'),'rt')); state_rows.append({'case':case['id'],'rho_mol_m3':d['state']['molar_density'],'V_m3_mol':1/d['state']['molar_density'],'packing':d.get('packing_result',{}).get('packing_fractions',[None])[0],'pressure_error_Pa':d['state']['pressure']-case['P']})
+    source_id=case.get('source_case','table3-nacl-5.6molal'); phase=case.get('source_phase',case['phase']); ref=source[(source.case_id==source_id)&(source.phase==phase)].set_index('quantity'); state_rows[-1].update(source_V=float(ref.loc['molar_volume','printed_value']),source_packing=float(ref.loc['packing_fraction','printed_value']),V_error=state_rows[-1]['V_m3_mol']-float(ref.loc['molar_volume','printed_value']),packing_error=state_rows[-1]['packing']-float(ref.loc['packing_fraction','printed_value']) if state_rows[-1]['packing'] is not None else None)
+print(c['licl_label']); display(pd.DataFrame(state_rows))
+```
+
+## NaCl all-species vapor: pending capability
+
+```{python}
+#| echo: false
+print(s[s.kind=='charged'][['case_id','error']].to_string(index=False))
+```
+
+[Engine issue #771](https://github.com/tannerpolley/ePC-SAFT/issues/771) owns admission and numerical qualification. The separate input requests preserve vapor kind and all species. Admission must then lead to a refined bubble satisfying the displayed pressure, water and neutral-salt chemical-potential, charge and conservation criteria. The current admission error supplies no pressure, trace-ion prediction or physical nonexistence finding. A successful solvent-only bubble does not discharge this request.
+
+## Conditional LiCl diagnostic
+
+**`{python} c['licl_label']`**
+
+These LiCl–water–1-butanol calculations compare a declared ePC-SAFT diagnostic model with Perdomo's calculated SAFT-γ Mie values at `{python} c['temperature_K']` K. The unlike-diameter corrections for water/Li+, Li+/Cl− and 1-butanol/Li+ are explicitly zero by model assumption. These zeros are not values reported by Ascani or Perdomo and are not verified inputs of the historical calculation. The declaration also retains the `{python} historical_count` historical assumptions listed in the input table: the water and ionic reporting masses, butanol solvation factor and relative permittivity, and two butanol/ion dispersion corrections. Solvent molar masses also enter the mass fractions used in dielectric mixing. Every reported LiCl phase split, density, composition, objective comparison and stability-search result is conditional on this complete declaration. Agreement or disagreement with Perdomo does not validate these parameters, reproduce the paper's model, or isolate the effect of any one assumed coefficient. Numerical closure and refinement, where achieved, establish only the numerical accuracy of the selected declaration. A finite search without resolved descent is not proof of global stability.
+
+The selected solvent molar masses define the mass/mole conversions and the salt-free solvent mass fractions used in dielectric mixing. The ionic reporting masses define the LiCl feed and reporting conversions.
+
+Figure 3 feeds are equal-mass source-endpoint midpoints on a total-mass basis. Table 5 feeds are equal-mole midpoints passed as native Amounts; native normalization retains their printed sum error. Initial composition guesses and direct source-state vectors are explicitly normalized source arithmetic in the inputs. Formula-component reporting uses $w_{\mathrm{LiCl}}=(x_{\mathrm{Li}}M_{\mathrm{Li}}+x_{\mathrm{Cl}}M_{\mathrm{Cl}})/\sum_i x_iM_i$. Equal explicit-ion mole amounts maintain electroneutrality.
+
+```{python}
+#| echo: false
+print(c['licl_label']); f=s[s.case_id.str.startswith('figure3')]; print(f.groupby(['usable','discovered_phase_count']).size().to_string()); display(s[s.kind=='split'][['case_id','usable','discovered_usable','discovered_phase_count','objective_difference_per_feed','declared_discovered_x']]); display(parameters[(parameters.source_status!='sourced') | parameters.quantity.str.endswith('/l_ij')][['quantity','selected_value','source_status','selection_status']])
+```
+
+Every source feed has a usable discovered state. A missing declared split is a numerical non-result, distinct from source disagreement. The no-guess two-liquid request was refused before numerical iteration because phase composition guesses were absent. The source-composition and stored Table 5 starts were attempted; the stored-solution start recovered an initially missing split. For the remaining feeds the attempted numerical starts coalesce or lose a phase, while finite discovery returns one liquid. This does not prove physical exclusion of another liquid. Those declared branches remain unresolved; an Engine correction would require an admitted pressure-closed two-liquid state on the exact retained feed, meeting the displayed criteria. No tolerance, physical input or solver method was changed to force a split. Full attempt causes and work limits remain in each compressed result.
+
+```{python}
+#| echo: false
+print(c['licl_label']); src=pd.read_csv(leaf/'inputs/source/figure-3-source.csv'); current=e[(e.method=='discovered') & e.case_id.str.startswith('figure3')]; matched=current.merge(src,left_on=['case_id','phase'],right_on=['tie_line_id','phase']); display(matched.assign(water_error=lambda d:d.water_w-d.water_mass_fraction,butanol_error=lambda d:d.butanol_w-d.one_butanol_mass_fraction,licl_error=lambda d:d.licl_w-d.licl_mass_fraction)[['case_id','phase','source_x_error_max','water_error','butanol_error','licl_error']]); fig,ax=plt.subplots(figsize=(7,4)); ax.scatter(src.water_mass_fraction,src.licl_mass_fraction,label='Perdomo endpoints',marker='x'); ax.scatter(current.water_w,current.licl_w,label='Conditional current states',s=14); ax.set(xlabel='Water formula-component mass fraction',ylabel='LiCl formula-component mass fraction'); ax.legend(); fig.text(.5,-.2,textwrap.fill(c['licl_label'],95),ha='center',fontsize=9); plt.show()
+```
+
+The conditional current endpoints and the source endpoints disagree. Single-liquid states are plotted as states, without assigning them to either source endpoint. Source workbook digits carry no supplied uncertainty, so their errors receive no invented physical pass band.
+
+**`{python} c['licl_label']`**
+
+```{python}
+#| echo: false
+print(c['licl_label']); display(t); display(e[e.case_id.str.startswith('table5')]); display(s[s.case_id.str.startswith('table5') & (s.kind=='split')][['case_id','pressure_Pa','usable','refined_usable','objective_difference_per_feed','declared_discovered_x']]); display(e[e.case_id.str.startswith('table5')].pivot(index=['method','phase'],columns='case_id',values=['water_x','butanol_x','lithium_x']))
+sensitivity=[]
+for base in sorted({v['source_case'] for v in cases if v['kind']=='split' and v.get('source_case')}):
+    a,b=[json.load(gzip.open(leaf / f'results/current/{base}-{P}.json.gz','rt'))['result'] for P in [notes['paper_pressure_Pa'],notes['workbook_header_pressure_Pa']]]; sensitivity.append({'case':base,'maximum_delta_x':max(abs(x-y) for x,y in zip(a['mole_fractions'],b['mole_fractions'])),'maximum_delta_V_m3_mol':max(abs(1/x-1/y) for x,y in zip(a['molar_densities'],b['molar_densities'])),'maximum_delta_packing':max(abs(x-y) for x,y in zip(a['packing_fractions'],b['packing_fractions']))})
+display(pd.DataFrame(sensitivity))
+```
+
+The Table 5 scalar comparison above includes each composition, molar volume and packing fraction, with printed rounding intervals. The separate pressure-header repeat uses `{python} notes['paper_pressure_Pa']` Pa and `{python} notes['workbook_header_pressure_Pa']` Pa. Its endpoint columns retain the pressure sensitivity rather than interpreting the header difference as solver error. Packing fraction depends on the model's segment definition. HELD iteration counts and CPU times remain source provenance: no identified original executable, random seed or settings are available for algorithmic replay.
+
+## Evidence and remaining limits
+
+The current declarations run through this checkout's installed native Engine. All finite phase results retain achieved rows, amounts, compositions, densities and work, including discovery trials. Same-model declared/discovered objective and endpoint comparisons are meaningful only where both solutions are usable. Refinement supports the numerical accuracy of the selected declarations, not their physical validity. Reproducing the paper's model itself would require the independently sourced complete SAFT-γ Mie group model and the paper's state quantities within printed precision with pressure and neutral chemical-potential closure.
+
+Historical result bytes and the original parameter bundle remain unchanged under their original paths. They are provenance, not current results. The current campaign is under [results/current](results/current/summary.csv). The [README](README.md) gives the rerun and standalone presentation commands. Root-site registration is left to the lead because this task excludes edits to the shared Quarto configuration.

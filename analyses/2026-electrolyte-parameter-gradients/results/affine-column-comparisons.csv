@@ -1,0 +1,6 @@
+comparison,quantity,unit,exact,reference,error,tolerance,passed,inputs
+affine-columns/map/0/0,D,angstrom per v,0.17600000000000002,0.176,2.7755575615628914e-17,1e-16,True,{}
+affine-columns/map/0/1,D,angstrom per v,0.2,0.2,0.0,1e-16,True,{}
+affine-columns/map/0/2,D,angstrom per v,0.17600000000000002,0.176,2.7755575615628914e-17,1e-16,True,{}
+affine-columns/0/0/refinement,Richardson_uncertainty,per optimizer unit,7.582823258189819e-12,0,7.582823258189819e-12,5.468820717317353e-08,True,"{""step"":0.001,""coarse"":0.007123937945147096,""middle"":0.007123937717784523,""fine"":0.007123937666630997,""uncertainty"":7.582823258189819e-12,""tolerance"":2.1875282869269413e-07}"
+affine-columns/0/0,optimizer_column,per optimizer unit,0.005937641434634706,0.007123937649579822,0.0011862962149451154,2.1875282869269413e-07,False,"{""step"":0.001,""coarse"":0.007123937945147096,""middle"":0.007123937717784523,""fine"":0.007123937666630997,""uncertainty"":7.582823258189819e-12,""tolerance"":2.1875282869269413e-07}"

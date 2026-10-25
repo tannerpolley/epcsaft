@@ -1,0 +1,13 @@
+case,comparison,phase,reason
+NEUTRAL_SINGLETON/1 vapor,historical candidate snapshot,all,No historical density or chemical plane retained; matching c74 wheel not found. Composition alone is not a thermodynamic snapshot.
+CHARGED_SINGLETON/1 liquid,historical candidate snapshot,all,No historical density or chemical plane retained; matching c74 wheel not found. Composition alone is not a thermodynamic snapshot.
+CHARGED_SINGLETON/1 liquid,historical charged trial,liquid,permittivity model has no low-density limit; declare phases
+CHARGED_SINGLETON/1 liquid,historical charged trial,vapor,permittivity model has no low-density limit; declare phases
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,historical candidate snapshot,all,No historical density or chemical plane retained; matching c74 wheel not found. Composition alone is not a thermodynamic snapshot.
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,historical candidate snapshot,all,No historical density or chemical plane retained; matching c74 wheel not found. Composition alone is not a thermodynamic snapshot.
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),historical candidate snapshot,all,No historical density or chemical plane retained; matching c74 wheel not found. Composition alone is not a thermodynamic snapshot.
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,historical candidate snapshot,all,No historical density or chemical plane retained; matching c74 wheel not found. Composition alone is not a thermodynamic snapshot.
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,historical candidate snapshot,all,No historical density or chemical plane retained; matching c74 wheel not found. Composition alone is not a thermodynamic snapshot.
+KHUDAIDA_ROW_7/2 liquids,historical candidate snapshot,all,No historical density or chemical plane retained; matching c74 wheel not found. Composition alone is not a thermodynamic snapshot.
+KHUDAIDA_ROW_7/2 liquids,historical charged trial,liquid,permittivity model has no low-density limit; declare phases
+KHUDAIDA_ROW_7/2 liquids,historical charged trial,vapor,permittivity model has no low-density limit; declare phases

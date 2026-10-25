@@ -1,0 +1,52 @@
+schema_version = 2
+packet_id = "gross-2001-methane-ethane"
+packet_version = "2"
+title = "gross-2001-methane-ethane canonical Parameters packet"
+description = "Canonical JSON successor to the immutable accepted gross-2001-methane-ethane parameter packet."
+license_or_use_basis = "Source-traceable numeric parameter transcription and project-authored packet metadata retained for scientific verification under the source-specific use bases listed below; no full paper content is included."
+tolerance_rationale = "The strict schema translation preserves accepted coefficient values and asserts no new numerical acceptance tolerance. Any validation tolerance or uncertainty must be declared by the consuming campaign."
+
+[[sources]]
+source_id = "gross-sadowski-2001"
+citation = "Gross, J.; Sadowski, G. PC-SAFT: An Equation of State Based on a Perturbation Theory for Chain Molecules. Industrial & Engineering Chemistry Research 2001, 40, 1244-1260."
+doi = "10.1021/ie0003887"
+use_basis = "source-backed installed parameter catalog"
+
+[[domains]]
+domain_id = "methane-fit-range"
+kind = "fit-range"
+temperature_min = 97
+temperature_max = 300
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain methane-fit-range (temperature 97–300 kelvin); see the cited sources and canonical Parameters document."
+
+[[domains]]
+domain_id = "ethane-fit-range"
+kind = "fit-range"
+temperature_min = 90
+temperature_max = 305
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain ethane-fit-range (temperature 90–305 kelvin); see the cited sources and canonical Parameters document."
+
+[[domains]]
+domain_id = "gross-pair-unknown"
+kind = "unknown"
+description = "Source-defined domain gross-pair-unknown has no numeric range stated in the origin bundle; retain the cited source limits and do not infer a broader range."
+
+[[files]]
+path = "parameters/parameters.json"
+role = "parameters"
+media_type = "application/json"
+sha256 = "7dd1899712aacfbc3395d86349768b0d93dd5dfd75b2e0f0700640be618aa9c2"
+source_refs = ["gross-sadowski-2001"]
+domain_refs = ["methane-fit-range", "ethane-fit-range", "gross-pair-unknown"]
+units_basis = "Every fixed specification and continuous coefficient declares its unit in the canonical Parameters document; dimensionless values use the explicit dimensionless unit."
+
+[[files]]
+path = "provenance/source-origin.toml"
+role = "provenance"
+media_type = "application/toml"
+sha256 = "f8fa94dd8fa53cffc3103737be7064d5535d724f5226ba8bbfb12d33d54b1cd5"
+source_refs = ["gross-sadowski-2001"]
+domain_refs = ["methane-fit-range", "ethane-fit-range", "gross-pair-unknown"]
+units_basis = "Origin repository, immutable source packet, paths, and hash metadata are non-numeric identifiers."

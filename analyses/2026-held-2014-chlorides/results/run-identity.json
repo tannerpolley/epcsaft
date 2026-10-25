@@ -1,0 +1,18 @@
+{
+  "baseline": "502e8099051c00bf169198c970f3525bbcfac7fd",
+  "wheel_sha256": "62c2f9078579f300c5e1dc5ae0814223b021a3b5e0a921d331cb6b63a58fbaf5",
+  "script_sha256": "912dcda8c648dfad98cdba3d015d983be60f0937b6489f35ac55c2646b4acc59",
+  "input_sha256": {
+    "inputs/evaluated.csv": "cda600657e41e8518b08211edf874a771cb8287a98398a7cf6df90d7e6f311fb",
+    "inputs/held-2008/4/packet.toml": "906b00d7d297fc575dadf326b42a2fc8d86df87a923e0e5a44fec4c8895624d0",
+    "inputs/held-2008/4/parameters/parameters.json": "8f0313b6ebecb891873866a2181b32f8aeb44a49860487f34aeab8aecfa596f9",
+    "inputs/held-2008/4/provenance/source-origin.toml": "80fa4252d8a97a5243cf7058255d384683e6ac9aa85f7ac36710b44cb61ba7a5",
+    "inputs/held-2014/1/packet.toml": "ef9ac926bfcb0131189ea168197e59aa6d172d9262f2ecc8bebbfcb7cddf257f",
+    "inputs/held-2014/1/parameters/parameters.json": "49e5dce5503979d157ec0a8251cf89f233d2bc8f190ac9102a4dfd1519f0ab71",
+    "inputs/packet-locks.json": "9072ecd6f5d622e1861fea56e7a3d806b23666505a0aa972a52da290394f55c4",
+    "inputs/source-uncertainty.csv": "52f33d1b29a4418c97433e6373de56b92fe5d33e3192fc3096f9bf5db3dfd181",
+    "inputs/sources.csv": "62b0e1934dd716d26149890f6ad160f20a5c1481d3dba6946a4ceb8a8c3716ba"
+  },
+  "conditions": "298.15 K, 100000 Pa, fully dissociated formula-unit molality/kg water",
+  "limits": "Held2014 dielectric 78.09 is a declared supplement; nearest-temperature Floriano sensitivity is not an exact author replay. No refit or ternary validation."
+}

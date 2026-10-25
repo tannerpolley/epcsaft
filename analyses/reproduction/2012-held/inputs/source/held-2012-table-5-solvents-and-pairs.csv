@@ -1,0 +1,23 @@
+component,other_component,quantity,value,unit,locator,zotero_key,pdf_attachment_key,markdown_attachment_key,doi
+water,,segment_count,1.2047,dimensionless,Table 5; p. 332; water; segment_count,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+methanol,,segment_count,1.5255,dimensionless,Table 5; p. 332; methanol; segment_count,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+ethanol,,segment_count,2.3827,dimensionless,Table 5; p. 332; ethanol; segment_count,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+water,,segment_diameter,2.7927,angstrom,Table 5; p. 332; water; segment_diameter,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+methanol,,segment_diameter,3.2300,angstrom,Table 5; p. 332; methanol; segment_diameter,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+ethanol,,segment_diameter,3.1771,angstrom,Table 5; p. 332; ethanol; segment_diameter,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+water,,dispersion_energy_over_k,353.94,kelvin,Table 5; p. 332; water; dispersion_energy_over_k,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+methanol,,dispersion_energy_over_k,188.90,kelvin,Table 5; p. 332; methanol; dispersion_energy_over_k,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+ethanol,,dispersion_energy_over_k,198.24,kelvin,Table 5; p. 332; ethanol; dispersion_energy_over_k,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+water,,association_site_count,2,dimensionless,Table 5; p. 332; water; association_site_count,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+methanol,,association_site_count,2,dimensionless,Table 5; p. 332; methanol; association_site_count,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+ethanol,,association_site_count,2,dimensionless,Table 5; p. 332; ethanol; association_site_count,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+water,,association_energy_over_k,2425.7,kelvin,Table 5; p. 332; water; association_energy_over_k,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+methanol,,association_energy_over_k,2899.5,kelvin,Table 5; p. 332; methanol; association_energy_over_k,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+ethanol,,association_energy_over_k,2653.4,kelvin,Table 5; p. 332; ethanol; association_energy_over_k,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+water,,association_volume,0.045099,dimensionless,Table 5; p. 332; water; association_volume,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+methanol,,association_volume,0.035176,dimensionless,Table 5; p. 332; methanol; association_volume,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+ethanol,,association_volume,0.032384,dimensionless,Table 5; p. 332; ethanol; association_volume,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+methanol,water,k_ij,-0.085,dimensionless,Table 5; p. 332; footnote c; methanol-water; k_ij,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+ethanol,water,k_ij,-0.049,dimensionless,Table 5; p. 332; footnote c; ethanol-water; k_ij,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+ethanol,water,association_volume_correction,0.20,dimensionless,Table 5; p. 332; footnote c; ethanol-water; association_volume_correction,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+ethanol,water,l_ij,-0.01,dimensionless,Table 5; p. 332; footnote c; ethanol-water; l_ij,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040

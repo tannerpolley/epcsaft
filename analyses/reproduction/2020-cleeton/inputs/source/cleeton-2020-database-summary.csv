@@ -1,0 +1,16 @@
+system,source,measurement,n_points,temperature_K,pressure_Pa,mdea_mass_fraction,loading_mol_per_mol_mdea,source_locator
+MDEA-H2O-CO2,Kamps et al. 2001,VLE TPx total pressure,21,313-393,2e5-6e6,0.489,0.13-1.15,Table 3
+MDEA-H2O-CO2,Kuranov et al. 1996,VLE TPx total pressure,26,333-413,1e5-3e6,0.189,0.16-1.25,Table 3
+MDEA-H2O-CO2,Huang et al.,VLE TPx CO2 pressure,12,313,1-1e6,0.23-0.5,0.0025-1.08,Table 3
+MDEA-H2O-CO2,Austgen et al.,VLE TPx CO2 pressure,15,313,2-1e6,0.23-0.5,0.003-1.12,Table 3
+MDEA-H2O-CO2,Rho et al.,VLE TPx CO2 pressure,101,323-373,9e2-6e5,0.05-0.75,0.00187-0.8,Table 3
+MDEA-H2O-CO2,Jakobsen et al.,species concentration,17,293,,,0.1-0.78,Table 3
+MDEA-H2O-CO2,Arcis,enthalpy of absorption,14,323,,,0.3-1.3,Table 3
+MDEA-H2O-CO2,Mathonat,enthalpy of absorption,55,353-393,,,0.15-1.3,Table 3
+MDEA-H2O-H2S,Kamps et al. 2001,VLE TPx total pressure,26,313-393,1e5-4e6,0.489,0.15-1.45,Table 3
+MDEA-H2O-H2S,Kuranov et al. 1996,VLE TPx total pressure,25,333-413,1e5-4e6,0.189,0.45-1.8,Table 3
+MDEA-H2O-H2S,Oscarson and Izatt,enthalpy of absorption,84,300-400,,,0-2,Table 3
+MDEA-H2O-CO2-H2S,Dicko et al. 2010,VLE TPx acid-gas pressure,30,323,5e3-1e6,0.5,"CO2 0.1-0.7; H2S 0.1-0.87",Table 3
+MDEA-H2O-CO2-H2S,Haghtalab and Izadi,VLE TPx acid-gas pressure,16,343,2.3e4-1.5e6,0.4,"CO2 0.25-0.6; H2S 0.1-0.32",Table 3
+MDEA-H2O-CO2-H2S,Jou et al. 2010,VLE TPx acid-gas pressure,90,313,1-3e5,0.35,"CO2 0-1.25; H2S 0-0.8",Table 3
+MDEA-H2O-CO2-H2S,Jou et al. 2013,VLE TPx acid-gas pressure,104,313-373,1e2-1e6,0.5,"CO2 0-1.2; H2S 0-1.4",Table 3

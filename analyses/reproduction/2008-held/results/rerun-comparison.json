@@ -1,0 +1,30 @@
+{
+  "baseline_commit": "e4bc6d23ba4fa0fe2d61c5791bf2078f0cc3bc2d",
+  "main_commit": "0464743766320c23ef2cae536b26a7083074df51",
+  "baseline_run_id": "7669b1b6-9bc0-4076-b1b0-3d4c9f8d8c3e",
+  "rerun_id": "cc1f2d8c-8a43-4c66-89e4-572f6f7485d9",
+  "files_compared": [
+    "convention-probes.csv",
+    "diagnostics.json",
+    "figure-comparisons.csv.gz",
+    "native-results.jsonl.gz",
+    "numerical-checks.json",
+    "quantity-outcomes.csv",
+    "run-summary.json",
+    "series-outcomes.csv",
+    "structural-comparisons.csv",
+    "table-4-comparisons.csv",
+    "table-4-overall-comparisons.csv"
+  ],
+  "excluded_fields": [
+    "execution_run_id",
+    "wall_seconds"
+  ],
+  "separately_recorded_execution_identity": "run-identity.json",
+  "numeric_values_compared": 382707,
+  "maximum_absolute_numeric_change": 0.0,
+  "changed_values": 0,
+  "changes": [],
+  "source_rows": 2196,
+  "native_rows": 11942
+}

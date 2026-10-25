@@ -1,0 +1,7 @@
+organic solvent,water ${ }^{63}$,methanol ${ }^{64}$,ethanol ${ }^{64}$
+$m_{i}^{\text {seg }}$,1.2047,1.5255,2.3827
+$\sigma_{i} / \AA$,$b$,3.2300,3.1771
+$u_{i} / k_{\mathrm{B}} / \mathrm{K}$,353.95,188.90,198.24
+$\varepsilon^{\mathrm{AiBi}} / \mathrm{K}$,2425.7,2899.5,2653.4
+$\kappa^{\mathrm{AiBi}}$,0.04509,0.03518,0.03238
+$f_{k}$,1.5,1.4,1.6

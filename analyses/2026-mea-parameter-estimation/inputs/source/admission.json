@@ -1,0 +1,30 @@
+{
+  "counts": {
+    "bottinger_30wt_states": 39,
+    "bottinger_eligible_targets": 55,
+    "cai_neutral_rows": 29,
+    "hilliard_30wt_pressure_rows": 31,
+    "jakobsen_untouched_targets": 67,
+    "jou_pressure_rows": 48,
+    "kiepe_physical_rows": 39,
+    "matin_eligible_targets": 76,
+    "raw_calorimetry_rows": 158,
+    "xu_untouched_pressure_rows": 18
+  },
+  "heat_status": "unsupported_source_state_current_engine_scope",
+  "identity": "mea-pressure-speciation-admission-v1",
+  "pressure_scale": {
+    "role": "diagnostic_model_discrepancy_not_measurement_uncertainty",
+    "unit": "natural_log",
+    "value": 0.05
+  },
+  "schema_version": 1,
+  "selection_rule": "source fields, 30 wt% reactive membership, and frozen target eligibility",
+  "source_authority_commit": "412f85b4a34d713aa3b00985f6bef044c1f12327",
+  "speciation_scale": {
+    "role": "diagnostic_model_discrepancy_not_measurement_uncertainty",
+    "unit": "absolute_mole_fraction",
+    "value": 0.01
+  },
+  "supersedes": "old candidate lifecycle and active-v1 row-number cutoffs"
+}

@@ -1,0 +1,394 @@
+---
+title: "Shared-state FeOs and Clapeyron cross-check"
+subtitle: "Equation verification, NaCl convention diagnosis, and complete call costs"
+date: 2026-10-05
+execute:
+  enabled: false
+format:
+  html:
+    toc: true
+---
+
+## Outcome
+
+The selected C1–C4 solved pressures, densities, compositions and phase fractions meet the **cross-library value** targets. FeOs acetone saturation does not: the relative pressure difference is $1.21\times10^{-7}$ and vapor-density difference $1.22\times10^{-7}$ against $10^{-8}$. The motivating NaCl anchors are reproduced. Their gap is explained by controlled, ordered changes in screening diameter, electrostatic constants, water–chloride interaction and ionic reference, not by diameter alone.
+
+This is not universal strict equation agreement. Raw common-state differences and computed source-error-adjusted differences remain separate. Dispersion coefficient precision, dipole conversion and the Clapeyron DH approximation explain important differences. Dense-liquid $\ln\phi$ still misses its absolute target after those corrections. C4 has an additional Clapeyron association derivative remainder. **The corrected Engine closes all 12 primary NaCl states and all 14 reference-ladder states below the unchanged $10^{-10}$ relative pressure target:** their maxima are $6.96\times10^{-11}$ and $8.46\times10^{-11}$. The original Engine maximum $3.88\times10^{-10}$ remains under its original wheel identity. Clapeyron C4 pressure/chemical closure still reaches about $2.88\times10^{-9}$. A passing comparison between libraries does not override these failed checks.
+
+The evidence is **numerical verification**, not experimental validation, parameter adoption, a global-stability result or a portable speed ranking. The owner-approved revision changes native density endpoint publication and anchor return, keeping all numerical-policy values and comparison targets. The first benchmark delivery received independent review; delivered review of this density correction remains open. These results have not been promoted for manuscript use.
+
+## Original agreement on the declared cases
+
+All quantities use SI pressure in Pa and molar density in mol/m³. $a^r=A^r/(nRT)$, $Z$, $\ln\phi_i$, molality-scale $\gamma_\pm$, practical $\Phi$, mole fractions and mole phase fractions are dimensionless. Relative differences use Engine as denominator; composition and logarithmic comparisons use absolute differences. Maxima below exclude intentionally unmatched NaCl convention rows.
+
+| Case and conditions | FeOs versus Engine | Clapeyron versus Engine | Target/disposition |
+|---|---|---|---|
+| C1 propane; 200, 250, 300, 350 K | max relative P $5.68\times10^{-10}$; density $5.74\times10^{-10}$ | P/density at most $4.83\times10^{-15}$ relative | Solved-value $10^{-8}$ met |
+| C2 ethanol/butane; 373.15 K; liquid ethanol x=0.2, 0.5, 0.8 | P $1.65\times10^{-10}$; density $2.26\times10^{-10}$ relative; vapor x $1.94\times10^{-11}$ absolute | P/density at most $3.42\times10^{-13}$ relative | Solved-value targets met |
+| C3 NaCl; 298.15 K, 1 bar; 0.01–4 mol/kg; matched 0.88σ | density $7.99\times10^{-11}$ relative; $|\Delta\ln\gamma|=1.18\times10^{-6}$; $|\Delta\Phi|=2.48\times10^{-8}$ | density $5.05\times10^{-11}$; $|\Delta\ln\gamma|=1.18\times10^{-6}$; $|\Delta\Phi|=2.27\times10^{-8}$ | C3 coefficient target $10^{-5}$ met |
+| C3 unchanged σ screening | Not a matching FeOs option | density $1.03\times10^{-10}$ relative; $|\Delta\ln\gamma|=1.18\times10^{-6}$; $|\Delta\Phi|=4.62\times10^{-8}$ | Held screening selection preserved |
+| C4 water/pentanol; 298.15/323.15 K, 101300 Pa | density $7.77\times10^{-11}$ relative; x $7.40\times10^{-11}$; water-rich mole fraction $9.40\times10^{-11}$ absolute | density at most $5.03\times10^{-12}$ relative; x at most $4.26\times10^{-12}$; fraction $5.55\times10^{-12}$ absolute | Nontrivial split; value targets met, closure misses below |
+| C5 acetone; 300 K | raw P/vapor density $1.2074\times10^{-7}$/$1.2187\times10^{-7}$ relative; matched dipole P/vapor density $1.1988\times10^{-7}$/$1.2100\times10^{-7}$ | raw P $8.62\times10^{-10}$; matched dipole P $3.29\times10^{-15}$ | FeOs pressure/vapor-density targets missed |
+| C1/C2 exact P gradients | max relative difference $1.92\times10^{-10}$ / $2.24\times10^{-10}$ | Not selected under adopted D6 | Every selected component meets mixed rule |
+
+The gradient rule is $|g_L-g_E|\le10^{-6}\max(|g_L|,|g_E|)+10^{-8}$. C1 coordinates are $(m,\sigma,\epsilon/k)$ with units Pa, Pa/Å, Pa/K. C2 coordinates are $(k,\epsilon^{AB}/k,\kappa^{AB})$ with units Pa, Pa/K, Pa; one self-edge coordinate changes both directional association edges. These are physical pressure derivatives, not weighted fit-residual gradients. No Clapeyron gradient-capability conclusion follows from D6.
+
+[values.csv](results/values.csv) owns exact values, signed differences, units and target outcomes. [states.csv](inputs/states.csv) owns the exact common-state inputs. Each comparator is evaluated at the Engine solved $(T,\rho_m,x)$ for common-state rows, not at its own equilibrium density.
+
+## Original warm call costs
+
+Milliseconds, median of three fresh-process medians; each process uses five warmups and 25 samples. All samples and inclusive p10/p90 are retained. The table compares **complete public case-output costs**, not equal algorithms or equal derivative work.
+
+| Block | Engine† | FeOs | Clapeyron |
+|---|---:|---:|---:|
+| C1 saturation, 300 K | 8.761 | 0.04949 | 0.05638 |
+| C2 bubble, xEtOH=0.5 | 21.990 | 1.148 | 0.3292 |
+| C4 LLE, 298.15 K | 22.282 | 43.109 | 0.8908 |
+| C4 LLE, 323.15 K | 22.776 | 11.183 | 1.027 |
+| C3 0.88σ, reused Engine reference / complete comparator helpers | 2.226 | 0.3511 | 0.07103 |
+| C3 0.88σ, fresh Engine reference | 9.157 | — | — |
+| C1 value + exact P gradient | 18.583 | 0.01043 | — |
+| C2 value + exact P gradient | 55.888 | 1.123 | — |
+| C1 fixed-state $a^r/Z/\ln\phi$ | 0.02657 | 0.06554 | 0.005811 |
+| C2 fixed-state $a^r/Z/\ln\phi$ | 0.07899 | 0.07391 | 0.003857 |
+| C3 0.88σ fixed-state $a^r/Z/\ln\phi$ | 0.1423 | 0.07989 | 0.01046 |
+
+† Original Engine timing returns were not retained and remain unqualified. The costs are preserved historical measurements; no future snapshot qualifies those missing returns.
+
+The Engine T1 state path returns its normal derivatives and contributions. FeOs State construction plus requested properties and Clapeyron scalar/chemical-potential calls do different additional work. Engine T2 uses the general equilibrium driver. Engine T3 includes `predict` plus `differentiate`; the latter performs another prediction. FeOs's native AD property interface includes its internal solve; C2 also includes a native bubble solve to obtain the AD pressure guess. Models are constructed outside warm timing, but automatic solve initialization and returned-value extraction are inside.
+
+Engine C3 reused-reference timing excludes only the explicitly preconstructed reference. Its fresh-reference row includes reference construction. FeOs C3 times native solution/reference states, serialization, the compiled Julia contraction and transport. Clapeyron C3 times **both** native activity/osmotic helpers, each of which repeats solution/reference solves; it is not a cached-reference workload.
+
+Three fresh-process median ranges show substantial case-dependent scatter: Engine C2 21.28–26.92 ms; FeOs C4 at 298.15 K 30.39–45.00 ms; Clapeyron C4 at 298.15 K 0.879–0.985 ms. The 124.8 ms Clapeyron warm outlier is retained, not trimmed. The 642 retained comparator fields reproduce the corresponding implementation's qualification baseline (306 FeOs, 336 Clapeyron). The original Engine timing files contain no returned numerical records, so Engine timed outputs remain unqualified. Comparator records are first-call outputs collected outside warm timing, not independent numerical snapshots of all 25 warm samples.
+
+The host is an AMD Ryzen 5 5500, six cores/twelve logical CPUs, CPU 0 affinity, qualification-time performance governor snapshot, `nice -n 10`, and one thread in every pool. The governor was not logged separately in the timing processes; the qualification snapshot cannot establish its value throughout those measurements. Normal optimized Julia has `compile_enabled=1`, optimization level 2. Measured cold block sums (imports, model construction and first calls) are 604–696 s per Julia process, 0.230–0.334 s Engine and 0.603–0.709 s FeOs. These exclude unmeasured process-launch work and are not warm speed estimates. Total measured warm work including warmups is 22.955 s, below 1200 s; the maximum measured sample is 0.229 s, below the 180 s case limit.
+
+The original 300 s Julia cold cap was exhausted during inference/compilation. The lead authorized 1800 s and retired the global flock. Normal optimized qualification and all three timing repetitions then completed. `--compile=min` probes are not used as benchmark evidence. [timings.csv](results/timings.csv), [timing-statistics.csv](results/timing-statistics.csv), [budgets.csv](results/budgets.csv) and [original qualification checks](results/timed-output-checks-original.csv) retain the measurements and checks.
+
+## Separate Engine replay: returned values and observed costs
+
+The original collector/evidence snapshot is retained at local commit `c1c29e94`. The corrected collector retains the last measured return after the clock stops for every selected Engine block, including fresh/reused-reference selections. Readout requires every selected request, unique phase labels, all advertised fields and complete gradient/component vectors. T1 checks $a^r$, Z and each $\ln\phi_i$; T2 checks solved P/densities/compositions and C4 mole fraction, or C3 $\gamma_\pm/\Phi$; T3 checks P and every selected exact-gradient coordinate. Extra qualification quantities outside those timed blocks are excluded.
+
+The fresh Engine-only replay completed on 2026-10-03 with canonical main's interpreter and pinned `a0adb1cd` wheel `398bcf8b90185b68cc796b5db258a9bfa3e919b9fb74bbb29171e003a03b3cc7`. The installed bytes matched all 14 wheel RECORD hashes immediately before replay. Case-driver checkout `b5a13cea` supplies the declarations/collector, separately from that native snapshot. Root verified that main's intervening `62ed1b2b` change leaves the Engine/runtime identical to a0. The corrected #231 wheel was restored and its installed bytes verified afterward.
+
+All **183 Engine advertised fields** (61 per repetition) have zero recorded difference from the original qualification baseline under unchanged targets. Every repetition has 14 request/selection records and 350 warm samples, with five warmups and 25 samples per selection. Coverage includes unchanged σ as well as 0.88σ C3, both fresh/reused ionic-reference blocks, and every selected gradient coordinate. The new [timed-output-checks.csv](results/timed-output-checks.csv) also checks 150 FeOs and 147 Clapeyron advertised first-call fields from the original campaign, all with zero difference. Its 480 rows exclude extra qualification quantities outside those timed blocks; the original 642-row table remains separately retained. Engine records the final measured return only, so this does not establish numerical equality of every individual warm sample.
+
+The following costs belong only to this a0 Engine replay. Units are milliseconds; the central value is the median of the three process medians, and the range spans those process medians. Per-process inclusive p10/p90 and all samples remain in [engine-replay-statistics.csv](results/engine-replay-statistics.csv) and [engine-timing-replay.csv](results/engine-timing-replay.csv).
+
+| Engine block | Median / ms | Process-median range / ms |
+|---|---:|---:|
+| C1 saturation, 300 K | 4.8073 | 4.5867–4.8854 |
+| C2 bubble, xEtOH=0.5 | 15.6476 | 15.1729–15.6508 |
+| C4 LLE, 298.15 K | 15.1363 | 14.8632–15.4584 |
+| C4 LLE, 323.15 K | 15.2258 | 15.1215–15.6750 |
+| C3 σ, reused reference | 1.4918 | 1.4839–2.6388 |
+| C3 σ, fresh reference | 5.5096 | 5.2838–5.5195 |
+| C3 0.88σ, reused reference | 1.5807 | 1.5167–1.6058 |
+| C3 0.88σ, fresh reference | 5.4526 | 5.3171–5.6025 |
+| C1 value + exact P gradient | 10.0282 | 10.0050–10.1612 |
+| C2 value + exact P gradient | 32.9314 | 32.5280–33.2323 |
+| C1 fixed-state $a^r/Z/\ln\phi$ | 0.01390 | 0.01389–0.01424 |
+| C2 fixed-state $a^r/Z/\ln\phi$ | 0.04721 | 0.04470–0.04791 |
+| C3 σ fixed-state $a^r/Z/\ln\phi$ | 0.08255 | 0.08171–0.08288 |
+| C3 0.88σ fixed-state $a^r/Z/\ln\phi$ | 0.08210 | 0.08192–0.08350 |
+
+The actual native processes ran on CPU 0 with **niceness 19**: the declared `nice -n 10` adjustment added to inherited positive niceness and capped at 19. Governor observations at each process's start/end were performance; these endpoint observations do not establish its entire trajectory. One-minute host load ranged from 1.395 to 1.524, so quiet-host execution is not established. All thread pools were limited to one, with a 6 GB scope cap, a 600 s numerical outer limit and 180 s per subprocess. Measured warm work including warmups totaled 10.2104 s; the largest retained sample was 57.4224 ms. Cold block sums were 138.3–150.9 ms per process. No sample was discarded. These distributions describe this host/session, rather than a confidence interval or transferable speed improvement.
+
+[engine-replay-summary.json](results/engine-replay-summary.json) distinguishes native wheel/source, original qualification identity, case driver, execution controls and raw-output hashes. Losslessly compressed [raw returns and logs](results/engine-replay-raw/Engine-timing-replay-1.json.gz) retain actual interpreter/preparation, UTC times, affinity, niceness, load and governor observations. Identical process banner logs are retained once with explicit aliases; original build outputs remain available. This separate campaign qualifies the retained Engine returns against the old baseline. It neither retroactively qualifies absent original Engine returns nor forms a paired timing comparison with the old comparator campaign. The historical strict closure/source-precision misses remain unresolved; this selected-value replay does not reassess or remedy them.
+
+
+## Native density publication and corrected Engine replay
+
+At 298.15 K and 100000 Pa, the unchanged Held packet and its explicitly declared 0.88σ screening variant use constant solvent-only εr=78.09 and Born off. The 12 primary states cover 0.01, 0.1, 0.5, 1, 2 and 4 mol/kg under both screening selections. The 14 cold reference-ladder states cover 0, 1e-4, 1e-6, 1e-8, 1e-10, 1e-12 and 1e-20 mol/kg. Native source `55e3b3a4` produced non-editable wheel `6039c149e7df951236fea278995ff9f29078ea19c58f354e92679c6da546cb57`; the reference run used wheel `e28d258df06eac39711c59a79f9ce2b69fc8ac7565637bfba0dbef21863d8dc7` with the pre-correction density owner. Original benchmark and a0 timing rows retain their separate wheel identities.
+
+| Cold class | Rows | Worst relative pressure closure, reference → corrected | Maximum corrected reduced residual | Maximum corrected radius product | Iterations, reference → corrected | Evaluations, reference → corrected |
+|---|---:|---:|---:|---:|---:|---|
+| Primary C3 | 12 | 3.87990e-10 → 6.96033e-11 | 5.03355e-14 | 3.03768e-13 | 8 → 7 for every row | 53 → 52 for 7; 54 → 53 for 5 |
+| C3 reference ladder | 14 | 3.68871e-10 → 8.45738e-11 | 6.16488e-14 | 3.12554e-13 | 8 → 7 for every row | 53 → 52 for 7; 54 → 53 for 7 |
+
+All 26 cold rows retain **two stable roots**, the liquid branch and positive $P_\rho$. Every publication equals the endpoint with the smaller pressure error inside its new certified bracket; primary endpoint selections are ten upper/two lower and all ladder selections are upper. Residual and radius products meet the unchanged 1e-12 conditions. Across cold and anchored rows, the smallest positive slope is 75037.349 Pa m³/mol. Maximum relative density movement from the reference wheel is 9.55e-15. The changed Newton origin changes the final brackets: 17 cold publications lie outside the old final bracket, although all movements are at most 0.317 of the old local sensitivity radius. The bracket criterion does not bound floating-point EOS pressure error; the qualification tests the newly formed brackets and measured pressure closures, as specified by revision 1.
+
+[Corrected density rows](results/density-closure-corrected.csv), [reference density rows](results/density-closure-reference.csv) and [native traces](results/density-closure-traces-corrected.json.gz) retain each endpoint, slope, selected root, reduced residual, floor, amplification, radius, iteration and evaluation count. This is verification of the declared roots; two stable pressure crossings do not establish global phase stability or complete root enumeration.
+
+The pinned sigma/1 mol/kg density is 56028.936178136835 mol/m³. Anchor factors multiply only this initialization. The optional 1.009/0.991 factors exercise the vicinity of the local window.
+
+| Anchor factor | Relative closure, reference → corrected | Iterations, reference → corrected | Evaluations, reference → corrected |
+|---|---:|---:|---:|
+| 1 | 3.87990e-10 → 3.87603e-11 | 1 → 6 | 11 → 11 |
+| 1.001 | 1.24390e-12 → 1.96413e-11 | 4 → 9 | 14 → 14 |
+| 0.999 | 1.96413e-11 → 1.24390e-12 | 4 → 9 | 14 → 14 |
+| 1.009 | 3.87603e-11 → 3.87603e-11 | 5 → 10 | 15 → 15 |
+| 0.991 | 3.87603e-11 → 1.69734e-11 | 5 → 10 | 15 → 15 |
+
+Every anchored publication uses the better local endpoint with positive slope and liquid branch. Maximum reduced residual/radius product are 2.76468e-14/2.81263e-13. The anchor reports no global stable-root count. Its additional reported iterations compose the already performed local refinement; evaluation counts are unchanged.
+
+Native `infinite_dilution_reference` followed by `electrolyte_activity` at 1 mol/kg was traced under both screening selections. The terminal molality remains 1e-12 mol/kg, and the terminal ionic log-fugacity references are unchanged: sigma [4.128833217895552, 3.2642681026507705], 0.88σ [4.128833217895421, 3.2642681026506413]. Pure-solvent log fugacity changes from −3.458641612918817 to −3.458641612918526. Corrected gamma/Phi are 0.6389806877776536/0.9395213313806655 for sigma and 0.6159343357479928/0.9257995002621913 for 0.88σ. Reference step changes are 1.0628387420386076e-5 and 1.0628400222145729e-5; these are observed successive-reference changes, not error bounds. Three internal anchored spans change from 2 iterations/12 evaluations to 7/12; cold spans change from 8/53–54 to 7/52–53. [Reference traces](results/density-closure-traces-reference.json.gz) preserve the old counts and values.
+
+The existing ethane fixture at 200 K and 217800.69494692178 Pa already has relative closure 3.35206e-11 on the reference wheel. It does not falsify the pre-correction behavior. The bare existing associating-binary fixture at 353.15 K, 100000 Pa and x=[0.25, 0.75] does: the uninstrumented 5fe2a70a density owner publishes 34384.79685099591 mol/m³ and relative closure 2.7189351385459305e-10; revision 1 publishes 34384.796850995459 mol/m³ and closure 8.830102160573006e-12. [Old](results/density-closure-fixture-pressure-old.txt.gz) and [new](results/density-closure-fixture-pressure-new.txt.gz) native outputs retain this counterexample. One numerical value check was therefore added to the existing P2 root-residual group at the unchanged 1e-10 target. The ethane [native output](results/density-closure-fixture-reference.json.gz) remains retained.
+
+### Changed comparisons
+
+The existing Engine collector returned all 99 requests without errors. Against the original benchmark, 790 Engine quantity rows across 42 request IDs change at floating-point scale: C1-300/350 and C1-gradient; all three C2 states and C2-gradient; every primary/reference C3 state and the C3 literal/diagnosis variants; both C4 states. Frozen common-state inputs/values and C5 remain unchanged. The maximum primary gamma change is 1.90e-13; maximum Phi change is 1.95e-11. Four gradient coordinates change, without any comparison-target outcome changing.
+
+[Corrected values and differences](results/density-closure-values.csv) use retained original FeOs/Clapeyron returns against the new Engine values. Their inputs, comparator calculations and frozen common-state declarations did not change, so no comparator calculation or timing was rerun. The affected reference operands include solved P, density, composition, phase fraction, C3 gamma/Phi and selected gradients; their exact revised differences and targets are retained. Original [values](results/values.csv), source-adjusted rows and timings remain under their original scientific basis; those source-error probes address the frozen original common states.
+
+### First corrected-wheel Engine costs
+
+Sampling and targets are unchanged: five warmups, 25 samples per selection and three fresh serial processes, 14 selected records per process. The replay retains 1050 warm and 75 cold rows. All 183 final measured Engine fields reproduce the corrected qualification baseline exactly; the 150 FeOs/147 Clapeyron original first-call fields also remain exact, giving 480 checks. Only the final measured return of each selection is qualified, not every warm sample. [Checks](results/density-closure-timed-output-checks.csv), [samples](results/density-closure-timings.csv), [statistics](results/density-closure-engine-replay-statistics.csv) and [budgets](results/density-closure-engine-replay-budgets.csv) own these numbers.
+
+Milliseconds, median of process medians. The old column belongs to the separate a0 wheel, not the e28 Khudaida reference campaign. Differences describe observed campaigns on this host, without pairing or causal speed claims.
+
+| Engine block | Old a0 / ms | Corrected / ms | Observed change / % |
+|---|---:|---:|---:|
+| C1 saturation | 4.807286 | 5.157626 | +7.29 |
+| C2 bubble | 15.647604 | 15.796883 | +0.95 |
+| C4 LLE, 298.15 K | 15.136331 | 15.140394 | +0.03 |
+| C4 LLE, 323.15 K | 15.225757 | 15.727322 | +3.29 |
+| C3 sigma, reused reference | 1.491772 | 1.431369 | −4.05 |
+| C3 sigma, fresh reference | 5.509586 | 5.293680 | −3.92 |
+| C3 0.88σ, reused reference | 1.580738 | 1.512942 | −4.29 |
+| C3 0.88σ, fresh reference | 5.452570 | 5.364403 | −1.62 |
+| C1 value + gradient | 10.028224 | 11.478960 | +14.47 |
+| C2 value + gradient | 32.931410 | 33.384278 | +1.38 |
+| C1 fixed state | 0.013896 | 0.013997 | +0.73 |
+| C2 fixed state | 0.047208 | 0.044513 | −5.71 |
+| C3 sigma fixed state | 0.082554 | 0.080401 | −2.61 |
+| C3 0.88σ fixed state | 0.082103 | 0.080872 | −1.50 |
+
+Measured Engine warm work including warmups totals 10.319685174 s; maximum sample is 53.675415 ms, within the unchanged 1200 s campaign/180 s case limits. Cold measured block sums are 150.924, 140.292 and 152.336 ms, excluding unmeasured process launch. CPU affinity is [0], actual niceness 19, with performance governor observed at process endpoints and thread pools limited to one. Raw process metadata retains load and memory observations. The environment lock was acquired before `agent-heavy`, which enforced serialization, an 8 GB memory cap and a 15-minute outer timeout.
+
+### Khudaida native cost and required gates
+
+The timed block solves the existing eight-point ionic LLE sequence with the existing continuation order, excluding model construction and IDAES. Each process uses five warmups and 25 samples. Reference/corrected median-of-process-medians are 252.337534/226.117457 ms, an observed decrease of 10.39%. Reference 25-sample totals are 6.621164780, 6.109857848 and 6.514028148 s; corrected totals are 5.784430682, 5.788216749 and 5.663550244 s (−12.64%, −5.26%, −13.06%). Aggregate sample time decreases by 10.44%. Campaigns span the host reboot, so the difference is not a paired causal estimate and establishes no new ceiling. [All 150 samples](results/density-closure-khudaida-timings.csv) and native results retain both wheel identities.
+
+The eight native equilibria retain iteration counts [11, 10, 7, 8, 8, 8, 7, 7]. Equilibrium evaluation counts are [17, 16, 16, 14, 17, 14, 12, 12] on the reference wheel and [16, 17, 13, 16, 17, 15, 12, 13] on the corrected wheel. Worst native residuals are 5.57e-14 and 8.88e-14, respectively. Maximum density/composition/phase-amount movements are 1.65e-14 relative / 1.38e-14 absolute / 8.33e-15 mol. These count nonlinear equilibrium evaluations, separately from density pressure evaluations.
+
+The initial full gate passed all six fast native programs but failed seven Python comparisons to retained C++ value rows. All seven Python operands equal fresh C++ exactly, establishing stale retained values. The complete recorder refused E5-3 because the A→2B third-order amount reference uncertainty is 8.09549e-9 mol, exceeding its unchanged 5.38831e-9 allowance, although action/reference discrepancy is only 4.87e-11 mol. A disposable native probe with nodes [0.2, 0.06, 0.02], replacing [0.1, 0.03, 0.01] for this existing reference ladder, passes every criterion: action is unchanged, uncertainty is 1.00987e-9 mol and discrepancy 3.28e-12 mol. The owner approved [0.2, 0.06, 0.02] as canonical for the A→2B third-order fixture in E5-3 only. [All 268 criteria](results/density-closure-E5-3-reference-criteria.csv) retain both node sets, every unchanged rule and allowance, reference uncertainty and verdict; all resolved-node criteria pass. Native-row refresh is limited to the proven causal classes below. The canonical Khudaida application slice passed in 7.15 s. Numerical criteria remain unchanged; only the declared E5-3 reference nodes change. The reference wheel was restored and all 14 installed RECORD hashes verified before every lease release. [Qualification summary](results/density-closure-summary.json) owns identities, retained output hashes, failures and claim limits.
+
+### Native reference changes after the main merge
+
+Main `9c31cb9a` is merged at `08b99d2d`; the resolved E5-3 reference nodes are committed at `7b5c55cd`. The resulting wheel is `835d9bc27b243acb6d2288f4911828be973f07dc0d20766f397538065a9368b0` (build wall 526.25 s). Main adds six Equilibrium runtime lines; Properties and Core counts are unchanged. The final installed-wheel replay follows the native-row refresh; the single earned P2 value check is committed at `81cd8582`.
+
+The controlled C++ replays keep the same final archive, requests and test criteria, substituting only the old density owner and, separately, the old polish owner from `5fe2a70a`. All twelve native selectors pass under each of the three variants. For every original failed Python comparison, the old-density replay exactly restores the retained operand; changing only density yields the observed value difference exactly. The polish-only difference is zero for all seven.
+
+| Original failed row | Old → current value | Independently implied density effect | Cause/disposition |
+|---|---|---:|---|
+| pressure/action/5/1 | −66.15929676558801 → −66.159296765705 | −1.16984e-10 | Residual-enthalpy directional action changes with its pressure-closed density; refresh supported by the control |
+| state/root/1 | 100000.00002718935 → 99999.99999911699 Pa | −2.80724e-5 Pa | Pressure at the better published density; refresh supported |
+| e5-10/manifold/pressure-temperature/phase0 | 1.84696e-16 → −8.34111e-17 | −2.68107e-16 | Density-induced rounding of an analytically zero manifold action; refresh supported, no nonzero physical effect claimed |
+| e5-5/electrolyte/ResidualIsobaricHeatCapacity/A1 | −0.021019333941804625 → −0.021019333943052762 J/(mol K) | −1.24814e-12 | Density initialization changes the accepted state and its caloric action; refresh supported |
+| solved/thermal/3 | −126.9394978664622 → −126.93949786462497 | +1.83724e-9 | Solved thermal action changes through the density-initialized equilibrium state; refresh supported |
+| floor/residual | 4.44089e-16 → 8.88178e-16 | +4.44089e-16 | Density-induced rounding at the requested 1e-18 floor; both remain unmet, no adequacy claim from the guessed floor |
+| r4/recovery/variance_factor | 3.43426e-27 → 3.47494e-27 | +4.06796e-29 | Density changes manufactured targets/predictions and the fitted numerical residual floor; not experimental parameter uncertainty |
+
+[All old/new native operands and causal differences](results/density-closure-native-value-causal-comparison.csv) retain 478 rows. [Matched density publications](results/density-closure-matched-density-publications.csv) retain 1528 changed requests with temperature, pressure, composition, parameters, slopes and density shifts. For compound actions, floor and fitting quantities, the implied change is an independent native forward replay of the entire quantity under the density intervention, rather than a linear approximation at one density. The surface pressure density moves from 34384.79685099591 to 34384.79685099546 mol/m³, a shift of −4.51109e-10 mol/m³. The native replay implies the observed −2.80724e-5 Pa pressure change exactly. Its local linear estimate $P_\rho\Delta\rho$ is −2.62449e-5 Pa; the difference is consistent with floating-point EOS evaluation at this density scale, so that linear estimate is not treated as an exact value prediction. Source-level density-shift ranges accompany every value row; for a compound action or fitted quantity they summarize contributing matched calls, not one effective scalar density.
+
+Of 253 changed native rows, 252 have this density-only explanation. An additional pressure prediction, `r4/recovery/prediction/0`, has a pre-existing four-ulp difference: retained 1009056.6044860848 Pa, old-density/old-polish 1009056.6044860843 Pa, current 1009056.604486083 Pa. The density intervention predicts −1.280568540096283e-9 Pa versus the full retained/current −1.7462298274040222e-9 Pa. An uninstrumented replay confirms that the accepted warm prediction is 1009056.6044860843 Pa, while cold re-solving the same fitted model gives the cached 1009056.6044860848 Pa exactly. This −4.656612873077393e-10 Pa component belongs to the earlier accepted-warm publication correction at `333595888b45892d07292d4198d51768f13e83e6`, rather than density or the #261 polish. [The native cold-report control](results/density-closure-regression-cold-report.log.gz) retains the evidence. The owner authorized refreshing this row with the distinct disposition “pre-existing staleness from the cold-report → accepted-warm publication change (`33359588`, 4-increment difference)”, separately from the 252 density-explained refreshes. The numerical comparison criterion is unchanged. The 225 remaining values do not change.
+
+The correction has Properties 4792/4800 (net +4), Core 917 (net 0), 31 gross runtime additions under the approved 32, and 1167 physical analysis-code lines under 1170. This evidence qualifies the measured density publications and returned benchmark fields; the final fast gate passes as recorded below; independent delivered review remains open. It supplies no experimental physical validation or general relative-pressure guarantee.
+
+### Final qualification after the main merge
+
+The final replay uses committed tree `81cd8582` and wheel SHA-256 `835d9bc27b243acb6d2288f4911828be973f07dc0d20766f397538065a9368b0`. This wheel was built from committed runtime `7b5c55cd`; the later P2-only test change leaves its runtime inputs unchanged, so canonical preparation reuses the wheel and rebuilds native checks (87.39 s). The 99 request records return without errors. All numerical value rows exactly reproduce the first corrected-wheel campaign above, now with their final wheel identity in [values](results/density-closure-final-values.csv), [states](results/density-closure-final-states.csv) and [diagnostics](results/density-closure-final-diagnostics.csv). Original comparator returns remain retained; no comparator run or timing was repeated and no comparison verdict changes.
+
+The 12 primary and 14 ladder C3 rows again close to worst 6.96033e-11 and 8.45738e-11, respectively, with two cold stable roots, positive slope and liquid branch. Iterations are 8 → 7, evaluations 53–54 → 52–53. Primary publications select ten upper/two lower endpoints; ladder publications select fourteen upper endpoints. Every selected point is the better endpoint inside its newly certified bracket. Maximum reduced residuals/radius products remain 5.03355e-14/3.03768e-13 (primary) and 6.16488e-14/3.12554e-13 (ladder). All five anchors reproduce the closures and composed counts above (worst 3.87603e-11; evaluations unchanged); the two native reference/activity traces reproduce every value and count above. [Final density rows](results/density-closure-final-corrected.csv) retain all 31 cases. The independently replayed trace bytes equal the earlier trace file and are retained once, with both wheel identities documented in [the final summary](results/density-closure-final-summary.json).
+
+The recorder refreshes 252 density-explained values and the one separately diagnosed stale accepted-warm pressure prediction; 225 values remain unchanged. All 478 final operands equal the native causal controls exactly. All twelve recorder selectors pass, including E5-3; its complete final log and the retained old/new nodes, uncertainty estimates and rules retain all 268 unchanged criteria and allowances. The existing P2 group passes including the one new relative-pressure value check. The full fast installed-wheel gate passes: **116 Python tests passed, one deselected, six fast native programs passed**, with packet, Ruff, mypy, analysis-layout and architecture checks clean. Wall time is 30.64 s, above the repository's warm-wheel target below ten seconds; that target is not a new hard ceiling. The canonical Khudaida slice passes in 6.14 s. The original seven failed fields are all refreshed with the density causes listed above; the E5-3 reference-resolution change and additional accepted-warm staleness remain separate dispositions.
+
+The final timing campaign again retains five warmups, 25 samples per selection and three serial processes: 1050 warm and 75 cold rows. All 183 final Engine returned fields match its new baseline exactly, plus 150 FeOs/147 Clapeyron original first-call fields, for 480 passing comparisons. Only the final measured return per selection is checked. [Samples](results/density-closure-final-timings.csv), [statistics](results/density-closure-final-engine-replay-statistics.csv), [checks](results/density-closure-final-timed-output-checks.csv) and [budgets](results/density-closure-final-engine-replay-budgets.csv) retain the unchanged sampling and targets.
+
+Milliseconds, median of the three process medians, versus the retained a0 campaign:
+
+| Engine block | Old a0 / ms | Final merged wheel / ms | Observed change / % |
+|---|---:|---:|---:|
+| C1 saturation | 4.807286 | 5.729685 | +19.19 |
+| C2 bubble | 15.647604 | 16.989853 | +8.58 |
+| C4 LLE, 298.15 K | 15.136331 | 16.202942 | +7.05 |
+| C4 LLE, 323.15 K | 15.225757 | 16.585217 | +8.93 |
+| C3 sigma, reused reference | 1.491772 | 1.511534 | +1.32 |
+| C3 sigma, fresh reference | 5.509586 | 5.578252 | +1.25 |
+| C3 0.88σ, reused reference | 1.580738 | 1.554655 | -1.65 |
+| C3 0.88σ, fresh reference | 5.452570 | 5.512279 | +1.10 |
+| C1 value + gradient | 10.028224 | 11.886217 | +18.53 |
+| C2 value + gradient | 32.931410 | 34.937685 | +6.09 |
+| C1 fixed state | 0.013896 | 0.014197 | +2.17 |
+| C2 fixed state | 0.047208 | 0.044803 | -5.09 |
+| C3 sigma fixed state | 0.082554 | 0.082044 | -0.62 |
+| C3 0.88σ fixed state | 0.082103 | 0.081423 | -0.83 |
+
+Warm elapsed work totals 10.709878027 s; maximum sample is 40.879326 ms, within unchanged campaign/case caps. Cold measured block sums are 151.608/157.611/147.457 ms. Actual niceness is 19, affinity [0], performance governor at endpoints and one thread per pool. One-minute loads are 7.092–7.923 at process endpoints; these are not quiet-host or paired measurements.
+
+The native Khudaida eight-point LLE block retains 75 warm samples with five warmups in each of three processes. Reference 25-sample totals are 6.621164780/6.109857848/6.514028148 s; final totals are **6.720949199/6.930058492/6.775487153 s**, changes +1.51/+13.42/+4.01% (aggregate +6.14%). Median of process medians is 252.337534 → 260.564580 ms (+3.26%). The first corrected-wheel campaign's faster 5.7844/5.7882/5.6636 s totals remain above under their own wheel; no campaign is selected or averaged away. No causal speed claim or new cost ceiling follows from these unpaired noisy-host measurements.
+
+Khudaida iterations remain [11,10,7,8,8,8,7,7]; evaluations change from [17,16,16,14,17,14,12,12] to [16,17,13,16,17,15,12,13]. Worst native equilibrium residual changes from 5.57332e-14 to 8.88178e-14. Phase densities, compositions and amounts reproduce the first corrected-wheel outputs exactly, with maximum relative/absolute changes from reference 1.65e-14/1.38e-14/8.33e-15 respectively. [Final samples](results/density-closure-final-khudaida-timings.csv) retain every timing; identical returned-state bytes from the independent replay are retained once through the summary's aliases.
+
+The exclusive environment lease was acquired before `agent-heavy`; all build, install and numerical calls ran inside it with OMP/OPENBLAS/MKL threads=1, build-job cap two and explicit timeouts. The exit trap restored reference wheel `e28d258df06eac39711c59a79f9ce2b69fc8ac7565637bfba0dbef21863d8dc7` and verified all fourteen installed RECORD hashes before release. Properties remain 4792/4800 (net +4), Core 917 (net zero), and the density correction adds 31 gross runtime lines under the approved 32. Main's six Equilibrium additions are separate; total runtime is 22054. The six existing analysis scripts remain 1167/1170 physical lines. The notebook and ALG-DENSITY live HTML views are rendered with execution disabled, and their text and browser DOM inspected. Automated bitmap inspection remains unavailable: Chrome captures are blank and the background preview disconnects or times out. No visual-pass claim is made; the temporary server and own background tab are closed. Independent delivered review is pending. This is numerical verification and host-specific cost evidence, not experimental physical validation or manuscript promotion.
+
+### Paired ionic LLE and MEA reacting-flash cost
+
+**No density-caused wall-time slowdown is resolved beyond the six-pair spread.** Cold ionic point 7 has a positive median paired difference of 2.25%, within its 3.06 percentage-point median absolute deviation and −21.50% to +21.31% range. Its four extra polish evaluations are a reproducible work increase. These observations do not prove zero overhead or a portable speedup; the owner’s no-slowdown requirement is assessed only at this host’s measured resolution.
+
+The comparison uses merged tree `86b1ef1473618c7bed8322ec129ac379e5f2ae63`, including main `8f5f5685` and its exact-zero feed-weight initializer guard. Wheel A restores only `engine/native/properties/density.cpp` to pre-`55e3b3a4` and the two density-publication text lines that revision touched in `numerical_policy.hpp`. All other tracked Engine inputs are identical, including later policy changes. Wheel B keeps the corrected pressure-closest endpoint as Newton origin and publication point, and the stable local-scan root for anchored publication. No tolerance, chemistry, phase support or start was changed. [Source hashes](results/density-paired-source-identity.json), [the exact owner difference](results/density-paired-owner.diff), [compiler settings](results/density-paired-compile-settings.json) and [wheel-member comparison](results/density-paired-wheel-member-differences.json) retain that intervention; only the two native libraries and their RECORD hashes differ in the wheels.
+
+- A SHA-256: `da6897394f85e0fd2a487899ad2296e209f2ee18c591cdfcc5aa7f68cf3ff382`.
+- B SHA-256: `f10774c1ff665861e80e3449a9ad3bb5bb5557d002546e16596db108663b811d`.
+
+The ionic case is `case-6/figure-2-point-7`, at 293.15 K and 100000 Pa, from the existing Khudaida Figure 2 declaration. The MEA case is `case-7/flash-5918.5286-Pa`, at 318.15 K, with the existing nine-species packet, five reaction laws, feed and default liquid/vapor starts. These are exactly the [#238 ordinary cases](../2026-tpd-phase-discovery/results/issue238-elapsed/README.md), whose cold reference counts are 16/49/17 and 43/57/44. The eight-point ionic block keeps its original point order and previous-point continuation. The two additional accepted-start measurements use each wheel’s own cold accepted result, fixed across samples. [Input and declaration hashes](results/density-paired-physical-inputs.json) identify the retained owners.
+
+After a twenty-minute resource-admission wait, the owner authorized one A/B pair per short exclusive lease. Six leases execute A then B, preserving one thread per OMP/OpenBLAS/MKL pool, CPU 0, actual niceness 19, five warmups and 25 samples per workload. Every wheel install is verified. Imports, model construction, cold seed construction, retention and untimed tracing are outside the clocks. “Cold” denotes a default cold solver start on a prepared model; [first-call times](results/density-paired-first-calls.csv) are separate observations, not import or end-to-end cold-process costs.
+
+| Workload | A median / ms | B median / ms | Median paired change / % | Paired range / % | Paired MAD / percentage points | Iterations/evaluations/Hessians, A → B |
+|---|---:|---:|---:|---|---:|---|
+| Khudaida eight-point LLE block | 271.735197 | 276.684836 | -4.31 | -12.82 to +6.27 | 5.02 | 66/118/74 → 66/119/74 |
+| Ionic point 7, cold | 55.688299 | 55.393255 | +2.25 | -21.50 to +21.31 | 3.06 | 16/49/17 → 16/53/17 |
+| Ionic point 7, accepted start | 30.586151 | 30.085726 | -9.67 | -25.32 to +9.16 | 11.77 | 7/14/8 → 7/14/8 |
+| MEA flash, cold | 114.361308 | 96.865381 | -10.68 | -27.62 to +3.98 | 6.34 | 43/57/44 → 43/57/44 |
+| MEA flash, accepted start | 65.724829 | 66.113982 | -4.19 | -21.00 to +36.12 | 14.41 | 18/23/19 → 18/23/19 |
+
+Each A/B median is the median of six process medians. The paired change is the median of the six within-pair percentage differences, not the ratio of the two marginal medians; these can have opposite signs under changing load. MAD means median absolute deviation from the median paired change. [All thirty pair/workload rows](results/density-paired-pairs.csv), [all 1500 sample times and counts](results/density-paired-samples.csv) and [the summary](results/density-paired-summary.csv) retain every observation without trimming. One-minute load ranges from 4.03 to 11.75 and endpoint memory-pressure `some avg10` from 0.00% to 1.17%; the governor is performance at every endpoint. [Per-pair host observations](results/density-paired-host-observations.csv) and the complete host records preserve those conditions. Between-pair contention prevents a quiet-host or sub-percent cost claim.
+
+#### Cause of the additional ionic work
+
+Cold ionic point 7 retains 16 optimizer iterations and 17 Hessian calls on both wheels, while evaluations increase 49 → 53. The untimed trace has three polish trials on A and seven on B. On B’s second polish step, full and half steps increase the raw residual from 6.32827e-14; the quarter step reaches 5.68434e-14 and is accepted. All three trials of the next step fail to reduce that residual. A accepts full steps. The density intervention changes the initialized and optimizer-returned point at floating-point scale, producing four additional damped trial evaluations near the raw-row rounding floor. It does not add four optimizer iterations or four density Newton steps. [All polish trials](results/density-paired-polish-trials.csv) retain the native raw/classified residuals and step lengths.
+
+Both cold ionic traces contain six density calls, 233 pressure evaluations and 57 density Newton probes. The reported sum of density iterations changes 32 → 41 because corrected anchored publication composes the local-scan convergence record; it is not nine additional observed Newton probes. In the eight-point block, density pressure evaluations decrease 1871 → 1861 and Newton probes 463 → 453, while equilibrium evaluations increase 118 → 119. MEA cold work remains exactly 43/57/44; its density pressure evaluations remain 272 and Newton probes decrease 69 → 67. MEA accepted work remains 18/23/19; no measured wall increase is separated from the pair spread. These counts distinguish density work from equilibrium polish work; the returned values, rather than count equality, establish numerical equivalence.
+
+All [9360 returned-value comparisons](results/density-paired-output-checks.csv) pass a 1e-10 relative rule for density and phase amount and a 1e-10 absolute rule for mole fraction; fixed temperatures and pressures agree exactly. Both wheels return the same two phases and every measured solve meets the unchanged native caller row criterion of 1e-10. Maximum density/composition/amount differences are 1.65432e-14 relative, 1.37668e-14 absolute and 2.32371e-14 relative. [Returned numerical rows](results/density-paired-returned-values.csv.gz) retain all measured and first-call states. Density can legitimately change intermediate iterates; there is no physical phase or composition change at these tolerances.
+
+Wheel B passes the requested full fast gate once: 119 Python tests, one deselected, six fast native programs, Ruff, mypy, analysis layout and architecture. [The complete gate log](results/density-paired-check-all.log.gz) retains the executed checks. The six analysis scripts remain 1167/1170 lines, with no new persistent executable code. Previous C3 closure and comparator evidence remains under its identified historical wheels; this cost comparison does not relabel those rows as a new full cross-library replay.
+
+The reference wheel `e28d258df06eac39711c59a79f9ce2b69fc8ac7565637bfba0dbef21863d8dc7` is restored and its fourteen RECORD hashes verified before every timing lease releases. During the build lease, the owner authorized a 2 GiB restoration-only pressure-threshold exception; the original admission waiter was then cancelled after successful verification, so its exit 143 is not an install failure. The updated normal resource helper admits numerical runs by free slots and available memory, with per-job limits; no numerical pressure override was used. [Provenance](results/density-paired-provenance.json) retains source/wheel identities, commands, lease times, restoration logs and limits. This is numerical verification and timing on this host, not physical validation, universal no-overhead proof or manuscript promotion. Independent delivered review remains with the lead.
+
+## Model basis and input mappings
+
+[full-eos](../../engine/docs/science/full-eos.md) §§2, 4–6, 8, 10–11 owns the equations and quantity bases. [cases.json](inputs/cases.json) freezes cited component records, explicit zero/nonzero interactions, site/component order, constants, solver selections and gradient identities. C1 reuses GS2001 propane; C2/C4 reuse GS2002 neutral/2B data and cited interactions; C3 reuses the complete Held strategy-2 packet; C5 reuses GV2006 acetone. The existing [polar study](../2026-polar-dipole/README.md) is independent dipole-term evidence on its retained rows only; it is not rerun here.
+
+C3 uses temperature-dependent Held water σ, ion segment counts of one, ion **packing** diameters 0.88σ, excluded same-sign dispersion, all packet unlike interactions, constant solvent-only εr=78.09 and Born off. Screening diameter is a separate input: unchanged σ versus an analysis-local 0.88σ variant. Neither variant replaces the adopted Held packet. FeOs revised ePC-SAFT exposes the latter screening convention only.
+
+Each library's electrostatic constants are retained. Compensated permittivity
+
+$$
+\epsilon_{r,L}=78.09\left(\frac{e_L}{e_E}\right)^2
+\frac{\epsilon_{0,E}}{\epsilon_{0,L}}\frac{k_{B,E}}{k_{B,L}}
+$$
+
+preserves the same Bjerrum factor. Literal εr=78.09 rows remain convention diagnostics. This is a numerical input mapping, not a new measured dielectric constant. The locked FeOs quantity constants $N_A,k_B,R$ agree with the Engine selection. Its vacuum permittivity is older; Clapeyron also uses an older charge constant. Bjerrum lengths, screening factors and evaluated water diameters are retained rather than inferred from names.
+
+### Association and C4 feed
+
+Every associating molecule has one donor A and one acceptor B; only A–B/B–A edges exist. Unlike edges use arithmetic association energy and
+
+$$
+\kappa^{AB}_{ij}=\sqrt{\kappa^{AB}_{ii}\kappa^{AB}_{jj}}
+\left[\frac{\sqrt{\sigma_i\sigma_j}}{(\sigma_i+\sigma_j)/2}\right]^3.
+$$
+
+Engine explicit derived edges, FeOs's native geometric volume factor and Clapeyron explicit dimensionless `bondvol` with `combining=:nocombining` therefore enter the same source strength. Clapeyron's m³ docstring is not the parameter basis used here. The independently returned cross-volume check tests parameter construction, not a native Δ or site-solver residual.
+
+At the required fixed falsifier, $\rho_m=10000$ mol/m³ and $x=(0.5,0.5)$, native association energies are:
+
+| T / K | Engine $a_{assoc}$ | FeOs−Engine | Clapeyron−Engine |
+|---:|---:|---:|---:|
+| 298.15 | −2.599352552304062 | −8.88e-16 | −8.75e-14 |
+| 323.15 | −2.111356600522939 | 0 | −9.50e-14 |
+
+The $10^{-12}$ association-energy target is met. Total Z at 323.15 K has a separate Clapeyron $1.32\times10^{-12}$ miss. Pressure is negative at these falsifiers, so real $\ln\phi$ is unavailable; energy and derivatives remain meaningful EOS evaluations, not equilibrium states.
+
+All three nontrivial coexistence intervals contain water feed 0.5 at both temperatures. Engine's water-rich/water-poor endpoints are 0.99935665/0.31959730 at 298.15 K and 0.99873812/0.37319377 at 323.15 K; corresponding water-rich **mole** fractions are 0.26539201 and 0.20271342. Comparator endpoint differences are much smaller than the distance to the common feed. No feed movement is needed. Feed closure is at most $1.11\times10^{-16}$. These declared two-liquid solutions do not establish global discovery or stability.
+
+## Reproduced NaCl gap: ordered, not all diameter
+
+At 298.15 K, 1 bar and 1 mol/kg, each row changes one declared selection from the preceding row. The finite ionic reference and pure-water osmotic reference are separate; changing the former must not change $\Phi$.
+
+| Ordered selection | $\gamma_\pm$ | $\Phi$ |
+|---|---:|---:|
+| Engine original Held packet | 0.6389806877775401 | 0.9395213313807824 |
+| Engine screening diameter 0.88σ | 0.6159343357478744 | 0.9257995002624917 |
+| Engine literal FeOs electrostatic factor | 0.6159327387368092 | 0.9257989463626597 |
+| Engine water–Cl interaction set to zero | 0.5827395348747241 | 0.8983684566777839 |
+| FeOs matched finite 1e-12 ionic reference | 0.5827395349115551 | 0.8983684557322118 |
+| FeOs zero-ion ionic reference | 0.5827388467089519 | 0.8983684557322118 |
+
+The screening change shifts $\ln\gamma$ by −0.03673387 and $\Phi$ by −0.01372183. Zeroing water–chloride k then shifts $\ln\gamma$ by −0.05539745 and $\Phi$ by −0.02743049. Relative to original γ, these are −3.6067 and −5.1947 percentage points, respectively. The constants contribute −0.000250 percentage points. With the finite reference matched, the remaining FeOs/Engine difference is $6.32\times10^{-11}$ in $\ln\gamma$ and $-9.46\times10^{-10}$ in $\Phi$.
+
+The 0.58274/0.89837 motivating anchor is therefore reproduced by this controlled zero-interaction selection. This is not proof of the removed historical environment's inputs; the earlier scratch values were not retained with a complete packet. The result supports the specified reconstruction, not a retrospective provenance claim. Percentages are path-dependent controlled contrasts, not a universal additive decomposition or a diameter-dependent Debye limiting law.
+
+At the **same** original density 56028.936178136835 mol/m³ and the original composition, changing only screening diameter leaves hard-chain, dispersion and association energies unchanged. $\Delta a_{DH}=-0.0008002976989382217$, total $\Delta a^r=-0.0008002976989391897$ and $\Delta Z=-0.0004883626793962259$. Own-state density movement is kept separate. [decomposition.csv](results/decomposition.csv) and [screening-contrast.csv](results/screening-contrast.csv) own the signed contrasts.
+
+![Ordered NaCl selections and common-state Helmholtz discrepancies. Left: categorical native γ values, not a continuous curve. Right: maximum absolute energy differences across declared common states, raw and source-adjusted; these maxima are observations, not uncertainty bounds.](figures/comparison.svg){#fig-comparison}
+
+### Finite versus zero-ion reference
+
+Engine's native ladder is $10^{-6},10^{-8},10^{-10},10^{-12}$ mol/kg. The actual terminal change in ionic log fugacity at the original 1 mol/kg selection is about $1.06\times10^{-5}$; it is not the remaining terminal bias. FeOs zero-ion states and the full finite ladder are retained. Clapeyron's native helpers use $10^{-20}$ mol/kg and are separately checked against the same finite ladder.
+
+At matched 0.88σ, finite-minus-zero $\ln\gamma$ shifts are:
+
+| Reference molality / mol kg⁻¹ | FeOs | Clapeyron |
+|---:|---:|---:|
+| 1e-6 | 1.17978984e-3 | 1.17978981e-3 |
+| 1e-8 | 1.18083042e-4 | 1.18083110e-4 |
+| 1e-10 | 1.18093402e-5 | 1.18093800e-5 |
+| 1e-12 | 1.18101296e-6 | 1.18095843e-6 |
+
+The leading $\sqrt m$ fit, computed in Julia over $10^{-6}$–$10^{-10}$, gives slopes 1.17973609/1.17973601, intercepts about $5.84\times10^{-8}$ and maximum fit residuals about $5.11\times10^{-8}$. Curvature and cancellation remain visible; these intercepts do not establish a nonzero infinite-dilution limit or rigorous reference accuracy. The observed terminal shifts support the approximately $1.18\times10^{-6}$ matched coefficient offset. They are measured contractions, not substitution of an assumed Debye correction. Tiny-y FeOs function cancellation is separately retained; no universal error bound is inferred from it.
+
+## Source precision and remaining strict misses
+
+The DH diagnostic evaluates the analytic source function
+
+$$
+f(y)=\frac{\log(1+y)-y+y^2/2}{y^3},\qquad f(0)=1/3,
+$$
+
+its small-y series, Clapeyron's rational expression, and first/second derivatives at every actual solution/reference screening argument and on both sides of 1.5. Native Julia automatic differentiation propagates the signed source discrepancy into energy, Z and residual chemical potential. The 256/512-bit repeats and successive analytic-pressure-root refinements are retained. Corrections are outside timing; they do not replace returned library values.
+
+Pressure correction is library-minus-analytic at one state. At the library root the displacement toward the analytic root is $\Delta\rho=+\delta P/P_{analytic,\rho}$. Solution, ionic-reference and pure-solvent corrections are applied independently before contracting coefficients. Observed refinement changes are numerical diagnostics, not rigorous accuracy bounds. FeOs dispersion/polar coefficient differences and dipole conversion are computed from the retained source coefficients; FeOs DH cancellation is not assigned Clapeyron's rational-approximation error model.
+
+Maxima after the stated source corrections:
+
+| Case | FeOs $|\Delta a^r|$ / $|\Delta Z|$ / $|\Delta\ln\phi|$ | Clapeyron $|\Delta a^r|$ / $|\Delta Z|$ / $|\Delta\ln\phi|$ |
+|---|---|---|
+| C1 | 8.52e-15 / 1.25e-14 / **1.43e-11** | 1.78e-15 / 1.19e-14 / **1.36e-11** |
+| C2 | 3.07e-15 / 5.35e-15 / 1.05e-13 | 3.11e-15 / 3.46e-15 / 8.57e-14 |
+| C3 | 1.00e-14 / 7.05e-14 / **1.68e-10** | 1.61e-14 / 6.69e-14 / **9.18e-11** |
+| C4 | 8.73e-15 / 4.58e-14 / **3.93e-11** | 3.87e-13 / **1.32e-12** / **3.29e-10** |
+| C5 | 7.69e-15 / 6.46e-15 / **6.48e-12** | 1.78e-15 / 1.40e-14 / 6.27e-13 |
+
+Bold entries miss the unchanged absolute target ($10^{-12}$ neutral/dipolar, $10^{-11}$ C3). $\mu^r/(RT)$ is a localization diagnostic, not an additionally invented agreement target. For each log-fugacity row the retained decomposition uses
+
+$$
+\ln\phi_i=\mu_i^r/(RT)-\ln Z.
+$$
+
+For the same-density C3 FeOs contrast, the remaining $\ln\phi$ difference is about $-1.68\times10^{-10}$, while the chemical-potential remainder is only $1.68\times10^{-14}$: the logarithmic Z remainder dominates. This is an observed decomposition, not a residual-times-conditioning accuracy bound. In contrast, the C4 Clapeyron pentanol component in the 298.15 K water-rich liquid has chemical remainder $-3.0663\times10^{-10}$ and log-Z remainder $-2.1944\times10^{-11}$; blaming that whole miss on small Z would be incorrect.
+
+The documented `AssocOptions(implicit_ad=true)` attempt has no effect on the C4 remainder. Raising evaluation precision to 256 bits also preserves it (chemical maximum $3.0653\times10^{-10}$). The source's compressed two-by-two association initializer uses a hardcoded $10^{-12}$ stopping threshold and returns before the general solver's tolerance/implicit-AD path. The 40-row retained diagnostic confirms a four-by-four native site matrix compressed to two-by-two. Tightening atol/rtol to 1e-30 also leaves the reported state quantities unchanged at each precision. This reproduces the source routing limitation, not merely an inference from the flag name. No library method is overwritten, and no corrected derivative is substituted into the benchmark.
+
+## Closure diagnosis and scope disposition
+
+The original $10^{-10}$ pressure/chemical/feed target remains unchanged. [diagnostics.csv](results/diagnostics.csv) retains actual observable metrics and available native stopping quantities; absent internal residual accessors are not manufactured.
+
+| Failing selection | Measured miss | Evidenced cause / bounded remedy | Disposition |
+|---|---|---|---|
+| Engine C3-σ, 1 mol/kg | native pressure 99999.999961201 Pa at target 100000 Pa; relative closure 3.8799e-10 | density reduced residual 2.7960e-13, below immutable criterion 1e-12; dense-liquid Z=7.19977e-4 separates reduced and relative pressure metrics | Original miss retained; the authorized endpoint-publication correction is qualified on the C3 rows below |
+| Clapeyron C4, 298.15 K | pressure/chemical closure about 2.88e-9 | pinned volume method stops on log-volume change (rtol=1e-12), not the study's pressure criterion; public volume reseed at the library's own returned phase is a separate diagnostic | Preserve original outputs/timing. No covert refined-runtime replacement |
+| Clapeyron C4 common states | Z remainder 1.32e-12; chemical maximum 3.07e-10 | 256-bit and implicit-AD input probes do not remove it; compressed initializer bypasses those controls | Keep strict misses; no comparator source fork |
+| FeOs C5 saturation | P difference 0.004000949 Pa (1.2074e-7 relative); vapor-density difference 1.2187e-7 relative | matched dipole input removes only a small part; quantified coefficient/source differences explain fixed-state errors | No post-hoc solved-target relaxation |
+
+For Engine C3, reduced residual alone does not guarantee relative pressure closure: $r=(P(\rho)-P_{target})/(\rho RT)$ and $|P(\rho)-P_{target}|/P_{target}=|r|/Z_{target}$, where $Z_{target}=P_{target}/(\rho RT)$. The owner-authorized revision retains both endpoint pressure records and uses the smaller $|P-P_{target}|$ endpoint for Newton and publication, choosing the upper endpoint on a tie. It preserves the residual and radius criteria, safeguarded step, quarter-radius witness and iteration budget. The anchor publishes the sole stable root from its existing local scan and composes the convergence counts. The original [historical anchor probe](results/density-closure-probe.csv) remains separately identified; the new replay has retained native traces and wheel identities.
+
+The native C4 volume-reseed diagnostic reduces maximum relative pressure closure to $4.97\times10^{-11}$ and chemical equality to $4.53\times10^{-11}$, meeting the original $10^{-10}$ target on these two retained splits. It leaves the original compositions fixed and uses each library-returned volume as the starting guess. This demonstrates a bounded remedy for the volume-closure miss, not a new automatic flash solve, association-derivative correction or replacement timing result.
+
+For Clapeyron C4, the bounded proposals are to qualify that documented native volume-reseed call as an explicitly different output workload, and to return the compressed association initializer's stopping/derivative precision to its upstream numerical owner. Those are prospective remedies, not authority to overwrite source or primary outputs. If the accountable lead accepts a narrower result, it must preserve every failed target and state the supported solved-value/energy scope explicitly. **Issue completion or scope amendment remains with that lead; this notebook does not silently redefine acceptance.**
+
+## Provenance, reproducibility and limits
+
+Engine values and gradients come from one non-editable wheel, SHA-256 `da56e55eab2dac8b75c2497da07e4895d838d82d2d78b305e4a30b81bfef3950`, using Engine numerical owners from merged main `efcb50fc`. FeOs is 0.10.1; Julia is 1.13.1; Clapeyron is 0.6.29. [summary.json](results/summary.json) records host, controls, identities and explicit missing diagnostics; [FeOs controls](inputs/feos-controls.md) and [Julia controls](inputs/julia-source-controls.md) give native source locators and defaults. `Project.toml`, `Manifest.toml` and the FeOs lock are analysis-local, not Engine dependencies.
+
+The dispersion and dipole coefficient CSVs retain their executed CRLF bytes. Their input-directory `.gitattributes` disables line-ending normalization for these two files, preserving the committed bytes against the original `input_table_sha256` identities without changing coefficients or results.
+
+Python declares inputs and compares/plots returned results. Engine EOS, equilibrium and gradients run natively in C++; comparator EOS and automatic differentiation run natively in Rust/Julia; source-error refinements and reference linear regression runs in Julia. FeOs activity contraction is an analysis-local Julia adapter, not an advertised FeOs native helper. No Python root solve, finite difference, activity equation or optimizer is introduced.
+
+The [README](README.md) gives reproduction commands. Rendering reads this retained narrative and figure only; it does not run thermodynamics. Comparator caches stay available through delivered review and only task-owned caches may then be removed. Source locks/hashes, raw misses and diagnostic rows remain.
+
+Claim limits: only the printed parameter packets, temperatures, compositions, declared phases, constant-permittivity/Born-off electrolyte selection and retained derivative coordinates are covered. The analysis neither adopts new parameters nor validates experimental thermodynamics, fits applications, establishes global stability, demonstrates Clapeyron parameter gradients, or extrapolates timings to other hosts. The unresolved strict closure/derivative findings prevent a blanket precision claim.

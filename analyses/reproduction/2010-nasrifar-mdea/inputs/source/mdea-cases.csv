@@ -1,0 +1,10 @@
+case_id,figure,system,temperature_or_pressure,composition_or_loading,quantity,source_locator,comparison_status
+mdea-water-vle-40kpa,6a,MDEA+water,P=40 kPa,temperature sweep,VLE,Figure 6a; PDF p.5; printed p.7624,native-neutral
+mdea-water-vle-53kpa,6b,MDEA+water,P=53.3 kPa,temperature sweep,VLE,Figure 6b; PDF p.5; printed p.7624,native-neutral
+mdea-water-vle-67p7kpa,6c,MDEA+water,P=67.7 kPa,temperature sweep,VLE,Figure 6c; PDF p.5; printed p.7624,native-neutral
+mdea-methane,7,MDEA+methane,T=298-403 K,solubility sweep,methane solubility,Figure 7; PDF p.6; printed p.7625,withheld-axis-conflict
+mdea-co2-speciation,15,CO2+MDEA+water,T=373.15 K; MDEA=20 wt%,species distribution,liquid species mole fractions,Figure 15; PDF p.9; printed p.7628,unavailable-engine-776
+mdea-co2-total-pressure,16a,CO2+MDEA+water,MDEA=48.77 wt% temperature sweep,,total pressure,Figure 16a; PDF p.9; printed p.7628,unavailable-engine-776
+mdea-h2s-total-pressure,16b,H2S+MDEA+water,MDEA=48.79 wt% temperature sweep,,total pressure,Figure 16b; PDF p.9; printed p.7628,unavailable-engine-776
+mdea-co2-loading-323,17a,CO2+MDEA+water,T=323.15 K multiple MDEA wt%,,partial pressure vs loading,Figure 17a; PDF p.9; printed p.7628,unavailable-engine-776
+mdea-co2-loading-373,17b,CO2+MDEA+water,T=373.15 K multiple MDEA wt%,,partial pressure vs loading,Figure 17b; PDF p.9; printed p.7628,unavailable-engine-776

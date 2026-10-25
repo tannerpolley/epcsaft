@@ -1,0 +1,21 @@
+salt,observable,number_of_points,reported_aad_percent,references,temperature_K,molality_min_mol_kg,molality_max_mol_kg,source_table,source_pdf_page,source_printed_page,source_doi,source_pdf_item,selection_note
+LiCl,osmotic_coefficient,23,1.87,180,298.15,0.001,3.0,8,19,5880,10.1021/acs.jced.0c00746,JGRVI5AH,row selection unresolved
+LiBr,osmotic_coefficient,23,0.53,179,298.15,0.001,3.0,8,19,5880,10.1021/acs.jced.0c00746,JGRVI5AH,row selection unresolved
+LiI,osmotic_coefficient,23,2.07,179,298.15,0.001,3.0,8,19,5880,10.1021/acs.jced.0c00746,JGRVI5AH,row selection unresolved
+NaCl,osmotic_coefficient,40,0.63,181-186,298.15,0.001,3.0,8,19,5880,10.1021/acs.jced.0c00746,JGRVI5AH,row selection unresolved
+NaBr,osmotic_coefficient,23,0.95,"182,187",298.15,0.001,3.0,8,19,5880,10.1021/acs.jced.0c00746,JGRVI5AH,row selection unresolved
+NaI,osmotic_coefficient,23,0.88,179,298.15,0.001,3.0,8,19,5880,10.1021/acs.jced.0c00746,JGRVI5AH,row selection unresolved
+KCl,osmotic_coefficient,37,0.88,"181,188,189",298.15,0.001,3.0,8,19,5880,10.1021/acs.jced.0c00746,JGRVI5AH,row selection unresolved
+KBr,osmotic_coefficient,24,0.67,179,298.15,0.001,3.0,8,19,5880,10.1021/acs.jced.0c00746,JGRVI5AH,row selection unresolved
+KI,osmotic_coefficient,23,0.35,179,298.15,0.001,3.0,8,19,5880,10.1021/acs.jced.0c00746,JGRVI5AH,row selection unresolved
+LiCl,gamma_pm_m,23,5.79,179,298.15,0.001,3.0,8,19,5880,10.1021/acs.jced.0c00746,JGRVI5AH,"same reference and count; exact row identity inferred in old ledger, not independently established"
+LiBr,gamma_pm_m,23,2.48,179,298.15,0.001,3.0,8,19,5880,10.1021/acs.jced.0c00746,JGRVI5AH,"same reference and count; exact row identity inferred in old ledger, not independently established"
+LiI,gamma_pm_m,23,3.33,179,298.15,0.001,3.0,8,19,5880,10.1021/acs.jced.0c00746,JGRVI5AH,"same reference and count; exact row identity inferred in old ledger, not independently established"
+NaCl,gamma_pm_m,12,4.05,179,298.15,0.001,3.0,8,19,5880,10.1021/acs.jced.0c00746,JGRVI5AH,row selection unresolved
+NaBr,gamma_pm_m,23,3.17,179,298.15,0.001,3.0,8,19,5880,10.1021/acs.jced.0c00746,JGRVI5AH,"same reference and count; exact row identity inferred in old ledger, not independently established"
+NaI,gamma_pm_m,23,2.63,179,298.15,0.001,3.0,8,19,5880,10.1021/acs.jced.0c00746,JGRVI5AH,"same reference and count; exact row identity inferred in old ledger, not independently established"
+KCl,gamma_pm_m,23,1.27,179,298.15,0.001,3.0,8,19,5880,10.1021/acs.jced.0c00746,JGRVI5AH,"same reference and count; exact row identity inferred in old ledger, not independently established"
+KBr,gamma_pm_m,21,1.08,179,298.15,0.001,3.0,8,19,5880,10.1021/acs.jced.0c00746,JGRVI5AH,row selection unresolved
+KI,gamma_pm_m,23,0.55,179,298.15,0.001,3.0,8,19,5880,10.1021/acs.jced.0c00746,JGRVI5AH,"same reference and count; exact row identity inferred in old ledger, not independently established"
+average,osmotic_coefficient,,0.73,,298.15,0.001,3.0,8,19,5880,10.1021/acs.jced.0c00746,JGRVI5AH,printed average; aggregation not defined in the located article
+average,gamma_pm_m,,2.71,,298.15,0.001,3.0,8,19,5880,10.1021/acs.jced.0c00746,JGRVI5AH,printed average; aggregation not defined in the located article

@@ -1,0 +1,1093 @@
+{
+  "purpose": "Complete visible source-ink traces with manual guide and marker masks, not predictions",
+  "coordinates": "original retained crop pixels, origin top left; 3 pixel half width in each axis, no experimental uncertainty implied",
+  "qa": "calibrated overlays visually inspected; unresolved overlaps explicitly excluded",
+  "helper_limitation": "bundled digitize_xy_plot.py requires cv2, absent in both system Python and checkout venv; manual calibration used with PIL QA",
+  "panels": [
+    {
+      "figure": 1,
+      "panel": "CsBr",
+      "salt": "CsBr",
+      "temperature_K": 293.15,
+      "quantity": "density_difference",
+      "box": [
+        132,
+        18,
+        325,
+        213
+      ],
+      "x_range": [
+        0,
+        6
+      ],
+      "y_range": [
+        0,
+        1000
+      ],
+      "scale": "linear",
+      "source": "analyses/reproduction/2008-held/figures/figure-01/source/paper-source-01-held-2008-figure-001.png",
+      "sha256": "bd5154875af5bd79a77a22286dbad0fee962bc8981f802586b7ee86b29d9d15e"
+    },
+    {
+      "figure": 1,
+      "panel": "CsCl",
+      "salt": "CsCl",
+      "temperature_K": 293.15,
+      "quantity": "density_difference",
+      "box": [
+        391,
+        18,
+        584,
+        213
+      ],
+      "x_range": [
+        0,
+        6
+      ],
+      "y_range": [
+        0,
+        600
+      ],
+      "scale": "linear",
+      "source": "analyses/reproduction/2008-held/figures/figure-01/source/paper-source-01-held-2008-figure-001.png",
+      "sha256": "bd5154875af5bd79a77a22286dbad0fee962bc8981f802586b7ee86b29d9d15e"
+    },
+    {
+      "figure": 1,
+      "panel": "CsI",
+      "salt": "CsI",
+      "temperature_K": 293.15,
+      "quantity": "density_difference",
+      "box": [
+        653,
+        18,
+        844,
+        213
+      ],
+      "x_range": [
+        0,
+        6
+      ],
+      "y_range": [
+        0,
+        1000
+      ],
+      "scale": "linear",
+      "source": "analyses/reproduction/2008-held/figures/figure-01/source/paper-source-01-held-2008-figure-001.png",
+      "sha256": "bd5154875af5bd79a77a22286dbad0fee962bc8981f802586b7ee86b29d9d15e"
+    },
+    {
+      "figure": 1,
+      "panel": "Cs2SO4",
+      "salt": "Cs2SO4",
+      "temperature_K": 293.15,
+      "quantity": "density_difference",
+      "box": [
+        132,
+        305,
+        325,
+        500
+      ],
+      "x_range": [
+        0,
+        6
+      ],
+      "y_range": [
+        0,
+        1500
+      ],
+      "scale": "linear",
+      "source": "analyses/reproduction/2008-held/figures/figure-01/source/paper-source-01-held-2008-figure-001.png",
+      "sha256": "bd5154875af5bd79a77a22286dbad0fee962bc8981f802586b7ee86b29d9d15e"
+    },
+    {
+      "figure": 1,
+      "panel": "CsF",
+      "salt": "CsF",
+      "temperature_K": 293.15,
+      "quantity": "density_difference",
+      "box": [
+        393,
+        305,
+        584,
+        500
+      ],
+      "x_range": [
+        0,
+        6
+      ],
+      "y_range": [
+        0,
+        1000
+      ],
+      "scale": "linear",
+      "source": "analyses/reproduction/2008-held/figures/figure-01/source/paper-source-01-held-2008-figure-001.png",
+      "sha256": "bd5154875af5bd79a77a22286dbad0fee962bc8981f802586b7ee86b29d9d15e"
+    },
+    {
+      "figure": 1,
+      "panel": "CsNO3",
+      "salt": "CsNO3",
+      "temperature_K": 293.15,
+      "quantity": "density_difference",
+      "box": [
+        653,
+        305,
+        844,
+        500
+      ],
+      "x_range": [
+        0,
+        6
+      ],
+      "y_range": [
+        0,
+        1000
+      ],
+      "scale": "linear",
+      "source": "analyses/reproduction/2008-held/figures/figure-01/source/paper-source-01-held-2008-figure-001.png",
+      "sha256": "bd5154875af5bd79a77a22286dbad0fee962bc8981f802586b7ee86b29d9d15e"
+    },
+    {
+      "figure": 2,
+      "panel": "CsBr",
+      "salt": "CsBr",
+      "temperature_K": 313.15,
+      "quantity": "density_difference",
+      "box": [
+        132,
+        22,
+        324,
+        229
+      ],
+      "x_range": [
+        0,
+        6
+      ],
+      "y_range": [
+        0,
+        800
+      ],
+      "scale": "linear",
+      "source": "analyses/reproduction/2008-held/figures/figure-02/source/paper-source-01-held-2008-figure-002.png",
+      "sha256": "e21f055243d14aaa2e2a6c3219c883a0ea47b1b11d0716638de1b74c5d21ca88"
+    },
+    {
+      "figure": 2,
+      "panel": "CsCl",
+      "salt": "CsCl",
+      "temperature_K": 313.15,
+      "quantity": "density_difference",
+      "box": [
+        391,
+        22,
+        582,
+        229
+      ],
+      "x_range": [
+        0,
+        6
+      ],
+      "y_range": [
+        0,
+        600
+      ],
+      "scale": "linear",
+      "source": "analyses/reproduction/2008-held/figures/figure-02/source/paper-source-01-held-2008-figure-002.png",
+      "sha256": "e21f055243d14aaa2e2a6c3219c883a0ea47b1b11d0716638de1b74c5d21ca88"
+    },
+    {
+      "figure": 2,
+      "panel": "CsI",
+      "salt": "CsI",
+      "temperature_K": 313.15,
+      "quantity": "density_difference",
+      "box": [
+        649,
+        22,
+        839,
+        229
+      ],
+      "x_range": [
+        0,
+        6
+      ],
+      "y_range": [
+        0,
+        1000
+      ],
+      "scale": "linear",
+      "source": "analyses/reproduction/2008-held/figures/figure-02/source/paper-source-01-held-2008-figure-002.png",
+      "sha256": "e21f055243d14aaa2e2a6c3219c883a0ea47b1b11d0716638de1b74c5d21ca88"
+    },
+    {
+      "figure": 2,
+      "panel": "Cs2SO4",
+      "salt": "Cs2SO4",
+      "temperature_K": 313.15,
+      "quantity": "density_difference",
+      "box": [
+        132,
+        308,
+        324,
+        517
+      ],
+      "x_range": [
+        0,
+        6
+      ],
+      "y_range": [
+        0,
+        1500
+      ],
+      "scale": "linear",
+      "source": "analyses/reproduction/2008-held/figures/figure-02/source/paper-source-01-held-2008-figure-002.png",
+      "sha256": "e21f055243d14aaa2e2a6c3219c883a0ea47b1b11d0716638de1b74c5d21ca88"
+    },
+    {
+      "figure": 2,
+      "panel": "CsNO3",
+      "salt": "CsNO3",
+      "temperature_K": 313.15,
+      "quantity": "density_difference",
+      "box": [
+        390,
+        308,
+        580,
+        517
+      ],
+      "x_range": [
+        0,
+        6
+      ],
+      "y_range": [
+        0,
+        800
+      ],
+      "scale": "linear",
+      "source": "analyses/reproduction/2008-held/figures/figure-02/source/paper-source-01-held-2008-figure-002.png",
+      "sha256": "e21f055243d14aaa2e2a6c3219c883a0ea47b1b11d0716638de1b74c5d21ca88"
+    },
+    {
+      "figure": 3,
+      "panel": "CsBr-333.15",
+      "salt": "CsBr",
+      "temperature_K": 333.15,
+      "quantity": "vapor_pressure",
+      "box": [
+        113,
+        24,
+        297,
+        234
+      ],
+      "x_range": [
+        0,
+        10
+      ],
+      "y_range": [
+        0,
+        0.25
+      ],
+      "scale": "linear",
+      "source": "analyses/reproduction/2008-held/figures/figure-03/source/paper-source-01-held-2008-figure-003.png",
+      "sha256": "796215e815c40d8ca78d1f3d19bd1aa7cf1eba8f922d8c5afb0908a9aa890d1f"
+    },
+    {
+      "figure": 3,
+      "panel": "CsBr-323.15",
+      "salt": "CsBr",
+      "temperature_K": 323.15,
+      "quantity": "vapor_pressure",
+      "box": [
+        113,
+        24,
+        297,
+        234
+      ],
+      "x_range": [
+        0,
+        10
+      ],
+      "y_range": [
+        0,
+        0.25
+      ],
+      "scale": "linear",
+      "source": "analyses/reproduction/2008-held/figures/figure-03/source/paper-source-01-held-2008-figure-003.png",
+      "sha256": "796215e815c40d8ca78d1f3d19bd1aa7cf1eba8f922d8c5afb0908a9aa890d1f"
+    },
+    {
+      "figure": 3,
+      "panel": "CsBr-303.15",
+      "salt": "CsBr",
+      "temperature_K": 303.15,
+      "quantity": "vapor_pressure",
+      "box": [
+        113,
+        24,
+        297,
+        234
+      ],
+      "x_range": [
+        0,
+        10
+      ],
+      "y_range": [
+        0,
+        0.25
+      ],
+      "scale": "linear",
+      "source": "analyses/reproduction/2008-held/figures/figure-03/source/paper-source-01-held-2008-figure-003.png",
+      "sha256": "796215e815c40d8ca78d1f3d19bd1aa7cf1eba8f922d8c5afb0908a9aa890d1f"
+    },
+    {
+      "figure": 3,
+      "panel": "CsCl-333.15",
+      "salt": "CsCl",
+      "temperature_K": 333.15,
+      "quantity": "vapor_pressure",
+      "box": [
+        359,
+        24,
+        542,
+        234
+      ],
+      "x_range": [
+        0,
+        10
+      ],
+      "y_range": [
+        0,
+        0.25
+      ],
+      "scale": "linear",
+      "source": "analyses/reproduction/2008-held/figures/figure-03/source/paper-source-01-held-2008-figure-003.png",
+      "sha256": "796215e815c40d8ca78d1f3d19bd1aa7cf1eba8f922d8c5afb0908a9aa890d1f"
+    },
+    {
+      "figure": 3,
+      "panel": "CsCl-323.15",
+      "salt": "CsCl",
+      "temperature_K": 323.15,
+      "quantity": "vapor_pressure",
+      "box": [
+        359,
+        24,
+        542,
+        234
+      ],
+      "x_range": [
+        0,
+        10
+      ],
+      "y_range": [
+        0,
+        0.25
+      ],
+      "scale": "linear",
+      "source": "analyses/reproduction/2008-held/figures/figure-03/source/paper-source-01-held-2008-figure-003.png",
+      "sha256": "796215e815c40d8ca78d1f3d19bd1aa7cf1eba8f922d8c5afb0908a9aa890d1f"
+    },
+    {
+      "figure": 3,
+      "panel": "CsCl-303.15",
+      "salt": "CsCl",
+      "temperature_K": 303.15,
+      "quantity": "vapor_pressure",
+      "box": [
+        359,
+        24,
+        542,
+        234
+      ],
+      "x_range": [
+        0,
+        10
+      ],
+      "y_range": [
+        0,
+        0.25
+      ],
+      "scale": "linear",
+      "source": "analyses/reproduction/2008-held/figures/figure-03/source/paper-source-01-held-2008-figure-003.png",
+      "sha256": "796215e815c40d8ca78d1f3d19bd1aa7cf1eba8f922d8c5afb0908a9aa890d1f"
+    },
+    {
+      "figure": 3,
+      "panel": "CsI-333.15",
+      "salt": "CsI",
+      "temperature_K": 333.15,
+      "quantity": "vapor_pressure",
+      "box": [
+        606,
+        24,
+        790,
+        234
+      ],
+      "x_range": [
+        0,
+        10
+      ],
+      "y_range": [
+        0,
+        0.25
+      ],
+      "scale": "linear",
+      "source": "analyses/reproduction/2008-held/figures/figure-03/source/paper-source-01-held-2008-figure-003.png",
+      "sha256": "796215e815c40d8ca78d1f3d19bd1aa7cf1eba8f922d8c5afb0908a9aa890d1f"
+    },
+    {
+      "figure": 3,
+      "panel": "CsI-323.15",
+      "salt": "CsI",
+      "temperature_K": 323.15,
+      "quantity": "vapor_pressure",
+      "box": [
+        606,
+        24,
+        790,
+        234
+      ],
+      "x_range": [
+        0,
+        10
+      ],
+      "y_range": [
+        0,
+        0.25
+      ],
+      "scale": "linear",
+      "source": "analyses/reproduction/2008-held/figures/figure-03/source/paper-source-01-held-2008-figure-003.png",
+      "sha256": "796215e815c40d8ca78d1f3d19bd1aa7cf1eba8f922d8c5afb0908a9aa890d1f"
+    },
+    {
+      "figure": 3,
+      "panel": "CsI-303.15",
+      "salt": "CsI",
+      "temperature_K": 303.15,
+      "quantity": "vapor_pressure",
+      "box": [
+        606,
+        24,
+        790,
+        234
+      ],
+      "x_range": [
+        0,
+        10
+      ],
+      "y_range": [
+        0,
+        0.25
+      ],
+      "scale": "linear",
+      "source": "analyses/reproduction/2008-held/figures/figure-03/source/paper-source-01-held-2008-figure-003.png",
+      "sha256": "796215e815c40d8ca78d1f3d19bd1aa7cf1eba8f922d8c5afb0908a9aa890d1f"
+    },
+    {
+      "figure": 4,
+      "panel": "a",
+      "salt": "LiI",
+      "temperature_K": 303.15,
+      "quantity": "water_activity_coefficient",
+      "box": [
+        98,
+        21,
+        438,
+        378
+      ],
+      "x_range": [
+        0,
+        6
+      ],
+      "y_range": [
+        0.8,
+        1.05
+      ],
+      "scale": "linear",
+      "source": "analyses/reproduction/2008-held/figures/figure-04/source/paper-source-01-held-2008-figure-004.png",
+      "sha256": "1c7c02233be429a5f59b98292dd8a97b1fc2815066fe078c503f1fe18729aaa3"
+    },
+    {
+      "figure": 4,
+      "panel": "a",
+      "salt": "NaI",
+      "temperature_K": 303.15,
+      "quantity": "water_activity_coefficient",
+      "box": [
+        98,
+        21,
+        438,
+        378
+      ],
+      "x_range": [
+        0,
+        6
+      ],
+      "y_range": [
+        0.8,
+        1.05
+      ],
+      "scale": "linear",
+      "source": "analyses/reproduction/2008-held/figures/figure-04/source/paper-source-01-held-2008-figure-004.png",
+      "sha256": "1c7c02233be429a5f59b98292dd8a97b1fc2815066fe078c503f1fe18729aaa3"
+    },
+    {
+      "figure": 4,
+      "panel": "a",
+      "salt": "KI",
+      "temperature_K": 303.15,
+      "quantity": "water_activity_coefficient",
+      "box": [
+        98,
+        21,
+        438,
+        378
+      ],
+      "x_range": [
+        0,
+        6
+      ],
+      "y_range": [
+        0.8,
+        1.05
+      ],
+      "scale": "linear",
+      "source": "analyses/reproduction/2008-held/figures/figure-04/source/paper-source-01-held-2008-figure-004.png",
+      "sha256": "1c7c02233be429a5f59b98292dd8a97b1fc2815066fe078c503f1fe18729aaa3"
+    },
+    {
+      "figure": 4,
+      "panel": "b",
+      "salt": "NaI",
+      "temperature_K": 303.15,
+      "quantity": "water_activity_coefficient",
+      "box": [
+        530,
+        21,
+        870,
+        378
+      ],
+      "x_range": [
+        0,
+        6
+      ],
+      "y_range": [
+        0.8,
+        1.05
+      ],
+      "scale": "linear",
+      "source": "analyses/reproduction/2008-held/figures/figure-04/source/paper-source-01-held-2008-figure-004.png",
+      "sha256": "1c7c02233be429a5f59b98292dd8a97b1fc2815066fe078c503f1fe18729aaa3"
+    },
+    {
+      "figure": 4,
+      "panel": "b",
+      "salt": "NaBr",
+      "temperature_K": 303.15,
+      "quantity": "water_activity_coefficient",
+      "box": [
+        530,
+        21,
+        870,
+        378
+      ],
+      "x_range": [
+        0,
+        6
+      ],
+      "y_range": [
+        0.8,
+        1.05
+      ],
+      "scale": "linear",
+      "source": "analyses/reproduction/2008-held/figures/figure-04/source/paper-source-01-held-2008-figure-004.png",
+      "sha256": "1c7c02233be429a5f59b98292dd8a97b1fc2815066fe078c503f1fe18729aaa3"
+    },
+    {
+      "figure": 4,
+      "panel": "b",
+      "salt": "NaCl",
+      "temperature_K": 303.15,
+      "quantity": "water_activity_coefficient",
+      "box": [
+        530,
+        21,
+        870,
+        378
+      ],
+      "x_range": [
+        0,
+        6
+      ],
+      "y_range": [
+        0.8,
+        1.05
+      ],
+      "scale": "linear",
+      "source": "analyses/reproduction/2008-held/figures/figure-04/source/paper-source-01-held-2008-figure-004.png",
+      "sha256": "1c7c02233be429a5f59b98292dd8a97b1fc2815066fe078c503f1fe18729aaa3"
+    },
+    {
+      "figure": 5,
+      "panel": "CsBr",
+      "salt": "CsBr",
+      "temperature_K": 298.15,
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "box": [
+        104,
+        17,
+        304,
+        225
+      ],
+      "x_range": [
+        0,
+        5
+      ],
+      "y_range": [
+        0.25,
+        1
+      ],
+      "scale": "linear",
+      "source": "analyses/reproduction/2008-held/figures/figure-05/source/paper-source-01-held-2008-figure-005.png",
+      "sha256": "67264d547cccd86f4455dd4b199bb12e3f586977e57404f8a1dc6f2a4d437c91"
+    },
+    {
+      "figure": 5,
+      "panel": "CsCl",
+      "salt": "CsCl",
+      "temperature_K": 298.15,
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "box": [
+        370,
+        17,
+        570,
+        225
+      ],
+      "x_range": [
+        0,
+        5
+      ],
+      "y_range": [
+        0.25,
+        1
+      ],
+      "scale": "linear",
+      "source": "analyses/reproduction/2008-held/figures/figure-05/source/paper-source-01-held-2008-figure-005.png",
+      "sha256": "67264d547cccd86f4455dd4b199bb12e3f586977e57404f8a1dc6f2a4d437c91"
+    },
+    {
+      "figure": 5,
+      "panel": "CsI",
+      "salt": "CsI",
+      "temperature_K": 298.15,
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "box": [
+        637,
+        17,
+        837,
+        225
+      ],
+      "x_range": [
+        0,
+        5
+      ],
+      "y_range": [
+        0.25,
+        1
+      ],
+      "scale": "linear",
+      "source": "analyses/reproduction/2008-held/figures/figure-05/source/paper-source-01-held-2008-figure-005.png",
+      "sha256": "67264d547cccd86f4455dd4b199bb12e3f586977e57404f8a1dc6f2a4d437c91"
+    },
+    {
+      "figure": 5,
+      "panel": "Cs2SO4",
+      "salt": "Cs2SO4",
+      "temperature_K": 298.15,
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "box": [
+        104,
+        310,
+        304,
+        520
+      ],
+      "x_range": [
+        0,
+        5
+      ],
+      "y_range": [
+        0,
+        1
+      ],
+      "scale": "linear",
+      "source": "analyses/reproduction/2008-held/figures/figure-05/source/paper-source-01-held-2008-figure-005.png",
+      "sha256": "67264d547cccd86f4455dd4b199bb12e3f586977e57404f8a1dc6f2a4d437c91"
+    },
+    {
+      "figure": 5,
+      "panel": "CsF",
+      "salt": "CsF",
+      "temperature_K": 298.15,
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "box": [
+        369,
+        310,
+        570,
+        520
+      ],
+      "x_range": [
+        0,
+        5
+      ],
+      "y_range": [
+        0.5,
+        1.5
+      ],
+      "scale": "linear",
+      "source": "analyses/reproduction/2008-held/figures/figure-05/source/paper-source-01-held-2008-figure-005.png",
+      "sha256": "67264d547cccd86f4455dd4b199bb12e3f586977e57404f8a1dc6f2a4d437c91"
+    },
+    {
+      "figure": 5,
+      "panel": "CsNO3",
+      "salt": "CsNO3",
+      "temperature_K": 298.15,
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "box": [
+        637,
+        310,
+        837,
+        520
+      ],
+      "x_range": [
+        0,
+        5
+      ],
+      "y_range": [
+        0,
+        1
+      ],
+      "scale": "linear",
+      "source": "analyses/reproduction/2008-held/figures/figure-05/source/paper-source-01-held-2008-figure-005.png",
+      "sha256": "67264d547cccd86f4455dd4b199bb12e3f586977e57404f8a1dc6f2a4d437c91"
+    },
+    {
+      "figure": 6,
+      "panel": "LiBr",
+      "salt": "LiBr",
+      "temperature_K": 298.15,
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "box": [
+        90,
+        16,
+        589,
+        505
+      ],
+      "x_range": [
+        0,
+        5
+      ],
+      "y_range": [
+        0,
+        3
+      ],
+      "scale": "linear",
+      "source": "analyses/reproduction/2008-held/figures/figure-06/source/paper-source-01-held-2008-figure-006.png",
+      "sha256": "5f14e5f54e16e3ec53841afb50796993b0b7cc10c7d2be4df7d52d404e31f91c"
+    },
+    {
+      "figure": 6,
+      "panel": "NaBr",
+      "salt": "NaBr",
+      "temperature_K": 298.15,
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "box": [
+        90,
+        16,
+        589,
+        505
+      ],
+      "x_range": [
+        0,
+        5
+      ],
+      "y_range": [
+        0,
+        3
+      ],
+      "scale": "linear",
+      "source": "analyses/reproduction/2008-held/figures/figure-06/source/paper-source-01-held-2008-figure-006.png",
+      "sha256": "5f14e5f54e16e3ec53841afb50796993b0b7cc10c7d2be4df7d52d404e31f91c"
+    },
+    {
+      "figure": 6,
+      "panel": "KBr",
+      "salt": "KBr",
+      "temperature_K": 298.15,
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "box": [
+        90,
+        16,
+        589,
+        505
+      ],
+      "x_range": [
+        0,
+        5
+      ],
+      "y_range": [
+        0,
+        3
+      ],
+      "scale": "linear",
+      "source": "analyses/reproduction/2008-held/figures/figure-06/source/paper-source-01-held-2008-figure-006.png",
+      "sha256": "5f14e5f54e16e3ec53841afb50796993b0b7cc10c7d2be4df7d52d404e31f91c"
+    },
+    {
+      "figure": 6,
+      "panel": "RbBr",
+      "salt": "RbBr",
+      "temperature_K": 298.15,
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "box": [
+        90,
+        16,
+        589,
+        505
+      ],
+      "x_range": [
+        0,
+        5
+      ],
+      "y_range": [
+        0,
+        3
+      ],
+      "scale": "linear",
+      "source": "analyses/reproduction/2008-held/figures/figure-06/source/paper-source-01-held-2008-figure-006.png",
+      "sha256": "5f14e5f54e16e3ec53841afb50796993b0b7cc10c7d2be4df7d52d404e31f91c"
+    },
+    {
+      "figure": 6,
+      "panel": "CsBr",
+      "salt": "CsBr",
+      "temperature_K": 298.15,
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "box": [
+        90,
+        16,
+        589,
+        505
+      ],
+      "x_range": [
+        0,
+        5
+      ],
+      "y_range": [
+        0,
+        3
+      ],
+      "scale": "linear",
+      "source": "analyses/reproduction/2008-held/figures/figure-06/source/paper-source-01-held-2008-figure-006.png",
+      "sha256": "5f14e5f54e16e3ec53841afb50796993b0b7cc10c7d2be4df7d52d404e31f91c"
+    },
+    {
+      "figure": 7,
+      "panel": "CsOH",
+      "salt": "CsOH",
+      "temperature_K": 298.15,
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "box": [
+        91,
+        14,
+        598,
+        508
+      ],
+      "x_range": [
+        0,
+        5
+      ],
+      "y_range": [
+        0,
+        3.5
+      ],
+      "scale": "linear",
+      "source": "analyses/reproduction/2008-held/figures/figure-07/source/paper-source-01-held-2008-figure-007.png",
+      "sha256": "d1e98c5c5e1c186bfdbe2909fb7a9a746dcac0e99d3ad8cf984592f3fd27de53"
+    },
+    {
+      "figure": 7,
+      "panel": "KOH",
+      "salt": "KOH",
+      "temperature_K": 298.15,
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "box": [
+        91,
+        14,
+        598,
+        508
+      ],
+      "x_range": [
+        0,
+        5
+      ],
+      "y_range": [
+        0,
+        3.5
+      ],
+      "scale": "linear",
+      "source": "analyses/reproduction/2008-held/figures/figure-07/source/paper-source-01-held-2008-figure-007.png",
+      "sha256": "d1e98c5c5e1c186bfdbe2909fb7a9a746dcac0e99d3ad8cf984592f3fd27de53"
+    },
+    {
+      "figure": 7,
+      "panel": "NaOH",
+      "salt": "NaOH",
+      "temperature_K": 298.15,
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "box": [
+        91,
+        14,
+        598,
+        508
+      ],
+      "x_range": [
+        0,
+        5
+      ],
+      "y_range": [
+        0,
+        3.5
+      ],
+      "scale": "linear",
+      "source": "analyses/reproduction/2008-held/figures/figure-07/source/paper-source-01-held-2008-figure-007.png",
+      "sha256": "d1e98c5c5e1c186bfdbe2909fb7a9a746dcac0e99d3ad8cf984592f3fd27de53"
+    },
+    {
+      "figure": 7,
+      "panel": "LiOH",
+      "salt": "LiOH",
+      "temperature_K": 298.15,
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "box": [
+        91,
+        14,
+        598,
+        508
+      ],
+      "x_range": [
+        0,
+        5
+      ],
+      "y_range": [
+        0,
+        3.5
+      ],
+      "scale": "linear",
+      "source": "analyses/reproduction/2008-held/figures/figure-07/source/paper-source-01-held-2008-figure-007.png",
+      "sha256": "d1e98c5c5e1c186bfdbe2909fb7a9a746dcac0e99d3ad8cf984592f3fd27de53"
+    },
+    {
+      "figure": 8,
+      "panel": "a-313.15",
+      "salt": "RbCl",
+      "temperature_K": 313.15,
+      "quantity": "vapor_pressure",
+      "box": [
+        99,
+        20,
+        266,
+        182
+      ],
+      "x_range": [
+        0,
+        10
+      ],
+      "y_range": [
+        0.02,
+        0.08
+      ],
+      "scale": "linear",
+      "source": "analyses/reproduction/2008-held/figures/figure-08/source/paper-source-01-held-2008-figure-008.png",
+      "sha256": "d6239855b9c9f3b4895e0d00fd933617f7622f942a1b7688ad86edcca0a529d0"
+    },
+    {
+      "figure": 8,
+      "panel": "a-303.15",
+      "salt": "RbCl",
+      "temperature_K": 303.15,
+      "quantity": "vapor_pressure",
+      "box": [
+        99,
+        20,
+        266,
+        182
+      ],
+      "x_range": [
+        0,
+        10
+      ],
+      "y_range": [
+        0.02,
+        0.08
+      ],
+      "scale": "linear",
+      "source": "analyses/reproduction/2008-held/figures/figure-08/source/paper-source-01-held-2008-figure-008.png",
+      "sha256": "d6239855b9c9f3b4895e0d00fd933617f7622f942a1b7688ad86edcca0a529d0"
+    },
+    {
+      "figure": 8,
+      "panel": "b",
+      "salt": "RbCl",
+      "temperature_K": 298.15,
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "box": [
+        375,
+        20,
+        545,
+        185
+      ],
+      "x_range": [
+        0,
+        5
+      ],
+      "y_range": [
+        0.4,
+        1
+      ],
+      "scale": "linear",
+      "source": "analyses/reproduction/2008-held/figures/figure-08/source/paper-source-01-held-2008-figure-008.png",
+      "sha256": "d6239855b9c9f3b4895e0d00fd933617f7622f942a1b7688ad86edcca0a529d0"
+    },
+    {
+      "figure": 8,
+      "panel": "c",
+      "salt": "RbCl",
+      "temperature_K": 293.15,
+      "quantity": "density_difference",
+      "box": [
+        667,
+        20,
+        835,
+        182
+      ],
+      "x_range": [
+        0,
+        10
+      ],
+      "y_range": [
+        0,
+        1000
+      ],
+      "scale": "linear",
+      "source": "analyses/reproduction/2008-held/figures/figure-08/source/paper-source-01-held-2008-figure-008.png",
+      "sha256": "d6239855b9c9f3b4895e0d00fd933617f7622f942a1b7688ad86edcca0a529d0"
+    }
+  ],
+  "calibration_check": "Midpoint ticks checked in original crops: linear molality midpoint and ordinate midpoint; axes align within 1 original pixel",
+  "source_pdf_sha256": "20855b3de708fd529b29c7c4d8f6d0a1270802b610408606db1488b32d9c97e8",
+  "pixel_half_width": 3,
+  "comparison": "directional native ordinate range over the source abscissa interval; fixed quarter-interval interior samples; unresolved turning extrema undetermined",
+  "figure_4b_anchors": "Six provisional source anchors rechecked in figure4b-detail.png: I lower, Br middle, Cl upper; no Engine prediction used"
+}

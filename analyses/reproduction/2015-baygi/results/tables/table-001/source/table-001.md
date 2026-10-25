@@ -1,0 +1,44 @@
+<!-- source: docs/papers/md/Baygi and Pahlavanzadeh - 2015 - Application of the PC-SAFT equation of state for modeling CO2 solub.md lines 21-62 -->
+
+| :--- | :--- |
+| $a_{\mathrm{i}}$ | activity of species i |
+| $\tilde{a}^{\text {res }}$ | residual Helmholtz energy |
+| $\tilde{a}^{h c}$ | hard-chain Helmholtz energy |
+| $\tilde{a}^{\text {disp }}$ | dispersion interactions Helmholtz energy |
+| $\tilde{a}^{\text {assoc }}$ | association interactions Helmholtz energy |
+| d | average segment diameter |
+| $g_{i j}^{h s}$ | radial pair distribution function for segments of component $i$ in the hard sphere system |
+| h | enthalpy |
+| $k_{B}$ | Boltzmann constant ( $1.38066 \times 10^{-23} \mathrm{~J} . \mathrm{K}^{-1}$ ) |
+| $\mathrm{K}_{\mathrm{X}}$ | The chemical equilibrium constants in mole fraction based |
+| $K_{m}$ | The chemical equilibrium constants in molality based |
+|  |  |
+| m | pure number of segments in a molecule |
+| $\mathrm{M}_{\mathrm{t}}$ | total moles of MEA |
+| np | number of experimental data points |
+| x | mole fraction in liquid phase |
+| y | mole fraction in gas phase |
+| $\mathrm{X}^{\mathrm{A}_{\mathrm{i}}}$ | fraction of molecules of species $i$ that are not bound at site A |
+|  |  |
+| $p$ | pressure (Pa) |
+| T | temperature (K) |
+| W | total moles of water in liquid phase |
+| Greek symbols |  |
+| $\alpha$ | $\mathrm{CO}_{2}$ liquid loading (mole $\mathrm{CO}_{2} /$ mole MEA) |
+| $\varepsilon$ | segment dispersion interaction energy |
+| $\varepsilon^{A_{i} B_{j}}$ | energy of hydrogen bonding between site $A$ at molecule $i$ and site $B$ at molecule $j$ |
+| $\kappa^{\mathrm{A}_{i} \mathrm{~B}_{\mathrm{j}}}$ | volume of hydrogen bonding between site $A$ at molecule $i$ and site $B$ at molecule $j$ |
+| $\rho$ | molar density |
+| $\rho_{n}$ | molecular density (number of molecules/ $\AA^{3}$ ) |
+| $\sigma$ | pure temperature independent segment diameter (Å) |
+| $v_{i}$ | stoichiometric coefficient of component $i$ in reaction |
+| $\Delta{ }^{\mathrm{A}_{\mathrm{i}} \mathrm{B}_{\mathrm{j}}}$ | strength of hydrogen bonding between the site $A$ at molecule $i$ and the site $B$ at molecule $j$ |
+| Subscripts and superscripts |  |
+| exp | experimental |
+| cal | calculated |
+| E | excess |
+| L | liquid |
+| min | minimum |
+| max | maximum |
+| i, j, k | indices |
+| sat | saturation |

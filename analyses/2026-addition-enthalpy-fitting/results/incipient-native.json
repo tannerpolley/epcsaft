@@ -1,0 +1,145 @@
+{
+  "base": "8f5f5685",
+  "wheel_sha256": "08f335ae3dee404fc86607d981820275d47bc287bcc90ba2e1dd5b579f8c1a96",
+  "logs": [
+    "build/issue269/native-face.log",
+    "build/issue269/native-neutral.log",
+    "build/issue269/native-mea.log",
+    "build/issue269/native-incipient.log"
+  ],
+  "rows": 349,
+  "failed": [],
+  "evidence": "Numerical verification of exact inventory faces and neutral electrostatic restrictions; no calorimetry validation, fit or parameter adoption",
+  "build_fingerprint": "4e40636e3aa2b9a21f2172e67c2eae873f0c1aca8dee97b3dee9f4040b9cfe79",
+  "native_binary_sha256": "8819efe26311a4983cb610650f1b6f0af4f81d6ec9e0a6e28cb39bb0a9cc236d",
+  "log_sha256": {
+    "build/issue269/native-face.log": "1c23bcd67c7a50b07744bbac4003fc5045ff3144c103dc0df4860ef5fdbd3e32",
+    "build/issue269/native-neutral.log": "fe325958bc4ac0c05134c542b9a5e5cb39c84fc4d6f70bef1d8b308fa6e5a428",
+    "build/issue269/native-mea.log": "8a5abf2196383cf8faf2ff80589b04ca2d7730b8880fcf542eef4d6acf393b2c",
+    "build/issue269/native-incipient.log": "d0d73a059b1b030870cfb7d28e577de3ba44564bd6c1513e25c1367227c6c652"
+  },
+  "artifacts": {
+    "build/issue269/check-all.log": "3e20bdeffa3dc308d90ec346841e8b2d1fe0d2f2121299725cea5c1120fb1117",
+    "build/issue269/check-affected.log": "5f88f9df9279a37a855e8b7940e44fc3ea2ca5e2a9c77ad07999f30ccbe3443e",
+    "build/issue269/khudaida.log": "35669b9700eff40beefb42efb836c0481a53dd66423d68bb7417ff1259fa19a1",
+    "build/issue269/candidate-values/mea-input.txt": "ff796ddbe45af945ed8983f058856c79a806bb8b063229dfd5fa7c3a700930a3"
+  },
+  "baseline_preparation": {
+    "build_dir": "build/engine-meson/cpython-313-linux-x86_64-x86_64-f6db693e21e289603ae71c78242a17b102f1e324061021d5dca361f47a0bfef7",
+    "build_fingerprint": "a103de5064ed5159cadf804aa8809b8e72b67b2db605dbf748e7fd0d6692cdeb",
+    "schema_version": 1,
+    "wheel": "build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+    "wheel_sha256": "0c329ac7d5d10063d0315791815f83bd63b7413b0ffce13266810f52bc605bc0"
+  },
+  "inputs": {
+    "ideal-calorics.json": "c94d504e68c6dc6e85d3d950cc51422499846729b1a06994b362040be991924a",
+    "reactions.json": "c1cb5c74b2d71ce56e9c0a5d86116f972adbb2d635a0e9ed944152f25bd5fc43",
+    "parameters.json": "7e9e3f02723700f8b6577681173249c0e7bd2c8c2a098f38a4e0a7e4611852d5"
+  },
+  "source_head": "bf1d61ab6960b3763fef1076ff01c5b2e044f8a7",
+  "runtime_patch_sha256": "52f392357859ae4607a8d1206b5109a26f707c1a9077a8a751bc82a15f727a4a",
+  "native_test_patch_sha256": "ffcd68d9060487d3bd606c910d07a951d57e4f0753b35ae5d9949c51d092db78",
+  "probes": {
+    "baseline": {
+      "source_commit": "8f5f56855ccafbeb2b73329f7bc7ec0b62265ddc",
+      "wheel_sha256": "0c329ac7d5d10063d0315791815f83bd63b7413b0ffce13266810f52bc605bc0",
+      "module": "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/issue-269-zero-inventory-incipient/.venv/lib/python3.13/site-packages/epcsaft/__init__.py",
+      "inputs": {
+        "ideal-calorics.json": "c94d504e68c6dc6e85d3d950cc51422499846729b1a06994b362040be991924a",
+        "reactions.json": "c1cb5c74b2d71ce56e9c0a5d86116f972adbb2d635a0e9ed944152f25bd5fc43",
+        "parameters.json": "7e9e3f02723700f8b6577681173249c0e7bd2c8c2a098f38a4e0a7e4611852d5"
+      },
+      "failures": {
+        "propane-bubble": "zero_inventory_incipient_support: component 1 in phase V needs the discarded conserved potential in chemical stationarity",
+        "propane-dew": "zero_inventory_incipient_support: component 1 in phase L needs the discarded conserved potential in chemical stationarity",
+        "mea-zero": "zero_inventory_incipient_support: component 0 in phase V needs the discarded conserved potential in chemical stationarity"
+      },
+      "limits": "Numerical verification; no physical validation, global stability, or boundary caloric use."
+    },
+    "candidate": {
+      "source_commit": "bf1d61ab6960b3763fef1076ff01c5b2e044f8a7",
+      "wheel_sha256": "08f335ae3dee404fc86607d981820275d47bc287bcc90ba2e1dd5b579f8c1a96",
+      "module": "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/issue-269-zero-inventory-incipient/.venv/lib/python3.13/site-packages/epcsaft/__init__.py",
+      "inputs": {
+        "ideal-calorics.json": "c94d504e68c6dc6e85d3d950cc51422499846729b1a06994b362040be991924a",
+        "reactions.json": "c1cb5c74b2d71ce56e9c0a5d86116f972adbb2d635a0e9ed944152f25bd5fc43",
+        "parameters.json": "7e9e3f02723700f8b6577681173249c0e7bd2c8c2a098f38a4e0a7e4611852d5"
+      },
+      "failures": {},
+      "limits": "Numerical verification; no physical validation, global stability, or boundary caloric use."
+    }
+  },
+  "failures": {},
+  "task_diff_budget": {
+    "base": "8f5f5685",
+    "runtime_added": 20,
+    "runtime_removed": 4,
+    "runtime_net": 16,
+    "runtime_layer": "Equilibrium",
+    "test_added": 156,
+    "test_removed": 2,
+    "analysis_reader_added": 73,
+    "analysis_reader_removed": 4,
+    "aggregate_gross_executable": 249,
+    "ceilings": {
+      "runtime_gross": 80,
+      "runtime_net": 60,
+      "test_gross": 220,
+      "analysis_reader_gross": 80
+    }
+  },
+  "integration_budget_projection": {
+    "integration_reference": "19a0c8258c3f5f6fca2258395eb54e07503b7efb",
+    "actual_current_main": {
+      "core": 917,
+      "contributions": 1547,
+      "properties": 4784,
+      "equilibrium": 7500,
+      "regression": 2435,
+      "surface": 532,
+      "bindings": 1979,
+      "python": 2791,
+      "total": 22485
+    },
+    "projected_unchanged_task_net": {
+      "core": 917,
+      "contributions": 1547,
+      "properties": 4784,
+      "equilibrium": 7516,
+      "regression": 2435,
+      "surface": 532,
+      "bindings": 1979,
+      "python": 2791,
+      "total": 22501
+    },
+    "hard": {
+      "core": 917,
+      "contributions": 1547,
+      "properties": 4800,
+      "equilibrium": 8800,
+      "regression": 2478,
+      "surface": 650,
+      "bindings": 2100,
+      "python": 2850,
+      "total": 24000
+    },
+    "limits": "Read-only line projection only. No integration or rebasing performed; assumes the same +16-line runtime change and does not resolve textual conflicts."
+  },
+  "gates": {
+    "check_all": "Passed: 119 Python checks, 1 deselected, six native fast groups, packet/docs/layout/architecture/Ruff/mypy.",
+    "check_affected": "Passed against 8f5f5685, including boundary, equilibrium and parameter-fitting native groups.",
+    "khudaida": "Passed canonical tools/run-slice.sh khudaida. Its temporary directories were created under build/issue269 and removed by the canonical command.",
+    "logs": {
+      "check_all": "3e20bdeffa3dc308d90ec346841e8b2d1fe0d2f2121299725cea5c1120fb1117",
+      "check_affected": "5f88f9df9279a37a855e8b7940e44fc3ea2ca5e2a9c77ad07999f30ccbe3443e",
+      "khudaida": "35669b9700eff40beefb42efb836c0481a53dd66423d68bb7417ff1259fa19a1"
+    }
+  },
+  "preservation": "results/incipient-preservation.json",
+  "ordinary_work": "results/incipient-cost.json",
+  "independent_delivered_review": "Pending with the orchestrator; no investigator promotion.",
+  "results_sha256": {
+    "incipient-native.csv": "91421480bb80c4a39ab35f63f37eeaae314a69950845c011e567e68e961a3c28",
+    "incipient-wheel.csv": "24e75496faa5b839556f70495c81b98949d4871b12e7d145af63cd40fa849da5"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "coefficients": [
+    33.94805007361066,
+    0.007139705002695323,
+    1.9294830293672383e-05,
+    -3.549875188835969e-08,
+    -5.882583717021177e-11,
+    4.907010411213469e-13,
+    -7.1510225343166e-16
+  ],
+  "reference_temperature_K": 360,
+  "temperature_min_K": 270,
+  "temperature_max_K": 450,
+  "standard_pressure_Pa": 100000.0,
+  "enthalpy_at_reference_J_mol": 0,
+  "entropy_at_reference_J_mol_K": 0,
+  "quantity": "cp^id in J/(mol K)",
+  "source": "IAPWS R6-95(2018), Eq. (5) / Table 3"
+}

@@ -1,0 +1,32 @@
+{
+  "envelope_packet": "data/packets/gross-2001-methane-ethane/3/parameters/parameters.json",
+  "envelope_reference": "analyses/2026-open-source-equilibrium-comparison/results/issue-224-sliceB/reference/envelope-points.csv",
+  "critical_reference": "analyses/2026-open-source-equilibrium-comparison/results/issue-224-sliceB/reference/critical-binary.csv",
+  "tpd_source": "analyses/2026-tpd-phase-discovery/scripts/feos_compare.py",
+  "feed_mol": [
+    0.5,
+    0.5
+  ],
+  "start_temperature_K": 120.0,
+  "start_pressure_Pa": 100000.0,
+  "row_tolerance": 1e-11,
+  "curve_relative_tolerance": 0.001,
+  "critical_relative_tolerance": 1e-07,
+  "tpd_temperature_K": 300.0,
+  "tpd_pressure_Pa": 100000.0,
+  "tpd_logit_limits": [
+    -14,
+    14
+  ],
+  "tpd_grid_points": 401,
+  "claim_class": "Numerical illustration of the algorithms; no physical validation",
+  "continuation": {
+    "initial_step": 1.0,
+    "minimum_step": 1e-07,
+    "max_steps": 4000,
+    "max_retries_per_step": 6,
+    "envelope_max_log_step": 0.02,
+    "envelope_straddle": 0.01
+  },
+  "tpd_parameters": "analyses/2026-tpd-phase-discovery/inputs/feos-test-parameters.json"
+}

@@ -1,0 +1,25 @@
+{
+  "citation": "Clegg, Rard and Miller (2005), DOI 10.1021/je0495987, Table 2, manuscript printed pp. 25-26 (PDF pages 27-28), published p. 1164; definitions Eqs. (1)-(6), manuscript pp. 6-8.",
+  "zotero_parent": "YGQSZVQE",
+  "zotero_attachment": "IMUUNKXB",
+  "source_pdf_sha256": "d3b031cb651fe84425359b067775c8b1272886ab320ba54582634fb45a3584b4",
+  "source_text_sha256": "eff60b211a01c4340a0c64d9686d7f24385360d8afb024fbc1dcfc32e2bd3482",
+  "readback": "All 49 occupied cells checked against rendered PDF page 27; blanks absent. Increasing y, then series and experiment order. Experiment numbers are within each series.",
+  "footnote_a": "Printed NaCl reference coefficients use Archer equation and parameters (Table 3); m_total=m_NaCl+m_SrCl2; y is NaCl ionic-strength fraction; t is equilibration time in days.",
+  "footnote_b": "Bath 298.15 +/- 0.005 K (IPTS-68). Six marked experiments retain reported times after temperature control was restored following refrigerator/circulator malfunctions.",
+  "footnote_c": "Three Series 2 NaCl reference molalities already corrected as described on manuscript p. 7. Original records implied the wrong stock. Back-calculated stock 2.00960 +/- 0.00153 mol/kg agrees with the other stock 2.0110 +/- 0.0007 mol/kg. Use printed corrected references once; no further correction.",
+  "uncertainty": "Printed +/- entries are retained as printed, not interpreted as independent standard uncertainties. Experiments share reference values; all share the Archer reference convention. No covariance model.",
+  "pressure": "100000 Pa is the nominal calculation convention, not a verified experimental pressure.",
+  "units": {
+    "molalities": "mol/kg water",
+    "y": "dimensionless",
+    "phi_reference": "dimensionless",
+    "time_days": "days"
+  },
+  "counts_by_y": {
+    "0.17066": 17,
+    "0.47366": 18,
+    "0.82682": 14
+  },
+  "source_readback_pass": true
+}

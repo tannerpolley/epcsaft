@@ -1,0 +1,22 @@
+packet4 LiCl 105 states
+packet4 NaCl 105 states
+packet4 MgCl2 121 states
+packet4 CaCl2 121 states
+packet4 SrCl2 122 states
+held2014 LiCl 105 states
+held2014 NaCl 105 states
+held2014 MgCl2 121 states
+held2014 CaCl2 121 states
+held2014_nearest_dielectric MgCl2 42 states
+held2014_nearest_dielectric CaCl2 42 states
+{'mode': 'packet4', 'salt': 'LiCl', 'n_rows': 26, 'max_abs_gamma_decade': 0.06559673387898336, 'gamma_worst_molality': 4.5, 'max_abs_osmotic_decade': 0.017731588671149958, 'osmotic_worst_molality': 4.5, 'gamma_fail_rows': 18, 'osmotic_fail_rows': 0, 'gamma_ard_percent': 6.164025951946437, 'osmotic_ard_percent': 1.5386580938817114, 'passes': False}
+{'mode': 'packet4', 'salt': 'NaCl', 'n_rows': 26, 'max_abs_gamma_decade': 0.05361485796261262, 'gamma_worst_molality': 4.5, 'max_abs_osmotic_decade': 0.027413218068895705, 'osmotic_worst_molality': 3.5, 'gamma_fail_rows': 6, 'osmotic_fail_rows': 6, 'gamma_ard_percent': 3.5816110690092016, 'osmotic_ard_percent': 2.311760667102884, 'passes': False}
+{'mode': 'packet4', 'salt': 'MgCl2', 'n_rows': 42, 'max_abs_gamma_decade': 0.07647414392663596, 'gamma_worst_molality': 0.3, 'max_abs_osmotic_decade': 0.047801384154538766, 'osmotic_worst_molality': 1.5, 'gamma_fail_rows': 27, 'osmotic_fail_rows': 20, 'gamma_ard_percent': 8.654327415394466, 'osmotic_ard_percent': 4.414681537204167, 'passes': False}
+{'mode': 'packet4', 'salt': 'CaCl2', 'n_rows': 42, 'max_abs_gamma_decade': 0.27236152530306157, 'gamma_worst_molality': 4.5, 'max_abs_osmotic_decade': 0.08190312741643437, 'osmotic_worst_molality': 4.5, 'gamma_fail_rows': 31, 'osmotic_fail_rows': 8, 'gamma_ard_percent': 11.803192586690685, 'osmotic_ard_percent': 3.7843163245658906, 'passes': False}
+{'mode': 'packet4', 'salt': 'SrCl2', 'n_rows': 42, 'max_abs_gamma_decade': 0.13438953929122036, 'gamma_worst_molality': 4.038, 'max_abs_osmotic_decade': 0.05121246669061315, 'osmotic_worst_molality': 4.038, 'gamma_fail_rows': 25, 'osmotic_fail_rows': 6, 'gamma_ard_percent': 7.000840104792801, 'osmotic_ard_percent': 2.996576391639874, 'passes': False}
+{'mode': 'held2014', 'salt': 'LiCl', 'n_rows': 26, 'max_abs_gamma_decade': 0.019515910151056887, 'gamma_worst_molality': 3.0, 'max_abs_osmotic_decade': 0.013483055951973136, 'osmotic_worst_molality': 2.5, 'gamma_fail_rows': 0, 'osmotic_fail_rows': 0, 'gamma_ard_percent': 1.847591770671131, 'osmotic_ard_percent': 1.062016413514524, 'passes': True}
+{'mode': 'held2014', 'salt': 'NaCl', 'n_rows': 26, 'max_abs_gamma_decade': 0.01629068456362511, 'gamma_worst_molality': 0.4, 'max_abs_osmotic_decade': 0.01164723849855909, 'osmotic_worst_molality': 3.0, 'gamma_fail_rows': 0, 'osmotic_fail_rows': 0, 'gamma_ard_percent': 1.8268231267684907, 'osmotic_ard_percent': 1.0405617772872457, 'passes': True}
+{'mode': 'held2014', 'salt': 'MgCl2', 'n_rows': 42, 'max_abs_gamma_decade': 0.08560471659800388, 'gamma_worst_molality': 2.25, 'max_abs_osmotic_decade': 0.04599028727051402, 'osmotic_worst_molality': 1.5, 'gamma_fail_rows': 27, 'osmotic_fail_rows': 14, 'gamma_ard_percent': 7.990579174175082, 'osmotic_ard_percent': 4.072101409694169, 'passes': False}
+{'mode': 'held2014', 'salt': 'CaCl2', 'n_rows': 42, 'max_abs_gamma_decade': 0.0893507300530574, 'gamma_worst_molality': 2.25, 'max_abs_osmotic_decade': 0.04572236652664955, 'osmotic_worst_molality': 1.5, 'gamma_fail_rows': 23, 'osmotic_fail_rows': 13, 'gamma_ard_percent': 7.560429809129514, 'osmotic_ard_percent': 3.822083831628791, 'passes': False}
+{'mode': 'held2014_nearest_dielectric', 'salt': 'MgCl2', 'n_rows': 42, 'max_abs_gamma_decade': 0.08943087348137406, 'gamma_worst_molality': 2.25, 'max_abs_osmotic_decade': 0.04633511022576582, 'osmotic_worst_molality': 1.5, 'gamma_fail_rows': 26, 'osmotic_fail_rows': 14, 'gamma_ard_percent': 8.083760355835883, 'osmotic_ard_percent': 4.056352685474685, 'passes': False}
+{'mode': 'held2014_nearest_dielectric', 'salt': 'CaCl2', 'n_rows': 42, 'max_abs_gamma_decade': 0.09308597819620898, 'gamma_worst_molality': 2.25, 'max_abs_osmotic_decade': 0.04608192579960383, 'osmotic_worst_molality': 1.5, 'gamma_fail_rows': 24, 'osmotic_fail_rows': 13, 'gamma_ard_percent': 7.7279579230820055, 'osmotic_ard_percent': 3.8093215788309953, 'passes': False}

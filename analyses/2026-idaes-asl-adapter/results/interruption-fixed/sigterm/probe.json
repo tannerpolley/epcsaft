@@ -1,0 +1,14 @@
+{
+  "signal": "SIGTERM",
+  "parent_returncode": -2,
+  "expected_parent_returncode": -2,
+  "exit_semantics": "SIGTERM handler raises KeyboardInterrupt; CPython reports -SIGINT",
+  "child_group": 36,
+  "child_group_alive": false,
+  "partial_numerical_rows": 9,
+  "partial_rows_preserved": true,
+  "summary_status": "failed attempt",
+  "summary_stage": "interrupted",
+  "identity_preserved": true,
+  "injection": "real numerical child paused after an atomic scalar checkpoint"
+}

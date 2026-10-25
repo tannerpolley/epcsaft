@@ -1,0 +1,30 @@
+{
+  "restored_source_sha256": "8bdff2a00f60aff4b53c430205e1a220a3ba775904ffd05140f69d26826bf920",
+  "restored_run": "passed",
+  "checks": [
+    {
+      "case": "binary",
+      "throwaway_edit": "if (background == 0) a.mean_ionic_log_molality_scale += 1e-4;",
+      "exit": 1,
+      "failure": "binary HCl scalar/vector divergence",
+      "diff": "build/issue-676/plant-binary.diff",
+      "log": "build/issue-676/falsify-binary.log"
+    },
+    {
+      "case": "trace",
+      "throwaway_edit": "if (amounts[0] == 1e-15) a.mean_ionic_log_molality_scale += 1e-4;",
+      "exit": 1,
+      "failure": "mixed/trace HCl activity normalization",
+      "diff": "build/issue-676/plant-trace.diff",
+      "log": "build/issue-676/falsify-trace.log"
+    },
+    {
+      "case": "old-scalar",
+      "throwaway_edit": "if (background == 0) scalar.mean_ionic_log_molality_scale += 1e-4;",
+      "exit": 1,
+      "failure": "old/new HCl scalar divergence",
+      "diff": "build/issue-676/plant-old-scalar.diff",
+      "log": "build/issue-676/falsify-old-scalar.log"
+    }
+  ]
+}

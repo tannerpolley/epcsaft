@@ -1,0 +1,188 @@
+---
+title: "Native tangent-plane tests of the retained phase candidates"
+execute:
+  enabled: true
+  echo: false
+---
+
+```{python}
+import csv
+import json
+from pathlib import Path
+
+results = Path("results")
+def rows(name):
+    with (results / name).open(newline="") as stream:
+        return list(csv.DictReader(stream))
+
+def record(name):
+    return json.loads((results / name).read_text())
+
+native = "native-e8ad39e0"
+summary = record(f"{native}/summary.json")
+comparison = rows(f"{native}/before-after.csv")
+candidates = rows(f"{native}/current-engine.csv")
+trials = rows(f"{native}/trials.csv")
+quantities = rows(f"{native}/quantities.csv")
+reference_trials = rows("native-e28d258d/trials.csv")
+reference_comparison = rows("native-e28d258d/before-after.csv")
+qualification = record("batch14-comparison-main/qualification.json")
+batch_summary = record("batch14-comparison-main/summary.json")
+
+# Cases follow retained CSV order; table labels preserve the existing wording.
+labels = ["Methane/ethane, 1 vapor", "Water/Na+/Cl−, 1 liquid",
+          "Ternary, 1 vapor", "Ternary, 1 liquid", "Ternary, 2 liquids",
+          "Ternary, 3 liquids", "Ternary, 3 liquids", "Khudaida row 7, 2 liquids"]
+interpretations = ["No witness", "Charged family refused", "No witness",
+                   "Resolved descending split", "Resolved descending split; 1 indeterminate",
+                   "Resolved descending split; 2 indeterminate", "No witness", "Charged family refused"]
+
+def table(headers, values):
+    print("| " + " | ".join(headers) + " |")
+    print("| " + " | ".join("---" for _ in headers) + " |")
+    for value in values:
+        print("| " + " | ".join(value) + " |")
+
+def composition(value, precision=6):
+    return "(" + ", ".join(f"{x:.{precision}f}" for x in json.loads(value)) + ")" if value else "refused"
+
+def pair(row, quantity, formatter):
+    return formatter(row[f"before_{quantity}"]) + " → " + formatter(row[f"after_{quantity}"])
+
+def tpd(value):
+    return f"{float(value):.9g}" if value else "refused"
+
+def q(case, entry, quantity):
+    return float(next(r["value"] for r in quantities
+                      if r["case"] == case and r["entry"] == entry and r["quantity"] == quantity))
+
+indeterminate = [r for r in trials if r["evidence"] == "indeterminate"]
+indeterminate_values = [q(r["case"], f"trial-{r['trial']}", "tpd_over_rt") for r in indeterminate]
+indeterminate_errors = [q(r["case"], f"trial-{r['trial']}", "descent_error_estimate_over_rt") for r in indeterminate]
+liquid_cases = [comparison[i]["case"] for i in (3, 4, 5)]
+# Select vapor trial 4, as in the original reported finite splits.
+split_values = [q(case, "trial-4", "split_delta_g_over_rt") for case in liquid_cases]
+split_errors = [q(case, "trial-4", "split_error_estimate_over_rt") for case in liquid_cases]
+
+# Explicit Khudaida row selection, from the retained feed owner, not a copy.
+with Path("../reproduction/2026-khudaida/results/data/khudaida-2026-figure-2-held2.csv").open() as stream:
+    khudaida_feed = json.loads(next(r["explicit_feed_json"] for r in csv.DictReader(stream) if r["point_id"] == "7"))
+```
+
+The native finite search finds resolved descending splits for the neutral ternary liquid declarations at 300 K and 0.1 MPa. Methane/ethane vapor at 300 K and 0.1 MPa and the ternary vapor at those conditions have no witness in their recorded trial sets. The three-liquid ternary at 10 MPa has no witness. Three near-zero signs at 0.1 MPa remain indeterminate. The two ionic families are explicitly refused under the adopted density-independent-permittivity rule. These are numerical verification results, not physical validation or global stability certificates.
+
+The result source is [the native table](results/native-e8ad39e0/current-engine.csv), with [all trials](results/native-e8ad39e0/trials.csv), [native quantities and finite splits](results/native-e8ad39e0/quantities.csv), [declared equation rows](results/native-e8ad39e0/declared-residuals.csv), [before/after values](results/native-e8ad39e0/before-after.csv) and [identities](results/native-e8ad39e0/summary.json). The batch-14 delivered review supports these results within their stated limits; the notebook is not promoted for manuscript use.
+
+## Inputs, basis and method
+
+The original [historical table](results/current-engine.csv) and [summary](results/summary.json) remain unchanged under wheel `c74a91f66fb906c56a7cbad9e9448760eb7e24c79afc740c5391c061d10b220a`. The new calculation uses non-editable wheel `e8ad39e0c5d7da471a6d3ace6ff62d60518c57bc1c96fe5198d8bf18747ba8b5`. The historical wheel was not replayed; differences therefore do not isolate the effect of changing the minimizer.
+
+The [calculation](scripts/current_engine.py) supplies the same temperatures, pressures, parameter files, feeds, supports and multi-phase guesses. Methane/ethane feed is `{python} "(" + ",".join(map(str, json.loads(candidates[0]["feed_mol"]))) + ")"` mol; aqueous water/Na+/Cl− feed is `{python} "(" + ",".join(map(str, json.loads(candidates[1]["feed_mol"]))) + ")"` mol; the manufactured ternary feed is `{python} "(" + ",".join(map(str, json.loads(candidates[2]["feed_mol"]))) + ")"` mol. Khudaida row 7 uses the original explicit feed `{python} "(" + ",".join(map(str, khudaida_feed)) + ")"` mol in (water,ethanol,isobutanol,Na+,Cl−) order at `{python} comparison[7]["T_K"]` K. Parameter and feed-file digests are retained in the identity file. No parameters were refitted.
+
+Every candidate now comes from a native declared solve, including the previously direct-evaluated singletons. The call is `equilibrium.stability_test(equilibrium.compile_problem(model, problem), result, equilibrium.StabilityOptions())`. Native [ALG-STABILITY](../../engine/docs/science/algorithms.md#alg-stability) owns the finite starts, exact-curvature Ipopt trials, reconstruction, uncertainty and donor splits; [the TPD definition](../../engine/docs/equations.md#tangent_plane_distance) owns the objective. The declared row tolerance stays `{python} str(summary["row_tolerance"])` and reconstructed trial charge/normalization defects must stay within `{python} str(summary["trial_charge_tolerance"])`. Native default starts and budgets are unchanged.
+
+The historical search used `{python} comparison[0]["before_grid_points_liquid"]` grid points per branch for binary cases, `{python} f"{int(comparison[2]['before_grid_points_liquid']):,}"` for ternary cases and `{python} comparison[7]["before_grid_points_liquid"]` for Khudaida, followed by three Nelder–Mead refinements per branch. The native neutral search uses `{python} candidates[0]["trial_count"]` trials for methane/ethane and `{python} candidates[2]["trial_count"]` per ternary declaration, with charge-neutral base, near-pure and ideal-vapor starts and density-root deduplication. These are different finite start sets on common neutral supports; no equal coverage or exhaustive minimum is asserted. Skipped failures and artificial thousand-valued penalties (historical method detail; source: the pre-cutover `current_engine.py` at commit `f302a653`, with no retained numerical owner) have been removed. All `{python} sum(r["optimizer_success"] == "True" for r in trials)` trial optimizers converged; every raw point, reconstructed composition, termination, donor, split and uncertainty quantity is retained.
+
+## TPD comparison
+
+TPD divided by $RT$ and mole fractions are dimensionless. The table contains discrete scalar comparisons and categorical refusals; a curve would imply a continuous path or comparable search coverage that was not calculated.
+
+TPD values are rounded to nine significant digits; temperatures retain two decimal places and pressures are converted from Pa to MPa. Empty native minima display the retained charged-family refusal.
+
+```{python}
+#| output: asis
+table(["Candidate", "T (K)", "P (MPa)", "Liquid TPD/RT, before → after",
+       "Vapor TPD/RT, before → after", "Native interpretation"],
+      [[label, f"{float(r['T_K']):.2f}", f"{float(r['P_Pa']) / 1e6:g}",
+        pair(r, "tpd_min_liquid", tpd), pair(r, "tpd_min_vapor", tpd), interpretation]
+       for label, r, interpretation in zip(labels, comparison, interpretations, strict=True)])
+```
+
+Native minimum compositions follow the explicit species order (methane,ethane) or (alpha,beta,gamma). Historical ionic compositions retain their formula-salt coordinates, as explained below. Exact values and every other trial remain in the linked CSVs.
+
+Compositions are rounded to six decimal places, without changing the retained values. Scalar diagnostics below retain Python’s shortest round-trip decimal representation of the stored binary64 values; scientific notation is dimensionless unless a unit is stated.
+
+```{python}
+#| output: asis
+table(["Candidate", "Liquid minimum composition, before → after", "Vapor minimum composition, before → after"],
+      [[f"{label}, {float(r['P_Pa']) / 1e6:g} MPa", pair(r, "argmin_liquid", composition),
+        pair(r, "argmin_vapor", composition)] for label, r in zip(labels, comparison, strict=True)])
+```
+
+Historical ionic trial coordinates use formula NaCl as their last coordinate, whereas native trial coordinates are explicit species mole fractions. For historical formula fraction $s$, solvent fractions are divided by $1+s$ and both ion fractions equal $s/(1+s)$. Historical binary liquid/vapor minima are at formula coordinates `{python} composition(comparison[1]["before_argmin_liquid"]) + "/" + composition(comparison[1]["before_argmin_vapor"])`; Khudaida minima are at `{python} composition(comparison[7]["before_argmin_liquid"]) + "/" + composition(comparison[7]["before_argmin_vapor"])`. Neither ionic minimum has a common admitted native counterpart.
+
+## Conserved finite descent and uncertainty
+
+For the one-, two- and three-liquid ternary candidates at 0.1 MPa, selected native vapor trials give finite $\Delta G/RT$ of `{python} str(split_values[0])`, `{python} str(split_values[1])` and `{python} str(split_values[2])` mol, respectively. Their native split uncertainty estimates are `{python} str(split_errors[0])`, `{python} str(split_errors[1])` and `{python} str(split_errors[2])` mol. The decreases exceed their estimates and conserve component inventories; the native table retains all split operands. TPD and donor slopes remain intensive and dimensionless, while these Gibbs decreases are extensive in mol.
+
+Three near-zero trials at 0.1 MPa are indeterminate: their negative TPD magnitudes are no larger than `{python} str(max(abs(v) for v in indeterminate_values))`, smaller than their native descent-error estimates of `{python} str(min(indeterminate_errors))` to `{python} str(max(indeterminate_errors))`. This is uncertainty-limited sign resolution, with converged optimizers, rather than a failed root or evidence of physical instability. All three signs are retained. No tolerance, start, budget or physical model was changed in response.
+
+A separate [reference-wheel replay](results/native-e28d258d/summary.json) at SHA `e28d258df06eac39711c59a79f9ce2b69fc8ac7565637bfba0dbef21863d8dc7` retains the same physical inputs and finite-descent conclusions, with `{python} sum(r["evidence"] == "indeterminate" for r in reference_trials)` indeterminate signs (`{python} sum(r["evidence"] == "indeterminate" and "10 MPa" not in r["case"] for r in reference_trials)` at 0.1 MPa and `{python} sum(r["evidence"] == "indeterminate" and "10 MPa" in r["case"] for r in reference_trials)` at 10 MPa). Its smallest 10 MPa TPD is `{python} str(min(float(reference_comparison[6][f"after_tpd_min_{branch}"]) for branch in ("liquid", "vapor")))`, compared with zero on the current worktree wheel. The differences concern uncertainty-limited signs; neither wheel establishes a global certificate. This is a cross-wheel comparison, not an isolated source-change or compiler experiment.
+
+All declared classified row residuals are at most `{python} str(max(float(r["after_classified_residual_max_abs"]) for r in comparison))` against `{python} str(summary["row_tolerance"])`. The largest inter-phase neutral-species or ion-pair chemical-potential gap from native raw chemical rows is `{python} str(max(float(r["after_dmu_max_abs"]) for r in comparison))` in units of $RT$; the largest feed-normalized material defect is `{python} str(max(float(r["after_material_max_abs"]) for r in comparison))`. Reconstructed neutral trial normalization defects are at most `{python} str(max(abs(float(r["value"])) for r in quantities if r["quantity"] == "normalization_residual"))`, and their charge defects are zero. No charged trial reconstruction is claimed.
+
+The historical Gibbs column is per-mole $\sum_i x_i(\ln x_i+\ln\phi_i)$, using pressure as the ideal reference. The native objective uses the fixed ideal density reference $\rho_0=1$ mol/m³. At pressure closure the retained historical value is converted for comparison as $G_{\mathrm{native}}/(RT)=N[g_{\mathrm{historical}}+\ln(P/(RT\rho_0))]$. This is a presentation reference conversion, not a second EOS evaluation. The largest observed Gibbs difference is `{python} str(max(abs(float(r["delta_g_over_rt_mol"])) for r in comparison))` mol. Historical phase amounts are fractions; native phase amounts are mol. The full table retains both bases and both composition sets. The historical state evaluations and current solved states were not bit-identical replays, so these differences do not establish isolated minimizer error.
+
+## Changed claims and limits
+
+- The historical wording “stable” for the vapor singletons and the 10 MPa three-liquid state becomes “no witness in the recorded trial set”. At 0.1 MPa one two-liquid and two three-liquid signs remain indeterminate. The liquid/vapor labels share the unique density-root behavior recorded historically; they do not establish two distinct physical branches.
+- The 0.1 MPa ternary liquid declarations retain the conclusion that a vapor alternative lowers Gibbs energy. The new support is a numerically resolved conserved finite split with estimated uncertainty, rather than a negative plane value alone. No new topology is solved by this analysis.
+- Water/Na+/Cl− and Khudaida row 7 retain their declared equilibria, but their historical charged stability conclusions are not re-established. Both use density-independent ion-fraction-suppression permittivity. The entire default charged test family raises `ParameterError`: “permittivity model has no low-density limit; declare phases”, before trials. The [owner-adopted rule](../../engine/docs/science/algorithms.md#supports-seeds-and-trial-solves) requires a vacuum-limit permittivity form. Historical ionic vapor trials also fall outside native ionic-vapor admission. No dielectric substitution or reduced neutral-only family is used here.
+- These finite searches provide no global certificate, solid-phase conclusion, physical validation, parameter adoption or application-wide qualification. The numerical uncertainty estimates are local estimates, not rigorous bounds.
+
+## Batch comparison qualification
+
+The [round-one comparison](results/batch14-comparison-main/comparison.csv) retains `{python} len(rows("batch14-comparison-main/comparison.csv"))` rows. Its [qualification](results/batch14-comparison-main/qualification.json) states: `{python} qualification["stage"]`. The [comparison summary](results/batch14-comparison-main/summary.json) records: `{python} batch_summary["missing"]`.
+
+The claims below are read verbatim from the historical round-one qualification; they preserve its finite-search and uncertainty limits. Its missing-evaluator and notebook-number findings are superseded by the supplied comparison below and the current notebook checks.
+
+```{python}
+#| output: asis
+for claim in qualification["changed_claims"]:
+    print("- " + claim)
+```
+
+## Supplied historical trial comparison
+
+The [supplied-trial comparison](results/historical-supplied-round3/comparison.csv) evaluates native TPD at the retained historical trial argmins. It supersedes the earlier missing-evaluator finding: `StabilityOptions.evaluate_supplied_trials` now consumes the historical composition directly, with no packing guess and no trial minimization. Native density closure selects the declared liquid or vapor root. Candidate planes come from newly converged declared equilibria. The [candidate table](results/historical-supplied-round3/candidates.csv) records those compositions, densities, planes and residuals. The source-defined one-phase compositions are used at full binary64 precision; multiphase guesses come from the previously retained native candidates. This does not restore historical candidate snapshots.
+
+```{python}
+#| output: asis
+supplied = rows("historical-supplied-round3/comparison.csv")
+unverifiable = rows("historical-supplied-round3/unverifiable.csv")
+supplied_candidates = rows("historical-supplied-round3/candidates.csv")
+supplied_summary = record("historical-supplied-round3/summary.json")
+table(["Case", "Phase", "Historical TPD/RT", "Native TPD/RT", "Difference", "Displacement L1", "Pass"],
+      [[r["case"], r["phase"], r["historical_tpd_over_rt"], r["native_tpd_over_rt"],
+        r["difference"], r["displacement_l1"], r["passes"]] for r in supplied])
+```
+
+There are `{python} len(supplied)` neutral comparisons, with `{python} sum(r["passes"] == "True" for r in supplied)` passing the dimensionless absolute criterion `{python} str(supplied_summary["criterion"])`. The maximum absolute TPD difference is `{python} str(max(abs(float(r["difference"])) for r in supplied))`. The supplied points retain six decimal places. At a stationary minimum, the first-order composition term vanishes, so rounding changes TPD at second order when the same local branch and chemical plane apply. This is the owner's comparison basis, not a rigorous error bound: the exact historical trial coordinates and their curvature were not retained.
+
+Displacement L1 is the native sum of absolute changes between the supplied rounded coordinates and the evaluated normalized composition, ranging from `{python} str(min(float(r["displacement_l1"]) for r in supplied))` to `{python} str(max(float(r["displacement_l1"]) for r in supplied))`. It measures native reconstruction, not distance to the unavailable full-precision historical argmin. Component rounding alone has bound `{python} supplied[0]["rounding_linf_bound"]` before normalization; the exact total historical-to-evaluated displacement is unknown. Every supplied and evaluated composition is retained in the comparison CSV. The [native quantities](results/historical-supplied-round3/quantities.csv) retain pressure closure, density, packing, charge, normalization and uncertainty diagnostics. The maximum classified candidate residual is `{python} str(max(float(r["classified_residual_max"]) for r in supplied_candidates))`.
+
+The [unverifiable rows](results/historical-supplied-round3/unverifiable.csv) preserve `{python} sum(r["comparison"] == "historical charged trial" for r in unverifiable)` charged trial comparisons and `{python} sum(r["comparison"] == "historical candidate snapshot" for r in unverifiable)` candidate-snapshot comparisons, rather than treating them as passes.
+
+```{python}
+#| output: asis
+table(["Case", "Comparison", "Phase", "Reason"],
+      [[r["case"], r["comparison"], r["phase"], r["reason"]] for r in unverifiable])
+```
+
+The charged liquid and vapor comparisons remain unverifiable because density-independent permittivity refuses the whole supplied charged family. Candidate snapshots remain unverifiable because no historical density or chemical plane was retained and the matching old wheel was not found. Full-precision one-phase compositions do not supply the missing thermodynamic snapshots.
+
+The comparison supports numerical agreement at the retained rounded neutral trial points under newly solved candidate planes. It does not establish exact historical snapshot equivalence, isolated minimizer error, physical validation or global certificates. Historical “stable” claims retain the replacement “no witness in the recorded finite trial set”; charged stability claims remain unestablished. Existing conserved finite-descent conclusions and uncertainty-limited signs refer to their identified earlier wheels. The new wheel identity is `{python} supplied_summary["wheel_sha256"]`; its [provenance and limits](results/historical-supplied-round3/summary.json) identify the inputs and evaluated rows. Batch 14 delivered review is Supported in [PR #307](https://github.com/tannerpolley/ePC-SAFT/pull/307); manuscript promotion has not occurred.
+
+## Frozen calculation methods
+
+The retained native replay and supplied-trial comparison are frozen at record
+commit `ca719012c31e8b41edcb98ae82a388117b58d343`.
+`scripts/evaluate_historical_trials.py` is **historical, not rerunnable**:
+#696 report line 716 records `epcsaft._core.DeclarationError` because vapor
+`phase-0` contains charged component index `1` (`z=1`), contrary to the
+zero-charge vapor-support rule. No solve was accepted for that declaration.
+The original calculation methods perform no Python EOS, equilibrium or
+minimization loop. All comparison rows keep their original identities; the
+[leaf record](README.md#historical-supplied-trial-producer-720) retains the cause.
+
+The former SciPy allowlist rows are removed; #341 later removed the empty allowlist. The [native calculation log](results/native-e8ad39e0/checks/calculation.log) is retained; the gate logs remain at record commit `21d7a112`. The native Engine mathematics and algorithms are reused unchanged. The [delivered review](https://github.com/tannerpolley/ePC-SAFT/pull/307) supports the bounded batch comparison. The [analysis index](../README.md#analysis-index) lists the leaves whose claims the #234 conversions changed.

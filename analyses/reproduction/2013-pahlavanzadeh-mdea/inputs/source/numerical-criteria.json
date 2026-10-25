@@ -1,0 +1,13 @@
+{
+  "row_tolerance": 1e-10,
+  "refinement_tolerance": 1e-11,
+  "refinement_fraction_of_source_half_width": 0.1,
+  "pure_temperature_interval_K": [
+    303.15,
+    443.15
+  ],
+  "arithmetic_tolerance": 1e-12,
+  "conservation_tolerance_mol": 1e-10,
+  "source_reading_half_width_pixels": 2,
+  "branch_range_rule": "Use center and two bounds only if monotone, separated liquid/vapor roots and refinement supported; unresolved extrema/branch changes undetermined; failure separate."
+}

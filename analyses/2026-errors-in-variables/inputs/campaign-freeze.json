@@ -1,0 +1,39 @@
+{
+  "accepted_design_sha256": "dda4ab72111786d74349b7241716c1bcfc6d4e39e6c603e952488fb9228a9436",
+  "rules_sha256": "308544f9962cf63239e910098c770c91809612c2b6e75bc36c07652d7b159eb1",
+  "frozen_at_utc": "2026-10-17T10:45:52.888649+00:00",
+  "campaign_main_fits_run": 0,
+  "comparison_base": "8efe02e380a1e9d65182ec478a74df1c64883fb0",
+  "analysis_script_allowance_net": 700,
+  "derivative_steps": [
+    0.02,
+    0.01,
+    0.005
+  ],
+  "verification_half_step": 0.0025,
+  "ionic_verification": "existing binary128 contribution-kernel oracle; unchanged inputs and criteria",
+  "inputs_sha256": {
+    "inputs/ionic/bootstrap-indices.csv": "ad5776752a771d0236b8337d73a208ae37009609fc14f24016b03df08d44e59f",
+    "inputs/ionic/draws.csv": "0bef131826820fc54453c672738759fb65f4122668a69cdb5cba16a513edd01f",
+    "inputs/ionic/rho.csv": "bf13260b6db7957ab99ca5e9d275e8e3cb5ad836e47d87b1e6fd819644db9df0",
+    "inputs/ionic/truth.csv": "842a88b2016040af046517c38ca65ab16144811ae23693c7f29af6a8afd09840",
+    "inputs/ionic/verification.csv": "cde5a8e8a1db1ad180a88d5acc12db69ba10b4bebc8a5114c7351ff69db0ba16",
+    "inputs/mea/bootstrap-indices.csv": "0cee79386876123a541ab0d56d5b9acb9ab69c11125c5807c1dd21d8abfd492b",
+    "inputs/mea/draws.csv": "5b81e14f27e7bab21e0dd70bc1d0aba10378d85fbc126ea83f0bb9d3e2152557",
+    "inputs/mea/rho.csv": "67c6f781a1e8323b65dfd369fe7c9830de8735d31e90d22f0dedb03abd1adf32",
+    "inputs/mea/truth.csv": "7e0cc84f9dc9771432c816c934e09a8ddb1ac1764b296cc4564ce18cd8505355",
+    "inputs/mea/verification.csv": "731c33589efca2fd64671c63e61736e60447298add1372aebec05ec9fa2c3d88"
+  },
+  "driver_sha256": "318b2375666498fa613902ef82df3a6a154ea46aaea77eb2cfe18a662d9cc932",
+  "native_library_sha256": "6f9872501bdce1f6eca8c477d5c7148e45f891a488bac46dd171ff42077807d9",
+  "previous_freeze_sha256": "e539185741956679e124f52359a34ac7f3939d44a67cc6acb53ec0e8c28901e4",
+  "campaign_round": 3,
+  "campaign_main_fits_run_in_round": 0,
+  "partial_round": "results/attempt-1",
+  "signed_bias_summaries_inspected": true,
+  "build_correction": "Affine box face admission now uses existing COMPOSITION_SUM_TOLERANCE; all draws, domains, starts, controls, rules and rho estimates unchanged.",
+  "engine_commit": "8efe02e3",
+  "requalification": "#624: Engine #594 made the ionic reference the sqrt(m) limit of the 1e-12/1e-14 rungs; #623 moved the binary128 oracle to it. Truth, sigma, noisy outputs, verification and rho regenerated with the retained normal draws and bootstrap streams; rules unchanged; comparison rule frozen in campaign-freeze.md before any fit. Engine library unchanged from 3fbccd954 (only engine/tests/native/equilibrium_e5_checks.cpp differs).",
+  "refused_attempt": "2026-10-17T10:35:57Z run at driver 9ad7f311: all 528 fit records invalid_setup before any iteration (positional FitControls after #486; maximum_iterations and maximum_elapsed_time_seconds 0). Fifth driver correction sets the controls by name; MEA inputs regenerated (output-only changes <= 5.86e-14 relative).",
+  "outcome_note_after_fit": "Recorded 2026-10-17 after the round-3 run; not part of the frozen rules (rules_sha256 unchanged). C1-C6 hold; decision flags unchanged (MEA accepted, ionic inconclusive). C7 `pressure`: NOT MET. Ionic ratio new/old 2.334 for fixed (3.802335e-9 -> 8.873878e-9) and 2.383 for eiv (1.390137e-6 -> 3.312868e-6), against the frozen band [0.5, 2]. Cause: the gamma reference term charges the 1e-14 mol/kg root with weight 10/9; at 298.15 K and 1e5 Pa that root stops at pressure residual -3.39e-5 Pa (2.5e-13 reduced, inside the 1e-12 density tolerance), against -1.39e-6 Pa for the 1e-12 root, so the gamma reference pressure term rose about 27x; the driver builds the 1e-14 composition as the Engine does (infinite_dilution_reference.cpp:974-988). The term is about 3e-5 of the ionic numerical allowance and cannot affect the verdict. The band was set for a term the design marked unmeasured; it is not changed. Recorded as a miss, not waived."
+}

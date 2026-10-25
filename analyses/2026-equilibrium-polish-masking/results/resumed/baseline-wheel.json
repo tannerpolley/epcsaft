@@ -1,0 +1,8 @@
+{
+  "path": "build/issue-272/resumed/main-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+  "sha256": "ae3d960f3b310d88c83468e361c390392a8b58b6e5dafbead662f42e0e7fd8d3",
+  "states_path": "analyses/2026-equilibrium-polish-masking/results/amendment-2/baseline-states.csv",
+  "states_sha256": "9b722bff579037206b048a599b600d832f82a8142f0165289f852786c060c163",
+  "inputs_path": "analyses/2026-equilibrium-polish-masking/results/resumed/inputs.json",
+  "inputs_sha256": "577bd90565f348a5652cab8d4492a2cc646c4412e4121559a56ceed07a4dd06a"
+}

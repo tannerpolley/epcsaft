@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "purpose": "Retain the installed-artifact failure locations observed before the issue-102 numerical-contract corrections.",
+  "source_receipt_commit": "9e317ea6b91610ddaf6bb3206571e8944f77618f",
+  "artifacts": {
+    "eos_commit": "258076fb8ffaff8d0f0b9348d888ce9a892faef4",
+    "eos_wheel_sha256": "0d7320f235287b304ba71b0730e14da526d481e868ae965f34c5a07994d9e44a",
+    "equilibrium_commit": "409d7464d8be98cd3e9d58b1458fa29111e5f8ff",
+    "equilibrium_wheel_sha256": "942066c7e443292bb561143ad0c51c3f963b96289e631916c92577d29d632643"
+  },
+  "rows": [
+    {
+      "point_id": 1,
+      "attempts": 34,
+      "best_tpd": -0.07404916190886329,
+      "held_gap": 0.00019692642946633754,
+      "search_status": "step8",
+      "failure_reason": "problem_67_not_converged"
+    },
+    {
+      "point_id": 3,
+      "attempts": 12,
+      "best_tpd": -0.024936841337356352,
+      "held_gap": 0.000009577500531321448,
+      "search_status": "step8",
+      "failure_reason": "problem_67_not_converged"
+    },
+    {
+      "point_id": 5,
+      "attempts": 24,
+      "best_tpd": -0.14368759992352378,
+      "held_gap": 0.00002300720766612585,
+      "search_status": "step8",
+      "failure_reason": "problem_67_not_converged"
+    },
+    {
+      "point_id": 6,
+      "attempts": 80,
+      "best_tpd": -0.276684032887651,
+      "held_gap": null,
+      "search_status": "step7",
+      "failure_reason": "stage_ii_major_iteration_limit"
+    },
+    {
+      "point_id": 7,
+      "attempts": 80,
+      "best_tpd": -0.3232117367450612,
+      "held_gap": null,
+      "search_status": "step7",
+      "failure_reason": "stage_ii_major_iteration_limit"
+    },
+    {
+      "point_id": 8,
+      "attempts": 11,
+      "best_tpd": -0.010423548637468357,
+      "held_gap": null,
+      "search_status": "step8",
+      "failure_reason": "stage_iii_solver_not_converged"
+    }
+  ],
+  "interpretation": "These are differential failure locations, not accepted scientific results. The final campaign uses newer exact wheels and independently re-evaluates all eight rows."
+}

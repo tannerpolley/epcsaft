@@ -1,0 +1,41 @@
+{
+  "measured_samples": 2787,
+  "measured_blocks": 1275,
+  "loaded_library_checks": 28,
+  "repeat_tolerance": 1e-10,
+  "repeats_within_tolerance": true,
+  "maximum_solver_arm_difference": 8.516421089415273e-12,
+  "solver_arms_within_tolerance": true,
+  "work_count_comparisons": 28,
+  "work_counts_equal": true,
+  "work_count_differences": 0,
+  "f1_observations": 149,
+  "f1_coordinates": 7,
+  "unavailable_blocks": 183,
+  "prior_value_checks": 189885,
+  "differing_fields": 6255,
+  "maximum_repeat_difference": 0.0,
+  "maximum_density_relative_error": 5.329070518200751e-15,
+  "maximum_composition_sum_error": 2.220446049250313e-16,
+  "load_min": 3.884765625,
+  "load_max": 22.95068359375,
+  "gates": [
+    "relaxed"
+  ],
+  "declaration_sha256": {
+    "1218dc78": "b9b65314746b65c9f41f31d625e9a0a47064fbd2e8d85a1dd7a4aa064d94833d",
+    "026b3031": "f7bbcbc8b5e8631dae569621208af3e8d09aa4f90389c1f611bcbfb7aaef3460",
+    "a36a20a5": "f7bbcbc8b5e8631dae569621208af3e8d09aa4f90389c1f611bcbfb7aaef3460",
+    "36485a88": "db2919e4bb9ff02abbfc065d6eb9450827290357976a982323feb16d6467e579",
+    "177c2a87": "f8c2aa5853f6442b97b1f3113d740f504459832d285bd724d4e5eb006355f259",
+    "5ad73fb9": "f8c2aa5853f6442b97b1f3113d740f504459832d285bd724d4e5eb006355f259",
+    "ffda2bc0": "f8c2aa5853f6442b97b1f3113d740f504459832d285bd724d4e5eb006355f259",
+    "0bec2bdf": "66462e78419a0a8f090737c33118a586da43836a7b25dde38ba817f19c2278e4",
+    "9853bb6d": "66462e78419a0a8f090737c33118a586da43836a7b25dde38ba817f19c2278e4",
+    "cf26a17b": "66462e78419a0a8f090737c33118a586da43836a7b25dde38ba817f19c2278e4",
+    "21e761c3": "f6bc1db05eda3924f291332d55513f36a995ba1f298cc0ee50d30242177d0900",
+    "cc63a135": "f8a4240abee5402156a99a935d360d09f8d1b6908b614dd0ef3fce14c304e721",
+    "1cd3ab15": "f8a4240abee5402156a99a935d360d09f8d1b6908b614dd0ef3fce14c304e721",
+    "1cd3ab15-ma57": "f8a4240abee5402156a99a935d360d09f8d1b6908b614dd0ef3fce14c304e721"
+  }
+}

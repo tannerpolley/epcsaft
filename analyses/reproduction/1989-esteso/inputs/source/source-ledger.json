@@ -1,0 +1,80 @@
+{
+  "paper": {
+    "title": "Activity coefficients for NaCl in ethanol-water mixtures at 25°C",
+    "authors": "Esteso et al.",
+    "year": 1989,
+    "doi": "10.1007/BF00652989",
+    "zotero_key": "ZU5SKCH5",
+    "attachment_key": "NPM7L783",
+    "pdf_sha256": "c4d219d899340c750f5f4231199ecdf3cd1d9c876419ac2b6968aa14b13232bd"
+  },
+  "temperature_K": 298.15,
+  "pressure_Pa": 100000.0,
+  "pressure_basis": "Declared calculation condition; experimental pressure unreported.",
+  "packet": "figiel-2025-reference-electrolytes/4",
+  "parameter_sha256": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+  "components": [
+    "water",
+    "ethanol",
+    "sodium-cation",
+    "chloride-anion"
+  ],
+  "stoichiometry": [
+    1,
+    1
+  ],
+  "criteria": {
+    "printed_absolute": 0.0005,
+    "numerical_absolute": 5e-06,
+    "solvent_input_absolute": 1e-14
+  },
+  "controls": {
+    "baseline": {},
+    "refined": {
+      "ASSOCIATION_RESIDUAL": 1e-13,
+      "DENSITY_ROOT_RESIDUAL": 5e-13
+    }
+  },
+  "solvent_declaration": {
+    "equation": "x_i^s = (w_i/M_i) / sum_j(w_j/M_j)",
+    "basis": "Salt-free solvent; formula-unit molality per kg mixed solvent.",
+    "molar_mass_source": "Selected Figiel /4 packet, NIST solvent masses",
+    "shared_row": "Literal solvent fractions from issue #730; remaining declarations prepared once using the same masses."
+  },
+  "source_roles": {
+    "I": "Physical comparison: activities inferred from cell voltage and fitted reference coefficients; delta_E_mV retained as observation only.",
+    "II": "Recorded only: solvent permittivity, density, Debye–Hückel/Pitzer constants used by source models; partly previous literature.",
+    "III": "Recorded only: extended Debye–Hückel fits (Eq.4); no native source-model verification.",
+    "IV": "Recorded only: Pitzer fits (Eqs.6–8); blank C_phi retained beside source constraint.",
+    "V": "Recorded only: chemical ion-pair fits (Eqs.9–16); no neutral NaCl species in selected Figiel declaration.",
+    "reference-coefficients": "Recorded only: fitted references, shared uncertainty, instrument resolution and temperature control."
+  },
+  "source_equations": {
+    "cell_voltage": "Eq.3 pp.277–278: delta_E = (2RT/F) ln(m_R gamma_R / (m gamma)); source mV. Not calculated here.",
+    "extended_debye_huckel": "Eq.4 p.279: log10 gamma = -A sqrt(m)/(1+B a sqrt(m)) + c m - log10(1+0.002 M_xy m) + Ext; Ext refers to external higher terms.",
+    "pitzer": "Eqs.6–8 pp.282–283: ln gamma = f_gamma + B_gamma m + C_gamma m^2; source coefficients in Table IV.",
+    "pairing": "Eqs.9–16 pp.284–285: K_A = (1-alpha) gamma_0 / (m alpha^2 gamma_prime^2); I=alpha m; gamma=alpha gamma_prime."
+  },
+  "source_inconsistency": {
+    "ethanol_mass_percent": 60,
+    "molality_mol_kg": 0.1,
+    "table_I_gamma": 0.566,
+    "section_3_4_gamma": 0.565,
+    "locators": "Table I p.281; section 3.4 p.285; neither recalibrated."
+  },
+  "uncertainty": "Reference coefficient ±0.003 (p.287), instrument ±0.1 mV and temperature ±0.002 K (section 2.3); reference uncertainty shared within solvent series. Pointwise covariance, weighing and pressure uncertainty unknown. Criteria are not experimental uncertainties.",
+  "limitations": [
+    "No refit or physical-model change.",
+    "Esteso extended Debye–Hückel, Pitzer, neutral-pair and forward cell-voltage calculations excluded.",
+    "Selected Figiel family cites Esteso: independence from development data unestablished.",
+    "No phase-stability or global numerical-error bound claimed."
+  ],
+  "historical": {
+    "record_commit": "ca719012c31e8b41edcb98ae82a388117b58d343",
+    "method_commit": "21d7a112",
+    "legacy_input": "esteso-1989-water-ethanol-nacl.csv",
+    "legacy_results": "results/data/esteso-1989-water-ethanol-nacl.csv at the record commit; producer not retained; superseded by this live comparison."
+  },
+  "accepted_design_sha256": "4de884b94dc38c81a6144f8ac1dead6662d8cf7c31185ac7806b72665a59d0e0",
+  "accounting_base": "759c95d80c25557c176d21ca895ba5e3b288dc3b"
+}

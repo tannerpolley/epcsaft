@@ -1,0 +1,17 @@
+model,variant,k_ij,role,phase,points,failures,AAD_P_percent
+polar/GV2006,k_ij=0,0.0,calibration,liquid,5,0,13.119834566684068
+polar/GV2006,k_ij=0,0.0,calibration,vapor,3,0,9.001802508735334
+polar/GV2006,k_ij=0,0.0,validation,liquid,11,0,10.728587876532858
+polar/GV2006,k_ij=0,0.0,validation,vapor,11,0,8.778087937197656
+polar/GV2006,k_ij calibrated,0.03333866793213885,calibration,liquid,5,0,0.9341805117028645
+polar/GV2006,k_ij calibrated,0.03333866793213885,calibration,vapor,3,0,1.9032690399808854
+polar/GV2006,k_ij calibrated,0.03333866793213885,validation,liquid,11,0,1.2617426114819086
+polar/GV2006,k_ij calibrated,0.03333866793213885,validation,vapor,11,0,0.502759407008422
+nonpolar/refit,k_ij=0,0.0,calibration,liquid,5,0,22.374699781760466
+nonpolar/refit,k_ij=0,0.0,calibration,vapor,3,0,16.655021691502007
+nonpolar/refit,k_ij=0,0.0,validation,liquid,11,0,18.590784790226245
+nonpolar/refit,k_ij=0,0.0,validation,vapor,11,0,16.326049580318347
+nonpolar/refit,k_ij calibrated,0.059200033899127105,calibration,liquid,5,0,2.3553490592671844
+nonpolar/refit,k_ij calibrated,0.059200033899127105,calibration,vapor,3,0,1.9109650664705675
+nonpolar/refit,k_ij calibrated,0.059200033899127105,validation,liquid,11,0,2.0566573219877364
+nonpolar/refit,k_ij calibrated,0.059200033899127105,validation,vapor,11,0,0.9229426540184953

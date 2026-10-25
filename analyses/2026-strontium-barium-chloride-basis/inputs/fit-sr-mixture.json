@@ -1,0 +1,15 @@
+{
+  "design_sha256": "014dd70debde936eb6c0215d703a80e8bb5f540c7e60d18fdb561911d29ba81b", "amendment_sha256": "1b233dd7950a029a7bc7cf30234f1de750a45b9f35643ae3086a7a349611a609", "readiness_sha256": "b2892bf8978c206ba482a31d71636b3f386787aefca193e2be358b72c3d50d26", "accounting_base": "b8b2956d1347d8721ab73afd88614ca53c453b15",
+  "temperature_K": 298.15, "pressure_Pa": 100000, "training_states": 39, "training_observations": 127, "mixture": {"training": "clegg2005-table2.csv", "states": 49, "source": "Clegg Table 2"},
+  "maximum_iterations": 1500, "maximum_seconds": 450, "total_maximum_iterations": 9000, "total_maximum_seconds": 2700,
+  "starts": [[0, 0], [0, 0.7], [0, -5], [-3, 0], [-3, 0.7], [-3, -5]],
+  "screen_points": [[0, 0], [0, 0.7], [0, -5], [-3, 0], [-3, 0.7], [-3, -5], [-0.5778998203244021, 0], [-0.5778998203244021, 0.7], [-0.5778998203244021, -5]],
+  "coordinates": [{"family": "k_ij", "pair": ["strontium-cation", "water"], "origin": 0, "scale": 1, "bounds": [-50, 1]}, {"family": "k_ij", "pair": ["strontium-cation", "chloride-anion"], "origin": 0, "scale": 1, "bounds": [-50, 1]}],
+  "trial": {"ion": "strontium-cation", "label": "Sr", "source": "Goldberg–Nuttall Table 23", "training": "srcl2-evaluated.csv", "split": 1, "cutoff": 3.518, "low_states": 28, "stoichiometry": [1, 2], "candidate": "sr-candidate.json", "build": "build/issue-795/sr-mixture"},
+  "fixed": {"segment_diameter": 2.9882, "dispersion_energy_over_k": 1677.6061, "packing_diameter": 2.629616, "debye_huckel_diameter": 2.629616, "born_diameter": 2.9882},
+  "identification": {"rank_ratio_strict": 1e-14, "bound_distance_strict": 1e-06, "cost_floor": 1e-10, "cost_fraction": 0.0001, "max_h": 0.051, "max_endpoint_distance": 0.051, "max_correlation": 0.99},
+  "later_Guo_conditions": {"temperature_K": 298.15, "pressure_Pa": 77500, "maximum_I_mol_kg": 8.03, "maximum_m_CaCl2_mol_kg": 3.3, "maximum_m_SrCl2_mol_kg": 3.518, "rule": "unique actual two-salt rows; both molalities positive; exclude endpoints and duplicates; condition-only; no values opened"},
+  "accuracy": {"phi_RMS": 0.01, "phi_max": 0.03, "gamma_MARD_percent": 2, "gamma_max_percent": 5},
+  "input_hashes": {"sr-candidate.json": "3a16f1e9ce2331af263e3027eaf850d3e420c1feca84ddfb1b80e79327a37768", "srcl2-evaluated.csv": "a1573cc41a135dfeb5c8678c99486919413ec8bbe29b4374b82cc97458bfb7aa", "clegg2005-table2.csv": "31858f995f6267dc38e4d46be2dcb0dc6de851d8c7e11c998324eba65982fe30", "clegg2005-provenance.json": "346a11344b0323450a7552990ac46e8f3e54ee8fa49fe39b32811db5f176141f"},
+  "results": "results/sr-mixture", "native_library": {"path": "build/engine-meson/shared/libepcsaft_native.so"}
+}

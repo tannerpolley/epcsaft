@@ -1,0 +1,1108 @@
+{
+  "question": "With the Held 2014 conventions settled, do Na+, Mg2+ and Ca2+ parameters trained jointly on binary osmotic data and Rard-Miller NaCl-MgCl2 mixtures predict the held-out Robinson-Bower NaCl-CaCl2 and Dinane-Mounir NaCl-MgCl2 water properties within the frozen #556 limits at 298.15 K and 1 bar?",
+  "authority": "Engine issue #575 design r2 (build/issue-575/design.md SHA-256 f21754273988226bcd64ec91cfd059e0790271ec1d04735324ef6805237103a1, sections 4-7) and the owner decision of 2026-10-16 (D1-D3, Option M).",
+  "freeze_rule": "Commit this declaration before any stage-A fit. Bounds, starts, weights, controls, the optimum-selection rule and the held-out limits are not changed after residuals are seen.",
+  "conditions": {
+    "temperature_K": 298.15,
+    "pressure_Pa": 100000.0,
+    "components": [
+      "water",
+      "sodium-cation",
+      "magnesium-cation",
+      "calcium-cation",
+      "chloride-anion"
+    ]
+  },
+  "forms": {
+    "H": {
+      "title": "Held 2014 strategy 2 chloride brine refit",
+      "base_packet": "held-2014-strategy2/2",
+      "candidate_packet": "held-2014-chloride-mixture-refit",
+      "coordinates_per_cation": [
+        "segment_diameter",
+        "debye_huckel_diameter",
+        "k_ij/water",
+        "k_ij/chloride-anion"
+      ],
+      "starts": [
+        {
+          "id": "grid-00",
+          "sigma_k_water_k_chloride": [
+            2.4,
+            -0.5,
+            -1.0
+          ],
+          "values": {
+            "sodium-cation": [
+              2.4,
+              2.112,
+              -0.5,
+              -1.0
+            ],
+            "magnesium-cation": [
+              2.4,
+              2.112,
+              -0.5,
+              -1.0
+            ],
+            "calcium-cation": [
+              2.4,
+              2.112,
+              -0.5,
+              -1.0
+            ]
+          }
+        },
+        {
+          "id": "grid-01",
+          "sigma_k_water_k_chloride": [
+            2.4,
+            -0.5,
+            0.5
+          ],
+          "values": {
+            "sodium-cation": [
+              2.4,
+              2.112,
+              -0.5,
+              0.5
+            ],
+            "magnesium-cation": [
+              2.4,
+              2.112,
+              -0.5,
+              0.5
+            ],
+            "calcium-cation": [
+              2.4,
+              2.112,
+              -0.5,
+              0.5
+            ]
+          }
+        },
+        {
+          "id": "grid-02",
+          "sigma_k_water_k_chloride": [
+            2.4,
+            0.0,
+            -1.0
+          ],
+          "values": {
+            "sodium-cation": [
+              2.4,
+              2.112,
+              0.0,
+              -1.0
+            ],
+            "magnesium-cation": [
+              2.4,
+              2.112,
+              0.0,
+              -1.0
+            ],
+            "calcium-cation": [
+              2.4,
+              2.112,
+              0.0,
+              -1.0
+            ]
+          }
+        },
+        {
+          "id": "grid-03",
+          "sigma_k_water_k_chloride": [
+            2.4,
+            0.0,
+            0.5
+          ],
+          "values": {
+            "sodium-cation": [
+              2.4,
+              2.112,
+              0.0,
+              0.5
+            ],
+            "magnesium-cation": [
+              2.4,
+              2.112,
+              0.0,
+              0.5
+            ],
+            "calcium-cation": [
+              2.4,
+              2.112,
+              0.0,
+              0.5
+            ]
+          }
+        },
+        {
+          "id": "grid-04",
+          "sigma_k_water_k_chloride": [
+            3.2,
+            -0.5,
+            -1.0
+          ],
+          "values": {
+            "sodium-cation": [
+              3.2,
+              2.8160000000000003,
+              -0.5,
+              -1.0
+            ],
+            "magnesium-cation": [
+              3.2,
+              2.8160000000000003,
+              -0.5,
+              -1.0
+            ],
+            "calcium-cation": [
+              3.2,
+              2.8160000000000003,
+              -0.5,
+              -1.0
+            ]
+          }
+        },
+        {
+          "id": "grid-05",
+          "sigma_k_water_k_chloride": [
+            3.2,
+            -0.5,
+            0.5
+          ],
+          "values": {
+            "sodium-cation": [
+              3.2,
+              2.8160000000000003,
+              -0.5,
+              0.5
+            ],
+            "magnesium-cation": [
+              3.2,
+              2.8160000000000003,
+              -0.5,
+              0.5
+            ],
+            "calcium-cation": [
+              3.2,
+              2.8160000000000003,
+              -0.5,
+              0.5
+            ]
+          }
+        },
+        {
+          "id": "grid-06",
+          "sigma_k_water_k_chloride": [
+            3.2,
+            0.0,
+            -1.0
+          ],
+          "values": {
+            "sodium-cation": [
+              3.2,
+              2.8160000000000003,
+              0.0,
+              -1.0
+            ],
+            "magnesium-cation": [
+              3.2,
+              2.8160000000000003,
+              0.0,
+              -1.0
+            ],
+            "calcium-cation": [
+              3.2,
+              2.8160000000000003,
+              0.0,
+              -1.0
+            ]
+          }
+        },
+        {
+          "id": "grid-07",
+          "sigma_k_water_k_chloride": [
+            3.2,
+            0.0,
+            0.5
+          ],
+          "values": {
+            "sodium-cation": [
+              3.2,
+              2.8160000000000003,
+              0.0,
+              0.5
+            ],
+            "magnesium-cation": [
+              3.2,
+              2.8160000000000003,
+              0.0,
+              0.5
+            ],
+            "calcium-cation": [
+              3.2,
+              2.8160000000000003,
+              0.0,
+              0.5
+            ]
+          }
+        },
+        {
+          "id": "grid-08",
+          "sigma_k_water_k_chloride": [
+            4.4,
+            -0.5,
+            -1.0
+          ],
+          "values": {
+            "sodium-cation": [
+              4.4,
+              3.8720000000000003,
+              -0.5,
+              -1.0
+            ],
+            "magnesium-cation": [
+              4.4,
+              3.8720000000000003,
+              -0.5,
+              -1.0
+            ],
+            "calcium-cation": [
+              4.4,
+              3.8720000000000003,
+              -0.5,
+              -1.0
+            ]
+          }
+        },
+        {
+          "id": "grid-09",
+          "sigma_k_water_k_chloride": [
+            4.4,
+            -0.5,
+            0.5
+          ],
+          "values": {
+            "sodium-cation": [
+              4.4,
+              3.8720000000000003,
+              -0.5,
+              0.5
+            ],
+            "magnesium-cation": [
+              4.4,
+              3.8720000000000003,
+              -0.5,
+              0.5
+            ],
+            "calcium-cation": [
+              4.4,
+              3.8720000000000003,
+              -0.5,
+              0.5
+            ]
+          }
+        },
+        {
+          "id": "grid-10",
+          "sigma_k_water_k_chloride": [
+            4.4,
+            0.0,
+            -1.0
+          ],
+          "values": {
+            "sodium-cation": [
+              4.4,
+              3.8720000000000003,
+              0.0,
+              -1.0
+            ],
+            "magnesium-cation": [
+              4.4,
+              3.8720000000000003,
+              0.0,
+              -1.0
+            ],
+            "calcium-cation": [
+              4.4,
+              3.8720000000000003,
+              0.0,
+              -1.0
+            ]
+          }
+        },
+        {
+          "id": "grid-11",
+          "sigma_k_water_k_chloride": [
+            4.4,
+            0.0,
+            0.5
+          ],
+          "values": {
+            "sodium-cation": [
+              4.4,
+              3.8720000000000003,
+              0.0,
+              0.5
+            ],
+            "magnesium-cation": [
+              4.4,
+              3.8720000000000003,
+              0.0,
+              0.5
+            ],
+            "calcium-cation": [
+              4.4,
+              3.8720000000000003,
+              0.0,
+              0.5
+            ]
+          }
+        },
+        {
+          "id": "grid-12",
+          "sigma_k_water_k_chloride": [
+            6.0,
+            -0.5,
+            -1.0
+          ],
+          "values": {
+            "sodium-cation": [
+              6.0,
+              5.28,
+              -0.5,
+              -1.0
+            ],
+            "magnesium-cation": [
+              6.0,
+              5.28,
+              -0.5,
+              -1.0
+            ],
+            "calcium-cation": [
+              6.0,
+              5.28,
+              -0.5,
+              -1.0
+            ]
+          }
+        },
+        {
+          "id": "grid-13",
+          "sigma_k_water_k_chloride": [
+            6.0,
+            -0.5,
+            0.5
+          ],
+          "values": {
+            "sodium-cation": [
+              6.0,
+              5.28,
+              -0.5,
+              0.5
+            ],
+            "magnesium-cation": [
+              6.0,
+              5.28,
+              -0.5,
+              0.5
+            ],
+            "calcium-cation": [
+              6.0,
+              5.28,
+              -0.5,
+              0.5
+            ]
+          }
+        },
+        {
+          "id": "grid-14",
+          "sigma_k_water_k_chloride": [
+            6.0,
+            0.0,
+            -1.0
+          ],
+          "values": {
+            "sodium-cation": [
+              6.0,
+              5.28,
+              0.0,
+              -1.0
+            ],
+            "magnesium-cation": [
+              6.0,
+              5.28,
+              0.0,
+              -1.0
+            ],
+            "calcium-cation": [
+              6.0,
+              5.28,
+              0.0,
+              -1.0
+            ]
+          }
+        },
+        {
+          "id": "grid-15",
+          "sigma_k_water_k_chloride": [
+            6.0,
+            0.0,
+            0.5
+          ],
+          "values": {
+            "sodium-cation": [
+              6.0,
+              5.28,
+              0.0,
+              0.5
+            ],
+            "magnesium-cation": [
+              6.0,
+              5.28,
+              0.0,
+              0.5
+            ],
+            "calcium-cation": [
+              6.0,
+              5.28,
+              0.0,
+              0.5
+            ]
+          }
+        },
+        {
+          "id": "binary-optima",
+          "note": "Mg2+/Ca2+ at the readiness-r2 sourced binary optima (build/issue-575/probes-r2, <= 3.3 mol/kg, held088 dh); Na+ at the base packet (no binary optimum in r2)",
+          "values": {
+            "sodium-cation": [
+              2.8232,
+              2.484416,
+              0.00045485000000011766,
+              0.317
+            ],
+            "magnesium-cation": [
+              1.44,
+              9.45378,
+              -9.43941,
+              -9.01876
+            ],
+            "calcium-cation": [
+              4.43011,
+              8.33715,
+              -2.42171,
+              -6.96619
+            ]
+          }
+        }
+      ]
+    },
+    "F": {
+      "title": "Figiel 2025 chloride brine refit",
+      "base_packet": "figiel-2025-chloride-activity-refit/2",
+      "candidate_packet": "figiel-2025-chloride-mixture-refit",
+      "coordinates_per_cation": [
+        "segment_diameter",
+        "debye_huckel_diameter",
+        "born_diameter",
+        "k_ij/water",
+        "k_ij/chloride-anion"
+      ],
+      "starts": [
+        {
+          "id": "grid-00",
+          "sigma_k_water_k_chloride": [
+            2.4,
+            -0.5,
+            -1.0
+          ],
+          "values": {
+            "sodium-cation": [
+              2.4,
+              2.112,
+              2.112,
+              -0.5,
+              -1.0
+            ],
+            "magnesium-cation": [
+              2.4,
+              2.112,
+              2.112,
+              -0.5,
+              -1.0
+            ],
+            "calcium-cation": [
+              2.4,
+              2.112,
+              2.112,
+              -0.5,
+              -1.0
+            ]
+          }
+        },
+        {
+          "id": "grid-01",
+          "sigma_k_water_k_chloride": [
+            2.4,
+            -0.5,
+            0.5
+          ],
+          "values": {
+            "sodium-cation": [
+              2.4,
+              2.112,
+              2.112,
+              -0.5,
+              0.5
+            ],
+            "magnesium-cation": [
+              2.4,
+              2.112,
+              2.112,
+              -0.5,
+              0.5
+            ],
+            "calcium-cation": [
+              2.4,
+              2.112,
+              2.112,
+              -0.5,
+              0.5
+            ]
+          }
+        },
+        {
+          "id": "grid-02",
+          "sigma_k_water_k_chloride": [
+            2.4,
+            0.0,
+            -1.0
+          ],
+          "values": {
+            "sodium-cation": [
+              2.4,
+              2.112,
+              2.112,
+              0.0,
+              -1.0
+            ],
+            "magnesium-cation": [
+              2.4,
+              2.112,
+              2.112,
+              0.0,
+              -1.0
+            ],
+            "calcium-cation": [
+              2.4,
+              2.112,
+              2.112,
+              0.0,
+              -1.0
+            ]
+          }
+        },
+        {
+          "id": "grid-03",
+          "sigma_k_water_k_chloride": [
+            2.4,
+            0.0,
+            0.5
+          ],
+          "values": {
+            "sodium-cation": [
+              2.4,
+              2.112,
+              2.112,
+              0.0,
+              0.5
+            ],
+            "magnesium-cation": [
+              2.4,
+              2.112,
+              2.112,
+              0.0,
+              0.5
+            ],
+            "calcium-cation": [
+              2.4,
+              2.112,
+              2.112,
+              0.0,
+              0.5
+            ]
+          }
+        },
+        {
+          "id": "grid-04",
+          "sigma_k_water_k_chloride": [
+            3.2,
+            -0.5,
+            -1.0
+          ],
+          "values": {
+            "sodium-cation": [
+              3.2,
+              2.8160000000000003,
+              2.8160000000000003,
+              -0.5,
+              -1.0
+            ],
+            "magnesium-cation": [
+              3.2,
+              2.8160000000000003,
+              2.8160000000000003,
+              -0.5,
+              -1.0
+            ],
+            "calcium-cation": [
+              3.2,
+              2.8160000000000003,
+              2.8160000000000003,
+              -0.5,
+              -1.0
+            ]
+          }
+        },
+        {
+          "id": "grid-05",
+          "sigma_k_water_k_chloride": [
+            3.2,
+            -0.5,
+            0.5
+          ],
+          "values": {
+            "sodium-cation": [
+              3.2,
+              2.8160000000000003,
+              2.8160000000000003,
+              -0.5,
+              0.5
+            ],
+            "magnesium-cation": [
+              3.2,
+              2.8160000000000003,
+              2.8160000000000003,
+              -0.5,
+              0.5
+            ],
+            "calcium-cation": [
+              3.2,
+              2.8160000000000003,
+              2.8160000000000003,
+              -0.5,
+              0.5
+            ]
+          }
+        },
+        {
+          "id": "grid-06",
+          "sigma_k_water_k_chloride": [
+            3.2,
+            0.0,
+            -1.0
+          ],
+          "values": {
+            "sodium-cation": [
+              3.2,
+              2.8160000000000003,
+              2.8160000000000003,
+              0.0,
+              -1.0
+            ],
+            "magnesium-cation": [
+              3.2,
+              2.8160000000000003,
+              2.8160000000000003,
+              0.0,
+              -1.0
+            ],
+            "calcium-cation": [
+              3.2,
+              2.8160000000000003,
+              2.8160000000000003,
+              0.0,
+              -1.0
+            ]
+          }
+        },
+        {
+          "id": "grid-07",
+          "sigma_k_water_k_chloride": [
+            3.2,
+            0.0,
+            0.5
+          ],
+          "values": {
+            "sodium-cation": [
+              3.2,
+              2.8160000000000003,
+              2.8160000000000003,
+              0.0,
+              0.5
+            ],
+            "magnesium-cation": [
+              3.2,
+              2.8160000000000003,
+              2.8160000000000003,
+              0.0,
+              0.5
+            ],
+            "calcium-cation": [
+              3.2,
+              2.8160000000000003,
+              2.8160000000000003,
+              0.0,
+              0.5
+            ]
+          }
+        },
+        {
+          "id": "grid-08",
+          "sigma_k_water_k_chloride": [
+            4.4,
+            -0.5,
+            -1.0
+          ],
+          "values": {
+            "sodium-cation": [
+              4.4,
+              3.8720000000000003,
+              3.8720000000000003,
+              -0.5,
+              -1.0
+            ],
+            "magnesium-cation": [
+              4.4,
+              3.8720000000000003,
+              3.8720000000000003,
+              -0.5,
+              -1.0
+            ],
+            "calcium-cation": [
+              4.4,
+              3.8720000000000003,
+              3.8720000000000003,
+              -0.5,
+              -1.0
+            ]
+          }
+        },
+        {
+          "id": "grid-09",
+          "sigma_k_water_k_chloride": [
+            4.4,
+            -0.5,
+            0.5
+          ],
+          "values": {
+            "sodium-cation": [
+              4.4,
+              3.8720000000000003,
+              3.8720000000000003,
+              -0.5,
+              0.5
+            ],
+            "magnesium-cation": [
+              4.4,
+              3.8720000000000003,
+              3.8720000000000003,
+              -0.5,
+              0.5
+            ],
+            "calcium-cation": [
+              4.4,
+              3.8720000000000003,
+              3.8720000000000003,
+              -0.5,
+              0.5
+            ]
+          }
+        },
+        {
+          "id": "grid-10",
+          "sigma_k_water_k_chloride": [
+            4.4,
+            0.0,
+            -1.0
+          ],
+          "values": {
+            "sodium-cation": [
+              4.4,
+              3.8720000000000003,
+              3.8720000000000003,
+              0.0,
+              -1.0
+            ],
+            "magnesium-cation": [
+              4.4,
+              3.8720000000000003,
+              3.8720000000000003,
+              0.0,
+              -1.0
+            ],
+            "calcium-cation": [
+              4.4,
+              3.8720000000000003,
+              3.8720000000000003,
+              0.0,
+              -1.0
+            ]
+          }
+        },
+        {
+          "id": "grid-11",
+          "sigma_k_water_k_chloride": [
+            4.4,
+            0.0,
+            0.5
+          ],
+          "values": {
+            "sodium-cation": [
+              4.4,
+              3.8720000000000003,
+              3.8720000000000003,
+              0.0,
+              0.5
+            ],
+            "magnesium-cation": [
+              4.4,
+              3.8720000000000003,
+              3.8720000000000003,
+              0.0,
+              0.5
+            ],
+            "calcium-cation": [
+              4.4,
+              3.8720000000000003,
+              3.8720000000000003,
+              0.0,
+              0.5
+            ]
+          }
+        },
+        {
+          "id": "grid-12",
+          "sigma_k_water_k_chloride": [
+            6.0,
+            -0.5,
+            -1.0
+          ],
+          "values": {
+            "sodium-cation": [
+              6.0,
+              5.28,
+              5.28,
+              -0.5,
+              -1.0
+            ],
+            "magnesium-cation": [
+              6.0,
+              5.28,
+              5.28,
+              -0.5,
+              -1.0
+            ],
+            "calcium-cation": [
+              6.0,
+              5.28,
+              5.28,
+              -0.5,
+              -1.0
+            ]
+          }
+        },
+        {
+          "id": "grid-13",
+          "sigma_k_water_k_chloride": [
+            6.0,
+            -0.5,
+            0.5
+          ],
+          "values": {
+            "sodium-cation": [
+              6.0,
+              5.28,
+              5.28,
+              -0.5,
+              0.5
+            ],
+            "magnesium-cation": [
+              6.0,
+              5.28,
+              5.28,
+              -0.5,
+              0.5
+            ],
+            "calcium-cation": [
+              6.0,
+              5.28,
+              5.28,
+              -0.5,
+              0.5
+            ]
+          }
+        },
+        {
+          "id": "grid-14",
+          "sigma_k_water_k_chloride": [
+            6.0,
+            0.0,
+            -1.0
+          ],
+          "values": {
+            "sodium-cation": [
+              6.0,
+              5.28,
+              5.28,
+              0.0,
+              -1.0
+            ],
+            "magnesium-cation": [
+              6.0,
+              5.28,
+              5.28,
+              0.0,
+              -1.0
+            ],
+            "calcium-cation": [
+              6.0,
+              5.28,
+              5.28,
+              0.0,
+              -1.0
+            ]
+          }
+        },
+        {
+          "id": "grid-15",
+          "sigma_k_water_k_chloride": [
+            6.0,
+            0.0,
+            0.5
+          ],
+          "values": {
+            "sodium-cation": [
+              6.0,
+              5.28,
+              5.28,
+              0.0,
+              0.5
+            ],
+            "magnesium-cation": [
+              6.0,
+              5.28,
+              5.28,
+              0.0,
+              0.5
+            ],
+            "calcium-cation": [
+              6.0,
+              5.28,
+              5.28,
+              0.0,
+              0.5
+            ]
+          }
+        },
+        {
+          "id": "binary-optima",
+          "note": "Mg2+/Ca2+ at the readiness-r2 sourced binary optima (build/issue-575/probes-r2, <= 3.3 mol/kg, figiel dh; Born diameter at the base packet); Na+ at the base packet (no binary optimum in r2)",
+          "values": {
+            "sodium-cation": [
+              2.8232,
+              2.484416,
+              3.4383822767333454,
+              -0.27587411094495873,
+              0.9955856997158054
+            ],
+            "magnesium-cation": [
+              4.72296,
+              9.08085,
+              3.1586096100162964,
+              -1.74129,
+              -6.32795
+            ],
+            "calcium-cation": [
+              4.51905,
+              7.3553,
+              3.852587089114636,
+              -2.3152,
+              -7.13049
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "fixed": "Water, Cl-, K+, Li+ and every cation dispersion energy u_i/k at the base packet (u_i enters only through the two cross energies: exact degeneracy). Packing diameter tied at 0.88 sigma.",
+  "bounds": {
+    "diameter_floor_angstrom": {
+      "sodium-cation": 2.04,
+      "magnesium-cation": 1.44,
+      "calcium-cation": 2.0
+    },
+    "diameter_floor_source": "Marcus 1991 Table 1 crystal diameter 2r (Zotero 9J34P8R4, PDF T2JYYU7D)",
+    "diameter_numerical_upper_angstrom": 30.0,
+    "k_ij_upper": 1.0,
+    "k_ij_upper_reason": "keeps sqrt(u_i u_j)(1 - k_ij) >= 0",
+    "k_ij_numerical_lower": -50.0,
+    "numerical_box_rule": "an optimum within 1e-6 of a numerical-box limit is reported as unbounded, covariance withheld"
+  },
+  "training": [
+    {
+      "source": "hamer-wu-1972",
+      "salt": "NaCl",
+      "rows": 26,
+      "selection": "analyses/2026-held-2014-chlorides/inputs/evaluated.csv salt NaCl, all rows (0.001-4.5 mol/kg)",
+      "scale": 0.8382736442849094
+    },
+    {
+      "source": "goldberg-nuttall-1978",
+      "salt": "MgCl2",
+      "rows": 37,
+      "selection": "evaluated.csv salt MgCl2, molality <= 3.3",
+      "scale": 1.0
+    },
+    {
+      "source": "goldberg-nuttall-1978",
+      "salt": "CaCl2",
+      "rows": 37,
+      "selection": "evaluated.csv salt CaCl2, molality <= 3.3",
+      "scale": 1.0
+    },
+    {
+      "source": "rard-miller-1987",
+      "salt": "NaCl-MgCl2",
+      "rows": 287,
+      "selection": "#556 compare.realize(rard-miller-1987, nominal realization r0000): every mixture row, nominal Phi",
+      "scale": 2.7850954663631833
+    }
+  ],
+  "objective": "Difference residual (Phi_model - Phi_observed)/scale, unit weights; equal total weight per training source (scale = sqrt(n_source/37)). No errors-in-variables term.",
+  "controls": {
+    "maximum_iterations": 300,
+    "maximum_elapsed_time_seconds": 900,
+    "shared_iterations": 5100,
+    "shared_seconds": 15300,
+    "workers": 0,
+    "amendment": "2026-10-16, before any accepted fit: shared_iterations states the declared 300 iterations per start for all 17 starts. The first run omitted it; the native multistart then shared 300 iterations in total and stopped after 3 starts. Bounds, starts, weights, selection and limits are unchanged.",
+    "amendment_2": "2026-10-16, lead decision after the first full run: the 60 s per-start wall limit was a guard, not the frozen budget, and host load (load average about 40 on 32 hardware threads, about eleven agents) made it bind: 5 of 17 F starts and 1 of 17 H starts stopped on time with 137-179 of 300 iterations used, and F's frozen-selected optimum (cost 0.0237) was not its lowest. The per-start wall limit becomes 900 s; the shared wall guard becomes 17 x 900 s so it cannot drop starts. Iterations (300 per start), starts, bounds, weights, the selection rule and the held-out limits are unchanged. The 60 s run is retained in results/run-60s/."
+  },
+  "optimum_selection": {
+    "rule": "Qualification uses the lowest final training cost among converged starts of each form. Held-out buckets are also reported for every distinct converged optimum with cost <= 1.10 x that lowest cost.",
+    "distinct": "two converged starts are the same optimum when every physical coordinate agrees within 1e-3"
+  },
+  "held_out": {
+    "code": "analyses/2026-mixed-chloride-water-activity/scripts/compare.py",
+    "code_sha256": "25f12a40288f2637061bbc4b62c91c4473a2aa017592399a1350b483a68b0cfd",
+    "specification": "analyses/2026-mixed-chloride-water-activity/inputs/comparison-specification.json",
+    "specification_sha256": "ee7a1a2df6c84f725be3427cbfe7df6cd06253b4ce4e527a165f9b25da9f539a",
+    "rule": "#556 frozen realizations, buckets, failure rules and limits unchanged; a form qualifies only if every Robinson-Bower and Dinane-Mounir bucket passes under every realization with no native failure (robust_passed). Rard-Miller buckets are training rows and are reported, not judged."
+  },
+  "inputs_sha256": {
+    "analyses/2026-held-2014-chlorides/inputs/evaluated.csv": "cda600657e41e8518b08211edf874a771cb8287a98398a7cf6df90d7e6f311fb"
+  }
+}

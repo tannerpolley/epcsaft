@@ -1,0 +1,76 @@
+---
+title: "Rezaee 2026: DES and DES–TOPO density comparison"
+format:
+  html:
+    embed-resources: true
+execute:
+  echo: false
+  cache: false
+  daemon: false
+---
+
+The published DES/TOPO tuples predict the liquid densities below under
+Lithium's benchmark assumptions. S5 and S6 remain separate datasets.
+The count table reports attempted (`size`) and numerically admitted (`sum`)
+rows. The following AARD table uses admitted rows only and reports percent;
+an incomplete table would therefore have an available-subset AARD.
+All direct state checks, source uncertainties, exact thermal actions and
+local propagated uncertainty scales remain visible in the retained-row table.
+
+```{python}
+import json, pandas as pd, matplotlib.pyplot as plt
+from pathlib import Path
+r = pd.json_normalize(json.loads(Path('results/density-comparison.json').read_text()))
+display(r)
+display(r.groupby('source.table_label').admitted.agg(['size','sum']))
+display(r[r.admitted].groupby('source.table_label').relative_error_percent.agg(lambda v:v.abs().mean()))
+fig, axes = plt.subplots(1,2,figsize=(10,4))
+for (name,g),ax in zip(r.groupby('source.table_label'),axes):
+    ax.scatter(g['source.T_K'].astype(float),g.observed_kg_m3,label='SI measured')
+    ax.scatter(g['source.T_K'].astype(float),g.density_kg_m3.where(g.admitted),marker='x',label='Engine')
+    ax.set(title=name,xlabel='Temperature (K)',ylabel='Density (kg/m³)')
+    ax.legend()
+```
+
+The figure compares discrete predictions with observations at their literal
+SI temperatures. It introduces no interpolated model curve. Rezaee et al.,
+DOI 10.1016/j.fluid.2026.114737, Tables 4 and 6 supply the tuples; SI S5/S6
+supply the density rows and standard uncertainties. Their exact retained
+paths and source hashes are in `inputs/source/reference-limits.md` and
+`results/density-run-identity.json`.
+
+Lithium's benchmark assumptions supply the rounded F/3 DES particle mass,
+TOPO mass, DES donor/acceptor self edge, single self-paired TOPO site,
+disabled cross association, zero density-stage dispersion interaction and
+benchmark pressure. Their values, read-only Lithium paths, hashes and commit
+are retained in `inputs/lithium-declarations.json`. The full-formula-unit
+mass and later formula-precise average mass are excluded. These choices do
+not establish source parity.
+
+Native mass-fraction conversion and density observations use those masses
+and the explicit site graph. Each unanchored request selects the liquid
+branch through the Engine's density search. The returned branch code is
+retained unchanged: the Engine reports `Unspecified` when its finite search
+finds a single stable root serving either branch. With multiple stable
+roots a liquid request selects the highest stable root. This finite search
+does not prove global stability or complete root enumeration.
+
+The numerical limits shown above are relative pressure closure, then the
+mass-density identity, inverse mass fractions and composition normalization.
+Positive densities and exact pressure slopes and the native convergence
+criterion are also required. The exact fixed-pressure thermal density action
+uses the returned density as its anchor. Its local uncertainty is
+$\sqrt{u_\rho^2+(u_T\,\partial\rho/\partial T|_P)^2}$, assuming independent
+temperature and density errors as a Lithium benchmark assumption. It leaves
+particle-basis, topology, rounded-parameter and model-form uncertainties
+unquantified. An unavailable action does not invalidate a central density.
+
+Density residuals and AARD are descriptive physical comparisons. The paper
+fitted Tait-smoothed data; the literal SI rows here need not be its optimizer
+inputs. The printed fitted AARDs are source statistics with a different row
+basis and are not pass thresholds. This reuse of calibration evidence is
+not independent physical validation. The S5/article temperature-range
+conflict remains unresolved, and the density discrepancies have no identified
+cause. Extraction, aqueous species, complexes and the published A/B reference
+conversion remain excluded. Independent delivered review is pending; this
+notebook has not been promoted for manuscript use.

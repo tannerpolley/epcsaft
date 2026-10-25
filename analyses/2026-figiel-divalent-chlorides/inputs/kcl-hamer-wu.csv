@@ -1,0 +1,27 @@
+salt,molality_mol_kg,gamma_evaluated,osmotic_evaluated,temperature_K,source_key,attachment_key,source_table,printed_page,pdf_page,source_row,saturation_status
+KCl,.001,.965,.988,298.15,28NPJ5H6,5RS9QAMK,Table 28,1073,28,m=.001,below saturation
+KCl,.002,.951,.984,298.15,28NPJ5H6,5RS9QAMK,Table 28,1073,28,m=.002,below saturation
+KCl,.005,.927,.976,298.15,28NPJ5H6,5RS9QAMK,Table 28,1073,28,m=.005,below saturation
+KCl,.010,.901,.967,298.15,28NPJ5H6,5RS9QAMK,Table 28,1073,28,m=.010,below saturation
+KCl,.020,.869,.957,298.15,28NPJ5H6,5RS9QAMK,Table 28,1073,28,m=.020,below saturation
+KCl,.050,.816,.940,298.15,28NPJ5H6,5RS9QAMK,Table 28,1073,28,m=.050,below saturation
+KCl,.100,.768,.927,298.15,28NPJ5H6,5RS9QAMK,Table 28,1073,28,m=.100,below saturation
+KCl,.200,.717,.913,298.15,28NPJ5H6,5RS9QAMK,Table 28,1073,28,m=.200,below saturation
+KCl,.300,.687,.906,298.15,28NPJ5H6,5RS9QAMK,Table 28,1073,28,m=.300,below saturation
+KCl,.400,.665,.902,298.15,28NPJ5H6,5RS9QAMK,Table 28,1073,28,m=.400,below saturation
+KCl,.500,.649,.900,298.15,28NPJ5H6,5RS9QAMK,Table 28,1073,28,m=.500,below saturation
+KCl,.600,.636,.899,298.15,28NPJ5H6,5RS9QAMK,Table 28,1073,28,m=.600,below saturation
+KCl,.700,.626,.898,298.15,28NPJ5H6,5RS9QAMK,Table 28,1073,28,m=.700,below saturation
+KCl,.800,.617,.898,298.15,28NPJ5H6,5RS9QAMK,Table 28,1073,28,m=.800,below saturation
+KCl,.900,.610,.898,298.15,28NPJ5H6,5RS9QAMK,Table 28,1073,28,m=.900,below saturation
+KCl,1.000,.604,.898,298.15,28NPJ5H6,5RS9QAMK,Table 28,1073,28,m=1.000,below saturation
+KCl,1.200,.594,.900,298.15,28NPJ5H6,5RS9QAMK,Table 28,1073,28,m=1.200,below saturation
+KCl,1.400,.586,.902,298.15,28NPJ5H6,5RS9QAMK,Table 28,1073,28,m=1.400,below saturation
+KCl,1.600,.580,.905,298.15,28NPJ5H6,5RS9QAMK,Table 28,1073,28,m=1.600,below saturation
+KCl,1.800,.576,.908,298.15,28NPJ5H6,5RS9QAMK,Table 28,1073,28,m=1.800,below saturation
+KCl,2.000,.573,.912,298.15,28NPJ5H6,5RS9QAMK,Table 28,1073,28,m=2.000,below saturation
+KCl,2.500,.568,.923,298.15,28NPJ5H6,5RS9QAMK,Table 28,1073,28,m=2.500,below saturation
+KCl,3.000,.568,.936,298.15,28NPJ5H6,5RS9QAMK,Table 28,1073,28,m=3.000,below saturation
+KCl,3.500,.571,.950,298.15,28NPJ5H6,5RS9QAMK,Table 28,1073,28,m=3.500,below saturation
+KCl,4.000,.576,.965,298.15,28NPJ5H6,5RS9QAMK,Table 28,1073,28,m=4.000,below saturation
+KCl,4.500,.584,.981,298.15,28NPJ5H6,5RS9QAMK,Table 28,1073,28,m=4.500,below saturation

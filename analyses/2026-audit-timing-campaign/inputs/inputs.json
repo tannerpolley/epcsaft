@@ -1,0 +1,8503 @@
+{
+ "sources": {
+  "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/audit-2026-10-15/opus/probes/epc.py": "49e1357916f494b4c4192731eedefa07bb300a3f61f83fdfd14b9de2d27f2810",
+  "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/audit-2026-10-15/opus/probes/p07/engine.py": "175d846bff2af3a07856bb419cac4dbae96b99ae8c9d359faa512c3757987851",
+  "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/audit-2026-10-15/opus/probes/p03/engine.py": "39321febb78d926aa5dbadd6aac79ab8df0496f26864f5ad20adfac45d88cdab",
+  "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/audit-2026-10-15/opus/probes/p04/engine.py": "eee5dcef6996410ee6315105057e6e3e7f429f45350ab7b2d3c0c864b35465d3",
+  "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/audit-2026-10-15/opus/probes/p10/engine.py": "0d0fe12849886ada2db290a96eb691e0340dd55e4f403e1444ff9b32bd6fb788",
+  "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/audit-2026-10-15/astra/probes/engine_probes.py": "af3fc03336c6ba33c0f79380a44c217ae489e5dca2573aa55126f61c44b6a271",
+  "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/audit-2026-10-15/astra/probes/extended_engine_probes.py": "7b9548e39aa5bbc435ba2950c12f82ad61ca075f93c6138d44b257468cbf48ee",
+  "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/audit-2026-10-15/sol/probes/engine_cases.py": "893b7412b769edcf67bd5073e19ec28dd054b3b9def00d6cff90ec8a3c33adc6",
+  "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-578-shared-timing-campaign-for-the-four-5/analyses/2026-density-root-benchmark/inputs/cases.json": "ffe91e34e5d6aa72f1c75425ce247d56ab5fc64beff992dfc2addd5873a8e479",
+  "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-578-shared-timing-campaign-for-the-four-5/analyses/2026-competitor-cross-check/inputs/cases.json": "30e9ee4b832eb1e569c980a621a922bf559feaf8112d7f347519b4f5f985c797"
+ },
+ "components": {
+  "METHANE": {
+   "cid": "methane",
+   "M": 0.016043,
+   "m": 1.0,
+   "sigma": 3.7039,
+   "eps": 150.03
+  },
+  "ETHANE": {
+   "cid": "ethane",
+   "M": 0.03007,
+   "m": 1.6069,
+   "sigma": 3.5206,
+   "eps": 191.42
+  },
+  "PROPANE": {
+   "cid": "propane",
+   "M": 0.044096,
+   "m": 2.002,
+   "sigma": 3.6184,
+   "eps": 208.11
+  },
+  "NBUTANE": {
+   "cid": "n-butane",
+   "M": 0.05812,
+   "m": 2.3316,
+   "sigma": 3.7086,
+   "eps": 222.88
+  },
+  "CO2": {
+   "cid": "carbon-dioxide",
+   "M": 0.04401,
+   "m": 2.0729,
+   "sigma": 2.7852,
+   "eps": 169.21
+  },
+  "METHANOL": {
+   "cid": "methanol",
+   "M": 0.032042,
+   "m": 1.5255,
+   "sigma": 3.23,
+   "eps": 188.9,
+   "assoc": [
+    2899.5,
+    0.035176
+   ]
+  },
+  "ETHANOL": {
+   "cid": "ethanol",
+   "M": 0.04607,
+   "m": 2.3827,
+   "sigma": 3.1771,
+   "eps": 198.24,
+   "assoc": [
+    2653.4,
+    0.032384
+   ]
+  },
+  "NHEXANE": {
+   "cid": "n-hexane",
+   "M": 0.086177,
+   "m": 3.0576,
+   "sigma": 3.7983,
+   "eps": 236.77
+  },
+  "ACETONE_POLAR": {
+   "cid": "acetone",
+   "M": 0.05808,
+   "m": 2.7447,
+   "sigma": 3.2742,
+   "eps": 232.99,
+   "mu": 2.88
+  }
+ },
+ "models": {
+  "propane": [
+   "PROPANE"
+  ],
+  "methanol": [
+   "METHANOL"
+  ],
+  "acetone-polar": [
+   "ACETONE_POLAR"
+  ],
+  "methane-ethane": [
+   "METHANE",
+   "ETHANE"
+  ],
+  "methanol-hexane": [
+   "METHANOL",
+   "NHEXANE"
+  ],
+  "gross-methane-ethane": [
+   "METHANE",
+   "ETHANE"
+  ],
+  "ethane": [
+   "ETHANE"
+  ]
+ },
+ "tolerances": {
+  "action_abs": 2e-08,
+  "action_rel": 2e-05,
+  "helmholtz_scaled": 1e-06,
+  "property_rel": 1e-08,
+  "floors": {
+   "P": 1.0,
+   "h": 1.0,
+   "cv": 1.0,
+   "ar": 1.0,
+   "lnphi": 1.0
+  },
+  "density_rel": 1e-10,
+  "same_image": 1e-10,
+  "equilibrium_rel": 1e-07,
+  "composition_abs": 1e-08
+ },
+ "t1": [
+  {
+   "id": "O-P01/propane-dilute",
+   "model": "propane",
+   "T": 300.0,
+   "rho": 500.0,
+   "x": [
+    1.0
+   ],
+   "directions": {
+    "T": [
+     1.0,
+     0.0,
+     [
+      0.0
+     ]
+    ],
+    "rho": [
+     0.0,
+     1.0,
+     [
+      0.0
+     ]
+    ]
+   },
+   "requests": [
+    {
+     "order": 1,
+     "names": [
+      "T"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02
+       ],
+       "admissible": true,
+       "points": 2
+      },
+      {
+       "h": [
+        0.01
+       ],
+       "admissible": true,
+       "points": 2
+      }
+     ]
+    },
+    {
+     "order": 1,
+     "names": [
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.05
+       ],
+       "admissible": true,
+       "points": 2
+      },
+      {
+       "h": [
+        0.025
+       ],
+       "admissible": true,
+       "points": 2
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "T"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        0.02
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.01,
+        0.01
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        0.05
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.01,
+        0.025
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "rho",
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.05,
+        0.05
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.025,
+        0.025
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    }
+   ],
+   "comparators": [
+    "FeOs",
+    "Clapeyron"
+   ],
+   "neutral_property": true
+  },
+  {
+   "id": "O-P01/propane-liquid",
+   "model": "propane",
+   "T": 300.0,
+   "rho": 11000.0,
+   "x": [
+    1.0
+   ],
+   "directions": {
+    "T": [
+     1.0,
+     0.0,
+     [
+      0.0
+     ]
+    ],
+    "rho": [
+     0.0,
+     1.0,
+     [
+      0.0
+     ]
+    ]
+   },
+   "requests": [
+    {
+     "order": 1,
+     "names": [
+      "T"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02
+       ],
+       "admissible": true,
+       "points": 2
+      },
+      {
+       "h": [
+        0.01
+       ],
+       "admissible": true,
+       "points": 2
+      }
+     ]
+    },
+    {
+     "order": 1,
+     "names": [
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        1.1
+       ],
+       "admissible": true,
+       "points": 2
+      },
+      {
+       "h": [
+        0.55
+       ],
+       "admissible": true,
+       "points": 2
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "T"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        0.02
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.01,
+        0.01
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        1.1
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.01,
+        0.55
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "rho",
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        1.1,
+        1.1
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.55,
+        0.55
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    }
+   ],
+   "comparators": [
+    "FeOs",
+    "Clapeyron"
+   ],
+   "neutral_property": true
+  },
+  {
+   "id": "O-P01/methanol-liquid",
+   "model": "methanol",
+   "T": 300.0,
+   "rho": 24000.0,
+   "x": [
+    1.0
+   ],
+   "directions": {
+    "T": [
+     1.0,
+     0.0,
+     [
+      0.0
+     ]
+    ],
+    "rho": [
+     0.0,
+     1.0,
+     [
+      0.0
+     ]
+    ]
+   },
+   "requests": [
+    {
+     "order": 1,
+     "names": [
+      "T"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02
+       ],
+       "admissible": true,
+       "points": 2
+      },
+      {
+       "h": [
+        0.01
+       ],
+       "admissible": true,
+       "points": 2
+      }
+     ]
+    },
+    {
+     "order": 1,
+     "names": [
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        2.4
+       ],
+       "admissible": true,
+       "points": 2
+      },
+      {
+       "h": [
+        1.2
+       ],
+       "admissible": true,
+       "points": 2
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "T"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        0.02
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.01,
+        0.01
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        2.4
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.01,
+        1.2
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "rho",
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        2.4,
+        2.4
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        1.2,
+        1.2
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    }
+   ],
+   "comparators": [
+    "FeOs",
+    "Clapeyron"
+   ],
+   "neutral_property": false
+  },
+  {
+   "id": "O-P01/methanol-vapor",
+   "model": "methanol",
+   "T": 450.0,
+   "rho": 300.0,
+   "x": [
+    1.0
+   ],
+   "directions": {
+    "T": [
+     1.0,
+     0.0,
+     [
+      0.0
+     ]
+    ],
+    "rho": [
+     0.0,
+     1.0,
+     [
+      0.0
+     ]
+    ]
+   },
+   "requests": [
+    {
+     "order": 1,
+     "names": [
+      "T"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02
+       ],
+       "admissible": true,
+       "points": 2
+      },
+      {
+       "h": [
+        0.01
+       ],
+       "admissible": true,
+       "points": 2
+      }
+     ]
+    },
+    {
+     "order": 1,
+     "names": [
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.030000000000000002
+       ],
+       "admissible": true,
+       "points": 2
+      },
+      {
+       "h": [
+        0.015000000000000001
+       ],
+       "admissible": true,
+       "points": 2
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "T"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        0.02
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.01,
+        0.01
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        0.030000000000000002
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.01,
+        0.015000000000000001
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "rho",
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.030000000000000002,
+        0.030000000000000002
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.015000000000000001,
+        0.015000000000000001
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    }
+   ],
+   "comparators": [
+    "FeOs",
+    "Clapeyron"
+   ],
+   "neutral_property": false
+  },
+  {
+   "id": "O-P01/acetone-polar",
+   "model": "acetone-polar",
+   "T": 300.0,
+   "rho": 13000.0,
+   "x": [
+    1.0
+   ],
+   "directions": {
+    "T": [
+     1.0,
+     0.0,
+     [
+      0.0
+     ]
+    ],
+    "rho": [
+     0.0,
+     1.0,
+     [
+      0.0
+     ]
+    ]
+   },
+   "requests": [
+    {
+     "order": 1,
+     "names": [
+      "T"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02
+       ],
+       "admissible": true,
+       "points": 2
+      },
+      {
+       "h": [
+        0.01
+       ],
+       "admissible": true,
+       "points": 2
+      }
+     ]
+    },
+    {
+     "order": 1,
+     "names": [
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        1.3
+       ],
+       "admissible": true,
+       "points": 2
+      },
+      {
+       "h": [
+        0.65
+       ],
+       "admissible": true,
+       "points": 2
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "T"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        0.02
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.01,
+        0.01
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        1.3
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.01,
+        0.65
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "rho",
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        1.3,
+        1.3
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.65,
+        0.65
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    }
+   ],
+   "comparators": [
+    "FeOs",
+    "Clapeyron"
+   ],
+   "neutral_property": false
+  },
+  {
+   "id": "O-P01/methane-ethane",
+   "model": "methane-ethane",
+   "T": 230.0,
+   "rho": 8000.0,
+   "x": [
+    0.4,
+    0.6
+   ],
+   "directions": {
+    "T": [
+     1.0,
+     0.0,
+     [
+      0.0,
+      0.0
+     ]
+    ],
+    "rho": [
+     0.0,
+     1.0,
+     [
+      0.0,
+      0.0
+     ]
+    ],
+    "x0-x1": [
+     0.0,
+     0.0,
+     [
+      1.0,
+      -1.0
+     ]
+    ]
+   },
+   "requests": [
+    {
+     "order": 1,
+     "names": [
+      "T"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02
+       ],
+       "admissible": true,
+       "points": 2
+      },
+      {
+       "h": [
+        0.01
+       ],
+       "admissible": true,
+       "points": 2
+      }
+     ]
+    },
+    {
+     "order": 1,
+     "names": [
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.8
+       ],
+       "admissible": true,
+       "points": 2
+      },
+      {
+       "h": [
+        0.4
+       ],
+       "admissible": true,
+       "points": 2
+      }
+     ]
+    },
+    {
+     "order": 1,
+     "names": [
+      "x0-x1"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.002
+       ],
+       "admissible": true,
+       "points": 2
+      },
+      {
+       "h": [
+        0.001
+       ],
+       "admissible": true,
+       "points": 2
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "T"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        0.02
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.01,
+        0.01
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        0.8
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.01,
+        0.4
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "x0-x1"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        0.002
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.01,
+        0.001
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "rho",
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.8,
+        0.8
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.4,
+        0.4
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "rho",
+      "x0-x1"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.8,
+        0.002
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.4,
+        0.001
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "x0-x1",
+      "x0-x1"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.002,
+        0.002
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.001,
+        0.001
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    }
+   ],
+   "comparators": [
+    "FeOs",
+    "Clapeyron"
+   ],
+   "neutral_property": false
+  },
+  {
+   "id": "O-P01/methanol-hexane",
+   "model": "methanol-hexane",
+   "T": 320.0,
+   "rho": 7000.0,
+   "x": [
+    0.3,
+    0.7
+   ],
+   "directions": {
+    "T": [
+     1.0,
+     0.0,
+     [
+      0.0,
+      0.0
+     ]
+    ],
+    "rho": [
+     0.0,
+     1.0,
+     [
+      0.0,
+      0.0
+     ]
+    ],
+    "x0-x1": [
+     0.0,
+     0.0,
+     [
+      1.0,
+      -1.0
+     ]
+    ]
+   },
+   "requests": [
+    {
+     "order": 1,
+     "names": [
+      "T"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02
+       ],
+       "admissible": true,
+       "points": 2
+      },
+      {
+       "h": [
+        0.01
+       ],
+       "admissible": true,
+       "points": 2
+      }
+     ]
+    },
+    {
+     "order": 1,
+     "names": [
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.7000000000000001
+       ],
+       "admissible": true,
+       "points": 2
+      },
+      {
+       "h": [
+        0.35000000000000003
+       ],
+       "admissible": true,
+       "points": 2
+      }
+     ]
+    },
+    {
+     "order": 1,
+     "names": [
+      "x0-x1"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.002
+       ],
+       "admissible": true,
+       "points": 2
+      },
+      {
+       "h": [
+        0.001
+       ],
+       "admissible": true,
+       "points": 2
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "T"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        0.02
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.01,
+        0.01
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        0.7000000000000001
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.01,
+        0.35000000000000003
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "x0-x1"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        0.002
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.01,
+        0.001
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "rho",
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.7000000000000001,
+        0.7000000000000001
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.35000000000000003,
+        0.35000000000000003
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "rho",
+      "x0-x1"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.7000000000000001,
+        0.002
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.35000000000000003,
+        0.001
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "x0-x1",
+      "x0-x1"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.002,
+        0.002
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.001,
+        0.001
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    }
+   ],
+   "comparators": [
+    "FeOs",
+    "Clapeyron"
+   ],
+   "neutral_property": false
+  },
+  {
+   "id": "O-P07/nacl-0.01",
+   "model": "water-nacl",
+   "T": 298.15,
+   "rho": 55000.0,
+   "x": [
+    0.98,
+    0.01,
+    0.01
+   ],
+   "directions": {
+    "T": [
+     1.0,
+     0.0,
+     [
+      0.0,
+      0.0,
+      0.0
+     ]
+    ],
+    "rho": [
+     0.0,
+     1.0,
+     [
+      0.0,
+      0.0,
+      0.0
+     ]
+    ],
+    "x0-x2": [
+     0.0,
+     0.0,
+     [
+      1.0,
+      0.0,
+      -1.0
+     ]
+    ],
+    "x1-x2": [
+     0.0,
+     0.0,
+     [
+      0.0,
+      1.0,
+      -1.0
+     ]
+    ]
+   },
+   "requests": [
+    {
+     "order": 1,
+     "names": [
+      "T"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02
+       ],
+       "admissible": true,
+       "points": 2
+      },
+      {
+       "h": [
+        0.01
+       ],
+       "admissible": true,
+       "points": 2
+      }
+     ]
+    },
+    {
+     "order": 1,
+     "names": [
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        5.5
+       ],
+       "admissible": true,
+       "points": 2
+      },
+      {
+       "h": [
+        2.75
+       ],
+       "admissible": true,
+       "points": 2
+      }
+     ]
+    },
+    {
+     "order": 1,
+     "names": [
+      "x0-x2"
+     ],
+     "inadmissible_chart": "charge-violating composition direction",
+     "levels": []
+    },
+    {
+     "order": 1,
+     "names": [
+      "x1-x2"
+     ],
+     "inadmissible_chart": "charge-violating composition direction",
+     "levels": []
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "T"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        0.02
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.01,
+        0.01
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        5.5
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.01,
+        2.75
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "x0-x2"
+     ],
+     "inadmissible_chart": "charge-violating composition direction",
+     "levels": []
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "x1-x2"
+     ],
+     "inadmissible_chart": "charge-violating composition direction",
+     "levels": []
+    },
+    {
+     "order": 2,
+     "names": [
+      "rho",
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        5.5,
+        5.5
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        2.75,
+        2.75
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "rho",
+      "x0-x2"
+     ],
+     "inadmissible_chart": "charge-violating composition direction",
+     "levels": []
+    },
+    {
+     "order": 2,
+     "names": [
+      "rho",
+      "x1-x2"
+     ],
+     "inadmissible_chart": "charge-violating composition direction",
+     "levels": []
+    },
+    {
+     "order": 2,
+     "names": [
+      "x0-x2",
+      "x0-x2"
+     ],
+     "inadmissible_chart": "charge-violating composition direction",
+     "levels": []
+    },
+    {
+     "order": 2,
+     "names": [
+      "x0-x2",
+      "x1-x2"
+     ],
+     "inadmissible_chart": "charge-violating composition direction",
+     "levels": []
+    },
+    {
+     "order": 2,
+     "names": [
+      "x1-x2",
+      "x1-x2"
+     ],
+     "inadmissible_chart": "charge-violating composition direction",
+     "levels": []
+    }
+   ],
+   "comparators": [
+    "FeOs",
+    "Clapeyron"
+   ],
+   "neutral_property": false
+  },
+  {
+   "id": "O-P07/nacl-0.05",
+   "model": "water-nacl",
+   "T": 298.15,
+   "rho": 52000.0,
+   "x": [
+    0.9,
+    0.05,
+    0.05
+   ],
+   "directions": {
+    "T": [
+     1.0,
+     0.0,
+     [
+      0.0,
+      0.0,
+      0.0
+     ]
+    ],
+    "rho": [
+     0.0,
+     1.0,
+     [
+      0.0,
+      0.0,
+      0.0
+     ]
+    ],
+    "x0-x2": [
+     0.0,
+     0.0,
+     [
+      1.0,
+      0.0,
+      -1.0
+     ]
+    ],
+    "x1-x2": [
+     0.0,
+     0.0,
+     [
+      0.0,
+      1.0,
+      -1.0
+     ]
+    ]
+   },
+   "requests": [
+    {
+     "order": 1,
+     "names": [
+      "T"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02
+       ],
+       "admissible": true,
+       "points": 2
+      },
+      {
+       "h": [
+        0.01
+       ],
+       "admissible": true,
+       "points": 2
+      }
+     ]
+    },
+    {
+     "order": 1,
+     "names": [
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        5.2
+       ],
+       "admissible": true,
+       "points": 2
+      },
+      {
+       "h": [
+        2.6
+       ],
+       "admissible": true,
+       "points": 2
+      }
+     ]
+    },
+    {
+     "order": 1,
+     "names": [
+      "x0-x2"
+     ],
+     "inadmissible_chart": "charge-violating composition direction",
+     "levels": []
+    },
+    {
+     "order": 1,
+     "names": [
+      "x1-x2"
+     ],
+     "inadmissible_chart": "charge-violating composition direction",
+     "levels": []
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "T"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        0.02
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.01,
+        0.01
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        5.2
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.01,
+        2.6
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "x0-x2"
+     ],
+     "inadmissible_chart": "charge-violating composition direction",
+     "levels": []
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "x1-x2"
+     ],
+     "inadmissible_chart": "charge-violating composition direction",
+     "levels": []
+    },
+    {
+     "order": 2,
+     "names": [
+      "rho",
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        5.2,
+        5.2
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        2.6,
+        2.6
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "rho",
+      "x0-x2"
+     ],
+     "inadmissible_chart": "charge-violating composition direction",
+     "levels": []
+    },
+    {
+     "order": 2,
+     "names": [
+      "rho",
+      "x1-x2"
+     ],
+     "inadmissible_chart": "charge-violating composition direction",
+     "levels": []
+    },
+    {
+     "order": 2,
+     "names": [
+      "x0-x2",
+      "x0-x2"
+     ],
+     "inadmissible_chart": "charge-violating composition direction",
+     "levels": []
+    },
+    {
+     "order": 2,
+     "names": [
+      "x0-x2",
+      "x1-x2"
+     ],
+     "inadmissible_chart": "charge-violating composition direction",
+     "levels": []
+    },
+    {
+     "order": 2,
+     "names": [
+      "x1-x2",
+      "x1-x2"
+     ],
+     "inadmissible_chart": "charge-violating composition direction",
+     "levels": []
+    }
+   ],
+   "comparators": [
+    "FeOs",
+    "Clapeyron"
+   ],
+   "neutral_property": false
+  },
+  {
+   "id": "O-P07/nacl-0.10",
+   "model": "water-nacl",
+   "T": 298.15,
+   "rho": 50000.0,
+   "x": [
+    0.8,
+    0.1,
+    0.1
+   ],
+   "directions": {
+    "T": [
+     1.0,
+     0.0,
+     [
+      0.0,
+      0.0,
+      0.0
+     ]
+    ],
+    "rho": [
+     0.0,
+     1.0,
+     [
+      0.0,
+      0.0,
+      0.0
+     ]
+    ],
+    "x0-x2": [
+     0.0,
+     0.0,
+     [
+      1.0,
+      0.0,
+      -1.0
+     ]
+    ],
+    "x1-x2": [
+     0.0,
+     0.0,
+     [
+      0.0,
+      1.0,
+      -1.0
+     ]
+    ]
+   },
+   "requests": [
+    {
+     "order": 1,
+     "names": [
+      "T"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02
+       ],
+       "admissible": true,
+       "points": 2
+      },
+      {
+       "h": [
+        0.01
+       ],
+       "admissible": true,
+       "points": 2
+      }
+     ]
+    },
+    {
+     "order": 1,
+     "names": [
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        5.0
+       ],
+       "admissible": true,
+       "points": 2
+      },
+      {
+       "h": [
+        2.5
+       ],
+       "admissible": true,
+       "points": 2
+      }
+     ]
+    },
+    {
+     "order": 1,
+     "names": [
+      "x0-x2"
+     ],
+     "inadmissible_chart": "charge-violating composition direction",
+     "levels": []
+    },
+    {
+     "order": 1,
+     "names": [
+      "x1-x2"
+     ],
+     "inadmissible_chart": "charge-violating composition direction",
+     "levels": []
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "T"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        0.02
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.01,
+        0.01
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        5.0
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.01,
+        2.5
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "x0-x2"
+     ],
+     "inadmissible_chart": "charge-violating composition direction",
+     "levels": []
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "x1-x2"
+     ],
+     "inadmissible_chart": "charge-violating composition direction",
+     "levels": []
+    },
+    {
+     "order": 2,
+     "names": [
+      "rho",
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        5.0,
+        5.0
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        2.5,
+        2.5
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "rho",
+      "x0-x2"
+     ],
+     "inadmissible_chart": "charge-violating composition direction",
+     "levels": []
+    },
+    {
+     "order": 2,
+     "names": [
+      "rho",
+      "x1-x2"
+     ],
+     "inadmissible_chart": "charge-violating composition direction",
+     "levels": []
+    },
+    {
+     "order": 2,
+     "names": [
+      "x0-x2",
+      "x0-x2"
+     ],
+     "inadmissible_chart": "charge-violating composition direction",
+     "levels": []
+    },
+    {
+     "order": 2,
+     "names": [
+      "x0-x2",
+      "x1-x2"
+     ],
+     "inadmissible_chart": "charge-violating composition direction",
+     "levels": []
+    },
+    {
+     "order": 2,
+     "names": [
+      "x1-x2",
+      "x1-x2"
+     ],
+     "inadmissible_chart": "charge-violating composition direction",
+     "levels": []
+    }
+   ],
+   "comparators": [
+    "FeOs",
+    "Clapeyron"
+   ],
+   "neutral_property": false
+  },
+  {
+   "id": "A-Q01/300-5000",
+   "model": "gross-methane-ethane",
+   "T": 300.0,
+   "rho": 5000.0,
+   "x": [
+    0.4,
+    0.6
+   ],
+   "directions": {
+    "T": [
+     1.0,
+     0.0,
+     [
+      0.0,
+      0.0
+     ]
+    ],
+    "rho": [
+     0.0,
+     1.0,
+     [
+      0.0,
+      0.0
+     ]
+    ],
+    "x0-x1": [
+     0.0,
+     0.0,
+     [
+      1.0,
+      -1.0
+     ]
+    ]
+   },
+   "requests": [
+    {
+     "order": 1,
+     "names": [
+      "T"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02
+       ],
+       "admissible": true,
+       "points": 2
+      },
+      {
+       "h": [
+        0.01
+       ],
+       "admissible": true,
+       "points": 2
+      }
+     ]
+    },
+    {
+     "order": 1,
+     "names": [
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.5
+       ],
+       "admissible": true,
+       "points": 2
+      },
+      {
+       "h": [
+        0.25
+       ],
+       "admissible": true,
+       "points": 2
+      }
+     ]
+    },
+    {
+     "order": 1,
+     "names": [
+      "x0-x1"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.002
+       ],
+       "admissible": true,
+       "points": 2
+      },
+      {
+       "h": [
+        0.001
+       ],
+       "admissible": true,
+       "points": 2
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "T"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        0.02
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.01,
+        0.01
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        0.5
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.01,
+        0.25
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "x0-x1"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        0.002
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.01,
+        0.001
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "rho",
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.5,
+        0.5
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.25,
+        0.25
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "rho",
+      "x0-x1"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.5,
+        0.002
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.25,
+        0.001
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "x0-x1",
+      "x0-x1"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.002,
+        0.002
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.001,
+        0.001
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    }
+   ],
+   "comparators": [
+    "FeOs",
+    "Clapeyron"
+   ],
+   "neutral_property": false
+  },
+  {
+   "id": "A-Q01/180-200",
+   "model": "gross-methane-ethane",
+   "T": 180.0,
+   "rho": 200.0,
+   "x": [
+    0.5,
+    0.5
+   ],
+   "directions": {
+    "T": [
+     1.0,
+     0.0,
+     [
+      0.0,
+      0.0
+     ]
+    ],
+    "rho": [
+     0.0,
+     1.0,
+     [
+      0.0,
+      0.0
+     ]
+    ],
+    "x0-x1": [
+     0.0,
+     0.0,
+     [
+      1.0,
+      -1.0
+     ]
+    ]
+   },
+   "requests": [
+    {
+     "order": 1,
+     "names": [
+      "T"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02
+       ],
+       "admissible": true,
+       "points": 2
+      },
+      {
+       "h": [
+        0.01
+       ],
+       "admissible": true,
+       "points": 2
+      }
+     ]
+    },
+    {
+     "order": 1,
+     "names": [
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02
+       ],
+       "admissible": true,
+       "points": 2
+      },
+      {
+       "h": [
+        0.01
+       ],
+       "admissible": true,
+       "points": 2
+      }
+     ]
+    },
+    {
+     "order": 1,
+     "names": [
+      "x0-x1"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.002
+       ],
+       "admissible": true,
+       "points": 2
+      },
+      {
+       "h": [
+        0.001
+       ],
+       "admissible": true,
+       "points": 2
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "T"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        0.02
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.01,
+        0.01
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        0.02
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.01,
+        0.01
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "x0-x1"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        0.002
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.01,
+        0.001
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "rho",
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        0.02
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.01,
+        0.01
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "rho",
+      "x0-x1"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        0.002
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.01,
+        0.001
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "x0-x1",
+      "x0-x1"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.002,
+        0.002
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.001,
+        0.001
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    }
+   ],
+   "comparators": [
+    "FeOs",
+    "Clapeyron"
+   ],
+   "neutral_property": false
+  },
+  {
+   "id": "A-Q01/180-18000",
+   "model": "gross-methane-ethane",
+   "T": 180.0,
+   "rho": 18000.0,
+   "x": [
+    0.5,
+    0.5
+   ],
+   "directions": {
+    "T": [
+     1.0,
+     0.0,
+     [
+      0.0,
+      0.0
+     ]
+    ],
+    "rho": [
+     0.0,
+     1.0,
+     [
+      0.0,
+      0.0
+     ]
+    ],
+    "x0-x1": [
+     0.0,
+     0.0,
+     [
+      1.0,
+      -1.0
+     ]
+    ]
+   },
+   "requests": [
+    {
+     "order": 1,
+     "names": [
+      "T"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02
+       ],
+       "admissible": true,
+       "points": 2
+      },
+      {
+       "h": [
+        0.01
+       ],
+       "admissible": true,
+       "points": 2
+      }
+     ]
+    },
+    {
+     "order": 1,
+     "names": [
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        1.8
+       ],
+       "admissible": true,
+       "points": 2
+      },
+      {
+       "h": [
+        0.9
+       ],
+       "admissible": true,
+       "points": 2
+      }
+     ]
+    },
+    {
+     "order": 1,
+     "names": [
+      "x0-x1"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.002
+       ],
+       "admissible": true,
+       "points": 2
+      },
+      {
+       "h": [
+        0.001
+       ],
+       "admissible": true,
+       "points": 2
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "T"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        0.02
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.01,
+        0.01
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        1.8
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.01,
+        0.9
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "x0-x1"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        0.002
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.01,
+        0.001
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "rho",
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        1.8,
+        1.8
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.9,
+        0.9
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "rho",
+      "x0-x1"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        1.8,
+        0.002
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.9,
+        0.001
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "x0-x1",
+      "x0-x1"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.002,
+        0.002
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.001,
+        0.001
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    }
+   ],
+   "comparators": [
+    "FeOs",
+    "Clapeyron"
+   ],
+   "neutral_property": false
+  },
+  {
+   "id": "A-Q01/300-dilute",
+   "model": "gross-methane-ethane",
+   "T": 300.0,
+   "rho": 1e-10,
+   "x": [
+    0.4,
+    0.6
+   ],
+   "directions": {
+    "T": [
+     1.0,
+     0.0,
+     [
+      0.0,
+      0.0
+     ]
+    ],
+    "rho": [
+     0.0,
+     1.0,
+     [
+      0.0,
+      0.0
+     ]
+    ],
+    "x0-x1": [
+     0.0,
+     0.0,
+     [
+      1.0,
+      -1.0
+     ]
+    ]
+   },
+   "requests": [
+    {
+     "order": 1,
+     "names": [
+      "T"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02
+       ],
+       "admissible": true,
+       "points": 2
+      },
+      {
+       "h": [
+        0.01
+       ],
+       "admissible": true,
+       "points": 2
+      }
+     ]
+    },
+    {
+     "order": 1,
+     "names": [
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        1.0000000000000002e-14
+       ],
+       "admissible": true,
+       "points": 2
+      },
+      {
+       "h": [
+        5.000000000000001e-15
+       ],
+       "admissible": true,
+       "points": 2
+      }
+     ]
+    },
+    {
+     "order": 1,
+     "names": [
+      "x0-x1"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.002
+       ],
+       "admissible": true,
+       "points": 2
+      },
+      {
+       "h": [
+        0.001
+       ],
+       "admissible": true,
+       "points": 2
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "T"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        0.02
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.01,
+        0.01
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        1.0000000000000002e-14
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.01,
+        5.000000000000001e-15
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "x0-x1"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        0.002
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.01,
+        0.001
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "rho",
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        1.0000000000000002e-14,
+        1.0000000000000002e-14
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        5.000000000000001e-15,
+        5.000000000000001e-15
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "rho",
+      "x0-x1"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        1.0000000000000002e-14,
+        0.002
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        5.000000000000001e-15,
+        0.001
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "x0-x1",
+      "x0-x1"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.002,
+        0.002
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.001,
+        0.001
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    }
+   ],
+   "comparators": [
+    "FeOs",
+    "Clapeyron"
+   ],
+   "neutral_property": false
+  },
+  {
+   "id": "Sol-1/ethane-100",
+   "model": "ethane",
+   "T": 300.0,
+   "rho": 100.0,
+   "x": [
+    1.0
+   ],
+   "directions": {
+    "T": [
+     1.0,
+     0.0,
+     [
+      0.0
+     ]
+    ],
+    "rho": [
+     0.0,
+     1.0,
+     [
+      0.0
+     ]
+    ]
+   },
+   "requests": [
+    {
+     "order": 1,
+     "names": [
+      "T"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02
+       ],
+       "admissible": true,
+       "points": 2
+      },
+      {
+       "h": [
+        0.01
+       ],
+       "admissible": true,
+       "points": 2
+      }
+     ]
+    },
+    {
+     "order": 1,
+     "names": [
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.01
+       ],
+       "admissible": true,
+       "points": 2
+      },
+      {
+       "h": [
+        0.005
+       ],
+       "admissible": true,
+       "points": 2
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "T"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        0.02
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.01,
+        0.01
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        0.01
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.01,
+        0.005
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "rho",
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.01,
+        0.01
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.005,
+        0.005
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    }
+   ],
+   "comparators": [
+    "FeOs",
+    "Clapeyron"
+   ],
+   "neutral_property": true
+  },
+  {
+   "id": "Sol-1/ethane-10000",
+   "model": "ethane",
+   "T": 300.0,
+   "rho": 10000.0,
+   "x": [
+    1.0
+   ],
+   "directions": {
+    "T": [
+     1.0,
+     0.0,
+     [
+      0.0
+     ]
+    ],
+    "rho": [
+     0.0,
+     1.0,
+     [
+      0.0
+     ]
+    ]
+   },
+   "requests": [
+    {
+     "order": 1,
+     "names": [
+      "T"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02
+       ],
+       "admissible": true,
+       "points": 2
+      },
+      {
+       "h": [
+        0.01
+       ],
+       "admissible": true,
+       "points": 2
+      }
+     ]
+    },
+    {
+     "order": 1,
+     "names": [
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        1.0
+       ],
+       "admissible": true,
+       "points": 2
+      },
+      {
+       "h": [
+        0.5
+       ],
+       "admissible": true,
+       "points": 2
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "T"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        0.02
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.01,
+        0.01
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        1.0
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.01,
+        0.5
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "rho",
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        1.0,
+        1.0
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.5,
+        0.5
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    }
+   ],
+   "comparators": [
+    "FeOs",
+    "Clapeyron"
+   ],
+   "neutral_property": true
+  },
+  {
+   "id": "Sol-1/ethane-loop",
+   "model": "ethane",
+   "T": 308.8,
+   "rho": 5930.399614704038,
+   "x": [
+    1.0
+   ],
+   "directions": {
+    "T": [
+     1.0,
+     0.0,
+     [
+      0.0
+     ]
+    ],
+    "rho": [
+     0.0,
+     1.0,
+     [
+      0.0
+     ]
+    ]
+   },
+   "requests": [
+    {
+     "order": 1,
+     "names": [
+      "T"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02
+       ],
+       "admissible": true,
+       "points": 2
+      },
+      {
+       "h": [
+        0.01
+       ],
+       "admissible": true,
+       "points": 2
+      }
+     ]
+    },
+    {
+     "order": 1,
+     "names": [
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.5930399614704038
+       ],
+       "admissible": true,
+       "points": 2
+      },
+      {
+       "h": [
+        0.2965199807352019
+       ],
+       "admissible": true,
+       "points": 2
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "T"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        0.02
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.01,
+        0.01
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        0.5930399614704038
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.01,
+        0.2965199807352019
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "rho",
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.5930399614704038,
+        0.5930399614704038
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.2965199807352019,
+        0.2965199807352019
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    }
+   ],
+   "comparators": [
+    "FeOs",
+    "Clapeyron"
+   ],
+   "neutral_property": true
+  },
+  {
+   "id": "O-S1/MEA-liquid",
+   "model": "mea",
+   "T": 318.15,
+   "rho": 48155.797879301244,
+   "x": [
+    1.8515339674493934e-15,
+    0.06886454654154425,
+    0.7367007453843369,
+    0.12197837956231329,
+    3.659288688189574e-06,
+    9.793717016700354e-08,
+    0.04952280282088121,
+    3.758851858711041e-07,
+    0.022929392579878343
+   ],
+   "directions": {
+    "T": [
+     1.0,
+     0.0,
+     [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    ],
+    "rho": [
+     0.0,
+     1.0,
+     [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    ],
+    "x0-x8": [
+     0.0,
+     0.0,
+     [
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      -1.0
+     ]
+    ],
+    "x1-x8": [
+     0.0,
+     0.0,
+     [
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      -1.0
+     ]
+    ],
+    "x2-x8": [
+     0.0,
+     0.0,
+     [
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      -1.0
+     ]
+    ],
+    "x3-x8": [
+     0.0,
+     0.0,
+     [
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      -1.0
+     ]
+    ],
+    "x4-x8": [
+     0.0,
+     0.0,
+     [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      -1.0
+     ]
+    ],
+    "x5-x8": [
+     0.0,
+     0.0,
+     [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      -1.0
+     ]
+    ],
+    "x6-x8": [
+     0.0,
+     0.0,
+     [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      -1.0
+     ]
+    ],
+    "x7-x8": [
+     0.0,
+     0.0,
+     [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      -1.0
+     ]
+    ]
+   },
+   "requests": [
+    {
+     "order": 1,
+     "names": [
+      "T"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02
+       ],
+       "admissible": true,
+       "points": 2
+      },
+      {
+       "h": [
+        0.01
+       ],
+       "admissible": true,
+       "points": 2
+      }
+     ]
+    },
+    {
+     "order": 1,
+     "names": [
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        4.815579787930124
+       ],
+       "admissible": true,
+       "points": 2
+      },
+      {
+       "h": [
+        2.407789893965062
+       ],
+       "admissible": true,
+       "points": 2
+      }
+     ]
+    },
+    {
+     "order": 1,
+     "names": [
+      "x0-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        4.6288349186234835e-16
+       ],
+       "admissible": true,
+       "points": 2
+      },
+      {
+       "h": [
+        2.3144174593117417e-16
+       ],
+       "admissible": true,
+       "points": 2
+      }
+     ]
+    },
+    {
+     "order": 1,
+     "names": [
+      "x1-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.002
+       ],
+       "admissible": true,
+       "points": 2
+      },
+      {
+       "h": [
+        0.001
+       ],
+       "admissible": true,
+       "points": 2
+      }
+     ]
+    },
+    {
+     "order": 1,
+     "names": [
+      "x2-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.002
+       ],
+       "admissible": true,
+       "points": 2
+      },
+      {
+       "h": [
+        0.001
+       ],
+       "admissible": true,
+       "points": 2
+      }
+     ]
+    },
+    {
+     "order": 1,
+     "names": [
+      "x3-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.002
+       ],
+       "admissible": true,
+       "points": 2
+      },
+      {
+       "h": [
+        0.001
+       ],
+       "admissible": true,
+       "points": 2
+      }
+     ]
+    },
+    {
+     "order": 1,
+     "names": [
+      "x4-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        9.148221720473935e-07
+       ],
+       "admissible": true,
+       "points": 2
+      },
+      {
+       "h": [
+        4.5741108602369674e-07
+       ],
+       "admissible": true,
+       "points": 2
+      }
+     ]
+    },
+    {
+     "order": 1,
+     "names": [
+      "x5-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        2.4484292541750884e-08
+       ],
+       "admissible": true,
+       "points": 2
+      },
+      {
+       "h": [
+        1.2242146270875442e-08
+       ],
+       "admissible": true,
+       "points": 2
+      }
+     ]
+    },
+    {
+     "order": 1,
+     "names": [
+      "x6-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.002
+       ],
+       "admissible": true,
+       "points": 2
+      },
+      {
+       "h": [
+        0.001
+       ],
+       "admissible": true,
+       "points": 2
+      }
+     ]
+    },
+    {
+     "order": 1,
+     "names": [
+      "x7-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        9.397129646777603e-08
+       ],
+       "admissible": true,
+       "points": 2
+      },
+      {
+       "h": [
+        4.698564823388801e-08
+       ],
+       "admissible": true,
+       "points": 2
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "T"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        0.02
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.01,
+        0.01
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        4.815579787930124
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.01,
+        2.407789893965062
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "x0-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        2.3144174593117417e-16
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.01,
+        1.1572087296558709e-16
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "x1-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        0.002
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.01,
+        0.001
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "x2-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        0.002
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.01,
+        0.001
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "x3-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        0.002
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.01,
+        0.001
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "x4-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        4.5741108602369674e-07
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.01,
+        2.2870554301184837e-07
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "x5-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        1.2242146270875442e-08
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.01,
+        6.121073135437721e-09
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "x6-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        0.002
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.01,
+        0.001
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "x7-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        4.698564823388801e-08
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.01,
+        2.3492824116944007e-08
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "rho",
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        4.815579787930124,
+        4.815579787930124
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        2.407789893965062,
+        2.407789893965062
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "rho",
+      "x0-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        4.815579787930124,
+        2.3144174593117417e-16
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        2.407789893965062,
+        1.1572087296558709e-16
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "rho",
+      "x1-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        4.815579787930124,
+        0.002
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        2.407789893965062,
+        0.001
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "rho",
+      "x2-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        4.815579787930124,
+        0.002
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        2.407789893965062,
+        0.001
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "rho",
+      "x3-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        4.815579787930124,
+        0.002
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        2.407789893965062,
+        0.001
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "rho",
+      "x4-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        4.815579787930124,
+        4.5741108602369674e-07
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        2.407789893965062,
+        2.2870554301184837e-07
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "rho",
+      "x5-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        4.815579787930124,
+        1.2242146270875442e-08
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        2.407789893965062,
+        6.121073135437721e-09
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "rho",
+      "x6-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        4.815579787930124,
+        0.002
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        2.407789893965062,
+        0.001
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "rho",
+      "x7-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        4.815579787930124,
+        4.698564823388801e-08
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        2.407789893965062,
+        2.3492824116944007e-08
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "x0-x8",
+      "x0-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        2.3144174593117417e-16,
+        2.3144174593117417e-16
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        1.1572087296558709e-16,
+        1.1572087296558709e-16
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "x0-x8",
+      "x1-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        2.3144174593117417e-16,
+        0.002
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        1.1572087296558709e-16,
+        0.001
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "x0-x8",
+      "x2-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        2.3144174593117417e-16,
+        0.002
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        1.1572087296558709e-16,
+        0.001
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "x0-x8",
+      "x3-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        2.3144174593117417e-16,
+        0.002
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        1.1572087296558709e-16,
+        0.001
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "x0-x8",
+      "x4-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        2.3144174593117417e-16,
+        4.5741108602369674e-07
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        1.1572087296558709e-16,
+        2.2870554301184837e-07
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "x0-x8",
+      "x5-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        2.3144174593117417e-16,
+        1.2242146270875442e-08
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        1.1572087296558709e-16,
+        6.121073135437721e-09
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "x0-x8",
+      "x6-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        2.3144174593117417e-16,
+        0.002
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        1.1572087296558709e-16,
+        0.001
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "x0-x8",
+      "x7-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        2.3144174593117417e-16,
+        4.698564823388801e-08
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        1.1572087296558709e-16,
+        2.3492824116944007e-08
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "x1-x8",
+      "x1-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.002,
+        0.002
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.001,
+        0.001
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "x1-x8",
+      "x2-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.002,
+        0.002
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.001,
+        0.001
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "x1-x8",
+      "x3-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.002,
+        0.002
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.001,
+        0.001
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "x1-x8",
+      "x4-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.002,
+        4.5741108602369674e-07
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.001,
+        2.2870554301184837e-07
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "x1-x8",
+      "x5-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.002,
+        1.2242146270875442e-08
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.001,
+        6.121073135437721e-09
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "x1-x8",
+      "x6-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.002,
+        0.002
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.001,
+        0.001
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "x1-x8",
+      "x7-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.002,
+        4.698564823388801e-08
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.001,
+        2.3492824116944007e-08
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "x2-x8",
+      "x2-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.002,
+        0.002
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.001,
+        0.001
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "x2-x8",
+      "x3-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.002,
+        0.002
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.001,
+        0.001
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "x2-x8",
+      "x4-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.002,
+        4.5741108602369674e-07
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.001,
+        2.2870554301184837e-07
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "x2-x8",
+      "x5-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.002,
+        1.2242146270875442e-08
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.001,
+        6.121073135437721e-09
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "x2-x8",
+      "x6-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.002,
+        0.002
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.001,
+        0.001
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "x2-x8",
+      "x7-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.002,
+        4.698564823388801e-08
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.001,
+        2.3492824116944007e-08
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "x3-x8",
+      "x3-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.002,
+        0.002
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.001,
+        0.001
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "x3-x8",
+      "x4-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.002,
+        4.5741108602369674e-07
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.001,
+        2.2870554301184837e-07
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "x3-x8",
+      "x5-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.002,
+        1.2242146270875442e-08
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.001,
+        6.121073135437721e-09
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "x3-x8",
+      "x6-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.002,
+        0.002
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.001,
+        0.001
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "x3-x8",
+      "x7-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.002,
+        4.698564823388801e-08
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.001,
+        2.3492824116944007e-08
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "x4-x8",
+      "x4-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        4.5741108602369674e-07,
+        4.5741108602369674e-07
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        2.2870554301184837e-07,
+        2.2870554301184837e-07
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "x4-x8",
+      "x5-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        4.5741108602369674e-07,
+        1.2242146270875442e-08
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        2.2870554301184837e-07,
+        6.121073135437721e-09
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "x4-x8",
+      "x6-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        4.5741108602369674e-07,
+        0.002
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        2.2870554301184837e-07,
+        0.001
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "x4-x8",
+      "x7-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        4.5741108602369674e-07,
+        4.698564823388801e-08
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        2.2870554301184837e-07,
+        2.3492824116944007e-08
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "x5-x8",
+      "x5-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        1.2242146270875442e-08,
+        1.2242146270875442e-08
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        6.121073135437721e-09,
+        6.121073135437721e-09
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "x5-x8",
+      "x6-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        1.2242146270875442e-08,
+        0.002
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        6.121073135437721e-09,
+        0.001
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "x5-x8",
+      "x7-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        1.2242146270875442e-08,
+        4.698564823388801e-08
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        6.121073135437721e-09,
+        2.3492824116944007e-08
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "x6-x8",
+      "x6-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.002,
+        0.002
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.001,
+        0.001
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "x6-x8",
+      "x7-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.002,
+        4.698564823388801e-08
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.001,
+        2.3492824116944007e-08
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "x7-x8",
+      "x7-x8"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        4.698564823388801e-08,
+        4.698564823388801e-08
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        2.3492824116944007e-08,
+        2.3492824116944007e-08
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    }
+   ],
+   "comparators": [],
+   "neutral_property": false
+  },
+  {
+   "id": "A-Q05/associating-binary",
+   "model": "associating-binary",
+   "T": 313.15,
+   "rho": 42441.09427799721,
+   "x": [
+    0.25,
+    0.75
+   ],
+   "directions": {
+    "T": [
+     1.0,
+     0.0,
+     [
+      0.0,
+      0.0
+     ]
+    ],
+    "rho": [
+     0.0,
+     1.0,
+     [
+      0.0,
+      0.0
+     ]
+    ],
+    "x0-x1": [
+     0.0,
+     0.0,
+     [
+      1.0,
+      -1.0
+     ]
+    ]
+   },
+   "requests": [
+    {
+     "order": 1,
+     "names": [
+      "T"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02
+       ],
+       "admissible": true,
+       "points": 2
+      },
+      {
+       "h": [
+        0.01
+       ],
+       "admissible": true,
+       "points": 2
+      }
+     ]
+    },
+    {
+     "order": 1,
+     "names": [
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        4.244109427799721
+       ],
+       "admissible": true,
+       "points": 2
+      },
+      {
+       "h": [
+        2.1220547138998604
+       ],
+       "admissible": true,
+       "points": 2
+      }
+     ]
+    },
+    {
+     "order": 1,
+     "names": [
+      "x0-x1"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.002
+       ],
+       "admissible": true,
+       "points": 2
+      },
+      {
+       "h": [
+        0.001
+       ],
+       "admissible": true,
+       "points": 2
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "T"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        0.02
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.01,
+        0.01
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        4.244109427799721
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.01,
+        2.1220547138998604
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "T",
+      "x0-x1"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        0.002
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.01,
+        0.001
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "rho",
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        4.244109427799721,
+        4.244109427799721
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        2.1220547138998604,
+        2.1220547138998604
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "rho",
+      "x0-x1"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        4.244109427799721,
+        0.002
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        2.1220547138998604,
+        0.001
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 2,
+     "names": [
+      "x0-x1",
+      "x0-x1"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.002,
+        0.002
+       ],
+       "admissible": true,
+       "points": 4
+      },
+      {
+       "h": [
+        0.001,
+        0.001
+       ],
+       "admissible": true,
+       "points": 4
+      }
+     ]
+    },
+    {
+     "order": 3,
+     "names": [
+      "T",
+      "T",
+      "T"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        0.02,
+        0.02
+       ],
+       "admissible": true,
+       "points": 8
+      },
+      {
+       "h": [
+        0.01,
+        0.01,
+        0.01
+       ],
+       "admissible": true,
+       "points": 8
+      }
+     ]
+    },
+    {
+     "order": 3,
+     "names": [
+      "T",
+      "T",
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        0.02,
+        4.244109427799721
+       ],
+       "admissible": true,
+       "points": 8
+      },
+      {
+       "h": [
+        0.01,
+        0.01,
+        2.1220547138998604
+       ],
+       "admissible": true,
+       "points": 8
+      }
+     ]
+    },
+    {
+     "order": 3,
+     "names": [
+      "T",
+      "T",
+      "x0-x1"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        0.02,
+        0.002
+       ],
+       "admissible": true,
+       "points": 8
+      },
+      {
+       "h": [
+        0.01,
+        0.01,
+        0.001
+       ],
+       "admissible": true,
+       "points": 8
+      }
+     ]
+    },
+    {
+     "order": 3,
+     "names": [
+      "T",
+      "rho",
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        4.244109427799721,
+        4.244109427799721
+       ],
+       "admissible": true,
+       "points": 8
+      },
+      {
+       "h": [
+        0.01,
+        2.1220547138998604,
+        2.1220547138998604
+       ],
+       "admissible": true,
+       "points": 8
+      }
+     ]
+    },
+    {
+     "order": 3,
+     "names": [
+      "T",
+      "rho",
+      "x0-x1"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        4.244109427799721,
+        0.002
+       ],
+       "admissible": true,
+       "points": 8
+      },
+      {
+       "h": [
+        0.01,
+        2.1220547138998604,
+        0.001
+       ],
+       "admissible": true,
+       "points": 8
+      }
+     ]
+    },
+    {
+     "order": 3,
+     "names": [
+      "T",
+      "x0-x1",
+      "x0-x1"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.02,
+        0.002,
+        0.002
+       ],
+       "admissible": true,
+       "points": 8
+      },
+      {
+       "h": [
+        0.01,
+        0.001,
+        0.001
+       ],
+       "admissible": true,
+       "points": 8
+      }
+     ]
+    },
+    {
+     "order": 3,
+     "names": [
+      "rho",
+      "rho",
+      "rho"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        4.244109427799721,
+        4.244109427799721,
+        4.244109427799721
+       ],
+       "admissible": true,
+       "points": 8
+      },
+      {
+       "h": [
+        2.1220547138998604,
+        2.1220547138998604,
+        2.1220547138998604
+       ],
+       "admissible": true,
+       "points": 8
+      }
+     ]
+    },
+    {
+     "order": 3,
+     "names": [
+      "rho",
+      "rho",
+      "x0-x1"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        4.244109427799721,
+        4.244109427799721,
+        0.002
+       ],
+       "admissible": true,
+       "points": 8
+      },
+      {
+       "h": [
+        2.1220547138998604,
+        2.1220547138998604,
+        0.001
+       ],
+       "admissible": true,
+       "points": 8
+      }
+     ]
+    },
+    {
+     "order": 3,
+     "names": [
+      "rho",
+      "x0-x1",
+      "x0-x1"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        4.244109427799721,
+        0.002,
+        0.002
+       ],
+       "admissible": true,
+       "points": 8
+      },
+      {
+       "h": [
+        2.1220547138998604,
+        0.001,
+        0.001
+       ],
+       "admissible": true,
+       "points": 8
+      }
+     ]
+    },
+    {
+     "order": 3,
+     "names": [
+      "x0-x1",
+      "x0-x1",
+      "x0-x1"
+     ],
+     "inadmissible_chart": null,
+     "levels": [
+      {
+       "h": [
+        0.002,
+        0.002,
+        0.002
+       ],
+       "admissible": true,
+       "points": 8
+      },
+      {
+       "h": [
+        0.001,
+        0.001,
+        0.001
+       ],
+       "admissible": true,
+       "points": 8
+      }
+     ]
+    }
+   ],
+   "comparators": [],
+   "neutral_property": false
+  }
+ ],
+ "t2": {
+  "ordinary": [
+   {
+    "id": "A-propane-vapor",
+    "model": "C1",
+    "T": 300,
+    "x": [
+     1
+    ],
+    "branch": "vapor",
+    "states": [
+     {
+      "index": 0,
+      "P": 499330.4478698393,
+      "oracle_rho": 217.30215263291302,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 1,
+      "P": 499332.05861321953,
+      "oracle_rho": 217.3029175733232,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 2,
+      "P": 499333.6693565998,
+      "oracle_rho": 217.30368251421515,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 3,
+      "P": 499335.28009998,
+      "oracle_rho": 217.30444745558663,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 4,
+      "P": 499336.8908433602,
+      "oracle_rho": 217.30521239743882,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 5,
+      "P": 499338.5015867404,
+      "oracle_rho": 217.3059773397705,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 6,
+      "P": 499340.1123301207,
+      "oracle_rho": 217.30674228258374,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 7,
+      "P": 499341.7230735009,
+      "oracle_rho": 217.30750722587692,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 8,
+      "P": 499343.3338168811,
+      "oracle_rho": 217.30827216965088,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 9,
+      "P": 499344.9445602613,
+      "oracle_rho": 217.30903711390528,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 10,
+      "P": 499346.5553036416,
+      "oracle_rho": 217.30980205864034,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 11,
+      "P": 499348.1660470218,
+      "oracle_rho": 217.31056700385557,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 12,
+      "P": 499349.776790402,
+      "oracle_rho": 217.3113319495514,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 13,
+      "P": 499351.3875337822,
+      "oracle_rho": 217.31209689572734,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 14,
+      "P": 499352.9982771625,
+      "oracle_rho": 217.3128618423838,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 15,
+      "P": 499354.6090205427,
+      "oracle_rho": 217.3136267895205,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 16,
+      "P": 499356.2197639229,
+      "oracle_rho": 217.3143917371375,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 17,
+      "P": 499357.8305073031,
+      "oracle_rho": 217.3151566852349,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 18,
+      "P": 499359.4412506834,
+      "oracle_rho": 217.31592163381316,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 19,
+      "P": 499361.0519940636,
+      "oracle_rho": 217.31668658287225,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 20,
+      "P": 499362.6627374438,
+      "oracle_rho": 217.3174515324115,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 21,
+      "P": 499364.2734808241,
+      "oracle_rho": 217.3182164824306,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 22,
+      "P": 499365.8842242043,
+      "oracle_rho": 217.31898143293148,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 23,
+      "P": 499367.4949675845,
+      "oracle_rho": 217.3197463839117,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 24,
+      "P": 499369.1057109647,
+      "oracle_rho": 217.32051133537277,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 25,
+      "P": 499370.716454345,
+      "oracle_rho": 217.32127628731308,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 26,
+      "P": 499372.3271977252,
+      "oracle_rho": 217.32204123973497,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 27,
+      "P": 499373.9379411054,
+      "oracle_rho": 217.32280619263815,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 28,
+      "P": 499375.5486844856,
+      "oracle_rho": 217.32357114601973,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 29,
+      "P": 499377.1594278659,
+      "oracle_rho": 217.32433609988317,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 30,
+      "P": 499378.7701712461,
+      "oracle_rho": 217.32510105422708,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 31,
+      "P": 499380.3809146263,
+      "oracle_rho": 217.32586600905069,
+      "oracle_roots": 2,
+      "floor": 0.0
+     }
+    ]
+   },
+   {
+    "id": "A-propane-liquid",
+    "model": "C1",
+    "T": 300,
+    "x": [
+     1
+    ],
+    "branch": "liquid",
+    "states": [
+     {
+      "index": 0,
+      "P": 1997321.7914793573,
+      "oracle_rho": 11175.52468969248,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 1,
+      "P": 1997328.2344528781,
+      "oracle_rho": 11175.525161542424,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 2,
+      "P": 1997334.6774263992,
+      "oracle_rho": 11175.525633392263,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 3,
+      "P": 1997341.12039992,
+      "oracle_rho": 11175.526105241846,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 4,
+      "P": 1997347.5633734409,
+      "oracle_rho": 11175.526577091285,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 5,
+      "P": 1997354.0063469617,
+      "oracle_rho": 11175.527048940552,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 6,
+      "P": 1997360.4493204828,
+      "oracle_rho": 11175.527520789688,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 7,
+      "P": 1997366.8922940036,
+      "oracle_rho": 11175.527992638625,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 8,
+      "P": 1997373.3352675245,
+      "oracle_rho": 11175.528464487434,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 9,
+      "P": 1997379.7782410453,
+      "oracle_rho": 11175.52893633594,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 10,
+      "P": 1997386.2212145664,
+      "oracle_rho": 11175.529408184451,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 11,
+      "P": 1997392.6641880872,
+      "oracle_rho": 11175.529880032704,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 12,
+      "P": 1997399.107161608,
+      "oracle_rho": 11175.530351880781,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 13,
+      "P": 1997405.550135129,
+      "oracle_rho": 11175.530823728655,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 14,
+      "P": 1997411.99310865,
+      "oracle_rho": 11175.53129557637,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 15,
+      "P": 1997418.4360821708,
+      "oracle_rho": 11175.531767423941,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 16,
+      "P": 1997424.8790556917,
+      "oracle_rho": 11175.53223927139,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 17,
+      "P": 1997431.3220292125,
+      "oracle_rho": 11175.532711118602,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 18,
+      "P": 1997437.7650027336,
+      "oracle_rho": 11175.533182965704,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 19,
+      "P": 1997444.2079762544,
+      "oracle_rho": 11175.533654812534,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 20,
+      "P": 1997450.6509497752,
+      "oracle_rho": 11175.534126659259,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 21,
+      "P": 1997457.0939232963,
+      "oracle_rho": 11175.534598505881,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 22,
+      "P": 1997463.5368968172,
+      "oracle_rho": 11175.53507035218,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 23,
+      "P": 1997469.979870338,
+      "oracle_rho": 11175.53554219842,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 24,
+      "P": 1997476.4228438588,
+      "oracle_rho": 11175.53601404453,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 25,
+      "P": 1997482.86581738,
+      "oracle_rho": 11175.536485890341,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 26,
+      "P": 1997489.3087909007,
+      "oracle_rho": 11175.536957736094,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 27,
+      "P": 1997495.7517644216,
+      "oracle_rho": 11175.537429581549,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 28,
+      "P": 1997502.1947379424,
+      "oracle_rho": 11175.537901426978,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 29,
+      "P": 1997508.6377114635,
+      "oracle_rho": 11175.53837327216,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 30,
+      "P": 1997515.0806849843,
+      "oracle_rho": 11175.53884511712,
+      "oracle_roots": 2,
+      "floor": 0.0
+     },
+     {
+      "index": 31,
+      "P": 1997521.5236585052,
+      "oracle_rho": 11175.539316962064,
+      "oracle_roots": 2,
+      "floor": 0.0
+     }
+    ]
+   },
+   {
+    "id": "A-methane-ethane-vapor",
+    "model": "methane-ethane",
+    "T": 250,
+    "x": [
+     0.5,
+     0.5
+    ],
+    "branch": "vapor",
+    "states": [
+     {
+      "index": 0,
+      "P": 1000000.0,
+      "oracle_rho": 520.570362273691,
+      "oracle_roots": 1,
+      "floor": 0.0
+     },
+     {
+      "index": 1,
+      "P": 1000003.2258064516,
+      "oracle_rho": 520.5721867788727,
+      "oracle_roots": 1,
+      "floor": 0.0
+     },
+     {
+      "index": 2,
+      "P": 1000006.4516129033,
+      "oracle_rho": 520.5740112851215,
+      "oracle_roots": 1,
+      "floor": 0.0
+     },
+     {
+      "index": 3,
+      "P": 1000009.6774193548,
+      "oracle_rho": 520.5758357924474,
+      "oracle_roots": 1,
+      "floor": 0.0
+     },
+     {
+      "index": 4,
+      "P": 1000012.9032258064,
+      "oracle_rho": 520.5776603008405,
+      "oracle_roots": 1,
+      "floor": 0.0
+     },
+     {
+      "index": 5,
+      "P": 1000016.1290322581,
+      "oracle_rho": 520.5794848103105,
+      "oracle_roots": 1,
+      "floor": 0.0
+     },
+     {
+      "index": 6,
+      "P": 1000019.3548387097,
+      "oracle_rho": 520.581309320854,
+      "oracle_roots": 1,
+      "floor": 0.0
+     },
+     {
+      "index": 7,
+      "P": 1000022.5806451613,
+      "oracle_rho": 520.5831338324701,
+      "oracle_roots": 1,
+      "floor": 0.0
+     },
+     {
+      "index": 8,
+      "P": 1000025.8064516129,
+      "oracle_rho": 520.5849583451542,
+      "oracle_roots": 1,
+      "floor": 0.0
+     },
+     {
+      "index": 9,
+      "P": 1000029.0322580645,
+      "oracle_rho": 520.5867828589121,
+      "oracle_roots": 1,
+      "floor": 0.0
+     },
+     {
+      "index": 10,
+      "P": 1000032.2580645161,
+      "oracle_rho": 520.5886073737457,
+      "oracle_roots": 1,
+      "floor": 0.0
+     },
+     {
+      "index": 11,
+      "P": 1000035.4838709678,
+      "oracle_rho": 520.5904318896512,
+      "oracle_roots": 1,
+      "floor": 0.0
+     },
+     {
+      "index": 12,
+      "P": 1000038.7096774194,
+      "oracle_rho": 520.592256406627,
+      "oracle_roots": 1,
+      "floor": 0.0
+     },
+     {
+      "index": 13,
+      "P": 1000041.9354838709,
+      "oracle_rho": 520.5940809246786,
+      "oracle_roots": 1,
+      "floor": 0.0
+     },
+     {
+      "index": 14,
+      "P": 1000045.1612903225,
+      "oracle_rho": 520.5959054438023,
+      "oracle_roots": 1,
+      "floor": 0.0
+     },
+     {
+      "index": 15,
+      "P": 1000048.3870967742,
+      "oracle_rho": 520.597729963996,
+      "oracle_roots": 1,
+      "floor": 0.0
+     },
+     {
+      "index": 16,
+      "P": 1000051.6129032258,
+      "oracle_rho": 520.5995544852647,
+      "oracle_roots": 1,
+      "floor": 0.0
+     },
+     {
+      "index": 17,
+      "P": 1000054.8387096775,
+      "oracle_rho": 520.6013790076056,
+      "oracle_roots": 1,
+      "floor": 0.0
+     },
+     {
+      "index": 18,
+      "P": 1000058.0645161291,
+      "oracle_rho": 520.6032035310197,
+      "oracle_roots": 1,
+      "floor": 0.0
+     },
+     {
+      "index": 19,
+      "P": 1000061.2903225806,
+      "oracle_rho": 520.6050280555032,
+      "oracle_roots": 1,
+      "floor": 0.0
+     },
+     {
+      "index": 20,
+      "P": 1000064.5161290322,
+      "oracle_rho": 520.6068525810626,
+      "oracle_roots": 1,
+      "floor": 0.0
+     },
+     {
+      "index": 21,
+      "P": 1000067.7419354839,
+      "oracle_rho": 520.608677107695,
+      "oracle_roots": 1,
+      "floor": 0.0
+     },
+     {
+      "index": 22,
+      "P": 1000070.9677419355,
+      "oracle_rho": 520.6105016353974,
+      "oracle_roots": 1,
+      "floor": 0.0
+     },
+     {
+      "index": 23,
+      "P": 1000074.1935483871,
+      "oracle_rho": 520.6123261641725,
+      "oracle_roots": 1,
+      "floor": 0.0
+     },
+     {
+      "index": 24,
+      "P": 1000077.4193548387,
+      "oracle_rho": 520.61415069402,
+      "oracle_roots": 1,
+      "floor": 0.0
+     },
+     {
+      "index": 25,
+      "P": 1000080.6451612903,
+      "oracle_rho": 520.6159752249436,
+      "oracle_roots": 1,
+      "floor": 0.0
+     },
+     {
+      "index": 26,
+      "P": 1000083.8709677419,
+      "oracle_rho": 520.617799756938,
+      "oracle_roots": 1,
+      "floor": 0.0
+     },
+     {
+      "index": 27,
+      "P": 1000087.0967741936,
+      "oracle_rho": 520.6196242900054,
+      "oracle_roots": 1,
+      "floor": 0.0
+     },
+     {
+      "index": 28,
+      "P": 1000090.3225806452,
+      "oracle_rho": 520.6214488241453,
+      "oracle_roots": 1,
+      "floor": 0.0
+     },
+     {
+      "index": 29,
+      "P": 1000093.5483870967,
+      "oracle_rho": 520.6232733593545,
+      "oracle_roots": 1,
+      "floor": 0.0
+     },
+     {
+      "index": 30,
+      "P": 1000096.7741935484,
+      "oracle_rho": 520.625097895643,
+      "oracle_roots": 1,
+      "floor": 0.0
+     },
+     {
+      "index": 31,
+      "P": 1000100.0,
+      "oracle_rho": 520.6269224329976,
+      "oracle_roots": 1,
+      "floor": 0.0
+     }
+    ]
+   },
+   {
+    "id": "A-C2-liquid",
+    "model": "C2",
+    "T": 373.15,
+    "x": [
+     0.5,
+     0.5
+    ],
+    "branch": "liquid",
+    "states": [
+     {
+      "index": 0,
+      "P": 2000000.0,
+      "oracle_rho": 10875.397728880602,
+      "oracle_roots": 2,
+      "floor": 4.014014386675388e-16
+     },
+     {
+      "index": 1,
+      "P": 2000006.4516129033,
+      "oracle_rho": 10875.398094303722,
+      "oracle_roots": 2,
+      "floor": 4.0140145206817163e-16
+     },
+     {
+      "index": 2,
+      "P": 2000012.9032258065,
+      "oracle_rho": 10875.398459726668,
+      "oracle_roots": 2,
+      "floor": 4.0140146546879855e-16
+     },
+     {
+      "index": 3,
+      "P": 2000019.3548387096,
+      "oracle_rho": 10875.39882514956,
+      "oracle_roots": 2,
+      "floor": 4.0140147886942383e-16
+     },
+     {
+      "index": 4,
+      "P": 2000025.8064516129,
+      "oracle_rho": 10875.399190572269,
+      "oracle_roots": 2,
+      "floor": 4.0140149227004276e-16
+     },
+     {
+      "index": 5,
+      "P": 2000032.2580645161,
+      "oracle_rho": 10875.399555994967,
+      "oracle_roots": 2,
+      "floor": 4.0140150567066154e-16
+     },
+     {
+      "index": 6,
+      "P": 2000038.7096774194,
+      "oracle_rho": 10875.399921417506,
+      "oracle_roots": 2,
+      "floor": 4.014015190712751e-16
+     },
+     {
+      "index": 7,
+      "P": 2000045.1612903227,
+      "oracle_rho": 10875.400286839968,
+      "oracle_roots": 2,
+      "floor": 4.014015324718864e-16
+     },
+     {
+      "index": 8,
+      "P": 2000051.6129032257,
+      "oracle_rho": 10875.400652262382,
+      "oracle_roots": 2,
+      "floor": 4.014015458724962e-16
+     },
+     {
+      "index": 9,
+      "P": 2000058.064516129,
+      "oracle_rho": 10875.401017684611,
+      "oracle_roots": 2,
+      "floor": 4.014015592730994e-16
+     },
+     {
+      "index": 10,
+      "P": 2000064.5161290322,
+      "oracle_rho": 10875.401383106857,
+      "oracle_roots": 2,
+      "floor": 4.014015726737037e-16
+     },
+     {
+      "index": 11,
+      "P": 2000070.9677419355,
+      "oracle_rho": 10875.401748528939,
+      "oracle_roots": 2,
+      "floor": 4.0140158607430257e-16
+     },
+     {
+      "index": 12,
+      "P": 2000077.4193548388,
+      "oracle_rho": 10875.402113950919,
+      "oracle_roots": 2,
+      "floor": 4.0140159947489793e-16
+     },
+     {
+      "index": 13,
+      "P": 2000083.8709677418,
+      "oracle_rho": 10875.40247937271,
+      "oracle_roots": 2,
+      "floor": 4.014016128754869e-16
+     },
+     {
+      "index": 14,
+      "P": 2000090.322580645,
+      "oracle_rho": 10875.402844794562,
+      "oracle_roots": 2,
+      "floor": 4.014016262760784e-16
+     },
+     {
+      "index": 15,
+      "P": 2000096.7741935484,
+      "oracle_rho": 10875.40321021622,
+      "oracle_roots": 2,
+      "floor": 4.014016396766633e-16
+     },
+     {
+      "index": 16,
+      "P": 2000103.2258064516,
+      "oracle_rho": 10875.403575637727,
+      "oracle_roots": 2,
+      "floor": 4.0140165307724293e-16
+     },
+     {
+      "index": 17,
+      "P": 2000109.677419355,
+      "oracle_rho": 10875.40394105926,
+      "oracle_roots": 2,
+      "floor": 4.01401666477824e-16
+     },
+     {
+      "index": 18,
+      "P": 2000116.1290322582,
+      "oracle_rho": 10875.404306480581,
+      "oracle_roots": 2,
+      "floor": 4.0140167987839765e-16
+     },
+     {
+      "index": 19,
+      "P": 2000122.5806451612,
+      "oracle_rho": 10875.404671901939,
+      "oracle_roots": 2,
+      "floor": 4.014016932789732e-16
+     },
+     {
+      "index": 20,
+      "P": 2000129.0322580645,
+      "oracle_rho": 10875.405037323057,
+      "oracle_roots": 2,
+      "floor": 4.014017066795402e-16
+     },
+     {
+      "index": 21,
+      "P": 2000135.4838709678,
+      "oracle_rho": 10875.405402744142,
+      "oracle_roots": 2,
+      "floor": 4.0140172008010637e-16
+     },
+     {
+      "index": 22,
+      "P": 2000141.935483871,
+      "oracle_rho": 10875.405768165107,
+      "oracle_roots": 2,
+      "floor": 4.0140173348066855e-16
+     },
+     {
+      "index": 23,
+      "P": 2000148.3870967743,
+      "oracle_rho": 10875.406133585951,
+      "oracle_roots": 2,
+      "floor": 4.014017468812267e-16
+     },
+     {
+      "index": 24,
+      "P": 2000154.8387096773,
+      "oracle_rho": 10875.406499006758,
+      "oracle_roots": 2,
+      "floor": 4.014017602817839e-16
+     },
+     {
+      "index": 25,
+      "P": 2000161.2903225806,
+      "oracle_rho": 10875.406864427443,
+      "oracle_roots": 2,
+      "floor": 4.0140177368233733e-16
+     },
+     {
+      "index": 26,
+      "P": 2000167.7419354839,
+      "oracle_rho": 10875.407229848086,
+      "oracle_roots": 2,
+      "floor": 4.014017870828892e-16
+     },
+     {
+      "index": 27,
+      "P": 2000174.1935483871,
+      "oracle_rho": 10875.407595268513,
+      "oracle_roots": 2,
+      "floor": 4.014018004834336e-16
+     },
+     {
+      "index": 28,
+      "P": 2000180.6451612904,
+      "oracle_rho": 10875.407960688932,
+      "oracle_roots": 2,
+      "floor": 4.014018138839782e-16
+     },
+     {
+      "index": 29,
+      "P": 2000187.0967741935,
+      "oracle_rho": 10875.408326109207,
+      "oracle_roots": 2,
+      "floor": 4.014018272845182e-16
+     },
+     {
+      "index": 30,
+      "P": 2000193.5483870967,
+      "oracle_rho": 10875.408691529396,
+      "oracle_roots": 2,
+      "floor": 4.0140184068505493e-16
+     },
+     {
+      "index": 31,
+      "P": 2000200.0,
+      "oracle_rho": 10875.4090569494,
+      "oracle_roots": 2,
+      "floor": 4.0140185408558556e-16
+     }
+    ]
+   }
+  ],
+  "ethane_loop": [
+   {
+    "id": "A-Q02/308.8-vapor",
+    "T": 308.8,
+    "branch": "vapor",
+    "pressures": [
+     5147500.0,
+     5147499.89705,
+     5147499.948524999,
+     5147500.051475,
+     5147500.10295
+    ]
+   },
+   {
+    "id": "A-Q02/308.8-liquid",
+    "T": 308.8,
+    "branch": "liquid",
+    "pressures": [
+     5147500.0,
+     5147499.89705,
+     5147499.948524999,
+     5147500.051475,
+     5147500.10295
+    ]
+   },
+   {
+    "id": "A-Q02/308.0-vapor",
+    "T": 308.0,
+    "branch": "vapor",
+    "pressures": [
+     5057915.461281232,
+     5057915.360122923,
+     5057915.410702077,
+     5057915.511860386,
+     5057915.562439541
+    ]
+   },
+   {
+    "id": "A-Q02/308.0-liquid",
+    "T": 308.0,
+    "branch": "liquid",
+    "pressures": [
+     5057915.461281232,
+     5057915.360122923,
+     5057915.410702077,
+     5057915.511860386,
+     5057915.562439541
+    ]
+   }
+  ],
+  "actions": {
+   "directions": [
+    [
+     1.0,
+     0.0
+    ],
+    [
+     0.0,
+     1.0
+    ]
+   ],
+   "orders": [
+    1,
+    2
+   ]
+  }
+ },
+ "t3": [
+  "C1-300",
+  "C2-0.5",
+  "methane-bubble"
+ ],
+ "t4": {
+  "methane_ethane": {
+   "x": [
+    0.5,
+    0.5
+   ],
+   "points": [
+    [
+     200.0,
+     3000000.0
+    ],
+    [
+     220.0,
+     4000000.0
+    ],
+    [
+     240.0,
+     5000000.0
+    ],
+    [
+     190.0,
+     1000000.0
+    ],
+    [
+     250.0,
+     6500000.0
+    ],
+    [
+     200.0,
+     500000.0
+    ]
+   ]
+  },
+  "methanol_hexane": {
+   "x": [
+    0.5,
+    0.5
+   ],
+   "kij": 0.03,
+   "P": 100000.0,
+   "temperatures": [
+    250.0,
+    270.0,
+    290.0,
+    300.0,
+    310.0
+   ]
+  }
+ },
+ "t6": {
+  "T": 298.15,
+  "P": 100000.0,
+  "request": "C3-0.88sigma",
+  "molalities": [
+   0.001,
+   0.0013498362208200641,
+   0.001822057823037795,
+   0.0024594796459649704,
+   0.003319894710493225,
+   0.004481314129532696,
+   0.006049040128915976,
+   0.008165213467204856,
+   0.0110217008887609,
+   0.014877491074694164,
+   0.020082176327549404,
+   0.027107648999821456,
+   0.03659088648123579,
+   0.049391703924287315,
+   0.06667071096502356,
+   0.08999454052841421,
+   0.12147789048131281,
+   0.16397525660048892,
+   0.22133974067760448,
+   0.2987723990735507,
+   0.4032938060507857,
+   0.544380587039733,
+   0.7348246342975212,
+   0.9918929073256518,
+   1.338892973482684,
+   1.8072862314084064,
+   2.4395404165444594,
+   3.292980016406178,
+   4.444983700581713,
+   6.000000000000003
+  ]
+ },
+ "t7": [
+  "case-6/figure-2-point-7/cold",
+  "case-6/figure-2-point-7/accepted",
+  "case-7/flash-5918.5286-Pa/cold",
+  "case-7/flash-5918.5286-Pa/accepted",
+  "khudaida/sequential-8",
+  "mea-nominally-unloaded/353.15-K",
+  "mea-f1/residual-jacobian",
+  "mea-cp/hilliard-353.15-K-0.358"
+ ],
+ "t11": {
+  "temperatures": [
+   275.0,
+   325.0,
+   375.0
+  ],
+  "rho": 100.0,
+  "x": [
+   0.4,
+   0.6
+  ],
+  "intervals": [
+   [
+    250.0,
+    300.0
+   ],
+   [
+    300.0,
+    350.0
+   ],
+   [
+    350.0,
+    400.0
+   ]
+  ],
+  "sequences": {
+   "two-repeated": [
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0
+   ],
+   "three-repeated": [
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0
+   ],
+   "three-permuted-578": [
+    325.0,
+    275.0,
+    375.0,
+    375.0,
+    375.0,
+    275.0,
+    325.0,
+    325.0,
+    275.0,
+    275.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    275.0,
+    375.0,
+    275.0,
+    375.0,
+    275.0,
+    375.0,
+    325.0,
+    275.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    325.0,
+    325.0,
+    375.0,
+    375.0,
+    375.0,
+    325.0,
+    325.0,
+    275.0,
+    325.0,
+    325.0,
+    275.0,
+    275.0,
+    375.0,
+    375.0,
+    275.0,
+    375.0,
+    375.0,
+    275.0,
+    275.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    275.0,
+    325.0,
+    275.0,
+    375.0,
+    325.0,
+    325.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    325.0,
+    375.0,
+    325.0,
+    375.0,
+    275.0,
+    275.0,
+    375.0,
+    325.0,
+    275.0,
+    275.0,
+    325.0,
+    375.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    375.0,
+    375.0,
+    325.0,
+    275.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    325.0,
+    275.0,
+    375.0,
+    275.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    275.0,
+    275.0,
+    325.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    275.0,
+    375.0,
+    375.0,
+    325.0,
+    275.0,
+    275.0,
+    325.0,
+    275.0,
+    325.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    325.0,
+    325.0,
+    325.0,
+    375.0,
+    375.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    325.0,
+    375.0,
+    325.0,
+    275.0,
+    275.0,
+    275.0,
+    375.0,
+    325.0,
+    325.0,
+    375.0,
+    325.0,
+    275.0,
+    325.0,
+    375.0,
+    375.0,
+    325.0,
+    325.0,
+    275.0,
+    275.0,
+    325.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    375.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    325.0,
+    275.0,
+    375.0,
+    275.0,
+    375.0,
+    325.0,
+    325.0,
+    375.0,
+    375.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    275.0,
+    275.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    275.0,
+    375.0,
+    325.0,
+    325.0,
+    275.0,
+    325.0,
+    325.0,
+    375.0,
+    375.0,
+    275.0,
+    275.0,
+    325.0,
+    375.0,
+    375.0,
+    275.0,
+    275.0,
+    275.0,
+    325.0,
+    375.0,
+    275.0,
+    275.0,
+    275.0,
+    325.0,
+    275.0,
+    375.0,
+    275.0,
+    375.0,
+    325.0,
+    375.0,
+    375.0,
+    275.0,
+    275.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    275.0,
+    325.0,
+    325.0,
+    275.0,
+    375.0,
+    325.0,
+    325.0,
+    375.0,
+    325.0,
+    375.0,
+    375.0,
+    275.0,
+    275.0,
+    325.0,
+    275.0,
+    375.0,
+    375.0,
+    325.0,
+    375.0,
+    375.0,
+    275.0,
+    375.0,
+    375.0,
+    275.0,
+    375.0,
+    325.0,
+    325.0,
+    375.0,
+    325.0,
+    375.0,
+    325.0,
+    375.0,
+    325.0,
+    375.0,
+    325.0,
+    325.0,
+    375.0,
+    375.0,
+    275.0,
+    375.0,
+    325.0,
+    375.0,
+    275.0,
+    375.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    275.0,
+    375.0,
+    275.0,
+    325.0,
+    275.0,
+    375.0,
+    275.0,
+    275.0,
+    325.0,
+    275.0,
+    275.0,
+    375.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    275.0,
+    375.0,
+    275.0,
+    375.0,
+    325.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    325.0
+   ],
+   "three-partitioned": [
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    275.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    325.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0,
+    375.0
+   ]
+  }
+ }
+}

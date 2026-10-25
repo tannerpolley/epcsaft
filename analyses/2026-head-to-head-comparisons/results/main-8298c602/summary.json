@@ -1,0 +1,28 @@
+{
+  "available": true,
+  "rows": [
+    {
+      "case": "C2-0.5",
+      "comparisons": 8,
+      "new_fd_max": 5.640901037432886e-09,
+      "previous_fd_max": 9.41848708044115e-09,
+      "new_clapeyron_max": 3.9316596526189086e-13,
+      "previous_clapeyron_max": 3.979696847622692e-13,
+      "new_feos_max": 2.2421934323611968e-10,
+      "previous_feos_max": 2.2422494230972542e-10
+    },
+    {
+      "case": "C4-298.15",
+      "comparisons": 6,
+      "new_fd_max": 5.543631781449926e-08,
+      "previous_fd_max": 5.528318514200487e-08,
+      "new_clapeyron_max": 3.3944577777030547e-10,
+      "previous_clapeyron_max": 3.394331141669297e-10,
+      "new_feos_max": null,
+      "previous_feos_max": null
+    }
+  ],
+  "row_tolerance": 1e-12,
+  "criterion": "The producer declares the equilibrium row tolerance and requires available actions and successful displaced solves. It declares no numerical pass/fail allowance for derivative differences against Clapeyron, FeOs or its central differences. These differences are observations.",
+  "evidence_label": "numerical verification"
+}

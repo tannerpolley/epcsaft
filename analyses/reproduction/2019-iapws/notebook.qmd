@@ -1,0 +1,50 @@
+---
+title: "IAPWS 2019: one imposed-constant liquid solution"
+format:
+  html:
+    embed-resources: true
+execute:
+  echo: false
+  cache: false
+  daemon: false
+---
+
+```{python}
+import json
+import pandas as pd
+from IPython.display import display
+display(pd.read_csv('results/comparison.csv'))
+display(json.load(open('results/diagnostics.json')))
+display(json.load(open('results/run-identity.json')))
+```
+
+This is numerical solution verification of one liquid state with the imposed
+IAPWS self-ionization constant. The source release R11-07(2019), Eqs. 1–4 and
+Tables 1–3, conditions, source constant and solvent mass are retained in
+`inputs/cases/water-self-ionization/source/source.json`. The native declaration
+uses the selected Held packet with only water's admitted molar mass replaced
+by that source value. The run identity preserves the original packet mass,
+admitted source mass, source hashes and loaded native library identity.
+The diagnostics retain actual phase amount, every species amount, composition,
+density, pressure, slope and native reference status, cause and terminal values.
+
+The table compares the raw reaction contraction, inventory, charge/ion equality,
+normalization and pressure defects with their accepted numerical tolerances.
+Boolean requirements use a zero defect for satisfaction and a zero tolerance.
+The reaction check contracts the three native raw Chemical rows with the
+source stoichiometry. Their conserved-inventory and electrical multipliers
+cancel. The reader checks row identity and exact agreement between the native
+point evaluation and retained residuals; classified trace-weighted rows remain
+separate in the diagnostics. Terminal change is a local reference-convergence
+estimate, not a bound on source uncertainty. Ion masses retain their packet
+values, so the inventory check makes no independent exact physical mass claim.
+
+Source molalities, solved source activities and the independent activity product
+remain unavailable pending Engine #793. The imposed constant and transformed
+reaction residual cannot supply that missing verification. Source density is
+provenance for the input constant, not an EOS density target. Historical amounts
+remain historical under a different parameter identity. This single state
+establishes neither the general IAPWS correlation nor experimental speciation,
+pH, calorics or global stability. Separate scalar checks are displayed in a
+table without an interpolated curve. Independent delivered review and manuscript
+promotion remain open.

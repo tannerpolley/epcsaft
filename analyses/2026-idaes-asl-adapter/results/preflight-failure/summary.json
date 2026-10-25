@@ -1,0 +1,10 @@
+{
+  "attempt_id": "20260912T063436-2891963",
+  "error": "RuntimeError('numerical stage initial failed: {\\'error\\': \"PackageNotFoundError(\\'epcsaft\\')\", \\'stage\\': \\'initial\\', \\'status\\': \\'failed\\'}')",
+  "error_type": "RuntimeError",
+  "partial_rows": {
+    "derivatives": 1
+  },
+  "stage": "failed",
+  "status": "failed attempt"
+}

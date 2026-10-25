@@ -1,0 +1,65 @@
+{
+  "evidence_class": "Source-transcription and data-conversion checks; no EOS prediction or comparison",
+  "raw_counts": {
+    "Robinson_Table1": 69,
+    "Robinson_Table2": 10,
+    "Rard_TablesI_II": 287,
+    "Rard_TableIII": 4,
+    "Dinane_Table1": 19
+  },
+  "Robinson_max_R_reconstruction_difference_from_printed_inputs": 0.002052116451592756,
+  "Robinson_max_y_reconstruction_difference_from_printed_inputs": 0.0004554164057607446,
+  "Robinson_source_internal_inconsistencies": [
+    {
+      "set": "2",
+      "subseries": "A",
+      "row": "4",
+      "R_from_molalities_minus_printed": -0.002052116451592756,
+      "y_from_molalities_minus_printed": 0.0
+    },
+    {
+      "set": "5",
+      "subseries": "A",
+      "row": "2",
+      "R_from_molalities_minus_printed": 0.001119614157497617,
+      "y_from_molalities_minus_printed": -0.0004554164057607446
+    },
+    {
+      "set": "5",
+      "subseries": "B",
+      "row": "3",
+      "R_from_molalities_minus_printed": 4.636801339774621e-05,
+      "y_from_molalities_minus_printed": -0.00028222733933425115
+    },
+    {
+      "set": "6",
+      "subseries": "A",
+      "row": "1",
+      "R_from_molalities_minus_printed": -0.001147441046040365,
+      "y_from_molalities_minus_printed": -0.00032613768295236545
+    },
+    {
+      "set": "7",
+      "subseries": "B",
+      "row": "3",
+      "R_from_molalities_minus_printed": 0.00020228275011424657,
+      "y_from_molalities_minus_printed": -1.703867664692993e-05
+    }
+  ],
+  "Robinson_max_Phi_reference_linear_vs_quadratic_difference": 0.00011467728984893838,
+  "Robinson_reference_sensitivity_limit": 0.001,
+  "Robinson_note": "Linear-vs-quadratic difference is a sensitivity estimate, not a rigorous error bound or measurement uncertainty",
+  "Rard_I_min_mol_kg": 0.2946582550889554,
+  "Rard_I_max_mol_kg": 9.872673166044109,
+  "Rard_computed_count_below_6_16": 223,
+  "Rard_paper_count_below_6_16": 224,
+  "data_files": {
+    "dinane-mounir-2003-table-1.csv": "a9667e6be812cdfd04f958c546cbb4266d0fd679802cedf950917eeb740e7a30",
+    "rard-miller-1987-source-converted.csv": "07882f6fd1238febb2cba2228ae0d9ac4ba4f3bd9f7c18883c9049042ab810bd",
+    "rard-miller-1987-table-iii-mgcl2.csv": "ec3c260f1adb7ea14f6a310881241c469507ae628ddb70af274053f35f77c110",
+    "rard-miller-1987-tables-i-ii-mixtures.csv": "d9c627943bf490aa88e33c2f1f1a17bcbc345473ec2be0f6f75151ddf64dea76",
+    "robinson-bower-1966-source-converted.csv": "88f16575a27bf8c452b6caa4b900276f1fdd0d82e8196cb963fd6f96944fee7e",
+    "robinson-bower-1966-table-1.csv": "4c21692a0f8ffc6a1a28955652de5e6c123d37cc88cd317178728060493a7d57",
+    "robinson-bower-1966-table-2.csv": "24fe5a292a6a2fb0b85ef337d5fbb2e18b54ad1c2ed8aa3d60300e3985481acb"
+  }
+}

@@ -1,0 +1,14 @@
+family,upstream_path_or_pattern,disposition,reason
+reactive_pressure,observations/vapor_liquid_equilibrium/Canonical_VLE_Observations.csv,copied,canonical 327-row source-resolved ledger
+reactive_pressure,observations/vapor_liquid_equilibrium/{Aronu_2011,Hilliard_2008,Idris_2014,Jou_1995,Mamun_2005,Xu_2011}_VLE.csv,represented_by_canonical,all numerical rows are retained in the canonical ledger
+reactive_pressure,observations/vapor_liquid_equilibrium/Combined_VLE*.csv,represented_by_canonical,superseded active views would duplicate canonical rows
+supplemental_pressure,observations/vapor_liquid_equilibrium/{Barzagli_2009_absorption_endpoints,Cai_1996_MEA_H2O_VLE,Wong_2015_high_pressure_loading,Wong_2016_Raman_loading_comparison,Wong_2016_pressure_drop_protocol}.csv,copied,distinct numerical evidence not duplicated by one canonical fit view
+speciation,observations/liquid_speciation/Canonical_Combined_ChEq.csv,copied,canonical 571-value source-resolved long ledger
+speciation,observations/liquid_speciation/{Bottinger_2007,Jakobsen_2005,Matin_2012,Wong_2015_Raman_speciation}.csv,represented_by_canonical,all numerical values are retained in the canonical ledger
+speciation,observations/liquid_speciation/Combined_ChEq.csv,represented_by_canonical,superseded wide view would duplicate canonical values
+supplemental_speciation,observations/liquid_speciation/{Barzagli_2009_endpoint_NMR_speciation,Fan_2009_NMR_speciation_digitized,Wong_2016_Raman_speciation_digitized,Wong_2016_physical_CO2_solubility_30wt,duPreez_2019_ATR_FTIR_carbamate_digitized}.csv,copied,distinct numerical evidence retained for admission review
+digitization,observations/liquid_speciation/digitization/*.{csv,json},copied,numerical points and calibration metadata retained
+digitization,observations/liquid_speciation/**/*.png,metadata_only,QA crops and overlays contain no additional fit values; upstream hashes and locators remain in the inventory
+physical_co2_water,analyses/phase3/ionic_epcsaft_regression/co2_water_induced_association/source/kiepe_2002_table_1.csv,copied,separate physical-binary reproduction source
+other_observables,observations/{calorimetry,density_viscosity,dielectric,ionic_activity,ionic_analog_volumetrics,ph}/**,out_of_scope,this import is limited to pressure and speciation; heat of absorption is owned by Issue 78
+legacy_planning,manifests/{grouped_split_manifest,reactive_vle_cross_validation,reactive_vle_model_configurations,reactive_vle_parameter_stages}.**,not_reused,old planning and fit-stage contracts are not authority for this fresh campaign

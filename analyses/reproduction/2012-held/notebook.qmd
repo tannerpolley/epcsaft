@@ -1,0 +1,144 @@
+---
+title: "Held 2012 alcohol/salt densities and activities"
+format:
+  html:
+    embed-resources: true
+    toc: true
+execute:
+  enabled: true
+  echo: false
+  warning: false
+  error: false
+jupyter: python3
+---
+
+The adopted Held alcohol model misses the direct measurements at their printed resolution. Agreement with the sampled published model curves depends on the quantity. Density and bubble pressure in the binary NaI panels agree more closely than the activity quantities. The numerical solves converge; this alone does not reproduce a physical measurement. These are calibration comparisons and numerical verification against source model values, with no independent physical validation claim. This report has not been independently reviewed or promoted for manuscript use.
+
+```{python}
+import csv, gzip, json
+from pathlib import Path
+import pandas as pd
+import matplotlib.pyplot as plt
+from IPython.display import Markdown, display
+run=json.loads(gzip.decompress(Path('results/native-results.json.gz').read_bytes()))
+rows=pd.read_csv('results/comparisons.csv').fillna('')
+summary=pd.read_csv('results/summary-comparisons.csv').fillna('')
+screening=pd.read_csv('results/screening-comparisons.csv').fillna('')
+policy=json.loads(Path('inputs/source/comparison-policy.json').read_text())
+series=json.loads(Path('inputs/figures/calibration.json').read_text())
+quantities={r['case_id']:r for r in run['quantities']}
+def table(frame):
+    display(Markdown(frame.to_markdown(index=False)))
+def say(text):
+    display(Markdown(text))
+say(f"Conditions: {policy['temperature_K']} K and {policy['pressure_Pa']} Pa for liquid properties. Bubble pressure is solved with the native equilibrium driver. Direct-table comparisons: {len(rows[rows.group.str.startswith('Table')])}; sampled figure points: {len(rows[rows.group.str.startswith('Figure')])}; model-series inventory: {len(series)}. The final calculation pass took {run['wall_seconds']:.6f} s, excluding build/check time.")
+table(rows.groupby(['group','quantity','evidence_label','outcome']).size().rename('scalar comparisons').reset_index())
+```
+
+## Basis, conditions and comparison criteria
+
+The source is [Held et al., *Measuring and modeling alcohol/salt systems*](https://doi.org/10.1016/j.ces.2011.09.040), with source tables checked against the PDF and its identity retained in `inputs/source/source-identity.json`. Table captions govern the solvent assignment where the prose reverses it. Mean ionic coefficients are derived from osmometry, not independently measured ionic activities. The source parameters were fitted to density and osmotic data.
+
+The native model includes chain, dispersion, association and Debye–Hückel contributions, with fully dissociated salts, donor/acceptor solvent association, no Born term and no ion–ion dispersion. The two alcohol parameter documents are materialized byte-for-byte from the new packet. Source solvent–ion corrections remain zero in the source record; transformed pair coordinates supply the solvent-specific ion energies and cross sizes in mixed solvents without fitting. The averaged ion diameter supplies packing and primary screening. Physical formula masses include all solute ions but no solvent-shell mass. Source masses and their uncertainties remain supplementary declarations.
+
+```{python}
+say(f"Half-print-increment criteria: density ±{policy['density_kg_m3']} kg/m³; osmotic and mean ionic coefficients ±{policy['activity']}; Table 7 deviations ±{policy['table7']} in the reported unit; Table 8 relative deviations ±{policy['table8_ARD_percentage_point']} percentage point. Figure intervals use ±{policy['reading_pixels']} original embedded-image pixels on each axis. Printed molalities use half their last printed increment. These are reading criteria, not measurement uncertainty.")
+say(f"The density apparatus bound is {policy['source_instrument_bound_kg_m3']} kg/m³. Study-level osmotic repeatability is approximately {policy['source_study_osmotic_repeatability_percent']}%; neither is a per-row total uncertainty or a relaxed comparison criterion. Primary screening uses sigma; packing uses {policy['packing_sigma_factor']} sigma. Methanol permittivity is pinned at the declared temperature.")
+```
+
+Mixed-solvent diameters and permittivities are frozen at each declared salt-free ratio before prediction. Their salt-path derivative is consistent with a salt-independent scalar. They support density and ionic activity at that ratio, without claiming solvent-ratio derivatives, mixed-solvent solvent activities or equilibria that change solvent composition. Pure-water limits follow the stated mixture polynomial endpoint; the aqueous solvent-coefficient panel reuses the exact Held aqueous packet and its separately sourced permittivity.
+
+## Direct tables and shared Figiel comparison
+
+```{python}
+shared=quantities['shared-730'];pure=quantities['tpure-0-density']
+say(f"Pure ethanol: {pure['value']:.13g} kg/m³; source {rows.loc[rows.case_id=='tpure-0-density','source_value'].iloc[0]} kg/m³. The original zero-salt input refusal was corrected by passing the declared pure-solvent vector; it was a caller input error, not an Engine density failure.")
+say(f"The separate shared Figiel comparison gives {shared['value']!r} kg/m³ and {shared['state']['molar_density']!r} mol/m³, exactly equal to the retained #730 result: {run['shared_exact_equality']}. Its difference from the measured Held value is {rows.loc[rows.case_id=='shared-730','signed_error'].iloc[0]} kg/m³. This verifies numerical reuse of the historical declaration; it does not verify Held's parameterization.")
+say(f"Prior shared run: `{policy['shared_historical_run']}`, source commit `{policy['shared_historical_commit']}`, core SHA-256 `{policy['shared_historical_core_sha256']}`. New shared run: `{shared['execution_run_id']}`. Historical masses, parameter hash and mass-file hash remain separate in the policy record.")
+```
+
+<details><summary>Every direct-table comparison and the shared comparison</summary>
+
+```{python}
+table(rows[~rows.group.str.startswith('Figure')][['group','quantity','solvent','salt','molality','source_value','computed_value','signed_error','absolute_tolerance','outcome']])
+```
+
+</details>
+
+## Published model curves
+
+The symbols below compare the retained native values with manually read source-model points. Error bars show the horizontal and vertical source-reading intervals. No line interpolates across marker overlaps, crossings or hidden portions. Agreement applies only to sampled intervals; it does not establish the whole published curve.
+
+```{python}
+for figure in ['2','3','4','5','6']:
+    groups=[(k,s) for k,s in series.items() if s['figure']==figure and (rows.series==k).any()]
+    fig,axes=plt.subplots((len(groups)+1)//2,2,figsize=(7.8,2.8*((len(groups)+1)//2)),squeeze=False,constrained_layout=True)
+    for ax,(key,s) in zip(axes.flat,groups):
+        data=rows[rows.series==key];x=pd.to_numeric(data.molality);y=pd.to_numeric(data.source_value);calc=pd.to_numeric(data.computed_value,errors='coerce')
+        ax.errorbar(x,y,xerr=pd.to_numeric(data.x_interval),yerr=pd.to_numeric(data.absolute_tolerance),fmt='o',ms=4,capsize=2,label='source model reading')
+        ax.plot(x,calc,'x',ms=5,label='native prediction');ax.set(title=key,xlabel='Formula molality / (mol kg⁻¹)',ylabel={'density':'Density / (kg m⁻³)','pressure':'Bubble pressure / bar'}.get(s['quantity'],'Dimensionless coefficient'));ax.grid(alpha=.2);ax.legend(fontsize=8)
+    for ax in list(axes.flat)[len(groups):]:ax.set_visible(False)
+    plt.show()
+```
+
+Figure ownership was checked on extracted embedded JPEGs, with original pixel coordinates and inspected overlays retained in the build evidence. The earlier page-render calibration is superseded and its run is preserved only for diagnosis. The final original-image freeze precedes the delivered figure predictions. Figure 1 contains guide curves through Table 2 data, without an additional equation-of-state target. Figure 7 retains its exact solvent compositions and source readings but lacks the measured permittivities needed for native predictions. The shortest ethanol and lowest-water branches in Figure 5 are not digitized: ambiguous ownership. Excluded marker intersections and merged dilute regions remain unfilled in every series.
+
+Endpoint evaluations bound the sampled prediction interval where the source segment and the native samples establish monotone behavior. A reversal at the central sample leaves the interval undetermined; it does not establish agreement or disagreement through an unresolved interior extremum. The central-value outcome is retained separately in the CSV.
+
+<details><summary>Figure inventory and every sampled value</summary>
+
+```{python}
+table(pd.DataFrame([dict(series=k,figure=s['figure'],solvent=s['solvent'],water_ratio=s['ratio'],reading=s['digitization'],excluded=s['excluded']) for k,s in series.items()]))
+table(rows[rows.group.str.startswith('Figure')][['series','quantity','molality','source_value','computed_value','signed_error','absolute_tolerance','outcome','cause']])
+```
+
+</details>
+
+## Source deviation summaries
+
+Only cohorts complete in the direct activity tables are compared with Table 7. ARD_percent is the mean absolute relative deviation in percent; AAD is the mean absolute deviation in the reported quantity unit. The ethanol/LiI point-count/maximum-molality contradiction is undetermined, even though its direct observations remain physical comparisons. Missing density, vapor-pressure and other original observation cohorts cannot be reconstructed from a few table or figure values. Table 8 remains undetermined because its exact observation cohorts were not identified. The [Esteso Table I owner](../1989-esteso/inputs/source/esteso-1989-table-I.csv) provides tabulated observations, but Held does not state the included row set. Whole-percent solvent labels and concentration maxima alone do not establish that the complete Esteso grid entered each statistic; its Figiel predictions are not Held model targets. No partial-cohort average is presented as the paper's full statistic.
+
+```{python}
+table(summary.groupby(['table','quantity','outcome']).size().rename('reported statistics').reset_index())
+table(summary[summary.outcome!='undetermined'][['table','solvent','salt','quantity','metric','source_value','computed_value','absolute_tolerance','outcome']])
+```
+
+## Numerical evidence and limits
+
+```{python}
+pairs=pd.read_csv('results/pair-sizes.csv')
+say(f"Native pair-size check: {len(pairs)} solvent–ion pairs across {pairs.series.nunique()} mixed declarations; largest absolute cross-size difference {pairs.error_angstrom.abs().max():.6g} Å, against a 1e-12 Å equality criterion. The native parameter builder, segment-size correlation and pair correction are used by the retained C++ check.")
+table(pairs[(pairs.series=='4-0.6325') & (pairs.ion=='sodium-cation')])
+diagnostics=[]
+for d in run['diagnostics']:
+    v=d['result'];baseline=quantities[v['case_id']]['value'];criterion=float(rows.loc[rows.case_id==v['case_id'],'absolute_tolerance'].iloc[0]);diagnostics.append(dict(comparison=d['role'],case=v['case_id'],quantity=v['quantity'],value=v['value'],change=v['value']-baseline,refinement_limit=criterion*policy['refinement_fraction']))
+table(pd.DataFrame(diagnostics))
+state=[v['state'] for v in quantities.values() if 'state' in v]
+say(f"Largest liquid pressure residual: {max(abs(s['pressure']-policy['pressure_Pa']) for s in state):.6g} Pa; smallest pressure slope: {min(s['pressure_density_derivative'] for s in state):.9g} Pa m³/mol. All retained liquid density stops are `{sorted({s['density_convergence']['stop'] for s in state})}`. Largest terminal dilution-reference change: {max(v['reference']['convergence_error'] for v in quantities.values() if 'reference' in v):.6g} in natural-log fugacity coefficient. This is successive-limit evidence, not a rigorous physical uncertainty bound.")
+refine=[d for d in run['diagnostics'] if d['role']=='tenfold native tolerance refinement']
+say(f"All {len(refine)} property-family refinements change by less than the declared fraction of their own source-reading interval: {all(abs(d['change'])<d['refinement_limit'] for d in diagnostics if d['comparison']=='tenfold native tolerance refinement')}. Iteration budgets were not increased. Bubble-point rows retain their residuals, effective tolerances, stopping causes and actual linear solver in the native record.")
+for identity in run['execution_identities']:
+    say(f"Execution `{identity['run_id']}`: source commit `{identity['source_commit']}`, Engine provenance `{identity['engine_provenance']}`, loaded core SHA-256 `{identity['core_sha256']}`, producer SHA-256 `{identity['runner_sha256']}`. Each result names its execution; comparison-only refresh does not relabel it.")
+say(f"Final figure input freeze: `{run['execution_identity']['freeze_commit']}`; file-list SHA-256 `{run['execution_identity']['freeze_file_list_sha256']}`. The source and parameter hashes, native compositions, actual molar masses, consumed ionic references, density-closure diagnostics and bubble-equilibrium records remain in the compressed numerical record.")
+```
+
+The labelled screening probe evaluates every sampled activity state in the failed Figure 2, 3, 5 and 6 series, including the same abscissa endpoints and reading intervals. Packing, pair sizes, energies, permittivities and reference definitions remain unchanged. Each retained row contains the source input, primary and probe values, signed residuals, outcomes and execution identities.
+
+```{python}
+counts=pd.concat([screening.assign(declaration='printed sigma',comparison=screening.primary_outcome),screening.assign(declaration='probe: 0.88 sigma',comparison=screening.outcome)])
+table(counts.groupby(['series','declaration','comparison']).size().unstack(fill_value=0).reindex(columns=['reproduced','not reproduced','undetermined'],fill_value=0).reset_index())
+table(counts.groupby(['group','quantity','declaration','comparison']).size().unstack(fill_value=0).reindex(columns=['reproduced','not reproduced','undetermined'],fill_value=0).reset_index())
+```
+
+Shorter Debye–Hückel screening raises the NaI solvent activity coefficient and lowers the mean ionic coefficient in the evaluated cases. It substantially improves the water and ethanol solvent-coefficient curves and the ethanol NaI osmotic curve, while methanol NaI and several mixed-solvent curves remain inconsistent. The mixed-solvent pair-size correction is applied independently of agreement. Printed sigma screening remains the primary declaration. Residual discrepancies remain undetermined after the stated basis, reference, permittivity, interaction and numerical checks; these comparisons do not establish the authors' historical executable convention. No required Engine gap is demonstrated for the adopted fixed-temperature and fixed-solvent-ratio scope. General solvent-ratio diameter/permittivity derivatives and a logarithmic temperature law remain outside this study.
+
+<details>
+<summary>Retained screening probe comparisons</summary>
+
+```{python}
+table(screening[['series','molality','source_value','absolute_tolerance','x_interval','primary_value','primary_signed_error','primary_outcome','computed_value','signed_error','outcome','execution_run_id']])
+```
+
+</details>
+
+Global phase stability was not certified. Source reading error, parameter rounding, atomic-weight variability, study repeatability and model discrepancy are distinct limitations. [CIAAW's abridged atomic-weight table](https://ciaaw.org/abridged-atomic-weights.htm) supplies the supplementary mass limitations retained in `inputs/source/atomic-weight-uncertainties.csv`; they are not model-comparison bands. The missing cohorts, excluded curve portions and unavailable ternary dielectric inputs prevent a complete-paper reproduction claim.

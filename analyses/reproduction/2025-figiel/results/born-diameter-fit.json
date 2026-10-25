@@ -1,0 +1,640 @@
+{
+  "evidence_payload_sha256": "efb22d0b91aff559ea90d3a09e53b3ac87d2048faad2628ad38d8f4eec7e328c",
+  "subject": {
+    "authority_status": "authority-neutral non-production package candidate",
+    "capability": "figiel-2025-five-ion-born-diameter-tracer-v1",
+    "claim_limits": {
+      "all_targets_are_training_equations": true,
+      "global_identifiability_claim": false,
+      "predictive_claim": false,
+      "provider_catalog_admission": false,
+      "uncertainty_claim": false
+    },
+    "conclusion": "FIGIEL_BORN_TRACER_CANDIDATE_PASSED",
+    "derivative_checks": [
+      {
+        "absolute_difference": 4.5730615966022015e-05,
+        "acceptance_tolerance": 0.0031381775574692923,
+        "centered_h_j_per_mol_per_angstrom": 156908.87805976672,
+        "centered_h_over_2_j_per_mol_per_angstrom": 156908.87791919522,
+        "exact_j_per_mol_per_angstrom": 156908.8778734646,
+        "passed": true,
+        "target_id": "figiel2025-s5-Lip-reported-average",
+        "trial_diameter_angstrom": 2.9
+      },
+      {
+        "absolute_difference": 3.1256466172635555e-05,
+        "acceptance_tolerance": 0.0025773509041324932,
+        "centered_h_j_per_mol_per_angstrom": 128867.54533275962,
+        "centered_h_over_2_j_per_mol_per_angstrom": 128867.54523788113,
+        "exact_j_per_mol_per_angstrom": 128867.54520662467,
+        "passed": true,
+        "target_id": "figiel2025-s5-Nap-reported-average",
+        "trial_diameter_angstrom": 3.2
+      },
+      {
+        "absolute_difference": 9.534531272947788e-06,
+        "acceptance_tolerance": 0.0014273701059122081,
+        "centered_h_j_per_mol_per_angstrom": 71368.50533395773,
+        "centered_h_over_2_j_per_mol_per_angstrom": 71368.50530514494,
+        "exact_j_per_mol_per_angstrom": 71368.5052956104,
+        "passed": true,
+        "target_id": "figiel2025-s5-Kp-reported-average",
+        "trial_diameter_angstrom": 4.3
+      },
+      {
+        "absolute_difference": 1.369234814774245e-05,
+        "acceptance_tolerance": 0.0017351790439392991,
+        "centered_h_j_per_mol_per_angstrom": 86758.95225431304,
+        "centered_h_over_2_j_per_mol_per_angstrom": 86758.9522106573,
+        "exact_j_per_mol_per_angstrom": 86758.95219696495,
+        "passed": true,
+        "target_id": "figiel2025-s5-Clm-reported-average",
+        "trial_diameter_angstrom": 3.9
+      },
+      {
+        "absolute_difference": 6.3640763983130455e-06,
+        "acceptance_tolerance": 0.0011947520714493771,
+        "centered_h_j_per_mol_per_angstrom": 59737.60359920561,
+        "centered_h_over_2_j_per_mol_per_angstrom": 59737.60357883293,
+        "exact_j_per_mol_per_angstrom": 59737.603572468855,
+        "passed": true,
+        "target_id": "figiel2025-s5-Brm-reported-average",
+        "trial_diameter_angstrom": 4.7
+      }
+    ],
+    "installed_artifact_binding": {
+      "method": "all non-RECORD wheel members matched installed files byte-for-byte",
+      "provider": {
+        "distribution": "epcsaft",
+        "verified_member_count": 45,
+        "version": "0.1.0.dev0"
+      },
+      "regression": {
+        "distribution": "epcsaft-regression",
+        "verified_member_count": 11,
+        "version": "0.1.0.dev0"
+      }
+    },
+    "owner": "ePC-SAFT/ePC-SAFT-regression",
+    "provider": {
+      "capsule": "epcsaft.native_sdk.v1",
+      "commit": "907b077ec6f841a8a028fc759df14f899c79339c",
+      "derivative_order": 1,
+      "entry": "evaluate_ion_solvation_born",
+      "installed_header_sha256": "610cc480f05c3e17e431d26fd1b2c8628eec3e2adb412102a284d4d5d6eb8171",
+      "tree": "2b315113c9961a16f75c776783f704db54d75e44",
+      "wheel": "epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "wheel_sha256": "c327b9a176e54bfc79b625cca7f0c87f2a62fc7d87059826e40c9d70e214f0cd"
+    },
+    "regression": {
+      "commit": "4eb122d4e40e08fb5e9cea94bfb2fe25ccfcab79",
+      "tree": "85d1f980ce986e1ab48ed417704fd74c95c68b66",
+      "wheel": "epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "wheel_sha256": "2210b172d60141c27dec4cc7a92c9cce812bbeda75018d81f5fcef7b15e287e5"
+    },
+    "result": {
+      "compiled_problem_identity": [
+        "figiel-2025-five-ion-born-diameter-tracer-v1",
+        "8944d34f7002cda1bb8760e606cc1f11696f58cd",
+        "6c8fd350dcd6bfdd7be1918f73fd33a23e2070dd",
+        "f405a3e48d21cd979a8dd480d5f8cb3be40754f5d6babf368b505b5f305607f0",
+        "932e8baa90fcefbaa8c3a8730cdeadd83a4c01f0a3b109f4e4cd0319aee9312b",
+        "8ea06c6ca5452d01448a03f9a76cf7d0c35bb99c9abe23ccb1729d56c71d468f",
+        "ed6fdcaf3fc9b2cf7b6dd8d1e95933ab1b28908441b334a4586aa2e2a3222087",
+        "10.1021/acs.iecr.5c00475",
+        "10.1021/acs.iecr.5c00475.s001",
+        "SI Table S5, PDF page 9 of 10, reported-average lit column",
+        "x-treatment at infinite dilution; gas at 1 bar to hypothetical dilute-ideal aqueous solution at 1 bar; negative is favorable",
+        "K",
+        "Pa",
+        "J/mol",
+        "angstrom",
+        "x-process at infinite dilution",
+        "epcsaft.native_sdk.v1",
+        "d_i = 3.0 angstrom + 1.0 angstrom * z_i",
+        "r_i = (G_i(d_i) - G_i_target) / abs(G_i_target)",
+        "J_ij = delta_ij * G_i_prime(d_i) * 1 angstrom / abs(G_i_target)",
+        "DENSE_QR",
+        "SILENT"
+      ],
+      "confirmation_parameter_scaled_max_deltas": [
+        9.547918011776346e-14,
+        7.748466313017843e-10
+      ],
+      "failure_reasons": [],
+      "numerically_converged": true,
+      "parameters": [
+        {
+          "active_bound": false,
+          "active_component_id": "lithium-cation",
+          "final_diameter_angstrom": 2.7888130173797934,
+          "ion_label": "Li+",
+          "lower_bound_angstrom": 1.0,
+          "published_delta_angstrom": 0.0048130173797935605,
+          "published_diameter_angstrom": 2.784,
+          "scaled_lower_bound_distance": 1.7888130173797936,
+          "scaled_upper_bound_distance": 3.2111869826202066,
+          "upper_bound_angstrom": 6.0
+        },
+        {
+          "active_bound": false,
+          "active_component_id": "sodium-cation",
+          "final_diameter_angstrom": 3.4524616464076425,
+          "ion_label": "Na+",
+          "lower_bound_angstrom": 1.0,
+          "published_delta_angstrom": 0.007461646407642686,
+          "published_diameter_angstrom": 3.445,
+          "scaled_lower_bound_distance": 2.4524616464076425,
+          "scaled_upper_bound_distance": 2.5475383535923575,
+          "upper_bound_angstrom": 6.0
+        },
+        {
+          "active_bound": false,
+          "active_component_id": "potassium-cation",
+          "final_diameter_angstrom": 4.147266741279482,
+          "ion_label": "K+",
+          "lower_bound_angstrom": 1.0,
+          "published_delta_angstrom": -0.002733258720517995,
+          "published_diameter_angstrom": 4.15,
+          "scaled_lower_bound_distance": 3.147266741279483,
+          "scaled_upper_bound_distance": 1.8527332587205172,
+          "upper_bound_angstrom": 6.0
+        },
+        {
+          "active_bound": false,
+          "active_component_id": "chloride-anion",
+          "final_diameter_angstrom": 4.101505615791675,
+          "ion_label": "Cl-",
+          "lower_bound_angstrom": 1.0,
+          "published_delta_angstrom": 0.0015056157916752966,
+          "published_diameter_angstrom": 4.1,
+          "scaled_lower_bound_distance": 3.101505615791675,
+          "scaled_upper_bound_distance": 1.898494384208325,
+          "upper_bound_angstrom": 6.0
+        },
+        {
+          "active_bound": false,
+          "active_component_id": "bromide-anion",
+          "final_diameter_angstrom": 4.476998527506598,
+          "ion_label": "Br-",
+          "lower_bound_angstrom": 1.0,
+          "published_delta_angstrom": -0.003001472493401991,
+          "published_diameter_angstrom": 4.48,
+          "scaled_lower_bound_distance": 3.4769985275065984,
+          "scaled_upper_bound_distance": 1.5230014724934013,
+          "upper_bound_angstrom": 6.0
+        }
+      ],
+      "predictive_status": "NOT_ADJUDICATED_NO_APPROVED_HELD_OUT_CUTOFF",
+      "provider_fingerprints": [
+        "sha256:1bb528ebe8f5612757e148608fc55821f9fb03737dbcec6d0bc4fffd0f4cbc4c",
+        "sha256:7c637771bc9f717b8f47b44bb2a61044c3fe83084dca7c3c16102fba0989912d",
+        "sha256:d29cef0c0f63034436d547d0aafa57934effe06783c8dffd89c94fa85e6940f4",
+        "sha256:7551f1eee5903b66061cf7520f3bb59b169896ce372f3df3d48aa7ec778c39d4",
+        "sha256:70ae04599dfa8338175e793bac6b9e4dfad37a9b96a568b5484dc87f104ef1a9"
+      ],
+      "scientifically_valid": true,
+      "solver_converged": true,
+      "specification_id": "figiel-2025-five-ion-born-diameter-tracer-v1",
+      "starts": [
+        {
+          "complete_columns": true,
+          "condition_number": 1.5419272226731302,
+          "failure_reasons": [],
+          "final_cost": 3.4074991503808702e-28,
+          "final_diameters_angstrom": [
+            2.7888130173797934,
+            3.4524616464076425,
+            4.147266741279482,
+            4.101505615791675,
+            4.476998527506598
+          ],
+          "inactive_bounds": true,
+          "initial_cost": 0.286064429597782,
+          "iterations": 6,
+          "name": "primary",
+          "observations": [
+            {
+              "derivative_j_per_mol_per_angstrom": 169669.86664916368,
+              "ion_label": "Li+",
+              "modeled_j_per_mol": -486200.0000000001,
+              "provider_fingerprint": "sha256:1bb528ebe8f5612757e148608fc55821f9fb03737dbcec6d0bc4fffd0f4cbc4c",
+              "raw_error_j_per_mol": -1.1641532182693481e-10,
+              "reference_convergence_error": 1.0628375576970939e-05,
+              "reference_molality_mol_per_kg": 1e-12,
+              "scaled_jacobian": 0.3489713423471075,
+              "scaled_residual": -2.3943916459673963e-16,
+              "target_id": "figiel2025-s5-Lip-reported-average",
+              "target_j_per_mol": -486200.0
+            },
+            {
+              "derivative_j_per_mol_per_angstrom": 110709.72883213522,
+              "ion_label": "Na+",
+              "modeled_j_per_mol": -381100.00000000006,
+              "provider_fingerprint": "sha256:7c637771bc9f717b8f47b44bb2a61044c3fe83084dca7c3c16102fba0989912d",
+              "raw_error_j_per_mol": -5.820766091346741e-11,
+              "reference_convergence_error": 1.0628378632304702e-05,
+              "reference_molality_mol_per_kg": 1e-12,
+              "scaled_jacobian": 0.2905004692525196,
+              "scaled_residual": -1.5273592472702022e-16,
+              "target_id": "figiel2025-s5-Nap-reported-average",
+              "target_j_per_mol": -381100.0
+            },
+            {
+              "derivative_j_per_mol_per_angstrom": 76721.93974795903,
+              "ion_label": "K+",
+              "modeled_j_per_mol": -309100.0000000006,
+              "provider_fingerprint": "sha256:d29cef0c0f63034436d547d0aafa57934effe06783c8dffd89c94fa85e6940f4",
+              "raw_error_j_per_mol": -5.820766091346741e-10,
+              "reference_convergence_error": 1.062836328458161e-05,
+              "reference_molality_mol_per_kg": 1e-12,
+              "scaled_jacobian": 0.24821074004516022,
+              "scaled_residual": -1.883133643269732e-15,
+              "target_id": "figiel2025-s5-Kp-reported-average",
+              "target_j_per_mol": -309100.0
+            },
+            {
+              "derivative_j_per_mol_per_angstrom": 78443.4870862629,
+              "ion_label": "Cl-",
+              "modeled_j_per_mol": -314900.00000000035,
+              "provider_fingerprint": "sha256:7551f1eee5903b66061cf7520f3bb59b169896ce372f3df3d48aa7ec778c39d4",
+              "raw_error_j_per_mol": -3.4924596548080444e-10,
+              "reference_convergence_error": 1.0628378603882993e-05,
+              "reference_molality_mol_per_kg": 1e-12,
+              "scaled_jacobian": 0.24910602440858337,
+              "scaled_residual": -1.1090694362680357e-15,
+              "target_id": "figiel2025-s5-Clm-reported-average",
+              "target_j_per_mol": -314900.0
+            },
+            {
+              "derivative_j_per_mol_per_angstrom": 65836.93574900563,
+              "ion_label": "Br-",
+              "modeled_j_per_mol": -290900.00000000757,
+              "provider_fingerprint": "sha256:70ae04599dfa8338175e793bac6b9e4dfad37a9b96a568b5484dc87f104ef1a9",
+              "raw_error_j_per_mol": -7.566995918750763e-09,
+              "reference_convergence_error": 1.0628352185904077e-05,
+              "reference_molality_mol_per_kg": 1e-12,
+              "scaled_jacobian": 0.2263215391853064,
+              "scaled_residual": -2.6012361356998153e-14,
+              "target_id": "figiel2025-s5-Brm-reported-average",
+              "target_j_per_mol": -290900.0
+            }
+          ],
+          "rank": 5,
+          "rank_threshold": 3.874360192081067e-14,
+          "singular_values": [
+            0.3489713423471075,
+            0.2905004692525196,
+            0.24910602440858337,
+            0.2482107400451602,
+            0.22632153918530643
+          ],
+          "solution_usable": true,
+          "solver_converged": true,
+          "termination": "CONVERGENCE",
+          "transformed_parameters": [
+            -0.21118698262020644,
+            0.4524616464076427,
+            1.1472667412794828,
+            1.101505615791675,
+            1.4769985275065987
+          ]
+        },
+        {
+          "complete_columns": true,
+          "condition_number": 1.541927222673196,
+          "failure_reasons": [],
+          "final_cost": 9.9210512570334e-30,
+          "final_diameters_angstrom": [
+            2.7888130173797943,
+            3.4524616464076434,
+            4.147266741279488,
+            4.101505615791678,
+            4.476998527506694
+          ],
+          "inactive_bounds": true,
+          "initial_cost": 2.3133092798318686,
+          "iterations": 7,
+          "name": "lower",
+          "observations": [
+            {
+              "derivative_j_per_mol_per_angstrom": 169669.86664916362,
+              "ion_label": "Li+",
+              "modeled_j_per_mol": -486199.99999999994,
+              "provider_fingerprint": "sha256:1bb528ebe8f5612757e148608fc55821f9fb03737dbcec6d0bc4fffd0f4cbc4c",
+              "raw_error_j_per_mol": 5.820766091346741e-11,
+              "reference_convergence_error": 1.0628375576970939e-05,
+              "reference_molality_mol_per_kg": 1e-12,
+              "scaled_jacobian": 0.3489713423471074,
+              "scaled_residual": 1.1971958229836982e-16,
+              "target_id": "figiel2025-s5-Lip-reported-average",
+              "target_j_per_mol": -486200.0
+            },
+            {
+              "derivative_j_per_mol_per_angstrom": 110709.72883213515,
+              "ion_label": "Na+",
+              "modeled_j_per_mol": -381100.0,
+              "provider_fingerprint": "sha256:7c637771bc9f717b8f47b44bb2a61044c3fe83084dca7c3c16102fba0989912d",
+              "raw_error_j_per_mol": 0.0,
+              "reference_convergence_error": 1.0628378632304702e-05,
+              "reference_molality_mol_per_kg": 1e-12,
+              "scaled_jacobian": 0.29050046925251943,
+              "scaled_residual": 0.0,
+              "target_id": "figiel2025-s5-Nap-reported-average",
+              "target_j_per_mol": -381100.0
+            },
+            {
+              "derivative_j_per_mol_per_angstrom": 76721.93974795882,
+              "ion_label": "K+",
+              "modeled_j_per_mol": -309100.0000000001,
+              "provider_fingerprint": "sha256:d29cef0c0f63034436d547d0aafa57934effe06783c8dffd89c94fa85e6940f4",
+              "raw_error_j_per_mol": -1.1641532182693481e-10,
+              "reference_convergence_error": 1.062836328458161e-05,
+              "reference_molality_mol_per_kg": 1e-12,
+              "scaled_jacobian": 0.24821074004515956,
+              "scaled_residual": -3.7662672865394634e-16,
+              "target_id": "figiel2025-s5-Kp-reported-average",
+              "target_j_per_mol": -309100.0
+            },
+            {
+              "derivative_j_per_mol_per_angstrom": 78443.4870862628,
+              "ion_label": "Cl-",
+              "modeled_j_per_mol": -314900.0000000002,
+              "provider_fingerprint": "sha256:7551f1eee5903b66061cf7520f3bb59b169896ce372f3df3d48aa7ec778c39d4",
+              "raw_error_j_per_mol": -1.7462298274040222e-10,
+              "reference_convergence_error": 1.0628378603882993e-05,
+              "reference_molality_mol_per_kg": 1e-12,
+              "scaled_jacobian": 0.24910602440858304,
+              "scaled_residual": -5.545347181340179e-16,
+              "target_id": "figiel2025-s5-Clm-reported-average",
+              "target_j_per_mol": -314900.0
+            },
+            {
+              "derivative_j_per_mol_per_angstrom": 65836.9357490028,
+              "ion_label": "Br-",
+              "modeled_j_per_mol": -290900.0000000013,
+              "provider_fingerprint": "sha256:70ae04599dfa8338175e793bac6b9e4dfad37a9b96a568b5484dc87f104ef1a9",
+              "raw_error_j_per_mol": -1.280568540096283e-09,
+              "reference_convergence_error": 1.0628352185904077e-05,
+              "reference_molality_mol_per_kg": 1e-12,
+              "scaled_jacobian": 0.22632153918529668,
+              "scaled_residual": -4.402091921953534e-15,
+              "target_id": "figiel2025-s5-Brm-reported-average",
+              "target_j_per_mol": -290900.0
+            }
+          ],
+          "rank": 5,
+          "rank_threshold": 3.874360192081066e-14,
+          "singular_values": [
+            0.3489713423471074,
+            0.29050046925251943,
+            0.24910602440858307,
+            0.24821074004515956,
+            0.2263215391852967
+          ],
+          "solution_usable": true,
+          "solver_converged": true,
+          "termination": "CONVERGENCE",
+          "transformed_parameters": [
+            -0.21118698262020572,
+            0.4524616464076432,
+            1.1472667412794881,
+            1.1015056157916776,
+            1.4769985275066941
+          ]
+        },
+        {
+          "complete_columns": true,
+          "condition_number": 1.5419272233000825,
+          "failure_reasons": [],
+          "final_cost": 7.035986610614945e-20,
+          "final_diameters_angstrom": [
+            2.7888130167762117,
+            3.4524616457604727,
+            4.147266740660909,
+            4.101505615016828,
+            4.476998527447822
+          ],
+          "inactive_bounds": true,
+          "initial_cost": 0.17868014989400494,
+          "iterations": 5,
+          "name": "upper",
+          "observations": [
+            {
+              "derivative_j_per_mol_per_angstrom": 169669.86672260688,
+              "ion_label": "Li+",
+              "modeled_j_per_mol": -486200.00010240957,
+              "provider_fingerprint": "sha256:1bb528ebe8f5612757e148608fc55821f9fb03737dbcec6d0bc4fffd0f4cbc4c",
+              "raw_error_j_per_mol": -0.00010240956908091903,
+              "reference_convergence_error": 1.0628375576970939e-05,
+              "reference_molality_mol_per_kg": 1e-12,
+              "scaled_jacobian": 0.3489713424981631,
+              "scaled_residual": -2.106325978628528e-10,
+              "target_id": "figiel2025-s5-Lip-reported-average",
+              "target_j_per_mol": -486200.0
+            },
+            {
+              "derivative_j_per_mol_per_angstrom": 110709.72887364063,
+              "ion_label": "Na+",
+              "modeled_j_per_mol": -381100.0000716479,
+              "provider_fingerprint": "sha256:7c637771bc9f717b8f47b44bb2a61044c3fe83084dca7c3c16102fba0989912d",
+              "raw_error_j_per_mol": -7.164792623370886e-05,
+              "reference_convergence_error": 1.0628378632304702e-05,
+              "reference_molality_mol_per_kg": 1e-12,
+              "scaled_jacobian": 0.2905004693614291,
+              "scaled_residual": -1.8800295521833864e-10,
+              "target_id": "figiel2025-s5-Nap-reported-average",
+              "target_j_per_mol": -381100.0
+            },
+            {
+              "derivative_j_per_mol_per_angstrom": 76721.93977084548,
+              "ion_label": "K+",
+              "modeled_j_per_mol": -309100.0000474587,
+              "provider_fingerprint": "sha256:d29cef0c0f63034436d547d0aafa57934effe06783c8dffd89c94fa85e6940f4",
+              "raw_error_j_per_mol": -4.7458685003221035e-05,
+              "reference_convergence_error": 1.062836328458161e-05,
+              "reference_molality_mol_per_kg": 1e-12,
+              "scaled_jacobian": 0.24821074011920244,
+              "scaled_residual": -1.5353828859016833e-10,
+              "target_id": "figiel2025-s5-Kp-reported-average",
+              "target_j_per_mol": -309100.0
+            },
+            {
+              "derivative_j_per_mol_per_angstrom": 78443.48711590163,
+              "ion_label": "Cl-",
+              "modeled_j_per_mol": -314900.0000607821,
+              "provider_fingerprint": "sha256:7551f1eee5903b66061cf7520f3bb59b169896ce372f3df3d48aa7ec778c39d4",
+              "raw_error_j_per_mol": -6.078212754800916e-05,
+              "reference_convergence_error": 1.0628378575461284e-05,
+              "reference_molality_mol_per_kg": 1e-12,
+              "scaled_jacobian": 0.24910602450270444,
+              "scaled_residual": -1.9302041139412244e-10,
+              "target_id": "figiel2025-s5-Clm-reported-average",
+              "target_j_per_mol": -314900.0
+            },
+            {
+              "derivative_j_per_mol_per_angstrom": 65836.93575073428,
+              "ion_label": "Br-",
+              "modeled_j_per_mol": -290900.0000038772,
+              "provider_fingerprint": "sha256:70ae04599dfa8338175e793bac6b9e4dfad37a9b96a568b5484dc87f104ef1a9",
+              "raw_error_j_per_mol": -3.877212293446064e-06,
+              "reference_convergence_error": 1.0628352185904077e-05,
+              "reference_molality_mol_per_kg": 1e-12,
+              "scaled_jacobian": 0.2263215391912488,
+              "scaled_residual": -1.3328333769151131e-11,
+              "target_id": "figiel2025-s5-Brm-reported-average",
+              "target_j_per_mol": -290900.0
+            }
+          ],
+          "rank": 5,
+          "rank_threshold": 3.8743601937581206e-14,
+          "singular_values": [
+            0.3489713424981631,
+            0.2905004693614291,
+            0.24910602450270444,
+            0.24821074011920244,
+            0.2263215391912488
+          ],
+          "solution_usable": true,
+          "solver_converged": true,
+          "termination": "CONVERGENCE",
+          "transformed_parameters": [
+            -0.21118698322378812,
+            0.4524616457604728,
+            1.1472667406609083,
+            1.1015056150168283,
+            1.4769985274478223
+          ]
+        }
+      ],
+      "workflow_valid": true
+    },
+    "source": {
+      "ledger_sha256": "f405a3e48d21cd979a8dd480d5f8cb3be40754f5d6babf368b505b5f305607f0",
+      "metadata_sha256": "8ea06c6ca5452d01448a03f9a76cf7d0c35bb99c9abe23ccb1729d56c71d468f",
+      "packaged_five_target_sha256": "ed6fdcaf3fc9b2cf7b6dd8d1e95933ab1b28908441b334a4586aa2e2a3222087",
+      "parameter_packet_sha256": "932e8baa90fcefbaa8c3a8730cdeadd83a4c01f0a3b109f4e4cd0319aee9312b",
+      "residual_target_count": 5,
+      "underlying_support_rows_copied_or_fitted": 0,
+      "validation_commit": "8944d34f7002cda1bb8760e606cc1f11696f58cd",
+      "validation_tree": "6c8fd350dcd6bfdd7be1918f73fd33a23e2070dd"
+    },
+    "specification": {
+      "ceres_linear_solver": "DENSE_QR",
+      "ceres_logging": "SILENT",
+      "ceres_num_threads": 1,
+      "confirmation_parameter_scaled_max_delta": 1e-05,
+      "diameter_bounds_angstrom": [
+        1.0,
+        6.0
+      ],
+      "diameter_origin_angstrom": 3.0,
+      "diameter_scale_angstrom": 1.0,
+      "function_tolerance": 1e-10,
+      "gradient_tolerance": 1e-10,
+      "max_num_iterations": 500,
+      "observable_round_trip_j_per_mol": 50.0,
+      "packaged_targets_sha256": "ed6fdcaf3fc9b2cf7b6dd8d1e95933ab1b28908441b334a4586aa2e2a3222087",
+      "parameter_tolerance": 1e-10,
+      "pressure_pa": 100000.0,
+      "published_diameter_reporting_half_increment_angstrom": 0.0005,
+      "rank_threshold_multiplier": 100.0,
+      "reference_convergence_error_max": 5e-05,
+      "reference_molality_mol_per_kg": 1e-12,
+      "scaled_bounds": [
+        -2.0,
+        3.0
+      ],
+      "scaled_residual_max": 1e-08,
+      "source_basis": "x-treatment at infinite dilution; gas at 1 bar to hypothetical dilute-ideal aqueous solution at 1 bar; negative is favorable",
+      "source_doi": "10.1021/acs.iecr.5c00475",
+      "source_ledger_sha256": "f405a3e48d21cd979a8dd480d5f8cb3be40754f5d6babf368b505b5f305607f0",
+      "source_locator": "SI Table S5, PDF page 9 of 10, reported-average lit column",
+      "source_metadata_sha256": "8ea06c6ca5452d01448a03f9a76cf7d0c35bb99c9abe23ccb1729d56c71d468f",
+      "source_parameter_packet_sha256": "932e8baa90fcefbaa8c3a8730cdeadd83a4c01f0a3b109f4e4cd0319aee9312b",
+      "source_si_doi": "10.1021/acs.iecr.5c00475.s001",
+      "source_validation_commit": "8944d34f7002cda1bb8760e606cc1f11696f58cd",
+      "source_validation_tree": "6c8fd350dcd6bfdd7be1918f73fd33a23e2070dd",
+      "specification_id": "figiel-2025-five-ion-born-diameter-tracer-v1",
+      "start_diameters_angstrom": [
+        [
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0
+        ],
+        [
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0
+        ],
+        [
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0
+        ]
+      ],
+      "targets": [
+        {
+          "active_component_id": "lithium-cation",
+          "counterion_component_id": "chloride-anion",
+          "expected_provider_fingerprint": "sha256:1bb528ebe8f5612757e148608fc55821f9fb03737dbcec6d0bc4fffd0f4cbc4c",
+          "ion_label": "Li+",
+          "published_diameter_angstrom": 2.784,
+          "target_id": "figiel2025-s5-Lip-reported-average",
+          "target_j_per_mol": -486200.0,
+          "target_kj_per_mol": -486.2
+        },
+        {
+          "active_component_id": "sodium-cation",
+          "counterion_component_id": "chloride-anion",
+          "expected_provider_fingerprint": "sha256:7c637771bc9f717b8f47b44bb2a61044c3fe83084dca7c3c16102fba0989912d",
+          "ion_label": "Na+",
+          "published_diameter_angstrom": 3.445,
+          "target_id": "figiel2025-s5-Nap-reported-average",
+          "target_j_per_mol": -381100.0,
+          "target_kj_per_mol": -381.1
+        },
+        {
+          "active_component_id": "potassium-cation",
+          "counterion_component_id": "chloride-anion",
+          "expected_provider_fingerprint": "sha256:d29cef0c0f63034436d547d0aafa57934effe06783c8dffd89c94fa85e6940f4",
+          "ion_label": "K+",
+          "published_diameter_angstrom": 4.15,
+          "target_id": "figiel2025-s5-Kp-reported-average",
+          "target_j_per_mol": -309100.0,
+          "target_kj_per_mol": -309.1
+        },
+        {
+          "active_component_id": "chloride-anion",
+          "counterion_component_id": "sodium-cation",
+          "expected_provider_fingerprint": "sha256:7551f1eee5903b66061cf7520f3bb59b169896ce372f3df3d48aa7ec778c39d4",
+          "ion_label": "Cl-",
+          "published_diameter_angstrom": 4.1,
+          "target_id": "figiel2025-s5-Clm-reported-average",
+          "target_j_per_mol": -314900.0,
+          "target_kj_per_mol": -314.9
+        },
+        {
+          "active_component_id": "bromide-anion",
+          "counterion_component_id": "sodium-cation",
+          "expected_provider_fingerprint": "sha256:70ae04599dfa8338175e793bac6b9e4dfad37a9b96a568b5484dc87f104ef1a9",
+          "ion_label": "Br-",
+          "published_diameter_angstrom": 4.48,
+          "target_id": "figiel2025-s5-Brm-reported-average",
+          "target_j_per_mol": -290900.0,
+          "target_kj_per_mol": -290.9
+        }
+      ],
+      "temperature_k": 298.15
+    },
+    "strict_local_gates_passed": true
+  },
+  "subject_sha256": "55ea2cd69af62c45b26179cfab6939760de23058b5a7e8c880a79f67faa417ed"
+}

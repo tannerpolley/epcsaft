@@ -1,0 +1,16 @@
+{
+  "source_commit": "95988731bd35af522b5d4e986b8697545ad5fd98",
+  "missing_historical_interfaces": [
+    "unit_registry",
+    "SourceReferenceDeclaration",
+    "source_reference_transfer",
+    "ChemicalStandardState"
+  ],
+  "current_native_starts_present": true,
+  "gap": "The historical generator default pure-CO2-vapor lane needs mixed pure-water liquid / pure-CO2 vapor / other-solute infinite-dilution references. This is not unambiguously the paper convention. The source ledger states water pure-component and all other components infinite dilution, exactly expressible with NeutralReference and RawMoleFractionInfiniteDilution.",
+  "earlier_diagnosis": "results/data/native/reference-path-probe.json",
+  "action": "Source-ledger conversion proceeds in source-ledger/; historical results and diagnosis retain their original identities. Issue #274 applies only to exact historical pure-CO2-vapor replay or future pure-gas solute references.",
+  "wheel_sha256": "33ef17f578714f55c65223e6b3d8b28e09344ac65cb317dfe9007bcfffc8db94",
+  "source_ledger_reference_owner": "engine/docs/equations.md#neutral_reaction_reference_transfer",
+  "current_input_admission": "Current parameter declarations use fully-dissociated-debye-huckel with exclude-same-sign-ion-pairs and the canonical 1 / kelvin unit. Coefficients match the earlier current-wheel reconstruction at 624881f1; no historical Engine identity equivalence is asserted."
+}

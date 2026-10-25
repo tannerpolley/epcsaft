@@ -1,0 +1,91 @@
+{
+  "release": "main-8298c6029ebb8b467929badc4a223c580ec591ab",
+  "wheel": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/build/issue-680-release-PRNBCX/epcsaft-0.2.0.dev0-cp313-cp313-manylinux_2_39_x86_64.whl",
+  "wheel_sha256": "8897a0caab9f2508ed642f42c8b5226957fbe7035ed7bfdad71e4166798785b3",
+  "engine_provenance": [
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/build/issue-680-release-PRNBCX/epcsaft-0.2.0.dev0-cp313-cp313-manylinux_2_39_x86_64.whl",
+    "8897a0caab9f2508ed642f42c8b5226957fbe7035ed7bfdad71e4166798785b3"
+  ],
+  "interpreter": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/build/issue-680-release-PRNBCX/venv/bin/python",
+  "engine_import": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/build/issue-680-release-PRNBCX/venv/lib/python3.13/site-packages/epcsaft/__init__.py",
+  "direct_url": {
+    "url": "file:///home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/build/issue-680-release-PRNBCX/epcsaft-0.2.0.dev0-cp313-cp313-manylinux_2_39_x86_64.whl",
+    "archive_info": {}
+  },
+  "environment": {
+    "EPCSAFT_HSL_LIBRARY": null,
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1"
+  },
+  "packages": {
+    "sympy": "1.14.0",
+    "annotated-types": "0.8.0",
+    "idaes-pse": "2.13.0",
+    "packaging": "26.3",
+    "cycler": "0.12.1",
+    "pillow": "13.0.0",
+    "contourpy": "1.4.0",
+    "click": "8.5.0",
+    "numpy": "2.5.4",
+    "networkx": "3.7",
+    "pandas": "3.0.6",
+    "mpmath": "1.3.0",
+    "pyparsing": "3.3.3",
+    "typing_extensions": "4.16.0",
+    "kiwisolver": "1.5.1",
+    "pyomo": "6.10.1",
+    "matplotlib": "3.11.2",
+    "fonttools": "4.67.0",
+    "six": "1.17.0",
+    "typing-inspection": "0.4.4",
+    "scipy": "1.18.1",
+    "platformdirs": "4.13.5",
+    "python-dateutil": "2.9.0.post0",
+    "pydantic": "2.14.1",
+    "Pint": "0.26.2",
+    "pydantic_core": "2.50.1",
+    "flexcache": "0.3",
+    "epcsaft": "0.2.0.dev0",
+    "flexparser": "0.4"
+  },
+  "commands": [
+    "Native readout programs compiled from the matching release source; LD_LIBRARY_PATH selects the native library and solver dependencies packaged in the named wheel.",
+    "equilibrium_checks S2",
+    "regression_checks addition-enthalpy and ionic-addition (same retained executions as the caloric producer)",
+    "fresh-wheel Python -m pytest engine/tests/equilibrium/test_reference_calorics.py -k test_reference_parameter_enthalpy_actions_match_resolves -s -q",
+    "scripts/retain.py --stem main-8298c602-columns --base 8298c6029ebb8b467929badc4a223c580ec591ab --preparation build/issue-680-native-preparation.json <four retained logs>"
+  ],
+  "producer_sha256": {
+    "analyses/2026-addition-enthalpy-fitting/scripts/incipient.py": "cf5c0d45e44f8540b430a491f463a6a0b93babc81149c44a58e4c47c521aa3bf",
+    "analyses/2026-addition-enthalpy-fitting/scripts/retain.py": "50e0b72f11cf61eb661487e8afb0ea4f1434575a3004fedb47c9f5dbfac013c0",
+    "analyses/2026-addition-enthalpy-fitting/scripts/zero_inventory.cpp": "46355a39b03d482ec3f859df3920c7d0fa34003d46acdf486d0e278a1e573bc5",
+    "analyses/2026-addition-enthalpy-fitting/scripts/zero_inventory.py": "0826fb0e7ed0169b68d744aaf85b4b72059e19d9ad9cde03524f0ab4d43f0527",
+    "analyses/2026-addition-enthalpy-fitting/scripts/plot.py": "705eeb4ddcb5e257e361f2bdda8fd2d1403e8b8045a2a3fc7a3473e50717efde"
+  },
+  "evidence_label": "numerical verification",
+  "review": "Independent delivered review and owner promotion pending; no manuscript use authorized",
+  "native_readouts": {
+    "equilibrium_checks": {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/build/engine-meson/shared/equilibrium_checks",
+      "sha256": "f305adf0d9bb323642111df6ce4796637cb732508beafd17a50706ef4ca877d2"
+    },
+    "properties_checks": {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/build/engine-meson/shared/properties_checks",
+      "sha256": "090debb632c7819febf371454ae62d1adfcd0b34a16652bc5bb58eb5bab401d0"
+    },
+    "regression_checks": {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/build/engine-meson/shared/regression_checks",
+      "sha256": "0303376c0da484c69e71165bc1060cca9c2bbe141504c860007287c3f8ac9c7e"
+    }
+  },
+  "native_test_source_revision": "8298c6029ebb8b467929badc4a223c580ec591ab",
+  "native_loader_environment": {
+    "LD_LIBRARY_PATH": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/build/issue-680-release-PRNBCX/venv/lib/python3.13/site-packages/epcsaft"
+  },
+  "engine_tree": "26d93603c86ea21a40e911f7568a41d958ca12d8",
+  "native_runtime": {
+    "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/build/issue-680-release-PRNBCX/venv/lib/python3.13/site-packages/epcsaft/libepcsaft_native.so",
+    "sha256": "82b04c4f2cf679873d98bcc6c8b58e0efc74ac6b803d1541d85fb888843fe433"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "case": "B4",
+  "results": [
+    {
+      "physical_chart_bit_identical": true,
+      "cold_replay_with_and_without_holds_bit_identical": true,
+      "maximum_relative_difference": 1.660073876879036e-12,
+      "failed_rows": []
+    },
+    {
+      "physical_chart_bit_identical": true,
+      "cold_replay_with_and_without_holds_bit_identical": true,
+      "maximum_relative_difference": 1.5976490227727752e-12,
+      "failed_rows": []
+    }
+  ],
+  "remaining_cause": null
+}

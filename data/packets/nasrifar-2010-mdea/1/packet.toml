@@ -1,0 +1,31 @@
+schema_version = 2
+packet_id = "nasrifar-2010-mdea"
+packet_version = "1"
+title = "Nasrifar and Tafazzol 2010 neutral MDEA PC-SAFT"
+description = "Table 2 five neutral components; MDEA 3B, water 2B; Table 3 pairs; sigma-cubed association and Wolbach-Sandler cross rules. No reaction chemistry or electrolyte terms."
+license_or_use_basis = "Cited published numerical facts and model declarations for scientific reproduction; no full paper or figure redistribution."
+tolerance_rationale = "Exact printed parameter transcription; figure comparisons use independently frozen pixel rectangles in the analysis. No physical-validation tolerance is asserted by this packet."
+
+[[sources]]
+source_id = "nasrifar-2010"
+citation = "Nasrifar, K.; Tafazzol, A. H. Vapor-Liquid Equilibria of Acid Gas-Aqueous Ethanolamine Solutions Using the PC-SAFT Equation of State. I&EC Research 49 (2010), 7620-7630."
+doi = "10.1021/ie901181n"
+use_basis = "Cited numerical parameters and structural declarations; no full article redistribution."
+
+[[sources]]
+source_id = "repository-molar-masses"
+citation = "ePC-SAFT retained MDEA declarations and Gross-Sadowski neutral component catalog at 494e3e5f."
+use_basis = "Independent molecular molar masses; not fitted Table 2 coefficients."
+
+[[domains]]
+domain_id = "molecular-pc-saft"
+description = "Table 2 fit intervals: MDEA 340-620 K; water 273-647 K; CO2 216-304 K; H2S 187-362 K; methane 97-300 K. Table 3 MDEA-water 350-459 K; methane pair 298-403 K. Source plots may extrapolate; no hard runtime bounds. Component methane and CO2 coefficients equal gross-sadowski-2001/3. Association A/B labels are conventional; 3B is two equivalent A and one B sites."
+
+[[files]]
+path = "parameters/parameters.json"
+role = "parameters"
+media_type = "application/json"
+sha256 = "2847b41e3106810d15913c99986094debc5f9a98671a30657120ba7d15bc648b"
+source_refs = ["nasrifar-2010", "repository-molar-masses"]
+domain_refs = ["molecular-pc-saft"]
+units_basis = "Every coefficient and fixed molecular mass declares its unit; topology multiplicities and zero charge are exact structural choices."

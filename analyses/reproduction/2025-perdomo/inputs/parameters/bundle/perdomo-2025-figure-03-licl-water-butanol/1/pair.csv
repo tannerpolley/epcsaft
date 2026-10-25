@@ -1,0 +1,7 @@
+record_id,component_id_a,component_id_b,family,value,unit,source_id,locator,domain_id
+water-butanol-kij,water,1-butanol,k_ij,-0.102,,ascani-et-al-2022,Supporting Information Eq. S7 and Table S3,perdomo-figure-03-298-15-k-101-3-kpa
+water-lithium-kij,water,lithium-cation,k_ij,-0.4,,figiel-yu-held-2025,Table 5 Li+ water row,perdomo-figure-03-298-15-k-101-3-kpa
+water-chloride-kij,water,chloride-anion,k_ij,-0.3,,figiel-yu-held-2025,Table 5 Cl- water row,perdomo-figure-03-298-15-k-101-3-kpa
+butanol-lithium-kij,1-butanol,lithium-cation,k_ij,-1.1524901988171197,,perdomo-validation-regression-2026,historical split-wheel fit to retained Li+ transfer target,perdomo-figure-03-298-15-k-101-3-kpa
+butanol-chloride-kij,1-butanol,chloride-anion,k_ij,0.8430300746192005,,perdomo-validation-regression-2026,historical split-wheel fit to retained Cl- transfer target,perdomo-figure-03-298-15-k-101-3-kpa
+lithium-chloride-kij,lithium-cation,chloride-anion,k_ij,0.8,,figiel-yu-held-2025,Table 4 LiCl pair,perdomo-figure-03-298-15-k-101-3-kpa

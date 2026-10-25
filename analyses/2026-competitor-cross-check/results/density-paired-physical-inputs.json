@@ -1,0 +1,9 @@
+{
+  "analyses/2026-tpd-phase-discovery/scripts/baseline.py": "db6c413ea84549cd0426951bad156ee307dd14168f79e66b8c7409d08b2ca8f9",
+  "analyses/2026-tpd-phase-discovery/scripts/declared_start_cost.py": "605bbd7fdf16641603be87bd32d466710514c4b1937224853099d85acf8de005",
+  "engine/tests/equilibrium/test_trace_reliability.py": "01d51690d604086f8e672b5d8d903fdc9023c77e84bf4213ecdb7e5e3d27f236",
+  "analyses/2026-khudaida-idaes-settler/scripts/run_fixed_settler.py": "2dabb36cea32bd22feb71b041d0e6577ec38d8cd6f7a41db50c13313f84f3589",
+  "analyses/reproduction/2026-khudaida/figures/figure-02/source/source-points.csv": "21cf58a5373b2e2c337b6baf5a0423d0ab5d7cea9639bb727b061f5844ef78d7",
+  "analyses/2026-khudaida-idaes-settler/inputs/data/khudaida-2026-figure-2-electrolyte-lle/7/parameters/parameters.json": "8babed899e7347e58c403c7aff24a7fdd6d60411af3b4d81eb6aa90c2431dfa4",
+  "data/packets/mea-co2-h2o-nine-species-estimation/3/parameters/parameters.json": "2ea3b41485a98d2cf49add620b87bb05fc5a275cdd132c1cdbb0cfc5f07f2ca4"
+}

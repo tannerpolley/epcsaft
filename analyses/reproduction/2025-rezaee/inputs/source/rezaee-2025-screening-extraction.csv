@@ -1,0 +1,8 @@
+source,citation_key,doi,screening_type,candidate,li_extraction_pct_exp,T_C,pH,initial_li_ppm,notes
+Rezaee2025_Table3,Rezaee2025,10.1021/acs.iecr.4c03496,DES_molar_ratio,TBAC(1)/DA(1),12.48,30.0,9.0,1500,Equal masses of DES and aqueous phases.
+Rezaee2025_Table3,Rezaee2025,10.1021/acs.iecr.4c03496,DES_molar_ratio,TBAC(1)/DA(2),15.14,30.0,9.0,1500,Selected DES ratio for subsequent tests.
+Rezaee2025_Table3,Rezaee2025,10.1021/acs.iecr.4c03496,DES_molar_ratio,TBAC(1)/DA(3),4.98,30.0,9.0,1500,Equal masses of DES and aqueous phases.
+Rezaee2025_Table3,Rezaee2025,10.1021/acs.iecr.4c03496,DES_molar_ratio,TBAC(2)/DA(1),10.54,30.0,9.0,1500,Equal masses of DES and aqueous phases.
+Rezaee2025_Table4,Rezaee2025,10.1021/acs.iecr.4c03496,coextractant,TOPO,20.02,30.0,9.0,1500,Organic phase contained equal masses of DES and coextractant.
+Rezaee2025_Table4,Rezaee2025,10.1021/acs.iecr.4c03496,coextractant,TBP,18.84,30.0,9.0,1500,Organic phase contained equal masses of DES and coextractant.
+Rezaee2025_Table4,Rezaee2025,10.1021/acs.iecr.4c03496,coextractant,DEHPA,16.33,30.0,9.0,1500,Organic phase contained equal masses of DES and coextractant.

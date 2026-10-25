@@ -1,0 +1,233 @@
+{
+  "schema": "epcsaft.parameters",
+  "schema_version": 1,
+  "document_id": "may-2015-methane-propane-reference",
+  "document_version": 1,
+  "purpose": "user-provided",
+  "sources": [
+    {
+      "source_id": "gross-sadowski-2001",
+      "citation": "Gross, J.; Sadowski, G. PC-SAFT. Ind. Eng. Chem. Res. 2001, 40, 1244-1260.",
+      "doi": "10.1021/ie0003887",
+      "use_basis": "Pure-component parameters transcribed from the locked Data packet."
+    },
+    {
+      "source_id": "may-2015-regression-setup",
+      "citation": "May et al. J. Chem. Eng. Data 2015, 60, 3606-3620.",
+      "doi": "10.1021/acs.jced.5b00610",
+      "use_basis": "Zero interaction starting value for the campaign-owned reference fit."
+    }
+  ],
+  "domains": [
+    {
+      "domain_id": "may-2015-methane-propane",
+      "kind": "reported-conditions",
+      "temperature_min": {
+        "magnitude": 203.36,
+        "unit": "kelvin"
+      },
+      "temperature_max": {
+        "magnitude": 283.38,
+        "unit": "kelvin"
+      },
+      "pressure_min": {
+        "magnitude": 891,
+        "unit": "kilopascal"
+      },
+      "pressure_max": {
+        "magnitude": 7943,
+        "unit": "kilopascal"
+      }
+    }
+  ],
+  "components": [
+    {
+      "component_id": "methane",
+      "aliases": [],
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 0.016043,
+            "unit": "kg / mol"
+          },
+          "provenance": {
+            "source_id": "gross-sadowski-2001",
+            "locator": "Table 2, methane row",
+            "domain_id": "may-2015-methane-propane"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/methane/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 150.03,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "gross-sadowski-2001",
+            "locator": "Table 2, methane row",
+            "domain_id": "may-2015-methane-propane"
+          }
+        },
+        {
+          "identity": "component/methane/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-sadowski-2001",
+            "locator": "Table 2, methane row",
+            "domain_id": "may-2015-methane-propane"
+          }
+        },
+        {
+          "identity": "component/methane/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 3.7039,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "gross-sadowski-2001",
+            "locator": "Table 2, methane row",
+            "domain_id": "may-2015-methane-propane"
+          }
+        }
+      ],
+      "name": "methane"
+    },
+    {
+      "component_id": "propane",
+      "aliases": [],
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 0.044096,
+            "unit": "kg / mol"
+          },
+          "provenance": {
+            "source_id": "gross-sadowski-2001",
+            "locator": "Table 2, propane row",
+            "domain_id": "may-2015-methane-propane"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/propane/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 208.11,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "gross-sadowski-2001",
+            "locator": "Table 2, propane row",
+            "domain_id": "may-2015-methane-propane"
+          }
+        },
+        {
+          "identity": "component/propane/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 2.002,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-sadowski-2001",
+            "locator": "Table 2, propane row",
+            "domain_id": "may-2015-methane-propane"
+          }
+        },
+        {
+          "identity": "component/propane/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 3.6184,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "gross-sadowski-2001",
+            "locator": "Table 2, propane row",
+            "domain_id": "may-2015-methane-propane"
+          }
+        }
+      ],
+      "name": "propane"
+    }
+  ],
+  "pairs": [
+    {
+      "component_id_a": "methane",
+      "component_id_b": "propane",
+      "coefficients": [
+        {
+          "identity": "pair/methane/propane/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "may-2015-regression-setup",
+            "locator": "Campaign reference-fit origin",
+            "domain_id": "may-2015-methane-propane"
+          }
+        }
+      ]
+    }
+  ],
+  "model_families": [
+    {
+      "family_id": "model/association",
+      "kind": "association",
+      "choice": "none",
+      "provenance": {
+        "source_id": "gross-sadowski-2001",
+        "locator": "Neutral PC-SAFT formulation",
+        "domain_id": "may-2015-methane-propane"
+      }
+    },
+    {
+      "family_id": "model/base",
+      "kind": "base",
+      "choice": "pc-saft",
+      "provenance": {
+        "source_id": "gross-sadowski-2001",
+        "locator": "Neutral PC-SAFT formulation",
+        "domain_id": "may-2015-methane-propane"
+      }
+    },
+    {
+      "family_id": "model/electrolyte",
+      "kind": "electrolyte",
+      "choice": "none",
+      "provenance": {
+        "source_id": "gross-sadowski-2001",
+        "locator": "Neutral PC-SAFT formulation",
+        "domain_id": "may-2015-methane-propane"
+      }
+    },
+    {
+      "family_id": "model/relative_permittivity",
+      "kind": "permittivity",
+      "choice": "none",
+      "provenance": {
+        "source_id": "gross-sadowski-2001",
+        "locator": "Neutral PC-SAFT formulation",
+        "domain_id": "may-2015-methane-propane"
+      }
+    }
+  ],
+  "model_coefficients": [],
+  "correlations": [],
+  "topology": {
+    "presets": [],
+    "sites": [],
+    "edges": []
+  }
+}

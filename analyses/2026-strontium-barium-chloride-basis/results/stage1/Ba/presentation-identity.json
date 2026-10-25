@@ -1,0 +1,22 @@
+{
+  "scope": "Presentation only from retained native outputs; no new model evaluations",
+  "source_sha256": {
+    "analyses/2026-hydrochloric-acid-chloride-basis/scripts/run.py": "73aa88f109aee1461e5d9b8c4c953e70d0e69e191d6d39baab016b0a19ca68c1",
+    "analyses/2026-hydrochloric-acid-chloride-basis/scripts/present.py": "4d1589057dd33c2f65f9a01417d63c065f824b265b244e2091814b4d2d989044",
+    "analyses/2026-hydrochloric-acid-chloride-basis/scripts/score.py": "d63e182c48a93259bc6f8a45bfe5e492f3de84beaa9c7df5b4c7e09d15b01b18"
+  },
+  "retained_fit_sha256": {
+    "fit-values.csv": "b1e1878deadbf6b8556e6ea82a2e1c055bad95b835468e8bf015cea677e57a05",
+    "identification.csv": "8677ddc75873ebbc67f54d9b08504a2c869d7d645fb64ddae46e6c07c3866fbc",
+    "2a-binary-metrics.csv": "a862b8271a1e315fea7102408f912c6b313ebb32f4523c8937c32d8788a708b5",
+    "trial-failures.csv": "838f0706416c18d02b4735d9cf6ba0eb0bc2c85cadd3b055672abb501b8fbc8f",
+    "prefit-diagnostics.csv": "70585a731c6b07fe0ec4873ea391b21c607884ca2758b2f6eedf7ab2825d3a05",
+    "fit-status.csv": "115736c6920f7af93aa290449ea3c19b6bccc1f1b4b21ac78ef99a6f53fa0e82",
+    "Ba-Cl-dispersion.csv": "b3bbc414fdb0c377c28c4538e243532807d261811df2f3a4671571235001a6dc",
+    "sensitivity.csv": "2ca0451c953a36b44e107c24743e1e7fd0a7058af74c06bf8dbb1e790f940bd2",
+    "solver-policy.csv": "7ced538a1f0e285ddcba1b51f435f3dd13a416563810b4bc35e3a11afd1e893b",
+    "sensitivity-summary.csv": "24086a7d3d0753e52b30979f0912cf1da7998fd0c11f10fcdf75719c4f817379",
+    "local-resolution.csv": "27153d33b47a806a1e34d4e5c0a055b179fe9eb0dc8087f1197325ceda46d8df",
+    "2a-binary-errors.csv": "f005eaf494cfcb72b3ac2683ee1b8d7cfd28f8372e8b20fc3df904c849f2d3f6"
+  }
+}

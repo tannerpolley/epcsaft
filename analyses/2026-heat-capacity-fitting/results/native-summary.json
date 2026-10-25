@@ -1,0 +1,24 @@
+{
+  "base": "d47d0475",
+  "wheel_sha256": "093638fa8c8e1987792e0facaeb5c00d121c6965c69a3298754ee146f8610318",
+  "recovery": {
+    "status": "converged",
+    "termination": "convergence",
+    "iterations": 7,
+    "residual_evaluations": 6,
+    "jacobian_evaluations": 7,
+    "trial_failures": 0,
+    "final_cost": 1.4945994987658977e-20,
+    "covariance": "available",
+    "singular_values": [
+      0.9427571369062909,
+      0.17618191931217353,
+      0.06441942286958817,
+      0.016640782491478864,
+      0.0028733289198008076
+    ],
+    "rank": 5
+  },
+  "comparisons": 105,
+  "all_passed": true
+}

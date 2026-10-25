@@ -1,0 +1,44 @@
+TITLE Closed carbonate and calcium-complexation cross-model oracle
+SOLUTION 1 carbonic_acid_dominant
+    temp 25
+    units mol/L
+    pH 7 charge
+    C(4) 0.001
+SOLUTION 2 bicarbonate_dominant
+    temp 25
+    units mol/L
+    pH 7 charge
+    C(4) 0.001
+    Na 0.001
+SOLUTION 3 carbonate_dominant
+    temp 25
+    units mol/L
+    pH 7 charge
+    C(4) 0.001
+    Na 0.002
+SOLUTION 4 calcium_complexation
+    temp 25
+    units mol/L
+    pH 7 charge
+    C(4) 0.001
+    Na 0.001
+    Ca 0.0001
+    Cl 0.0002
+SELECTED_OUTPUT 1
+    -file chemical-equilibrium-phreeqc.tsv
+    -reset false
+    -high_precision true
+    -simulation false
+    -state false
+    -solution true
+    -pH true
+    -ionic_strength true
+USER_PUNCH 1
+    -headings total_C_mol_kgw total_Na_mol_kgw total_Ca_mol_kgw total_Cl_mol_kgw H_mol_kgw OH_mol_kgw CO2_mol_kgw HCO3_mol_kgw CO3_mol_kgw Na_free_mol_kgw NaHCO3_mol_kgw NaCO3_mol_kgw Ca_free_mol_kgw CaHCO3_mol_kgw CaCO3_mol_kgw CaOH_mol_kgw Cl_free_mol_kgw
+    -start
+10 PUNCH TOT("C(4)"), TOT("Na"), TOT("Ca"), TOT("Cl")
+20 PUNCH MOL("H+"), MOL("OH-"), MOL("CO2"), MOL("HCO3-"), MOL("CO3-2")
+30 PUNCH MOL("Na+"), MOL("NaHCO3"), MOL("NaCO3-")
+40 PUNCH MOL("Ca+2"), MOL("CaHCO3+"), MOL("CaCO3"), MOL("CaOH+"), MOL("Cl-")
+    -end
+END

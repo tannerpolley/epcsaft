@@ -1,0 +1,56 @@
+{
+  "wheel_sha256": "47686a364cfeb4d205d0ce03e29e2fd9f2e066f1d7cf729102cdb78f3c56d86a",
+  "born": {
+    "cases": [
+      {
+        "case": 1,
+        "selected": null,
+        "total_iterations": 735,
+        "shared_budget_exhausted": false,
+        "overrun_seconds": 0.0,
+        "min_residual": 0.01687982540531214
+      },
+      {
+        "case": 2,
+        "selected": null,
+        "total_iterations": 906,
+        "shared_budget_exhausted": false,
+        "overrun_seconds": 0.0,
+        "min_residual": 0.0023398302849809726
+      }
+    ],
+    "csv": "born-replay.csv"
+  },
+  "ordinary_cost": {
+    "reference_wheel_sha256": "e28d258df06eac39711c59a79f9ce2b69fc8ac7565637bfba0dbef21863d8dc7",
+    "csv": "ordinary-cost.csv",
+    "logs": [
+      "build/issue238-integration/qualification-current.log",
+      "build/issue238-integration/default-cost.log"
+    ],
+    "mea_refusal_both_wheels": "ionic_insertion: absent charged component property",
+    "limits": "No current MEA state/work comparison; reboot separates time samples, so no causal overhead comparison."
+  },
+  "khudaida": {
+    "summary": "build/issue238-integration/khudaida-results/summary.json",
+    "sha256": "b72d1b4b4d3d609d7004963bbf0a34778cd20dbc795609b39a2d8c690dc35754",
+    "accepted_count": 8,
+    "maxima": {
+      "engine_classified_residual_max_abs": 9.795338724153903e-15,
+      "engine_material_balance_max_abs": 2.220446049250313e-16,
+      "engine_phase_charge_max_abs": 0.0,
+      "engine_pressure_max_relative": 4.4170883484184743e-11,
+      "idaes_charge_residual_abs": 0.0,
+      "idaes_component_balance_max_abs": 3.608224830031759e-16,
+      "idaes_composition_max_abs": 1.1102230246251565e-16,
+      "idaes_phase_flow_closure_abs": 6.661338147750939e-16,
+      "idaes_phase_fraction_abs": 3.3306690738754696e-16
+    },
+    "max_raw_abs": 5.573319583618286e-14
+  },
+  "check_logs": [
+    "build/issue238-integration/check-all.log",
+    "build/issue238-integration/declared-starts.log"
+  ],
+  "limits": "Numerical verification for specified declarations only; no physical validation, nonexistence or global stability claim. Independent delivered review pending."
+}

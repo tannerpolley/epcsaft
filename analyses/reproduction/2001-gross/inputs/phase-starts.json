@@ -1,0 +1,29 @@
+{
+  "vapor_first_component_mole_fraction": {
+    "07": {
+      "21": 0.95,
+      "121": 0.42
+    },
+    "08": {
+      "171": 0.96,
+      "238": 0.82
+    },
+    "09": {
+      "25": 0.97
+    },
+    "10": {
+      "71": 0.95,
+      "138": 0.85,
+      "204": 0.55
+    },
+    "12": {
+      "4": 0.999,
+      "238": 0.85
+    },
+    "13": {
+      "71": 0.98,
+      "250": 0.36
+    }
+  },
+  "basis": "Approximate vapor branches in the same source figures; only initialization, never fixed solution values. Pressure starts are digitized pressures. Pure figure states above the prediction temperature use native coordinates from that solved state; colder states use the native cold seed. No outer retry or relaxed tolerance."
+}

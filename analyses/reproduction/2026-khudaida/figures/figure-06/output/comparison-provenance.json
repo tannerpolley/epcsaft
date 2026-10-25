@@ -1,0 +1,39 @@
+{
+  "accepted_native_splits": 5,
+  "campaign_results": {
+    "path": "results/data/khudaida-2026-figures-3-to-7-held2.csv",
+    "sha256": "c6c717ab21390746f7b019fc5219e1d1fa710982af38aa3700ed1857ebbc38bb"
+  },
+  "claim_scope": "5 accepted installed-artifact phase splits compared with retained Khudaida Figure 6 and Table 4 digitizations under an explicit Figure 2 parameter-bundle extrapolation assumption.",
+  "coordinate_normalization": {
+    "maximum_absolute_correction": 1.0000000000065512e-05,
+    "method": "divide each ternary row by its retained input sum"
+  },
+  "feed_count": 5,
+  "outputs": {
+    ".pdf": "c669598839000dda600faa63bb72d65f0acd90437c196cc6fca8b27d8d39ef5e",
+    ".png": "56fa00d468750bf30d5606f80922b027f01ef74469f3a2c8c85569ab9eb91d4d",
+    ".svg": "5dc7907a3d2e49ffb9ca12adea2fd212b5aa61cbcdb6604654f16b53d98e9349"
+  },
+  "parameter_domain_status": "exploratory_parameter_extrapolation",
+  "plotted_data": {
+    "path": "output/khudaida-figure-06-active-comparison.csv",
+    "sha256": "c40db19166eaf642fca3a8aef117fab06a6e90992a19a6f1673bd3cf2f8dc0e7"
+  },
+  "schema_version": 1,
+  "source_figure": "source/figure-06.png",
+  "source_inputs": [
+    {
+      "path": "source/source-points.csv",
+      "sha256": "a4d5fff850d7246c4fa71f385ce44b4a28775c5d08e5da2e851ea055c6beaac3"
+    },
+    {
+      "path": "source/paper-epcsaft-points.csv",
+      "sha256": "fa16d867e497809dcbae185cf2a70122981f0428e23e80633aa92256223909ac"
+    },
+    {
+      "path": "source/feed-compositions.csv",
+      "sha256": "7f90fd9f369e53fa1067e887f08ed36ad2214333cf93ba339d57d1fd936d6c46"
+    }
+  ]
+}

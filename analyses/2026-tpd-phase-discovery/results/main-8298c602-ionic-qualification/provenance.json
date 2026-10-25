@@ -1,0 +1,9 @@
+{
+  "provenance": [
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/build/issue-680-release-PRNBCX/epcsaft-0.2.0.dev0-cp313-cp313-manylinux_2_39_x86_64.whl",
+    "8897a0caab9f2508ed642f42c8b5226957fbe7035ed7bfdad71e4166798785b3"
+  ],
+  "wheel": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/build/issue-680-release-PRNBCX/epcsaft-0.2.0.dev0-cp313-cp313-manylinux_2_39_x86_64.whl",
+  "wheel_sha256": "8897a0caab9f2508ed642f42c8b5226957fbe7035ed7bfdad71e4166798785b3",
+  "release": "main-8298c6029ebb8b467929badc4a223c580ec591ab"
+}

@@ -1,0 +1,52 @@
+{
+  "qualification-addition-enthalpy.log": {
+    "retained_file": "qualification-addition-enthalpy.log.gz",
+    "raw_sha256": "57444a5e0514e0fefb79a9d5e6f579676603e261ce9f4b9b51b21cc6121a023f",
+    "gzip_sha256": "7a5db322f6ef058e6619d2bb0dcd832b1da8bd766f33eb0b0196a527dcf83ec5"
+  },
+  "qualification-installed-wheel.log": {
+    "retained_file": "qualification-installed-wheel.log.gz",
+    "raw_sha256": "c2d64d41edcb4d9a0b7a81fcc964ceb8d2b7d73d7d92491bb17f24d0bbaea6d3",
+    "gzip_sha256": "88b69275398322307c0aba54d309c126096e6ee8df79f9d2ad7cf7cd8ad319bc"
+  },
+  "qualification-ionic-addition.log": {
+    "retained_file": "qualification-ionic-addition.log.gz",
+    "raw_sha256": "17b90edf8039b4280530940e8ead63c89cbda4459557d326b273ab0da73ac249",
+    "gzip_sha256": "a824a2c40b22c0f6b1fea10359b4530a991aad141553fb9a489a2486c4e25cea"
+  },
+  "qualification-properties.log": {
+    "retained_file": "qualification-properties.log.gz",
+    "raw_sha256": "262c78d1a3e0bc3088582e5ab4d0d13fdc8f3858a6a325a2407ee45c46c151ff",
+    "gzip_sha256": "428591556ea8c2e7143052b3a671ef8357baab8a5e42f4f202a65e25bd6e60e0"
+  },
+  "qualification-reactive-caloric-F2.log": {
+    "retained_file": "qualification-reactive-caloric-F2.log.gz",
+    "raw_sha256": "d98feb07cce4dad0356a0958fac8bc8f76b2ecc4ca2a7558931fb91a71985df6",
+    "gzip_sha256": "aff4abe12fe72945af999c174db2002b6c67f9aacbb2a6af8e03b40cb92fbe76"
+  },
+  "qualification-reactive-caloric-F6-addition.log": {
+    "retained_file": "qualification-reactive-caloric-F6-addition.log.gz",
+    "raw_sha256": "a0a652d1a85449acd5511c4b5c45f3acafa940680181104c811093a6360cdd44",
+    "gzip_sha256": "eeaa8a1c49d37ef541b3ecc93b4eca417c685c8f5aad6c39a069ee67c1c647b3"
+  },
+  "qualification-reactive-caloric.log": {
+    "retained_file": "qualification-reactive-caloric.log.gz",
+    "raw_sha256": "3dc5c928b86f52c68b68b2905763ccc4591716d5aab86610da72a073f3f4318e",
+    "gzip_sha256": "ae69ffd41dce92f23bd917076c0c8ce3f1eebf84f05477ee54748d60c6d83c80"
+  },
+  "qualification-reactive-cp-F1.log": {
+    "retained_file": "qualification-reactive-cp-F1.log.gz",
+    "raw_sha256": "a65e42655285e3b1e5a290f148d47d8e88119813661cac869eca3b821e65b2e7",
+    "gzip_sha256": "18ba886f1843373ff2b3fe12aa2cc75b4333341921754ccf1787c0b6858c7b7c"
+  },
+  "qualification-reactive-cp-F3.log": {
+    "retained_file": "qualification-reactive-cp-F3.log.gz",
+    "raw_sha256": "65660029e7807f56b7eaab983e0b7d6287dfc63bde88a050aac11d6bc8942d84",
+    "gzip_sha256": "add5ef07521fc83bc8f0ae0b6d06c7584342c4fee4e41fb9ab45720910afa1ac"
+  },
+  "qualification-reactive-cp.log": {
+    "retained_file": "qualification-reactive-cp.log.gz",
+    "raw_sha256": "352bf7ba48ef9105b9509ad41ee091b8f446dd667063f596b91e41f63ac64782",
+    "gzip_sha256": "adb6054645053bd7cdf2f388281a00e16ffdd7df22d6c1fc19bf7610744b6085"
+  }
+}

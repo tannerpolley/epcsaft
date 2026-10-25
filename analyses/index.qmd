@@ -1,0 +1,65 @@
+---
+title: "Measured mixed-chloride water properties"
+---
+
+The [mixed-chloride study](2026-mixed-chloride-water-activity/notebook.qmd)
+compares complete Held and provisional Figiel declarations with independent
+NaCl–MgCl₂ and NaCl–CaCl₂ water-property observations.
+Neither declaration meets the frozen mixture limits, and the binary-fit
+improvement fails the all-bucket transfer test.
+The notebook retains the residuals, source sensitivity cases and composition
+limit for applying ternary evidence to the MS-2 brine.
+
+The native general-composition water property has separate independent
+numerical support in [Engine review 558](https://github.com/tannerpolley/ePC-SAFT/issues/558).
+That support does not qualify either declaration against measurements.
+The [correlated measurement-error study](2026-correlated-measurement-errors/notebook.qmd)
+verifies native fitting with a known joint output/input measurement covariance
+on synthetic cases; it makes no physical validation claim.
+
+The [chloride brine refit](2026-chloride-brine-refit/notebook.qmd) trains
+Na⁺, Mg²⁺ and Ca²⁺ on binary and mixture osmotic data and tests both forms
+against the same held-out measurements. Neither meets the frozen rule; the
+owner qualified the Figiel-form refit for NaCl–MgCl₂–CaCl₂ brines with its one
+failing source-rounding realization stated as the limit, and the Held form
+stays unqualified.
+
+The [audit timing campaign](2026-audit-timing-campaign/notebook.qmd) measures the four
+audits' speed questions at current main against FeOs and Clapeyron and records, per audit
+question, whether its finding still holds, was fixed by a named issue, or is new. Every
+block ran on a loaded shared host, so its times are shared-host measurements.
+
+The [lithium chloride refit](2026-lithium-chloride-refit/notebook.qmd) repairs
+the trace-LiCl bound and Lithium's activity targets on the qualified chloride
+basis. The separately declared joint Li/Na/Mg fit preserves the LiCl binary
+guard but still fails Li–Mg mixtures, the full old chloride rule and divalent
+transfer preservation. No new parameter packet is created; the diagnosis
+returns the question to a new physics design outside this campaign.
+
+The broader [analysis catalogue](README.md) lists the repository's other
+studies; this selected Quarto publication contains the linked studies and
+this overview.
+
+The [higher-order derivative comparisons](2026-solver-capability-matrix/notebook.qmd)
+retain native action/reference operands and allowances for the neutral ternary,
+aqueous electrolyte and analytic manufactured isomerization. The selected
+second- and third-order comparisons satisfy the existing criteria on the named
+release. This is numerical verification on declared smooth branches; independent
+delivered review and investigator promotion remain pending.
+
+The [Sr and Ba binary calibrations](2026-strontium-barium-chloride-basis/notebook.qmd)
+identify their sole ion–water coefficients under the frozen numerical rule,
+then fail evaluated-binary accuracy in both concentration buckets. These are
+calibration results, with no reserved measurement scoring or parameter adoption.
+
+The effective sulfate trial in the [same notebook](2026-strontium-barium-chloride-basis/notebook.qmd)
+is now admitted with chloride-basis mixing retained, then fails the prescribed
+local-resolution screen at every declared point. Complete exact columns and
+nonempty native state/reference diagnostics support this numerical result.
+Fitting and accuracy scoring were not reached; the fixed transfer hypothesis
+returns to the owner before either reserved sulfate study or a parameter packet.
+
+The [named-release computational cost study](2026-release-computational-cost/notebook.qmd)
+compares value-matched serial operations against FeOs and Clapeyron on the owner-defined quiet host,
+and reports marginal first-order actions separately from equilibrium solves.
+Independent delivered review and owner promotion remain outstanding.

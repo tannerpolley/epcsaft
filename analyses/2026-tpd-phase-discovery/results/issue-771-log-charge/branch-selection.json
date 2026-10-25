@@ -1,0 +1,23 @@
+{
+  "source_commit": "7b79dd97b5b36db35912c6a6821c9315f56de8af",
+  "runtime_restored_to_round_2": true,
+  "design_sha256": "0455f289da98ca44a038d57f0d45d3d22dc39895d00019c2c4121cdaac8a4aa7",
+  "numerical_values": "branch-selection.csv",
+  "probe_log_sha256": "88bd131eb96f19275550cf4a50755df5e77de58ead27b46aa13a356f413cb8ed",
+  "native_library_sha256": "eb192e483ac0eda5be8deb4c5f49b6228614cc2f7e00607645f7c3b6797f130d",
+  "finite_difference_step": 1e-05,
+  "conditions": "Unchanged manufactured Vapor case in equilibrium_tpd_checks.cpp: 298.15 K, 1000 Pa, original separated seed and frozen target-derived chemical shifts.",
+  "method": "Existing Newton numerical rows and full-pivot LU; finite differences verify derivatives only.",
+  "probe": "Reclose the Ipopt endpoint on declared_root(Vapor) before the existing Newton polish. It returns the same unstable stationary point; the runtime change was removed.",
+  "cause": "The Ipopt endpoint already has its own stable vapor density. The nonlinear Newton trajectory leaves that branch; no reconstruction, pressure-root selection, Jacobian or linear-solve defect was found by these probes.",
+  "boundary": "A rule to preserve the branch during Newton steps or a different stability solve needs a method decision outside design-r4. No such rule was retained.",
+  "limits": [
+    "Numerical diagnosis only; mandatory trace recovery still fails.",
+    "No charged-vapor discovery, physical vapor validation or qualified trace-relative solved-state actions.",
+    "Independent delivered review and owner allowance approval pending."
+  ],
+  "original_probe_log": "build/issue-771/build-r2b/final-trial-probe.log",
+  "reclosure_probe_log": "build/issue-771/build-r2b/trial-reclosure-differentials.log",
+  "reclosure_patch": "build/issue-771/build-r2b/root-reclosure-attempt.patch",
+  "all_probes_removed_from_runtime": true
+}

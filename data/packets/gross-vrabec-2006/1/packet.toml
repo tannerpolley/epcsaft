@@ -1,0 +1,41 @@
+schema_version = 2
+packet_id = "gross-vrabec-2006"
+packet_version = "1"
+title = "Gross and Vrabec 2006 PCP-SAFT dipolar parameters"
+description = "All 24 Table 2 PCP-SAFT records (m, sigma, epsilon/k, literature dipole moment, n_mu = 1) for the optional dipole-dipole family of ADR 0011. They are valid only with that family; they are not nonpolar PC-SAFT parameters."
+license_or_use_basis = "Numerical parameter values transcribed from a published table; no publisher full text is included."
+tolerance_rationale = "The source reports fitted coefficients without uncertainty and AAD-% of vapor pressure and liquid density against KDB/DIPPR data that are not retained here; the packet asserts no tolerance."
+
+[[sources]]
+source_id = "gross-vrabec-2006"
+citation = "Gross, J.; Vrabec, J. An Equation-of-State Contribution for Polar Components: Dipolar Molecules. AIChE Journal 2006, 52, 1194-1204."
+doi = "10.1002/aic.10683"
+use_basis = "Table 2 (p. 1200) and p. 1197 n_mu statement; inspected PDF SHA-256 0f342632efca9425db2a2cc26bac652605ae8c787900f3864d060c59d8e2a2e3"
+
+[[sources]]
+source_id = "explicit-neutral-model"
+citation = "Project declaration that every Table 2 species is neutral."
+use_basis = "Structural zero charge, not a fitted coefficient."
+
+[[domains]]
+domain_id = "gv2006-table2-fit-ranges"
+kind = "fit-range"
+description = "Per-species source temperature ranges are carried in the parameter document; the ketone rows state no range."
+
+[[files]]
+path = "parameters/parameters.json"
+role = "parameters"
+media_type = "application/json"
+sha256 = "40e5309f3348bbdc6974cc6f16e7bfc4efd4ab45c988799eb63728bc82003a00"
+source_refs = ["gross-vrabec-2006", "explicit-neutral-model"]
+domain_refs = ["gv2006-table2-fit-ranges"]
+units_basis = "Each value carries its unit: molar mass gram / mole, segment diameter angstrom, dispersion energy kelvin, dipole moment debye; segment count and dipole count are dimensionless."
+
+[[files]]
+path = "provenance/source-origin.toml"
+role = "provenance"
+media_type = "application/toml"
+sha256 = "dcc7ad155bf52f15e3a8c049ac54a2dd12a60e8bee806bc10c6ad45b784a9257"
+source_refs = ["gross-vrabec-2006"]
+domain_refs = ["gv2006-table2-fit-ranges"]
+units_basis = "Origin locators and hashes are non-numeric provenance."

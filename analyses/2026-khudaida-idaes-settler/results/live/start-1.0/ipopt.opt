@@ -1,0 +1,16 @@
+hessian_approximation exact
+point_perturbation_radius 0
+bound_relax_factor 0
+nlp_scaling_method none
+tol 1e-09
+constr_viol_tol 1e-08
+dual_inf_tol 1e-07
+compl_inf_tol 1e-07
+acceptable_iter 0
+max_iter 200
+print_user_options yes
+file_print_level 5
+output_file /home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-461-diagnose-build-route-change-moved-d5d8a30d/analyses/2026-khudaida-idaes-settler/results/live/start-1.0/ipopt.log
+derivative_test second-order
+derivative_test_perturbation 1e-06
+derivative_test_tol 0.0001

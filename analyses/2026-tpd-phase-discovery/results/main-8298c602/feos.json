@@ -1,0 +1,128 @@
+{
+  "identity": {
+    "wheel": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/build/issue-680-release-PRNBCX/epcsaft-0.2.0.dev0-cp313-cp313-manylinux_2_39_x86_64.whl",
+    "wheel_sha256": "8897a0caab9f2508ed642f42c8b5226957fbe7035ed7bfdad71e4166798785b3",
+    "executed_script_sha256": "f3d7e28bf0f72de8f31ff90f8e1e76509adc806d0b9c0920d7f67c09b147d1e7",
+    "baseline_script_sha256": "aab4c8de340158479fd4d30bffc5793b3cf96c48a4edb0c113b5b4cebdc62a10",
+    "qualifier_script_sha256": "609c631bacfbd41d92d0f54248a5c0436037decbb01423d8c122d74f8c7be5a7",
+    "source_mtimes": {
+      "engine/native/equilibrium/gibbs_minimizer.cpp": 1792470955160154551,
+      "engine/native/equilibrium/request_compile.cpp": 1792470955164154534
+    },
+    "thread_environment": {
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1"
+    },
+    "si_units_version": "0.11.5"
+  },
+  "feos_version": "0.10.1",
+  "feos_import": "/home/tnnrpolley21/.cache/epcsaft-comparators/222/feos/lib/python3.13/site-packages/feos/__init__.py",
+  "reference_reuse": null,
+  "sources": {
+    "parameters": {
+      "url": "https://raw.githubusercontent.com/feos-org/feos/f1fd55d8/crates/feos/tests/pcsaft/test_parameters.json",
+      "sha256": "bd09af1cb49e4b525f4c589d66b10579ac13600634b889f551de9d533f843580"
+    },
+    "stability_source": {
+      "url": "https://raw.githubusercontent.com/feos-org/feos/v0.10.1/crates/feos-core/src/phase_equilibria/stability_analysis.rs",
+      "sha256": "dc32cb8a9514772b6d84eac264f5a836812beff434ff46d4ed93c4f1bdf2c506"
+    },
+    "version": "0.10.1",
+    "comparison": {
+      "T_K": 300.0,
+      "P_Pa": 100000.0,
+      "feed_mol": [
+        0.5,
+        0.5
+      ],
+      "components": [
+        "water_np",
+        "hexane"
+      ],
+      "k_ij": 0.0,
+      "refinements": [
+        {
+          "tol": 1e-10,
+          "max_iter": 1000
+        },
+        {
+          "tol": 1e-12,
+          "max_iter": 1000
+        }
+      ],
+      "composition_change_max_abs": 1e-08,
+      "density_change_max_relative": 1e-07,
+      "composition_comparison_max_abs": 1e-07,
+      "density_comparison_max_relative": 1e-06
+    }
+  },
+  "failure": null,
+  "costs": {
+    "csv": "feos-costs.csv",
+    "sha256": "834931608e8f1c176abff10db3bad40a99c9669dc7a4ecc4a23fa577ebadbedd",
+    "samples": 9,
+    "first_report_work": "sample 0 native work references the identical reported CSV operands",
+    "count_aliases": "iterations/evaluations/Hessian counts alias native work where that map is present"
+  },
+  "limits": [
+    "independent implementation comparison, not physical validation",
+    "FeOs negative-TPD stopping relaxation is retained in achieved residuals",
+    "reused FeOs iteration output remains with the identified original reference; fresh reference output belongs in its run log"
+  ],
+  "unavailable_native_work": [
+    {
+      "case": "case-5/FeOs",
+      "role": "explicit-test",
+      "sample": 0,
+      "field": "iterations"
+    },
+    {
+      "case": "case-5/FeOs",
+      "role": "explicit-test",
+      "sample": 0,
+      "field": "evaluations"
+    },
+    {
+      "case": "case-5/FeOs",
+      "role": "explicit-test",
+      "sample": 0,
+      "field": "hessian_calls"
+    },
+    {
+      "case": "case-5/FeOs",
+      "role": "explicit-test",
+      "sample": 1,
+      "field": "iterations"
+    },
+    {
+      "case": "case-5/FeOs",
+      "role": "explicit-test",
+      "sample": 1,
+      "field": "evaluations"
+    },
+    {
+      "case": "case-5/FeOs",
+      "role": "explicit-test",
+      "sample": 1,
+      "field": "hessian_calls"
+    },
+    {
+      "case": "case-5/FeOs",
+      "role": "explicit-test",
+      "sample": 2,
+      "field": "iterations"
+    },
+    {
+      "case": "case-5/FeOs",
+      "role": "explicit-test",
+      "sample": 2,
+      "field": "evaluations"
+    },
+    {
+      "case": "case-5/FeOs",
+      "role": "explicit-test",
+      "sample": 2,
+      "field": "hessian_calls"
+    }
+  ]
+}

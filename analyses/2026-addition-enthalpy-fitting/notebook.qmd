@@ -1,0 +1,61 @@
+---
+title: "Finite-addition enthalpy and exact parameter actions"
+execute:
+  enabled: true
+---
+
+The signed enthalpy increment per mole of added feed and its exact parameter
+columns are checked on the manufactured neutral and ionic declarations of
+[the original study](README.md). The observable is
+$\Delta h_{add}=(H^{(2)}-H^{(1)})/n_{add}-h_{feed}$ in joules per mole of added
+feed. The initial and final equilibrium states and the feed state retain the
+same reactions, references, starts and fitted coordinates.
+
+## Named-release rerun (#680)
+
+This section reads only the retained named-release outputs. The evidence is
+**numerical verification** on the stated manufactured or shared-model inputs.
+It establishes no physical validation or global-stability certificate.
+Independent delivered review and owner promotion for manuscript use remain open.
+
+```{python}
+#| output: asis
+import csv as _csv
+import json as _json
+from pathlib import Path as _Path
+_rr = _Path("results/main-8298c602")
+_rp = _json.loads((_rr / "provenance.json").read_text())
+_rs = _json.loads((_rr / "summary.json").read_text())
+def _rt(headers, data):
+    print()
+    print("| " + " | ".join(headers) + " |")
+    print("| " + " | ".join("---" for _ in headers) + " |")
+    for row in data:
+        print("| " + " | ".join(str(x) for x in row) + " |")
+print("Release: `" + _rp["release"] + "`. Wheel SHA-256: `" + _rp["wheel_sha256"] + "`.")
+_rt(["Quantity", "Named release", "Previous retained run", "Criterion"], [
+    ["Column comparisons, both declared steps", _rs['comparisons'], _rs['previous_comparisons'], "unchanged native allowance for each row"],
+    ["Fine-step comparisons", _rs['fine_comparisons'], _rs['fine_comparisons'], "same steps and coordinates"],
+    ["Largest error / allowance, both steps", _rs['max_error_over_allowance'], _rs['previous_max_error_over_allowance'], "ratio at most unity"],
+    ["Largest fine-step error / allowance", _rs['max_fine_error_over_allowance'], "see prior comparisons.csv", "ratio at most unity"],
+    ["Failed column comparisons", _rs['failed'], "none in prior table", "native verdict"],
+])
+print("\n" + _rs['criterion'])
+```
+
+The complete requests, returned operands, causes and wheel identity stay in
+[the retained run](results/main-8298c602/). No start, physical input, method,
+option or criterion was adjusted to obtain agreement.
+
+The native prediction and independently re-solved reference are retained for
+every column at both declared steps. The allowance formula is unchanged; its
+evaluated magnitude can move with the re-solved derivative. These manufactured
+comparisons test the enthalpy derivative chain and do not compare measured heat
+or adopt application parameters.
+
+## Earlier retained studies
+
+The original result tables remain in this analysis. The
+[earlier notebook](https://github.com/tannerpolley/ePC-SAFT/blob/8298c6029ebb8b467929badc4a223c580ec591ab/analyses/2026-addition-enthalpy-fitting/notebook.qmd)
+records their conditions, detailed interpretation and review boundaries. Those
+older wheels do not supply numbers for the current-method placeholders.

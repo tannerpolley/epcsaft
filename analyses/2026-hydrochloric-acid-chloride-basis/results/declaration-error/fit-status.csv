@@ -1,0 +1,7 @@
+stage,start,status,usable,cost,iterations,residual_evaluations,jacobian_evaluations,covariance,rank,message
+5,1,invalid_setup,0,0,0,0,0,not_evaluated,0,"invalid k_ij symmetry"
+5,2,invalid_setup,0,0,0,0,0,not_evaluated,0,"invalid k_ij symmetry"
+5,3,invalid_setup,0,0,0,0,0,not_evaluated,0,"invalid k_ij symmetry"
+5,4,invalid_setup,0,0,0,0,0,not_evaluated,0,"invalid k_ij symmetry"
+5,5,invalid_setup,0,0,0,0,0,not_evaluated,0,"invalid k_ij symmetry"
+5,6,invalid_setup,0,0,0,0,0,not_evaluated,0,"invalid k_ij symmetry"

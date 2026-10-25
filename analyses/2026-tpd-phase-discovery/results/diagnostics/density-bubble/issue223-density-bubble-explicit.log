@@ -1,0 +1,127 @@
+
+******************************************************************************
+This program contains Ipopt, a library for large-scale nonlinear optimization.
+ Ipopt is released as open source code under the Eclipse Public License (EPL).
+         For more information visit http://projects.coin-or.org/Ipopt
+******************************************************************************
+
+PUBLIC_BUBBLE_EXPLICIT_COMPOSITIONS success=1 solver=SUCCESS message=converged: residual 1.8508318771217165e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 4 iterations, contraction absent, floor 7.6309509396242119e-11, amplification 0 convergence=converged: residual 1.8508318771217165e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 4 iterations, contraction absent, floor 7.6309509396242119e-11, amplification 0 iterations=4 evaluations=9 hessians=5 objective=-2.7040093912876655 rank=11 unknowns=11
+returned_coordinates -2.1175823681357508e-22 -11.483617924398473 -0.020202707317519438 -4.6051701859880909 -4.6051701859880909 1 -0.78723668104141231 3094.0685042628947 0.2189311425742371 -161.38702187909342 -130.46916922194802
+rows -5.2735593669694936e-16 -5.3225500755336231e-16 -1.8457457784393227e-14 0 0 -1.8508318771217165e-14 0 3.4694469519536142e-18 3.4694469519536142e-18 0 0
+classified_rows -5.2735593669694936e-16 -5.3225500755336231e-16 -1.8457457784393227e-14 0 0 -1.8508318771217165e-14 0 3.4694469519536142e-18 3.4694469519536142e-18 0 0
+returned_pressure 3094.0685042628947
+returned_density 1.2515313248759041 55795.196278370924
+ROW 0 chemical_potential_stationarity
+ROW 1 pressure_equality
+ROW 2 chemical_potential_stationarity
+ROW 3 chemical_potential_stationarity
+ROW 4 chemical_potential_stationarity
+ROW 5 pressure_equality
+ROW 6 material_balance
+ROW 7 material_balance
+ROW 8 material_balance
+ROW 9 phase_normalization
+ROW 10 phase_normalization
+ACCEPTED_BUBBLE T=298.14999999999998 P=3094.0685042628947 floor=7.6309509396242119e-11 objective=-2.7040093912876655
+coordinates -2.1175823681357508e-22 -11.483617924398473 -0.020202707317519438 -4.6051701859880909 -4.6051701859880909 1 -0.78723668104141231 3094.0685042628947 0.2189311425742371 -161.38702187909342 -130.46916922194802
+point_rows -5.2735593669694936e-16 -5.3225500755336231e-16 -1.8457457784393227e-14 0 0 -1.8508318771217165e-14 0 3.4694469519536142e-18 3.4694469519536142e-18 0 0
+amount 0 1
+volume 0.79902115122780104 1.7922689885538605e-05
+composition 1 0 0
+PHASE 0 rho=1.2515313248759041 pressure=3094.0685042628929 epsilon=1.0017516898572731 water_mu_over_rt=0.21893114257423657
+composition 0.97999999999999998 0.010000000000000004 0.010000000000000004
+PHASE 1 rho=55795.196278370939 pressure=3094.0685017029368 epsilon=77.531174181181626 water_mu_over_rt=0.21893114257421864
+STABILITY completed=1 message=no witness in the recorded trial set; unresolved trials 1 trials=2
+WORK association_diagnostic_evaluations 4
+WORK driver_invocations 2
+WORK energy_evaluations 194
+WORK evaluations 31
+WORK hessian_calls 21
+WORK iterations 19
+WORK reconstruction_evaluations 4
+WORK root_calls 2
+WORK root_evaluations 149
+WORK trial_driver_invocations 2
+WORK trial_invocations 2
+PRESENT 0 association_energy_estimate_over_rt 5.038585389871895e-18
+PRESENT 0 association_residual 1.3552527156068805e-20
+PRESENT 0 association_site_pivot_ratio 1.0000063801726593
+PRESENT 0 association_site_rank 2
+PRESENT 0 charge_residual 0
+PRESENT 0 chemical_plus_electric_contraction -5.2735593669694936e-16
+PRESENT 0 correction_l1_mol 6.938893903907233e-18
+PRESENT 0 euler_defect_over_rt 8.6736173798840355e-19
+PRESENT 0 feasibility_estimate_over_rt 1.0125795726243001e-15
+PRESENT 0 g_over_rt 0.21893114257423707
+PRESENT 0 gradient_floor_max_si_columns 2.8007371600012297e-18
+PRESENT 0 normalization_residual 0
+PRESENT 0 present_identity_defect_over_rt -3.2654646472041862e-17
+PRESENT 0 pressure_row -5.3225500755336231e-16
+PRESENT 0 summation_estimate_over_rt 3.9427094205793006e-15
+PRESENT 0 tpd_over_rt -2.7755575615628914e-17
+PRESENT 0 volume_m3_per_mol 0.79902115122780104
+PRESENT 1 association_energy_estimate_over_rt 7.6310877067914347e-11
+PRESENT 1 association_residual 1.7347234759768071e-18
+PRESENT 1 association_site_pivot_ratio 12.020735783484433
+PRESENT 1 association_site_rank 2
+PRESENT 1 charge_residual 0
+PRESENT 1 chemical_plus_electric_contraction -1.6347478926093118e-14
+PRESENT 1 correction_l1_mol 6.938893903907233e-18
+PRESENT 1 euler_defect_over_rt 0
+PRESENT 1 feasibility_estimate_over_rt 1.0125795726243001e-15
+PRESENT 1 g_over_rt -2.7040093912876637
+PRESENT 1 gradient_floor_max_si_columns 7.6309509396242119e-11
+PRESENT 1 normalization_residual -1.7347234759768071e-17
+PRESENT 1 present_identity_defect_over_rt -4.980434540038959e-15
+PRESENT 1 pressure_row -1.9551556626731827e-14
+PRESENT 1 summation_estimate_over_rt 4.96028465640523e-14
+PRESENT 1 tpd_over_rt -1.7763568394002505e-15
+PRESENT 1 volume_m3_per_mol 1.7922689885538605e-05
+TRIAL 0 seed=positive-neutral-base evidence=no_resolved_descent optimizer_success=1 residual=3.3969064829720576e-15 message=converged: residual 3.3969064829720576e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 11 iterations, contraction absent, floor 7.6309509396242067e-11, amplification 0
+trial_composition 0.98000000000000043 0.0099999999999998094 0.0099999999999998094
+QUANTITY 0 association_energy_estimate_over_rt 7.6310877067914386e-11
+QUANTITY 0 association_residual 1.7347234759768071e-18
+QUANTITY 0 association_site_pivot_ratio 12.020735783484453
+QUANTITY 0 association_site_rank 2
+QUANTITY 0 charge_residual 0
+QUANTITY 0 euler_defect_over_rt 1.7763568394002505e-15
+QUANTITY 0 g_over_rt -2.7040093912876015
+QUANTITY 0 gradient_floor_max_si_columns 7.6309509396242158e-11
+QUANTITY 0 normalization_residual 4.5102810375396984e-17
+QUANTITY 0 pressure_row 3.008461998772762e-15
+QUANTITY 0 raw_objective_over_rt 3.1086244689504379e-15
+QUANTITY 0 reconstruction_l1 0
+QUANTITY 0 summation_estimate_over_rt 4.960284656405218e-14
+QUANTITY 0 tpd_over_rt 4.8849813083506888e-15
+QUANTITY 0 trial_dual_over_rt 2.7445861390671749e-15
+QUANTITY 0 trial_identity_defect_over_rt 2.1403951692835138e-15
+QUANTITY 0 volume_m3_per_mol 1.7922689885538608e-05
+TRIAL 1 seed=near-pure-0 evidence=indeterminate optimizer_success=1 residual=1.9652241432580978e-15 message=converged: residual 1.9652241432580978e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 8 iterations, contraction absent, floor 7.6309509396242171e-11, amplification 0
+trial_composition 0.98000000000000009 0.0099999999999999603 0.0099999999999999603
+QUANTITY 1 arithmetic_error_estimate_over_rt 7.776611117754609e-15
+QUANTITY 1 association_energy_estimate_over_rt 7.6310877067914322e-11
+QUANTITY 1 association_residual 2.7105054312137611e-20
+QUANTITY 1 association_site_pivot_ratio 12.020735783484392
+QUANTITY 1 association_site_rank 2
+QUANTITY 1 charge_residual 0
+QUANTITY 1 descent_error_estimate_over_rt 1.5268192252992247e-10
+QUANTITY 1 donor_capacity_mol 0.99999999999999989
+QUANTITY 1 donor_chemical_contraction_over_rt -2.7040093912876668
+QUANTITY 1 donor_correction_over_rt -3.1202558622795097e-15
+QUANTITY 1 donor_pressure_row -1.9551556626731827e-14
+QUANTITY 1 donor_slope_over_rt -4.008434281979635e-15
+QUANTITY 1 euler_defect_over_rt 1.7763568394002505e-15
+QUANTITY 1 feasibility_error_estimate_over_rt 1.0125795726243001e-15
+QUANTITY 1 g_over_rt -2.7040093912876513
+QUANTITY 1 gradient_floor_max_si_columns 7.6309509396242093e-11
+QUANTITY 1 normalization_residual 1.3877787807814457e-17
+QUANTITY 1 pressure_row -1.8165130829825555e-15
+QUANTITY 1 raw_objective_over_rt -8.8817841970012523e-16
+QUANTITY 1 reconstruction_l1 0
+QUANTITY 1 standard_error_estimate_over_rt 0
+QUANTITY 1 summation_estimate_over_rt 4.9602846564052274e-14
+QUANTITY 1 tpd_over_rt -8.8817841970012523e-16
+QUANTITY 1 trial_dual_over_rt 1.8255317176047812e-15
+QUANTITY 1 trial_identity_defect_over_rt -2.7137101373049065e-15
+QUANTITY 1 volume_m3_per_mol 1.7922689885538608e-05
+CHECK physical_trials=2 positive=1 max_charge=0 max_normalization=4.5102810375396984e-17 max_successful_dual_defect=2.7137101373049065e-15

@@ -1,0 +1,64 @@
+{
+ "packet_k_ij": -0.07352749874985018,
+ "at_packet_k_ij": {
+  "v4": {
+   "mean_scaled_square": 4.426494801485563,
+   "max_abs_temperature_change_vs_v4_k": 0.0,
+   "max_abs_vapor_water_change_vs_v4": 0.0
+  },
+  "v5": {
+   "mean_scaled_square": 4.418461120121225,
+   "max_abs_temperature_change_vs_v4_k": 0.5508432443813263,
+   "max_abs_vapor_water_change_vs_v4": 0.004866999390491178
+  }
+ },
+ "v5_refit": {
+  "k_ij": -0.07341914969773079,
+  "mean_scaled_square": 4.418248583332288,
+  "sse": 220.91242916661443,
+  "status": "converged",
+  "message": "Function tolerance reached. |cost_change|/cost: 1.788318e-14 <= 1.000000e-12",
+  "usable": true,
+  "iterations": 4,
+  "rank": 1,
+  "singular_values": [
+   944.4470395176297
+  ],
+  "active_bounds": [],
+  "covariance_status": "available",
+  "variance_factor": 4.508416921767641,
+  "optimizer_covariance": [
+   1.1211011054734629e-06
+  ],
+  "projected_gradient_norm": 0.00032521187577277955,
+  "failures": [],
+  "retained_95_percent_interval": [
+   -0.07792,
+   -0.06914
+  ]
+ },
+ "identity": {
+  "wheel_sha256": "298a360e532f6f4c5e7ef70c5be45e8b9852310d1c388d6225c504714c3dc410",
+  "packets": {
+   "v4": "7f87d3a81be71aae05be80c94eaf7af36554f96d07c8beb17d64da13e83f4c25",
+   "v5": "1ba95275f9e23264250e891aee3d6284d801f73205dad255101e6561b29aee5f"
+  },
+  "cai": "c7857f045757881662f1836913e25216f808bc9fdcf5c74f3b4d03c76c134a8b"
+ },
+ "claim_limits": "25 admitted Cai 1996 rows, 66.66 and 101.33 kPa, 2B MEA; one-coordinate least squares with the retained scales; no uncertainty interval, topology reselection or reactive evaluation.",
+ "comparison": {
+  "base_commit": "f4075c0f",
+  "old_wheel_sha256": "ad12b19fcd8b3b4a87c355490386ecc911485ac1efc4b7a3f547e2393f803e46",
+  "old_refit": {
+   "k_ij": -0.07341914985140079,
+   "mean_scaled_square": 4.418248583332413,
+   "retained_95_percent_interval": [
+    -0.07792,
+    -0.06914
+   ]
+  },
+  "table": "batch1-before-after.csv",
+  "failed_comparisons": 0,
+  "old_optimum_rows": "native replay at the historical coordinate; original optimum rows were not retained"
+ }
+}

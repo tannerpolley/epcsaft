@@ -1,0 +1,766 @@
+{
+  "masking": {
+    "T": 350.0,
+    "P": 200000.0,
+    "feed": {
+      "s0": 1.0,
+      "s1": 1e-12,
+      "s2": 0.0
+    },
+    "row_tolerance": 1e-10,
+    "phases": [
+      {
+        "name": "V",
+        "kind": "vapor",
+        "support": null,
+        "amount": {
+          "kind": "Free",
+          "value": null
+        },
+        "composition_guess": [],
+        "packing_guess": null
+      }
+    ]
+  },
+  "case-6/figure-2-point-7": {
+    "T": 293.15,
+    "P": 100000.0,
+    "feed": {
+      "water": 0.646925133827633,
+      "ethanol": 0.07045345803743744,
+      "isobutanol": 0.22564721508764596,
+      "sodium-cation": 0.028487096523641797,
+      "chloride-anion": 0.028487096523641797
+    },
+    "row_tolerance": 1e-10,
+    "phases": [
+      {
+        "name": "phase-0",
+        "kind": "liquid",
+        "support": [
+          "water",
+          "ethanol",
+          "isobutanol",
+          "sodium-cation",
+          "chloride-anion"
+        ],
+        "amount": {
+          "kind": "Free",
+          "value": null
+        },
+        "composition_guess": [
+          0.8,
+          0.05,
+          0.05,
+          0.05,
+          0.05
+        ],
+        "packing_guess": null
+      },
+      {
+        "name": "phase-1",
+        "kind": "liquid",
+        "support": [
+          "water",
+          "ethanol",
+          "isobutanol",
+          "sodium-cation",
+          "chloride-anion"
+        ],
+        "amount": {
+          "kind": "Free",
+          "value": null
+        },
+        "composition_guess": [
+          0.2,
+          0.1,
+          0.6998,
+          0.0001,
+          0.0001
+        ],
+        "packing_guess": null
+      }
+    ]
+  },
+  "case-7/flash-5918.5286-Pa": {
+    "T": 318.15,
+    "P": 5918.5286,
+    "feed": {
+      "carbon-dioxide": 2.4865902751371616,
+      "monoethanolamine": 9.7292821,
+      "water": 76.9751925
+    },
+    "row_tolerance": 1e-10,
+    "phases": [
+      {
+        "name": "L",
+        "kind": "liquid",
+        "support": null,
+        "amount": {
+          "kind": "Free",
+          "value": null
+        },
+        "composition_guess": [],
+        "packing_guess": null
+      },
+      {
+        "name": "V",
+        "kind": "vapor",
+        "support": [
+          "carbon-dioxide",
+          "monoethanolamine",
+          "water"
+        ],
+        "amount": {
+          "kind": "Free",
+          "value": null
+        },
+        "composition_guess": [],
+        "packing_guess": null
+      }
+    ]
+  },
+  "mea-nominally-unloaded": {
+    "T": 353.15,
+    "P": 101325.0,
+    "feed": {
+      "carbon-dioxide": 9e-06,
+      "monoethanolamine": 0.9999998,
+      "water": 7.929467317564624,
+      "protonated-monoethanolamine": 1.0000000000000001e-07,
+      "carbamate-anion": 1.0000000000000001e-07,
+      "bicarbonate-anion": 8.000000000000001e-07,
+      "carbonate-anion": 1.0000000000000001e-07,
+      "hydronium-cation": 1.1e-06,
+      "hydroxide-anion": 1.0000000000000001e-07
+    },
+    "row_tolerance": null,
+    "phases": [
+      {
+        "name": "L",
+        "kind": "liquid",
+        "support": [
+          "carbon-dioxide",
+          "monoethanolamine",
+          "water",
+          "protonated-monoethanolamine",
+          "carbamate-anion",
+          "bicarbonate-anion",
+          "carbonate-anion",
+          "hydronium-cation",
+          "hydroxide-anion"
+        ],
+        "amount": {
+          "kind": "Free",
+          "value": null
+        },
+        "composition_guess": [
+          0.00012044382032884565,
+          0.03820530851007986,
+          0.88492326364512,
+          0.03838499164509782,
+          0.03561505266280674,
+          0.0027319402457567526,
+          1.899928767640581e-05,
+          1.0976016899728266e-11,
+          1.7215753829197593e-10
+        ],
+        "packing_guess": null
+      }
+    ]
+  },
+  "free-T": {
+    "T": {
+      "kind": "Free",
+      "value": 180.0
+    },
+    "P": 1596859.1113027716,
+    "feed": {
+      "s0": 0.5,
+      "s1": 0.5
+    },
+    "row_tolerance": null,
+    "phases": [
+      {
+        "name": "L",
+        "kind": "liquid",
+        "support": null,
+        "amount": {
+          "kind": "Free",
+          "value": null
+        },
+        "composition_guess": [],
+        "packing_guess": null
+      },
+      {
+        "name": "V",
+        "kind": "vapor",
+        "support": null,
+        "amount": {
+          "kind": "Pinned",
+          "value": 0.0
+        },
+        "composition_guess": [],
+        "packing_guess": null
+      }
+    ]
+  },
+  "free-P": {
+    "T": 180.0,
+    "P": {
+      "kind": "Free",
+      "value": 100000.0
+    },
+    "feed": {
+      "methane": 0.5,
+      "ethane": 0.5
+    },
+    "row_tolerance": null,
+    "phases": [
+      {
+        "name": "L",
+        "kind": "liquid",
+        "support": null,
+        "amount": {
+          "kind": "Free",
+          "value": null
+        },
+        "composition_guess": [],
+        "packing_guess": null
+      },
+      {
+        "name": "V",
+        "kind": "vapor",
+        "support": null,
+        "amount": {
+          "kind": "Pinned",
+          "value": 0.0
+        },
+        "composition_guess": [],
+        "packing_guess": null
+      }
+    ]
+  },
+  "small-positive-phase": {
+    "T": 180.0,
+    "P": {
+      "kind": "Free",
+      "value": 1596859.111302776
+    },
+    "feed": {
+      "methane": 0.5000000091272049,
+      "ethane": 0.4999999908727951
+    },
+    "row_tolerance": null,
+    "phases": [
+      {
+        "name": "L",
+        "kind": "liquid",
+        "support": null,
+        "amount": {
+          "kind": "Pinned",
+          "value": 0.99999998
+        },
+        "composition_guess": [
+          0.5,
+          0.5
+        ],
+        "packing_guess": 0.3677492924818145
+      },
+      {
+        "name": "V",
+        "kind": "vapor",
+        "support": null,
+        "amount": {
+          "kind": "Free",
+          "value": null
+        },
+        "composition_guess": [
+          0.9563602429614722,
+          0.0436397570385279
+        ],
+        "packing_guess": 0.020390681605308117
+      }
+    ]
+  },
+  "khudaida/point-1": {
+    "T": 293.15,
+    "P": 100000.0,
+    "feed": {
+      "water": 0.7295582904360919,
+      "ethanol": 0.013336215598851255,
+      "isobutanol": 0.20495308450174893,
+      "sodium-cation": 0.02607620473165392,
+      "chloride-anion": 0.02607620473165392
+    },
+    "row_tolerance": 1e-10,
+    "phases": [
+      {
+        "name": "phase-0",
+        "kind": "liquid",
+        "support": [
+          "water",
+          "ethanol",
+          "isobutanol",
+          "sodium-cation",
+          "chloride-anion"
+        ],
+        "amount": {
+          "kind": "Free",
+          "value": null
+        },
+        "composition_guess": [
+          0.8,
+          0.05,
+          0.05,
+          0.05,
+          0.05
+        ],
+        "packing_guess": null
+      },
+      {
+        "name": "phase-1",
+        "kind": "liquid",
+        "support": [
+          "water",
+          "ethanol",
+          "isobutanol",
+          "sodium-cation",
+          "chloride-anion"
+        ],
+        "amount": {
+          "kind": "Free",
+          "value": null
+        },
+        "composition_guess": [
+          0.2,
+          0.1,
+          0.6998,
+          0.0001,
+          0.0001
+        ],
+        "packing_guess": null
+      }
+    ]
+  },
+  "khudaida/point-2": {
+    "T": 293.15,
+    "P": 100000.0,
+    "feed": {
+      "water": 0.7202681034498146,
+      "ethanol": 0.019855614599329392,
+      "isobutanol": 0.2071861387890902,
+      "sodium-cation": 0.02634507158088285,
+      "chloride-anion": 0.02634507158088285
+    },
+    "row_tolerance": 1e-10,
+    "phases": [
+      {
+        "name": "phase-0",
+        "kind": "liquid",
+        "support": [
+          "water",
+          "ethanol",
+          "isobutanol",
+          "sodium-cation",
+          "chloride-anion"
+        ],
+        "amount": {
+          "kind": "Free",
+          "value": null
+        },
+        "composition_guess": [
+          0.8,
+          0.05,
+          0.05,
+          0.05,
+          0.05
+        ],
+        "packing_guess": null
+      },
+      {
+        "name": "phase-1",
+        "kind": "liquid",
+        "support": [
+          "water",
+          "ethanol",
+          "isobutanol",
+          "sodium-cation",
+          "chloride-anion"
+        ],
+        "amount": {
+          "kind": "Free",
+          "value": null
+        },
+        "composition_guess": [
+          0.2,
+          0.1,
+          0.6998,
+          0.0001,
+          0.0001
+        ],
+        "packing_guess": null
+      }
+    ]
+  },
+  "khudaida/point-3": {
+    "T": 293.15,
+    "P": 100000.0,
+    "feed": {
+      "water": 0.7092170674322668,
+      "ethanol": 0.025064821217743404,
+      "isobutanol": 0.2122748038629583,
+      "sodium-cation": 0.0267216537435157,
+      "chloride-anion": 0.0267216537435157
+    },
+    "row_tolerance": 1e-10,
+    "phases": [
+      {
+        "name": "phase-0",
+        "kind": "liquid",
+        "support": [
+          "water",
+          "ethanol",
+          "isobutanol",
+          "sodium-cation",
+          "chloride-anion"
+        ],
+        "amount": {
+          "kind": "Free",
+          "value": null
+        },
+        "composition_guess": [
+          0.8,
+          0.05,
+          0.05,
+          0.05,
+          0.05
+        ],
+        "packing_guess": null
+      },
+      {
+        "name": "phase-1",
+        "kind": "liquid",
+        "support": [
+          "water",
+          "ethanol",
+          "isobutanol",
+          "sodium-cation",
+          "chloride-anion"
+        ],
+        "amount": {
+          "kind": "Free",
+          "value": null
+        },
+        "composition_guess": [
+          0.2,
+          0.1,
+          0.6998,
+          0.0001,
+          0.0001
+        ],
+        "packing_guess": null
+      }
+    ]
+  },
+  "khudaida/point-4": {
+    "T": 293.15,
+    "P": 100000.0,
+    "feed": {
+      "water": 0.7005034356224062,
+      "ethanol": 0.03286847384962303,
+      "isobutanol": 0.21275572005079824,
+      "sodium-cation": 0.026936185238586256,
+      "chloride-anion": 0.026936185238586256
+    },
+    "row_tolerance": 1e-10,
+    "phases": [
+      {
+        "name": "phase-0",
+        "kind": "liquid",
+        "support": [
+          "water",
+          "ethanol",
+          "isobutanol",
+          "sodium-cation",
+          "chloride-anion"
+        ],
+        "amount": {
+          "kind": "Free",
+          "value": null
+        },
+        "composition_guess": [
+          0.8,
+          0.05,
+          0.05,
+          0.05,
+          0.05
+        ],
+        "packing_guess": null
+      },
+      {
+        "name": "phase-1",
+        "kind": "liquid",
+        "support": [
+          "water",
+          "ethanol",
+          "isobutanol",
+          "sodium-cation",
+          "chloride-anion"
+        ],
+        "amount": {
+          "kind": "Free",
+          "value": null
+        },
+        "composition_guess": [
+          0.2,
+          0.1,
+          0.6998,
+          0.0001,
+          0.0001
+        ],
+        "packing_guess": null
+      }
+    ]
+  },
+  "khudaida/point-5": {
+    "T": 293.15,
+    "P": 100000.0,
+    "feed": {
+      "water": 0.6917980304510681,
+      "ethanol": 0.04067453150932366,
+      "isobutanol": 0.2132268453710115,
+      "sodium-cation": 0.027150296334298364,
+      "chloride-anion": 0.027150296334298364
+    },
+    "row_tolerance": 1e-10,
+    "phases": [
+      {
+        "name": "phase-0",
+        "kind": "liquid",
+        "support": [
+          "water",
+          "ethanol",
+          "isobutanol",
+          "sodium-cation",
+          "chloride-anion"
+        ],
+        "amount": {
+          "kind": "Free",
+          "value": null
+        },
+        "composition_guess": [
+          0.8,
+          0.05,
+          0.05,
+          0.05,
+          0.05
+        ],
+        "packing_guess": null
+      },
+      {
+        "name": "phase-1",
+        "kind": "liquid",
+        "support": [
+          "water",
+          "ethanol",
+          "isobutanol",
+          "sodium-cation",
+          "chloride-anion"
+        ],
+        "amount": {
+          "kind": "Free",
+          "value": null
+        },
+        "composition_guess": [
+          0.2,
+          0.1,
+          0.6998,
+          0.0001,
+          0.0001
+        ],
+        "packing_guess": null
+      }
+    ]
+  },
+  "khudaida/point-6": {
+    "T": 293.15,
+    "P": 100000.0,
+    "feed": {
+      "water": 0.6702505456992145,
+      "ethanol": 0.05493655663424448,
+      "isobutanol": 0.2192267988913043,
+      "sodium-cation": 0.027793049387618313,
+      "chloride-anion": 0.027793049387618313
+    },
+    "row_tolerance": 1e-10,
+    "phases": [
+      {
+        "name": "phase-0",
+        "kind": "liquid",
+        "support": [
+          "water",
+          "ethanol",
+          "isobutanol",
+          "sodium-cation",
+          "chloride-anion"
+        ],
+        "amount": {
+          "kind": "Free",
+          "value": null
+        },
+        "composition_guess": [
+          0.8,
+          0.05,
+          0.05,
+          0.05,
+          0.05
+        ],
+        "packing_guess": null
+      },
+      {
+        "name": "phase-1",
+        "kind": "liquid",
+        "support": [
+          "water",
+          "ethanol",
+          "isobutanol",
+          "sodium-cation",
+          "chloride-anion"
+        ],
+        "amount": {
+          "kind": "Free",
+          "value": null
+        },
+        "composition_guess": [
+          0.2,
+          0.1,
+          0.6998,
+          0.0001,
+          0.0001
+        ],
+        "packing_guess": null
+      }
+    ]
+  },
+  "khudaida/point-7": {
+    "T": 293.15,
+    "P": 100000.0,
+    "feed": {
+      "water": 0.646925133827633,
+      "ethanol": 0.07045345803743744,
+      "isobutanol": 0.22564721508764596,
+      "sodium-cation": 0.028487096523641797,
+      "chloride-anion": 0.028487096523641797
+    },
+    "row_tolerance": 1e-10,
+    "phases": [
+      {
+        "name": "phase-0",
+        "kind": "liquid",
+        "support": [
+          "water",
+          "ethanol",
+          "isobutanol",
+          "sodium-cation",
+          "chloride-anion"
+        ],
+        "amount": {
+          "kind": "Free",
+          "value": null
+        },
+        "composition_guess": [
+          0.8,
+          0.05,
+          0.05,
+          0.05,
+          0.05
+        ],
+        "packing_guess": null
+      },
+      {
+        "name": "phase-1",
+        "kind": "liquid",
+        "support": [
+          "water",
+          "ethanol",
+          "isobutanol",
+          "sodium-cation",
+          "chloride-anion"
+        ],
+        "amount": {
+          "kind": "Free",
+          "value": null
+        },
+        "composition_guess": [
+          0.2,
+          0.1,
+          0.6998,
+          0.0001,
+          0.0001
+        ],
+        "packing_guess": null
+      }
+    ]
+  },
+  "khudaida/point-8": {
+    "T": 293.15,
+    "P": 100000.0,
+    "feed": {
+      "water": 0.6248595151317476,
+      "ethanol": 0.08593454620996213,
+      "isobutanol": 0.23095439027431355,
+      "sodium-cation": 0.029125774191988408,
+      "chloride-anion": 0.029125774191988408
+    },
+    "row_tolerance": 1e-10,
+    "phases": [
+      {
+        "name": "phase-0",
+        "kind": "liquid",
+        "support": [
+          "water",
+          "ethanol",
+          "isobutanol",
+          "sodium-cation",
+          "chloride-anion"
+        ],
+        "amount": {
+          "kind": "Free",
+          "value": null
+        },
+        "composition_guess": [
+          0.8,
+          0.05,
+          0.05,
+          0.05,
+          0.05
+        ],
+        "packing_guess": null
+      },
+      {
+        "name": "phase-1",
+        "kind": "liquid",
+        "support": [
+          "water",
+          "ethanol",
+          "isobutanol",
+          "sodium-cation",
+          "chloride-anion"
+        ],
+        "amount": {
+          "kind": "Free",
+          "value": null
+        },
+        "composition_guess": [
+          0.2,
+          0.1,
+          0.6998,
+          0.0001,
+          0.0001
+        ],
+        "packing_guess": null
+      }
+    ]
+  }
+}

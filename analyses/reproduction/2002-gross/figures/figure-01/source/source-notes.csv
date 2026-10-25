@@ -1,0 +1,17 @@
+section,key,value,unit,notes
+provenance,paper,Gross and Sadowski 2002,,
+provenance,figure,figure-01,,
+provenance,source_image,analyses/reproduction/2002-gross/figures/figure-01/source/figure-01.png,,
+provenance,parameter_table,analyses/reproduction/2002-gross/inputs/parameters/pure/any-solvent.csv,,
+source_method,published_figure_curve_trace,solid PC-SAFT curve points retained from the published figure,,
+source_method,published_figure_marker_trace,experimental marker centers retained from the published figure,,
+source_method,source_table,values copied from a published source table,,
+reference_data,methanol_saturation_density,not-retained-reference-data,,pure_component/saturation_density taxonomy home; source-only migration intentionally excludes the broad reference-data archive
+reference_data,1-pentanol_saturation_density,not-retained-reference-data,,pure_component/saturation_density taxonomy home; source-only migration intentionally excludes the broad reference-data archive
+reference_data,1-nonanol_saturation_density,not-retained-reference-data,,pure_component/saturation_density taxonomy home; source-only migration intentionally excludes the broad reference-data archive
+reference_data,methanol_association_aad,analyses/reproduction/2002-gross/figures/figure-01/source/pure-association-aad.csv,,compact source-backed association data retained for this campaign
+reference_data,1-pentanol_association_aad,analyses/reproduction/2002-gross/figures/figure-01/source/pure-association-aad.csv,,compact source-backed association data retained for this campaign
+reference_data,1-nonanol_association_aad,analyses/reproduction/2002-gross/figures/figure-01/source/pure-association-aad.csv,,compact source-backed association data retained for this campaign
+near_critical_connector,methanol,505.0 K; 275.0 kg/m^3,K;kg/m^3,visible Gross 2002 Figure 1 near-critical marker center between the retained vapor and liquid branch endpoints
+near_critical_connector,1-pentanol,585.0 K; 275.0 kg/m^3,K;kg/m^3,visible Gross 2002 Figure 1 near-critical marker at the top of the 1-pentanol envelope
+near_critical_connector,1-nonanol,670.0 K; 255.0 kg/m^3,K;kg/m^3,visible Gross 2002 Figure 1 near-critical marker at the top of the 1-nonanol envelope

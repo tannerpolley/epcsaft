@@ -1,0 +1,268 @@
+{
+  "available": true,
+  "charged_available": false,
+  "neutral_failure": null,
+  "feos_failure": null,
+  "charged_failure": "RuntimeError: case-6/figure-2-point-7: expected ParameterError, got NoneType",
+  "charged_state": {
+    "ionic/parameters": {
+      "analyses/2026-khudaida-idaes-settler/inputs/data/khudaida-2026-figure-2-electrolyte-lle/7/parameters/parameters.json": "8babed899e7347e58c403c7aff24a7fdd6d60411af3b4d81eb6aa90c2431dfa4",
+      "data/packets/mea-co2-h2o-nine-species-estimation/3/parameters/parameters.json": "2ea3b41485a98d2cf49add620b87bb05fc5a275cdd132c1cdbb0cfc5f07f2ca4"
+    },
+    "case-6/figure-2-point-7": {
+      "components": [
+        "water",
+        "ethanol",
+        "isobutanol",
+        "sodium-cation",
+        "chloride-anion"
+      ],
+      "T": 293.15,
+      "P": 100000.0,
+      "feed": {
+        "water": 0.646925133827633,
+        "ethanol": 0.07045345803743744,
+        "isobutanol": 0.22564721508764596,
+        "sodium-cation": 0.028487096523641797,
+        "chloride-anion": 0.028487096523641797
+      },
+      "row_tolerance": 1e-10,
+      "phases": [
+        {
+          "name": "phase-0",
+          "kind": "liquid",
+          "support": [
+            "water",
+            "ethanol",
+            "isobutanol",
+            "sodium-cation",
+            "chloride-anion"
+          ],
+          "amount": {
+            "kind": "Free",
+            "value": null
+          },
+          "composition_guess": [
+            0.8,
+            0.05,
+            0.05,
+            0.05,
+            0.05
+          ],
+          "packing_guess": null
+        },
+        {
+          "name": "phase-1",
+          "kind": "liquid",
+          "support": [
+            "water",
+            "ethanol",
+            "isobutanol",
+            "sodium-cation",
+            "chloride-anion"
+          ],
+          "amount": {
+            "kind": "Free",
+            "value": null
+          },
+          "composition_guess": [
+            0.2,
+            0.1,
+            0.6998,
+            0.0001,
+            0.0001
+          ],
+          "packing_guess": null
+        }
+      ]
+    }
+  },
+  "comparison_rows": [
+    {
+      "case": "case-1/two-liquid/comparison",
+      "quantity": "composition_max_abs",
+      "new_value": 1.9317880628477724e-14,
+      "previous_value": 4.440892098500626e-16,
+      "criterion": 1e-09,
+      "within_criterion": true
+    },
+    {
+      "case": "case-1/two-liquid/comparison",
+      "quantity": "g_relative",
+      "new_value": 7.66053886991358e-15,
+      "previous_value": 1.887379141862766e-15,
+      "criterion": 1e-10,
+      "within_criterion": true
+    },
+    {
+      "case": "case-1/two-liquid/comparison",
+      "quantity": "amount_error",
+      "new_value": 2.5091040356528538e-14,
+      "previous_value": 3.3306690738754696e-16,
+      "criterion": null,
+      "within_criterion": null
+    },
+    {
+      "case": "case-3/VLLE/comparison",
+      "quantity": "composition_max_abs",
+      "new_value": 1.687538997430238e-14,
+      "previous_value": 4.884981308350689e-15,
+      "criterion": 1e-09,
+      "within_criterion": true
+    },
+    {
+      "case": "case-3/VLLE/comparison",
+      "quantity": "g_relative",
+      "new_value": 1.3818816973963346e-15,
+      "previous_value": 1.5354241082181494e-15,
+      "criterion": 1e-10,
+      "within_criterion": true
+    },
+    {
+      "case": "case-3/VLLE/comparison",
+      "quantity": "amount_error",
+      "new_value": 1.4646617252367378e-13,
+      "previous_value": 9.953149415764528e-14,
+      "criterion": null,
+      "within_criterion": null
+    },
+    {
+      "case": "case-2/water-ethanol/comparison",
+      "quantity": "composition_max_abs",
+      "new_value": 0.0,
+      "previous_value": 0.0,
+      "criterion": 1e-09,
+      "within_criterion": true
+    },
+    {
+      "case": "case-2/water-ethanol/comparison",
+      "quantity": "g_relative",
+      "new_value": 0.0,
+      "previous_value": 0.0,
+      "criterion": 1e-10,
+      "within_criterion": true
+    },
+    {
+      "case": "case-2/water-ethanol/comparison",
+      "quantity": "amount_error",
+      "new_value": 0.0,
+      "previous_value": 0.0,
+      "criterion": null,
+      "within_criterion": null
+    },
+    {
+      "case": "case-2/dilute-isobutanol/comparison",
+      "quantity": "composition_max_abs",
+      "new_value": 0.0,
+      "previous_value": 0.0,
+      "criterion": 1e-09,
+      "within_criterion": true
+    },
+    {
+      "case": "case-2/dilute-isobutanol/comparison",
+      "quantity": "g_relative",
+      "new_value": 0.0,
+      "previous_value": 0.0,
+      "criterion": 1e-10,
+      "within_criterion": true
+    },
+    {
+      "case": "case-2/dilute-isobutanol/comparison",
+      "quantity": "amount_error",
+      "new_value": 0.0,
+      "previous_value": 0.0,
+      "criterion": null,
+      "within_criterion": null
+    },
+    {
+      "case": "case-4/three-liquid-1e+07-Pa/comparison",
+      "quantity": "composition_max_abs",
+      "new_value": 8.881784197001252e-16,
+      "previous_value": 2.9976021664879227e-15,
+      "criterion": 1e-09,
+      "within_criterion": true
+    },
+    {
+      "case": "case-4/three-liquid-1e+07-Pa/comparison",
+      "quantity": "g_relative",
+      "new_value": 5.49029504514276e-16,
+      "previous_value": 3.660196696761841e-16,
+      "criterion": 1e-10,
+      "within_criterion": true
+    },
+    {
+      "case": "case-4/three-liquid-1e+07-Pa/comparison",
+      "quantity": "amount_error",
+      "new_value": 3.885780586188048e-16,
+      "previous_value": 1.0547118733938987e-15,
+      "criterion": null,
+      "within_criterion": null
+    },
+    {
+      "case": "case-5/flash-comparison-0",
+      "quantity": "composition_max_abs",
+      "new_value": 3.0691100702529006e-12,
+      "previous_value": 3.0691213459554945e-12,
+      "criterion": 1e-07,
+      "within_criterion": true
+    },
+    {
+      "case": "case-5/flash-comparison-0",
+      "quantity": "density_max_relative",
+      "new_value": 8.806111395642802e-11,
+      "previous_value": 8.806166906794033e-11,
+      "criterion": 1e-06,
+      "within_criterion": true
+    },
+    {
+      "case": "case-5/flash-comparison-1",
+      "quantity": "composition_max_abs",
+      "new_value": 1.5432100042289676e-14,
+      "previous_value": 1.5432100042289676e-14,
+      "criterion": 1e-07,
+      "within_criterion": true
+    },
+    {
+      "case": "case-5/flash-comparison-1",
+      "quantity": "density_max_relative",
+      "new_value": 7.515188471529655e-11,
+      "previous_value": 7.515132960378423e-11,
+      "criterion": 1e-06,
+      "within_criterion": true
+    },
+    {
+      "case": "case-5/stationary-comparison-0",
+      "quantity": "composition_max_abs",
+      "new_value": 1.5795822982944685e-11,
+      "previous_value": 1.5805357023168654e-11,
+      "criterion": 1e-07,
+      "within_criterion": true
+    },
+    {
+      "case": "case-5/stationary-comparison-0",
+      "quantity": "density_max_relative",
+      "new_value": 7.625100550967545e-11,
+      "previous_value": 7.62390151010095e-11,
+      "criterion": 1e-06,
+      "within_criterion": true
+    },
+    {
+      "case": "case-5/stationary-comparison-1",
+      "quantity": "composition_max_abs",
+      "new_value": 1.2301425611656314e-15,
+      "previous_value": 1.2250942447999957e-15,
+      "criterion": 1e-07,
+      "within_criterion": true
+    },
+    {
+      "case": "case-5/stationary-comparison-1",
+      "quantity": "density_max_relative",
+      "new_value": 7.507972021869591e-11,
+      "previous_value": 7.50800532856033e-11,
+      "criterion": 1e-06,
+      "within_criterion": true
+    }
+  ],
+  "evidence_label": "numerical verification",
+  "charged_followup": "Observed admission: case-6/figure-2-point-7 at 293.15 K, 100000 Pa returned from stability_test, so blanket ParameterError is false. The remaining case-7 bubble, flash and liquid declarations and aqueous-salt-one-liquid were not reached. A current qualification must test each charged candidate at a stable root of its own composition on the liquid side of its own loop; vapor-side, loop-less and off-root candidates must remain unresolved with the named condensed-domain cause and no tpd_over_rt. Source-inspected examples: engine/tests/equilibrium/test_problem.py, test_supplied_charged_trials_count_only_on_their_liquid_side and test_ionic_discovery_reproduces_the_declared_split. No redesigned check was executed."
+}

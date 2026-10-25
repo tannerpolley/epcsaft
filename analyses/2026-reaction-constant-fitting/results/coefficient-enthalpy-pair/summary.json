@@ -1,0 +1,94 @@
+{
+  "base": "5d69b1d9caf1120b35f3bfc86fe49ee5f73c69d2",
+  "temperatures_K": [
+    293.15,
+    313.15,
+    353.15,
+    393.15
+  ],
+  "plain_a_k_K": [
+    2677.91,
+    2990.0
+  ],
+  "shift_centers_J_mol": [
+    0,
+    250
+  ],
+  "plain_steps_K": [
+    2,
+    1
+  ],
+  "enthalpy_steps_J_mol": [
+    25,
+    12.5
+  ],
+  "comparisons": 576,
+  "failures": 0,
+  "families": {
+    "pressure": {
+      "resolved_relative_max": 4.857913998872009e-10,
+      "near_zero_absolute_max": 4.596237669976522e-13
+    },
+    "species": {
+      "resolved_relative_max": 1.1281239192480915e-09,
+      "near_zero_absolute_max": 1.3019102641656857e-11
+    },
+    "kim-addition": {
+      "resolved_relative_max": 1.9809274880426434e-08,
+      "near_zero_absolute_max": 0
+    }
+  },
+  "pivot_max": 2.220446049250313e-16,
+  "enthalpy_max": 4.440892098500626e-16,
+  "recovery_max": 9.103828801926284e-13,
+  "replay_max": 0.0,
+  "raw_coarse_above_oracle_threshold_without_verdict": 64,
+  "no_pair": {
+    "predictions": {
+      "values": 149,
+      "bitwise_equal": true,
+      "sha256": "2ecac5a89e9e0afd4b13d94326abd32178d498afff7e09ac48f17e983b8ecafd"
+    },
+    "gradient": {
+      "values": 1043,
+      "bitwise_equal": true,
+      "sha256": "0e4f06b74e96f3338ecd4e85f659045d8a678d6fc3e4ea1aab4dd6e3651d2741"
+    },
+    "optimizer_gradient": {
+      "values": 1043,
+      "bitwise_equal": true,
+      "sha256": "e6b3991fa514da7e5cfdf9ee01c34446ee78b594a32c30fb8827e3b550ce7e86"
+    },
+    "residual_optimizer_gradient": {
+      "values": 1043,
+      "bitwise_equal": true,
+      "sha256": "8826ffaa6928bcdcea45442829acd9c05217e831bec247d9102b843af164fe71"
+    },
+    "fit_predictions": {
+      "values": 149,
+      "bitwise_equal": true,
+      "sha256": "fe6c7189c4c788a9cfa60867d5f6448159804c15aa7f54fa87556f3fdc029686"
+    },
+    "fit_physical": {
+      "values": 7,
+      "bitwise_equal": true,
+      "sha256": "7b6e146811662f6dd02f72099dd88fa2c85f1d26fdaa03c5ff2cfbdffbb09f37"
+    },
+    "fit_physical_jacobian": {
+      "values": 1043,
+      "bitwise_equal": true,
+      "sha256": "d76701d3ee31f4fad30f39d351eaecf132bd3ec7d3a2ac3c155d255f8bc96026"
+    },
+    "fit_optimizer_jacobian": {
+      "values": 1043,
+      "bitwise_equal": true,
+      "sha256": "a097ef6e1bc10fb84f05b34cedce1e38354cea879429e1af6e2f287cef416ac9"
+    },
+    "fit_residuals": {
+      "values": 149,
+      "bitwise_equal": true,
+      "sha256": "22869684dd0586183a88f8a72fe4c66a80f343cbd53078df07a13100c142cdb5"
+    }
+  },
+  "numerical_evidence": "Numerical verification only; no physical validation or application parameter adoption."
+}

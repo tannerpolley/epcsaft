@@ -1,0 +1,9 @@
+element,atomic_weight_g_mol,stated_uncertainty_g_mol,source,interpretation
+H,1.0080,.0002,https://ciaaw.org/abridged-atomic-weights.htm,source input limitation; not a model comparison tolerance
+N,14.007,.001,https://ciaaw.org/abridged-atomic-weights.htm,source input limitation; not a model comparison tolerance
+Li,6.94,.06,https://ciaaw.org/abridged-atomic-weights.htm,source input limitation; not a model comparison tolerance
+Na,22.990,.001,https://ciaaw.org/abridged-atomic-weights.htm,source input limitation; not a model comparison tolerance
+K,39.098,.001,https://ciaaw.org/abridged-atomic-weights.htm,source input limitation; not a model comparison tolerance
+Cl,35.45,.01,https://ciaaw.org/abridged-atomic-weights.htm,source input limitation; not a model comparison tolerance
+Br,79.904,.003,https://ciaaw.org/abridged-atomic-weights.htm,source input limitation; not a model comparison tolerance
+I,126.90,.01,https://ciaaw.org/abridged-atomic-weights.htm,source input limitation; not a model comparison tolerance

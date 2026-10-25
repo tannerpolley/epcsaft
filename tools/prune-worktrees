@@ -1,0 +1,124 @@
+#!/usr/bin/env python3
+"""Remove finished task worktrees and their branches at merge closeout (owner, 2026-10-20).
+
+Usage: tools/prune-worktrees [--dry-run] [--archive-unmerged] [WORKTREE ...]
+The lead names each WORKTREE whose task has finished: its agent thread is terminal with no queued turn and
+its pull request is merged or its issue closed. The tool still refuses a worktree with a process inside it
+or an open pull request on its branch, and lets tools/archive-worktree keep its ignored evidence and refuse
+dirty or still-written worktrees. It then deletes the local branch, and the remote branch only while its
+tip is on origin/main. Branches no worktree holds are handled the same way. Unmerged work is kept unless
+--archive-unmerged is given and its issue is closed; it is then first kept as a pushed archive/<branch> tag
+on the exact commit. --dry-run changes nothing and plans from the cached origin refs.
+"""
+import argparse
+import json
+import os
+import re
+import subprocess
+import sys
+
+TOOLS = os.path.dirname(os.path.realpath(__file__))
+
+
+def run(*args, check=True):
+    return subprocess.run(args, cwd=TOOLS, check=check, capture_output=True, text=True).stdout.strip()
+
+
+def succeeds(*args):
+    return subprocess.run(args, cwd=TOOLS, capture_output=True).returncode == 0
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--archive-unmerged", action="store_true")
+    parser.add_argument("worktrees", nargs="*")
+    options = parser.parse_args()
+    if not options.dry_run:
+        run("git", "fetch", "--quiet", "--prune", "origin")
+    try:
+        prs = json.loads(run("gh", "pr", "list", "--state", "open", "--limit", "1000", "--json", "headRefName"))
+    except (OSError, subprocess.CalledProcessError, ValueError):
+        sys.exit("prune-worktrees: open pull requests unknown (gh failed); nothing removed")
+    open_heads = {pr["headRefName"] for pr in prs}
+    live = set()
+    for pid in filter(str.isdigit, os.listdir("/proc")):
+        try:
+            live.add(os.path.realpath(os.readlink(f"/proc/{pid}/cwd")))
+        except OSError:
+            pass
+
+    def merged(revision):
+        return succeeds("git", "merge-base", "--is-ancestor", revision, "origin/main")
+
+    def archivable(name):
+        issue = re.search(r"(?:issue-|t3code/)(\d+)", name)
+        return bool(options.archive_unmerged and issue and run(
+            "gh", "issue", "view", issue[1], "--json", "state", "-q", ".state", check=False) == "CLOSED")
+
+    def archive_tag(name, commit):
+        """True once archive/<name> holds exactly `commit` locally and on origin."""
+        tag = f"refs/tags/archive/{name}"
+        existing = run("git", "rev-parse", "--quiet", "--verify", f"{tag}^{{commit}}", check=False)
+        if existing and existing != commit:
+            print(f"kept {name}: {tag} already names {existing[:8]}, not {commit[:8]}")
+            return False
+        if options.dry_run:
+            print(f"would tag archive/{name} at {commit[:8]}")
+            return True
+        if not existing:
+            run("git", "tag", f"archive/{name}", commit)
+        run("git", "push", "--quiet", "origin", tag)
+        return run("git", "ls-remote", "origin", f"{tag}^{{}}", tag).split()[0] == commit
+
+    def drop_branch(branch):
+        tip = run("git", "rev-parse", f"refs/heads/{branch}")
+        if not merged(tip) and not (archivable(branch) and archive_tag(branch, tip)):
+            print(f"kept branch {branch} (unmerged)")
+            return
+        remote = run("git", "ls-remote", "--heads", "origin", f"refs/heads/{branch}").split()
+        if options.dry_run:
+            print(f"would delete branch {branch}" + (" and its merged remote" if remote and merged(remote[0]) else ""))
+            return
+        if remote and merged(remote[0]):
+            run("git", "push", "--quiet", f"--force-with-lease=refs/heads/{branch}:{remote[0]}", "origin",
+                "--delete", branch)
+        elif remote:
+            print(f"kept remote {branch}: its tip {remote[0][:8]} is not on origin/main")
+        if f"branch refs/heads/{branch}\0" in run("git", "worktree", "list", "--porcelain", "-z"):
+            print(f"kept branch {branch} (checked out)")
+            return
+        run("git", "update-ref", "--no-deref", "-d", f"refs/heads/{branch}", tip)
+        print(f"deleted branch {branch}")
+
+    entries = {}  # path -> (head, branch)
+    for record in filter(None, run("git", "worktree", "list", "--porcelain", "-z").split("\0\0")):
+        fields = dict(field.partition(" ")[::2] for field in record.strip("\0").split("\0"))
+        entries[os.path.realpath(fields["worktree"])] = (fields.get("HEAD", ""),
+                                                       fields.get("branch", "").removeprefix("refs/heads/"))
+    main_checkout = next(iter(entries))
+    given = [os.path.realpath(path) for path in options.worktrees]
+    held = {branch for path, (_, branch) in entries.items() if branch and path not in given}
+    for path in sorted(given, key=len, reverse=True):  # nested baselines before their parents
+        if path == main_checkout or path not in entries:
+            sys.exit(f"prune-worktrees: {path} is not a linked worktree of this repository")
+        head, branch = entries[path]
+        name = branch or os.path.basename(path)
+        reason = ("live" if any(p == path or p.startswith(path + os.sep) for p in live) else
+                  "open PR" if branch in open_heads else
+                  "unmerged" if not merged(head) and not (archivable(name) and archive_tag(name, head)) else None)
+        if reason:
+            print(f"kept {path} ({reason})")
+            held.add(branch)
+        elif options.dry_run:
+            print(f"would archive and remove {path}")
+        elif subprocess.run([sys.executable, os.path.join(TOOLS, "archive-worktree"), path,
+                             f"{os.path.basename(path)}-{head[:8]}"]).returncode:
+            held.add(branch)
+    for branch in run("git", "for-each-ref", "--format=%(refname:short)", "refs/heads/").split():
+        if branch != "main" and branch not in held and branch not in open_heads:
+            drop_branch(branch)
+
+
+if __name__ == "__main__":
+    main()

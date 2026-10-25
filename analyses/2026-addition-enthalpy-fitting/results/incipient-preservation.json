@@ -1,0 +1,90 @@
+{
+  "source_commit": "bf1d61ab6960b3763fef1076ff01c5b2e044f8a7",
+  "base": "8f5f56855ccafbeb2b73329f7bc7ec0b62265ddc",
+  "wheel_sha256": "08f335ae3dee404fc86607d981820275d47bc287bcc90ba2e1dd5b579f8c1a96",
+  "baseline_wheel_sha256": "0c329ac7d5d10063d0315791815f83bd63b7413b0ffce13266810f52bc605bc0",
+  "identical_cp_states_and_comparisons": true,
+  "identical_provisional_states_and_work": true,
+  "cp": {
+    "temperature_K": 353.15,
+    "pressure_Pa": 101325.0,
+    "neighbours_K": [
+      353.1,
+      353.2
+    ],
+    "unloaded_declaration": "engine/data/reference/mea-nominally-unloaded/request.json",
+    "loaded_change": "Exactly recovered producer: feed[0] = 0.358 - 1e-6; other frozen feed entries, guesses, reactions, reference and calorics unchanged.",
+    "producer": "build/issue261/slow_contraction.py",
+    "producer_sha256": "12ab6be2aaf9d3604581e8a3f0ae765830bb5cd4c1a5184577c0086dcd795683",
+    "readout": "build/issue269/preservation.py",
+    "readout_sha256": "91523b5e29b693ebb90c708a24e74c85c68a2be0628fa194652793b062a62768",
+    "criteria": {
+      "raw_row_atol": 1e-09,
+      "cp_slope_rtol": 1e-06
+    }
+  },
+  "provisional": {
+    "producer": "build/issue265/probe.py",
+    "producer_sha256": "a8496bc445191d9b102c20ab5911f94ab7c467e634ac2843f78526a55d9d603d",
+    "readout": "build/issue269/provisional.sh",
+    "readout_sha256": "e681abca124a059659847a2cdd02ca5bce360d7ffb5ea43502c5b582f19dfeb3",
+    "guesses": "inputs/incipient-guesses.json",
+    "guesses_sha256": "5a06aaa0f4ad02773b4bf0df2b656a52b75ef86c2a0b3dac8961c2b310492ba3",
+    "declared_case_owner": "analyses/2026-tpd-phase-discovery/scripts/baseline.py",
+    "declared_case_owner_sha256": "db6c413ea84549cd0426951bad156ee307dd14168f79e66b8c7409d08b2ca8f9",
+    "parameters_sha256": "2ea3b41485a98d2cf49add620b87bb05fc5a275cdd132c1cdbb0cfc5f07f2ca4",
+    "temperature_K": 318.15,
+    "flash_pressure_Pa": 5918.5286,
+    "raw_row_tolerance": 1e-10
+  },
+  "historical_261": {
+    "authority": "https://github.com/tannerpolley/ePC-SAFT/issues/261",
+    "declarations": 72,
+    "successful": 58,
+    "returned_failures": 11,
+    "setup_exceptions": 3,
+    "unchanged_work_cases": 57,
+    "one_extra_polish_evaluation_cases": 10,
+    "failing_cases_max_extension_steps": 1,
+    "maximum_polish_attempts": 5,
+    "scope": "Inherited bounded-work evidence; not rerun or reinterpreted as this compiler change."
+  },
+  "unaccepted": [
+    {
+      "case": "alpha-0.256",
+      "success": false,
+      "requested_tolerance_met": true,
+      "message": "phase L vanished; Michelsen deficit -inf"
+    },
+    {
+      "case": "alpha-1e-06",
+      "success": true,
+      "requested_tolerance_met": false,
+      "message": "converged_to_floor: residual 7.8463203035178345e-09 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 25 iterations, contraction absent, floor 3.5373653924706091e-09, amplification 0; requested row tolerance 0.000000 not met by an available floor-limited state"
+    },
+    {
+      "case": "reacting-flash-guessed",
+      "success": false,
+      "requested_tolerance_met": false,
+      "message": "phase V vanished; Michelsen deficit -47209233.195094"
+    }
+  ],
+  "inputs": {
+    "engine/data/reference/mea-nominally-unloaded/request.json": "bc8a03e13efab9a9675a63121c12538dbb9f42a18dbe4ddc7fe6742b6ab6da61",
+    "engine/data/reference/mea-nominally-unloaded/parameters.json": "756fec502d3a1433d538abb073c4caeabf91902013ab7e27d5459ce70396543b",
+    "engine/data/reference/mea-zero-inventory/ideal-calorics.json": "c94d504e68c6dc6e85d3d950cc51422499846729b1a06994b362040be991924a",
+    "engine/tests/equilibrium/test_trace_reliability.py": "01d51690d604086f8e672b5d8d903fdc9023c77e84bf4213ecdb7e5e3d27f236"
+  },
+  "results": {
+    "analyses/2026-addition-enthalpy-fitting/results/incipient-cp-states.csv": "fe6e4c5440d0afb9d24aa93121ed5602596981a227113cbaa7f0285184ea6b3d",
+    "analyses/2026-addition-enthalpy-fitting/results/incipient-cp.csv": "e886091fd84c7bb4861c8070dee44cb7f1dfafee5302c42cce082d7a2e9734b1",
+    "analyses/2026-addition-enthalpy-fitting/results/incipient-provisional.csv": "26c98d13749a39f22b6177057def445696053403fea72d18f170cfa18cde4333"
+  },
+  "logs": {
+    "build/issue269/main-cp.log": "db28e2004770085c23349b564b61eb02285d983fb9c71a488629c9467abd3593",
+    "build/issue269/branch-cp.log": "db28e2004770085c23349b564b61eb02285d983fb9c71a488629c9467abd3593",
+    "build/issue269/main-provisional.log": "9b6fe7ae51fef5bc3e2697e9066d3c965a1a17ca7d26ee628ad4159a881f768f",
+    "build/issue269/branch-provisional.log": "9b6fe7ae51fef5bc3e2697e9066d3c965a1a17ca7d26ee628ad4159a881f768f"
+  },
+  "limits": "Numerical preservation at the declared inputs. Alpha 0.256 liquid loss, alpha 1e-6 unmet tolerance, and the supplied-composition vapor loss remain unaccepted. No physical validation, parameter adoption or global stability."
+}

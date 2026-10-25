@@ -1,0 +1,44 @@
+{
+  "study_status": "bounded native study completed; data criterion not met",
+  "completed_native_records": [
+    "stage2-MgCl2-ceres.json",
+    "stage2-CaCl2-ceres.json",
+    "stage2-MgCl2-minimax.json",
+    "stage2-CaCl2-minimax.json"
+  ],
+  "ca_minimax_started": true,
+  "ca_minimax_partial_outputs": false,
+  "pending": [
+    "delivered independent review",
+    "investigator promotion for manuscript use"
+  ],
+  "packet_2_written": false,
+  "criterion_decade": 0.02,
+  "normal_admission": {
+    "minimum_available_GB": 4,
+    "queued_UTC": "2026-10-05T23:22:33Z",
+    "maximum_wait_seconds": 3600,
+    "environment_lock_held_while_waiting": false,
+    "allocator_pressure_guard": "Removed by owner machine update; normal allocator uses available memory and a free slot.",
+    "study_lease_ended_UTC": "2026-10-05T23:48:01Z"
+  },
+  "refused_job": {
+    "operation": "Ca minimax wheel preparation; fit not started",
+    "allocator_exit": 75,
+    "admission_wait_seconds": 600
+  },
+  "reference_restore": {
+    "wheel_sha256": "e28d258df06eac39711c59a79f9ce2b69fc8ac7565637bfba0dbef21863d8dc7",
+    "record_hashes_verified": 14,
+    "memory_cap": "2G",
+    "threads": 1,
+    "pressure_threshold_exception": "owner authorized solely for restore and verification",
+    "lease_released": true
+  },
+  "limits": [
+    "Fitting to evaluated reference data, not physical validation.",
+    "Mg local constrained result exceeds criterion; no global optimum or impossibility proof.",
+    "Both minimax points exceed the data criterion; no packet /2 is written."
+  ],
+  "ca_minimax_completed": true
+}

@@ -1,0 +1,10 @@
+{
+  "engine_provenance": [
+    "388ed38b12d618e711c64a3c05c7f88653f84d6a",
+    true
+  ],
+  "script_sha256": "27773b826276b4056a1909d6e11cb8292e5421d88646f3cf4390a2bc433838dd",
+  "packet_sha256": "36cf241f3a9bd353cf775ae943ddc98e70817d5b004cac3bc001a9c5604d752d",
+  "baseline_seconds_78_rows": 0.01,
+  "conditions": "298.15 K, 100000 Pa, fully dissociated formula-unit molality/kg water"
+}

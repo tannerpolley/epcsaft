@@ -1,0 +1,23 @@
+component,m,s,e,e_assoc,vol_a,assoc_scheme,z,dielc,d_born,f_solv,MW,source
+H2O,1.2047,2.7927,353.9449,2425.6714,0.04509,2B,0,78.09,0.0,1.5,0.01801528,2019_Bulow reference dataset
+NTf2-,6.0103,3.7469,375.6529,0,0,,-1,11.0,0,1,0.280145,2019_Bulow reference dataset
+BF4-,3.8227,3.5088,496.1176,0,0,,-1,11.0,0,1,0.086809,2019_Bulow reference dataset
+PF6-,4.2771,3.5889,492.2835,0,0,,-1,11.0,0,1,0.144973,2019_Bulow reference dataset
+TFO-,3.7432,3.8771,509.3113,0,0,,-1,11.0,0,1,0.14907,2019_Bulow reference dataset
+C2mim+,1.4872,3.5926,206.4924,0,0,,1,11.0,0,1,0.111168,2019_Bulow reference dataset
+C3mim+,1.9857,3.6154,212.32,0,0,,1,11.0,0,1,0.12519,2019_Bulow reference dataset
+C4mim+,2.4805,3.6371,218.1441,0,0,,1,11.0,0,1,0.139221,2019_Bulow reference dataset
+C5mim+,2.9226,3.6575,224.1573,0,0,,1,11.0,0,1,0.15324,2019_Bulow reference dataset
+C6mim+,3.4131,3.6781,230.0,0,0,,1,11.0,0,1,0.167275,2019_Bulow reference dataset
+C7mim+,3.8598,3.6996,235.9986,0,0,,1,11.0,0,1,0.1813,2019_Bulow reference dataset
+C8mim+,4.2977,3.7187,242.0,0,0,,1,11.0,0,1,0.195328,2019_Bulow reference dataset
+C10mim+,5.2653,3.7627,253.76,0,0,,1,11.0,0,1,0.22338,2019_Bulow reference dataset
+C3mpyr+,2.2941,3.6082,167.9026,0,0,,1,11.0,0,1,0.128235,2019_Bulow reference dataset
+C4mpyr+,2.6364,3.7448,273.8825,0,0,,1,11.0,0,1,0.142257,2019_Bulow reference dataset
+C6mpyr+,3.3212,4.0179,485.9104,0,0,,1,11.0,0,1,0.17031,2019_Bulow reference dataset
+C4m4py+,2.5504,3.8046,277.1743,0,0,,1,11.0,0,1,0.150242,2019_Bulow reference dataset
+C4py+,3.1335,3.3131,235.6465,0,0,,1,11.0,0,1,0.13621,2019_Bulow reference dataset
+C6py+,4.4916,3.3243,246.0532,0,0,,1,11.0,0,1,0.164263,2019_Bulow reference dataset
+C8py+,5.8496,3.3354,256.4599,0,0,,1,11.0,0,1,0.192316,2019_Bulow reference dataset
+C3mpy+,2.7283,3.4306,161.5381,0,0,,1,11.0,0,1,0.136214,2019_Bulow reference dataset
+C4mpy+,2.5504,3.8046,277.1743,0,0,,1,11.0,0,1,0.150242,2019_Bulow reference dataset

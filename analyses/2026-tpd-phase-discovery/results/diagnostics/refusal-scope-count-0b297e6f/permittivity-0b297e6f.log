@@ -1,0 +1,28 @@
+
+******************************************************************************
+This program contains Ipopt, a library for large-scale nonlinear optimization.
+ Ipopt is released as open source code under the Eclipse Public License (EPL).
+         For more information visit http://projects.coin-or.org/Ipopt
+******************************************************************************
+
+Traceback (most recent call last):
+  File "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-223-build-tpd-stability-test-and-phase-35ebff8f/analyses/2026-tpd-phase-discovery/scripts/qualify.py", line 423, in <module>
+    main()
+    ~~~~^^
+  File "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-223-build-tpd-stability-test-and-phase-35ebff8f/analyses/2026-tpd-phase-discovery/scripts/qualify.py", line 410, in main
+    permittivity.qualify(sys.modules[__name__])
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-223-build-tpd-stability-test-and-phase-35ebff8f/analyses/2026-tpd-phase-discovery/scripts/permittivity.py", line 76, in qualify
+    q.refused_case(case, model, problem)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-223-build-tpd-stability-test-and-phase-35ebff8f/analyses/2026-tpd-phase-discovery/scripts/qualify.py", line 255, in refused_case
+    timed(case, 'refused-discover', lambda: eq.solve_equilibrium(model, request), refusal=True)
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-223-build-tpd-stability-test-and-phase-35ebff8f/analyses/2026-tpd-phase-discovery/scripts/qualify.py", line 101, in timed
+    require(all(value == 0 for value in row['trace_work'].values()) and row['iterations'] == row['evaluations'] == row['hessian_calls'] == 0,
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            f'{case}: refused call performed numerical work: {row}')
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-223-build-tpd-stability-test-and-phase-35ebff8f/analyses/2026-tpd-phase-discovery/scripts/qualify.py", line 24, in require
+    raise RuntimeError(message)
+RuntimeError: permittivity/ion-fraction-suppression: refused call performed numerical work: {'case': 'permittivity/ion-fraction-suppression', 'role': 'refused-discover', 'sample': 0, 'seconds': 0.0001586560028954409, 'trial_spans': 0, 'driver_finalizations': 0, 'hessian_calls': 0, 'iterations': 0, 'evaluations': 0, 'trace_work': {'driver_invocations': 0, 'driver_spans': 1, 'trial_invocations': 0, 'root_calls': 0, 'root_evaluations': 0}}

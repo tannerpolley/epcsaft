@@ -1,0 +1,5 @@
+feed0,feed1,normalized_balance,status,maximum,finite_tau,finite_residual,feasibility_cause
+1.0,1.0,0.0,optimal,0.5,1.0,0.0,Unbounded
+1.00000001,1.0,4.9999999750000005e-09,infeasible_inventory,,,0.0,Optimal
+1.0000000001,1.0,4.9999999997500004e-11,optimal,0.5,1.0,5.000000413451855e-11,Unbounded
+1.000000000001,1.0,4.9999999999975e-13,optimal,0.5,1.0,5.000444502909205e-13,Unbounded

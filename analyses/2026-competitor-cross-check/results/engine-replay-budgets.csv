@@ -1,0 +1,4 @@
+implementation,rep,warm_elapsed_ns,cold_measured_ns,max_sample_ns,samples,within_case_cap
+Engine,1,3455901252,149440347,57422367,350,True
+Engine,2,3515531626,150878323,48024130,350,True
+Engine,3,3238920806,138298892,35638118,350,True

@@ -1,0 +1,4 @@
+reaction_id,reaction,temperature_K,log10_K,concentration_unit,source_locator,source_classification
+water_autoionization,2 H2O <=> H3O+ + OH-,298.15,-13.995,M^2,Table 2 page 15,IAPWS approximate concentration constant
+carbonic_first,H2CO3* + H2O <=> HCO3- + H3O+,298.15,-6.345,M,Table 2 page 15,IAPWS combined dissolved CO2/carbonic-acid concentration constant
+carbonic_second,HCO3- + H2O <=> CO3-2 + H3O+,298.15,-10.329,M,Table 2 page 15,IAPWS approximate concentration constant

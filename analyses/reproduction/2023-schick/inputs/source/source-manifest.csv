@@ -1,0 +1,5 @@
+source_id,source_type,locator,sha256,status,notes
+schick-2023-parameters,source-table-transcription,schick-2023-parameters.csv,3e58007189912b47fa526a7c4635dbdd8a65a5d02ce87afb5187a90bd6b5a6e9,retained,Copied byte-for-byte from accepted design evidence; row locators inside
+schick-2023-reported-metrics,source-table-transcription,schick-2023-reported-metrics.csv,d220c8e29c9ede3066bf2e2f52970c288e7a7ab489f4bec182963625657847c3,retained,Copied byte-for-byte from accepted design evidence; row locators inside
+schick-2023-table-s10,source-table-transcription,schick-2023-table-s10.csv,377fd87c8dc9a58223dfc4f9d280faafd07e4a68155b3765cfc03eed60171528,retained,Copied byte-for-byte from accepted design evidence; row locators inside
+materialized-parameters,packet-materialization,materialization.json,ca7895b5d383c664dd97d50fd338bf2ad6dc4d61c711d85f5033f5c28c7f403d,retained,Binds packet fingerprint and materialized input hash

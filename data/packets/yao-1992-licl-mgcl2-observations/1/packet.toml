@@ -1,0 +1,38 @@
+schema_version = 2
+packet_id = "yao-1992-licl-mgcl2-observations"
+packet_version = "1"
+title = "Yao 1992 LiCl-MgCl2 isopiestic observations at 298.15 K"
+description = "Yao 1992 LiCl-MgCl2 isopiestic observations at 298.15 K"
+license_or_use_basis = "Factual numerical observations and project metadata for private scientific verification; no full article content."
+tolerance_rationale = "Printed precision is retained; no pointwise statistical uncertainty or model-acceptance tolerance is assigned."
+
+[[sources]]
+source_id = "yao-1992"
+citation = "Yao et al. (1992), Thermodynamics of Aqueous Electrolyte Solution: Isopiestic Determination of Osmotic and Activity Coefficients in LiCl–MgCl₂–H₂O at 25 °C, Acta Chimica Sinica 50, 839–848."
+use_basis = "Zotero PELPB487, Chinese; Table 1 p.841 (PDF p.3); printed values and all flags retained. Set/row means order within the printed set."
+
+[[domains]]
+domain_id = "yao-1992-licl-mgcl2-observations-298-15-k"
+kind = "source-observation"
+temperature_min = 298.15
+temperature_max = 298.15
+temperature_unit = "kelvin"
+description = "Yao 1992 LiCl-MgCl2 isopiestic observations at 298.15 K"
+
+[[files]]
+path = "observations/yao1992-licl-mgcl2-table1.csv"
+role = "observations"
+media_type = "text/csv"
+sha256 = "edbae25ae607f9c22cd4a34dad93bb9c622165737b5691e109ed2363660d4f8b"
+source_refs = ["yao-1992"]
+domain_refs = ["yao-1992-licl-mgcl2-observations-298-15-k"]
+units_basis = "Molalities and ionic strength: mol/kg water; osmotic coefficient, activity and ratios: dimensionless; source locators retained."
+
+[[files]]
+path = "sources/source-records.json"
+role = "source"
+media_type = "application/json"
+sha256 = "bc40f5ac30492fa1fd9c40a73e2a506913fd99ae7b1c1b35d524beb44c82b786"
+source_refs = ["yao-1992"]
+domain_refs = ["yao-1992-licl-mgcl2-observations-298-15-k"]
+units_basis = "Non-numeric source identities, locators, reading notes and PDF digest."

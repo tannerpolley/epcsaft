@@ -1,0 +1,16 @@
+quantity,source,packet,disposition
+residual Helmholtz energy,Held2014 Eq.1 hard-chain + dispersion + association + ion,PC-SAFT + water 2B + finite-size DH; Born off,match
+ion segmentation,Held2014 Section2.1 spherical ions,one segment per ion,source convention
+screening diameter,Held2014 Section2.1 closest approach equals sigma,DH diameter sigma,match
+packing diameter,Held2014 Eq.21,0.88 sigma,match
+water packing,Held2014 Eq.22,temperature-dependent water sigma times soft repulsion factor,match
+same-sign dispersion,Held2014 Section2.3 excluded,same-sign exclusion with no same-sign kij records,match
+opposite-sign dispersion,Held2014 Table3 Cl row,Li .669 Na .317 K .064 Mg .817 Ca 1.000,match
+water-sodium kij,Held2014 Table2 footnote a -0.007981 T/K + 2.37999,0.00045485 at 298.15 K,temperature restricted to 298.15 K
+water-potassium kij,Held2014 Table2 footnote b -0.004012 T/K + 1.3959,0.1997222 at 298.15 K,temperature restricted to 298.15 K
+permittivity convention,Held2014 Sections2.1/2.4 salt-independent solvent dielectric,constant 78.09 at stated T/P,convention matches; numeric value supplemented from Figiel2025 Table1
+permittivity exact author replay,Held2014 refers to Held2008; Cameretti2005 cites FlorianoNascimento,Held2008 prints no numerical water correlation; Floriano TableI uses 298K rather than 298.15K,not established; nearest-temperature sensitivity retained separately
+water source,Held2014 Table1 Fuchs2006,printed water parameters and sigma(T) footnote,match
+Sr ion parameters,Held2014 Tables2/3 none,no Sr in candidate,unavailable in this published set; no borrowed parameters
+gamma reference,Held2008 Eqs.8-10,infinite-dilution fugacity ratio stoichiometric mean and molality conversion,native calculation revalidated by per-state contraction
+osmotic coefficient,Held2014 Eq.5,-ln(a_water)/(nu m M_water),native calculation revalidated per-state; no below-.001 claim

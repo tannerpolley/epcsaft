@@ -1,0 +1,380 @@
+---
+title: "Cameretti, Sadowski and Mollerup (2005): aqueous electrolytes with ePC-SAFT"
+format:
+  html:
+    embed-resources: true
+    toc: true
+execute:
+  enabled: true
+  echo: false
+---
+
+```{python}
+import json
+import os
+from pathlib import Path
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from IPython.display import Markdown
+
+root = Path(os.environ.get("QUARTO_PROJECT_DIR", ".")) / "analyses/reproduction/2005-cameretti"
+if not (root / "results/water.csv").is_file():
+    root = Path.cwd()
+R = root / "results"
+water = pd.read_csv(R / "water.csv")
+t5 = pd.read_csv(R / "table-5.csv")
+lines = pd.read_csv(R / "figure-lines.csv")
+points = pd.read_csv(R / "figure-points.csv")
+traced = pd.read_csv(R / "digitized-lines.csv")
+activity = pd.read_csv(R / "activity-298K.csv")
+identity = json.loads((R / "run-identity.json").read_text())
+starts = pd.read_csv(R / "default-start-summary.csv")
+kcl = pd.read_csv(R / "table-5-kcl-misprint.csv")
+t4 = pd.read_csv(root / "results/tables/table-004/source/table-004.csv", skiprows=2, header=None,
+                 names=["salt", "p_mmax", "p_avg", "p_max", "rho_mmax", "rho_avg", "rho_max"])
+t4["salt"] = t4.salt.str.replace(r"\$\\mathrm\{(\w+)\}_\{2\} \\mathrm\{SO\}_\{4\}\$", r"\g<1>2SO4", regex=True)
+VARIANTS = ["original/sigma", "original/0.88", "corrected/sigma", "corrected/0.88"]
+f1 = lambda v: f"{v:.1f}"
+f2 = lambda v: f"{v:.2f}"
+def md(df):
+    cells = [[str(v).replace("|", "\\|") for v in df.columns]] + [[str(v).replace("|", "\\|") for v in row] for row in df.itertuples(index=False)]
+    return Markdown("\n".join(["| " + " | ".join(cells[0]) + " |", "|" + "---|" * len(df.columns)]
+                              + ["| " + " | ".join(r) + " |" for r in cells[1:]]))
+
+# Engine against the paper's model lines; tolerance max(1 %, two pixels) fixed before the run.
+lines["dev_pct"] = 100 * (lines.engine / lines.paper_model - 1)
+lines["tol_pct"] = np.maximum(1.0, 200 * lines.value_per_pixel / lines.paper_model)
+lines["within"] = lines.dev_pct.abs() <= lines.tol_pct
+nu = lines.salt.str.contains("SO4").map({True: 3, False: 2})
+lines["dev_basis_pct"] = 100 * (lines.engine * (1 + (nu - 1) * lines.x_salt) / lines.paper_model - 1)
+
+# Experiments recovered from the figure crosses; paper metric Delta = 1 - model/expt.
+def line_at(r):
+    g = traced[(traced.figure == r.figure) & (traced.salt == r.salt) & (traced.temperature_K == r.temperature_K)].sort_values("x_salt")
+    if g.empty or not g.x_salt.min() - 0.003 <= r.x_salt <= g.x_salt.max() + 0.003:
+        return np.nan
+    return np.interp(r.x_salt, g.x_salt, g.value)
+points = points[(points.x_salt > 0.004) & (points.value_per_pixel / points.experiment <= 0.01)].copy()
+points["paper_line"] = points.apply(line_at, axis=1)
+points["delta_engine"] = 100 * (1 - points.engine / points.experiment)
+points["delta_paper"] = 100 * (1 - points.paper_line / points.experiment)
+
+t5["dev_original"] = 100 * (t5.p_engine_kPa / t5.p_model_original_kPa - 1)
+t5["dev_corrected"] = 100 * (t5.p_engine_kPa / t5.p_model_corrected_kPa - 1)
+t5["delta_engine"] = 100 * (1 - t5.p_engine_kPa / t5.p_exp_kPa)
+t5["delta_paper"] = 100 * (1 - t5.p_model_original_kPa / t5.p_exp_kPa)
+p_sat_water = water.set_index("temperature_K").engine_saturation_pressure_kPa
+t5_excess = t5[t5.variant == VARIANTS[0]].assign(water=lambda d: d.temperature_K.map(p_sat_water))
+t5_excess = t5_excess[t5_excess.p_model_corrected_kPa > t5_excess.water]
+t5_water = t5.temperature_K.map(p_sat_water)
+t5_mad = t5.groupby("variant").delta_engine.apply(lambda d: d.abs().mean())
+paper_mad = t5[t5.variant == VARIANTS[0]].delta_paper.abs().mean()
+closer = [v for v in VARIANTS if t5_mad[v] < paper_mad]
+
+activity["log_err"] = np.log10(activity.gamma_engine / activity.gamma_hamer_wu)
+w_p = 100 * (water.engine_saturation_pressure_kPa / water.iapws_saturation_pressure_kPa - 1)
+w_rho = 100 * (water.engine_saturated_liquid_density_g_cm3 / water.iapws_saturated_liquid_density_g_cm3 - 1)
+best = lines[lines.variant == "original/sigma"]
+best_p = best[best.quantity == "p"]
+best_rho = best[best.quantity == "rho"]
+p_within = {v: int(lines[(lines.variant == v) & (lines.quantity == "p")].within.sum()) for v in VARIANTS}
+```
+
+## Result
+
+The closest agreement with the published vapor-pressure curves of Figure 2 comes from the
+article's **original** ion table with an ionic hard-sphere diameter equal to σ_j, and it is a
+partial reproduction. Of `{python} len(best_p)` points sampled from the recovered model lines,
+`{python} p_within["original/sigma"]` lie within the pre-set tolerance of max(1 %, two pixels);
+the mean absolute deviation is `{python} f2(best_p.dev_pct.abs().mean())` % and the largest
+`{python} f2(best_p.dev_pct.abs().max())` %. The original/σ variant is therefore the one used
+to compare the Engine with the recovered original curves. This does not adopt those
+parameters, which the correction notice declares incorrect, for general calculations. The
+corrected ion table of the correction notice agrees less closely under either diameter
+convention (`{python} p_within["corrected/sigma"]` points within tolerance with σ_j,
+`{python} p_within["corrected/0.88"]` with 0.88σ_j).
+
+No variant reproduces the published densities. With the same original/σ model, the Engine
+liquid densities lie `{python} f1(-best_rho.dev_pct.max())`–`{python} f1(-best_rho.dev_pct.min())` %
+below the paper's density lines. Multiplying the Engine density by 1 + (ν − 1)x_salt, which is
+the error made when a molar density counting ions separately is multiplied by a salt-basis
+mean molar mass, brings
+`{python} int((best_rho.groupby('salt').dev_basis_pct.mean().abs() <= 2.5).sum())` of
+`{python} best_rho.salt.nunique()` recovered salts to within 2.5 % on average. For n_w mol
+water and n_s mol of a salt that dissociates into ν ions, the mass is the same on both bases,
+the true-species amount is n_w + νn_s and the salt-basis amount n_w + n_s. A molar density
+that counts ions separately, multiplied by the salt-basis mean molar mass, therefore overstates
+the mass density by (n_w + νn_s)/(n_w + n_s) = 1 + (ν − 1)x_salt. This basis mismatch is
+**inferred** from the pattern, not established: the paper does not state its density
+formula. It is a reading of the paper, not a correction to the Engine density.
+
+Neither printed version of Table 5 is reproduced. Against the mixed-salt experiments the
+Engine mean |Δp| is `{python} f2(t5_mad["original/sigma"])` % (original/σ),
+`{python} f2(t5_mad["original/0.88"])` % (original/0.88σ),
+`{python} f2(t5_mad["corrected/sigma"])` % (corrected/σ) and
+`{python} f2(t5_mad["corrected/0.88"])` % (corrected/0.88σ), against
+`{python} f2(paper_mad)` % for the original Table 5 model column. Only
+`{python} ", ".join(closer)` are closer to experiment than the printed model. Read in units
+of 100 kPa, `{python} len(t5_excess)` of the `{python} len(t5[t5.variant == VARIANTS[0]])`
+corrected Table 5 model pressures exceed the vapor pressure of this water model at the same
+temperature. A dissolved salt lowers the water activity, so its solution is expected to have a
+lower water vapor pressure than pure water; none of the table's measured pressures
+(`{python} int((t5[t5.variant == VARIANTS[0]].p_exp_kPa > t5_water[t5.variant == VARIANTS[0]]).sum())` above pure water)
+and none of the Engine values of any variant (`{python} int((t5.p_engine_kPa > t5_water).sum())`)
+do so. The corrected model column is therefore inconsistent with the table's own
+experimental column and with the printed model as the Engine evaluates it.
+
+Evidence types: numerical verification against the paper's model values (Table 5 and
+figure lines), physical comparison with literature parameters against the paper's
+experimental data (Table 5 and figure crosses), and a prediction of 25 °C mean ionic
+activity coefficients against Hamer and Wu (1972), which the paper does not report.
+
+## Model and conventions
+
+Cameretti et al. add a Debye–Hückel term to PC-SAFT (Eqs. 13–20, as restated in the
+correction notice). The Engine terms are mapped as follows; `scripts/model.py` is the only
+place the parameters are declared.
+
+| Paper convention | Engine declaration |
+|---|---|
+| Water: Table 1, two association sites (2B), constant σ | `pc-saft` base, `general-site` association, one donor and one acceptor site |
+| Ions: one segment, diameter σ_j, energy u_j (Table 2) | `segment_count` 1, `segment_diameter` σ_j, `dispersion_energy_over_k` u_j |
+| Debye–Hückel closest approach a_j = σ_j, Eq. 13 | `fully-dissociated-debye-huckel`, `debye_huckel_diameter` σ_j |
+| Dispersion only water–water and water–ion; u_ij = 0 otherwise | `exclude-same-sign-ion-pairs` plus cation–anion k_ij = 1; water–ion k_ij = 0 |
+| Permittivity of pure water, salt independent | `solvent-only` permittivity |
+| ε_r(T) from Floriano and Nascimento at 100 kPa | cubic in temperature through their four 0.1 MPa values (273, 298, 323, 348 K) |
+| No Born term | no Born family |
+| Ionic hard-sphere diameter: not stated | two variants: d_j = σ_j (paper text, "charged hard spheres with diameter σ_j") and d_j = 0.88σ_j (Held et al. 2014, Eqs. 21–22: PC-SAFT d_i with zero like-ion dispersion) |
+| Vapor phase is pure water | vapor phase supported on water only; bubble pressure at fixed T |
+| Molality: mol salt per kg water; x_salt = n_salt/(n_salt + n_water) | same; densities at 1 atm |
+
+Floriano and Nascimento (2004) fit Eq. 3 separately at four temperatures and give no
+temperature function, so the cubic interpolant is a declared choice. Cameretti et al. do not
+print their interpolation. The cubic returns the four source values exactly.
+
+Two ion tables exist. The original article and the correction notice give different σ_j and u_j for every ion; the correction states that the
+original Table 2 contained incorrect data. Both are run, crossed with the two diameter
+conventions, giving the four variants below. `scripts/model.py` cites each input to its own
+source: original ion values to the article's own Table 2, corrected ion values to the
+correction's Table 2, water to the article's Table 1, permittivity to Floriano and Nascimento,
+and the 0.88σ_j diameter to Held et al. (2014). Model molar masses use standard atomic weights
+for the ions and the NIST value for water.
+
+## Tolerances
+
+Stated before the run:
+
+- Water against the IAPWS saturation equations (Wagner and Pruss 1993): the paper's own
+  claim, average absolute relative deviation below 0.9 % for vapor pressure and liquid
+  density.
+- Engine against the paper's model values: each Table 5 row within 1 %; each figure-line
+  point within max(1 %, two pixels of the recovered panel).
+- Engine against experiments with the paper's metric Δ = 1 − model/expt: reported per salt
+  beside the paper's own Table 4 values; agreement means average |Δ| within one percentage
+  point of the paper's value.
+
+## Pure water
+
+```{python}
+Markdown(f"Between {water.temperature_K.min():.2f} and {water.temperature_K.max():.2f} K, the Engine water model "
+         f"deviates from the IAPWS saturation pressure by {w_p.abs().mean():.2f} % on average "
+         f"(range {w_p.min():.2f} to {w_p.max():.2f} %) and from the saturated-liquid density by "
+         f"{w_rho.abs().mean():.2f} % (range {w_rho.min():.2f} to {w_rho.max():.2f} %). Both averages meet "
+         f"the paper's claim of less than 0.9 %. The density excess near 278 K is the water density "
+         f"maximum that the paper notes no model reproduces.")
+```
+
+## Table 5: mixed-salt vapor pressures
+
+```{python}
+rows = []
+for v in VARIANTS:
+    g = t5[t5.variant == v]
+    rows.append({"variant": v,
+                 "mean / max |Engine/p_mod,original − 1| (%)": f"{g.dev_original.abs().mean():.2f} / {g.dev_original.abs().max():.2f}",
+                 "rows within 1 %": int((g.dev_original.abs() <= 1).sum()),
+                 "mean / max |Engine/p_mod,corrected − 1| (%)": f"{g.dev_corrected.abs().mean():.2f} / {g.dev_corrected.abs().max():.2f}",
+                 "Engine mean / max |Δp| vs experiment (%)": f"{g.delta_engine.abs().mean():.2f} / {g.delta_engine.abs().max():.2f}"})
+md(pd.DataFrame(rows))
+```
+
+```{python}
+g = t5[t5.variant == VARIANTS[0]]
+k = kcl[kcl.variant == "original/sigma"].set_index("kcl_molality")
+Markdown(f"The original Table 5 model column has mean |Δp| = {paper_mad:.2f} % against its own "
+         f"experiments ({len(g)} rows). The Engine is closer to experiment with {', '.join(closer)}, and not with "
+         f"{', '.join(v for v in VARIANTS if v not in closer)}. The corrected Table 5 prints pressures in a column labelled kPa with values "
+         f"near 0.04–0.2, which match the experiments only as 100 kPa units; its model values then exceed the "
+         f"water-model vapor pressure in {len(t5_excess)} of {len(g)} rows. One NaBr+KCl row at {k.temperature_K.iloc[0]:.2f} K prints "
+         f"KCl = {k.index[0]} mol/kg and is run as printed: the original/σ Engine gives {k.p_engine_kPa.iloc[0]:.3f} kPa against "
+         f"{k.p_exp_kPa.iloc[0]} kPa measured. As a hypothesis only, kept out of the printed input, a misprint of "
+         f"{k.index[1]} or {k.index[2]} mol/kg gives {k.p_engine_kPa.iloc[1]:.3f} or {k.p_engine_kPa.iloc[2]:.3f} kPa "
+         f"(`results/table-5-kcl-misprint.csv`). "
+         f"The NaCl+KBr molalities of the two highest rows at 328.15 K are swapped in the original printing and "
+         f"are taken from the correction.")
+```
+
+## Figures 2–4: recovered model lines
+
+Values were recovered from the article figures by `scripts/digitize.py`: each axes frame
+gives the calibration, crosses are found with an X template, and lines are traced after the
+crosses are masked. `figures/figure-0N/qa-overlay.png` shows every traced line pixel (red)
+and every retained cross (blue box). Eight positions are sampled on each recovered line.
+
+```{python}
+rows = []
+for v in VARIANTS:
+    for qty, name in (("p", "vapor pressure"), ("rho", "density")):
+        g = lines[(lines.variant == v) & (lines.quantity == qty)]
+        rows.append({"variant": v, "property": name, "points": len(g), "within tolerance": int(g.within.sum()),
+                     "mean |dev| (%)": f2(g.dev_pct.abs().mean()), "median dev (%)": f2(g.dev_pct.median())})
+md(pd.DataFrame(rows))
+```
+
+Per salt, for the variant closest to the vapor-pressure curves (original table, d_j = σ_j):
+
+```{python}
+s = best.groupby(["quantity", "salt"]).agg(points=("dev_pct", "size"), mean_dev=("dev_pct", "mean"),
+                                           min_dev=("dev_pct", "min"), max_dev=("dev_pct", "max"),
+                                           basis_corrected_mean=("dev_basis_pct", "mean")).reset_index()
+s["basis_corrected_mean"] = np.where(s.quantity == "rho", s.basis_corrected_mean.round(2).astype(str), "")
+md(s.round(2).rename(columns={"mean_dev": "mean dev (%)", "min_dev": "min (%)", "max_dev": "max (%)",
+                              "basis_corrected_mean": "dev with 1+(ν−1)x factor (%)"}))
+```
+
+```{python}
+#| fig-cap: "Engine deviation from the paper's own model lines (original ion table, d_j = σ_j). Vapor pressures (Figure 2) agree within tolerance at most points; densities (Figures 3–4) do not, unless multiplied by 1 + (ν − 1)x_salt (open markers)."
+fig, axes = plt.subplots(1, 2, figsize=(9, 3.6), sharey=False)
+colors = dict(zip(sorted(best.salt.unique()), plt.cm.tab20.colors))
+for ax, qty, title in ((axes[0], "p", "Figure 2 vapor pressure"), (axes[1], "rho", "Figures 3–4 density")):
+    g = best[best.quantity == qty]
+    for salt, h in g.groupby("salt"):
+        ax.plot(h.x_salt, h.dev_pct, "o", ms=3, color=colors[salt], label=salt)
+        if qty == "rho":
+            ax.plot(h.x_salt, h.dev_basis_pct, "o", ms=4, mfc="none", color=colors[salt])
+    ax.axhline(0, color="k", lw=0.6)
+    ax.set_xlabel("x_salt")
+    ax.set_title(title)
+axes[0].set_ylabel("100 (Engine / paper line − 1) [%]")
+axes[0].legend(fontsize=7, ncol=3)
+axes[1].legend(fontsize=7, ncol=2)
+fig.tight_layout()
+```
+
+Coverage limits: the hottest NaI curve and the middle KCl and KBr curves were
+not recovered in full, the LiCl, LiBr, KI and NaBr density lines are hidden under dense
+crosses (LiCl only partly recovered), and the sulfate vapor-pressure panel of Figure 4 was not
+traced. Water (Figure 1) is compared with IAPWS directly.
+
+## Figures 2–4: experiments
+
+The crosses carry the paper's experimental data (Table 3 references for vapor pressure;
+densities from its ref. 59). Points at x_salt = 0 and points whose single pixel exceeds 1 % of
+the value are excluded. The column "paper line" applies the same metric to the paper's own
+recovered line at each cross; it checks the recovery against Table 4. Every Table 4 value
+below is from the original printing; the corrected Table 4 of the correction notice is not
+transcribed here.
+
+```{python}
+rows = []
+for (qty, salt), g in points[points.variant == VARIANTS[0]].groupby(["quantity", "salt"]):
+    ref = t4[t4.salt == salt]
+    row = {"property": qty, "salt": salt, "crosses": len(g),
+           "paper Table 4 avg |Δ| (%)": f1(ref[f"{qty}_avg"].iloc[0]) if len(ref) else "",
+           "paper line avg |Δ| (%)": f2(g.delta_paper.abs().mean()) if g.delta_paper.notna().any() else ""}
+    for v in VARIANTS:
+        h = points[(points.variant == v) & (points.quantity == qty) & (points.salt == salt)]
+        row[f"Engine {v} (%)"] = f2(h.delta_engine.abs().mean())
+    rows.append(row)
+md(pd.DataFrame(rows))
+```
+
+```{python}
+g = points[points.variant == VARIANTS[0]]
+rho_e = g[g.quantity == "rho"].delta_engine
+agree = {v: sum(abs(points[(points.variant == v) & (points.quantity == r["property"]) & (points.salt == r["salt"])].delta_engine.abs().mean()
+                  - float(r["paper Table 4 avg |Δ| (%)"])) <= 1 for r in rows if r["paper Table 4 avg |Δ| (%)"]) for v in VARIANTS}
+Markdown(f"The paper's recovered density lines sit on its crosses (average |Δ| "
+         f"{g[g.quantity == 'rho'].delta_paper.abs().mean():.2f} %), consistent with its Table 4. The Engine "
+         f"densities of the same model lie below the measured values, with Δ from {rho_e.min():.1f} to {rho_e.max():.1f} %. "
+         f"With d_j = 0.88σ_j the density gap shrinks, but the vapor pressures then fall below both the paper's "
+         f"lines and the experiments. Salt-property rows whose Engine average |Δ| is within one percentage point of "
+         f"the paper's Table 4 value, out of {len(rows)}: "
+         + ", ".join(f"{v} {n}" for v, n in agree.items()) + ".")
+```
+
+## Bubble-pressure starts
+
+Every bubble pressure is solved twice from the same declaration: from the Engine default start
+and from a declared ideal-solution start (pressure x_water times the IAPWS vapor pressure,
+liquid packing fraction 0.45, pure-water vapor). The retained pressures use the declared
+start. Default-start failures per variant, by total salt molality (formula units per kg water,
+the sum of anion molalities), as failures/unique states:
+
+```{python}
+t = starts.assign(cell=starts.default_failures.astype(str) + "/" + starts.states.astype(str))
+t = t.pivot(index="salt_molality_band_mol_kg", columns="variant", values="cell")
+total = starts.groupby("variant")[["default_failures", "states"]].sum()
+t.loc["all"] = [f"{total.default_failures[v]}/{total.states[v]}" for v in t.columns]
+md(t[VARIANTS].reset_index().rename(columns={"salt_molality_band_mol_kg": "molality band (mol/kg)"}))
+```
+
+```{python}
+Markdown(f"The default start fails for {starts.default_failures.sum()} of {starts.states.sum()} variant-state pairs. The declared start "
+         f"{'converges for every state' if starts.declared_all_succeeded.all() else 'also fails for some states'}, "
+         f"with largest residual {starts.declared_max_residual.max():.2e}. `results/default-start-failures.csv` "
+         f"lists any failure with the exact temperature and ion "
+         f"molalities, default status, iterations and residual, and the declared-start result of each failure.")
+```
+
+## Activity coefficients at 25 °C
+
+Cameretti et al. report no activity or osmotic coefficients. The Engine predictions are
+compared with Hamer and Wu (1972), molality scale, at 0.1 MPa.
+
+```{python}
+rows = []
+for v in VARIANTS:
+    for salt, g in activity[activity.variant == v].groupby("salt"):
+        worst = g.loc[g.log_err.abs().idxmax()]
+        rows.append({"variant": v, "salt": salt, "rows": len(g),
+                     "AARD γ± (%)": f1(100 * (g.gamma_engine / g.gamma_hamer_wu - 1).abs().mean()),
+                     "max |log10(Engine/HW)|": f"{abs(worst.log_err):.3f}", "at m (mol/kg)": worst.molality_mol_kg})
+md(pd.DataFrame(rows))
+```
+
+```{python}
+a = activity[activity.variant == VARIANTS[0]].set_index(["salt", "molality_mol_kg"])
+Markdown(f"With the original/σ model only NaCl stays within a factor of about 1.2 over the full range. LiBr reaches "
+         f"γ± = {a.loc[('LiBr', 6.0)].gamma_engine:.1f} at 6 mol/kg against {a.loc[('LiBr', 6.0)].gamma_hamer_wu:.2f}. "
+         f"Held, Cameretti and Sadowski (2008) report the same failure of this parameter set for mean ionic "
+         f"activity coefficients and refit the ions to activity data for that reason. The Engine osmotic coefficients at the same states are retained in "
+         f"`results/activity-298K.csv`; no reference osmotic coefficients are retained for comparison.")
+```
+
+## Limits
+
+- The ionic hard-sphere diameter and the density formula of the paper are not printed;
+  the variant closest to the vapor-pressure curves is identified numerically, and the
+  density basis factor is an inference from the deviation pattern.
+- Figure values are recovered from raster images: about 0.05 kPa or 0.001 g/cm³ per
+  pixel in most panels. Experimental points are a subset of the paper's data (only the
+  recovered crosses), so per-salt Table 4 averages are not reproduced exactly.
+- The permittivity interpolation between the four Floriano–Nascimento temperatures is a
+  declared choice.
+- No Engine source was changed; every property is a native Engine solve. Bubble pressures
+  use a declared start (ideal-solution pressure from the IAPWS water vapor pressure, liquid
+  packing fraction 0.45); the default-start result is in section "Bubble-pressure starts".
+
+## Provenance
+
+```{python}
+Markdown(f"Engine commit `{identity['engine'][0]}` (clean engine tree: {identity['engine'][1]}); "
+         f"{identity['native_solves']} native solves on {identity['processes']} processes; wall clock "
+         f"{identity['wall_seconds']} s for `scripts/run.py`. Figure recovery: `scripts/digitize.py`. "
+         f"This notebook reads retained CSV files only.")
+```
+
+This record has not been independently reviewed or promoted.

@@ -1,0 +1,13 @@
+provenance_kind = "repository-migration-v1"
+origin_repository = "tannerpolley/MEA-Thermodynamics"
+origin_commit = "97e9c15ca6b6ed78a0e9453ae80c5c3fd0ab8411"
+origin_tree = "2202a5c94541a87909bfd3aa7f1cd2fa332a13d2"
+copy_mode = "byte-for-byte"
+scope = "The current-best nine-species parameter document, copied unchanged from the pinned MEA-Thermodynamics commit. No value, unit, domain, citation, or source locator is altered; the document is its own manifest."
+source_bundle_manifest_path = "analyses/mea_parameter_bundle/results/selected-current-best-parameters.json"
+source_bundle_manifest_sha256 = "2666914f0f9cfebdf230e96565de843f9aadc9424035c940883147ff66af035c"
+
+[[files]]
+retained_path = "parameters/parameters.json"
+origin_path = "analyses/mea_parameter_bundle/results/selected-current-best-parameters.json"
+sha256 = "2666914f0f9cfebdf230e96565de843f9aadc9424035c940883147ff66af035c"

@@ -1,0 +1,10 @@
+[[correlations]]
+record_id = "butanol-relative-permittivity"
+component_id = "1-butanol"
+family = "relative_permittivity"
+form = "constant"
+constant = 17.58
+output_unit = "dimensionless"
+source_id = "ascani-et-al-2022"
+locator = "1-butanol correlation evaluated at 298.15 K"
+domain_id = "perdomo-regression-298-15-k-1-bar"

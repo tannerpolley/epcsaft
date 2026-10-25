@@ -1,0 +1,19 @@
+{
+ "final_wheel_sha256": "28181e72e429c6e87fc6361082af1a7b21c8747e76bda65a1c30abb4a97402f2",
+ "engine_commit": "1a905ff87b2cbe2d2428c38d84ae95e41d96d144",
+ "mea": {
+  "checkout": "799b2011e562a84c1bd93778cd43eb8340dae362",
+  "parameters_sha256": "868a501831b87e95dedf18ce40e9e7ac949f7c6a4aaf137f717cc493ecfcb7be",
+  "state_packet_sha256": "86f60041b28ec4493729b04c0238f44e86fba4becf33d6ddf47d86b7efb82448"
+ },
+ "lithium": {
+  "checkout": "53f171455a7877afebb2bdf5f2685d6b34ae5881",
+  "fit_coordinates": [
+   48.05643312515582,
+   -0.4458116871895585
+  ]
+ },
+ "agreement_rel": 1e-08,
+ "checks_passed": 11,
+ "checks": 11
+}

@@ -1,0 +1,15 @@
+{
+ "engine": [
+  "0e414d4002af443bcda6c53a57c986ecd570d335",
+  true
+ ],
+ "started": "2026-10-17T03:36:53-0600",
+ "feeds": 161,
+ "T_K": 298.15,
+ "P_Pa": 100000.0,
+ "pKa": 4.76,
+ "pKw": 13.995,
+ "feed_water_mol": 1.0,
+ "feed_toluene_mol": 1.0,
+ "esi_sha256": "84c3c8da4592a25f2eef1bddc5c3712096c31463c5df88e4b4fb6f1df6e9ede1"
+}

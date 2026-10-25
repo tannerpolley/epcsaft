@@ -1,0 +1,27 @@
+{
+  "wheel_sha256": "33ef17f578714f55c65223e6b3d8b28e09344ac65cb317dfe9007bcfffc8db94",
+  "source_reference_convention": "water pure-component; all other components infinite dilution",
+  "reference_pressure_pa": 100000.0,
+  "row_tolerance": 1e-10,
+  "maximum_original_row": 5.062616992290714e-14,
+  "source_row_count": 30,
+  "evaluated_row_count": 26,
+  "failed_row_count": 4,
+  "grepe_ard_percent": 425.3950943438712,
+  "grepe_ard_by_temperature_percent": {
+    "313.15": 1431.7654659872758,
+    "353.15": 218.61009726545936,
+    "393.15": 28.35786843624046
+  },
+  "liquid_denser_than_vapor_count": 26,
+  "retried_row_count": 6,
+  "wall_time_s": 27.936791024996637,
+  "phase_topology": [
+    "finite reacting liquid",
+    "incipient neutral vapor"
+  ],
+  "parameter_lane": "Uyan 2015 transfer reconstruction with explicit Archer-Wang water approximation and Hsieh ThermoML pure-MDEA fit",
+  "interpretation": "Direct source-data GREPE reconstruction; not an exact author-code replay.",
+  "pressure_seed_interpretation": "Pressure seed fields report declared physical guesses max(nominal list entry, observed CO2 partial pressure + 100 kPa); nominal_pressure_seed_attempts_kpa and selected_nominal_pressure_seed_kpa retain the nominal list entries.",
+  "selected_pressure_guess_differs_from_nominal_count": 14
+}

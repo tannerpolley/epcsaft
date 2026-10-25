@@ -1,0 +1,11 @@
+| stage | start | status | cost | iterations | covariance | rank |
+| --- | --- | --- | --- | --- | --- | --- |
+| 5 | 1 | converged | 0.102995472 | 32 | active_bound | 5 |
+| 5 | 2 | converged | 0.0416705474 | 168 | active_bound | 5 |
+| 5 | 3 | converged | 0.0416705474 | 189 | active_bound | 5 |
+| 5 | 4 | converged | 0.102995472 | 61 | active_bound | 5 |
+| 5 | 5 | converged | 0.0627471551 | 175 | active_bound | 5 |
+| 5 | 6 | converged | 0.0627471551 | 174 | active_bound | 5 |
+| 4 | 7 | limit_reached | 0.40687944 | 300 | not_converged | 4 |
+| 4 | 8 | converged | 0.0642944423 | 74 | available | 4 |
+| 4 | 9 | limit_reached | 45477804.1 | 300 | not_converged | 4 |

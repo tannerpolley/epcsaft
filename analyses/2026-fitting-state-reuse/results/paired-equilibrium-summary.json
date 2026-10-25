@@ -1,0 +1,50 @@
+[
+  {
+    "pair": 1,
+    "wheel": "baseline",
+    "numerical_rows_identical": true,
+    "values_file": "results/before-equilibrium-values.csv",
+    "termination": "eight accepted states and available actions",
+    "values_sha256": "2e71924b9a39d358ec2a5f4b501258b3343b5b94094a08406de4e156568626b3"
+  },
+  {
+    "pair": 1,
+    "wheel": "candidate",
+    "numerical_rows_identical": true,
+    "values_file": "results/before-equilibrium-values.csv",
+    "termination": "eight accepted states and available actions",
+    "values_sha256": "2e71924b9a39d358ec2a5f4b501258b3343b5b94094a08406de4e156568626b3"
+  },
+  {
+    "pair": 2,
+    "wheel": "baseline",
+    "numerical_rows_identical": true,
+    "values_file": "results/before-equilibrium-values.csv",
+    "termination": "eight accepted states and available actions",
+    "values_sha256": "2e71924b9a39d358ec2a5f4b501258b3343b5b94094a08406de4e156568626b3"
+  },
+  {
+    "pair": 2,
+    "wheel": "candidate",
+    "numerical_rows_identical": true,
+    "values_file": "results/before-equilibrium-values.csv",
+    "termination": "eight accepted states and available actions",
+    "values_sha256": "2e71924b9a39d358ec2a5f4b501258b3343b5b94094a08406de4e156568626b3"
+  },
+  {
+    "pair": 3,
+    "wheel": "baseline",
+    "numerical_rows_identical": true,
+    "values_file": "results/before-equilibrium-values.csv",
+    "termination": "eight accepted states and available actions",
+    "values_sha256": "2e71924b9a39d358ec2a5f4b501258b3343b5b94094a08406de4e156568626b3"
+  },
+  {
+    "pair": 3,
+    "wheel": "candidate",
+    "numerical_rows_identical": true,
+    "values_file": "results/before-equilibrium-values.csv",
+    "termination": "eight accepted states and available actions",
+    "values_sha256": "2e71924b9a39d358ec2a5f4b501258b3343b5b94094a08406de4e156568626b3"
+  }
+]

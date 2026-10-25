@@ -1,0 +1,204 @@
+version: 17
+# Project structure declaration: components, Engine layers, path ownership and
+# code budgets. Plans are GitHub issues (ADR 0010). Package dependencies live
+# in pyproject.toml.
+
+# The rule this file exists to state: C++ is organised by dependency layer,
+# because include direction is the only structural fact a checker can enforce.
+# Python is organised by capability, because that is what a caller imports.
+# The two do not mirror each other on purpose.
+
+artifact:
+  repository: tannerpolley/ePC-SAFT
+  source_directory: engine
+  distribution: epcsaft
+  python: ">=3.13"
+  build_owner: pyproject.toml
+  native_build_owner: meson.build
+  public_modules: [epcsaft, epcsaft.equilibrium, epcsaft.regression]
+
+plan:
+  delivery: https://github.com/tannerpolley/ePC-SAFT/milestones
+  scientific_authority: docs/scientific/CONTEXT.md
+  historical_evidence: docs/scientific/reviews
+
+# Hard ceilings in executable formatter-normalized runtime lines. docs/scientific/code-budgets.md owns
+# the counting, the band rule and the amendments.
+# JSON flow mapping is valid YAML and lets the counter use only the stdlib.
+# #700: owner-approved executable-line accounting, 2026-10-20; rule-2 reductions.
+# #791 owner approval, 2026-10-22; measured count plus band, total capped by layer sum.
+# #811 owner approval, 2026-10-23; rule 1: Core 1096 + 11, Equilibrium 10501 + 106;
+# total 27591 + 276 capped by the layer-ceiling sum 27818.
+# #814 rule 2: Properties 5983 -> 5981 (count 5921 + band 60); total = layer-ceiling sum 27816.
+code_budgets: {"core": 1058, "contributions": 1254, "properties": 5826, "equilibrium": 10607, "regression": 3728, "surface": 785, "bindings": 2179, "python": 2201, "total": 27614}
+
+property_categories: [Ideal, Residual, Total]
+
+# Project map: every project file resolves to one owner and one artifact role by
+# the longest matching path prefix. Owners are components or Engine layers.
+# Generated, environment and independent-repository roots are summarized, not
+# enumerated. JSON flow mapping so tools/project-map.py needs only the stdlib.
+project_map: {
+  "components": {
+    "engine": {"name": "Engine", "purpose": "One runtime distribution: native implementation, Python interface, Engine specifications and numerical verification."},
+    "engine.core": {"name": "Core", "parent": "engine", "purpose": "Constants, coordinates, numerical policy and diagnostics."},
+    "engine.contributions": {"name": "Contributions", "parent": "engine", "purpose": "Ideal and individual residual Helmholtz formulations."},
+    "engine.properties": {"name": "Properties", "parent": "engine", "purpose": "State evaluation, Ideal/Residual/Total quantities, density closure and derivative chains."},
+    "engine.equilibrium": {"name": "Equilibrium", "parent": "engine", "purpose": "Shared declared-phase equilibrium, branch continuation and solved-state actions, neutral PH/PS, including reactions without a reference coordinate, and fixed-T/P phase discovery; UV, charged PH/PS and PH/PS with a reaction reference coordinate are unavailable."},
+    "engine.regression": {"name": "Regression", "parent": "engine", "purpose": "Observation composition, fitting and fit diagnostics."},
+    "engine.surface": {"name": "Surface", "parent": "engine", "purpose": "Physical input construction, resolution and admission."},
+    "engine.bindings": {"name": "Bindings/Python", "parent": "engine", "purpose": "Native-language translation and the public Python input/output interfaces."},
+    "data": {"name": "Data", "purpose": "Reusable inputs, provenance, materialization and packet validation."},
+    "analyses": {"name": "Analyses", "purpose": "Scientific question sets, calculations, retained results and interpretation."},
+    "applications": {"name": "Applications", "purpose": "Three independent repositories that consume the Engine wheel; local migration drafts only.", "external": ["Lithium_Extraction", "MEA-Absorption-Column", "Amine-Thermodynamics"]},
+    "tooling": {"name": "Tooling", "purpose": "Shared build, checks, wheel preparation and project-map tooling."},
+    "documentation": {"name": "Documentation", "purpose": "Project records, doctrine and reviews."},
+    "workspace": {"name": "Workspace configuration", "purpose": "Root and hidden agent, IDE and environment configuration."},
+    "generated": {"name": "Generated and external", "purpose": "Build outputs, environments, caches, third-party build inputs and version-control internals."}
+  },
+  "roles": ["runtime", "specification", "test", "data", "evidence", "tooling", "configuration", "generated", "external"],
+  "rules": [
+    ["engine/native/core/", "engine.core", "runtime"],
+    ["engine/native/contributions/", "engine.contributions", "runtime"],
+    ["engine/native/properties/", "engine.properties", "runtime"],
+    ["engine/native/equilibrium/", "engine.equilibrium", "runtime"],
+    ["engine/native/regression/", "engine.regression", "runtime"],
+    ["engine/native/surface/", "engine.surface", "runtime"],
+    ["engine/native/bindings/", "engine.bindings", "runtime"],
+    ["engine/src/", "engine.bindings", "runtime"],
+    ["engine/tests/", "engine", "test"],
+    ["engine/tests/oracle/", "engine", "evidence"],
+    ["engine/docs/", "engine", "specification"],
+    ["engine/data/", "engine", "data"],
+    ["engine/scripts/", "engine", "tooling"],
+    ["engine/tools/", "engine", "tooling"],
+    ["engine/build/", "generated", "external"],
+    ["engine/meson.build", "engine", "configuration"],
+    ["engine/pyproject.toml", "engine", "configuration"],
+    ["engine/", "engine", "specification"],
+    ["data/packets/", "data", "data"],
+    ["data/packet-locks.json", "data", "data"],
+    ["data/tools/", "data", "tooling"],
+    ["data/", "data", "specification"],
+    ["analyses/**/scripts/**", "analyses", "tooling"],
+    ["analyses/**/tests/**", "analyses", "test"],
+    ["analyses/**/inputs/**", "analyses", "data"],
+    ["analyses/**/README.md", "analyses", "specification"],
+    ["analyses/**/notebook.qmd", "analyses", "evidence"],
+    ["analyses/**/results/**", "analyses", "evidence"],
+    ["analyses/**/figures/**", "analyses", "evidence"],
+    ["analyses/", "analyses", "evidence"],
+    ["downstream/", "applications", "external"],
+    ["downstream/README.md", "applications", "specification"],
+    ["tools/", "tooling", "tooling"],
+    ["docs/scientific/reviews/", "documentation", "evidence"],
+    ["docs/", "documentation", "specification"],
+    ["AGENTS.md", "documentation", "specification"],
+    ["CODING_STANDARDS.md", "documentation", "specification"],
+    ["CLAUDE.md", "documentation", "specification"],
+    ["README.md", "documentation", "specification"],
+    ["GLOSSARY.md", "documentation", "specification"],
+    ["LICENSE", "documentation", "specification"],
+    ["NOTICE", "documentation", "specification"],
+    ["CITATION.cff", "documentation", "specification"],
+    [".zenodo.json", "workspace", "configuration"],
+    ["ARCHITECTURE.yaml", "documentation", "specification"],
+    ["pyproject.toml", "workspace", "configuration"],
+    ["uv.lock", "workspace", "configuration"],
+    [".gitignore", "workspace", "configuration"],
+    [".gitattributes", "workspace", "configuration"],
+    [".agents/", "workspace", "configuration"],
+    [".claude/", "workspace", "configuration"],
+    [".codex/", "workspace", "configuration"],
+    [".github/", "workspace", "configuration"],
+    [".serena/", "workspace", "configuration"],
+    [".idea/", "workspace", "configuration"],
+    [".git/", "generated", "external"],
+    ["build/", "generated", "generated"],
+    [".venv/", "generated", "generated"],
+    [".pytest_cache/", "generated", "generated"],
+    [".ruff_cache/", "generated", "generated"],
+    [".mypy_cache/", "generated", "generated"]
+  ]
+}
+
+native:
+  root: engine/native
+  shared_library: epcsaft_native
+  private_archive_consumer: epcsaft_asl
+  extension: epcsaft._core
+  checker: tools/check-engine-architecture.py
+  # Downward only. bindings may include anything; nothing includes bindings.
+  layers: [core, contributions, properties, equilibrium, regression, surface, bindings]
+  layer_content:
+    core: policy, the declared-choice and convergence contracts, the trace
+    contributions: ideal-gas and individual residual Helmholtz formulations; no CppAD-specific types or equilibrium solver
+    properties: Ideal, Residual and Total outputs derived from Contributions, reusable state evaluation and exact derivatives; no phase-equilibrium solver
+    equilibrium: one equilibrium driver, shared rows and branch continuation; explicit native tangent-plane testing and phase discovery
+    regression: parameter fitting against declared problems
+    surface: the parameter builder, which model is asked for
+    bindings: the only nanobind includes
+  # regression/ may call solve_equilibrium and solve_phase_boundary on a problem
+  # with declared phases; it may not reach phase stability, because a fit needs
+  # differentiable residuals and a discovered phase count is not one.
+  regression_boundary:
+    permitted: [equilibrium/problem.hpp, solve_equilibrium, solve_phase_boundary, properties/helmholtz_model.hpp]  # documentation only; no checker reads this list
+    forbidden: [phase_stability.hpp, find_phases, problems with omitted topology]
+  invariants:
+    native_pic_object_sets: 1
+    private_static_archives: 1
+    native_extensions: 1
+    python_inside_native_library: forbidden
+    installed_headers: forbidden
+    public_cpp_abi: forbidden
+    iterative_python_callbacks: forbidden
+    constant_defined_twice: forbidden
+    category_one_constants_home: core/physical_constants.hpp
+
+python:
+  root: engine/src/epcsaft
+  # Python maps inputs to _core and _core results to types. It performs no
+  # arithmetic: a frontend call is agnostic to what it is solving.
+  numerics: forbidden
+  capabilities: [eos, equilibrium, regression]
+
+formulation:
+  document: engine/docs/equilibrium/formulation.md
+  algorithms: engine/docs/science/algorithms.md
+  # All admitted specifications use one driver and shared energy/row owners.
+  # Its numerical method and curvature must be qualified for each admitted domain.
+  equilibrium_drivers: 1
+  not_expressible: [solids, augmented critical-point equations, kinetics]
+
+naming:
+  # No proper nouns in identifiers. Source names are citations, not symbols.
+  # HELD in particular read as the wrong author here: Christoph Held is a
+  # parameter source in this repository's bibliography, and the algorithm is not
+  # his.
+  proper_nouns_in_identifiers: forbidden
+  retired: [HELD, Held2, GREPE, Provider, step numbering]
+
+evidence:
+  # Tests follow the Python side, because a test is written against a
+  # user-facing claim, not a compilation unit. No numerical/behavior split.
+  organisation: by_capability
+  basis: independent analytic identities, measurements, evaluated references, and source-model comparisons
+  route_specific_gates: forbidden
+  downstream_specific_flags: forbidden
+
+scientific_boundaries:
+  reusable_packets: data
+  installed_artifact_evidence: analyses
+  packet_access: explicit_materialization_only
+  sibling_discovery: forbidden
+
+build_invariants:
+  distributions: 1
+  versions: 1
+  wheels: 1
+  meson_roots: 1
+  editable_downstream_dependencies: forbidden
+  compatibility_aliases: forbidden
+  mutable_wheel_inputs: forbidden
+  third_party_cmake_use: ceres_package_lookup_only
+  inferred_parameter_defaults: forbidden

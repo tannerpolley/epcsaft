@@ -1,0 +1,9 @@
+Traceback (most recent call last):
+  File "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-750-720-part-b-diagnose-the-changed-results/analyses/2026-born-unavailable-states/scripts/probe.py", line 202, in <module>
+    main()
+    ~~~~^^
+  File "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-750-720-part-b-diagnose-the-changed-results/analyses/2026-born-unavailable-states/scripts/probe.py", line 60, in main
+    max(
+    ...<10 lines>...
+    < 2e-10
+AssertionError

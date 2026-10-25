@@ -1,0 +1,206 @@
+{
+  "components": [
+    {
+      "coefficients": [
+        {
+          "family": "dispersion_energy_over_k",
+          "identity": "component/methane/dispersion_energy_over_k",
+          "provenance": {
+            "domain_id": "engine-numerical-fixture-domain",
+            "locator": "compact numerical fixture values",
+            "source_id": "engine-numerical-fixture"
+          },
+          "value": {
+            "magnitude": 150.03,
+            "unit": "kelvin"
+          }
+        },
+        {
+          "family": "segment_count",
+          "identity": "component/methane/segment_count",
+          "provenance": {
+            "domain_id": "engine-numerical-fixture-domain",
+            "locator": "compact numerical fixture values",
+            "source_id": "engine-numerical-fixture"
+          },
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          }
+        },
+        {
+          "family": "segment_diameter",
+          "identity": "component/methane/segment_diameter",
+          "provenance": {
+            "domain_id": "engine-numerical-fixture-domain",
+            "locator": "compact numerical fixture values",
+            "source_id": "engine-numerical-fixture"
+          },
+          "value": {
+            "magnitude": 3.7039,
+            "unit": "angstrom"
+          }
+        }
+      ],
+      "component_id": "methane",
+      "fixed": {
+        "molar_mass": {
+          "provenance": {
+            "domain_id": "engine-numerical-fixture-domain",
+            "locator": "compact numerical fixture values",
+            "source_id": "engine-numerical-fixture"
+          },
+          "value": {
+            "magnitude": 0.016043,
+            "unit": "kilogram / mole"
+          }
+        }
+      }
+    },
+    {
+      "coefficients": [
+        {
+          "family": "dispersion_energy_over_k",
+          "identity": "component/ethane/dispersion_energy_over_k",
+          "provenance": {
+            "domain_id": "engine-numerical-fixture-domain",
+            "locator": "compact numerical fixture values",
+            "source_id": "engine-numerical-fixture"
+          },
+          "value": {
+            "magnitude": 191.42,
+            "unit": "kelvin"
+          }
+        },
+        {
+          "family": "segment_count",
+          "identity": "component/ethane/segment_count",
+          "provenance": {
+            "domain_id": "engine-numerical-fixture-domain",
+            "locator": "compact numerical fixture values",
+            "source_id": "engine-numerical-fixture"
+          },
+          "value": {
+            "magnitude": 1.6069,
+            "unit": "dimensionless"
+          }
+        },
+        {
+          "family": "segment_diameter",
+          "identity": "component/ethane/segment_diameter",
+          "provenance": {
+            "domain_id": "engine-numerical-fixture-domain",
+            "locator": "compact numerical fixture values",
+            "source_id": "engine-numerical-fixture"
+          },
+          "value": {
+            "magnitude": 3.5206,
+            "unit": "angstrom"
+          }
+        }
+      ],
+      "component_id": "ethane",
+      "fixed": {
+        "molar_mass": {
+          "provenance": {
+            "domain_id": "engine-numerical-fixture-domain",
+            "locator": "compact numerical fixture values",
+            "source_id": "engine-numerical-fixture"
+          },
+          "value": {
+            "magnitude": 0.03007,
+            "unit": "kilogram / mole"
+          }
+        }
+      }
+    }
+  ],
+  "correlations": [],
+  "document_id": "neutral-binary-fixture",
+  "document_version": 1,
+  "domains": [
+    {
+      "domain_id": "engine-numerical-fixture-domain",
+      "kind": "unknown"
+    }
+  ],
+  "model_coefficients": [],
+  "model_families": [
+    {
+      "choice": "none",
+      "family_id": "model/association",
+      "kind": "association",
+      "provenance": {
+        "domain_id": "engine-numerical-fixture-domain",
+        "locator": "compact numerical fixture values",
+        "source_id": "engine-numerical-fixture"
+      }
+    },
+    {
+      "choice": "pc-saft",
+      "family_id": "model/base",
+      "kind": "base",
+      "provenance": {
+        "domain_id": "engine-numerical-fixture-domain",
+        "locator": "compact numerical fixture values",
+        "source_id": "engine-numerical-fixture"
+      }
+    },
+    {
+      "choice": "none",
+      "family_id": "model/electrolyte",
+      "kind": "electrolyte",
+      "provenance": {
+        "domain_id": "engine-numerical-fixture-domain",
+        "locator": "compact numerical fixture values",
+        "source_id": "engine-numerical-fixture"
+      }
+    },
+    {
+      "choice": "none",
+      "family_id": "model/relative_permittivity",
+      "kind": "permittivity",
+      "provenance": {
+        "domain_id": "engine-numerical-fixture-domain",
+        "locator": "compact numerical fixture values",
+        "source_id": "engine-numerical-fixture"
+      }
+    }
+  ],
+  "pairs": [
+    {
+      "coefficients": [
+        {
+          "family": "k_ij",
+          "identity": "pair/ethane/methane/k_ij",
+          "provenance": {
+            "domain_id": "engine-numerical-fixture-domain",
+            "locator": "compact numerical fixture values",
+            "source_id": "engine-numerical-fixture"
+          },
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ],
+      "component_id_a": "ethane",
+      "component_id_b": "methane"
+    }
+  ],
+  "purpose": "package-test-fixture",
+  "schema": "epcsaft.parameters",
+  "schema_version": 1,
+  "sources": [
+    {
+      "citation": "Project-authored compact numerical EOS fixture.",
+      "source_id": "engine-numerical-fixture",
+      "use_basis": "Numerical invariants and independent equation oracles."
+    }
+  ],
+  "topology": {
+    "edges": [],
+    "presets": [],
+    "sites": []
+  }
+}

@@ -1,0 +1,3 @@
+PROBE_JSON={"case": "negative", "error": "\"epcsaft_equilibrium:outside_interval:phase[0].amount[0]", "nonfinite_outputs": true, "cache_recovery_fgh": true}
+epcsaft_equilibrium prepared record 1 of at most 16
+epcsaft_equilibrium failure: epcsaft_equilibrium:outside_interval:phase[0].amount[0] controls=-1,0.033778333292233328,0.21864518731791907,0.027681828087699221

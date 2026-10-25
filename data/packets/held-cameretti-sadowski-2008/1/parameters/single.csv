@@ -1,0 +1,121 @@
+record_id,component_id,family,value,unit,source_id,locator,domain_id
+water-molar-mass,water,molar_mass,18.01528,gram / mole,nist-srd-69-water,"Water record, molecular weight",nist-water-identity
+water-segment-count,water,segment_count,1.204659,,held-cameretti-sadowski-2008,"Table 1, segment number",held-aqueous-electrolyte-298-15-k-1-bar
+water-dispersion-energy,water,dispersion_energy_over_k,353.9449,kelvin,held-cameretti-sadowski-2008,"Table 1, dispersion energy",held-aqueous-electrolyte-298-15-k-1-bar
+water-charge,water,charge_number,0,,held-cameretti-sadowski-2008,"Section 2, water is the neutral solvent",held-aqueous-electrolyte-298-15-k-1-bar
+hydronium-cation-segment-count,hydronium-cation,segment_count,1,,held-cameretti-sadowski-2008,"Section 2, ion segment number is one",held-aqueous-electrolyte-298-15-k-1-bar
+hydronium-cation-segment-diameter,hydronium-cation,segment_diameter,2.2740,angstrom,held-cameretti-sadowski-2008,"Table 2, H+ row",held-aqueous-electrolyte-298-15-k-1-bar
+hydronium-cation-dispersion-energy,hydronium-cation,dispersion_energy_over_k,1616.4939,kelvin,held-cameretti-sadowski-2008,"Table 2, H+ row",held-aqueous-electrolyte-298-15-k-1-bar
+hydronium-cation-charge,hydronium-cation,charge_number,+1,,held-cameretti-sadowski-2008,"Table 2, H+ charge label",held-aqueous-electrolyte-298-15-k-1-bar
+lithium-cation-segment-count,lithium-cation,segment_count,1,,held-cameretti-sadowski-2008,"Section 2, ion segment number is one",held-aqueous-electrolyte-298-15-k-1-bar
+lithium-cation-segment-diameter,lithium-cation,segment_diameter,1.8177,angstrom,held-cameretti-sadowski-2008,"Table 2, Li+ row",held-aqueous-electrolyte-298-15-k-1-bar
+lithium-cation-dispersion-energy,lithium-cation,dispersion_energy_over_k,2697.2795,kelvin,held-cameretti-sadowski-2008,"Table 2, Li+ row",held-aqueous-electrolyte-298-15-k-1-bar
+lithium-cation-charge,lithium-cation,charge_number,+1,,held-cameretti-sadowski-2008,"Table 2, ion charge label",held-aqueous-electrolyte-298-15-k-1-bar
+sodium-cation-segment-count,sodium-cation,segment_count,1,,held-cameretti-sadowski-2008,"Section 2, ion segment number is one",held-aqueous-electrolyte-298-15-k-1-bar
+sodium-cation-segment-diameter,sodium-cation,segment_diameter,2.4122,angstrom,held-cameretti-sadowski-2008,"Table 2, Na+ row",held-aqueous-electrolyte-298-15-k-1-bar
+sodium-cation-dispersion-energy,sodium-cation,dispersion_energy_over_k,646.0504,kelvin,held-cameretti-sadowski-2008,"Table 2, Na+ row",held-aqueous-electrolyte-298-15-k-1-bar
+sodium-cation-charge,sodium-cation,charge_number,+1,,held-cameretti-sadowski-2008,"Table 2, ion charge label",held-aqueous-electrolyte-298-15-k-1-bar
+potassium-cation-segment-count,potassium-cation,segment_count,1,,held-cameretti-sadowski-2008,"Section 2, ion segment number is one",held-aqueous-electrolyte-298-15-k-1-bar
+potassium-cation-segment-diameter,potassium-cation,segment_diameter,2.9698,angstrom,held-cameretti-sadowski-2008,"Table 2, K+ row",held-aqueous-electrolyte-298-15-k-1-bar
+potassium-cation-dispersion-energy,potassium-cation,dispersion_energy_over_k,271.0518,kelvin,held-cameretti-sadowski-2008,"Table 2, K+ row",held-aqueous-electrolyte-298-15-k-1-bar
+potassium-cation-charge,potassium-cation,charge_number,+1,,held-cameretti-sadowski-2008,"Table 2, ion charge label",held-aqueous-electrolyte-298-15-k-1-bar
+rubidium-cation-segment-count,rubidium-cation,segment_count,1,,held-cameretti-sadowski-2008,"Section 2, ion segment number is one",held-aqueous-electrolyte-298-15-k-1-bar
+rubidium-cation-segment-diameter,rubidium-cation,segment_diameter,3.1443,angstrom,held-cameretti-sadowski-2008,"Table 2, Rb+ row",held-aqueous-electrolyte-298-15-k-1-bar
+rubidium-cation-dispersion-energy,rubidium-cation,dispersion_energy_over_k,215.3697,kelvin,held-cameretti-sadowski-2008,"Table 2, Rb+ row",held-aqueous-electrolyte-298-15-k-1-bar
+rubidium-cation-charge,rubidium-cation,charge_number,+1,,held-cameretti-sadowski-2008,"Table 2, ion charge label",held-aqueous-electrolyte-298-15-k-1-bar
+cesium-cation-segment-count,cesium-cation,segment_count,1,,held-cameretti-sadowski-2008,"Section 2, ion segment number is one",held-aqueous-electrolyte-298-15-k-1-bar
+cesium-cation-segment-diameter,cesium-cation,segment_diameter,3.5606,angstrom,held-cameretti-sadowski-2008,"Table 2, Cs+ row",held-aqueous-electrolyte-298-15-k-1-bar
+cesium-cation-dispersion-energy,cesium-cation,dispersion_energy_over_k,175.9357,kelvin,held-cameretti-sadowski-2008,"Table 2, Cs+ row",held-aqueous-electrolyte-298-15-k-1-bar
+cesium-cation-charge,cesium-cation,charge_number,+1,,held-cameretti-sadowski-2008,"Table 2, ion charge label",held-aqueous-electrolyte-298-15-k-1-bar
+ammonium-cation-segment-count,ammonium-cation,segment_count,1,,held-cameretti-sadowski-2008,"Section 2, ion segment number is one",held-aqueous-electrolyte-298-15-k-1-bar
+ammonium-cation-segment-diameter,ammonium-cation,segment_diameter,3.4755,angstrom,held-cameretti-sadowski-2008,"Table 2, NH4+ row",held-aqueous-electrolyte-298-15-k-1-bar
+ammonium-cation-dispersion-energy,ammonium-cation,dispersion_energy_over_k,212.3632,kelvin,held-cameretti-sadowski-2008,"Table 2, NH4+ row",held-aqueous-electrolyte-298-15-k-1-bar
+ammonium-cation-charge,ammonium-cation,charge_number,+1,,held-cameretti-sadowski-2008,"Table 2, ion charge label",held-aqueous-electrolyte-298-15-k-1-bar
+choline-cation-segment-count,choline-cation,segment_count,1,,held-cameretti-sadowski-2008,"Section 2, ion segment number is one",held-aqueous-electrolyte-298-15-k-1-bar
+choline-cation-segment-diameter,choline-cation,segment_diameter,5.9216,angstrom,held-cameretti-sadowski-2008,"Table 2, Choline+ row",held-aqueous-electrolyte-298-15-k-1-bar
+choline-cation-dispersion-energy,choline-cation,dispersion_energy_over_k,220.4883,kelvin,held-cameretti-sadowski-2008,"Table 2, Choline+ row",held-aqueous-electrolyte-298-15-k-1-bar
+choline-cation-charge,choline-cation,charge_number,+1,,held-cameretti-sadowski-2008,"Table 2, ion charge label",held-aqueous-electrolyte-298-15-k-1-bar
+magnesium-cation-segment-count,magnesium-cation,segment_count,1,,held-cameretti-sadowski-2008,"Section 2, ion segment number is one",held-aqueous-electrolyte-298-15-k-1-bar
+magnesium-cation-segment-diameter,magnesium-cation,segment_diameter,2.3229,angstrom,held-cameretti-sadowski-2008,"Table 2, Mg2+ row",held-aqueous-electrolyte-298-15-k-1-bar
+magnesium-cation-dispersion-energy,magnesium-cation,dispersion_energy_over_k,8145.3298,kelvin,held-cameretti-sadowski-2008,"Table 2, Mg2+ row",held-aqueous-electrolyte-298-15-k-1-bar
+magnesium-cation-charge,magnesium-cation,charge_number,+2,,held-cameretti-sadowski-2008,"Table 2, ion charge label",held-aqueous-electrolyte-298-15-k-1-bar
+calcium-cation-segment-count,calcium-cation,segment_count,1,,held-cameretti-sadowski-2008,"Section 2, ion segment number is one",held-aqueous-electrolyte-298-15-k-1-bar
+calcium-cation-segment-diameter,calcium-cation,segment_diameter,2.8889,angstrom,held-cameretti-sadowski-2008,"Table 2, Ca2+ row",held-aqueous-electrolyte-298-15-k-1-bar
+calcium-cation-dispersion-energy,calcium-cation,dispersion_energy_over_k,2146.9794,kelvin,held-cameretti-sadowski-2008,"Table 2, Ca2+ row",held-aqueous-electrolyte-298-15-k-1-bar
+calcium-cation-charge,calcium-cation,charge_number,+2,,held-cameretti-sadowski-2008,"Table 2, ion charge label",held-aqueous-electrolyte-298-15-k-1-bar
+strontium-cation-segment-count,strontium-cation,segment_count,1,,held-cameretti-sadowski-2008,"Section 2, ion segment number is one",held-aqueous-electrolyte-298-15-k-1-bar
+strontium-cation-segment-diameter,strontium-cation,segment_diameter,2.9882,angstrom,held-cameretti-sadowski-2008,"Table 2, Sr2+ row",held-aqueous-electrolyte-298-15-k-1-bar
+strontium-cation-dispersion-energy,strontium-cation,dispersion_energy_over_k,1677.6061,kelvin,held-cameretti-sadowski-2008,"Table 2, Sr2+ row",held-aqueous-electrolyte-298-15-k-1-bar
+strontium-cation-charge,strontium-cation,charge_number,+2,,held-cameretti-sadowski-2008,"Table 2, ion charge label",held-aqueous-electrolyte-298-15-k-1-bar
+barium-cation-segment-count,barium-cation,segment_count,1,,held-cameretti-sadowski-2008,"Section 2, ion segment number is one",held-aqueous-electrolyte-298-15-k-1-bar
+barium-cation-segment-diameter,barium-cation,segment_diameter,3.0982,angstrom,held-cameretti-sadowski-2008,"Table 2, Ba2+ row",held-aqueous-electrolyte-298-15-k-1-bar
+barium-cation-dispersion-energy,barium-cation,dispersion_energy_over_k,1475.9880,kelvin,held-cameretti-sadowski-2008,"Table 2, Ba2+ row",held-aqueous-electrolyte-298-15-k-1-bar
+barium-cation-charge,barium-cation,charge_number,+2,,held-cameretti-sadowski-2008,"Table 2, ion charge label",held-aqueous-electrolyte-298-15-k-1-bar
+cobalt-cation-segment-count,cobalt-cation,segment_count,1,,held-cameretti-sadowski-2008,"Section 2, ion segment number is one",held-aqueous-electrolyte-298-15-k-1-bar
+cobalt-cation-segment-diameter,cobalt-cation,segment_diameter,2.4387,angstrom,held-cameretti-sadowski-2008,"Table 2, Co2+ row",held-aqueous-electrolyte-298-15-k-1-bar
+cobalt-cation-dispersion-energy,cobalt-cation,dispersion_energy_over_k,5837.6334,kelvin,held-cameretti-sadowski-2008,"Table 2, Co2+ row",held-aqueous-electrolyte-298-15-k-1-bar
+cobalt-cation-charge,cobalt-cation,charge_number,+2,,held-cameretti-sadowski-2008,"Table 2, ion charge label",held-aqueous-electrolyte-298-15-k-1-bar
+copper-cation-segment-count,copper-cation,segment_count,1,,held-cameretti-sadowski-2008,"Section 2, ion segment number is one",held-aqueous-electrolyte-298-15-k-1-bar
+copper-cation-segment-diameter,copper-cation,segment_diameter,2.6955,angstrom,held-cameretti-sadowski-2008,"Table 2, Cu2+ row",held-aqueous-electrolyte-298-15-k-1-bar
+copper-cation-dispersion-energy,copper-cation,dispersion_energy_over_k,2545.1445,kelvin,held-cameretti-sadowski-2008,"Table 2, Cu2+ row",held-aqueous-electrolyte-298-15-k-1-bar
+copper-cation-charge,copper-cation,charge_number,+2,,held-cameretti-sadowski-2008,"Table 2, ion charge label",held-aqueous-electrolyte-298-15-k-1-bar
+iron-cation-segment-count,iron-cation,segment_count,1,,held-cameretti-sadowski-2008,"Section 2, ion segment number is one",held-aqueous-electrolyte-298-15-k-1-bar
+iron-cation-segment-diameter,iron-cation,segment_diameter,2.4828,angstrom,held-cameretti-sadowski-2008,"Table 2, Fe2+ row",held-aqueous-electrolyte-298-15-k-1-bar
+iron-cation-dispersion-energy,iron-cation,dispersion_energy_over_k,5495.6986,kelvin,held-cameretti-sadowski-2008,"Table 2, Fe2+ row",held-aqueous-electrolyte-298-15-k-1-bar
+iron-cation-charge,iron-cation,charge_number,+2,,held-cameretti-sadowski-2008,"Table 2, ion charge label",held-aqueous-electrolyte-298-15-k-1-bar
+chromium-iii-cation-segment-count,chromium-iii-cation,segment_count,1,,held-cameretti-sadowski-2008,"Section 2, ion segment number is one",held-aqueous-electrolyte-298-15-k-1-bar
+chromium-iii-cation-segment-diameter,chromium-iii-cation,segment_diameter,3.2380,angstrom,held-cameretti-sadowski-2008,"Table 2, Cr3+ row",held-aqueous-electrolyte-298-15-k-1-bar
+chromium-iii-cation-dispersion-energy,chromium-iii-cation,dispersion_energy_over_k,6905.3450,kelvin,held-cameretti-sadowski-2008,"Table 2, Cr3+ row",held-aqueous-electrolyte-298-15-k-1-bar
+chromium-iii-cation-charge,chromium-iii-cation,charge_number,+3,,held-cameretti-sadowski-2008,"Table 2, ion charge label",held-aqueous-electrolyte-298-15-k-1-bar
+fluoride-anion-segment-count,fluoride-anion,segment_count,1,,held-cameretti-sadowski-2008,"Section 2, ion segment number is one",held-aqueous-electrolyte-298-15-k-1-bar
+fluoride-anion-segment-diameter,fluoride-anion,segment_diameter,1.6132,angstrom,held-cameretti-sadowski-2008,"Table 2, F- row",held-aqueous-electrolyte-298-15-k-1-bar
+fluoride-anion-dispersion-energy,fluoride-anion,dispersion_energy_over_k,648.3127,kelvin,held-cameretti-sadowski-2008,"Table 2, F- row",held-aqueous-electrolyte-298-15-k-1-bar
+fluoride-anion-charge,fluoride-anion,charge_number,-1,,held-cameretti-sadowski-2008,"Table 2, ion charge label",held-aqueous-electrolyte-298-15-k-1-bar
+chloride-anion-segment-count,chloride-anion,segment_count,1,,held-cameretti-sadowski-2008,"Section 2, ion segment number is one",held-aqueous-electrolyte-298-15-k-1-bar
+chloride-anion-segment-diameter,chloride-anion,segment_diameter,3.0575,angstrom,held-cameretti-sadowski-2008,"Table 2, Cl- row",held-aqueous-electrolyte-298-15-k-1-bar
+chloride-anion-dispersion-energy,chloride-anion,dispersion_energy_over_k,47.2878,kelvin,held-cameretti-sadowski-2008,"Table 2, Cl- row",held-aqueous-electrolyte-298-15-k-1-bar
+chloride-anion-charge,chloride-anion,charge_number,-1,,held-cameretti-sadowski-2008,"Table 2, ion charge label",held-aqueous-electrolyte-298-15-k-1-bar
+bromide-anion-segment-count,bromide-anion,segment_count,1,,held-cameretti-sadowski-2008,"Section 2, ion segment number is one",held-aqueous-electrolyte-298-15-k-1-bar
+bromide-anion-segment-diameter,bromide-anion,segment_diameter,3.4573,angstrom,held-cameretti-sadowski-2008,"Table 2, Br- row",held-aqueous-electrolyte-298-15-k-1-bar
+bromide-anion-dispersion-energy,bromide-anion,dispersion_energy_over_k,60.2216,kelvin,held-cameretti-sadowski-2008,"Table 2, Br- row",held-aqueous-electrolyte-298-15-k-1-bar
+bromide-anion-charge,bromide-anion,charge_number,-1,,held-cameretti-sadowski-2008,"Table 2, ion charge label",held-aqueous-electrolyte-298-15-k-1-bar
+iodide-anion-segment-count,iodide-anion,segment_count,1,,held-cameretti-sadowski-2008,"Section 2, ion segment number is one",held-aqueous-electrolyte-298-15-k-1-bar
+iodide-anion-segment-diameter,iodide-anion,segment_diameter,3.9319,angstrom,held-cameretti-sadowski-2008,"Table 2, I- row",held-aqueous-electrolyte-298-15-k-1-bar
+iodide-anion-dispersion-energy,iodide-anion,dispersion_energy_over_k,80.4347,kelvin,held-cameretti-sadowski-2008,"Table 2, I- row",held-aqueous-electrolyte-298-15-k-1-bar
+iodide-anion-charge,iodide-anion,charge_number,-1,,held-cameretti-sadowski-2008,"Table 2, ion charge label",held-aqueous-electrolyte-298-15-k-1-bar
+hydroxide-anion-segment-count,hydroxide-anion,segment_count,1,,held-cameretti-sadowski-2008,"Section 2, ion segment number is one",held-aqueous-electrolyte-298-15-k-1-bar
+hydroxide-anion-segment-diameter,hydroxide-anion,segment_diameter,1.6401,angstrom,held-cameretti-sadowski-2008,"Table 2, OH- row",held-aqueous-electrolyte-298-15-k-1-bar
+hydroxide-anion-dispersion-energy,hydroxide-anion,dispersion_energy_over_k,2444.7555,kelvin,held-cameretti-sadowski-2008,"Table 2, OH- row",held-aqueous-electrolyte-298-15-k-1-bar
+hydroxide-anion-charge,hydroxide-anion,charge_number,-1,,held-cameretti-sadowski-2008,"Table 2, OH- charge label",held-aqueous-electrolyte-298-15-k-1-bar
+thiocyanate-anion-segment-count,thiocyanate-anion,segment_count,1,,held-cameretti-sadowski-2008,"Section 2, ion segment number is one",held-aqueous-electrolyte-298-15-k-1-bar
+thiocyanate-anion-segment-diameter,thiocyanate-anion,segment_diameter,4.0715,angstrom,held-cameretti-sadowski-2008,"Table 2, SCN- row",held-aqueous-electrolyte-298-15-k-1-bar
+thiocyanate-anion-dispersion-energy,thiocyanate-anion,dispersion_energy_over_k,69.6806,kelvin,held-cameretti-sadowski-2008,"Table 2, SCN- row",held-aqueous-electrolyte-298-15-k-1-bar
+thiocyanate-anion-charge,thiocyanate-anion,charge_number,-1,,held-cameretti-sadowski-2008,"Table 2, ion charge label",held-aqueous-electrolyte-298-15-k-1-bar
+perchlorate-anion-segment-count,perchlorate-anion,segment_count,1,,held-cameretti-sadowski-2008,"Section 2, ion segment number is one",held-aqueous-electrolyte-298-15-k-1-bar
+perchlorate-anion-segment-diameter,perchlorate-anion,segment_diameter,4.0731,angstrom,held-cameretti-sadowski-2008,"Table 2, ClO4- row",held-aqueous-electrolyte-298-15-k-1-bar
+perchlorate-anion-dispersion-energy,perchlorate-anion,dispersion_energy_over_k,58.423,kelvin,held-cameretti-sadowski-2008,"Table 2, ClO4- row",held-aqueous-electrolyte-298-15-k-1-bar
+perchlorate-anion-charge,perchlorate-anion,charge_number,-1,,held-cameretti-sadowski-2008,"Table 2, ion charge label",held-aqueous-electrolyte-298-15-k-1-bar
+chlorate-anion-segment-count,chlorate-anion,segment_count,1,,held-cameretti-sadowski-2008,"Section 2, ion segment number is one",held-aqueous-electrolyte-298-15-k-1-bar
+chlorate-anion-segment-diameter,chlorate-anion,segment_diameter,3.8212,angstrom,held-cameretti-sadowski-2008,"Table 2, ClO3- row",held-aqueous-electrolyte-298-15-k-1-bar
+chlorate-anion-dispersion-energy,chlorate-anion,dispersion_energy_over_k,15.4978,kelvin,held-cameretti-sadowski-2008,"Table 2, ClO3- row",held-aqueous-electrolyte-298-15-k-1-bar
+chlorate-anion-charge,chlorate-anion,charge_number,-1,,held-cameretti-sadowski-2008,"Table 2, ion charge label",held-aqueous-electrolyte-298-15-k-1-bar
+dihydrogen-phosphate-anion-segment-count,dihydrogen-phosphate-anion,segment_count,1,,held-cameretti-sadowski-2008,"Section 2, ion segment number is one",held-aqueous-electrolyte-298-15-k-1-bar
+dihydrogen-phosphate-anion-segment-diameter,dihydrogen-phosphate-anion,segment_diameter,3.7026,angstrom,held-cameretti-sadowski-2008,"Table 2, H2PO4- row",held-aqueous-electrolyte-298-15-k-1-bar
+dihydrogen-phosphate-anion-dispersion-energy,dihydrogen-phosphate-anion,dispersion_energy_over_k,0.0000,kelvin,held-cameretti-sadowski-2008,"Table 2, H2PO4- row",held-aqueous-electrolyte-298-15-k-1-bar
+dihydrogen-phosphate-anion-charge,dihydrogen-phosphate-anion,charge_number,-1,,held-cameretti-sadowski-2008,"Table 2, ion charge label",held-aqueous-electrolyte-298-15-k-1-bar
+bromate-anion-segment-count,bromate-anion,segment_count,1,,held-cameretti-sadowski-2008,"Section 2, ion segment number is one",held-aqueous-electrolyte-298-15-k-1-bar
+bromate-anion-segment-diameter,bromate-anion,segment_diameter,3.5765,angstrom,held-cameretti-sadowski-2008,"Table 2, BrO3- row",held-aqueous-electrolyte-298-15-k-1-bar
+bromate-anion-dispersion-energy,bromate-anion,dispersion_energy_over_k,0.0000,kelvin,held-cameretti-sadowski-2008,"Table 2, BrO3- row",held-aqueous-electrolyte-298-15-k-1-bar
+bromate-anion-charge,bromate-anion,charge_number,-1,,held-cameretti-sadowski-2008,"Table 2, ion charge label",held-aqueous-electrolyte-298-15-k-1-bar
+nitrate-anion-segment-count,nitrate-anion,segment_count,1,,held-cameretti-sadowski-2008,"Section 2, ion segment number is one",held-aqueous-electrolyte-298-15-k-1-bar
+nitrate-anion-segment-diameter,nitrate-anion,segment_diameter,3.3805,angstrom,held-cameretti-sadowski-2008,"Table 2, NO3- row",held-aqueous-electrolyte-298-15-k-1-bar
+nitrate-anion-dispersion-energy,nitrate-anion,dispersion_energy_over_k,0.0000,kelvin,held-cameretti-sadowski-2008,"Table 2, NO3- row",held-aqueous-electrolyte-298-15-k-1-bar
+nitrate-anion-charge,nitrate-anion,charge_number,-1,,held-cameretti-sadowski-2008,"Table 2, ion charge label",held-aqueous-electrolyte-298-15-k-1-bar
+sulfate-anion-segment-count,sulfate-anion,segment_count,1,,held-cameretti-sadowski-2008,"Section 2, ion segment number is one",held-aqueous-electrolyte-298-15-k-1-bar
+sulfate-anion-segment-diameter,sulfate-anion,segment_diameter,2.4538,angstrom,held-cameretti-sadowski-2008,"Table 2, SO4^2- row",held-aqueous-electrolyte-298-15-k-1-bar
+sulfate-anion-dispersion-energy,sulfate-anion,dispersion_energy_over_k,0.0000,kelvin,held-cameretti-sadowski-2008,"Table 2, SO4^2- row",held-aqueous-electrolyte-298-15-k-1-bar
+sulfate-anion-charge,sulfate-anion,charge_number,-2,,held-cameretti-sadowski-2008,"Table 2, ion charge label",held-aqueous-electrolyte-298-15-k-1-bar
+hydrogen-phosphate-anion-segment-count,hydrogen-phosphate-anion,segment_count,1,,held-cameretti-sadowski-2008,"Section 2, ion segment number is one",held-aqueous-electrolyte-298-15-k-1-bar
+hydrogen-phosphate-anion-segment-diameter,hydrogen-phosphate-anion,segment_diameter,4.4608,angstrom,held-cameretti-sadowski-2008,"Table 2, HPO4^2- row",held-aqueous-electrolyte-298-15-k-1-bar
+hydrogen-phosphate-anion-dispersion-energy,hydrogen-phosphate-anion,dispersion_energy_over_k,0.0000,kelvin,held-cameretti-sadowski-2008,"Table 2, HPO4^2- row",held-aqueous-electrolyte-298-15-k-1-bar
+hydrogen-phosphate-anion-charge,hydrogen-phosphate-anion,charge_number,-2,,held-cameretti-sadowski-2008,"Table 2, ion charge label",held-aqueous-electrolyte-298-15-k-1-bar

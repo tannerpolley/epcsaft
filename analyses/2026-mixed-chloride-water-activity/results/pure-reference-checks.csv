@@ -1,0 +1,3 @@
+declaration,aw,Phi,osmotic_cause,density_mol_m3,pressure_Pa,pressure_error_Pa,pressure_density_derivative,relative_permittivity,branch
+Held,1.0,Stop.converged_to_floor,OsmoticUndefinedPureSolvent,55340.403935031754,99999.99999891593,-1.0840740287676454e-06,81849.11302282174,78.09,DensityBranch.Liquid
+Figiel,1.0,Stop.converged_to_floor,OsmoticUndefinedPureSolvent,55340.37925215373,100000.0000022347,2.2346939658746123e-06,81848.85715917924,78.09,DensityBranch.Liquid

@@ -1,0 +1,53 @@
+{
+  "selected": 0,
+  "conditions": {
+    "temperature_K": 298.15,
+    "pressure_Pa": 100000.0,
+    "branch": "liquid",
+    "molality_basis": "mol formula units/kg water",
+    "target_interval": [
+      0.001,
+      4.5
+    ]
+  },
+  "rows": 948,
+  "columns": 7,
+  "physical_rows": 14,
+  "derivative_basis": "prediction dy/dv for every observation form; unit row weights",
+  "reference_commits": {
+    "inert_comparisons": "ce0f5411",
+    "active_columns": "062ccd92"
+  },
+  "holds": [
+    {
+      "energy_error_J_mol": -2.1711457520723343e-08,
+      "correction_angstrom": 1.3320732805455537e-13,
+      "energy_tolerance_J_mol": 1e-06,
+      "diameter_tolerance_angstrom": 1e-10,
+      "cause": "converged"
+    },
+    {
+      "energy_error_J_mol": 0.0,
+      "correction_angstrom": 0.0,
+      "energy_tolerance_J_mol": 1e-06,
+      "diameter_tolerance_angstrom": 1e-10,
+      "cause": "converged"
+    },
+    {
+      "energy_error_J_mol": 5.820766091346741e-11,
+      "correction_angstrom": 7.711907147049941e-16,
+      "energy_tolerance_J_mol": 1e-06,
+      "diameter_tolerance_angstrom": 1e-10,
+      "cause": "converged"
+    }
+  ],
+  "comparisons": 30807,
+  "failures": 0,
+  "accepted": true,
+  "stage2_started": false,
+  "maximum_absolute_error": 1.7630341631047486e-12,
+  "maximum_tolerance_fraction": 0.6196114045783947,
+  "source_sha256": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+  "packet_sha256": "cec1bfc9c833f7196c7bc11d51d21aa8bc224cc388b04f165712acc5c4473626",
+  "wheel_sha256": "9c59846dba0ead1e5dc396581514dd4322e62a2de9e1b8ce5469b96f8ed35b06"
+}

@@ -1,0 +1,27 @@
+{
+  "library": "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-452-build-several-immutable-records-pe-5b281467/.venv/lib/python3.13/site-packages/epcsaft/libepcsaft_asl.so",
+  "library_sha256": "d06b0d467e63682304c42787890404e3ead3216838c57b2aaf17305006ec6e40",
+  "record_sha256": {
+    "A": "32d32c0f4625dc79249affe7c82b59a5efcaf1542cda8c35099df3e03017de85",
+    "B": "bbe22051d42a9712a54f19636e177c107af03e925e36d8eb2a1551fe7eb4208f",
+    "B0": "bbe22051d42a9712a54f19636e177c107af03e925e36d8eb2a1551fe7eb4208f",
+    "B1": "227db1aacf96a02cc3df7e32572394c1b29087af2e21824a8a47cbf822302214",
+    "B10": "1a80068c2765f8f44d769ab88b39f72f32cc77e7b1aabc45c772bc948b8cf20b",
+    "B11": "7a377a6b828731ea2fbde61e4cf3e37a87a7f6a95cb90f81133d5534ffcf125b",
+    "B12": "1ea8ba3cd37fb57858fccd4821608533e6828d5dfdfe63d89610db1e14a52914",
+    "B13": "57a12379833b6db2ec7f2a28f6366fed5b7ce313d9aecf479e252cb57bb7a00e",
+    "B14": "0a339b69485ba12670889439360a2d9bf1ff241f10734a20cd9313f1bcbd0deb",
+    "B15": "26765f8bb2cc4a9e9bdcb59ad2ad2656922d7354379e8f124fa20a670545ea98",
+    "B16": "57d9bb066f398dc009faca76d665cc34168f67dd0bfc3fa61fb1252f5d9b5250",
+    "B2": "c8aee9141f3d9a8c86787c408f8fb7c1dcbe5350c4484eef3918abab80a666f3",
+    "B3": "a0fd6d4ed5c01427d8a35d71786bd9bb7e29411674e5d0291fea5c6073c2e8cd",
+    "B4": "b5f92993088ab0890a3fc47f1f3c3e09a2876b2f88f2f628169b182eb76ef5e3",
+    "B5": "28040887e8913ff895e364c0d232992db1540456bf1795d8c2944661584871c0",
+    "B6": "15a8b5067e08081866aafb5204f52bdab549072c3c356c4d1db734d7c1e39ec6",
+    "B7": "3cfa65b2a87e8c7bcc012b3152f5dcc5a3ad8f394ffbf33e656ed59a8e255b76",
+    "B8": "e5ce8558a14e01414bc9ac7861a8b9a888655926067199d89473ff62efa8bbad",
+    "B9": "6d6d0dc4c2b76efdb3b9f4530fc9454429a12875d55dc38d3306a237f664a2e8"
+  },
+  "wheel": "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-452-build-several-immutable-records-pe-5b281467/build/issue-452/slice-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+  "wheel_sha256": "69eec5794ab016fe3713605e8098adf707a7ec5410adf5e629c5d0dee4d82196"
+}

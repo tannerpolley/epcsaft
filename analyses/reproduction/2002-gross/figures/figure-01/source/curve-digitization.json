@@ -1,0 +1,37 @@
+{
+  "source_pdf_attachment": "UGT3UV2L",
+  "page_index": 2,
+  "pdf_image_xref": 65,
+  "image_sha256": "4cbfc97b38b6d77815d16a7d9ca4d37de85c45f614a4b902314c2cd20d6d1ec0",
+  "resolution": "Native embedded monochrome raster",
+  "transformation": "CCITT extracted pixels inverted to match rendered PDF",
+  "coordinate_helper": "/home/tnnrpolley21/.codex/plugins/cache/cse/cse/local/skills/digitize/scripts/digitize_xy_plot.py",
+  "axis": {
+    "x1_pixel": [
+      333,
+      1496
+    ],
+    "x2_pixel": [
+      1843,
+      1496
+    ],
+    "x1_value": 0,
+    "x2_value": 1000,
+    "y1_pixel": [
+      333,
+      1496
+    ],
+    "y2_pixel": [
+      333,
+      28
+    ],
+    "y1_value": 150,
+    "y2_value": 750
+  },
+  "crop": "Full embedded raster",
+  "roi": "Pentanol liquid curve at 330 K",
+  "series_mapping": "Solid PC-SAFT, dashed SAFT; experimental symbols retained separately",
+  "qa": "pass",
+  "independent_lane": "Column pixel spans checked against visual PDF/raster inspection; no independent second digitizer",
+  "uncertainty": "Retained output and input coordinate uncertainty unchanged; hidden values omitted rather than interpolated"
+}

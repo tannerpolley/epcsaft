@@ -1,0 +1,39 @@
+SELECTED_OUTPUT
+-file calcium.sel
+-reset false
+-high_precision true
+USER_PUNCH
+-headings T_K pressure_atm CaHCO3 CaCO3
+-start
+10 PUNCH TK, PRESSURE, LK_SPECIES("CaHCO3+"), LK_SPECIES("CaCO3")
+-end
+SOLUTION 1
+-temp 25
+-pressure 1
+pH 7
+END
+SOLUTION 2
+-temp 50
+-pressure 1
+pH 7
+END
+SOLUTION 3
+-temp 75
+-pressure 1
+pH 7
+END
+SOLUTION 4
+-temp 100
+-pressure 1
+pH 7
+END
+SOLUTION 5
+-temp 125
+-pressure 1
+pH 7
+END
+SOLUTION 6
+-temp 150
+-pressure 1
+pH 7
+END

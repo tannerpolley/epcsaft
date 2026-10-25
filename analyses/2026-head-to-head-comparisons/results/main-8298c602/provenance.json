@@ -1,0 +1,81 @@
+{
+  "release": "main-8298c6029ebb8b467929badc4a223c580ec591ab",
+  "wheel": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/build/issue-680-release-PRNBCX/epcsaft-0.2.0.dev0-cp313-cp313-manylinux_2_39_x86_64.whl",
+  "wheel_sha256": "8897a0caab9f2508ed642f42c8b5226957fbe7035ed7bfdad71e4166798785b3",
+  "engine_provenance": [
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/build/issue-680-release-PRNBCX/epcsaft-0.2.0.dev0-cp313-cp313-manylinux_2_39_x86_64.whl",
+    "8897a0caab9f2508ed642f42c8b5226957fbe7035ed7bfdad71e4166798785b3"
+  ],
+  "interpreter": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/build/issue-680-release-PRNBCX/venv/bin/python",
+  "engine_import": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/build/issue-680-release-PRNBCX/venv/lib/python3.13/site-packages/epcsaft/__init__.py",
+  "direct_url": {
+    "url": "file:///home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/build/issue-680-release-PRNBCX/epcsaft-0.2.0.dev0-cp313-cp313-manylinux_2_39_x86_64.whl",
+    "archive_info": {}
+  },
+  "environment": {
+    "EPCSAFT_HSL_LIBRARY": null,
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1"
+  },
+  "packages": {
+    "sympy": "1.14.0",
+    "annotated-types": "0.8.0",
+    "idaes-pse": "2.13.0",
+    "packaging": "26.3",
+    "cycler": "0.12.1",
+    "pillow": "13.0.0",
+    "contourpy": "1.4.0",
+    "click": "8.5.0",
+    "numpy": "2.5.4",
+    "networkx": "3.7",
+    "pandas": "3.0.6",
+    "mpmath": "1.3.0",
+    "pyparsing": "3.3.3",
+    "typing_extensions": "4.16.0",
+    "kiwisolver": "1.5.1",
+    "pyomo": "6.10.1",
+    "matplotlib": "3.11.2",
+    "fonttools": "4.67.0",
+    "six": "1.17.0",
+    "typing-inspection": "0.4.4",
+    "scipy": "1.18.1",
+    "platformdirs": "4.13.5",
+    "python-dateutil": "2.9.0.post0",
+    "pydantic": "2.14.1",
+    "Pint": "0.26.2",
+    "pydantic_core": "2.50.1",
+    "flexcache": "0.3",
+    "epcsaft": "0.2.0.dev0",
+    "flexparser": "0.4"
+  },
+  "commands": [
+    "scripts/h2h_engine.py build/h2h/engine-h2h.json",
+    "existing FeOs environment: scripts/h2h_feos.py build/h2h/engine-h2h.json build/h2h/feos-h2h.json",
+    "one Julia process: scripts/h2h_clapeyron_server.jl build/h2h/julia.fifo; include h2h_clapeyron_tasks.jl"
+  ],
+  "producer_sha256": {
+    "analyses/2026-head-to-head-comparisons/scripts/h2h_clapeyron_server.jl": "a456f86577bf8fcc10e9fadc200b85239c75f4ce34c6a21145b38f21e1278820",
+    "analyses/2026-head-to-head-comparisons/scripts/h2h_engine.py": "986ab2ee8915480a455561ffe78e5a30c51e6205c3584045bb37eabf823f064e",
+    "analyses/2026-head-to-head-comparisons/scripts/h2h_clapeyron_tasks.jl": "1325f58019e47738166868b2d1cedf9fefa6c556c753ba82efa7adba3603bdcf",
+    "analyses/2026-head-to-head-comparisons/scripts/h2h_feos.py": "8c8017164de426d33defd56463c0139cff86c6ecd8c2289121b1ae6d791b82a5",
+    "analyses/2026-head-to-head-comparisons/scripts/head_to_head.py": "905099fefe1ea2d27a0a4e2d552276280f1b86fc2418c148cf6166366c3cd027"
+  },
+  "evidence_label": "numerical verification",
+  "review": "Independent delivered review and owner promotion pending; no manuscript use authorized",
+  "julia": {
+    "clapeyron": "0.6.29",
+    "compile_enabled": 1,
+    "opt_level": 2,
+    "version": "1.13.1",
+    "process_pid": 3025810,
+    "single_process": true,
+    "timeout_seconds": 14400
+  },
+  "comparators": {
+    "feos_interpreter": "/home/tnnrpolley21/.cache/epcsaft-comparators/222/feos/bin/python",
+    "feos_version": "0.10.1",
+    "julia_project": "analyses/2026-competitor-cross-check/inputs",
+    "julia_depot": "/home/tnnrpolley21/.cache/epcsaft-comparators/222/depot"
+  }
+}

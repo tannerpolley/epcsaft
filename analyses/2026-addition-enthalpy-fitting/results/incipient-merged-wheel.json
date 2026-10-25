@@ -1,0 +1,12 @@
+{
+  "source_commit": "5ae884f7bae05ce1b771572cf1fe74023fe4e38b",
+  "wheel_sha256": "e8ad39e0c5d7da471a6d3ace6ff62d60518c57bc1c96fe5198d8bf18747ba8b5",
+  "module": "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/issue-269-zero-inventory-incipient/.venv/lib/python3.13/site-packages/epcsaft/__init__.py",
+  "inputs": {
+    "ideal-calorics.json": "c94d504e68c6dc6e85d3d950cc51422499846729b1a06994b362040be991924a",
+    "reactions.json": "c1cb5c74b2d71ce56e9c0a5d86116f972adbb2d635a0e9ed944152f25bd5fc43",
+    "parameters.json": "7e9e3f02723700f8b6577681173249c0e7bd2c8c2a098f38a4e0a7e4611852d5"
+  },
+  "failures": {},
+  "limits": "Numerical verification; no physical validation, global stability, or boundary caloric use."
+}

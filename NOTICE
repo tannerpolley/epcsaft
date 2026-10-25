@@ -1,0 +1,126 @@
+ePC-SAFT third-party notices
+
+The project code is licensed under GNU GPL version 3, with the section 7
+additional permission for linking with EPL-licensed Ipopt in LICENSE and
+engine/LICENSE. That permission does not relicense third-party components
+or data. Public releases contain source; tools/refresh-main-wheel remains
+private-only. Retain each component's upstream notices when redistributing it.
+
+Native dependencies (not all are bundled in the source tree)
+
+* Ipopt 3.11.9: Eclipse Public License 1.0 (EPL-1.0).
+  https://github.com/coin-or/Ipopt/blob/releases/3.11.9/Ipopt/LICENSE
+* MUMPS 5.6, selected through the inspected system Ipopt: CeCILL-C v1.
+  The distribution separately identifies BSD-3-clause AMD ordering code in
+  src/ana_orderings.F and public-domain PORD. Retain those separate notices.
+  Source: https://mumps-solver.org/; version-specific distribution notices:
+  /usr/share/doc/libmumps-seq-5.6t64/copyright (Ubuntu's 5.6 distribution).
+  https://www.cecill.info/licences/Licence_CeCILL-C_V1-en.html
+* CppAD 20250000.3: EPL-2.0 or GPL-2.0-or-later.
+  https://github.com/coin-or/CppAD/blob/20250000.3/user_guide.xrst
+* Eigen 3.4: Mozilla Public License 2.0 (MPL-2.0).
+  https://gitlab.com/libeigen/eigen/-/blob/3.4.0/COPYING.MPL2
+* Ceres 2.2: BSD terms, with Apache-2.0 third-party terms.
+  https://github.com/ceres-solver/ceres-solver/blob/2.2.0/LICENSE
+* HiGHS 1.15.1: MIT.
+  https://github.com/ERGO-Code/HiGHS/blob/v1.15.1/LICENSE.txt
+* ASL interface headers: Lucent notice retained in
+  engine/build/subprojects/packagefiles/asl/funcadd.h and stdio1.h.
+  Optional solver dependencies keep their own terms; the Ipopt permission
+  grants no permission for HSL or other separately licensed solver libraries.
+* nanobind 2.12.0, acquired during the build and compiled into the Engine:
+  BSD 3-clause, Copyright (c) 2022 Wenzel Jakob. Retain its copyright,
+  conditions and disclaimer with redistributed source or compiled code.
+  https://github.com/wjakob/nanobind/blob/v2.12.0/LICENSE
+* robin-map, supplied by nanobind 2.12.0: MIT, Copyright (c) 2017 Thibaut
+  Goetghebuer-Planchon. Its full notice remains in the installed nanobind
+  ext/robin_map/include/tsl/robin_map.h header; retain it when redistributing.
+  Source: https://github.com/Tessil/robin-map (nanobind's bundled revision).
+
+Build-selected transitive dependencies (not bundled in this source snapshot)
+
+The inspected Ipopt links BLAS/LAPACK; the inspected Ceres links glog and
+SuiteSparse. These libraries keep their own terms, outside the Ipopt permission.
+Other build environments must retain the notices for their selected distributions.
+
+* Reference BLAS/LAPACK 3.12.0: BSD 3-clause.
+  https://github.com/Reference-LAPACK/lapack/blob/v3.12.0/LICENSE
+* glog: BSD 3-clause. https://github.com/google/glog
+  The selected distribution retains its notice in
+  /usr/share/doc/libgoogle-glog0v6t64/copyright.
+* SuiteSparse 7: component-specific terms. AMD, CAMD, COLAMD, CCOLAMD and
+  SuiteSparse_config use BSD 3-clause; CHOLMOD includes LGPL-2.1-or-later,
+  GPL-2.0-or-later and Apache-2.0 portions; SPQR uses GPL-2.0-or-later, with
+  separately identified support-file terms. Retain the selected components'
+  complete notices, including their third-party portions.
+  Source: https://github.com/DrTimothyAldenDavis/SuiteSparse
+  Selected distribution: /usr/share/doc/libsuitesparseconfig7/copyright.
+
+Bundled source and coefficient distributions
+
+* engine/data/superancillary/pcsaft.json: SAFTsuperanc 0.0.7, commit
+  a3aaf0c39f78b053ef12a97339449140f2c7b0f8, from
+  https://github.com/usnistgov/SAFTsuperanc.
+  NIST employee work is in the United States public domain; NIST's permission
+  for use and distribution elsewhere requires its notice and warranty disclaimer
+  with copies. Full terms: engine/data/superancillary/LICENSE-NIST.md;
+  conversion and source identities: engine/data/superancillary/README.md.
+  This distribution is distinct from NIST SRD 69 below.
+* docs/scientific/latex/styles/cas-sc.cls and cas-common.sty: Elsevier CAS
+  Bundle 2.3 (2021-05-11), LaTeX Project Public License 1.3c-or-later.
+  cas-common.sty records the local footer change to "Preprint".
+  Source: https://ctan.org/pkg/els-cas-templates; notices remain in the files.
+* docs/scientific/latex/styles/model1-num-names.bst: Elsevier bibliography
+  style 2.0, Copyright 2009-2012 Elsevier Ltd, LaTeX Project Public License
+  1.2-or-later. Source and full notice remain in the file header.
+  https://www.latex-project.org/lppl/
+
+Retained data
+
+* analyses/reproduction/2025-figiel/inputs/source/
+  figiel-2025-regression-target-ledger.yaml and its SI-derived digitizations:
+  CC BY-NC 4.0, https://creativecommons.org/licenses/by-nc/4.0/.
+  Figiel, Yu and Held (2025), DOI 10.1021/acs.iecr.5c00475.s001.
+  See the adjacent LICENSE-NOTICE.md for attribution and derived paths.
+* data/packets/feos-esper-2023/1/: CC BY-NC 4.0 at packet level;
+  Esper, Bauer, Rehner and Gross (2023), DOI 10.1021/acs.iecr.3c02255.s001.
+  The FeOs parameter distribution, parameters/parameters.json, separately
+  retains the FeOs MIT terms. See parameters/LICENSE-NOTICE.md and packet.toml.
+* data/packets/feos-rehner-2023/1/: CC BY-NC 4.0 at packet level because
+  it includes the Esper pure-component dependencies cited above. The Rehner,
+  Bardow and Gross (2023) publication, DOI 10.1007/s10765-023-03290-3,
+  separately records CC BY 4.0 attribution terms. The FeOs parameter
+  distribution retains MIT terms. See parameters/LICENSE-NOTICE.md and
+  packet.toml for the separate attributions and full FeOs MIT notice.
+* data/packets/feos-gross-sadowski-2001/1/ and
+  data/packets/feos-gross-sadowski-2002/1/: FeOs MIT distributions.
+  Each packet.toml retains the full FeOs copyright, permission and disclaimer
+  and its pinned source distribution; no article content is copied.
+* data/packets/hamer-wu-1972-aqueous-alkali-halides/1/ and
+  data/packets/hda-pc-saft/1/: their packet.toml declarations retain numerical
+  records for noncommercial scientific use. Preserve those recorded use bases;
+  no broader redistribution permission is asserted here.
+* data/packets/schick-2023-co2-thf/1/: its packet.toml records private,
+  source-attributed scientific research and asserts no broader redistribution
+  licence. Other packets' private-verification use bases remain in their
+  declarations; this notice does not establish missing redistribution rights.
+* data/packets/nasa-glenn-2002-hda-species/1/: the NASA technical publication
+  NASA/TP-2002-211556 is cited separately from the pinned NASA CEA
+  machine-readable distribution, which uses Apache 2.0 and includes the retained
+  four-record coefficient excerpt from data/thermo.inp. Preserve the full
+  upstream licence in sources/LICENSE.txt and upstream attribution text in
+  sources/NOTICE.txt, including its NASA/database notice. See packet.toml and
+  provenance/source-origin.toml for the pinned https://github.com/nasa/cea source,
+  hashes and unchanged numerical-file provenance.
+* analyses/reproduction/2025-perdomo/inputs/source/
+  perdomo-2025-held2-source-ledger.yaml records CC BY 4.0 for its source
+  workbook, DOI 10.5281/zenodo.13646853; workbook bytes are not included.
+* analyses/2026-ascani-carboxylic-acid-lle/README.md records CC BY 3.0
+  for its source ESI; the source PDF is not included.
+* data/packets/nist-srd69-pure-saturation-properties/1/packet.toml and
+  analyses/reproduction/2004-glos/inputs/source/
+  nist-srd69-propane-reference-eos.yaml record NIST SRD use terms.
+  https://www.nist.gov/srd
+
+Other source attributions and use bases remain in their source ledgers.
+This list does not assign the project's GPL terms to third-party data.

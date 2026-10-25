@@ -1,0 +1,40 @@
+{
+  "base": "ec0bafa71b5022821f1774b2b9fffb06622be87c",
+  "preparation": {
+    "build_dir": "build/engine-meson/cpython-313-linux-x86_64-x86_64-f6db693e21e289603ae71c78242a17b102f1e324061021d5dca361f47a0bfef7",
+    "build_fingerprint": "35675abf3060209edcd80ec34e19736c4d8df426c8f97cc2d2f9dfd088763fc0",
+    "schema_version": 1,
+    "wheel": "build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+    "wheel_sha256": "2fba6bf9d526cd347d6c1783b148949f484082a359e6ae4504e5b41572c6c8c8"
+  },
+  "type": "numerical verification",
+  "review": "delivered review pending",
+  "limits": "manufactured branches; no physical calorimetry, parameter adoption, global stability or manuscript promotion",
+  "logs": {
+    "build/current-calorics/slice4/absent-observation.log": "54a0497ab195b3490319e4e615d9dcf686090b0d034439abe2102432e6998244",
+    "build/current-calorics/slice4/build-recording-fix.log": "93f0465f06e6b619fbe7d1200d86d2fbfea3e27398ce47807ac7cb2590b798cd",
+    "build/current-calorics/slice4/build-retry.log": "28bd167afa4be235e8cc027f9227fa396a8a89ef276d48396bb5098fc822fbac",
+    "build/current-calorics/slice4/build.log": "f7d5e2550ad015b5d022ace8bc64938ca98461111ea488aa5eeea37167f3a41d",
+    "build/current-calorics/slice4/check-affected-enum-name.log": "43f73f0a9376453aa9febb889d97971ce92081ddc4a506ce4ff496cf2b586aac",
+    "build/current-calorics/slice4/check-affected.log": "53994a99421135c2dfb76429e895fd96353d6554d040990f7c340e8cb99ed0d9",
+    "build/current-calorics/slice4/check-all.log": "1e17c63ba1185b8bc50999bd2cb5be4ae85849d49a5fc582dd8df4d6879581fc",
+    "build/current-calorics/slice4/final-source-check.log": "792f2645e6827cab70dfc45ad68097365d1361cea4fd27e48e5c35487fb6b07d",
+    "build/current-calorics/slice4/installed-wheel-missing-mass-basis.log": "859d7a2872bb08344de3b3b3b86f3ddc7118a2fbfa9587f6cc64aa5f6b6b5e82",
+    "build/current-calorics/slice4/installed-wheel-two-source-pass.log": "33c95cc962d7d33a83648235168c77f114a25a4c0158b979a45443cf92d71ce3",
+    "build/current-calorics/slice4/key-solves.log": "87771a69a8b4527625b4fdc02f756d13deb599f18c6d58983d2dbe96d1b2c8cb",
+    "build/current-calorics/slice4/notebook-render.log": "27c390bbfb6bbe50791c2f1f3306ce8027cf09c427970adf3f348910ee71ce18",
+    "build/current-calorics/slice4/prepare-reporting.log": "d3087aaa5dd5d899b05b410cc135844d8942d6fee997d61ded8941c6bcf5ef26",
+    "build/current-calorics/slice4/qualification-addition-enthalpy.log": "d5d47be05992ba01deee03ad874d5b0618e85a60aa3cbb76bd7cfa9cc6d18e23",
+    "build/current-calorics/slice4/qualification-installed-wheel.log": "ee0a008709f8a80aecfa3f91058fc60aa69c529a65b603a54069f5a0d38f8d84",
+    "build/current-calorics/slice4/qualification-ionic-addition.log": "643b842e18a43af28ad9c13f57fde1bc1942c32bc5f702442e8252b9aaa98f96",
+    "build/current-calorics/slice4/qualification-reactive-caloric-F2.log": "230dd67a515b1daf406fe254bd0b35016433a236121001ea9a20c8c66f2d2751",
+    "build/current-calorics/slice4/qualification-reactive-caloric-F6-addition.log": "b59b835e6acb98425ed3de8e07b1b7398a49a7d101b9e45fc5c835d4ae0b6f39",
+    "build/current-calorics/slice4/qualification-reactive-cp-F1.log": "01324fecd81a811ef930fa82bd99d7716e12a5aa2b8930a64f9873ee07f350c6",
+    "build/current-calorics/slice4/qualification-reactive-cp-F3.log": "1d1cf76a57ec4459f6973e968afa851a34c0579e4deae1ee2d1b2f5f3c2940ff",
+    "build/current-calorics/slice4/qualification-reactive-cp.log": "6398f9191ff5bc5c2b161086747e45d57a9f9c66713b33dd50d32a019eaf6d6f",
+    "build/current-calorics/slice4/reactive-cp-before-recovery-errors.log": "f72bbbfa1bed10b8f8eecef6cc69162a073694d16d3ad0aaeded4b1f49467b4f"
+  },
+  "key_solve_work": "build/current-calorics/slice4/key-solves/work.csv",
+  "key_solve_timing": "build/current-calorics/slice4/key-solves/summary.json",
+  "runtime_diff_sha256": "cfac63a690bd19f8b50a984623c4be9cf750c811e2bb1bcd4d717d24ecff0252"
+}

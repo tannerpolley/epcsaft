@@ -1,0 +1,18 @@
+{
+  "engine_provenance": [
+    "cc11ba3fd4082a773d844cb7abcc02f823145222",
+    true
+  ],
+  "conditions": "1 bar; 298.15 K except Fig. 2 cold series at 273.15 K; molality per kg (initial) water",
+  "water_permittivity": {
+    "298.15": 78.09282552212915,
+    "273.15": 87.30578082265038,
+    "source": "Ascani 2022 Table 5: -105.2 ln(T/K) + 677.480 (supplement; Held 2014 prints none)"
+  },
+  "max_native_minus_python_contraction_osmotic": {
+    "acid": 5.480293996384944e-10,
+    "salt": 1.1390927090459968e-09
+  },
+  "wall_clock_seconds": 24.367846753000777,
+  "ternary_wall_clock_seconds": 2.411914780999723
+}

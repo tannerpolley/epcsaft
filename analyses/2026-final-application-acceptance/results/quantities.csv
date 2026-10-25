@@ -1,0 +1,25 @@
+application,quantity,basis,retained,final
+MEA,"speciation RMS ln(pred/obs), Bottinger2008 | packet",calibration/previously accessed data,0.2268558244412667,0.22685582444125021
+MEA,"speciation RMS ln(pred/obs), Bottinger2008 | outside packet",calibration/previously accessed data,0.40606238303897796,0.4060623830389855
+MEA,"speciation RMS ln(pred/obs), Jakobsen2005 | outside packet",calibration/previously accessed data,0.9897619061458073,0.9897619061457704
+MEA,"speciation RMS ln(pred/obs), Matin2012 | packet",calibration/previously accessed data,0.4219815355157313,0.4219815355157425
+MEA,pCO2 calibration/aard_percent,calibration and Xu 2011 holdout,52.964100778323555,52.96410077845661
+MEA,pCO2 calibration/rms_ln,calibration and Xu 2011 holdout,0.5443928706885326,0.5443928706893896
+MEA,pCO2 holdout (Xu 2011)/aard_percent,calibration and Xu 2011 holdout,48.743816729384584,48.74381672938044
+MEA,pCO2 holdout (Xu 2011)/rms_ln,calibration and Xu 2011 holdout,0.439824162668588,0.4398241626685602
+MEA,"heat of absorption RMSE kJ/mol, calibration (63 -> 66 intervals)",Kim-Svendsen / Kim 2014 calorimetry,11.765221901882871,11.50188996222959
+MEA,"heat of absorption RMSE kJ/mol, model_selection_comparison (26 -> 27 intervals)",Kim-Svendsen / Kim 2014 calorimetry,10.796810150349568,10.606241310952152
+MEA,"heat of absorption RMSE kJ/mol, temperature_holdout (20 -> 20 intervals)",Kim-Svendsen / Kim 2014 calorimetry,29.27864473211692,29.278644732109992
+Lithium,Fig. 5 holdout max |log10(D_pred/D_obs)|,Zhang 2017 holdout,0.2556860509898516,0.2556860509898516
+Lithium,Table 4 R = 70 % D_Li (observed 7.77),Zhang 2017 holdout,17.72932268055396,17.72932268055396
+Lithium,Table 2 two-stage raffinate Li g/L (observed 0.045),Zhang 2017 holdout,0.0071751703083407555,0.0071751703083407555
+Lithium,design1 upper_bound_corner li_extraction,process result (unbuffered fresh-organic MS-2 basis),0.7539649322715051,0.7539649322715051
+Lithium,design1 upper_bound_corner organic_to_aqueous_ratio,process result (unbuffered fresh-organic MS-2 basis),1.5,1.5
+Lithium,design2 upper_bound_corner li_extraction,process result (unbuffered fresh-organic MS-2 basis),0.9441404376520666,0.9441404376520666
+Lithium,design2 upper_bound_corner organic_to_aqueous_ratio,process result (unbuffered fresh-organic MS-2 basis),1.5,1.5
+Lithium,design3 live_optimization li_extraction_fraction,process result (unbuffered fresh-organic MS-2 basis),0.950000000103613,0.950000000103613
+Lithium,design3 live_optimization extraction_screening_cost_usd_kg_li,process result (unbuffered fresh-organic MS-2 basis),420.193064535072,420.193064535072
+Lithium,design3 live_optimization organic_to_aqueous_ratio,process result (unbuffered fresh-organic MS-2 basis),1.0802280460927134,1.0802280460927134
+Lithium,design4 live_optimization li_extraction_fraction,process result (unbuffered fresh-organic MS-2 basis),0.988192902303204,0.988192902303204
+Lithium,design4 live_optimization extraction_screening_cost_usd_kg_li,process result (unbuffered fresh-organic MS-2 basis),417.6426115183476,417.6426115183476
+Lithium,design4 live_optimization organic_to_aqueous_ratio,process result (unbuffered fresh-organic MS-2 basis),1.107484842912567,1.107484842912567

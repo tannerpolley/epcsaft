@@ -1,0 +1,3 @@
+# Preserve the exact executed coefficient-table bytes and recorded SHA-256 hashes.
+dispersion-coefficients.csv -text
+dipole-coefficients.csv -text

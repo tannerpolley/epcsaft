@@ -1,0 +1,65 @@
+---
+title: "Hubach 2024: reduced S1/S6 comparison"
+format:
+  html:
+    embed-resources: true
+execute:
+  echo: false
+  cache: false
+  daemon: false
+---
+
+The four nonzero-salt S1/S6 predictions below pass the fixed numerical
+solution checks. S1's aqueous emim-cation-equivalent mass fraction and S6's
+organic TBP mole fraction are different observables. Their differences from
+measurements and paper-model values are descriptive. A compact table keeps
+these few scalar comparisons and their distinct units visible; a continuous
+curve is not established by these rows.
+
+```{python}
+import json, pandas as pd
+from pathlib import Path
+records = json.loads(Path('results/subsystem-comparison.json').read_text())
+declaration = json.loads(Path('inputs/lithium-declarations.json').read_text())
+comparison = pd.json_normalize(records)
+display(comparison.filter(regex='^(table|quantity|source\\.|candidate|admitted|minus_|absolute_)'))
+display(comparison.groupby('table')[['absolute_measured_error','absolute_published_error']].mean())
+display(pd.json_normalize(records,record_path='phases',meta='table'))
+display(pd.DataFrame(records).filter(regex='balance|chemical|phase_distance|numerical_limits|convergence'))
+display(pd.Series(declaration['assumptions'],name="Lithium's benchmark assumptions"))
+```
+
+Hubach et al., DOI 10.1021/acs.jced.4c00074, Tables 2–4 and SI S1/S6
+supply the tuples and comparison columns. Exact source hashes and locators
+are in `inputs/source/source_manifest.json`; Lithium's read-only paths,
+commit and hashes are in `inputs/lithium-declarations.json`.
+
+Lithium's benchmark assumptions are the neutral ionic-liquid pseudo-component,
+equal aqueous-solution and solvent masses, pressure, association edges and
+diameter choices shown above. Native C++ evaluates the water correlations,
+association edges, feed conversion, equilibrium and projections. Both liquids
+support all subsystem species and impose electroneutrality with electrochemical
+equilibrium. Fixed starting compositions, independent of source targets, are
+recorded in the producer. The aqueous phase is identified by greater water
+mass fraction. The displayed numerical limits are, in order, composition
+normalization, component balance in mol, phase charge in mol per mol, relative
+pressure and chemical/electrochemical residual in units of RT. These limits
+are separate from measurement uncertainty.
+
+Lithium's benchmark assumption retains the Engine dispersion rule
+$u_{ij}=\sqrt{u_i u_j}(1-k_{ij})$ with printed coefficients unchanged.
+Hubach Eq. (6) prints $u_{ij}=\sqrt{u_i u_j(1-k_{ij})}$, visually checked
+in PDF CBJZ36VC p. 3 (full locator in `inputs/lithium-declarations.json`). No coefficient remapping is made.
+This rule difference, the benchmark/source pressures displayed above and
+unknown source feed ratio preclude exact source parity. Their separate
+effects are not identified by this comparison; remaining discrepancy causes
+are undetermined.
+
+The SI expanded uncertainties are 0.0162 for S1 and 0.039 for S6, with
+coverage factor 2; standard temperature uncertainty is 0.5 K. These source
+scales do not quantify uncertainty in Lithium's benchmark assumptions.
+Paper-model columns are rounded to four decimal places. No physical
+pass threshold or independent physical validation follows from these fitted
+data comparisons. Zero-salt rows, S11 extraction, charged emim/tcb exchange
+and global stability remain excluded. Independent delivered review is pending;
+this notebook has not been promoted for manuscript use.

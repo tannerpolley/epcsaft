@@ -1,0 +1,6 @@
+model,stage,old_sse,new_sse,sse_increase_limit,sse_pass
+corrected_m_fixed_k_zero,historical_coordinates,5.112246396823669,5.112246393288775,5.112246396823669e-08,True
+constant_k,historical_coordinates,1.340022280116495,1.3400222781242115,1.3400222801164949e-08,True
+constant_k,native_optimum,1.340022280116495,1.340022278124212,1.3400222801164949e-08,True
+reciprocal_temperature_k,historical_coordinates,0.050434613644631324,0.05043461376653265,1e-08,True
+reciprocal_temperature_k,native_optimum,0.050434613644631324,0.050434613766534346,1e-08,True

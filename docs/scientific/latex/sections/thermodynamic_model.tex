@@ -1,0 +1,123 @@
+\section{Thermodynamic formulation and conventions}
+\label{sec:model}
+% P:model-01
+A fluid phase $p$ is described by its species amounts $\mathbf{n}_p$ in mol, its total amount $N_p=\sum_i n_{p,i}$ and its volume $V_p$ in \si{\cubic\metre}.
+Its mechanical Helmholtz energy is the ideal density and mixing term plus the residual term~\citep{Gross2001},
+\begin{equation}
+\frac{A_{p}}{RT}=\sum_i n_{p,i}\left[\ln\frac{n_{p,i}}{V_p\rho_0}-1\right]+N_p\,\ares\!\left(T,\frac{N_p}{V_p},\frac{\mathbf{n}_p}{N_p}\right),
+\label{eq:phase-helmholtz}
+\end{equation}
+where $\rho_0=1$~\si{\mol\per\cubic\metre} is a fixed reference molar density and $\ares$ is the reduced residual molar Helmholtz energy at temperature $T$, molar density $\rho$ and mole fractions $\mathbf{x}$.
+Ions are counted as separate species, so $\mathbf{x}$ of an electrolyte solution is a species, not a formula-unit, composition.
+Every property, equilibrium row and derivative below is a derivative of Eq.~\eqref{eq:phase-helmholtz} or of the reference terms added to it in Section~\ref{sec:references}; Supporting Information Table~\ref{tab:nomenclature} lists the symbols.
+
+% P:model-02
+The residual energy is a sum of contributions,
+\begin{equation}
+\ares=a^{\mathrm{hc}}+a^{\mathrm{disp}}+a^{\mathrm{assoc}}+a^{\mathrm{polar}}+a^{\mathrm{DH}}+a^{\mathrm{Born}},
+\label{eq:residual}
+\end{equation}
+and a parameter record selects which contributions and which permittivity relation enter a calculation (Supporting Information Table~\ref{tab:contributions}).
+A contribution that the record does not declare is identically zero, so Eq.~\eqref{eq:residual} is the selected formulation for a calculation, not a fixed inventory.
+The hard-chain and dispersion terms are those of Gross and Sadowski, with a binary parameter $k_{ij}$ on the cross dispersion energy that may carry a declared temperature law~\citep{Gross2001,Held2014}.
+The optional polar term is either the dipole--dipole contribution of Gross and Vrabec~\citep{Gross2006} or the quadrupole--quadrupole contribution of Gross~\citep{grossEquationofstateContributionPolar2005}; a record declares at most one of them, each is meaningful only with parameters fitted together with it, and no claim is made here for either one combined with ions.
+
+% P:model-03
+The association contribution follows Wertheim's theory in the form of Chapman et al.~\citep{Chapman1990},
+\begin{equation}
+a^{\mathrm{assoc}}=\sum_A x_{i(A)}\nu_A\left(\ln X_A-\frac{X_A}{2}+\frac12\right),\qquad
+X_A\Bigl[1+\hat\rho\sum_B x_{i(B)}\nu_B X_B\Delta_{AB}\Bigr]-1=0,
+\label{eq:mass-action}
+\end{equation}
+where $X_A$ is the fraction of sites of type $A$ not bonded, $\nu_A$ the number of such sites on species $i(A)$, $\hat\rho$ the number density and $\Delta_{AB}$ the association strength.
+Cross-association parameters follow the combining rule of Gross and Sadowski~\citep{Gross2002} or, when declared, that of Wolbach and Sandler~\citep{wolbachUsingMolecularOrbital1998}.
+The site fractions are implicit functions of $(T,\rho,\mathbf{x})$ and of the parameters; Section~\ref{sec:derivatives} differentiates them through the mass-action system.
+
+% P:model-04
+The Debye--H\"uckel contribution is~\citep{Held2008,Bulow2019}
+\begin{equation}
+a^{\mathrm{DH}}=-\frac{\kappa e^2}{12\pi\epsilon_0\epsilon_r k_BT}\sum_{i}x_iz_i^2\chi(\kappa d_i^{\mathrm{DH}}),\qquad
+\kappa^2=\frac{\rho N_A e^2\sum_i x_iz_i^2}{\epsilon_0\epsilon_r k_BT},\qquad
+\chi(y)=\frac{3}{y^3}\Bigl[\ln(1+y)-y+\frac{y^2}{2}\Bigr],
+\label{eq:dh}
+\end{equation}
+with charge numbers $z_i$, a separately declared closest-approach diameter $d_i^{\mathrm{DH}}$ and the bulk relative permittivity $\epsilon_r$.
+The Born contribution is the corrected solvation-shell form of Figiel et al.~\citep{Figiel2025,Figiel2026Correction},
+\begin{equation}
+\begin{aligned}
+a^{\mathrm{Born}}&=-\frac{e^2}{4\pi\epsilon_0k_BT}\sum_{i:z_i\ne0}x_iz_i^2\left[\frac{1-\epsilon_r^{-1}}{D_i}+c_{\mathrm{d}}\left(1-\epsilon_{r,\mathrm{ion}}^{-1}\right)\left(\frac{1}{d_i^{\mathrm{Born}}}-\frac{1}{D_i}\right)\right],\\
+D_i&=d_i^{\mathrm{Born}}\left(1+c_{\mathrm{s}}\frac{f_{\mathrm{mix}}-1}{\lvert z_i\rvert}\right)\quad(z_i\ne0),
+\end{aligned}
+\label{eq:born}
+\end{equation}
+where $D_i$ is the outer shell diameter of ion $i$, and $f_{\mathrm{mix}}=\sum_jx_jf_j$ averages solvation factors over all neutral and ionic components, with $f_j=1$ for ions.
+Here $\epsilon_{r,\mathrm{ion}}$ is the permittivity of the region between the ion and its shell, and $c_{\mathrm{s}}$ and $c_{\mathrm{d}}$ are fixed coefficients that recover the direct Born term when both are zero.
+Both electrolyte contributions vanish identically on an ion-free support.
+At zero ionic strength $a^{\mathrm{DH}}$ varies as the three-halves power of the ion amounts, which limits the derivatives available there (Section~\ref{sec:availability}).
+
+% P:model-05
+The relative permittivity enters Eqs.~\eqref{eq:dh} and~\eqref{eq:born} and must be declared consistently with the parameter record.
+Four relations are available:
+\begin{equation}
+\epsilon_r=
+\begin{cases}
+\epsilon_{\mathrm{sf}}\big/\bigl(1+\sum_i\alpha_ix_i\bigr) & \text{ion suppression~\citep{Zuber2014,Figiel2025}},\\[2pt]
+\epsilon_{\mathrm{sf}}\sum_s x_s+\sum_i x_i\epsilon_{r,i} & \text{component mixing~\citep{AscaniHeld2021,Bulow2019}},\\[2pt]
+1+\rho\,x_{\mathrm{solv}}\,d_{V}\bigl(d_{T}/T-1\bigr) & \text{density--temperature~\citep{Yang2024}},\\[2pt]
+1+3y\bigl\{1+y+\bigl[\tfrac{17}{16}I-1\bigr]y^2\bigr\} & \text{dipolar perturbation~\citep{Rueben2024}},
+\end{cases}
+\label{eq:permittivity}
+\end{equation}
+where $\epsilon_{\mathrm{sf}}$ is the permittivity of the salt-free solvent mixture, $\alpha_i$ an ion suppression coefficient, $x_s$ a solvent mole fraction, $d_V$ and $d_T$ mixed solvent coefficients, $y$ a reduced dipole density and $I$ a correlation integral.
+The first two relations do not depend on density and describe condensed phases only; the last two tend to $\epsilon_r=1$ as $\rho\to0$.
+Pressure, chemical potentials and caloric properties retain $\partial\epsilon_r/\partial\rho$, $\partial\epsilon_r/\partial T$ and $\partial\epsilon_r/\partial\mathbf{x}$ wherever the selected relation depends on them.
+The density dependence also decides where a charged trial phase can be evaluated during a phase search (Section~\ref{sec:stability}).
+
+\subsection{Reference states, reactions and units}
+\label{sec:references}
+% P:model-06
+Nonreactive phase equilibrium at fixed temperature needs only Eq.~\eqref{eq:phase-helmholtz}.
+Reaction equilibrium and total caloric properties also need each species' standard Gibbs energy on the density basis of Eq.~\eqref{eq:phase-helmholtz}, built from caller-supplied ideal-gas thermal records,
+\begin{equation}
+\frac{g^{\circ}_{i,\rho}}{RT}=\frac{h^{\circ}_i(T)}{RT}-\frac{s^{\circ}_i(T,P_0)}{R}+\ln\frac{RT\rho_0}{P_0},\qquad
+h^{\circ}_i(T)=\Delta_fh^{\circ}_i(T_{\mathrm{ref}})+\int_{T_{\mathrm{ref}}}^{T}C^{\circ}_{p,i}\,\mathrm{d}\tau,
+\label{eq:reference}
+\end{equation}
+with the entropy integrated likewise from $s^{\circ}_i(T_{\mathrm{ref}},P_0)$.
+The ideal-gas heat capacities $C^{\circ}_{p,i}$ are given as constant, polynomial, Shomate~\citep{shomateMethodEvaluatingCorrelating1954} in the convention of the NIST Chemistry WebBook~\citep{linstromNISTChemistryWebBook1997}, NASA seven- and nine-coefficient~\citep{gordonComputerProgramCalculation1994} or DIPPR~107~\citep{alySelfconsistentEquationsCalculating1981} correlations over declared temperature intervals.
+Without these records the residual properties remain available and total enthalpy, entropy and heat capacity are reported as unavailable.
+
+% P:model-07
+A reaction declares its stoichiometry and exactly one target: a constant affinity, a constant equilibrium constant, or the correlation
+\begin{equation}
+\ln K(T)=a+\frac{b}{T}+c\,\ln\frac{T}{T_{\mathrm{ref}}}+d\,T
+\label{eq:lnK}
+\end{equation}
+on the density basis, for which the activity of species $i$ is $(\rho x_i/\rho_0)\exp(\mu_i^{\mathrm{res}}/RT)$.
+A constant on an ideal-gas pressure basis, or one shifted by a standard state with constant reaction enthalpy and entropy, converts exactly into another correlation of the form of Eq.~\eqref{eq:lnK}.
+A constant on a molality, infinite-dilution or pure-liquid basis is converted through the residual chemical potentials of the reference state, computed for one pure neutral solvent and a charge-neutral dilution path at each temperature and pressure of the solve; this conversion is called reference completion below.
+Only charge-neutral combinations of ionic reference potentials are determined, so single-ion standard states remain a gauge choice.
+A reaction constant constrains the standard Gibbs energies only along the reaction subspace; it does not supply the absolute caloric properties of each species, which come from Eq.~\eqref{eq:reference}.
+Thermochemistry that is supplied together with a reaction target is checked against it in Gibbs energy, enthalpy and heat capacity, and an inconsistency is reported as an error rather than resolved in favor of either input.
+
+% P:model-08
+Parameters are explicit physical inputs in SI molar units: K, Pa, mol, \si{\cubic\metre} and \si{\joule\per\mol}, with molality in mol per kg of solvent.
+Before a calculation the package admits only inputs in the mathematical domain of the selected equations: positive diameters, a declared site topology, records that the selected contributions consume, and a feed whose mole fractions satisfy $\lvert\sum_iz_ix_i\rvert\le10^{-12}$.
+A record that no selected equation consumes is refused rather than ignored.
+Admission says nothing about whether published parameters are valid at the requested state; that physical validity is the caller's declaration.
+
+% P:model-10
+Electrolyte coefficients use the declared molality standard state.
+The neutral mean ionic combination obeys $\ln\gamma_\pm=(\nu_+\ln\gamma_++\nu_-\ln\gamma_-)/(\nu_++\nu_-)$, while solvent activity gives $\Phi=-\ln a_w/(M_w\sum_j\nu_jm_j)$ on the stated solvent-mass basis~\citep{HamerWu1972,Held2014}.
+Here $M_w$ is solvent molar mass in kg/mol, $m_j$ formula-unit molality and $\nu_j$ its total ion stoichiometry.
+Individual-ion conventions cancel only in the neutral combination; mixed-salt isopiestic coefficients retain their source-specific reference convention.
+
+\subsection{Parameter records and their domains}
+% P:model-09
+A parameter set is part of the physical model.
+Adding a polar or solvation contribution while keeping parameters fitted without it changes the model and does not isolate the physical effect of that contribution.
+Similarly, changing the diameter in the Debye--H\"uckel or Born terms changes the formulation even when the printed dispersion parameters are identical.
+Supporting Information Table~\ref{tab:records} groups the distributed records by their source and scientific role.
+The scientific-input collection contains 38 source families, including observation and thermal records; 26 families contain canonical equation-of-state parameter documents.
+Several records represent alternative or fitted declarations for the same system, so the number of records is not a count of independently validated fluids.
+Source applicability can be incomplete; the temperature and pressure ranges actually compared are given with the results rather than inferred from successful numerical evaluation.

@@ -1,0 +1,248 @@
+[
+  {
+    "case": "water-gas-shift",
+    "T_K": 600.0,
+    "P_Pa": 100000.0,
+    "success": true,
+    "message": "converged: residual 3.7389784158224959e-16 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 6 iterations, contraction absent, floor absent, amplification 0",
+    "solver_status": "SUCCESS",
+    "amounts": [
+      2.0
+    ],
+    "mole_fractions": [
+      0.07902845499388698,
+      0.07902845499388698,
+      0.42097154500611306,
+      0.42097154500611306
+    ],
+    "molar_densities": [
+      20.045392507121004
+    ],
+    "residuals": [
+      -2.220446049250313e-16,
+      -2.220446049250313e-16,
+      -4.440892098500626e-16,
+      -8.881784197001252e-16,
+      -1.7723343045233065e-16,
+      0.0,
+      0.0,
+      0.0,
+      -1.1102230246251565e-16
+    ],
+    "classified_residuals": [
+      -1.754784206695325e-17,
+      -1.754784206695325e-17,
+      -1.869489207911248e-16,
+      -3.738978415822496e-16,
+      -1.7723343045233065e-16,
+      0.0,
+      0.0,
+      0.0,
+      -1.1102230246251565e-16
+    ],
+    "iterations": 6,
+    "evaluations": 9,
+    "pressure_slope": 4988.677570891944,
+    "Z": 1.0
+  },
+  {
+    "case": "water-gas-shift",
+    "T_K": 900.0,
+    "P_Pa": 100000.0,
+    "success": true,
+    "message": "converged: residual 3.0505867409052261e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 6 iterations, contraction absent, floor absent, amplification 0",
+    "solver_status": "SUCCESS",
+    "amounts": [
+      1.9999999999999998
+    ],
+    "mole_fractions": [
+      0.19853499002315245,
+      0.19853499002315245,
+      0.30146500997684755,
+      0.30146500997684755
+    ],
+    "molar_densities": [
+      13.363595004747344
+    ],
+    "residuals": [
+      -1.5298873279334657e-13,
+      -1.5365486660812167e-13,
+      6.683542608243442e-14,
+      6.59472476627343e-14,
+      3.987752185177439e-16,
+      0.0,
+      0.0,
+      0.0,
+      2.220446049250313e-16
+    ],
+    "classified_residuals": [
+      -3.03736165387818e-14,
+      -3.050586740905226e-14,
+      2.014854239074795e-14,
+      1.988078767459183e-14,
+      3.9877521851774383e-16,
+      0.0,
+      0.0,
+      0.0,
+      2.220446049250313e-16
+    ],
+    "iterations": 6,
+    "evaluations": 8,
+    "pressure_slope": 7483.016356337916,
+    "Z": 1.0
+  },
+  {
+    "case": "water-gas-shift",
+    "T_K": 1100.0,
+    "P_Pa": 100000.0,
+    "success": true,
+    "message": "converged: residual 3.3211495725109109e-16 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 6 iterations, contraction absent, floor absent, amplification 0",
+    "solver_status": "SUCCESS",
+    "amounts": [
+      2.0
+    ],
+    "mole_fractions": [
+      0.250714533713303,
+      0.250714533713303,
+      0.249285466286697,
+      0.249285466286697
+    ],
+    "molar_densities": [
+      10.933850458429639
+    ],
+    "residuals": [
+      1.1102230246251565e-15,
+      1.1102230246251565e-15,
+      -1.3322676295501878e-15,
+      -1.3322676295501878e-15,
+      -1.6246397791463644e-16,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "classified_residuals": [
+      2.78349047936669e-16,
+      2.78349047936669e-16,
+      -3.321149572510911e-16,
+      -3.321149572510911e-16,
+      -1.6246397791463644e-16,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "iterations": 6,
+    "evaluations": 8,
+    "pressure_slope": 9145.908879968563,
+    "Z": 1.0
+  },
+  {
+    "case": "n2o4-no2",
+    "T_K": 500.0,
+    "P_Pa": 20000.0,
+    "success": true,
+    "message": "converged: residual 8.8794013461668062e-16 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 11 iterations, contraction absent, floor absent, amplification 0",
+    "solver_status": "SUCCESS",
+    "amounts": [
+      1.9997317148467473
+    ],
+    "mole_fractions": [
+      0.0001341605732707916,
+      0.9998658394267292
+    ],
+    "molar_densities": [
+      4.810894201709041
+    ],
+    "residuals": [
+      0.0,
+      -4.440892098500626e-16,
+      -1.8461815672117779e-16,
+      0.0,
+      -1.1102230246251565e-16
+    ],
+    "classified_residuals": [
+      0.0,
+      -8.879401346166806e-16,
+      -3.691867831318864e-16,
+      0.0,
+      -1.1102230246251565e-16
+    ],
+    "iterations": 11,
+    "evaluations": 14,
+    "pressure_slope": 4157.23130907662,
+    "Z": 1.0
+  },
+  {
+    "case": "n2o4-no2",
+    "T_K": 500.0,
+    "P_Pa": 100000.0,
+    "success": true,
+    "message": "converged: residual 2.9519124783219179e-16 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 9 iterations, contraction absent, floor absent, amplification 0",
+    "solver_status": "SUCCESS",
+    "amounts": [
+      1.9986607294942864
+    ],
+    "mole_fractions": [
+      0.0006700839647012092,
+      0.9993299160352989
+    ],
+    "molar_densities": [
+      24.054471008545203
+    ],
+    "residuals": [
+      -4.440892098500626e-16,
+      0.0,
+      -1.4769452537694223e-16,
+      0.0,
+      0.0
+    ],
+    "classified_residuals": [
+      -5.947555806571992e-19,
+      0.0,
+      -2.951912478321918e-16,
+      0.0,
+      0.0
+    ],
+    "iterations": 9,
+    "evaluations": 12,
+    "pressure_slope": 4157.23130907662,
+    "Z": 1.0
+  },
+  {
+    "case": "n2o4-no2",
+    "T_K": 500.0,
+    "P_Pa": 500000.0,
+    "success": true,
+    "message": "converged: residual 8.8227821254645034e-16 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 10 iterations, contraction absent, floor absent, amplification 0",
+    "solver_status": "SUCCESS",
+    "amounts": [
+      1.9933569573153245
+    ],
+    "mole_fractions": [
+      0.003332590613183948,
+      0.9966674093868161
+    ],
+    "molar_densities": [
+      120.27235504272599
+    ],
+    "residuals": [
+      0.0,
+      -4.440892098500626e-16,
+      -3.5446686090466144e-16,
+      -1.1102230246251565e-16,
+      0.0
+    ],
+    "classified_residuals": [
+      0.0,
+      -8.822782125464503e-16,
+      -7.065789833220303e-16,
+      -1.1102230246251565e-16,
+      0.0
+    ],
+    "iterations": 10,
+    "evaluations": 16,
+    "pressure_slope": 4157.23130907662,
+    "Z": 1.0
+  }
+]

@@ -1,0 +1,158 @@
+{
+  "Yao": {
+    "3<I<=8.3": {
+      "RMS": 0.010319963600427468,
+      "maximum_absolute_error": 0.0200928657313586,
+      "worst_RMS": 0.010329349386022882,
+      "worst_maximum": 0.020142865731358706,
+      "passing_realizations": 455,
+      "realizations": 455
+    },
+    "I<=3": {
+      "RMS": 0.009706490221975481,
+      "maximum_absolute_error": 0.01695788083758043,
+      "worst_RMS": 0.009730940161503377,
+      "worst_maximum": 0.017007880837580536,
+      "passing_realizations": 455,
+      "realizations": 455
+    }
+  },
+  "Hamer_Wu": {
+    "rows": 29,
+    "bias": 0.0011994626551020222,
+    "RMS": 0.009737132378839218,
+    "maximum_absolute_error": 0.029271286940099506
+  },
+  "El_Guendouzi_aw": {
+    "I<=3": {
+      "rows": 27,
+      "bias": -0.0005024298557732627,
+      "RMS": 0.001168458304252496,
+      "maximum_absolute_error": 0.003562144900941089
+    },
+    "I>3": {
+      "rows": 18,
+      "bias": -7.661004788850962e-05,
+      "RMS": 0.003160256010648372,
+      "maximum_absolute_error": 0.007503075050377728
+    }
+  },
+  "F3": [
+    {
+      "m": 1,
+      "log_gamma_trace": -0.13549988704808505,
+      "log_gamma_LiCl": -0.09699369301560272,
+      "log_gamma_NaCl": -0.1834081865175421,
+      "theta_eff": 0.01082457391096814,
+      "binary_route_error_decade": -6.897260540483785e-15
+    },
+    {
+      "m": 3,
+      "log_gamma_trace": -0.041033341148427646,
+      "log_gamma_LiCl": 0.08481730334558643,
+      "log_gamma_NaCl": -0.14737381585007095,
+      "theta_eff": -0.007487304354282614,
+      "binary_route_error_decade": -4.454769886308441e-15
+    },
+    {
+      "m": 6,
+      "log_gamma_trace": 0.1866373909991139,
+      "log_gamma_LiCl": 0.4405810917763793,
+      "log_gamma_NaCl": -0.011845782728078947,
+      "theta_eff": -0.010641881902924172,
+      "binary_route_error_decade": -5.88418203051333e-15
+    }
+  ],
+  "Lithium": [
+    {
+      "row": "table1/F2",
+      "check": "F2",
+      "engine_transfer": -1.2018251963659736,
+      "difference_decade": 0.010635848902380118,
+      "change_from_frozen_/1": 1.0604921701406909
+    },
+    {
+      "row": "table1/F2-prime",
+      "check": "F2-prime",
+      "engine_transfer": 2.186064806590082,
+      "difference_decade": 0.017592642744506115,
+      "change_from_frozen_/1": 1.0610359276516306
+    },
+    {
+      "row": "table1/F4-Mg",
+      "check": "F4-Mg",
+      "engine_transfer": 1.8810593979449095,
+      "difference_decade": 0.04905278204154606,
+      "change_from_frozen_/1": 0.00012063261044659157
+    },
+    {
+      "row": "table1/F4-Ca",
+      "check": "F4-Ca",
+      "engine_transfer": 1.5043824765797353,
+      "difference_decade": 0.010425979428175358,
+      "change_from_frozen_/1": 0.0005515477193966944
+    },
+    {
+      "row": "table1/F5",
+      "check": "F5",
+      "engine_transfer": 2.0856540975222515,
+      "difference_decade": -0.04708038994157704,
+      "change_from_frozen_/1": -0.0008146599743952265
+    },
+    {
+      "row": "ms2/F2",
+      "check": "F2",
+      "engine_transfer": -1.0340670686224769,
+      "difference_decade": 0.022071020918621675,
+      "change_from_frozen_/1": 0.7957535161160223
+    },
+    {
+      "row": "ms2/F2-prime",
+      "check": "F2-prime",
+      "engine_transfer": 2.186643195787127,
+      "difference_decade": 0.027259788892947334,
+      "change_from_frozen_/1": 0.7983411793573794
+    },
+    {
+      "row": "ms2/F4-Mg",
+      "check": "F4-Mg",
+      "engine_transfer": 2.5737274741659917,
+      "difference_decade": -0.09202448335526192,
+      "change_from_frozen_/1": -0.004655128207730286
+    },
+    {
+      "row": "ms2/F4-Ca",
+      "check": "F4-Ca",
+      "engine_transfer": 1.9837713634578336,
+      "difference_decade": -0.012535297522289213,
+      "change_from_frozen_/1": -0.00239006616794768
+    },
+    {
+      "row": "ms2/F5",
+      "check": "F5",
+      "engine_transfer": 0.9974229007376039,
+      "difference_decade": 0.04283478194099288,
+      "change_from_frozen_/1": -0.0020757292035966657
+    }
+  ],
+  "density": [
+    {
+      "state": "fig7",
+      "density_mol_m3": 55570.985566130454,
+      "pressure_error_Pa": -3.194378223270178e-06,
+      "charge_mol": 5.204170427930421e-18
+    },
+    {
+      "state": "table1",
+      "density_mol_m3": 58113.41898736964,
+      "pressure_error_Pa": -1.6973353922367096e-06,
+      "charge_mol": -2.3418766925686896e-16
+    },
+    {
+      "state": "ms2",
+      "density_mol_m3": 58431.44180071763,
+      "pressure_error_Pa": -4.11426299251616e-06,
+      "charge_mol": -2.1163626406917047e-16
+    }
+  ]
+}

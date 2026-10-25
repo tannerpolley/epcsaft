@@ -1,0 +1,22 @@
+{
+  "row": "ermatchkov-2006-t1-r01",
+  "historical_reference_callable_present": false,
+  "historical_reference_declaration_present": false,
+  "historical_chemical_standard_present": false,
+  "wheel_sha256": "84dbd5d062ccff3e6b539c4fe1e6498f54002c67823dc8cc15baadf253233bbe",
+  "meaning": "Identical current reference declaration, ordinary initializer versus one declared start; old reference pathway is unavailable in this installed Engine.",
+  "ordinary": {
+    "available": true,
+    "pressure_pa": 9686.970811508425,
+    "co2_partial_pressure_kpa": 2.42482383379317,
+    "maximum_original_row": 1.509903313490213e-14,
+    "native_termination": "SUCCESS"
+  },
+  "declared": {
+    "available": true,
+    "pressure_pa": 9686.970811508423,
+    "co2_partial_pressure_kpa": 2.4248238337931682,
+    "maximum_original_row": 1.5987211554602254e-14,
+    "native_termination": "SUCCESS"
+  }
+}

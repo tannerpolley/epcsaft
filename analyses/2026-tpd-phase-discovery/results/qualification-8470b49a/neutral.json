@@ -1,0 +1,557 @@
+{
+  "identity": {
+    "wheel": "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-223-build-tpd-stability-test-and-phase-35ebff8f/build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+    "wheel_sha256": "8470b49a9283528b83dbbdab46dc62dee0fc70e5e2149f8f218b823dd85812cb",
+    "script_sha256": "3c5a6ddc8d4de9475a915f6e50a1da8e2fb2f06c57a716bcf9010b234876f8cc",
+    "baseline_script_sha256": "640a35eb50295dc97469ad32a7eb2836b5b9b5262c2a7d3d4b7293594a1c6d9f",
+    "source_mtimes": {
+      "engine/native/equilibrium/gibbs_minimizer.cpp": 1790935477428563179,
+      "engine/native/equilibrium/request_compile.cpp": 1790915612053935625
+    },
+    "thread_environment": {
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1"
+    }
+  },
+  "inputs": {
+    "case-7/reactions": {
+      "species": [
+        "carbon-dioxide",
+        "monoethanolamine",
+        "water",
+        "protonated-monoethanolamine",
+        "carbamate-anion",
+        "bicarbonate-anion",
+        "carbonate-anion",
+        "hydronium-cation",
+        "hydroxide-anion"
+      ],
+      "stoichiometry": [
+        {
+          "water": -2.0,
+          "hydronium-cation": 1.0,
+          "hydroxide-anion": 1.0
+        },
+        {
+          "carbon-dioxide": -1.0,
+          "water": -2.0,
+          "bicarbonate-anion": 1.0,
+          "hydronium-cation": 1.0
+        },
+        {
+          "water": -1.0,
+          "bicarbonate-anion": -1.0,
+          "carbonate-anion": 1.0,
+          "hydronium-cation": 1.0
+        },
+        {
+          "monoethanolamine": 1.0,
+          "water": -1.0,
+          "carbamate-anion": -1.0,
+          "bicarbonate-anion": 1.0
+        },
+        {
+          "protonated-monoethanolamine": -1.0,
+          "water": -1.0,
+          "monoethanolamine": 1.0,
+          "hydronium-cation": 1.0
+        }
+      ],
+      "ln_k": [
+        -605.348,
+        -587.8,
+        -948.2312,
+        -25.1014,
+        -298.6415
+      ],
+      "T_ref": 318.15,
+      "T_min": 250.0,
+      "T_max": 450.0,
+      "standard_state": "eos-helmholtz-coordinate-basis"
+    },
+    "case-1/two-liquid": {
+      "components": [
+        "water",
+        "isobutanol"
+      ],
+      "T": 293.15,
+      "P": 100000.0,
+      "feed": {
+        "water": 0.6,
+        "isobutanol": 0.4
+      },
+      "row_tolerance": 1e-10,
+      "phases": [
+        {
+          "name": "Lw",
+          "kind": "liquid",
+          "support": null,
+          "amount": {
+            "kind": "Free",
+            "value": null
+          },
+          "composition_guess": [
+            0.999,
+            0.001
+          ],
+          "packing_guess": null
+        },
+        {
+          "name": "Lo",
+          "kind": "liquid",
+          "support": null,
+          "amount": {
+            "kind": "Free",
+            "value": null
+          },
+          "composition_guess": [
+            0.3,
+            0.7
+          ],
+          "packing_guess": null
+        }
+      ]
+    },
+    "case-3/VLLE": {
+      "components": [
+        "water",
+        "ethanol",
+        "isobutanol"
+      ],
+      "T": 364.2,
+      "P": 100000.0,
+      "feed": {
+        "water": 0.8,
+        "ethanol": 0.02,
+        "isobutanol": 0.18
+      },
+      "row_tolerance": 1e-10,
+      "phases": [
+        {
+          "name": "Lw",
+          "kind": "liquid",
+          "support": null,
+          "amount": {
+            "kind": "Free",
+            "value": null
+          },
+          "composition_guess": [
+            0.98,
+            0.01,
+            0.01
+          ],
+          "packing_guess": null
+        },
+        {
+          "name": "Lo",
+          "kind": "liquid",
+          "support": null,
+          "amount": {
+            "kind": "Free",
+            "value": null
+          },
+          "composition_guess": [
+            0.5,
+            0.03,
+            0.47
+          ],
+          "packing_guess": null
+        },
+        {
+          "name": "V",
+          "kind": "vapor",
+          "support": null,
+          "amount": {
+            "kind": "Free",
+            "value": null
+          },
+          "composition_guess": [
+            0.713829,
+            0.039282,
+            0.246889
+          ],
+          "packing_guess": null
+        }
+      ]
+    },
+    "case-2/water-ethanol": {
+      "components": [
+        "water",
+        "ethanol"
+      ],
+      "T": 293.15,
+      "P": 100000.0,
+      "feed": {
+        "water": 0.5,
+        "ethanol": 0.5
+      },
+      "row_tolerance": 1e-10,
+      "phases": [
+        {
+          "name": "L",
+          "kind": "liquid",
+          "support": null,
+          "amount": {
+            "kind": "Free",
+            "value": null
+          },
+          "composition_guess": [],
+          "packing_guess": null
+        }
+      ]
+    },
+    "case-2/dilute-isobutanol": {
+      "components": [
+        "water",
+        "isobutanol"
+      ],
+      "T": 293.15,
+      "P": 100000.0,
+      "feed": {
+        "water": 0.995,
+        "isobutanol": 0.005
+      },
+      "row_tolerance": 1e-10,
+      "phases": [
+        {
+          "name": "L",
+          "kind": "liquid",
+          "support": null,
+          "amount": {
+            "kind": "Free",
+            "value": null
+          },
+          "composition_guess": [],
+          "packing_guess": null
+        }
+      ]
+    },
+    "case-4/parameters": {
+      "path": "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-223-build-tpd-stability-test-and-phase-35ebff8f/analyses/phase-stability-cutover/inputs/phase-stability-neutral-ternary.json",
+      "sha256": "ce87eb12ae9fe16c5e266cc0db83841049d49c2aa732eaf4f904cd878ec55b73"
+    },
+    "case-4/three-liquid-1e+07-Pa": {
+      "components": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "T": 300.0,
+      "P": 10000000.0,
+      "feed": {
+        "alpha": 0.3333333333333333,
+        "beta": 0.3333333333333333,
+        "gamma": 0.3333333333333333
+      },
+      "row_tolerance": 1e-10,
+      "phases": [
+        {
+          "name": "L0",
+          "kind": "liquid",
+          "support": null,
+          "amount": {
+            "kind": "Free",
+            "value": null
+          },
+          "composition_guess": [
+            0.9,
+            0.06,
+            0.04
+          ],
+          "packing_guess": null
+        },
+        {
+          "name": "L1",
+          "kind": "liquid",
+          "support": null,
+          "amount": {
+            "kind": "Free",
+            "value": null
+          },
+          "composition_guess": [
+            0.11,
+            0.83,
+            0.06
+          ],
+          "packing_guess": null
+        },
+        {
+          "name": "L2",
+          "kind": "liquid",
+          "support": null,
+          "amount": {
+            "kind": "Free",
+            "value": null
+          },
+          "composition_guess": [
+            0.14,
+            0.12,
+            0.74
+          ],
+          "packing_guess": null
+        }
+      ]
+    },
+    "case-4/three-liquid-100000-Pa": {
+      "components": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "T": 300.0,
+      "P": 100000.0,
+      "feed": {
+        "alpha": 0.3333333333333333,
+        "beta": 0.3333333333333333,
+        "gamma": 0.3333333333333333
+      },
+      "row_tolerance": 1e-10,
+      "phases": [
+        {
+          "name": "L0",
+          "kind": "liquid",
+          "support": null,
+          "amount": {
+            "kind": "Free",
+            "value": null
+          },
+          "composition_guess": [
+            0.9,
+            0.06,
+            0.04
+          ],
+          "packing_guess": null
+        },
+        {
+          "name": "L1",
+          "kind": "liquid",
+          "support": null,
+          "amount": {
+            "kind": "Free",
+            "value": null
+          },
+          "composition_guess": [
+            0.11,
+            0.83,
+            0.06
+          ],
+          "packing_guess": null
+        },
+        {
+          "name": "L2",
+          "kind": "liquid",
+          "support": null,
+          "amount": {
+            "kind": "Free",
+            "value": null
+          },
+          "composition_guess": [
+            0.14,
+            0.12,
+            0.74
+          ],
+          "packing_guess": null
+        }
+      ]
+    }
+  },
+  "costs": {
+    "csv": "neutral-costs.csv",
+    "sha256": "5565960142957e5ca96a6b4689f32f10aa2b57255f7f101618dde7b0d78dabd5",
+    "samples": 57,
+    "first_report_work": "sample 0 native work references the identical reported CSV operands",
+    "count_aliases": "iterations/evaluations/Hessian counts alias native work where that map is present"
+  },
+  "failure": null,
+  "failures": [],
+  "unresolved": [
+    {
+      "case": "case-1/two-liquid/declared-reference",
+      "trial": 1,
+      "seed": "near-pure-0",
+      "evidence": "indeterminate",
+      "message": "converged: residual 5.7820525918507952e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 11 iterations, contraction absent, floor 1.5191395616672852e-10, amplification 0"
+    },
+    {
+      "case": "case-1/two-liquid/declared-reference",
+      "trial": 2,
+      "seed": "near-pure-1",
+      "evidence": "indeterminate",
+      "message": "converged: residual 1.6748210944901289e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 10 iterations, contraction absent, floor 4.1637066142682397e-11, amplification 0"
+    },
+    {
+      "case": "case-1/two-liquid/final",
+      "trial": 0,
+      "seed": "positive-neutral-base",
+      "evidence": "indeterminate",
+      "message": "converged: residual 5.8381782884394517e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 6 iterations, contraction absent, floor 4.1637066142681997e-11, amplification 0"
+    },
+    {
+      "case": "case-1/two-liquid/final",
+      "trial": 2,
+      "seed": "near-pure-1",
+      "evidence": "indeterminate",
+      "message": "converged: residual 2.9195560723514172e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 10 iterations, contraction absent, floor 4.1637066142682339e-11, amplification 0"
+    },
+    {
+      "case": "case-3/VLLE/declared-reference",
+      "trial": 0,
+      "seed": "positive-neutral-base",
+      "evidence": "indeterminate",
+      "message": "converged: residual 1.909665639355175e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 9 iterations, contraction absent, floor 7.4108964422583659e-11, amplification 0"
+    },
+    {
+      "case": "case-3/VLLE/declared-reference",
+      "trial": 1,
+      "seed": "near-pure-0",
+      "evidence": "indeterminate",
+      "message": "converged: residual 2.7505841933534302e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 12 iterations, contraction absent, floor 1.7578853984953562e-10, amplification 0"
+    },
+    {
+      "case": "case-3/VLLE/declared-reference",
+      "trial": 2,
+      "seed": "near-pure-1",
+      "evidence": "indeterminate",
+      "message": "converged: residual 6.707681306587009e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 20 iterations, contraction absent, floor 1.7578853984953637e-10, amplification 0"
+    },
+    {
+      "case": "case-3/VLLE/declared-reference",
+      "trial": 3,
+      "seed": "near-pure-2",
+      "evidence": "indeterminate",
+      "message": "converged: residual 1.2771840539073096e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 14 iterations, contraction absent, floor 7.410896442258256e-11, amplification 0"
+    },
+    {
+      "case": "case-3/VLLE/declared-reference",
+      "trial": 4,
+      "seed": "positive-neutral-base",
+      "evidence": "indeterminate",
+      "message": "converged: residual 1.1102230246251565e-16 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 8 iterations, contraction absent, floor 1.5013560573460536e-13, amplification 0"
+    },
+    {
+      "case": "case-3/VLLE/declared-reference",
+      "trial": 6,
+      "seed": "near-pure-1",
+      "evidence": "indeterminate",
+      "message": "converged: residual 2.1101048571154478e-16 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 20 iterations, contraction absent, floor 1.5013560573460533e-13, amplification 0"
+    },
+    {
+      "case": "case-3/VLLE/declared-reference",
+      "trial": 7,
+      "seed": "near-pure-2",
+      "evidence": "indeterminate",
+      "message": "converged: residual 2.1101048571154473e-16 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 12 iterations, contraction absent, floor 1.5013560573460533e-13, amplification 0"
+    },
+    {
+      "case": "case-3/VLLE/declared-reference",
+      "trial": 8,
+      "seed": "ideal-gas",
+      "evidence": "indeterminate",
+      "message": "converged: residual 2.1101048571154478e-16 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 6 iterations, contraction absent, floor 1.5013560573460533e-13, amplification 0"
+    },
+    {
+      "case": "case-3/VLLE/final",
+      "trial": 0,
+      "seed": "positive-neutral-base",
+      "evidence": "indeterminate",
+      "message": "converged: residual 9.575260379214293e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 9 iterations, contraction absent, floor 7.4108964422584021e-11, amplification 0"
+    },
+    {
+      "case": "case-3/VLLE/final",
+      "trial": 3,
+      "seed": "near-pure-2",
+      "evidence": "indeterminate",
+      "message": "converged: residual 5.2552686424810229e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 12 iterations, contraction absent, floor 7.4108964422584137e-11, amplification 0"
+    },
+    {
+      "case": "case-3/VLLE/final",
+      "trial": 6,
+      "seed": "near-pure-1",
+      "evidence": "indeterminate",
+      "message": "converged: residual 2.2204460492503131e-16 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 15 iterations, contraction absent, floor 1.5013560573460619e-13, amplification 0"
+    },
+    {
+      "case": "case-3/VLLE/final",
+      "trial": 7,
+      "seed": "near-pure-2",
+      "evidence": "indeterminate",
+      "message": "converged: residual 9.122636950799838e-17 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 13 iterations, contraction absent, floor 1.5013560573460619e-13, amplification 0"
+    },
+    {
+      "case": "case-2/dilute-isobutanol/declared-reference",
+      "trial": 1,
+      "seed": "near-pure-0",
+      "evidence": "indeterminate",
+      "message": "converged: residual 1.4825607974904568e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 11 iterations, contraction absent, floor 1.5233031570939688e-10, amplification 0"
+    },
+    {
+      "case": "case-2/dilute-isobutanol/final",
+      "trial": 1,
+      "seed": "near-pure-0",
+      "evidence": "indeterminate",
+      "message": "converged: residual 1.4825607974904568e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 11 iterations, contraction absent, floor 1.5233031570939688e-10, amplification 0"
+    },
+    {
+      "case": "case-4/three-liquid-1e+07-Pa/declared-reference",
+      "trial": 0,
+      "seed": "positive-neutral-base",
+      "evidence": "indeterminate",
+      "message": "converged: residual 1.6922565650812679e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 12 iterations, contraction absent, floor absent, amplification 0"
+    },
+    {
+      "case": "case-4/three-liquid-1e+07-Pa/declared-reference",
+      "trial": 4,
+      "seed": "positive-neutral-base",
+      "evidence": "indeterminate",
+      "message": "converged: residual 1.6922565650812679e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 12 iterations, contraction absent, floor absent, amplification 0"
+    },
+    {
+      "case": "case-4/three-liquid-1e+07-Pa/final",
+      "trial": 1,
+      "seed": "near-pure-0",
+      "evidence": "indeterminate",
+      "message": "converged: residual 7.0374673245213541e-16 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 14 iterations, contraction absent, floor absent, amplification 0"
+    },
+    {
+      "case": "case-4/three-liquid-1e+07-Pa/final",
+      "trial": 5,
+      "seed": "near-pure-0",
+      "evidence": "indeterminate",
+      "message": "converged: residual 7.0374673245213541e-16 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 14 iterations, contraction absent, floor absent, amplification 0"
+    },
+    {
+      "case": "case-4/three-liquid-1e+07-Pa/final",
+      "trial": 8,
+      "seed": "ideal-gas",
+      "evidence": "indeterminate",
+      "message": "converged: residual 4.1474250490491715e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 9 iterations, contraction absent, floor absent, amplification 0"
+    },
+    {
+      "case": "case-4/three-liquid-100000-Pa/declared-reference",
+      "trial": 0,
+      "seed": "positive-neutral-base",
+      "evidence": "indeterminate",
+      "message": "converged: residual 1.1274906481547271e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 8 iterations, contraction absent, floor absent, amplification 0"
+    },
+    {
+      "case": "case-4/three-liquid-100000-Pa/declared-reference",
+      "trial": 1,
+      "seed": "near-pure-0",
+      "evidence": "indeterminate",
+      "message": "converged: residual 6.0036460677452111e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 12 iterations, contraction absent, floor absent, amplification 0"
+    },
+    {
+      "case": "case-4/three-liquid-100000-Pa/declared-reference",
+      "trial": 3,
+      "seed": "near-pure-2",
+      "evidence": "indeterminate",
+      "message": "converged: residual 1.9084796560308395e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 18 iterations, contraction absent, floor absent, amplification 0"
+    }
+  ],
+  "limits": [
+    "numerical verification of the supplied model and finite trial set",
+    "estimated uncertainty is not a rigorous bound",
+    "Refused discovery compiles before admission, including generic-point Jacobian/EOS work inside its private trace; outer zero evaluations denote no observed driver callbacks, not no EOS work.",
+    "no physical validation or global stability certificate"
+  ]
+}

@@ -1,0 +1,68 @@
+{
+ "wheel_sha256": "b66c7b962541a586f5ec50043a5e8b4e62cf52e24eaec02ef33f43e558762a58",
+ "mea_commit": "e522dc4a9f7a59567ab94f21541d37a3e692a9ab",
+ "record_sha256": "868a501831b87e95dedf18ce40e9e7ac949f7c6a4aaf137f717cc493ecfcb7be",
+ "state_packet_sha256": "86f60041b28ec4493729b04c0238f44e86fba4becf33d6ddf47d86b7efb82448",
+ "omp_num_threads": "1",
+ "summary": {
+  "base_cold_s": {
+   "n": 123,
+   "median": 0.3523596880004334,
+   "p90": 2.0934791210002004,
+   "max": 7.719218923999506,
+   "sum": 106.32686733399896
+  },
+  "trial_anchor_s": {
+   "n": 123,
+   "median": 0.3274974400010251,
+   "p90": 4.377002839999477,
+   "max": 41.172955949001334,
+   "sum": 236.95703638398845
+  },
+  "trial_protocol_s": {
+   "n": 123,
+   "median": 0.3274974400010251,
+   "p90": 4.744047849999333,
+   "max": 42.58386952100045,
+   "sum": 250.83948916498593
+  },
+  "child_s": {
+   "n": 123,
+   "median": 0.45232239499819116,
+   "p90": 4.434136878000572,
+   "max": 41.67157023099935,
+   "sum": 249.2447323839824
+  }
+ },
+ "failures": {
+  "base_cold_ok": [
+   "vle_obs_0128",
+   "vle_obs_0145",
+   "vle_obs_0227",
+   "Bottinger2008_state_042",
+   "Bottinger2008_state_046",
+   "Matin2012_state_016"
+  ],
+  "trial_anchor_ok": [
+   "vle_obs_0119",
+   "vle_obs_0123",
+   "vle_obs_0124",
+   "vle_obs_0128",
+   "vle_obs_0133",
+   "vle_obs_0188",
+   "vle_obs_0197"
+  ],
+  "trial_cold_ok": [
+   "vle_obs_0128"
+  ],
+  "child_ok": [
+   "vle_obs_0119",
+   "vle_obs_0123",
+   "vle_obs_0124",
+   "vle_obs_0128",
+   "vle_obs_0133",
+   "vle_obs_0188",
+   "vle_obs_0197"
+  ]
+ }
+}

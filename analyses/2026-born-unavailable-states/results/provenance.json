@@ -1,0 +1,20 @@
+{
+  "engine_wheel_sha256": "28181e72e429c6e87fc6361082af1a7b21c8747e76bda65a1c30abb4a97402f2",
+  "engine_wheel_path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT-greenfield/build/fit-audit-20260929/candidate-28181e72/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+  "source_commit": "ca8be1f28f9a499fbd5ae023f3d5acdf60e2e32d",
+  "engine_python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT-greenfield/.venv/bin/python",
+  "scope": "Engine analysis only; no MEA source executed or edited",
+  "input_hashes": "../inputs/manifest.json",
+  "threshold": 1e-10,
+  "physical_validation": false,
+  "global_existence_verdict": {
+    "case1": "undetermined",
+    "case2": "undetermined"
+  },
+  "fixed_target_scan": {
+    "source_inspection_base": "fe00aa6a7ca40912386bd9ac0ed7877624fb6a9d",
+    "coverage": "global-scan/coverage.csv",
+    "row_verification": "global-scan/row-verification.csv",
+    "numerical_outcome": "no target root found; global existence undetermined for both cases"
+  }
+}

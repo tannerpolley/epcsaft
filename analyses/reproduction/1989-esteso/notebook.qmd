@@ -1,0 +1,252 @@
+---
+title: "NaCl activity in ethanol–water: Figiel predictions compared with Esteso Table I"
+format:
+  html:
+    toc: true
+    embed-resources: true
+execute:
+  enabled: true
+  echo: false
+  cache: false
+  daemon: false
+---
+
+```{python}
+import gzip
+import json
+from pathlib import Path
+import pandas as pd
+import matplotlib.pyplot as plt
+from IPython.display import HTML, Markdown, display
+source = Path('inputs/source')
+ledger = json.loads((source / 'source-ledger.json').read_text())
+run = json.loads(gzip.decompress(Path('results/native-results.json.gz').read_bytes()))
+data = pd.read_csv('results/comparisons.csv', float_precision='round_trip')
+prior = json.loads((source / 'issue-730-shared-row.json').read_text())['quantity']
+current = json.loads(Path('results/shared-row-reference.json').read_text())['quantity']
+refs = pd.read_csv(source / 'esteso-1989-reference-coefficients.csv')
+shared = data[(data.ethanol_mass_percent == 60) & (data.molality_mol_kg == .5)].iloc[0]
+counts = data.groupby('ethanol_mass_percent').agg(
+    rows=('row_id','size'), reproduced=('outcome', lambda s: (s == 'reproduced').sum()),
+    numerical_resolved=('numerical_resolution', lambda s: (s == 'resolved').sum()),
+    density_trace_converged=('activity_density_trace_qualified','sum'))
+summary = data.groupby('ethanol_mass_percent').agg(
+    m_min=('molality_mol_kg','min'), m_max=('molality_mol_kg','max'),
+    error_min=('signed_error','min'), error_max=('signed_error','max'),
+    absolute_error_max=('absolute_error','max'), relative_error_min=('relative_error','min'),
+    relative_error_max=('relative_error','max'), AARD_percent=('relative_error',lambda s: 100*s.abs().mean()))
+passed = data[data.outcome == 'reproduced']
+density = [s['convergence'] for a in run['activities'] for s in a['trace']['spans'] if s['name'] == 'solve_density']
+```
+
+## Result and meaning
+
+The native Figiel prediction agrees with `{python} str(len(passed))` of
+`{python} str(len(data))` Table I coefficients at the fixed printed-precision
+criterion. The other `{python} str((data.outcome == 'not reproduced').sum())`
+rows are **converged disagreements, cause undetermined**. This is a physical
+comparison with activities inferred from cell voltages and fitted reference
+coefficients, with separate numerical verification of the calculations.
+It does not establish independent physical validation: Figiel cites Esteso,
+and independence from parameter-development evidence has not been established.
+
+The calculation uses `{python} str(run['temperature_K'])` K and
+`{python} str(run['pressure_Pa'])` Pa, with formula-unit molality per kilogram
+of salt-free mixed solvent. Pressure is a declared calculation condition;
+Esteso's experimental pressure is unreported. Solvent-only mole fractions
+come from `inputs/solvent-compositions.csv`, using the selected packet's NIST
+molar masses. The component order, stoichiometry, solvent fractions and both
+variants are retained in the native result and its reference records.
+
+## All solvent series
+
+```{python}
+fig, axes = plt.subplots(2, 3, figsize=(12, 7), layout='constrained')
+for ax, (percent, group) in zip(axes.flat, data.groupby('ethanol_mass_percent')):
+    ax.scatter(group.molality_mol_kg, group.gamma_pm_m, marker='o', facecolors='none', edgecolors='#0072B2', label='Esteso Table I')
+    ax.scatter(group.molality_mol_kg, group.predicted_gamma, marker='x', color='#D55E00', label='Native Figiel')
+    ax.set(xscale='log', xlabel='NaCl molality / (mol kg⁻¹ mixed solvent)', ylabel='Mean ionic coefficient γ± / 1', title=f'{percent} mass % ethanol')
+    ax.tick_params(axis='x', which='minor', labelbottom=False)
+    if percent == 90:
+        ax.set_xticks([.004, .01, .04], labels=['0.004', '0.01', '0.04'])
+    ax.grid(alpha=.2)
+axes.flat[0].legend()
+plt.show()
+display(HTML(counts.to_html()))
+display(HTML(summary.to_html(float_format=lambda x: f'{x:.8g}')))
+```
+
+The figure shows discrete predictions at the observation coordinates; it
+contains no fitted or interpolated curve. The logarithmic molality axis
+resolves the dilute rows. The tables give row counts, numerical resolution,
+and signed, absolute and relative errors by solvent. Average absolute relative
+deviation (AARD) is the arithmetic mean of absolute signed relative errors,
+multiplied by a percentage factor, over every row in the corresponding solvent;
+the row count is its denominator. No incomplete-grid average is used.
+
+The only agreeing row is shown below. Agreement of that row does not make its
+solvent series a reproduction at printed precision.
+
+```{python}
+display(HTML(passed[['ethanol_mass_percent','molality_mol_kg','gamma_pm_m','predicted_gamma','absolute_error']].to_html(index=False, float_format=lambda x: f'{x:.16g}')))
+total = dict(rows=len(data), unavailable=data.predicted_gamma.isna().sum(),
+             signed_error_min=data.signed_error.min(), signed_error_max=data.signed_error.max(),
+             relative_error_min=data.relative_error.min(), relative_error_max=data.relative_error.max(),
+             AARD_percent=100*data.relative_error.abs().mean())
+display(HTML(pd.DataFrame([total]).to_html(index=False, float_format=lambda x: f'{x:.8g}')))
+```
+
+## Fixed numerical criteria and actual density evidence
+
+The printed-precision criterion is absolute error at most
+`{python} str(run['criteria']['printed_absolute'])`. The independent numerical
+allocation is `{python} str(run['criteria']['numerical_absolute'])` in the
+coefficient. Neither is experimental uncertainty. Effective stopping settings
+are retained on each reference and activity record. The baseline uses native
+defaults; the refined declaration changes only association and density residual
+criteria, leaving all physical inputs, the analytic infinite-dilution reference
+and fixed work limits unchanged. The native reference uses ion insertion at the
+ion-free solvent state, as specified by [ALG-REFERENCE](../../../engine/docs/science/algorithms.md#alg-reference).
+Its terminal molality is zero; no dilution ladder or terminal-change estimate exists.
+
+```{python}
+reference_rows = [dict(variant=r['variant'], ethanol_mass_percent=r['ethanol_mass_percent'],
+    terminal_molality_mol_kg=r['molality'], reference_log_change=r['convergence_error'],
+    association_residual=next(x['value'] for x in r['solver_options'] if x['name']=='ASSOCIATION_RESIDUAL'),
+    density_residual=next(x['value'] for x in r['solver_options'] if x['name']=='DENSITY_ROOT_RESIDUAL'))
+    for r in run['references']]
+display(HTML(pd.DataFrame(reference_rows).fillna('unavailable').to_html(index=False)))
+```
+
+The largest baseline–refined coefficient difference is
+`{python} f"{data.refinement_difference.max():.8g}"`.
+The terminal-change estimate is **unavailable**, rather than zero, for both
+analytic-reference variants. Numerical resolution uses the unchanged
+`{python} str(run['criteria']['numerical_absolute'])` allocation and requires
+the baseline–refined difference to lie within it. A comparison lying within
+that allocation of the printed boundary would be unresolved; there are
+`{python} str((data.outcome == 'unresolved').sum())` here. Density and association
+diagnostics and the refinement comparison supply numerical verification;
+the allocation is not a rigorous total error bound.
+
+Each actual activity call has its own captured native density solve. Across
+both variants, `{python} str(len(density))` captured density convergence records
+have a maximum residual/criterion ratio of
+`{python} f"{max(c['residual']/c['criterion']['value'] for c in density):.8g}"`.
+The trace includes span parentage, selected-root events, root counts,
+association convergence and analytic infinite-dilution reference spans. The trace-incompleteness
+count is `{python} str(sum(a['trace']['incomplete'] for a in run['activities']) + sum(r['trace']['incomplete'] for r in run['references']))`.
+The activity binding omits its consumed State. Accordingly, density qualification
+here means the actual captured solve's convergence evidence; no second solve
+was substituted, and no full exposed-state or global-stability claim is made.
+
+## Shared row and interpretation of disagreement
+
+The current shared-row coefficient is `{python} repr(float(shared.predicted_gamma))`;
+its Table I target is `{python} str(shared.gamma_pm_m)`. It equals the accepted
+analytic-reference value in [the current reference record](results/shared-row-reference.json),
+whose log value is `{python} repr(current['log_value'])` and terminal molality is
+`{python} repr(current['reference']['molality'])` mol/kg. That record retains the
+actual native-source, extension and parameter-packet hashes and execution identity.
+It supplies no terminal-change estimate.
+
+The historical #730 coefficient is `{python} repr(prior['value'])`, with run
+`{python} prior['execution_identity']['run_id']` and its original source hash,
+Engine identity and terminal reference unchanged in
+[issue-730-shared-row.json](inputs/source/issue-730-shared-row.json).
+Exact equality with that historical value is
+`{python} str(float(shared.predicted_gamma) == prior['value'])`; the current minus
+historical difference is `{python} f"{float(shared.predicted_gamma)-prior['value']:.16g}"`.
+[#823](https://github.com/tannerpolley/ePC-SAFT/issues/823) replaced the dilution
+ladder with the analytic reference. This small change is below both fixed
+criteria and does not explain the physical disagreement.
+
+The retained pre-#823 run had one reproduced and 122 not-reproduced rows.
+On main before this record correction, the stale requirement for two ladder
+estimates classified all 123 rows as unresolved and the historical-equality
+self-check stopped. The refreshed comparison has
+`{python} str((data.outcome == 'reproduced').sum())` reproduced,
+`{python} str((data.outcome == 'not reproduced').sum())` not reproduced, and
+`{python} str((data.outcome == 'unresolved').sum())` unresolved rows.
+The numerical allocation and printed-precision criterion are unchanged.
+
+The salt-free composition, mixed-solvent mass basis, charge-neutral
+stoichiometry, parameter family and pressure match the accepted declarations.
+The tightened solve changes are far smaller than the discrepancies. This rules
+out the tested tolerance sensitivity as their explanation. The
+[#730 comparison](https://github.com/tannerpolley/ePC-SAFT/blob/759c95d80c25557c176d21ca895ba5e3b288dc3b/analyses/reproduction/2026-eos-literature-handoff/notebook.qmd) found that the
+accepted change in cross-solvent association does not explain the shared-row
+miss. The [#726 aqueous comparison](https://github.com/tannerpolley/ePC-SAFT/blob/759c95d80c25557c176d21ca895ba5e3b288dc3b/analyses/reproduction/2020-haslam/notebook.qmd) also found
+limited agreement, with allocation among model terms, fitting and source
+selection unresolved. Its pressure differs and it supplies no diagnosis of a
+mixed-solvent mechanism.
+
+The ethanol-rich series consistently overpredict Table I, whereas the water-rich series contain errors of both signs. The maximum absolute error and average absolute relative deviation are generally larger in the ethanol-rich series, but the trend is not monotonic and the molality grids differ. Disagreement also occurs at dilute points in the most water-rich series, so concentration extrapolation is not established as its cause.
+
+Figiel, Yu and Held, in “Properties in Organic and Mixed Solvents” and Figure 9, present mixed-solvent predictions without additional fitting and compare NaCl in water–ethanol directly with Esteso. They report good mixed-solvent agreement, particularly at low concentration. This is a qualitative model-adequacy statement, not a printed-precision guarantee. The present comparison does not retain matching-state values of their plotted model curves. Their high-concentration NaBr caveat does not establish a cause for these NaCl deviations. The remaining difference has not been isolated to a model term, fitted parameter, source treatment or implementation difference; its cause remains undetermined. Neither the aqueous comparison nor the present solvent pattern establishes missing neutral pairing as the cause.
+
+Source locator: [Figiel, Yu and Held (2025)](https://doi.org/10.1021/acs.iecr.5c00475),
+“Properties in Organic and Mixed Solvents,” discussion preceding Figure 9 and
+Figure 9 caption, Esteso reference 85.
+
+No numerical refusal occurred in either variant, so no failure retry or Engine
+correction was warranted.
+
+## Source quantities, uncertainty and exclusions
+
+[Esteso et al. (1989)](https://doi.org/10.1007/BF00652989), Table I, printed
+pp.280–281, supplies the activity targets and measured voltage differences.
+The source ledger records the local PDF identity, table/page locators,
+source-model equations and historical provenance. `source-verification.json`
+retains the transcription checks and spot checks. The legacy observations
+remain as historical input; superseded comparison figures and values are
+identified by their exact Git record, with no retained producer attributed to them.
+
+The source inconsistency is preserved: the Table I reference row gives
+`{python} str(ledger['source_inconsistency']['table_I_gamma'])`, while section
+3.4 gives `{python} str(ledger['source_inconsistency']['section_3_4_gamma'])`.
+The literal Table I value remains the target; neither statement is recalibrated.
+The fitted reference uncertainty is ±`{python} str(refs.gamma_pm_reference_uncertainty.iloc[0])`,
+shared within a solvent series. Instrument resolution is
+±`{python} str(refs.emf_resolution_mV.iloc[0])` mV and temperature control is
+±`{python} str(refs.temperature_uncertainty_K.iloc[0])` K. Pointwise activity
+covariance, solvent-weighing uncertainty and pressure uncertainty are unknown.
+The misses therefore do not establish individual statistical significance.
+
+Tables II–V and reference coefficients are recorded only. Table II contains
+solvent reference properties used in the source data reduction, partly from
+previous literature. Tables III–V contain fits of the source's extended
+Debye–Hückel, Pitzer and neutral-pair models. Their fitted coefficients and
+voltage residuals are not ePC-SAFT prediction targets. The selected Figiel
+family has no neutral NaCl species. Source solvent association does not
+supply that chemistry. Cell voltage is retained as the source observable;
+no forward-voltage projection is computed. These are scope limitations and
+require no Engine issue for the present activity comparison.
+
+```{python}
+for name, role in ledger['source_roles'].items():
+    filename = f'esteso-1989-table-{name}.csv' if name != 'reference-coefficients' else 'esteso-1989-reference-coefficients.csv'
+    if name != 'I':
+        display(Markdown(f'### Source {name}: recorded only\n\n{role}'))
+        display(HTML(pd.read_csv(source / filename, keep_default_na=False).to_html(index=False)))
+```
+
+[Figiel, Yu and Held (2025)](https://doi.org/10.1021/acs.iecr.5c00475),
+Tables 1–5 and Eqs.11–12, supplies the selected packet and its dielectric model.
+Esteso's Table II permittivity is not substituted for that model, and no
+parameter is refitted. The source equations and parameter packet retain their
+own scientific owners; Python only submits declarations and reads native values.
+
+## Row-level record and execution identity
+
+```{python}
+display(HTML(data[['row_id','source_table','source_page','molality_mol_kg','gamma_pm_m','predicted_gamma','signed_error','relative_error','outcome']].to_html(index=False, float_format=lambda x: f'{x:.10g}')))
+display(Markdown('```json\n' + json.dumps({k:v for k,v in run['execution_identity'].items() if k != 'input_hashes'}, indent=2) + '\n```'))
+```
+
+Every row in `results/comparisons.csv` identifies both native attempts and
+their run. `results/native-results.json.gz` owns the physical declarations,
+effective settings, reference operands, traces and input hashes.
+Native campaign timing was `{python} f"{run['wall_seconds']:.6f} s wall; {run['cpu_seconds']:.6f} s CPU"`. These include capture and
+checkpoint serialization, and exclude environment setup and notebook rendering.
+This notebook has not been independently reviewed or promoted for manuscript use.

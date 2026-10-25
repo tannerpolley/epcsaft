@@ -1,0 +1,6 @@
+{
+  "path": "../baseline-summary.md",
+  "sha256": "f3f7b86b59d315e8fa9a47cf198c9b79416a776839b413c5ca2a4daefd85f1d0",
+  "qualification_directory": "analyses/2026-tpd-phase-discovery/results/qualification-8470b49a",
+  "comparison": "byte-identical generated table linked once"
+}

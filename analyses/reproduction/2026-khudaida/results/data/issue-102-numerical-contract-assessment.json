@@ -1,0 +1,77 @@
+{
+  "after": {
+    "acceptance_contracts": {
+      "historical_output_abs_tolerance": 1e-07,
+      "kkt_abs_tolerance": 1e-08,
+      "phase_distance_minimum": 0.001,
+      "physical_abs_tolerance": 1e-10,
+      "predictive_policy": "DESCRIPTIVE_ONLY_NO_APPROVED_CUTOFF",
+      "pressure_relative_tolerance": 1e-08
+    },
+    "accepted_count": 8,
+    "accepted_point_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ],
+    "attempts_max": 73,
+    "attempts_min": 13,
+    "held_gap_max_abs": 7.459704046119953e-05,
+    "kkt_stationarity_max_abs": 6.954509459998769e-09,
+    "material_balance_max_abs": 1.4621637234313312e-13,
+    "phase_charge_max_abs": 0.0,
+    "pressure_max_relative": 5.709196557290852e-11,
+    "returned_phase_counts": [
+      2
+    ]
+  },
+  "before": {
+    "failure_reasons": {
+      "problem_67_not_converged": 3,
+      "stage_ii_major_iteration_limit": 2,
+      "stage_iii_solver_not_converged": 1
+    },
+    "non_admission_count": 6,
+    "non_admission_point_ids": [
+      1,
+      3,
+      5,
+      6,
+      7,
+      8
+    ]
+  },
+  "inputs": {
+    "current_receipt": {
+      "path": "results/khudaida-2026-figure-2-held2-summary.json",
+      "sha256": "f0baafdeda86abc9837a6a7ae308fd7457e14281d8c1dbfb223f06d691f8f9f3"
+    },
+    "current_result_rows": {
+      "path": "results/data/khudaida-2026-figure-2-held2.csv",
+      "sha256": "876a5a48977b8c8cf83c06f0826c72b3bc63dde977b73ceab09c6b89b5a020c3"
+    },
+    "pre_fix_failure_diagnostic": {
+      "path": "results/data/issue-102-pre-fix-failures.json",
+      "sha256": "42caff119eceb78b83ddccff0efd21e4da6d08d3069bfd1bf0cf2a4d31260136"
+    }
+  },
+  "interpretation": "The current exact installed artifacts accept all eight feeds while independent physical and KKT residuals remain far below their gates. This is bounded-search capability evidence, not a globality proof.",
+  "paper_convergence_contract": {
+    "does_not_replace": [
+      "material balance",
+      "electroneutrality",
+      "pressure stationarity",
+      "KKT stationarity",
+      "distinct two-phase topology"
+    ],
+    "perdomo_equation_69_ratio_before": 0.001,
+    "perdomo_equation_69_ratio_current": 0.01,
+    "role": "finite-search stopping gate only"
+  },
+  "schema_version": 1
+}

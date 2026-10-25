@@ -1,0 +1,409 @@
+{
+  "base": {
+    "input_schema_version": 2,
+    "active": {
+      "coordinates": {
+        "pair/carbon-dioxide/monoethanolamine/k_ij": {
+          "bounds": [
+            -1.0,
+            1.0
+          ],
+          "origin": -0.1957268589414558,
+          "scale": 1.0
+        }
+      },
+      "identities": [
+        "pair/carbon-dioxide/monoethanolamine/k_ij"
+      ],
+      "ties": []
+    },
+    "model": {
+      "kind": "mixture"
+    },
+    "parameters": {
+      "path": "inputs/neutral-selected-parameters.json",
+      "sha256": "sha256:e210801233ac1dcc756c5cfdeeb7454c4e7878de912da4c4bc1f40c503fec1b1"
+    },
+    "solver": {
+      "controls": {
+        "maximum_iterations": 80,
+        "optimizer_tolerance": 1e-08
+      },
+      "multistart": {
+        "affine_bound_margin": 1e-07,
+        "start_rule": "retained-calibration-origin values are active-coordinate origins in active identity order"
+      }
+    }
+  },
+  "candidates": {
+    "baseline-fit": {
+      "active_additions": [
+        {
+          "bounds": [
+            1.5,
+            5.8
+          ],
+          "identity": "component/protonated-monoethanolamine/segment_diameter",
+          "origin": 2.7533328530317225,
+          "scale": 2.15
+        },
+        {
+          "bounds": [
+            1.5,
+            5.8
+          ],
+          "identity": "component/carbamate-anion/segment_diameter",
+          "origin": 3.017079292071164,
+          "scale": 2.15
+        },
+        {
+          "bounds": [
+            -20.0,
+            20.0
+          ],
+          "identity": "reaction:R4:correlation:a",
+          "origin": 2.151,
+          "scale": 20.0
+        },
+        {
+          "bounds": [
+            -10000.0,
+            5000.0
+          ],
+          "identity": "reaction:R4:correlation:b_k",
+          "origin": -1545.3,
+          "scale": 7500.0
+        },
+        {
+          "bounds": [
+            500.0,
+            6000.0
+          ],
+          "identity": "reaction:R5:correlation:a_k",
+          "origin": 2677.91,
+          "scale": 2750.0
+        },
+        {
+          "bounds": [
+            -10.0,
+            10.0
+          ],
+          "identity": "reaction:R5:correlation:b",
+          "origin": 0.3869,
+          "scale": 10.0
+        },
+        {
+          "bounds": [
+            -0.01,
+            0.01
+          ],
+          "identity": "reaction:R5:correlation:c_per_k",
+          "origin": 0.0004277,
+          "scale": 0.01
+        }
+      ],
+      "observation_overrides": {
+        "phase_model_fields": {
+          "kind": "eos",
+          "reference_id": "installed-eos"
+        }
+      },
+      "parameters": {
+        "path": "data/mea-co2-h2o-nine-species-estimation/1/parameters/parameters.json",
+        "sha256": "sha256:8ef0b7c6c9f56cda3007b9d4161da8df39f0eddd66a8395f39ed8d2262fccf90"
+      },
+      "solver": {
+        "evaluation_strategy": "simultaneous_sparse_full_space"
+      },
+      "target_residual_overrides": {
+        "dimensionless": "scaled_difference"
+      }
+    },
+    "candidate-1-fit": {
+      "active_additions": [],
+      "target_residual_overrides": {}
+    },
+    "candidate-2-fit": {
+      "active_additions": [
+        {
+          "bounds": [
+            1.5,
+            5.8
+          ],
+          "identity": "component/protonated-monoethanolamine/segment_diameter",
+          "origin": 2.7533328530317225,
+          "scale": 2.15
+        },
+        {
+          "bounds": [
+            1.5,
+            5.8
+          ],
+          "identity": "component/carbamate-anion/segment_diameter",
+          "origin": 3.017079292071164,
+          "scale": 2.15
+        }
+      ],
+      "target_residual_overrides": {}
+    },
+    "candidate-3-fit": {
+      "active_additions": [
+        {
+          "bounds": [
+            1.5,
+            5.8
+          ],
+          "identity": "component/protonated-monoethanolamine/segment_diameter",
+          "origin": 2.7533328530317225,
+          "scale": 2.15
+        },
+        {
+          "bounds": [
+            1.5,
+            5.8
+          ],
+          "identity": "component/carbamate-anion/segment_diameter",
+          "origin": 3.017079292071164,
+          "scale": 2.15
+        },
+        {
+          "bounds": [
+            -1000.0,
+            1000.0
+          ],
+          "identity": "pair/carbon-dioxide/monoethanolamine/k_ij/reciprocal_temperature_slope",
+          "origin": 0.0,
+          "scale": 1000.0
+        }
+      ],
+      "parameters": {
+        "path": "inputs/candidate-3-parameters.json",
+        "sha256": "sha256:0e7c5ac63c078be9d32c15f316ecdb2b0de67de6f495358ab5955450f0271c6a"
+      },
+      "target_residual_overrides": {
+        "dimensionless": "scaled_difference"
+      }
+    },
+    "candidate-3-fit-reduced": {
+      "active_additions": [
+        {
+          "bounds": [
+            1.5,
+            5.8
+          ],
+          "identity": "component/protonated-monoethanolamine/segment_diameter",
+          "origin": 2.7533328530317225,
+          "scale": 2.15
+        },
+        {
+          "bounds": [
+            1.5,
+            5.8
+          ],
+          "identity": "component/carbamate-anion/segment_diameter",
+          "origin": 3.017079292071164,
+          "scale": 2.15
+        },
+        {
+          "bounds": [
+            -1000.0,
+            1000.0
+          ],
+          "identity": "pair/carbon-dioxide/monoethanolamine/k_ij/reciprocal_temperature_slope",
+          "origin": 0.0,
+          "scale": 1000.0
+        }
+      ],
+      "parameters": {
+        "path": "inputs/candidate-3-parameters.json",
+        "sha256": "sha256:0e7c5ac63c078be9d32c15f316ecdb2b0de67de6f495358ab5955450f0271c6a"
+      },
+      "solver": {
+        "evaluation_strategy": "reduced_space"
+      },
+      "target_residual_overrides": {
+        "dimensionless": "scaled_difference"
+      }
+    },
+    "candidate-4-fit": {
+      "active_additions": [
+        {
+          "bounds": [
+            1.5,
+            5.8
+          ],
+          "identity": "component/protonated-monoethanolamine/segment_diameter",
+          "origin": 2.7533328530317225,
+          "scale": 2.15
+        },
+        {
+          "bounds": [
+            1.5,
+            5.8
+          ],
+          "identity": "component/carbamate-anion/segment_diameter",
+          "origin": 3.017079292071164,
+          "scale": 2.15
+        },
+        {
+          "bounds": [
+            -20.0,
+            20.0
+          ],
+          "identity": "reaction:R4:correlation:a",
+          "origin": 2.151,
+          "scale": 20.0
+        },
+        {
+          "bounds": [
+            -10000.0,
+            5000.0
+          ],
+          "identity": "reaction:R4:correlation:b_k",
+          "origin": -1545.3,
+          "scale": 7500.0
+        },
+        {
+          "bounds": [
+            500.0,
+            6000.0
+          ],
+          "identity": "reaction:R5:correlation:a_k",
+          "origin": 2677.91,
+          "scale": 2750.0
+        },
+        {
+          "bounds": [
+            -10.0,
+            10.0
+          ],
+          "identity": "reaction:R5:correlation:b",
+          "origin": 0.3869,
+          "scale": 10.0
+        },
+        {
+          "bounds": [
+            -0.01,
+            0.01
+          ],
+          "identity": "reaction:R5:correlation:c_per_k",
+          "origin": 0.0004277,
+          "scale": 0.01
+        },
+        {
+          "bounds": [
+            -1000.0,
+            1000.0
+          ],
+          "identity": "pair/carbon-dioxide/monoethanolamine/k_ij/reciprocal_temperature_slope",
+          "origin": 0.0,
+          "scale": 1000.0
+        }
+      ],
+      "parameters": {
+        "path": "inputs/candidate-3-parameters.json",
+        "sha256": "sha256:0e7c5ac63c078be9d32c15f316ecdb2b0de67de6f495358ab5955450f0271c6a"
+      },
+      "target_residual_overrides": {}
+    },
+    "candidate-4-fit-reduced": {
+      "active_additions": [
+        {
+          "bounds": [
+            1.5,
+            5.8
+          ],
+          "identity": "component/protonated-monoethanolamine/segment_diameter",
+          "origin": 2.7533328530317225,
+          "scale": 2.15
+        },
+        {
+          "bounds": [
+            1.5,
+            5.8
+          ],
+          "identity": "component/carbamate-anion/segment_diameter",
+          "origin": 3.017079292071164,
+          "scale": 2.15
+        },
+        {
+          "bounds": [
+            -20.0,
+            20.0
+          ],
+          "identity": "reaction:R4:correlation:a",
+          "origin": 2.151,
+          "scale": 20.0
+        },
+        {
+          "bounds": [
+            -10000.0,
+            5000.0
+          ],
+          "identity": "reaction:R4:correlation:b_k",
+          "origin": -1545.3,
+          "scale": 7500.0
+        },
+        {
+          "bounds": [
+            500.0,
+            6000.0
+          ],
+          "identity": "reaction:R5:correlation:a_k",
+          "origin": 2677.91,
+          "scale": 2750.0
+        },
+        {
+          "bounds": [
+            -10.0,
+            10.0
+          ],
+          "identity": "reaction:R5:correlation:b",
+          "origin": 0.3869,
+          "scale": 10.0
+        },
+        {
+          "bounds": [
+            -0.01,
+            0.01
+          ],
+          "identity": "reaction:R5:correlation:c_per_k",
+          "origin": 0.0004277,
+          "scale": 0.01
+        },
+        {
+          "bounds": [
+            -1000.0,
+            1000.0
+          ],
+          "identity": "pair/carbon-dioxide/monoethanolamine/k_ij/reciprocal_temperature_slope",
+          "origin": 0.0,
+          "scale": 1000.0
+        }
+      ],
+      "parameters": {
+        "path": "inputs/candidate-3-parameters.json",
+        "sha256": "sha256:0e7c5ac63c078be9d32c15f316ecdb2b0de67de6f495358ab5955450f0271c6a"
+      },
+      "solver": {
+        "controls": {
+          "maximum_iterations": 500,
+          "optimizer_tolerance": 1e-08
+        },
+        "evaluation_strategy": "reduced_space"
+      },
+      "target_residual_overrides": {
+        "dimensionless": "scaled_difference"
+      }
+    }
+  },
+  "observations": {
+    "default_target_residual": "log_ratio",
+    "path": "inputs/observations.json",
+    "sha256": "sha256:fc6b7446266e1ee47f7cab78a55fc5a2a7d6fbe502c601839c844fd3bc0d0912",
+    "state_count": 123,
+    "target_count": 210
+  },
+  "schema": "mea-fit-candidates",
+  "schema_version": 1
+}

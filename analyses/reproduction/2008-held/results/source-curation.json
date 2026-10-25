@@ -1,0 +1,31 @@
+{
+  "issue": 832,
+  "baseline_commit": "be78aed2",
+  "source_only_commit": "210f4462088679ceaa80dd0189e85fd8729ae6cb",
+  "source_review_rows": 249,
+  "recentered_guides": 118,
+  "newly_excluded_line_candidates": 2,
+  "changed_coordinate_values": 0,
+  "new_native_evaluations": 0,
+  "original_execution_run_id": "cc1f2d8c-8a43-4c66-89e4-572f6f7485d9",
+  "original_frozen_targets_sha256": "3ec69e0949f60553f3596cf09f18fbd0ad676a2353138fb527d2d9f2f93ad6cb",
+  "revised_frozen_targets_sha256": "b10acb120587c37dca42c7898037c41e997bc9d19247420244bd22c7791d6475",
+  "original_native_results_sha256": "409857fed25a318059112e5441aeefb8af081ae9fb616160077cbe0a8cb8be7f",
+  "before_outcomes": {
+    "reproduced": 1330,
+    "undetermined": 299,
+    "not reproduced": 567
+  },
+  "after_outcomes": {
+    "reproduced": 1394,
+    "undetermined": 183,
+    "not reproduced": 619
+  },
+  "commands": [
+    "nice -n 10 .venv/bin/python analyses/reproduction/2008-held/scripts/digitize.py",
+    "env -u EPCSAFT_HSL_LIBRARY nice -n 10 .venv/bin/python analyses/reproduction/2008-held/scripts/run.py --compare-only",
+    "nice -n 10 .venv/bin/python analyses/reproduction/2008-held/scripts/present.py"
+  ],
+  "basis": "Source-only local guide corrections from original crops and review of all rejected coordinates. All physical coordinates, allowances, native values, residuals and original execution identities preserved. Comparison-only mode uses retained native lookups and the existing interval-overlap rule; missing native keys stop without calculation.",
+  "reclassification_runner_sha256": "17ecbbef430559e34d84cc373bf16b80a338277f431722bbe6928b0ffae166c5"
+}

@@ -1,0 +1,40 @@
+{
+  "main_commit": "96e947030c15fac5361ed1249b57b52f364ab36f",
+  "addendum_sha256": "8e48922e11aab2b5b6f51ed73a3db1f49622eea9344491afc6893f64e67bcccc",
+  "zotero_parent": "DUAIHQ7Y",
+  "pdf_attachment": "YAUNIZGX",
+  "markdown_attachment": "44UN7WS8",
+  "pdf_sha256": "b737d0b83a13c5bb868d36459d1c0474eccb40e7ef700bde50fdaa77de31673a",
+  "markdown_sha256": "25a3c8001ae56e43f7aa41e936893ccbca4f07bd39ecf65b86b0aef46f45ca9e",
+  "prediction_state": "No Engine compile, import or prediction in this investigation",
+  "chronology": "Manual readings and analytic source checks frozen before any #736 Engine prediction",
+  "hashes": {
+    "balance-checks.csv": "09b997bde843e6f6a3a2703fc6848068cc8dba78ddbe400f84b666828d75df5c",
+    "figure-1-model-points.csv": "32a3810d08e516bce483b4b3228e2ea2f9afc14de3081d7ce3a66cbec843b07e",
+    "figure-4-model-points.csv": "709b9c02a9e185f7c0e6b85e48bf96804a46f7ab2724bacd8cc67622662f0be6",
+    "kamps-2001-table-2-co2.csv": "fb44a76ef5735eb44c0c620c3f4b1a529adeb5d59fcdfdf77ed7bf576473a7c2",
+    "kuranov-1996-table-2.csv": "45159aae9cc2ad8019dc9de482ec36ae4e5355ef84981cc15068bd43b7a18b29",
+    "source-equation-references.csv": "017c8c347e10c976787cf353f0887f1d4c86beb180f29e47ed00532fc37f7940",
+    "table-001-mdea-correlations.csv": "e88417aa6bd10dc0dda3f39e966d6aee451b66e6a8882814a07b4b4d66f215bc",
+    "table-002-pure-parameters.csv": "dcf2e25e2867090b6db774be3f525f3086824272f7f1233c7105892c01380b1c",
+    "table-003-co2-water-summary.csv": "710bfedaab3f09b90502a16856c9b6671a1029efdde159530695662cae33cf38",
+    "table-004-mdea-water-k-gaussian.csv": "8db11bbc4d8bfc7bacd235f9ddf546860970ff35436a23181abe871c8377c102",
+    "table-005-reaction-correlations.csv": "725727bba9872df03e61252bb0f6bbc6996f57366b6ab5038ae63c5fb01c5abf",
+    "table-006-reactive-summary.csv": "3b24fa261f3598913cab8fe9a14e6408c45e971d95f21ccd53749de950a226bb"
+  },
+  "acquisition_byte_hashes": {
+    "balance-checks.csv": "bfc9b5cbd3f95a7648a6c2640c0fa1637001e7b24efc58bc224cf7c5f5430191",
+    "figure-1-model-points.csv": "a12574af30040aabc4917417728aa49fcba7f6d7432aff6287d39a813abe6368",
+    "figure-4-model-points.csv": "7fac14010c26159e8864cd5da91d3bb60b7cbf50defa51788e010352b0649012",
+    "kamps-2001-table-2-co2.csv": "73e061978fb1eb7c75af961d834f7f141d1802104ffd1d5b766626fcf986f980",
+    "kuranov-1996-table-2.csv": "45159aae9cc2ad8019dc9de482ec36ae4e5355ef84981cc15068bd43b7a18b29",
+    "source-equation-references.csv": "f08f94199579f4565d2e0b26f553bbd3c7266b89fda36f7b5d2c26d7203160cc",
+    "table-001-mdea-correlations.csv": "72eca9e53cc499503fbb6451aac978e171a760136813d822024ebba5e91e8dea",
+    "table-002-pure-parameters.csv": "47593ae082f08d2d3084f5b18587e891f2c4d216ffbc4a099565aa6d5aee45ac",
+    "table-003-co2-water-summary.csv": "358ab35e32c9883188ceb22b2a2f72034ea14030aea28460075022ff3913c6e0",
+    "table-004-mdea-water-k-gaussian.csv": "c413bb4c6981f1226cfba958d8d68302d739f790ef54794cf0d0c7e18daf5172",
+    "table-005-reaction-correlations.csv": "cb876640c33aac1da41b599799ab6134570b0e07eef752e9da9eb0ea4a978127",
+    "table-006-reactive-summary.csv": "917c3cac67bcf845432515c3953ad8987147d69ab3f1589d826d71c4806a5dce"
+  },
+  "line_endings": "CSV CRLF normalized to LF before prediction; coordinates and all cell strings unchanged; acquisition hashes retained separately."
+}

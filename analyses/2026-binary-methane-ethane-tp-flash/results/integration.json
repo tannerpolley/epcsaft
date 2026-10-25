@@ -1,0 +1,24 @@
+{
+  "baseline_source": "7b70ddca45b9b142e083e94c84173c0d3c6ba273",
+  "integrated_source": "5fb4ab5343babf92b6def99025f8f14689df2e32",
+  "local_donor": "cd8144fb1652987f2de95341448547c29c1d7245",
+  "baseline_samples": "performance-integration-before.csv",
+  "integrated_samples": "performance-integrated.csv",
+  "comparison_limits": {
+    "phase_composition_absolute": 1e-08,
+    "density_relative": 1e-07
+  },
+  "comparison_maxima": {
+    "phase_composition_absolute": 2.942091015256665e-15,
+    "density_relative": 1.5190757761734162e-15
+  },
+  "native_transport": {
+    "rows": 444,
+    "moved": 100,
+    "moved_owner": "E5-1 neutral-ternary actions",
+    "max_absolute_pressure_A1_Pa": 1.6630110621917993e-09,
+    "max_relative_for_previous_magnitude_above_1e_9": 9.521240439936714e-13,
+    "near_zero_max_absolute_pressure_A2_Pa": 3.075070911720118e-11
+  },
+  "limits": "Nine neutral methane/ethane interior-TP controls. Historical external values retained; no external timing reruns. No association-development, phase-discovery, IDAES or modular work."
+}

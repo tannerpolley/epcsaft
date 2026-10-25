@@ -1,0 +1,400 @@
+---
+title: "Exact residual polish: correction stops and damped-trial diagnosis"
+execute:
+  enabled: true
+---
+
+**The current-equation reference refresh passes the original preservation comparison and every requested row tolerance.** The [reference refresh](#reference-refresh-754) below records the current producer, before/after differences and residuals. The earlier qualification sections retain their historical builds and criteria.
+
+**On the historical merged main, the correction-size stop passed every affected check once two native check criteria were derived: one at its rounding floor, one as a volume accuracy target.**
+The two native failures were not defects in the returned states: both pass criteria
+sat at the rounding floor, and main passed them only by margin.
+The action forward bound now includes the Jacobian's own evaluation error, and the
+wide-ionic reference now closes its volume Newton on the relative volume error.
+Both criteria pass on the shortcut-off build and on the candidate, and both still
+fail a deliberately broken solve.
+On the merged source the returned states repeat the earlier preservation maxima
+exactly, ionic and sequential Khudaida evaluations fall, and MEA work is unchanged.
+This is numerical verification on manufactured references and declared local cases;
+delivered review has not run.
+
+## Equivalence requalification
+
+[The four comparisons](results/equivalence/four-checks.csv) retain main and candidate values,
+the former criteria, the comparison scales, absolute floors and new limits.
+The action comparisons use relative differences against main, with their existing
+absolute floor near zero.
+Stationarity uses the maximum absolute gradient of the extensive objective,
+computed independently from the compiled objective and constraint Jacobian.
+Its residual per mole of feed is also reported in the generated table.
+The noise-free fit variance uses the square of the normalized-residual absolute
+floor; its raw relative difference is retained and is not claimed to meet the
+relative limit without that near-zero floor.
+The test comments cite the equivalence standard in `CODING_STANDARDS.md` and PR #311.
+Solver row criteria, correction admission and preservation budgets remain unchanged.
+
+{{< include results/equivalence/tables.md >}}
+
+The fresh physical comparisons include the same declared local states, free
+intensives, trace inventories and sequential starts as the earlier qualification.
+The masking input keeps its trace correction.
+The small positive vapor uses its own phase amount for correction scaling;
+scaling it by feed would incorrectly admit the shortcut.
+Unloaded MEA keeps its fourth accepted polish trial.
+Paired time is supporting evidence with shared-host variability; deterministic
+native work counts govern the speed decision.
+[Qualification provenance](results/equivalence/qualification.json) identifies the
+source and wheel hashes, comparison formulas, floors and claim limits.
+No experimental validation, general state-error bound or global stability
+certificate follows from these comparisons.
+
+## Native check criteria at the rounding floor
+
+The earlier affected check failed the action forward-bound comparison at two
+manufactured bubble inputs and the wide-ionic reference's pressure closure.
+[The diagnosis](results/equivalence/check-failure-diagnosis.json) traced both to
+criteria that omit a rounding term the shortcut's state change reshuffles.
+
+**Action forward bound.** The identical-species bubble has an exact response
+$z^*$ in the equilibrated chart. The computed Jacobian $\tilde J$ carries its own
+evaluation error $\Delta J$: the dense-liquid chemical-potential rows' composition
+entries differ from their exact value $\pm\tfrac12$ through cancellation against
+the liquid log-volume column. Then $z^*$ solves a perturbed computed system with
+normwise backward error
+
+$$
+\eta_J=\frac{\lVert R\,\Delta J\,z^*\rVert_\infty}
+{\lVert R\tilde JC\rVert_\infty\lVert C^{-1}z^*\rVert+\lVert R\tilde Jz^*\rVert_\infty},
+$$
+
+in the same certified norm as the solve's own backward error $\eta$, so the
+first-order forward error obeys
+
+$$
+\frac{\lVert C^{-1}(\hat z-z^*)\rVert}{\lVert C^{-1}z^*\rVert}\le
+2\kappa_\infty(\eta+\eta_J)+\epsilon .
+$$
+
+Each backward error enters with the factor $2\kappa_\infty$ because it perturbs
+both matrix and right-hand side; $\epsilon$ covers the final rounding of each
+returned observable. The check computes $\Delta J$ from the Jacobian the action
+factors: on every rung the action's matrix equals the compiled Jacobian bit for bit.
+The former bound omitted $\eta_J$, so it failed whenever refinement drove $\eta$
+below the Jacobian's own error.
+
+**Wide-ionic volume closure.** The binary128 reference uses the volume $v$.
+Its pressure limit was the evaluation noise floor, which the converged Newton
+iterate straddled. The final check is now the volume forward error
+$|P(v)-P|\le 2^{-100}|\partial P/\partial v|\,v$, to first order
+$|\delta v/v|\le 2^{-100}$, which moves the reference values far below their
+Richardson targets. The Newton loop is unchanged.
+
+{{< include results/merged-main/tables.md >}}
+
+Both defect probes were disposable builds. An action solved in the raw,
+unequilibrated system is refused as ill-conditioned at the four highest-condition
+rungs that its bound cannot admit. Truncating the volume Newton before or after
+one step leaves the closure ratio many orders above one at the first reference call.
+[Criterion records](results/merged-main/criteria.json) retain every rung, every
+closure distribution and both probes, and
+[qualification provenance](results/merged-main/qualification.json) identifies the
+merged source and wheels.
+The bound is first-order and valid while $\Delta J$ stays at rounding level; the
+Jacobian's own correctness is owned by the exact-derivative checks, not by this
+bound.
+
+## Question, method and basis
+
+Can the shared driver's fresh Newton correction avoid damped trials at the
+rounding floor without losing the physical state of unchanged polishing?
+[Issue 272](https://github.com/tannerpolley/ePC-SAFT/issues/272) owns the accepted
+amendment and preservation budgets. [ALG-EQUILIBRIUM](../../engine/docs/science/algorithms.md#alg-equilibrium)
+owns the complete stopping rule, including consistent infinity norms, full-rank
+factorizations, the forward estimate, the current-best guard and positive free
+amounts. Thermodynamic definitions remain
+[material balance](../../engine/docs/equations.md#material_balance) and
+[chemical-potential stationarity](../../engine/docs/equations.md#chemical_potential_stationarity).
+No equation-of-state formulation, row criterion or solver tolerance changes.
+
+The local correction tolerance is read from the installed candidate's numerical
+policy. Log compositions and log packing fractions keep their chart scales.
+Each positive free phase amount uses its own amount in mol; free temperature
+and pressure use their current K and Pa values; multipliers remain absolute in
+RT units. A nonpositive free amount disables the shortcut. The current correction
+must be fresh: a preceding small direction does not bound the next one.
+
+The observable-relative budget applies to temperature, pressure and each phase
+density. Species with fed amounts below one millionth of total feed use their
+own phase-species amount as the trace-relative denominator. This conservative
+screen also includes unfed reacting products. Other species amounts and each
+phase total use the reference phase total as their phase-relative denominator.
+Both-zero amounts agree exactly. Ordered phase identities and identical input
+declarations are retained.
+
+Each budget is ten times the local correction tolerance. The shortcut omits only
+a correction bounded by that tolerance in the same scaled coordinates. On these
+qualified inputs, unchanged polishing then applies at most rounding-level
+corrections. An excess is a finding for diagnosis; it does not authorize a wider
+tolerance. This local estimate is not a general state-error certificate:
+composition normalization, density conversion, condition estimation and later
+Newton directions limit that interpretation.
+
+## Historical qualification and damped-trial diagnosis
+
+The earlier damped-trial predicates did not separate wasted ionic and Khudaida
+trials from required productive steps.
+The historical correction-size comparison failed four checks under the former
+criteria.
+These records remain below with their original values and inspected snapshots;
+the owner subsequently required the equivalence requalification above.
+
+## Damped-trial diagnosis on unchanged polishing
+
+The diagnostic wheel uses unchanged polishing from main; its exact revision and
+wheel identities are in [provenance](results/damped-stop/provenance.json).
+The recording-only wheel changes no equation, Newton direction, damping fraction,
+row criterion or best-point selection. Returned values and comparison checks are
+compared exactly against the pristine wheel before interpreting the trace.
+
+For current chart coordinates $x$, rounded trial coordinates $x_\alpha$,
+raw rows $r$, and the exact current Jacobian $J$, the native recorder computes
+
+$$
+\widehat r_\alpha=r+J(x_\alpha-x),\qquad
+\widehat{\Delta m}=\lVert r\rVert_\infty-\lVert\widehat r_\alpha\rVert_\infty.
+$$
+
+The accumulation uses extended precision and the actual representable trial
+coordinates. It therefore includes addition rounding in the proposed displacement.
+The assembly estimate is $f_j=u\sum_k|t_{jk}|$, with $u$ the binary64 unit roundoff
+and $t_{jk}$ the terms of raw row $j$ in
+[the shared row assembly](../../engine/native/equilibrium/request_compile.cpp).
+This estimates final assembly rounding. It does not bound error within the
+equation-of-state derivatives, source completion or coordinate transformations.
+The recorder retains the native association-gradient estimate separately; its
+maximum is the native evaluation’s reported floor. Taking the larger estimate
+also rejects productive corrections and cannot certify a no-progress decision.
+
+Ulps mean distances between ordered binary64 representations. The coordinate
+files retain every current value, undamped correction, rounded trial and distance.
+The complete [trial table](results/damped-stop/trials.md),
+[row table](results/damped-stop/rows.csv) and
+[coordinate table](results/damped-stop/coordinates.csv) retain every evaluated
+trial, including all sequential Khudaida points and the native parameter-fit calls.
+A productive trial means it satisfies main’s existing raw-contraction and
+physical-composition admission, not that it establishes physical validation.
+
+{{< include ../../build/notebook-data/polish-damped.md >}}
+
+All rejected ionic and sequential Khudaida trials remain physically inside the
+composition cutoff. Their recomputed chemical rows fail strict raw contraction;
+none is rejected by the extension-ratio rule. These trials change representable
+coordinates, rather than repeat the current point. The linear prediction remains
+a descent on every such trial, but recomputing the thermodynamic rows reverses it.
+Extended-precision summation of already evaluated row operands still rejects
+every one of these trials. It also changes the verdict on an accepted ionic
+quarter trial, so changing summation precision would change the governing method.
+These observations locate the discrepancy beyond a duplicate-coordinate test or
+final assembly rounding alone; they do not isolate one electrolyte or association
+operation as its cause.
+
+The norm-wide estimate catches an accepted ionic quarter trial, productive fit
+trials, an isomerization correction and a productive masking correction.
+Comparing each row with its own rounding estimate avoids the masking correction,
+but still catches productive fit and isomerization steps and saves no ionic or
+Khudaida work. Comparing only the currently controlling merit row catches fewer
+rejected ionic trials and still catches productive fit steps. Exact-coordinate,
+previous-trial identity and nonpositive-prediction checks identify no rejected
+ionic or Khudaida trial. A stop after a rejected full trial also cannot meet the
+ionic evaluation limit while retaining its productive quarter trial.
+
+The historical damped-trial design outcome was **optimization not adopted**. No runtime rule,
+new numerical-policy value, tolerance change or caller-specific selection is
+proposed. This finite replay falsifies the tested predicates; it is not a proof
+that every possible pre-evaluation predicate is impossible. Main’s work remains
+the expected work. The preservation budgets, physical masking and small-phase
+cases, extensive stationarity and solved-state derivative criteria remain required
+for any different proposal. Independent design review and issue disposition stay
+with the accountable lead; these results have not been promoted for manuscript use.
+
+## Earlier correction-size comparisons
+
+The tables below are generated from retained CSV and JSON, without importing
+the Engine. Temperature is in K, pressure in Pa, density in mol/m³ and amounts
+in mol. Preservation differences are dimensionless. Work entries are optimizer
+iterations / native evaluations / Hessian calls. Evaluations include exact
+polish and do not count every equation-of-state call. All states in the declared preservation comparison meet
+the unchanged caller criterion; this does not establish the other unchanged checks.
+
+{{< include ../../build/notebook-data/polish.md >}}
+
+## Falsifiers and physical meaning
+
+The masking input uses three identical ethane species in one vapor phase with
+the source test's trace-feed reacting isomerization declaration. The candidate
+never takes the shortcut on this case and preserves both reacting species amounts
+exactly. The historical norm-band counterexample remains in
+[original state rows](results/physical-state-comparison.csv),
+[row operands](results/operands.csv) and [Newton directions](results/steps.csv).
+The small raw residual did not justify omitting its trace correction.
+
+The free-temperature declaration comes from `test_cold_vapor.py`; the
+free-pressure declaration comes from `test_continuation.py`. Both retain their
+states within the approved budgets and take the fresh-correction shortcut.
+The [small positive vapor declaration](results/amendment-2/small-phase-input.json)
+lies above the topology cutoff. Its phase-relative correction exceeds the local
+threshold while the same amount correction relative to feed is below it.
+A bounded native solve of the installed Engine Jacobian confirms that changing
+only the free-amount scale to feed admits the complete forward bound.
+[amount-scaling.csv](results/resumed/amount-scaling.csv) retains both full-coordinate
+norms, the alternative forward bound and factorization ranks. The candidate
+blocks the shortcut and keeps unchanged-polish work and states.
+Unloaded MEA retains its fourth accepted trial.
+
+The bounded native diagonal-system falsifier retains a tiny backward residual
+with an analytically known larger forward correction. Its manufactured input
+is in [qualification.json](results/resumed/qualification.json); its computed
+bound and reference are in
+[admission-falsifier.csv](results/resumed/admission-falsifier.csv).
+The same check rejects a singular factorization and admits a resolved small
+correction. The paused test's reporting fields were corrected while preserving
+its numerical expectation and tolerance.
+
+## Historical failed checks and correction admission
+
+[gate-findings.csv](results/resumed/gate-findings.csv) retains the failed
+candidate comparisons and their unchanged limits. Both affected and full checks
+find the same failures. These comprise two solved-state action transport
+comparisons, the extensive KKT stationarity identity and a near-zero parameter regression
+variance comparison. Replaying those four tests against the identified
+merged-main wheel passes all four.
+
+The bounded KKT replay reuses the exact identical-ethane isomerization test
+at its stated temperature, pressure, equilibrium constant and feed amount.
+Its analytic composition and first-through-third thermal-action checks pass,
+while extensive-objective stationarity fails. Native detailed capture shows
+full rank, a current-best point, positive amount, and a forward bound below the
+local correction threshold when the candidate stops. Unchanged polishing
+continues and satisfies the identity. This reproduced case shows that the
+accepted coordinate bound does not preserve every unchanged numerical check;
+it does not identify a new admissible stopping criterion.
+
+The [candidate numerical rows](results/resumed/candidate-kkt-values.csv),
+[baseline numerical rows](results/resumed/baseline-kkt-values.csv),
+[candidate polish trace](results/resumed/candidate-kkt-trace.csv) and
+[baseline polish trace](results/resumed/baseline-kkt-trace.csv) retain the cause.
+At that stage, the local correction bound did not preserve the former check
+criteria. The owner subsequently adopted the equivalence standard; the fresh
+qualification above changes the test criteria under that authority while
+retaining the runtime correction predicate.
+
+## Paired timing and uncertainty
+
+`tools/time-key-solves` installs the two identified wheels, uses identical
+physical inputs and a common accepted start where applicable, and pins both
+workers to the same CPU with one numerical thread. Every counterbalanced pair
+includes AB and BA blocks. Imports and input preparation lie outside the solve
+clock. Pair changes average the two block percentage changes. Median absolute
+deviation and the observed range describe shared-host variability; they are
+not confidence intervals. Deterministic work counts are the speed gate.
+
+These are scalar work, error-budget and elapsed-time comparisons on fixed
+inputs. Tables identify the controlling case and retain timing spread directly;
+a plot would add no continuous physical relationship or accuracy information.
+
+## Provenance and limits
+
+Each checkout wheel is installed non-editably before numerical runs. The
+candidate runtime source hashes and wheel identities are in
+[qualification.json](results/resumed/qualification.json),
+[baseline-wheel.json](results/resumed/baseline-wheel.json) and
+[candidate-wheel.json](results/resumed/candidate-wheel.json).
+The fresh reference run reproduced
+[the retained baseline state table](results/amendment-2/baseline-states.csv)
+byte for byte; its wheel record references that single numerical owner.
+[Declared inputs](results/resumed/inputs.json),
+[candidate state rows](results/resumed/candidate-states.csv),
+[detailed traces](results/resumed/candidate-trace.csv),
+[physical differences](results/resumed/physical-state-comparison.csv),
+[work counts](results/resumed/work.csv) and
+[paired measurements](results/resumed/timing/pairs.csv) retain the evidence.
+
+The comparison supports this local termination behavior on the retained cases.
+It provides no experimental validation, parameter uncertainty propagation,
+global phase-stability result, guarantee on all returned raw rows, or general
+state-error bound. Earlier evidence remains in its original result directories,
+limited to its recorded source and inputs. The presentation reads these records
+and never runs the thermodynamic model.
+
+## Reference refresh (#754)
+
+The [accepted diagnosis](https://github.com/tannerpolley/ePC-SAFT/issues/754#issuecomment-6328215094)
+attributes the MEA shift to [#353](https://github.com/tannerpolley/ePC-SAFT/issues/353)'s
+intended infinite-dilution reference correction and brackets the masking shift at
+[#633](https://github.com/tannerpolley/ePC-SAFT/issues/633)'s trace-inventory correction.
+The MEA attribution is supported by the source change and numerical probes. It
+cannot be isolated with published wheels: the earliest available wheel already
+contains the shift. The diagnosis path and full SHA-256 are retained in the
+[qualification record](results/issue-754/qualification.json).
+
+The [original reference rows](results/amendment-2/baseline-states.csv) remain frozen,
+with their original reference source and wheel identified in the leaf README and
+[historical wheel record](results/resumed/baseline-wheel.json). The declarations
+remain byte-identical. The fresh reference and independent repeat use one wheel
+built from the current main producer, with every solve and comparison operation
+unchanged. Both freshly serialized state tables and traces reproduce the #720
+numerical owners byte for byte; their records point to those single owners.
+This comparison checks repetition on the accepted equations. The earlier
+shortcut-disabled comparisons retain their original scope and producer identities.
+
+```{python}
+#| echo: false
+#| output: asis
+import csv
+import json
+from pathlib import Path
+
+fresh = Path('results/issue-754')
+qualification = json.loads((fresh / 'qualification.json').read_text())
+reference = json.loads((fresh / 'baseline-wheel.json').read_text())
+root = Path('../..')
+before = list(csv.DictReader((root / qualification['historical_maxima_path']).open()))
+after = list(csv.DictReader((fresh / 'budget-maxima.csv').open()))
+residuals = list(csv.DictReader((fresh / 'residual-maxima.csv').open()))
+limit = qualification['comparison_limit']
+print(f"Producer commit: `{qualification['producer_commit']}`.\n")
+print(f"Installed wheel SHA-256: `{reference['sha256']}`.\n")
+print(f"Both runs solve **{qualification['solved_states']} of {len(residuals)} states**, "
+      f"with **{qualification['requested_tolerances_met']} of {len(residuals)} requested tolerances met**.\n")
+print(f"The **{limit:.0e} comparison limit is unchanged**.\n")
+print('| Comparison basis | Historical reference difference | Refreshed reference difference | Unchanged limit |')
+print('|---|---:|---:|---:|')
+for old, new in zip(before, after, strict=True):
+    assert old['budget'] == new['budget']
+    print(f"| {old['budget']} | {float(old['difference']):.15g} | {float(new['difference']):.15g} | {limit:.0e} |")
+print('\nTemperature is in K, pressure in Pa, phase/species amounts in mol, and all comparison differences are dimensionless.\n')
+print('| State | Maximum absolute classified residual | Requested row tolerance | Met |')
+print('|---|---:|---:|---|')
+for row in residuals:
+    print(f"| {row['case']} | {float(row['maximum_classified_residual']):.8g} | {float(row['row_tolerance']):.0e} | {row['requested_tolerance_met']} |")
+small = next(r for r in csv.DictReader((root / qualification['historical_comparison_path']).open())
+             if r['case'] == 'small-positive-phase' and r['quantity'] == 'phase_amount' and r['index'] == '1')
+absolute = abs(float(small['candidate']) - float(small['baseline']))
+print(f"\nThe small vapor amount is {float(small['candidate']):.8g} mol. Its historical "
+      f"difference is only {absolute:.8g} mol absolute, despite a "
+      f"{float(small['difference']):.8g} phase-relative difference.\n")
+```
+
+The small-phase case is a rounding-amplification note, not a loosened bound.
+Recovering a tiny phase from differences of order-one inventories amplifies
+binary64 rounding. The current s1/s2 amounts in the masking case satisfy the
+analytic inventory and its one-to-three split to rounding, as the diagnosis
+establishes. The comparison limit and every requested row tolerance are retained.
+The original comparison also passes its trace, correction and work assertions.
+
+These are three scalar preservation maxima and per-state residual checks; a plot
+would add no physical relationship. The result supports a reference refresh on
+accepted current equations and local numerical verification on these declared
+cases. It supplies no physical validation, global stability result, rigorous
+forward-error bound, or isolated pre-/post-#353 comparison. Independent delivered
+review and investigator promotion remain separate.

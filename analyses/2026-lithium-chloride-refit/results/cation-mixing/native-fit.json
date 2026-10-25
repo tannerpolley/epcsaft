@@ -1,0 +1,45 @@
+{
+  "status": "converged",
+  "message": "Parameter tolerance reached. Relative step_norm: 1.247510e-11 <= 1.000000e-10.",
+  "usable": true,
+  "iterations": 33,
+  "residual_evaluations": 34,
+  "jacobian_evaluations": 17,
+  "trial_failures": 0,
+  "initial_cost": 0.005874872523801429,
+  "final_cost": 0.005741183217519807,
+  "physical": [
+    3.6555416629540853,
+    3.2168766633995953,
+    16.230077626394564,
+    1.38,
+    -2.9961478792412892,
+    -8.841893823888611
+  ],
+  "optimizer": [
+    3.6555416629540853,
+    16.230077626394564,
+    1.38,
+    -2.9961478792412892,
+    -8.841893823888611
+  ],
+  "available_rows": 96,
+  "covariance": {
+    "status": "active_bound",
+    "rank": 5,
+    "active_bounds": [
+      2
+    ],
+    "singular_values": [
+      13.443612779068365,
+      0.20237670798859156,
+      0.13428611378156868,
+      0.04117131050815783,
+      0.002339079661680916
+    ],
+    "projected_gradient_norm": 4.58660220914453e-10
+  },
+  "failures": [],
+  "extension": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-640-refit-li-and-k-jointly-with-the-18/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so",
+  "extension_sha256": "0954372a1b5a726bf95c4592f0db781bcbb89061d00f1457a6fe01da88527498"
+}

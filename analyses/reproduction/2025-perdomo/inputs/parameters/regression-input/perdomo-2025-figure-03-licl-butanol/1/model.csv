@@ -1,0 +1,4 @@
+record_id,family,value,unit,source_id,locator,domain_id
+ionic-region-permittivity,ionic_region_relative_permittivity,8,,figiel-yu-held-2025,ion-region convention,perdomo-regression-298-15-k-1-bar
+dielectric-suppression,ion_fraction_suppression_coefficient,7.01,,figiel-yu-held-2025,retained electrolyte model setting,perdomo-regression-298-15-k-1-bar
+relative-permittivity-formulation,relative_permittivity_formulation,ion-fraction-suppression,,figiel-yu-held-2025,retained electrolyte model setting,perdomo-regression-298-15-k-1-bar

@@ -1,0 +1,73 @@
+component_id,T_K,p_sat_Pa,rho_liq_mol_m3,role,reference_eos,u_p_sat_rel,u_rho_liq_rel
+acetone,180.0,2.874299120241266,15694.825100989647,calibration,"Lemmon and Span, J. Chem. Eng. Data 51 (2006) 785",,0.005
+acetone,193.48,16.27535301692999,15444.076721052747,validation,"Lemmon and Span, J. Chem. Eng. Data 51 (2006) 785",,0.005
+acetone,206.96,71.32756108713535,15196.171805163467,calibration,"Lemmon and Span, J. Chem. Eng. Data 51 (2006) 785",,0.005
+acetone,220.43,254.01696285155037,14950.079541510006,validation,"Lemmon and Span, J. Chem. Eng. Data 51 (2006) 785",,0.005
+acetone,233.91,764.9737504811552,14704.338703165671,calibration,"Lemmon and Span, J. Chem. Eng. Data 51 (2006) 785",,0.005
+acetone,247.39,2004.4878949770023,14458.11075875191,validation,"Lemmon and Span, J. Chem. Eng. Data 51 (2006) 785",,0.005
+acetone,260.87,4678.027644534726,14210.414643117121,calibration,"Lemmon and Span, J. Chem. Eng. Data 51 (2006) 785",,0.005
+acetone,274.35,9906.443828069276,13960.280259694546,validation,"Lemmon and Span, J. Chem. Eng. Data 51 (2006) 785",0.005,0.005
+acetone,287.83,19324.409154056728,13706.72087833004,calibration,"Lemmon and Span, J. Chem. Eng. Data 51 (2006) 785",0.005,0.001
+acetone,301.3,35138.17412680772,13448.898605790713,validation,"Lemmon and Span, J. Chem. Eng. Data 51 (2006) 785",0.0025,0.001
+acetone,314.78,60215.77510087129,13185.3251732255,calibration,"Lemmon and Span, J. Chem. Eng. Data 51 (2006) 785",0.0025,0.005
+acetone,328.26,98025.68248944293,12914.973362506069,validation,"Lemmon and Span, J. Chem. Eng. Data 51 (2006) 785",0.0025,0.005
+acetone,341.74,152656.0146500528,12636.471072570243,calibration,"Lemmon and Span, J. Chem. Eng. Data 51 (2006) 785",0.0025,0.005
+acetone,355.22,228768.21709794283,12348.232924249427,validation,"Lemmon and Span, J. Chem. Eng. Data 51 (2006) 785",0.0025,0.005
+acetone,368.7,331555.1044302961,12048.381710423462,calibration,"Lemmon and Span, J. Chem. Eng. Data 51 (2006) 785",0.0025,0.005
+acetone,382.17,466591.86584674375,11734.876689180022,validation,"Lemmon and Span, J. Chem. Eng. Data 51 (2006) 785",0.0025,0.01
+acetone,395.65,640241.9546240784,11404.412222274526,calibration,"Lemmon and Span, J. Chem. Eng. Data 51 (2006) 785",0.005,0.01
+acetone,409.13,859071.3837190262,11053.56618659474,validation,"Lemmon and Span, J. Chem. Eng. Data 51 (2006) 785",0.005,0.01
+acetone,422.61,1130267.8976416192,10677.486771595342,calibration,"Lemmon and Span, J. Chem. Eng. Data 51 (2006) 785",0.005,0.01
+acetone,436.09,1461655.3847426288,10269.435975103006,validation,"Lemmon and Span, J. Chem. Eng. Data 51 (2006) 785",0.005,0.01
+acetone,449.57,1861879.1978485764,9819.483119583967,calibration,"Lemmon and Span, J. Chem. Eng. Data 51 (2006) 785",0.005,0.01
+acetone,463.04,2340345.7666066387,9312.054962251688,validation,"Lemmon and Span, J. Chem. Eng. Data 51 (2006) 785",0.005,0.01
+acetone,476.52,2909298.754650623,8716.862049732186,calibration,"Lemmon and Span, J. Chem. Eng. Data 51 (2006) 785",0.005,0.01
+acetone,490.0,3582930.318781534,7964.11027239074,validation,"Lemmon and Span, J. Chem. Eng. Data 51 (2006) 785",0.005,0.01
+dimethyl-ether,200.0,6735.581236202308,17332.094502801505,calibration,"Wu, Zhou and Lemmon, J. Phys. Chem. Ref. Data 40 (2011) 023104",,0.0005
+dimethyl-ether,208.04,11710.55395723449,17111.369045630603,validation,"Wu, Zhou and Lemmon, J. Phys. Chem. Ref. Data 40 (2011) 023104",,0.0005
+dimethyl-ether,216.09,19423.478786542113,16887.875281244633,calibration,"Wu, Zhou and Lemmon, J. Phys. Chem. Ref. Data 40 (2011) 023104",,0.0005
+dimethyl-ether,224.13,30870.964337386336,16661.786443231278,validation,"Wu, Zhou and Lemmon, J. Phys. Chem. Ref. Data 40 (2011) 023104",,0.0005
+dimethyl-ether,232.17,47276.615339443815,16432.413398623285,calibration,"Wu, Zhou and Lemmon, J. Phys. Chem. Ref. Data 40 (2011) 023104",0.002,0.0005
+dimethyl-ether,240.22,70087.2351563032,16199.018770229004,validation,"Wu, Zhou and Lemmon, J. Phys. Chem. Ref. Data 40 (2011) 023104",0.002,0.0005
+dimethyl-ether,248.26,100850.39964942183,15961.701833037057,calibration,"Wu, Zhou and Lemmon, J. Phys. Chem. Ref. Data 40 (2011) 023104",0.002,0.0005
+dimethyl-ether,256.3,141367.5865222911,15719.653007889203,validation,"Wu, Zhou and Lemmon, J. Phys. Chem. Ref. Data 40 (2011) 023104",0.002,0.0005
+dimethyl-ether,264.35,193647.46213064395,15471.986270875106,calibration,"Wu, Zhou and Lemmon, J. Phys. Chem. Ref. Data 40 (2011) 023104",0.002,0.0005
+dimethyl-ether,272.39,259638.88917423267,15218.673179958407,validation,"Wu, Zhou and Lemmon, J. Phys. Chem. Ref. Data 40 (2011) 023104",0.002,0.0005
+dimethyl-ether,280.43,341600.41047258914,14958.67672229959,calibration,"Wu, Zhou and Lemmon, J. Phys. Chem. Ref. Data 40 (2011) 023104",0.002,0.0005
+dimethyl-ether,288.48,441981.1423472946,14690.807565166311,validation,"Wu, Zhou and Lemmon, J. Phys. Chem. Ref. Data 40 (2011) 023104",0.002,0.0005
+dimethyl-ether,296.52,562946.9117952246,14414.720190401422,calibration,"Wu, Zhou and Lemmon, J. Phys. Chem. Ref. Data 40 (2011) 023104",0.002,0.0005
+dimethyl-ether,304.57,707313.2476898916,14128.501171205691,validation,"Wu, Zhou and Lemmon, J. Phys. Chem. Ref. Data 40 (2011) 023104",0.002,0.0005
+dimethyl-ether,312.61,877327.221737241,13831.346044019205,calibration,"Wu, Zhou and Lemmon, J. Phys. Chem. Ref. Data 40 (2011) 023104",0.002,0.0005
+dimethyl-ether,320.65,1075858.1332570617,13520.989226888303,validation,"Wu, Zhou and Lemmon, J. Phys. Chem. Ref. Data 40 (2011) 023104",0.002,0.0005
+dimethyl-ether,328.7,1306034.1804573948,13194.529085177359,calibration,"Wu, Zhou and Lemmon, J. Phys. Chem. Ref. Data 40 (2011) 023104",0.002,0.0005
+dimethyl-ether,336.74,1570250.3899936802,12849.460833976767,validation,"Wu, Zhou and Lemmon, J. Phys. Chem. Ref. Data 40 (2011) 023104",0.002,0.0005
+dimethyl-ether,344.78,1871919.352209295,12480.82982194188,calibration,"Wu, Zhou and Lemmon, J. Phys. Chem. Ref. Data 40 (2011) 023104",0.002,0.0005
+dimethyl-ether,352.83,2214886.8719315846,12081.589672044165,validation,"Wu, Zhou and Lemmon, J. Phys. Chem. Ref. Data 40 (2011) 023104",0.002,0.0005
+dimethyl-ether,360.87,2602043.469950159,11642.88532192795,calibration,"Wu, Zhou and Lemmon, J. Phys. Chem. Ref. Data 40 (2011) 023104",0.002,0.0005
+dimethyl-ether,368.91,3038037.2536111856,11148.375641714783,validation,"Wu, Zhou and Lemmon, J. Phys. Chem. Ref. Data 40 (2011) 023104",0.002,0.0005
+dimethyl-ether,376.96,3528558.9383996692,10569.094776247657,calibration,"Wu, Zhou and Lemmon, J. Phys. Chem. Ref. Data 40 (2011) 023104",0.002,0.0005
+dimethyl-ether,385.0,4078795.6066145394,9848.152435157883,validation,"Wu, Zhou and Lemmon, J. Phys. Chem. Ref. Data 40 (2011) 023104",0.002,
+diethyl-ether,270.0,21283.811029803248,9972.40002076034,calibration,"Thol, Piazza and Span, Int. J. Thermophys. 35 (2014) 783",0.004,0.002
+diethyl-ether,277.83,30705.619192466766,9857.566425875983,validation,"Thol, Piazza and Span, Int. J. Thermophys. 35 (2014) 783",0.004,0.002
+diethyl-ether,285.65,43236.898329071606,9740.73623406941,calibration,"Thol, Piazza and Span, Int. J. Thermophys. 35 (2014) 783",0.004,0.002
+diethyl-ether,293.48,59606.21995015143,9621.445699788517,validation,"Thol, Piazza and Span, Int. J. Thermophys. 35 (2014) 783",0.004,0.002
+diethyl-ether,301.3,80541.2603935584,9499.820241115956,calibration,"Thol, Piazza and Span, Int. J. Thermophys. 35 (2014) 783",0.004,0.002
+diethyl-ether,309.13,106936.29149512242,9375.35092653663,validation,"Thol, Piazza and Span, Int. J. Thermophys. 35 (2014) 783",0.004,0.002
+diethyl-ether,316.96,139674.1617227613,9247.97093970899,calibration,"Thol, Piazza and Span, Int. J. Thermophys. 35 (2014) 783",0.004,0.002
+diethyl-ether,324.78,179664.61887169728,9117.600488846667,validation,"Thol, Piazza and Span, Int. J. Thermophys. 35 (2014) 783",0.004,0.002
+diethyl-ether,332.61,228028.88270541953,8983.623382337488,calibration,"Thol, Piazza and Span, Int. J. Thermophys. 35 (2014) 783",0.004,0.002
+diethyl-ether,340.43,285709.6201360305,8846.05703515557,validation,"Thol, Piazza and Span, Int. J. Thermophys. 35 (2014) 783",0.004,0.002
+diethyl-ether,348.26,353967.39284612524,8704.171151964745,calibration,"Thol, Piazza and Span, Int. J. Thermophys. 35 (2014) 783",0.004,0.002
+diethyl-ether,356.09,433891.1303171544,8557.693380045874,validation,"Thol, Piazza and Span, Int. J. Thermophys. 35 (2014) 783",0.004,0.002
+diethyl-ether,363.91,526551.102658169,8406.289762431958,calibration,"Thol, Piazza and Span, Int. J. Thermophys. 35 (2014) 783",0.004,0.002
+diethyl-ether,371.74,633422.3321065846,8248.932443973963,validation,"Thol, Piazza and Span, Int. J. Thermophys. 35 (2014) 783",0.004,0.002
+diethyl-ether,379.57,755679.4875552381,8085.025281684579,calibration,"Thol, Piazza and Span, Int. J. Thermophys. 35 (2014) 783",0.004,0.002
+diethyl-ether,387.39,894470.7079582926,7913.8110695134,validation,"Thol, Piazza and Span, Int. J. Thermophys. 35 (2014) 783",0.004,0.002
+diethyl-ether,395.22,1051549.817125152,7733.602939752633,calibration,"Thol, Piazza and Span, Int. J. Thermophys. 35 (2014) 783",0.004,0.002
+diethyl-ether,403.04,1227992.6843023158,7543.233082892976,validation,"Thol, Piazza and Span, Int. J. Thermophys. 35 (2014) 783",0.004,0.002
+diethyl-ether,410.87,1425836.9228521858,7340.019757403584,calibration,"Thol, Piazza and Span, Int. J. Thermophys. 35 (2014) 783",0.004,0.002
+diethyl-ether,418.7,1646603.3961219848,7121.128283892803,validation,"Thol, Piazza and Span, Int. J. Thermophys. 35 (2014) 783",0.004,0.002
+diethyl-ether,426.52,1891899.3367153406,6882.37077547518,calibration,"Thol, Piazza and Span, Int. J. Thermophys. 35 (2014) 783",0.004,0.002
+diethyl-ether,434.35,2164580.7348827166,6616.076599597545,validation,"Thol, Piazza and Span, Int. J. Thermophys. 35 (2014) 783",0.004,0.002
+diethyl-ether,442.17,2466608.3449805845,6310.794371763301,calibration,"Thol, Piazza and Span, Int. J. Thermophys. 35 (2014) 783",0.004,0.002
+diethyl-ether,450.0,2802072.6572090737,5941.560207815598,validation,"Thol, Piazza and Span, Int. J. Thermophys. 35 (2014) 783",0.004,

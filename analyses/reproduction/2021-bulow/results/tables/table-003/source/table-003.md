@@ -1,0 +1,11 @@
+<!-- source: docs/papers/md/Bülow, Ascani, Held - 2021 - ePC-SAFT advanced – Part II Application to Salt Solubility in Ionic and.md lines 333-341 -->
+
+| Ion | $\sigma_{i} / \AA$ | $u_{i} / k_{B} / \mathrm{K}$ | $k_{\text {ion,Water }}$ |
+| :--- | :--- | :--- | :--- |
+| $\mathrm{Li}^{+}$ | 2.8449 | 360.00 | -0.25 |
+| $\mathrm{Na}^{+}$ | 2.8232 | 230.00 | $-7.981 \bullet 10^{-4} \mathrm{~T} / \mathrm{K}+2.38$ |
+| $\mathrm{K}^{+}$ | 3.3417 | 200.00 | $-4.012 \bullet 10^{-4} T / K+1.396$ |
+| $\mathrm{F}^{-}$ | 1.7712 | 275.00 | 0 |
+| $\mathrm{Cl}^{-}$ | 2.7560 | 170.00 | -0.25 |
+| $\mathrm{Br}^{-}$ | 3.0707 | 190.00 | -0.25 |
+| $\mathrm{I}^{-}$ | 3.6672 | 200.00 | -0.25 |

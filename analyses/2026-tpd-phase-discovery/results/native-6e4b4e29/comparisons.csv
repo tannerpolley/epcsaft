@@ -1,0 +1,1307 @@
+test_id,comparison_id,quantity,comparison_unit,field,kind,value,binary64
+native.equilibrium.removal,removal/disappearance/amount,difference,mol,model,float,1.0,3ff0000000000000
+native.equilibrium.removal,removal/disappearance/amount,difference,mol,reference,float,1.0,3ff0000000000000
+native.equilibrium.removal,removal/disappearance/amount,difference,mol,basis,text,Relationship,
+native.equilibrium.removal,removal/disappearance/amount,difference,mol,method,text,native-thermodynamic-identity,
+native.equilibrium.removal,removal/disappearance/amount,difference,mol,claim,text,#223 numerical falsifier,
+native.equilibrium.removal,removal/disappearance/amount,difference,mol,judgment,text,Criterion satisfied,
+native.equilibrium.removal,removal/disappearance/amount,difference,mol,evidence_state,text,Complete,
+native.equilibrium.removal,removal/disappearance/amount,difference,mol,criterion,text,absolute,
+native.equilibrium.removal,removal/disappearance/amount,difference,mol,rule,text,absolute,
+native.equilibrium.removal,removal/disappearance/amount,difference,mol,atol,float,1e-12,3d719799812dea11
+native.equilibrium.removal,removal/disappearance/amount,difference,mol,rtol,float,0.0,0000000000000000
+native.equilibrium.removal,removal/disappearance/amount,difference,mol,verdict,bool,True,
+native.equilibrium.removal,removal/disappearance/before-component0,difference,mol,model,float,0.5,3fe0000000000000
+native.equilibrium.removal,removal/disappearance/before-component0,difference,mol,reference,float,0.5,3fe0000000000000
+native.equilibrium.removal,removal/disappearance/before-component0,difference,mol,basis,text,Relationship,
+native.equilibrium.removal,removal/disappearance/before-component0,difference,mol,method,text,native-thermodynamic-identity,
+native.equilibrium.removal,removal/disappearance/before-component0,difference,mol,claim,text,#223 numerical falsifier,
+native.equilibrium.removal,removal/disappearance/before-component0,difference,mol,judgment,text,Criterion satisfied,
+native.equilibrium.removal,removal/disappearance/before-component0,difference,mol,evidence_state,text,Complete,
+native.equilibrium.removal,removal/disappearance/before-component0,difference,mol,criterion,text,absolute,
+native.equilibrium.removal,removal/disappearance/before-component0,difference,mol,rule,text,absolute,
+native.equilibrium.removal,removal/disappearance/before-component0,difference,mol,atol,float,1e-12,3d719799812dea11
+native.equilibrium.removal,removal/disappearance/before-component0,difference,mol,rtol,float,0.0,0000000000000000
+native.equilibrium.removal,removal/disappearance/before-component0,difference,mol,verdict,bool,True,
+native.equilibrium.removal,removal/disappearance/after-component0,difference,mol,model,float,0.5,3fe0000000000000
+native.equilibrium.removal,removal/disappearance/after-component0,difference,mol,reference,float,0.5,3fe0000000000000
+native.equilibrium.removal,removal/disappearance/after-component0,difference,mol,basis,text,Relationship,
+native.equilibrium.removal,removal/disappearance/after-component0,difference,mol,method,text,native-thermodynamic-identity,
+native.equilibrium.removal,removal/disappearance/after-component0,difference,mol,claim,text,#223 numerical falsifier,
+native.equilibrium.removal,removal/disappearance/after-component0,difference,mol,judgment,text,Criterion satisfied,
+native.equilibrium.removal,removal/disappearance/after-component0,difference,mol,evidence_state,text,Complete,
+native.equilibrium.removal,removal/disappearance/after-component0,difference,mol,criterion,text,absolute,
+native.equilibrium.removal,removal/disappearance/after-component0,difference,mol,rule,text,absolute,
+native.equilibrium.removal,removal/disappearance/after-component0,difference,mol,atol,float,1e-12,3d719799812dea11
+native.equilibrium.removal,removal/disappearance/after-component0,difference,mol,rtol,float,0.0,0000000000000000
+native.equilibrium.removal,removal/disappearance/after-component0,difference,mol,verdict,bool,True,
+native.equilibrium.removal,removal/disappearance/before-component1,difference,mol,model,float,0.5,3fe0000000000000
+native.equilibrium.removal,removal/disappearance/before-component1,difference,mol,reference,float,0.5,3fe0000000000000
+native.equilibrium.removal,removal/disappearance/before-component1,difference,mol,basis,text,Relationship,
+native.equilibrium.removal,removal/disappearance/before-component1,difference,mol,method,text,native-thermodynamic-identity,
+native.equilibrium.removal,removal/disappearance/before-component1,difference,mol,claim,text,#223 numerical falsifier,
+native.equilibrium.removal,removal/disappearance/before-component1,difference,mol,judgment,text,Criterion satisfied,
+native.equilibrium.removal,removal/disappearance/before-component1,difference,mol,evidence_state,text,Complete,
+native.equilibrium.removal,removal/disappearance/before-component1,difference,mol,criterion,text,absolute,
+native.equilibrium.removal,removal/disappearance/before-component1,difference,mol,rule,text,absolute,
+native.equilibrium.removal,removal/disappearance/before-component1,difference,mol,atol,float,1e-12,3d719799812dea11
+native.equilibrium.removal,removal/disappearance/before-component1,difference,mol,rtol,float,0.0,0000000000000000
+native.equilibrium.removal,removal/disappearance/before-component1,difference,mol,verdict,bool,True,
+native.equilibrium.removal,removal/disappearance/after-component1,difference,mol,model,float,0.5,3fe0000000000000
+native.equilibrium.removal,removal/disappearance/after-component1,difference,mol,reference,float,0.5,3fe0000000000000
+native.equilibrium.removal,removal/disappearance/after-component1,difference,mol,basis,text,Relationship,
+native.equilibrium.removal,removal/disappearance/after-component1,difference,mol,method,text,native-thermodynamic-identity,
+native.equilibrium.removal,removal/disappearance/after-component1,difference,mol,claim,text,#223 numerical falsifier,
+native.equilibrium.removal,removal/disappearance/after-component1,difference,mol,judgment,text,Criterion satisfied,
+native.equilibrium.removal,removal/disappearance/after-component1,difference,mol,evidence_state,text,Complete,
+native.equilibrium.removal,removal/disappearance/after-component1,difference,mol,criterion,text,absolute,
+native.equilibrium.removal,removal/disappearance/after-component1,difference,mol,rule,text,absolute,
+native.equilibrium.removal,removal/disappearance/after-component1,difference,mol,atol,float,1e-12,3d719799812dea11
+native.equilibrium.removal,removal/disappearance/after-component1,difference,mol,rtol,float,0.0,0000000000000000
+native.equilibrium.removal,removal/disappearance/after-component1,difference,mol,verdict,bool,True,
+native.equilibrium.removal,removal/disappearance/moiety0,difference,mol,model,float,0.5,3fe0000000000000
+native.equilibrium.removal,removal/disappearance/moiety0,difference,mol,reference,float,0.5,3fe0000000000000
+native.equilibrium.removal,removal/disappearance/moiety0,difference,mol,basis,text,Relationship,
+native.equilibrium.removal,removal/disappearance/moiety0,difference,mol,method,text,native-thermodynamic-identity,
+native.equilibrium.removal,removal/disappearance/moiety0,difference,mol,claim,text,#223 numerical falsifier,
+native.equilibrium.removal,removal/disappearance/moiety0,difference,mol,judgment,text,Criterion satisfied,
+native.equilibrium.removal,removal/disappearance/moiety0,difference,mol,evidence_state,text,Complete,
+native.equilibrium.removal,removal/disappearance/moiety0,difference,mol,criterion,text,absolute,
+native.equilibrium.removal,removal/disappearance/moiety0,difference,mol,rule,text,absolute,
+native.equilibrium.removal,removal/disappearance/moiety0,difference,mol,atol,float,1e-12,3d719799812dea11
+native.equilibrium.removal,removal/disappearance/moiety0,difference,mol,rtol,float,0.0,0000000000000000
+native.equilibrium.removal,removal/disappearance/moiety0,difference,mol,verdict,bool,True,
+native.equilibrium.removal,removal/disappearance/moiety1,difference,mol,model,float,0.5,3fe0000000000000
+native.equilibrium.removal,removal/disappearance/moiety1,difference,mol,reference,float,0.5,3fe0000000000000
+native.equilibrium.removal,removal/disappearance/moiety1,difference,mol,basis,text,Relationship,
+native.equilibrium.removal,removal/disappearance/moiety1,difference,mol,method,text,native-thermodynamic-identity,
+native.equilibrium.removal,removal/disappearance/moiety1,difference,mol,claim,text,#223 numerical falsifier,
+native.equilibrium.removal,removal/disappearance/moiety1,difference,mol,judgment,text,Criterion satisfied,
+native.equilibrium.removal,removal/disappearance/moiety1,difference,mol,evidence_state,text,Complete,
+native.equilibrium.removal,removal/disappearance/moiety1,difference,mol,criterion,text,absolute,
+native.equilibrium.removal,removal/disappearance/moiety1,difference,mol,rule,text,absolute,
+native.equilibrium.removal,removal/disappearance/moiety1,difference,mol,atol,float,1e-12,3d719799812dea11
+native.equilibrium.removal,removal/disappearance/moiety1,difference,mol,rtol,float,0.0,0000000000000000
+native.equilibrium.removal,removal/disappearance/moiety1,difference,mol,verdict,bool,True,
+native.equilibrium.removal,removal/disappearance/final-x0,difference,1,model,float,0.5,3fe0000000000000
+native.equilibrium.removal,removal/disappearance/final-x0,difference,1,reference,float,0.5,3fe0000000000000
+native.equilibrium.removal,removal/disappearance/final-x0,difference,1,basis,text,Relationship,
+native.equilibrium.removal,removal/disappearance/final-x0,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.removal,removal/disappearance/final-x0,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.removal,removal/disappearance/final-x0,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.removal,removal/disappearance/final-x0,difference,1,evidence_state,text,Complete,
+native.equilibrium.removal,removal/disappearance/final-x0,difference,1,criterion,text,absolute,
+native.equilibrium.removal,removal/disappearance/final-x0,difference,1,rule,text,absolute,
+native.equilibrium.removal,removal/disappearance/final-x0,difference,1,atol,float,1e-09,3e112e0be826d695
+native.equilibrium.removal,removal/disappearance/final-x0,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.removal,removal/disappearance/final-x0,difference,1,verdict,bool,True,
+native.equilibrium.removal,removal/disappearance/final-x1,difference,1,model,float,0.5,3fe0000000000000
+native.equilibrium.removal,removal/disappearance/final-x1,difference,1,reference,float,0.5,3fe0000000000000
+native.equilibrium.removal,removal/disappearance/final-x1,difference,1,basis,text,Relationship,
+native.equilibrium.removal,removal/disappearance/final-x1,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.removal,removal/disappearance/final-x1,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.removal,removal/disappearance/final-x1,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.removal,removal/disappearance/final-x1,difference,1,evidence_state,text,Complete,
+native.equilibrium.removal,removal/disappearance/final-x1,difference,1,criterion,text,absolute,
+native.equilibrium.removal,removal/disappearance/final-x1,difference,1,rule,text,absolute,
+native.equilibrium.removal,removal/disappearance/final-x1,difference,1,atol,float,1e-09,3e112e0be826d695
+native.equilibrium.removal,removal/disappearance/final-x1,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.removal,removal/disappearance/final-x1,difference,1,verdict,bool,True,
+native.equilibrium.removal,removal/disappearance/relative-g,difference,1,model,float,0.0,0000000000000000
+native.equilibrium.removal,removal/disappearance/relative-g,difference,1,reference,float,0.0,0000000000000000
+native.equilibrium.removal,removal/disappearance/relative-g,difference,1,basis,text,Relationship,
+native.equilibrium.removal,removal/disappearance/relative-g,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.removal,removal/disappearance/relative-g,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.removal,removal/disappearance/relative-g,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.removal,removal/disappearance/relative-g,difference,1,evidence_state,text,Complete,
+native.equilibrium.removal,removal/disappearance/relative-g,difference,1,criterion,text,absolute,
+native.equilibrium.removal,removal/disappearance/relative-g,difference,1,rule,text,absolute,
+native.equilibrium.removal,removal/disappearance/relative-g,difference,1,atol,float,1e-10,3ddb7cdfd9d7bdbb
+native.equilibrium.removal,removal/disappearance/relative-g,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.removal,removal/disappearance/relative-g,difference,1,verdict,bool,True,
+native.equilibrium.removal,removal/disappearance/driver-event,topology_event,1,model,float,2.0,4000000000000000
+native.equilibrium.removal,removal/disappearance/driver-event,topology_event,1,inputs/attempt/0,float,-0.6931471805599453,bfe62e42fefa39ef
+native.equilibrium.removal,removal/disappearance/driver-event,topology_event,1,inputs/attempt/1,float,-0.6931471805599454,bfe62e42fefa39f0
+native.equilibrium.removal,removal/disappearance/driver-event,topology_event,1,inputs/attempt/2,float,0.7520097360322067,3fe81076b8d1057e
+native.equilibrium.removal,removal/disappearance/driver-event,topology_event,1,inputs/attempt/3,float,-7.23736496284779,c01cf30fcd02970e
+native.equilibrium.removal,removal/disappearance/driver-event,topology_event,1,inputs/attempt/4,float,-0.6931471805599452,bfe62e42fefa39ee
+native.equilibrium.removal,removal/disappearance/driver-event,topology_event,1,inputs/attempt/5,float,-0.6931471805599454,bfe62e42fefa39f0
+native.equilibrium.removal,removal/disappearance/driver-event,topology_event,1,inputs/attempt/6,float,0.24799026396779333,3fcfbe251cbbea08
+native.equilibrium.removal,removal/disappearance/driver-event,topology_event,1,inputs/attempt/7,float,-7.23736496284779,c01cf30fcd02970e
+native.equilibrium.removal,removal/disappearance/driver-event,topology_event,1,inputs/attempt/8,float,2.996547132503345,4007f8edb3f83210
+native.equilibrium.removal,removal/disappearance/driver-event,topology_event,1,inputs/attempt/9,float,2.99098629446984,4007ed8a38ec41ec
+native.equilibrium.removal,removal/disappearance/driver-event,topology_event,1,inputs/success,float,0.0,0000000000000000
+native.equilibrium.removal,removal/disappearance/driver-event,topology_event,1,basis,text,Numerical,
+native.equilibrium.removal,removal/disappearance/driver-event,topology_event,1,method,text,native-driver,
+native.equilibrium.removal,removal/disappearance/driver-event,topology_event,1,claim,text,actual optimizer topology event,
+native.equilibrium.removal,removal/disappearance/driver-event,topology_event,1,judgment,text,Observation only,
+native.equilibrium.removal,removal/disappearance/driver-event,topology_event,1,evidence_state,text,Complete,
+native.equilibrium.removal,removal/disappearance/driver-event,topology_event,1,comparison_group_id,text,none,
+native.equilibrium.removal,removal/disappearance/driver-event,topology_event,1,point_id,text,,
+native.equilibrium.removal,removal/disappearance/driver-event,topology_event,1,quantity_latex,text,,
+native.equilibrium.removal,removal/disappearance/driver-event,topology_event,1,inputs_latex,text,,
+native.equilibrium.removal,removal/coalescence/amount,difference,mol,model,float,1.0,3ff0000000000000
+native.equilibrium.removal,removal/coalescence/amount,difference,mol,reference,float,1.0,3ff0000000000000
+native.equilibrium.removal,removal/coalescence/amount,difference,mol,basis,text,Relationship,
+native.equilibrium.removal,removal/coalescence/amount,difference,mol,method,text,native-thermodynamic-identity,
+native.equilibrium.removal,removal/coalescence/amount,difference,mol,claim,text,#223 numerical falsifier,
+native.equilibrium.removal,removal/coalescence/amount,difference,mol,judgment,text,Criterion satisfied,
+native.equilibrium.removal,removal/coalescence/amount,difference,mol,evidence_state,text,Complete,
+native.equilibrium.removal,removal/coalescence/amount,difference,mol,criterion,text,absolute,
+native.equilibrium.removal,removal/coalescence/amount,difference,mol,rule,text,absolute,
+native.equilibrium.removal,removal/coalescence/amount,difference,mol,atol,float,1e-12,3d719799812dea11
+native.equilibrium.removal,removal/coalescence/amount,difference,mol,rtol,float,0.0,0000000000000000
+native.equilibrium.removal,removal/coalescence/amount,difference,mol,verdict,bool,True,
+native.equilibrium.removal,removal/coalescence/before-component0,difference,mol,model,float,0.5,3fe0000000000000
+native.equilibrium.removal,removal/coalescence/before-component0,difference,mol,reference,float,0.5,3fe0000000000000
+native.equilibrium.removal,removal/coalescence/before-component0,difference,mol,basis,text,Relationship,
+native.equilibrium.removal,removal/coalescence/before-component0,difference,mol,method,text,native-thermodynamic-identity,
+native.equilibrium.removal,removal/coalescence/before-component0,difference,mol,claim,text,#223 numerical falsifier,
+native.equilibrium.removal,removal/coalescence/before-component0,difference,mol,judgment,text,Criterion satisfied,
+native.equilibrium.removal,removal/coalescence/before-component0,difference,mol,evidence_state,text,Complete,
+native.equilibrium.removal,removal/coalescence/before-component0,difference,mol,criterion,text,absolute,
+native.equilibrium.removal,removal/coalescence/before-component0,difference,mol,rule,text,absolute,
+native.equilibrium.removal,removal/coalescence/before-component0,difference,mol,atol,float,1e-12,3d719799812dea11
+native.equilibrium.removal,removal/coalescence/before-component0,difference,mol,rtol,float,0.0,0000000000000000
+native.equilibrium.removal,removal/coalescence/before-component0,difference,mol,verdict,bool,True,
+native.equilibrium.removal,removal/coalescence/after-component0,difference,mol,model,float,0.5,3fe0000000000000
+native.equilibrium.removal,removal/coalescence/after-component0,difference,mol,reference,float,0.5,3fe0000000000000
+native.equilibrium.removal,removal/coalescence/after-component0,difference,mol,basis,text,Relationship,
+native.equilibrium.removal,removal/coalescence/after-component0,difference,mol,method,text,native-thermodynamic-identity,
+native.equilibrium.removal,removal/coalescence/after-component0,difference,mol,claim,text,#223 numerical falsifier,
+native.equilibrium.removal,removal/coalescence/after-component0,difference,mol,judgment,text,Criterion satisfied,
+native.equilibrium.removal,removal/coalescence/after-component0,difference,mol,evidence_state,text,Complete,
+native.equilibrium.removal,removal/coalescence/after-component0,difference,mol,criterion,text,absolute,
+native.equilibrium.removal,removal/coalescence/after-component0,difference,mol,rule,text,absolute,
+native.equilibrium.removal,removal/coalescence/after-component0,difference,mol,atol,float,1e-12,3d719799812dea11
+native.equilibrium.removal,removal/coalescence/after-component0,difference,mol,rtol,float,0.0,0000000000000000
+native.equilibrium.removal,removal/coalescence/after-component0,difference,mol,verdict,bool,True,
+native.equilibrium.removal,removal/coalescence/before-component1,difference,mol,model,float,0.5,3fe0000000000000
+native.equilibrium.removal,removal/coalescence/before-component1,difference,mol,reference,float,0.5,3fe0000000000000
+native.equilibrium.removal,removal/coalescence/before-component1,difference,mol,basis,text,Relationship,
+native.equilibrium.removal,removal/coalescence/before-component1,difference,mol,method,text,native-thermodynamic-identity,
+native.equilibrium.removal,removal/coalescence/before-component1,difference,mol,claim,text,#223 numerical falsifier,
+native.equilibrium.removal,removal/coalescence/before-component1,difference,mol,judgment,text,Criterion satisfied,
+native.equilibrium.removal,removal/coalescence/before-component1,difference,mol,evidence_state,text,Complete,
+native.equilibrium.removal,removal/coalescence/before-component1,difference,mol,criterion,text,absolute,
+native.equilibrium.removal,removal/coalescence/before-component1,difference,mol,rule,text,absolute,
+native.equilibrium.removal,removal/coalescence/before-component1,difference,mol,atol,float,1e-12,3d719799812dea11
+native.equilibrium.removal,removal/coalescence/before-component1,difference,mol,rtol,float,0.0,0000000000000000
+native.equilibrium.removal,removal/coalescence/before-component1,difference,mol,verdict,bool,True,
+native.equilibrium.removal,removal/coalescence/after-component1,difference,mol,model,float,0.5,3fe0000000000000
+native.equilibrium.removal,removal/coalescence/after-component1,difference,mol,reference,float,0.5,3fe0000000000000
+native.equilibrium.removal,removal/coalescence/after-component1,difference,mol,basis,text,Relationship,
+native.equilibrium.removal,removal/coalescence/after-component1,difference,mol,method,text,native-thermodynamic-identity,
+native.equilibrium.removal,removal/coalescence/after-component1,difference,mol,claim,text,#223 numerical falsifier,
+native.equilibrium.removal,removal/coalescence/after-component1,difference,mol,judgment,text,Criterion satisfied,
+native.equilibrium.removal,removal/coalescence/after-component1,difference,mol,evidence_state,text,Complete,
+native.equilibrium.removal,removal/coalescence/after-component1,difference,mol,criterion,text,absolute,
+native.equilibrium.removal,removal/coalescence/after-component1,difference,mol,rule,text,absolute,
+native.equilibrium.removal,removal/coalescence/after-component1,difference,mol,atol,float,1e-12,3d719799812dea11
+native.equilibrium.removal,removal/coalescence/after-component1,difference,mol,rtol,float,0.0,0000000000000000
+native.equilibrium.removal,removal/coalescence/after-component1,difference,mol,verdict,bool,True,
+native.equilibrium.removal,removal/coalescence/moiety0,difference,mol,model,float,0.5,3fe0000000000000
+native.equilibrium.removal,removal/coalescence/moiety0,difference,mol,reference,float,0.5,3fe0000000000000
+native.equilibrium.removal,removal/coalescence/moiety0,difference,mol,basis,text,Relationship,
+native.equilibrium.removal,removal/coalescence/moiety0,difference,mol,method,text,native-thermodynamic-identity,
+native.equilibrium.removal,removal/coalescence/moiety0,difference,mol,claim,text,#223 numerical falsifier,
+native.equilibrium.removal,removal/coalescence/moiety0,difference,mol,judgment,text,Criterion satisfied,
+native.equilibrium.removal,removal/coalescence/moiety0,difference,mol,evidence_state,text,Complete,
+native.equilibrium.removal,removal/coalescence/moiety0,difference,mol,criterion,text,absolute,
+native.equilibrium.removal,removal/coalescence/moiety0,difference,mol,rule,text,absolute,
+native.equilibrium.removal,removal/coalescence/moiety0,difference,mol,atol,float,1e-12,3d719799812dea11
+native.equilibrium.removal,removal/coalescence/moiety0,difference,mol,rtol,float,0.0,0000000000000000
+native.equilibrium.removal,removal/coalescence/moiety0,difference,mol,verdict,bool,True,
+native.equilibrium.removal,removal/coalescence/moiety1,difference,mol,model,float,0.5,3fe0000000000000
+native.equilibrium.removal,removal/coalescence/moiety1,difference,mol,reference,float,0.5,3fe0000000000000
+native.equilibrium.removal,removal/coalescence/moiety1,difference,mol,basis,text,Relationship,
+native.equilibrium.removal,removal/coalescence/moiety1,difference,mol,method,text,native-thermodynamic-identity,
+native.equilibrium.removal,removal/coalescence/moiety1,difference,mol,claim,text,#223 numerical falsifier,
+native.equilibrium.removal,removal/coalescence/moiety1,difference,mol,judgment,text,Criterion satisfied,
+native.equilibrium.removal,removal/coalescence/moiety1,difference,mol,evidence_state,text,Complete,
+native.equilibrium.removal,removal/coalescence/moiety1,difference,mol,criterion,text,absolute,
+native.equilibrium.removal,removal/coalescence/moiety1,difference,mol,rule,text,absolute,
+native.equilibrium.removal,removal/coalescence/moiety1,difference,mol,atol,float,1e-12,3d719799812dea11
+native.equilibrium.removal,removal/coalescence/moiety1,difference,mol,rtol,float,0.0,0000000000000000
+native.equilibrium.removal,removal/coalescence/moiety1,difference,mol,verdict,bool,True,
+native.equilibrium.removal,removal/coalescence/final-x0,difference,1,model,float,0.5,3fe0000000000000
+native.equilibrium.removal,removal/coalescence/final-x0,difference,1,reference,float,0.5,3fe0000000000000
+native.equilibrium.removal,removal/coalescence/final-x0,difference,1,basis,text,Relationship,
+native.equilibrium.removal,removal/coalescence/final-x0,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.removal,removal/coalescence/final-x0,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.removal,removal/coalescence/final-x0,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.removal,removal/coalescence/final-x0,difference,1,evidence_state,text,Complete,
+native.equilibrium.removal,removal/coalescence/final-x0,difference,1,criterion,text,absolute,
+native.equilibrium.removal,removal/coalescence/final-x0,difference,1,rule,text,absolute,
+native.equilibrium.removal,removal/coalescence/final-x0,difference,1,atol,float,1e-09,3e112e0be826d695
+native.equilibrium.removal,removal/coalescence/final-x0,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.removal,removal/coalescence/final-x0,difference,1,verdict,bool,True,
+native.equilibrium.removal,removal/coalescence/final-x1,difference,1,model,float,0.5,3fe0000000000000
+native.equilibrium.removal,removal/coalescence/final-x1,difference,1,reference,float,0.5,3fe0000000000000
+native.equilibrium.removal,removal/coalescence/final-x1,difference,1,basis,text,Relationship,
+native.equilibrium.removal,removal/coalescence/final-x1,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.removal,removal/coalescence/final-x1,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.removal,removal/coalescence/final-x1,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.removal,removal/coalescence/final-x1,difference,1,evidence_state,text,Complete,
+native.equilibrium.removal,removal/coalescence/final-x1,difference,1,criterion,text,absolute,
+native.equilibrium.removal,removal/coalescence/final-x1,difference,1,rule,text,absolute,
+native.equilibrium.removal,removal/coalescence/final-x1,difference,1,atol,float,1e-09,3e112e0be826d695
+native.equilibrium.removal,removal/coalescence/final-x1,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.removal,removal/coalescence/final-x1,difference,1,verdict,bool,True,
+native.equilibrium.removal,removal/coalescence/relative-g,difference,1,model,float,0.0,0000000000000000
+native.equilibrium.removal,removal/coalescence/relative-g,difference,1,reference,float,0.0,0000000000000000
+native.equilibrium.removal,removal/coalescence/relative-g,difference,1,basis,text,Relationship,
+native.equilibrium.removal,removal/coalescence/relative-g,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.removal,removal/coalescence/relative-g,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.removal,removal/coalescence/relative-g,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.removal,removal/coalescence/relative-g,difference,1,evidence_state,text,Complete,
+native.equilibrium.removal,removal/coalescence/relative-g,difference,1,criterion,text,absolute,
+native.equilibrium.removal,removal/coalescence/relative-g,difference,1,rule,text,absolute,
+native.equilibrium.removal,removal/coalescence/relative-g,difference,1,atol,float,1e-10,3ddb7cdfd9d7bdbb
+native.equilibrium.removal,removal/coalescence/relative-g,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.removal,removal/coalescence/relative-g,difference,1,verdict,bool,True,
+native.equilibrium.removal,removal/coalescence/driver-event,topology_event,1,model,float,2.0,4000000000000000
+native.equilibrium.removal,removal/coalescence/driver-event,topology_event,1,inputs/attempt/0,float,-0.6931471805599452,bfe62e42fefa39ee
+native.equilibrium.removal,removal/coalescence/driver-event,topology_event,1,inputs/attempt/1,float,-0.6931471805599454,bfe62e42fefa39f0
+native.equilibrium.removal,removal/coalescence/driver-event,topology_event,1,inputs/attempt/2,float,0.42745579268703193,3fdb5b6f8a84e654
+native.equilibrium.removal,removal/coalescence/driver-event,topology_event,1,inputs/attempt/3,float,-7.23736496284779,c01cf30fcd02970e
+native.equilibrium.removal,removal/coalescence/driver-event,topology_event,1,inputs/attempt/4,float,-0.6931471805599454,bfe62e42fefa39f0
+native.equilibrium.removal,removal/coalescence/driver-event,topology_event,1,inputs/attempt/5,float,-0.6931471805599453,bfe62e42fefa39ef
+native.equilibrium.removal,removal/coalescence/driver-event,topology_event,1,inputs/attempt/6,float,0.5725442073129681,3fe252483abd8cd6
+native.equilibrium.removal,removal/coalescence/driver-event,topology_event,1,inputs/attempt/7,float,-7.23736496284779,c01cf30fcd02970e
+native.equilibrium.removal,removal/coalescence/driver-event,topology_event,1,inputs/attempt/8,float,2.996547132503345,4007f8edb3f83210
+native.equilibrium.removal,removal/coalescence/driver-event,topology_event,1,inputs/attempt/9,float,2.99098629446984,4007ed8a38ec41ec
+native.equilibrium.removal,removal/coalescence/driver-event,topology_event,1,inputs/success,float,0.0,0000000000000000
+native.equilibrium.removal,removal/coalescence/driver-event,topology_event,1,basis,text,Numerical,
+native.equilibrium.removal,removal/coalescence/driver-event,topology_event,1,method,text,native-driver,
+native.equilibrium.removal,removal/coalescence/driver-event,topology_event,1,claim,text,actual optimizer topology event,
+native.equilibrium.removal,removal/coalescence/driver-event,topology_event,1,judgment,text,Observation only,
+native.equilibrium.removal,removal/coalescence/driver-event,topology_event,1,evidence_state,text,Complete,
+native.equilibrium.removal,removal/coalescence/driver-event,topology_event,1,comparison_group_id,text,none,
+native.equilibrium.removal,removal/coalescence/driver-event,topology_event,1,point_id,text,,
+native.equilibrium.removal,removal/coalescence/driver-event,topology_event,1,quantity_latex,text,,
+native.equilibrium.removal,removal/coalescence/driver-event,topology_event,1,inputs_latex,text,,
+native.equilibrium.removal,removal/coalescence/attempt-inventory,difference,mol,model,float,1.0,3ff0000000000000
+native.equilibrium.removal,removal/coalescence/attempt-inventory,difference,mol,reference,float,1.0,3ff0000000000000
+native.equilibrium.removal,removal/coalescence/attempt-inventory,difference,mol,basis,text,Relationship,
+native.equilibrium.removal,removal/coalescence/attempt-inventory,difference,mol,method,text,native-thermodynamic-identity,
+native.equilibrium.removal,removal/coalescence/attempt-inventory,difference,mol,claim,text,#223 numerical falsifier,
+native.equilibrium.removal,removal/coalescence/attempt-inventory,difference,mol,judgment,text,Criterion satisfied,
+native.equilibrium.removal,removal/coalescence/attempt-inventory,difference,mol,evidence_state,text,Complete,
+native.equilibrium.removal,removal/coalescence/attempt-inventory,difference,mol,criterion,text,absolute,
+native.equilibrium.removal,removal/coalescence/attempt-inventory,difference,mol,rule,text,absolute,
+native.equilibrium.removal,removal/coalescence/attempt-inventory,difference,mol,atol,float,1e-12,3d719799812dea11
+native.equilibrium.removal,removal/coalescence/attempt-inventory,difference,mol,rtol,float,0.0,0000000000000000
+native.equilibrium.removal,removal/coalescence/attempt-inventory,difference,mol,verdict,bool,True,
+native.equilibrium.plane-curvature,plane-curvature/0/0,difference,1,model,float,0.49999999999999956,3fdffffffffffff8
+native.equilibrium.plane-curvature,plane-curvature/0/0,difference,1,reference,float,0.5,3fe0000000000000
+native.equilibrium.plane-curvature,plane-curvature/0/0,difference,1,basis,text,Relationship,
+native.equilibrium.plane-curvature,plane-curvature/0/0,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-curvature,plane-curvature/0/0,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-curvature,plane-curvature/0/0,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-curvature,plane-curvature/0/0,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-curvature,plane-curvature/0/0,difference,1,criterion,text,absolute,
+native.equilibrium.plane-curvature,plane-curvature/0/0,difference,1,rule,text,absolute,
+native.equilibrium.plane-curvature,plane-curvature/0/0,difference,1,atol,float,1e-12,3d719799812dea11
+native.equilibrium.plane-curvature,plane-curvature/0/0,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/0/0,difference,1,verdict,bool,True,
+native.equilibrium.plane-curvature,plane-curvature/0/1,difference,1,model,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/0/1,difference,1,reference,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/0/1,difference,1,basis,text,Relationship,
+native.equilibrium.plane-curvature,plane-curvature/0/1,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-curvature,plane-curvature/0/1,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-curvature,plane-curvature/0/1,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-curvature,plane-curvature/0/1,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-curvature,plane-curvature/0/1,difference,1,criterion,text,absolute,
+native.equilibrium.plane-curvature,plane-curvature/0/1,difference,1,rule,text,absolute,
+native.equilibrium.plane-curvature,plane-curvature/0/1,difference,1,atol,float,1e-12,3d719799812dea11
+native.equilibrium.plane-curvature,plane-curvature/0/1,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/0/1,difference,1,verdict,bool,True,
+native.equilibrium.plane-curvature,plane-curvature/0/2,difference,1,model,float,0.4999999999999998,3fdffffffffffffc
+native.equilibrium.plane-curvature,plane-curvature/0/2,difference,1,reference,float,0.5,3fe0000000000000
+native.equilibrium.plane-curvature,plane-curvature/0/2,difference,1,basis,text,Relationship,
+native.equilibrium.plane-curvature,plane-curvature/0/2,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-curvature,plane-curvature/0/2,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-curvature,plane-curvature/0/2,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-curvature,plane-curvature/0/2,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-curvature,plane-curvature/0/2,difference,1,criterion,text,absolute,
+native.equilibrium.plane-curvature,plane-curvature/0/2,difference,1,rule,text,absolute,
+native.equilibrium.plane-curvature,plane-curvature/0/2,difference,1,atol,float,1e-12,3d719799812dea11
+native.equilibrium.plane-curvature,plane-curvature/0/2,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/0/2,difference,1,verdict,bool,True,
+native.equilibrium.plane-curvature,plane-curvature/0/3,difference,1,model,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/0/3,difference,1,reference,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/0/3,difference,1,basis,text,Relationship,
+native.equilibrium.plane-curvature,plane-curvature/0/3,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-curvature,plane-curvature/0/3,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-curvature,plane-curvature/0/3,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-curvature,plane-curvature/0/3,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-curvature,plane-curvature/0/3,difference,1,criterion,text,absolute,
+native.equilibrium.plane-curvature,plane-curvature/0/3,difference,1,rule,text,absolute,
+native.equilibrium.plane-curvature,plane-curvature/0/3,difference,1,atol,float,1e-12,3d719799812dea11
+native.equilibrium.plane-curvature,plane-curvature/0/3,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/0/3,difference,1,verdict,bool,True,
+native.equilibrium.plane-curvature,plane-curvature/0/4,difference,1,model,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/0/4,difference,1,reference,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/0/4,difference,1,basis,text,Relationship,
+native.equilibrium.plane-curvature,plane-curvature/0/4,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-curvature,plane-curvature/0/4,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-curvature,plane-curvature/0/4,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-curvature,plane-curvature/0/4,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-curvature,plane-curvature/0/4,difference,1,criterion,text,absolute,
+native.equilibrium.plane-curvature,plane-curvature/0/4,difference,1,rule,text,absolute,
+native.equilibrium.plane-curvature,plane-curvature/0/4,difference,1,atol,float,1e-12,3d719799812dea11
+native.equilibrium.plane-curvature,plane-curvature/0/4,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/0/4,difference,1,verdict,bool,True,
+native.equilibrium.plane-curvature,plane-curvature/1/0,difference,1,model,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/1/0,difference,1,reference,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/1/0,difference,1,basis,text,Relationship,
+native.equilibrium.plane-curvature,plane-curvature/1/0,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-curvature,plane-curvature/1/0,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-curvature,plane-curvature/1/0,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-curvature,plane-curvature/1/0,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-curvature,plane-curvature/1/0,difference,1,criterion,text,absolute,
+native.equilibrium.plane-curvature,plane-curvature/1/0,difference,1,rule,text,absolute,
+native.equilibrium.plane-curvature,plane-curvature/1/0,difference,1,atol,float,1e-12,3d719799812dea11
+native.equilibrium.plane-curvature,plane-curvature/1/0,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/1/0,difference,1,verdict,bool,True,
+native.equilibrium.plane-curvature,plane-curvature/1/1,difference,1,model,float,-2.250000000000001,c002000000000002
+native.equilibrium.plane-curvature,plane-curvature/1/1,difference,1,reference,float,-2.25,c002000000000000
+native.equilibrium.plane-curvature,plane-curvature/1/1,difference,1,basis,text,Relationship,
+native.equilibrium.plane-curvature,plane-curvature/1/1,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-curvature,plane-curvature/1/1,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-curvature,plane-curvature/1/1,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-curvature,plane-curvature/1/1,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-curvature,plane-curvature/1/1,difference,1,criterion,text,absolute,
+native.equilibrium.plane-curvature,plane-curvature/1/1,difference,1,rule,text,absolute,
+native.equilibrium.plane-curvature,plane-curvature/1/1,difference,1,atol,float,1e-12,3d719799812dea11
+native.equilibrium.plane-curvature,plane-curvature/1/1,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/1/1,difference,1,verdict,bool,True,
+native.equilibrium.plane-curvature,plane-curvature/1/2,difference,1,model,float,-2.2500000000000004,c002000000000001
+native.equilibrium.plane-curvature,plane-curvature/1/2,difference,1,reference,float,-2.25,c002000000000000
+native.equilibrium.plane-curvature,plane-curvature/1/2,difference,1,basis,text,Relationship,
+native.equilibrium.plane-curvature,plane-curvature/1/2,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-curvature,plane-curvature/1/2,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-curvature,plane-curvature/1/2,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-curvature,plane-curvature/1/2,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-curvature,plane-curvature/1/2,difference,1,criterion,text,absolute,
+native.equilibrium.plane-curvature,plane-curvature/1/2,difference,1,rule,text,absolute,
+native.equilibrium.plane-curvature,plane-curvature/1/2,difference,1,atol,float,1e-12,3d719799812dea11
+native.equilibrium.plane-curvature,plane-curvature/1/2,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/1/2,difference,1,verdict,bool,True,
+native.equilibrium.plane-curvature,plane-curvature/1/3,difference,1,model,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/1/3,difference,1,reference,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/1/3,difference,1,basis,text,Relationship,
+native.equilibrium.plane-curvature,plane-curvature/1/3,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-curvature,plane-curvature/1/3,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-curvature,plane-curvature/1/3,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-curvature,plane-curvature/1/3,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-curvature,plane-curvature/1/3,difference,1,criterion,text,absolute,
+native.equilibrium.plane-curvature,plane-curvature/1/3,difference,1,rule,text,absolute,
+native.equilibrium.plane-curvature,plane-curvature/1/3,difference,1,atol,float,1e-12,3d719799812dea11
+native.equilibrium.plane-curvature,plane-curvature/1/3,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/1/3,difference,1,verdict,bool,True,
+native.equilibrium.plane-curvature,plane-curvature/1/4,difference,1,model,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/1/4,difference,1,reference,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/1/4,difference,1,basis,text,Relationship,
+native.equilibrium.plane-curvature,plane-curvature/1/4,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-curvature,plane-curvature/1/4,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-curvature,plane-curvature/1/4,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-curvature,plane-curvature/1/4,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-curvature,plane-curvature/1/4,difference,1,criterion,text,absolute,
+native.equilibrium.plane-curvature,plane-curvature/1/4,difference,1,rule,text,absolute,
+native.equilibrium.plane-curvature,plane-curvature/1/4,difference,1,atol,float,1e-12,3d719799812dea11
+native.equilibrium.plane-curvature,plane-curvature/1/4,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/1/4,difference,1,verdict,bool,True,
+native.equilibrium.plane-curvature,plane-curvature/2/0,difference,1,model,float,0.4999999999999998,3fdffffffffffffc
+native.equilibrium.plane-curvature,plane-curvature/2/0,difference,1,reference,float,0.5,3fe0000000000000
+native.equilibrium.plane-curvature,plane-curvature/2/0,difference,1,basis,text,Relationship,
+native.equilibrium.plane-curvature,plane-curvature/2/0,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-curvature,plane-curvature/2/0,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-curvature,plane-curvature/2/0,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-curvature,plane-curvature/2/0,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-curvature,plane-curvature/2/0,difference,1,criterion,text,absolute,
+native.equilibrium.plane-curvature,plane-curvature/2/0,difference,1,rule,text,absolute,
+native.equilibrium.plane-curvature,plane-curvature/2/0,difference,1,atol,float,1e-12,3d719799812dea11
+native.equilibrium.plane-curvature,plane-curvature/2/0,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/2/0,difference,1,verdict,bool,True,
+native.equilibrium.plane-curvature,plane-curvature/2/1,difference,1,model,float,-2.2500000000000004,c002000000000001
+native.equilibrium.plane-curvature,plane-curvature/2/1,difference,1,reference,float,-2.25,c002000000000000
+native.equilibrium.plane-curvature,plane-curvature/2/1,difference,1,basis,text,Relationship,
+native.equilibrium.plane-curvature,plane-curvature/2/1,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-curvature,plane-curvature/2/1,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-curvature,plane-curvature/2/1,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-curvature,plane-curvature/2/1,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-curvature,plane-curvature/2/1,difference,1,criterion,text,absolute,
+native.equilibrium.plane-curvature,plane-curvature/2/1,difference,1,rule,text,absolute,
+native.equilibrium.plane-curvature,plane-curvature/2/1,difference,1,atol,float,1e-12,3d719799812dea11
+native.equilibrium.plane-curvature,plane-curvature/2/1,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/2/1,difference,1,verdict,bool,True,
+native.equilibrium.plane-curvature,plane-curvature/2/2,difference,1,model,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/2/2,difference,1,reference,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/2/2,difference,1,basis,text,Relationship,
+native.equilibrium.plane-curvature,plane-curvature/2/2,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-curvature,plane-curvature/2/2,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-curvature,plane-curvature/2/2,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-curvature,plane-curvature/2/2,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-curvature,plane-curvature/2/2,difference,1,criterion,text,absolute,
+native.equilibrium.plane-curvature,plane-curvature/2/2,difference,1,rule,text,absolute,
+native.equilibrium.plane-curvature,plane-curvature/2/2,difference,1,atol,float,1e-12,3d719799812dea11
+native.equilibrium.plane-curvature,plane-curvature/2/2,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/2/2,difference,1,verdict,bool,True,
+native.equilibrium.plane-curvature,plane-curvature/2/3,difference,1,model,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/2/3,difference,1,reference,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/2/3,difference,1,basis,text,Relationship,
+native.equilibrium.plane-curvature,plane-curvature/2/3,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-curvature,plane-curvature/2/3,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-curvature,plane-curvature/2/3,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-curvature,plane-curvature/2/3,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-curvature,plane-curvature/2/3,difference,1,criterion,text,absolute,
+native.equilibrium.plane-curvature,plane-curvature/2/3,difference,1,rule,text,absolute,
+native.equilibrium.plane-curvature,plane-curvature/2/3,difference,1,atol,float,1e-12,3d719799812dea11
+native.equilibrium.plane-curvature,plane-curvature/2/3,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/2/3,difference,1,verdict,bool,True,
+native.equilibrium.plane-curvature,plane-curvature/2/4,difference,1,model,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/2/4,difference,1,reference,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/2/4,difference,1,basis,text,Relationship,
+native.equilibrium.plane-curvature,plane-curvature/2/4,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-curvature,plane-curvature/2/4,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-curvature,plane-curvature/2/4,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-curvature,plane-curvature/2/4,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-curvature,plane-curvature/2/4,difference,1,criterion,text,absolute,
+native.equilibrium.plane-curvature,plane-curvature/2/4,difference,1,rule,text,absolute,
+native.equilibrium.plane-curvature,plane-curvature/2/4,difference,1,atol,float,1e-12,3d719799812dea11
+native.equilibrium.plane-curvature,plane-curvature/2/4,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/2/4,difference,1,verdict,bool,True,
+native.equilibrium.plane-curvature,plane-curvature/3/0,difference,1,model,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/3/0,difference,1,reference,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/3/0,difference,1,basis,text,Relationship,
+native.equilibrium.plane-curvature,plane-curvature/3/0,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-curvature,plane-curvature/3/0,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-curvature,plane-curvature/3/0,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-curvature,plane-curvature/3/0,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-curvature,plane-curvature/3/0,difference,1,criterion,text,absolute,
+native.equilibrium.plane-curvature,plane-curvature/3/0,difference,1,rule,text,absolute,
+native.equilibrium.plane-curvature,plane-curvature/3/0,difference,1,atol,float,1e-12,3d719799812dea11
+native.equilibrium.plane-curvature,plane-curvature/3/0,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/3/0,difference,1,verdict,bool,True,
+native.equilibrium.plane-curvature,plane-curvature/3/1,difference,1,model,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/3/1,difference,1,reference,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/3/1,difference,1,basis,text,Relationship,
+native.equilibrium.plane-curvature,plane-curvature/3/1,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-curvature,plane-curvature/3/1,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-curvature,plane-curvature/3/1,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-curvature,plane-curvature/3/1,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-curvature,plane-curvature/3/1,difference,1,criterion,text,absolute,
+native.equilibrium.plane-curvature,plane-curvature/3/1,difference,1,rule,text,absolute,
+native.equilibrium.plane-curvature,plane-curvature/3/1,difference,1,atol,float,1e-12,3d719799812dea11
+native.equilibrium.plane-curvature,plane-curvature/3/1,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/3/1,difference,1,verdict,bool,True,
+native.equilibrium.plane-curvature,plane-curvature/3/2,difference,1,model,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/3/2,difference,1,reference,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/3/2,difference,1,basis,text,Relationship,
+native.equilibrium.plane-curvature,plane-curvature/3/2,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-curvature,plane-curvature/3/2,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-curvature,plane-curvature/3/2,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-curvature,plane-curvature/3/2,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-curvature,plane-curvature/3/2,difference,1,criterion,text,absolute,
+native.equilibrium.plane-curvature,plane-curvature/3/2,difference,1,rule,text,absolute,
+native.equilibrium.plane-curvature,plane-curvature/3/2,difference,1,atol,float,1e-12,3d719799812dea11
+native.equilibrium.plane-curvature,plane-curvature/3/2,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/3/2,difference,1,verdict,bool,True,
+native.equilibrium.plane-curvature,plane-curvature/3/3,difference,1,model,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/3/3,difference,1,reference,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/3/3,difference,1,basis,text,Relationship,
+native.equilibrium.plane-curvature,plane-curvature/3/3,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-curvature,plane-curvature/3/3,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-curvature,plane-curvature/3/3,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-curvature,plane-curvature/3/3,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-curvature,plane-curvature/3/3,difference,1,criterion,text,absolute,
+native.equilibrium.plane-curvature,plane-curvature/3/3,difference,1,rule,text,absolute,
+native.equilibrium.plane-curvature,plane-curvature/3/3,difference,1,atol,float,1e-12,3d719799812dea11
+native.equilibrium.plane-curvature,plane-curvature/3/3,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/3/3,difference,1,verdict,bool,True,
+native.equilibrium.plane-curvature,plane-curvature/3/4,difference,1,model,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/3/4,difference,1,reference,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/3/4,difference,1,basis,text,Relationship,
+native.equilibrium.plane-curvature,plane-curvature/3/4,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-curvature,plane-curvature/3/4,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-curvature,plane-curvature/3/4,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-curvature,plane-curvature/3/4,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-curvature,plane-curvature/3/4,difference,1,criterion,text,absolute,
+native.equilibrium.plane-curvature,plane-curvature/3/4,difference,1,rule,text,absolute,
+native.equilibrium.plane-curvature,plane-curvature/3/4,difference,1,atol,float,1e-12,3d719799812dea11
+native.equilibrium.plane-curvature,plane-curvature/3/4,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/3/4,difference,1,verdict,bool,True,
+native.equilibrium.plane-curvature,plane-curvature/4/0,difference,1,model,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/4/0,difference,1,reference,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/4/0,difference,1,basis,text,Relationship,
+native.equilibrium.plane-curvature,plane-curvature/4/0,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-curvature,plane-curvature/4/0,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-curvature,plane-curvature/4/0,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-curvature,plane-curvature/4/0,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-curvature,plane-curvature/4/0,difference,1,criterion,text,absolute,
+native.equilibrium.plane-curvature,plane-curvature/4/0,difference,1,rule,text,absolute,
+native.equilibrium.plane-curvature,plane-curvature/4/0,difference,1,atol,float,1e-12,3d719799812dea11
+native.equilibrium.plane-curvature,plane-curvature/4/0,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/4/0,difference,1,verdict,bool,True,
+native.equilibrium.plane-curvature,plane-curvature/4/1,difference,1,model,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/4/1,difference,1,reference,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/4/1,difference,1,basis,text,Relationship,
+native.equilibrium.plane-curvature,plane-curvature/4/1,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-curvature,plane-curvature/4/1,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-curvature,plane-curvature/4/1,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-curvature,plane-curvature/4/1,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-curvature,plane-curvature/4/1,difference,1,criterion,text,absolute,
+native.equilibrium.plane-curvature,plane-curvature/4/1,difference,1,rule,text,absolute,
+native.equilibrium.plane-curvature,plane-curvature/4/1,difference,1,atol,float,1e-12,3d719799812dea11
+native.equilibrium.plane-curvature,plane-curvature/4/1,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/4/1,difference,1,verdict,bool,True,
+native.equilibrium.plane-curvature,plane-curvature/4/2,difference,1,model,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/4/2,difference,1,reference,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/4/2,difference,1,basis,text,Relationship,
+native.equilibrium.plane-curvature,plane-curvature/4/2,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-curvature,plane-curvature/4/2,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-curvature,plane-curvature/4/2,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-curvature,plane-curvature/4/2,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-curvature,plane-curvature/4/2,difference,1,criterion,text,absolute,
+native.equilibrium.plane-curvature,plane-curvature/4/2,difference,1,rule,text,absolute,
+native.equilibrium.plane-curvature,plane-curvature/4/2,difference,1,atol,float,1e-12,3d719799812dea11
+native.equilibrium.plane-curvature,plane-curvature/4/2,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/4/2,difference,1,verdict,bool,True,
+native.equilibrium.plane-curvature,plane-curvature/4/3,difference,1,model,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/4/3,difference,1,reference,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/4/3,difference,1,basis,text,Relationship,
+native.equilibrium.plane-curvature,plane-curvature/4/3,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-curvature,plane-curvature/4/3,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-curvature,plane-curvature/4/3,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-curvature,plane-curvature/4/3,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-curvature,plane-curvature/4/3,difference,1,criterion,text,absolute,
+native.equilibrium.plane-curvature,plane-curvature/4/3,difference,1,rule,text,absolute,
+native.equilibrium.plane-curvature,plane-curvature/4/3,difference,1,atol,float,1e-12,3d719799812dea11
+native.equilibrium.plane-curvature,plane-curvature/4/3,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/4/3,difference,1,verdict,bool,True,
+native.equilibrium.plane-curvature,plane-curvature/4/4,difference,1,model,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/4/4,difference,1,reference,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/4/4,difference,1,basis,text,Relationship,
+native.equilibrium.plane-curvature,plane-curvature/4/4,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-curvature,plane-curvature/4/4,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-curvature,plane-curvature/4/4,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-curvature,plane-curvature/4/4,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-curvature,plane-curvature/4/4,difference,1,criterion,text,absolute,
+native.equilibrium.plane-curvature,plane-curvature/4/4,difference,1,rule,text,absolute,
+native.equilibrium.plane-curvature,plane-curvature/4/4,difference,1,atol,float,1e-12,3d719799812dea11
+native.equilibrium.plane-curvature,plane-curvature/4/4,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-curvature/4/4,difference,1,verdict,bool,True,
+native.equilibrium.plane-curvature,plane-stencil/first/0.0001,difference,1,model,float,1.9414305983076635e-09,3e20ad4043cfb358
+native.equilibrium.plane-curvature,plane-stencil/first/0.0001,difference,1,reference,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-stencil/first/0.0001,difference,1,inputs/step,float,0.0001,3f1a36e2eb1c432d
+native.equilibrium.plane-curvature,plane-stencil/first/0.0001,difference,1,inputs/point/0,float,-1.3862943611198906,bff62e42fefa39ef
+native.equilibrium.plane-curvature,plane-stencil/first/0.0001,difference,1,inputs/point/1,float,-0.2876820724517809,bfd269621134db92
+native.equilibrium.plane-curvature,plane-stencil/first/0.0001,difference,1,inputs/point/2,float,1.0,3ff0000000000000
+native.equilibrium.plane-curvature,plane-stencil/first/0.0001,difference,1,inputs/point/3,float,-2.3025850929940455,c0026bb1bbb55515
+native.equilibrium.plane-curvature,plane-stencil/first/0.0001,difference,1,basis,text,Relationship,
+native.equilibrium.plane-curvature,plane-stencil/first/0.0001,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-curvature,plane-stencil/first/0.0001,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-curvature,plane-stencil/first/0.0001,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-curvature,plane-stencil/first/0.0001,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-curvature,plane-stencil/first/0.0001,difference,1,criterion,text,absolute,
+native.equilibrium.plane-curvature,plane-stencil/first/0.0001,difference,1,rule,text,absolute,
+native.equilibrium.plane-curvature,plane-stencil/first/0.0001,difference,1,atol,float,1e-07,3e7ad7f29abcaf48
+native.equilibrium.plane-curvature,plane-stencil/first/0.0001,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-stencil/first/0.0001,difference,1,verdict,bool,True,
+native.equilibrium.plane-curvature,plane-stencil/second/0.0001,difference,1,model,float,1.9330655687358746e-09,3e209adb2c005749
+native.equilibrium.plane-curvature,plane-stencil/second/0.0001,difference,1,reference,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-stencil/second/0.0001,difference,1,inputs/step,float,0.0001,3f1a36e2eb1c432d
+native.equilibrium.plane-curvature,plane-stencil/second/0.0001,difference,1,inputs/point/0,float,-1.3862943611198906,bff62e42fefa39ef
+native.equilibrium.plane-curvature,plane-stencil/second/0.0001,difference,1,inputs/point/1,float,-0.2876820724517809,bfd269621134db92
+native.equilibrium.plane-curvature,plane-stencil/second/0.0001,difference,1,inputs/point/2,float,1.0,3ff0000000000000
+native.equilibrium.plane-curvature,plane-stencil/second/0.0001,difference,1,inputs/point/3,float,-2.3025850929940455,c0026bb1bbb55515
+native.equilibrium.plane-curvature,plane-stencil/second/0.0001,difference,1,basis,text,Relationship,
+native.equilibrium.plane-curvature,plane-stencil/second/0.0001,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-curvature,plane-stencil/second/0.0001,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-curvature,plane-stencil/second/0.0001,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-curvature,plane-stencil/second/0.0001,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-curvature,plane-stencil/second/0.0001,difference,1,criterion,text,absolute,
+native.equilibrium.plane-curvature,plane-stencil/second/0.0001,difference,1,rule,text,absolute,
+native.equilibrium.plane-curvature,plane-stencil/second/0.0001,difference,1,atol,float,1e-05,3ee4f8b588e368f1
+native.equilibrium.plane-curvature,plane-stencil/second/0.0001,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-stencil/second/0.0001,difference,1,verdict,bool,True,
+native.equilibrium.plane-curvature,plane-stencil/first/3.0000000000000001e-05,difference,1,model,float,1.8589371983686767e-10,3de98c8dc657b2b0
+native.equilibrium.plane-curvature,plane-stencil/first/3.0000000000000001e-05,difference,1,reference,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-stencil/first/3.0000000000000001e-05,difference,1,inputs/step,float,3e-05,3eff75104d551d69
+native.equilibrium.plane-curvature,plane-stencil/first/3.0000000000000001e-05,difference,1,inputs/point/0,float,-1.3862943611198906,bff62e42fefa39ef
+native.equilibrium.plane-curvature,plane-stencil/first/3.0000000000000001e-05,difference,1,inputs/point/1,float,-0.2876820724517809,bfd269621134db92
+native.equilibrium.plane-curvature,plane-stencil/first/3.0000000000000001e-05,difference,1,inputs/point/2,float,1.0,3ff0000000000000
+native.equilibrium.plane-curvature,plane-stencil/first/3.0000000000000001e-05,difference,1,inputs/point/3,float,-2.3025850929940455,c0026bb1bbb55515
+native.equilibrium.plane-curvature,plane-stencil/first/3.0000000000000001e-05,difference,1,basis,text,Relationship,
+native.equilibrium.plane-curvature,plane-stencil/first/3.0000000000000001e-05,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-curvature,plane-stencil/first/3.0000000000000001e-05,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-curvature,plane-stencil/first/3.0000000000000001e-05,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-curvature,plane-stencil/first/3.0000000000000001e-05,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-curvature,plane-stencil/first/3.0000000000000001e-05,difference,1,criterion,text,absolute,
+native.equilibrium.plane-curvature,plane-stencil/first/3.0000000000000001e-05,difference,1,rule,text,absolute,
+native.equilibrium.plane-curvature,plane-stencil/first/3.0000000000000001e-05,difference,1,atol,float,1e-07,3e7ad7f29abcaf48
+native.equilibrium.plane-curvature,plane-stencil/first/3.0000000000000001e-05,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-stencil/first/3.0000000000000001e-05,difference,1,verdict,bool,True,
+native.equilibrium.plane-curvature,plane-stencil/second/3.0000000000000001e-05,difference,1,model,float,1.883392686727647e-10,3de9e29952078e3d
+native.equilibrium.plane-curvature,plane-stencil/second/3.0000000000000001e-05,difference,1,reference,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-stencil/second/3.0000000000000001e-05,difference,1,inputs/step,float,3e-05,3eff75104d551d69
+native.equilibrium.plane-curvature,plane-stencil/second/3.0000000000000001e-05,difference,1,inputs/point/0,float,-1.3862943611198906,bff62e42fefa39ef
+native.equilibrium.plane-curvature,plane-stencil/second/3.0000000000000001e-05,difference,1,inputs/point/1,float,-0.2876820724517809,bfd269621134db92
+native.equilibrium.plane-curvature,plane-stencil/second/3.0000000000000001e-05,difference,1,inputs/point/2,float,1.0,3ff0000000000000
+native.equilibrium.plane-curvature,plane-stencil/second/3.0000000000000001e-05,difference,1,inputs/point/3,float,-2.3025850929940455,c0026bb1bbb55515
+native.equilibrium.plane-curvature,plane-stencil/second/3.0000000000000001e-05,difference,1,basis,text,Relationship,
+native.equilibrium.plane-curvature,plane-stencil/second/3.0000000000000001e-05,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-curvature,plane-stencil/second/3.0000000000000001e-05,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-curvature,plane-stencil/second/3.0000000000000001e-05,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-curvature,plane-stencil/second/3.0000000000000001e-05,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-curvature,plane-stencil/second/3.0000000000000001e-05,difference,1,criterion,text,absolute,
+native.equilibrium.plane-curvature,plane-stencil/second/3.0000000000000001e-05,difference,1,rule,text,absolute,
+native.equilibrium.plane-curvature,plane-stencil/second/3.0000000000000001e-05,difference,1,atol,float,1e-05,3ee4f8b588e368f1
+native.equilibrium.plane-curvature,plane-stencil/second/3.0000000000000001e-05,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-stencil/second/3.0000000000000001e-05,difference,1,verdict,bool,True,
+native.equilibrium.plane-curvature,plane-stencil/first/1.0000000000000001e-05,difference,1,model,float,3.6612657350332256e-11,3dc420c600000000
+native.equilibrium.plane-curvature,plane-stencil/first/1.0000000000000001e-05,difference,1,reference,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-stencil/first/1.0000000000000001e-05,difference,1,inputs/step,float,1e-05,3ee4f8b588e368f1
+native.equilibrium.plane-curvature,plane-stencil/first/1.0000000000000001e-05,difference,1,inputs/point/0,float,-1.3862943611198906,bff62e42fefa39ef
+native.equilibrium.plane-curvature,plane-stencil/first/1.0000000000000001e-05,difference,1,inputs/point/1,float,-0.2876820724517809,bfd269621134db92
+native.equilibrium.plane-curvature,plane-stencil/first/1.0000000000000001e-05,difference,1,inputs/point/2,float,1.0,3ff0000000000000
+native.equilibrium.plane-curvature,plane-stencil/first/1.0000000000000001e-05,difference,1,inputs/point/3,float,-2.3025850929940455,c0026bb1bbb55515
+native.equilibrium.plane-curvature,plane-stencil/first/1.0000000000000001e-05,difference,1,basis,text,Relationship,
+native.equilibrium.plane-curvature,plane-stencil/first/1.0000000000000001e-05,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-curvature,plane-stencil/first/1.0000000000000001e-05,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-curvature,plane-stencil/first/1.0000000000000001e-05,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-curvature,plane-stencil/first/1.0000000000000001e-05,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-curvature,plane-stencil/first/1.0000000000000001e-05,difference,1,criterion,text,absolute,
+native.equilibrium.plane-curvature,plane-stencil/first/1.0000000000000001e-05,difference,1,rule,text,absolute,
+native.equilibrium.plane-curvature,plane-stencil/first/1.0000000000000001e-05,difference,1,atol,float,1e-07,3e7ad7f29abcaf48
+native.equilibrium.plane-curvature,plane-stencil/first/1.0000000000000001e-05,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-stencil/first/1.0000000000000001e-05,difference,1,verdict,bool,True,
+native.equilibrium.plane-curvature,plane-stencil/second/1.0000000000000001e-05,difference,1,model,float,4.373304496319008e-11,3dc80ae100000000
+native.equilibrium.plane-curvature,plane-stencil/second/1.0000000000000001e-05,difference,1,reference,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-stencil/second/1.0000000000000001e-05,difference,1,inputs/step,float,1e-05,3ee4f8b588e368f1
+native.equilibrium.plane-curvature,plane-stencil/second/1.0000000000000001e-05,difference,1,inputs/point/0,float,-1.3862943611198906,bff62e42fefa39ef
+native.equilibrium.plane-curvature,plane-stencil/second/1.0000000000000001e-05,difference,1,inputs/point/1,float,-0.2876820724517809,bfd269621134db92
+native.equilibrium.plane-curvature,plane-stencil/second/1.0000000000000001e-05,difference,1,inputs/point/2,float,1.0,3ff0000000000000
+native.equilibrium.plane-curvature,plane-stencil/second/1.0000000000000001e-05,difference,1,inputs/point/3,float,-2.3025850929940455,c0026bb1bbb55515
+native.equilibrium.plane-curvature,plane-stencil/second/1.0000000000000001e-05,difference,1,basis,text,Relationship,
+native.equilibrium.plane-curvature,plane-stencil/second/1.0000000000000001e-05,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-curvature,plane-stencil/second/1.0000000000000001e-05,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-curvature,plane-stencil/second/1.0000000000000001e-05,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-curvature,plane-stencil/second/1.0000000000000001e-05,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-curvature,plane-stencil/second/1.0000000000000001e-05,difference,1,criterion,text,absolute,
+native.equilibrium.plane-curvature,plane-stencil/second/1.0000000000000001e-05,difference,1,rule,text,absolute,
+native.equilibrium.plane-curvature,plane-stencil/second/1.0000000000000001e-05,difference,1,atol,float,1e-05,3ee4f8b588e368f1
+native.equilibrium.plane-curvature,plane-stencil/second/1.0000000000000001e-05,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-curvature,plane-stencil/second/1.0000000000000001e-05,difference,1,verdict,bool,True,
+native.equilibrium.plane-admission,witness/pressure-identity,difference,1,model,float,-1e-10,bddb7cdfd9d7bdbb
+native.equilibrium.plane-admission,witness/pressure-identity,difference,1,reference,float,-1e-10,bddb7cdfd9d7bdbb
+native.equilibrium.plane-admission,witness/pressure-identity,difference,1,basis,text,Relationship,
+native.equilibrium.plane-admission,witness/pressure-identity,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-admission,witness/pressure-identity,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-admission,witness/pressure-identity,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-admission,witness/pressure-identity,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-admission,witness/pressure-identity,difference,1,criterion,text,absolute,
+native.equilibrium.plane-admission,witness/pressure-identity,difference,1,rule,text,absolute,
+native.equilibrium.plane-admission,witness/pressure-identity,difference,1,atol,float,0.0,0000000000000000
+native.equilibrium.plane-admission,witness/pressure-identity,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-admission,witness/pressure-identity,difference,1,verdict,bool,True,
+native.equilibrium.plane-admission,witness/uncertain-descent,difference,1,model,float,0.0,0000000000000000
+native.equilibrium.plane-admission,witness/uncertain-descent,difference,1,reference,float,0.0,0000000000000000
+native.equilibrium.plane-admission,witness/uncertain-descent,difference,1,basis,text,Relationship,
+native.equilibrium.plane-admission,witness/uncertain-descent,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-admission,witness/uncertain-descent,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-admission,witness/uncertain-descent,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-admission,witness/uncertain-descent,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-admission,witness/uncertain-descent,difference,1,criterion,text,absolute,
+native.equilibrium.plane-admission,witness/uncertain-descent,difference,1,rule,text,absolute,
+native.equilibrium.plane-admission,witness/uncertain-descent,difference,1,atol,float,0.0,0000000000000000
+native.equilibrium.plane-admission,witness/uncertain-descent,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-admission,witness/uncertain-descent,difference,1,verdict,bool,True,
+native.equilibrium.plane-admission,witness/missing-error/nan,difference,1,model,float,0.0,0000000000000000
+native.equilibrium.plane-admission,witness/missing-error/nan,difference,1,reference,float,0.0,0000000000000000
+native.equilibrium.plane-admission,witness/missing-error/nan,difference,1,basis,text,Relationship,
+native.equilibrium.plane-admission,witness/missing-error/nan,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-admission,witness/missing-error/nan,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-admission,witness/missing-error/nan,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-admission,witness/missing-error/nan,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-admission,witness/missing-error/nan,difference,1,criterion,text,absolute,
+native.equilibrium.plane-admission,witness/missing-error/nan,difference,1,rule,text,absolute,
+native.equilibrium.plane-admission,witness/missing-error/nan,difference,1,atol,float,0.0,0000000000000000
+native.equilibrium.plane-admission,witness/missing-error/nan,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-admission,witness/missing-error/nan,difference,1,verdict,bool,True,
+native.equilibrium.plane-admission,witness/missing-error/inf,difference,1,model,float,0.0,0000000000000000
+native.equilibrium.plane-admission,witness/missing-error/inf,difference,1,reference,float,0.0,0000000000000000
+native.equilibrium.plane-admission,witness/missing-error/inf,difference,1,basis,text,Relationship,
+native.equilibrium.plane-admission,witness/missing-error/inf,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-admission,witness/missing-error/inf,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-admission,witness/missing-error/inf,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-admission,witness/missing-error/inf,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-admission,witness/missing-error/inf,difference,1,criterion,text,absolute,
+native.equilibrium.plane-admission,witness/missing-error/inf,difference,1,rule,text,absolute,
+native.equilibrium.plane-admission,witness/missing-error/inf,difference,1,atol,float,0.0,0000000000000000
+native.equilibrium.plane-admission,witness/missing-error/inf,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-admission,witness/missing-error/inf,difference,1,verdict,bool,True,
+native.equilibrium.plane-admission,witness/off-normalized-reconstruction,difference,1,model,float,1.0,3ff0000000000000
+native.equilibrium.plane-admission,witness/off-normalized-reconstruction,difference,1,reference,float,1.0,3ff0000000000000
+native.equilibrium.plane-admission,witness/off-normalized-reconstruction,difference,1,basis,text,Relationship,
+native.equilibrium.plane-admission,witness/off-normalized-reconstruction,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-admission,witness/off-normalized-reconstruction,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-admission,witness/off-normalized-reconstruction,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-admission,witness/off-normalized-reconstruction,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-admission,witness/off-normalized-reconstruction,difference,1,criterion,text,absolute,
+native.equilibrium.plane-admission,witness/off-normalized-reconstruction,difference,1,rule,text,absolute,
+native.equilibrium.plane-admission,witness/off-normalized-reconstruction,difference,1,atol,float,1e-12,3d719799812dea11
+native.equilibrium.plane-admission,witness/off-normalized-reconstruction,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-admission,witness/off-normalized-reconstruction,difference,1,verdict,bool,True,
+native.equilibrium.plane-admission,witness/reconstructed-charge,difference,1,model,float,0.0,0000000000000000
+native.equilibrium.plane-admission,witness/reconstructed-charge,difference,1,reference,float,0.0,0000000000000000
+native.equilibrium.plane-admission,witness/reconstructed-charge,difference,1,inputs/raw/0,float,0.98,3fef5c28f5c28f5c
+native.equilibrium.plane-admission,witness/reconstructed-charge,difference,1,inputs/raw/1,float,0.0100000001,3f847ae14b1db076
+native.equilibrium.plane-admission,witness/reconstructed-charge,difference,1,inputs/raw/2,float,0.0099999999,3f847ae1443e7880
+native.equilibrium.plane-admission,witness/reconstructed-charge,difference,1,inputs/reconstructed/0,float,0.98,3fef5c28f5c28f5c
+native.equilibrium.plane-admission,witness/reconstructed-charge,difference,1,inputs/reconstructed/1,float,0.01,3f847ae147ae147b
+native.equilibrium.plane-admission,witness/reconstructed-charge,difference,1,inputs/reconstructed/2,float,0.01,3f847ae147ae147b
+native.equilibrium.plane-admission,witness/reconstructed-charge,difference,1,basis,text,Relationship,
+native.equilibrium.plane-admission,witness/reconstructed-charge,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-admission,witness/reconstructed-charge,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-admission,witness/reconstructed-charge,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-admission,witness/reconstructed-charge,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-admission,witness/reconstructed-charge,difference,1,criterion,text,absolute,
+native.equilibrium.plane-admission,witness/reconstructed-charge,difference,1,rule,text,absolute,
+native.equilibrium.plane-admission,witness/reconstructed-charge,difference,1,atol,float,1e-12,3d719799812dea11
+native.equilibrium.plane-admission,witness/reconstructed-charge,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-admission,witness/reconstructed-charge,difference,1,verdict,bool,True,
+native.equilibrium.plane-admission,witness/reconstructed-normalization,difference,1,model,float,1.0,3ff0000000000000
+native.equilibrium.plane-admission,witness/reconstructed-normalization,difference,1,reference,float,1.0,3ff0000000000000
+native.equilibrium.plane-admission,witness/reconstructed-normalization,difference,1,inputs/raw/0,float,0.98,3fef5c28f5c28f5c
+native.equilibrium.plane-admission,witness/reconstructed-normalization,difference,1,inputs/raw/1,float,0.0100000001,3f847ae14b1db076
+native.equilibrium.plane-admission,witness/reconstructed-normalization,difference,1,inputs/raw/2,float,0.0099999999,3f847ae1443e7880
+native.equilibrium.plane-admission,witness/reconstructed-normalization,difference,1,inputs/reconstructed/0,float,0.98,3fef5c28f5c28f5c
+native.equilibrium.plane-admission,witness/reconstructed-normalization,difference,1,inputs/reconstructed/1,float,0.01,3f847ae147ae147b
+native.equilibrium.plane-admission,witness/reconstructed-normalization,difference,1,inputs/reconstructed/2,float,0.01,3f847ae147ae147b
+native.equilibrium.plane-admission,witness/reconstructed-normalization,difference,1,basis,text,Relationship,
+native.equilibrium.plane-admission,witness/reconstructed-normalization,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-admission,witness/reconstructed-normalization,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-admission,witness/reconstructed-normalization,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-admission,witness/reconstructed-normalization,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-admission,witness/reconstructed-normalization,difference,1,criterion,text,absolute,
+native.equilibrium.plane-admission,witness/reconstructed-normalization,difference,1,rule,text,absolute,
+native.equilibrium.plane-admission,witness/reconstructed-normalization,difference,1,atol,float,1e-12,3d719799812dea11
+native.equilibrium.plane-admission,witness/reconstructed-normalization,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-admission,witness/reconstructed-normalization,difference,1,verdict,bool,True,
+native.equilibrium.plane-admission,witness/raw-apparent-charge-descent,difference,1,model,float,-2.0000000100495186e-08,be55798ee4000000
+native.equilibrium.plane-admission,witness/raw-apparent-charge-descent,difference,1,reference,float,-2e-08,be55798ee2308c3a
+native.equilibrium.plane-admission,witness/raw-apparent-charge-descent,difference,1,basis,text,Relationship,
+native.equilibrium.plane-admission,witness/raw-apparent-charge-descent,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-admission,witness/raw-apparent-charge-descent,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-admission,witness/raw-apparent-charge-descent,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-admission,witness/raw-apparent-charge-descent,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-admission,witness/raw-apparent-charge-descent,difference,1,criterion,text,absolute,
+native.equilibrium.plane-admission,witness/raw-apparent-charge-descent,difference,1,rule,text,absolute,
+native.equilibrium.plane-admission,witness/raw-apparent-charge-descent,difference,1,atol,float,1e-12,3d719799812dea11
+native.equilibrium.plane-admission,witness/raw-apparent-charge-descent,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-admission,witness/raw-apparent-charge-descent,difference,1,verdict,bool,True,
+native.equilibrium.plane-admission,witness/reconstructed-charge-descent,difference,1,model,float,0.0,0000000000000000
+native.equilibrium.plane-admission,witness/reconstructed-charge-descent,difference,1,reference,float,0.0,0000000000000000
+native.equilibrium.plane-admission,witness/reconstructed-charge-descent,difference,1,basis,text,Relationship,
+native.equilibrium.plane-admission,witness/reconstructed-charge-descent,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-admission,witness/reconstructed-charge-descent,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-admission,witness/reconstructed-charge-descent,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-admission,witness/reconstructed-charge-descent,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-admission,witness/reconstructed-charge-descent,difference,1,criterion,text,absolute,
+native.equilibrium.plane-admission,witness/reconstructed-charge-descent,difference,1,rule,text,absolute,
+native.equilibrium.plane-admission,witness/reconstructed-charge-descent,difference,1,atol,float,1e-12,3d719799812dea11
+native.equilibrium.plane-admission,witness/reconstructed-charge-descent,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-admission,witness/reconstructed-charge-descent,difference,1,verdict,bool,True,
+native.equilibrium.plane-admission,witness/reevaluated-charge-plane,difference,1,model,float,0.0,0000000000000000
+native.equilibrium.plane-admission,witness/reevaluated-charge-plane,difference,1,reference,float,0.0,0000000000000000
+native.equilibrium.plane-admission,witness/reevaluated-charge-plane,difference,1,inputs/raw/0,float,0.98,3fef5c28f5c28f5c
+native.equilibrium.plane-admission,witness/reevaluated-charge-plane,difference,1,inputs/raw/1,float,0.0100000001,3f847ae14b1db076
+native.equilibrium.plane-admission,witness/reevaluated-charge-plane,difference,1,inputs/raw/2,float,0.0099999999,3f847ae1443e7880
+native.equilibrium.plane-admission,witness/reevaluated-charge-plane,difference,1,inputs/reconstructed/0,float,0.98,3fef5c28f5c28f5c
+native.equilibrium.plane-admission,witness/reevaluated-charge-plane,difference,1,inputs/reconstructed/1,float,0.01,3f847ae147ae147b
+native.equilibrium.plane-admission,witness/reevaluated-charge-plane,difference,1,inputs/reconstructed/2,float,0.01,3f847ae147ae147b
+native.equilibrium.plane-admission,witness/reevaluated-charge-plane,difference,1,inputs/raw_energy_over_rt,float,-1.4963702304056925,bff7f121e924ce94
+native.equilibrium.plane-admission,witness/reevaluated-charge-plane,difference,1,inputs/reevaluated_energy_over_rt,float,-1.4963702075024405,bff7f121e2fee84f
+native.equilibrium.plane-admission,witness/reevaluated-charge-plane,difference,1,inputs/volume_m3_per_mol,float,2.718875924371296e-05,3efc826d4eeea6dd
+native.equilibrium.plane-admission,witness/reevaluated-charge-plane,difference,1,basis,text,Relationship,
+native.equilibrium.plane-admission,witness/reevaluated-charge-plane,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-admission,witness/reevaluated-charge-plane,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-admission,witness/reevaluated-charge-plane,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-admission,witness/reevaluated-charge-plane,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-admission,witness/reevaluated-charge-plane,difference,1,criterion,text,absolute,
+native.equilibrium.plane-admission,witness/reevaluated-charge-plane,difference,1,rule,text,absolute,
+native.equilibrium.plane-admission,witness/reevaluated-charge-plane,difference,1,atol,float,1e-12,3d719799812dea11
+native.equilibrium.plane-admission,witness/reevaluated-charge-plane,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-admission,witness/reevaluated-charge-plane,difference,1,verdict,bool,True,
+native.equilibrium.plane-admission,support/singleton,difference,1,model,float,1.0,3ff0000000000000
+native.equilibrium.plane-admission,support/singleton,difference,1,reference,float,1.0,3ff0000000000000
+native.equilibrium.plane-admission,support/singleton,difference,1,basis,text,Relationship,
+native.equilibrium.plane-admission,support/singleton,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-admission,support/singleton,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-admission,support/singleton,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-admission,support/singleton,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-admission,support/singleton,difference,1,criterion,text,absolute,
+native.equilibrium.plane-admission,support/singleton,difference,1,rule,text,absolute,
+native.equilibrium.plane-admission,support/singleton,difference,1,atol,float,0.0,0000000000000000
+native.equilibrium.plane-admission,support/singleton,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-admission,support/singleton,difference,1,verdict,bool,True,
+native.equilibrium.plane-admission,support/reconstruction-rejected/0,difference,1,model,float,1.0,3ff0000000000000
+native.equilibrium.plane-admission,support/reconstruction-rejected/0,difference,1,reference,float,1.0,3ff0000000000000
+native.equilibrium.plane-admission,support/reconstruction-rejected/0,difference,1,basis,text,Relationship,
+native.equilibrium.plane-admission,support/reconstruction-rejected/0,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-admission,support/reconstruction-rejected/0,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-admission,support/reconstruction-rejected/0,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-admission,support/reconstruction-rejected/0,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-admission,support/reconstruction-rejected/0,difference,1,criterion,text,absolute,
+native.equilibrium.plane-admission,support/reconstruction-rejected/0,difference,1,rule,text,absolute,
+native.equilibrium.plane-admission,support/reconstruction-rejected/0,difference,1,atol,float,0.0,0000000000000000
+native.equilibrium.plane-admission,support/reconstruction-rejected/0,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-admission,support/reconstruction-rejected/0,difference,1,verdict,bool,True,
+native.equilibrium.plane-admission,support/reconstruction-rejected/2,difference,1,model,float,1.0,3ff0000000000000
+native.equilibrium.plane-admission,support/reconstruction-rejected/2,difference,1,reference,float,1.0,3ff0000000000000
+native.equilibrium.plane-admission,support/reconstruction-rejected/2,difference,1,basis,text,Relationship,
+native.equilibrium.plane-admission,support/reconstruction-rejected/2,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-admission,support/reconstruction-rejected/2,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-admission,support/reconstruction-rejected/2,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-admission,support/reconstruction-rejected/2,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-admission,support/reconstruction-rejected/2,difference,1,criterion,text,absolute,
+native.equilibrium.plane-admission,support/reconstruction-rejected/2,difference,1,rule,text,absolute,
+native.equilibrium.plane-admission,support/reconstruction-rejected/2,difference,1,atol,float,0.0,0000000000000000
+native.equilibrium.plane-admission,support/reconstruction-rejected/2,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-admission,support/reconstruction-rejected/2,difference,1,verdict,bool,True,
+native.equilibrium.plane-admission,witness/present-phase/0,difference,1,model,float,-4.2125935103897535e-16,bcbe5add0a39a178
+native.equilibrium.plane-admission,witness/present-phase/0,difference,1,reference,float,0.0,0000000000000000
+native.equilibrium.plane-admission,witness/present-phase/0,difference,1,basis,text,Relationship,
+native.equilibrium.plane-admission,witness/present-phase/0,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-admission,witness/present-phase/0,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-admission,witness/present-phase/0,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-admission,witness/present-phase/0,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-admission,witness/present-phase/0,difference,1,criterion,text,absolute,
+native.equilibrium.plane-admission,witness/present-phase/0,difference,1,rule,text,absolute,
+native.equilibrium.plane-admission,witness/present-phase/0,difference,1,atol,float,1e-10,3ddb7cdfd9d7bdbb
+native.equilibrium.plane-admission,witness/present-phase/0,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-admission,witness/present-phase/0,difference,1,verdict,bool,True,
+native.equilibrium.plane-admission,support/trial-charge/0,difference,1,model,float,0.0,0000000000000000
+native.equilibrium.plane-admission,support/trial-charge/0,difference,1,reference,float,0.0,0000000000000000
+native.equilibrium.plane-admission,support/trial-charge/0,difference,1,inputs/label,text,liquid,
+native.equilibrium.plane-admission,support/trial-charge/0,difference,1,inputs/support/0,float,0.0,0000000000000000
+native.equilibrium.plane-admission,support/trial-charge/0,difference,1,inputs/support/1,float,1.0,3ff0000000000000
+native.equilibrium.plane-admission,support/trial-charge/0,difference,1,inputs/support/2,float,2.0,4000000000000000
+native.equilibrium.plane-admission,support/trial-charge/0,difference,1,inputs/seed,text,positive-neutral-base,
+native.equilibrium.plane-admission,support/trial-charge/0,difference,1,inputs/evidence,text,no_resolved_descent,
+native.equilibrium.plane-admission,support/trial-charge/0,difference,1,inputs/composition/0,float,0.9799999999999999,3fef5c28f5c28f5b
+native.equilibrium.plane-admission,support/trial-charge/0,difference,1,inputs/composition/1,float,0.010000000000000103,3f847ae147ae14b6
+native.equilibrium.plane-admission,support/trial-charge/0,difference,1,inputs/composition/2,float,0.010000000000000103,3f847ae147ae14b6
+native.equilibrium.plane-admission,support/trial-charge/0,difference,1,inputs/association_floor,float,7.631332604617387e-11,3dd4fa12aabf304b
+native.equilibrium.plane-admission,support/trial-charge/0,difference,1,basis,text,Relationship,
+native.equilibrium.plane-admission,support/trial-charge/0,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-admission,support/trial-charge/0,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-admission,support/trial-charge/0,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-admission,support/trial-charge/0,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-admission,support/trial-charge/0,difference,1,criterion,text,absolute,
+native.equilibrium.plane-admission,support/trial-charge/0,difference,1,rule,text,absolute,
+native.equilibrium.plane-admission,support/trial-charge/0,difference,1,atol,float,1e-12,3d719799812dea11
+native.equilibrium.plane-admission,support/trial-charge/0,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-admission,support/trial-charge/0,difference,1,verdict,bool,True,
+native.equilibrium.plane-admission,support/trial-normalization/0,difference,1,model,float,1.0,3ff0000000000000
+native.equilibrium.plane-admission,support/trial-normalization/0,difference,1,reference,float,1.0,3ff0000000000000
+native.equilibrium.plane-admission,support/trial-normalization/0,difference,1,inputs/label,text,liquid,
+native.equilibrium.plane-admission,support/trial-normalization/0,difference,1,inputs/support/0,float,0.0,0000000000000000
+native.equilibrium.plane-admission,support/trial-normalization/0,difference,1,inputs/support/1,float,1.0,3ff0000000000000
+native.equilibrium.plane-admission,support/trial-normalization/0,difference,1,inputs/support/2,float,2.0,4000000000000000
+native.equilibrium.plane-admission,support/trial-normalization/0,difference,1,inputs/seed,text,positive-neutral-base,
+native.equilibrium.plane-admission,support/trial-normalization/0,difference,1,inputs/evidence,text,no_resolved_descent,
+native.equilibrium.plane-admission,support/trial-normalization/0,difference,1,inputs/composition/0,float,0.9799999999999999,3fef5c28f5c28f5b
+native.equilibrium.plane-admission,support/trial-normalization/0,difference,1,inputs/composition/1,float,0.010000000000000103,3f847ae147ae14b6
+native.equilibrium.plane-admission,support/trial-normalization/0,difference,1,inputs/composition/2,float,0.010000000000000103,3f847ae147ae14b6
+native.equilibrium.plane-admission,support/trial-normalization/0,difference,1,inputs/association_floor,float,7.631332604617387e-11,3dd4fa12aabf304b
+native.equilibrium.plane-admission,support/trial-normalization/0,difference,1,basis,text,Relationship,
+native.equilibrium.plane-admission,support/trial-normalization/0,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-admission,support/trial-normalization/0,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-admission,support/trial-normalization/0,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-admission,support/trial-normalization/0,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-admission,support/trial-normalization/0,difference,1,criterion,text,absolute,
+native.equilibrium.plane-admission,support/trial-normalization/0,difference,1,rule,text,absolute,
+native.equilibrium.plane-admission,support/trial-normalization/0,difference,1,atol,float,1e-12,3d719799812dea11
+native.equilibrium.plane-admission,support/trial-normalization/0,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-admission,support/trial-normalization/0,difference,1,verdict,bool,True,
+native.equilibrium.plane-admission,witness/trial-dual/0,difference,1,model,float,-6.414887694916713e-15,bcfce3dcaa4501fe
+native.equilibrium.plane-admission,witness/trial-dual/0,difference,1,reference,float,0.0,0000000000000000
+native.equilibrium.plane-admission,witness/trial-dual/0,difference,1,inputs/label,text,liquid,
+native.equilibrium.plane-admission,witness/trial-dual/0,difference,1,inputs/support/0,float,0.0,0000000000000000
+native.equilibrium.plane-admission,witness/trial-dual/0,difference,1,inputs/support/1,float,1.0,3ff0000000000000
+native.equilibrium.plane-admission,witness/trial-dual/0,difference,1,inputs/support/2,float,2.0,4000000000000000
+native.equilibrium.plane-admission,witness/trial-dual/0,difference,1,inputs/seed,text,positive-neutral-base,
+native.equilibrium.plane-admission,witness/trial-dual/0,difference,1,inputs/evidence,text,no_resolved_descent,
+native.equilibrium.plane-admission,witness/trial-dual/0,difference,1,inputs/composition/0,float,0.9799999999999999,3fef5c28f5c28f5b
+native.equilibrium.plane-admission,witness/trial-dual/0,difference,1,inputs/composition/1,float,0.010000000000000103,3f847ae147ae14b6
+native.equilibrium.plane-admission,witness/trial-dual/0,difference,1,inputs/composition/2,float,0.010000000000000103,3f847ae147ae14b6
+native.equilibrium.plane-admission,witness/trial-dual/0,difference,1,inputs/association_floor,float,7.631332604617387e-11,3dd4fa12aabf304b
+native.equilibrium.plane-admission,witness/trial-dual/0,difference,1,basis,text,Relationship,
+native.equilibrium.plane-admission,witness/trial-dual/0,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-admission,witness/trial-dual/0,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-admission,witness/trial-dual/0,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-admission,witness/trial-dual/0,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-admission,witness/trial-dual/0,difference,1,criterion,text,absolute,
+native.equilibrium.plane-admission,witness/trial-dual/0,difference,1,rule,text,absolute,
+native.equilibrium.plane-admission,witness/trial-dual/0,difference,1,atol,float,1e-10,3ddb7cdfd9d7bdbb
+native.equilibrium.plane-admission,witness/trial-dual/0,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-admission,witness/trial-dual/0,difference,1,verdict,bool,True,
+native.equilibrium.plane-admission,support/trial-charge/1,difference,1,model,float,0.0,0000000000000000
+native.equilibrium.plane-admission,support/trial-charge/1,difference,1,reference,float,0.0,0000000000000000
+native.equilibrium.plane-admission,support/trial-charge/1,difference,1,inputs/label,text,liquid,
+native.equilibrium.plane-admission,support/trial-charge/1,difference,1,inputs/support/0,float,0.0,0000000000000000
+native.equilibrium.plane-admission,support/trial-charge/1,difference,1,inputs/support/1,float,1.0,3ff0000000000000
+native.equilibrium.plane-admission,support/trial-charge/1,difference,1,inputs/support/2,float,2.0,4000000000000000
+native.equilibrium.plane-admission,support/trial-charge/1,difference,1,inputs/seed,text,near-pure-0,
+native.equilibrium.plane-admission,support/trial-charge/1,difference,1,inputs/evidence,text,indeterminate,
+native.equilibrium.plane-admission,support/trial-charge/1,difference,1,inputs/composition/0,float,0.9800000000000006,3fef5c28f5c28f62
+native.equilibrium.plane-admission,support/trial-charge/1,difference,1,inputs/composition/1,float,0.009999999999999684,3f847ae147ae13c5
+native.equilibrium.plane-admission,support/trial-charge/1,difference,1,inputs/composition/2,float,0.009999999999999684,3f847ae147ae13c5
+native.equilibrium.plane-admission,support/trial-charge/1,difference,1,inputs/association_floor,float,7.631332604617391e-11,3dd4fa12aabf304e
+native.equilibrium.plane-admission,support/trial-charge/1,difference,1,basis,text,Relationship,
+native.equilibrium.plane-admission,support/trial-charge/1,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-admission,support/trial-charge/1,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-admission,support/trial-charge/1,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-admission,support/trial-charge/1,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-admission,support/trial-charge/1,difference,1,criterion,text,absolute,
+native.equilibrium.plane-admission,support/trial-charge/1,difference,1,rule,text,absolute,
+native.equilibrium.plane-admission,support/trial-charge/1,difference,1,atol,float,1e-12,3d719799812dea11
+native.equilibrium.plane-admission,support/trial-charge/1,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-admission,support/trial-charge/1,difference,1,verdict,bool,True,
+native.equilibrium.plane-admission,support/trial-normalization/1,difference,1,model,float,1.0,3ff0000000000000
+native.equilibrium.plane-admission,support/trial-normalization/1,difference,1,reference,float,1.0,3ff0000000000000
+native.equilibrium.plane-admission,support/trial-normalization/1,difference,1,inputs/label,text,liquid,
+native.equilibrium.plane-admission,support/trial-normalization/1,difference,1,inputs/support/0,float,0.0,0000000000000000
+native.equilibrium.plane-admission,support/trial-normalization/1,difference,1,inputs/support/1,float,1.0,3ff0000000000000
+native.equilibrium.plane-admission,support/trial-normalization/1,difference,1,inputs/support/2,float,2.0,4000000000000000
+native.equilibrium.plane-admission,support/trial-normalization/1,difference,1,inputs/seed,text,near-pure-0,
+native.equilibrium.plane-admission,support/trial-normalization/1,difference,1,inputs/evidence,text,indeterminate,
+native.equilibrium.plane-admission,support/trial-normalization/1,difference,1,inputs/composition/0,float,0.9800000000000006,3fef5c28f5c28f62
+native.equilibrium.plane-admission,support/trial-normalization/1,difference,1,inputs/composition/1,float,0.009999999999999684,3f847ae147ae13c5
+native.equilibrium.plane-admission,support/trial-normalization/1,difference,1,inputs/composition/2,float,0.009999999999999684,3f847ae147ae13c5
+native.equilibrium.plane-admission,support/trial-normalization/1,difference,1,inputs/association_floor,float,7.631332604617391e-11,3dd4fa12aabf304e
+native.equilibrium.plane-admission,support/trial-normalization/1,difference,1,basis,text,Relationship,
+native.equilibrium.plane-admission,support/trial-normalization/1,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-admission,support/trial-normalization/1,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-admission,support/trial-normalization/1,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-admission,support/trial-normalization/1,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-admission,support/trial-normalization/1,difference,1,criterion,text,absolute,
+native.equilibrium.plane-admission,support/trial-normalization/1,difference,1,rule,text,absolute,
+native.equilibrium.plane-admission,support/trial-normalization/1,difference,1,atol,float,1e-12,3d719799812dea11
+native.equilibrium.plane-admission,support/trial-normalization/1,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-admission,support/trial-normalization/1,difference,1,verdict,bool,True,
+native.equilibrium.plane-admission,witness/trial-dual/1,difference,1,model,float,-3.0347132858765e-15,bceb559289cd8e8f
+native.equilibrium.plane-admission,witness/trial-dual/1,difference,1,reference,float,0.0,0000000000000000
+native.equilibrium.plane-admission,witness/trial-dual/1,difference,1,inputs/label,text,liquid,
+native.equilibrium.plane-admission,witness/trial-dual/1,difference,1,inputs/support/0,float,0.0,0000000000000000
+native.equilibrium.plane-admission,witness/trial-dual/1,difference,1,inputs/support/1,float,1.0,3ff0000000000000
+native.equilibrium.plane-admission,witness/trial-dual/1,difference,1,inputs/support/2,float,2.0,4000000000000000
+native.equilibrium.plane-admission,witness/trial-dual/1,difference,1,inputs/seed,text,near-pure-0,
+native.equilibrium.plane-admission,witness/trial-dual/1,difference,1,inputs/evidence,text,indeterminate,
+native.equilibrium.plane-admission,witness/trial-dual/1,difference,1,inputs/composition/0,float,0.9800000000000006,3fef5c28f5c28f62
+native.equilibrium.plane-admission,witness/trial-dual/1,difference,1,inputs/composition/1,float,0.009999999999999684,3f847ae147ae13c5
+native.equilibrium.plane-admission,witness/trial-dual/1,difference,1,inputs/composition/2,float,0.009999999999999684,3f847ae147ae13c5
+native.equilibrium.plane-admission,witness/trial-dual/1,difference,1,inputs/association_floor,float,7.631332604617391e-11,3dd4fa12aabf304e
+native.equilibrium.plane-admission,witness/trial-dual/1,difference,1,basis,text,Relationship,
+native.equilibrium.plane-admission,witness/trial-dual/1,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-admission,witness/trial-dual/1,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-admission,witness/trial-dual/1,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-admission,witness/trial-dual/1,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-admission,witness/trial-dual/1,difference,1,criterion,text,absolute,
+native.equilibrium.plane-admission,witness/trial-dual/1,difference,1,rule,text,absolute,
+native.equilibrium.plane-admission,witness/trial-dual/1,difference,1,atol,float,1e-10,3ddb7cdfd9d7bdbb
+native.equilibrium.plane-admission,witness/trial-dual/1,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-admission,witness/trial-dual/1,difference,1,verdict,bool,True,
+native.equilibrium.plane-admission,support/trial-charge/2,difference,1,model,float,0.0,0000000000000000
+native.equilibrium.plane-admission,support/trial-charge/2,difference,1,reference,float,0.0,0000000000000000
+native.equilibrium.plane-admission,support/trial-charge/2,difference,1,inputs/label,text,liquid,
+native.equilibrium.plane-admission,support/trial-charge/2,difference,1,inputs/support,float,0.0,0000000000000000
+native.equilibrium.plane-admission,support/trial-charge/2,difference,1,inputs/seed,text,positive-neutral-base,
+native.equilibrium.plane-admission,support/trial-charge/2,difference,1,inputs/evidence,text,no_resolved_descent,
+native.equilibrium.plane-admission,support/trial-charge/2,difference,1,inputs/composition/0,float,1.0,3ff0000000000000
+native.equilibrium.plane-admission,support/trial-charge/2,difference,1,inputs/composition/1,float,0.0,0000000000000000
+native.equilibrium.plane-admission,support/trial-charge/2,difference,1,inputs/composition/2,float,0.0,0000000000000000
+native.equilibrium.plane-admission,support/trial-charge/2,difference,1,inputs/association_floor,float,7.726289854223821e-11,3dd53ce4a4f34e51
+native.equilibrium.plane-admission,support/trial-charge/2,difference,1,basis,text,Relationship,
+native.equilibrium.plane-admission,support/trial-charge/2,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-admission,support/trial-charge/2,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-admission,support/trial-charge/2,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-admission,support/trial-charge/2,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-admission,support/trial-charge/2,difference,1,criterion,text,absolute,
+native.equilibrium.plane-admission,support/trial-charge/2,difference,1,rule,text,absolute,
+native.equilibrium.plane-admission,support/trial-charge/2,difference,1,atol,float,1e-12,3d719799812dea11
+native.equilibrium.plane-admission,support/trial-charge/2,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-admission,support/trial-charge/2,difference,1,verdict,bool,True,
+native.equilibrium.plane-admission,support/trial-normalization/2,difference,1,model,float,1.0,3ff0000000000000
+native.equilibrium.plane-admission,support/trial-normalization/2,difference,1,reference,float,1.0,3ff0000000000000
+native.equilibrium.plane-admission,support/trial-normalization/2,difference,1,inputs/label,text,liquid,
+native.equilibrium.plane-admission,support/trial-normalization/2,difference,1,inputs/support,float,0.0,0000000000000000
+native.equilibrium.plane-admission,support/trial-normalization/2,difference,1,inputs/seed,text,positive-neutral-base,
+native.equilibrium.plane-admission,support/trial-normalization/2,difference,1,inputs/evidence,text,no_resolved_descent,
+native.equilibrium.plane-admission,support/trial-normalization/2,difference,1,inputs/composition/0,float,1.0,3ff0000000000000
+native.equilibrium.plane-admission,support/trial-normalization/2,difference,1,inputs/composition/1,float,0.0,0000000000000000
+native.equilibrium.plane-admission,support/trial-normalization/2,difference,1,inputs/composition/2,float,0.0,0000000000000000
+native.equilibrium.plane-admission,support/trial-normalization/2,difference,1,inputs/association_floor,float,7.726289854223821e-11,3dd53ce4a4f34e51
+native.equilibrium.plane-admission,support/trial-normalization/2,difference,1,basis,text,Relationship,
+native.equilibrium.plane-admission,support/trial-normalization/2,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-admission,support/trial-normalization/2,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-admission,support/trial-normalization/2,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-admission,support/trial-normalization/2,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-admission,support/trial-normalization/2,difference,1,criterion,text,absolute,
+native.equilibrium.plane-admission,support/trial-normalization/2,difference,1,rule,text,absolute,
+native.equilibrium.plane-admission,support/trial-normalization/2,difference,1,atol,float,1e-12,3d719799812dea11
+native.equilibrium.plane-admission,support/trial-normalization/2,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-admission,support/trial-normalization/2,difference,1,verdict,bool,True,
+native.equilibrium.plane-admission,witness/trial-dual/2,difference,1,model,float,3.122502256758253e-16,3cb6800000000000
+native.equilibrium.plane-admission,witness/trial-dual/2,difference,1,reference,float,0.0,0000000000000000
+native.equilibrium.plane-admission,witness/trial-dual/2,difference,1,inputs/label,text,liquid,
+native.equilibrium.plane-admission,witness/trial-dual/2,difference,1,inputs/support,float,0.0,0000000000000000
+native.equilibrium.plane-admission,witness/trial-dual/2,difference,1,inputs/seed,text,positive-neutral-base,
+native.equilibrium.plane-admission,witness/trial-dual/2,difference,1,inputs/evidence,text,no_resolved_descent,
+native.equilibrium.plane-admission,witness/trial-dual/2,difference,1,inputs/composition/0,float,1.0,3ff0000000000000
+native.equilibrium.plane-admission,witness/trial-dual/2,difference,1,inputs/composition/1,float,0.0,0000000000000000
+native.equilibrium.plane-admission,witness/trial-dual/2,difference,1,inputs/composition/2,float,0.0,0000000000000000
+native.equilibrium.plane-admission,witness/trial-dual/2,difference,1,inputs/association_floor,float,7.726289854223821e-11,3dd53ce4a4f34e51
+native.equilibrium.plane-admission,witness/trial-dual/2,difference,1,basis,text,Relationship,
+native.equilibrium.plane-admission,witness/trial-dual/2,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-admission,witness/trial-dual/2,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-admission,witness/trial-dual/2,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-admission,witness/trial-dual/2,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-admission,witness/trial-dual/2,difference,1,criterion,text,absolute,
+native.equilibrium.plane-admission,witness/trial-dual/2,difference,1,rule,text,absolute,
+native.equilibrium.plane-admission,witness/trial-dual/2,difference,1,atol,float,1e-10,3ddb7cdfd9d7bdbb
+native.equilibrium.plane-admission,witness/trial-dual/2,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-admission,witness/trial-dual/2,difference,1,verdict,bool,True,
+native.equilibrium.plane-admission,support/trial-charge/3,difference,1,model,float,0.0,0000000000000000
+native.equilibrium.plane-admission,support/trial-charge/3,difference,1,reference,float,0.0,0000000000000000
+native.equilibrium.plane-admission,support/trial-charge/3,difference,1,inputs/label,text,vapor,
+native.equilibrium.plane-admission,support/trial-charge/3,difference,1,inputs/support,float,0.0,0000000000000000
+native.equilibrium.plane-admission,support/trial-charge/3,difference,1,inputs/seed,text,positive-neutral-base,
+native.equilibrium.plane-admission,support/trial-charge/3,difference,1,inputs/evidence,text,no_resolved_descent,
+native.equilibrium.plane-admission,support/trial-charge/3,difference,1,inputs/composition/0,float,1.0,3ff0000000000000
+native.equilibrium.plane-admission,support/trial-charge/3,difference,1,inputs/composition/1,float,0.0,0000000000000000
+native.equilibrium.plane-admission,support/trial-charge/3,difference,1,inputs/composition/2,float,0.0,0000000000000000
+native.equilibrium.plane-admission,support/trial-charge/3,difference,1,inputs/association_floor,float,2.769128954549158e-15,3ce8f12d385fe6f3
+native.equilibrium.plane-admission,support/trial-charge/3,difference,1,basis,text,Relationship,
+native.equilibrium.plane-admission,support/trial-charge/3,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-admission,support/trial-charge/3,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-admission,support/trial-charge/3,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-admission,support/trial-charge/3,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-admission,support/trial-charge/3,difference,1,criterion,text,absolute,
+native.equilibrium.plane-admission,support/trial-charge/3,difference,1,rule,text,absolute,
+native.equilibrium.plane-admission,support/trial-charge/3,difference,1,atol,float,1e-12,3d719799812dea11
+native.equilibrium.plane-admission,support/trial-charge/3,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-admission,support/trial-charge/3,difference,1,verdict,bool,True,
+native.equilibrium.plane-admission,support/trial-normalization/3,difference,1,model,float,1.0,3ff0000000000000
+native.equilibrium.plane-admission,support/trial-normalization/3,difference,1,reference,float,1.0,3ff0000000000000
+native.equilibrium.plane-admission,support/trial-normalization/3,difference,1,inputs/label,text,vapor,
+native.equilibrium.plane-admission,support/trial-normalization/3,difference,1,inputs/support,float,0.0,0000000000000000
+native.equilibrium.plane-admission,support/trial-normalization/3,difference,1,inputs/seed,text,positive-neutral-base,
+native.equilibrium.plane-admission,support/trial-normalization/3,difference,1,inputs/evidence,text,no_resolved_descent,
+native.equilibrium.plane-admission,support/trial-normalization/3,difference,1,inputs/composition/0,float,1.0,3ff0000000000000
+native.equilibrium.plane-admission,support/trial-normalization/3,difference,1,inputs/composition/1,float,0.0,0000000000000000
+native.equilibrium.plane-admission,support/trial-normalization/3,difference,1,inputs/composition/2,float,0.0,0000000000000000
+native.equilibrium.plane-admission,support/trial-normalization/3,difference,1,inputs/association_floor,float,2.769128954549158e-15,3ce8f12d385fe6f3
+native.equilibrium.plane-admission,support/trial-normalization/3,difference,1,basis,text,Relationship,
+native.equilibrium.plane-admission,support/trial-normalization/3,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-admission,support/trial-normalization/3,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-admission,support/trial-normalization/3,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-admission,support/trial-normalization/3,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-admission,support/trial-normalization/3,difference,1,criterion,text,absolute,
+native.equilibrium.plane-admission,support/trial-normalization/3,difference,1,rule,text,absolute,
+native.equilibrium.plane-admission,support/trial-normalization/3,difference,1,atol,float,1e-12,3d719799812dea11
+native.equilibrium.plane-admission,support/trial-normalization/3,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-admission,support/trial-normalization/3,difference,1,verdict,bool,True,
+native.equilibrium.plane-admission,witness/trial-dual/3,difference,1,model,float,0.0,0000000000000000
+native.equilibrium.plane-admission,witness/trial-dual/3,difference,1,reference,float,0.0,0000000000000000
+native.equilibrium.plane-admission,witness/trial-dual/3,difference,1,inputs/label,text,vapor,
+native.equilibrium.plane-admission,witness/trial-dual/3,difference,1,inputs/support,float,0.0,0000000000000000
+native.equilibrium.plane-admission,witness/trial-dual/3,difference,1,inputs/seed,text,positive-neutral-base,
+native.equilibrium.plane-admission,witness/trial-dual/3,difference,1,inputs/evidence,text,no_resolved_descent,
+native.equilibrium.plane-admission,witness/trial-dual/3,difference,1,inputs/composition/0,float,1.0,3ff0000000000000
+native.equilibrium.plane-admission,witness/trial-dual/3,difference,1,inputs/composition/1,float,0.0,0000000000000000
+native.equilibrium.plane-admission,witness/trial-dual/3,difference,1,inputs/composition/2,float,0.0,0000000000000000
+native.equilibrium.plane-admission,witness/trial-dual/3,difference,1,inputs/association_floor,float,2.769128954549158e-15,3ce8f12d385fe6f3
+native.equilibrium.plane-admission,witness/trial-dual/3,difference,1,basis,text,Relationship,
+native.equilibrium.plane-admission,witness/trial-dual/3,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-admission,witness/trial-dual/3,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-admission,witness/trial-dual/3,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-admission,witness/trial-dual/3,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-admission,witness/trial-dual/3,difference,1,criterion,text,absolute,
+native.equilibrium.plane-admission,witness/trial-dual/3,difference,1,rule,text,absolute,
+native.equilibrium.plane-admission,witness/trial-dual/3,difference,1,atol,float,1e-10,3ddb7cdfd9d7bdbb
+native.equilibrium.plane-admission,witness/trial-dual/3,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-admission,witness/trial-dual/3,difference,1,verdict,bool,True,
+native.equilibrium.plane-admission,support/physics-rejected/0,difference,1,model,float,1.0,3ff0000000000000
+native.equilibrium.plane-admission,support/physics-rejected/0,difference,1,reference,float,1.0,3ff0000000000000
+native.equilibrium.plane-admission,support/physics-rejected/0,difference,1,basis,text,Relationship,
+native.equilibrium.plane-admission,support/physics-rejected/0,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-admission,support/physics-rejected/0,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-admission,support/physics-rejected/0,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-admission,support/physics-rejected/0,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-admission,support/physics-rejected/0,difference,1,criterion,text,absolute,
+native.equilibrium.plane-admission,support/physics-rejected/0,difference,1,rule,text,absolute,
+native.equilibrium.plane-admission,support/physics-rejected/0,difference,1,atol,float,0.0,0000000000000000
+native.equilibrium.plane-admission,support/physics-rejected/0,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-admission,support/physics-rejected/0,difference,1,verdict,bool,True,
+native.equilibrium.plane-admission,support/physics-rejected/2,difference,1,model,float,1.0,3ff0000000000000
+native.equilibrium.plane-admission,support/physics-rejected/2,difference,1,reference,float,1.0,3ff0000000000000
+native.equilibrium.plane-admission,support/physics-rejected/2,difference,1,basis,text,Relationship,
+native.equilibrium.plane-admission,support/physics-rejected/2,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-admission,support/physics-rejected/2,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-admission,support/physics-rejected/2,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-admission,support/physics-rejected/2,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-admission,support/physics-rejected/2,difference,1,criterion,text,absolute,
+native.equilibrium.plane-admission,support/physics-rejected/2,difference,1,rule,text,absolute,
+native.equilibrium.plane-admission,support/physics-rejected/2,difference,1,atol,float,0.0,0000000000000000
+native.equilibrium.plane-admission,support/physics-rejected/2,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-admission,support/physics-rejected/2,difference,1,verdict,bool,True,
+native.equilibrium.plane-admission,support/physics-rejected/3,difference,1,model,float,1.0,3ff0000000000000
+native.equilibrium.plane-admission,support/physics-rejected/3,difference,1,reference,float,1.0,3ff0000000000000
+native.equilibrium.plane-admission,support/physics-rejected/3,difference,1,basis,text,Relationship,
+native.equilibrium.plane-admission,support/physics-rejected/3,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-admission,support/physics-rejected/3,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-admission,support/physics-rejected/3,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-admission,support/physics-rejected/3,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-admission,support/physics-rejected/3,difference,1,criterion,text,absolute,
+native.equilibrium.plane-admission,support/physics-rejected/3,difference,1,rule,text,absolute,
+native.equilibrium.plane-admission,support/physics-rejected/3,difference,1,atol,float,0.0,0000000000000000
+native.equilibrium.plane-admission,support/physics-rejected/3,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-admission,support/physics-rejected/3,difference,1,verdict,bool,True,
+native.equilibrium.plane-admission,support/absent-first-phase-charge/0,difference,1,model,float,0.0,0000000000000000
+native.equilibrium.plane-admission,support/absent-first-phase-charge/0,difference,1,reference,float,0.0,0000000000000000
+native.equilibrium.plane-admission,support/absent-first-phase-charge/0,difference,1,inputs/composition/0,float,0.9800000000000004,3fef5c28f5c28f60
+native.equilibrium.plane-admission,support/absent-first-phase-charge/0,difference,1,inputs/composition/1,float,0.00999999999999981,3f847ae147ae140d
+native.equilibrium.plane-admission,support/absent-first-phase-charge/0,difference,1,inputs/composition/2,float,0.00999999999999981,3f847ae147ae140d
+native.equilibrium.plane-admission,support/absent-first-phase-charge/0,difference,1,inputs/seed,text,positive-neutral-base,
+native.equilibrium.plane-admission,support/absent-first-phase-charge/0,difference,1,inputs/label,text,liquid,
+native.equilibrium.plane-admission,support/absent-first-phase-charge/0,difference,1,inputs/support/0,float,0.0,0000000000000000
+native.equilibrium.plane-admission,support/absent-first-phase-charge/0,difference,1,inputs/support/1,float,1.0,3ff0000000000000
+native.equilibrium.plane-admission,support/absent-first-phase-charge/0,difference,1,inputs/support/2,float,2.0,4000000000000000
+native.equilibrium.plane-admission,support/absent-first-phase-charge/0,difference,1,basis,text,Relationship,
+native.equilibrium.plane-admission,support/absent-first-phase-charge/0,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-admission,support/absent-first-phase-charge/0,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-admission,support/absent-first-phase-charge/0,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-admission,support/absent-first-phase-charge/0,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-admission,support/absent-first-phase-charge/0,difference,1,criterion,text,absolute,
+native.equilibrium.plane-admission,support/absent-first-phase-charge/0,difference,1,rule,text,absolute,
+native.equilibrium.plane-admission,support/absent-first-phase-charge/0,difference,1,atol,float,1e-12,3d719799812dea11
+native.equilibrium.plane-admission,support/absent-first-phase-charge/0,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-admission,support/absent-first-phase-charge/0,difference,1,verdict,bool,True,
+native.equilibrium.plane-admission,support/absent-first-phase-charge/1,difference,1,model,float,0.0,0000000000000000
+native.equilibrium.plane-admission,support/absent-first-phase-charge/1,difference,1,reference,float,0.0,0000000000000000
+native.equilibrium.plane-admission,support/absent-first-phase-charge/1,difference,1,inputs/composition/0,float,0.9800000000000001,3fef5c28f5c28f5d
+native.equilibrium.plane-admission,support/absent-first-phase-charge/1,difference,1,inputs/composition/1,float,0.00999999999999996,3f847ae147ae1464
+native.equilibrium.plane-admission,support/absent-first-phase-charge/1,difference,1,inputs/composition/2,float,0.00999999999999996,3f847ae147ae1464
+native.equilibrium.plane-admission,support/absent-first-phase-charge/1,difference,1,inputs/seed,text,near-pure-0,
+native.equilibrium.plane-admission,support/absent-first-phase-charge/1,difference,1,inputs/label,text,liquid,
+native.equilibrium.plane-admission,support/absent-first-phase-charge/1,difference,1,inputs/support/0,float,0.0,0000000000000000
+native.equilibrium.plane-admission,support/absent-first-phase-charge/1,difference,1,inputs/support/1,float,1.0,3ff0000000000000
+native.equilibrium.plane-admission,support/absent-first-phase-charge/1,difference,1,inputs/support/2,float,2.0,4000000000000000
+native.equilibrium.plane-admission,support/absent-first-phase-charge/1,difference,1,basis,text,Relationship,
+native.equilibrium.plane-admission,support/absent-first-phase-charge/1,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-admission,support/absent-first-phase-charge/1,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-admission,support/absent-first-phase-charge/1,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-admission,support/absent-first-phase-charge/1,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-admission,support/absent-first-phase-charge/1,difference,1,criterion,text,absolute,
+native.equilibrium.plane-admission,support/absent-first-phase-charge/1,difference,1,rule,text,absolute,
+native.equilibrium.plane-admission,support/absent-first-phase-charge/1,difference,1,atol,float,1e-12,3d719799812dea11
+native.equilibrium.plane-admission,support/absent-first-phase-charge/1,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-admission,support/absent-first-phase-charge/1,difference,1,verdict,bool,True,
+native.equilibrium.plane-admission,witness/charged-first-dual,difference,1,model,float,2.9999999999999996,4007ffffffffffff
+native.equilibrium.plane-admission,witness/charged-first-dual,difference,1,reference,float,3.0,4008000000000000
+native.equilibrium.plane-admission,witness/charged-first-dual,difference,1,basis,text,Relationship,
+native.equilibrium.plane-admission,witness/charged-first-dual,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-admission,witness/charged-first-dual,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-admission,witness/charged-first-dual,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-admission,witness/charged-first-dual,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-admission,witness/charged-first-dual,difference,1,criterion,text,absolute,
+native.equilibrium.plane-admission,witness/charged-first-dual,difference,1,rule,text,absolute,
+native.equilibrium.plane-admission,witness/charged-first-dual,difference,1,atol,float,1e-12,3d719799812dea11
+native.equilibrium.plane-admission,witness/charged-first-dual,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-admission,witness/charged-first-dual,difference,1,verdict,bool,True,
+native.equilibrium.plane-admission,witness/charged-first-stationary-dual,difference,1,model,float,5.773159728050814e-15,3cfa000000000000
+native.equilibrium.plane-admission,witness/charged-first-stationary-dual,difference,1,reference,float,-6.416180701742766e-16,bcc71de1d5aeb820
+native.equilibrium.plane-admission,witness/charged-first-stationary-dual,difference,1,basis,text,Relationship,
+native.equilibrium.plane-admission,witness/charged-first-stationary-dual,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.plane-admission,witness/charged-first-stationary-dual,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.plane-admission,witness/charged-first-stationary-dual,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.plane-admission,witness/charged-first-stationary-dual,difference,1,evidence_state,text,Complete,
+native.equilibrium.plane-admission,witness/charged-first-stationary-dual,difference,1,criterion,text,absolute,
+native.equilibrium.plane-admission,witness/charged-first-stationary-dual,difference,1,rule,text,absolute,
+native.equilibrium.plane-admission,witness/charged-first-stationary-dual,difference,1,atol,float,1e-10,3ddb7cdfd9d7bdbb
+native.equilibrium.plane-admission,witness/charged-first-stationary-dual,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.plane-admission,witness/charged-first-stationary-dual,difference,1,verdict,bool,True,
+native.equilibrium.normalized-reaction,reaction/normalized-affinity/0,difference,1,model,float,2.220446049250313e-15,3ce4000000000000
+native.equilibrium.normalized-reaction,reaction/normalized-affinity/0,difference,1,reference,float,0.0,0000000000000000
+native.equilibrium.normalized-reaction,reaction/normalized-affinity/0,difference,1,inputs/composition/0,float,0.8539210970961443,3feb5352562c8e61
+native.equilibrium.normalized-reaction,reaction/normalized-affinity/0,difference,1,inputs/composition/1,float,0.14607890290385578,3fc2b2b6a74dc67e
+native.equilibrium.normalized-reaction,reaction/normalized-affinity/0,difference,1,inputs/seed,text,positive-neutral-base,
+native.equilibrium.normalized-reaction,reaction/normalized-affinity/0,difference,1,basis,text,Relationship,
+native.equilibrium.normalized-reaction,reaction/normalized-affinity/0,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.normalized-reaction,reaction/normalized-affinity/0,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.normalized-reaction,reaction/normalized-affinity/0,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.normalized-reaction,reaction/normalized-affinity/0,difference,1,evidence_state,text,Complete,
+native.equilibrium.normalized-reaction,reaction/normalized-affinity/0,difference,1,criterion,text,absolute,
+native.equilibrium.normalized-reaction,reaction/normalized-affinity/0,difference,1,rule,text,absolute,
+native.equilibrium.normalized-reaction,reaction/normalized-affinity/0,difference,1,atol,float,1e-10,3ddb7cdfd9d7bdbb
+native.equilibrium.normalized-reaction,reaction/normalized-affinity/0,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.normalized-reaction,reaction/normalized-affinity/0,difference,1,verdict,bool,True,
+native.equilibrium.normalized-reaction,reaction/normalized-affinity/1,difference,1,model,float,2.220446049250313e-15,3ce4000000000000
+native.equilibrium.normalized-reaction,reaction/normalized-affinity/1,difference,1,reference,float,0.0,0000000000000000
+native.equilibrium.normalized-reaction,reaction/normalized-affinity/1,difference,1,inputs/composition/0,float,0.8539210970961443,3feb5352562c8e61
+native.equilibrium.normalized-reaction,reaction/normalized-affinity/1,difference,1,inputs/composition/1,float,0.14607890290385578,3fc2b2b6a74dc67e
+native.equilibrium.normalized-reaction,reaction/normalized-affinity/1,difference,1,inputs/seed,text,near-pure-0,
+native.equilibrium.normalized-reaction,reaction/normalized-affinity/1,difference,1,basis,text,Relationship,
+native.equilibrium.normalized-reaction,reaction/normalized-affinity/1,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.normalized-reaction,reaction/normalized-affinity/1,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.normalized-reaction,reaction/normalized-affinity/1,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.normalized-reaction,reaction/normalized-affinity/1,difference,1,evidence_state,text,Complete,
+native.equilibrium.normalized-reaction,reaction/normalized-affinity/1,difference,1,criterion,text,absolute,
+native.equilibrium.normalized-reaction,reaction/normalized-affinity/1,difference,1,rule,text,absolute,
+native.equilibrium.normalized-reaction,reaction/normalized-affinity/1,difference,1,atol,float,1e-10,3ddb7cdfd9d7bdbb
+native.equilibrium.normalized-reaction,reaction/normalized-affinity/1,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.normalized-reaction,reaction/normalized-affinity/1,difference,1,verdict,bool,True,
+native.equilibrium.normalized-reaction,reaction/normalized-affinity/2,difference,1,model,float,2.220446049250313e-15,3ce4000000000000
+native.equilibrium.normalized-reaction,reaction/normalized-affinity/2,difference,1,reference,float,0.0,0000000000000000
+native.equilibrium.normalized-reaction,reaction/normalized-affinity/2,difference,1,inputs/composition/0,float,0.8539210970961443,3feb5352562c8e61
+native.equilibrium.normalized-reaction,reaction/normalized-affinity/2,difference,1,inputs/composition/1,float,0.14607890290385578,3fc2b2b6a74dc67e
+native.equilibrium.normalized-reaction,reaction/normalized-affinity/2,difference,1,inputs/seed,text,near-pure-1,
+native.equilibrium.normalized-reaction,reaction/normalized-affinity/2,difference,1,basis,text,Relationship,
+native.equilibrium.normalized-reaction,reaction/normalized-affinity/2,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.normalized-reaction,reaction/normalized-affinity/2,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.normalized-reaction,reaction/normalized-affinity/2,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.normalized-reaction,reaction/normalized-affinity/2,difference,1,evidence_state,text,Complete,
+native.equilibrium.normalized-reaction,reaction/normalized-affinity/2,difference,1,criterion,text,absolute,
+native.equilibrium.normalized-reaction,reaction/normalized-affinity/2,difference,1,rule,text,absolute,
+native.equilibrium.normalized-reaction,reaction/normalized-affinity/2,difference,1,atol,float,1e-10,3ddb7cdfd9d7bdbb
+native.equilibrium.normalized-reaction,reaction/normalized-affinity/2,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.normalized-reaction,reaction/normalized-affinity/2,difference,1,verdict,bool,True,
+native.equilibrium.normalized-reaction,reaction/candidate-affinity,difference,1,model,float,2.220446049250313e-15,3ce4000000000000
+native.equilibrium.normalized-reaction,reaction/candidate-affinity,difference,1,reference,float,0.0,0000000000000000
+native.equilibrium.normalized-reaction,reaction/candidate-affinity,difference,1,basis,text,Relationship,
+native.equilibrium.normalized-reaction,reaction/candidate-affinity,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.normalized-reaction,reaction/candidate-affinity,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.normalized-reaction,reaction/candidate-affinity,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.normalized-reaction,reaction/candidate-affinity,difference,1,evidence_state,text,Complete,
+native.equilibrium.normalized-reaction,reaction/candidate-affinity,difference,1,criterion,text,absolute,
+native.equilibrium.normalized-reaction,reaction/candidate-affinity,difference,1,rule,text,absolute,
+native.equilibrium.normalized-reaction,reaction/candidate-affinity,difference,1,atol,float,1e-10,3ddb7cdfd9d7bdbb
+native.equilibrium.normalized-reaction,reaction/candidate-affinity,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.normalized-reaction,reaction/candidate-affinity,difference,1,verdict,bool,True,
+native.equilibrium.normalized-reaction,reaction/negative-normalized-affinity,difference,1,model,float,-0.10000000000000009,bfb99999999999a0
+native.equilibrium.normalized-reaction,reaction/negative-normalized-affinity,difference,1,reference,float,-0.1,bfb999999999999a
+native.equilibrium.normalized-reaction,reaction/negative-normalized-affinity,difference,1,basis,text,Relationship,
+native.equilibrium.normalized-reaction,reaction/negative-normalized-affinity,difference,1,method,text,native-thermodynamic-identity,
+native.equilibrium.normalized-reaction,reaction/negative-normalized-affinity,difference,1,claim,text,#223 numerical falsifier,
+native.equilibrium.normalized-reaction,reaction/negative-normalized-affinity,difference,1,judgment,text,Criterion satisfied,
+native.equilibrium.normalized-reaction,reaction/negative-normalized-affinity,difference,1,evidence_state,text,Complete,
+native.equilibrium.normalized-reaction,reaction/negative-normalized-affinity,difference,1,criterion,text,absolute,
+native.equilibrium.normalized-reaction,reaction/negative-normalized-affinity,difference,1,rule,text,absolute,
+native.equilibrium.normalized-reaction,reaction/negative-normalized-affinity,difference,1,atol,float,1e-15,3cd203af9ee75616
+native.equilibrium.normalized-reaction,reaction/negative-normalized-affinity,difference,1,rtol,float,0.0,0000000000000000
+native.equilibrium.normalized-reaction,reaction/negative-normalized-affinity,difference,1,verdict,bool,True,

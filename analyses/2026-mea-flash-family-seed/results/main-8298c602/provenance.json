@@ -1,0 +1,63 @@
+{
+  "release": "main-8298c6029ebb8b467929badc4a223c580ec591ab",
+  "wheel": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/build/issue-680-release-PRNBCX/epcsaft-0.2.0.dev0-cp313-cp313-manylinux_2_39_x86_64.whl",
+  "wheel_sha256": "8897a0caab9f2508ed642f42c8b5226957fbe7035ed7bfdad71e4166798785b3",
+  "engine_provenance": [
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/build/issue-680-release-PRNBCX/epcsaft-0.2.0.dev0-cp313-cp313-manylinux_2_39_x86_64.whl",
+    "8897a0caab9f2508ed642f42c8b5226957fbe7035ed7bfdad71e4166798785b3"
+  ],
+  "interpreter": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/build/issue-680-release-PRNBCX/venv/bin/python",
+  "engine_import": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/build/issue-680-release-PRNBCX/venv/lib/python3.13/site-packages/epcsaft/__init__.py",
+  "direct_url": {
+    "url": "file:///home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/build/issue-680-release-PRNBCX/epcsaft-0.2.0.dev0-cp313-cp313-manylinux_2_39_x86_64.whl",
+    "archive_info": {}
+  },
+  "environment": {
+    "EPCSAFT_HSL_LIBRARY": null,
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1"
+  },
+  "packages": {
+    "sympy": "1.14.0",
+    "annotated-types": "0.8.0",
+    "idaes-pse": "2.13.0",
+    "packaging": "26.3",
+    "cycler": "0.12.1",
+    "pillow": "13.0.0",
+    "contourpy": "1.4.0",
+    "click": "8.5.0",
+    "numpy": "2.5.4",
+    "networkx": "3.7",
+    "pandas": "3.0.6",
+    "mpmath": "1.3.0",
+    "pyparsing": "3.3.3",
+    "typing_extensions": "4.16.0",
+    "kiwisolver": "1.5.1",
+    "pyomo": "6.10.1",
+    "matplotlib": "3.11.2",
+    "fonttools": "4.67.0",
+    "six": "1.17.0",
+    "typing-inspection": "0.4.4",
+    "scipy": "1.18.1",
+    "platformdirs": "4.13.5",
+    "python-dateutil": "2.9.0.post0",
+    "pydantic": "2.14.1",
+    "Pint": "0.26.2",
+    "pydantic_core": "2.50.1",
+    "flexcache": "0.3",
+    "epcsaft": "0.2.0.dev0",
+    "flexparser": "0.4"
+  },
+  "commands": [
+    "scripts/family.py main-8298c602 results/main-8298c602/family.jsonl"
+  ],
+  "producer_sha256": {
+    "analyses/2026-mea-flash-family-seed/scripts/family.py": "4f17fd93b70ba50898bf115717156fc88901346013d120c8c8d6d986d8ce6b4c",
+    "analyses/2026-mea-flash-family-seed/scripts/family-points.txt": "6e1231d9506fd6dd9e965a64120ff952cebf1c4778da5d66cfb0f888e8b7f44b",
+    "analyses/2026-mea-flash-family-seed/scripts/render.py": "2fa79d2e96fa24d05af2bfd1d6134eb3a4b27147f3c725548d2012cdf04b283c",
+    "analyses/2026-mea-flash-family-seed/scripts/compare.py": "e600329743e9993b9ac827cacef028ec5a0c84af62a34b14aefce8f287a422c1"
+  },
+  "evidence_label": "numerical verification",
+  "review": "Independent delivered review and owner promotion pending; no manuscript use authorized"
+}

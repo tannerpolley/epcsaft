@@ -1,0 +1,86 @@
+---
+title: "Bülow Figure 1: literal sulfolane/CO2 model"
+format:
+  html:
+    embed-resources: true
+execute:
+  echo: false
+  cache: false
+  daemon: false
+---
+
+```{python}
+import json
+import pandas as pd
+import matplotlib.pyplot as plt
+from pathlib import Path
+from IPython.display import display
+rows = pd.read_csv('results/comparison.csv')
+probes = pd.read_csv('results/source-precision-probes.csv')
+diagnostics = json.loads(Path('results/diagnostics.json').read_text())
+identity = json.loads(Path('results/run-identity.json').read_text())
+counts = rows.outcome.value_counts()
+probe_range = probes.groupby('point').native_pressure_bar.agg(['min','max'])
+```
+
+The literal source model gives `{python} str(counts.get('pass', 0))` passing,
+`{python} str(counts.get('fail', 0))` failing and
+`{python} str(counts.get('undetermined', 0))` undetermined nominal comparisons.
+All `{python} str(len(rows))` nominal attempts and
+`{python} str(len(probes))` source-precision probes are retained.
+This is **numerical comparison against published model lines**, not comparison
+with experimental symbols or physical validation.
+
+The model uses Table 1's literal segment counts, diameters and dispersion
+energies, the Table 3 binary interaction, one donor/one acceptor on each
+component and zero association energies. Unlike-site edges also have zero
+energy, so their association strength is zero under the source combining
+rule. No familiar alternative CO2 diameter or fitted interaction is substituted.
+The native declared bubble calculation solves pressure and vapor composition;
+its zero incipient-vapor amount is intentional.
+
+```{python}
+display(rows)
+display(probe_range)
+display(probes)
+fig, ax = plt.subplots(figsize=(7,4))
+for T, r in rows.groupby('T_K'):
+    ax.errorbar(r.x_sulfolane, r.reference_pressure_bar, yerr=r.tolerance_bar, fmt='o', label=f'{T:g} K source model')
+    ax.scatter(r.x_sulfolane, r.native_pressure_bar, marker='x', label=f'{T:g} K native')
+ax.set(xlabel='Liquid sulfolane mole fraction', ylabel='Bubble pressure / bar')
+ax.legend()
+fig.tight_layout()
+plt.show()
+display(pd.json_normalize(diagnostics))
+```
+
+The discrete points compare with the calibrated orange and green strokes of
+Figure 1, printed p.6331, DOI `10.1021/acs.iecr.1c00176`. Error bars are the
+fixed vertical raster allowance, **not experimental uncertainty**. Horizontal
+readback uncertainty and printed-temperature rounding are tested separately
+by the retained native probes. No line is interpolated between these sparse
+points. The original raster, calibration, extraction configuration, pixel
+coordinates and inspected overlay remain under `inputs/source/figure-1/`.
+
+The nominal absolute errors span `{python} f'{rows.error_bar.min():.4g}'` to
+`{python} f'{rows.error_bar.max():.4g}'` bar, compared with the fixed
+`{python} str(rows.tolerance_bar.iloc[0])` bar allowance. The finite probe
+ranges remain far above the source references; these declared precision probes
+cannot explain the disagreement. Their extrema are not rigorous uncertainty
+bounds and never enlarge the nominal allowance. Agreement of native pressure
+and fugacity equations establishes numerical closure only. Density ordering
+between phases of different composition is not imposed; distinct states,
+positive normalized compositions and mechanical slopes remain visible.
+
+The discrepancy belongs to the **literal declared source model comparison**.
+The current evidence does not isolate a particular printed coefficient as its
+cause, and no parameter correction is authorized. Exact fractional source
+temperatures and a second independent extraction remain unavailable. Other
+Figure 1 curves, Figures 2–10 and reactive MDEA comparisons remain uncompleted;
+adjacent Kuranov total pressures cannot replace CO2 partial-pressure data.
+
+Engine identity: `{python} str(identity['engine'])`.
+Native library SHA-256: `{python} identity['native_library_sha256']`.
+The exact declared model and source hashes are in `results/run-identity.json`.
+Historical files remain separate. This notebook awaits independent delivered
+review and is not promoted for manuscript use.

@@ -1,0 +1,13 @@
+{
+ "wheel_sha256": "684b213ac8065fbe35950ca8998a33a5c05264fad5b174560110f112d60ef8ba",
+ "label": "before",
+ "omp_num_threads": "1",
+ "failures": [
+  "329.39 K 110900.0 Pa CO2 2.43232",
+  "Bottinger2008_state_042 pre_refit",
+  "Bottinger2008_state_046 pre_refit",
+  "Matin2012_state_016 pre_refit"
+ ],
+ "worst_route_difference": 1.475788988037903e-13,
+ "criterion_relative": 1e-08
+}

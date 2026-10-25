@@ -1,0 +1,23 @@
+{
+  "reaktoro": "2.13.0",
+  "source": "Song et al. 2010, W3AX2GHK, Tables 1 and 5, pp. 1288 and 1292",
+  "binary_parameters": {
+    "Li+": [
+      0.20818,
+      -0.07264,
+      -0.004241
+    ],
+    "Mg+2": [
+      0.35235,
+      1.6815,
+      0.00519
+    ]
+  },
+  "theta_Li_Mg": 0.010196,
+  "psi_Li_Mg_Cl": -0.0005947,
+  "meaning": "Native Pitzer with Song coefficients, unequal-charge mixing and native water properties; not a measurement",
+  "temperature_K": 298.15,
+  "pressure_Pa": 100000.0,
+  "trace_molality_mol_kg": 1e-06,
+  "declaration_sha256": "7a51ef0526a89635daece010d95f0f13cf20e1542fb0e1b20cfe4147bbe170ca"
+}

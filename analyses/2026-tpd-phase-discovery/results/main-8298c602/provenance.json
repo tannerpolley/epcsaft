@@ -1,0 +1,78 @@
+{
+  "release": "main-8298c6029ebb8b467929badc4a223c580ec591ab",
+  "wheel": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/build/issue-680-release-PRNBCX/epcsaft-0.2.0.dev0-cp313-cp313-manylinux_2_39_x86_64.whl",
+  "wheel_sha256": "8897a0caab9f2508ed642f42c8b5226957fbe7035ed7bfdad71e4166798785b3",
+  "engine_provenance": [
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/build/issue-680-release-PRNBCX/epcsaft-0.2.0.dev0-cp313-cp313-manylinux_2_39_x86_64.whl",
+    "8897a0caab9f2508ed642f42c8b5226957fbe7035ed7bfdad71e4166798785b3"
+  ],
+  "interpreter": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/build/issue-680-release-PRNBCX/venv/bin/python",
+  "engine_import": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/build/issue-680-release-PRNBCX/venv/lib/python3.13/site-packages/epcsaft/__init__.py",
+  "direct_url": {
+    "url": "file:///home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/build/issue-680-release-PRNBCX/epcsaft-0.2.0.dev0-cp313-cp313-manylinux_2_39_x86_64.whl",
+    "archive_info": {}
+  },
+  "environment": {
+    "EPCSAFT_HSL_LIBRARY": null,
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1"
+  },
+  "packages": {
+    "sympy": "1.14.0",
+    "annotated-types": "0.8.0",
+    "idaes-pse": "2.13.0",
+    "packaging": "26.3",
+    "cycler": "0.12.1",
+    "pillow": "13.0.0",
+    "contourpy": "1.4.0",
+    "click": "8.5.0",
+    "numpy": "2.5.4",
+    "networkx": "3.7",
+    "pandas": "3.0.6",
+    "mpmath": "1.3.0",
+    "pyparsing": "3.3.3",
+    "typing_extensions": "4.16.0",
+    "kiwisolver": "1.5.1",
+    "pyomo": "6.10.1",
+    "matplotlib": "3.11.2",
+    "fonttools": "4.67.0",
+    "six": "1.17.0",
+    "typing-inspection": "0.4.4",
+    "scipy": "1.18.1",
+    "platformdirs": "4.13.5",
+    "python-dateutil": "2.9.0.post0",
+    "pydantic": "2.14.1",
+    "Pint": "0.26.2",
+    "pydantic_core": "2.50.1",
+    "flexcache": "0.3",
+    "epcsaft": "0.2.0.dev0",
+    "flexparser": "0.4"
+  },
+  "commands": [
+    "scripts/qualify.py --stage neutral --output results/main-8298c602",
+    "scripts/feos_compare.py --output results/main-8298c602 (existing FeOs site-packages)",
+    "scripts/qualify.py --stage ionic --output results/main-8298c602"
+  ],
+  "producer_sha256": {
+    "analyses/2026-tpd-phase-discovery/scripts/neutral.py": "11ea6c20cab99a63b10cb2559f124a1c7d71ed16f1d6bad203e5f7c7fb29ff6e",
+    "analyses/2026-tpd-phase-discovery/scripts/asl_native_trace.cpp": "0ddc8287c7d1d98bb2ea4a2b65ca3462554d2c8d9fd0228b3db4170ca00abc88",
+    "analyses/2026-tpd-phase-discovery/scripts/phase_domain_probe.py": "9cd10ad46ba07546ead136055df778bde62f758668a9bc5b9de25c08615b9d3f",
+    "analyses/2026-tpd-phase-discovery/scripts/replay_compare.py": "876d17747a216f8eeaf0cd415a0c56eafff40908827430c3714369d47a4d4789",
+    "analyses/2026-tpd-phase-discovery/scripts/retain_charged.py": "28d5cb3f47f680514102aec9b11f690f0c6989f19bf38e3e24110dacc00a9ebc",
+    "analyses/2026-tpd-phase-discovery/scripts/declared_start_cost.py": "605bbd7fdf16641603be87bd32d466710514c4b1937224853099d85acf8de005",
+    "analyses/2026-tpd-phase-discovery/scripts/feos_compare.py": "f3d7e28bf0f72de8f31ff90f8e1e76509adc806d0b9c0920d7f67c09b147d1e7",
+    "analyses/2026-tpd-phase-discovery/scripts/qualify.py": "609c631bacfbd41d92d0f54248a5c0436037decbb01423d8c122d74f8c7be5a7",
+    "analyses/2026-tpd-phase-discovery/scripts/present.py": "4f6c13f6aac3adb07f41564c8e201e609032270b0da11e985d982e9fff00dc5e",
+    "analyses/2026-tpd-phase-discovery/scripts/asl_trace.py": "bf92f03e96409e1290a2bfaef0be61d82490747a7e95863e41a80c2326be4056",
+    "analyses/2026-tpd-phase-discovery/scripts/physical_comparison.py": "eebd39e167d16d0978354682f5dc183562c1f463d703e15e2855701b266bf323",
+    "analyses/2026-tpd-phase-discovery/scripts/permittivity.py": "bd9fe06e747c13a3c063fc844f6056d1bbb945926a9c19b28addcb249c3c6fbe",
+    "analyses/2026-tpd-phase-discovery/scripts/asl_native_trace.py": "08d280821d812d05b696a3358d4ee7dd0382706c4c37c667c92b06d12bb1c7ab",
+    "analyses/2026-tpd-phase-discovery/scripts/charged_trial_probe.cpp": "a79c574b4476e6b7a9ae5bf730641a9482de88cdd6e0de94724e68c39e613056",
+    "analyses/2026-tpd-phase-discovery/scripts/retain_native.py": "ee3a51afaed59019ef87608c5871432206857ad96b6f1ea9ebd9ef494d4dcc3c",
+    "analyses/2026-tpd-phase-discovery/scripts/baseline.py": "aab4c8de340158479fd4d30bffc5793b3cf96c48a4edb0c113b5b4cebdc62a10",
+    "analyses/2026-tpd-phase-discovery/scripts/costs.py": "501cb4881ad54c31eb14e9967c99e28f8510d15ef62e31bcfc7fe62c02d4012d"
+  },
+  "evidence_label": "numerical verification",
+  "review": "Independent delivered review and owner promotion pending; no manuscript use authorized"
+}

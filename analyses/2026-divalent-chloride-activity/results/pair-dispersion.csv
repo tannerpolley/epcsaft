@@ -1,0 +1,1741 @@
+packet_version,component_a,component_b,k_ij_explicit,effective_dispersion_factor,paper_dispersion_factor,disposition,locator
+1,ammonium-cation,barium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,ammonium-cation,bromate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,ammonium-cation,bromide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,ammonium-cation,calcium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,ammonium-cation,cesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,ammonium-cation,chlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,ammonium-cation,chloride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,ammonium-cation,choline-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,ammonium-cation,chromium-iii-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,ammonium-cation,cobalt-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,ammonium-cation,copper-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,ammonium-cation,dihydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,ammonium-cation,fluoride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,ammonium-cation,hydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,ammonium-cation,hydronium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,ammonium-cation,hydroxide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,ammonium-cation,iodide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,ammonium-cation,iron-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,ammonium-cation,lithium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,ammonium-cation,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,ammonium-cation,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,ammonium-cation,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,ammonium-cation,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,ammonium-cation,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,ammonium-cation,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,ammonium-cation,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,ammonium-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,ammonium-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,ammonium-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,barium-cation,bromate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,barium-cation,bromide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,barium-cation,calcium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,barium-cation,cesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,barium-cation,chlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,barium-cation,chloride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,barium-cation,choline-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,barium-cation,chromium-iii-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,barium-cation,cobalt-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,barium-cation,copper-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,barium-cation,dihydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,barium-cation,fluoride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,barium-cation,hydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,barium-cation,hydronium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,barium-cation,hydroxide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,barium-cation,iodide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,barium-cation,iron-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,barium-cation,lithium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,barium-cation,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,barium-cation,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,barium-cation,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,barium-cation,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,barium-cation,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,barium-cation,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,barium-cation,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,barium-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,barium-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,barium-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,bromate-anion,bromide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,bromate-anion,calcium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,bromate-anion,cesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,bromate-anion,chlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,bromate-anion,chloride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,bromate-anion,choline-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,bromate-anion,chromium-iii-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,bromate-anion,cobalt-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,bromate-anion,copper-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,bromate-anion,dihydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,bromate-anion,fluoride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,bromate-anion,hydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,bromate-anion,hydronium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,bromate-anion,hydroxide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,bromate-anion,iodide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,bromate-anion,iron-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,bromate-anion,lithium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,bromate-anion,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,bromate-anion,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,bromate-anion,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,bromate-anion,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,bromate-anion,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,bromate-anion,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,bromate-anion,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,bromate-anion,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,bromate-anion,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,bromate-anion,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,bromide-anion,calcium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,bromide-anion,cesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,bromide-anion,chlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,bromide-anion,chloride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,bromide-anion,choline-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,bromide-anion,chromium-iii-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,bromide-anion,cobalt-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,bromide-anion,copper-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,bromide-anion,dihydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,bromide-anion,fluoride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,bromide-anion,hydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,bromide-anion,hydronium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,bromide-anion,hydroxide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,bromide-anion,iodide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,bromide-anion,iron-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,bromide-anion,lithium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,bromide-anion,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,bromide-anion,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,bromide-anion,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,bromide-anion,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,bromide-anion,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,bromide-anion,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,bromide-anion,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,bromide-anion,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,bromide-anion,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,bromide-anion,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,calcium-cation,cesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,calcium-cation,chlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,calcium-cation,chloride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,calcium-cation,choline-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,calcium-cation,chromium-iii-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,calcium-cation,cobalt-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,calcium-cation,copper-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,calcium-cation,dihydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,calcium-cation,fluoride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,calcium-cation,hydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,calcium-cation,hydronium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,calcium-cation,hydroxide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,calcium-cation,iodide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,calcium-cation,iron-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,calcium-cation,lithium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,calcium-cation,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,calcium-cation,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,calcium-cation,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,calcium-cation,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,calcium-cation,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,calcium-cation,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,calcium-cation,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,calcium-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,calcium-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,calcium-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,cesium-cation,chlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,cesium-cation,chloride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,cesium-cation,choline-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,cesium-cation,chromium-iii-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,cesium-cation,cobalt-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,cesium-cation,copper-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,cesium-cation,dihydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,cesium-cation,fluoride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,cesium-cation,hydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,cesium-cation,hydronium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,cesium-cation,hydroxide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,cesium-cation,iodide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,cesium-cation,iron-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,cesium-cation,lithium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,cesium-cation,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,cesium-cation,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,cesium-cation,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,cesium-cation,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,cesium-cation,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,cesium-cation,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,cesium-cation,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,cesium-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,cesium-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,cesium-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chlorate-anion,chloride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chlorate-anion,choline-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chlorate-anion,chromium-iii-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chlorate-anion,cobalt-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chlorate-anion,copper-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chlorate-anion,dihydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chlorate-anion,fluoride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chlorate-anion,hydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chlorate-anion,hydronium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chlorate-anion,hydroxide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chlorate-anion,iodide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chlorate-anion,iron-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chlorate-anion,lithium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chlorate-anion,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chlorate-anion,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chlorate-anion,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chlorate-anion,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chlorate-anion,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chlorate-anion,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chlorate-anion,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chlorate-anion,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chlorate-anion,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chlorate-anion,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chloride-anion,choline-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chloride-anion,chromium-iii-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chloride-anion,cobalt-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chloride-anion,copper-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chloride-anion,dihydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chloride-anion,fluoride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chloride-anion,hydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chloride-anion,hydronium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chloride-anion,hydroxide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chloride-anion,iodide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chloride-anion,iron-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chloride-anion,lithium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chloride-anion,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chloride-anion,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chloride-anion,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chloride-anion,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chloride-anion,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chloride-anion,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chloride-anion,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chloride-anion,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chloride-anion,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chloride-anion,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,choline-cation,chromium-iii-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,choline-cation,cobalt-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,choline-cation,copper-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,choline-cation,dihydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,choline-cation,fluoride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,choline-cation,hydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,choline-cation,hydronium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,choline-cation,hydroxide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,choline-cation,iodide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,choline-cation,iron-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,choline-cation,lithium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,choline-cation,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,choline-cation,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,choline-cation,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,choline-cation,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,choline-cation,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,choline-cation,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,choline-cation,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,choline-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,choline-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,choline-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chromium-iii-cation,cobalt-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chromium-iii-cation,copper-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chromium-iii-cation,dihydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chromium-iii-cation,fluoride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chromium-iii-cation,hydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chromium-iii-cation,hydronium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chromium-iii-cation,hydroxide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chromium-iii-cation,iodide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chromium-iii-cation,iron-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chromium-iii-cation,lithium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chromium-iii-cation,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chromium-iii-cation,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chromium-iii-cation,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chromium-iii-cation,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chromium-iii-cation,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chromium-iii-cation,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chromium-iii-cation,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chromium-iii-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chromium-iii-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,chromium-iii-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,cobalt-cation,copper-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,cobalt-cation,dihydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,cobalt-cation,fluoride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,cobalt-cation,hydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,cobalt-cation,hydronium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,cobalt-cation,hydroxide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,cobalt-cation,iodide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,cobalt-cation,iron-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,cobalt-cation,lithium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,cobalt-cation,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,cobalt-cation,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,cobalt-cation,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,cobalt-cation,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,cobalt-cation,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,cobalt-cation,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,cobalt-cation,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,cobalt-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,cobalt-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,cobalt-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,copper-cation,dihydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,copper-cation,fluoride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,copper-cation,hydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,copper-cation,hydronium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,copper-cation,hydroxide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,copper-cation,iodide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,copper-cation,iron-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,copper-cation,lithium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,copper-cation,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,copper-cation,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,copper-cation,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,copper-cation,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,copper-cation,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,copper-cation,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,copper-cation,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,copper-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,copper-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,copper-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,dihydrogen-phosphate-anion,fluoride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,dihydrogen-phosphate-anion,hydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,dihydrogen-phosphate-anion,hydronium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,dihydrogen-phosphate-anion,hydroxide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,dihydrogen-phosphate-anion,iodide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,dihydrogen-phosphate-anion,iron-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,dihydrogen-phosphate-anion,lithium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,dihydrogen-phosphate-anion,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,dihydrogen-phosphate-anion,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,dihydrogen-phosphate-anion,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,dihydrogen-phosphate-anion,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,dihydrogen-phosphate-anion,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,dihydrogen-phosphate-anion,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,dihydrogen-phosphate-anion,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,dihydrogen-phosphate-anion,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,dihydrogen-phosphate-anion,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,dihydrogen-phosphate-anion,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,fluoride-anion,hydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,fluoride-anion,hydronium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,fluoride-anion,hydroxide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,fluoride-anion,iodide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,fluoride-anion,iron-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,fluoride-anion,lithium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,fluoride-anion,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,fluoride-anion,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,fluoride-anion,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,fluoride-anion,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,fluoride-anion,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,fluoride-anion,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,fluoride-anion,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,fluoride-anion,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,fluoride-anion,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,fluoride-anion,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,hydrogen-phosphate-anion,hydronium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,hydrogen-phosphate-anion,hydroxide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,hydrogen-phosphate-anion,iodide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,hydrogen-phosphate-anion,iron-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,hydrogen-phosphate-anion,lithium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,hydrogen-phosphate-anion,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,hydrogen-phosphate-anion,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,hydrogen-phosphate-anion,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,hydrogen-phosphate-anion,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,hydrogen-phosphate-anion,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,hydrogen-phosphate-anion,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,hydrogen-phosphate-anion,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,hydrogen-phosphate-anion,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,hydrogen-phosphate-anion,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,hydrogen-phosphate-anion,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,hydronium-cation,hydroxide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,hydronium-cation,iodide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,hydronium-cation,iron-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,hydronium-cation,lithium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,hydronium-cation,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,hydronium-cation,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,hydronium-cation,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,hydronium-cation,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,hydronium-cation,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,hydronium-cation,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,hydronium-cation,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,hydronium-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,hydronium-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,hydronium-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,hydroxide-anion,iodide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,hydroxide-anion,iron-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,hydroxide-anion,lithium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,hydroxide-anion,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,hydroxide-anion,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,hydroxide-anion,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,hydroxide-anion,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,hydroxide-anion,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,hydroxide-anion,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,hydroxide-anion,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,hydroxide-anion,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,hydroxide-anion,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,hydroxide-anion,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,iodide-anion,iron-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,iodide-anion,lithium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,iodide-anion,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,iodide-anion,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,iodide-anion,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,iodide-anion,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,iodide-anion,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,iodide-anion,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,iodide-anion,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,iodide-anion,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,iodide-anion,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,iodide-anion,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,iron-cation,lithium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,iron-cation,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,iron-cation,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,iron-cation,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,iron-cation,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,iron-cation,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,iron-cation,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,iron-cation,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,iron-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,iron-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,iron-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,lithium-cation,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,lithium-cation,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,lithium-cation,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,lithium-cation,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,lithium-cation,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,lithium-cation,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,lithium-cation,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,lithium-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,lithium-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,lithium-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,magnesium-cation,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,magnesium-cation,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,magnesium-cation,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,magnesium-cation,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,magnesium-cation,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,magnesium-cation,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,magnesium-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,magnesium-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,magnesium-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,nitrate-anion,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,nitrate-anion,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,nitrate-anion,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,nitrate-anion,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,nitrate-anion,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,nitrate-anion,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,nitrate-anion,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,nitrate-anion,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,perchlorate-anion,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,perchlorate-anion,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,perchlorate-anion,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,perchlorate-anion,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,perchlorate-anion,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,perchlorate-anion,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,perchlorate-anion,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,potassium-cation,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,potassium-cation,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,potassium-cation,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,potassium-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,potassium-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,potassium-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,rubidium-cation,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,rubidium-cation,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,rubidium-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,rubidium-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,rubidium-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,sodium-cation,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,sodium-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,sodium-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,sodium-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,strontium-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,strontium-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,strontium-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,sulfate-anion,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,sulfate-anion,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+1,thiocyanate-anion,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,ammonium-cation,barium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,ammonium-cation,bromate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,ammonium-cation,bromide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,ammonium-cation,calcium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,ammonium-cation,cesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,ammonium-cation,chlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,ammonium-cation,chloride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,ammonium-cation,choline-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,ammonium-cation,chromium-iii-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,ammonium-cation,cobalt-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,ammonium-cation,copper-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,ammonium-cation,dihydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,ammonium-cation,fluoride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,ammonium-cation,hydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,ammonium-cation,hydronium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,ammonium-cation,hydroxide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,ammonium-cation,iodide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,ammonium-cation,iron-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,ammonium-cation,lithium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,ammonium-cation,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,ammonium-cation,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,ammonium-cation,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,ammonium-cation,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,ammonium-cation,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,ammonium-cation,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,ammonium-cation,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,ammonium-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,ammonium-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,ammonium-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,barium-cation,bromate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,barium-cation,bromide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,barium-cation,calcium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,barium-cation,cesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,barium-cation,chlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,barium-cation,chloride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,barium-cation,choline-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,barium-cation,chromium-iii-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,barium-cation,cobalt-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,barium-cation,copper-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,barium-cation,dihydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,barium-cation,fluoride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,barium-cation,hydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,barium-cation,hydronium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,barium-cation,hydroxide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,barium-cation,iodide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,barium-cation,iron-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,barium-cation,lithium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,barium-cation,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,barium-cation,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,barium-cation,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,barium-cation,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,barium-cation,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,barium-cation,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,barium-cation,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,barium-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,barium-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,barium-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,bromate-anion,bromide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,bromate-anion,calcium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,bromate-anion,cesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,bromate-anion,chlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,bromate-anion,chloride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,bromate-anion,choline-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,bromate-anion,chromium-iii-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,bromate-anion,cobalt-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,bromate-anion,copper-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,bromate-anion,dihydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,bromate-anion,fluoride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,bromate-anion,hydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,bromate-anion,hydronium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,bromate-anion,hydroxide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,bromate-anion,iodide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,bromate-anion,iron-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,bromate-anion,lithium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,bromate-anion,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,bromate-anion,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,bromate-anion,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,bromate-anion,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,bromate-anion,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,bromate-anion,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,bromate-anion,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,bromate-anion,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,bromate-anion,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,bromate-anion,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,bromide-anion,calcium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,bromide-anion,cesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,bromide-anion,chlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,bromide-anion,chloride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,bromide-anion,choline-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,bromide-anion,chromium-iii-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,bromide-anion,cobalt-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,bromide-anion,copper-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,bromide-anion,dihydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,bromide-anion,fluoride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,bromide-anion,hydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,bromide-anion,hydronium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,bromide-anion,hydroxide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,bromide-anion,iodide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,bromide-anion,iron-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,bromide-anion,lithium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,bromide-anion,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,bromide-anion,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,bromide-anion,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,bromide-anion,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,bromide-anion,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,bromide-anion,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,bromide-anion,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,bromide-anion,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,bromide-anion,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,bromide-anion,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,calcium-cation,cesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,calcium-cation,chlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,calcium-cation,chloride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,calcium-cation,choline-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,calcium-cation,chromium-iii-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,calcium-cation,cobalt-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,calcium-cation,copper-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,calcium-cation,dihydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,calcium-cation,fluoride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,calcium-cation,hydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,calcium-cation,hydronium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,calcium-cation,hydroxide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,calcium-cation,iodide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,calcium-cation,iron-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,calcium-cation,lithium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,calcium-cation,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,calcium-cation,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,calcium-cation,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,calcium-cation,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,calcium-cation,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,calcium-cation,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,calcium-cation,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,calcium-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,calcium-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,calcium-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,cesium-cation,chlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,cesium-cation,chloride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,cesium-cation,choline-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,cesium-cation,chromium-iii-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,cesium-cation,cobalt-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,cesium-cation,copper-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,cesium-cation,dihydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,cesium-cation,fluoride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,cesium-cation,hydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,cesium-cation,hydronium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,cesium-cation,hydroxide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,cesium-cation,iodide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,cesium-cation,iron-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,cesium-cation,lithium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,cesium-cation,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,cesium-cation,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,cesium-cation,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,cesium-cation,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,cesium-cation,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,cesium-cation,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,cesium-cation,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,cesium-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,cesium-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,cesium-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chlorate-anion,chloride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chlorate-anion,choline-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chlorate-anion,chromium-iii-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chlorate-anion,cobalt-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chlorate-anion,copper-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chlorate-anion,dihydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chlorate-anion,fluoride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chlorate-anion,hydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chlorate-anion,hydronium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chlorate-anion,hydroxide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chlorate-anion,iodide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chlorate-anion,iron-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chlorate-anion,lithium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chlorate-anion,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chlorate-anion,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chlorate-anion,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chlorate-anion,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chlorate-anion,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chlorate-anion,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chlorate-anion,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chlorate-anion,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chlorate-anion,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chlorate-anion,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chloride-anion,choline-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chloride-anion,chromium-iii-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chloride-anion,cobalt-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chloride-anion,copper-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chloride-anion,dihydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chloride-anion,fluoride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chloride-anion,hydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chloride-anion,hydronium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chloride-anion,hydroxide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chloride-anion,iodide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chloride-anion,iron-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chloride-anion,lithium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chloride-anion,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chloride-anion,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chloride-anion,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chloride-anion,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chloride-anion,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chloride-anion,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chloride-anion,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chloride-anion,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chloride-anion,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chloride-anion,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,choline-cation,chromium-iii-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,choline-cation,cobalt-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,choline-cation,copper-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,choline-cation,dihydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,choline-cation,fluoride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,choline-cation,hydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,choline-cation,hydronium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,choline-cation,hydroxide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,choline-cation,iodide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,choline-cation,iron-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,choline-cation,lithium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,choline-cation,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,choline-cation,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,choline-cation,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,choline-cation,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,choline-cation,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,choline-cation,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,choline-cation,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,choline-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,choline-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,choline-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chromium-iii-cation,cobalt-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chromium-iii-cation,copper-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chromium-iii-cation,dihydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chromium-iii-cation,fluoride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chromium-iii-cation,hydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chromium-iii-cation,hydronium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chromium-iii-cation,hydroxide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chromium-iii-cation,iodide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chromium-iii-cation,iron-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chromium-iii-cation,lithium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chromium-iii-cation,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chromium-iii-cation,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chromium-iii-cation,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chromium-iii-cation,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chromium-iii-cation,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chromium-iii-cation,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chromium-iii-cation,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chromium-iii-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chromium-iii-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,chromium-iii-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,cobalt-cation,copper-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,cobalt-cation,dihydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,cobalt-cation,fluoride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,cobalt-cation,hydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,cobalt-cation,hydronium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,cobalt-cation,hydroxide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,cobalt-cation,iodide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,cobalt-cation,iron-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,cobalt-cation,lithium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,cobalt-cation,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,cobalt-cation,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,cobalt-cation,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,cobalt-cation,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,cobalt-cation,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,cobalt-cation,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,cobalt-cation,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,cobalt-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,cobalt-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,cobalt-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,copper-cation,dihydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,copper-cation,fluoride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,copper-cation,hydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,copper-cation,hydronium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,copper-cation,hydroxide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,copper-cation,iodide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,copper-cation,iron-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,copper-cation,lithium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,copper-cation,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,copper-cation,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,copper-cation,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,copper-cation,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,copper-cation,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,copper-cation,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,copper-cation,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,copper-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,copper-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,copper-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,dihydrogen-phosphate-anion,fluoride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,dihydrogen-phosphate-anion,hydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,dihydrogen-phosphate-anion,hydronium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,dihydrogen-phosphate-anion,hydroxide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,dihydrogen-phosphate-anion,iodide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,dihydrogen-phosphate-anion,iron-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,dihydrogen-phosphate-anion,lithium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,dihydrogen-phosphate-anion,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,dihydrogen-phosphate-anion,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,dihydrogen-phosphate-anion,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,dihydrogen-phosphate-anion,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,dihydrogen-phosphate-anion,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,dihydrogen-phosphate-anion,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,dihydrogen-phosphate-anion,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,dihydrogen-phosphate-anion,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,dihydrogen-phosphate-anion,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,dihydrogen-phosphate-anion,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,fluoride-anion,hydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,fluoride-anion,hydronium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,fluoride-anion,hydroxide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,fluoride-anion,iodide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,fluoride-anion,iron-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,fluoride-anion,lithium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,fluoride-anion,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,fluoride-anion,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,fluoride-anion,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,fluoride-anion,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,fluoride-anion,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,fluoride-anion,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,fluoride-anion,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,fluoride-anion,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,fluoride-anion,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,fluoride-anion,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,hydrogen-phosphate-anion,hydronium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,hydrogen-phosphate-anion,hydroxide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,hydrogen-phosphate-anion,iodide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,hydrogen-phosphate-anion,iron-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,hydrogen-phosphate-anion,lithium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,hydrogen-phosphate-anion,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,hydrogen-phosphate-anion,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,hydrogen-phosphate-anion,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,hydrogen-phosphate-anion,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,hydrogen-phosphate-anion,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,hydrogen-phosphate-anion,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,hydrogen-phosphate-anion,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,hydrogen-phosphate-anion,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,hydrogen-phosphate-anion,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,hydrogen-phosphate-anion,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,hydronium-cation,hydroxide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,hydronium-cation,iodide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,hydronium-cation,iron-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,hydronium-cation,lithium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,hydronium-cation,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,hydronium-cation,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,hydronium-cation,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,hydronium-cation,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,hydronium-cation,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,hydronium-cation,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,hydronium-cation,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,hydronium-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,hydronium-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,hydronium-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,hydroxide-anion,iodide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,hydroxide-anion,iron-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,hydroxide-anion,lithium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,hydroxide-anion,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,hydroxide-anion,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,hydroxide-anion,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,hydroxide-anion,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,hydroxide-anion,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,hydroxide-anion,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,hydroxide-anion,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,hydroxide-anion,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,hydroxide-anion,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,hydroxide-anion,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,iodide-anion,iron-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,iodide-anion,lithium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,iodide-anion,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,iodide-anion,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,iodide-anion,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,iodide-anion,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,iodide-anion,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,iodide-anion,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,iodide-anion,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,iodide-anion,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,iodide-anion,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,iodide-anion,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,iron-cation,lithium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,iron-cation,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,iron-cation,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,iron-cation,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,iron-cation,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,iron-cation,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,iron-cation,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,iron-cation,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,iron-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,iron-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,iron-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,lithium-cation,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,lithium-cation,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,lithium-cation,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,lithium-cation,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,lithium-cation,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,lithium-cation,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,lithium-cation,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,lithium-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,lithium-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,lithium-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,magnesium-cation,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,magnesium-cation,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,magnesium-cation,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,magnesium-cation,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,magnesium-cation,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,magnesium-cation,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,magnesium-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,magnesium-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,magnesium-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,nitrate-anion,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,nitrate-anion,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,nitrate-anion,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,nitrate-anion,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,nitrate-anion,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,nitrate-anion,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,nitrate-anion,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,nitrate-anion,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,perchlorate-anion,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,perchlorate-anion,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,perchlorate-anion,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,perchlorate-anion,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,perchlorate-anion,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,perchlorate-anion,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,perchlorate-anion,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,potassium-cation,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,potassium-cation,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,potassium-cation,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,potassium-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,potassium-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,potassium-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,rubidium-cation,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,rubidium-cation,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,rubidium-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,rubidium-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,rubidium-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,sodium-cation,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,sodium-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,sodium-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,sodium-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,strontium-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,strontium-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,strontium-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,sulfate-anion,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,sulfate-anion,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+2,thiocyanate-anion,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,ammonium-cation,barium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,ammonium-cation,bromate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,ammonium-cation,bromide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,ammonium-cation,calcium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,ammonium-cation,cesium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,ammonium-cation,chlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,ammonium-cation,chloride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,ammonium-cation,choline-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,ammonium-cation,chromium-iii-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,ammonium-cation,cobalt-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,ammonium-cation,copper-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,ammonium-cation,dihydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,ammonium-cation,fluoride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,ammonium-cation,hydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,ammonium-cation,hydronium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,ammonium-cation,hydroxide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,ammonium-cation,iodide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,ammonium-cation,iron-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,ammonium-cation,lithium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,ammonium-cation,magnesium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,ammonium-cation,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,ammonium-cation,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,ammonium-cation,potassium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,ammonium-cation,rubidium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,ammonium-cation,sodium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,ammonium-cation,strontium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,ammonium-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,ammonium-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,ammonium-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,barium-cation,bromate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,barium-cation,bromide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,barium-cation,calcium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,barium-cation,cesium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,barium-cation,chlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,barium-cation,chloride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,barium-cation,choline-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,barium-cation,chromium-iii-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,barium-cation,cobalt-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,barium-cation,copper-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,barium-cation,dihydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,barium-cation,fluoride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,barium-cation,hydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,barium-cation,hydronium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,barium-cation,hydroxide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,barium-cation,iodide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,barium-cation,iron-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,barium-cation,lithium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,barium-cation,magnesium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,barium-cation,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,barium-cation,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,barium-cation,potassium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,barium-cation,rubidium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,barium-cation,sodium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,barium-cation,strontium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,barium-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,barium-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,barium-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,bromate-anion,bromide-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,bromate-anion,calcium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,bromate-anion,cesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,bromate-anion,chlorate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,bromate-anion,chloride-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,bromate-anion,choline-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,bromate-anion,chromium-iii-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,bromate-anion,cobalt-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,bromate-anion,copper-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,bromate-anion,dihydrogen-phosphate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,bromate-anion,fluoride-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,bromate-anion,hydrogen-phosphate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,bromate-anion,hydronium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,bromate-anion,hydroxide-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,bromate-anion,iodide-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,bromate-anion,iron-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,bromate-anion,lithium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,bromate-anion,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,bromate-anion,nitrate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,bromate-anion,perchlorate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,bromate-anion,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,bromate-anion,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,bromate-anion,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,bromate-anion,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,bromate-anion,sulfate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,bromate-anion,thiocyanate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,bromate-anion,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,bromide-anion,calcium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,bromide-anion,cesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,bromide-anion,chlorate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,bromide-anion,chloride-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,bromide-anion,choline-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,bromide-anion,chromium-iii-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,bromide-anion,cobalt-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,bromide-anion,copper-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,bromide-anion,dihydrogen-phosphate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,bromide-anion,fluoride-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,bromide-anion,hydrogen-phosphate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,bromide-anion,hydronium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,bromide-anion,hydroxide-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,bromide-anion,iodide-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,bromide-anion,iron-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,bromide-anion,lithium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,bromide-anion,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,bromide-anion,nitrate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,bromide-anion,perchlorate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,bromide-anion,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,bromide-anion,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,bromide-anion,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,bromide-anion,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,bromide-anion,sulfate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,bromide-anion,thiocyanate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,bromide-anion,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,calcium-cation,cesium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,calcium-cation,chlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,calcium-cation,chloride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,calcium-cation,choline-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,calcium-cation,chromium-iii-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,calcium-cation,cobalt-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,calcium-cation,copper-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,calcium-cation,dihydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,calcium-cation,fluoride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,calcium-cation,hydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,calcium-cation,hydronium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,calcium-cation,hydroxide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,calcium-cation,iodide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,calcium-cation,iron-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,calcium-cation,lithium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,calcium-cation,magnesium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,calcium-cation,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,calcium-cation,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,calcium-cation,potassium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,calcium-cation,rubidium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,calcium-cation,sodium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,calcium-cation,strontium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,calcium-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,calcium-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,calcium-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,cesium-cation,chlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,cesium-cation,chloride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,cesium-cation,choline-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,cesium-cation,chromium-iii-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,cesium-cation,cobalt-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,cesium-cation,copper-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,cesium-cation,dihydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,cesium-cation,fluoride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,cesium-cation,hydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,cesium-cation,hydronium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,cesium-cation,hydroxide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,cesium-cation,iodide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,cesium-cation,iron-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,cesium-cation,lithium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,cesium-cation,magnesium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,cesium-cation,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,cesium-cation,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,cesium-cation,potassium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,cesium-cation,rubidium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,cesium-cation,sodium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,cesium-cation,strontium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,cesium-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,cesium-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,cesium-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,chlorate-anion,chloride-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,chlorate-anion,choline-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,chlorate-anion,chromium-iii-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,chlorate-anion,cobalt-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,chlorate-anion,copper-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,chlorate-anion,dihydrogen-phosphate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,chlorate-anion,fluoride-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,chlorate-anion,hydrogen-phosphate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,chlorate-anion,hydronium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,chlorate-anion,hydroxide-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,chlorate-anion,iodide-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,chlorate-anion,iron-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,chlorate-anion,lithium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,chlorate-anion,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,chlorate-anion,nitrate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,chlorate-anion,perchlorate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,chlorate-anion,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,chlorate-anion,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,chlorate-anion,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,chlorate-anion,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,chlorate-anion,sulfate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,chlorate-anion,thiocyanate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,chlorate-anion,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,chloride-anion,choline-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,chloride-anion,chromium-iii-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,chloride-anion,cobalt-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,chloride-anion,copper-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,chloride-anion,dihydrogen-phosphate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,chloride-anion,fluoride-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,chloride-anion,hydrogen-phosphate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,chloride-anion,hydronium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,chloride-anion,hydroxide-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,chloride-anion,iodide-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,chloride-anion,iron-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,chloride-anion,lithium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,chloride-anion,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,chloride-anion,nitrate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,chloride-anion,perchlorate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,chloride-anion,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,chloride-anion,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,chloride-anion,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,chloride-anion,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,chloride-anion,sulfate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,chloride-anion,thiocyanate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,chloride-anion,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,choline-cation,chromium-iii-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,choline-cation,cobalt-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,choline-cation,copper-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,choline-cation,dihydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,choline-cation,fluoride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,choline-cation,hydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,choline-cation,hydronium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,choline-cation,hydroxide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,choline-cation,iodide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,choline-cation,iron-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,choline-cation,lithium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,choline-cation,magnesium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,choline-cation,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,choline-cation,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,choline-cation,potassium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,choline-cation,rubidium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,choline-cation,sodium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,choline-cation,strontium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,choline-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,choline-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,choline-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,chromium-iii-cation,cobalt-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,chromium-iii-cation,copper-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,chromium-iii-cation,dihydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,chromium-iii-cation,fluoride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,chromium-iii-cation,hydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,chromium-iii-cation,hydronium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,chromium-iii-cation,hydroxide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,chromium-iii-cation,iodide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,chromium-iii-cation,iron-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,chromium-iii-cation,lithium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,chromium-iii-cation,magnesium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,chromium-iii-cation,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,chromium-iii-cation,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,chromium-iii-cation,potassium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,chromium-iii-cation,rubidium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,chromium-iii-cation,sodium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,chromium-iii-cation,strontium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,chromium-iii-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,chromium-iii-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,chromium-iii-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,cobalt-cation,copper-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,cobalt-cation,dihydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,cobalt-cation,fluoride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,cobalt-cation,hydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,cobalt-cation,hydronium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,cobalt-cation,hydroxide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,cobalt-cation,iodide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,cobalt-cation,iron-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,cobalt-cation,lithium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,cobalt-cation,magnesium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,cobalt-cation,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,cobalt-cation,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,cobalt-cation,potassium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,cobalt-cation,rubidium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,cobalt-cation,sodium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,cobalt-cation,strontium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,cobalt-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,cobalt-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,cobalt-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,copper-cation,dihydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,copper-cation,fluoride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,copper-cation,hydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,copper-cation,hydronium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,copper-cation,hydroxide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,copper-cation,iodide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,copper-cation,iron-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,copper-cation,lithium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,copper-cation,magnesium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,copper-cation,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,copper-cation,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,copper-cation,potassium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,copper-cation,rubidium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,copper-cation,sodium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,copper-cation,strontium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,copper-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,copper-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,copper-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,dihydrogen-phosphate-anion,fluoride-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,dihydrogen-phosphate-anion,hydrogen-phosphate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,dihydrogen-phosphate-anion,hydronium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,dihydrogen-phosphate-anion,hydroxide-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,dihydrogen-phosphate-anion,iodide-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,dihydrogen-phosphate-anion,iron-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,dihydrogen-phosphate-anion,lithium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,dihydrogen-phosphate-anion,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,dihydrogen-phosphate-anion,nitrate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,dihydrogen-phosphate-anion,perchlorate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,dihydrogen-phosphate-anion,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,dihydrogen-phosphate-anion,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,dihydrogen-phosphate-anion,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,dihydrogen-phosphate-anion,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,dihydrogen-phosphate-anion,sulfate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,dihydrogen-phosphate-anion,thiocyanate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,dihydrogen-phosphate-anion,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,fluoride-anion,hydrogen-phosphate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,fluoride-anion,hydronium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,fluoride-anion,hydroxide-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,fluoride-anion,iodide-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,fluoride-anion,iron-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,fluoride-anion,lithium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,fluoride-anion,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,fluoride-anion,nitrate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,fluoride-anion,perchlorate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,fluoride-anion,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,fluoride-anion,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,fluoride-anion,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,fluoride-anion,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,fluoride-anion,sulfate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,fluoride-anion,thiocyanate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,fluoride-anion,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,hydrogen-phosphate-anion,hydronium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,hydrogen-phosphate-anion,hydroxide-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,hydrogen-phosphate-anion,iodide-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,hydrogen-phosphate-anion,iron-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,hydrogen-phosphate-anion,lithium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,hydrogen-phosphate-anion,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,hydrogen-phosphate-anion,nitrate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,hydrogen-phosphate-anion,perchlorate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,hydrogen-phosphate-anion,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,hydrogen-phosphate-anion,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,hydrogen-phosphate-anion,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,hydrogen-phosphate-anion,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,hydrogen-phosphate-anion,sulfate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,hydrogen-phosphate-anion,thiocyanate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,hydrogen-phosphate-anion,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,hydronium-cation,hydroxide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,hydronium-cation,iodide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,hydronium-cation,iron-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,hydronium-cation,lithium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,hydronium-cation,magnesium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,hydronium-cation,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,hydronium-cation,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,hydronium-cation,potassium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,hydronium-cation,rubidium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,hydronium-cation,sodium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,hydronium-cation,strontium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,hydronium-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,hydronium-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,hydronium-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,hydroxide-anion,iodide-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,hydroxide-anion,iron-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,hydroxide-anion,lithium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,hydroxide-anion,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,hydroxide-anion,nitrate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,hydroxide-anion,perchlorate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,hydroxide-anion,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,hydroxide-anion,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,hydroxide-anion,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,hydroxide-anion,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,hydroxide-anion,sulfate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,hydroxide-anion,thiocyanate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,hydroxide-anion,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,iodide-anion,iron-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,iodide-anion,lithium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,iodide-anion,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,iodide-anion,nitrate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,iodide-anion,perchlorate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,iodide-anion,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,iodide-anion,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,iodide-anion,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,iodide-anion,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,iodide-anion,sulfate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,iodide-anion,thiocyanate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,iodide-anion,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,iron-cation,lithium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,iron-cation,magnesium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,iron-cation,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,iron-cation,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,iron-cation,potassium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,iron-cation,rubidium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,iron-cation,sodium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,iron-cation,strontium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,iron-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,iron-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,iron-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,lithium-cation,magnesium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,lithium-cation,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,lithium-cation,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,lithium-cation,potassium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,lithium-cation,rubidium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,lithium-cation,sodium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,lithium-cation,strontium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,lithium-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,lithium-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,lithium-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,magnesium-cation,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,magnesium-cation,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,magnesium-cation,potassium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,magnesium-cation,rubidium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,magnesium-cation,sodium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,magnesium-cation,strontium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,magnesium-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,magnesium-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,magnesium-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,nitrate-anion,perchlorate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,nitrate-anion,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,nitrate-anion,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,nitrate-anion,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,nitrate-anion,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,nitrate-anion,sulfate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,nitrate-anion,thiocyanate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,nitrate-anion,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,perchlorate-anion,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,perchlorate-anion,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,perchlorate-anion,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,perchlorate-anion,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,perchlorate-anion,sulfate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,perchlorate-anion,thiocyanate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,perchlorate-anion,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,potassium-cation,rubidium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,potassium-cation,sodium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,potassium-cation,strontium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,potassium-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,potassium-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,potassium-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,rubidium-cation,sodium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,rubidium-cation,strontium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,rubidium-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,rubidium-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,rubidium-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,sodium-cation,strontium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,sodium-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,sodium-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,sodium-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,strontium-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,strontium-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,strontium-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,sulfate-anion,thiocyanate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+3,sulfate-anion,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+3,thiocyanate-anion,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,ammonium-cation,barium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,ammonium-cation,bromate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,ammonium-cation,bromide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,ammonium-cation,calcium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,ammonium-cation,cesium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,ammonium-cation,chlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,ammonium-cation,chloride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,ammonium-cation,choline-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,ammonium-cation,chromium-iii-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,ammonium-cation,cobalt-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,ammonium-cation,copper-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,ammonium-cation,dihydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,ammonium-cation,fluoride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,ammonium-cation,hydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,ammonium-cation,hydronium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,ammonium-cation,hydroxide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,ammonium-cation,iodide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,ammonium-cation,iron-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,ammonium-cation,lithium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,ammonium-cation,magnesium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,ammonium-cation,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,ammonium-cation,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,ammonium-cation,potassium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,ammonium-cation,rubidium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,ammonium-cation,sodium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,ammonium-cation,strontium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,ammonium-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,ammonium-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,ammonium-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,barium-cation,bromate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,barium-cation,bromide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,barium-cation,calcium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,barium-cation,cesium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,barium-cation,chlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,barium-cation,chloride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,barium-cation,choline-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,barium-cation,chromium-iii-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,barium-cation,cobalt-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,barium-cation,copper-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,barium-cation,dihydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,barium-cation,fluoride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,barium-cation,hydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,barium-cation,hydronium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,barium-cation,hydroxide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,barium-cation,iodide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,barium-cation,iron-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,barium-cation,lithium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,barium-cation,magnesium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,barium-cation,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,barium-cation,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,barium-cation,potassium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,barium-cation,rubidium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,barium-cation,sodium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,barium-cation,strontium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,barium-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,barium-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,barium-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,bromate-anion,bromide-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,bromate-anion,calcium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,bromate-anion,cesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,bromate-anion,chlorate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,bromate-anion,chloride-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,bromate-anion,choline-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,bromate-anion,chromium-iii-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,bromate-anion,cobalt-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,bromate-anion,copper-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,bromate-anion,dihydrogen-phosphate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,bromate-anion,fluoride-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,bromate-anion,hydrogen-phosphate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,bromate-anion,hydronium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,bromate-anion,hydroxide-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,bromate-anion,iodide-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,bromate-anion,iron-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,bromate-anion,lithium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,bromate-anion,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,bromate-anion,nitrate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,bromate-anion,perchlorate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,bromate-anion,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,bromate-anion,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,bromate-anion,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,bromate-anion,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,bromate-anion,sulfate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,bromate-anion,thiocyanate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,bromate-anion,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,bromide-anion,calcium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,bromide-anion,cesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,bromide-anion,chlorate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,bromide-anion,chloride-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,bromide-anion,choline-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,bromide-anion,chromium-iii-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,bromide-anion,cobalt-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,bromide-anion,copper-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,bromide-anion,dihydrogen-phosphate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,bromide-anion,fluoride-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,bromide-anion,hydrogen-phosphate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,bromide-anion,hydronium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,bromide-anion,hydroxide-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,bromide-anion,iodide-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,bromide-anion,iron-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,bromide-anion,lithium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,bromide-anion,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,bromide-anion,nitrate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,bromide-anion,perchlorate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,bromide-anion,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,bromide-anion,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,bromide-anion,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,bromide-anion,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,bromide-anion,sulfate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,bromide-anion,thiocyanate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,bromide-anion,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,calcium-cation,cesium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,calcium-cation,chlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,calcium-cation,chloride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,calcium-cation,choline-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,calcium-cation,chromium-iii-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,calcium-cation,cobalt-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,calcium-cation,copper-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,calcium-cation,dihydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,calcium-cation,fluoride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,calcium-cation,hydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,calcium-cation,hydronium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,calcium-cation,hydroxide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,calcium-cation,iodide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,calcium-cation,iron-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,calcium-cation,lithium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,calcium-cation,magnesium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,calcium-cation,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,calcium-cation,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,calcium-cation,potassium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,calcium-cation,rubidium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,calcium-cation,sodium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,calcium-cation,strontium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,calcium-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,calcium-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,calcium-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,cesium-cation,chlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,cesium-cation,chloride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,cesium-cation,choline-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,cesium-cation,chromium-iii-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,cesium-cation,cobalt-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,cesium-cation,copper-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,cesium-cation,dihydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,cesium-cation,fluoride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,cesium-cation,hydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,cesium-cation,hydronium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,cesium-cation,hydroxide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,cesium-cation,iodide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,cesium-cation,iron-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,cesium-cation,lithium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,cesium-cation,magnesium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,cesium-cation,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,cesium-cation,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,cesium-cation,potassium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,cesium-cation,rubidium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,cesium-cation,sodium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,cesium-cation,strontium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,cesium-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,cesium-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,cesium-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,chlorate-anion,chloride-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,chlorate-anion,choline-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,chlorate-anion,chromium-iii-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,chlorate-anion,cobalt-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,chlorate-anion,copper-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,chlorate-anion,dihydrogen-phosphate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,chlorate-anion,fluoride-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,chlorate-anion,hydrogen-phosphate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,chlorate-anion,hydronium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,chlorate-anion,hydroxide-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,chlorate-anion,iodide-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,chlorate-anion,iron-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,chlorate-anion,lithium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,chlorate-anion,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,chlorate-anion,nitrate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,chlorate-anion,perchlorate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,chlorate-anion,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,chlorate-anion,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,chlorate-anion,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,chlorate-anion,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,chlorate-anion,sulfate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,chlorate-anion,thiocyanate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,chlorate-anion,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,chloride-anion,choline-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,chloride-anion,chromium-iii-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,chloride-anion,cobalt-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,chloride-anion,copper-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,chloride-anion,dihydrogen-phosphate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,chloride-anion,fluoride-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,chloride-anion,hydrogen-phosphate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,chloride-anion,hydronium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,chloride-anion,hydroxide-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,chloride-anion,iodide-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,chloride-anion,iron-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,chloride-anion,lithium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,chloride-anion,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,chloride-anion,nitrate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,chloride-anion,perchlorate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,chloride-anion,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,chloride-anion,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,chloride-anion,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,chloride-anion,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,chloride-anion,sulfate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,chloride-anion,thiocyanate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,chloride-anion,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,choline-cation,chromium-iii-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,choline-cation,cobalt-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,choline-cation,copper-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,choline-cation,dihydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,choline-cation,fluoride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,choline-cation,hydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,choline-cation,hydronium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,choline-cation,hydroxide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,choline-cation,iodide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,choline-cation,iron-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,choline-cation,lithium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,choline-cation,magnesium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,choline-cation,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,choline-cation,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,choline-cation,potassium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,choline-cation,rubidium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,choline-cation,sodium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,choline-cation,strontium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,choline-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,choline-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,choline-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,chromium-iii-cation,cobalt-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,chromium-iii-cation,copper-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,chromium-iii-cation,dihydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,chromium-iii-cation,fluoride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,chromium-iii-cation,hydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,chromium-iii-cation,hydronium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,chromium-iii-cation,hydroxide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,chromium-iii-cation,iodide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,chromium-iii-cation,iron-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,chromium-iii-cation,lithium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,chromium-iii-cation,magnesium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,chromium-iii-cation,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,chromium-iii-cation,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,chromium-iii-cation,potassium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,chromium-iii-cation,rubidium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,chromium-iii-cation,sodium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,chromium-iii-cation,strontium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,chromium-iii-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,chromium-iii-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,chromium-iii-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,cobalt-cation,copper-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,cobalt-cation,dihydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,cobalt-cation,fluoride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,cobalt-cation,hydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,cobalt-cation,hydronium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,cobalt-cation,hydroxide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,cobalt-cation,iodide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,cobalt-cation,iron-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,cobalt-cation,lithium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,cobalt-cation,magnesium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,cobalt-cation,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,cobalt-cation,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,cobalt-cation,potassium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,cobalt-cation,rubidium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,cobalt-cation,sodium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,cobalt-cation,strontium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,cobalt-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,cobalt-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,cobalt-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,copper-cation,dihydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,copper-cation,fluoride-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,copper-cation,hydrogen-phosphate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,copper-cation,hydronium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,copper-cation,hydroxide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,copper-cation,iodide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,copper-cation,iron-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,copper-cation,lithium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,copper-cation,magnesium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,copper-cation,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,copper-cation,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,copper-cation,potassium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,copper-cation,rubidium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,copper-cation,sodium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,copper-cation,strontium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,copper-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,copper-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,copper-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,dihydrogen-phosphate-anion,fluoride-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,dihydrogen-phosphate-anion,hydrogen-phosphate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,dihydrogen-phosphate-anion,hydronium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,dihydrogen-phosphate-anion,hydroxide-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,dihydrogen-phosphate-anion,iodide-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,dihydrogen-phosphate-anion,iron-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,dihydrogen-phosphate-anion,lithium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,dihydrogen-phosphate-anion,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,dihydrogen-phosphate-anion,nitrate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,dihydrogen-phosphate-anion,perchlorate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,dihydrogen-phosphate-anion,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,dihydrogen-phosphate-anion,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,dihydrogen-phosphate-anion,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,dihydrogen-phosphate-anion,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,dihydrogen-phosphate-anion,sulfate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,dihydrogen-phosphate-anion,thiocyanate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,dihydrogen-phosphate-anion,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,fluoride-anion,hydrogen-phosphate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,fluoride-anion,hydronium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,fluoride-anion,hydroxide-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,fluoride-anion,iodide-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,fluoride-anion,iron-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,fluoride-anion,lithium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,fluoride-anion,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,fluoride-anion,nitrate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,fluoride-anion,perchlorate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,fluoride-anion,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,fluoride-anion,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,fluoride-anion,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,fluoride-anion,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,fluoride-anion,sulfate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,fluoride-anion,thiocyanate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,fluoride-anion,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,hydrogen-phosphate-anion,hydronium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,hydrogen-phosphate-anion,hydroxide-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,hydrogen-phosphate-anion,iodide-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,hydrogen-phosphate-anion,iron-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,hydrogen-phosphate-anion,lithium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,hydrogen-phosphate-anion,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,hydrogen-phosphate-anion,nitrate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,hydrogen-phosphate-anion,perchlorate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,hydrogen-phosphate-anion,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,hydrogen-phosphate-anion,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,hydrogen-phosphate-anion,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,hydrogen-phosphate-anion,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,hydrogen-phosphate-anion,sulfate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,hydrogen-phosphate-anion,thiocyanate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,hydrogen-phosphate-anion,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,hydronium-cation,hydroxide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,hydronium-cation,iodide-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,hydronium-cation,iron-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,hydronium-cation,lithium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,hydronium-cation,magnesium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,hydronium-cation,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,hydronium-cation,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,hydronium-cation,potassium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,hydronium-cation,rubidium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,hydronium-cation,sodium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,hydronium-cation,strontium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,hydronium-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,hydronium-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,hydronium-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,hydroxide-anion,iodide-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,hydroxide-anion,iron-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,hydroxide-anion,lithium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,hydroxide-anion,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,hydroxide-anion,nitrate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,hydroxide-anion,perchlorate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,hydroxide-anion,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,hydroxide-anion,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,hydroxide-anion,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,hydroxide-anion,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,hydroxide-anion,sulfate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,hydroxide-anion,thiocyanate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,hydroxide-anion,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,iodide-anion,iron-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,iodide-anion,lithium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,iodide-anion,magnesium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,iodide-anion,nitrate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,iodide-anion,perchlorate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,iodide-anion,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,iodide-anion,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,iodide-anion,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,iodide-anion,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,iodide-anion,sulfate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,iodide-anion,thiocyanate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,iodide-anion,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,iron-cation,lithium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,iron-cation,magnesium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,iron-cation,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,iron-cation,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,iron-cation,potassium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,iron-cation,rubidium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,iron-cation,sodium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,iron-cation,strontium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,iron-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,iron-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,iron-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,lithium-cation,magnesium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,lithium-cation,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,lithium-cation,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,lithium-cation,potassium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,lithium-cation,rubidium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,lithium-cation,sodium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,lithium-cation,strontium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,lithium-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,lithium-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,lithium-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,magnesium-cation,nitrate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,magnesium-cation,perchlorate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,magnesium-cation,potassium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,magnesium-cation,rubidium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,magnesium-cation,sodium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,magnesium-cation,strontium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,magnesium-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,magnesium-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,magnesium-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,nitrate-anion,perchlorate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,nitrate-anion,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,nitrate-anion,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,nitrate-anion,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,nitrate-anion,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,nitrate-anion,sulfate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,nitrate-anion,thiocyanate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,nitrate-anion,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,perchlorate-anion,potassium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,perchlorate-anion,rubidium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,perchlorate-anion,sodium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,perchlorate-anion,strontium-cation,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,perchlorate-anion,sulfate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,perchlorate-anion,thiocyanate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,perchlorate-anion,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,potassium-cation,rubidium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,potassium-cation,sodium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,potassium-cation,strontium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,potassium-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,potassium-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,potassium-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,rubidium-cation,sodium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,rubidium-cation,strontium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,rubidium-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,rubidium-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,rubidium-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,sodium-cation,strontium-cation,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,sodium-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,sodium-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,sodium-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,strontium-cation,sulfate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,strontium-cation,thiocyanate-anion,1.0,0.0,0.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,strontium-cation,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,sulfate-anion,thiocyanate-anion,,0.0,0.0,same sign excluded,Held2008 p.88 after Eq.6; Section3 p.89
+4,sulfate-anion,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89
+4,thiocyanate-anion,water,0.0,1.0,1.0,matches,Held2008 p.88 after Eq.6; Section3 p.89

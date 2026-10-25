@@ -1,0 +1,13 @@
+{
+  "jacobian_condition": 1026.8003858639127,
+  "first_divergence_evaluation": 5,
+  "parameter_shift_first_divergence": 5.2575757026948796e-11,
+  "seeded_same_point_residual_difference": 1.163107342152969e-09,
+  "seeded_same_point_evaluations": [
+    22,
+    33
+  ],
+  "seeded_gauss_newton_distance": 1.8276531556868142e-11,
+  "cold_gauss_newton_distance": 1.4084236817223178e-11,
+  "source": "traces from a local uncommitted logging build (trace-patch.py), controls 1e-15, 1e-14, 1e-14"
+}

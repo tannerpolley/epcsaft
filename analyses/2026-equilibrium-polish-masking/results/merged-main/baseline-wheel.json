@@ -1,0 +1,8 @@
+{
+  "path": "build/issue-272-floor/baseline-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+  "sha256": "dad141bae630ce8eef63106ba2ae3714d994a5c1543928b455f4ba8ecf464adf",
+  "states_path": "analyses/2026-equilibrium-polish-masking/results/merged-main/baseline-states.csv",
+  "states_sha256": "35dc50d3579191c6e46376e3c1b53e0b179273e3fa53ecbac80436707587c0dc",
+  "inputs_path": "analyses/2026-equilibrium-polish-masking/results/resumed/inputs.json",
+  "inputs_sha256": "577bd90565f348a5652cab8d4492a2cc646c4412e4121559a56ceed07a4dd06a"
+}

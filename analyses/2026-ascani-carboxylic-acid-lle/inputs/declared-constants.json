@@ -1,0 +1,21 @@
+{
+ "tolerances": {
+  "pH_against_esi_model": 0.005,
+  "K_against_esi_model_relative": 0.01,
+  "row": 1e-10,
+  "charge_mol": 1e-12,
+  "density_log_affinity": 1e-8,
+  "reference_terminal_change": 5e-5,
+  "coarse_fine_interpolation": 1e-4
+ },
+ "reference_limit_molalities_mol_per_kg": [1e-12, 1e-14],
+ "pKw_iapws_r11_07": {
+  "value": 13.9945,
+  "water_density_kg_m3": 997.047,
+  "source": "IAPWS R11-07 (Bandura and Lvov 2006) at 298.15 K; IAPWS-95 water density at 0.1 MPa"
+ },
+ "kij_T_water_toluene_per_K": {
+  "value": 0.000726,
+  "source": "ESI Table S3"
+ }
+}

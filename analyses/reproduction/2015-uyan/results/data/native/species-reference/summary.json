@@ -1,0 +1,41 @@
+{
+  "source_row_count": 30,
+  "evaluated_row_count": 30,
+  "failed_row_count": 0,
+  "maximum_original_row": 8.348877145181177e-14,
+  "comparisons": 240,
+  "misses": 210,
+  "misses_by_quantity": {
+    "grepe_total_pressure_kpa": 30,
+    "grepe_co2_partial_pressure_kpa": 30,
+    "liquid_density_mol_m3": 30,
+    "vapor_density_mol_m3": 30,
+    "vapor_water_mole_fraction": 30,
+    "vapor_mdea_mole_fraction": 30,
+    "vapor_co2_mole_fraction": 30,
+    "maximum_original_row": 0,
+    "availability": 0
+  },
+  "maximum_relative_error": 0.998882317395264,
+  "maximum_composition_error": 0.8113577066941576,
+  "liquid_denser_than_vapor_count": 30,
+  "input_sha256": {
+    "analyses/reproduction/2015-uyan/scripts/generate_data.py": "870ec99865e3f04c414c6ae8bda152f00d1b7ad14214a4ad7f115adeef5d9ac6",
+    "analyses/reproduction/2015-uyan/inputs/source/ermatchkov-2006-tables-1-3.csv": "f38c3f4e23cf971bb61d0fdd993c6b6fcfe1c8b69e204b235bbd266887a4697e",
+    "analyses/reproduction/2015-uyan/inputs/source/uyan-2015-source-ledger.json": "54d572ab8959283103938f8af9501d309b9de4463b9ae40e054d6b5d6a8c651d"
+  },
+  "wheel_sha256": "0063b9f143d23ff3ac9bc7148fb6ec3c9f617e7114c9632319cb91df03b59e87",
+  "installed_engine": "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/issue-274-design/.venv/lib/python3.13/site-packages/epcsaft/__init__.py",
+  "base_commit": "92382dae",
+  "historical_commit": "566d57de5ec6b2bd36d1e1f0460b62a837e70e0e",
+  "historical_wheel_sha256": null,
+  "declaration": {
+    "solvent": "water",
+    "species_reference": {
+      "co2": "PureGas"
+    },
+    "basis": "RawMoleFractionInfiniteDilution",
+    "source_pressure_Pa": 100000.0
+  },
+  "meaning": "Numerical diagnostic of the e12a5ff8 generator declaration against an older table with different convention labels; no historical-equivalence or physical-validation claim."
+}

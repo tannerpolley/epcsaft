@@ -1,0 +1,36 @@
+{
+  "campaign_results": {
+    "path": "results/data/khudaida-2026-figure-2-held2.csv",
+    "sha256": "876a5a48977b8c8cf83c06f0826c72b3bc63dde977b73ceab09c6b89b5a020c3"
+  },
+  "claim_scope": "Eight accepted installed-artifact phase splits compared with the retained Khudaida Figure 2 and Table 3 digitizations.",
+  "coordinate_normalization": {
+    "maximum_absolute_correction": 9.99999999995449e-06,
+    "method": "divide each ternary row by its retained input sum"
+  },
+  "indexing": {
+    "feed_point_id_role": "Figure 2 solver-feed identity",
+    "feed_to_experimental_tie_line": {
+      "1": 8,
+      "2": 7,
+      "3": 6,
+      "4": 5,
+      "5": 4,
+      "6": 3,
+      "7": 2,
+      "8": 1
+    },
+    "point_id_role": "experimental Table 3 tie-line identity"
+  },
+  "outputs": {
+    ".pdf": "4f45d200773557aaf0339116519e92e68d019a7842b882a32433f27f104dfe30",
+    ".png": "94616f67628563f2c4c2a421d2014b324a46c7e485b651435092c1857862a1ab",
+    ".svg": "2485e62f216af25bf6bb260560a6bb5e5457814793c50db5f1344c4808edaa4f"
+  },
+  "plotted_data": {
+    "path": "output/khudaida-figure-02-active-comparison.csv",
+    "sha256": "e3098e9b93cfb91f2584777f57d51a0543b794c59c709c739dcf5140b81a939c"
+  },
+  "schema_version": 1,
+  "source_figure": "source/figure-02.png"
+}

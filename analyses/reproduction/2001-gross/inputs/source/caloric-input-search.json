@@ -1,0 +1,44 @@
+{
+  "source_parent": "KXZN4KLQ",
+  "source_pdf_attachment": "ZAETGZK9",
+  "source_markdown_attachment": "FBUE24M8",
+  "source_locators": [
+    "section 3.2",
+    "Table 3 and footnote a",
+    "Figure 4 and section 3.1",
+    "Figure 6",
+    "Figure 16 and section 3.3"
+  ],
+  "ideal_heat_capacity_reference": "Daubert, Danner, Sibul and Stebbins, Physical and Thermodynamic Properties of Pure Chemicals, 1989",
+  "paper_contains_coefficients": false,
+  "queries": [
+    {
+      "query": "Daubert",
+      "queries_tried": [
+        "Daubert"
+      ],
+      "count": 0
+    },
+    {
+      "query": "Danner",
+      "queries_tried": [
+        "Danner"
+      ],
+      "count": 0
+    },
+    {
+      "query": "Physical and Thermodynamic Properties of Pure Chemicals",
+      "queries_tried": [
+        "Physical and Thermodynamic Properties of Pure Chemicals"
+      ],
+      "count": 0
+    },
+    {
+      "query": "ideal gas heat capacity",
+      "count": 0,
+      "scope": "canonical records and packages; zero matches does not exclude review candidates",
+      "warnings": []
+    }
+  ],
+  "limit": "Bounded searches establish unrecovered inputs, not absence from every unregistered source."
+}

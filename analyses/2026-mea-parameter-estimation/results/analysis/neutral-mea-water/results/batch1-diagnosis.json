@@ -1,0 +1,66 @@
+{
+  "columns": {
+    "row": "cai1996_10133_002",
+    "k": -0.0301141682641,
+    "h": 1e-06,
+    "exact_scaled": [
+      -124.89179291812424,
+      210.30340264432974
+    ],
+    "difference_scaled": [
+      -124.89179297858755,
+      210.30340279803994
+    ]
+  },
+  "tight_3B": {
+    "k_ij": -0.017176426639403823,
+    "mean_scaled_square": 90.56143461134165,
+    "sse": 2173.4744306721996,
+    "status": "converged",
+    "message": "Function tolerance reached. |cost_change|/cost: 4.184520e-16 <= 1.000000e-15",
+    "usable": true,
+    "iterations": 12,
+    "rank": 1,
+    "singular_values": [
+      667.1909258038486
+    ],
+    "active_bounds": [],
+    "covariance_status": "available",
+    "variance_factor": 94.49888829009564,
+    "optimizer_covariance": [
+      2.246465420700121e-06
+    ],
+    "projected_gradient_norm": 5.6831527515122104e-06,
+    "failures": [],
+    "gradient": -5.6830592077838915e-06,
+    "curvature": 445143.73147499707,
+    "criterion": 0.004451437314749971
+  },
+  "4C_historical_failure": {
+    "row_id": "cai1996_10133_002",
+    "k": -0.052,
+    "records": [
+      {
+        "identity": "cai1996_10133_002",
+        "attempted": true,
+        "outcome": "evaluated",
+        "statuses": [
+          "ObservationStatus.Available",
+          "ObservationStatus.Available"
+        ],
+        "pressure_pa": 101330.0,
+        "liquid_water_mole_fraction": 0.0736,
+        "observed_temperature_k": 431.85,
+        "predicted_temperature_k": 481.3555360137851,
+        "observed_vapor_water_mole_fraction": 0.3411,
+        "predicted_vapor_water_mole_fraction": 0.8055805931384604,
+        "scaled_temperature_residual": 49.505536013785104,
+        "scaled_vapor_water_residual": 46.44805931384604
+      }
+    ],
+    "historical_T_bracket": [
+      350,
+      460
+    ]
+  }
+}

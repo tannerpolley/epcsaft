@@ -1,0 +1,11 @@
+parameter,component_i,component_j,value,source,provenance_status
+l_ij,*,*,0,default zero for unpublished values,unresolved_default_zero
+k_ij,H2O,[HOEMIM][Tf2N],0.007,Yu2024 Table3,source_backed
+k_ij,Li+,TOP,0.3,Yu2024 Table3,source_backed
+k_hb_ij,Li+,TOP,0.3,Yu2024 Table3,source_backed
+k_ij,H2O,TOP,1,Yu2024 Table3,source_backed
+k_ij,Li+,[HOEMIM][Tf2N],1,Yu2024 Table3,source_backed
+k_hb_ij,Li+,[HOEMIM][Tf2N],1,Yu2024 Table3,source_backed
+k_ij,Li+,H2O,0,Yu2024 Table3,source_backed
+k_hb_ij,Li+,H2O,1,Yu2024 Table3,source_backed
+k_ij,Li+,Cl-,0.669,Yu2024 Table3,source_backed

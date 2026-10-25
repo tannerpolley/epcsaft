@@ -1,0 +1,17 @@
+quantity,temperature_K,value,unit,source_locator,kind
+k_MDEA_water,298.15,0.1400465858244039,1,Pahlavanzadeh 2013 Eq11 Table4; PDF p4-5 printed217-218,analytic source-equation reference; no Engine run
+d_k_dT,298.15,-0.00014306110443126563,1/K,Pahlavanzadeh 2013 Eq11 Table4; PDF p4-5 printed217-218,analytic source-equation reference; no Engine run
+d2_k_dT2,298.15,0.00021873472312963917,1/K2,Pahlavanzadeh 2013 Eq11 Table4; PDF p4-5 printed217-218,analytic source-equation reference; no Engine run
+k_MDEA_water,313.5,0.14865562978836236,1,Pahlavanzadeh 2013 Eq11 Table4; PDF p4-5 printed217-218,analytic source-equation reference; no Engine run
+d_k_dT,313.5,-0.0004051518149707137,1/K,Pahlavanzadeh 2013 Eq11 Table4; PDF p4-5 printed217-218,analytic source-equation reference; no Engine run
+d2_k_dT2,313.5,-0.0003371544318223413,1/K2,Pahlavanzadeh 2013 Eq11 Table4; PDF p4-5 printed217-218,analytic source-equation reference; no Engine run
+k_MDEA_water,342.0,0.073616593729251,1,Pahlavanzadeh 2013 Eq11 Table4; PDF p4-5 printed217-218,analytic source-equation reference; no Engine run
+d_k_dT,342.0,-0.007575321122336367,1/K,Pahlavanzadeh 2013 Eq11 Table4; PDF p4-5 printed217-218,analytic source-equation reference; no Engine run
+d2_k_dT2,342.0,-0.00019955949910295328,1/K2,Pahlavanzadeh 2013 Eq11 Table4; PDF p4-5 printed217-218,analytic source-equation reference; no Engine run
+k_MDEA_water,400.0,5.789827187680249e-08,1,Pahlavanzadeh 2013 Eq11 Table4; PDF p4-5 printed217-218,analytic source-equation reference; no Engine run
+d_k_dT,400.0,-1.949073967281775e-08,1/K,Pahlavanzadeh 2013 Eq11 Table4; PDF p4-5 printed217-218,analytic source-equation reference; no Engine run
+d2_k_dT2,400.0,6.347751260502471e-09,1/K2,Pahlavanzadeh 2013 Eq11 Table4; PDF p4-5 printed217-218,analytic source-equation reference; no Engine run
+MDEA_4C_d_cubed_over_sigma_cubed,298.15,0.9643851317816017,1,Pahlavanzadeh 2013 Eq4-5 Table2; PDF p2-3 printed215-216,analytic source-equation reference; no Engine run
+MDEA_4C_d_cubed_over_sigma_cubed,443.15,0.9253975021703574,1,Pahlavanzadeh 2013 Eq4-5 Table2; PDF p2-3 printed215-216,analytic source-equation reference; no Engine run
+ln_K_R1_printed_C,298.15,215.86782107579074,1,Pahlavanzadeh Eq16 Table5(+C); Nasrifar Table1(-C),source inconsistency arithmetic; alternative not adopted
+ln_K_R1_Nasrifar_C,298.15,-40.26536023393261,1,Pahlavanzadeh Eq16 Table5(+C); Nasrifar Table1(-C),source inconsistency arithmetic; alternative not adopted

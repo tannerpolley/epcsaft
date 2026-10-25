@@ -1,0 +1,20 @@
+{
+  "engine_provenance": [
+    "3b307095e04890f396f518fe2a53412b5bbe22cb",
+    true
+  ],
+  "dh_factor": 1.0,
+  "packing_factor": 0.88,
+  "convention": "sigma record",
+  "script_sha256": "52e534c7c071b7ecde86692d8789bf849d0cee181d01d86235d6db0e2bee93eb",
+  "input_sha256": {
+    "inputs/evaluated.csv": "cda600657e41e8518b08211edf874a771cb8287a98398a7cf6df90d7e6f311fb",
+    "inputs/packet-locks.json": "9072ecd6f5d622e1861fea56e7a3d806b23666505a0aa972a52da290394f55c4",
+    "inputs/source-uncertainty.csv": "52f33d1b29a4418c97433e6373de56b92fe5d33e3192fc3096f9bf5db3dfd181",
+    "inputs/sources.csv": "62b0e1934dd716d26149890f6ad160f20a5c1481d3dba6946a4ceb8a8c3716ba",
+    "data/packets/held-cameretti-sadowski-2008/4/parameters/parameters.json": "8f0313b6ebecb891873866a2181b32f8aeb44a49860487f34aeab8aecfa596f9",
+    "data/packets/held-2014-strategy2/1/parameters/parameters.json": "49e5dce5503979d157ec0a8251cf89f233d2bc8f190ac9102a4dfd1519f0ab71"
+  },
+  "conditions": "298.15 K, 100000 Pa, fully dissociated formula-unit molality/kg water",
+  "limits": "Held2014 dielectric 78.09 is a declared supplement; nearest-temperature Floriano sensitivity is not an exact author replay. No refit or ternary validation."
+}

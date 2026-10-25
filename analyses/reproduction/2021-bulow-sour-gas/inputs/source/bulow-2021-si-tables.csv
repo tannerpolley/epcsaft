@@ -1,0 +1,17 @@
+table,system,temperature_k,mdea_weight_percent,reported_ard_percent,quantity
+S3,water-mdea-co2,313,19,42.21,co2-partial-pressure
+S3,water-mdea-co2,333,19,24.69,co2-partial-pressure
+S3,water-mdea-co2,373,19,10.54,co2-partial-pressure
+S3,water-mdea-co2,393,19,14.78,co2-partial-pressure
+S3,water-mdea-co2,313,32.3,63.06,co2-partial-pressure
+S3,water-mdea-co2,333,32.3,42.86,co2-partial-pressure
+S3,water-mdea-co2,373,32.3,14.78,co2-partial-pressure
+S3,water-mdea-co2,393,32.3,17.77,co2-partial-pressure
+S4,water-mdea-h2s,313,19,22.34,h2s-partial-pressure
+S4,water-mdea-h2s,333,19,15.74,h2s-partial-pressure
+S4,water-mdea-h2s,373,19,11.03,h2s-partial-pressure
+S4,water-mdea-h2s,393,19,10.31,h2s-partial-pressure
+S4,water-mdea-h2s,313,32.3,31.40,h2s-partial-pressure
+S4,water-mdea-h2s,333,32.3,15.69,h2s-partial-pressure
+S4,water-mdea-h2s,373,32.3,15.23,h2s-partial-pressure
+S4,water-mdea-h2s,393,32.3,13.02,h2s-partial-pressure

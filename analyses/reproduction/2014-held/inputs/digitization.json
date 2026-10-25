@@ -1,0 +1,724 @@
+{
+ "source": "Held et al. 2014 PDF, Zotero 3DIW87Q5/TD5T732H, sha256 dea9aa05e2ee8eb1c675873fa9d8737943312484874d844f01b45613da261acf; images from `pdfimages -png` (300 ppi embedded rasters)",
+ "calibration_basis": "x: left and right frame columns are the 0 and 4 mol/kg ticks; y: two labelled tick rows per panel",
+ "panels": [
+  {
+   "figure": "figure-1",
+   "image": "img-003.png",
+   "image_sha256": "5e1bbaf40df9847d70a3b1eb5b0c861d93067f0deff34f0ea73f33053b01d13c",
+   "x_calibration": [
+    [
+     51,
+     0
+    ],
+    [
+     791,
+     4
+    ]
+   ],
+   "y_calibration": [
+    [
+     138.5,
+     1.1
+    ],
+    [
+     414,
+     0.9
+    ]
+   ],
+   "rows": [
+    3,
+    550
+   ],
+   "stride": 5,
+   "lines": [
+    {
+     "name": "NaCl strategy 1",
+     "seed": [
+      2.25,
+      1.0368
+     ],
+     "threshold": 170,
+     "max_run": 4,
+     "x_range": [
+      0.35,
+      3.99
+     ],
+     "max_step": 3,
+     "qa_color": [
+      255,
+      0,
+      0
+     ]
+    },
+    {
+     "name": "NaCl strategy 2",
+     "seed": [
+      2.25,
+      1.0074
+     ],
+     "threshold": 110,
+     "max_run": 9,
+     "x_range": [
+      0.3,
+      3.95
+     ],
+     "max_step": 3,
+     "qa_color": [
+      0,
+      160,
+      0
+     ],
+     "min_run": 3
+    },
+    {
+     "name": "KBr strategy 1",
+     "seed": [
+      2.25,
+      0.9613
+     ],
+     "threshold": 170,
+     "max_run": 4,
+     "x_range": [
+      0.5,
+      3.99
+     ],
+     "max_step": 3,
+     "qa_color": [
+      0,
+      0,
+      255
+     ]
+    },
+    {
+     "name": "KBr strategy 2",
+     "seed": [
+      2.25,
+      0.9391
+     ],
+     "threshold": 110,
+     "max_run": 9,
+     "x_range": [
+      0.3,
+      3.99
+     ],
+     "max_step": 3,
+     "qa_color": [
+      255,
+      0,
+      255
+     ],
+     "min_run": 3
+    }
+   ]
+  },
+  {
+   "figure": "figure-2",
+   "image": "img-004.png",
+   "image_sha256": "08dc668cb7c551007d04b3f042f6d216a25ccb89ce187ea52050085cd9d844b1",
+   "x_calibration": [
+    [
+     62,
+     0
+    ],
+    [
+     890,
+     4
+    ]
+   ],
+   "y_calibration": [
+    [
+     104,
+     1.1
+    ],
+    [
+     514.5,
+     0.9
+    ]
+   ],
+   "rows": [
+    4,
+    615
+   ],
+   "stride": 5,
+   "lines": [
+    {
+     "name": "NaCl 298.15 K",
+     "seed": [
+      2.25,
+      1.0074
+     ],
+     "threshold": 170,
+     "max_run": 4,
+     "x_range": [
+      0.35,
+      3.97
+     ],
+     "max_step": 3,
+     "qa_color": [
+      255,
+      0,
+      0
+     ]
+    },
+    {
+     "name": "NaCl 273.15 K",
+     "seed": [
+      2.25,
+      0.9726
+     ],
+     "threshold": 90,
+     "max_run": 9,
+     "x_range": [
+      0.3,
+      3.99
+     ],
+     "max_step": 3,
+     "qa_color": [
+      0,
+      160,
+      0
+     ],
+     "min_run": 3
+    },
+    {
+     "name": "KCl 298.15 K",
+     "seed": [
+      2.25,
+      0.9234
+     ],
+     "threshold": 170,
+     "max_run": 4,
+     "x_range": [
+      0.5,
+      3.97
+     ],
+     "max_step": 3,
+     "qa_color": [
+      0,
+      0,
+      255
+     ]
+    },
+    {
+     "name": "KCl 273.15 K",
+     "seed": [
+      2.25,
+      0.8966
+     ],
+     "threshold": 90,
+     "max_run": 9,
+     "x_range": [
+      0.3,
+      3.99
+     ],
+     "max_step": 3,
+     "qa_color": [
+      255,
+      0,
+      255
+     ],
+     "min_run": 3
+    },
+    {
+     "name": "NaCl 298.15 K",
+     "seed": [
+      1.2,
+      0.9385
+     ],
+     "threshold": 170,
+     "max_run": 4,
+     "x_range": [
+      0.35,
+      1.3
+     ],
+     "max_step": 3,
+     "qa_color": [
+      255,
+      0,
+      0
+     ]
+    },
+    {
+     "name": "KCl 298.15 K",
+     "seed": [
+      3.75,
+      0.9604
+     ],
+     "threshold": 170,
+     "max_run": 4,
+     "x_range": [
+      3.6,
+      3.97
+     ],
+     "max_step": 3,
+     "qa_color": [
+      0,
+      0,
+      255
+     ]
+    }
+   ],
+   "markers": {
+    "threshold": 60,
+    "erode": 4
+   }
+  },
+  {
+   "figure": "figure-3a",
+   "image": "img-005.png",
+   "image_sha256": "649bef22b9e542b8d68c82615449e9fa2950f8a166e9161bd8b640c80a7a0511",
+   "x_calibration": [
+    [
+     67,
+     0
+    ],
+    [
+     624,
+     4
+    ]
+   ],
+   "y_calibration": [
+    [
+     183,
+     1.2
+    ],
+    [
+     349,
+     1.1
+    ]
+   ],
+   "rows": [
+    20,
+    679
+   ],
+   "stride": 5,
+   "lines": [
+    {
+     "name": "NaAc strategy 1",
+     "seed": [
+      2.25,
+      1.2054
+     ],
+     "threshold": 110,
+     "max_run": 9,
+     "x_range": [
+      0.4,
+      2.95
+     ],
+     "max_step": 3,
+     "qa_color": [
+      0,
+      160,
+      0
+     ],
+     "min_run": 3
+    },
+    {
+     "name": "KAc strategy 1",
+     "seed": [
+      3.75,
+      1.0015
+     ],
+     "threshold": 120,
+     "max_run": 6,
+     "x_range": [
+      0.4,
+      3.99
+     ],
+     "max_step": 3,
+     "qa_color": [
+      0,
+      0,
+      255
+     ]
+    },
+    {
+     "name": "LiAc strategy 1",
+     "seed": [
+      0.75,
+      1.1485
+     ],
+     "threshold": 200,
+     "max_run": 8,
+     "x_range": [
+      0.15,
+      1.2
+     ],
+     "max_step": 3,
+     "qa_color": [
+      255,
+      0,
+      0
+     ]
+    }
+   ]
+  },
+  {
+   "figure": "figure-3b",
+   "image": "img-005.png",
+   "image_sha256": "649bef22b9e542b8d68c82615449e9fa2950f8a166e9161bd8b640c80a7a0511",
+   "x_calibration": [
+    [
+     735,
+     0
+    ],
+    [
+     1292,
+     4
+    ]
+   ],
+   "y_calibration": [
+    [
+     178,
+     1.2
+    ],
+    [
+     344,
+     1.1
+    ]
+   ],
+   "rows": [
+    16,
+    675
+   ],
+   "stride": 5,
+   "lines": [
+    {
+     "name": "KAc strategy 2",
+     "seed": [
+      3.75,
+      1.2795
+     ],
+     "threshold": 170,
+     "max_run": 7,
+     "x_range": [
+      2.95,
+      3.99
+     ],
+     "max_step": 4,
+     "qa_color": [
+      0,
+      0,
+      255
+     ],
+     "max_gap": 60
+    },
+    {
+     "name": "NaAc strategy 2",
+     "seed": [
+      2.25,
+      1.1196
+     ],
+     "threshold": 110,
+     "max_run": 8,
+     "x_range": [
+      0.3,
+      3.99
+     ],
+     "max_step": 3,
+     "qa_color": [
+      0,
+      160,
+      0
+     ],
+     "min_run": 3
+    },
+    {
+     "name": "LiAc strategy 2",
+     "seed": [
+      2.25,
+      1.047
+     ],
+     "threshold": 200,
+     "max_run": 6,
+     "x_range": [
+      0.3,
+      2.45
+     ],
+     "max_step": 3,
+     "qa_color": [
+      255,
+      0,
+      0
+     ]
+    },
+    {
+     "name": "LiAc strategy 2",
+     "seed": [
+      3.75,
+      1.1358
+     ],
+     "threshold": 200,
+     "max_run": 6,
+     "x_range": [
+      2.6,
+      3.99
+     ],
+     "max_step": 2,
+     "qa_color": [
+      255,
+      0,
+      0
+     ]
+    },
+    {
+     "name": "KAc strategy 2",
+     "seed": [
+      2.25,
+      1.159
+     ],
+     "threshold": 170,
+     "max_run": 7,
+     "x_range": [
+      0.45,
+      2.9
+     ],
+     "max_step": 4,
+     "qa_color": [
+      0,
+      0,
+      255
+     ],
+     "max_gap": 60
+    }
+   ]
+  },
+  {
+   "figure": "figure-5",
+   "image": "img-007.png",
+   "x_calibration": [
+    [
+     155,
+     0
+    ],
+    [
+     811,
+     4
+    ]
+   ],
+   "y_calibration": [
+    [
+     503,
+     0
+    ],
+    [
+     13,
+     25
+    ]
+   ],
+   "rows": [
+    15,
+    500
+   ],
+   "stride": 5,
+   "lines": [
+    {
+     "name": "NaCl strategy 2",
+     "seed": [
+      2.5,
+      7.219
+     ],
+     "threshold": 110,
+     "max_run": 7,
+     "min_run": 2,
+     "x_range": [
+      0.05,
+      3.6
+     ],
+     "max_step": 3,
+     "qa_color": [
+      255,
+      0,
+      0
+     ]
+    },
+    {
+     "name": "NaI strategy 2",
+     "seed": [
+      0.6,
+      19.209
+     ],
+     "threshold": 160,
+     "max_run": 7,
+     "min_run": 1,
+     "x_range": [
+      0.0,
+      1.1
+     ],
+     "max_step": 3,
+     "qa_color": [
+      0,
+      0,
+      255
+     ]
+    }
+   ],
+   "markers": {
+    "threshold": 150,
+    "erode": 4
+   },
+   "image_sha256": "ac99847ab210921a10d254d92f976277d3bc6318e47abbb97ebebc72b797012d"
+  },
+  {
+   "figure": "figure-6a",
+   "image": "img-008.png",
+   "x_calibration": [
+    [
+     134,
+     0
+    ],
+    [
+     747,
+     25
+    ]
+   ],
+   "y_calibration": [
+    [
+     463.5,
+     0
+    ],
+    [
+     97.5,
+     80
+    ]
+   ],
+   "rows": [
+    8,
+    460
+   ],
+   "stride": 5,
+   "lines": [
+    {
+     "name": "1-butanol phase",
+     "seed": [
+      8,
+      83.06
+     ],
+     "threshold": 110,
+     "max_run": 7,
+     "min_run": 2,
+     "x_range": [
+      0.0,
+      23.3
+     ],
+     "max_step": 3,
+     "qa_color": [
+      255,
+      0,
+      0
+     ]
+    },
+    {
+     "name": "aqueous phase",
+     "seed": [
+      8,
+      1.42
+     ],
+     "threshold": 170,
+     "max_run": 6,
+     "min_run": 1,
+     "x_range": [
+      0.0,
+      23.3
+     ],
+     "max_step": 3,
+     "qa_color": [
+      0,
+      0,
+      255
+     ]
+    }
+   ],
+   "markers": {
+    "threshold": 150,
+    "erode": 4,
+    "cols": [
+     136,
+     745
+    ]
+   },
+   "image_sha256": "c2dfc8774fe045c74071be8a8cae49c12008773d461e207735c849fba695d73f"
+  },
+  {
+   "figure": "figure-4a",
+   "image": "img-006.png",
+   "image_sha256": "2dd3cbba67da583d6d76a8a3a5bd2571f9cf91bfd70bd9618e32fd1095f63334",
+   "x_calibration": [
+    [
+     66,
+     0
+    ],
+    [
+     230,
+     1
+    ]
+   ],
+   "y_calibration": [
+    [
+     480,
+     0.9
+    ],
+    [
+     165.5,
+     1.0
+    ]
+   ],
+   "rows": [
+    10,
+    634
+   ],
+   "stride": 5,
+   "lines": [
+    {
+     "name": "glycine strategy 2",
+     "seed": [
+      1.1,
+      0.8898
+     ],
+     "threshold": 60,
+     "max_run": 8,
+     "min_run": 3,
+     "x_range": [
+      0.02,
+      3.0
+     ],
+     "max_step": 3,
+     "qa_color": [
+      255,
+      0,
+      0
+     ]
+    },
+    {
+     "name": "alanine strategy 2",
+     "seed": [
+      1.1,
+      0.9267
+     ],
+     "threshold": 140,
+     "max_run": 7,
+     "min_run": 3,
+     "x_range": [
+      0.02,
+      2.0
+     ],
+     "max_step": 3,
+     "qa_color": [
+      0,
+      0,
+      255
+     ]
+    }
+   ],
+   "markers": {
+    "threshold": 215,
+    "erode": 4,
+    "cols": [
+     68,
+     590
+    ]
+   }
+  }
+ ]
+}

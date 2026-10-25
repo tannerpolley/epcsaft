@@ -1,0 +1,80 @@
+{
+  "sources": {
+    "/home/tnnrpolley21/.t3/worktrees/Amine-Thermodynamics/t3code-172-execute-schreckenberg-measured-rou-d2c453db/analyses/mea_parameter_bundle/results/permittivity-refit-172/smaller-dV/F1-A/start-parameters.json": "d0e5021b36230e0249536ba90456778cdaff14694542fb386cd1fc3a01fd74ba",
+    "/home/tnnrpolley21/.t3/worktrees/Amine-Thermodynamics/t3code-172-execute-schreckenberg-measured-rou-d2c453db/analyses/mea_parameter_bundle/results/permittivity-refit-172/smaller-dV/F1-A/targets.json": "601e7dd1500f540e3310033917c220d7ac167688c5144d3a327e4f9e0cdf774f",
+    "/home/tnnrpolley21/.t3/worktrees/Amine-Thermodynamics/t3code-172-execute-schreckenberg-measured-rou-d2c453db/analyses/mea_parameter_bundle/results/permittivity-refit-172/run.py": "aeb4b7f13e5fbe9131ef71bebcc615b84accd42f35d0a709119f1efdb190c125",
+    "/home/tnnrpolley21/.t3/worktrees/Amine-Thermodynamics/t3code-172-execute-schreckenberg-measured-rou-d2c453db/analyses/mea_parameter_bundle/results/source-corrections-152/state-packet.json.gz": "3fca278be8790d58ab30e5474b2b3892c47225d8230ac40fd4f87c066e8eaf2d",
+    "/home/tnnrpolley21/.t3/worktrees/Amine-Thermodynamics/t3code-172-execute-schreckenberg-measured-rou-d2c453db/analyses/mea_parameter_bundle/results/source-corrections-152/accepted-wave/strict141-targets.csv": "b2c63743258e949d33eed367d5cdd733968a36ed960ef52fb6fe919d51953e4a",
+    "/home/tnnrpolley21/.t3/worktrees/Amine-Thermodynamics/t3code-172-execute-schreckenberg-measured-rou-d2c453db/analyses/mea_parameter_bundle/results/source-corrections-152/accepted-wave/packet.jsonl": "b61c7789ad8bd225a991245dc2124ba6f6b6abaf0c8cba34265f6b8e7afe7bcb",
+    "/home/tnnrpolley21/.t3/worktrees/Amine-Thermodynamics/t3code-172-execute-schreckenberg-measured-rou-d2c453db/analyses/mea_parameter_bundle/results/heat-160/inputs/heat-source-admission.json": "d51a7210be2b93b3a8ae55b19a33001e5f5eeb875070a071ca0127cf88ea4a78",
+    "/home/tnnrpolley21/.t3/worktrees/Amine-Thermodynamics/t3code-172-execute-schreckenberg-measured-rou-d2c453db/data/reference/MEA/thermal/physical-ideal-gas-calorics.json": "c94d504e68c6dc6e85d3d950cc51422499846729b1a06994b362040be991924a"
+  },
+  "packet_sha256": "862ecf1e5d2756b7639493ea9d08444e890c66af6f427e5d9ee436910783a8db",
+  "rows": 149,
+  "coordinates": [
+    "pair/carbamate-anion/water/k_ij",
+    "pair/protonated-monoethanolamine/water/k_ij",
+    "pair/bicarbonate-anion/water/k_ij",
+    "pair/carbamate-anion/protonated-monoethanolamine/k_ij",
+    "pair/protonated-monoethanolamine/water/k_ij/reciprocal_temperature_slope",
+    "component/protonated-monoethanolamine/born_diameter",
+    "component/carbamate-anion/born_diameter"
+  ],
+  "compressed_sha256": "3bdb146a7b8d6b449b829fc40bf08aaeef3616b71409ce0bb22c837bdc97be4c",
+  "historical": {
+    "revision": "36485a88",
+    "fit_wall_seconds": 46.4,
+    "fit_cpu_seconds": 833,
+    "workers": 32,
+    "iterations": 14,
+    "residual_evaluations": 15,
+    "jacobian_evaluations": 11,
+    "serial_wall_seconds": 21.79,
+    "reference_taylor_evaluations": 664
+  },
+  "frozen": {
+    "revision": "5ad73fb9ff2a7e21d44b4d2fb20924aaa643ab6e",
+    "host": "tnnrpolley21-MS-7C95",
+    "serial_cpu_seconds": 16.279413456,
+    "serial_wall_seconds": 16.28246296299767,
+    "reference_taylor_evaluations": 675,
+    "work": {
+      "reference_computations": 295,
+      "reference_columns": 3388,
+      "density_solves": 2627,
+      "equilibrium_iterations": 1426
+    },
+    "measurement": "non-diagnostic native trace; process CPU and wall around evaluate_observations; decoding and trace reduction excluded",
+    "observation_patch_sha256": "0566f803c570915fbc2b84e176b1bf55176cfa46c0517d75db4d5a451c768f69",
+    "fits": {
+      "A": {
+        "seconds": 31.26431085900549,
+        "cpu_seconds": 620.1816550350001,
+        "critical_cpu_seconds": 28.646384528999988,
+        "total_compute_cpu_seconds": 615.880454223,
+        "workers": 32,
+        "iterations": 14,
+        "residual_evaluations": 15,
+        "jacobian_evaluations": 12,
+        "initial_cost": 230.90624790099864,
+        "final_cost": 31.123726998619993,
+        "status": "converged"
+      },
+      "B": {
+        "seconds": 31.56655494000006,
+        "cpu_seconds": 631.6697723020001,
+        "critical_cpu_seconds": 29.049397098999993,
+        "total_compute_cpu_seconds": 627.4250052579999,
+        "workers": 32,
+        "iterations": 14,
+        "residual_evaluations": 15,
+        "jacobian_evaluations": 12,
+        "initial_cost": 230.90624790099864,
+        "final_cost": 31.123726998619993,
+        "status": "converged"
+      }
+    },
+    "evidence": "build/issue-497/refreeze-evaluation.json; build/issue-497/main-aa/summary.json and fit-cpu-A/, fit-cpu-B/",
+    "work_refrozen": "#595: unread reference columns are no longer computed; the serial CPU value is unchanged"
+  }
+}

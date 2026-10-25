@@ -1,0 +1,25 @@
+{
+  "schema_version": 3,
+  "repository": "tannerpolley/ePC-SAFT",
+  "lock_manifest": "data/packet-locks.json",
+  "packet_id": "gross-2001-propane",
+  "packet_version": "2",
+  "packet_path": "data/packets/gross-2001-propane/2",
+  "packet_fingerprint": "4593b9dbd813004096c7e396fc65df6ae3f4c1c65933c36918a6d316111326e2",
+  "materialization_mode": "byte-for-byte-validation-input",
+  "destination": "analyses/2026-idaes-asl-adapter/inputs/data/gross-2001-propane/2",
+  "files": [
+    {
+      "path": "packet.toml",
+      "sha256": "1497dfa7eb14f914f2cf43b079022c3582f51cea9e6a05fbce9c97f4d1a8d1ac"
+    },
+    {
+      "path": "parameters/parameters.json",
+      "sha256": "5b72b92f1b47162e5fffee8641a83fc5354d15eeec2ac51658cb051c727bd099"
+    },
+    {
+      "path": "provenance/source-origin.toml",
+      "sha256": "16f79cee1631f07647444335aa9b4b0ea0293b8e6fc9b25ac78b11ebc5d32ce1"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "base": "3f5ee19f",
+  "wheel_sha256": "62c2f9078579f300c5e1dc5ae0814223b021a3b5e0a921d331cb6b63a58fbaf5",
+  "logs": [
+    "/tmp/issue210-reference-final.log",
+    "/tmp/issue210-addition-final.log",
+    "/tmp/issue210-python-final.log"
+  ],
+  "rows": 148,
+  "failed": [],
+  "evidence": "Numerical verification on manufactured Engine cases; no physical validation or parameter adoption"
+}

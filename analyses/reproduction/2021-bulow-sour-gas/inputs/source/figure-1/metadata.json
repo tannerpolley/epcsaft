@@ -1,0 +1,20 @@
+{
+  "source_pdf_sha256": "b4f9dda69075aa6137f58006cfef10492c45c7cb5d9fd48558e52430a4ae87bd",
+  "source_page_1based": 5,
+  "printed_page": 6331,
+  "figure": 1,
+  "embedded_xref": 235,
+  "native_image_size_px": [
+    500,
+    374
+  ],
+  "image_sha256": "96192bbcc329318dec103a4cd10eb028db373cdfab687f09508d37b622fcac51",
+  "extraction": "bundled cse:digitize digitize_xy_plot.py; HSV thresholds and axis transform in calibration.json; selected fixed image columns 250,320,380,420",
+  "selection": "Two colored published model curves only. Symbols are excluded from the comparison identity. Original full extraction retained as extracted.csv. Four sampling columns avoid visible marker centers.",
+  "axis_uncertainty_px": 1,
+  "vertical_allowance_px": 4,
+  "pressure_allowance_bar": 2.1660649819494586,
+  "temperature_label_resolution_K": 1,
+  "qa": "pass: all eight selected magenta circles lie on the matching orange/green model strokes; no second independent extraction lane",
+  "limitations": "Raster image, no measurement uncertainty. Printed 373 K/403 K labels are nominal, exact original fractional temperatures are unreported here. Black/gray curves and experimental markers remain unextracted. No quantitative claim before readiness and native results."
+}

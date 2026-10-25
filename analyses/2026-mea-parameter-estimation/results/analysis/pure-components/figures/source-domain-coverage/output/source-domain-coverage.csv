@@ -1,0 +1,7 @@
+family_id,component_id,classification,temperature_min_k,temperature_max_k
+gross-sadowski-2001-co2,carbon-dioxide,fixed,216,304
+held-2008-water,water,fixed,298.15,298.15
+figiel-2025-water,water,fixed,298.15,298.15
+baygi-2015-mea-2b,monoethanolamine,candidate,303.15,443.15
+baygi-2015-mea-3b,monoethanolamine,candidate,303.15,443.15
+baygi-2015-mea-4c,monoethanolamine,candidate,303.15,443.15

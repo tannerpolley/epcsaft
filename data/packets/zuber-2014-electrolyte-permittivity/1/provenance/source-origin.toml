@@ -1,0 +1,10 @@
+provenance_kind = "source-record-provenance-v1"
+schema_version = 1
+
+[[records]]
+retained_path = "parameters/ion-suppression.csv"
+sha256 = "f12e5a9c77edfe1c04ba7c19ac6e19cc1dfa9fa472d584d7b03f54816850f3d7"
+origin_repository = "none"
+origin_commit = "0000000000000000000000000000000000000000"
+origin_tree = "0000000000000000000000000000000000000000"
+origin_path = "Fluid Phase Equilibria 376 (2014) 116-123, Tables 2, 3, 4 and 9"

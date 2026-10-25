@@ -1,0 +1,136 @@
+{
+  "identity": {
+    "wheel": "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-243-design-d1-two-liquid-feed-scale-st-a47da443/build/wheels/candidate-122e54e1/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+    "wheel_sha256": "aa7b7d24dd8bd7985b6964b522c80006d1233cf692678b9ee014bb952cf3b4f7",
+    "script_sha256": "5946d67115b010e84f2b84a71546971c10b374093da8c6e6b60717e8a7d461fa",
+    "baseline_script_sha256": "b01ec8b8f7bf83d71f0f668ca87983ef4ea6457281fb4b573ffb3da68a86efe6",
+    "source_mtimes": {
+      "engine/native/equilibrium/gibbs_minimizer.cpp": 1791599057205205763,
+      "engine/native/equilibrium/request_compile.cpp": 1791594018162748826
+    },
+    "thread_environment": {
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": null
+    }
+  },
+  "inputs": {
+    "reacting/reference": {
+      "path": "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json",
+      "sha256": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+      "construction": "equilibrium_checks.cpp manufactured charged reference; one Liquid x* state, frozen g",
+      "reference_wheel_sha256": "6e4b4e294439b26351e21c8b16041288959b3f794d3f30e0175118943e698192",
+      "operands_csv": "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-243-design-d1-two-liquid-feed-scale-st-a47da443/analyses/2026-tpd-phase-discovery/results/diagnostics/reacting-reaction-mapping/reacting.csv",
+      "operands_sha256": "287dd38cef97b6f0919756692f4369dd1631721b4483d83d77a5485dee09d58a",
+      "method": "Continue with the exact already-frozen g/K operands after the constructor mapping correction; no second reference-state evaluation"
+    },
+    "reacting/fixed-TP": {
+      "components": [
+        "water",
+        "sodium-cation",
+        "chloride-anion"
+      ],
+      "T": 298.15,
+      "P": 100000.0,
+      "feed": {
+        "water": 0.0,
+        "sodium-cation": 1.0,
+        "chloride-anion": 1.0
+      },
+      "row_tolerance": 1e-10,
+      "phases": [
+        {
+          "name": "L",
+          "kind": "liquid",
+          "support": null,
+          "amount": {
+            "kind": "Free",
+            "value": null
+          },
+          "composition_guess": [
+            0.98,
+            0.01,
+            0.01
+          ],
+          "packing_guess": null
+        }
+      ],
+      "reaction_operands_csv_case": "reacting/fixed-TP/inputs",
+      "standard_operands_csv_case": "reacting/reference"
+    },
+    "reacting/pinned-free-pressure": {
+      "components": [
+        "water",
+        "sodium-cation",
+        "chloride-anion"
+      ],
+      "T": 298.15,
+      "P": {
+        "kind": "Free",
+        "value": 100000.0
+      },
+      "feed": {
+        "water": 0.0,
+        "sodium-cation": 1.0,
+        "chloride-anion": 1.0
+      },
+      "row_tolerance": 1e-10,
+      "phases": [
+        {
+          "name": "L",
+          "kind": "liquid",
+          "support": null,
+          "amount": {
+            "kind": "Pinned",
+            "value": 0.5050505050505051
+          },
+          "composition_guess": [
+            0.98,
+            0.01,
+            0.01
+          ],
+          "packing_guess": null
+        }
+      ],
+      "reaction_operands_csv_case": "reacting/pinned-free-pressure/inputs",
+      "standard_operands_csv_case": "reacting/reference"
+    }
+  },
+  "costs": {
+    "csv": "reacting-costs.csv",
+    "sha256": "546fe370b6d27b32960cdf7e1c2a99174639a63ba24c717e36e2b1281880fb58",
+    "samples": 21,
+    "first_report_work": "sample 0 native work references the identical reported CSV operands",
+    "count_aliases": "iterations/evaluations/Hessian counts alias native work where that map is present"
+  },
+  "failure": null,
+  "failures": [],
+  "unresolved": [
+    {
+      "case": "reacting/fixed-TP/returned-test",
+      "trial": 0,
+      "seed": "positive-neutral-base",
+      "evidence": "indeterminate",
+      "message": "converged: residual 3.7038604847177604e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 11 iterations, contraction absent, floor 7.6383355746340436e-11, amplification 0"
+    },
+    {
+      "case": "reacting/pinned-free-pressure/declared-test",
+      "trial": 0,
+      "seed": "positive-neutral-base",
+      "evidence": "indeterminate",
+      "message": "converged: residual 4.8004158768679344e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 11 iterations, contraction absent, floor 7.6383355746340991e-11, amplification 0"
+    },
+    {
+      "case": "reacting/pinned-free-pressure/declared-test",
+      "trial": 1,
+      "seed": "near-pure-0",
+      "evidence": "indeterminate",
+      "message": "converged: residual 2.0129336186059283e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 8 iterations, contraction absent, floor 7.638335574634103e-11, amplification 0"
+    }
+  ],
+  "limits": [
+    "numerical verification of the supplied model and finite trial set",
+    "estimated uncertainty is not a rigorous bound",
+    "Refused discovery compiles before admission, including generic-point Jacobian/EOS work inside its private trace; outer zero evaluations denote no observed driver callbacks, not no EOS work.",
+    "no physical validation or global stability certificate"
+  ]
+}

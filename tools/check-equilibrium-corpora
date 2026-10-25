@@ -1,0 +1,332 @@
+#!/usr/bin/env python3
+"""Equilibrium acceptance corpora on two prepared environments; one table (docs/agents/workflow.md "Gates").
+
+Runs, in each selected environment, the Cameretti 2005 bubble states (default start), the
+Gross 2002 declarations (default start), the 70-case neutral methane/ethane sweep, the #243 42-row
+matrix, four-section replay and declared 73-state MEA flash family, then compares B with A. Cases a gate already runs (the #390 and
+#407 pins, e4-d, the Gross pins in equilibrium/Automatic*) are omitted. Work counts, timings,
+messages and diagnostic residuals are reported by the scripts, not compared here; every other value
+must be finite on both sides and agree within 1e-10 relative (absolute floor 1e-12), with equal text
+and JSON kinds. Gross deviation and percent columns are reported, not compared: they are functions of
+the compared value and its input reference, and amplify last-bit changes (owner, 2026-10-13). Both sides must reproduce the accepted inventories and successes (ACCEPTED), every
+criterion must be finite and positive, and every successful result must have a finite residual within
+its own criterion (Gross: calculation.json row_tolerance; Cameretti: run.py's criterion-violations.csv
+must have no rows, and each band's largest declared residual must be within its largest criterion).
+The replay uses replay_compare.py's checks and quantity limits. The MEA family requires 73/73 successes
+in both images, the 1e-10 row criterion, and entrywise abs(a-b)/max(abs(a),abs(b),1e-14) <= 1e-10
+for amounts, fractions and densities; its work and timing are diagnostic. Exits 1 on any problem or failed job.
+Tracked results/ are never written.
+"""
+import argparse
+import csv
+import hashlib
+from concurrent.futures import ThreadPoolExecutor
+from contextlib import nullcontext
+import json
+import math
+import os
+import runpy
+from pathlib import Path
+import subprocess
+import sys
+import threading
+import time
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "tools"))
+TPD = ROOT / 'analyses/2026-tpd-phase-discovery/scripts'
+SECTIONS = ('declared', 'continuation', 'fitting', 'asl')
+REPORTED = {'seconds', 'iterations', 'evaluations', 'hessians', 'message', 'residual', 'raw', 'classified',
+            'default_iterations', 'default_residual', 'declared_iterations', 'declared_residual',
+            'wall_seconds', 'parallel_solve_seconds'}
+# value - reference, 100|value/reference - 1| and, for liquid volume, 100|reference/value - 1|
+# (2002-gross calculate.py:217-223); `value` itself is compared.
+GROSS_REPORTED = REPORTED | {'deviation', 'absolute_relative_percent', 'pressure_aad_percent',
+                             'liquid_density_aad_percent', 'liquid_volume_aad_percent'}
+MATRIX_REPORTED = REPORTED | {'I', 'E', 'H', 'dx', 'dq', 'drho', 'dT', 'dP', 'df', 'inventory'}  # gated by `passes`
+# Accepted results at the #391 delivery, which both wheels must reproduce; a slice that changes one edits it
+# here. Gross failures are CSV line numbers of default-start-comparisons.csv; neutral successes are initial
+# pressures (Pa) by temperature (K); replay success and requested_tolerance_met count True rows, and keys
+# is the SHA-256 prefix of the sorted "case,quantity" lines.
+ACCEPTED = dict(
+    cameretti=dict(states=1800, default_successes=1800, declared_all_succeeded=True),
+    gross=dict(rows=724, failed_lines=[558, 722, 723]),
+    # #565: the neutral recovery adds 38 rows at 240-265.95 K. FeOs 0.10.1 bubble points at identical parameters agree
+    # within 3.1e-10 (240-265 K) and, from an initial guess, 1.1e-10 (265.5 K). At 265.95 K, 0.02 K below the mixture
+    # critical point, the default 1e-10 row criterion leaves about 2e-8 in P, 6e-6 in y and 3e-5 in the vapor density;
+    # tightening the Engine's own tolerance to 1e-13 converges onto FeOs (1.1e-9 in P), so the gap is the tolerance, not
+    # a code disagreement (build/issue-565/delivered-review-r1.md). This check compares B against A; it claims no accuracy.
+    # #611: 266.5 K is above the z = 0.5 critical temperature; its 5 MPa row was the upper dew point with L and V swapped.
+    neutral=dict(rows=70, successes={**{T: [1e5, 1e6, 2.02606e6, 3e6, 5e6, 6.75e6, 7e6]
+                                        for T in (240, 250, 255, 260, 262, 264, 265, 265.5, 265.95)}, 266.5: []}),
+    matrix=dict(rows=42, passes=42),
+    replay=dict(declared=dict(rows=1847, cases=263, success=6, requested_tolerance_met=6, keys='11cba60ff4310589'),
+                continuation=dict(rows=845, cases=86, success=8, requested_tolerance_met=7, keys='224947d11f3063e3'),
+                fitting=dict(rows=210, cases=3, success=0, requested_tolerance_met=0, keys='6bf548d8e98db3f9'),  # #823: the reference correction changes Held NaCl recovery from 25 to 20 iterations at the objective floor.
+                asl=dict(rows=1479, cases=31, success=1, requested_tolerance_met=4, keys='77a70ac426a96fdb')))
+
+
+def values(text):
+    """A CSV cell or JSON value as a flat list of floats, or None for text."""
+    if isinstance(text, str):
+        try:
+            return [float(text)]
+        except ValueError:
+            pass
+        try:
+            text = json.loads(text)
+        except ValueError:
+            return None
+    flat = text if isinstance(text, list) else [text]
+    if all(isinstance(v, (int, float)) and not isinstance(v, bool) for v in flat):
+        return [float(v) for v in flat]
+    return None
+
+
+def differences(a_rows, b_rows, reported=REPORTED):
+    """Rows of B that differ from A outside the comparison above."""
+    found = [dict(row=i, reason='row missing') for i in range(min(len(a_rows), len(b_rows)), max(len(a_rows), len(b_rows)))]
+    for i, (a, b) in enumerate(zip(a_rows, b_rows)):
+        for key in sorted((set(a) | set(b)) - reported):
+            x, y = a.get(key), b.get(key)
+            u, v = values(x), values(y)
+            if not all(math.isfinite(w) for w in (u or []) + (v or [])):
+                found.append(dict(row=i, key=key, a=x, b=y, reason='non-finite'))
+                continue
+            if type(x) is not type(y):
+                found.append(dict(row=i, key=key, a=x, b=y, reason='kind changed'))
+                continue
+            if x == y:
+                continue
+            if u is None or v is None or len(u) != len(v) or not all(
+                    math.isclose(p, q, rel_tol=1e-10, abs_tol=1e-12) for p, q in zip(u, v)):
+                found.append(dict(row=i, key=key, a=x, b=y))
+    return found
+
+
+def table(path):
+    return list(csv.DictReader(path.open())) if path.stat().st_size else []
+
+
+def family_differences(a_rows, b_rows):
+    """The declared 73-state MEA family: row criterion and its frozen entrywise metric."""
+    found = []
+    quantities = {'amounts': 2, 'mole_fractions': 18, 'molar_densities': 2}
+    for label, rows in (('A', a_rows), ('B', b_rows)):
+        if [r['index'] for r in rows] != list(range(73)):
+            found.append(dict(image=label, reason='family inventory differs from 73 ordered states'))
+        for r in rows:
+            if r.get('success') is not True or r.get('met') is not True or not 0 <= r.get('residual', math.inf) <= 1e-10:
+                found.append(dict(image=label, row=r['index'], reason='family state unavailable or row criterion unmet'))
+            for key, size in quantities.items():
+                values = r.get(key, [])
+                if len(values) != size or not all(math.isfinite(v) for v in values):
+                    found.append(dict(image=label, row=r['index'], key=key, reason='unavailable physical quantities'))
+    for a, b in zip(a_rows, b_rows):
+        if any(a[k] != b[k] for k in ('index', 'loading', 'T', 'P')):
+            found.append(dict(row=a['index'], reason='family declaration differs'))
+        if a.get('success') is not True or b.get('success') is not True:
+            continue
+        for key in quantities:
+            for j, (p, q) in enumerate(zip(a[key], b[key])):
+                metric = abs(p - q) / max(abs(p), abs(q), 1e-14)
+                if not math.isfinite(metric) or metric > 1e-10:
+                    found.append(dict(row=a['index'], key=key, entry=j, a=p, b=q, metric=metric))
+    return found
+
+
+def accepted(name, observed, expected):
+    """Observed results that differ from the accepted ones."""
+    return [dict(corpus=name, key=k, observed=v, accepted=expected[k]) for k, v in observed.items() if v != expected[k]]
+
+
+def unmet(name, rows, success, residual, criterion):
+    """Rows whose criterion is not finite and positive, and successful rows whose residual is not finite and within it."""
+    def number(row, value):
+        try:
+            return float(value(row))
+        except (KeyError, TypeError, ValueError):
+            return math.nan
+    found = []
+    for i, r in enumerate(rows):
+        c, x = number(r, criterion), number(r, lambda r: r[residual])
+        if not 0 < c < math.inf or r[success] in (True, 'True') and not 0 <= x <= c:
+            found.append(dict(corpus=name, row=i, reason=f'{residual} {r.get(residual)}, criterion {c}'))
+    return found
+
+
+def main():
+    from engine_identity import prepared_python
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument('prepared_a', help='prepared interpreter, virtual environment, or build-tree root')
+    parser.add_argument('prepared_b')
+    parser.add_argument('--out', type=Path, default=ROOT / f'build/equilibrium-corpora/{time.strftime("%Y%m%dT%H%M%S")}')
+    args = parser.parse_args()
+    out = args.out.resolve()
+    if out.is_relative_to(ROOT) and not out.is_relative_to(ROOT / 'build'):
+        parser.error('--out must be outside the tracked tree (use build/)')
+    out.mkdir(parents=True, exist_ok=False)
+    began = time.perf_counter()
+    env = {**os.environ, 'OMP_NUM_THREADS': '1', 'OPENBLAS_NUM_THREADS': '1', 'MKL_NUM_THREADS': '1',
+           'PYTHONNOUSERSITE': '1', 'PYTHONPATH': ''}
+    selections, interpreters, environments, identities = {}, {}, {}, {}
+    for label, value in (('A', args.prepared_a), ('B', args.prepared_b)):
+        (out / label).mkdir()
+        python, selected_env = prepared_python(value, env)
+        identity = json.loads(subprocess.check_output([str(python), str(ROOT / 'tools/engine_identity.py')], env=selected_env))
+        if not identity['source_revision'] or not identity['meson_configuration_sha256'] or not identity['lock_sha256']:
+            parser.error(f'{label} must identify its prepared source, Meson build, and lock')
+        selections[label], interpreters[label], environments[label], identities[label] = value, python, selected_env, identity
+    inventories = {label: runpy.run_path(str(Path(identity['source_root']) / 'tools/check-equilibrium-corpora'))['ACCEPTED']
+                   for label, identity in identities.items()}
+    (out / 'accepted-inventories.json').write_text(json.dumps(inventories, indent=2) + '\n')
+    (out / 'environment-identities.json').write_text(json.dumps(identities, indent=2) + '\n')
+
+    # Cameretti and Gross each use every CPU; run them one at a time beside the single-process jobs.
+    parallel = threading.Lock()
+
+    def run(label, name, *command):
+        with (out / label / f'{name}.log').open('w') as log, (parallel if name in ('cameretti', 'gross') else nullcontext()):
+            code = subprocess.run([str(interpreters[label]), *map(str, command)], cwd=ROOT, env=environments[label],
+                                  stdout=log, stderr=subprocess.STDOUT).returncode
+        return None if code == 0 else f'{label} {name} exit {code} ({out / label / name}.log)'
+
+    reference = out / 'A/matrix-reference'
+    jobs = []
+    for label in selections:
+        d = out / label
+        jobs += [(label, 'cameretti', ROOT / 'analyses/reproduction/2005-cameretti/scripts/run.py', d / 'cameretti'),
+                 (label, 'gross', ROOT / 'analyses/reproduction/2002-gross/scripts/calculate.py', d / 'gross'),
+                 (label, 'neutral', TPD / 'neutral.py', d / 'neutral.json')]
+        jobs += [(label, f'replay-{s}', TPD / 'baseline.py', '--section', s, '--output', d / 'replay') for s in SECTIONS]
+        jobs += [(label, 'mea-family', ROOT / 'analyses/2026-mea-flash-family-seed/scripts/family.py', label, d / 'mea-family.jsonl')]
+    with ThreadPoolExecutor(len(jobs) + 1) as pool:
+        matrix = pool.submit(run, 'A', 'matrix-reference', TPD / 'physical_comparison.py', reference)
+        futures = [pool.submit(run, *job) for job in jobs]
+        failures = [f.result() for f in [matrix, *futures]]
+        if matrix.result() is None:
+            failures += pool.map(lambda label: run(label, 'matrix', TPD / 'physical_comparison.py', out / label / 'matrix',
+                                                   '--reference', reference / 'original-states.json'), selections)
+    failures = [f for f in failures if f]
+    for label in selections:
+        current = json.loads(subprocess.check_output(
+            [str(interpreters[label]), str(ROOT / 'tools/engine_identity.py')], env=environments[label]
+        ))
+        if current != identities[label]:
+            failures.append(f'{label} Engine identity changed during corpora runs')
+
+    rows, found = [], {}
+
+    def corpus(name, count, compare):
+        try:
+            counts = [count(out / label) for label in selections]
+            found[name] = compare()
+            rows.append((name, *counts, str(len(found[name]))))
+        except (OSError, ValueError, KeyError, StopIteration) as error:
+            rows.append((name, '-', '-', f'unreadable: {error}'))
+
+    def cameretti(d):
+        summary = table(d / 'cameretti/default-start-summary.csv')
+        states = sum(int(r['states']) for r in summary)
+        return f"{states - sum(int(r['default_failures']) for r in summary):,}/{states:,}"
+
+    def cameretti_problems():
+        found = []
+        for label in selections:
+            d = out / label / 'cameretti'
+            summary = table(d / 'default-start-summary.csv')
+            states = sum(int(r['states']) for r in summary)
+            found += accepted(f'{label} Cameretti', dict(
+                states=states, default_successes=states - sum(int(r['default_failures']) for r in summary),
+                declared_all_succeeded=all(r['declared_all_succeeded'] == 'True' for r in summary)), ACCEPTED['cameretti'])
+            found += [dict(corpus=f'{label} Cameretti', file=f, reason='no rows') for f in camerettis
+                      if f != 'default-start-failures' and not table(d / f'{f}.csv')]
+            found += [dict(corpus=f'{label} Cameretti', reason='criterion violation', **r)
+                      for r in table(d / 'criterion-violations.csv')]
+            found += unmet(f'{label} Cameretti band', summary, 'declared_all_succeeded', 'declared_max_residual',
+                           lambda r: r['declared_max_criterion'])
+        return found + [dict(file=f, **x) for f in camerettis for x in differences(
+            table(out / f'A/cameretti/{f}.csv'), table(out / f'B/cameretti/{f}.csv'))]
+
+    camerettis = ('default-start-summary', 'default-start-failures', 'table-5', 'figure-lines', 'figure-points',
+                  'activity-298K', 'water', 'table-5-kcl-misprint')
+    corpus('Cameretti 2005 default start', cameretti, cameretti_problems)
+
+    gross = lambda d: table(d / 'gross/default-start-comparisons.csv')
+
+    def gross_problems():
+        found = []
+        for label in selections:
+            tolerance = json.loads((out / label / 'gross/calculation.json').read_text())['row_tolerance']
+            found += accepted(f'{label} Gross', dict(rows=len(gross(out / label)), failed_lines=[
+                i + 2 for i, r in enumerate(gross(out / label)) if r['success'] != 'True']), ACCEPTED['gross'])
+            found += unmet(f'{label} Gross', gross(out / label), 'success', 'residual', lambda r: tolerance)
+        return found + differences(gross(out / 'A'), gross(out / 'B'), GROSS_REPORTED)
+    corpus('Gross 2002 default start', lambda d: f"{sum(r['success'] == 'True' for r in gross(d))}/{len(gross(d))}",
+           gross_problems)
+
+    neutral = lambda d: json.loads((d / 'neutral.json').read_text())['rows']
+
+    def neutral_problems():
+        found = []
+        for label in selections:
+            successes = {}
+            for r in neutral(out / label):
+                successes.setdefault(r['T'], [])  # every swept temperature, so a refused one reads []
+                if r['success'] is True:
+                    successes[r['T']].append(r['P0'])
+            found += accepted(f'{label} neutral', dict(rows=len(neutral(out / label)), successes=successes), ACCEPTED['neutral'])
+            found += unmet(f'{label} neutral', neutral(out / label), 'success', 'residual', lambda r: r['criterion'])
+        return found + differences(neutral(out / 'A'), neutral(out / 'B'))
+    corpus('neutral methane/ethane sweep', lambda d: f"{sum(r['success'] for r in neutral(d))}/{len(neutral(d))}",
+           neutral_problems)
+
+    matrix = lambda d: table(d / 'matrix/comparisons.csv')
+
+    def matrix_problems():
+        found = []
+        keys = {label: [(r['case'], r['lane'], r['N']) for r in matrix(out / label)] for label in selections}
+        for label in selections:
+            found += accepted(f'{label} matrix', dict(rows=len(set(keys[label])), passes=sum(
+                r['passes'] == 'True' for r in matrix(out / label))), ACCEPTED['matrix'])
+            found += [dict(corpus=f'{label} matrix', key=k, reason='duplicate') for k in set(keys[label])
+                      if keys[label].count(k) > 1]
+        if keys['A'] != keys['B']:
+            found.append(dict(corpus='matrix', reason='case/lane/feed inventories differ'))
+        return found + differences(matrix(out / 'A'), matrix(out / 'B'), MATRIX_REPORTED)
+    corpus('#243 matrix', lambda d: f"{sum(r['passes'] == 'True' for r in matrix(d))}/{len(matrix(d))}", matrix_problems)
+
+    def replay():
+        if subprocess.run([sys.executable, TPD / 'replay_compare.py', out / 'A/replay', out / 'B/replay',
+                           out / 'replay-compare.json'], stdout=subprocess.DEVNULL).returncode:
+            raise ValueError('replay_compare.py failed')
+        found = [f for section in json.loads((out / 'replay-compare.json').read_text()).values() for f in section['failures']]
+        for label in selections:
+            for s in SECTIONS:
+                rows = table(out / label / f'replay/{s}.csv')
+                true = lambda q: sum(r['quantity'] == q and r['value'] == 'True' for r in rows)
+                keys = '\n'.join(sorted(f"{r['case']},{r['quantity']}" for r in rows))
+                found += accepted(f'{label} replay {s}', dict(
+                    rows=len(rows), cases=len({r['case'] for r in rows}), success=true('success'),
+                    requested_tolerance_met=true('requested_tolerance_met'),
+                    keys=hashlib.sha256(keys.encode()).hexdigest()[:16]), inventories[label]['replay'][s])
+        return found
+    corpus('replay rows (4 sections)', lambda d: f"{sum(len(table(d / f'replay/{s}.csv')) for s in SECTIONS):,}", replay)
+
+    family = lambda d: [json.loads(line) for line in (d / 'mea-family.jsonl').read_text().splitlines()]
+    corpus('MEA flash family', lambda d: f"{sum(r['success'] for r in family(d))}/{len(family(d))}",
+           lambda: family_differences(family(out / 'A'), family(out / 'B')))
+
+    (out / 'differences.json').write_text(json.dumps(found, indent=2, default=str) + '\n')
+    header = ('corpus', 'A', 'B', 'problems')
+    widths = [max(len(str(r[i])) for r in [header, *rows]) for i in range(4)]
+    for r in [header, *rows]:
+        print('  '.join(str(c).ljust(w) for c, w in zip(r, widths)))
+    for failure in failures:
+        print('FAILED', failure)
+    print(f'prepared A={selections["A"]} B={selections["B"]}; details {out}/differences.json; {time.perf_counter() - began:.0f} s')
+    return 1 if failures or any(found.get(r[0]) for r in rows) or any(r[1] == '-' for r in rows) else 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())

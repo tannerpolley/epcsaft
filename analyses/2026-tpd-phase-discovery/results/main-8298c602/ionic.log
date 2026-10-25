@@ -1,0 +1,19 @@
+Traceback (most recent call last):
+  File "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/analyses/2026-tpd-phase-discovery/scripts/qualify.py", line 496, in <module>
+    main()
+    ~~~~^^
+  File "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/analyses/2026-tpd-phase-discovery/scripts/qualify.py", line 483, in main
+    globals()[args.stage]()
+    ~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/analyses/2026-tpd-phase-discovery/scripts/qualify.py", line 342, in ionic
+    refused_case(case, model, problem, neutral_only=case.startswith('case-6/'))
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/analyses/2026-tpd-phase-discovery/scripts/qualify.py", line 316, in refused_case
+    timed(case, 'refused-test', lambda: eq.stability_test(compiled, reference, eq.StabilityOptions()), refusal=True)
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/analyses/2026-tpd-phase-discovery/scripts/qualify.py", line 99, in timed
+    require(type(error) is b._core.ParameterError, f'{case}: expected ParameterError, got {type(error).__name__}')
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/analyses/2026-tpd-phase-discovery/scripts/qualify.py", line 24, in require
+    raise RuntimeError(message)
+RuntimeError: case-6/figure-2-point-7: expected ParameterError, got NoneType

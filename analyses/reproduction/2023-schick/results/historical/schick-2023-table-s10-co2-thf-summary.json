@@ -1,0 +1,43 @@
+{
+  "schema": "epcsaft.validation.schick-2023-table-s10.v1",
+  "source_row_count": 34,
+  "reconstruction_evaluable_row_count": 32,
+  "calibration_row_count": 6,
+  "validation_row_count": 26,
+  "reconstruction_non_evaluable_row_count": 2,
+  "all_rows_evaluated": false,
+  "paper_kij": 0.04,
+  "regressed_kij": 0.041700420500974035,
+  "paper_tabulated_aard_percent": 7.477654743364864,
+  "engine_paper_kij_aard_percent_on_evaluable_rows": 6.404890892050657,
+  "engine_refitted_kij_aard_percent_on_evaluable_rows": 5.985464296624282,
+  "engine_paper_kij_calibration_aard_percent": 6.926856091562901,
+  "engine_refitted_kij_calibration_aard_percent": 6.826854931009761,
+  "engine_paper_kij_validation_aard_percent": 6.284437384470911,
+  "engine_refitted_kij_validation_aard_percent": 5.791297227150711,
+  "regression_objective": "sum((x_model-x_exp)/x_exp)^2",
+  "optimizer_controls": {
+    "maximum_iterations": 12,
+    "function_tolerance": 1e-06,
+    "gradient_tolerance": 1e-06,
+    "parameter_tolerance": 1e-06
+  },
+  "best_start": "paper",
+  "best_start_usable": true,
+  "best_start_rank": 1,
+  "parameter_sha256": "sha256:b5e7d57acdb358da78f8c9c104d7f0ed52ce667c40e9ca951f622eb3f51f6852",
+  "source_sha256": "sha256:b3d00317abd3a8fd01698c60a91f500300be57c2df8500af074c180198de822f",
+  "non_evaluable_source_rows": [
+    {
+      "temperature_k": 353.2,
+      "pressure_bar": 99.4,
+      "reason": "no_pure_co2_reservoir_root"
+    },
+    {
+      "temperature_k": 353.2,
+      "pressure_bar": 102.9,
+      "reason": "no_pure_co2_reservoir_root"
+    }
+  ],
+  "interpretation": "Exact Table S10 rows and paper predictions; installed Engine uses the generic fixed-T,P imposed pure-CO2-fugacity boundary. Difference from the paper curve is retained as formulation/reconstruction evidence."
+}

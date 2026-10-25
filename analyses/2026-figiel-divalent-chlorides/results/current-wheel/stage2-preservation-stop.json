@@ -1,0 +1,108 @@
+{
+  "outcome": "Stopped before native stage-2 refit and provisional packet: historical stage-1 preservation fails.",
+  "evidence_type": "Numerical preservation comparison; no physical validation.",
+  "conditions": {
+    "temperature_K": 298.15,
+    "pressure_Pa": 100000,
+    "phase": "liquid",
+    "basis": "Original eight-species stage-1 selections; formula-unit molality and original reference declarations."
+  },
+  "comparison": {
+    "rows": 948,
+    "passed": 908,
+    "failed": 40,
+    "maximum_absolute_change": 2.8484037351006464e-10,
+    "maximum_tolerance_fraction": 288.22716115911663,
+    "rule": "Absolute change <= 1e-12*abs(historical reference) for a nonzero reference; otherwise <=1e-12.",
+    "row_identity_fields": [
+      "row",
+      "set",
+      "group",
+      "abscissa",
+      "quantity",
+      "batch",
+      "composition",
+      "reference_composition",
+      "components",
+      "ions"
+    ],
+    "observed_operand_check": "All observed operands agree within their matching historical tolerances, including source-generated invariance references.",
+    "worst_row": {
+      "row": "105",
+      "set": "T",
+      "group": "T KCl osmotic",
+      "abscissa": "0.001",
+      "quantity": "osmotic",
+      "observed": "0.988",
+      "batch": "all",
+      "composition": "1.0;0.0;0.0;0.0;0.0;0.0;0.0;0.0",
+      "reference_composition": "",
+      "components": "water;methanol;ethanol;lithium-cation;sodium-cation;potassium-cation;chloride-anion;bromide-anion",
+      "ions": "potassium-cation;chloride-anion",
+      "reference": "0.9882495888471027",
+      "current": "0.988249589131943",
+      "error": "2.8484037351006464e-10",
+      "tolerance": "9.882495888471027e-13",
+      "passed": "False"
+    },
+    "failed_groups": [
+      "G1 KBr osmotic",
+      "G1 LiBr osmotic",
+      "G1 NaBr osmotic",
+      "T KCl osmotic",
+      "T LiCl osmotic",
+      "T NaCl osmotic"
+    ]
+  },
+  "source_commit": "b06914127825557e7820f810b03b9b9f2e000955",
+  "source_tree": "5e2fc985efcd1ac58d5213216c78f82707f4e40a",
+  "merged_origin_main": "ec0bafa71b5022821f1774b2b9fffb06622be87c",
+  "wheel_sha256": "fdf3fbb51244eb4991f0743a6acd377dc0296d5909b77e896d050c6e36fdf57c",
+  "reference_wheel_sha256": "71ee347fb606352dff9b69df1ddd930b62a7ddbdacb0cec7a0c9f4aece94cfcc",
+  "stage1_packet_unchanged": true,
+  "stage2_fit_rerun": false,
+  "packet_written": false,
+  "procedure": "Existing stage2_fit.py declarations; native observations_at on frozen /1 compared with matching reference operands in retained stage2-combined-stage1-preservation.csv. Stop before Ceres on failed preservation.",
+  "limits": [
+    "The cause of the changed dilute osmotic predictions has not been diagnosed.",
+    "No current-wheel Mg/Ca parameters, errors, hydration/pressure/column qualification or G1/G2/G5 acceptance is claimed.",
+    "No mixed-salt, ternary, temperature, density, caloric or organic-solvent qualification.",
+    "The owner relaxation applies only to the stage-2 0.02-decade activity/osmotic target; the stage-1 preservation criterion remains unchanged."
+  ],
+  "inputs": [
+    {
+      "path": "data/packets/figiel-2025-chloride-activity-refit/1/parameters/parameters.json",
+      "sha256": "cec1bfc9c833f7196c7bc11d51d21aa8bc224cc388b04f165712acc5c4473626"
+    },
+    {
+      "path": "analyses/2026-figiel-divalent-chlorides/results/stage2-summary.json",
+      "sha256": "841839fc3791073a3774532426a0064b8b80a88d4135bcdf4ddd63e031f6d9ab"
+    },
+    {
+      "path": "analyses/2026-figiel-divalent-chlorides/results/stage2-combined-stage1-preservation.csv",
+      "sha256": "08f14b2e61c40cc6bf63087bd62d9e9a031f123e75cf026cd59245e14000e738"
+    },
+    {
+      "path": "analyses/2026-figiel-divalent-chlorides/scripts/stage2_fit.py",
+      "sha256": "b42c95ebfcdc51bf8a6f23268385f22c33ca0b8624f1d0ca04aec1d6ad8a1771"
+    },
+    {
+      "path": "build/issue-209-provisional/replay.py",
+      "sha256": "bcde0476a44ecf5d04ebb594057dd4e5d8b69833962aa465f5165d5443034181"
+    }
+  ],
+  "results": {
+    "path": "analyses/2026-figiel-divalent-chlorides/results/current-wheel/stage2-historical-stage1-preservation.csv",
+    "sha256": "a2002ec6978893162f947f624be8a082da7ff8afe8083bedeb9d72f60a43fe4e"
+  },
+  "checks": {
+    "installed_wheel": "14 RECORD hashes match; non-editable wheel verified before and after evaluation.",
+    "native_evaluation": "948 values returned; 40 exceed retained preservation tolerances; replay exited 1 at declared stop.",
+    "setup": "Completed: current wheel restored from content-bound cache, installed and verified; native check executables compiled.",
+    "check_affected": "Not run: preservation stop precedes packet/notebook changes.",
+    "check_all": "Not run: preservation stop precedes packet/notebook changes.",
+    "packet_validation": "Not run: no packet written.",
+    "key_solves": "Not run: preservation stop triggered."
+  },
+  "engine_runtime_added": 0
+}

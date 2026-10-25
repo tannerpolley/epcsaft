@@ -1,0 +1,36 @@
+{
+  "base": "e9ade379dca73068bdec33fca4bae0c905a35306",
+  "main": "1fa7ec18bfc732d371a5683a2bbabec7583a936a", "main_also_merged": "50aac8ace78479d58b3895d6cf3cca06daf4f520 (README and tools/native-run only)",
+  "question": "F2 seeded and cold endpoints against per-coordinate allowances propagated from the accepted observable allowances; B4 seeded and cold minimax objective",
+  "owner_decision": "2026-10-06: propagate floors; B4 by objective",
+  "method": {
+    "F2": "bound_k = sum_i |[J_w^+]_{k,i}| c_i, J_w^+ = V S^-1 U^T from FitResult.covariance (singular_values, left_vectors, right_vectors, objective_rows) of the weighted optimizer Jacobian at the cold endpoint; c_i = sqrt(w_i)|dr_i/dy_i| a_i, dr/dy = 1/scale (Difference) or 1/y (LogRatio), a_i = max(1e-12, 1e-10|y_i|), osmotic a_i = max(1e-10|phi|, 1e-12/s), s = M_w sum(nu) m. Only products of returned factors; no Python solve.",
+    "B4": "returned MinimaxResult.t (Ipopt objective = 50 t), |t_seeded - t_cold| <= max(1e-12, 1e-10|t_cold|); coordinate differences are diagnostics of the flat optimum set, no criterion",
+    "reproduction": "each arm reruns the complete fit; every optimizer coordinate equals the retained round3/endpoints.csv (script controls) and round4/work-matched/endpoints.csv bit for bit (asserted)"
+  },
+  "controls": {
+    "script-controls": "F2 Ceres 1e-15, 1e-14, 1e-14",
+    "work-matched": "F2 Ceres 1e-15, 1e-14, 1e-8",
+    "B4": "declared Ipopt tolerance 1e-10 in both"
+  },
+  "merge_reasoning": "main 0bc8e14a..1fa7ec18 (#272) changes native code only in equilibrium/gibbs_minimizer.cpp, adds a declaration to equilibrium/problem.hpp and adds EQUILIBRIUM_POLISH_CORRECTION to core/numerical_policy.hpp (no existing value changed). F2 rows are MeanIonicActivityCoefficient and OsmoticCoefficient and B4 adds solvation and transfer Gibbs energies, all single-phase property observations with no equilibrium solve, and minimax uses equilibrium/ipopt.hpp only, so the merge cannot move them; the merged seeded wheel reproduced the retained seeded endpoints bit for bit, so the round-4 timing stands without rerun.",
+  "wheels": {
+    "seeded": {
+      "path": "build/issue-245-round5/wheel",
+      "sha256": "02d652474d50866eaee692d65f842fd3b8c501c84bc897b203d6123e125a8680",
+      "source": "HEAD merged with main 1fa7ec18"
+    },
+    "cold": {
+      "path": "build/issue-245-round4/cold-wheel",
+      "sha256": "3bdbdf15cd0c13e8e650712e8466633d77b6b7f48d847f75429c2021fbeaed7a",
+      "source": "round-4 cold comparator"
+    },
+    "main": {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/wheels/main-current",
+      "sha256": "7181e0a0123f9e574bc2d316fe8f4f6d89a85667168b1f4df4ad133fd5227151"
+    }
+  },
+  "script_sha256": "ab6d297858080794704dc5aa5bc1a3f4cff154bdc158d2b8c7b6b71153092270",
+  "evidence_type": "numerical verification; no physical validation",
+  "numerical_threads": 1
+}

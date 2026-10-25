@@ -1,0 +1,1 @@
+Do the admitted density-temperature and dipolar-perturbation epsilon_r forms, paired with the Figiel 2025 water/Na+/Cl- base, describe NaCl(aq) MIAC, dielectric decrement, solvation and density better than Figiel's ion-fraction suppression at 298.15 K and 1 bar?

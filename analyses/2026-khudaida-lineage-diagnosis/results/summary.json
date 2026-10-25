@@ -1,0 +1,55 @@
+{
+  "points": 8,
+  "temperature_K": 293.15,
+  "pressure_Pa": 100000.0,
+  "association_volumes": {
+    "ethanol/isobutanol": {
+      "geometric_mean": 0.0112519242798732,
+      "with_size_factor": 0.01119849133244554,
+      "historical_bundle_2": 0.01119849133244554
+    },
+    "ethanol/water": {
+      "geometric_mean": 0.03821013216412631,
+      "with_size_factor": 0.037980982229321184,
+      "historical_bundle_2": 0.03798098222932118
+    },
+    "isobutanol/water": {
+      "geometric_mean": 0.013277872570558884,
+      "with_size_factor": 0.012996238253524316,
+      "historical_bundle_2": 0.01299623825352431
+    }
+  },
+  "maxima": {
+    "historical_material_max_abs": 1.4621637234313312e-13,
+    "v6_g_rt_excess_of_historical_state": 3.2100988715200174e-05,
+    "v6_dmu_neutral_historical_state": 0.03318148873242599,
+    "v6_dmu_nacl_historical_state": 0.00033391292873830025,
+    "v6_dmu_neutral_solved": 4.666733666169876e-10,
+    "v6_dmu_nacl_solved": 9.335110462416196e-10,
+    "v6_x_max_abs_vs_historical": 0.00806733008260807,
+    "v6_amount_max_abs_vs_historical": 0.0053724124192018885,
+    "v6_g_rt_abs_vs_historical": 0.004295386754607833,
+    "size_factor_g_rt_excess_of_historical_state": 1.1719514247943152e-10,
+    "size_factor_dmu_neutral_historical_state": 4.135767284196845e-08,
+    "size_factor_dmu_nacl_historical_state": 3.390949245840602e-07,
+    "size_factor_dmu_neutral_solved": 4.784124207901641e-10,
+    "size_factor_dmu_nacl_solved": 9.570442216499941e-10,
+    "size_factor_x_max_abs_vs_historical": 1.2004241489727008e-09,
+    "size_factor_amount_max_abs_vs_historical": 8.729263423212785e-10,
+    "size_factor_g_rt_abs_vs_historical": 4.908073947262892e-12,
+    "v6_g_rt_excess_of_historical_state_min": 2.730060045053051e-05
+  },
+  "identity": {
+    "wheel_sha256": "684b213ac8065fbe35950ca8998a33a5c05264fad5b174560110f112d60ef8ba",
+    "epcsaft_version": "0.2.0.dev0",
+    "v6_parameters_sha256": "05d684f3ec8a58c51a3d86bcc35b808efc9ee0a858086f705cb1e4ea011ab2e7",
+    "historical_rows_sha256": "876a5a48977b8c8cf83c06f0826c72b3bc63dde977b73ceab09c6b89b5a020c3",
+    "bundle_2_association_sha256": "ea8e7d42383d62ac7f3fa73392112c7d1e3d8fd008e2895a6a78ae928a341161",
+    "diagnosis_csv_sha256": "4604acc230f5de28dd981aeed2f8d7537ea4623ed2d222a285d8556fb4a57502"
+  },
+  "claim_limits": [
+    "declared two-liquid local branches at the eight Figure 2 feeds only",
+    "G/RT excess uses the sum of n x ln(x phi); the feed-fixed reference constant cancels",
+    "no global-stability or predictive-accuracy claim"
+  ]
+}

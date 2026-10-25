@@ -1,0 +1,5 @@
+record_id,component_id,family,value,unit,source_id,locator,domain_id
+deea-molar-mass,diethylethanolamine,molar_mass,117.19,gram / mole,crespo-et-al-2021,"Table 3, diethylethanolamine row, Mw column",crespo-deea-fit-domain-unreported
+deea-segment-count,diethylethanolamine,segment_count,3.844,,crespo-et-al-2021,"Table 3, diethylethanolamine row, m column",crespo-deea-fit-domain-unreported
+deea-segment-diameter,diethylethanolamine,segment_diameter,3.6406,angstrom,crespo-et-al-2021,"Table 3, diethylethanolamine row, sigma column",crespo-deea-fit-domain-unreported
+deea-dispersion-energy,diethylethanolamine,dispersion_energy_over_k,248.55,kelvin,crespo-et-al-2021,"Table 3, diethylethanolamine row, epsilon/k_B column",crespo-deea-fit-domain-unreported

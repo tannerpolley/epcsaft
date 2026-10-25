@@ -1,0 +1,19 @@
+{
+  "base": "8298c6029ebb8b467929badc4a223c580ec591ab",
+  "wheel_sha256": "8897a0caab9f2508ed642f42c8b5226957fbe7035ed7bfdad71e4166798785b3",
+  "logs": [
+    "analyses/2026-addition-enthalpy-fitting/results/main-8298c602/qualification-S2.log",
+    "analyses/2026-addition-enthalpy-fitting/results/main-8298c602/qualification-reference-parameter.log",
+    "analyses/2026-reactive-caloric-actions/results/main-8298c602/qualification-addition-enthalpy.log.gz",
+    "analyses/2026-reactive-caloric-actions/results/main-8298c602/qualification-ionic-addition.log.gz"
+  ],
+  "rows": 140,
+  "failed": [],
+  "evidence": "Numerical verification on manufactured Engine cases; no physical validation or parameter adoption",
+  "log_sha256": {
+    "analyses/2026-addition-enthalpy-fitting/results/main-8298c602/qualification-S2.log": "9997124060c3d15131fced8f1e233f0f77769343e891885d4b21d386152a37ce",
+    "analyses/2026-addition-enthalpy-fitting/results/main-8298c602/qualification-reference-parameter.log": "5f86a7030b5f88b343cf2aec1771faea6469d06a83e3af013d964affabd99eef",
+    "analyses/2026-reactive-caloric-actions/results/main-8298c602/qualification-addition-enthalpy.log.gz": "7a5db322f6ef058e6619d2bb0dcd832b1da8bd766f33eb0b0196a527dcf83ec5",
+    "analyses/2026-reactive-caloric-actions/results/main-8298c602/qualification-ionic-addition.log.gz": "a824a2c40b22c0f6b1fea10359b4530a991aad141553fb9a489a2486c4e25cea"
+  }
+}

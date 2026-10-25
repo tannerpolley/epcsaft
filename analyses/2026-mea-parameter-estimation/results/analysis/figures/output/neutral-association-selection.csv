@@ -1,0 +1,4 @@
+scheme,grouped_mean_score,grouped_standard_error,phase_success,selected
+2B,9.212755791244883,1.84487218850254,True,True
+3B,102.72925801440886,2.439695480067563,True,False
+4C,330.53131784518405,92.16019313466063,False,False

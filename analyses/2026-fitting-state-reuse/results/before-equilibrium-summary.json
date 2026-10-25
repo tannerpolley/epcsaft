@@ -1,0 +1,19 @@
+{
+  "wheel_sha256": "28181e72e429c6e87fc6361082af1a7b21c8747e76bda65a1c30abb4a97402f2",
+  "values_file": "results/before-equilibrium-values.csv",
+  "values_sha256": "2e71924b9a39d358ec2a5f4b501258b3343b5b94094a08406de4e156568626b3",
+  "repeats_identical": true,
+  "calculation": {
+    "points": 8
+  },
+  "termination_messages": [
+    "eight accepted points and available actions",
+    "eight accepted points and available actions",
+    "eight accepted points and available actions"
+  ],
+  "input_files": {
+    "analyses/2026-khudaida-idaes-settler/inputs/data/khudaida-2026-figure-2-electrolyte-lle/7/parameters/parameters.json": "8babed899e7347e58c403c7aff24a7fdd6d60411af3b4d81eb6aa90c2431dfa4",
+    "analyses/reproduction/2026-khudaida/figures/figure-02/source/source-points.csv": "21cf58a5373b2e2c337b6baf5a0423d0ab5d7cea9639bb727b061f5844ef78d7",
+    "analyses/2026-khudaida-idaes-settler/scripts/run_fixed_settler.py": "2dabb36cea32bd22feb71b041d0e6577ec38d8cd6f7a41db50c13313f84f3589"
+  }
+}

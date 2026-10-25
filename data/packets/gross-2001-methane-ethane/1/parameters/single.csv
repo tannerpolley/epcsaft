@@ -1,0 +1,9 @@
+record_id,component_id,family,value,unit,source_id,locator,domain_id
+methane-molar-mass,methane,molar_mass,0.016043,kg / mol,gross-sadowski-2001,"Table 2, methane row, M_i and T range columns",methane-fit-range
+methane-segment-count,methane,segment_count,1.0000,,gross-sadowski-2001,"Table 2, methane row, m_i^seg and T range columns",methane-fit-range
+methane-segment-diameter,methane,segment_diameter,3.7039,angstrom,gross-sadowski-2001,"Table 2, methane row, sigma_i and T range columns",methane-fit-range
+methane-dispersion-energy,methane,dispersion_energy_over_k,150.03,kelvin,gross-sadowski-2001,"Table 2, methane row, u_i/k_B and T range columns",methane-fit-range
+ethane-molar-mass,ethane,molar_mass,0.03007,kg / mol,gross-sadowski-2001,"Table 2, ethane row, M_i and T range columns",ethane-fit-range
+ethane-segment-count,ethane,segment_count,1.6069,,gross-sadowski-2001,"Table 2, ethane row, m_i^seg and T range columns",ethane-fit-range
+ethane-segment-diameter,ethane,segment_diameter,3.5206,angstrom,gross-sadowski-2001,"Table 2, ethane row, sigma_i and T range columns",ethane-fit-range
+ethane-dispersion-energy,ethane,dispersion_energy_over_k,191.42,kelvin,gross-sadowski-2001,"Table 2, ethane row, u_i/k_B and T range columns",ethane-fit-range

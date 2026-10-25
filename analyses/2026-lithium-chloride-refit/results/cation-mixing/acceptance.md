@@ -1,0 +1,29 @@
+| check | value | limit | unit | passed |
+|---|---|---|---|---|
+| Yao 3<I<=8.3 RMS | 0.010319963600427468 | 0.0105 | dimensionless | True |
+| Yao 3<I<=8.3 maximum_absolute_error | 0.0200928657313586 | 0.027 | dimensionless | True |
+| Yao 3<I<=8.3 worst_RMS | 0.010329349386022882 | 0.0105 | dimensionless | True |
+| Yao 3<I<=8.3 worst_maximum | 0.020142865731358706 | 0.027 | dimensionless | True |
+| Yao I<=3 RMS | 0.009706490221975481 | 0.0105 | dimensionless | True |
+| Yao I<=3 maximum_absolute_error | 0.01695788083758043 | 0.027 | dimensionless | True |
+| Yao I<=3 worst_RMS | 0.009730940161503377 | 0.0105 | dimensionless | True |
+| Yao I<=3 worst_maximum | 0.017007880837580536 | 0.027 | dimensionless | True |
+| Hamer-Wu RMS | 0.009737132378839218 | 0.01 | dimensionless | True |
+| Hamer-Wu maximum_absolute_error | 0.029271286940099506 | 0.03 | dimensionless | True |
+| El Guendouzi I<=3 RMS | 0.001168458304252496 | 0.00144 | dimensionless | True |
+| El Guendouzi I<=3 maximum_absolute_error | 0.003562144900941089 | 0.00413 | dimensionless | True |
+| El Guendouzi I>3 RMS | 0.003160256010648372 | 0.0032 | dimensionless | True |
+| El Guendouzi I>3 maximum_absolute_error | 0.007503075050377728 | 0.00758 | dimensionless | True |
+| F3 NaCl 1 | 0.01082457391096814 | 0.04 | kg/mol | True |
+| F3 NaCl 3 | -0.007487304354282614 | 0.04 | kg/mol | True |
+| F3 NaCl 6 | -0.010641881902924172 | 0.04 | kg/mol | True |
+| table1/F2 vs Pitzer | 0.010635848902380118 | 0.15 | decade | True |
+| table1/F4-Mg vs Pitzer | 0.04905278204154606 | 0.15 | decade | True |
+| table1/F4-Mg vs /1 | 0.00012063261044659157 | 0.01 | decade | True |
+| table1/F4-Ca vs Pitzer | 0.010425979428175358 | 0.15 | decade | True |
+| table1/F4-Ca vs /1 | 0.0005515477193966944 | 0.01 | decade | True |
+| ms2/F2 vs Pitzer | 0.022071020918621675 | 0.15 | decade | True |
+| ms2/F4-Mg vs Pitzer | -0.09202448335526192 | 0.15 | decade | True |
+| ms2/F4-Mg vs /1 | -0.004655128207730286 | 0.01 | decade | True |
+| ms2/F4-Ca vs Pitzer | -0.012535297522289213 | 0.15 | decade | True |
+| ms2/F4-Ca vs /1 | -0.00239006616794768 | 0.01 | decade | True |

@@ -1,0 +1,100 @@
+{
+  "base": "c3100e94",
+  "source": "875dbd5a",
+  "main_wheel_sha256": "8640b283926540aad7ebecdce900aa331edbc5c7196bdedb4f80daf9e67a7b31",
+  "branch_wheel_sha256": "82d682b28a03f7516f27a34f994d084589e168498ada7de7f111435382c55178",
+  "states": {
+    "file": "analyses/2026-tpd-phase-discovery/results/issue238-cost/main-states.csv",
+    "sha256": "e03a2aa3723ed5b9e016e696cec3047baf70e62445c9e107c00f6d7cfb1c8a55",
+    "rows": 1176,
+    "full_rows_equal": 1182,
+    "binary64_and_text_equal": true,
+    "messages_file": "messages.csv"
+  },
+  "cost_comparisons": [
+    {
+      "case": "case-6/figure-2-point-7",
+      "main_best_seconds": 0.05339331600043806,
+      "branch_best_seconds": 0.0504027489987493,
+      "difference_percent": -5.601013807916,
+      "work_equal": true,
+      "all_selected_states_accepted": true
+    },
+    {
+      "case": "case-7/flash-5918.5286-Pa",
+      "main_best_seconds": 0.09183996699903219,
+      "branch_best_seconds": 0.08709440100028587,
+      "difference_percent": -5.167212221228612,
+      "work_equal": true,
+      "all_selected_states_accepted": true
+    }
+  ],
+  "timed": {
+    "file": "case1-summary.json",
+    "attempts": 3,
+    "attempt_work_file": "case1-attempt-work.csv",
+    "aggregate_elapsed_excess_seconds": 0.014885996999999929,
+    "compile_and_controller_seconds": 0.03898225099999997
+  },
+  "executed_scripts": {
+    "analyses/2026-born-unavailable-states/scripts/starts.py": "a86f25566df68433a1c4d129de96d079dda4da80158189c1f7e0a988f863d217",
+    "analyses/2026-tpd-phase-discovery/scripts/declared_start_cost.py": "605bbd7fdf16641603be87bd32d466710514c4b1937224853099d85acf8de005"
+  },
+  "logs": [
+    "build/issue238-elapsed-budget/main-lease.log",
+    "build/issue238-elapsed-budget/final-branch-lease.log"
+  ],
+  "limits": "Numerical verification for declared requests. One elapsed observation, not a strict real-time bound or persistent timing test. Best-of-three shared-host costs do not isolate causal overhead; no physical validation or global stability.",
+  "counting_correction": {
+    "before_source": "f07b465d",
+    "before_wheel_sha256": "e2fbe24148d12a7d21d3c732487311e97f90acb75d8a3ae60285e4af2ae59923",
+    "file": "before-counting-fix.csv",
+    "unequal_rows": 12,
+    "cause": "Initial polish preparation counted twice after main integration; one duplicate increment removed, preparation and row evaluation unchanged.",
+    "native_source_sha256": "678c6301230eeed8fb612d83a8fe9862f4635f7aec13e1cf6128d1a9cb54756d"
+  },
+  "checks": {
+    "source_commit": "875dbd5a",
+    "full_gate": {
+      "python_passed": 119,
+      "python_deselected": 1,
+      "native_passed": 6,
+      "ruff": "passed",
+      "mypy": "passed",
+      "analysis_layout": "clean",
+      "architecture": "passed",
+      "log": "build/issue238-elapsed-budget/final-branch-lease.log"
+    },
+    "affected": {
+      "command": "bash tools/check-affected.sh HEAD",
+      "log": "build/issue238-elapsed-budget/final-affected-lease.log",
+      "passed": true
+    },
+    "khudaida": {
+      "accepted": 8,
+      "original_row_maximum": 5.573319583618286e-14,
+      "component_balance_maximum_mol_per_second": 3.608224830031759e-16,
+      "results": "build/issue238-elapsed-budget/khudaida-results/",
+      "qualification": "build/issue238-elapsed-budget/khudaida-qualification/"
+    },
+    "render": {
+      "command": "quarto render notebook.qmd --to html --no-execute --embed-resources",
+      "cwd": "analyses/2026-tpd-phase-discovery",
+      "output": "analyses/2026-tpd-phase-discovery/figures/notebook.html",
+      "source_sha256": "3af2e593ef9b23439c6e971975bcea938deeb8d8aafc6fc3718bad67d35fd21e",
+      "output_sha256": "a4ddab06e50661b3e32e42e67a76c83a20988ab13ce64974eccad2e77cb53c0d",
+      "relative_links_rebased_to_figures": true,
+      "retained_quantities_checked": [
+        "Positive elapsed allowance and ordinary-solve preservation",
+        "1.014885997",
+        "24 iterations",
+        "185.47568909850332",
+        "221.4320092906285",
+        "0.017649549",
+        "1,176",
+        "119 Python tests"
+      ]
+    },
+    "prose": "24 plugin-wide rules passed; no personal configuration exists, and repository context has no supported terminology table; scoped checker unavailable."
+  }
+}

@@ -1,0 +1,99 @@
+{
+  "schema": "epcsaft.fixed-pressure-anchor-summary.v1",
+  "engine_commit": "f55b217ceef9be78253885f90caf91a8f5f6c491",
+  "wheel": {
+    "filename": "epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+    "sha256": "687481a96890443023ef52388fd5b45fa5ff001d45bd5e4b9bb65cf16337658e"
+  },
+  "fixture_sources": {
+    "downstream": {
+      "commit": "700f6212fb20ab4b2b9045c1b9da9d23a5acb88a",
+      "repository": "tannerpolley/MEA-Absorption-Column"
+    },
+    "engine": {
+      "commit": "9f4dc3eea1d0f9d22ec70f8e9e0aa2620c860468",
+      "repository": "tannerpolley/ePC-SAFT"
+    }
+  },
+  "fixtures": {
+    "aqueous_electrolyte.json": "27878d5e9ebc7fd4bc13dcc5a3e7e432502c74de960d1a3adf3c5ae38641a8ee",
+    "film_states.csv": "2c6172cbd84d11b851168c8d5526c46f62e28ed9dd7d06e6de1bb24bc68d074a",
+    "neutral_binary.json": "9b4abb521b2d9308a31ca568476a7d249402f1fe9822d14966ed5c4ed4edded5",
+    "parameters.json": "66837ab1c9625f28cf143a8adfea5855db70d3e070d44258d7e6f5f3e133c63b",
+    "speciation_table.csv": "36ae5bf625f076e5f31f8a3f26cccd40f9d3d33526190fac97e46e887507bdb4",
+    "strongly_associating_binary.json": "94893d3c6ca19f4a9dfcb30634703fe8e2d24f273d7172ef7669c59e8ff76bf0",
+    "temperature_adjustments.json": "502033bb303bd80aaddcbba817058e20572f675ed5dbc478de9e022c11fe6da8"
+  },
+  "model_identities": {
+    "artifact_fingerprint": "sha256:daca7434d860dd4d84b6aed4fb2dc771271b26e68abe97fe5514618c87745870",
+    "component_order_fingerprint": "sha256:398bd3c7ea472027619d503ba0c102541cfd77e76f0f720ab8b76fd0095a89a9",
+    "parameter_fingerprint": "sha256:f6a37f8ff6bd074540b3d7550b0e644f7f11efcea1e38789c36611b5229c50ee",
+    "topology_fingerprint": "sha256:a616ae2df897e07c114e035efc50f565af03bb41ff46dfdf6b7eefba7b7de783"
+  },
+  "comparison_summary": {
+    "count": 540,
+    "all_passed": true,
+    "max_normalized_derivative_disagreement": 0.0,
+    "normalized_derivative_tolerance": 3e-6,
+    "value_derivative_identity_exact": true
+  },
+  "performance": {
+    "charged": {
+      "maximum_ratio": 0.31332633890949413,
+      "ratios": {
+        "forward": 0.31163729354439207,
+        "reverse": 0.31332633890949413
+      },
+      "sequence_times_ns": {
+        "forward": {
+          "anchored": [3592581718, 3617043813, 3653833723, 3642312230, 3580678181],
+          "ordinary": [11797076021, 11653946999, 11606582036, 11404690055, 11518594050]
+        },
+        "reverse": {
+          "anchored": [3627427208, 3657755379, 3762875015, 3762991294, 3583652507],
+          "ordinary": [11420553148, 11558312099, 11775678775, 11673947973, 11839872991]
+        }
+      },
+      "threshold": 0.5
+    },
+    "neutral": {
+      "maximum_ratio": 0.3489622766556471,
+      "ratios": {
+        "forward": 0.3483036779748675,
+        "reverse": 0.3489622766556471
+      },
+      "sequence_times_ns": {
+        "forward": {
+          "anchored": [278012019, 275832204, 278949761, 299924731, 279400753],
+          "ordinary": [789151173, 798755215, 811093789, 800880894, 801959971]
+        },
+        "reverse": {
+          "anchored": [281968813, 289629012, 269355523, 280238988, 275010193],
+          "ordinary": [830697017, 851934957, 801017542, 803063846, 782218457]
+        }
+      },
+      "threshold": 0.5
+    }
+  },
+  "negative_cases": [
+    {"name": "wrong-phase", "status": "expected-error", "pressure_iterations": null, "derivative_condition_measure": null, "local_search_outcome": null, "reachability_envelope": null, "error_code": "density-anchor-phase-mismatch", "error_context": [], "message": "density-anchor-phase-mismatch", "anchor_pressure_iterations": 29, "certified_branch": {"origin_molar_density_hex": "0x1.3b15722dbcc86p+15", "requested_phase": "liquid", "schema": "epcsaft-certified-density-branch-v1", "stable_root_index": 0}},
+    {"name": "model-mismatch", "status": "expected-error", "pressure_iterations": null, "derivative_condition_measure": null, "local_search_outcome": null, "reachability_envelope": null, "error_code": "density-anchor-model-mismatch", "error_context": [], "message": "density-anchor-model-mismatch", "anchor_pressure_iterations": 29, "certified_branch": {"origin_molar_density_hex": "0x1.b3e46d73f9eacp+15", "requested_phase": "liquid", "schema": "epcsaft-certified-density-branch-v1", "stable_root_index": 0}},
+    {"name": "component-order-mismatch", "status": "expected-error", "pressure_iterations": null, "derivative_condition_measure": null, "local_search_outcome": null, "reachability_envelope": null, "error_code": "density-anchor-model-mismatch", "error_context": [], "message": "density-anchor-model-mismatch", "anchor_pressure_iterations": 29, "certified_branch": {"origin_molar_density_hex": "0x1.b3e46d73f9eaep+15", "requested_phase": "liquid", "schema": "epcsaft-certified-density-branch-v1", "stable_root_index": 0}},
+    {"name": "temperature-mismatch", "status": "expected-error", "pressure_iterations": null, "derivative_condition_measure": null, "local_search_outcome": null, "reachability_envelope": null, "error_code": "density-anchor-state-mismatch", "error_context": [], "message": "density-anchor-state-mismatch", "anchor_pressure_iterations": 31, "certified_branch": {"origin_molar_density_hex": "0x1.74ddf6cb07228p+15", "requested_phase": "liquid", "schema": "epcsaft-certified-density-branch-v1", "stable_root_index": 0}},
+    {"name": "pressure-mismatch", "status": "expected-error", "pressure_iterations": null, "derivative_condition_measure": null, "local_search_outcome": null, "reachability_envelope": null, "error_code": "density-anchor-state-mismatch", "error_context": [], "message": "density-anchor-state-mismatch", "anchor_pressure_iterations": 31, "certified_branch": {"origin_molar_density_hex": "0x1.74ddf6cb07228p+15", "requested_phase": "liquid", "schema": "epcsaft-certified-density-branch-v1", "stable_root_index": 0}},
+    {"name": "wrong-type", "status": "expected-error", "pressure_iterations": null, "derivative_condition_measure": null, "local_search_outcome": null, "reachability_envelope": null, "error_code": "invalid-density-anchor", "error_context": [["reason", "expected-State"]], "message": "invalid-density-anchor (reason=expected-State)", "anchor_pressure_iterations": null, "certified_branch": {}},
+    {"name": "nonfinite-density-double", "status": "expected-error", "pressure_iterations": null, "derivative_condition_measure": null, "local_search_outcome": null, "reachability_envelope": null, "error_code": "invalid-density-anchor", "error_context": [["reason", "missing-or-invalid-identity"]], "message": "invalid-density-anchor (reason=missing-or-invalid-identity)", "anchor_pressure_iterations": 29, "certified_branch": {"origin_molar_density_hex": "0x1.3b15722dbcc86p+15", "requested_phase": "liquid", "schema": "epcsaft-certified-density-branch-v1", "stable_root_index": 0}},
+    {"name": "nonpositive-density-double", "status": "expected-error", "pressure_iterations": null, "derivative_condition_measure": null, "local_search_outcome": null, "reachability_envelope": null, "error_code": "invalid-density-anchor", "error_context": [["reason", "missing-or-invalid-identity"]], "message": "invalid-density-anchor (reason=missing-or-invalid-identity)", "anchor_pressure_iterations": 29, "certified_branch": {"origin_molar_density_hex": "0x1.3b15722dbcc86p+15", "requested_phase": "liquid", "schema": "epcsaft-certified-density-branch-v1", "stable_root_index": 0}},
+    {"name": "local-envelope", "status": "expected-error", "pressure_iterations": null, "derivative_condition_measure": null, "local_search_outcome": "rejected", "reachability_envelope": {"max_abs_log_density": 0.009950330853168083, "centered_scan_intervals": 5, "domain_scan_intervals": 360}, "error_code": "density-anchor-branch-unreachable", "error_context": [["reason", "continued density reference is outside the model domain"], ["max_abs_log_density", "0.009950330853168083"], ["centered_scan_intervals", "5"], ["domain_scan_intervals", "360"]], "message": "density-anchor-branch-unreachable (reason=continued density reference is outside the model domain, max_abs_log_density=0.009950330853168083, centered_scan_intervals=5, domain_scan_intervals=360)", "anchor_pressure_iterations": 29, "certified_branch": {"origin_molar_density_hex": "0x1.3b15722dbcc86p+15", "requested_phase": "liquid", "schema": "epcsaft-certified-density-branch-v1", "stable_root_index": 0}},
+    {"name": "non-evaluable-derivative", "status": "expected-non-evaluable", "error_code": "provider_domain_rejection", "anchor_pressure_iterations": null, "certified_branch": {"origin_molar_density_hex": "0x1.4321b1d1d4455p+5", "requested_phase": "liquid", "schema": "epcsaft-certified-density-branch-v1", "stable_root_index": 0}, "value_status": "accepted", "derivative_status": "non_evaluable", "molar_density_mol_per_m3": 40.391452445307245, "pressure_iterations": 23, "derivative_condition_measure": null, "local_search_outcome": "not_attempted", "reachability_envelope": null, "state_identity": "sha256:666373fe68285e7d004a22d23ba32adb0304249101bf73df03e09e7c847d35a4"}
+  ],
+  "tolerances": {
+    "normalized_derivative_disagreement": 3e-6,
+    "derivative_absolute_floor": 1e-8,
+    "value_relative": 1e-10,
+    "value_absolute": 1e-12,
+    "pressure_relative_residual": 1e-11,
+    "performance_ratio": 0.5
+  },
+  "claim_limits": ["Local fixed-pressure branch-continuation evidence only; not global phase-equilibrium or reactive-film validation."]
+}

@@ -1,0 +1,25 @@
+reaction_id,source_symbol,temperature_C,temperature_K,log10_K,source_unit,pressure_Pa,pressure_note,rounding_half_width_log10_K,reported_uncertainty,source_id,source_locator,scope,verification
+carbonic_first,CO2 K1,25,298.15,-6.345,M,,not specified for Table 2,0.0005,,IAPWS-TGD9-18,Table 2 p.15; row CO2 K1; column 25 degC,selected,checked against PDF p.15 and text extraction
+carbonic_first,CO2 K1,50,323.15,-6.269,M,,not specified for Table 2,0.0005,,IAPWS-TGD9-18,Table 2 p.15; row CO2 K1; column 50 degC,selected,checked against PDF p.15 and text extraction
+carbonic_first,CO2 K1,75,348.15,-6.293,M,,not specified for Table 2,0.0005,,IAPWS-TGD9-18,Table 2 p.15; row CO2 K1; column 75 degC,selected,checked against PDF p.15 and text extraction
+carbonic_first,CO2 K1,100,373.15,-6.388,M,,not specified for Table 2,0.0005,,IAPWS-TGD9-18,Table 2 p.15; row CO2 K1; column 100 degC,selected,checked against PDF p.15 and text extraction
+carbonic_first,CO2 K1,125,398.15,-6.535,M,,not specified for Table 2,0.0005,,IAPWS-TGD9-18,Table 2 p.15; row CO2 K1; column 125 degC,selected,checked against PDF p.15 and text extraction
+carbonic_first,CO2 K1,150,423.15,-6.724,M,,not specified for Table 2,0.0005,,IAPWS-TGD9-18,Table 2 p.15; row CO2 K1; column 150 degC,selected,checked against PDF p.15 and text extraction
+carbonic_second,CO2 K2,25,298.15,-10.329,M,,not specified for Table 2,0.0005,,IAPWS-TGD9-18,Table 2 p.15; row CO2 K2; column 25 degC,selected,checked against PDF p.15 and text extraction
+carbonic_second,CO2 K2,50,323.15,-10.169,M,,not specified for Table 2,0.0005,,IAPWS-TGD9-18,Table 2 p.15; row CO2 K2; column 50 degC,selected,checked against PDF p.15 and text extraction
+carbonic_second,CO2 K2,75,348.15,-10.095,M,,not specified for Table 2,0.0005,,IAPWS-TGD9-18,Table 2 p.15; row CO2 K2; column 75 degC,selected,checked against PDF p.15 and text extraction
+carbonic_second,CO2 K2,100,373.15,-10.084,M,,not specified for Table 2,0.0005,,IAPWS-TGD9-18,Table 2 p.15; row CO2 K2; column 100 degC,selected,checked against PDF p.15 and text extraction
+carbonic_second,CO2 K2,125,398.15,-10.121,M,,not specified for Table 2,0.0005,,IAPWS-TGD9-18,Table 2 p.15; row CO2 K2; column 125 degC,selected,checked against PDF p.15 and text extraction
+carbonic_second,CO2 K2,150,423.15,-10.200,M,,not specified for Table 2,0.0005,,IAPWS-TGD9-18,Table 2 p.15; row CO2 K2; column 150 degC,selected,checked against PDF p.15 and text extraction
+ammonia_base,NH3 Kb,25,298.15,-4.754,M,,not specified for Table 2,0.0005,,IAPWS-TGD9-18,Table 2 p.15; row NH3 Kb; column 25 degC,source inventory; ammonia excluded,checked against PDF p.15 and text extraction
+ammonia_base,NH3 Kb,50,323.15,-4.733,M,,not specified for Table 2,0.0005,,IAPWS-TGD9-18,Table 2 p.15; row NH3 Kb; column 50 degC,source inventory; ammonia excluded,checked against PDF p.15 and text extraction
+ammonia_base,NH3 Kb,75,348.15,-4.772,M,,not specified for Table 2,0.0005,,IAPWS-TGD9-18,Table 2 p.15; row NH3 Kb; column 75 degC,source inventory; ammonia excluded,checked against PDF p.15 and text extraction
+ammonia_base,NH3 Kb,100,373.15,-4.854,M,,not specified for Table 2,0.0005,,IAPWS-TGD9-18,Table 2 p.15; row NH3 Kb; column 100 degC,source inventory; ammonia excluded,checked against PDF p.15 and text extraction
+ammonia_base,NH3 Kb,125,398.15,-4.970,M,,not specified for Table 2,0.0005,,IAPWS-TGD9-18,Table 2 p.15; row NH3 Kb; column 125 degC,source inventory; ammonia excluded,checked against PDF p.15 and text extraction
+ammonia_base,NH3 Kb,150,423.15,-5.115,M,,not specified for Table 2,0.0005,,IAPWS-TGD9-18,Table 2 p.15; row NH3 Kb; column 150 degC,source inventory; ammonia excluded,checked against PDF p.15 and text extraction
+water_autoionization,H2O Kw,25,298.15,-13.995,M^2,,not specified for Table 2,0.0005,,IAPWS-TGD9-18,Table 2 p.15; row H2O Kw; column 25 degC,selected,checked against PDF p.15 and text extraction
+water_autoionization,H2O Kw,50,323.15,-13.265,M^2,,not specified for Table 2,0.0005,,IAPWS-TGD9-18,Table 2 p.15; row H2O Kw; column 50 degC,selected,checked against PDF p.15 and text extraction
+water_autoionization,H2O Kw,75,348.15,-12.696,M^2,,not specified for Table 2,0.0005,,IAPWS-TGD9-18,Table 2 p.15; row H2O Kw; column 75 degC,selected,checked against PDF p.15 and text extraction
+water_autoionization,H2O Kw,100,373.15,-12.252,M^2,,not specified for Table 2,0.0005,,IAPWS-TGD9-18,Table 2 p.15; row H2O Kw; column 100 degC,selected,checked against PDF p.15 and text extraction
+water_autoionization,H2O Kw,125,398.15,-11.906,M^2,,not specified for Table 2,0.0005,,IAPWS-TGD9-18,Table 2 p.15; row H2O Kw; column 125 degC,selected,checked against PDF p.15 and text extraction
+water_autoionization,H2O Kw,150,423.15,-11.641,M^2,,not specified for Table 2,0.0005,,IAPWS-TGD9-18,Table 2 p.15; row H2O Kw; column 150 degC,selected,checked against PDF p.15 and text extraction

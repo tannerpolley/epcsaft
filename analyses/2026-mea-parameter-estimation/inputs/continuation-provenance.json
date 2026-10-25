@@ -1,0 +1,741 @@
+{
+  "schema_version": 1,
+  "purpose": "deterministic-initial-guesses-only",
+  "materialization_command": "OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 .venv/bin/python analyses/2026-mea-parameter-estimation/scripts/build_fit_input.py",
+  "source_parameters_sha256": "sha256:8ef0b7c6c9f56cda3007b9d4161da8df39f0eddd66a8395f39ed8d2262fccf90",
+  "source_observation_structure_sha256": "sha256:3aa0e900f78cb1f389e6966c23c2097dc0a9659319a352d5870db06510f65562",
+  "speciation_anchors_sha256": "sha256:1b796302c719d033f5693c81726a5bca118eeed9aca1dbbd4ecc1dc43f9c987c",
+  "pressure_anchors_sha256": "sha256:2f81a77b02228f6a47b9d2ad9fb73e81306220a900843727eb58e6420c4f54ff",
+  "fit_input_sha256": "sha256:318b36fb0577ba15faa57978105338f72b48d75c4e3a82bbb622d8218f902d5a",
+  "parameter_metadata_rebind": {
+    "source_commit": "0300342",
+    "old_parameters_sha256": "sha256:d31dd673f76020991439254857c356abb7f237cc038c5ac6a18dd6b5a48e058d",
+    "new_parameters_sha256": "sha256:8ef0b7c6c9f56cda3007b9d4161da8df39f0eddd66a8395f39ed8d2262fccf90",
+    "allowed_changed_fields": [
+      "candidate_domain_id",
+      "qualification",
+      "source_sha256"
+    ],
+    "semantic_records_unchanged_after_field_removal": true,
+    "state_values_changed": false,
+    "one_time_commands": [
+      "sed -i 's/d31dd673f76020991439254857c356abb7f237cc038c5ac6a18dd6b5a48e058d/8ef0b7c6c9f56cda3007b9d4161da8df39f0eddd66a8395f39ed8d2262fccf90/g' inputs/{continuation-provenance,fit-input,pressure-anchors,speciation-anchors}.json",
+      "sed -i 's/e27a719ba9fee824445d94c65ba772e8be04aba5e5f3e8e3cad99cb74a327f8a/1b796302c719d033f5693c81726a5bca118eeed9aca1dbbd4ecc1dc43f9c987c/g' inputs/pressure-anchors.json"
+    ]
+  },
+  "initial_speciation_amounts": "declared-feed-amounts",
+  "initial_speciation_molar_volume_m3_per_mol": 2.2e-05,
+  "pressure_initial_guesses": [
+    "ordered-target-independent-100000-10000-1000-1000000-pascal-ideal-starts",
+    "source-only-ideal-vapor-pressure-for-final-nonideal-provider",
+    "target-independent-exp-plus-minus-half-and-one-ideal-pressure-recovery",
+    "nearest-retained-source-only-pressure-continuation-on-resume",
+    "retained-source-only-nonideal-pressure-if-ideal-corrector-fails",
+    "typed-source-parameter-failure-with-nearest-source-only-provider-start"
+  ],
+  "target_values_used_for_initial_guesses": false,
+  "materialization_workers": 1,
+  "source_parameter_initialization_failures": {
+    "vle_obs_0126": {
+      "code": "numerical_convergence_failure",
+      "diagnostic": "source-parameter nonideal bubble branch did not converge"
+    },
+    "vle_obs_0225": {
+      "code": "numerical_convergence_failure",
+      "diagnostic": "source-parameter nonideal bubble branch did not converge"
+    },
+    "vle_obs_0226": {
+      "code": "numerical_convergence_failure",
+      "diagnostic": "source-parameter nonideal bubble branch did not converge"
+    },
+    "vle_obs_0227": {
+      "code": "numerical_convergence_failure",
+      "diagnostic": "source-parameter nonideal bubble branch did not converge"
+    },
+    "vle_obs_0230": {
+      "code": "numerical_convergence_failure",
+      "diagnostic": "source-parameter nonideal bubble branch did not converge"
+    }
+  },
+  "pressure_initialization_provenance": {
+    "vle_obs_0119": {
+      "pressure_seed_kind": "row-specific-model-ideal",
+      "source_neighbor_identity": null,
+      "source_neighbor_pressure_pa": null,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0120": {
+      "pressure_seed_kind": "row-specific-model-ideal",
+      "source_neighbor_identity": null,
+      "source_neighbor_pressure_pa": null,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0121": {
+      "pressure_seed_kind": "row-specific-model-ideal",
+      "source_neighbor_identity": null,
+      "source_neighbor_pressure_pa": null,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0122": {
+      "pressure_seed_kind": "row-specific-model-ideal",
+      "source_neighbor_identity": null,
+      "source_neighbor_pressure_pa": null,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0123": {
+      "pressure_seed_kind": "row-specific-model-ideal",
+      "source_neighbor_identity": null,
+      "source_neighbor_pressure_pa": null,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0124": {
+      "pressure_seed_kind": "row-specific-model-ideal",
+      "source_neighbor_identity": null,
+      "source_neighbor_pressure_pa": null,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0125": {
+      "pressure_seed_kind": "row-specific-model-ideal",
+      "source_neighbor_identity": null,
+      "source_neighbor_pressure_pa": null,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0126": {
+      "pressure_seed_kind": "row-specific-model-ideal",
+      "source_neighbor_identity": null,
+      "source_neighbor_pressure_pa": null,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0127": {
+      "pressure_seed_kind": "row-specific-model-ideal",
+      "source_neighbor_identity": null,
+      "source_neighbor_pressure_pa": null,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0128": {
+      "pressure_seed_kind": "row-specific-model-ideal",
+      "source_neighbor_identity": null,
+      "source_neighbor_pressure_pa": null,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0129": {
+      "pressure_seed_kind": "row-specific-model-ideal",
+      "source_neighbor_identity": null,
+      "source_neighbor_pressure_pa": null,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0130": {
+      "pressure_seed_kind": "row-specific-model-ideal",
+      "source_neighbor_identity": null,
+      "source_neighbor_pressure_pa": null,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0131": {
+      "pressure_seed_kind": "row-specific-model-ideal",
+      "source_neighbor_identity": null,
+      "source_neighbor_pressure_pa": null,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0132": {
+      "pressure_seed_kind": "row-specific-model-ideal",
+      "source_neighbor_identity": null,
+      "source_neighbor_pressure_pa": null,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0133": {
+      "pressure_seed_kind": "row-specific-model-ideal",
+      "source_neighbor_identity": null,
+      "source_neighbor_pressure_pa": null,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0134": {
+      "pressure_seed_kind": "row-specific-model-ideal",
+      "source_neighbor_identity": null,
+      "source_neighbor_pressure_pa": null,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0135": {
+      "pressure_seed_kind": "row-specific-model-ideal",
+      "source_neighbor_identity": null,
+      "source_neighbor_pressure_pa": null,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0136": {
+      "pressure_seed_kind": "row-specific-model-ideal",
+      "source_neighbor_identity": null,
+      "source_neighbor_pressure_pa": null,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0137": {
+      "pressure_seed_kind": "row-specific-model-ideal",
+      "source_neighbor_identity": null,
+      "source_neighbor_pressure_pa": null,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0138": {
+      "pressure_seed_kind": "row-specific-model-ideal",
+      "source_neighbor_identity": null,
+      "source_neighbor_pressure_pa": null,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0139": {
+      "pressure_seed_kind": "row-specific-model-ideal",
+      "source_neighbor_identity": null,
+      "source_neighbor_pressure_pa": null,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0140": {
+      "pressure_seed_kind": "row-specific-model-ideal",
+      "source_neighbor_identity": null,
+      "source_neighbor_pressure_pa": null,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0141": {
+      "pressure_seed_kind": "row-specific-model-ideal",
+      "source_neighbor_identity": null,
+      "source_neighbor_pressure_pa": null,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0142": {
+      "pressure_seed_kind": "row-specific-model-ideal",
+      "source_neighbor_identity": null,
+      "source_neighbor_pressure_pa": null,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0143": {
+      "pressure_seed_kind": "row-specific-model-ideal",
+      "source_neighbor_identity": null,
+      "source_neighbor_pressure_pa": null,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0144": {
+      "pressure_seed_kind": "row-specific-model-ideal",
+      "source_neighbor_identity": null,
+      "source_neighbor_pressure_pa": null,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0145": {
+      "pressure_seed_kind": "row-specific-model-ideal",
+      "source_neighbor_identity": null,
+      "source_neighbor_pressure_pa": null,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0146": {
+      "pressure_seed_kind": "row-specific-model-ideal",
+      "source_neighbor_identity": null,
+      "source_neighbor_pressure_pa": null,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0147": {
+      "pressure_seed_kind": "row-specific-model-ideal",
+      "source_neighbor_identity": null,
+      "source_neighbor_pressure_pa": null,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0148": {
+      "pressure_seed_kind": "source-group-model-provider-continuation",
+      "source_neighbor_identity": "vle_obs_0147",
+      "source_neighbor_pressure_pa": 624487.185729834,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0149": {
+      "pressure_seed_kind": "source-group-model-provider-continuation",
+      "source_neighbor_identity": "vle_obs_0148",
+      "source_neighbor_pressure_pa": 1145655.048392133,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0186": {
+      "pressure_seed_kind": "row-specific-model-ideal",
+      "source_neighbor_identity": null,
+      "source_neighbor_pressure_pa": null,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0187": {
+      "pressure_seed_kind": "source-group-model-provider-continuation",
+      "source_neighbor_identity": "vle_obs_0186",
+      "source_neighbor_pressure_pa": 6573.950554987444,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0188": {
+      "pressure_seed_kind": "source-group-model-provider-continuation",
+      "source_neighbor_identity": "vle_obs_0187",
+      "source_neighbor_pressure_pa": 7658.221844778101,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0189": {
+      "pressure_seed_kind": "source-group-model-provider-continuation",
+      "source_neighbor_identity": "vle_obs_0188",
+      "source_neighbor_pressure_pa": 29756.85294173989,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0190": {
+      "pressure_seed_kind": "source-group-model-provider-continuation",
+      "source_neighbor_identity": "vle_obs_0189",
+      "source_neighbor_pressure_pa": 190033.03817944988,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0191": {
+      "pressure_seed_kind": "source-group-model-provider-continuation",
+      "source_neighbor_identity": "vle_obs_0190",
+      "source_neighbor_pressure_pa": 349822.0063996125,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0192": {
+      "pressure_seed_kind": "source-group-model-provider-continuation",
+      "source_neighbor_identity": "vle_obs_0191",
+      "source_neighbor_pressure_pa": 601316.0276310903,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0193": {
+      "pressure_seed_kind": "source-group-model-provider-continuation",
+      "source_neighbor_identity": "vle_obs_0192",
+      "source_neighbor_pressure_pa": 968641.9482225531,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0194": {
+      "pressure_seed_kind": "source-group-model-provider-continuation",
+      "source_neighbor_identity": "vle_obs_0186",
+      "source_neighbor_pressure_pa": 6573.950554987444,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0195": {
+      "pressure_seed_kind": "source-group-model-provider-continuation",
+      "source_neighbor_identity": "vle_obs_0194",
+      "source_neighbor_pressure_pa": 17633.659166179023,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0196": {
+      "pressure_seed_kind": "source-group-model-provider-continuation",
+      "source_neighbor_identity": "vle_obs_0195",
+      "source_neighbor_pressure_pa": 18463.724334834063,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0197": {
+      "pressure_seed_kind": "source-group-model-provider-continuation",
+      "source_neighbor_identity": "vle_obs_0196",
+      "source_neighbor_pressure_pa": 23195.2857740327,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0198": {
+      "pressure_seed_kind": "source-group-model-provider-continuation",
+      "source_neighbor_identity": "vle_obs_0197",
+      "source_neighbor_pressure_pa": 161712.526187769,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0199": {
+      "pressure_seed_kind": "source-group-model-provider-continuation",
+      "source_neighbor_identity": "vle_obs_0198",
+      "source_neighbor_pressure_pa": 335847.56003133865,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0200": {
+      "pressure_seed_kind": "source-group-model-provider-continuation",
+      "source_neighbor_identity": "vle_obs_0199",
+      "source_neighbor_pressure_pa": 775273.0930188264,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0201": {
+      "pressure_seed_kind": "source-group-model-provider-continuation",
+      "source_neighbor_identity": "vle_obs_0200",
+      "source_neighbor_pressure_pa": 1320667.145899478,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0202": {
+      "pressure_seed_kind": "source-group-model-provider-continuation",
+      "source_neighbor_identity": "vle_obs_0201",
+      "source_neighbor_pressure_pa": 1514960.1739172898,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0203": {
+      "pressure_seed_kind": "source-group-model-provider-continuation",
+      "source_neighbor_identity": "vle_obs_0194",
+      "source_neighbor_pressure_pa": 17633.659166179023,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0204": {
+      "pressure_seed_kind": "source-group-model-provider-continuation",
+      "source_neighbor_identity": "vle_obs_0203",
+      "source_neighbor_pressure_pa": 41709.47527573554,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0205": {
+      "pressure_seed_kind": "source-group-model-provider-continuation",
+      "source_neighbor_identity": "vle_obs_0204",
+      "source_neighbor_pressure_pa": 41769.95866129566,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0206": {
+      "pressure_seed_kind": "source-group-model-provider-continuation",
+      "source_neighbor_identity": "vle_obs_0205",
+      "source_neighbor_pressure_pa": 43106.57112947591,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0207": {
+      "pressure_seed_kind": "source-group-model-provider-continuation",
+      "source_neighbor_identity": "vle_obs_0206",
+      "source_neighbor_pressure_pa": 45714.173573702465,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0208": {
+      "pressure_seed_kind": "source-group-model-provider-continuation",
+      "source_neighbor_identity": "vle_obs_0207",
+      "source_neighbor_pressure_pa": 58363.572411965804,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0209": {
+      "pressure_seed_kind": "source-group-model-provider-continuation",
+      "source_neighbor_identity": "vle_obs_0208",
+      "source_neighbor_pressure_pa": 294427.52314597124,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0210": {
+      "pressure_seed_kind": "source-group-model-provider-continuation",
+      "source_neighbor_identity": "vle_obs_0209",
+      "source_neighbor_pressure_pa": 1098040.0831731758,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0211": {
+      "pressure_seed_kind": "source-group-model-provider-continuation",
+      "source_neighbor_identity": "vle_obs_0210",
+      "source_neighbor_pressure_pa": 1790468.7990596143,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0212": {
+      "pressure_seed_kind": "source-group-model-provider-continuation",
+      "source_neighbor_identity": "vle_obs_0211",
+      "source_neighbor_pressure_pa": 2682660.6211174764,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0213": {
+      "pressure_seed_kind": "source-group-model-provider-continuation",
+      "source_neighbor_identity": "vle_obs_0212",
+      "source_neighbor_pressure_pa": 3674130.308831647,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0214": {
+      "pressure_seed_kind": "source-group-model-provider-continuation",
+      "source_neighbor_identity": "vle_obs_0203",
+      "source_neighbor_pressure_pa": 41709.47527573554,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0215": {
+      "pressure_seed_kind": "source-group-model-provider-continuation",
+      "source_neighbor_identity": "vle_obs_0214",
+      "source_neighbor_pressure_pa": 89756.86207195908,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0216": {
+      "pressure_seed_kind": "source-group-model-provider-continuation",
+      "source_neighbor_identity": "vle_obs_0215",
+      "source_neighbor_pressure_pa": 92354.23962296444,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0217": {
+      "pressure_seed_kind": "source-group-model-provider-continuation",
+      "source_neighbor_identity": "vle_obs_0216",
+      "source_neighbor_pressure_pa": 153743.85521284243,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0218": {
+      "pressure_seed_kind": "source-group-model-provider-continuation",
+      "source_neighbor_identity": "vle_obs_0217",
+      "source_neighbor_pressure_pa": 1124381.9210857463,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0219": {
+      "pressure_seed_kind": "source-group-model-provider-continuation",
+      "source_neighbor_identity": "vle_obs_0218",
+      "source_neighbor_pressure_pa": 1622746.734479589,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0220": {
+      "pressure_seed_kind": "source-group-model-provider-continuation",
+      "source_neighbor_identity": "vle_obs_0219",
+      "source_neighbor_pressure_pa": 2444575.2166235885,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0221": {
+      "pressure_seed_kind": "source-group-model-provider-continuation",
+      "source_neighbor_identity": "vle_obs_0220",
+      "source_neighbor_pressure_pa": 2510157.6683017923,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0222": {
+      "pressure_seed_kind": "source-group-model-provider-continuation",
+      "source_neighbor_identity": "vle_obs_0221",
+      "source_neighbor_pressure_pa": 4146942.0569459014,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0223": {
+      "pressure_seed_kind": "source-group-model-provider-continuation",
+      "source_neighbor_identity": "vle_obs_0222",
+      "source_neighbor_pressure_pa": 4505555.714975243,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0224": {
+      "pressure_seed_kind": "source-group-model-provider-continuation",
+      "source_neighbor_identity": "vle_obs_0214",
+      "source_neighbor_pressure_pa": 89756.86207195908,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0225": {
+      "pressure_seed_kind": "source-group-model-provider-continuation",
+      "source_neighbor_identity": "vle_obs_0224",
+      "source_neighbor_pressure_pa": 176980.31316930367,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0226": {
+      "pressure_seed_kind": "source-group-model-provider-continuation",
+      "source_neighbor_identity": "vle_obs_0225",
+      "source_neighbor_pressure_pa": 176980.31316930367,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0227": {
+      "pressure_seed_kind": "source-group-model-provider-continuation",
+      "source_neighbor_identity": "vle_obs_0226",
+      "source_neighbor_pressure_pa": 176980.31316930367,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0228": {
+      "pressure_seed_kind": "source-group-model-provider-continuation",
+      "source_neighbor_identity": "vle_obs_0227",
+      "source_neighbor_pressure_pa": 176980.31316930367,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0229": {
+      "pressure_seed_kind": "source-group-model-provider-continuation",
+      "source_neighbor_identity": "vle_obs_0228",
+      "source_neighbor_pressure_pa": 1770386.4415402585,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0230": {
+      "pressure_seed_kind": "source-group-model-provider-continuation",
+      "source_neighbor_identity": "vle_obs_0229",
+      "source_neighbor_pressure_pa": 2771261.010051138,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0231": {
+      "pressure_seed_kind": "source-group-model-provider-continuation",
+      "source_neighbor_identity": "vle_obs_0230",
+      "source_neighbor_pressure_pa": 2771261.010051138,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0232": {
+      "pressure_seed_kind": "source-group-model-provider-continuation",
+      "source_neighbor_identity": "vle_obs_0231",
+      "source_neighbor_pressure_pa": 3949739.8949268437,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    },
+    "vle_obs_0233": {
+      "pressure_seed_kind": "source-group-model-provider-continuation",
+      "source_neighbor_identity": "vle_obs_0232",
+      "source_neighbor_pressure_pa": 5311019.345539004,
+      "measured_target_used": false,
+      "row_conserved_totals_reconstructed": true
+    }
+  },
+  "continuation_states": [
+    "vle_obs_0119",
+    "vle_obs_0120",
+    "vle_obs_0121",
+    "vle_obs_0122",
+    "vle_obs_0123",
+    "vle_obs_0124",
+    "vle_obs_0125",
+    "vle_obs_0126",
+    "vle_obs_0127",
+    "vle_obs_0128",
+    "vle_obs_0129",
+    "vle_obs_0130",
+    "vle_obs_0131",
+    "vle_obs_0132",
+    "vle_obs_0133",
+    "vle_obs_0134",
+    "vle_obs_0135",
+    "vle_obs_0136",
+    "vle_obs_0137",
+    "vle_obs_0138",
+    "vle_obs_0139",
+    "vle_obs_0140",
+    "vle_obs_0141",
+    "vle_obs_0142",
+    "vle_obs_0143",
+    "vle_obs_0144",
+    "vle_obs_0145",
+    "vle_obs_0146",
+    "vle_obs_0147",
+    "vle_obs_0148",
+    "vle_obs_0149",
+    "vle_obs_0186",
+    "vle_obs_0187",
+    "vle_obs_0188",
+    "vle_obs_0189",
+    "vle_obs_0190",
+    "vle_obs_0191",
+    "vle_obs_0192",
+    "vle_obs_0193",
+    "vle_obs_0194",
+    "vle_obs_0195",
+    "vle_obs_0196",
+    "vle_obs_0197",
+    "vle_obs_0198",
+    "vle_obs_0199",
+    "vle_obs_0200",
+    "vle_obs_0201",
+    "vle_obs_0202",
+    "vle_obs_0203",
+    "vle_obs_0204",
+    "vle_obs_0205",
+    "vle_obs_0206",
+    "vle_obs_0207",
+    "vle_obs_0208",
+    "vle_obs_0209",
+    "vle_obs_0210",
+    "vle_obs_0211",
+    "vle_obs_0212",
+    "vle_obs_0213",
+    "vle_obs_0214",
+    "vle_obs_0215",
+    "vle_obs_0216",
+    "vle_obs_0217",
+    "vle_obs_0218",
+    "vle_obs_0219",
+    "vle_obs_0220",
+    "vle_obs_0221",
+    "vle_obs_0222",
+    "vle_obs_0223",
+    "vle_obs_0224",
+    "vle_obs_0225",
+    "vle_obs_0226",
+    "vle_obs_0227",
+    "vle_obs_0228",
+    "vle_obs_0229",
+    "vle_obs_0230",
+    "vle_obs_0231",
+    "vle_obs_0232",
+    "vle_obs_0233",
+    "Bottinger2008_state_030",
+    "Bottinger2008_state_031",
+    "Bottinger2008_state_032",
+    "Bottinger2008_state_033",
+    "Bottinger2008_state_034",
+    "Bottinger2008_state_035",
+    "Bottinger2008_state_042",
+    "Bottinger2008_state_043",
+    "Bottinger2008_state_044",
+    "Bottinger2008_state_045",
+    "Bottinger2008_state_046",
+    "Bottinger2008_state_047",
+    "Bottinger2008_state_048",
+    "Bottinger2008_state_049",
+    "Bottinger2008_state_050",
+    "Bottinger2008_state_055",
+    "Bottinger2008_state_056",
+    "Bottinger2008_state_057",
+    "Bottinger2008_state_058",
+    "Bottinger2008_state_059",
+    "Bottinger2008_state_063",
+    "Bottinger2008_state_064",
+    "Bottinger2008_state_065",
+    "Bottinger2008_state_066",
+    "Bottinger2008_state_067",
+    "Matin2012_state_001",
+    "Matin2012_state_002",
+    "Matin2012_state_003",
+    "Matin2012_state_004",
+    "Matin2012_state_005",
+    "Matin2012_state_006",
+    "Matin2012_state_007",
+    "Matin2012_state_008",
+    "Matin2012_state_009",
+    "Matin2012_state_010",
+    "Matin2012_state_011",
+    "Matin2012_state_012",
+    "Matin2012_state_013",
+    "Matin2012_state_014",
+    "Matin2012_state_015",
+    "Matin2012_state_016",
+    "Matin2012_state_017",
+    "Matin2012_state_018",
+    "Matin2012_state_019"
+  ],
+  "replay_contract": "the timed fit recomputes every model prediction, residual, and certificate for the complete retained dataset"
+}

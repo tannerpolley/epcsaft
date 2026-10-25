@@ -1,0 +1,36 @@
+{
+  "selected": null,
+  "extents": [
+    0.005,
+    0.02,
+    0.05,
+    0.1,
+    0.2,
+    0.3
+  ],
+  "causes": [
+    "elapsed work budget exhausted; elapsed work budget exhausted",
+    "elapsed work budget exhausted; elapsed work budget exhausted",
+    "elapsed work budget exhausted; elapsed work budget exhausted",
+    "unattempted",
+    "unattempted",
+    "unattempted"
+  ],
+  "iterations": 24,
+  "seconds": 1.014885997,
+  "attempt_seconds": [
+    0.367649549,
+    0.354856097,
+    0.2533981,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "overrun_seconds": 0.017649549000000042,
+  "budget_exhausted": true,
+  "limits": {
+    "seconds": 1.0,
+    "attempt_seconds": 0.35
+  },
+  "wheel_sha256": "82d682b28a03f7516f27a34f994d084589e168498ada7de7f111435382c55178"
+}

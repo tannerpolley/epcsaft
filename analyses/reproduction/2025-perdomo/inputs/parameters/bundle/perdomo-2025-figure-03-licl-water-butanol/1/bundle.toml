@@ -1,0 +1,33 @@
+schema_version = 1
+bundle_id = "perdomo-2025-figure-03-licl-water-butanol"
+bundle_version = 1
+purpose = "user-provided"
+files = ["components.csv", "single.csv", "pair.csv", "sites.csv", "association.csv", "model.csv", "correlations.toml"]
+
+[[sources]]
+source_id = "ascani-et-al-2022"
+citation = "Ascani, M.; Sadowski, G.; Held, C. Journal of Chemical & Engineering Data 2022, 67, 1972-1984."
+doi = "10.1021/acs.jced.1c00866"
+use_basis = "Water/1-butanol pure, cross-association, and binary parameters"
+
+[[sources]]
+source_id = "figiel-yu-held-2025"
+citation = "Figiel, P.; Yu, G.; Held, C. Industrial & Engineering Chemistry Research 2025, 64, 9406-9418."
+doi = "10.1021/acs.iecr.5c00475"
+use_basis = "Li+ and Cl- pure, water-ion, and ion-ion parameters"
+
+[[sources]]
+source_id = "perdomo-validation-regression-2026"
+citation = "Validation-side Regression replay for Perdomo Figure 3"
+use_basis = "1-butanol/Li+ and 1-butanol/Cl- k_ij fitted to retained single-ion transfer targets"
+
+[[domains]]
+domain_id = "perdomo-figure-03-298-15-k-101-3-kpa"
+kind = "reported-conditions"
+temperature_min = 298.15
+temperature_max = 298.15
+temperature_unit = "kelvin"
+pressure_min = 101.3
+pressure_max = 101.3
+pressure_unit = "kilopascal"
+ion_mole_fraction_max = 0.38

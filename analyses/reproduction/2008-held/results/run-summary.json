@@ -1,0 +1,11 @@
+{
+  "wall_seconds": 2.0718698269993183,
+  "source_rows": 2196,
+  "native_rows": 11942,
+  "execution_run_id": "cc1f2d8c-8a43-4c66-89e4-572f6f7485d9",
+  "outcomes": {
+    "reproduced": 1394,
+    "not reproduced": 619,
+    "undetermined": 183
+  }
+}

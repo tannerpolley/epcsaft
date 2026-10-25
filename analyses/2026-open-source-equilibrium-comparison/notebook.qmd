@@ -1,0 +1,110 @@
+---
+title: "Caloric specifications, critical candidates and phase-envelope comparisons"
+execute:
+  enabled: false
+---
+
+On the retained fixtures, the native Engine recovers declared neutral pressure–enthalpy (PH) and
+pressure–entropy (PS) states with extensive targets on the resolved feed basis.
+[The retained rows](results/issue-224-sliceA/native-comparisons.csv) contain the
+public-Properties round trips, pure saturation lever relations, ordinary
+reaction consistency, exact action identities and off-solution derivative
+ladders. Their adopted quantities, inputs and criteria remain in
+[issue #224](https://github.com/tannerpolley/ePC-SAFT/issues/224) and the
+[caloric specification equations](../../engine/docs/equations.md#extensive_enthalpy_specification).
+
+{{< include results/issue-224-sliceA/qualification-table.md >}}
+
+Each maximum divides the retained comparison error by its own unchanged
+criterion. Closure uses positive feed/thermal scales; it never divides by an
+arbitrary caloric target near zero. The callback comparisons retain raw matrix
+entries, coordinate scales and centered refinement before the rounding floor.
+Mixed control actions refine lower exact actions with centered extrapolation;
+conditioning and linear backward errors accompany those rows.
+
+The [independent comparison](results/issue-224-sliceA/reference/comparisons.csv)
+uses FeOs on identical residual parameters, gas constant and manufactured
+DIPPR records, with explicit molar-to-kilomolar coefficient conversion.
+Both implementations receive one common Engine enthalpy or entropy increment
+and their own baseline anchor. Their native flashes agree on temperature,
+composition and split. The [reference declarations](results/issue-224-sliceA/reference/reference-inputs.json)
+and [provenance](results/issue-224-sliceA/provenance.json) retain source identity,
+wheel hashes, source standards and the numerical comparison domain.
+
+Regular PH/PS roots receive the existing fixed-temperature/pressure local
+curvature diagnostic. Pure coexistence instead has a caloric lever-fixed
+split and an analytically flat Gibbs split; ordinary equilibrium heat capacity
+and strict split curvature remain unavailable. Missing records, excluded
+intervals and discontinuous joins preserve their distinct caloric causes.
+Existing residual-only quantities remain available under their own admission.
+
+This is numerical verification and agreement between implementations, using
+manufactured thermal inputs. It supplies no physical validation, global
+stability conclusion or charged-caloric result; critical points and envelopes
+follow in the next section.
+The [paired key-solve evidence](results/issue-224-sliceA/provenance.json) records
+unchanged work; shared-host wall-time spread supports no isolated speed claim.
+Independent delivered review remains with the lead. This notebook has not been
+promoted for manuscript use.
+
+## Critical-equation candidates and phase envelopes
+
+The selected F4 evidence is the discrete critical and bubble/dew comparison
+in `results/issue-224-sliceB/reference/`. These retained reference points do
+not supply a continuous envelope. The separately retained curves in
+[the algorithm illustrations](../2026-algorithm-illustrations/notebook.qmd)
+have their own calculation and review boundary. The source-matched render
+of this notebook reads the corrected qualification tables and reference
+locators without running a model calculation. Independent delivered review
+and investigator promotion of this selected presentation remain open.
+
+Issue #224 slice B solves the necessary Heidemann–Khalil critical conditions of
+one neutral phase and traces vapor–liquid envelopes with the native local
+parametrization, on the Gross (2001) propane and methane/ethane packets.
+[The retained rows](results/issue-224-sliceB/native-comparisons.csv) hold the
+native falsifiers: the pure and binary candidates and their spectra, the
+pressure-slope identities with their propagated floor, first composition
+actions against refined central solves, the fifth-order energy contraction
+against the difference of exact fourth-order contractions, off-solution
+Jacobian and weighted-curvature ladders of the critical and envelope rows, the
+Clapeyron identity, the pure-fluid endpoint and the mixture envelope closure at
+three bracketing step levels. The equations are
+[`critical_equations`](../../engine/docs/equations.md#critical_equations) and
+[`envelope_local_condition`](../../engine/docs/equations.md#envelope_local_condition).
+
+{{< include results/issue-224-sliceB/qualification-table.md >}}
+
+Each maximum divides the retained error by its own unchanged criterion. The
+[independent comparisons](results/issue-224-sliceB/reference/comparisons.csv)
+use FeOs and teqp on the same residual parameters and gas constant. teqp has
+no fixed-composition binary critical solve, so the Engine cell is solved at
+teqp's own polished locus compositions nearest the two FeOs compositions; FeOs
+solves at exactly those compositions. FeOs bubble and dew points at common
+temperatures start from the Engine pressure and incipient composition, which
+select the branch where two retrograde dew points exist. The
+[reference declarations](results/issue-224-sliceB/reference/reference-inputs.json)
+and [provenance](results/issue-224-sliceB/provenance.json) retain versions,
+solver options, hashes and limits.
+
+A solved critical cell is a critical-equation candidate: one lowest zero
+eigenvalue of the scaled composition Hessian, not a stability certificate. A
+pure-fluid candidate's isobaric heat capacities divide by its zero pressure
+slope and are unavailable; a mixture candidate keeps a positive pressure slope,
+and its residual and total isobaric heat capacities match the direct
+state-property route in C3. Second and third solved-state actions are refused
+with central values kept. The Hermite seeds of the mixture passage are retained with their
+successive differences; they do not show fourth-order convergence, so no
+order is claimed for them. Each seed only starts the critical solve.
+
+E3's Clapeyron rows use the existing fixed-temperature saturation actions, not
+the envelope tangent. The envelope tangent J dy/ds = e is backed instead by the
+envelope-row derivative ladder and by E1's Hermite seeds, which reach the C3
+candidate within the retained seed differences. The derivative-ladder rows
+retain, for each matrix entry, the exact and centered-difference values at the
+best step and the coordinate scale.
+
+This is numerical verification and agreement between implementations. It
+supplies no physical validation, stability classification of the candidates,
+liquid–liquid, reactive, charged or three-phase envelope. The key-solve work in
+the provenance is unchanged. Independent delivered review remains with the
+lead; this notebook has not been promoted for manuscript use.

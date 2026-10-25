@@ -1,0 +1,11 @@
+{
+  "cause": "FeOs flash phases are intensive states; extensive mole amounts are unavailable. FeOs stability trial raw coordinates use Moles::from_reduced(y).",
+  "invalid_quantities": [
+    "unnormalized_stationarity_max_abs in this attempt uses mol-valued coordinates instead of reduced coordinates; do not interpret it as achieved FeOs stationarity"
+  ],
+  "attempted_repair": "Retain raw trial stationarity using y=state.moles*si.NAV; flash comparison uses its returned intensive compositions/densities and chemical-potential gap.",
+  "sources": [
+    "https://raw.githubusercontent.com/feos-org/feos/v0.10.1/crates/feos-core/src/phase_equilibria/stability_analysis.rs",
+    "https://raw.githubusercontent.com/feos-org/feos/v0.10.1/crates/feos-core/src/phase_equilibria/tp_flash.rs"
+  ]
+}

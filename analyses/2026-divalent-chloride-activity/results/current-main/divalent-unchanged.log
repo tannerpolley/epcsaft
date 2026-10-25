@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-750-720-part-b-diagnose-the-changed-results/analyses/2026-divalent-chloride-activity/scripts/run.py", line 157, in <module>
+    run()
+    ~~~^^
+  File "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-750-720-part-b-diagnose-the-changed-results/analyses/2026-divalent-chloride-activity/scripts/run.py", line 76, in run
+    assert row["gamma_formula_error"] < 1e-12 and row["osmotic_formula_error"] < 1e-10, (mode, salt, m, row["gamma_formula_error"], row["osmotic_formula_error"])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('packet3', 'LiCl', 0.001, 2.7755575615628914e-17, 3.174217555468317e-10)

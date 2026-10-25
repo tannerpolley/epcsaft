@@ -1,0 +1,3 @@
+case	samples_per_wheel	baseline_iterations	baseline_evaluations	baseline_hessians	corrected_iterations	corrected_evaluations	corrected_hessians	baseline_best_s	corrected_best_s	baseline_median_s	corrected_median_s	median_ratio	maximum_raw_residual	maximum_classified_residual
+case-6/figure-2-point-7	20	16	53	17	16	53	17	0.059275490002619335	0.05869442399853142	0.066383504499754054	0.065828988499561092	0.99164678026007169	5.6843418860808015e-14	4.0068917379426259e-15
+case-7/flash-5918.5286-Pa	20	43	57	44	43	57	44	0.10402246800003923	0.10363087599762366	0.11480185400068876	0.11652355650039681	1.0149971663323287	2.8421709430404007e-13	7.9231910579432305e-15

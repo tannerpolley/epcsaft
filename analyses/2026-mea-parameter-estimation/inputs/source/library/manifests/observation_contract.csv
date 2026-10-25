@@ -1,0 +1,23 @@
+field,required,domain_or_unit,description
+record_id,yes,stable string,Unique repository-owned observation identifier.
+source_key,yes,stable source id,Primary literature or repository source identity.
+source_file,yes,repository-relative path,Machine-readable source artifact used for this record.
+source_locator,yes,text,Primary-source table figure page line or coordinate locator.
+data_family,yes,controlled family,Observation family such as VLE speciation density viscosity dielectric pH or ionic activity.
+observed_quantity,yes,text,Physical or chemical quantity represented by the value.
+species,no,canonical species id,Observed species when the quantity is species-specific.
+phase,yes,controlled phase,Thermodynamic phase to which the observation applies.
+value_reported,conditional,source unit,Value as reported or transcribed without normalization; numeric zero is retained.
+reported_unit,conditional,source unit,Unit attached to value_reported.
+reported_basis,conditional,explicit thermodynamic basis,Composition or amount denominator attached to value_reported.
+value_normalized,no,declared normalized unit,Derived value retained alongside rather than instead of the reported value.
+normalization_method,conditional,named conversion,Deterministic conversion used to create value_normalized.
+uncertainty_value,no,source unit,Reported uncertainty value; blank means not reported and never zero uncertainty.
+uncertainty_type,conditional,text,Standard deviation confidence interval instrument precision or other reported type.
+uncertainty_coverage,yes,reported|partial|not_reported,Extent to which source uncertainty metadata covers the record.
+measurement_role,yes,direct_positive|direct_zero|below_detection|aggregate_direct_positive|aggregate_direct_zero|balance_inferred|model_derived|analog|ambiguous,Evidentiary role that controls whether the value may become a regression target.
+lifecycle_status,yes,raw|qa_pending|canonical_eligible|validation_reserved|diagnostic_only|excluded,Current row-level disposition in the evidence lifecycle.
+replicate_group,no,stable group id,Records that are experimental replicates and must stay in one validation split.
+normalization_group,no,stable group id,Records linked by a shared normalization or nominal-condition decision.
+exclusion_reason,conditional,text,Required explanation for excluded records.
+reviewer_decision,no,text,Recorded scientific review decision or pending review owner.

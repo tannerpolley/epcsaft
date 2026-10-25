@@ -1,0 +1,2 @@
+declaration,I_bucket,effective_source_realization,RMS,maximum_absolute_error,native_failure_count,realization_id,rows,disagreement_RMS,disagreement_maximum,limit_RMS,limit_maximum
+candidate,I<=3,r1408,0.0014967493374179119,0.0026522137384630273,0,r1408,10,0.0013524983743917877,0.0026262590660273144,0.0013524983743917877,0.004

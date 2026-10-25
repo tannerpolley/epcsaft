@@ -1,0 +1,9 @@
+parameter,component_i,component_j,value,source,provenance_status
+l_ij,*,*,0,default zero for unpublished values,unresolved_default_zero
+k_hb_ij,*,*,0,default zero for unpublished values,unresolved_default_zero
+k_ij,MEA-2B,H2O-2B,-0.0420,Baygi2015 Table3,source_backed
+k_ij,MEA-3B,H2O-2B,-0.0146,Baygi2015 Table3,source_backed
+k_ij,MEA-4C,H2O-2B,-0.0362,Baygi2015 Table3,source_backed
+k_ij,MEA-2B,H2O-4C,-0.1305,Baygi2015 Table3,source_backed
+k_ij,MEA-3B,H2O-4C,-0.0520,Baygi2015 Table3,source_backed
+k_ij,MEA-4C,H2O-4C,-0.1245,Baygi2015 Table3,source_backed

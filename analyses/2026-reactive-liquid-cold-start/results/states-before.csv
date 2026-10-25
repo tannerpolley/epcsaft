@@ -1,0 +1,13 @@
+issue,state,cold_ok,cold_iterations,cold_residual,cold_s,cold_message,other_route,other_ok,max_relative_composition_difference
+157,329.39 K 110900.0 Pa CO2 2.43232,False,200,0.0006207868080803092,0.28012575799948536,"budget_exhausted: residual 0.00062078680808030917 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 200 iterations, contracti",continuation,True,
+157,329.39 K 110901.0 Pa CO2 2.43232,True,145,2.4479814746036684e-14,0.1958797350016539,,continuation,True,1.475788988037903e-13
+157,318.15 K 111100.0 Pa CO2 1.991416,True,58,7.383409620194797e-14,0.10007382899857475,,continuation,True,8.699675912555691e-14
+157,318.15 K 111110.0 Pa CO2 1.991416,True,140,7.383409620945723e-14,0.20015725700068288,,continuation,True,8.170461542712594e-14
+157,318.15 K 111200.0 Pa CO2 1.991416,True,58,1.2780849420119423e-14,0.10287248600070598,,continuation,True,6.136844870665219e-14
+157,318.15 K 110900.0 Pa CO2 2.550636,True,154,2.4426557846765638e-14,0.22941220500069903,,continuation,True,1.0857418195308398e-13
+154,Bottinger2008_state_042 pre_refit,False,200,6.198476751909411e-10,0.2744960109994281,"converged_to_floor: residual 6.1984767519094107e-10 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 200 iterations, contrac",anchored on refit_c solution,True,
+154,Bottinger2008_state_042 refit_c,True,24,1.590491184654631e-14,0.066587907000212,,anchored on pre_refit solution,False,
+154,Bottinger2008_state_046 pre_refit,False,200,0.041770965309545494,0.26820488900193595,"budget_exhausted: residual 0.041770965309545494 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 200 iterations, contraction",anchored on refit_c solution,True,
+154,Bottinger2008_state_046 refit_c,True,16,3.6651093235385876e-14,0.05681975000334205,,anchored on pre_refit solution,False,
+154,Matin2012_state_016 pre_refit,False,200,8.874401815691765e-05,0.3017605819986784,"budget_exhausted: residual 8.874401815691765e-05 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 200 iterations, contractio",anchored on refit_c solution,True,
+154,Matin2012_state_016 refit_c,True,19,1.8319189533726598e-14,0.061576785999932326,,anchored on pre_refit solution,False,

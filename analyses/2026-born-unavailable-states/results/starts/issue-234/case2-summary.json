@@ -1,0 +1,36 @@
+{
+  "selected": null,
+  "extents": [
+    0.005,
+    0.02,
+    0.05,
+    0.1,
+    0.2,
+    0.3
+  ],
+  "causes": [
+    "infeasible: residual 0.0023532068551426191 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 101 iterations, contraction absent, floor 1.8265319601695453e-10, amplification 0",
+    "infeasible: residual 0.0023398910294973752 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 178 iterations, contraction absent, floor 1.8259404366456758e-10, amplification 0",
+    "infeasible: residual 0.0023401243183337984 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 159 iterations, contraction absent, floor 1.8259679304595094e-10, amplification 0",
+    "infeasible: residual 0.0023402779808516434 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 195 iterations, contraction absent, floor 1.825983943009185e-10, amplification 0",
+    "infeasible: residual 0.0023402286627821974 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 159 iterations, contraction absent, floor 1.8259789499581545e-10, amplification 0",
+    "infeasible: residual 0.0023398302849809726 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 114 iterations, contraction absent, floor 1.8259324185740454e-10, amplification 0"
+  ],
+  "iterations": 906,
+  "seconds": 52.055884306,
+  "attempt_seconds": [
+    4.727458578,
+    12.778448239,
+    7.945092117,
+    12.368313932,
+    8.521701867,
+    5.671731316
+  ],
+  "overrun_seconds": 0.0,
+  "budget_exhausted": false,
+  "limits": {
+    "seconds": null,
+    "attempt_seconds": null
+  },
+  "wheel_sha256": "33ef17f578714f55c65223e6b3d8b28e09344ac65cb317dfe9007bcfffc8db94"
+}

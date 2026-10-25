@@ -1,0 +1,64 @@
+[
+  {
+    "workload": "F2",
+    "boundary": "full",
+    "median_A": 5.974182852001832,
+    "median_B": 4.984145346999867,
+    "median_paired": 0.1751703929188967,
+    "range": [
+      0.11691274773665473,
+      0.18918510182371637
+    ],
+    "mad": 0.009258543100389788,
+    "passed": true,
+    "evaluations_A": 23,
+    "evaluations_B": 24,
+    "identical_work": false,
+    "median_per_evaluation_A": 0.2597470805218188,
+    "median_per_evaluation_B": 0.20767272279166113,
+    "median_per_evaluation_saving": 0.2095382932139426,
+    "per_evaluation_range": [
+      0.15370804991429404,
+      0.22296905591439486
+    ],
+    "per_evaluation_mad": 0.00887277047120677,
+    "stops": {
+      "F2": [
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "workload": "B4",
+    "boundary": "full",
+    "median_A": 7.958093868001015,
+    "median_B": 7.484058748003008,
+    "median_paired": 0.05892183887492286,
+    "range": [
+      0.04771450525564581,
+      0.09250033327239086
+    ],
+    "mad": 0.004794190419231452,
+    "passed": true,
+    "evaluations_A": 48,
+    "evaluations_B": 48,
+    "identical_work": true,
+    "median_per_evaluation_A": 0.16579362225002114,
+    "median_per_evaluation_B": 0.155917890583396,
+    "median_per_evaluation_saving": 0.058921838874922805,
+    "per_evaluation_range": [
+      0.04771450525564586,
+      0.09250033327239092
+    ],
+    "per_evaluation_mad": 0.004794190419231452,
+    "stops": {
+      "F2": [
+        0,
+        0,
+        0
+      ]
+    }
+  }
+]

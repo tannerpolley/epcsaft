@@ -1,0 +1,62 @@
+{
+  "authority": {
+    "issue": 817,
+    "readiness_comment": 6372194727,
+    "design_sha256": "277465b6d2f48892dfe6a01c1abc5b97c7d5c74959560518001066cb13f8eeb2",
+    "amendment_r1_sha256": "dcbb84e409a795ba0422136f3d1844cae51cdfc2e0455e17804f52b2cd691c30",
+    "amendment_r2_sha256": "b7b93e5ef14a6f59f4838098b8e0370605da0eaeceee68bd0cbd378ab0717399",
+    "readiness_r2_sha256": "245b4feeb4e3874d54ee43985954f8d380d7ffb6ab3a76a94c91fb57fdcfd13d"
+  },
+  "Robinson_Bower": {
+    "doi": "10.6028/jres.069A.004",
+    "locator": "Table 1 p. 21; reference convention section 2.1 p. 20; Figure 1 p. 20",
+    "zotero": "TPPT6WGL/T3A24JGT",
+    "pdf_sha256": "823a40bfaff8686f79aa41e7cce85977e35a833158cb100404ab0669404421eb",
+    "mixture_observations": 48,
+    "pure_BaCl2_endpoint_rows_excluded": [
+      4,
+      8,
+      12,
+      16,
+      20,
+      24,
+      28,
+      32,
+      36,
+      52,
+      56,
+      60
+    ],
+    "printed_ratio_precision": 4,
+    "reference_scale": "owner-approved replacement, not recovered historical curve"
+  },
+  "Hamer_Wu": {
+    "doi": "10.1063/1.3253108",
+    "locator": "Table 16 printed p. 1067 / PDF p. 22; osmotic column",
+    "zotero": "28NPJ5H6/5RS9QAMK",
+    "pdf_sha256": "a20e0029c929b4e1df2cc8cd7aba10ecbbada3dd0f35689a102d16d18fc34ca6",
+    "interpolation": "817-REF: piecewise linear in molality between exact printed osmotic knots; no extrapolation",
+    "solvent_convention": "817-MAP: insert coefficients on historical 55.51 mol/kg convention, then convert with native Mw=0.0180153 kg/mol; preserve isopiestic water activity",
+    "uncertainty": "Shared run references; three-decimal knot rounding is not a total uncertainty bound. Historical-scale bias, interpolation curvature, evaluated-reference uncertainty and measurement error remain unresolved."
+  },
+  "El_Guendouzi": {
+    "doi": "10.1016/j.calphad.2004.01.006",
+    "locator": "2003 Table 1 p. 378; no calculated Tables 2–4 observations",
+    "zotero": "ESHK42H4/TTQRP3H3; earlier parent C6LRN57Q",
+    "pdf_sha256": "76ffbad56d0f8d47b7cc0248543079e77322280709e4657ca8597012c0f3981b",
+    "role": "reserved untrained check; no model evaluation or score",
+    "rows_file": "el-guendouzi2003-reserved-rows.csv",
+    "predicate": "actual Table 1 mixtures; positive component molalities; mBaCl2<=1.785; 0.45<=mNaCl+3*mBaCl2<=4.8229 mol/kg water",
+    "pressure": "unreported; nominal 100000 Pa and later check limits require owner readiness",
+    "transfer": "I=0.45 and 0.60 are below training mixture minimum 0.6241; NaCl reaches 3.00 beyond training mixture maximum 2.0250 mol/kg water",
+    "independence": "distinct experimental group and technique; shared electrolyte references preclude assuming independent errors"
+  },
+  "input_sha256": {
+    "hamer-wu1972-nacl-knots.csv": "f4c96e8ac47270be70b6818a05753e787f658eb7e596b0ade4afc3e8195be1ea",
+    "robinson-bower1965-references.csv": "d3e154ffbb1be2a6a20f034d8f6a33dbcb70a3b355eb493a35ae498fa4be7d9e",
+    "robinson-bower1965-targets.csv": "e268874e6a3bf95802efa034efbc1d66560c36dbfc012ffe4b3dcbe9c82119df",
+    "robinson-bower1965-ratios.csv": "959ecc85e273fc725a3fe6a4effbd0647868d5fb7ff05c105a4586637b9654ba",
+    "robinson-bower1965-table1.csv": "623fb3342553ffe2be2cbe16e666b0abe6c0013a5381a0a04b2a7acb438d9c85",
+    "el-guendouzi2003-reserved-rows.csv": "ce79210e9776a8a9914fb5e14d8883dc00bd6f8c3d1fd16386ed2b16626e976b"
+  }
+}

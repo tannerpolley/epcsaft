@@ -1,0 +1,50 @@
+[
+  {
+    "pair": 1,
+    "wheel": "baseline",
+    "numerical_rows_identical": true,
+    "values_file": "results/corrected-initial.csv",
+    "termination": "Maximum solver time reached. Total solver time: 8.678436e-05 >= 1.000000e-06.",
+    "values_sha256": "bda78a0f6db914be76107951309816144ee374d0de74b3afe6d53ab089f649fd"
+  },
+  {
+    "pair": 1,
+    "wheel": "candidate",
+    "numerical_rows_identical": true,
+    "values_file": "results/corrected-initial.csv",
+    "termination": "Maximum solver time reached. Total solver time: 1.070499e-04 >= 1.000000e-06.",
+    "values_sha256": "bda78a0f6db914be76107951309816144ee374d0de74b3afe6d53ab089f649fd"
+  },
+  {
+    "pair": 2,
+    "wheel": "baseline",
+    "numerical_rows_identical": true,
+    "values_file": "results/corrected-initial.csv",
+    "termination": "Maximum solver time reached. Total solver time: 8.988380e-05 >= 1.000000e-06.",
+    "values_sha256": "bda78a0f6db914be76107951309816144ee374d0de74b3afe6d53ab089f649fd"
+  },
+  {
+    "pair": 2,
+    "wheel": "candidate",
+    "numerical_rows_identical": true,
+    "values_file": "results/corrected-initial.csv",
+    "termination": "Maximum solver time reached. Total solver time: 8.773804e-05 >= 1.000000e-06.",
+    "values_sha256": "bda78a0f6db914be76107951309816144ee374d0de74b3afe6d53ab089f649fd"
+  },
+  {
+    "pair": 3,
+    "wheel": "baseline",
+    "numerical_rows_identical": true,
+    "values_file": "results/corrected-initial.csv",
+    "termination": "Maximum solver time reached. Total solver time: 1.430511e-04 >= 1.000000e-06.",
+    "values_sha256": "bda78a0f6db914be76107951309816144ee374d0de74b3afe6d53ab089f649fd"
+  },
+  {
+    "pair": 3,
+    "wheel": "candidate",
+    "numerical_rows_identical": true,
+    "values_file": "results/corrected-initial.csv",
+    "termination": "Maximum solver time reached. Total solver time: 8.201599e-05 >= 1.000000e-06.",
+    "values_sha256": "bda78a0f6db914be76107951309816144ee374d0de74b3afe6d53ab089f649fd"
+  }
+]

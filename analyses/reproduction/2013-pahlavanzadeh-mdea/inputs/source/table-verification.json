@@ -1,0 +1,18 @@
+{
+  "pahlavanzadeh": "Tables 1-6 visually checked against PDF pp3-7 and text; Table 3 2B column restored; Table 5 R1 positive C preserved as printed",
+  "kuranov": {
+    "rows": 82,
+    "fields": 328,
+    "pdf_page": 2,
+    "printed_page": 1960,
+    "result": "all CSV values match text layer; whole PDF page image inspected",
+    "csv_sha256": "45159aae9cc2ad8019dc9de482ec36ae4e5355ef84981cc15068bd43b7a18b29"
+  },
+  "kamps": {
+    "rows": 23,
+    "fields": 69,
+    "pdf_page": 2,
+    "printed_page": 697,
+    "result": "all CSV T,mCO2,10p triples match Table 2 text; image inspected; mMDEA=7.994 caption checked"
+  }
+}

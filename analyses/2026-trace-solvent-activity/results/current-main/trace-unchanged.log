@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-750-720-part-b-diagnose-the-changed-results/analyses/2026-trace-solvent-activity/scripts/verify.py", line 55, in <module>
+    assert abs(activity.osmotic_coefficient - scalar) <= 1e-12
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

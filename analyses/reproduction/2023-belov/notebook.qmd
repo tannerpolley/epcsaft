@@ -1,0 +1,56 @@
+---
+title: "Belov and Aristova: one eight-gas restriction"
+format:
+  html:
+    embed-resources: true
+execute:
+  echo: false
+  cache: false
+  daemon: false
+---
+
+```{python}
+import json
+import pandas as pd
+from IPython.display import display
+display(pd.read_csv('results/comparison.csv'))
+print(open('results/diagnostics.txt').read())
+display(json.load(open('results/run-identity.json')))
+```
+
+The table numerically verifies the restricted homogeneous ideal-gas problem
+against the retained independent element-potential reference. That reference
+is an independent high-precision calculation, not a measured composition or
+the heterogeneous answer published by Belov and Aristova (2023),
+DOI 10.5541/ijot.1317496. The actual temperature, pressure, phase amount,
+density, composition and native convergence/cause are retained above. Every
+species, including trace ozone, retains its positive reference and native
+amount. The amount rows use absolute logarithmic error; the unitless Gibbs
+anchor rows and numerical closure rows use absolute error. Each metric's
+unchanged tolerance is tabulated separately.
+
+The source standard Gibbs vector, reaction and atom matrices, feed and
+independent amount references are retained in
+`inputs/cases/test-01/source/source.json`. The original ten-species input,
+authors' commit/blob identities and both fetched and Git-normalized hashes
+remain in `reference-limits.md`. Section 6 of the article gives the selected
+IVTANTHERMO pressure-standard convention; the system pressure remains the
+separately declared value. Native admission derives carbon and oxygen masses
+from the retained Chase CO/CO2 source rows identified in the run identity.
+
+Native unit-vector pressure-Gibbs readouts check each anchor before the solve.
+The zero-heat-capacity polynomial and enthalpy/entropy anchor split encode
+only the supplied Gibbs values at this temperature. No caloric quantity,
+thermal derivative, variable-temperature solution or extrapolation is
+qualified by that bookkeeping interval. The existing native driver owns the
+single reacting solve, all trace handling, density and conservation.
+Raw and classified equation rows remain separate and carry their native
+row identities. Positive pressure slope and zero residual chemical potential
+are checked independently of amount agreement.
+
+Graphite and diamond remain deliberately excluded. The authors' heterogeneous
+reference and solid pressure/volume conventions are unavailable; no solid
+volume is invented. These separate scalar, one-state comparisons are shown
+in a table without interpolation. This result supplies neither experimental
+validation, global stability nor general high-temperature material properties.
+Independent delivered review and manuscript promotion remain open.

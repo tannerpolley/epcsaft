@@ -1,0 +1,8 @@
+<!-- source: docs/papers/md/Bülow, Ascani, Held - 2020 - ePC-SAFT advanced - Part I Physical meaning of including a concentratio.md lines 209-214 -->
+
+|  | $\mathrm{Li}^{+}$ | $\mathrm{Na}^{+}$ | $\mathrm{K}^{+}$ |
+| :--- | :--- | :--- | :--- |
+| $\mathrm{F}^{-}$ | 0 | 0.665 | 1.000 |
+| $\mathrm{Cl}^{-}$ | 0.669 | 0.317 | 0.064 |
+| $\mathrm{Br}^{-}$ | 0.591 | 0.290 | -0.102 |
+| $\mathrm{I}^{-}$ | 0.002 | 0.018 | -0.312 |

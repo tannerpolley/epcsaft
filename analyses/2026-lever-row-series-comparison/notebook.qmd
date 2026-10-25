@@ -1,0 +1,180 @@
+---
+title: "Lever derivatives from the shared row series"
+---
+
+The corrected `lever_jacobian` includes the ionic packing-diameter volume chain.
+At an accepted one-liquid electrolyte equilibrium at 300 K and 100 kPa, its
+first chemical-row derivative is 0.07248519480266756 per angstrom, replacing
+0.30591249238080681 from the dense assembly.
+Centered diameter steps of 1e-4 and 1e-5 angstrom give
+0.072485194850813173 and 0.07248519482416782 per angstrom.
+The central classified residual is 1.7625900738948984e-14.
+These values verify the derivative numerically; they establish no physical
+validation or parameter adoption.
+
+## Calculation and retained basis
+
+The baseline is `bdde4003db7fda654655fdc42e684f60b4a29cfd`, merged before this
+correction; it reproduces all 230 dense entries retained in the initial
+`96e9ecde` investigation.
+[`summary.json`](results/summary.json) identifies the baseline and corrected
+non-editable wheels, numerical comparisons, source inspection and table hashes.
+
+`lever_jacobian` now prepares one center and takes first row-series coefficients
+along unit directions in T, P, feed-amount and active-parameter order.
+A free T/P column drives the corresponding state coordinate, preserving the
+callable's previous column definition; its external control entry is ignored
+by `row_series`.
+Primal-only points retain zero missing multipliers through padding of the
+prepared coordinates, after the original point admission.
+The reference refusal, callable, matrix shape and diagnostic meanings remain.
+`PackingTerms::parameter_derivative` and its analytic producer have been removed.
+[ALG-ACTIONS](../../engine/docs/science/algorithms.md#alg-actions) records this
+shared first-coefficient calculation and the correction.
+
+For an ion, the packing coefficient contains its diameter cubed.
+At fixed packing fraction and composition, volume is the packing coefficient
+divided by the packing fraction.
+The old producer handled segment count, neutral constant sigma and neutral
+dispersion energy, leaving `PackingDiameter` at zero.
+The shared geometry differentiates this diameter and propagates its volume
+response through both chemical and pressure rows, as required by the
+[packing-coefficient derivative equation](../../engine/docs/equations.md#packing_coefficient_parameter_derivative).
+Production sensitivities already used this chain; this corrects the dense
+callable and its readers.
+
+The matrices use the baseline native numerical input builders
+`properties_support::neutral_ternary`, `aqueous_electrolyte` and
+`equilibrium_support::flash`.
+The two neutral cases evaluate defining rows at their generic positive chart
+points, at 300 K and 100 kPa.
+The free-T/P case has three phases, fractions 0.2 and 0.3 pinned, and feed
+amounts (0.6, 0.4, 1.0) mol.
+The ionic case has one liquid phase, feed amounts (0.98, 0.01, 0.01) mol and
+an active cation packing diameter; it uses an accepted equilibrium center.
+[`centers.csv`](results/centers.csv) retains all coordinates, identical between
+baseline and corrected builds.
+The current [`compare.cpp`](scripts/compare.cpp) calls the Engine calculation;
+it retains no second row-series assembly or stencil calculation.
+
+## Falsifier and other-entry preservation
+
+One compact persistent native check, `boundary_checks packing-derivative`,
+compares the ionic column's three chemical rows and pressure row against
+centered stencils at both steps.
+Its **2e-9 per-angstrom absolute tolerance** covers the step study's largest
+observed discrepancy, **1.34814e-9 per angstrom**; the old missing-chain error
+in the first row is **0.2334273 per angstrom**.
+This is a derivative/reference rounding allowance, independent of the solve's
+stopping tolerance.
+The check fails on the dense baseline and all eight comparisons pass after
+correction.
+[`stencils.csv`](results/stencils.csv) retains these values.
+
+| Matrix case | Entries | Bitwise differences | Material corrections |
+|---|---:|---:|---:|
+| Neutral, fixed T/P | 56 | 5 | 0 |
+| Neutral, free T/P, pins, scaled feed | 126 | 20 | 0 |
+| Ionic packing diameter | 48 | 9 | 4 |
+
+[`columns.csv`](results/columns.csv) retains every baseline and corrected entry.
+The four authorized material changes are the ionic parameter column in rows
+0–3.
+Every other entry satisfies 1e-12 relative agreement.
+The remaining 30 bitwise differences comprise 12 signed zeros and 18 rounding
+changes, with absolute differences at most 2.22045e-16 and relative differences
+at most 4.7e-15. One small entry differs by about 24 units in the last place.
+
+| Retained native selection | Rows | Judged rows | False judgments |
+|---|---:|---:|---:|
+| Boundary S9 | 128 | 128 | 0 |
+| Equilibrium S10 | 4865 | 4865 | 0 |
+| E5 pinned | 675 | 339 | 0 |
+| E5 reactive | 520 | 268 | 0 |
+| E5 identities | 79 | 79 | 0 |
+
+All **6267** native rows retain their numerical values and semantic fields
+within 1e-12 relative agreement.
+Only seven numeric fields differ, by at most **1.96242e-16 relative**; every
+criterion and judgment is unchanged.
+[`native-comparisons.csv`](results/native-comparisons.csv) retains their values;
+`summary.json` also identifies the comparison of the complete native records,
+including input and diagnostic fields.
+
+## Cost and caller consequence
+
+Each measured call returns a complete matrix and includes preparation, after
+30 warmup calls and in seven repetitions of 30 calls.
+The initial investigation measured both alternatives in alternating order in
+one executable, under the then-required shared command lock.
+Its separate timing medians and quotients were:
+
+| Case | Dense (microseconds/call) | Proposed row series (microseconds/call) | Quotient |
+|---|---:|---:|---:|
+| Neutral, fixed T/P | 53.2282 | 99.8404 | 1.88 |
+| Neutral, free T/P, pins, scaled feed | 219.4911 | 336.5913 | 1.53 |
+| Ionic packing diameter | 112.1113 | 213.9490 | 1.91 |
+
+The owner accepted this additional per-call cost.
+Final installed-call measurements in separate baseline/corrected builds,
+under the updated CPU policy while other jobs shared the host, gave:
+
+| Case | Dense (microseconds/call) | Corrected (microseconds/call) | Quotient |
+|---|---:|---:|---:|
+| Neutral, fixed T/P | 87.3038 | 167.7556 | 1.92 |
+| Neutral, free T/P, pins, scaled feed | 175.1796 | 411.4442 | 2.35 |
+| Ionic packing diameter | 100.2344 | 225.6361 | 2.25 |
+
+[`cost.csv`](results/cost.csv) separates these two measurement studies.
+Geometry is recorded for each control direction.
+The separate-build timing ratios include changing shared-host load and do not
+isolate implementation cost as closely as the initial alternating study.
+No speedup or larger-system cost result is claimed.
+The tables contain a few scalar comparisons; a plot would not clarify the
+correction or its cost limit.
+
+Lithium's `run_live_derivatives.py` calls this matrix from
+`mpmath_first_actions`, selecting columns after T/P for its affine feed map.
+Its default reference uses `independent_network.build_model`, which constructs
+`epcsaft.Mixture(parameters)` with no active parameters.
+The saponified campaign's `stage_chemistry.build_live_reference` similarly uses
+`mechanism_candidates.model`, also with no active parameters.
+Thus neither inspected declaration activates an ion packing-diameter parameter;
+the material correction has no column exposed there.
+The Engine constructor maps an omitted active list to an empty native list.
+The inspection source hashes are retained in `summary.json`.
+Lithium was neither edited nor run, and arbitrary externally supplied reference
+models were not qualified by this source inspection.
+
+## Verification, counts and limits
+
+The corrected non-editable wheel passed `tools/check-all.sh`: 113 Python tests
+passed, including the two requested continuation selections, and all fast
+native/static checks passed.
+The explicit native selections above and the new falsifier also passed.
+The current Khudaida slice passed its eight declared two-liquid states and
+IDAES mappings.
+Against a fresh native/non-editable baseline at `bdde4003`, its
+`stage-results.csv`, `engine-residuals.csv` and
+`qualification-comparison.csv` are byte-identical; their sizes and hashes are
+retained in `summary.json`.
+This replay preserves the existing Khudaida qualification and does not broaden
+its physical or global-stability claim.
+
+The correction removes **75 net Equilibrium runtime lines**: 17 added and 92
+removed, Equilibrium 6129 → 6054, total 20208 → 20133.
+Other layers are unchanged.
+The hard Equilibrium ceiling is 7575: measured 6054 plus the existing remaining
+shared roadmap allowance of 1521 lines, with no additional allocation.
+`tools/check-affected.sh HEAD` also passed, including the full equilibrium,
+boundary and parameter-fit native programs.
+The independent [delivered review](results/review.md) of `09bcb72f` returned
+**Supported**, with no required code corrections. It confirms the correction,
+falsifier, preservation comparisons and final runtime counts.
+The review recommends owner acknowledgment of the higher separate-build timing
+ratios; these were measured under changing host load and do not isolate the
+algorithm's cost as closely as the accepted interleaved study.
+Neutral sigma and dispersion-energy lever columns were verified algebraically
+by review, rather than by the retained before/after matrix. The stencil
+tolerance is empirical for the inspected state and build.
+The notebook has not been promoted for manuscript use.

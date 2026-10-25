@@ -1,0 +1,39 @@
+schema_version = 2
+packet_id = "saad-padova-marcus-1980-nacl-kcl-cacl2-observations"
+packet_version = "1"
+title = "Measured NaCl-KCl-CaCl2 aqueous osmotic coefficients at 298.15 K"
+description = "Saad, Padova and Marcus 1980 Tables I-III: 59 isopiestic osmotic coefficients of (NaCl.nKCl)-CaCl2-water at 25 C against NaCl, with printed reference molalities, water activities, CaCl2 ionic-strength fractions and ionic strengths; printed inconsistencies are listed in the source records."
+license_or_use_basis = "Factual numerical transcriptions and project-authored metadata for private scientific verification; no full paper or model prediction is distributed."
+tolerance_rationale = "The source states no measurement uncertainty; values are printed to 0.001 in phi. This packet assigns no model-acceptance tolerance and no pointwise sigma."
+
+[[sources]]
+source_id = "saad-padova-marcus-1980"
+citation = "D. Saad, J. Padova and Y. Marcus, Thermodynamics of mixed electrolyte solutions. XI. An isopiestic study of the quaternary system NaCl-KCl-CaCl2-H2O at 25 C, Journal of Solution Chemistry 9 (1980), 259-268."
+doi = "10.1007/BF00644551"
+use_basis = "Tables I-III pp.260-262; procedure p.260; column definitions p.261; Zotero BHXKZXUP/V67QRMAU; source PDF SHA256 b9ff9e913d1526e96c668f3199cf5f2480bde2d39fc856f84f4368ed4e693bec"
+
+[[domains]]
+domain_id = "saad-padova-marcus-1980-aqueous-298-15-k"
+kind = "source-observation"
+temperature_min = 298.15
+temperature_max = 298.15
+temperature_unit = "kelvin"
+description = "Stoichiometric aqueous NaCl-KCl-CaCl2 isopiestic rows at 298.15 K, ionic strength 0.95-5.75 mol/kg, KCl/NaCl ratios 0.333, 1.000 and 3.000; no pressure dependence is established."
+
+[[files]]
+path = "observations/saad-padova-marcus-1980-tables-i-iii.csv"
+role = "observations"
+media_type = "text/csv"
+sha256 = "79cbcfc3444fcc5dbea2abe4ef09c3cb5264e6bc983aa6ff72db0f3fc8bcf891"
+source_refs = ["saad-padova-marcus-1980"]
+domain_refs = ["saad-padova-marcus-1980-aqueous-298-15-k"]
+units_basis = "Molalities and ionic strength in mol/kg water; ratios, fractions, activities and osmotic coefficients dimensionless; printed table/page/row locators."
+
+[[files]]
+path = "sources/source-records.json"
+role = "source"
+media_type = "application/json"
+sha256 = "0b1c08ce8a80cac1724f3966d2e6a0fbd0965084a33c248bed3a34c120e2a16f"
+source_refs = ["saad-padova-marcus-1980"]
+domain_refs = ["saad-padova-marcus-1980-aqueous-298-15-k"]
+units_basis = "Non-numeric locators, conversion equations and printed-inconsistency notes."

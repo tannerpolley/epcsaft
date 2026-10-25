@@ -1,0 +1,96 @@
+---
+title: "Trace solvent activity at common pressure"
+format: html
+execute:
+  enabled: true
+  echo: false
+---
+
+```{python}
+import csv
+import json
+from pathlib import Path
+root = Path.cwd()
+if not (root / 'results/current-main').exists():
+    root = root / 'analyses/2026-trace-solvent-activity'
+current = root / 'results/current-main'
+identity = json.loads((current / 'verification-identity.json').read_text())
+trace = list(csv.DictReader((current / 'trace-verification.csv').open()))
+resolved = list(csv.DictReader((current / 'resolved-comparison.csv').open()))
+criteria = identity['falsifier_criteria']
+first = trace[0]
+```
+
+The current Engine passes the original common-pressure solvent-activity checks
+at `{python} identity['temperature_K']` K and `{python} identity['pressure_Pa']` Pa.
+For NaCl at `{python} float(first['molality_mol_kg'])` mol/kg water, the osmotic
+coefficient is `{python} float(first['osmotic_coefficient'])`. Its absolute
+error from the leading Debye relation is
+`{python} identity['trace_debye_absolute_error']`, below the original limit
+`{python} criteria['trace_absolute']`.
+
+This is numerical verification of the retained fully dissociated aqueous model,
+with no new physical validation. The original [qualified replay](results/verification-identity.json)
+and [baseline diagnosis](results/diagnosis.csv) remain unchanged. The
+[current diagnosis](results/current-main/diagnosis.md) identifies the Engine
+changes and the comparisons used to repair the producer.
+
+## Common-pressure definition
+
+The Held packets retain separate hard-chain packing and Debye–Hückel screening
+lengths. Their source audit and model limitations are owned by the
+[chloride diagnosis](../2026-divalent-chloride-activity/README.md).
+Formula-unit molality is per kilogram of water. For $s=\nu mM_w$,
+
+$$
+\ln a_w=-\ln(1+s)+\frac{\mu_w^r-\mu_w^{r,\mathrm{pure}}}{RT}
++\ln\frac{\rho_{\mathrm{solution}}}{\rho_{\mathrm{pure}}},\qquad
+\Phi=-\frac{\ln a_w}{s}.
+$$
+
+The native calculation uses the prescribed common pressure. Subtracting two
+separately rounded solvent chemical potentials is retained as a diagnostic;
+it does not furnish an independent equality at arbitrary dilution. The
+producer checks the ionic and solvent-reference requests at the same composition,
+then applies the independent Debye, resolved-change and historical-pressure
+checks at their original limits.
+
+## Resolved values and pressure errors
+
+The current replay contains `{python} len(resolved)` resolved comparison rows.
+The largest change from the original chloride osmotic values is
+`{python} identity['maximum_resolved_change']`, below
+`{python} criteria['resolved_absolute']`. The maximum error after accounting
+for historical pressure residuals is
+`{python} identity['maximum_pressure_corrected_identity_error']`, below
+`{python} criteria['pressure_corrected_absolute']`.
+
+The pressure-error identity compares each historical osmotic value with the
+historical solution and pure-solvent pressure residuals. Using current root
+pressure errors in that identity would compare different density solves.
+The [current rows](results/current-main/resolved-comparison.csv) retain original
+and current osmotic coefficients, gamma values and densities, as well as the
+direct solvent subtraction and removed pressure term. No original row was
+replaced. Density and gamma equality checks use the separately rerun current
+chloride table at their original limits; the intended ionic-reference correction
+is documented in [PR #619](https://github.com/tannerpolley/ePC-SAFT/pull/619).
+
+## Trace availability and limits
+
+```{python}
+#| output: asis
+print('| Molality, mol/kg | Osmotic coefficient | Reporting outcome | Debye limit |')
+print('|---:|---:|---|---:|')
+for row in trace:
+    print(f"| {row['molality_mol_kg']} | {row['osmotic_coefficient']} | {row['precision']} | {row['debye_limit']} |")
+```
+
+Below the retained reporting floor the osmotic quantity remains
+`Stop.converged_to_floor`, while ionic activity remains finite. The mixed-solvent
+osmotic result remains absent. A numerical reporting floor is not a physical
+absence claim, an error bound for arbitrary compositions, or an estimate of
+parameter uncertainty.
+
+The [identity](results/current-main/verification-identity.json) retains Engine,
+input and script identities and the unchanged criteria. Independent delivered
+review remains with the lead. This report has not been promoted for manuscript use.

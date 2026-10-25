@@ -1,0 +1,15 @@
+provenance_kind = "repository-migration-v1"
+origin_repository = "ePC-SAFT/ePC-SAFT-validation"
+origin_commit = "dc1841fc8c7b837d92b7fed9d976a22ba6d5b2e6"
+origin_tree = "f9312688db6c8f624310e628b9127f31f8fcb009"
+copy_mode = "strict-schema-translation"
+scope = "Canonical Parameters translation of the immutable accepted figiel-2025-validation-parameters packet; coefficient values, units, domains, citations, and source locators retain their accepted meaning."
+source_bundle_manifest_path = "campaigns/2025-figiel/parameters/provider-bundle/1/bundle.toml"
+source_bundle_manifest_sha256 = "16476065e6b01141193d553394ec7c58ad5e97b7392bd2a0272a7f5039776821"
+source_packet = "packets/figiel-2025-validation-parameters/2"
+source_packet_fingerprint = "813c104f1b9f422475296663d927a8f10baf71ad806c4176abd4527b5950db63"
+
+[[files]]
+retained_path = "parameters/parameters.json"
+origin_path = "packets/figiel-2025-validation-parameters/1/parameters/{association.csv,bundle.toml,components.csv,correlations.toml,model.csv,pair.csv,single.csv,sites.csv}"
+sha256 = "34876926be8aa16ea9155a5a200045147fe040f0c9e3c7286b670af9860b640a"

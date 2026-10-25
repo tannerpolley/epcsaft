@@ -1,0 +1,17 @@
+<!-- source: docs/papers/md/Ascani - 2023 - Simultaneous Predictions of Chemical and Phase Equilibria in Systems with an Esterif.md lines 243-255 -->
+
+Table 2. Binary interaction parameters used in this work to model multicomponent mixtures using PC-SAFT. Definition of the $\mathrm{k}_{\mathrm{ij}}$ values according to the Appendix A .
+
+| Component 1 | Component 2 | $\boldsymbol{k}_{\boldsymbol{i j}, \mathbf{2 9 8 . 1 5}} \boldsymbol{/} \boldsymbol{-}$ | $k_{i j, T} / K$ | Property Used for Estimation | Ref. |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| Water | Acetic acid | -0.1247 | - | VLE-binary | [107] |
+| Water | 1-Pentanol | 0.001604 | 0.00016 | LLE-binary | [108] |
+| Water | Pentyl Acetate | -0.0228 | - | LLE-binary | This work (using data from [100]) |
+| Water | 1-Hexanol | 0.010105 | 0.000404 | LLE-binary | [108] |
+| Water | Hexyl Acetate | -0.01 | 0.0015 | LLE-binary | This work (using data from [100]) |
+| Acetic acid | 1-Pentanol | -0.1 | - | LLE-ternary | This work (using data from [103]) |
+| Acetic acid | 1-Hexanol | -0.033 | - | LLE-ternary | This work (using data from [103]) |
+| Acetic acid | Pentyl Acetate | -0.1 | - | LLE-ternary | This work (using data from [102]) |
+| Acetic acid | Hexyl Acetate | -0.08 | -0.0004 | LLE-ternary | This work (using data from [98]) |
+| 1-Pentanol | Pentyl Acetate | -0.0095 | - | VLE-binary | This work (using data from [109]) |
+| 1-Hexanol | Hexyl Acetate | -0.0042 | - | VLE-binary | This work (using data from [98]) |

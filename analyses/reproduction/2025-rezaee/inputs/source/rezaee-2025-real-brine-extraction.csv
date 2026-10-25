@@ -1,0 +1,10 @@
+source,citation_key,doi,ion,real_brine_ppm,synthetic_initial_ppm,synthetic_after_extraction_ppm,extraction_efficiency_pct,notes
+Rezaee2025_Table8,Rezaee2025,10.1021/acs.iecr.4c03496,Li,40.01,40.2,19.6,51.63,Synthetic brine modeled on an Iran source brine.
+Rezaee2025_Table8,Rezaee2025,10.1021/acs.iecr.4c03496,Na,47658,47705.2,43290.0,9.97,Synthetic brine modeled on an Iran source brine.
+Rezaee2025_Table8,Rezaee2025,10.1021/acs.iecr.4c03496,K,2582,2610.1,2549.1,3.11,Synthetic brine modeled on an Iran source brine.
+Rezaee2025_Table8,Rezaee2025,10.1021/acs.iecr.4c03496,Mg,2832,2811.6,2710.2,4.38,Synthetic brine modeled on an Iran source brine.
+Rezaee2025_Table8,Rezaee2025,10.1021/acs.iecr.4c03496,Ca,758,755.4,743.8,2.29,Synthetic brine modeled on an Iran source brine.
+Rezaee2025_Table8,Rezaee2025,10.1021/acs.iecr.4c03496,Sr,63.17,,,,Real brine component; not detected by ICP in the synthetic brine row.
+Rezaee2025_Table8,Rezaee2025,10.1021/acs.iecr.4c03496,B,58.32,,,,Real brine component; not detected by ICP in the synthetic brine row.
+Rezaee2025_Table8,Rezaee2025,10.1021/acs.iecr.4c03496,S,2274,,,,Real brine component; not detected by ICP in the synthetic brine row.
+Rezaee2025_Table8,Rezaee2025,10.1021/acs.iecr.4c03496,Cl,180155,,,,Real brine component; not detected by ICP in the synthetic brine row.

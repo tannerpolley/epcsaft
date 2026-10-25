@@ -1,0 +1,16 @@
+<!-- source: docs/papers/md/Bülow, Ascani, Held - 2021 - ePC-SAFT advanced – Part II Application to Salt Solubility in Ionic and.md lines 491-504 -->
+
+| Salt | Hydrate formation in water | NP |
+| :--- | :--- | :--- |
+| LiF | Yes | 5 |
+| LiCl | Yes | 5 |
+| LiBr | Yes | 5 |
+| LiI | Yes | 5 |
+| NaF | No | 5 |
+| NaCl | No | 5 |
+| NaBr | Treated | 5 |
+| NaI | Treated | 5 |
+| KF | No | 5 |
+| KCl | No | 5 |
+| KBr | No | 5 |
+| KI | No | 5 |

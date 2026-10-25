@@ -1,0 +1,369 @@
+---
+title: "Native electrolyte estimation and dependent Born diameters"
+execute:
+  enabled: false
+---
+
+The retained comparisons support native least-squares fitting of molality-scale
+mean ionic activity, practical osmotic coefficient, single-ion solvation energy,
+solvent transfer energy and bulk relative permittivity using exact Engine first
+parameter derivatives. Three dependent Born diameters hold declared hydration
+energies during fitting. This is **numerical verification** of #219 slice A and the guarded minimax path,
+with the conditions and identified wheel below. It establishes no #209
+parameter adoption, global optimum or physical validation.
+
+## Basis and calculations
+
+All cases use the temperature and pressure declared in [the native inputs](scripts/declarations.py), on the liquid branch. The source parameter
+packet is Figiel `/4`; the [input hashes](inputs/files.json) and
+[declarations](scripts/declarations.py) identify each component subset and row.
+The 383 F1 rows include chloride/bromide activity and osmotic coefficients,
+transfer and hydration energies, and water/alcohol permittivity or ratios.
+Undefined ethanol-methanol pair data are not supplied: each observation uses
+its source-defined component subset. Absent components have no parameter column.
+
+The native coordinate chart solves
+
+$$
+H_i=RT\ln\phi_i^\infty-G_{i,target}=0,\qquad
+\frac{dd_i}{du_a}=-\frac{H_{i,\theta}D_{ind,a}}{H_{i,d}}.
+$$
+
+Its inner criteria bound energy error in J/mol and exact correction
+or refined bracket width in Angstrom, as declared by [the holds](scripts/declarations.py). Both estimators use the complete map for their exact first columns. Ceres uses
+it for its conditional covariance. Final checks rebuild from the stored
+parameters, preserving solved diameters without another hold solve.
+
+The exact physical columns and independent central differences test the same
+reported quantities. The manufactured recovery uses seven free coordinates,
+three native holds and 156 native manufactured rows. The perturbed-data case
+adds +0.005 decade to NaCl activity observations and compares the three stored
+diameters against independently refined native scalar roots.
+
+The [equation owners](../../engine/docs/equations.md),
+[parameter-regression formulation](../../engine/docs/regression/science/pure-saturation-regression.md)
+and [algorithm owners](../../engine/docs/science/algorithms.md) define the
+pressure chart, admitted finite reference, reported activities and held map.
+
+## Retained comparisons
+
+{{< include results/qualification.md >}}
+
+[All comparison and step-study rows](results/falsifiers.csv),
+[reference-ladder changes](results/reference-ladders.csv),
+[fitted observations](results/fitted-observations.csv) and
+[fit/root diagnostics](results/summary.json) retain the numerical operands.
+A table is used because these are heterogeneous discrete falsifiers, with
+separate units and tolerances, rather than one continuous physical curve.
+
+## Guarded minimax with physical holds
+
+Slice B uses the same native observations and eliminated chart, with an
+explicit scaled epigraph declaration and separate max/mean inequalities.
+Ipopt uses limited-memory BFGS over exact first columns, while equilibrium's
+curvature remains exact. The mean slacks have their row's error unit; final
+means use actual absolute errors. Frozen baseline guards and report-only
+rules preserve their declared meaning.
+
+B4 uses the seven stage-1 coordinates and three hydration holds, with 18
+manufactured LiCl/NaCl/KCl gamma/Phi targets at m={0.1,1,4.5} mol/kg. Only NaCl
+gamma data receive a 0.005-decade offset. Two native molality-derived aqueous
+permittivity rows have both source max/mean limits of 0.1. Methanol has zero
+fraction in these aqueous rows; its source parameters are retained only for
+B3's separate water-to-methanol transfer probe. The same source and F2 truth,
+plus both B4 returned points, test complete exact columns, all five kinds,
+frozen thresholds and final stored-parameter checks. The probe's failed
+report-only logarithmic check cannot change the enforced constraints.
+
+{{< include results/minimax-qualification.md >}}
+
+[Native B1/B2 and compact B3 operands](results/minimax-native.csv),
+[full B3/B4 operands](results/minimax.csv) and
+[declarations, conditions and wheel identity](results/minimax.json) retain
+parameter ordering, physical inputs, held-root actions, chart maps, reconstructed full-space
+stationarity, row/bound multipliers, starts and refinement comparisons.
+A table is used for these finite heterogeneous falsifiers; no sampled
+continuous relation or physical parameter-uncertainty curve is claimed.
+
+### Fitted versus cold osmotic replay
+
+The [current rerun](results/minimax.json) completes both declared minimax
+starts under the original budgets and retains [every comparison](results/minimax.csv).
+The [diagnosis and previous failures](results/minimax-diagnosis.json),
+[native contraction operands](results/minimax-density-operands.csv) and
+[wheel comparisons](results/minimax-wheel-comparisons.csv) identify a
+one-ulp mixture-density change between the fitted evaluator's accepted density
+seed and a fresh cold closure. The pure-water density and fitted physical
+parameters agree. A native probe reproduces both original osmotic predictions
+by changing only that admitted mixture density.
+
+The [exact native density sensitivity](scripts/density_sensitivity.cpp) uses the
+residual Helmholtz gradient and Hessian to differentiate the common-pressure
+Euler expression at fixed temperature, composition and pure-water reference.
+Its derivative-times-ulp estimate is much smaller than the observed binary64
+change and has the opposite sign. The [leaf derivation](README.md#current-minimax-replay-757)
+and [retained sensitivity values](results/minimax-diagnosis.json) distinguish
+smooth density propagation from changes in rounded Helmholtz and
+chemical-potential operands. The one-ulp density change triggers those rounding
+changes, which are amplified in the osmotic equation by division by the small
+solute-to-solvent particle ratio.
+
+The repair replays both point evaluators at each fitted optimizer point with
+common cold density initialization. Prediction comparisons keep their original
+limits. Stored-fit minus cold predictions remain explicit initialization
+diagnostics, and the fitted candidate's exact columns, holds, chart and stored
+checks keep their existing assertions. The derivative estimate is not treated
+as a bound on binary64 rounding. This rerun awaits independent review and
+supports numerical verification of manufactured observations only.
+
+## Affine parameter columns and native input construction
+
+The original affine-column discrepancy concerned the reported derivative basis.
+The public `optimizer_gradient` reports a prediction derivative; the native
+`residual_optimizer_gradient` reports the pre-division residual derivative at
+unit row weight. The fitter consumes the residual derivative, and minimax
+consumes the prediction derivative. The [basis operands](results/affine-column-basis.csv),
+[original failed comparison and refinement operands](results/affine-column-comparisons.csv)
+and [conditions and wheel identity](results/affine-column-diagnosis.json)
+preserve that diagnosis. Independent refinement did not explain the original
+basis mismatch; the correction changed the reader meaning used by the study.
+It changed no thermodynamic derivative or numerical tolerance.
+
+The native start, signed reciprocal action and manufactured one-coordinate
+recovery are retained in [the numerical comparisons](results/affine-coordinate-recovery.csv)
+and [their input declarations and criteria](results/affine-coordinate-recovery.json).
+The proportional packing and Debye-Huckel lengths follow the declared sigma
+coordinate. An inconsistent tied length is rejected. Independently written
+reciprocal pairs verify the density action, and a manufactured aqueous
+activity/osmotic fit recovers the declared scalar while preserving its held
+hydration energy. These comparisons test coordinate construction and the
+residual chain; they establish no physical parameter adoption or identifiability.
+
+The [qualified affine operands](results/affine-coordinate-qualification.csv)
+and [conditions, derivative meanings and wheel identity](results/affine-coordinate-qualification.json)
+retain the held and unheld column comparisons, refinement uncertainties,
+hydration errors, start inversion, signed actions and recovery criteria.
+Delivered re-review was Supported at `9c7286a3`; investigator promotion for
+manuscript use remains outstanding. The [manufactured fitting operands](results/affine-start-fitting.csv)
+and [matching-reference comparison](results/affine-start-fitting.json)
+record replacement of the remaining Python chart inverses with native start
+and native construction. Predictions, fit columns and covariance were
+bit-identical to the stated captured reference. Trace hashes changed because
+native construction opened its calculation scopes.
+
+## Meaning and limits
+
+Reference values and columns belong to the admitted finite dilution endpoint.
+Terminal changes and a finer witness admit each consumed column; they do not
+certify a universal infinite-limit bias. The retained permittivity identity,
+density-chain and limiting-column checks have their quantities and criteria
+in [the comparison rows](results/falsifiers.csv).
+
+The recovered point and perturbed-data roots demonstrate the complete
+held-coordinate calculation at the declared branches. The perturbed fit
+reaches active bounds, so covariance is withheld. Convergence does not prove
+a global minimum. Interior covariance describes conditional local sensitivity
+with fixed hydration targets and independent weighted errors; Gibbs-Duhem
+links gamma and Phi, so it does not describe measurement uncertainty.
+
+The [diagnosed misses](results/diagnosed-failures.json) retain the scalar
+cancellation causes. Prescribed-pressure ln Z removes unequal terminated
+pressure logarithms from reference energy differences. The extensive
+Helmholtz Euler identity stabilizes the dilute solvent difference before
+formula-unit division, with extended-precision scalar accumulation.
+Parameter columns remain exact CppAD contractions. Physical definitions and
+numerical tolerances were preserved.
+
+Native multistart uses declared starts and shared budgets. Least-squares
+SVD/covariance is delivered; no minimax covariance is returned. Local minimax
+stationarity and guarded feasibility do not establish global optimality or
+measurement uncertainty. [Code budgets](../../docs/scientific/code-budgets.md)
+retain the historical allocation decisions separately from numerical evidence.
+
+## Reproduction and prior qualification
+
+The [README](README.md) gives commands, caps, inputs and row/column order.
+Quarto reads retained results with execution disabled; it runs no model.
+The [slice-B delivered review](results/minimax-review.json) was Supported for
+`310d762d` against `1fc771b0`. The [slice-A review](results/review.json)
+retains its initial findings and focused Supported disposition. The investigator
+subsequently completed its unchanged replay; that reviewer did not rerun the
+entire study. These reviews retain their inspected scope.
+
+The [merged-main integration record](results/affine-coordinate-qualification.json)
+identifies the wheel, checks and matching Khudaida numerical files after the
+exact-zero feed guard was integrated. That replay supports the declared local
+branch and paper-correlation-scale agreement. It establishes neither agreement
+within experimental uncertainty nor global phase stability. Historical jobs
+used the environment lease and restored their reference wheel; current jobs
+use the checkout's independent environment. No historical wheel result is
+qualification of the density-initialization change below.
+
+## Density initialization in fitting
+
+At a fixed parameter point, a density-seeded evaluation reproduces the cold
+evaluation within the owner's equivalence standard: closures, association
+sites, slopes, exact columns and every returned observable pass on the merged
+wheel. At identical optimizer work, a seeded evaluation is about a quarter
+cheaper for F2 and a few percent cheaper for B4, and the key cold equilibrium
+solves do the same work as on main. No stopping control makes the complete
+fits' endpoints agree within the standard's relative criterion on each
+coordinate: the seeded objective differs from the cold one at the osmotic
+floor, and the fits amplify that difference into their optimizer coordinates.
+Under the owner's endpoint judgment, the F2 endpoints agree within
+coordinate allowances carried from the accepted observable allowances through
+the fit, and the B4 seeded and cold fits reach the same minimax objective.
+
+The one round-2 osmotic comparison that exceeded a plain relative criterion
+concerned conditioning, not a changed state. The practical osmotic
+coefficient is $\phi = -\ln a_w / s$ with $s = M_w \sum_i \nu_i m_i$
+(`practical_osmotic_coefficient`). At low molality $\ln a_w$ is a small
+difference of order-one Helmholtz and chemical-potential terms, so the
+standard's absolute floor $\delta$ for near-zero quantities applies to
+$\ln a_w$. Carried to $\phi$, each row's allowance is
+
+$$\max\left(\epsilon_r \lvert\phi\rvert,\; \delta / s\right),$$
+
+with $\epsilon_r$ the standard's relative criterion. The floor grows as
+$1/m$. The comparison owner takes $M_w$ from the parameter packet and $\nu_i$
+and $m$ from each declared observation; every other quantity keeps its
+original criterion. The osmotic table reports $s\,\lvert\Delta\phi\rvert$, the
+equivalent $\ln a_w$ difference, which stays at rounding level.
+
+{{< include results/density-initialization/round3/qualification.md >}}
+
+[Comparison operands](results/density-initialization/round3/comparisons.csv),
+[osmotic floors](results/density-initialization/round3/osmotic-floors.csv),
+[anchor failure causes](results/density-initialization/round2/fallbacks.json)
+and [round-3 conditions and wheel identities](results/density-initialization/round3/provenance.json)
+retain the fixed-point evidence. The [round-2 record](results/density-initialization/round2/qualification.md)
+keeps its original outcome with a dated supersession note.
+
+### Fit stops and the per-evaluation saving
+
+{{< include results/density-initialization/round4/qualification.md >}}
+
+[Per-iteration stopping data](results/density-initialization/round4/stop-iterations.csv),
+[cold and seeded evaluations compared in order](results/density-initialization/round4/divergence.csv),
+[row identities](results/density-initialization/round4/rows.csv),
+[noise mapping](results/density-initialization/round4/noise.json),
+[stopping-control probes](results/density-initialization/round4/stop-probes.csv),
+[work-matched pairs](results/density-initialization/round4/work-matched/pairs.csv)
+with [endpoints](results/density-initialization/round4/work-matched/endpoints.csv),
+[pairs at the round-2 controls](results/density-initialization/round4/script-controls/pairs.csv),
+[pairs at the Engine defaults](results/density-initialization/round4/engine-defaults/pairs.csv),
+[key-solve work](results/density-initialization/round4/key-solves/summary.json)
+and [conditions, wheel identities and source hashes](results/density-initialization/round4/provenance.json)
+retain this evidence. The traces come from a local logging build that writes
+each evaluation and optimizer iteration and can withhold previous-trial
+offers at run time; it reproduced the round-3 endpoints and work counts
+exactly. The cold comparator for the timing omits previous-trial density
+offers in `fit.cpp` and changes nothing else.
+
+The round-2 and round-3 F2 calls did not use the Engine's default stops; the
+analysis declared tighter Ceres tolerances. Under them, both arms stop on the
+relative-step test after their trust regions collapse. The paths first
+separate at the first seeded trial, at the same optimizer point, through
+low-molality osmotic rows; mean ionic activity rows agree to rounding there.
+That difference is the accepted $1/s$ amplification of a rounding-level
+$\ln a_w$ difference, well inside the osmotic allowance. The cost then falls
+to the level where this difference decides whether a step is accepted, so the
+two arms accept different steps and stop at different points inside a noise
+region set by the fit's Jacobian. The seeded objective also depends on which
+trial seeded it, while the cold objective repeats exactly. Tighter tolerances
+leave the endpoints unchanged because both arms already stop at that floor.
+Looser stops change only how far into the floor each arm goes, and the
+direction of the evaluation-count difference reverses between the round-2
+controls and the Engine defaults. B4's Ipopt stop is the same tolerance test
+in both arms, with identical work. Its two starts reach different coordinates
+at one objective, so the optimum is inferred, not mapped, to be a set; the
+remaining endpoint difference is judged on the objective.
+
+A parameter tolerance that stops F2 before the floor gives both arms
+identical work and convergence, so its complete-call saving is the pure
+per-evaluation saving. The per-evaluation savings at the round-2 controls and
+at the Engine defaults agree with it. The round-2 F2 saving of about two
+fifths therefore combined this per-evaluation saving with fewer evaluations
+inside the floor. The complete call includes input and model construction,
+native manufacture, holds, fitting and result reading; shared-host scheduling
+adds uncertainty to the paired spread.
+
+The timing result is the work-matched one: a pure per-evaluation saving of
+24.6% for F2 and 7.0% for B4. The round-2 F2 saving of about 40% included a
+path-dependent reduction in evaluations at the noise floor and is not a
+per-evaluation saving.
+
+Endpoint agreement within the standard's relative criterion cannot be reached
+by stopping controls: the endpoint difference is set by the accepted osmotic
+floor carried through the fit, not by the stop.
+
+### Endpoint judgment
+
+The owner judged the endpoints on 2026-10-06: F2 coordinates against
+allowances propagated from the observable allowances, B4 by its minimax
+objective. A least-squares endpoint minimizes
+$\tfrac12\lVert W^{1/2} r(\theta)\rVert^2$. To first order, residual changes
+$\delta r$ move it by
+
+$$\delta\theta = -J_w^{+} W^{1/2} \delta r, \qquad J_w = W^{1/2} J = U \Sigma V^{\mathsf T}, \qquad J_w^{+} = V \Sigma^{-1} U^{\mathsf T}.$$
+
+An observable allowance $a_i$ becomes a residual allowance
+$\lvert \mathrm{d}r_i/\mathrm{d}y_i\rvert\, a_i$, with
+$\mathrm{d}r/\mathrm{d}y = 1/\text{scale}$ for difference residuals and $1/y$
+for log ratios. The componentwise bound on each optimizer coordinate is
+
+$$\lvert\delta\theta_k\rvert \le \sum_i \bigl\lvert [J_w^{+}]_{k,i}\bigr\rvert \sqrt{w_i}\, \Bigl\lvert \frac{\mathrm{d}r_i}{\mathrm{d}y_i}\Bigr\rvert\, a_i,$$
+
+with $a_i = \max(\delta, \epsilon_r \lvert y_i\rvert)$ for ordinary
+observables and the osmotic allowance above for osmotic rows. The fit returns
+$U$, $\Sigma$ and $V$ of the weighted optimizer Jacobian over its
+positive-weight rows; the bound only multiplies these returned factors and
+needs no linear solve. It is evaluated at the cold endpoint, and each arm's
+rerun reproduces the retained endpoints exactly. The minimax comparison uses
+the returned minimax level $t$ with allowance
+$\max(\delta, \epsilon_r \lvert t\rvert)$; Ipopt's reported objective is a
+fixed multiple of $t$. B4 coordinate differences are recorded as a
+diagnostic of the flat optimum set and carry no criterion.
+
+{{< include results/density-initialization/round5/qualification.md >}}
+
+Every F2 coordinate passes at both control sets with less than a tenth of a
+percent of its allowance, and both B4 starts reach the same minimax objective
+within the absolute floor. The allowance is a worst case: every row moves by
+its full allowance with signs aligned to one coordinate. The observed seeded
+residual differences are about 1% of their allowance and concentrate in a few
+low-molality osmotic rows, so the observed endpoint gaps are much smaller.
+Removing the absolute floors leaves most of the allowance, so its width
+reflects the relative criterion carried through this Jacobian over all rows,
+not the osmotic floor alone. The bound is first order at the endpoint and
+tests seeded-against-cold agreement at the resolution of the observable
+standard; recovery of the manufactured truth remains the round-3 comparison.
+Merging main's equilibrium polish change does not reach these fits, which
+evaluate single-phase property observations only; the merged seeded wheel
+reproduces the retained seeded endpoints exactly, so the timing is not
+repeated.
+
+[Coordinate allowances](results/density-initialization/round5/coordinate-allowance.csv),
+[B4 objectives](results/density-initialization/round5/b4-objective.csv),
+[B4 coordinate differences](results/density-initialization/round5/b4-coordinates.csv),
+[key-solve work on the merged wheel](results/density-initialization/round5/key-solves/README.md)
+and [method, wheel identities and merge reasoning](results/density-initialization/round5/provenance.json)
+retain this evidence.
+
+The branch witness identifies the physical extreme within the admitted
+single-loop domain; agreement with a bounded cold search remains a numerical
+comparison. A cold scan with a failed grid node now refuses a sole root, while
+a witnessed anchor can still close, so such a seeded state has no cold
+comparator. The pressure equations, root criteria, reference ladder and exact
+columns are unchanged. The delivered review of the round-2 change requested
+four corrections: a density status name restored in failure causes,
+seed-event assertions that make the gate falsifiers able to fail, the
+endpoint comparison, and one shared Properties owner for the anchored closure
+with its single cold retry. All four are in, and the endpoint judgment above
+closes the endpoint comparison.
+
+The tables present discrete comparisons in different units and paired timing
+samples; a figure would add no information. This is numerical verification
+and performance measurement. It establishes no physical parameter adoption,
+global minimum or new physical validation, and has not received investigator
+promotion for manuscript use.

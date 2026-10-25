@@ -1,0 +1,76 @@
+record_id,component_id,family,value,unit,source_id,locator,domain_id
+water-molar-mass,water,molar_mass,18.0153,gram / mole,nist-srd-69-water,"Water record, molecular weight",nist-water-identity
+water-segment-count,water,segment_count,1.2047,,figiel-yu-held-2025,"Table 2, water column, m_i^seg row",figiel-298-k-1-bar
+water-dispersion-energy,water,dispersion_energy_over_k,353.95,kelvin,figiel-yu-held-2025,"Table 2, water column, u_i/k_B row",figiel-298-k-1-bar
+water-charge,water,charge_number,0,,figiel-yu-held-2025,Table 2 identifies the component as a solvent; Table 3 separately lists ions,figiel-298-k-1-bar
+water-solvation-factor,water,solvation_factor,1.5,,figiel-yu-held-2025,"Table 2, water column, f_k row",figiel-298-k-1-bar
+methanol-molar-mass,methanol,molar_mass,32.042,gram / mole,nist-srd-69-methanol,"Methanol record, molecular weight",nist-methanol-identity
+methanol-segment-count,methanol,segment_count,1.5255,,figiel-yu-held-2025,"Table 2, methanol column, m_i^seg row",figiel-298-k-1-bar
+methanol-dispersion-energy,methanol,dispersion_energy_over_k,188.90,kelvin,figiel-yu-held-2025,"Table 2, methanol column, u_i/k_B row",figiel-298-k-1-bar
+methanol-charge,methanol,charge_number,0,,figiel-yu-held-2025,Table 2 identifies the component as a solvent; Table 3 separately lists ions,figiel-298-k-1-bar
+methanol-solvation-factor,methanol,solvation_factor,1.4,,figiel-yu-held-2025,"Table 2, methanol column, f_k row",figiel-298-k-1-bar
+ethanol-molar-mass,ethanol,molar_mass,46.069,gram / mole,nist-srd-69-ethanol,"Ethanol record, molecular weight",nist-ethanol-identity
+ethanol-segment-count,ethanol,segment_count,2.3827,,figiel-yu-held-2025,"Table 2, ethanol column, m_i^seg row",figiel-298-k-1-bar
+ethanol-dispersion-energy,ethanol,dispersion_energy_over_k,198.24,kelvin,figiel-yu-held-2025,"Table 2, ethanol column, u_i/k_B row",figiel-298-k-1-bar
+ethanol-charge,ethanol,charge_number,0,,figiel-yu-held-2025,Table 2 identifies the component as a solvent; Table 3 separately lists ions,figiel-298-k-1-bar
+ethanol-solvation-factor,ethanol,solvation_factor,1.6,,figiel-yu-held-2025,"Table 2, ethanol column, f_k row",figiel-298-k-1-bar
+hydrogen-segment-count,hydrogen-cation,segment_count,1,,figiel-yu-held-2025,"Table 3 footnote a, segment number is 1 for all ions",figiel-298-k-1-bar
+hydrogen-segment-diameter,hydrogen-cation,segment_diameter,3.4654,angstrom,figiel-yu-held-2025,"Table 3, H+ row, sigma_i column",figiel-298-k-1-bar
+hydrogen-dispersion-energy,hydrogen-cation,dispersion_energy_over_k,500.00,kelvin,figiel-yu-held-2025,"Table 3, H+ row, u_i/k_B column",figiel-298-k-1-bar
+hydrogen-charge,hydrogen-cation,charge_number,+1,,figiel-yu-held-2025,"Table 3, H+ ion label",figiel-298-k-1-bar
+hydrogen-born-diameter,hydrogen-cation,born_diameter,1.218,angstrom,figiel-yu-held-2025,"Table 3, H+ row, d_i^Born column",figiel-298-k-1-bar
+hydrogen-solvation-factor,hydrogen-cation,solvation_factor,1,,figiel-yu-held-2025,"p. 9411, Model Parameters paragraph sets the solvation parameter to 1 for all ions",figiel-298-k-1-bar
+lithium-segment-count,lithium-cation,segment_count,1,,figiel-yu-held-2025,"Table 3 footnote a, segment number is 1 for all ions",figiel-298-k-1-bar
+lithium-segment-diameter,lithium-cation,segment_diameter,2.8449,angstrom,figiel-yu-held-2025,"Table 3, Li+ row, sigma_i column",figiel-298-k-1-bar
+lithium-dispersion-energy,lithium-cation,dispersion_energy_over_k,360.00,kelvin,figiel-yu-held-2025,"Table 3, Li+ row, u_i/k_B column",figiel-298-k-1-bar
+lithium-charge,lithium-cation,charge_number,+1,,figiel-yu-held-2025,"Table 3, Li+ ion label",figiel-298-k-1-bar
+lithium-born-diameter,lithium-cation,born_diameter,2.784,angstrom,figiel-yu-held-2025,"Table 3, Li+ row, d_i^Born column",figiel-298-k-1-bar
+lithium-solvation-factor,lithium-cation,solvation_factor,1,,figiel-yu-held-2025,"p. 9411, Model Parameters paragraph sets the solvation parameter to 1 for all ions",figiel-298-k-1-bar
+sodium-segment-count,sodium-cation,segment_count,1,,figiel-yu-held-2025,"Table 3 footnote a, segment number is 1 for all ions",figiel-298-k-1-bar
+sodium-segment-diameter,sodium-cation,segment_diameter,2.8232,angstrom,figiel-yu-held-2025,"Table 3, Na+ row, sigma_i column",figiel-298-k-1-bar
+sodium-dispersion-energy,sodium-cation,dispersion_energy_over_k,230.00,kelvin,figiel-yu-held-2025,"Table 3, Na+ row, u_i/k_B column",figiel-298-k-1-bar
+sodium-charge,sodium-cation,charge_number,+1,,figiel-yu-held-2025,"Table 3, Na+ ion label",figiel-298-k-1-bar
+sodium-born-diameter,sodium-cation,born_diameter,3.445,angstrom,figiel-yu-held-2025,"Table 3, Na+ row, d_i^Born column",figiel-298-k-1-bar
+sodium-solvation-factor,sodium-cation,solvation_factor,1,,figiel-yu-held-2025,"p. 9411, Model Parameters paragraph sets the solvation parameter to 1 for all ions",figiel-298-k-1-bar
+potassium-segment-count,potassium-cation,segment_count,1,,figiel-yu-held-2025,"Table 3 footnote a, segment number is 1 for all ions",figiel-298-k-1-bar
+potassium-segment-diameter,potassium-cation,segment_diameter,3.3417,angstrom,figiel-yu-held-2025,"Table 3, K+ row, sigma_i column",figiel-298-k-1-bar
+potassium-dispersion-energy,potassium-cation,dispersion_energy_over_k,200.00,kelvin,figiel-yu-held-2025,"Table 3, K+ row, u_i/k_B column",figiel-298-k-1-bar
+potassium-charge,potassium-cation,charge_number,+1,,figiel-yu-held-2025,"Table 3, K+ ion label",figiel-298-k-1-bar
+potassium-born-diameter,potassium-cation,born_diameter,4.150,angstrom,figiel-yu-held-2025,"Table 3, K+ row, d_i^Born column",figiel-298-k-1-bar
+potassium-solvation-factor,potassium-cation,solvation_factor,1,,figiel-yu-held-2025,"p. 9411, Model Parameters paragraph sets the solvation parameter to 1 for all ions",figiel-298-k-1-bar
+vanadyl-segment-count,vanadyl-cation,segment_count,1,,figiel-yu-held-2025,"Table 3 footnote a, segment number is 1 for all ions",figiel-298-k-1-bar
+vanadyl-segment-diameter,vanadyl-cation,segment_diameter,3.4638,angstrom,figiel-yu-held-2025,"Table 3, VO2+ row, sigma_i column",figiel-298-k-1-bar
+vanadyl-dispersion-energy,vanadyl-cation,dispersion_energy_over_k,1488.28,kelvin,figiel-yu-held-2025,"Table 3, VO2+ row, u_i/k_B column",figiel-298-k-1-bar
+vanadyl-charge,vanadyl-cation,charge_number,+2,,figiel-yu-held-2025,"Table 3, VO2+ ion label",figiel-298-k-1-bar
+vanadyl-born-diameter,vanadyl-cation,born_diameter,2.930,angstrom,figiel-yu-held-2025,"Table 3, VO2+ row, d_i^Born column",figiel-298-k-1-bar
+vanadyl-solvation-factor,vanadyl-cation,solvation_factor,1,,figiel-yu-held-2025,"p. 9411, Model Parameters paragraph sets the solvation parameter to 1 for all ions",figiel-298-k-1-bar
+vanadium-iii-segment-count,vanadium-iii-cation,segment_count,1,,figiel-yu-held-2025,"Table 3 footnote a, segment number is 1 for all ions",figiel-298-k-1-bar
+vanadium-iii-segment-diameter,vanadium-iii-cation,segment_diameter,3.1401,angstrom,figiel-yu-held-2025,"Table 3, V3+ row, sigma_i column",figiel-298-k-1-bar
+vanadium-iii-dispersion-energy,vanadium-iii-cation,dispersion_energy_over_k,1415.66,kelvin,figiel-yu-held-2025,"Table 3, V3+ row, u_i/k_B column",figiel-298-k-1-bar
+vanadium-iii-charge,vanadium-iii-cation,charge_number,+3,,figiel-yu-held-2025,"Table 3, V3+ ion label",figiel-298-k-1-bar
+vanadium-iii-born-diameter,vanadium-iii-cation,born_diameter,2.940,angstrom,figiel-yu-held-2025,"Table 3, V3+ row, d_i^Born column",figiel-298-k-1-bar
+vanadium-iii-solvation-factor,vanadium-iii-cation,solvation_factor,1,,figiel-yu-held-2025,"p. 9411, Model Parameters paragraph sets the solvation parameter to 1 for all ions",figiel-298-k-1-bar
+chloride-segment-count,chloride-anion,segment_count,1,,figiel-yu-held-2025,"Table 3 footnote a, segment number is 1 for all ions",figiel-298-k-1-bar
+chloride-segment-diameter,chloride-anion,segment_diameter,2.7560,angstrom,figiel-yu-held-2025,"Table 3, Cl- row, sigma_i column",figiel-298-k-1-bar
+chloride-dispersion-energy,chloride-anion,dispersion_energy_over_k,170.00,kelvin,figiel-yu-held-2025,"Table 3, Cl- row, u_i/k_B column",figiel-298-k-1-bar
+chloride-charge,chloride-anion,charge_number,-1,,figiel-yu-held-2025,"Table 3, Cl- ion label",figiel-298-k-1-bar
+chloride-born-diameter,chloride-anion,born_diameter,4.100,angstrom,figiel-yu-held-2025,"Table 3, Cl- row, d_i^Born column",figiel-298-k-1-bar
+chloride-solvation-factor,chloride-anion,solvation_factor,1,,figiel-yu-held-2025,"p. 9411, Model Parameters paragraph sets the solvation parameter to 1 for all ions",figiel-298-k-1-bar
+bromide-segment-count,bromide-anion,segment_count,1,,figiel-yu-held-2025,"Table 3 footnote a, segment number is 1 for all ions",figiel-298-k-1-bar
+bromide-segment-diameter,bromide-anion,segment_diameter,3.0707,angstrom,figiel-yu-held-2025,"Table 3, Br- row, sigma_i column",figiel-298-k-1-bar
+bromide-dispersion-energy,bromide-anion,dispersion_energy_over_k,190.00,kelvin,figiel-yu-held-2025,"Table 3, Br- row, u_i/k_B column",figiel-298-k-1-bar
+bromide-charge,bromide-anion,charge_number,-1,,figiel-yu-held-2025,"Table 3, Br- ion label",figiel-298-k-1-bar
+bromide-born-diameter,bromide-anion,born_diameter,4.480,angstrom,figiel-yu-held-2025,"Table 3, Br- row, d_i^Born column",figiel-298-k-1-bar
+bromide-solvation-factor,bromide-anion,solvation_factor,1,,figiel-yu-held-2025,"p. 9411, Model Parameters paragraph sets the solvation parameter to 1 for all ions",figiel-298-k-1-bar
+iodide-segment-count,iodide-anion,segment_count,1,,figiel-yu-held-2025,"Table 3 footnote a, segment number is 1 for all ions",figiel-298-k-1-bar
+iodide-segment-diameter,iodide-anion,segment_diameter,3.6672,angstrom,figiel-yu-held-2025,"Table 3, I- row, sigma_i column",figiel-298-k-1-bar
+iodide-dispersion-energy,iodide-anion,dispersion_energy_over_k,200.00,kelvin,figiel-yu-held-2025,"Table 3, I- row, u_i/k_B column",figiel-298-k-1-bar
+iodide-charge,iodide-anion,charge_number,-1,,figiel-yu-held-2025,"Table 3, I- ion label",figiel-298-k-1-bar
+iodide-born-diameter,iodide-anion,born_diameter,4.985,angstrom,figiel-yu-held-2025,"Table 3, I- row, d_i^Born column",figiel-298-k-1-bar
+iodide-solvation-factor,iodide-anion,solvation_factor,1,,figiel-yu-held-2025,"p. 9411, Model Parameters paragraph sets the solvation parameter to 1 for all ions",figiel-298-k-1-bar
+sulfate-segment-count,sulfate-anion,segment_count,1,,figiel-yu-held-2025,"Table 3 footnote a, segment number is 1 for all ions",figiel-298-k-1-bar
+sulfate-segment-diameter,sulfate-anion,segment_diameter,2.6491,angstrom,figiel-yu-held-2025,"Table 3, SO4(2-) row, sigma_i column",figiel-298-k-1-bar
+sulfate-dispersion-energy,sulfate-anion,dispersion_energy_over_k,80.00,kelvin,figiel-yu-held-2025,"Table 3, SO4(2-) row, u_i/k_B column",figiel-298-k-1-bar
+sulfate-charge,sulfate-anion,charge_number,-2,,figiel-yu-held-2025,"Table 3, SO4(2-) ion label",figiel-298-k-1-bar
+sulfate-born-diameter,sulfate-anion,born_diameter,4.953,angstrom,figiel-yu-held-2025,"Table 3, SO4(2-) row, d_i^Born column",figiel-298-k-1-bar
+sulfate-solvation-factor,sulfate-anion,solvation_factor,1,,figiel-yu-held-2025,"p. 9411, Model Parameters paragraph sets the solvation parameter to 1 for all ions",figiel-298-k-1-bar

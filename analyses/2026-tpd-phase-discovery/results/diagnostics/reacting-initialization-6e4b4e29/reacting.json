@@ -1,0 +1,85 @@
+{
+  "identity": {
+    "wheel": "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-223-build-tpd-stability-test-and-phase-35ebff8f/build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+    "wheel_sha256": "6e4b4e294439b26351e21c8b16041288959b3f794d3f30e0175118943e698192",
+    "script_sha256": "84861b155c5bccc4999957c2f756043bed353289db0778afff344bc2f15c36c1",
+    "baseline_script_sha256": "640a35eb50295dc97469ad32a7eb2836b5b9b5262c2a7d3d4b7293594a1c6d9f",
+    "source_mtimes": {
+      "engine/native/equilibrium/gibbs_minimizer.cpp": 1790928264812976410,
+      "engine/native/equilibrium/request_compile.cpp": 1790915612053935625
+    },
+    "thread_environment": {
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1"
+    }
+  },
+  "inputs": {
+    "reacting/reference": {
+      "path": "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json",
+      "sha256": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+      "construction": "equilibrium_checks.cpp manufactured charged reference; one Liquid x* state, frozen g",
+      "operands_csv": "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-223-build-tpd-stability-test-and-phase-35ebff8f/analyses/2026-tpd-phase-discovery/results/diagnostics/reacting-reaction-mapping/reacting.csv",
+      "operands_sha256": "287dd38cef97b6f0919756692f4369dd1631721b4483d83d77a5485dee09d58a",
+      "method": "Continue with the exact already-frozen g/K operands after the constructor mapping correction; no second reference-state evaluation"
+    },
+    "reacting/fixed-TP": {
+      "components": [
+        "water",
+        "sodium-cation",
+        "chloride-anion"
+      ],
+      "T": 298.15,
+      "P": 100000.0,
+      "feed": {
+        "water": 0.0,
+        "sodium-cation": 1.0,
+        "chloride-anion": 1.0
+      },
+      "row_tolerance": 1e-10,
+      "phases": [
+        {
+          "name": "L",
+          "kind": "liquid",
+          "support": null,
+          "amount": {
+            "kind": "Free",
+            "value": null
+          },
+          "composition_guess": [
+            0.98,
+            0.01,
+            0.01
+          ],
+          "packing_guess": null
+        }
+      ],
+      "reaction_operands_csv_case": "reacting/fixed-TP/inputs",
+      "standard_operands_csv_case": "reacting/reference"
+    }
+  },
+  "costs": {
+    "csv": "reacting-costs.csv",
+    "sha256": "cac9d64a6b5cbb4ae4082f4e38b3f420b7512a2a678f9cb2c0450e596e4d1624",
+    "samples": 9,
+    "first_report_work": "sample 0 native work references the identical reported CSV operands",
+    "count_aliases": "iterations/evaluations/Hessian counts alias native work where that map is present"
+  },
+  "failure": "RuntimeError: reacting/fixed-TP/discovered: solve failed: discovery has no accepted initial candidate",
+  "failures": [
+    "reacting/fixed-TP/discovered: solve failed: discovery has no accepted initial candidate"
+  ],
+  "unresolved": [
+    {
+      "case": "reacting/fixed-TP/declared-test",
+      "trial": 1,
+      "seed": "near-pure-0",
+      "evidence": "indeterminate",
+      "message": "converged: residual 5.0701976571754684e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 8 iterations, contraction absent, floor 7.638335574634072e-11, amplification 0"
+    }
+  ],
+  "limits": [
+    "numerical verification of the supplied model and finite trial set",
+    "estimated uncertainty is not a rigorous bound",
+    "no physical validation or global stability certificate"
+  ]
+}

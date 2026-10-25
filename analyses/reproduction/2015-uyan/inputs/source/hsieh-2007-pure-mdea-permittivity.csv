@@ -1,0 +1,7 @@
+temperature_k,pressure_kpa,relative_permittivity,source_locator
+303.15,101.325,21.84,NIST ThermoML DOI 10.1021/je600515j pure MDEA row 1
+308.15,101.325,21.33,NIST ThermoML DOI 10.1021/je600515j pure MDEA row 2
+313.15,101.325,20.83,NIST ThermoML DOI 10.1021/je600515j pure MDEA row 3
+318.15,101.325,20.32,NIST ThermoML DOI 10.1021/je600515j pure MDEA row 4
+323.15,101.325,19.79,NIST ThermoML DOI 10.1021/je600515j pure MDEA row 5
+328.15,101.325,19.28,NIST ThermoML DOI 10.1021/je600515j pure MDEA row 6

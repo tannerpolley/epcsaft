@@ -1,0 +1,473 @@
+{
+  "bounds": {
+    "pair/carbon-dioxide/water/k_ij": [
+      -1.0,
+      1.0
+    ],
+    "pair/carbon-dioxide/water/k_ij/reciprocal_temperature_slope": [
+      -1000.0,
+      1000.0
+    ]
+  },
+  "effective_k_definition": "k(T) = k_ref + slope_K * (1/T - 1/T_ref)",
+  "models": {
+    "constant_k": {
+      "active_mask": [
+        0
+      ],
+      "aicc": -129.35603270063726,
+      "metrics": {
+        "max_absolute_log_error": 0.3989135364847729,
+        "mean_log_bias": -0.09427514872029856,
+        "phase_failure_count": 0,
+        "rmse_log_pressure": 0.18536328019328072,
+        "row_count": 39
+      },
+      "metrics_by_axis": {
+        "liquid_co2_mole_fraction": {
+          "0.001_to_0.01": {
+            "max_absolute_log_error": 0.3989135364847729,
+            "mean_log_bias": -0.11511810986238344,
+            "phase_failure_count": 0,
+            "rmse_log_pressure": 0.18945077865061546,
+            "row_count": 20
+          },
+          "ge_0.01": {
+            "max_absolute_log_error": 0.3872952615897861,
+            "mean_log_bias": -0.07905247097076055,
+            "phase_failure_count": 0,
+            "rmse_log_pressure": 0.21126380975889011,
+            "row_count": 11
+          },
+          "lt_0.001": {
+            "max_absolute_log_error": 0.22556655045415058,
+            "mean_log_bias": -0.06309892777070107,
+            "phase_failure_count": 0,
+            "rmse_log_pressure": 0.12807905714721643,
+            "row_count": 8
+          }
+        },
+        "observed_pressure": {
+          "1_to_5_mpa": {
+            "max_absolute_log_error": 0.3490917653511941,
+            "mean_log_bias": -0.13302171061137186,
+            "phase_failure_count": 0,
+            "rmse_log_pressure": 0.1877355717829048,
+            "row_count": 13
+          },
+          "ge_5_mpa": {
+            "max_absolute_log_error": 0.3989135364847729,
+            "mean_log_bias": -0.11987739126425878,
+            "phase_failure_count": 0,
+            "rmse_log_pressure": 0.25018119567762376,
+            "row_count": 10
+          },
+          "lt_1_mpa": {
+            "max_absolute_log_error": 0.22556655045415058,
+            "mean_log_bias": -0.04679216559382634,
+            "phase_failure_count": 0,
+            "rmse_log_pressure": 0.1264751926132987,
+            "row_count": 16
+          }
+        },
+        "temperature_k": {
+          "313.20": {
+            "max_absolute_log_error": 0.3872952615897861,
+            "mean_log_bias": 0.10642988828056053,
+            "phase_failure_count": 0,
+            "rmse_log_pressure": 0.13614562797370316,
+            "row_count": 12
+          },
+          "353.11": {
+            "max_absolute_log_error": 0.17329938915533724,
+            "mean_log_bias": -0.12143602949857896,
+            "phase_failure_count": 0,
+            "rmse_log_pressure": 0.12478877810453806,
+            "row_count": 9
+          },
+          "373.26": {
+            "max_absolute_log_error": 0.2654342739374661,
+            "mean_log_bias": -0.20343124124836853,
+            "phase_failure_count": 0,
+            "rmse_log_pressure": 0.20883569376624447,
+            "row_count": 12
+          },
+          "393.17": {
+            "max_absolute_log_error": 0.3989135364847729,
+            "mean_log_bias": -0.23663171649845616,
+            "phase_failure_count": 0,
+            "rmse_log_pressure": 0.27510494354060927,
+            "row_count": 6
+          }
+        }
+      },
+      "nfev": 8,
+      "nonlinear_profile": {
+        "crossings": [
+          0.011374501969069795,
+          0.015244566204303193
+        ],
+        "points": [
+          {
+            "coordinate_value": 0.010344770669366867,
+            "delta_sse": 0.3120009443654037,
+            "nuisance_value": null,
+            "sse": 1.6520232244818986
+          },
+          {
+            "coordinate_value": 0.011074297796255059,
+            "delta_sse": 0.17597268966504953,
+            "nuisance_value": null,
+            "sse": 1.5159949697815445
+          },
+          {
+            "coordinate_value": 0.011803824923143249,
+            "delta_sse": 0.07753293017372775,
+            "nuisance_value": null,
+            "sse": 1.4175552102902227
+          },
+          {
+            "coordinate_value": 0.012533352050031438,
+            "delta_sse": 0.0191054365740424,
+            "nuisance_value": null,
+            "sse": 1.3591277166905373
+          },
+          {
+            "coordinate_value": 0.013262879176919628,
+            "delta_sse": 0.0,
+            "nuisance_value": null,
+            "sse": 1.340022280116495
+          },
+          {
+            "coordinate_value": 0.013992406303807818,
+            "delta_sse": 0.018441195760767526,
+            "nuisance_value": null,
+            "sse": 1.3584634758772625
+          },
+          {
+            "coordinate_value": 0.014721933430696008,
+            "delta_sse": 0.07245956501685202,
+            "nuisance_value": null,
+            "sse": 1.412481845133347
+          },
+          {
+            "coordinate_value": 0.015451460557584198,
+            "delta_sse": 0.16040584043392214,
+            "nuisance_value": null,
+            "sse": 1.500428120550417
+          },
+          {
+            "coordinate_value": 0.01618098768447239,
+            "delta_sse": 0.2815857066479457,
+            "nuisance_value": null,
+            "sse": 1.6216079867644406
+          }
+        ],
+        "standard_error": 0.00097270283585092,
+        "target_sse": 1.475486501376499,
+        "threshold_basis": "nonlinear one-dimensional profile grid; chi-square(1,0.95) times SSE/(n-p)"
+      },
+      "optimality": 0.000261069267328973,
+      "optimality_gate": 0.001,
+      "rank": 1,
+      "scaled_singular_values": [
+        193.0563225809543
+      ],
+      "scientific_status": "best_supported_parameterization",
+      "solver_message": "`ftol` termination condition is satisfied.",
+      "solver_status": 2,
+      "solver_success": true,
+      "sse_log_pressure": 1.340022280116495,
+      "values": {
+        "pair/carbon-dioxide/water/k_ij": 0.013262879176919628
+      }
+    },
+    "corrected_m_fixed_k_zero": {
+      "metrics": {
+        "max_absolute_log_error": 0.6067268150046999,
+        "mean_log_bias": -0.336474409565183,
+        "phase_failure_count": 0,
+        "rmse_log_pressure": 0.36205419614461476,
+        "row_count": 39
+      },
+      "values": {
+        "pair/carbon-dioxide/water/k_ij": 0.0
+      }
+    },
+    "reciprocal_temperature_k": {
+      "active_mask": [
+        0,
+        0
+      ],
+      "aicc": -255.0415957433984,
+      "local_quadratic_uncertainty": {
+        "pair/carbon-dioxide/water/k_ij": {
+          "crossings": [
+            0.020977573181762202,
+            0.02220701869166266
+          ],
+          "points": [
+            {
+              "coordinate_value": 0.02063685502983001,
+              "delta_sse": 0.012130815446833185,
+              "nuisance_value": -28.618972881824654,
+              "sse": 0.06256542909146451
+            },
+            {
+              "coordinate_value": 0.020876279827991943,
+              "delta_sse": 0.0068409113188432485,
+              "nuisance_value": -29.18847094911867,
+              "sse": 0.05727552496347457
+            },
+            {
+              "coordinate_value": 0.02111570462615388,
+              "delta_sse": 0.0030480891374179697,
+              "nuisance_value": -29.757969016412698,
+              "sse": 0.05348270278204929
+            },
+            {
+              "coordinate_value": 0.021355129424315816,
+              "delta_sse": 0.0007639426892725315,
+              "nuisance_value": -30.32746708370672,
+              "sse": 0.051198556333903855
+            },
+            {
+              "coordinate_value": 0.021594554222477753,
+              "delta_sse": 0.0,
+              "nuisance_value": -30.896965151000746,
+              "sse": 0.050434613644631324
+            },
+            {
+              "coordinate_value": 0.02183397902063969,
+              "delta_sse": 0.0007677791547125445,
+              "nuisance_value": -31.466463218294773,
+              "sse": 0.05120239279934387
+            },
+            {
+              "coordinate_value": 0.022073403818801626,
+              "delta_sse": 0.0030788311317439393,
+              "nuisance_value": -32.03596128558879,
+              "sse": 0.05351344477637526
+            },
+            {
+              "coordinate_value": 0.022312828616963563,
+              "delta_sse": 0.006944775089881852,
+              "nuisance_value": -32.60545935288282,
+              "sse": 0.057379388734513176
+            },
+            {
+              "coordinate_value": 0.022552253415125498,
+              "delta_sse": 0.012377327669800056,
+              "nuisance_value": -33.17495742017684,
+              "sse": 0.06281194131443138
+            }
+          ],
+          "standard_error": 0.000319233064215915,
+          "target_sse": 0.055670897197427786,
+          "threshold_basis": "local quadratic profile; chi-square(1,0.95) times SSE/(n-p)"
+        },
+        "pair/carbon-dioxide/water/k_ij/reciprocal_temperature_slope": {
+          "crossings": [
+            -32.85706926156461,
+            -28.970482453223692
+          ],
+          "points": [
+            {
+              "coordinate_value": -33.88670401541237,
+              "delta_sse": 0.01161350810938526,
+              "nuisance_value": 0.022324260546671085,
+              "sse": 0.06204812175401658
+            },
+            {
+              "coordinate_value": -33.13926929930946,
+              "delta_sse": 0.006613551791550862,
+              "nuisance_value": 0.02214183396562275,
+              "sse": 0.057048165436182185
+            },
+            {
+              "coordinate_value": -32.39183458320656,
+              "delta_sse": 0.0029657206174044867,
+              "nuisance_value": 0.02195940738457442,
+              "sse": 0.05340033426203581
+            },
+            {
+              "coordinate_value": -31.64439986710365,
+              "delta_sse": 0.0007467148879987465,
+              "nuisance_value": 0.021776980803526087,
+              "sse": 0.05118132853263007
+            },
+            {
+              "coordinate_value": -30.896965151000746,
+              "delta_sse": 0.0,
+              "nuisance_value": 0.021594554222477753,
+              "sse": 0.050434613644631324
+            },
+            {
+              "coordinate_value": -30.14953043489784,
+              "delta_sse": 0.0007548699918962509,
+              "nuisance_value": 0.02141212764142942,
+              "sse": 0.051189483636527575
+            },
+            {
+              "coordinate_value": -29.402095718794936,
+              "delta_sse": 0.0030325312289232464,
+              "nuisance_value": 0.02122970106038109,
+              "sse": 0.05346714487355457
+            },
+            {
+              "coordinate_value": -28.65466100269203,
+              "delta_sse": 0.006848820309786556,
+              "nuisance_value": 0.021047274479332755,
+              "sse": 0.05728343395441788
+            },
+            {
+              "coordinate_value": -27.907226286589122,
+              "delta_sse": 0.012215669736803603,
+              "nuisance_value": 0.02086484789828442,
+              "sse": 0.06265028338143493
+            }
+          ],
+          "standard_error": 0.9965796214705409,
+          "target_sse": 0.055670897197427786,
+          "threshold_basis": "local quadratic profile; chi-square(1,0.95) times SSE/(n-p)"
+        }
+      },
+      "metrics": {
+        "max_absolute_log_error": 0.11334687698949088,
+        "mean_log_bias": 0.006065571906092112,
+        "phase_failure_count": 0,
+        "rmse_log_pressure": 0.03596102364584764,
+        "row_count": 39
+      },
+      "metrics_by_axis": {
+        "liquid_co2_mole_fraction": {
+          "0.001_to_0.01": {
+            "max_absolute_log_error": 0.11334687698949088,
+            "mean_log_bias": 0.00478838306405494,
+            "phase_failure_count": 0,
+            "rmse_log_pressure": 0.040783723455514155,
+            "row_count": 20
+          },
+          "ge_0.01": {
+            "max_absolute_log_error": 0.04370215689175511,
+            "mean_log_bias": 0.007197180896562169,
+            "phase_failure_count": 0,
+            "rmse_log_pressure": 0.026846908023412677,
+            "row_count": 11
+          },
+          "lt_0.001": {
+            "max_absolute_log_error": 0.06168805177135513,
+            "mean_log_bias": 0.00770258164928871,
+            "phase_failure_count": 0,
+            "rmse_log_pressure": 0.033985383792376166,
+            "row_count": 8
+          }
+        },
+        "observed_pressure": {
+          "1_to_5_mpa": {
+            "max_absolute_log_error": 0.08202700508319526,
+            "mean_log_bias": 0.0042968416731221735,
+            "phase_failure_count": 0,
+            "rmse_log_pressure": 0.034674488673910715,
+            "row_count": 13
+          },
+          "ge_5_mpa": {
+            "max_absolute_log_error": 0.11334687698949088,
+            "mean_log_bias": -0.006029528709111394,
+            "phase_failure_count": 0,
+            "rmse_log_pressure": 0.0442911059068215,
+            "row_count": 10
+          },
+          "lt_1_mpa": {
+            "max_absolute_log_error": 0.06168805177135513,
+            "mean_log_bias": 0.015062103104882377,
+            "phase_failure_count": 0,
+            "rmse_log_pressure": 0.030809323748842075,
+            "row_count": 16
+          }
+        },
+        "temperature_k": {
+          "313.20": {
+            "max_absolute_log_error": 0.04370215689175511,
+            "mean_log_bias": 0.010460696932164967,
+            "phase_failure_count": 0,
+            "rmse_log_pressure": 0.027422761211084702,
+            "row_count": 12
+          },
+          "353.11": {
+            "max_absolute_log_error": 0.04012903566257872,
+            "mean_log_bias": 0.03340054475912771,
+            "phase_failure_count": 0,
+            "rmse_log_pressure": 0.03379900117560164,
+            "row_count": 9
+          },
+          "373.26": {
+            "max_absolute_log_error": 0.021738674360238908,
+            "mean_log_bias": 0.006431143932923679,
+            "phase_failure_count": 0,
+            "rmse_log_pressure": 0.010692762535990136,
+            "row_count": 12
+          },
+          "393.17": {
+            "max_absolute_log_error": 0.11334687698949088,
+            "mean_log_bias": -0.04445828147927012,
+            "phase_failure_count": 0,
+            "rmse_log_pressure": 0.07042388951120858,
+            "row_count": 6
+          }
+        }
+      },
+      "nfev": 12,
+      "nonlinear_profile_gate": {
+        "interpretation": "local quadratic crossings are not finite nonlinear profile bounds and are not used for promotion",
+        "reproduced_failure_trial": {
+          "failure_reason": "multiple_unresolved_coexistence_branches",
+          "row_id": "kiepe-313.20-13",
+          "status": "reproduced_typed_failure",
+          "values": {
+            "pair/carbon-dioxide/water/k_ij": 0.02,
+            "pair/carbon-dioxide/water/k_ij/reciprocal_temperature_slope": -28.0
+          }
+        },
+        "scope": "two-sided nuisance-refitted nonlinear profiles were not completed",
+        "status": "unresolved"
+      },
+      "optimality": 4.516266172256709e-05,
+      "optimality_gate": 0.001,
+      "rank": 2,
+      "scaled_singular_values": [
+        184.032395260101,
+        35.94773937215075
+      ],
+      "scientific_status": "candidate_profile_gate_unresolved",
+      "solver_message": "`xtol` termination condition is satisfied.",
+      "solver_status": 3,
+      "solver_success": true,
+      "sse_log_pressure": 0.050434613644631324,
+      "values": {
+        "pair/carbon-dioxide/water/k_ij": 0.021594554222477753,
+        "pair/carbon-dioxide/water/k_ij/reciprocal_temperature_slope": -30.896965151000746
+      }
+    }
+  },
+  "reference_temperature_k": 353.11,
+  "schema_version": 1,
+  "selected_model": "constant_k",
+  "selection_rule": "minimum supported complexity; reciprocal-temperature candidate cannot be promoted without completed two-sided nonlinear profiles",
+  "status": "completed_with_nonlinear_profile_gate_unresolved",
+  "supported_data_domain": {
+    "active_domain_caveat": "393.17 K rows are 0.02 K above the active candidate ceiling and remain boundary evidence only",
+    "liquid_co2_mole_fraction": [
+      3e-05,
+      0.02481
+    ],
+    "observed_pressure_pa": [
+      95090.0,
+      9257600.0
+    ],
+    "temperature_k": [
+      313.2,
+      393.17
+    ]
+  }
+}

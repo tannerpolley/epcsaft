@@ -1,0 +1,3 @@
+sites,rank,maximum_pivot,minimum_pivot,pivot_ratio,reason
+2,2,19999999999999.984,1,19999999999999.984,association Jacobian is ill-conditioned
+128,1,63245553203367.719,1,63245553203367.719,association Jacobian is singular

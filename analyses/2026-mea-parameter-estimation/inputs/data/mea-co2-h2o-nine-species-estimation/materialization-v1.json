@@ -1,0 +1,25 @@
+{
+  "schema_version": 3,
+  "repository": "tannerpolley/ePC-SAFT",
+  "lock_manifest": "data/packet-locks.json",
+  "packet_id": "mea-co2-h2o-nine-species-estimation",
+  "packet_version": "1",
+  "packet_path": "data/packets/mea-co2-h2o-nine-species-estimation/1",
+  "packet_fingerprint": "d02c109c035c79ea27905eb115a9a107afa4d5299abb6f17492285142f0a7b32",
+  "materialization_mode": "byte-for-byte-analysis-input",
+  "destination": "analyses/2026-mea-parameter-estimation/inputs/data/mea-co2-h2o-nine-species-estimation/1",
+  "files": [
+    {
+      "path": "packet.toml",
+      "sha256": "e4dbd11ee25f49cc9c78c77e0a5ddac40f4f26575e5d8665d12abbf72fd3916c"
+    },
+    {
+      "path": "parameters/parameters.json",
+      "sha256": "12e380a27eb615e25bae580f8c1ec852020879917b08fa16a5821ae76311550d"
+    },
+    {
+      "path": "provenance/source-origin.toml",
+      "sha256": "a2d60d686b98896c5488198c8b81c6bbd795d6d779948147363f4659cfc61e15"
+    }
+  ]
+}

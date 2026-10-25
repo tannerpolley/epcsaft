@@ -1,0 +1,103 @@
+provenance_kind = "derived-record-provenance-v1"
+schema_version = 1
+transformations = ["Aqueous component projection of frozen /1; only five tied Li coordinates refitted by native Ceres on original observations under the complete joint-check declaration, with grid-selected theta/psi fixed."]
+
+[[records]]
+retained_path = "parameters/parameters.json"
+sha256 = "7e32db55f77fe437bc8f918685b6287899e658810ebb575a10e31fcc61e63bf7"
+
+[[sources]]
+source_id = "input-0"
+role = "Retained source, declaration or native numerical result"
+retained_path = "data/packets/figiel-2025-chloride-mixture-refit/1/parameters/parameters.json"
+sha256 = "1c27b1b14b17f59c931444574c41ffb71f4977e423ca7960bd0263b6afc1cc33"
+
+[[sources]]
+source_id = "input-1"
+role = "Retained source, declaration or native numerical result"
+retained_path = "analyses/2026-lithium-chloride-refit/inputs/cation-mixing-declaration.json"
+sha256 = "a627712c39ba99513c0e98c1a69f861adf54b6cc2bf6f6abb32ecae464216df9"
+
+[[sources]]
+source_id = "input-2"
+role = "Retained source, declaration or native numerical result"
+retained_path = "analyses/2026-lithium-chloride-refit/inputs/cation-mixing-reference.json"
+sha256 = "d19dc9f1630610a767134db095a2bb2e5a6db4b59d62ce4f069c781b83bfe303"
+
+[[sources]]
+source_id = "input-3"
+role = "Retained source, declaration or native numerical result"
+retained_path = "analyses/2026-lithium-chloride-refit/scripts/cation_mixing.py"
+sha256 = "0a7f0c8b0b278dcb300735524b3a5b43cac350d0549155f6ff2f81661177cdfd"
+
+[[sources]]
+source_id = "input-4"
+role = "Retained source, declaration or native numerical result"
+retained_path = "analyses/2026-lithium-chloride-refit/results/cation-mixing/native-fit.json"
+sha256 = "fbc868e186a8cd098fcd9efe61cc0034655d882a0fda483a50cbfae967e5c175"
+
+[[sources]]
+source_id = "input-5"
+role = "Retained source, declaration or native numerical result"
+retained_path = "analyses/2026-lithium-chloride-refit/results/cation-mixing/training.csv"
+sha256 = "ac58bd24ba78a0e27d9d095686fee3cdf684f2fb5f6718bd9ba5687c8c5f8189"
+
+[[sources]]
+source_id = "input-6"
+role = "Retained source, declaration or native numerical result"
+retained_path = "analyses/2026-lithium-chloride-refit/results/cation-mixing/native-scores.json"
+sha256 = "9bf1e28c02aa0921a752eab8ce710510b4b8cbac5ac327b19944e1587ea6bf48"
+
+[[sources]]
+source_id = "input-7"
+role = "Retained source, declaration or native numerical result"
+retained_path = "analyses/2026-lithium-chloride-refit/results/cation-mixing/checks.json"
+sha256 = "16f50c21952eb8c157c29247df2e3b1909e34b416c75fadcdb9309938e297f6a"
+
+[[sources]]
+source_id = "input-8"
+role = "Retained source, declaration or native numerical result"
+retained_path = "analyses/2026-lithium-chloride-refit/inputs/hamer-wu-1972-licl.csv"
+sha256 = "d6bd62adde57d94eadf882ebb1366c798ff6f7d4ce9c17ced922bf9685843233"
+
+[[sources]]
+source_id = "input-9"
+role = "Retained source, declaration or native numerical result"
+retained_path = "data/packets/el-guendouzi-2004-licl-nacl-observations/1/observations/el-guendouzi-2004-licl-nacl-from-lassin2015-fig22.csv"
+sha256 = "28b511d458f0ada0b10fe7f571ceedd3db548d61997fbbb1e529bec7147154ac"
+
+[[sources]]
+source_id = "input-10"
+role = "Retained source, declaration or native numerical result"
+retained_path = "data/packets/yao-1992-licl-mgcl2-observations/1/observations/yao1992-licl-mgcl2-table1.csv"
+sha256 = "edbae25ae607f9c22cd4a34dad93bb9c622165737b5691e109ed2363660d4f8b"
+
+[[sources]]
+source_id = "input-11"
+role = "Retained source, declaration or native numerical result"
+retained_path = "data/packets/robinson-covington-1968-kcl-cacl2-observations/1/observations/robinson-covington-1968-table1.csv"
+sha256 = "2275421545191812af30b5a31585954f44f3ff19bfc6a6cbbad380b6788b63ee"
+
+[[sources]]
+source_id = "input-12"
+role = "Retained source, declaration or native numerical result"
+retained_path = "analyses/2026-lithium-chloride-refit/inputs/lithium-f0-states.csv"
+sha256 = "338612553e3387194bb5fb6560ee5b22b2c25127e825f261172fbf17df3515ef"
+
+[[sources]]
+source_id = "input-13"
+role = "Retained source, declaration or native numerical result"
+retained_path = "analyses/2026-lithium-chloride-refit/inputs/frozen-realizations.csv"
+sha256 = "3028cf12973644b15481c2db749a0059b22ded1971181d1181d44aa11b1d9338"
+
+[[sources]]
+source_id = "input-14"
+role = "Retained source, declaration or native numerical result"
+retained_path = "analyses/2026-mixed-chloride-water-activity/scripts/compare.py"
+sha256 = "25f12a40288f2637061bbc4b62c91c4473a2aa017592399a1350b483a68b0cfd"
+
+[[sources]]
+source_id = "input-15"
+role = "Retained source, declaration or native numerical result"
+retained_path = "analyses/2026-chloride-brine-refit/scripts/fit.py"
+sha256 = "10b6660022842c0516d95124ca5792c94c552baeb95819b99b9010bebd0b70a4"

@@ -1,0 +1,74 @@
+{
+  "temperature_K": 298.15,
+  "pressure_Pa": 100000.0,
+  "stoichiometry": [
+    1,
+    1
+  ],
+  "molalities_mol_kg": [
+    0.001,
+    0.01,
+    0.1,
+    0.5,
+    1,
+    2
+  ],
+  "salts": {
+    "LiCl": [
+      "water",
+      "lithium-cation",
+      "chloride-anion"
+    ],
+    "LiBr": [
+      "water",
+      "lithium-cation",
+      "bromide-anion"
+    ],
+    "NaCl": [
+      "water",
+      "sodium-cation",
+      "chloride-anion"
+    ],
+    "NaBr": [
+      "water",
+      "sodium-cation",
+      "bromide-anion"
+    ],
+    "KCl": [
+      "water",
+      "potassium-cation",
+      "chloride-anion"
+    ],
+    "KBr": [
+      "water",
+      "potassium-cation",
+      "bromide-anion"
+    ]
+  },
+  "packet": "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json",
+  "figure": "analyses/reproduction/2025-figiel/figures/figure-05/source/libr-model-digitized.csv",
+  "figure_method": "analyses/reproduction/2025-figiel/figures/figure-05/source/libr-model-digitized.md",
+  "historical": {
+    "exclusion": "analyses/reproduction/2025-figiel-engine-crosswalk/results/data/superseded.json",
+    "all-pairs": "analyses/reproduction/2025-figiel-engine-crosswalk/results/data/greenfield.json"
+  },
+  "tolerances": {
+    "matched_scaled_absolute": 1e-10,
+    "witness_minimum_absolute": 1e-06,
+    "reduced_energy_scaled_absolute": 1e-06,
+    "density_relative": 1e-06,
+    "permittivity_absolute": 1e-10,
+    "log_fugacity_absolute": 0.0001,
+    "gamma_relative": 0.0001,
+    "euler_absolute": 1e-09
+  },
+  "criteria": {
+    "matched": "abs(all-pairs - exclusion) <= matched_scaled_absolute * max(1, abs(exclusion)); total change minus dispersion change uses reduced exclusion total scale",
+    "witness": "abs(KCl dispersion change at 2 mol/kg) > witness_minimum_absolute",
+    "history": "energies scaled by max(1,abs(reference)); density and gamma relative; permittivity and log fugacity absolute",
+    "pressure": "positive pressure_density_derivative and abs(density_convergence.residual) <= density_convergence.criterion.value; retain Pa error",
+    "curve": "mean(abs(native_gamma/source_gamma - 1)) <= mean(digitization_uncertainty/source_gamma); maximum pointwise uncertainty ratio also retained"
+  },
+  "evidence": "numerical verification; historical outputs are unidentified implementations; Figure 5 is a published model line, not measured data",
+  "packet_resolution": "Versions /3 and /4 have identical physics for these aqueous states: only two water-ethanol site edges changed, removed by component selection."
+}

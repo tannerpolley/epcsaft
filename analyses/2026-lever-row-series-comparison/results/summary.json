@@ -1,0 +1,125 @@
+{
+  "base": "bdde4003db7fda654655fdc42e684f60b4a29cfd",
+  "original_measurement_base": "96e9ecde0d8c990804486f51b29d93f2ff7df174",
+  "baseline_wheel_sha256": "7e44fadae95055db943a787a4d2c624d24c8c60bd4c75c0b6db5308d2fe26890",
+  "wheel_sha256": "298a360e532f6f4c5e7ef70c5be45e8b9852310d1c388d6225c504714c3dc410",
+  "ionic_classified_residual": 1.7625900738948984e-14,
+  "comparison": {
+    "columns": 230,
+    "corrected": 4,
+    "preserved": 226,
+    "native_checks": [
+      {
+        "selection": "boundary-S9",
+        "rows": 128,
+        "judged": 128,
+        "false": 0,
+        "byte_equal": false
+      },
+      {
+        "selection": "equilibrium-S10",
+        "rows": 4865,
+        "judged": 4865,
+        "false": 0,
+        "byte_equal": false
+      },
+      {
+        "selection": "equilibrium-E5-2",
+        "rows": 675,
+        "judged": 339,
+        "false": 0,
+        "byte_equal": true
+      },
+      {
+        "selection": "equilibrium-E5-3",
+        "rows": 520,
+        "judged": 268,
+        "false": 0,
+        "byte_equal": true
+      },
+      {
+        "selection": "equilibrium-E5-10",
+        "rows": 79,
+        "judged": 79,
+        "false": 0,
+        "byte_equal": true
+      }
+    ],
+    "native_numeric_differences": 7,
+    "native_max_relative_difference": 1.962411928515416e-16,
+    "native_max_difference_field": "boundary-S9:reactive-lever/2.model",
+    "khudaida_byte_comparison": [
+      {
+        "file": "stage-results.csv",
+        "bytes": 12868,
+        "sha256": "fa39f166d6d2d671a59999dcff5e2a25deafbcd43ee08e43fbe227431aa61458",
+        "equal": true
+      },
+      {
+        "file": "engine-residuals.csv",
+        "bytes": 12205,
+        "sha256": "e9a15992c8d3d628f67a1cb56f6636590a0732fca3526e0efb20161de99a90c3",
+        "equal": true
+      },
+      {
+        "file": "qualification-comparison.csv",
+        "bytes": 12732,
+        "sha256": "a6a8ee82d3f682d954b3589faf5babb2ac0f875b2a201e4e17a99cc5ea977d0b",
+        "equal": true
+      }
+    ]
+  },
+  "falsifier": {
+    "rows": 8,
+    "atol_per_angstrom": 2e-09,
+    "maximum_error_per_angstrom": 1.3481376015533897e-09,
+    "legacy_first_row_error_per_angstrom": 0.23342729752999364
+  },
+  "repetitions": 7,
+  "calls_per_repetition": 30,
+  "warmup_calls_per_method": 30,
+  "omp_threads": 1,
+  "openblas_threads": 1,
+  "native_build_process_cap": 3,
+  "native_test_processes": 1,
+  "python_checks": "113 passed, 1 deselected in 10.17 s",
+  "checks": "check-all, Khudaida slice and check-affected HEAD passed",
+  "runtime_counts": {
+    "equilibrium_before": 6129,
+    "equilibrium_after": 6054,
+    "total_before": 20208,
+    "total_after": 20133
+  },
+  "tables": {
+    "native-comparisons.csv": "4a352c02c8a268cc5d3b34588a07dac1988dccfb7d36088a3fe7d7a7e0ab576a",
+    "stencils.csv": "a156c9973ce0e2227c8c26ce8698e799d5527da971c530074ba77cdc3798fba2",
+    "centers.csv": "c4b847b8c8ffdd8453e29f29bf5ebe76097ee5a66f51ed4a3b51d297d5e15dca",
+    "columns.csv": "17edb72bf6b22f80bd20d02639367ca8a7bbe561eb3ec1b49ac89cb03338b9d0",
+    "cost.csv": "4be94bef276c8bdfa3377eafbf367a90180e77b64270539b6f75ae7a57b3bc6d"
+  },
+  "downstream": {
+    "repository": "Lithium_Extraction",
+    "active_eos_parameters": 0,
+    "packing_diameter_exposed": false,
+    "source_sha256": {
+      "analyses/hbta_topo_ms2_idaes_optimization/scripts/run_live_derivatives.py": "18eb1748976af923ebec80717febad246b39d7ed6a941bb47118f77bef00dd55",
+      "lithium_extraction/flowsheets/hbta_topo_ms2_extraction/live_equilibrium.py": "6b2739de1c549a7fa8e7c18c9b98e7735749c567f75230dea92590e20872d05d",
+      "analyses/hbta_topo_configured_reactive_lle/scripts/independent_network.py": "5fabbbf43cc2f34302ede31e0b0835baa05ffe06d7edf169b59a3851667d5334",
+      "lithium_extraction/flowsheets/hbta_topo_ms2_saponified/stage_chemistry.py": "711d1b00e0c881fa0865cfc70d04dd98f3addbec89a1cbf9c837cc7d61e0fd97",
+      "analyses/hbta_topo_configured_reactive_lle/scripts/mechanism_candidates.py": "64251ba8edbf1e5e5a82a414f6f9f5ee051f95d323c5873dd2131f2169857ea1"
+    },
+    "basis": "default and saponified reference builders construct Mixture without active_parameters; inspected source only; no downstream execution or edits",
+    "inspected_commit": "4c8ee73b37eaa1324901d389b338a62f311ac960"
+  },
+  "retained_probe_replay": "230 corrected entries reproduced exactly; notebook rendered without execution",
+  "review": {
+    "verdict": "Supported",
+    "reviewed_commit": "09bcb72f",
+    "provider": "claudeAgent",
+    "model": "claude-opus-5-5",
+    "effort": "high",
+    "task_id": "node:delegated-task:command%3Amcp%3A0bce7172-df0b-40f8-a41a-be3e256d78c4%3Adelegate-task%3Ac5d6705e-81e9-4acd-9503-ce4802071aad",
+    "required_code_corrections": 0,
+    "limits": "Reviewer recommends owner acknowledgment of separate-build cost above accepted interleaved range; neutral sigma and dispersion-energy lever columns checked algebraically; stencil tolerance empirical."
+  }
+}

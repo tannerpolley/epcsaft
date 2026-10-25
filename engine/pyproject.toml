@@ -1,0 +1,27 @@
+[build-system]
+requires = ["meson-python>=0.18", "nanobind"]
+build-backend = "mesonpy"
+
+[project]
+name = "epcsaft"
+dynamic = ["version"]
+description = "Unified ePC-SAFT engine for EOS, equilibrium, and regression"
+# No readme: engine/README.md stays out of METADATA so a docs edit keeps the wheel SHA-256 (#355).
+requires-python = ">=3.13"
+license = { file = "LICENSE" } # GPLv3 with the Ipopt section 7 permission
+dependencies = []
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+junit_logging = "system-out"
+junit_log_passing_tests = true
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+
+[tool.mypy]
+files = ["src/epcsaft", "tests"]
+mypy_path = "src"
+python_version = "3.13"
+strict = true

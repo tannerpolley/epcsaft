@@ -1,0 +1,16 @@
+{
+  "basis": "Reviewer evidence supplied with revision request; independently executed by reviewer, not rerun in this revision",
+  "comparator": "teqp",
+  "version": "0.23.2",
+  "pure_density_states": 12,
+  "maximum_pure_density_relative_difference": 5.2e-15,
+  "binary_figures": [
+    "07",
+    "10",
+    "12"
+  ],
+  "maximum_checked_binary_pressure_relative_difference": 8.1e-13,
+  "revision_comparator_installation": "No teqp module in checkout .venv or ~/.cache/epcsaft-comparators/222/feos; optional rerun skipped",
+  "scope": "Original sampled native declarations checked by reviewer; retraced source selections change some input states; no claim of a fresh comparator check on those states",
+  "disposition": "Historical reviewer evidence; superseded for final retained declarations by independent-code-comparison.csv and independent-code-run.json."
+}

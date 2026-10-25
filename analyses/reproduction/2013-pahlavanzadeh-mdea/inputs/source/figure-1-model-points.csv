@@ -1,0 +1,3 @@
+row_id,source_figure,source_pdf_page,source_printed_page,zotero_parent_key,pdf_attachment_key,mdea_scheme,pixel_x,pixel_y,density_kg_per_m3,pressure_Pa,density_half_width_kg_per_m3,pressure_half_width_Pa,reading_half_width_pixels,evidence_label,verification
+"1/4(2:2,0:0)",1,3,216,DUAIHQ7Y,YAUNIZGX,"4(2:2,0:0)",755,341,939.4919168591224,6000.0,0.8314087759815243,60.60606060606061,2,numerical verification,manual line-style ownership; original panel and horizontal strip checked; no Engine predictions
+1/2(1:1),1,3,216,DUAIHQ7Y,YAUNIZGX,2(1:1),800,341,958.1986143187067,6000.0,0.8314087759815243,60.60606060606061,2,numerical verification,manual line-style ownership; original panel and horizontal strip checked; no Engine predictions

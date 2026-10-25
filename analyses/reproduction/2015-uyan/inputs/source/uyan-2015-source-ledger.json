@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "source_id": "uyan-2015",
+  "citation": "Uyan, Sieder, Ingram, Held, Fluid Phase Equilibria 393 (2015) 91-100",
+  "doi": "10.1016/j.fluid.2015.02.026",
+  "source_markdown": {
+    "path": "/home/tnnrpolley21/Zotero/storage/9C7EACSK/Uyan et al.md",
+    "sha256": "3bec38e73260af8b820d460e914a748a0a58cce77659069ea89938a7692f5347"
+  },
+  "model": {
+    "name": "explicit-ion ePC-SAFT",
+    "residual_terms": ["hard-chain", "dispersion", "association", "Debye-Huckel"],
+    "ions": ["H+", "OH-", "HCO3-", "CO3^2-", "MDEAH+"],
+    "volatile_neutrals": ["water", "CO2", "MDEA"],
+    "reactions": [
+      "H2O <=> H+ + OH-",
+      "CO2 + H2O <=> HCO3- + H+",
+      "HCO3- <=> CO3^2- + H+",
+      "MDEAH+ <=> MDEA + H+"
+    ],
+    "activity_convention": "water pure-component reference; all other species infinite-dilution reference",
+    "reaction_correlation": "ln(K)=c1+c2/T+c3*ln(T)+c4*T"
+  },
+  "declared_topology": {
+    "phase_count": 2,
+    "phase_roles": ["finite-reacting-liquid", "incipient-neutral-vapor"],
+    "vapor_support": ["water", "CO2", "MDEA"],
+    "discovery": false,
+    "globality": "not-established"
+  },
+  "reported_metrics_provenance_only": {
+    "abstract_ard_percent": 19.82,
+    "figure_5_discussion_ard_percent": 19.22,
+    "interpretation": "source discrepancy retained; no current validation result"
+  },
+  "observation_status": {
+    "exact_source_point_table": "Ermatchkov 2006 Tables 1-3 materialized as 101 exact rows",
+    "digitized_figures": false,
+    "executable_target": "30 rows at CO2-free solvent MDEA mass fraction 0.18-0.20",
+    "reproduction_status": "installed_public_wheel_source_reconstruction_complete",
+    "evaluated_rows": 30,
+    "failed_rows": 0,
+    "grepe_ard_percent": 118.97650898476668,
+    "interpretation": "specified-topology GREPE path succeeds; paper accuracy not reproduced",
+    "result_identity": "Historical transfer reconstruction at 566d57de5ec6b2bd36d1e1f0460b62a837e70e0e; retained numerical fields describe results/data/uyan-2015-ermatchkov-2006-grepe-plotted-data.csv",
+    "current_source_ledger_results": "results/data/native/source-ledger/uyan-2015-ermatchkov-2006-grepe-summary.json"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "design_sha256": "833711f9d5c5e5a7f6703e44da2482d0ae8e88bb8814e1c1cbd9828747aec5ea", "readiness_sha256": "82aa0ef56c2be8bad3bb25844fa4eeffab7ec5270bd6490923e15320f52335c0",
+  "temperature_K": 298.15, "pressure_Pa": 100000, "maximum_iterations": 1500, "maximum_seconds": 450, "total_maximum_iterations": 4500, "total_maximum_seconds": 1350,
+  "starts": [[0], [-1.5], [-3]], "training_states": 39, "results": "results/stage1/Sr",
+  "trial": {"ion": "strontium-cation", "label": "Sr", "source": "Goldberg–Nuttall Table 23", "training": "srcl2-evaluated.csv", "split": 1, "cutoff": 3.518, "low_states": 28, "stoichiometry": [1, 2], "candidate": "sr-candidate.json", "build": "build/issue-795/stage1/Sr"},
+  "coordinate": {"family": "k_ij", "pair": ["strontium-cation", "water"], "origin": 0, "scale": 1, "bounds": [-50, 1]},
+  "fixed": {"segment_diameter": 2.9882, "dispersion_energy_over_k": 1677.6061, "packing_diameter": 2.629616, "debye_huckel_diameter": 2.629616, "born_diameter": 2.9882}, "ion_Cl_k": 0,
+  "identification": {"rank_ratio_strict": 1e-14, "bound_distance_strict": 1e-06, "cost_floor": 1e-10, "cost_fraction": 0.0001, "max_h": 0.051, "max_endpoint_distance": 0.051}, "accuracy": {"phi_RMS": 0.01, "phi_max": 0.03, "gamma_MARD_percent": 2, "gamma_max_percent": 5},
+  "input_hashes": {"sr-candidate.json": "3a16f1e9ce2331af263e3027eaf850d3e420c1feca84ddfb1b80e79327a37768", "srcl2-evaluated.csv": "a1573cc41a135dfeb5c8678c99486919413ec8bbe29b4374b82cc97458bfb7aa"}, "native_library": {"path": "build/engine-meson/shared/libepcsaft_native.so"}
+}

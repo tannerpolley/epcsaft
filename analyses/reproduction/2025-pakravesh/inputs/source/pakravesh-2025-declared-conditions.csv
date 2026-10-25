@@ -1,0 +1,5 @@
+condition_id,mixture,property_or_route,phase_topology,temperature_min_K,temperature_max_K,pressure_min,pressure_max,pressure_unit,composition_contract,source_locator,observation_status
+mdea-p-rho-t,MDEA,p-rho-T pure qualification,one finite liquid or single fluid,313,362,1,20,MPa,Table-1 MDEA row; exact P-rho-T rows absent,Table 1 and Section 2.3,missing-point-table
+mdea-mea-water-density,MDEA+MEA+water,density,one finite liquid,293,323,0.1,0.1,MPa,w_MDEA=0-30%; w_MEA=0-30%; w_water=70%,Table 4 and Figure 4 caption,missing-point-table
+mdea-dea-water-density,MDEA+DEA+water,density,one finite liquid,293,393,0.1,140,MPa,w_MDEA=10-30%; w_DEA=10-30%; w_water=60%,Table 4 and Figure 6 caption,missing-point-table
+mdea-mea-water-vle,MDEA+MEA+water,VLE,one finite liquid plus vapor,313,473,5.98,90.30,kPa,source composition rows are not present in local extraction,Table 5 and Figure 7 caption,missing-point-table

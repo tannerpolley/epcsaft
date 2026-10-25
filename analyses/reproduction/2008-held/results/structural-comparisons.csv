@@ -1,0 +1,13 @@
+table,ion,label,source_value,packet_value,tolerance,difference,outcome,cause
+3,Li+,numerical verification,1.81,1.8177,0.005,0.00770000000000004,not reproduced,Table 2 coefficient versus Table 3 printed value
+3,Li+,physical comparison of effective size,1.86,1.8177,0.005,-0.042300000000000004,not reproduced,effective fitted size versus diffraction distance; not EOS validation
+3,Na+,numerical verification,2.41,2.4122,0.005,0.0021999999999997577,reproduced,Table 2 coefficient versus Table 3 printed value
+3,Na+,physical comparison of effective size,2.4,2.4122,0.005,0.012199999999999989,not reproduced,effective fitted size versus diffraction distance; not EOS validation
+3,K+,numerical verification,2.97,2.9698,0.005,-0.00019999999999997797,reproduced,Table 2 coefficient versus Table 3 printed value
+3,K+,physical comparison of effective size,3.1,2.9698,0.005,-0.13019999999999987,not reproduced,effective fitted size versus diffraction distance; not EOS validation
+5,Li+,structural source evidence,100.0,,0.5,,undetermined,bare Pauling relative size is not an EOS prediction
+5,Na+,structural source evidence,160.0,,0.5,,undetermined,bare Pauling relative size is not an EOS prediction
+5,K+,structural source evidence,220.0,,0.5,,undetermined,bare Pauling relative size is not an EOS prediction
+5,Cl-,structural source evidence,100.0,,0.5,,undetermined,bare Pauling relative size is not an EOS prediction
+5,Br-,structural source evidence,110.0,,0.5,,undetermined,bare Pauling relative size is not an EOS prediction
+5,I-,structural source evidence,120.0,,0.5,,undetermined,bare Pauling relative size is not an EOS prediction

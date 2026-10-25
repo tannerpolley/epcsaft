@@ -1,0 +1,14 @@
+{
+  "input": "analyses/2026-reaction-constant-fitting/results/cold-start.json",
+  "reference_commit": "bea7655d",
+  "source_commit": "72b3c80b2cc27417599f9a9b369accf56bcd2e6d",
+  "wheel_sha256": "79fca1a03770a9feeb0a2ff0c48f1bb9e45e29935309d14625b1149077adaec5",
+  "cold_residual": 1.8122022746710964e-15,
+  "cold_message": "converged: residual 1.8122022746710964e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 7 iterations, contraction absent, floor absent, amplification 0",
+  "seed_densities": [
+    18517.4641979993,
+    1282.7455055836367
+  ],
+  "seed_source": "shared native initializer; dense diagnostic declares the former K=1 compositions",
+  "evidence_kind": "numerical verification; no physical validation"
+}

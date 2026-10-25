@@ -1,0 +1,85 @@
+{
+ "packet_k_ij": -0.07352749874985018,
+ "at_packet_k_ij": {
+  "v3": {
+   "mean_scaled_square": 4.39499893987717,
+   "max_abs_temperature_change_vs_v3_k": 0.0,
+   "max_abs_vapor_water_change_vs_v3": 0.0
+  },
+  "v4": {
+   "mean_scaled_square": 4.426494801485563,
+   "max_abs_temperature_change_vs_v3_k": 0.06415467849780043,
+   "max_abs_vapor_water_change_vs_v3": 0.000985075738814234
+  }
+ },
+ "refit": {
+  "v3": {
+   "k_ij": -0.07352749874985018,
+   "mean_scaled_square": 4.39499893987705,
+   "sse": 219.7499469938525,
+   "status": "converged",
+   "message": "Function tolerance reached. |cost_change|/cost: 5.509739e-14 <= 1.000000e-12",
+   "usable": true,
+   "iterations": 1,
+   "rank": 1,
+   "singular_values": [
+    945.1328526607589
+   ],
+   "active_bounds": [],
+   "covariance_status": "available",
+   "variance_factor": 4.484692795792908,
+   "optimizer_covariance": [
+    1.1194746951415337e-06
+   ],
+   "projected_gradient_norm": 0.0026186459659194306,
+   "failures": []
+  },
+  "v4": {
+   "k_ij": -0.07388170627554556,
+   "mean_scaled_square": 4.424227149795836,
+   "sse": 221.21135748979182,
+   "status": "converged",
+   "message": "Function tolerance reached. |cost_change|/cost: 3.314839e-14 <= 1.000000e-12",
+   "usable": true,
+   "iterations": 4,
+   "rank": 1,
+   "singular_values": [
+    945.1865495065597
+   ],
+   "active_bounds": [],
+   "covariance_status": "available",
+   "variance_factor": 4.51451749979167,
+   "optimizer_covariance": [
+    1.1193475021496313e-06
+   ],
+   "projected_gradient_norm": 0.0004457332801999503,
+   "failures": []
+  }
+ },
+ "identity": {
+  "wheel_sha256": "298a360e532f6f4c5e7ef70c5be45e8b9852310d1c388d6225c504714c3dc410",
+  "packets": {
+   "v3": "2ea3b41485a98d2cf49add620b87bb05fc5a275cdd132c1cdbb0cfc5f07f2ca4",
+   "v4": "7f87d3a81be71aae05be80c94eaf7af36554f96d07c8beb17d64da13e83f4c25"
+  },
+  "cai": "c7857f045757881662f1836913e25216f808bc9fdcf5c74f3b4d03c76c134a8b"
+ },
+ "claim_limits": "25 admitted Cai 1996 rows, 66.66 and 101.33 kPa, 2B MEA; one-coordinate least squares with the retained scales; no uncertainty interval or topology reselection.",
+ "comparison": {
+  "base_commit": "f4075c0f",
+  "old_wheel_sha256": "b55665901b881836f90af010c22bd16a51a687a4e83242ab6d7d5d10118e582a",
+  "old_refit": {
+   "v3": {
+    "k_ij": -0.07352749567201722,
+    "mean_scaled_square": 4.394998939876985
+   },
+   "v4": {
+    "k_ij": -0.07388170556345687,
+    "mean_scaled_square": 4.424227149795866
+   }
+  },
+  "table": "batch1-before-after.csv",
+  "failed_comparisons": 0,
+  "old_optimum_rows": "native replay at the historical coordinate; original optimum rows were not retained"
+ }
+}

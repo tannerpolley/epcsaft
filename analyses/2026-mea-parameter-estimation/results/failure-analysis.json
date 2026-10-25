@@ -1,0 +1,184 @@
+{
+  "schema_version": 1,
+  "campaign_id": "2026-mea-parameter-estimation",
+  "workflow": "CSE Analyze",
+  "analysis_status": "blocked_before_complete_fit",
+  "candidate_bundle": {
+    "status": "not_produced_no_complete_usable_fit",
+    "path": null,
+    "sha256": null,
+    "reason": "None of the four frozen reactive candidates produced a usable exactly certified mixed N=8 FitResult, so the fail-closed driver did not begin the 123-state fit or export a bundle."
+  },
+  "retained_inputs": {
+    "states": 123,
+    "targets": 210,
+    "included_targets": 210,
+    "typed_exclusions": 0,
+    "source_parameter_initialization_failures": 5,
+    "source_parameter_initialization_failure_rows": ["vle_obs_0126", "vle_obs_0225", "vle_obs_0226", "vle_obs_0227", "vle_obs_0230"],
+    "fit_input_sha256": "363ebcfdfd12d3718219a0cd1a93cdb1d2641621597ba7edcd7652b6a8689115",
+    "candidate_1_fit_input_sha256": "a7725811273cbf3200304a7c784644f567cf5db791116a4c8a53b6da8b156c99",
+    "candidate_1_mixed_n8_input_sha256": "e0b139bfe921888138c2d5e15f3ce552e256dc19f32eec1f0575a6635b35e20a",
+    "candidate_2_fit_input_sha256": "c3a59c6ec7aa04851b065801feed59e52009bbe942a9c6cee09de704886308a1",
+    "candidate_2_mixed_n8_input_sha256": "109fded9bbed1285ca24746cf2b0c3434b3159b2d7a756f8a3e39edb8de8ab4d",
+    "candidate_3_fit_input_sha256": "c3835d0e51fd66130c4173bda925d4ae591a26114ff954f62215f767ee655dbb",
+    "candidate_3_mixed_n8_input_sha256": "d7c1967d41e671a2fc840a178c87ea036be75d7313d6e245b35417789d3a64d8",
+    "candidate_4_fit_input_sha256": "6d6503e47be3b2901e2231e0a93cfa43754c949f5517f34b5a444e27c5059a52",
+    "candidate_4_mixed_n8_input_sha256": "dbb01c5a7df8eaa251a15bd9f2bc2e3522a257e910e3e964812592b899a6734a",
+    "candidate_3_and_4_parameters_sha256": "0e7c5ac63c078be9d32c15f316ecdb2b0de67de6f495358ab5955450f0271c6a",
+    "continuation_provenance_sha256": "fd8d9e3dde821543044788934ffada76bf47f97bdf52c8408e9aa8202e9317d2",
+    "speciation_anchors_sha256": "1b796302c719d033f5693c81726a5bca118eeed9aca1dbbd4ecc1dc43f9c987c",
+    "pressure_anchors_sha256": "2f81a77b02228f6a47b9d2ad9fb73e81306220a900843727eb58e6420c4f54ff",
+    "fold_manifest_sha256": "f71dff3bf75546b7e46a4a1c40ead94f248403f28cdac2bd517858b1e23f3f9f",
+    "target_values_used_for_initial_guesses": false
+  },
+  "scientific_prerequisites": {
+    "selection_evidence_sha256": "1e9cfc66e3d075063ffb1a042e1e5d73d77381bc15a2b78f2a715d70c3055048",
+    "neutral_association": {
+      "status": "selected_by_one_se",
+      "admitted_rows": 25,
+      "selected_scheme": "2b",
+      "selected_k_mea_water": -0.07352749874985018,
+      "selected_parameters_sha256": "e210801233ac1dcc756c5cfdeeb7454c4e7878de912da4c4bc1f40c503fec1b1",
+      "candidate_scores": {
+        "2b": {"mean": 9.212755791244883, "standard_error": 1.84487218850254, "phase_success": true},
+        "3b": {"mean": 102.72925801440886, "standard_error": 2.439695480067563, "phase_success": true},
+        "4c": {"mean": 330.53131784518405, "standard_error": 92.16019313466063, "phase_success": false}
+      }
+    },
+    "kiepe_physical_prerequisite": {
+      "status": "completed",
+      "rows": 39,
+      "evaluated": 39,
+      "rmse_log_pressure": 0.3599215452944524,
+      "mean_log_bias": -0.3343839952942697
+    }
+  },
+  "installed_engine": {
+    "wheel_path": "build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+    "wheel_sha256": "09ad1d556d5e12c69d0d7f8e6a5847b55de5175f79be884c9af59e6515f19969",
+    "ipopt": "3.11.9",
+    "evaluation_strategy": "simultaneous_sparse_full_space"
+  },
+  "attempts": [
+    {
+      "identity": "candidate-1-mixed-n8-max20",
+      "result_sha256": "4287e5b4e6cf7b2694a3af5fd41e7110ab4bdfcb3ebc96141988ca8efd6ea911",
+      "solver_status": "maximum_iterations_exceeded",
+      "iterations": 20,
+      "final_physical": [-1.0],
+      "failure_reason": "reactive_finite_phase_certificate_failed",
+      "usable": false
+    },
+    {
+      "identity": "candidate-1-mixed-n8-max80",
+      "result_sha256": "8dce2d9f3dbf2e7ccaccad536ab21700fcc21c8fccd8c73571de7006ddc154da",
+      "solver_status": "solve_succeeded",
+      "iterations": 25,
+      "final_physical": [-1.0],
+      "failure_reason": "reactive_finite_phase_certificate_failed",
+      "usable": false
+    },
+    {
+      "identity": "candidate-1-mixed-n8-post-guard-max20",
+      "result_sha256": "06be8a8febb344f00236ee266918b99de76d353e4e2cfb280a0e57fec1ffc1eb",
+      "solver_status": "maximum_iterations_exceeded",
+      "iterations": 20,
+      "final_physical": [-1.0],
+      "trial_failure_code": "physical_rejection",
+      "failure_reason": "reactive_finite_phase_certificate_failed",
+      "unexpected_exceptions_are_rejected_trials": false,
+      "usable": false
+    },
+    {
+      "identity": "candidate-2-mixed-n8-max80",
+      "result_sha256": "22eafda23fcd709965b72086061059e9e93a1c6d1d2962dedd4c37a1b27c78be",
+      "solver_status": "maximum_iterations_exceeded",
+      "iterations": 80,
+      "final_physical": [0.9999576913462405, 1.832153125131462, 1.504679172149689],
+      "failure_reason": "reactive_finite_phase_certificate_failed",
+      "usable": false
+    },
+    {
+      "identity": "candidate-3-mixed-n8-endpoint-domain-wall",
+      "result_sha256": "490970c291a26f52e2d7638aa23bc1f2603b94233e643bde089ab826c03855a5",
+      "solver_status": "non_ipopt_exception_thrown",
+      "iterations": 0,
+      "final_physical": [0.49030009453720114, 5.778937613452892, 1.5098428245321638, -323.8769379495602],
+      "failure_reason": "non_ipopt_exception_thrown",
+      "trial_failure_code": "optimizer_failure",
+      "attempted": true,
+      "stopped_by": "solver",
+      "outcome": "numerical_convergence_failure",
+      "wall_time_seconds": null,
+      "diagnostic": "The full-range pair-domain rejection was initially typed as an invalid argument and escaped the narrow physical-trial rejection wall; the retained result establishes an implementation boundary, not a candidate result.",
+      "next_probe": "Retype only this known physical-domain rejection as std::domain_error and replay the unchanged candidate-3 N=8 input.",
+      "claim_strength": "not_established",
+      "usable": false
+    },
+    {
+      "identity": "candidate-3-mixed-n8-max80",
+      "result_sha256": "f630a6a6f47dfd8ef91421902e88d55c0a11e41984a1b1db304a8aed7586fd0c",
+      "solver_status": "maximum_iterations_exceeded",
+      "iterations": 80,
+      "final_physical": [0.9463224586024575, 1.5700992509885614, 1.8230313157235647, -82.60584510831],
+      "failure_reason": "reactive_finite_phase_certificate_failed",
+      "trial_failure_code": "physical_rejection",
+      "attempted": true,
+      "stopped_by": "certificate_check",
+      "outcome": "certificate_failure",
+      "wall_time_seconds": 642,
+      "diagnostic": "The solver reached its frozen 80-iteration limit, and the retained full-space liquid point failed reactive_finite_phase_certificate_failed.",
+      "next_probe": "Evaluate only the already-specified candidate-4 nesting with frozen R4/R5 coordinates.",
+      "claim_strength": "boundary_at_state",
+      "usable": false
+    },
+    {
+      "identity": "candidate-4-mixed-n8-max80",
+      "result_sha256": "17c98fdb6f458a790a5074391a65ec5ebd2881b37a320d800e01f14441d6dab9",
+      "solver_status": "maximum_iterations_exceeded",
+      "iterations": 80,
+      "final_physical": [-0.40336777692211245, 3.321232652149628, 4.995826740336512, -0.0001515506981442094, -2500.066616658451, 3250.0377068617563, -2.7835674818788014e-05, -3.07498705152758e-08, 999.9236194899254],
+      "failure_reason": "reactive_finite_phase_certificate_failed",
+      "trial_failure_code": "physical_rejection",
+      "attempted": true,
+      "stopped_by": "certificate_check",
+      "outcome": "certificate_failure",
+      "wall_time_seconds": 1029,
+      "diagnostic": "The solver reached its frozen 80-iteration limit, and the retained full-space liquid point failed reactive_finite_phase_certificate_failed.",
+      "next_probe": "No further nested candidate is specified by Issue 80; a new numerical-method design is required before another campaign run.",
+      "claim_strength": "boundary_at_state",
+      "usable": false
+    }
+  ],
+  "shared_model_verification": {
+    "command": "PYTHONPATH=engine .venv/bin/pytest -q engine/tests/eos/numerical/test_parameter_derivatives.py",
+    "result": "7 passed in 0.42s",
+    "temperatures_k": [293.15, 313.15, 393.15],
+    "checks": [
+      "ordinary public-model predictions match equivalent static k(T) models",
+      "the AD inverse-temperature slope derivative matches centered differences at both endpoints",
+      "the slope derivative is exactly zero at T_ref",
+      "an endpoint-invalid exported correlation is rejected across the complete declared temperature domain"
+    ]
+  },
+  "interpretation": "The neutral association selection and physical CO2-water prerequisite are executable. The shared inverse-temperature pair correlation is verified for ordinary exported models and active fits. None of reactive candidates 1 through 4 passes the frozen mixed-topology N=8 physical gate. Candidate 1 reaches Ipopt solve_succeeded but its retained full-space liquid point fails exact final certification; candidates 2 through 4 reach the iteration limit and fail the same certificate. This establishes a numerical and physical-certification boundary at the attempted states, not an Ipopt/MUMPS crash and not a model-validity result.",
+  "domains": {
+    "computational_temperature_k": [293.15, 393.15],
+    "source_qualified": "retained record-specific domains only",
+    "validated_pressure_temperature_k": null,
+    "validated_speciation_temperature_k": null
+  },
+  "validation_metrics": null,
+  "failed_gates": [
+    "mixed N=8 did not produce a usable exactly certified FitResult",
+    "no complete 123-state fit was executed",
+    "no physical complete fit was usable and no candidate bundle was produced",
+    "reactive baseline, grouped fold refits, one-SE selection, ranks, correlations, bounds, and profiles are incomplete",
+    "candidates 3 and 4 include the generic inverse-temperature pair coordinate but did not pass exact mixed N=8 certification",
+    "the less-than-120-second complete-fit gate was not evaluated",
+    "untouched Xu2011 and Jakobsen2005 evaluation was not run because no candidate froze",
+    "MEA-Thermodynamics immutable-wheel replay remains pending",
+    "caloric thermochemistry remains unsupported and out of scope"
+  ]
+}

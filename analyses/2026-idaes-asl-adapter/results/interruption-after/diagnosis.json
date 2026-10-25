@@ -1,0 +1,10 @@
+{
+  "status": "failed diagnostic attempt",
+  "observed": "SIGTERM did not terminate the campaign parent within the five-second probe bound",
+  "cause": "The first repair raised InterruptedError, which selectors.EpollSelector.select catches and treats as a retry",
+  "resolution": "The signal handler now raises KeyboardInterrupt; both fixed signal probes pass",
+  "claim_limit": "This directory is a failed intermediate probe, not accepted current evidence",
+  "checkpoint_csv": "../interruption-checkpoint.csv",
+  "checkpoint_sha256": "cbca178a3da1a2b036155204a7d8bef4c0d9178a0decf2feff84234418342761",
+  "checkpoint_prefix_rows": 17
+}

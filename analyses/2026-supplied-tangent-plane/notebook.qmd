@@ -1,0 +1,45 @@
+---
+title: "Supplied tangent-plane distances"
+execute:
+  enabled: false
+---
+
+The default-false `StabilityOptions.evaluate_supplied_trials` evaluates the
+reconstructed supplied composition and its selected packing coordinate through
+the same native energy calculation as ordinary tangent-plane search. The
+[retained qualification rows](results/qualification.csv) compare installed-wheel
+outputs on the existing neutral and admitted ionic fixtures. The
+[native rows](results/native-qualification.csv) extend the existing charged,
+pinned-bubble and mole-changing reacting fixtures. Equations and input sources
+remain with [the stability analysis](../2026-tpd-phase-discovery/README.md) and
+[ALG-STABILITY](../../engine/docs/science/algorithms.md#alg-stability).
+
+{{< include results/qualification-table.md >}}
+
+Minimum replay uses the design's native final-summation scale $S$ and the
+criterion $32\varepsilon_{\rm mach}S$. Present-phase zeros use the unchanged
+propagated donor uncertainty; the plane/slope correction contributes no
+allowance. Public phases and the nearby corrected candidate are checked
+separately. The full chemical, electric and pressure identity is checked on the
+returned point. Uncertainty estimates are local numerical estimates, not
+certified error enclosures or physical uncertainty measurements.
+
+Without supplied packing, the density owner selects the declared Liquid or
+Vapor branch at the initial reconstruction. Returned composition, final density
+and pressure closure are checked together. With packing, the chart replays that
+coordinate and exposes its pressure defect. Input-to-evaluated displacement is
+retained separately from final reconstruction displacement. Repeated entries
+and unavailable supported-zero and invalid-packing rows keep caller order and
+causes. Density-independent charged admission refuses the whole family, even
+with packing; a separate neutral-only family remains evaluable.
+
+{{< include results/default-table.md >}}
+
+This is numerical verification at fixed positive temperature and pressure,
+using the stated model parameters, feeds and stationary fixtures. Shared-host
+paired wall times support the unchanged-work comparison; they do not establish
+an isolated speedup. Supplied evaluation performs no optimization or finite
+split. No stability or instability conclusion follows, and this work does not
+recreate #234's historical candidate snapshots or qualify its historical
+comparisons. Independent delivered review remains with the lead; this notebook
+has not been promoted for manuscript use.

@@ -1,0 +1,4 @@
+scheme,grouped_mean_score,grouped_standard_error,eligible,selected
+2B,9.2127559012734,1.8448718706308822,true,true
+3B,102.72925913401598,2.439697465929143,true,false
+4C,393.069914186589,2.93976811339391,true,false

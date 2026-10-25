@@ -1,0 +1,18 @@
+{
+  "cause": "Stage B coordinate enumeration changed prior.CATIONS globally. #575 uses its first entry for NaCl descriptive metadata; native observation ion stayed sodium.",
+  "correction": "Scope the free-cation list to coordinate construction. Keep #575 training cation identities unchanged.",
+  "first_NaCl_molality_mol_kg": 0.001,
+  "maximum_prediction_difference": 1.1643863651045194e-10,
+  "maximum_difference_over_ALG_FIT_tolerance": 0.009124484646970686,
+  "reconstructed_training_cost": 0.00683955241150446,
+  "native_fit_cost": 0.006839552411651109,
+  "fit_repeated": false,
+  "frozen_declaration_unchanged": true,
+  "limitation": "The original pre-fit expanded NaCl metadata was wrong; its native observation declarations and all frozen source inputs were correct. This erratum is post-fit and must remain disclosed.",
+  "correction_script_sha256": "6d3257280ebe528cf38164e0e09767802cf82836f7663132eac32c65378c38ff",
+  "elapsed_seconds": 1946.1556162049983,
+  "corrected_calculation_script_sha256": "1ab241c379389a4ed1ba004b24bb3c1907cc026c8984d52017e7400bc0c8d2fe",
+  "original_execution_script": "inputs/stage-b-executed.py.txt",
+  "corrected_row_metadata": "inputs/stage-b-nacl-row-metadata.json",
+  "multiprocessing_correction": "The #556 module used for dispatch is reinstated in sys.modules after training declarations reload it; equations and cases unchanged."
+}

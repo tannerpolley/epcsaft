@@ -1,0 +1,288 @@
+---
+title: "Native diagnostic trace"
+format: html
+execute:
+  enabled: true
+  echo: false
+---
+
+
+```{python}
+import csv
+import gzip
+import json
+from pathlib import Path
+
+results = Path("results")
+def retained_json(name):
+    return json.loads((results / name).read_text())
+
+def retained_rows(name):
+    path = results / name
+    opener = gzip.open if path.suffix == ".gz" else open
+    with opener(path, "rt", newline="") as stream:
+        return list(csv.DictReader(stream))
+
+def event(rows, name, iteration=None):
+    return next(row for row in rows if row["event"] == name
+                and (iteration is None or int(row["iteration"]) == iteration))
+
+def markdown_table(headers, rows):
+    print("| " + " | ".join(headers) + " |")
+    print("| " + " | ".join("---" for _ in headers) + " |")
+    for row in rows:
+        print("| " + " | ".join(map(str, row)) + " |")
+
+provenance = retained_json("provenance.json")
+declarations = provenance["report_declarations"]
+masking = retained_rows("detailed/masking-events.csv.gz")
+direction = event(masking, "polish_direction", 1)
+site_events = retained_rows("detailed/site-skip-events.csv.gz")
+skip = event(site_events, "density_scan_skip")
+# The retained cause carries both the residual and its criterion.
+site_residual = float(skip["reason"].split("residual ")[1].split()[0])
+site_tolerance = float(skip["reason"].split("ASSOCIATION_RESIDUAL ")[1].split()[0])
+discovery = retained_rows("detailed/discovery-events.csv.gz")
+discovery_spans = retained_rows("detailed/discovery-spans.csv.gz")
+allocation = retained_rows("allocation.csv")
+ipopt = next(row for row in allocation if row["case"] == "0" and row["fault"] == "-1" and row["capture"] == "1")
+fit_capture = next(row for row in allocation if row["case"] == "5" and row["fault"] == "-1" and row["capture"] == "1")
+fit = retained_rows("fit-returned.csv")[0]
+returned = {row["case"]: row["value"] for row in retained_rows("returned.csv")}
+derivatives = retained_rows("derivative.csv")
+anchor = retained_rows("anchor.csv")
+rule = retained_json("payload-rule.json")
+timing = retained_json("timing-r2-final/summary.json")
+first_timing = retained_json("timing-r2/summary.json")
+```
+
+# Observation preserves the declared numerical calculations
+
+Optional detailed capture retains the polish correction, skipped density node,
+association fallback and derivative causes, anchor retry, and the Jacobian rank
+at the finalized returned state. The disabled candidate preserves all 478 native
+reference rows bit for bit. The prior delivered-wheel qualification retains
+34 disabled case/mode comparisons preserving
+`{python} f"{provenance['disabled']['readouts']:,}"` readouts, including `{python} f"{provenance['disabled']['binary64_readouts']:,}"` binary64 values, complete ordinary records apart
+from wall time, model sweeps and explicit discovery work. Its untimed detailed
+calculations and their next solves retain the same returned numerical values.
+Those retained comparisons use wheel `57e108a1`; the refreshed native rows,
+allocation qualification and paired timing use corrected wheel `ba215c7e`.
+These are numerical verification results, not physical validation or new
+convergence rules. Discrete event and identity comparisons are reported as
+tables rather than interpolated curves.
+
+The calculation uses main `9fdfe7ce`, before #272 or #275 changes either pinned
+path, and the installed non-editable wheels identified in
+[provenance](results/provenance.json). The native equations and decisions remain
+owned by [ALG-ASSOCIATION, ALG-DENSITY and ALG-EQUILIBRIUM](../../engine/docs/science/algorithms.md).
+Python declares inputs and serializes completed native records.
+
+# Pinned polish and skipped node
+
+The #272 manufactured declaration has three identical ethane species, 1 mol
+inert inventory and `{python} f"{declarations['masking']['reactive_inventory_mol']:.0e}"` mol reactive inventory, T = 350 K, P = `{python} f"{declarations['masking']['pressure_Pa']:.0f}"` Pa,
+K = 3 and row tolerance `{python} f"{declarations['masking']['row_tolerance']:.0e}"`. The declaration remains in
+`engine/tests/equilibrium/test_trace_reliability.py`; #272 owns interpretation
+of the masking sequence. Detailed capture matches its unchanged reference:
+
+The captured direction and trial records are retained once in
+[the masking event table](results/detailed/masking-events.csv.gz).
+The sequence comparison remains owned by
+[the #272 sequence owner](https://github.com/tannerpolley/ePC-SAFT/issues/272).
+The correction `{python} direction["v0"]` is visible at step 1 despite raw and
+classified defects near `{python} f"{float(direction['v2']):.1e}"`; all three steps accept damping 1 with
+`raw_contraction`.
+
+The controlling coordinates are 1, 5 and 1: log mole fraction of component 1,
+multiplier in RT units, and the same log mole fraction. This is the undamped
+chart correction, which mixes chart units; it is not a physical relative error.
+The scalar comparison uses relative tolerance `{python} f"{declarations['relative_tolerance']:.0e}"`, exact zeros, and exact
+sequence/damping/acceptance/reason. It does not adopt #272's proposed stop.
+
+The #275 ethanol/butane declaration uses x = (0.5, 0.5), T = 45 K,
+P = `{python} f"{json.loads(Path('inputs/site-trace-input.json').read_text())['P']:.0e}"` Pa, and a liquid request. Its
+[input and reference](inputs/site-trace-input.json) retain the source at
+`19a0c825`. Node 38 at `{python} skip["v0"]` mol/m3 is skipped after 50
+association iterations. Its final residual is `{python} str(site_residual)` against
+`{python} f"{site_tolerance:.0e}"`, with `budget_exhausted`. All 50 residual/damping/method values match
+[the original sequence](inputs/site-trace-50.csv) at relative `{python} f"{declarations['relative_tolerance']:.0e}"`; the first
+31 records retain `association Jacobian is ill-conditioned` before substitution.
+The density remains `{python} f"{float(returned['2']):.15g}"` mol/m3. This is cryogenic
+extrapolation and reproduction of an interruption; no incorrect root or
+physical validity at 45 K is established.
+
+# Final states, causes and nested capture
+
+```{python}
+#| output: asis
+endpoint_rows = []
+for label, name in [("#269 propane bubble endpoint", "propane-bubble"),
+                    ("#269 fresh-solvent MEA endpoint", "mea-zero")]:
+    row = event(retained_rows(f"endpoints/{name}-events.csv.gz"), "solved_endpoint_jacobian")
+    endpoint_rows.append([label, f"rank {int(float(row['v2']))}/{int(float(row['v1']))}; raw-J two-norm condition {row['v3']}"])
+endpoint_rows.extend([
+    ["Condition comparison to #269's native endpoint calculation", f"relative difference {declarations['endpoint_condition_relative_difference']:g} for both"],
+    ["Invalid solvent anchor", f"offered density {float(anchor[0]['offered_density']):.0e} mol/m3; original `left_domain`"],
+    ["First-rung cold retry", f"{sum(r['event'] == 'anchor_cold_retry' for r in anchor)} retry; later solvent density {returned['3']} mol/m3"],
+])
+for row in derivatives:
+    sites = int(row["sites"])
+    endpoint_rows.append([f"Association derivative, {sites} sites, q = {declarations['derivative_q'][str(sites)]:.0e}",
+                          f"rank {row['rank']}; pivots {row['maximum_pivot']} and {row['minimum_pivot']}; {row['reason'].removeprefix('association Jacobian is ')}"])
+markdown_table(["Quantity or preserved cause", "Native result"], endpoint_rows)
+```
+
+The derivative cases preserve the existing primal solution and action absence,
+with one factorization per action batch and one failure record per failed LU.
+The throwing Hessian consumer retains its original association exception.
+The rank and finite pivot ratio match the same LU diagnostics, at exact rank
+and relative `{python} f"{declarations['relative_tolerance']:.0e}"`. These manufactured conditioning cases establish failure
+classification, not applicability of such parameters.
+
+[Bounded starts](results/starts.csv) retain no endpoint for zero attempts,
+iterations, attempt iterations, total seconds or attempt seconds. An invalid
+packing seed followed by the accepted seed selects attempt 1 and emits one
+endpoint on the enclosing starts span with iteration 1. Source order places all
+inspection after complete attempt selection, branch admission and deadline
+checks. Ranks describe returned coordinates, and do not replace the existing
+generic-point result field.
+
+Detailed discovery retains `{python} f"{len(discovery):,}"` events and `{python} f"{len(discovery_spans):,}"` spans, including `{python} f"{sum(row['event'] == 'association_iteration' for row in discovery):,}"`
+association iteration records and 885 density nodes. All remapped indices and
+parents are valid, and there is one final endpoint on the outer solve span.
+The returned search work map is unchanged. The isolated endpoint EOS spans
+are absent from that capture and cannot increase its search work.
+
+# Allocation failure preserves the numerical outcome
+
+The [native qualification](scripts/qualify.cpp) injects allocation failure inside
+Core observation, including child forwarding and close/`take`, and targets the
+EOS, Ipopt and fit payload constructions independently of observation depth.
+The [qualification builder](scripts/build_fault_probe.py) inserts these hooks
+only in the separately compiled qualification sources. Fault `-4` targets
+signature conversion; fault `-3` targets the nonempty declared-choice vector
+at T = 300 K, V = `0.001 m3`, n = (0.98, 0.01, 0.01) mol.
+Fault `-5` targets the Ipopt iteration vector; faults `-6`, `-7` and `-8`
+target the fit iteration mask, projected gradient and round mask respectively.
+An independent Ipopt call-site allocation counter observes eager argument
+allocation outside Core, so absent-capture verification does not rely solely
+on whether Core entered its observation lambda.
+
+[Retained comparisons](results/allocation.csv) cover nine baselines and 92 fault
+configurations, with 66 injected failures: 65 incomplete captures and one
+retained unavailable endpoint diagnostic. All comparisons preserve returned
+binary64 values, original causes and numerical work. Trial counts remain 5,
+conditioned and cold association substitutions remain 48 and 397, the cold scan
+skips once, and the anchor retries once. The endpoint allocation failure emits
+unavailable rank with `std::bad_alloc`, preserving the frozen state.
+
+```{python}
+#| output: asis
+payload_rows = []
+for label, case, fault in [("Ipopt iteration", "0", "-5"), ("Fit iteration mask", "5", "-6"),
+                            ("Fit projected gradient", "5", "-7"), ("Fit round mask", "5", "-8")]:
+    row = next(r for r in allocation if r["case"] == case and r["fault"] == fault and r["capture"] == "1")
+    work = (f"{row['work0']} iterations, {row['work1']} evaluations, {row['work2']} Hessian calls"
+            if case == "0" else f"{fit['iterations']} iterations, {fit['residual_evaluations']} residual evaluations, {fit['jacobian_evaluations']} Jacobian evaluations")
+    payload_rows.append([label, row["injected"], "yes" if row["incomplete"] == "1" else "no",
+                         f"{row['spans']}/{row['events']}", work])
+markdown_table(["Targeted payload", "Injected", "Incomplete", "Retained spans/events", "Numerical work"], payload_rows)
+```
+
+The uninjected Ipopt capture constructs seven iteration payloads and retains
+`{python} ipopt["spans"]` spans and `{python} ipopt["events"]` events. Without capture, it constructs zero payloads,
+performs zero eager argument allocations, emits zero records and injects zero
+faults. The fit constructs five masks, five projected gradients and one round
+mask under capture; all are zero without capture. Its uninjected capture keeps
+`{python} fit_capture["spans"]` spans and `{python} fit_capture["events"]` events. Both capture modes and all targeted failures retain
+the [manufactured fit result](results/fit-returned.csv): dispersion energy over
+Boltzmann's constant `{python} fit["epsilon_over_k_K"]` K, interaction parameter
+`{python} fit["k_ij"]`, weighted cost `{python} fit["cost"]`, convergence,
+no trial failures and available covariance. The source declaration and numerical
+criteria remain owned by R2-J2 in `engine/tests/native/regression_j2_inventory_checks.cpp`.
+
+The [architecture rule](../../tools/check-engine-architecture.py), “known eager
+trace-payload forms are absent”, guards the observed eager-temporary and
+named-local patterns outside observation; it is not a complete allocation-safety proof.
+It accepts Core's initializer-list overload and payload construction inside
+`Scope::observe`. A guard on `scope.on()` alone does not contain allocation
+failure. Its [retained source scans and falsification](results/payload-rule.json)
+find ten hits on main, four on the pre-correction branch and zero after
+correction. Reintroducing R1a's eager vector in a scratch copy produces one hit
+and exit 1. This is a bounded regression guard, not full C++ type inference or a complete
+allocation-safety proof.
+
+The allocation instrument and decision counters exist only in the separate
+qualification compilation under `build/issue-284`; the delivered wheel has no
+injection switch. Scope admission, ordinary and detailed emission, finish,
+forwarding and close use the same Core exception boundary. This source check
+is necessary: numerical counts alone do not prove lazy allocation or formatting.
+
+# Disabled work and paired timing
+
+[Binary and ordinary-record comparisons](results/disabled-identity.csv) cover
+cold ionic LLE, the MEA flash, both accepted starts, eight sequential Khudaida
+points, unloaded MEA, the pinned masking and cold-scan cases, and discovery.
+The ordinary capture includes EOS/density convergence operands. Native
+[counter readouts](results/native-counters.csv) also preserve directional paths
+and maximum energy order, alongside forward/reverse/Hessian/recording counts.
+Discovery has 92 directional paths and maximum energy order 2 in both wheels,
+with and without an ordinary outer capture.
+
+The final-wheel command uses seven counterbalanced AB/BA pairs, one warmup,
+one native thread, fixed CPU and niceness, and capture absent. Its work counts
+are unchanged: ionic LLE 16/53/17, MEA flash 43/57/44, accepted starts 7/14/8
+and 18/23/19, sequential Khudaida 66/119/74, and unloaded MEA 14/20/15
+(iterations/evaluations/Hessian calls). Every reported relative state difference
+is zero. Separate binary comparison preserves the signs of zero as well.
+
+```{python}
+#| output: asis
+labels = ["Ionic LLE cold", "Ionic LLE accepted", "MEA flash cold", "MEA flash accepted",
+          "Khudaida sequential eight", "Unloaded MEA"]
+timing_rows = []
+for label, case in zip(labels, timing["cases"].values(), strict=True):
+    lo, hi = case["range_percent"]
+    timing_rows.append([label, f"{case['median_change_percent']:.3f}",
+                        f"{lo:.3f} to {hi:.3f}", f"{case['mad_percent']:.3f}"])
+markdown_table(["Case", "Balanced median B/A change (%)", "Pair range (%)", "Median absolute deviation (%)"], timing_rows)
+```
+
+[Final paired numbers](results/timing-r2-final/pairs.csv) show zero state
+difference and identical numerical work in every case. Wall-time medians range
+from `{python} f"{min(c['median_change_percent'] for c in timing['cases'].values()):+.3f}%"` to `{python} f"{max(c['median_change_percent'] for c in timing['cases'].values()):+.3f}%"`; every paired range crosses zero. These shared-host
+measurements do not establish a speedup or exact wall-time equality. The
+[first run](results/timing-r2/summary.json), which overlapped qualification
+compilation and `check-all`, ranged from `{python} f"{min(c['median_change_percent'] for c in first_timing['cases'].values()):+.3f}%"` to `{python} f"{max(c['median_change_percent'] for c in first_timing['cases'].values()):+.3f}%"`. The final run
+began after those jobs ended. Both runs retain their conditions and wheel
+identities; the work-count gate passes. Earlier timing directories and the
+[A/A control](results/timing-AA/summary.json) retain their own wheel identities.
+Identical numerical tables are retained once and linked from each timing summary.
+
+Detailed observation can advance finite deadlines. Endpoint inspection occurs
+after numerical decisions, adds uncapped call time, and may update model
+caches/counters. Enabled endpoint inspection can update `tape_` and `previous_tape_` in
+`ensure_tape`, so it may change later disabled-call work; the demonstrated
+subsequent-solve equality applies to the retained histories.
+Untimed returned-state and subsequent-solve equality is the
+qualified statement; enabled finite-deadline identity and global phase stability
+are not claims of this notebook.
+
+# Build qualification and remaining delivery
+
+The runtime diff against `9fdfe7ce` has 257 gross added lines and 184 net lines,
+within the 260-line task ceiling. Runtime grows from `{python} f"{declarations['baseline_runtime_lines']:,}"` to `{python} f"{declarations['baseline_runtime_lines'] + provenance['R2']['runtime_net']:,}"`; every hard
+layer ceiling is respected. Existing parameter-fitting, bindings, Python and
+aggregate soft overruns remain associated with their scientific owners.
+The callback correction replaces five runtime lines with five lines; it adds
+no net runtime lines.
+The retained native verifier has 117 lines, with the 80-line qualification
+builder, 46 Python reader lines and 14 native counter-reader lines. The verifier
+grows by 18 lines for the Ipopt call-site allocation check and manufactured fit
+failure comparisons. The source architecture rule is tooling, outside the runtime
+ceiling. The reproducible builder retains the previously scratch-only compilation
+procedure and extracts the existing fit declaration from its owner.
+The numerical wheel and retained values require independent delivered review
+by the accountable lead. No issue edit, push, pull request or merge is performed
+by this implementation worker, and this notebook is not promoted for manuscript use.

@@ -1,0 +1,21 @@
+{
+  "affected_exit": 1,
+  "full_exit": 0,
+  "python_tests_passed": 126,
+  "python_tests_deselected": 1,
+  "full_native_programs_passed": 6,
+  "bounded_native_replays": {
+    "main-E5-8": 0,
+    "candidate-E5-8": 1,
+    "main-I-sys": 0,
+    "candidate-I-sys": 1,
+    "candidate-I-fix": 0
+  },
+  "wide_ionic_guard": {
+    "source": "engine/tests/native/reactive_caloric_wide_ionic.hpp:57",
+    "condition": "abs(f[1]-P) <= limit() && point[1]>0 && j[7]<0",
+    "inputs_owner": "checks/candidate-I-sys.log.gz",
+    "outcome": "Main passes; candidate fails. The assertion emits no failing residual, volume or pressure slope; the failing subcondition remains unresolved."
+  },
+  "claim_limit": "The four original checks and preservation/work gates pass. The required affected check fails two additional native scientific checks; candidate remains unqualified. No additional native criterion was changed; owner decision required before delivered review."
+}

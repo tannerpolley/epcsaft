@@ -1,0 +1,12 @@
+{
+  "wall_seconds": 0.023380119000648847,
+  "population": {
+    "figure_requested": 122,
+    "prediction_requested": 78,
+    "returned": 200,
+    "figure_qualified": 119,
+    "prediction_qualified": 78
+  },
+  "excluded_cases": 3,
+  "probes": 11
+}

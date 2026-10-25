@@ -1,0 +1,144 @@
+{
+  "declaration_sha256": "7a51ef0526a89635daece010d95f0f13cf20e1542fb0e1b20cfe4147bbe170ca",
+  "selected": {
+    "optimum": "optimum-1",
+    "starts": [
+      "grid-13",
+      "grid-12",
+      "grid-09",
+      "grid-11",
+      "grid-15"
+    ],
+    "cost": 0.008672513574817551,
+    "F1_passed": false,
+    "F3_passed": true,
+    "F4_passed": true,
+    "F6_passed": false,
+    "Hamer_Wu": {
+      "rows": 29,
+      "bias": -0.0014670869101877284,
+      "RMS": 0.010287672644482456,
+      "maximum_absolute_error": 0.02491099272260877
+    },
+    "Hamer_Wu_guard_passed": false,
+    "El_Guendouzi_aw": {
+      "I<=3": {
+        "rows": 27,
+        "bias": -0.0003108006973033899,
+        "RMS": 0.001001987762260341,
+        "maximum_absolute_error": 0.0030979678735119087
+      },
+      "I>3": {
+        "rows": 18,
+        "bias": 0.0003443009969530459,
+        "RMS": 0.0031607638433986188,
+        "maximum_absolute_error": 0.006997817851768118
+      }
+    },
+    "El_Guendouzi_exceeds_reference": true,
+    "Yao_mixing_failure": true,
+    "stage_B_trigger": true,
+    "stop": true,
+    "packet_eligible": false,
+    "active_bounds": [
+      2
+    ],
+    "physical": [
+      3.6602787021470307,
+      3.221045257889387,
+      17.175527288040648,
+      1.38,
+      -3.111333957340356,
+      -9.205355462886327
+    ],
+    "F6_max_change": 0.0,
+    "unchanged_native_parameter_entries": 70
+  },
+  "optima": [
+    {
+      "optimum": "optimum-1",
+      "starts": [
+        "grid-13",
+        "grid-12",
+        "grid-09",
+        "grid-11",
+        "grid-15"
+      ],
+      "cost": 0.008672513574817551,
+      "F1_passed": false,
+      "F3_passed": true,
+      "F4_passed": true,
+      "F6_passed": false,
+      "Hamer_Wu": {
+        "rows": 29,
+        "bias": -0.0014670869101877284,
+        "RMS": 0.010287672644482456,
+        "maximum_absolute_error": 0.02491099272260877
+      },
+      "Hamer_Wu_guard_passed": false,
+      "El_Guendouzi_aw": {
+        "I<=3": {
+          "rows": 27,
+          "bias": -0.0003108006973033899,
+          "RMS": 0.001001987762260341,
+          "maximum_absolute_error": 0.0030979678735119087
+        },
+        "I>3": {
+          "rows": 18,
+          "bias": 0.0003443009969530459,
+          "RMS": 0.0031607638433986188,
+          "maximum_absolute_error": 0.006997817851768118
+        }
+      },
+      "El_Guendouzi_exceeds_reference": true,
+      "Yao_mixing_failure": true,
+      "stage_B_trigger": true,
+      "stop": true,
+      "packet_eligible": false,
+      "active_bounds": [
+        2
+      ],
+      "physical": [
+        3.6602787021470307,
+        3.221045257889387,
+        17.175527288040648,
+        1.38,
+        -3.111333957340356,
+        -9.205355462886327
+      ],
+      "F6_max_change": 0.0,
+      "unchanged_native_parameter_entries": 70
+    }
+  ],
+  "optimum_dependent": false,
+  "evaluation_wall_seconds": 0.28058350999981485,
+  "scientific_wall_seconds": 57.42972019700028,
+  "native_failure_count": 0,
+  "packet_created": false,
+  "stage_B_run": false,
+  "missing_evidence": [
+    "F1 Li-Ca",
+    "F1-prime",
+    "F6 KCl-NaCl"
+  ],
+  "baseline_lithium_diagnostics": [
+    {
+      "state": "fig7",
+      "density_mol_m3": 55567.56328386953,
+      "pressure_error_Pa": 4.310131771489978e-07,
+      "charge_mol": 5.204170427930421e-18
+    },
+    {
+      "state": "table1",
+      "density_mol_m3": 58115.09778411666,
+      "pressure_error_Pa": 3.785855369642377e-06,
+      "charge_mol": -2.3418766925686896e-16
+    },
+    {
+      "state": "ms2",
+      "density_mol_m3": 58434.72826663683,
+      "pressure_error_Pa": -1.8776918295770884e-06,
+      "charge_mol": -2.1163626406917047e-16
+    }
+  ]
+}

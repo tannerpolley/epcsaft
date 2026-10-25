@@ -1,0 +1,27 @@
+ion,component_id,charge,sigma_strategy1_A,u_strategy1_K,sigma_strategy2_A,u_strategy2_K,k_water_strategy2,k_water_note
+H3O+,hydronium-cation,1,2.2740,1616.49,3.4654,500.00,0.25,
+Li+,lithium-cation,1,1.8177,2697.28,2.8449,360.00,-0.25,
+Na+,sodium-cation,1,2.4122,646.05,2.8232,230.00,,footnote a: -0.007981 T/K + 2.37999
+K+,potassium-cation,1,2.9698,271.05,3.3417,200.00,,footnote b: -0.004012 T/K + 1.3959
+Cs+,cesium-cation,1,3.5606,175.94,3.9246,180.00,0.081,
+NH4+,ammonium-cation,1,3.4755,212.36,3.5740,230.00,0.064,
+F-,fluoride-anion,-1,1.6132,648.31,1.7712,275.00,,blank in Table 2; taken as 0
+Cl-,chloride-anion,-1,3.0575,47.29,2.7560,170.00,-0.25,
+Br-,bromide-anion,-1,3.4573,60.22,3.0707,190.00,-0.25,
+I-,iodide-anion,-1,3.9319,80.43,3.6672,200.00,-0.25,
+NO3-,nitrate-anion,-1,3.3805,0.00,3.2988,130.00,0.098,
+OH-,hydroxide-anion,-1,1.6401,2444.76,2.0177,650.00,-0.25,
+ClO4-,perchlorate-anion,-1,4.0731,58.42,4.0186,104.16,-0.25,
+HCO3-,bicarbonate-anion,-1,,,2.9296,70.00,0.00,
+H2PO4-,dihydrogen-phosphate-anion,-1,3.7020,60.00,3.6505,95.00,0.25,
+Fo-,formate-anion,-1,,,3.3077,190.00,-0.23,
+Ac-,acetate-anion,-1,4.3000,300.00,3.9328,150.00,-0.23,
+Mg2+,magnesium-cation,2,2.3229,8145.33,3.1327,1500.00,-0.25,
+Ca2+,calcium-cation,2,2.8889,2146.98,3.2648,1060.00,0.0041,
+Cu2+,copper-cation,2,2.6955,2545.14,3.8379,1610.90,0.25,
+Zn2+,zinc-cation,2,,,2.9798,1250.00,-0.25,
+SO42-,sulfate-anion,-2,2.4538,0.00,2.6491,80.00,0.25,
+S2O32-,thiosulfate-anion,-2,,,3.1877,80.00,0.25,
+CO32-,carbonate-anion,-2,,,2.4422,249.26,-0.25,
+HPO42-,hydrogen-phosphate-anion,-2,4.4608,0.00,2.1621,146.02,0.25,
+PO43-,phosphate-anion,-3,,,2.5516,310.00,-0.25,

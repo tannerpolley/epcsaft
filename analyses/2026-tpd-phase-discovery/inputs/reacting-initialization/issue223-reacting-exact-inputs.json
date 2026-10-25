@@ -1,0 +1,359 @@
+{
+  "component_ids": [
+    "water",
+    "sodium-cation",
+    "chloride-anion"
+  ],
+  "site_component": [
+    0,
+    0
+  ],
+  "site_multiplicity": [
+    1,
+    1
+  ],
+  "base_choice": "pc-saft",
+  "association_choice": "general-site",
+  "electrolyte_choice": "born",
+  "ionic_dispersion_choice": "exclude-same-sign-ion-pairs",
+  "permittivity_choice": "solvent-density-temperature",
+  "polar_choice": "none",
+  "entries": [
+    {
+      "identity": "component/water/molar_mass",
+      "field": "molar_mass",
+      "index": [
+        0
+      ],
+      "magnitude": 18.0153,
+      "unit": "gram / mole"
+    },
+    {
+      "identity": "component/water/charge_number",
+      "field": "charge_number",
+      "index": [
+        0
+      ],
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+    },
+    {
+      "identity": "component/water/dispersion_energy_over_k",
+      "field": "dispersion_energy_over_k",
+      "index": [
+        0
+      ],
+      "magnitude": 353.95,
+      "unit": "kelvin"
+    },
+    {
+      "identity": "component/water/segment_count",
+      "field": "segment_count",
+      "index": [
+        0
+      ],
+      "magnitude": 1.2047,
+      "unit": "dimensionless"
+    },
+    {
+      "identity": "component/water/solvation_factor",
+      "field": "solvation_factor",
+      "index": [
+        0
+      ],
+      "magnitude": 1.5,
+      "unit": "dimensionless"
+    },
+    {
+      "identity": "component/water/dielectric_volume",
+      "field": "dielectric_volume",
+      "index": [
+        0
+      ],
+      "magnitude": 0.3777,
+      "unit": "liter / mole"
+    },
+    {
+      "identity": "component/water/dielectric_temperature",
+      "field": "dielectric_temperature",
+      "index": [
+        0
+      ],
+      "magnitude": 1403.0,
+      "unit": "kelvin"
+    },
+    {
+      "identity": "component/sodium-cation/charge_number",
+      "field": "charge_number",
+      "index": [
+        1
+      ],
+      "magnitude": 1.0,
+      "unit": "elementary-charge"
+    },
+    {
+      "identity": "component/sodium-cation/born_diameter",
+      "field": "born_diameter",
+      "index": [
+        1
+      ],
+      "magnitude": 3.445,
+      "unit": "angstrom"
+    },
+    {
+      "identity": "component/sodium-cation/debye_huckel_diameter",
+      "field": "debye_huckel_diameter",
+      "index": [
+        1
+      ],
+      "magnitude": 2.484416,
+      "unit": "angstrom"
+    },
+    {
+      "identity": "component/sodium-cation/dispersion_energy_over_k",
+      "field": "dispersion_energy_over_k",
+      "index": [
+        1
+      ],
+      "magnitude": 230.0,
+      "unit": "kelvin"
+    },
+    {
+      "identity": "component/sodium-cation/packing_diameter",
+      "field": "packing_diameter",
+      "index": [
+        1
+      ],
+      "magnitude": 2.484416,
+      "unit": "angstrom"
+    },
+    {
+      "identity": "component/sodium-cation/segment_count",
+      "field": "segment_count",
+      "index": [
+        1
+      ],
+      "magnitude": 1.0,
+      "unit": "dimensionless"
+    },
+    {
+      "identity": "component/sodium-cation/segment_diameter",
+      "field": "sigma_constant",
+      "index": [
+        1
+      ],
+      "magnitude": 2.8232,
+      "unit": "angstrom"
+    },
+    {
+      "identity": "component/sodium-cation/solvation_factor",
+      "field": "solvation_factor",
+      "index": [
+        1
+      ],
+      "magnitude": 1.0,
+      "unit": "dimensionless"
+    },
+    {
+      "identity": "component/chloride-anion/charge_number",
+      "field": "charge_number",
+      "index": [
+        2
+      ],
+      "magnitude": -1.0,
+      "unit": "elementary-charge"
+    },
+    {
+      "identity": "component/chloride-anion/born_diameter",
+      "field": "born_diameter",
+      "index": [
+        2
+      ],
+      "magnitude": 4.1,
+      "unit": "angstrom"
+    },
+    {
+      "identity": "component/chloride-anion/debye_huckel_diameter",
+      "field": "debye_huckel_diameter",
+      "index": [
+        2
+      ],
+      "magnitude": 2.42528,
+      "unit": "angstrom"
+    },
+    {
+      "identity": "component/chloride-anion/dispersion_energy_over_k",
+      "field": "dispersion_energy_over_k",
+      "index": [
+        2
+      ],
+      "magnitude": 170.0,
+      "unit": "kelvin"
+    },
+    {
+      "identity": "component/chloride-anion/packing_diameter",
+      "field": "packing_diameter",
+      "index": [
+        2
+      ],
+      "magnitude": 2.42528,
+      "unit": "angstrom"
+    },
+    {
+      "identity": "component/chloride-anion/segment_count",
+      "field": "segment_count",
+      "index": [
+        2
+      ],
+      "magnitude": 1.0,
+      "unit": "dimensionless"
+    },
+    {
+      "identity": "component/chloride-anion/segment_diameter",
+      "field": "sigma_constant",
+      "index": [
+        2
+      ],
+      "magnitude": 2.756,
+      "unit": "angstrom"
+    },
+    {
+      "identity": "component/chloride-anion/solvation_factor",
+      "field": "solvation_factor",
+      "index": [
+        2
+      ],
+      "magnitude": 1.0,
+      "unit": "dimensionless"
+    },
+    {
+      "identity": "component/water/segment_diameter/constant-plus-sum-of-exponentials/constant",
+      "field": "sigma_constant",
+      "index": [
+        0
+      ],
+      "magnitude": 2.7927,
+      "unit": "angstrom"
+    },
+    {
+      "identity": "component/water/segment_diameter/constant-plus-sum-of-exponentials/term-0/amplitude",
+      "field": "sigma_term_amplitude",
+      "index": [
+        0,
+        0
+      ],
+      "magnitude": 10.11,
+      "unit": "angstrom"
+    },
+    {
+      "identity": "component/water/segment_diameter/constant-plus-sum-of-exponentials/term-0/exponent_coefficient",
+      "field": "sigma_term_exponent",
+      "index": [
+        0,
+        0
+      ],
+      "magnitude": -0.01775,
+      "unit": "1 / kelvin"
+    },
+    {
+      "identity": "component/water/segment_diameter/constant-plus-sum-of-exponentials/term-1/amplitude",
+      "field": "sigma_term_amplitude",
+      "index": [
+        1,
+        0
+      ],
+      "magnitude": -1.417,
+      "unit": "angstrom"
+    },
+    {
+      "identity": "component/water/segment_diameter/constant-plus-sum-of-exponentials/term-1/exponent_coefficient",
+      "field": "sigma_term_exponent",
+      "index": [
+        1,
+        0
+      ],
+      "magnitude": -0.01146,
+      "unit": "1 / kelvin"
+    },
+    {
+      "identity": "pair/chloride-anion/sodium-cation/k_ij",
+      "field": "k_ij",
+      "index": [
+        2,
+        1
+      ],
+      "magnitude": 0.8,
+      "unit": "dimensionless"
+    },
+    {
+      "identity": "pair/chloride-anion/water/k_ij",
+      "field": "k_ij",
+      "index": [
+        2,
+        0
+      ],
+      "magnitude": -0.3,
+      "unit": "dimensionless"
+    },
+    {
+      "identity": "pair/sodium-cation/water/k_ij",
+      "field": "k_ij",
+      "index": [
+        1,
+        0
+      ],
+      "magnitude": -0.3,
+      "unit": "dimensionless"
+    },
+    {
+      "identity": "model/electrolyte/c_shell",
+      "field": "born_c_shell",
+      "index": [],
+      "magnitude": 1.0,
+      "unit": "dimensionless"
+    },
+    {
+      "identity": "model/electrolyte/c_dielectric",
+      "field": "born_c_dielectric",
+      "index": [],
+      "magnitude": 1.0,
+      "unit": "dimensionless"
+    },
+    {
+      "identity": "model/relative_permittivity/ionic_region_relative_permittivity",
+      "field": "ionic_region_relative_permittivity",
+      "index": [],
+      "magnitude": 8.0,
+      "unit": "dimensionless"
+    },
+    {
+      "identity": "association/water/a/water/b/energy_over_k",
+      "field": "association_energy_over_k",
+      "index": [
+        0,
+        1
+      ],
+      "magnitude": 2425.7,
+      "unit": "kelvin"
+    },
+    {
+      "identity": "association/water/a/water/b/volume",
+      "field": "association_volume",
+      "index": [
+        0,
+        1
+      ],
+      "magnitude": 0.04509,
+      "unit": "dimensionless"
+    }
+  ],
+  "g": [
+    -547.7300907690495,
+    385362.7534228404,
+    318514.6478683443
+  ],
+  "K": 3.205544914804826e+123,
+  "selection_sha256": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+  "wheel_sha256": "6e4b4e294439b26351e21c8b16041288959b3f794d3f30e0175118943e698192",
+  "operands_csv_sha256": "287dd38cef97b6f0919756692f4369dd1631721b4483d83d77a5485dee09d58a"
+}

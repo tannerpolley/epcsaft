@@ -1,0 +1,75 @@
+{
+  "logs": [
+    {
+      "path": "asl-8470b49a.log",
+      "sha256": "6c19a3fa7be096262c4d4124ee0e223e77f7e4b716636572bfdfad4a142b4b2b",
+      "bytes": 388,
+      "identical_log": "qualification/neutral.log",
+      "interpretation": "identical completed output; retained original copy"
+    },
+    {
+      "path": "continuation-8470b49a.log",
+      "sha256": "6c19a3fa7be096262c4d4124ee0e223e77f7e4b716636572bfdfad4a142b4b2b",
+      "bytes": 388,
+      "identical_log": "qualification/neutral.log",
+      "interpretation": "identical completed output; retained original copy"
+    },
+    {
+      "path": "declared-8470b49a.log",
+      "sha256": "6c19a3fa7be096262c4d4124ee0e223e77f7e4b716636572bfdfad4a142b4b2b",
+      "bytes": 388,
+      "identical_log": "qualification/neutral.log",
+      "interpretation": "identical completed output; retained original copy"
+    },
+    {
+      "path": "feos-8470b49a.log",
+      "sha256": "6c19a3fa7be096262c4d4124ee0e223e77f7e4b716636572bfdfad4a142b4b2b",
+      "bytes": 388,
+      "identical_log": "qualification/neutral.log",
+      "interpretation": "identical completed output; retained original copy"
+    },
+    {
+      "path": "fitting-8470b49a.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "identical_log": null,
+      "interpretation": "completed empty log"
+    },
+    {
+      "path": "gibbs-scaling-8470b49a.log",
+      "sha256": "6c19a3fa7be096262c4d4124ee0e223e77f7e4b716636572bfdfad4a142b4b2b",
+      "bytes": 388,
+      "identical_log": "qualification/neutral.log",
+      "interpretation": "identical completed output; retained original copy"
+    },
+    {
+      "path": "ionic-8470b49a.log",
+      "sha256": "6c19a3fa7be096262c4d4124ee0e223e77f7e4b716636572bfdfad4a142b4b2b",
+      "bytes": 388,
+      "identical_log": "qualification/neutral.log",
+      "interpretation": "identical completed output; retained original copy"
+    },
+    {
+      "path": "neutral-8470b49a.log",
+      "sha256": "6c19a3fa7be096262c4d4124ee0e223e77f7e4b716636572bfdfad4a142b4b2b",
+      "bytes": 388,
+      "identical_log": "qualification/neutral.log",
+      "interpretation": "identical completed output; retained original copy"
+    },
+    {
+      "path": "permittivity-8470b49a.log",
+      "sha256": "6c19a3fa7be096262c4d4124ee0e223e77f7e4b716636572bfdfad4a142b4b2b",
+      "bytes": 388,
+      "identical_log": "qualification/neutral.log",
+      "interpretation": "identical completed output; retained original copy"
+    },
+    {
+      "path": "reacting-8470b49a.log",
+      "sha256": "6c19a3fa7be096262c4d4124ee0e223e77f7e4b716636572bfdfad4a142b4b2b",
+      "bytes": 388,
+      "identical_log": "qualification/neutral.log",
+      "interpretation": "identical completed output; retained original copy"
+    }
+  ],
+  "limits": "No genuine failed logs removed; silent output establishes no numerical result."
+}

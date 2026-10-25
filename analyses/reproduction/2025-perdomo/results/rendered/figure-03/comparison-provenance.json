@@ -1,0 +1,18 @@
+{
+  "campaign_results_sha256": "d8f17460bf041ead56faa7eb349830f0c944658a54f66ae4298589d7bcb7aaec",
+  "claim": "Descriptive comparison only; non-admitted midpoint feeds are shown explicitly.",
+  "coordinate_system": "ternary formula-component mass fractions; water left, 1-butanol right, LiCl top",
+  "outputs": {
+    ".pdf": "41a8e94227a572f93e3f8b609098c2e2c068fccbf1ba77fe3720dbe6bb787cf0",
+    ".png": "58d9e1b04aa1cfd17916c3769ba1b3b0c6380f0dc39d9135f7f355a7f7cdbc1c",
+    ".svg": "23b41d0842b270bb0045735d1f3bc716001f37a4c1f6d45ec65433a934630a22"
+  },
+  "plotted_csv_sha256": "8c51ccd72734b6e4864e983ac896dc8b5183fabe0a1d561809c70b4e54690457",
+  "schema_version": 1,
+  "source_sha256": "8154e9c78d64b4c73302ceb65f2999cdf465e4c7ef413486014979cc18f4d646",
+  "visual_qc": {
+    "note": "Compared the retained ternary rendering with the Perdomo Figure 3 topology. Deliberate differences are explicit ePC-SAFT cross-EOS endpoints, synthetic midpoint markers, and fail-closed non-admissions.",
+    "performed_at_utc": "2026-08-03",
+    "status": "passed"
+  }
+}

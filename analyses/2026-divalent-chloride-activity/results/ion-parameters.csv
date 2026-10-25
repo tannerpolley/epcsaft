@@ -1,0 +1,581 @@
+packet_version,component,paper_ion,quantity,paper_value,packet_value,difference,disposition,locator
+1,ammonium-cation,$\mathrm{NH}_{4}{ }^{+}$,segment_diameter,3.4755,3.4755,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,ammonium-cation,$\mathrm{NH}_{4}{ }^{+}$,dispersion_energy_over_k,212.3632,212.3632,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,ammonium-cation,$\mathrm{NH}_{4}{ }^{+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,ammonium-cation,$\mathrm{NH}_{4}{ }^{+}$,debye_huckel_diameter,3.4755,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,ammonium-cation,$\mathrm{NH}_{4}{ }^{+}$,packing_diameter,3.05844,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,barium-cation,$\mathrm{Ba}^{2+}$,segment_diameter,3.0982,3.0982,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,barium-cation,$\mathrm{Ba}^{2+}$,dispersion_energy_over_k,1475.988,1475.988,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,barium-cation,$\mathrm{Ba}^{2+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,barium-cation,$\mathrm{Ba}^{2+}$,debye_huckel_diameter,3.0982,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,barium-cation,$\mathrm{Ba}^{2+}$,packing_diameter,2.726416,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,bromate-anion,$\mathrm{BrO}_{3}{ }^{-}$,segment_diameter,3.5765,3.5765,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,bromate-anion,$\mathrm{BrO}_{3}{ }^{-}$,dispersion_energy_over_k,0.0,0.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,bromate-anion,$\mathrm{BrO}_{3}{ }^{-}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,bromate-anion,$\mathrm{BrO}_{3}{ }^{-}$,debye_huckel_diameter,3.5765,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,bromate-anion,$\mathrm{BrO}_{3}{ }^{-}$,packing_diameter,3.1473199999999997,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,bromide-anion,$\mathrm{Br}^{-}$,segment_diameter,3.4573,3.4573,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,bromide-anion,$\mathrm{Br}^{-}$,dispersion_energy_over_k,60.2216,60.2216,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,bromide-anion,$\mathrm{Br}^{-}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,bromide-anion,$\mathrm{Br}^{-}$,debye_huckel_diameter,3.4573,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,bromide-anion,$\mathrm{Br}^{-}$,packing_diameter,3.042424,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,calcium-cation,$\mathrm{Ca}^{2+}$,segment_diameter,2.8889,2.8889,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,calcium-cation,$\mathrm{Ca}^{2+}$,dispersion_energy_over_k,2146.9794,2146.9794,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,calcium-cation,$\mathrm{Ca}^{2+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,calcium-cation,$\mathrm{Ca}^{2+}$,debye_huckel_diameter,2.8889,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,calcium-cation,$\mathrm{Ca}^{2+}$,packing_diameter,2.542232,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,cesium-cation,$\mathrm{Cs}^{+}$,segment_diameter,3.5606,3.5606,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,cesium-cation,$\mathrm{Cs}^{+}$,dispersion_energy_over_k,175.9357,175.9357,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,cesium-cation,$\mathrm{Cs}^{+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,cesium-cation,$\mathrm{Cs}^{+}$,debye_huckel_diameter,3.5606,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,cesium-cation,$\mathrm{Cs}^{+}$,packing_diameter,3.133328,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,chlorate-anion,$\mathrm{ClO}_{3}{ }^{-}$,segment_diameter,3.8212,3.8212,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,chlorate-anion,$\mathrm{ClO}_{3}{ }^{-}$,dispersion_energy_over_k,15.4978,15.4978,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,chlorate-anion,$\mathrm{ClO}_{3}{ }^{-}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,chlorate-anion,$\mathrm{ClO}_{3}{ }^{-}$,debye_huckel_diameter,3.8212,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,chlorate-anion,$\mathrm{ClO}_{3}{ }^{-}$,packing_diameter,3.3626560000000003,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,chloride-anion,$\mathrm{Cl}^{-}$,segment_diameter,3.0575,3.0575,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,chloride-anion,$\mathrm{Cl}^{-}$,dispersion_energy_over_k,47.2878,47.2878,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,chloride-anion,$\mathrm{Cl}^{-}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,chloride-anion,$\mathrm{Cl}^{-}$,debye_huckel_diameter,3.0575,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,chloride-anion,$\mathrm{Cl}^{-}$,packing_diameter,2.6906000000000003,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,choline-cation,Choline ${ }^{+}$,segment_diameter,5.9216,5.9216,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,choline-cation,Choline ${ }^{+}$,dispersion_energy_over_k,220.4883,220.4883,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,choline-cation,Choline ${ }^{+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,choline-cation,Choline ${ }^{+}$,debye_huckel_diameter,5.9216,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,choline-cation,Choline ${ }^{+}$,packing_diameter,5.211008,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,chromium-iii-cation,$\mathrm{Cr}^{3+}$,segment_diameter,3.238,3.238,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,chromium-iii-cation,$\mathrm{Cr}^{3+}$,dispersion_energy_over_k,6905.345,6905.345,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,chromium-iii-cation,$\mathrm{Cr}^{3+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,chromium-iii-cation,$\mathrm{Cr}^{3+}$,debye_huckel_diameter,3.238,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,chromium-iii-cation,$\mathrm{Cr}^{3+}$,packing_diameter,2.84944,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,cobalt-cation,$\mathrm{Co}^{2+}$,segment_diameter,2.4387,2.4387,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,cobalt-cation,$\mathrm{Co}^{2+}$,dispersion_energy_over_k,5837.6334,5837.6334,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,cobalt-cation,$\mathrm{Co}^{2+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,cobalt-cation,$\mathrm{Co}^{2+}$,debye_huckel_diameter,2.4387,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,cobalt-cation,$\mathrm{Co}^{2+}$,packing_diameter,2.1460559999999997,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,copper-cation,$\mathrm{Cu}^{2+}$,segment_diameter,2.6955,2.6955,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,copper-cation,$\mathrm{Cu}^{2+}$,dispersion_energy_over_k,2545.1445,2545.1445,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,copper-cation,$\mathrm{Cu}^{2+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,copper-cation,$\mathrm{Cu}^{2+}$,debye_huckel_diameter,2.6955,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,copper-cation,$\mathrm{Cu}^{2+}$,packing_diameter,2.37204,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,dihydrogen-phosphate-anion,$\mathrm{H}_{2} \mathrm{PO}_{4}{ }^{-}$,segment_diameter,3.7026,3.7026,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,dihydrogen-phosphate-anion,$\mathrm{H}_{2} \mathrm{PO}_{4}{ }^{-}$,dispersion_energy_over_k,0.0,0.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,dihydrogen-phosphate-anion,$\mathrm{H}_{2} \mathrm{PO}_{4}{ }^{-}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,dihydrogen-phosphate-anion,$\mathrm{H}_{2} \mathrm{PO}_{4}{ }^{-}$,debye_huckel_diameter,3.7026,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,dihydrogen-phosphate-anion,$\mathrm{H}_{2} \mathrm{PO}_{4}{ }^{-}$,packing_diameter,3.258288,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,fluoride-anion,$\mathrm{F}^{-}$,segment_diameter,1.6132,1.6132,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,fluoride-anion,$\mathrm{F}^{-}$,dispersion_energy_over_k,648.3127,648.3127,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,fluoride-anion,$\mathrm{F}^{-}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,fluoride-anion,$\mathrm{F}^{-}$,debye_huckel_diameter,1.6132,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,fluoride-anion,$\mathrm{F}^{-}$,packing_diameter,1.419616,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,hydrogen-phosphate-anion,$\mathrm{HPO}_{4}{ }^{2-}$,segment_diameter,4.4608,4.4608,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,hydrogen-phosphate-anion,$\mathrm{HPO}_{4}{ }^{2-}$,dispersion_energy_over_k,0.0,0.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,hydrogen-phosphate-anion,$\mathrm{HPO}_{4}{ }^{2-}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,hydrogen-phosphate-anion,$\mathrm{HPO}_{4}{ }^{2-}$,debye_huckel_diameter,4.4608,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,hydrogen-phosphate-anion,$\mathrm{HPO}_{4}{ }^{2-}$,packing_diameter,3.925504,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,hydronium-cation,$\mathrm{H}^{+}$,segment_diameter,2.274,2.274,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,hydronium-cation,$\mathrm{H}^{+}$,dispersion_energy_over_k,1616.4939,1616.4939,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,hydronium-cation,$\mathrm{H}^{+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,hydronium-cation,$\mathrm{H}^{+}$,debye_huckel_diameter,2.274,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,hydronium-cation,$\mathrm{H}^{+}$,packing_diameter,2.0011200000000002,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,hydroxide-anion,$\mathrm{OH}^{-}$,segment_diameter,1.6401,1.6401,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,hydroxide-anion,$\mathrm{OH}^{-}$,dispersion_energy_over_k,2444.7555,2444.7555,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,hydroxide-anion,$\mathrm{OH}^{-}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,hydroxide-anion,$\mathrm{OH}^{-}$,debye_huckel_diameter,1.6401,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,hydroxide-anion,$\mathrm{OH}^{-}$,packing_diameter,1.443288,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,iodide-anion,$\mathrm{I}^{-}$,segment_diameter,3.9319,3.9319,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,iodide-anion,$\mathrm{I}^{-}$,dispersion_energy_over_k,80.4347,80.4347,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,iodide-anion,$\mathrm{I}^{-}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,iodide-anion,$\mathrm{I}^{-}$,debye_huckel_diameter,3.9319,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,iodide-anion,$\mathrm{I}^{-}$,packing_diameter,3.4600720000000003,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,iron-cation,$\mathrm{Fe}^{2+}$,segment_diameter,2.4828,2.4828,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,iron-cation,$\mathrm{Fe}^{2+}$,dispersion_energy_over_k,5495.6986,5495.6986,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,iron-cation,$\mathrm{Fe}^{2+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,iron-cation,$\mathrm{Fe}^{2+}$,debye_huckel_diameter,2.4828,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,iron-cation,$\mathrm{Fe}^{2+}$,packing_diameter,2.184864,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,lithium-cation,$\mathrm{Li}^{+}$,segment_diameter,1.8177,1.8177,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,lithium-cation,$\mathrm{Li}^{+}$,dispersion_energy_over_k,2697.2795,2697.2795,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,lithium-cation,$\mathrm{Li}^{+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,lithium-cation,$\mathrm{Li}^{+}$,debye_huckel_diameter,1.8177,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,lithium-cation,$\mathrm{Li}^{+}$,packing_diameter,1.599576,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,magnesium-cation,$\mathrm{Mg}^{2+}$,segment_diameter,2.3229,2.3229,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,magnesium-cation,$\mathrm{Mg}^{2+}$,dispersion_energy_over_k,8145.3298,8145.3298,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,magnesium-cation,$\mathrm{Mg}^{2+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,magnesium-cation,$\mathrm{Mg}^{2+}$,debye_huckel_diameter,2.3229,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,magnesium-cation,$\mathrm{Mg}^{2+}$,packing_diameter,2.044152,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,nitrate-anion,$\mathrm{NO}_{3}{ }^{-}$,segment_diameter,3.3805,3.3805,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,nitrate-anion,$\mathrm{NO}_{3}{ }^{-}$,dispersion_energy_over_k,0.0,0.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,nitrate-anion,$\mathrm{NO}_{3}{ }^{-}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,nitrate-anion,$\mathrm{NO}_{3}{ }^{-}$,debye_huckel_diameter,3.3805,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,nitrate-anion,$\mathrm{NO}_{3}{ }^{-}$,packing_diameter,2.97484,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,perchlorate-anion,$\mathrm{ClO}_{4}{ }^{-}$,segment_diameter,4.0731,4.0731,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,perchlorate-anion,$\mathrm{ClO}_{4}{ }^{-}$,dispersion_energy_over_k,58.423,58.423,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,perchlorate-anion,$\mathrm{ClO}_{4}{ }^{-}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,perchlorate-anion,$\mathrm{ClO}_{4}{ }^{-}$,debye_huckel_diameter,4.0731,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,perchlorate-anion,$\mathrm{ClO}_{4}{ }^{-}$,packing_diameter,3.584328,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,potassium-cation,$\mathrm{K}^{+}$,segment_diameter,2.9698,2.9698,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,potassium-cation,$\mathrm{K}^{+}$,dispersion_energy_over_k,271.0518,271.0518,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,potassium-cation,$\mathrm{K}^{+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,potassium-cation,$\mathrm{K}^{+}$,debye_huckel_diameter,2.9698,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,potassium-cation,$\mathrm{K}^{+}$,packing_diameter,2.613424,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,rubidium-cation,$\mathrm{Rb}^{+}$,segment_diameter,3.1443,3.1443,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,rubidium-cation,$\mathrm{Rb}^{+}$,dispersion_energy_over_k,215.3697,215.3697,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,rubidium-cation,$\mathrm{Rb}^{+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,rubidium-cation,$\mathrm{Rb}^{+}$,debye_huckel_diameter,3.1443,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,rubidium-cation,$\mathrm{Rb}^{+}$,packing_diameter,2.766984,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,sodium-cation,$\mathrm{Na}^{+}$,segment_diameter,2.4122,2.4122,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,sodium-cation,$\mathrm{Na}^{+}$,dispersion_energy_over_k,646.0504,646.0504,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,sodium-cation,$\mathrm{Na}^{+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,sodium-cation,$\mathrm{Na}^{+}$,debye_huckel_diameter,2.4122,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,sodium-cation,$\mathrm{Na}^{+}$,packing_diameter,2.1227359999999997,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,strontium-cation,$\mathrm{Sr}^{2+}$,segment_diameter,2.9882,2.9882,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,strontium-cation,$\mathrm{Sr}^{2+}$,dispersion_energy_over_k,1677.6061,1677.6061,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,strontium-cation,$\mathrm{Sr}^{2+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,strontium-cation,$\mathrm{Sr}^{2+}$,debye_huckel_diameter,2.9882,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,strontium-cation,$\mathrm{Sr}^{2+}$,packing_diameter,2.629616,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,sulfate-anion,$\mathrm{SO}_{4}{ }^{2-}$,segment_diameter,2.4538,2.4538,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,sulfate-anion,$\mathrm{SO}_{4}{ }^{2-}$,dispersion_energy_over_k,0.0,0.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,sulfate-anion,$\mathrm{SO}_{4}{ }^{2-}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,sulfate-anion,$\mathrm{SO}_{4}{ }^{2-}$,debye_huckel_diameter,2.4538,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,sulfate-anion,$\mathrm{SO}_{4}{ }^{2-}$,packing_diameter,2.1593440000000004,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,thiocyanate-anion,$\mathrm{SCN}^{-}$,segment_diameter,4.0715,4.0715,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,thiocyanate-anion,$\mathrm{SCN}^{-}$,dispersion_energy_over_k,69.6806,69.6806,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,thiocyanate-anion,$\mathrm{SCN}^{-}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,thiocyanate-anion,$\mathrm{SCN}^{-}$,debye_huckel_diameter,4.0715,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+1,thiocyanate-anion,$\mathrm{SCN}^{-}$,packing_diameter,3.58292,,,implicit in historical loader; not stored,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,ammonium-cation,$\mathrm{NH}_{4}{ }^{+}$,segment_diameter,3.4755,3.4755,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,ammonium-cation,$\mathrm{NH}_{4}{ }^{+}$,dispersion_energy_over_k,212.3632,212.3632,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,ammonium-cation,$\mathrm{NH}_{4}{ }^{+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,ammonium-cation,$\mathrm{NH}_{4}{ }^{+}$,debye_huckel_diameter,3.4755,3.05844,-0.41705999999999976,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,ammonium-cation,$\mathrm{NH}_{4}{ }^{+}$,packing_diameter,3.05844,3.05844,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,barium-cation,$\mathrm{Ba}^{2+}$,segment_diameter,3.0982,3.0982,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,barium-cation,$\mathrm{Ba}^{2+}$,dispersion_energy_over_k,1475.988,1475.988,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,barium-cation,$\mathrm{Ba}^{2+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,barium-cation,$\mathrm{Ba}^{2+}$,debye_huckel_diameter,3.0982,2.726416,-0.3717839999999999,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,barium-cation,$\mathrm{Ba}^{2+}$,packing_diameter,2.726416,2.726416,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,bromate-anion,$\mathrm{BrO}_{3}{ }^{-}$,segment_diameter,3.5765,3.5765,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,bromate-anion,$\mathrm{BrO}_{3}{ }^{-}$,dispersion_energy_over_k,0.0,0.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,bromate-anion,$\mathrm{BrO}_{3}{ }^{-}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,bromate-anion,$\mathrm{BrO}_{3}{ }^{-}$,debye_huckel_diameter,3.5765,3.14732,-0.4291799999999997,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,bromate-anion,$\mathrm{BrO}_{3}{ }^{-}$,packing_diameter,3.1473199999999997,3.14732,4.440892098500626e-16,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,bromide-anion,$\mathrm{Br}^{-}$,segment_diameter,3.4573,3.4573,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,bromide-anion,$\mathrm{Br}^{-}$,dispersion_energy_over_k,60.2216,60.2216,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,bromide-anion,$\mathrm{Br}^{-}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,bromide-anion,$\mathrm{Br}^{-}$,debye_huckel_diameter,3.4573,3.042424,-0.414876,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,bromide-anion,$\mathrm{Br}^{-}$,packing_diameter,3.042424,3.042424,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,calcium-cation,$\mathrm{Ca}^{2+}$,segment_diameter,2.8889,2.8889,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,calcium-cation,$\mathrm{Ca}^{2+}$,dispersion_energy_over_k,2146.9794,2146.9794,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,calcium-cation,$\mathrm{Ca}^{2+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,calcium-cation,$\mathrm{Ca}^{2+}$,debye_huckel_diameter,2.8889,2.542232,-0.3466680000000002,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,calcium-cation,$\mathrm{Ca}^{2+}$,packing_diameter,2.542232,2.542232,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,cesium-cation,$\mathrm{Cs}^{+}$,segment_diameter,3.5606,3.5606,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,cesium-cation,$\mathrm{Cs}^{+}$,dispersion_energy_over_k,175.9357,175.9357,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,cesium-cation,$\mathrm{Cs}^{+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,cesium-cation,$\mathrm{Cs}^{+}$,debye_huckel_diameter,3.5606,3.133328,-0.4272719999999999,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,cesium-cation,$\mathrm{Cs}^{+}$,packing_diameter,3.133328,3.133328,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,chlorate-anion,$\mathrm{ClO}_{3}{ }^{-}$,segment_diameter,3.8212,3.8212,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,chlorate-anion,$\mathrm{ClO}_{3}{ }^{-}$,dispersion_energy_over_k,15.4978,15.4978,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,chlorate-anion,$\mathrm{ClO}_{3}{ }^{-}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,chlorate-anion,$\mathrm{ClO}_{3}{ }^{-}$,debye_huckel_diameter,3.8212,3.362656,-0.4585440000000003,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,chlorate-anion,$\mathrm{ClO}_{3}{ }^{-}$,packing_diameter,3.3626560000000003,3.362656,-4.440892098500626e-16,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,chloride-anion,$\mathrm{Cl}^{-}$,segment_diameter,3.0575,3.0575,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,chloride-anion,$\mathrm{Cl}^{-}$,dispersion_energy_over_k,47.2878,47.2878,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,chloride-anion,$\mathrm{Cl}^{-}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,chloride-anion,$\mathrm{Cl}^{-}$,debye_huckel_diameter,3.0575,2.6906,-0.3669000000000002,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,chloride-anion,$\mathrm{Cl}^{-}$,packing_diameter,2.6906000000000003,2.6906,-4.440892098500626e-16,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,choline-cation,Choline ${ }^{+}$,segment_diameter,5.9216,5.9216,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,choline-cation,Choline ${ }^{+}$,dispersion_energy_over_k,220.4883,220.4883,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,choline-cation,Choline ${ }^{+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,choline-cation,Choline ${ }^{+}$,debye_huckel_diameter,5.9216,5.211008,-0.7105920000000001,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,choline-cation,Choline ${ }^{+}$,packing_diameter,5.211008,5.211008,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,chromium-iii-cation,$\mathrm{Cr}^{3+}$,segment_diameter,3.238,3.238,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,chromium-iii-cation,$\mathrm{Cr}^{3+}$,dispersion_energy_over_k,6905.345,6905.345,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,chromium-iii-cation,$\mathrm{Cr}^{3+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,chromium-iii-cation,$\mathrm{Cr}^{3+}$,debye_huckel_diameter,3.238,2.84944,-0.38856,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,chromium-iii-cation,$\mathrm{Cr}^{3+}$,packing_diameter,2.84944,2.84944,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,cobalt-cation,$\mathrm{Co}^{2+}$,segment_diameter,2.4387,2.4387,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,cobalt-cation,$\mathrm{Co}^{2+}$,dispersion_energy_over_k,5837.6334,5837.6334,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,cobalt-cation,$\mathrm{Co}^{2+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,cobalt-cation,$\mathrm{Co}^{2+}$,debye_huckel_diameter,2.4387,2.146056,-0.2926439999999997,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,cobalt-cation,$\mathrm{Co}^{2+}$,packing_diameter,2.1460559999999997,2.146056,4.440892098500626e-16,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,copper-cation,$\mathrm{Cu}^{2+}$,segment_diameter,2.6955,2.6955,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,copper-cation,$\mathrm{Cu}^{2+}$,dispersion_energy_over_k,2545.1445,2545.1445,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,copper-cation,$\mathrm{Cu}^{2+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,copper-cation,$\mathrm{Cu}^{2+}$,debye_huckel_diameter,2.6955,2.37204,-0.32345999999999986,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,copper-cation,$\mathrm{Cu}^{2+}$,packing_diameter,2.37204,2.37204,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,dihydrogen-phosphate-anion,$\mathrm{H}_{2} \mathrm{PO}_{4}{ }^{-}$,segment_diameter,3.7026,3.7026,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,dihydrogen-phosphate-anion,$\mathrm{H}_{2} \mathrm{PO}_{4}{ }^{-}$,dispersion_energy_over_k,0.0,0.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,dihydrogen-phosphate-anion,$\mathrm{H}_{2} \mathrm{PO}_{4}{ }^{-}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,dihydrogen-phosphate-anion,$\mathrm{H}_{2} \mathrm{PO}_{4}{ }^{-}$,debye_huckel_diameter,3.7026,3.258288,-0.44431200000000004,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,dihydrogen-phosphate-anion,$\mathrm{H}_{2} \mathrm{PO}_{4}{ }^{-}$,packing_diameter,3.258288,3.258288,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,fluoride-anion,$\mathrm{F}^{-}$,segment_diameter,1.6132,1.6132,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,fluoride-anion,$\mathrm{F}^{-}$,dispersion_energy_over_k,648.3127,648.3127,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,fluoride-anion,$\mathrm{F}^{-}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,fluoride-anion,$\mathrm{F}^{-}$,debye_huckel_diameter,1.6132,1.419616,-0.19358399999999998,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,fluoride-anion,$\mathrm{F}^{-}$,packing_diameter,1.419616,1.419616,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,hydrogen-phosphate-anion,$\mathrm{HPO}_{4}{ }^{2-}$,segment_diameter,4.4608,4.4608,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,hydrogen-phosphate-anion,$\mathrm{HPO}_{4}{ }^{2-}$,dispersion_energy_over_k,0.0,0.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,hydrogen-phosphate-anion,$\mathrm{HPO}_{4}{ }^{2-}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,hydrogen-phosphate-anion,$\mathrm{HPO}_{4}{ }^{2-}$,debye_huckel_diameter,4.4608,3.925504,-0.5352959999999998,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,hydrogen-phosphate-anion,$\mathrm{HPO}_{4}{ }^{2-}$,packing_diameter,3.925504,3.925504,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,hydronium-cation,$\mathrm{H}^{+}$,segment_diameter,2.274,2.274,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,hydronium-cation,$\mathrm{H}^{+}$,dispersion_energy_over_k,1616.4939,1616.4939,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,hydronium-cation,$\mathrm{H}^{+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,hydronium-cation,$\mathrm{H}^{+}$,debye_huckel_diameter,2.274,2.00112,-0.27288000000000023,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,hydronium-cation,$\mathrm{H}^{+}$,packing_diameter,2.0011200000000002,2.00112,-4.440892098500626e-16,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,hydroxide-anion,$\mathrm{OH}^{-}$,segment_diameter,1.6401,1.6401,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,hydroxide-anion,$\mathrm{OH}^{-}$,dispersion_energy_over_k,2444.7555,2444.7555,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,hydroxide-anion,$\mathrm{OH}^{-}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,hydroxide-anion,$\mathrm{OH}^{-}$,debye_huckel_diameter,1.6401,1.443288,-0.196812,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,hydroxide-anion,$\mathrm{OH}^{-}$,packing_diameter,1.443288,1.443288,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,iodide-anion,$\mathrm{I}^{-}$,segment_diameter,3.9319,3.9319,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,iodide-anion,$\mathrm{I}^{-}$,dispersion_energy_over_k,80.4347,80.4347,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,iodide-anion,$\mathrm{I}^{-}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,iodide-anion,$\mathrm{I}^{-}$,debye_huckel_diameter,3.9319,3.460072,-0.47182800000000036,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,iodide-anion,$\mathrm{I}^{-}$,packing_diameter,3.4600720000000003,3.460072,-4.440892098500626e-16,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,iron-cation,$\mathrm{Fe}^{2+}$,segment_diameter,2.4828,2.4828,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,iron-cation,$\mathrm{Fe}^{2+}$,dispersion_energy_over_k,5495.6986,5495.6986,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,iron-cation,$\mathrm{Fe}^{2+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,iron-cation,$\mathrm{Fe}^{2+}$,debye_huckel_diameter,2.4828,2.184864,-0.297936,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,iron-cation,$\mathrm{Fe}^{2+}$,packing_diameter,2.184864,2.184864,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,lithium-cation,$\mathrm{Li}^{+}$,segment_diameter,1.8177,1.8177,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,lithium-cation,$\mathrm{Li}^{+}$,dispersion_energy_over_k,2697.2795,2697.2795,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,lithium-cation,$\mathrm{Li}^{+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,lithium-cation,$\mathrm{Li}^{+}$,debye_huckel_diameter,1.8177,1.599576,-0.21812399999999998,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,lithium-cation,$\mathrm{Li}^{+}$,packing_diameter,1.599576,1.599576,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,magnesium-cation,$\mathrm{Mg}^{2+}$,segment_diameter,2.3229,2.3229,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,magnesium-cation,$\mathrm{Mg}^{2+}$,dispersion_energy_over_k,8145.3298,8145.3298,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,magnesium-cation,$\mathrm{Mg}^{2+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,magnesium-cation,$\mathrm{Mg}^{2+}$,debye_huckel_diameter,2.3229,2.044152,-0.2787480000000002,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,magnesium-cation,$\mathrm{Mg}^{2+}$,packing_diameter,2.044152,2.044152,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,nitrate-anion,$\mathrm{NO}_{3}{ }^{-}$,segment_diameter,3.3805,3.3805,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,nitrate-anion,$\mathrm{NO}_{3}{ }^{-}$,dispersion_energy_over_k,0.0,0.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,nitrate-anion,$\mathrm{NO}_{3}{ }^{-}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,nitrate-anion,$\mathrm{NO}_{3}{ }^{-}$,debye_huckel_diameter,3.3805,2.97484,-0.40566000000000013,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,nitrate-anion,$\mathrm{NO}_{3}{ }^{-}$,packing_diameter,2.97484,2.97484,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,perchlorate-anion,$\mathrm{ClO}_{4}{ }^{-}$,segment_diameter,4.0731,4.0731,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,perchlorate-anion,$\mathrm{ClO}_{4}{ }^{-}$,dispersion_energy_over_k,58.423,58.423,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,perchlorate-anion,$\mathrm{ClO}_{4}{ }^{-}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,perchlorate-anion,$\mathrm{ClO}_{4}{ }^{-}$,debye_huckel_diameter,4.0731,3.584328,-0.488772,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,perchlorate-anion,$\mathrm{ClO}_{4}{ }^{-}$,packing_diameter,3.584328,3.584328,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,potassium-cation,$\mathrm{K}^{+}$,segment_diameter,2.9698,2.9698,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,potassium-cation,$\mathrm{K}^{+}$,dispersion_energy_over_k,271.0518,271.0518,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,potassium-cation,$\mathrm{K}^{+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,potassium-cation,$\mathrm{K}^{+}$,debye_huckel_diameter,2.9698,2.613424,-0.356376,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,potassium-cation,$\mathrm{K}^{+}$,packing_diameter,2.613424,2.613424,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,rubidium-cation,$\mathrm{Rb}^{+}$,segment_diameter,3.1443,3.1443,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,rubidium-cation,$\mathrm{Rb}^{+}$,dispersion_energy_over_k,215.3697,215.3697,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,rubidium-cation,$\mathrm{Rb}^{+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,rubidium-cation,$\mathrm{Rb}^{+}$,debye_huckel_diameter,3.1443,2.766984,-0.377316,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,rubidium-cation,$\mathrm{Rb}^{+}$,packing_diameter,2.766984,2.766984,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,sodium-cation,$\mathrm{Na}^{+}$,segment_diameter,2.4122,2.4122,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,sodium-cation,$\mathrm{Na}^{+}$,dispersion_energy_over_k,646.0504,646.0504,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,sodium-cation,$\mathrm{Na}^{+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,sodium-cation,$\mathrm{Na}^{+}$,debye_huckel_diameter,2.4122,2.122736,-0.2894639999999997,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,sodium-cation,$\mathrm{Na}^{+}$,packing_diameter,2.1227359999999997,2.122736,4.440892098500626e-16,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,strontium-cation,$\mathrm{Sr}^{2+}$,segment_diameter,2.9882,2.9882,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,strontium-cation,$\mathrm{Sr}^{2+}$,dispersion_energy_over_k,1677.6061,1677.6061,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,strontium-cation,$\mathrm{Sr}^{2+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,strontium-cation,$\mathrm{Sr}^{2+}$,debye_huckel_diameter,2.9882,2.629616,-0.358584,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,strontium-cation,$\mathrm{Sr}^{2+}$,packing_diameter,2.629616,2.629616,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,sulfate-anion,$\mathrm{SO}_{4}{ }^{2-}$,segment_diameter,2.4538,2.4538,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,sulfate-anion,$\mathrm{SO}_{4}{ }^{2-}$,dispersion_energy_over_k,0.0,0.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,sulfate-anion,$\mathrm{SO}_{4}{ }^{2-}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,sulfate-anion,$\mathrm{SO}_{4}{ }^{2-}$,debye_huckel_diameter,2.4538,2.159344,-0.2944560000000003,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,sulfate-anion,$\mathrm{SO}_{4}{ }^{2-}$,packing_diameter,2.1593440000000004,2.159344,-4.440892098500626e-16,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,thiocyanate-anion,$\mathrm{SCN}^{-}$,segment_diameter,4.0715,4.0715,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,thiocyanate-anion,$\mathrm{SCN}^{-}$,dispersion_energy_over_k,69.6806,69.6806,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,thiocyanate-anion,$\mathrm{SCN}^{-}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,thiocyanate-anion,$\mathrm{SCN}^{-}$,debye_huckel_diameter,4.0715,3.58292,-0.48858000000000024,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+2,thiocyanate-anion,$\mathrm{SCN}^{-}$,packing_diameter,3.58292,3.58292,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,ammonium-cation,$\mathrm{NH}_{4}{ }^{+}$,segment_diameter,3.4755,3.4755,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,ammonium-cation,$\mathrm{NH}_{4}{ }^{+}$,dispersion_energy_over_k,212.3632,212.3632,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,ammonium-cation,$\mathrm{NH}_{4}{ }^{+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,ammonium-cation,$\mathrm{NH}_{4}{ }^{+}$,debye_huckel_diameter,3.4755,3.05844,-0.41705999999999976,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,ammonium-cation,$\mathrm{NH}_{4}{ }^{+}$,packing_diameter,3.05844,3.05844,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,barium-cation,$\mathrm{Ba}^{2+}$,segment_diameter,3.0982,3.0982,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,barium-cation,$\mathrm{Ba}^{2+}$,dispersion_energy_over_k,1475.988,1475.988,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,barium-cation,$\mathrm{Ba}^{2+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,barium-cation,$\mathrm{Ba}^{2+}$,debye_huckel_diameter,3.0982,2.726416,-0.3717839999999999,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,barium-cation,$\mathrm{Ba}^{2+}$,packing_diameter,2.726416,2.726416,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,bromate-anion,$\mathrm{BrO}_{3}{ }^{-}$,segment_diameter,3.5765,3.5765,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,bromate-anion,$\mathrm{BrO}_{3}{ }^{-}$,dispersion_energy_over_k,0.0,0.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,bromate-anion,$\mathrm{BrO}_{3}{ }^{-}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,bromate-anion,$\mathrm{BrO}_{3}{ }^{-}$,debye_huckel_diameter,3.5765,3.14732,-0.4291799999999997,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,bromate-anion,$\mathrm{BrO}_{3}{ }^{-}$,packing_diameter,3.1473199999999997,3.14732,4.440892098500626e-16,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,bromide-anion,$\mathrm{Br}^{-}$,segment_diameter,3.4573,3.4573,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,bromide-anion,$\mathrm{Br}^{-}$,dispersion_energy_over_k,60.2216,60.2216,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,bromide-anion,$\mathrm{Br}^{-}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,bromide-anion,$\mathrm{Br}^{-}$,debye_huckel_diameter,3.4573,3.042424,-0.414876,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,bromide-anion,$\mathrm{Br}^{-}$,packing_diameter,3.042424,3.042424,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,calcium-cation,$\mathrm{Ca}^{2+}$,segment_diameter,2.8889,2.8889,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,calcium-cation,$\mathrm{Ca}^{2+}$,dispersion_energy_over_k,2146.9794,2146.9794,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,calcium-cation,$\mathrm{Ca}^{2+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,calcium-cation,$\mathrm{Ca}^{2+}$,debye_huckel_diameter,2.8889,2.542232,-0.3466680000000002,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,calcium-cation,$\mathrm{Ca}^{2+}$,packing_diameter,2.542232,2.542232,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,cesium-cation,$\mathrm{Cs}^{+}$,segment_diameter,3.5606,3.5606,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,cesium-cation,$\mathrm{Cs}^{+}$,dispersion_energy_over_k,175.9357,175.9357,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,cesium-cation,$\mathrm{Cs}^{+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,cesium-cation,$\mathrm{Cs}^{+}$,debye_huckel_diameter,3.5606,3.133328,-0.4272719999999999,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,cesium-cation,$\mathrm{Cs}^{+}$,packing_diameter,3.133328,3.133328,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,chlorate-anion,$\mathrm{ClO}_{3}{ }^{-}$,segment_diameter,3.8212,3.8212,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,chlorate-anion,$\mathrm{ClO}_{3}{ }^{-}$,dispersion_energy_over_k,15.4978,15.4978,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,chlorate-anion,$\mathrm{ClO}_{3}{ }^{-}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,chlorate-anion,$\mathrm{ClO}_{3}{ }^{-}$,debye_huckel_diameter,3.8212,3.362656,-0.4585440000000003,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,chlorate-anion,$\mathrm{ClO}_{3}{ }^{-}$,packing_diameter,3.3626560000000003,3.362656,-4.440892098500626e-16,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,chloride-anion,$\mathrm{Cl}^{-}$,segment_diameter,3.0575,3.0575,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,chloride-anion,$\mathrm{Cl}^{-}$,dispersion_energy_over_k,47.2878,47.2878,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,chloride-anion,$\mathrm{Cl}^{-}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,chloride-anion,$\mathrm{Cl}^{-}$,debye_huckel_diameter,3.0575,2.6906,-0.3669000000000002,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,chloride-anion,$\mathrm{Cl}^{-}$,packing_diameter,2.6906000000000003,2.6906,-4.440892098500626e-16,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,choline-cation,Choline ${ }^{+}$,segment_diameter,5.9216,5.9216,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,choline-cation,Choline ${ }^{+}$,dispersion_energy_over_k,220.4883,220.4883,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,choline-cation,Choline ${ }^{+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,choline-cation,Choline ${ }^{+}$,debye_huckel_diameter,5.9216,5.211008,-0.7105920000000001,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,choline-cation,Choline ${ }^{+}$,packing_diameter,5.211008,5.211008,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,chromium-iii-cation,$\mathrm{Cr}^{3+}$,segment_diameter,3.238,3.238,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,chromium-iii-cation,$\mathrm{Cr}^{3+}$,dispersion_energy_over_k,6905.345,6905.345,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,chromium-iii-cation,$\mathrm{Cr}^{3+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,chromium-iii-cation,$\mathrm{Cr}^{3+}$,debye_huckel_diameter,3.238,2.84944,-0.38856,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,chromium-iii-cation,$\mathrm{Cr}^{3+}$,packing_diameter,2.84944,2.84944,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,cobalt-cation,$\mathrm{Co}^{2+}$,segment_diameter,2.4387,2.4387,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,cobalt-cation,$\mathrm{Co}^{2+}$,dispersion_energy_over_k,5837.6334,5837.6334,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,cobalt-cation,$\mathrm{Co}^{2+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,cobalt-cation,$\mathrm{Co}^{2+}$,debye_huckel_diameter,2.4387,2.146056,-0.2926439999999997,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,cobalt-cation,$\mathrm{Co}^{2+}$,packing_diameter,2.1460559999999997,2.146056,4.440892098500626e-16,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,copper-cation,$\mathrm{Cu}^{2+}$,segment_diameter,2.6955,2.6955,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,copper-cation,$\mathrm{Cu}^{2+}$,dispersion_energy_over_k,2545.1445,2545.1445,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,copper-cation,$\mathrm{Cu}^{2+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,copper-cation,$\mathrm{Cu}^{2+}$,debye_huckel_diameter,2.6955,2.37204,-0.32345999999999986,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,copper-cation,$\mathrm{Cu}^{2+}$,packing_diameter,2.37204,2.37204,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,dihydrogen-phosphate-anion,$\mathrm{H}_{2} \mathrm{PO}_{4}{ }^{-}$,segment_diameter,3.7026,3.7026,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,dihydrogen-phosphate-anion,$\mathrm{H}_{2} \mathrm{PO}_{4}{ }^{-}$,dispersion_energy_over_k,0.0,0.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,dihydrogen-phosphate-anion,$\mathrm{H}_{2} \mathrm{PO}_{4}{ }^{-}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,dihydrogen-phosphate-anion,$\mathrm{H}_{2} \mathrm{PO}_{4}{ }^{-}$,debye_huckel_diameter,3.7026,3.258288,-0.44431200000000004,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,dihydrogen-phosphate-anion,$\mathrm{H}_{2} \mathrm{PO}_{4}{ }^{-}$,packing_diameter,3.258288,3.258288,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,fluoride-anion,$\mathrm{F}^{-}$,segment_diameter,1.6132,1.6132,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,fluoride-anion,$\mathrm{F}^{-}$,dispersion_energy_over_k,648.3127,648.3127,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,fluoride-anion,$\mathrm{F}^{-}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,fluoride-anion,$\mathrm{F}^{-}$,debye_huckel_diameter,1.6132,1.419616,-0.19358399999999998,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,fluoride-anion,$\mathrm{F}^{-}$,packing_diameter,1.419616,1.419616,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,hydrogen-phosphate-anion,$\mathrm{HPO}_{4}{ }^{2-}$,segment_diameter,4.4608,4.4608,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,hydrogen-phosphate-anion,$\mathrm{HPO}_{4}{ }^{2-}$,dispersion_energy_over_k,0.0,0.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,hydrogen-phosphate-anion,$\mathrm{HPO}_{4}{ }^{2-}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,hydrogen-phosphate-anion,$\mathrm{HPO}_{4}{ }^{2-}$,debye_huckel_diameter,4.4608,3.925504,-0.5352959999999998,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,hydrogen-phosphate-anion,$\mathrm{HPO}_{4}{ }^{2-}$,packing_diameter,3.925504,3.925504,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,hydronium-cation,$\mathrm{H}^{+}$,segment_diameter,2.274,2.274,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,hydronium-cation,$\mathrm{H}^{+}$,dispersion_energy_over_k,1616.4939,1616.4939,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,hydronium-cation,$\mathrm{H}^{+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,hydronium-cation,$\mathrm{H}^{+}$,debye_huckel_diameter,2.274,2.00112,-0.27288000000000023,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,hydronium-cation,$\mathrm{H}^{+}$,packing_diameter,2.0011200000000002,2.00112,-4.440892098500626e-16,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,hydroxide-anion,$\mathrm{OH}^{-}$,segment_diameter,1.6401,1.6401,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,hydroxide-anion,$\mathrm{OH}^{-}$,dispersion_energy_over_k,2444.7555,2444.7555,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,hydroxide-anion,$\mathrm{OH}^{-}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,hydroxide-anion,$\mathrm{OH}^{-}$,debye_huckel_diameter,1.6401,1.443288,-0.196812,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,hydroxide-anion,$\mathrm{OH}^{-}$,packing_diameter,1.443288,1.443288,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,iodide-anion,$\mathrm{I}^{-}$,segment_diameter,3.9319,3.9319,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,iodide-anion,$\mathrm{I}^{-}$,dispersion_energy_over_k,80.4347,80.4347,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,iodide-anion,$\mathrm{I}^{-}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,iodide-anion,$\mathrm{I}^{-}$,debye_huckel_diameter,3.9319,3.460072,-0.47182800000000036,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,iodide-anion,$\mathrm{I}^{-}$,packing_diameter,3.4600720000000003,3.460072,-4.440892098500626e-16,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,iron-cation,$\mathrm{Fe}^{2+}$,segment_diameter,2.4828,2.4828,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,iron-cation,$\mathrm{Fe}^{2+}$,dispersion_energy_over_k,5495.6986,5495.6986,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,iron-cation,$\mathrm{Fe}^{2+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,iron-cation,$\mathrm{Fe}^{2+}$,debye_huckel_diameter,2.4828,2.184864,-0.297936,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,iron-cation,$\mathrm{Fe}^{2+}$,packing_diameter,2.184864,2.184864,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,lithium-cation,$\mathrm{Li}^{+}$,segment_diameter,1.8177,1.8177,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,lithium-cation,$\mathrm{Li}^{+}$,dispersion_energy_over_k,2697.2795,2697.2795,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,lithium-cation,$\mathrm{Li}^{+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,lithium-cation,$\mathrm{Li}^{+}$,debye_huckel_diameter,1.8177,1.599576,-0.21812399999999998,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,lithium-cation,$\mathrm{Li}^{+}$,packing_diameter,1.599576,1.599576,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,magnesium-cation,$\mathrm{Mg}^{2+}$,segment_diameter,2.3229,2.3229,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,magnesium-cation,$\mathrm{Mg}^{2+}$,dispersion_energy_over_k,8145.3298,8145.3298,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,magnesium-cation,$\mathrm{Mg}^{2+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,magnesium-cation,$\mathrm{Mg}^{2+}$,debye_huckel_diameter,2.3229,2.044152,-0.2787480000000002,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,magnesium-cation,$\mathrm{Mg}^{2+}$,packing_diameter,2.044152,2.044152,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,nitrate-anion,$\mathrm{NO}_{3}{ }^{-}$,segment_diameter,3.3805,3.3805,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,nitrate-anion,$\mathrm{NO}_{3}{ }^{-}$,dispersion_energy_over_k,0.0,0.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,nitrate-anion,$\mathrm{NO}_{3}{ }^{-}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,nitrate-anion,$\mathrm{NO}_{3}{ }^{-}$,debye_huckel_diameter,3.3805,2.97484,-0.40566000000000013,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,nitrate-anion,$\mathrm{NO}_{3}{ }^{-}$,packing_diameter,2.97484,2.97484,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,perchlorate-anion,$\mathrm{ClO}_{4}{ }^{-}$,segment_diameter,4.0731,4.0731,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,perchlorate-anion,$\mathrm{ClO}_{4}{ }^{-}$,dispersion_energy_over_k,58.423,58.423,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,perchlorate-anion,$\mathrm{ClO}_{4}{ }^{-}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,perchlorate-anion,$\mathrm{ClO}_{4}{ }^{-}$,debye_huckel_diameter,4.0731,3.584328,-0.488772,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,perchlorate-anion,$\mathrm{ClO}_{4}{ }^{-}$,packing_diameter,3.584328,3.584328,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,potassium-cation,$\mathrm{K}^{+}$,segment_diameter,2.9698,2.9698,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,potassium-cation,$\mathrm{K}^{+}$,dispersion_energy_over_k,271.0518,271.0518,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,potassium-cation,$\mathrm{K}^{+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,potassium-cation,$\mathrm{K}^{+}$,debye_huckel_diameter,2.9698,2.613424,-0.356376,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,potassium-cation,$\mathrm{K}^{+}$,packing_diameter,2.613424,2.613424,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,rubidium-cation,$\mathrm{Rb}^{+}$,segment_diameter,3.1443,3.1443,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,rubidium-cation,$\mathrm{Rb}^{+}$,dispersion_energy_over_k,215.3697,215.3697,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,rubidium-cation,$\mathrm{Rb}^{+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,rubidium-cation,$\mathrm{Rb}^{+}$,debye_huckel_diameter,3.1443,2.766984,-0.377316,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,rubidium-cation,$\mathrm{Rb}^{+}$,packing_diameter,2.766984,2.766984,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,sodium-cation,$\mathrm{Na}^{+}$,segment_diameter,2.4122,2.4122,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,sodium-cation,$\mathrm{Na}^{+}$,dispersion_energy_over_k,646.0504,646.0504,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,sodium-cation,$\mathrm{Na}^{+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,sodium-cation,$\mathrm{Na}^{+}$,debye_huckel_diameter,2.4122,2.122736,-0.2894639999999997,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,sodium-cation,$\mathrm{Na}^{+}$,packing_diameter,2.1227359999999997,2.122736,4.440892098500626e-16,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,strontium-cation,$\mathrm{Sr}^{2+}$,segment_diameter,2.9882,2.9882,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,strontium-cation,$\mathrm{Sr}^{2+}$,dispersion_energy_over_k,1677.6061,1677.6061,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,strontium-cation,$\mathrm{Sr}^{2+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,strontium-cation,$\mathrm{Sr}^{2+}$,debye_huckel_diameter,2.9882,2.629616,-0.358584,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,strontium-cation,$\mathrm{Sr}^{2+}$,packing_diameter,2.629616,2.629616,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,sulfate-anion,$\mathrm{SO}_{4}{ }^{2-}$,segment_diameter,2.4538,2.4538,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,sulfate-anion,$\mathrm{SO}_{4}{ }^{2-}$,dispersion_energy_over_k,0.0,0.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,sulfate-anion,$\mathrm{SO}_{4}{ }^{2-}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,sulfate-anion,$\mathrm{SO}_{4}{ }^{2-}$,debye_huckel_diameter,2.4538,2.159344,-0.2944560000000003,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,sulfate-anion,$\mathrm{SO}_{4}{ }^{2-}$,packing_diameter,2.1593440000000004,2.159344,-4.440892098500626e-16,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,thiocyanate-anion,$\mathrm{SCN}^{-}$,segment_diameter,4.0715,4.0715,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,thiocyanate-anion,$\mathrm{SCN}^{-}$,dispersion_energy_over_k,69.6806,69.6806,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,thiocyanate-anion,$\mathrm{SCN}^{-}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,thiocyanate-anion,$\mathrm{SCN}^{-}$,debye_huckel_diameter,4.0715,3.58292,-0.48858000000000024,differs,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+3,thiocyanate-anion,$\mathrm{SCN}^{-}$,packing_diameter,3.58292,3.58292,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,ammonium-cation,$\mathrm{NH}_{4}{ }^{+}$,segment_diameter,3.4755,3.4755,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,ammonium-cation,$\mathrm{NH}_{4}{ }^{+}$,dispersion_energy_over_k,212.3632,212.3632,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,ammonium-cation,$\mathrm{NH}_{4}{ }^{+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,ammonium-cation,$\mathrm{NH}_{4}{ }^{+}$,debye_huckel_diameter,3.4755,3.4755,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,ammonium-cation,$\mathrm{NH}_{4}{ }^{+}$,packing_diameter,3.05844,3.05844,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,barium-cation,$\mathrm{Ba}^{2+}$,segment_diameter,3.0982,3.0982,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,barium-cation,$\mathrm{Ba}^{2+}$,dispersion_energy_over_k,1475.988,1475.988,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,barium-cation,$\mathrm{Ba}^{2+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,barium-cation,$\mathrm{Ba}^{2+}$,debye_huckel_diameter,3.0982,3.0982,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,barium-cation,$\mathrm{Ba}^{2+}$,packing_diameter,2.726416,2.726416,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,bromate-anion,$\mathrm{BrO}_{3}{ }^{-}$,segment_diameter,3.5765,3.5765,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,bromate-anion,$\mathrm{BrO}_{3}{ }^{-}$,dispersion_energy_over_k,0.0,0.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,bromate-anion,$\mathrm{BrO}_{3}{ }^{-}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,bromate-anion,$\mathrm{BrO}_{3}{ }^{-}$,debye_huckel_diameter,3.5765,3.5765,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,bromate-anion,$\mathrm{BrO}_{3}{ }^{-}$,packing_diameter,3.1473199999999997,3.14732,4.440892098500626e-16,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,bromide-anion,$\mathrm{Br}^{-}$,segment_diameter,3.4573,3.4573,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,bromide-anion,$\mathrm{Br}^{-}$,dispersion_energy_over_k,60.2216,60.2216,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,bromide-anion,$\mathrm{Br}^{-}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,bromide-anion,$\mathrm{Br}^{-}$,debye_huckel_diameter,3.4573,3.4573,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,bromide-anion,$\mathrm{Br}^{-}$,packing_diameter,3.042424,3.042424,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,calcium-cation,$\mathrm{Ca}^{2+}$,segment_diameter,2.8889,2.8889,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,calcium-cation,$\mathrm{Ca}^{2+}$,dispersion_energy_over_k,2146.9794,2146.9794,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,calcium-cation,$\mathrm{Ca}^{2+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,calcium-cation,$\mathrm{Ca}^{2+}$,debye_huckel_diameter,2.8889,2.8889,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,calcium-cation,$\mathrm{Ca}^{2+}$,packing_diameter,2.542232,2.542232,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,cesium-cation,$\mathrm{Cs}^{+}$,segment_diameter,3.5606,3.5606,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,cesium-cation,$\mathrm{Cs}^{+}$,dispersion_energy_over_k,175.9357,175.9357,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,cesium-cation,$\mathrm{Cs}^{+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,cesium-cation,$\mathrm{Cs}^{+}$,debye_huckel_diameter,3.5606,3.5606,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,cesium-cation,$\mathrm{Cs}^{+}$,packing_diameter,3.133328,3.133328,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,chlorate-anion,$\mathrm{ClO}_{3}{ }^{-}$,segment_diameter,3.8212,3.8212,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,chlorate-anion,$\mathrm{ClO}_{3}{ }^{-}$,dispersion_energy_over_k,15.4978,15.4978,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,chlorate-anion,$\mathrm{ClO}_{3}{ }^{-}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,chlorate-anion,$\mathrm{ClO}_{3}{ }^{-}$,debye_huckel_diameter,3.8212,3.8212,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,chlorate-anion,$\mathrm{ClO}_{3}{ }^{-}$,packing_diameter,3.3626560000000003,3.362656,-4.440892098500626e-16,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,chloride-anion,$\mathrm{Cl}^{-}$,segment_diameter,3.0575,3.0575,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,chloride-anion,$\mathrm{Cl}^{-}$,dispersion_energy_over_k,47.2878,47.2878,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,chloride-anion,$\mathrm{Cl}^{-}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,chloride-anion,$\mathrm{Cl}^{-}$,debye_huckel_diameter,3.0575,3.0575,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,chloride-anion,$\mathrm{Cl}^{-}$,packing_diameter,2.6906000000000003,2.6906,-4.440892098500626e-16,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,choline-cation,Choline ${ }^{+}$,segment_diameter,5.9216,5.9216,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,choline-cation,Choline ${ }^{+}$,dispersion_energy_over_k,220.4883,220.4883,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,choline-cation,Choline ${ }^{+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,choline-cation,Choline ${ }^{+}$,debye_huckel_diameter,5.9216,5.9216,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,choline-cation,Choline ${ }^{+}$,packing_diameter,5.211008,5.211008,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,chromium-iii-cation,$\mathrm{Cr}^{3+}$,segment_diameter,3.238,3.238,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,chromium-iii-cation,$\mathrm{Cr}^{3+}$,dispersion_energy_over_k,6905.345,6905.345,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,chromium-iii-cation,$\mathrm{Cr}^{3+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,chromium-iii-cation,$\mathrm{Cr}^{3+}$,debye_huckel_diameter,3.238,3.238,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,chromium-iii-cation,$\mathrm{Cr}^{3+}$,packing_diameter,2.84944,2.84944,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,cobalt-cation,$\mathrm{Co}^{2+}$,segment_diameter,2.4387,2.4387,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,cobalt-cation,$\mathrm{Co}^{2+}$,dispersion_energy_over_k,5837.6334,5837.6334,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,cobalt-cation,$\mathrm{Co}^{2+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,cobalt-cation,$\mathrm{Co}^{2+}$,debye_huckel_diameter,2.4387,2.4387,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,cobalt-cation,$\mathrm{Co}^{2+}$,packing_diameter,2.1460559999999997,2.146056,4.440892098500626e-16,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,copper-cation,$\mathrm{Cu}^{2+}$,segment_diameter,2.6955,2.6955,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,copper-cation,$\mathrm{Cu}^{2+}$,dispersion_energy_over_k,2545.1445,2545.1445,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,copper-cation,$\mathrm{Cu}^{2+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,copper-cation,$\mathrm{Cu}^{2+}$,debye_huckel_diameter,2.6955,2.6955,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,copper-cation,$\mathrm{Cu}^{2+}$,packing_diameter,2.37204,2.37204,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,dihydrogen-phosphate-anion,$\mathrm{H}_{2} \mathrm{PO}_{4}{ }^{-}$,segment_diameter,3.7026,3.7026,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,dihydrogen-phosphate-anion,$\mathrm{H}_{2} \mathrm{PO}_{4}{ }^{-}$,dispersion_energy_over_k,0.0,0.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,dihydrogen-phosphate-anion,$\mathrm{H}_{2} \mathrm{PO}_{4}{ }^{-}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,dihydrogen-phosphate-anion,$\mathrm{H}_{2} \mathrm{PO}_{4}{ }^{-}$,debye_huckel_diameter,3.7026,3.7026,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,dihydrogen-phosphate-anion,$\mathrm{H}_{2} \mathrm{PO}_{4}{ }^{-}$,packing_diameter,3.258288,3.258288,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,fluoride-anion,$\mathrm{F}^{-}$,segment_diameter,1.6132,1.6132,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,fluoride-anion,$\mathrm{F}^{-}$,dispersion_energy_over_k,648.3127,648.3127,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,fluoride-anion,$\mathrm{F}^{-}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,fluoride-anion,$\mathrm{F}^{-}$,debye_huckel_diameter,1.6132,1.6132,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,fluoride-anion,$\mathrm{F}^{-}$,packing_diameter,1.419616,1.419616,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,hydrogen-phosphate-anion,$\mathrm{HPO}_{4}{ }^{2-}$,segment_diameter,4.4608,4.4608,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,hydrogen-phosphate-anion,$\mathrm{HPO}_{4}{ }^{2-}$,dispersion_energy_over_k,0.0,0.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,hydrogen-phosphate-anion,$\mathrm{HPO}_{4}{ }^{2-}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,hydrogen-phosphate-anion,$\mathrm{HPO}_{4}{ }^{2-}$,debye_huckel_diameter,4.4608,4.4608,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,hydrogen-phosphate-anion,$\mathrm{HPO}_{4}{ }^{2-}$,packing_diameter,3.925504,3.925504,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,hydronium-cation,$\mathrm{H}^{+}$,segment_diameter,2.274,2.274,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,hydronium-cation,$\mathrm{H}^{+}$,dispersion_energy_over_k,1616.4939,1616.4939,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,hydronium-cation,$\mathrm{H}^{+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,hydronium-cation,$\mathrm{H}^{+}$,debye_huckel_diameter,2.274,2.274,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,hydronium-cation,$\mathrm{H}^{+}$,packing_diameter,2.0011200000000002,2.00112,-4.440892098500626e-16,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,hydroxide-anion,$\mathrm{OH}^{-}$,segment_diameter,1.6401,1.6401,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,hydroxide-anion,$\mathrm{OH}^{-}$,dispersion_energy_over_k,2444.7555,2444.7555,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,hydroxide-anion,$\mathrm{OH}^{-}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,hydroxide-anion,$\mathrm{OH}^{-}$,debye_huckel_diameter,1.6401,1.6401,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,hydroxide-anion,$\mathrm{OH}^{-}$,packing_diameter,1.443288,1.443288,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,iodide-anion,$\mathrm{I}^{-}$,segment_diameter,3.9319,3.9319,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,iodide-anion,$\mathrm{I}^{-}$,dispersion_energy_over_k,80.4347,80.4347,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,iodide-anion,$\mathrm{I}^{-}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,iodide-anion,$\mathrm{I}^{-}$,debye_huckel_diameter,3.9319,3.9319,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,iodide-anion,$\mathrm{I}^{-}$,packing_diameter,3.4600720000000003,3.460072,-4.440892098500626e-16,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,iron-cation,$\mathrm{Fe}^{2+}$,segment_diameter,2.4828,2.4828,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,iron-cation,$\mathrm{Fe}^{2+}$,dispersion_energy_over_k,5495.6986,5495.6986,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,iron-cation,$\mathrm{Fe}^{2+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,iron-cation,$\mathrm{Fe}^{2+}$,debye_huckel_diameter,2.4828,2.4828,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,iron-cation,$\mathrm{Fe}^{2+}$,packing_diameter,2.184864,2.184864,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,lithium-cation,$\mathrm{Li}^{+}$,segment_diameter,1.8177,1.8177,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,lithium-cation,$\mathrm{Li}^{+}$,dispersion_energy_over_k,2697.2795,2697.2795,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,lithium-cation,$\mathrm{Li}^{+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,lithium-cation,$\mathrm{Li}^{+}$,debye_huckel_diameter,1.8177,1.8177,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,lithium-cation,$\mathrm{Li}^{+}$,packing_diameter,1.599576,1.599576,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,magnesium-cation,$\mathrm{Mg}^{2+}$,segment_diameter,2.3229,2.3229,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,magnesium-cation,$\mathrm{Mg}^{2+}$,dispersion_energy_over_k,8145.3298,8145.3298,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,magnesium-cation,$\mathrm{Mg}^{2+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,magnesium-cation,$\mathrm{Mg}^{2+}$,debye_huckel_diameter,2.3229,2.3229,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,magnesium-cation,$\mathrm{Mg}^{2+}$,packing_diameter,2.044152,2.044152,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,nitrate-anion,$\mathrm{NO}_{3}{ }^{-}$,segment_diameter,3.3805,3.3805,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,nitrate-anion,$\mathrm{NO}_{3}{ }^{-}$,dispersion_energy_over_k,0.0,0.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,nitrate-anion,$\mathrm{NO}_{3}{ }^{-}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,nitrate-anion,$\mathrm{NO}_{3}{ }^{-}$,debye_huckel_diameter,3.3805,3.3805,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,nitrate-anion,$\mathrm{NO}_{3}{ }^{-}$,packing_diameter,2.97484,2.97484,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,perchlorate-anion,$\mathrm{ClO}_{4}{ }^{-}$,segment_diameter,4.0731,4.0731,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,perchlorate-anion,$\mathrm{ClO}_{4}{ }^{-}$,dispersion_energy_over_k,58.423,58.423,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,perchlorate-anion,$\mathrm{ClO}_{4}{ }^{-}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,perchlorate-anion,$\mathrm{ClO}_{4}{ }^{-}$,debye_huckel_diameter,4.0731,4.0731,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,perchlorate-anion,$\mathrm{ClO}_{4}{ }^{-}$,packing_diameter,3.584328,3.584328,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,potassium-cation,$\mathrm{K}^{+}$,segment_diameter,2.9698,2.9698,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,potassium-cation,$\mathrm{K}^{+}$,dispersion_energy_over_k,271.0518,271.0518,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,potassium-cation,$\mathrm{K}^{+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,potassium-cation,$\mathrm{K}^{+}$,debye_huckel_diameter,2.9698,2.9698,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,potassium-cation,$\mathrm{K}^{+}$,packing_diameter,2.613424,2.613424,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,rubidium-cation,$\mathrm{Rb}^{+}$,segment_diameter,3.1443,3.1443,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,rubidium-cation,$\mathrm{Rb}^{+}$,dispersion_energy_over_k,215.3697,215.3697,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,rubidium-cation,$\mathrm{Rb}^{+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,rubidium-cation,$\mathrm{Rb}^{+}$,debye_huckel_diameter,3.1443,3.1443,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,rubidium-cation,$\mathrm{Rb}^{+}$,packing_diameter,2.766984,2.766984,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,sodium-cation,$\mathrm{Na}^{+}$,segment_diameter,2.4122,2.4122,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,sodium-cation,$\mathrm{Na}^{+}$,dispersion_energy_over_k,646.0504,646.0504,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,sodium-cation,$\mathrm{Na}^{+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,sodium-cation,$\mathrm{Na}^{+}$,debye_huckel_diameter,2.4122,2.4122,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,sodium-cation,$\mathrm{Na}^{+}$,packing_diameter,2.1227359999999997,2.122736,4.440892098500626e-16,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,strontium-cation,$\mathrm{Sr}^{2+}$,segment_diameter,2.9882,2.9882,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,strontium-cation,$\mathrm{Sr}^{2+}$,dispersion_energy_over_k,1677.6061,1677.6061,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,strontium-cation,$\mathrm{Sr}^{2+}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,strontium-cation,$\mathrm{Sr}^{2+}$,debye_huckel_diameter,2.9882,2.9882,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,strontium-cation,$\mathrm{Sr}^{2+}$,packing_diameter,2.629616,2.629616,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,sulfate-anion,$\mathrm{SO}_{4}{ }^{2-}$,segment_diameter,2.4538,2.4538,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,sulfate-anion,$\mathrm{SO}_{4}{ }^{2-}$,dispersion_energy_over_k,0.0,0.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,sulfate-anion,$\mathrm{SO}_{4}{ }^{2-}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,sulfate-anion,$\mathrm{SO}_{4}{ }^{2-}$,debye_huckel_diameter,2.4538,2.4538,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,sulfate-anion,$\mathrm{SO}_{4}{ }^{2-}$,packing_diameter,2.1593440000000004,2.159344,-4.440892098500626e-16,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,thiocyanate-anion,$\mathrm{SCN}^{-}$,segment_diameter,4.0715,4.0715,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,thiocyanate-anion,$\mathrm{SCN}^{-}$,dispersion_energy_over_k,69.6806,69.6806,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,thiocyanate-anion,$\mathrm{SCN}^{-}$,segment_count,1,1.0,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,thiocyanate-anion,$\mathrm{SCN}^{-}$,debye_huckel_diameter,4.0715,4.0715,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement
+4,thiocyanate-anion,$\mathrm{SCN}^{-}$,packing_diameter,3.58292,3.58292,0.0,matches printed precision,Held2008 Table 2; DH p.88 Eqs.2-3; packing Held2014 Eq.21 backward statement

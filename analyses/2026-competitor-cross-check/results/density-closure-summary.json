@@ -1,0 +1,273 @@
+{
+  "source_commit": "55e3b3a4272e86343e01bd1624c842a2f71f4da4",
+  "wheel_sha256": "6039c149e7df951236fea278995ff9f29078ea19c58f354e92679c6da546cb57",
+  "reference_wheel_sha256": "e28d258df06eac39711c59a79f9ce2b69fc8ac7565637bfba0dbef21863d8dc7",
+  "input_sha256": "30e9ee4b832eb1e569c980a621a922bf559feaf8112d7f347519b4f5f985c797",
+  "failures": [
+    "Initial check-all: seven stale C++ reference operands; each agrees exactly with fresh C++; canonical refresh pending.",
+    "Original E5-3 reference ladder fails its uncertainty rule; disposable resolved-node probe passes; canonical node choice pending."
+  ],
+  "raw_outputs": [
+    {
+      "path": "density-closure-Engine-reference.json.gz",
+      "sha256": "b9979347c166dea8b1f9f7587f4fa4480f6ee0d2116394af345b706a3bf235fb",
+      "raw_sha256": "4ff414cf370d31d129c30f9bbcdfedd0036bdee0d13285628a3c8772aa46bcf1"
+    },
+    {
+      "path": "density-closure-fixture-reference.json.gz",
+      "sha256": "8e025b91229bd153918ee37b32be6ee7aabe82494e2a728bf3b035200e85ec9a",
+      "raw_sha256": "4f58cf482321555e71a96ffc1b17deec12943ad4fe9214df756127248541eccd"
+    },
+    {
+      "path": "density-closure-Engine-corrected.json.gz",
+      "sha256": "d11db47c126a9745154e8c252059c0a844efe29f80cfc897cdd2e0fefe413e79",
+      "raw_sha256": "777e3579f103cb9ebefea9af9cb23aad2a9e87f01ae22bc96bd1ac6d55d77960"
+    },
+    {
+      "path": "density-closure-Engine-timing-corrected-2.json.gz",
+      "sha256": "f8a8ce360b18fa09466f9bb58b7589cd65b7c3be4e3a8d2af7e92ec10149e242",
+      "raw_sha256": "67650910f06896c493d1419843bfd0dabcd7526790aa75e4688ef1498e7cceb6"
+    },
+    {
+      "path": "density-closure-traces-reference.json.gz",
+      "sha256": "b639242bcc089a44abd4e51b167346ace784700409b11ccc031a9e1ae99eeb73",
+      "raw_sha256": "6e63b206dc8c2fc71e1fe13caec1fec64a915415398e4311bca86da98a33c22a"
+    },
+    {
+      "path": "density-closure-Engine-timing-corrected-3.json.gz",
+      "sha256": "ded395256e6783de374fa1827a8b7024ba2e8a61397017c4cb18f47fbd19f546",
+      "raw_sha256": "e47530078ea87c693c1d78d16ef84d07c179275f5454753045e3176706c6a484"
+    },
+    {
+      "path": "density-closure-khudaida-reference-1.json.gz",
+      "sha256": "ff23ee68c4a7345412de6fd7de24337217595b97a787657e62d4313869fc9279",
+      "raw_sha256": "d01546a9b85849b57037881eaa79bade1ab3f6ad74e5e9d9bb179a108ad8914b"
+    },
+    {
+      "path": "density-closure-traces-corrected.json.gz",
+      "sha256": "3318df9756d70df17b87fdcfe7b99fb72ebeddd35373b51d4165b50f33650357",
+      "raw_sha256": "05c9e3ec33da25193c53bec9b2c2403f5f133606f6c295920740962935661412"
+    },
+    {
+      "path": "density-closure-khudaida-corrected-1.json.gz",
+      "sha256": "41c6bb87898a00495000fcb5a9ef27745295c69fd810bbd188c6a83c51a50035",
+      "raw_sha256": "3bea28fceb16676cb70d6e88a6f3b4b0cc704a5a52be24c12c9563bf668c798b"
+    },
+    {
+      "path": "density-closure-Engine-timing-corrected-1.json.gz",
+      "sha256": "594ca39f95b130308b03b0a203abf10fae6eff9aac066b5747996baca37e0a20",
+      "raw_sha256": "8763e3fc803230c874f1838ffe9940fc11a0df4b52b03ba47587266f4ad70cdf"
+    },
+    {
+      "path": "density-closure-native-row-diagnosis.csv",
+      "sha256": "b76a13feb228f46ffc39068af196d5681ccec666964cad3cf60875c4e2c94705",
+      "raw_sha256": "b76a13feb228f46ffc39068af196d5681ccec666964cad3cf60875c4e2c94705"
+    },
+    {
+      "path": "density-closure-check-all-first.log.gz",
+      "sha256": "8fc747798d68331bd02dd5c51265f0630b1c5750e507d157c774c63a1e74ac82",
+      "raw_sha256": "80ed3ed3f697d93e6f38e8262f168ab88e9485f05a2b7773f6a7aa3b5fa6247d"
+    },
+    {
+      "path": "density-closure-equilibrium_checks-E5-3.log.gz",
+      "sha256": "4178aa9c6539228bf2d8a8ea589b2a89aff4d37e5eab158f46682e36ccd27524",
+      "raw_sha256": "d0300487be46d5ca946951444b736487ac5fb7e5848c0a03734424a5b8283c7a"
+    },
+    {
+      "path": "density-closure-equilibrium-ladder-probe.log.gz",
+      "sha256": "4c209c2b81b59478e9a53449c7df06bb3ead87b97af1423905078032a1091c3e",
+      "raw_sha256": "d6746fc574fa7b6e5b73c697625d52e25de2ad3ca6fea18e1e0944dbfe572b9f"
+    },
+    {
+      "path": "density-closure-khudaida-slice.log.gz",
+      "sha256": "279947dd4154216cb9265d8d66075aeefce5b72ff9d62dd3d2c1932b47997d05",
+      "raw_sha256": "daffa06aeb319550dbb1dd1e60df44dee74058f9373d02dfb0aa83aea62474dd"
+    }
+  ],
+  "limits": [
+    "Numerical verification on specified liquid roots; no physical validation or global stability claim.",
+    "Original comparator calculations and common-state inputs are retained. New differences use their original returned values.",
+    "Only the final measured return per request/selection is checked."
+  ],
+  "qualification": {
+    "check_all": "initial run: seven stale native-row comparisons; each Python value equals fresh C++ exactly",
+    "native_row_recorder": "original recorder refused E5-3 reference uncertainty; disposable larger-node probe passes every unchanged criterion; canonical node choice pending",
+    "khudaida_slice": "passed canonical tools/run-slice.sh khudaida; wall 7.15 s"
+  },
+  "controls": {
+    "environment_lock": "/tmp/epc-shared-env.lock; flock -w 3600; acquired before agent-heavy",
+    "heavy": "agent-heavy --timeout 15m --max 8G inside environment lease",
+    "OMP_NUM_THREADS": 1,
+    "OPENBLAS_NUM_THREADS": 1,
+    "MKL_NUM_THREADS": 1,
+    "EPCSAFT_BUILD_JOBS": 2,
+    "timing": {
+      "warmups": 5,
+      "samples": 25,
+      "processes": 3,
+      "CPU": 0,
+      "per_process_timeout_seconds": 180
+    },
+    "restore": "reference wheel reinstall and 14 RECORD hash verification before lease release"
+  },
+  "retained_original_outputs": "Original result files and reference-phase outputs remain byte-identical; original native and timing wheel identities are not replaced.",
+  "scope": "Native endpoint publication and composed anchor convergence only; policy values, test criteria, inputs and comparator runs unchanged.",
+  "changed_engine_request_ids": [
+    "C1-300",
+    "C1-350",
+    "C1-gradient",
+    "C2-0.2",
+    "C2-0.5",
+    "C2-0.8",
+    "C2-gradient",
+    "C3-0.88sigma-0.01",
+    "C3-0.88sigma-0.1",
+    "C3-0.88sigma-0.5",
+    "C3-0.88sigma-1",
+    "C3-0.88sigma-2",
+    "C3-0.88sigma-4",
+    "C3-diagnosis-constants",
+    "C3-diagnosis-diameter",
+    "C3-diagnosis-finite",
+    "C3-diagnosis-interaction",
+    "C3-diagnosis-original",
+    "C3-literal-0.88sigma",
+    "C3-literal-sigma",
+    "C3-ref-0.88sigma-0",
+    "C3-ref-0.88sigma-0.0001",
+    "C3-ref-0.88sigma-1e-06",
+    "C3-ref-0.88sigma-1e-08",
+    "C3-ref-0.88sigma-1e-10",
+    "C3-ref-0.88sigma-1e-12",
+    "C3-ref-0.88sigma-1e-20",
+    "C3-ref-sigma-0",
+    "C3-ref-sigma-0.0001",
+    "C3-ref-sigma-1e-06",
+    "C3-ref-sigma-1e-08",
+    "C3-ref-sigma-1e-10",
+    "C3-ref-sigma-1e-12",
+    "C3-ref-sigma-1e-20",
+    "C3-sigma-0.01",
+    "C3-sigma-0.1",
+    "C3-sigma-0.5",
+    "C3-sigma-1",
+    "C3-sigma-2",
+    "C3-sigma-4",
+    "C4-298.15",
+    "C4-323.15"
+  ],
+  "comparison_replay": "Differences recomputed against retained original comparator values on unchanged inputs. No target outcomes flipped. Frozen common states and C5 did not change; no comparator execution was repeated.",
+  "gates": {
+    "density_rows": "All cold and anchored rows pass unchanged closure, positive-slope, branch, endpoint-selection, residual and new-bracket radius checks. Cold stable-root count is two; anchor global count is absent.",
+    "timed_values": "All advertised final measured Engine fields reproduce corrected baseline exactly; retained comparator first-call values reproduce their original baseline.",
+    "full_fast_gate": "failed against old C++ cache; seven Python operands equal fresh C++ exactly",
+    "Khudaida_application_slice": "passed"
+  },
+  "raw_output_aliases": [
+    {
+      "original_output": "density-closure-khudaida-reference-2.json.gz",
+      "retained_output": "density-closure-khudaida-reference-1.json.gz",
+      "sha256": "ff23ee68c4a7345412de6fd7de24337217595b97a787657e62d4313869fc9279",
+      "raw_sha256": "d01546a9b85849b57037881eaa79bade1ab3f6ad74e5e9d9bb179a108ad8914b",
+      "meaning": "Identical first/final native numerical returns; all process timing samples remain separately retained."
+    },
+    {
+      "original_output": "density-closure-khudaida-reference-3.json.gz",
+      "retained_output": "density-closure-khudaida-reference-1.json.gz",
+      "sha256": "ff23ee68c4a7345412de6fd7de24337217595b97a787657e62d4313869fc9279",
+      "raw_sha256": "d01546a9b85849b57037881eaa79bade1ab3f6ad74e5e9d9bb179a108ad8914b",
+      "meaning": "Identical first/final native numerical returns; all process timing samples remain separately retained."
+    },
+    {
+      "original_output": "density-closure-khudaida-corrected-2.json.gz",
+      "retained_output": "density-closure-khudaida-corrected-1.json.gz",
+      "sha256": "41c6bb87898a00495000fcb5a9ef27745295c69fd810bbd188c6a83c51a50035",
+      "raw_sha256": "3bea28fceb16676cb70d6e88a6f3b4b0cc704a5a52be24c12c9563bf668c798b",
+      "meaning": "Identical first/final native numerical returns; all process timing samples remain separately retained."
+    },
+    {
+      "original_output": "density-closure-khudaida-corrected-3.json.gz",
+      "retained_output": "density-closure-khudaida-corrected-1.json.gz",
+      "sha256": "41c6bb87898a00495000fcb5a9ef27745295c69fd810bbd188c6a83c51a50035",
+      "raw_sha256": "3bea28fceb16676cb70d6e88a6f3b4b0cc704a5a52be24c12c9563bf668c798b",
+      "meaning": "Identical first/final native numerical returns; all process timing samples remain separately retained."
+    }
+  ],
+  "table_aliases": [
+    {
+      "original_output": "density-closure-reference-reference-and-mapping.csv",
+      "retained_output": "density-closure-reference-and-mapping.csv",
+      "sha256": "ec99cc0d14d91fdff44e62df5f251256cb81998a362128531d89bc7ad8311050",
+      "meaning": "No input/reference mapping changed between reference and corrected Engine collectors."
+    }
+  ],
+  "causal_tables": {
+    "native-value-causal-comparison.csv": {
+      "path": "density-closure-native-value-causal-comparison.csv",
+      "sha256": "d9c6c4b164b76f8ac773f0bbe23b7be6cca14dbd71919d79985f824c1ccd40e0"
+    },
+    "matched-density-publications.csv": {
+      "path": "density-closure-matched-density-publications.csv",
+      "sha256": "246b8edf24d092f1d01f99e122aef4a541fd50aa372ad501c00a3f09306bd1db"
+    }
+  },
+  "causal_control": {
+    "source_commit": "7b5c55cdb673452dc9e5c6220382dfcdfe1b1169",
+    "wheel_sha256": "835d9bc27b243acb6d2288f4911828be973f07dc0d20766f397538065a9368b0",
+    "comparison": "Same final native archive and requests; substitute 5fe2a70a density and/or polish owners. All 12 native selector runs pass for every variant.",
+    "refresh": "Recorded: 252 density-explained values and 1 separately proven stale accepted-warm value; 225 values unchanged. All 478 final operands exactly match the controls.",
+    "tables": "Old/new values, independent density effect, polish effect and pre-existing change are retained for all 478 rows; matched input density publications retain their shifts and slopes.",
+    "native_value_table_sha256": "aa41f99349b8f085121f32c7c78e8a80b4b983dd196658003c486c6c1077b34f",
+    "preexisting_prediction": {
+      "id": "r4/recovery/prediction/0",
+      "old_density_accepted_warm_Pa": 1009056.6044860843,
+      "old_density_cold_final_report_Pa": 1009056.6044860848,
+      "retained_Pa": 1009056.6044860848,
+      "cause_commit": "333595888b45892d07292d4198d51768f13e83e6",
+      "explanation": "Historical final report cold-resolved the same fitted model; current report retains the accepted warm prediction. Uninstrumented cold solve exactly restores the retained operand. No EOS or numerical-criterion change.",
+      "log": "density-closure-regression-cold-report.log.gz",
+      "log_sha256": "be23a8a1d3fe9b983ec65875e5c689cafeae0294843501c64590c441a52ba3dd",
+      "refresh_decision": "Owner authorized and recorder completed refresh with its distinct cause; separate from 252 density-explained changes."
+    }
+  },
+  "e5_3_reference": {
+    "scope": "Existing E5-3 a-to-2b third-order fixture only",
+    "old_nodes": [
+      0.1,
+      0.03,
+      0.01
+    ],
+    "new_nodes": [
+      0.2,
+      0.06,
+      0.02
+    ],
+    "old_uncertainty_mol": 8.095490866347874e-09,
+    "new_uncertainty_mol": 1.009873062887544e-09,
+    "unchanged_allowance_mol": 5.388309530019562e-09,
+    "criteria": 268,
+    "criteria_table": "density-closure-E5-3-reference-criteria.csv",
+    "criteria_sha256": "319e1c34df597eee016672b3f94c0a8e29f7cefc0bd00094fdc8b6cbb6a8fd23",
+    "all_rules_and_allowances_unchanged": true,
+    "resolved_verdicts_all_pass": true
+  },
+  "persistent_pressure_check": {
+    "fixture": "Existing properties_support::associating_binary",
+    "T_K": 353.15,
+    "P_Pa": 100000.0,
+    "x": [
+      0.25,
+      0.75
+    ],
+    "branch": "Liquid",
+    "old_density_owner": "5fe2a70a",
+    "old_relative_closure": 2.7189351385459305e-10,
+    "corrected_relative_closure": 8.830102160573006e-12,
+    "criterion": 1e-10,
+    "native_group": "properties_p2/root-residual/associating-dense",
+    "old_log": "density-closure-fixture-pressure-old.txt.gz",
+    "new_log": "density-closure-fixture-pressure-new.txt.gz",
+    "checks_added": 1
+  },
+  "final_qualification": "density-closure-final-summary.json"
+}

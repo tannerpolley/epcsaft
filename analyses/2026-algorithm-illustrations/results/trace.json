@@ -1,0 +1,26 @@
+{
+  "stop": "ContinuationStop.reached_target",
+  "attempts": 514,
+  "retries": 0,
+  "critical": [
+    {
+      "T_K": 265.9667440343548,
+      "P_Pa": 6842019.677409215,
+      "rho_feed": 8669.937445613263,
+      "rho_incipient": 8669.937445613263,
+      "x0_incipient": 0.5,
+      "success": true,
+      "tolerance_met": true,
+      "residual": 1.7763568394002505e-15,
+      "stop": "Stop.converged",
+      "message": "converged: residual 1.7763568394002505e-15 against EQUILIBRIUM_ROW_RESIDUAL 9.9999999999999994e-12 after 3 iterations, contraction absent, floor absent, amplification 0; critical-equation candidate, no stability certificate",
+      "bubble": false,
+      "eigenvalues": [
+        -1.180540606971644e-15,
+        1.0575542721169038
+      ],
+      "cubic": 1.5543122344752192e-15,
+      "zero_band": 1.6086420365556645e-15
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+zotero_key,pdf_attachment,page,table,source_row,quantity,value,output_unit,coefficient_basis,source_equation,note
+B8EJJPCJ,JWH69DKG,791,1,A,saturation_pressure,92.624,Pa,T/K as printed; empirical constants depend on the equation form,9,
+B8EJJPCJ,JWH69DKG,791,1,B,saturation_pressure,-10367,Pa,T/K as printed; empirical constants depend on the equation form,9,
+B8EJJPCJ,JWH69DKG,791,1,C,saturation_pressure,-9.4699,Pa,T/K as printed; empirical constants depend on the equation form,9,
+B8EJJPCJ,JWH69DKG,791,1,D,saturation_pressure,1.9e-18,Pa,T/K as printed; empirical constants depend on the equation form,9,
+B8EJJPCJ,JWH69DKG,791,1,E,saturation_pressure,6,Pa,T/K as printed; empirical constants depend on the equation form,9,
+B8EJJPCJ,JWH69DKG,791,1,A,saturated_liquid_density,1.0011,mol/L,T/K as printed; empirical constants depend on the equation form,10,Eq. 10 printed grouping unresolved; do not silently correct
+B8EJJPCJ,JWH69DKG,791,1,B,saturated_liquid_density,0.22523,mol/L,T/K as printed; empirical constants depend on the equation form,10,Eq. 10 printed grouping unresolved; do not silently correct
+B8EJJPCJ,JWH69DKG,791,1,C,saturated_liquid_density,678.2,mol/L,T/K as printed; empirical constants depend on the equation form,10,Eq. 10 printed grouping unresolved; do not silently correct
+B8EJJPCJ,JWH69DKG,791,1,D,saturated_liquid_density,0.21515,mol/L,T/K as printed; empirical constants depend on the equation form,10,Eq. 10 printed grouping unresolved; do not silently correct
+B8EJJPCJ,JWH69DKG,791,1,E,saturated_liquid_density,0,mol/L,T/K as printed; empirical constants depend on the equation form,10,Eq. 10 printed grouping unresolved; do not silently correct
+B8EJJPCJ,JWH69DKG,791,1,Tmin,source_range,283.65,K,,,Range entries are printed in pressure column; do not infer independently stated density range
+B8EJJPCJ,JWH69DKG,791,1,Tmax,source_range,678.2,K,,,Range entries are printed in pressure column; do not infer independently stated density range
+B8EJJPCJ,JWH69DKG,791,1,Maximum deviation,saturation_pressure,8.1,percent,,,Range entries are printed in pressure column; do not infer independently stated density range
+B8EJJPCJ,JWH69DKG,791,1,Average deviation,saturation_pressure,2.1,percent,,,Range entries are printed in pressure column; do not infer independently stated density range
+B8EJJPCJ,JWH69DKG,791,1,Maximum deviation,saturated_liquid_density,0.3,percent,,,Range entries are printed in pressure column; do not infer independently stated density range
+B8EJJPCJ,JWH69DKG,791,1,Average deviation,saturated_liquid_density,0.1,percent,,,Range entries are printed in pressure column; do not infer independently stated density range

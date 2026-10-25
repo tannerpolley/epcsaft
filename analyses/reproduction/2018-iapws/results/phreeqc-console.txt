@@ -1,0 +1,22 @@
+Input file: /home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-789-live-literature-reproductions-the/analyses/reproduction/2018-iapws/results/phreeqc-calcium-laws.pqi
+
+Output file: /home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-789-live-literature-reproductions-the/build/issue-789/2018-iapws/calcium.out
+
+Database file: /home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-789-live-literature-reproductions-the/build/issue-789/2018-iapws/phreeqc3-b0b3be767158ccc3322d2c816625cf470045e67e/database/wateq4f.dat
+
+               ____________________________________________
+              |                                            |
+              |             * PHREEQC_3.8.9 *              |
+              |                                            |
+              |      A hydrogeochemical transport model    |
+              |                                            |
+              |                    by                      |
+              |       D.L. Parkhurst and C.A.J. Appelo     |
+              |                                            |
+              |              October 13, 2025              |
+              |____________________________________________|
+
+
+Initializing...                                                                 
+
+End of Run after 0.009814 Seconds.

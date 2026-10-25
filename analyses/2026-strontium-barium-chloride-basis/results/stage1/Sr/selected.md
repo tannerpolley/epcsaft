@@ -1,0 +1,1 @@
+Selected **$k_{Sr,\mathrm{water}}=-0.57789982032440212$**, from initial **-3**, with binary cost **5.238726587355317**. The cost increment is **0.00052387265873553171**, and **$h=0.00051461821814866645$**, against limit **0.051**. Maximum comparable-endpoint separation is **7.6203880983172212e-09**, against limit **0.051**.

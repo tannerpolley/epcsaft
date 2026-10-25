@@ -1,0 +1,237 @@
+{
+  "baseline": {
+    "wheel_sha256": "b55665901b881836f90af010c22bd16a51a687a4e83242ab6d7d5d10118e582a",
+    "engine_commit": "80cf018b499ad080d33555fd0a2566be416e0918",
+    "packet_sha256": "86f60041b28ec4493729b04c0238f44e86fba4becf33d6ddf47d86b7efb82448",
+    "parameter_ids": [
+      "pair/carbamate-anion/water/k_ij",
+      "pair/protonated-monoethanolamine/water/k_ij",
+      "pair/bicarbonate-anion/water/k_ij",
+      "pair/carbamate-anion/protonated-monoethanolamine/k_ij",
+      "pair/protonated-monoethanolamine/water/k_ij/reciprocal_temperature_slope"
+    ],
+    "physical_point": [
+      -0.06655083320547248,
+      0.1466880086746801,
+      0.5,
+      -1,
+      88.44665375790703
+    ],
+    "states": 84,
+    "targets": 160,
+    "setup_s": 1.5563224319994333,
+    "omp_num_threads": "1",
+    "fit_s": 92.35852255299687,
+    "fit_cpu_s": 47.989234593000006,
+    "peak_rss_kib": 52064,
+    "status": "limit_reached",
+    "message": "Maximum solver time reached. Total solver time: 3.677130e-03 >= 1.000000e-06.",
+    "initial_cost": 40.20153733056146,
+    "final_cost": 40.20153733056146,
+    "residual_evaluations": 0,
+    "jacobian_evaluations": 1,
+    "iterations": 1,
+    "trial_failures": 0,
+    "physical": [
+      -0.06655083320547248,
+      0.1466880086746801,
+      0.5,
+      -1,
+      88.44665375790703
+    ],
+    "measurement_origin": "Recovered complete original native command output from thread c2f6bc19-74c2-4047-a0fa-24f18c8e4bed item exec-6ce8bc00-583d-4b1c-b4a5-40406fc2572b; scratch files lost during restart."
+  },
+  "candidate": {
+    "wheel_sha256": "4235074a5d264a4a30fa1023bc19b6f82040d1c9a957e0dd712cf3d6cf4e4f74",
+    "packet_sha256": "86f60041b28ec4493729b04c0238f44e86fba4becf33d6ddf47d86b7efb82448",
+    "parameter_ids": [
+      "pair/carbamate-anion/water/k_ij",
+      "pair/protonated-monoethanolamine/water/k_ij",
+      "pair/bicarbonate-anion/water/k_ij",
+      "pair/carbamate-anion/protonated-monoethanolamine/k_ij",
+      "pair/protonated-monoethanolamine/water/k_ij/reciprocal_temperature_slope"
+    ],
+    "physical_point": [
+      -0.06655083320547248,
+      0.1466880086746801,
+      0.5,
+      -1.0,
+      88.44665375790703
+    ],
+    "states": 84,
+    "targets": 160,
+    "setup_s": 0.8773427460000107,
+    "omp_num_threads": "1",
+    "fit_cpu_s": 24.353442776,
+    "peak_rss_kib": 407392,
+    "trace_spans": {
+      "fit": {
+        "count": 1,
+        "inclusive_s": 24.176545905
+      },
+      "fit_validation": {
+        "count": 1,
+        "inclusive_s": 3.281882296
+      },
+      "compile_problem": {
+        "count": 216,
+        "inclusive_s": 7.593963348000003
+      },
+      "reaction_references": {
+        "count": 969,
+        "inclusive_s": 16.768523640000023
+      },
+      "neutral_reference_trace": {
+        "count": 1269,
+        "inclusive_s": 15.422584927000004
+      },
+      "state_at_pressure": {
+        "count": 6441,
+        "inclusive_s": 14.725905207999979
+      },
+      "solve_density": {
+        "count": 7065,
+        "inclusive_s": 11.967838892000023
+      },
+      "evaluate": {
+        "count": 144999,
+        "inclusive_s": 20.01686942000043
+      },
+      "association_newton": {
+        "count": 151620,
+        "inclusive_s": 1.0520222380000037
+      },
+      "state": {
+        "count": 6621,
+        "inclusive_s": 4.994141869000014
+      },
+      "density_anchor": {
+        "count": 6177,
+        "inclusive_s": 7.337340670999998
+      },
+      "equilibrium_generic_point": {
+        "count": 348,
+        "inclusive_s": 0.00024888399999999994
+      },
+      "equilibrium_prepare": {
+        "count": 3291,
+        "inclusive_s": 10.047880072999988
+      },
+      "equilibrium_jacobian": {
+        "count": 2129,
+        "inclusive_s": 0.0038231219999999982
+      },
+      "fit_evaluation": {
+        "count": 5,
+        "inclusive_s": 20.893699028999997
+      },
+      "fit_group_prediction": {
+        "count": 84,
+        "inclusive_s": 17.530642687999997
+      },
+      "solve_equilibrium": {
+        "count": 132,
+        "inclusive_s": 17.481737017999993
+      },
+      "boundary_start": {
+        "count": 132,
+        "inclusive_s": 1.68580714
+      },
+      "equilibrium_evaluate": {
+        "count": 2943,
+        "inclusive_s": 0.004270166000000014
+      },
+      "equilibrium_objective_gradient": {
+        "count": 1373,
+        "inclusive_s": 0.000661019999999999
+      },
+      "equilibrium_hessian": {
+        "count": 1325,
+        "inclusive_s": 0.0016072050000000033
+      },
+      "fit_group_differentiation": {
+        "count": 84,
+        "inclusive_s": 3.3625032370000003
+      },
+      "solved_state_first_actions": {
+        "count": 84,
+        "inclusive_s": 3.3619590409999995
+      },
+      "equilibrium_row_series": {
+        "count": 924,
+        "inclusive_s": 2.6995976250000027
+      },
+      "solved_state_action_path": {
+        "count": 420,
+        "inclusive_s": 2.6997591720000007
+      },
+      "fit_round": {
+        "count": 1,
+        "inclusive_s": 0.00010085999999999999
+      },
+      "fit_iteration": {
+        "count": 1,
+        "inclusive_s": 3.3460000000000002e-06
+      }
+    },
+    "physical": [
+      -0.06655083320547248,
+      0.1466880086746801,
+      0.5,
+      -1.0,
+      88.44665375790703
+    ],
+    "fit_s": 24.518292574000043,
+    "status": "limit_reached",
+    "message": "Maximum solver time reached. Total solver time: 5.602837e-05 >= 1.000000e-06.",
+    "initial_cost": 40.20153733056146,
+    "final_cost": 40.20153733056146,
+    "residual_evaluations": 0,
+    "jacobian_evaluations": 1,
+    "iterations": 1,
+    "trial_failures": 0,
+    "source_base": "11ee6fbed89b541b01aad90459a941b85f3ef285",
+    "source_diff_sha256": "fb37d192d796b3242edab02d62cc7dfef70df18fd00d9e25faf92e325514a0f5"
+  },
+  "agreement": {
+    "predictions": 0.0,
+    "residuals": 0.0,
+    "weighted_residuals": 0.0,
+    "physical_jacobian": 0.0,
+    "optimizer_jacobian": 0.0
+  },
+  "claim_limit": "One initial objective at the frozen Original Born old-rule point; no multistart or plateau attribution, no physical validation; candidate test and code-budget acceptance gates remain open.",
+  "input_file": "inputs/mea-initial.json",
+  "input_sha256": "013f57c6390a821599942f33f22445e37904e50ee85f272ac153fd5073fe39ba",
+  "execution_record": "results/execution.json",
+  "corrected": {
+    "wheel_sha256": "28181e72e429c6e87fc6361082af1a7b21c8747e76bda65a1c30abb4a97402f2",
+    "input_sha256": "013f57c6390a821599942f33f22445e37904e50ee85f272ac153fd5073fe39ba",
+    "mode": "initial",
+    "states": 84,
+    "targets": 160,
+    "wall_s": 23.490700805000188,
+    "cpu_s": 23.488207343000003,
+    "initial_cost": 40.20153733056146,
+    "final_cost": 40.20153733056146,
+    "physical": [
+      -0.06655083320547248,
+      0.1466880086746801,
+      0.5,
+      -1.0,
+      88.44665375790703
+    ],
+    "status": "limit_reached",
+    "message": "Maximum solver time reached. Total solver time: 9.489059e-05 >= 1.000000e-06.",
+    "residual_evaluations": 0,
+    "jacobian_evaluations": 1,
+    "trial_failures": 0,
+    "iterations": 1,
+    "residual_to_jacobian_promotions": 0,
+    "source_base": "11ee6fbed89b541b01aad90459a941b85f3ef285",
+    "source_diff_sha256": "1bdc588daf58a69f296f898073caf130aa68c991debb9032f6d318c51cad087d",
+    "bitwise_differences": 0,
+    "measured_source_diff_sha256": "92183bab8c3c1efdd54b63ef0efb01523ef746101139423141a9cb0ad38401cd",
+    "post_measurement_change": "Documentation qualifier only: equilibrium-observation promotion does not repeat equilibrium solve; density direction batches retain pressure closure. Runtime unchanged."
+  }
+}

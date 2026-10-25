@@ -1,0 +1,38 @@
+{
+  "identity": {
+    "wheel_sha256": "e28d258df06eac39711c59a79f9ce2b69fc8ac7565637bfba0dbef21863d8dc7",
+    "historical_identity": {
+      "wheel_sha256": "c74a91f66fb906c56a7cbad9e9448760eb7e24c79afc740c5391c061d10b220a",
+      "methane_ethane_sha256": "109cfe8e80c4fcefadcbb4975ebe7436d371710ed9d20f2c7bd6d30d9c581bf2",
+      "ternary_sha256": "ce87eb12ae9fe16c5e266cc0db83841049d49c2aa732eaf4f904cd878ec55b73",
+      "charged_sha256": "a5cd3e0d8434eda592ee07025093e2d14bb7758fb21328c06b3c8ff571160b98",
+      "khudaida_v6_sha256": "05d684f3ec8a58c51a3d86bcc35b808efc9ee0a858086f705cb1e4ea011ab2e7",
+      "current_engine_csv_sha256": "cf24341031bf4d34f81debbf24d726a681ab3e375dbb93f28dde314b08bcb529"
+    },
+    "script_sha256": "4f5a86a406aad9dc014045be89c62efbaa7e69c7fdbd825eac19645f2d7f49e1",
+    "inputs": {
+      "data/packets/gross-2001-methane-ethane/3/parameters/parameters.json": "109cfe8e80c4fcefadcbb4975ebe7436d371710ed9d20f2c7bd6d30d9c581bf2",
+      "analyses/phase-stability-cutover/inputs/phase-stability-neutral-ternary.json": "ce87eb12ae9fe16c5e266cc0db83841049d49c2aa732eaf4f904cd878ec55b73",
+      "analyses/phase-stability-cutover/inputs/phase-stability-charged-singleton.json": "a5cd3e0d8434eda592ee07025093e2d14bb7758fb21328c06b3c8ff571160b98",
+      "analyses/2026-khudaida-lineage-diagnosis/inputs/data/khudaida-2026-figure-2-electrolyte-lle/6/parameters/parameters.json": "05d684f3ec8a58c51a3d86bcc35b808efc9ee0a858086f705cb1e4ea011ab2e7",
+      "analyses/reproduction/2026-khudaida/results/data/khudaida-2026-figure-2-held2.csv": "876a5a48977b8c8cf83c06f0826c72b3bc63dde977b73ceab09c6b89b5a020c3"
+    },
+    "outputs": {
+      "trials.csv": "26e162bdf4b466929175c5f90ad430c98a85cb38d41c36ea18f8610d977b07db",
+      "current-engine.csv": "6fb7fd0e92bac754be077d19dcd8a5673101b30c84fc595167350c546884f5aa",
+      "declared-residuals.csv": "8324fae72b32c75390e3adb7d3238d1880234d3574e78b8da7919d5ae7ebe943",
+      "before-after.csv": "d5e75c0ddf2bb8bff3318e497c56ab55097a88aceaa6f82ddfa6ad653ea7aef2",
+      "quantities.csv": "1e0f4a9acda206decfa83cc1d95a6e75d0ab5613ad9ad86087af6dd90fb0fa4c"
+    }
+  },
+  "method": "equilibrium.stability_test at each native declared candidate; default native trials and budgets",
+  "row_tolerance": 1e-10,
+  "trial_charge_tolerance": 1e-12,
+  "claim_limits": [
+    "finite trial set, estimated uncertainty; no global stability certificate or physical validation",
+    "density-independent ionic families refused; no charged stability verdict inferred",
+    "historical and native trial seeds differ; explicit mole fractions replace formula-salt coordinates",
+    "historical Gibbs reference converted to native density reference for comparison; no identical-wheel replay",
+    "no discovery solve, new topology, solid phase or parameter adoption"
+  ]
+}

@@ -1,0 +1,66 @@
+{
+  "producer_commit": "8ffd627f0f7e4e68fdf9db634773ff00e058d85e",
+  "producer_sha256": {
+    "analyses/2026-equilibrium-polish-masking/scripts/qualify_polish.py": "fd73c83e9779e51b86dc2bf5d42cad52df49ad44cb014e9a9d3000e2bbae1a7c",
+    "analyses/2026-equilibrium-polish-masking/scripts/compare_polish.py": "9de71922af6c3ac855b7dd3f2c2a476f390746ee84779fd8abcf04dcd4d8f83b"
+  },
+  "installed_engine": [
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-754-equilibrium-polish-masking-qualification-3/build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-manylinux_2_39_x86_64.whl",
+    "4e331275a44ab795d0daa18f09455acfaeaa7681372d2fd07f8e809655008bfd"
+  ],
+  "diagnosis_path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-754/diagnosis.md",
+  "diagnosis_sha256": "3e518992ff71c9c5aa0a7a49a7a4fe60abba282900c42ae460c555787ded9140",
+  "diagnosis_url": "https://github.com/tannerpolley/ePC-SAFT/issues/754#issuecomment-6328215094",
+  "historical_reference_source": "d7739584458aa43a265dc7cc8b6f0e1a097c1480",
+  "historical_reference": {
+    "path": "build/issue-272/resumed/main-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+    "sha256": "ae3d960f3b310d88c83468e361c390392a8b58b6e5dafbead662f42e0e7fd8d3",
+    "states_path": "analyses/2026-equilibrium-polish-masking/results/amendment-2/baseline-states.csv",
+    "states_sha256": "9b722bff579037206b048a599b600d832f82a8142f0165289f852786c060c163",
+    "inputs_path": "analyses/2026-equilibrium-polish-masking/results/resumed/inputs.json",
+    "inputs_sha256": "577bd90565f348a5652cab8d4492a2cc646c4412e4121559a56ceed07a4dd06a"
+  },
+  "historical_comparison_path": "analyses/2026-equilibrium-polish-masking/results/issue-720/physical-state-comparison.csv",
+  "historical_comparison_sha256": "c115b515cab5c974d9d37da7d81d3914912772394fb086274d4108536be43279",
+  "historical_maxima_path": "analyses/2026-equilibrium-polish-masking/results/issue-720/budget-maxima.csv",
+  "historical_maxima_sha256": "b533a79841d35bd547cb4c5289e9035f255e9a87ed6f024502a8bf46319d29cf",
+  "comparison_limit": 1e-11,
+  "default_row_tolerance": 1e-10,
+  "solved_states": 15,
+  "requested_tolerances_met": 15,
+  "maximum_classified_residual": 3.092854198100707e-14,
+  "states_byte_identical": true,
+  "comparison_assertions_passed": true,
+  "interpretation": "A current-equation reference refresh and independent repeat of the same producer, not an isolated shortcut-off experiment. Historical records retain their original criteria and producer identities. Numerical verification on declared local cases only; no global stability, physical validation or universal forward-error bound.",
+  "build_jobs": 6,
+  "hsl_library_environment": null,
+  "niceness": 10,
+  "checks": {
+    "bash tools/check-affected.sh origin/main": {
+      "exit_code": 1,
+      "stopping_point": "analysis-layout",
+      "reason": "duplicate analysis content: 2026-idaes-asl-adapter/results/domain.csv, 2026-idaes-asl-adapter/results/issue-720/domain.csv",
+      "unchanged_origin_main_blob_for_both_files": "7cfc36c6dc7847e4be913b0cca7e8fc76d380e2d"
+    },
+    "python3 tools/check-analysis-layout.py": {
+      "exit_code": 1,
+      "reason": "The same unchanged adapter duplicate stops the repository-wide check."
+    },
+    "python3 tools/check-notebook-numbers.py analyses/2026-equilibrium-polish-masking/notebook.qmd": {
+      "exit_code": 0,
+      "literal_numbers": 0
+    },
+    "supplemental leaf-only layout and duplicate-content checks": {
+      "exit_code": 0
+    },
+    "execution of the changed notebook cell from retained files": {
+      "exit_code": 0
+    },
+    "git diff --check": {
+      "exit_code": 0
+    },
+    ".venv/bin/python tools/check-analysis-declarations.py": {
+      "exit_code": 0
+    }
+  }
+}

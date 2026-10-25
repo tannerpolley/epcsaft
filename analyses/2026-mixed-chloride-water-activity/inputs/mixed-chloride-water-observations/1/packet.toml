@@ -1,0 +1,121 @@
+schema_version = 2
+packet_id = "mixed-chloride-water-observations"
+packet_version = "1"
+title = "Measured NaCl-MgCl2 and NaCl-CaCl2 aqueous water properties"
+description = "Reusable isopiestic and hygrometric factual tables, source-reference conversions, locators and uncertainty limits at 298.15 K."
+license_or_use_basis = "Factual numerical transcriptions and project-authored metadata for private scientific verification; no full paper or model prediction is distributed."
+tolerance_rationale = "Source uncertainties and reconstruction limits are retained in sources/source-records.json. This packet assigns no model-acceptance tolerance and no independent pointwise sigma."
+
+[[sources]]
+source_id = "robinson-bower-1966"
+citation = "R. A. Robinson and V. E. Bower, Properties of Aqueous Mixtures of Pure Salts. Thermodynamics of the Ternary System: Water-Sodium Chloride-Calcium Chloride at 25 C, Journal of Research of the National Bureau of Standards A 70A (1966), 313-318."
+doi = "10.6028/jres.070A.027"
+use_basis = "Table 1 and 2 p.314; procedure p.313; activity derivation pp.315-318; Zotero NUPRKNZV/V7ETQ9YV; source PDF SHA256 fa0aad70870957e1d4a0a82fc95dd28c4f74994b85c2a9275066714c03add35e"
+
+[[domains]]
+domain_id = "robinson-bower-1966-aqueous-298-15-k"
+kind = "source-observation"
+temperature_min = 298.15
+temperature_max = 298.15
+temperature_unit = "kelvin"
+description = "Stoichiometric aqueous NaCl-CaCl2 source tables at 298.15 K. Full compositions and uncertainty limits are in the retained rows and source metadata; no global phase-stability or pressure dependence is established."
+
+[[sources]]
+source_id = "rard-miller-1987"
+citation = "J. A. Rard and D. G. Miller, Isopiestic determination of the osmotic and activity coefficients of aqueous mixtures of sodium chloride and magnesium chloride at 25 C, Journal of Chemical and Engineering Data 32 (1987), 85-92."
+doi = "10.1021/je00047a025"
+use_basis = "Tables I p.86 and II p.87; binary check Table III p.87; uncertainties p.86; Zotero M552Z2SC/FS9Y25S9; source PDF SHA256 26eb1f7809c261a1c7f833aea59bd8b78a4b301f85e0e7fe23ac8dd9db02d8b3"
+
+[[domains]]
+domain_id = "rard-miller-1987-aqueous-298-15-k"
+kind = "source-observation"
+temperature_min = 298.15
+temperature_max = 298.15
+temperature_unit = "kelvin"
+description = "Stoichiometric aqueous NaCl-MgCl2 source tables at 298.15 K. Full compositions and uncertainty limits are in the retained rows and source metadata; no global phase-stability or pressure dependence is established."
+
+[[sources]]
+source_id = "dinane-mounir-2003"
+citation = "A. Dinane and A. Mounir, Water activities, osmotic and activity coefficients in aqueous mixtures of sodium and magnesium chlorides at 298.15 K by the hygrometric method, Fluid Phase Equilibria 206 (2003), 13-25."
+doi = "10.1016/S0378-3812(02)00300-X"
+use_basis = "Table 1 p.18; reference method p.14; dispersion pp.19,21; symbols p.24; Zotero 5GZVKTPL/C4MZPNCU; source PDF SHA256 964b2f9c6be1041b2977fd5c2775d61ace48c77e991613f121acf75156abbaf8"
+
+[[domains]]
+domain_id = "dinane-mounir-2003-aqueous-298-15-k"
+kind = "source-observation"
+temperature_min = 298.15
+temperature_max = 298.15
+temperature_unit = "kelvin"
+description = "Stoichiometric aqueous NaCl-MgCl2 source tables at 298.15 K. Full compositions and uncertainty limits are in the retained rows and source metadata; no global phase-stability or pressure dependence is established."
+
+[[files]]
+path = "observations/dinane-mounir-2003-table-1.csv"
+role = "observations"
+media_type = "text/csv"
+sha256 = "a9667e6be812cdfd04f958c546cbb4266d0fd679802cedf950917eeb740e7a30"
+source_refs = ["dinane-mounir-2003"]
+domain_refs = ["dinane-mounir-2003-aqueous-298-15-k"]
+units_basis = "Molalities and ionic strength in mol/kg water; ratios, activities, fractions and coefficients dimensionless; printed page/table/row locators. Source-converted values are labelled and are not independent additional observations."
+
+[[files]]
+path = "observations/rard-miller-1987-source-converted.csv"
+role = "observations"
+media_type = "text/csv"
+sha256 = "07882f6fd1238febb2cba2228ae0d9ac4ba4f3bd9f7c18883c9049042ab810bd"
+source_refs = ["rard-miller-1987"]
+domain_refs = ["rard-miller-1987-aqueous-298-15-k"]
+units_basis = "Molalities and ionic strength in mol/kg water; ratios, activities, fractions and coefficients dimensionless; printed page/table/row locators. Source-converted values are labelled and are not independent additional observations."
+
+[[files]]
+path = "observations/rard-miller-1987-table-iii-mgcl2.csv"
+role = "observations"
+media_type = "text/csv"
+sha256 = "ec3c260f1adb7ea14f6a310881241c469507ae628ddb70af274053f35f77c110"
+source_refs = ["rard-miller-1987"]
+domain_refs = ["rard-miller-1987-aqueous-298-15-k"]
+units_basis = "Molalities and ionic strength in mol/kg water; ratios, activities, fractions and coefficients dimensionless; printed page/table/row locators. Source-converted values are labelled and are not independent additional observations."
+
+[[files]]
+path = "observations/rard-miller-1987-tables-i-ii-mixtures.csv"
+role = "observations"
+media_type = "text/csv"
+sha256 = "d9c627943bf490aa88e33c2f1f1a17bcbc345473ec2be0f6f75151ddf64dea76"
+source_refs = ["rard-miller-1987"]
+domain_refs = ["rard-miller-1987-aqueous-298-15-k"]
+units_basis = "Molalities and ionic strength in mol/kg water; ratios, activities, fractions and coefficients dimensionless; printed page/table/row locators. Source-converted values are labelled and are not independent additional observations."
+
+[[files]]
+path = "observations/robinson-bower-1966-source-converted.csv"
+role = "observations"
+media_type = "text/csv"
+sha256 = "88f16575a27bf8c452b6caa4b900276f1fdd0d82e8196cb963fd6f96944fee7e"
+source_refs = ["robinson-bower-1966"]
+domain_refs = ["robinson-bower-1966-aqueous-298-15-k"]
+units_basis = "Molalities and ionic strength in mol/kg water; ratios, activities, fractions and coefficients dimensionless; printed page/table/row locators. Source-converted values are labelled and are not independent additional observations."
+
+[[files]]
+path = "observations/robinson-bower-1966-table-1.csv"
+role = "observations"
+media_type = "text/csv"
+sha256 = "4c21692a0f8ffc6a1a28955652de5e6c123d37cc88cd317178728060493a7d57"
+source_refs = ["robinson-bower-1966"]
+domain_refs = ["robinson-bower-1966-aqueous-298-15-k"]
+units_basis = "Molalities and ionic strength in mol/kg water; ratios, activities, fractions and coefficients dimensionless; printed page/table/row locators. Source-converted values are labelled and are not independent additional observations."
+
+[[files]]
+path = "observations/robinson-bower-1966-table-2.csv"
+role = "observations"
+media_type = "text/csv"
+sha256 = "24fe5a292a6a2fb0b85ef337d5fbb2e18b54ad1c2ed8aa3d60300e3985481acb"
+source_refs = ["robinson-bower-1966"]
+domain_refs = ["robinson-bower-1966-aqueous-298-15-k"]
+units_basis = "Molalities and ionic strength in mol/kg water; ratios, activities, fractions and coefficients dimensionless; printed page/table/row locators. Source-converted values are labelled and are not independent additional observations."
+
+[[files]]
+path = "sources/source-records.json"
+role = "source"
+media_type = "application/json"
+sha256 = "83e3393ea6ecdcf9a04db51cb272433b3258deb7555461fb26ddf650c20e4ef2"
+source_refs = ["robinson-bower-1966", "rard-miller-1987", "dinane-mounir-2003"]
+domain_refs = ["robinson-bower-1966-aqueous-298-15-k", "rard-miller-1987-aqueous-298-15-k", "dinane-mounir-2003-aqueous-298-15-k"]
+units_basis = "Explicit units and source locators within each metadata record; unavailable uncertainties remain null."

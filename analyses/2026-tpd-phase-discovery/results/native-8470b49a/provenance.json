@@ -1,0 +1,79 @@
+{
+  "logs": [
+    {
+      "path": "/tmp/223-gibbs-native-removal.log",
+      "sha256": "186fa3119e3641e6a84c5d0c5e97bfb89e759d02b42ff05a914b050bbebdd55b",
+      "test_id": "native.equilibrium.removal",
+      "execution": "Passed",
+      "comparisons": 23,
+      "asserted": 21,
+      "observations": 2
+    },
+    {
+      "path": "/tmp/223-gibbs-native-plane-curvature.log",
+      "sha256": "7a8b8b9ac78abd91410050df243ee47abf46f22386711403eeaa214ecb493af8",
+      "test_id": "native.equilibrium.plane-curvature",
+      "execution": "Passed",
+      "comparisons": 31,
+      "asserted": 31,
+      "observations": 0
+    },
+    {
+      "path": "/tmp/223-gibbs-native-plane-admission.log",
+      "sha256": "8052e6edba9cda7dc0674c1607a0020f8fea1dff2151e77393e87d3bf6774e62",
+      "test_id": "native.equilibrium.plane-admission",
+      "execution": "Passed",
+      "comparisons": 33,
+      "asserted": 33,
+      "observations": 0
+    },
+    {
+      "path": "/tmp/223-gibbs-native-normalized-reaction.log",
+      "sha256": "eb52cdfbd94bfe7bd4d979953dd16aaab0d7aab84b96981b7fcc36f26111954d",
+      "test_id": "native.equilibrium.normalized-reaction",
+      "execution": "Passed",
+      "comparisons": 5,
+      "asserted": 5,
+      "observations": 0
+    }
+  ],
+  "native_format_versions": [
+    1.0
+  ],
+  "associated_wheel_sha256": "8470b49a9283528b83dbbdab46dc62dee0fc70e5e2149f8f218b823dd85812cb",
+  "numerical_rows": "comparisons.csv",
+  "numerical_rows_path": "../native-6e4b4e29/comparisons.csv",
+  "comparison": {
+    "identical": true,
+    "reference": "analyses/2026-tpd-phase-discovery/results/native-6e4b4e29/comparisons.csv",
+    "reference_sha256": "89be08faa5554bab5ece41f8bd804a37bb97ebbc0e95dadc4ce8b3743913ae50"
+  },
+  "execution_identity": {
+    "preparation": {
+      "path": "build/environment-wheel/preparation.json",
+      "sha256": "7412b04a5779e9f2f8e70c7b44fd286532c179cdafba8851a77b2ddf211a5bf7"
+    },
+    "executable": {
+      "path": "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-223-build-tpd-stability-test-and-phase-35ebff8f/build/engine-meson/cpython-313-linux-x86_64-x86_64-f6db693e21e289603ae71c78242a17b102f1e324061021d5dca361f47a0bfef7/equilibrium_checks",
+      "sha256": "037c675adf38c4f6be21820d0d479f984187420d0c6f8c58dde1c153168db610"
+    },
+    "installation_log": {
+      "path": "/tmp/223-gibbs-build4.log",
+      "sha256": "453888de1a3bc8e20dc2bdaa41da33d06c2edb2705bcaf3f4003e1d49a6d355d"
+    },
+    "build_fingerprint": "0110fba95ed2f519bb8d18afcfea9d5ad378293f8e1183f25ce3f07fef5271f8",
+    "build_dir": "build/engine-meson/cpython-313-linux-x86_64-x86_64-f6db693e21e289603ae71c78242a17b102f1e324061021d5dca361f47a0bfef7"
+  },
+  "numerical_rows_sha256": "89be08faa5554bab5ece41f8bd804a37bb97ebbc0e95dadc4ce8b3743913ae50",
+  "columns": "comparison_unit applies to model, reference and absolute tolerance; input units follow their emitted names and source definitions",
+  "limits": [
+    "read-only extraction of supplied native numerical logs",
+    "wheel/run association supplied by the lead; optional binary and preparation hashes identify the inspected files",
+    "no Engine calculation, build or installation; no physical validation"
+  ],
+  "extraction": {
+    "method": "Exact Running-through-Passed case sections from corrected check-affected native JUnit; no new Engine execution.",
+    "junit_sha256": "1da3e01875c427f1b34291da94b866c3c4735695ba2f51fb1277cf48fe89c6dd",
+    "gate_log_sha256": "dd46e702d444a22e8a2288ead1e6951417625aab67e3645c64da4648767e60a8"
+  }
+}

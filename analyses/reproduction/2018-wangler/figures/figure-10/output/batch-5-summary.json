@@ -1,0 +1,236 @@
+{
+  "success": true,
+  "evaluations": 12,
+  "reported_parameter_ard_percent": 128.10494118229383,
+  "refitted_ard_percent": 2.007464681407357,
+  "fitted_endpoint_values": {
+    "k_ij_273_k": 0.3679447188469627,
+    "l_hb_273_k": -5.0,
+    "k_ij_313_k": 0.3488662862515805,
+    "l_hb_313_k": -5.0
+  },
+  "fitted_linear_coefficients_at_298_15_k": {
+    "k_ij_constant": 0.35594915435261615,
+    "k_ij_per_k": -0.00047696081488455557,
+    "l_hb_constant": -5.0,
+    "l_hb_per_k": 0.0
+  },
+  "wheel_sha256": "298a360e532f6f4c5e7ef70c5be45e8b9852310d1c388d6225c504714c3dc410",
+  "source_sha256": "f58033b8f757ad42d03c940c6ab4f4c582a2fb0b5fb32c69b3a50fecbea53f40",
+  "historical_reference": {
+    "execution_commit": "52c165f52f44532aedb6caea7a54fd34cf0828d8",
+    "wheel_sha256": null,
+    "summary": {
+      "success": true,
+      "evaluations": 23,
+      "reported_parameter_ard_percent": 128.10494117266447,
+      "refitted_ard_percent": 2.1747350314864455,
+      "fitted_endpoint_values": {
+        "k_ij_273_k": 0.3467572773477947,
+        "k_ij_313_k": 0.32352907572306355,
+        "l_hb_273_k": 0.25352916795284824,
+        "l_hb_313_k": 0.2467190708872086
+      },
+      "fitted_linear_coefficients_at_298_15_k": {
+        "k_ij_constant": 0.332152545576245,
+        "k_ij_per_k": -0.000580705040618279,
+        "l_hb_constant": 0.24924731942282732,
+        "l_hb_per_k": -0.0001702524266409912
+      }
+    },
+    "row_values": "batch-5-before-after.csv"
+  },
+  "isotherms": {
+    "273.0": {
+      "mixing_factor_C": 0.07308226827397776,
+      "coordinate_origins": [
+        -0.15429460420387503,
+        0.04786234485644491
+      ],
+      "coordinate_scales": [
+        1.0,
+        0.07308226827397776
+      ],
+      "coordinate_bounds": [
+        [
+          -2.0,
+          2.0
+        ],
+        [
+          7.308226827397777e-05,
+          0.4384936096438666
+        ]
+      ],
+      "declared_starts": [
+        [
+          0.0,
+          0.0
+        ],
+        [
+          0.5010518815516698,
+          0.0915603320471518
+        ]
+      ],
+      "optimizer": [
+        0.5222393230508378,
+        5.3450895
+      ],
+      "restart_from_old": {
+        "status": "converged",
+        "message": "Parameter tolerance reached. Relative step_norm: 7.184775e-12 <= 1.000000e-10.",
+        "physical": [
+          0.3679447186296619,
+          0.4384936096438666,
+          0.4384936096438666
+        ],
+        "relative_sse": 0.00452806936439574,
+        "maximum_phi_difference_from_first_start": 6.885967351877298e-10,
+        "trial_failures": 0
+      },
+      "physical": [
+        0.3679447188469627,
+        0.4384936096438666,
+        0.4384936096438666
+      ],
+      "physical_order": [
+        "k_ij",
+        "kappa_water_a_mdeah_b",
+        "kappa_water_b_mdeah_a"
+      ],
+      "source_relative_sse": 13.318059583357053,
+      "old_relative_sse": 0.005079996799531455,
+      "at_old_coordinates_relative_sse": 0.005079996772996539,
+      "new_relative_sse": 0.004528069364360317,
+      "sse_increase_limit": 1e-08,
+      "sse_comparison_passes": true,
+      "old_exact_JTr": [
+        0.0024889175308003553,
+        -0.000177793523122981
+      ],
+      "status": "converged",
+      "message": "Parameter tolerance reached. Relative step_norm: 4.764679e-11 <= 1.000000e-10.",
+      "iterations": 6,
+      "residual_evaluations": 6,
+      "jacobian_evaluations": 7,
+      "trial_failures": [],
+      "covariance": {
+        "status": "active_bound",
+        "rank": 2,
+        "singular_values": [
+          7.618458901261211,
+          0.0002796181508581903
+        ],
+        "active_bounds": [
+          1
+        ],
+        "projected_gradient_norm": 1.4852071461568528e-08,
+        "assumption": "unit-variance weighted residuals, independent errors and a regular local linearization at an interior point; multiply by variance_factor for an unknown common variance; no claim under bounds, rank deficiency or model discrepancy",
+        "variance_factor": 0.0009056138728720635,
+        "optimizer": [],
+        "physical": []
+      }
+    },
+    "313.0": {
+      "mixing_factor_C": 0.07299991701716871,
+      "coordinate_origins": [
+        -0.20087205110387502,
+        0.04468401570533765
+      ],
+      "coordinate_scales": [
+        1.0,
+        0.07299991701716871
+      ],
+      "coordinate_bounds": [
+        [
+          -2.0,
+          2.0
+        ],
+        [
+          7.299991701716871e-05,
+          0.43799950210301225
+        ]
+      ],
+      "declared_starts": [
+        [
+          0.0,
+          0.0
+        ],
+        [
+          0.5244011268269386,
+          0.1411704291127914
+        ]
+      ],
+      "optimizer": [
+        0.5497383373554555,
+        5.3878895
+      ],
+      "restart_from_old": {
+        "status": "converged",
+        "message": "Parameter tolerance reached. Relative step_norm: 2.698427e-12 <= 1.000000e-10.",
+        "physical": [
+          0.348866286243294,
+          0.43799950210301225,
+          0.43799950210301225
+        ],
+        "relative_sse": 0.00046374674274186174,
+        "maximum_phi_difference_from_first_start": 2.4256818775825195e-11,
+        "trial_failures": 0
+      },
+      "physical": [
+        0.3488662862515805,
+        0.43799950210301225,
+        0.43799950210301225
+      ],
+      "physical_order": [
+        "k_ij",
+        "kappa_water_a_mdeah_b",
+        "kappa_water_b_mdeah_a"
+      ],
+      "source_relative_sse": 4.3664755114271525,
+      "old_relative_sse": 0.0006406897751407017,
+      "at_old_coordinates_relative_sse": 0.0006406897966591342,
+      "new_relative_sse": 0.00046374674275413523,
+      "sse_increase_limit": 1e-08,
+      "sse_comparison_passes": true,
+      "old_exact_JTr": [
+        -0.00015543852657761564,
+        -4.330933401551897e-05
+      ],
+      "status": "converged",
+      "message": "Parameter tolerance reached. Relative step_norm: 4.225105e-12 <= 1.000000e-10.",
+      "iterations": 6,
+      "residual_evaluations": 6,
+      "jacobian_evaluations": 7,
+      "trial_failures": [],
+      "covariance": {
+        "status": "active_bound",
+        "rank": 2,
+        "singular_values": [
+          4.212161910665188,
+          0.0002657584616626603
+        ],
+        "active_bounds": [
+          1
+        ],
+        "projected_gradient_norm": 4.059909075593282e-10,
+        "assumption": "unit-variance weighted residuals, independent errors and a regular local linearization at an interior point; multiply by variance_factor for an unknown common variance; no claim under bounds, rank deficiency or model discrepancy",
+        "variance_factor": 0.00046374674275413523,
+        "optimizer": [],
+        "physical": []
+      }
+    }
+  },
+  "fit_controls": {
+    "function_tolerance": 1e-10,
+    "parameter_tolerance": 1e-10,
+    "gradient_tolerance": 1e-10,
+    "maximum_iterations": 100,
+    "shared_iterations": 100,
+    "shared_seconds": 120.0
+  },
+  "residual_convention": "Native Difference r=Phi/Phi_observed-1 reverses the historical r=1-Phi/Phi_observed sign; both have identical SSE.",
+  "diagnosis": "Exact J^T r is nonzero at both old interior fits. Restarting there reaches the same bounded solution as the source start. Central-difference errors decrease at resolved steps but grow near 1e-8, consistent with premature stopping of the historical forward-difference fit; no historical wheel is available to prove its exact stop cause.",
+  "comparison_rule": "Absolute Phi difference <=1e-7; relative SSE=sum(r^2)=2*final_cost may increase by at most 1e-8*max(1,old SSE). Parameter agreement is secondary.",
+  "claim_change": "Source and old-coordinate predictions agree. Native optima differ beyond 1e-7 and reach l_hb=-5 at both isotherms with lower SSE. Old fits are nonstationary under exact columns; covariance is withheld at the active association-volume bound.",
+  "limits": "Numerical verification and calibration to ten Tables 8\u20139 observations at 1 bar and 273/313 K only. No continuous-temperature qualification, unique optimum, parameter adoption or reactive VLE validation."
+}

@@ -1,0 +1,4 @@
+salt,cation,anion,ion_pair,Kip_kg_per_mol,Kip_lit_kg_per_mol,mseg_ip,sigma_ip_A,epsilon_ip_over_k_K,notes
+LiAc,Li+,Ac-,LiAc_ip,0.4585,1.81,2.0,3.0588,172.456,"Held and Sadowski 2009 Table 1 fitted ion-pair parameters for aqueous lithium acetate."
+NaAc,Na+,Ac-,NaAc_ip,0.2808,0.63,2.0,3.3561,211.828,"Held and Sadowski 2009 Table 1 fitted ion-pair parameters for aqueous sodium acetate."
+KAc,K+,Ac-,KAc_ip,0.2534,,2.0,3.6349,227.947,"Held and Sadowski 2009 Table 1 fitted ion-pair parameters for aqueous potassium acetate; literature Kip not listed in the OCR text."

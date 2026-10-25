@@ -1,0 +1,57 @@
+{
+  "base": "88f4bb96a2a9a6c7385ee6e4dad376a9f9cc3d36",
+  "main": "0bc8e14a15a7d6384fdd9266f38845222ef8ad4d",
+  "conditions": {
+    "temperature_K": 298.15,
+    "pressure_Pa": 100000,
+    "branch": "liquid",
+    "source_packet": "figiel-2025-reference-electrolytes/4",
+    "numerical_threads": 1
+  },
+  "question": "which stopping test ends each arm, where the cold and seeded fits first diverge, and the per-evaluation saving at identical work",
+  "diagnosis": {
+    "method": "local uncommitted logging build (diagnosis/trace-patch.py): EPCSAFT_FIT_TRACE logs every evaluation (point, weighted residuals, Jacobian) and every Ceres or Ipopt iteration; EPCSAFT_COLD_FIT=1 offers no previous density",
+    "trace_wheel_sha256": "cb5ce9654a290e9336be2504b0a0951b89bfc1defccfedf9ba3dd20a8b011b61",
+    "controls": "F2 1e-15, 1e-14, 1e-14 (round-2/3 script controls); B4 declared Ipopt tolerance 1e-10",
+    "reproduced": "the traced endpoints and work counts equal round3/endpoints.csv exactly"
+  },
+  "probes": "stop-probes.csv: both arms on the traced wheel, the same FitControls (F2) or MinimaxRequest tolerance (B4) for both arms; Engine defaults unchanged",
+  "timing": {
+    "procedure": "seven counterbalanced pairs per control set, complete fit call, one worker per wheel (round-2 procedure)",
+    "sets": {
+      "work-matched": "F2 1e-15, 1e-14, 1e-8",
+      "script-controls": "F2 1e-15, 1e-14, 1e-14",
+      "engine-defaults": "F2 Engine defaults 1e-12, 1e-12, 1e-10"
+    },
+    "B4": "declared Ipopt tolerance 1e-10 in every set",
+    "script_controls_endpoints": "identical byte for byte to round3/endpoints.csv on the round-4 wheels; retained once there"
+  },
+  "key_solves": {
+    "pairs": 1,
+    "main_wheel": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/wheels/main-1218dc78/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+    "main_sha256": "dad141bae630ce8eef63106ba2ae3714d994a5c1543928b455f4ba8ecf464adf"
+  },
+  "evidence_type": "numerical verification and performance measurement; no physical validation",
+  "wheels": {
+    "seeded": {
+      "path": "build/issue-245-round4/wheel",
+      "sha256": "bb3b8a7f832910044b4bb4995e37e8aefd0f0ecf87b41ff01a929ac57aeebc32"
+    },
+    "cold": {
+      "path": "build/issue-245-round4/cold-wheel",
+      "sha256": "3bdbdf15cd0c13e8e650712e8466633d77b6b7f48d847f75429c2021fbeaed7a",
+      "source": "seeded source with previous-trial density offers omitted in fit.cpp (round-3 method)"
+    }
+  },
+  "source_sha256": {
+    "engine/native/regression/fit.cpp": "8de7a7bbf1ad69b1f86fd99ab1f10dbf47f6dcb919273f4e79686191406c5ec4",
+    "engine/native/regression/minimax.cpp": "9ca6c5d308fc011a69f12ea6a1356a0217e3f79d05d2392d68e7f3b424967be0",
+    "engine/native/regression/observations.cpp": "b78185b409a9df9a6aca7fc10c4c08e96e35430406cb86710dff64465d6e2ce4",
+    "engine/native/properties/density.cpp": "228a3b95574c7a27a36875320f178bec56fcb048e6aa7ac1995af9447e51bba6",
+    "engine/native/properties/infinite_dilution_reference.cpp": "240b015c3f42cd4a3c504fa885e87fca49f7b258eefcc7908531b8c36915a295",
+    "analyses/2026-electrolyte-parameter-gradients/scripts/density_seed_pairs.py": "023970d993fe5babcfeb9823df44edb918fdfd5bc7c1479ac8c6955fcefcb22f",
+    "analyses/2026-electrolyte-parameter-gradients/scripts/declarations.py": "a22d73496bd91a95c30560510a93b814287503506cd572c4eb980135d58f5b7e",
+    "analyses/2026-electrolyte-parameter-gradients/scripts/minimax.py": "97adca7f9f93b0c526b9d7e14b6bb43b4881945669621c32358492c9edc16763",
+    "analyses/2026-electrolyte-parameter-gradients/scripts/run.py": "4f9d2fe84c9a924b0d05da97c2ed04107c78f66a802285db425bf83d894d7aff"
+  }
+}

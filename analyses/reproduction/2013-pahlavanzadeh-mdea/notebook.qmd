@@ -1,0 +1,265 @@
+---
+title: "Pahlavanzadeh and Fakouri Baygi: molecular MDEA comparison and reactive limits"
+format:
+  html:
+    toc: true
+    embed-resources: true
+jupyter: python3
+execute:
+  echo: false
+  warning: false
+---
+
+```{python}
+import csv, gzip, json
+from pathlib import Path
+from IPython.display import Markdown, display
+import matplotlib.pyplot as plt
+root = Path.cwd()
+source, results = root/'inputs/source', root/'results'
+def read(path):
+    with path.open() as f:
+        return list(csv.DictReader(f))
+def table(headers, rows):
+    clean = lambda v: str(v).replace('*', r'\*').replace('|','/').replace('\n',' ')
+    display(Markdown('| '+' | '.join(headers)+' |\n| '+' | '.join(['---']*len(headers))+' |\n'+'\n'.join('| '+' | '.join(clean(v) for v in row)+' |' for row in rows)))
+run = json.loads(gzip.decompress((results/'native-results.json.gz').read_bytes()))
+diag = json.loads(gzip.decompress((results/'diagnosis.json.gz').read_bytes()))
+rows = read(results/'comparisons.csv')
+model = [r for r in rows if r['evidence']=='numerical verification']
+criteria = json.loads((source/'numerical-criteria.json').read_text())
+strength = read(source/'association-strength-reference.csv')
+points = run['points']
+groups = sorted({(r['figure'],r['branch'],r['mdea'],r['water']) for r in model})
+```
+
+The raw published parameters give `{python} sum(r['outcome']=='reproduced' for r in model)`
+coordinate ranges intersecting their source intervals,
+`{python} sum(r['outcome']=='not reproduced' for r in model)` disjoint ranges, and
+`{python} sum(r['outcome']=='undetermined' for r in model)` coordinates without an
+admitted prediction. These are local comparisons with the paper's model curves.
+They do not establish equation identity: the Engine uses $\sigma_{ij}^3$ in
+association strength, whereas the paper prints $d_{ij}^3$.
+The physical pressure targets remain unavailable; no physical validation is claimed.
+
+The source is Pahlavanzadeh and Fakouri Baygi (2013), *Journal of Chemical
+Thermodynamics*, DOI [10.1016/j.jct.2012.12.021](https://doi.org/10.1016/j.jct.2012.12.021).
+[Source identities](inputs/source/source-identity.json), primary-table checks,
+manual figure coordinates and calibration are retained in
+[inputs/source](inputs/source/source-locator.md). Raster QA overlays and reading strips
+are retained under `build/issue-736/source/` in the archived evidence. The readings were frozen in
+Git before prediction. CSV line endings were normalized before prediction;
+acquisition and canonical byte hashes are both recorded. No coordinate reading
+was corrected after prediction. These were hand-confirmed by one investigator,
+not acquired by two independent readers.
+
+## Equations, basis and comparison conditions
+
+The paper's residual Helmholtz energy is molecular PC-SAFT: hard-chain,
+dispersion and association. There are no ionic EOS, dielectric, Born or polar
+parameters. Acceptors are listed before donors in the printed scheme labels.
+Grouped native sites express those multiplicities; the MDEA amine group does
+not contribute an extra association site. Each calculation selects one MDEA
+alternative and at most one water alternative. The [packet materialization](inputs/parameters/provenance.json)
+is byte-for-byte, with raw printed association volumes and native
+Wolbach–Sandler combining rules. No conversion or fitting was performed.
+The identical nonassociating CO₂ and CH₄ tuples belong to
+`gross-sadowski-2001/3`; this neutral subset executes no gas state.
+
+Figure 1 fixes the printed pressure and solves saturation temperature before
+reading native liquid mass density. Molecular masses use the independent
+identity provenance of `nasrifar-2010-mdea/1`, without its fitted parameters.
+Figure 4 fixes pressure and the finite-phase MDEA mole fraction: liquid for
+bubble temperature, vapor for dew temperature. The other phase has zero pinned
+amount. Figure 4 uses its printed zero binary interaction, not Eq. (11).
+
+```{python}
+parameters = json.loads((root/'inputs/parameters/parameters.json').read_text())
+table(['Component alternative','Molar mass / kg mol⁻¹'],[[c['component_id'],c['fixed']['molar_mass']['value']['magnitude']] for c in parameters['components']])
+table(['Association pair','Temperature / K','Printed d³ / Engine σ³','Engine strength excess / %'],[[r['pair'],r['temperature_K'],r['source_d3_over_engine_sigma3'],f"{float(r['engine_excess_percent']):.5f}"] for r in strength])
+```
+
+The strength ratios follow the nominal source diameter expression at identical
+state and parameters. They quantify the prefactor difference only. Coupled
+association and phase equilibrium respond nonlinearly, so these percentages do
+not predict pressure or temperature errors. The intended target label remains
+**numerical verification** against the source model readings; interpreting the
+loaded equation as a different model is a **supplementary reference-equation
+comparison**. Neither interpretation establishes the paper's exact calculation.
+
+## Pure density and bubble/dew temperatures
+
+```{python}
+table(['Figure / scheme / branch','Within intervals','Disjoint','Undetermined','Center difference range / source unit'],[[f"{f} {m} {w} {b}",sum(r['outcome']=='reproduced' for r in model if (r['figure'],r['branch'],r['mdea'],r['water'])==g),sum(r['outcome']=='not reproduced' for r in model if (r['figure'],r['branch'],r['mdea'],r['water'])==g),sum(r['outcome']=='undetermined' for r in model if (r['figure'],r['branch'],r['mdea'],r['water'])==g),'; '.join(f"{float(r['delta']):.4f} {r['unit']}" for r in model if (r['figure'],r['branch'],r['mdea'],r['water'])==g and r['delta'])] for g in groups for f,b,m,w in [g]])
+table(['Figure 1 scheme','Paper ρ / kg m⁻³','Native ρ range / kg m⁻³','Solved T / K','Outcome'],[[r['mdea'],r['source_y'],f"{float(r['prediction_low']):.6f} to {float(r['prediction_high']):.6f}",next(p['temperature'] for p in points if p['row_id']==r['row_id'] and p['offset']==0),r['outcome']] for r in model if r['figure']=='1'])
+fig, axes = plt.subplots(2,2,figsize=(11,8),layout='constrained')
+for ax,panel in zip(axes.flat,'abcd'):
+    for branch,color in [('bubble','#D55E00'),('dew','#0072B2')]:
+        data = [r for r in model if r['row_id'].startswith('4'+panel+'/'+branch)]
+        ax.errorbar([float(r['pressure_Pa'])/1000 for r in data],[float(r['source_y']) for r in data],yerr=[float(r['y_half_width']) for r in data],fmt='o',color=color,label='paper '+branch,capsize=3)
+        admitted = [r for r in data if r['prediction']]
+        if admitted:
+            ax.errorbar([float(r['pressure_Pa'])/1000 for r in admitted],[float(r['prediction']) for r in admitted],yerr=[[float(r['prediction'])-float(r['prediction_low']) for r in admitted],[float(r['prediction_high'])-float(r['prediction']) for r in admitted]],fmt='x',color=color,label='Engine '+branch,capsize=3)
+    ax.set(title=f"Figure 4{panel}: {data[0]['mdea']} / {data[0]['water']}",xlabel='Pressure / kPa',ylabel='Temperature / K')
+    ax.legend(fontsize=8)
+plt.show()
+```
+
+Paper circles are model readings with vertical drawing-resolution intervals,
+not experimental observations. Native crosses and their vertical ranges come
+from independent center/bound composition declarations. No line connects these
+sparse coordinates. The missing native bubble crosses in the final panel are
+refused states, not zero temperatures.
+
+The [row comparisons](results/comparisons.csv) retain every center, source
+half-width, supported native range, discrepancy, equation convention and cause.
+An overlap means only that these local intervals intersect. It neither verifies
+the entire curve nor ranks association schemes. Disjoint raw production ranges remain non-reproduced. A labelled isothermal d³ association probe accounts for the Figure 1 2B rectangle miss and is consistent with the Figure 4a/b dew shifts. It does not account for all remaining density/bubble discrepancies. Residual causes remain undetermined; Figure 4d retains local liquid-instability refusals in the sampled declarations.
+
+
+## Supplementary isothermal association probes
+
+Production above remains the primary raw-tuple comparison. Each supplementary
+pair below fixes temperature and frees pressure, retaining the source center
+composition and phase specification. For $s_{ij}=(\sigma_i+\sigma_j)/2$ and
+$d_{ij}=(d_i+d_j)/2$, the explicit probe volume is
+$\kappa_{ij}=\sqrt{\kappa_{ii}\kappa_{jj}}(\sqrt{\sigma_i\sigma_j}/s_{ij})^3(d_{ij}/s_{ij})^3$,
+including each self edge. Thus $s_{ij}^3\kappa_{ij}=d_{ij}^3\kappa_{ij}^{paper}$
+at that fixed temperature, with identical contact functions, energies and sites.
+These frozen scalars establish no thermal derivatives, enthalpies, varying-temperature
+implementation, refit or adoption of a different production convention.
+
+```{python}
+probe = diag['association_probes']
+pr = probe['records']
+table(['Figure 1 witness','Convention','T / K','P / Pa','Liquid ρ / kg m⁻³','Source P interval / Pa','Source ρ interval / kg m⁻³'],[[r['row_id'],r['convention'],r['temperature_K'],r['result']['pressure'],r['liquid_mass_density']['value'],[r['source']['pressure_Pa']+k*r['source']['x_half_width'] for k in [-1,1]],[r['source']['source_y']+k*r['source']['y_half_width'] for k in [-1,1]]] for r in pr if r['source']['figure']=='1'])
+table(['Figure 4 coordinate','Convention','Source T center ± half-width / K','P at lower / center / upper T / Pa','Target P / Pa','Admission / refusal'],[[rid,c,f"{rs[0]['source']['source_y']} ± {rs[0]['source']['y_half_width']}",[r['result']['pressure'] for r in rs],rs[0]['source']['pressure_Pa'],'; '.join(sorted({r['result']['message'] for r in rs}))] for rid in dict.fromkeys(r['row_id'] for r in pr if r['source']['figure']=='4') for c in ['raw-sigma3','explicit-d3-isothermal'] for rs in [[r for r in pr if r['row_id']==rid and r['convention']==c]]])
+table(['Center witness','T / K','Edge','Geometric self κ','Sigma size factor','d³ / σ³','Explicit κ'],[[r['row_id'],r['temperature_K'],v['edge']['volume']['identity'],v['geometric_self_volume'],v['sigma_size_factor'],v['d3_over_sigma3'],v['edge']['volume']['value']['magnitude']] for r in pr if r['convention']=='explicit-d3-isothermal' and r['offset']==0 and (r['source']['figure']=='1' or (r['source']['branch']=='dew' and r['source']['pressure_Pa']==40000)) for v in r['volumes']])
+table(['Probe execution identity','Value'],list(probe['execution_identity'].items()))
+```
+
+The Figure 1 2B probe is an intersection witness in pressure and density.
+The 4C witness remains below its source density interval. All six Figure 4a/b
+dew target pressures lie between the two endpoint probe pressures, at the center
+vapor composition. This is endpoint bracketing, not an exact free-temperature
+solution or a global enclosure proof. Substantial bubble discrepancies remain;
+panel a bubble pressures move farther above their targets, and panel c remains
+below them. Panel d bubbles retain local liquid-instability refusals at the
+center and both bounds. Unavailable pressures remain explicit for refused states; no admitted
+prediction is substituted. Every declared self/cross volume, source expression,
+phase specification and complete native response is retained in
+[the diagnosis](results/diagnosis.json.gz); full traces remain under build.
+
+## Resolution, branch evidence and bounded diagnosis
+
+The source intervals are fixed two-pixel reading rectangles, not experimental
+uncertainty. Native solves at each center and both bounds support the reported
+local range. Ordering of those values, same-sign native exact first derivatives
+at all sampled states, and separated liquid/vapor densities check the local
+branch. This is finite local evidence, not a global enclosure proof. An observed
+turning point, branch change, unavailable derivative or failed solve makes the
+range undetermined. No source interval was widened to fit a prediction.
+
+```{python}
+table(['Criterion','Retained value / unit'],[[k,v] for k,v in criteria.items()])
+table(['Figure','Horizontal half-width / coordinate unit','Vertical half-width / response unit'],[[r['figure'],r['x_half_width'],r['y_half_width']] for i,r in enumerate(model) if (r['figure'],r['x_half_width'],r['y_half_width']) not in {(p['figure'],p['x_half_width'],p['y_half_width']) for p in model[:i]}])
+admitted = [p for p in points if p.get('success')]
+refined = [r for r in model if r['refinement_change']]
+table(['Numerical quantity','Value'],[['Native declarations',len(points)],['Admitted states',len(admitted)],['Refused states',len(points)-len(admitted)],['Largest admitted classified residual',max(p['convergence']['residual'] for p in admitted)],['Largest density-closure residual',max(p['inner_residual_maxima']['solve_density'] or 0 for p in admitted)],['Largest association residual',max(p['inner_residual_maxima']['association_newton'] or 0 for p in admitted)],['First native case wall / s',points[0]['wall_seconds']],['Native pass wall / s',run['wall_seconds']],['Diagnosis wall / s',diag['wall_seconds']]])
+table(['Refinement witness','Observable change','Source half-width × allowed fraction'],[[r['row_id'],r['refinement_change'],float(r['y_half_width'])*criteria['refinement_fraction_of_source_half_width']] for r in refined])
+checks = [r for r in diag['records'] if r['probe']!='native-source-interval-starts']
+table(['Diagnostic','Witnesses','Largest |ΔT| / K','Largest |ΔP| / Pa'],[[name,len([r for r in checks if r['probe']==name]),max(abs(r['result']['temperature']-r['source_temperature_K']) for r in checks if r['probe']==name),max(abs(r['result']['pressure']-r['source_pressure_Pa']) for r in checks if r['probe']==name)] for name in sorted({r['probe'] for r in checks})])
+refusals = [r for r in diag['records'] if r['probe']=='native-source-interval-starts']
+table(['Refused coordinate','Composition offset','Native attempts','Selected state','Causes'],[[r['row_id'],r['offset'],len(r['result']['results']),r['result']['selected'],'; '.join(r['result']['causes'])] for r in refusals])
+```
+
+The defining-equation residuals are small, including for the refused bubble
+solutions, but local liquid stability admission fails. Native source-interval
+starts attempted a different initial state while keeping the same declaration
+and safeguards; all retained attempts again refused the liquid. This diagnoses
+why no temperature was admitted. It does not prove the absence of another
+branch or a stable phase split. Removing stability admission, changing the
+phase declaration or changing parameters would change the question and was not
+adopted. This is no demonstrated Engine defect or new capability request.
+
+At the admitted witnesses, tighter closure, inverse pressure declarations and
+simultaneous donor/acceptor site relabeling preserve the result within numerical
+roundoff. They rule out those particular explanations of the discrepancy.
+[Native results](results/native-results.json.gz) retain phase compositions,
+amounts, densities, packing fractions, classified residuals, exact branch
+actions, stopping evidence and per-row run identity; [diagnostic results](results/diagnosis.json.gz)
+retain their own execution identity. Full traces are in the archived build evidence.
+
+## Every reported quantity and unavailable comparisons
+
+```{python}
+inventory = read(source/'quantity-inventory.csv')
+table(['Locator','Quantity','Evidence','Disposition / limiting cause'],[[r['locator'],r['quantity'],r['evidence'],r['outcome']+': '+r['cause']] for r in inventory])
+pressure = [r for r in rows if r['evidence']=='physical comparison']
+table(['Primary cohort','Rows','Half-print pressure criterion / Pa','Prediction'],[[name,sum(r['row_id'].startswith(name) for r in pressure),', '.join(sorted({r['y_half_width'] for r in pressure if r['row_id'].startswith(name)})),'unavailable: ideal chemistry and source/mapping decisions'] for name in ['kuranov','kamps']])
+```
+
+The measured reactive targets number `{python} len(pressure)`; source temperatures,
+stoichiometric molalities and printed decimal strings remain in their primary
+CSVs. Printed `10p (MPa)` cells map to Pa as stated by the table heading, not to
+CO₂ partial pressure. Half-print pressure limits describe agreement to printed
+values. The source transducer uncertainty is a percentage of full range without
+a row-level instrument identifier, so it is not substituted as an uncertainty
+band. Kamps' row count matches Table 6 but its range conflicts; this does not
+establish exact aggregate-cohort identity. Later corrected temperatures are not used.
+
+[Engine #776](https://github.com/tannerpolley/ePC-SAFT/issues/776) owns ideal
+mole-fraction chemistry. The independent water-autoprotolysis falsifier uses
+Nasrifar's negative-C reference, positive normalized water/hydronium/hydroxide
+fractions, logarithmic mass-action closure and conserved water-equivalent amount
+at the retained tolerance. That reference does not resolve this paper's printed
+positive coefficient. Pahlavanzadeh's mapping from ions to molecular VLE inputs
+is unspecified; no Nasrifar effective-water assumption is imported here.
+
+```{python}
+table(['Functional','Reaction','Change per mol extent','Change at source step / mol'],[[r['functional'],r['reaction'],r['change_per_mol_extent'],r['change_at_1e_minus_6_mol_extent']] for r in read(source/'balance-checks.csv')])
+table(['Source-equation quantity','T / K','Value','Unit'],[[r['quantity'],r['temperature_K'],r['value'],r['unit']] for r in read(source/'source-equation-references.csv')])
+```
+
+Printed Eq. (14) has a negative bicarbonate term and fails carbon conservation;
+the all-plus alternative remains unadopted. Eq. (15), charge and total MDEA are
+conserved by the printed reactions. Table 5's positive autoprotolysis
+coefficient is preserved as a source inconsistency. Reaction IV's hot reactive
+conditions extrapolate its printed fit interval.
+
+Frozen Eq. (11) scalars are exact for isothermal pressure calculations, so a
+general Gaussian law is not a prerequisite for those comparisons. Excess molar
+enthalpy additionally needs the thermal chain, an unambiguous source pressure
+and a qualified native observable on the common mixture basis,
+$h^E=h_{mix}-x_{MDEA}h_{MDEA}-x_{water}h_{water}$.
+Native addition enthalpy is not automatically that observable. The retained
+value/first-/second-derivative references define a possible later thermal-law
+falsifier at the retained arithmetic tolerance; no new Engine issue is requested.
+
+Tables 1–6 remain printed source records. The original fit cohorts are needed
+to reproduce their aggregate deviations: a selected subset or invented uniform
+grid cannot replace them. Their comparison tolerance is half the last printed
+digit in percentage points, conditional on matched cohorts and observables.
+The following tables preserve every printed coefficient, statistic and range;
+none is presented as an independently recomputed Engine aggregate.
+
+```{python}
+for path,columns in [(source/'table-001-mdea-correlations.csv',['quantity','coefficient_or_statistic','printed_value']), (source/'table-002-pure-parameters.csv',['species','association_scheme','m','sigma_A','epsilon_over_k_K','kappa_AB','epsilon_AB_over_k_K','psat_aad_percent','rho_sat_aad_percent']), (source/'table-003-co2-water-summary.csv',['source','points','temperature_range_K','total_pressure_range_MPa','co2_mole_fraction_range','reported_error_percent','water_2B_reported_error_percent']), (source/'table-004-mdea-water-k-gaussian.csv',['term','a','b','c']), (source/'table-005-reaction-correlations.csv',['reaction','expression','A','B','C','temperature_range_C']), (source/'table-006-reactive-summary.csv',['source','points','temperature_range_K','pressure_range_kPa','mdea_mole_fraction_range','co2_loading_range_mol_per_mol_mdea','reported_error_percent','reported_observable'])]:
+    display(Markdown('**'+path.stem+'**'))
+    table(columns,[[r[c] for c in columns] for r in read(path)])
+```
+
+## Execution and review limits
+
+```{python}
+identity = run['execution_identity']
+table(['Execution identity','Value'],[[k,identity[k]] for k in ['run_id','checkout_commit','target_freeze_commit','engine_provenance','extension_path','extension_sha256','interpreter','producer_sha256']])
+table(['Diagnosis identity','Value'],[[k,diag['execution_identity'][k]] for k in ['run_id','parent_run_id','producer_sha256','extension_sha256']])
+```
+
+The source inputs and producer were committed before the retained production run. Production and diagnostic records retain their own checkout state and execution identity; comparison-only refreshes preserve those identities.
+The notebook reads retained results and performs no Engine calculation.
+Local declared-phase closure does not establish global stability or physical
+validation. This bounded live attempt has not passed independent delivered
+review or received investigator promotion for manuscript use. The complete reactive
+paper remains unreproduced for the stated source and capability reasons.

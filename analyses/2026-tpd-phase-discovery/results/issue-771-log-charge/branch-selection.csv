@@ -1,0 +1,34 @@
+point,quantity,value,unit
+target,numerical_jacobian_scaled_fd_error,6.8474765857473585e-09,1
+target,linear_relative_defect,1.5777218104420236e-30,1
+target,density,0.40375023150119704,mol/m3
+target,slope,2474.6037816190028,Pa m3/mol
+target,own_root,0.40375023150119677,mol/m3
+target,root_displacement,6.6613381477509412e-16,1
+returned,numerical_jacobian_scaled_fd_error,2.5247574031439513e-09,1
+returned,linear_relative_defect,1.6155871338926322e-27,1
+returned,density,307.50810561780338,mol/m3
+returned,slope,-972.31130283056234,Pa m3/mol
+returned,own_root,0.40885790491341545,mol/m3
+returned,root_displacement,6.6228890506853562,1
+captured_ipopt_endpoint,numerical_jacobian_scaled_fd_error,7.0218081349437966e-09,1
+captured_ipopt_endpoint,linear_relative_defect,2.4351291050035192e-17,1
+captured_ipopt_endpoint,density,0.40375023465723398,mol/m3
+captured_ipopt_endpoint,slope,2474.6037430277829,Pa m3/mol
+captured_ipopt_endpoint,own_root,0.40375023465725862,mol/m3
+captured_ipopt_endpoint,root_displacement,6.1062266354381742e-14,1
+first Newton damping 1,numerical_defect,2.5608900062573032e+20,1
+first Newton damping 1,normalization_defect,6.1170849260879823e+19,1
+first Newton damping 1,reconstructed_density,0.40375012133690052,mol/m3
+first Newton damping 1,own_vapor_density,0.40375023150119677,mol/m3
+first Newton damping 1,root_displacement,2.7285262685766237e-07,1
+first Newton damping 0.5,numerical_defect,3274306.4386151703,1
+first Newton damping 0.5,normalization_defect,782119.37013042113,1
+first Newton damping 0.5,reconstructed_density,0.40375017769617516,mol/m3
+first Newton damping 0.5,own_vapor_density,0.40375023150119677,mol/m3
+first Newton damping 0.5,root_displacement,1.3326314385106089e-07,1
+first Newton damping 0.25,numerical_defect,305.20844471305878,1
+first Newton damping 0.25,normalization_defect,0.088439422300517156,1
+first Newton damping 0.25,reconstructed_density,0.40375020587581112,mol/m3
+first Newton damping 0.25,own_vapor_density,0.40375023150119987,mol/m3
+first Newton damping 0.25,root_displacement,6.3468420756949337e-08,1

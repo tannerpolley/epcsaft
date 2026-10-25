@@ -1,0 +1,41 @@
+schema_version = 2
+packet_id = "crespo-2021-deea"
+packet_version = "3"
+title = "crespo-2021-deea canonical Parameters packet"
+description = "Explicit-neutral-charge successor to immutable crespo-2021-deea/2; no fitted coefficient or formulation change."
+license_or_use_basis = "Source-traceable numeric parameter transcription and project-authored packet metadata retained for scientific verification under the source-specific use bases listed below; no full paper content is included."
+tolerance_rationale = "Fixed zero charge makes the previously selected neutral model explicit without changing its numerical parameters. Migration equality is checked separately; no new physical-validation tolerance or applicability range is asserted."
+
+[[sources]]
+source_id = "crespo-et-al-2021"
+citation = "Crespo, E. A.; Silva, L. P.; Carvalho, P. J.; Coutinho, J. A. P. The Excess Volumes of Protic Ionic Liquids and Its Significance to Their Thermodynamic Modelling. Fluid Phase Equilibria 2021, 113277."
+doi = "10.1016/j.fluid.2021.113277"
+use_basis = "Table 3 neutral DEEA PC-SAFT parameters and 2B association topology; kappa_HB is used in the cited PC-SAFT sigma^3*kappa association-strength convention; c_i is excluded as the PIL volume correction"
+
+[[sources]]
+source_id = "explicit-neutral-model"
+citation = "Project declaration of the neutral species already selected by crespo-2021-deea/2 (electrolyte: none)."
+use_basis = "Exact structural input of the accepted neutral model, not a fitted coefficient or a new observation; predecessor coefficient values and reported conditions are unchanged."
+
+[[domains]]
+domain_id = "crespo-deea-fit-domain-unreported"
+kind = "unknown"
+description = "Source-defined domain crespo-deea-fit-domain-unreported has no numeric range stated in the origin bundle; retain the cited source limits and do not infer a broader range."
+
+[[files]]
+path = "parameters/parameters.json"
+role = "parameters"
+media_type = "application/json"
+sha256 = "a8d00fe1f3eda812295ef619e858129388262a62eef71095ce6adf63e3ace91a"
+source_refs = ["crespo-et-al-2021", "explicit-neutral-model"]
+domain_refs = ["crespo-deea-fit-domain-unreported"]
+units_basis = "Every fixed specification and continuous coefficient declares its unit in the canonical Parameters document; dimensionless values use the explicit dimensionless unit."
+
+[[files]]
+path = "provenance/source-origin.toml"
+role = "provenance"
+media_type = "application/toml"
+sha256 = "1ad15d0985fe8f3081a0b1718ecfc457a5c82a150d3ca91057bb2f4b214008b8"
+source_refs = ["crespo-et-al-2021", "explicit-neutral-model"]
+domain_refs = ["crespo-deea-fit-domain-unreported"]
+units_basis = "Origin repository, immutable source packet, paths, and hash metadata are non-numeric identifiers."

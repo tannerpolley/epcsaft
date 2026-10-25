@@ -1,0 +1,61 @@
+{
+  "case": {
+    "components": ["methane", "ethane"],
+    "temperature_K": 180.0,
+    "pressure_Pa": 1000000.0,
+    "feed_mole_fractions": [0.5, 0.5],
+    "parameter_source": "Gross-Sadowski 2001 neutral PC-SAFT; k_ij=0",
+    "definition": "Fixed-T,P,z two-phase flash; both phase amounts and phase compositions are solved."
+  },
+  "runtime_protocol": {
+    "warmups": 3,
+    "samples": 15,
+    "clock": "time.perf_counter_ns",
+    "imports_excluded": true,
+    "cpu_affinity": "CPU 0",
+    "nice": 19,
+    "thread_limits": {
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1"
+    },
+    "clapeyron_runtime": {
+      "status": "not_measured",
+      "reason": "A bounded first PCSAFT specialization run hit Julia OutOfMemoryError under ulimit -v 1200000; maximum observed resident set was 861616 kB. No unbounded retry was made."
+    }
+  },
+  "source_snapshots": {
+    "ePC-SAFT": {
+      "path": "/home/tnnrpolley21/.codex/worktrees/7a8a/ePC-SAFT-greenfield",
+      "commit": "e384411e6685665de4ecd4080ebc0bb3b8e4d36b",
+      "dirty": true,
+      "parameter_sha256": "7dd1899712aacfbc3395d86349768b0d93dd5dfd75b2e0f0700640be618aa9c2"
+    },
+    "FeOs": {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/Forks-Clones/feos",
+      "commit": "a508463cb4a41a15411cb90e9b4146c44b47d688",
+      "dirty": true,
+      "parameter_sha256": "f4b4018c7f02341b937c086cbb38626b72c1f3f3d9677a26b463112e16dfd404"
+    },
+    "ThermoPack": {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/Forks-Clones/thermopack",
+      "commit": "d68c794c7342bfc6938eb424a1fbb88b7780b738",
+      "dirty": false
+    },
+    "Clapeyron": {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/Forks-Clones/Clapeyron.jl",
+      "commit": "6b8a694749bc5a7e427c20d9f1dfc6002d1e1194",
+      "dirty": true
+    },
+    "teqp": {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/Forks-Clones/teqp",
+      "commit": "5f62a6f515d517e39c3fb035c11a03524ffa3ad6",
+      "dirty": false,
+      "executed_cached_extension": "/home/tnnrpolley21/.cache/uv/archive-v0/RVfSm55_8wyXIZRk/teqp/teqp.cpython-313-x86_64-linux-gnu.so",
+      "extension_sha256": "06907ae43684ee23b416a77553ab2351ee82bb7ad649ff649f204ffec097a6ee"
+    }
+  },
+  "diagnostics": {
+    "teqp": "mix_VLE_Tp returned phase residual max 4.82e-11; the Python wrapper reported success=false and return_code=unset even after the Newton residual stopped changing, because the Newton branch does not set the success flag. Values satisfy the fixed-T,P equilibrium and material balance."
+  }
+}

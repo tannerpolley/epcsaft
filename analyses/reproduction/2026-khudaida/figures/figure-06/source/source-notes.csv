@@ -1,0 +1,9 @@
+section,key,value,unit,notes
+provenance,paper,Khudaida 2026,,
+provenance,figure,figure-06,,
+provenance,source_image,analyses/reproduction/2026-khudaida/figures/figure-06/source/figure-06.png,,
+basis,composition,salt-free ternary projection with NaCl retained in source/model CSV rows,,
+model,route,internal electrolyte LLE validation,,package rows are retained internal component diagnostics; set KHUDAIDA_FORCE_RECOMPUTE=1 to refresh
+model,collapsed_split_contract,failed_model_row,,"Rows below phase_distance 0.001 or minor beta 0.0001 are retained as diagnostics but excluded from accepted model counts; solver success with postsolve_accepted=True is classified as root_cause=postsolve_acceptance, with #338 retaining fitted-parameter/noncollapsed-branch follow-up ownership."
+parameters,parameter_dataset,campaigns/2026-khudaida/parameters,,retained 2026_Khudaida Tables 5-7 parameter bundle for internal component validation
+parameters,figiel_2025_ssm_ds_born_options,retained_in_2026_Khudaida,,Figiel 2025 SSM+DS/Born option family is carried by the Khudaida parameter bundle

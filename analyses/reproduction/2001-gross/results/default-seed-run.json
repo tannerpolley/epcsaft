@@ -1,0 +1,26 @@
+{
+  "wall_seconds": 0.2402876690002813,
+  "processes": 32,
+  "engine_provenance": [
+    "0218a597ba0a1419c7c2378d852b4ef0a48051d3",
+    true
+  ],
+  "source_parent": "KXZN4KLQ",
+  "source_pdf_attachment": "ZAETGZK9",
+  "pdf_sha256": "373b1c6224407933ee8e123bdd78b186b8bf49cabe1f17dffc9bd631d660bc72",
+  "source_doi": "10.1021/ie0003887",
+  "git_base": "0218a597ba0a1419c7c2378d852b4ef0a48051d3",
+  "total_rows": 200,
+  "successful_rows": 157,
+  "input_hashes": {
+    "inputs/tolerances.json": "cb9627e35feb6a9ef550889deccef1db6e15c3f9bb75d5df392ac8c727d216f5",
+    "inputs/digitized/pixels.csv": "ef48e50a31ca08e9843a672ec87948c0ae3793a0c9518fb8afeef57ea66dbd0d",
+    "inputs/digitized/figure-values.csv": "21b8c3b69a8eac515b9e6f76ab42e1e664e564cad1f789071480a7dbbebf8a59",
+    "inputs/digitized/calibration.json": "a4623bee7f8b682caf355dd186776af364d7e04bd6205ef46e1985a07ed8ed9f",
+    "inputs/source/figures-manifest.csv": "ccbd30b96cf5a7ccdedfb752f39e8290d2c7e17db266e71bedeaa77d44445823",
+    "inputs/source/source-manifest.csv": "aa716eec883916fb0746e7028e763ed36d6909ce1a823e0c25e61bdc0406b4b7",
+    "inputs/parameters/pure/any-solvent.csv": "6dc04cdf8b07cfbbca1c961ffd10e34fc9e1109d4930f8d75c6fa2c0582f847d",
+    "inputs/parameters/mixed/binary-interaction/source-manifest.csv": "640e5f947feaa71673e16a70290754e98201f72c4a1feb6bebcb5793129381b2",
+    "inputs/parameters/mixed/binary-interaction/k-ij.csv": "975b9a70db189056232acf7173aaa6d405fdc7b1b76988392c1aa7866dd7f3c4"
+  }
+}

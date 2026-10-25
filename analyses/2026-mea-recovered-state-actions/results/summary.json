@@ -1,0 +1,378 @@
+{
+ "actions": {
+  "states": [
+   {
+    "state": "B050",
+    "recovery": "cold packet start (#142 state)",
+    "recovered_ok": true,
+    "recovered_code": "",
+    "without_recovery_ok": true,
+    "without_recovery_code": "",
+    "pressure_pa": 101325.0,
+    "work": [
+     13,
+     28
+    ],
+    "wall_s": 0.112,
+    "classified_residual_max": 2.240147754113152e-14,
+    "balance_rel": 4.968039004352601e-15,
+    "charge_rel": 3.282386124786679e-15,
+    "raw_row_max": 3.126388037344441e-13,
+    "trace_row_max": 3.126388037344441e-13,
+    "trace_species": "hydronium-cation;hydroxide-anion",
+    "affinity_max": 9.237055564881302e-14,
+    "min_liquid_x": 3.9062781603543875e-10,
+    "eta_liquid": 0.44636512434938264,
+    "dPdrho_min": 75443.4264557068,
+    "pressure_rel": 6.977329825019751e-11,
+    "reduced_hessian_minimum": 3.4810230204837566e-09,
+    "criteria_ok": true
+   },
+   {
+    "state": "R360",
+    "recovery": "345 K liquid anchor",
+    "recovered_ok": true,
+    "recovered_code": "",
+    "without_recovery_ok": true,
+    "without_recovery_code": "",
+    "pressure_pa": 101325.0,
+    "work": [
+     14,
+     25
+    ],
+    "wall_s": 0.105,
+    "classified_residual_max": 1.4286497426245397e-14,
+    "balance_rel": 1.4356388523440373e-16,
+    "charge_rel": 1.731941074995882e-17,
+    "raw_row_max": 6.394884621840902e-14,
+    "trace_row_max": 5.684341886080802e-14,
+    "trace_species": "hydronium-cation;hydroxide-anion",
+    "affinity_max": 2.3092638912203256e-14,
+    "min_liquid_x": 3.989126680954097e-09,
+    "eta_liquid": 0.428496291707436,
+    "dPdrho_min": 64744.81547277108,
+    "pressure_rel": 2.4464985592942412e-11,
+    "reduced_hessian_minimum": 3.556779794309908e-08,
+    "criteria_ok": true
+   },
+   {
+    "state": "vle_obs_0128",
+    "recovery": "speciated-liquid start",
+    "recovered_ok": true,
+    "recovered_code": "",
+    "without_recovery_ok": true,
+    "without_recovery_code": "",
+    "pressure_pa": 6620.532727846561,
+    "work": [
+     3,
+     10
+    ],
+    "wall_s": 0.362,
+    "classified_residual_max": 5.684341886080802e-14,
+    "balance_rel": 1.263060763818458e-16,
+    "charge_rel": 5.297696474883361e-17,
+    "raw_row_max": 5.684341886080802e-14,
+    "trace_row_max": 5.684341886080802e-14,
+    "trace_species": "carbon-dioxide;hydronium-cation",
+    "affinity_max": 3.126388037344441e-14,
+    "min_liquid_x": 6.645093322753805e-11,
+    "eta_liquid": 0.4473103725788255,
+    "dPdrho_min": 2584.317566350349,
+    "pressure_rel": 2.4043389501571255e-10,
+    "reduced_hessian_minimum": 0.0,
+    "fugacity_max": 2.7533531010703882e-14,
+    "eta_vapor": 2.1048834379748093e-05,
+    "vapor_support_ok": true,
+    "criteria_ok": true
+   },
+   {
+    "state": "vle_obs_0145",
+    "recovery": "speciated-liquid start",
+    "recovered_ok": true,
+    "recovered_code": "",
+    "without_recovery_ok": true,
+    "without_recovery_code": "",
+    "pressure_pa": 17897.854499313922,
+    "work": [
+     3,
+     11
+    ],
+    "wall_s": 0.367,
+    "classified_residual_max": 3.552713678800501e-14,
+    "balance_rel": 1.0945770698587503e-16,
+    "charge_rel": 1.1385627708420416e-16,
+    "raw_row_max": 3.552713678800501e-14,
+    "trace_row_max": 2.842170943040401e-14,
+    "trace_species": "hydronium-cation",
+    "affinity_max": 1.5987211554602254e-14,
+    "min_liquid_x": 1.576158794926611e-10,
+    "eta_liquid": 0.43997980220845817,
+    "dPdrho_min": 2736.2213503885837,
+    "pressure_rel": 6.443334754635544e-11,
+    "reduced_hessian_minimum": 0.0,
+    "fugacity_max": 2.4868995751603507e-14,
+    "eta_vapor": 5.345452264100322e-05,
+    "vapor_support_ok": true,
+    "criteria_ok": true
+   },
+   {
+    "state": "vle_obs_0227",
+    "recovery": "speciated-liquid start",
+    "recovered_ok": true,
+    "recovered_code": "",
+    "without_recovery_ok": true,
+    "without_recovery_code": "",
+    "pressure_pa": 177605.39582444445,
+    "work": [
+     3,
+     10
+    ],
+    "wall_s": 0.364,
+    "classified_residual_max": 5.684341886080802e-14,
+    "balance_rel": 6.31530381909229e-17,
+    "charge_rel": 1.1220760835920365e-16,
+    "raw_row_max": 5.684341886080802e-14,
+    "trace_row_max": 2.842170943040401e-14,
+    "trace_species": "hydronium-cation",
+    "affinity_max": 2.4868995751603507e-14,
+    "min_liquid_x": 5.959882762528518e-10,
+    "eta_liquid": 0.4166654924001033,
+    "dPdrho_min": 3138.9186565416076,
+    "pressure_rel": 1.3079426430806507e-11,
+    "reduced_hessian_minimum": 0.0,
+    "fugacity_max": 5.595524044110789e-14,
+    "eta_vapor": 0.00045199389463171255,
+    "vapor_support_ok": true,
+    "criteria_ok": true
+   }
+  ],
+  "actions": 405,
+  "passed": 405,
+  "unresolved_references": 0,
+  "by_direction": {
+   "T": {
+    "rows": 111,
+    "passed": 111,
+    "max_rel_error": 8.39457699897695e-08
+   },
+   "P": {
+    "rows": 42,
+    "passed": 42,
+    "max_rel_error": 1.0351183070158921e-05
+   },
+   "feed": {
+    "rows": 111,
+    "passed": 111,
+    "max_rel_error": 5.221940110237574e-08
+   },
+   "kij": {
+    "rows": 111,
+    "passed": 111,
+    "max_rel_error": 4.268856770560057e-06
+   },
+   "T:caloric": {
+    "rows": 15,
+    "passed": 15,
+    "max_rel_error": 9.906351511213675e-08
+   },
+   "feed:caloric": {
+    "rows": 15,
+    "passed": 15,
+    "max_rel_error": 7.044544739748874e-08
+   }
+  },
+  "gibbs_helmholtz": [
+   {
+    "state": "B050:liquid-TP",
+    "heat_kJ_per_mol": 72.84352817640314,
+    "identity_rel": 2.481137194488865e-13,
+    "cp_equilibrium_J_per_mol_K": 76.57293602100086
+   },
+   {
+    "state": "R360:liquid-TP",
+    "heat_kJ_per_mol": 73.66682416990243,
+    "identity_rel": 5.5507865653885007e-14,
+    "cp_equilibrium_J_per_mol_K": 73.53215189860914
+   },
+   {
+    "state": "vle_obs_0128:liquid-TP",
+    "heat_kJ_per_mol": 82.29072790924972,
+    "identity_rel": 1.3810846108794082e-13,
+    "cp_equilibrium_J_per_mol_K": 74.84392171463507
+   },
+   {
+    "state": "vle_obs_0145:liquid-TP",
+    "heat_kJ_per_mol": 83.48112092225247,
+    "identity_rel": 1.506071626543731e-13,
+    "cp_equilibrium_J_per_mol_K": 73.52676063707413
+   },
+   {
+    "state": "vle_obs_0227:liquid-TP",
+    "heat_kJ_per_mol": 96.09147953437117,
+    "identity_rel": 3.184744149383078e-13,
+    "cp_equilibrium_J_per_mol_K": 79.00243581567226
+   }
+  ],
+  "identity_passed": 5,
+  "max_error_over_criterion": 0.8108361322671767,
+  "wall_s": 22.4,
+  "provenance": {
+   "wheel": "epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+   "wheel_sha256": "ad12b19fcd8b3b4a87c355490386ecc911485ac1efc4b7a3f547e2393f803e46",
+   "mea_commit": "799b2011e562a84c1bd93778cd43eb8340dae362",
+   "parameters_sha256": "868a501831b87e95dedf18ce40e9e7ac949f7c6a4aaf137f717cc493ecfcb7be",
+   "state_packet_sha256": "86f60041b28ec4493729b04c0238f44e86fba4becf33d6ddf47d86b7efb82448"
+  }
+ },
+ "sweep": {
+  "requests": 79,
+  "paths": {
+   "cold-packet-start": {
+    "attempts": 79,
+    "accepted": 79,
+    "same_branch": 79,
+    "iterations": 212,
+    "criteria_ok": 79,
+    "max": {
+     "balance_rel": 1.7542510608589693e-16,
+     "charge_rel": 1.5169950336838612e-16,
+     "raw_row_max": 1.4210854715202004e-13,
+     "trace_row_max": 1.4210854715202004e-13,
+     "affinity_max": 6.394884621840902e-14,
+     "fugacity_max": 1.4299672557172016e-13,
+     "pressure_rel": 7.62718999069989e-10
+    }
+   },
+   "same-temperature-anchor": {
+    "attempts": 79,
+    "accepted": 79,
+    "same_branch": 79,
+    "iterations": 196,
+    "criteria_ok": 79,
+    "max": {
+     "balance_rel": 1.7542510608589693e-16,
+     "charge_rel": 1.986663234345036e-16,
+     "raw_row_max": 1.9895196601282805e-13,
+     "trace_row_max": 1.7053025658242404e-13,
+     "affinity_max": 8.526512829121202e-14,
+     "fugacity_max": 1.652011860642233e-13,
+     "pressure_rel": 6.53234799585789e-10
+    }
+   },
+   "cross-temperature-anchor": {
+    "attempts": 79,
+    "accepted": 79,
+    "same_branch": 79,
+    "iterations": 211,
+    "criteria_ok": 79,
+    "max": {
+     "balance_rel": 1.6840810184246105e-16,
+     "charge_rel": 1.6513567432768567e-16,
+     "raw_row_max": 1.7053025658242404e-13,
+     "trace_row_max": 1.7053025658242404e-13,
+     "affinity_max": 7.673861546209083e-14,
+     "fugacity_max": 1.2079226507921703e-13,
+     "pressure_rel": 7.244066457801068e-10
+    }
+   },
+   "feed-continuation": {
+    "attempts": 79,
+    "accepted": 76,
+    "same_branch": 76,
+    "iterations": 2309,
+    "criteria_ok": 76,
+    "max": {
+     "balance_rel": 1.543740933555893e-16,
+     "charge_rel": 2.5620896749728505e-16,
+     "raw_row_max": 1.7053025658242404e-13,
+     "trace_row_max": 1.7053025658242404e-13,
+     "affinity_max": 7.105427357601002e-14,
+     "fugacity_max": 1.8474111129762605e-13,
+     "pressure_rel": 6.640246130729111e-10
+    },
+    "step_too_small": 3
+   },
+   "feed-continuation-fine": {
+    "attempts": 3,
+    "accepted": 3,
+    "same_branch": 3,
+    "iterations": 496,
+    "criteria_ok": 3,
+    "max": {
+     "balance_rel": 9.823805940810228e-17,
+     "charge_rel": 9.388005020517518e-17,
+     "raw_row_max": 7.105427357601002e-14,
+     "trace_row_max": 5.684341886080802e-14,
+     "affinity_max": 4.973799150320701e-14,
+     "fugacity_max": 4.1744385725905886e-14,
+     "pressure_rel": 1.466793353444018e-11
+    }
+   }
+  },
+  "wall_s": 520.6,
+  "provenance": {
+   "wheel": "epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+   "wheel_sha256": "ad12b19fcd8b3b4a87c355490386ecc911485ac1efc4b7a3f547e2393f803e46",
+   "mea_commit": "04a932835ae32f3855390ef9d2acd64a2877f63b",
+   "parameters_sha256": "868a501831b87e95dedf18ce40e9e7ac949f7c6a4aaf137f717cc493ecfcb7be",
+   "state_packet_sha256": "86f60041b28ec4493729b04c0238f44e86fba4becf33d6ddf47d86b7efb82448"
+  }
+ },
+ "heat": {
+  "attempted": 113,
+  "evaluated": 113,
+  "failed": 0,
+  "rmse_kj_per_mol_CO2": 15.995973919213734,
+  "mean_bias_kj_per_mol_CO2": -2.308294478979234,
+  "median_absolute_error_kj_per_mol_CO2": 8.019984718317431,
+  "cold_packet_start": {
+   "40C-0.003": {
+    "success": true,
+    "iterations": 3,
+    "pressure_pa": 6291.267142728261
+   },
+   "40C-0.037": {
+    "success": true,
+    "iterations": 3,
+    "pressure_pa": 6319.082797942006
+   }
+  },
+  "by_campaign_partition": {
+   "calibration": {
+    "attempted": 66,
+    "evaluated": 66,
+    "failed": 0,
+    "rmse_kj_per_mol_CO2": 11.501889962224277,
+    "mean_bias_kj_per_mol_CO2": 0.32685551538693686,
+    "median_absolute_error_kj_per_mol_CO2": 5.654231496089778
+   },
+   "model_selection_comparison": {
+    "attempted": 27,
+    "evaluated": 27,
+    "failed": 0,
+    "rmse_kj_per_mol_CO2": 10.606241310952198,
+    "mean_bias_kj_per_mol_CO2": 1.2282262052659856,
+    "median_absolute_error_kj_per_mol_CO2": 3.5576625662809533
+   },
+   "temperature_holdout": {
+    "attempted": 20,
+    "evaluated": 20,
+    "failed": 0,
+    "rmse_kj_per_mol_CO2": 29.278644732107317,
+    "mean_bias_kj_per_mol_CO2": -15.778592384118644,
+    "median_absolute_error_kj_per_mol_CO2": 18.21694796677642
+   }
+  },
+  "pinned_wheel": "b66c7b962541a586f5ec50043a5e8b4e62cf52e24eaec02ef33f43e558762a58",
+  "paired_with_pinned": 109,
+  "max_abs_difference_from_pinned_kj_per_mol": 4.035726419715502e-09,
+  "wall_s": 2.3,
+  "provenance": {
+   "wheel": "epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+   "wheel_sha256": "ad12b19fcd8b3b4a87c355490386ecc911485ac1efc4b7a3f547e2393f803e46",
+   "mea_commit": "799b2011e562a84c1bd93778cd43eb8340dae362",
+   "parameters_sha256": "868a501831b87e95dedf18ce40e9e7ac949f7c6a4aaf137f717cc493ecfcb7be",
+   "state_packet_sha256": "86f60041b28ec4493729b04c0238f44e86fba4becf33d6ddf47d86b7efb82448"
+  }
+ }
+}

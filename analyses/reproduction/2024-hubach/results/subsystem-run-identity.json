@@ -1,0 +1,27 @@
+{
+  "engine": [
+    "1dee1a078e42bac18c530c1d65066db4032a7b19",
+    true
+  ],
+  "sha256": {
+    "analyses/reproduction/2024-hubach/inputs/lithium-declarations.json": "f2b965c13bcdf8333c4ec19c4369b301288aa2cf657a886aadb0a91f4b2399b9",
+    "analyses/reproduction/2024-hubach/inputs/parameters/user-options.json": "a589f0fec8e69da7e4b7da4c2c2d87b9f93fce0d79ea58ae296d97a5bd1cb09c",
+    "analyses/reproduction/2024-hubach/inputs/source/table_s1.csv": "5369e9f0f9762b67eaa8b1620bcc62a8fbee48f237a545abea0ed5063a9e2555",
+    "analyses/reproduction/2024-hubach/inputs/source/figures-manifest.csv": "121e8d515e94d06cb0b9f3c904408fffcf036246a4d974e54929a6f05ceb34e3",
+    "analyses/reproduction/2024-hubach/inputs/source/source-assets.md": "9b5c19e563fb00a4ad9919ff4951bab020956a8ec22dea744bb51bfb8994a9f6",
+    "analyses/reproduction/2024-hubach/inputs/source/table_s6.csv": "20daddedfa0a6bc999a7033eec972b829b7cda9e38b22c734cdaaef0d97b9b2f",
+    "analyses/reproduction/2024-hubach/inputs/source/source-manifest.csv": "4ae11c7e2823670f38de04af38e4a18b7063e7843d1873cfdb2118d13ced7882",
+    "analyses/reproduction/2024-hubach/inputs/source/source_manifest.json": "fcc485dc8d3db0524f46226a8578ad2ed2252323f42f2a476bfdc8d40d2b0b89",
+    "analyses/reproduction/2024-hubach/inputs/source/reference-limits.md": "e02fa9cfc9ae603587a9a326aa16ac573f7784e2fad6ff163901e7f5c9b10494",
+    "analyses/reproduction/2024-hubach/inputs/source/table_s11.csv": "5b62daa304639cb8f139f87b52d060da70aa598b46c3e648a8ef3254116f021a",
+    "analyses/reproduction/2024-hubach/inputs/parameters/pure/any-solvent.csv": "71739fc99bcc5a976e0cc987896664aa566a3b7549cc9f9fdd8d6d284db2fac7",
+    "analyses/reproduction/2024-hubach/inputs/parameters/mixed/binary-interaction/source-manifest.csv": "107e7a8636f5240a39d085eca7eeb7ce400e95218f379a4645946bd428f557a5",
+    "analyses/reproduction/2024-hubach/inputs/parameters/mixed/binary-interaction/k-hb-ij.csv": "122a55ccb6a6bc555a0832758b4aa1cb304017c53740b40aa9faf874f1592d35",
+    "analyses/reproduction/2024-hubach/inputs/parameters/mixed/binary-interaction/k-ij.csv": "2046d646e65e8729b822c9e8ef0a2d13d0e2db9efca6defa5c8c7ccd27fc768b",
+    "analyses/reproduction/2024-hubach/scripts/subsystems.cpp": "08c10906f9f2c463754b47df225e560b751f7378e4f506ae635d3a7aaa98254f",
+    "analyses/reproduction/2024-hubach/scripts/reproduce.py": "19d3f5a206ca838cb3f4f357aeac1a8020721c6fe87e0a5cf9294bf5f2cef958",
+    "analyses/reproduction/2024-hubach/scripts/reproduce.sh": "3dd2efbd031fa2f32a4966b74178e7f48b1c50166323e1bc8ac57d7366a95b41",
+    "build/engine-meson/shared/libepcsaft_native.so": "1d4ca41cee07553436e5411f9824345ac3723d90335b7346362a2fb47be3455c",
+    "build/issue-789/2024-hubach/subsystems.so": "d2d22d10f3e335d5dd1f692e782579333f0a531f9d0a6fcefa196de2e341422c"
+  }
+}

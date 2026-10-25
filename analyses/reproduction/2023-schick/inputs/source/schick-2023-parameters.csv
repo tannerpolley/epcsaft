@@ -1,0 +1,9 @@
+component_a,component_b,quantity,value,unit,use_in_dry_binary,source_locator,zotero_parent_key,zotero_attachment_key
+co2,,segment_count,2.0729,dimensionless,active,Main Table 1; PDF p.4; co2 row,V9MAIE7D,WVKUKNLW
+co2,,segment_diameter,2.7852,angstrom,active,Main Table 1; PDF p.4; co2 row,V9MAIE7D,WVKUKNLW
+co2,,dispersion_energy_over_k,169.21,kelvin,active,Main Table 1; PDF p.4; co2 row,V9MAIE7D,WVKUKNLW
+thf,,segment_count,2.425,dimensionless,active,Main Table 1; PDF p.4; thf row,V9MAIE7D,WVKUKNLW
+thf,,segment_diameter,3.497,angstrom,active,Main Table 1; PDF p.4; thf row,V9MAIE7D,WVKUKNLW
+thf,,dispersion_energy_over_k,280.41,kelvin,active,Main Table 1; PDF p.4; thf row,V9MAIE7D,WVKUKNLW
+co2,,induced_association_volume,0.04509,dimensionless,inactive: no associating partner in dry CO2+THF,Main Table 1; PDF p.4; CO2 row and footnote b; section 2.4.2 p.3,V9MAIE7D,WVKUKNLW
+co2,thf,k_ij,0.04,dimensionless,active: temperature independent,Main Table 6; PDF p.6; CO2-THF row; SI Table S3 PDF p.3,V9MAIE7D,WVKUKNLW

@@ -1,0 +1,4 @@
+state,Li,Na,K,Mg,Ca,Sr,Cl_printed,unit,water_mol,water_kg,temperature_K,pressure_Pa,locator
+fig7,9.5,49.625,98,47.529,48.908,0,350,mmol per kg water,55.508,1,298.15,101325,"Lithium issue 188, F0 frozen reference states"
+table1,10.17,2063.2,590.4,389.5,1465.8,0,6374.2,mmol per kg water,55.508,1,298.15,101325,"Lithium issue 188, F0 frozen reference states"
+ms2,24.204,2788.2,58.826,136.19,920.71,22.141,5029.3,mmol per kg water,55.508,1,298.15,101325,"Lithium issue 188, F0 frozen reference states"

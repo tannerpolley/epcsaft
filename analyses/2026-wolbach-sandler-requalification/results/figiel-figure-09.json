@@ -1,0 +1,68 @@
+{
+ "systems": {
+  "figiel-2025-reference-electrolytes/water-ethanol-nabr": {
+   "rows": 120,
+   "aard_v3": 0.17638343699809905,
+   "aard_v4": 0.17638165005300419,
+   "max_relative_change_v4_vs_v3": 6.813670587302312e-06
+  },
+  "figiel-2025-reference-electrolytes/water-ethanol-nacl": {
+   "rows": 123,
+   "aard_v3": 0.06348362246269049,
+   "aard_v4": 0.0634850939350628,
+   "max_relative_change_v4_vs_v3": 4.268452735045614e-06
+  },
+  "figiel-2025-reference-electrolytes/water-methanol-nabr": {
+   "rows": 108,
+   "aard_v3": 0.07392126214705831,
+   "aard_v4": 0.07392126214705831,
+   "max_relative_change_v4_vs_v3": 0.0
+  },
+  "figiel-2025-reference-electrolytes/water-methanol-nacl": {
+   "rows": 58,
+   "aard_v3": 0.08081136616508014,
+   "aard_v4": 0.08081136616508014,
+   "max_relative_change_v4_vs_v3": 0.0
+  },
+  "figiel-yu-held-2025/water-ethanol-nabr": {
+   "rows": 120,
+   "aard_v3": 0.17638343699809905,
+   "aard_v4": 0.17638165005300419,
+   "max_relative_change_v4_vs_v3": 6.813670587302312e-06
+  },
+  "figiel-yu-held-2025/water-ethanol-nacl": {
+   "rows": 123,
+   "aard_v3": 0.06348362246269049,
+   "aard_v4": 0.0634850939350628,
+   "max_relative_change_v4_vs_v3": 4.268452735045614e-06
+  },
+  "figiel-yu-held-2025/water-methanol-nabr": {
+   "rows": 108,
+   "aard_v3": 0.07442880802523755,
+   "aard_v4": 0.07442694794689932,
+   "max_relative_change_v4_vs_v3": 5.56519659800081e-06
+  },
+  "figiel-yu-held-2025/water-methanol-nacl": {
+   "rows": 58,
+   "aard_v3": 0.08092760107650686,
+   "aard_v4": 0.08092701025630099,
+   "max_relative_change_v4_vs_v3": 4.101176760640257e-06
+  }
+ },
+ "identity": {
+  "wheel_sha256": "ad12b19fcd8b3b4a87c355490386ecc911485ac1efc4b7a3f547e2393f803e46",
+  "packets": {
+   "figiel-2025-reference-electrolytes/3": "4d2429a9922d7cdce0bf90b2d41b2133139b21d3e2a8d143c2091247eeb4072f",
+   "figiel-2025-reference-electrolytes/4": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+   "figiel-yu-held-2025/3": "3d37235cd8217e056f55005bfdf2b65dcf7c4a8621e239bdd40a70c273a9be8c",
+   "figiel-yu-held-2025/4": "36cf241f3a9bd353cf775ae943ddc98e70817d5b004cac3bc001a9c5604d752d"
+  },
+  "sources": {
+   "water-ethanol-nabr.csv": "8f05e41c4a0df3f78998035f040b380d21a6df4ddf4579ed5596ca2844711ae5",
+   "water-ethanol-nacl.csv": "b7bedcee246ae9fd28418471f48fc92f06efc0194352812d54ab690db618c604",
+   "water-methanol-nabr.csv": "e03835c37d9867f51223ae3122d00675dadccf85e3babac52cd1a3380d1c37de",
+   "water-methanol-nacl.csv": "2ede668fdadff7214af4b7ab297824d284200ea8bc5a9ef4e95ae10f3a1ce8d4"
+  }
+ },
+ "claim_limits": "298.15 K, 1 bar, Figure 9 literature rows only; relative deviation of the molality-scale mean ionic activity coefficient; no fitted parameter changes."
+}

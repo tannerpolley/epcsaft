@@ -1,0 +1,3051 @@
+[
+  {
+    "id": "nacl-ion-suppression-workbook-5",
+    "model": "nacl-ion-suppression",
+    "kind": "bubble",
+    "molality": 0.005000000139214637,
+    "source_pressure": 3213.5903,
+    "source_row": "5",
+    "half_unit": 0.005,
+    "refinement_limit": 0.0005,
+    "refine": true,
+    "T": 298.15,
+    "vapor_support": [
+      "water"
+    ]
+  },
+  {
+    "id": "nacl-ion-suppression-workbook-6",
+    "model": "nacl-ion-suppression",
+    "kind": "bubble",
+    "molality": 0.10383204200898462,
+    "source_pressure": 3203.0,
+    "source_row": "6",
+    "half_unit": 0.005,
+    "refinement_limit": 0.0005,
+    "refine": false,
+    "T": 298.15,
+    "vapor_support": [
+      "water"
+    ]
+  },
+  {
+    "id": "nacl-ion-suppression-workbook-7",
+    "model": "nacl-ion-suppression",
+    "kind": "bubble",
+    "molality": 0.4199609478958201,
+    "source_pressure": 3170.0,
+    "source_row": "7",
+    "half_unit": 0.005,
+    "refinement_limit": 0.0005,
+    "refine": false,
+    "T": 298.15,
+    "vapor_support": [
+      "water"
+    ]
+  },
+  {
+    "id": "nacl-ion-suppression-workbook-8",
+    "model": "nacl-ion-suppression",
+    "kind": "bubble",
+    "molality": 0.7313179040459395,
+    "source_pressure": 3137.0,
+    "source_row": "8",
+    "half_unit": 0.005,
+    "refinement_limit": 0.0005,
+    "refine": false,
+    "T": 298.15,
+    "vapor_support": [
+      "water"
+    ]
+  },
+  {
+    "id": "nacl-ion-suppression-workbook-9",
+    "model": "nacl-ion-suppression",
+    "kind": "bubble",
+    "molality": 1.0328334230464915,
+    "source_pressure": 3104.0,
+    "source_row": "9",
+    "half_unit": 0.005,
+    "refinement_limit": 0.0005,
+    "refine": false,
+    "T": 298.15,
+    "vapor_support": [
+      "water"
+    ]
+  },
+  {
+    "id": "nacl-ion-suppression-workbook-10",
+    "model": "nacl-ion-suppression",
+    "kind": "bubble",
+    "molality": 1.3272549324032503,
+    "source_pressure": 3071.0,
+    "source_row": "10",
+    "half_unit": 0.005,
+    "refinement_limit": 0.0005,
+    "refine": false,
+    "T": 298.15,
+    "vapor_support": [
+      "water"
+    ]
+  },
+  {
+    "id": "nacl-ion-suppression-workbook-11",
+    "model": "nacl-ion-suppression",
+    "kind": "bubble",
+    "molality": 1.6149228119730696,
+    "source_pressure": 3038.0,
+    "source_row": "11",
+    "half_unit": 0.005,
+    "refinement_limit": 0.0005,
+    "refine": false,
+    "T": 298.15,
+    "vapor_support": [
+      "water"
+    ]
+  },
+  {
+    "id": "nacl-ion-suppression-workbook-12",
+    "model": "nacl-ion-suppression",
+    "kind": "bubble",
+    "molality": 1.8964939313512317,
+    "source_pressure": 3005.0,
+    "source_row": "12",
+    "half_unit": 0.005,
+    "refinement_limit": 0.0005,
+    "refine": false,
+    "T": 298.15,
+    "vapor_support": [
+      "water"
+    ]
+  },
+  {
+    "id": "nacl-ion-suppression-workbook-13",
+    "model": "nacl-ion-suppression",
+    "kind": "bubble",
+    "molality": 2.173189821648142,
+    "source_pressure": 2972.0,
+    "source_row": "13",
+    "half_unit": 0.005,
+    "refinement_limit": 0.0005,
+    "refine": false,
+    "T": 298.15,
+    "vapor_support": [
+      "water"
+    ]
+  },
+  {
+    "id": "nacl-ion-suppression-workbook-14",
+    "model": "nacl-ion-suppression",
+    "kind": "bubble",
+    "molality": 2.4456769027747782,
+    "source_pressure": 2939.0,
+    "source_row": "14",
+    "half_unit": 0.005,
+    "refinement_limit": 0.0005,
+    "refine": false,
+    "T": 298.15,
+    "vapor_support": [
+      "water"
+    ]
+  },
+  {
+    "id": "nacl-ion-suppression-workbook-15",
+    "model": "nacl-ion-suppression",
+    "kind": "bubble",
+    "molality": 2.7146292597374697,
+    "source_pressure": 2906.0,
+    "source_row": "15",
+    "half_unit": 0.005,
+    "refinement_limit": 0.0005,
+    "refine": false,
+    "T": 298.15,
+    "vapor_support": [
+      "water"
+    ]
+  },
+  {
+    "id": "nacl-ion-suppression-workbook-16",
+    "model": "nacl-ion-suppression",
+    "kind": "bubble",
+    "molality": 2.9806332006683776,
+    "source_pressure": 2873.0,
+    "source_row": "16",
+    "half_unit": 0.005,
+    "refinement_limit": 0.0005,
+    "refine": false,
+    "T": 298.15,
+    "vapor_support": [
+      "water"
+    ]
+  },
+  {
+    "id": "nacl-ion-suppression-workbook-17",
+    "model": "nacl-ion-suppression",
+    "kind": "bubble",
+    "molality": 3.2442019656155408,
+    "source_pressure": 2840.0,
+    "source_row": "17",
+    "half_unit": 0.005,
+    "refinement_limit": 0.0005,
+    "refine": false,
+    "T": 298.15,
+    "vapor_support": [
+      "water"
+    ]
+  },
+  {
+    "id": "nacl-ion-suppression-workbook-18",
+    "model": "nacl-ion-suppression",
+    "kind": "bubble",
+    "molality": 3.5057880859235957,
+    "source_pressure": 2807.0,
+    "source_row": "18",
+    "half_unit": 0.005,
+    "refinement_limit": 0.0005,
+    "refine": false,
+    "T": 298.15,
+    "vapor_support": [
+      "water"
+    ]
+  },
+  {
+    "id": "nacl-ion-suppression-workbook-19",
+    "model": "nacl-ion-suppression",
+    "kind": "bubble",
+    "molality": 3.76579453852373,
+    "source_pressure": 2774.0,
+    "source_row": "19",
+    "half_unit": 0.005,
+    "refinement_limit": 0.0005,
+    "refine": false,
+    "T": 298.15,
+    "vapor_support": [
+      "water"
+    ]
+  },
+  {
+    "id": "nacl-ion-suppression-workbook-20",
+    "model": "nacl-ion-suppression",
+    "kind": "bubble",
+    "molality": 4.024582730522003,
+    "source_pressure": 2741.0,
+    "source_row": "20",
+    "half_unit": 0.005,
+    "refinement_limit": 0.0005,
+    "refine": false,
+    "T": 298.15,
+    "vapor_support": [
+      "water"
+    ]
+  },
+  {
+    "id": "nacl-ion-suppression-workbook-21",
+    "model": "nacl-ion-suppression",
+    "kind": "bubble",
+    "molality": 4.282479902997809,
+    "source_pressure": 2708.0,
+    "source_row": "21",
+    "half_unit": 0.005,
+    "refinement_limit": 0.0005,
+    "refine": false,
+    "T": 298.15,
+    "vapor_support": [
+      "water"
+    ]
+  },
+  {
+    "id": "nacl-ion-suppression-workbook-22",
+    "model": "nacl-ion-suppression",
+    "kind": "bubble",
+    "molality": 4.539784783050979,
+    "source_pressure": 2675.0,
+    "source_row": "22",
+    "half_unit": 0.005,
+    "refinement_limit": 0.0005,
+    "refine": false,
+    "T": 298.15,
+    "vapor_support": [
+      "water"
+    ]
+  },
+  {
+    "id": "nacl-ion-suppression-workbook-23",
+    "model": "nacl-ion-suppression",
+    "kind": "bubble",
+    "molality": 4.797577064037786,
+    "source_pressure": 2642.0,
+    "source_row": "23",
+    "half_unit": 0.005,
+    "refinement_limit": 0.0005,
+    "refine": false,
+    "T": 298.15,
+    "vapor_support": [
+      "water"
+    ]
+  },
+  {
+    "id": "nacl-ion-suppression-workbook-24",
+    "model": "nacl-ion-suppression",
+    "kind": "bubble",
+    "molality": 5.053697676339793,
+    "source_pressure": 2609.0,
+    "source_row": "24",
+    "half_unit": 0.005,
+    "refinement_limit": 0.0005,
+    "refine": false,
+    "T": 298.15,
+    "vapor_support": [
+      "water"
+    ]
+  },
+  {
+    "id": "nacl-ion-suppression-workbook-25",
+    "model": "nacl-ion-suppression",
+    "kind": "bubble",
+    "molality": 5.3107993931486375,
+    "source_pressure": 2576.0,
+    "source_row": "25",
+    "half_unit": 0.005,
+    "refinement_limit": 0.0005,
+    "refine": false,
+    "T": 298.15,
+    "vapor_support": [
+      "water"
+    ]
+  },
+  {
+    "id": "nacl-ion-suppression-workbook-26",
+    "model": "nacl-ion-suppression",
+    "kind": "bubble",
+    "molality": 5.568308964505821,
+    "source_pressure": 2543.0,
+    "source_row": "26",
+    "half_unit": 0.005,
+    "refinement_limit": 0.0005,
+    "refine": false,
+    "T": 298.15,
+    "vapor_support": [
+      "water"
+    ]
+  },
+  {
+    "id": "nacl-ion-suppression-workbook-27",
+    "model": "nacl-ion-suppression",
+    "kind": "bubble",
+    "molality": 5.599999992794862,
+    "source_pressure": 2541.0,
+    "source_row": "27",
+    "half_unit": 0.005,
+    "refinement_limit": 0.0005,
+    "refine": false,
+    "T": 298.15,
+    "vapor_support": [
+      "water"
+    ]
+  },
+  {
+    "id": "nacl-ion-suppression-workbook-28",
+    "model": "nacl-ion-suppression",
+    "kind": "bubble",
+    "molality": 5.842087210760663,
+    "source_pressure": 2508.0,
+    "source_row": "28",
+    "half_unit": 0.005,
+    "refinement_limit": 0.0005,
+    "refine": false,
+    "T": 298.15,
+    "vapor_support": [
+      "water"
+    ]
+  },
+  {
+    "id": "nacl-ion-suppression-table3",
+    "model": "nacl-ion-suppression",
+    "kind": "bubble",
+    "molality": 5.6,
+    "source_pressure": 2508.0,
+    "half_unit": 0.05,
+    "refinement_limit": 0.005,
+    "refine": true,
+    "T": 298.15,
+    "vapor_support": [
+      "water"
+    ]
+  },
+  {
+    "id": "nacl-ion-suppression-fig1a-298k-0005-0.99",
+    "model": "nacl-ion-suppression",
+    "kind": "discover",
+    "molality": 0.005000000139214637,
+    "P": 3181.454397,
+    "T": 298.15
+  },
+  {
+    "id": "nacl-ion-suppression-fig1a-298k-0005-1.0",
+    "model": "nacl-ion-suppression",
+    "kind": "discover",
+    "molality": 0.005000000139214637,
+    "P": 3213.5903,
+    "T": 298.15
+  },
+  {
+    "id": "nacl-ion-suppression-fig1a-298k-0005-1.01",
+    "model": "nacl-ion-suppression",
+    "kind": "discover",
+    "molality": 0.005000000139214637,
+    "P": 3245.7262029999997,
+    "T": 298.15
+  },
+  {
+    "id": "nacl-ion-suppression-fig1a-298k-1033-0.99",
+    "model": "nacl-ion-suppression",
+    "kind": "discover",
+    "molality": 1.0328334230464915,
+    "P": 3072.96,
+    "T": 298.15
+  },
+  {
+    "id": "nacl-ion-suppression-fig1a-298k-1033-1.0",
+    "model": "nacl-ion-suppression",
+    "kind": "discover",
+    "molality": 1.0328334230464915,
+    "P": 3104.0,
+    "T": 298.15
+  },
+  {
+    "id": "nacl-ion-suppression-fig1a-298k-1033-1.01",
+    "model": "nacl-ion-suppression",
+    "kind": "discover",
+    "molality": 1.0328334230464915,
+    "P": 3135.04,
+    "T": 298.15
+  },
+  {
+    "id": "nacl-ion-suppression-fig1a-298k-2173-0.99",
+    "model": "nacl-ion-suppression",
+    "kind": "discover",
+    "molality": 2.173189821648142,
+    "P": 2942.28,
+    "T": 298.15
+  },
+  {
+    "id": "nacl-ion-suppression-fig1a-298k-2173-1.0",
+    "model": "nacl-ion-suppression",
+    "kind": "discover",
+    "molality": 2.173189821648142,
+    "P": 2972.0,
+    "T": 298.15
+  },
+  {
+    "id": "nacl-ion-suppression-fig1a-298k-2173-1.01",
+    "model": "nacl-ion-suppression",
+    "kind": "discover",
+    "molality": 2.173189821648142,
+    "P": 3001.72,
+    "T": 298.15
+  },
+  {
+    "id": "nacl-ion-suppression-fig1a-298k-3506-0.99",
+    "model": "nacl-ion-suppression",
+    "kind": "discover",
+    "molality": 3.5057880859235957,
+    "P": 2778.93,
+    "T": 298.15
+  },
+  {
+    "id": "nacl-ion-suppression-fig1a-298k-3506-1.0",
+    "model": "nacl-ion-suppression",
+    "kind": "discover",
+    "molality": 3.5057880859235957,
+    "P": 2807.0,
+    "T": 298.15
+  },
+  {
+    "id": "nacl-ion-suppression-fig1a-298k-3506-1.01",
+    "model": "nacl-ion-suppression",
+    "kind": "discover",
+    "molality": 3.5057880859235957,
+    "P": 2835.07,
+    "T": 298.15
+  },
+  {
+    "id": "nacl-ion-suppression-fig1a-298k-4798-0.99",
+    "model": "nacl-ion-suppression",
+    "kind": "discover",
+    "molality": 4.797577064037786,
+    "P": 2615.58,
+    "T": 298.15
+  },
+  {
+    "id": "nacl-ion-suppression-fig1a-298k-4798-1.0",
+    "model": "nacl-ion-suppression",
+    "kind": "discover",
+    "molality": 4.797577064037786,
+    "P": 2642.0,
+    "T": 298.15
+  },
+  {
+    "id": "nacl-ion-suppression-fig1a-298k-4798-1.01",
+    "model": "nacl-ion-suppression",
+    "kind": "discover",
+    "molality": 4.797577064037786,
+    "P": 2668.42,
+    "T": 298.15
+  },
+  {
+    "id": "nacl-ion-suppression-fig1a-298k-5600-0.99",
+    "model": "nacl-ion-suppression",
+    "kind": "discover",
+    "molality": 5.599999992794862,
+    "P": 2515.59,
+    "T": 298.15
+  },
+  {
+    "id": "nacl-ion-suppression-fig1a-298k-5600-1.0",
+    "model": "nacl-ion-suppression",
+    "kind": "discover",
+    "molality": 5.599999992794862,
+    "P": 2541.0,
+    "T": 298.15
+  },
+  {
+    "id": "nacl-ion-suppression-fig1a-298k-5600-1.01",
+    "model": "nacl-ion-suppression",
+    "kind": "discover",
+    "molality": 5.599999992794862,
+    "P": 2566.41,
+    "T": 298.15
+  },
+  {
+    "id": "nacl-ion-suppression-table3-nacl-5600-0.99",
+    "model": "nacl-ion-suppression",
+    "kind": "discover",
+    "molality": 5.6,
+    "P": 2482.92,
+    "T": 298.15
+  },
+  {
+    "id": "nacl-ion-suppression-table3-nacl-5600-1.0",
+    "model": "nacl-ion-suppression",
+    "kind": "discover",
+    "molality": 5.6,
+    "P": 2508.0,
+    "T": 298.15
+  },
+  {
+    "id": "nacl-ion-suppression-table3-nacl-5600-1.01",
+    "model": "nacl-ion-suppression",
+    "kind": "discover",
+    "molality": 5.6,
+    "P": 2533.08,
+    "T": 298.15
+  },
+  {
+    "id": "nacl-ion-suppression-fig1a-298k-6000-0.99",
+    "model": "nacl-ion-suppression",
+    "kind": "discover",
+    "molality": 6.0,
+    "P": 2463.0003740933053,
+    "T": 298.15
+  },
+  {
+    "id": "nacl-ion-suppression-fig1a-298k-6000-1.0",
+    "model": "nacl-ion-suppression",
+    "kind": "discover",
+    "molality": 6.0,
+    "P": 2487.8791657508136,
+    "T": 298.15
+  },
+  {
+    "id": "nacl-ion-suppression-fig1a-298k-6000-1.01",
+    "model": "nacl-ion-suppression",
+    "kind": "discover",
+    "molality": 6.0,
+    "P": 2512.757957408322,
+    "T": 298.15
+  },
+  {
+    "id": "nacl-ion-suppression-table3-state-liquid",
+    "model": "nacl-ion-suppression",
+    "kind": "state",
+    "x": [
+      0.826112,
+      0.086944,
+      0.086944
+    ],
+    "phase": "liquid",
+    "P": 2508.0,
+    "T": 298.15,
+    "source_printed_x": [
+      0.826112,
+      0.086944,
+      0.086944
+    ]
+  },
+  {
+    "id": "nacl-ion-suppression-table3-state-vapor",
+    "model": "nacl-ion-suppression",
+    "kind": "state",
+    "x": [
+      1.0,
+      1.41063e-116,
+      1.41063e-116
+    ],
+    "phase": "vapor",
+    "P": 2508.0,
+    "T": 298.15,
+    "source_printed_x": [
+      1.0,
+      1.41063e-116,
+      1.41063e-116
+    ]
+  },
+  {
+    "id": "nacl-ion-suppression-charged-vapor-pending-771",
+    "model": "nacl-ion-suppression",
+    "kind": "charged",
+    "molality": 5.6,
+    "T": 298.15,
+    "vapor_support": [
+      "water",
+      "sodium-cation",
+      "chloride-anion"
+    ]
+  },
+  {
+    "id": "nacl-density-temperature-workbook-5",
+    "model": "nacl-density-temperature",
+    "kind": "bubble",
+    "molality": 0.005000000139214637,
+    "source_pressure": 3213.5903,
+    "source_row": "5",
+    "half_unit": 0.005,
+    "refinement_limit": 0.0005,
+    "refine": true,
+    "T": 298.15,
+    "vapor_support": [
+      "water"
+    ]
+  },
+  {
+    "id": "nacl-density-temperature-workbook-6",
+    "model": "nacl-density-temperature",
+    "kind": "bubble",
+    "molality": 0.10383204200898462,
+    "source_pressure": 3203.0,
+    "source_row": "6",
+    "half_unit": 0.005,
+    "refinement_limit": 0.0005,
+    "refine": false,
+    "T": 298.15,
+    "vapor_support": [
+      "water"
+    ]
+  },
+  {
+    "id": "nacl-density-temperature-workbook-7",
+    "model": "nacl-density-temperature",
+    "kind": "bubble",
+    "molality": 0.4199609478958201,
+    "source_pressure": 3170.0,
+    "source_row": "7",
+    "half_unit": 0.005,
+    "refinement_limit": 0.0005,
+    "refine": false,
+    "T": 298.15,
+    "vapor_support": [
+      "water"
+    ]
+  },
+  {
+    "id": "nacl-density-temperature-workbook-8",
+    "model": "nacl-density-temperature",
+    "kind": "bubble",
+    "molality": 0.7313179040459395,
+    "source_pressure": 3137.0,
+    "source_row": "8",
+    "half_unit": 0.005,
+    "refinement_limit": 0.0005,
+    "refine": false,
+    "T": 298.15,
+    "vapor_support": [
+      "water"
+    ]
+  },
+  {
+    "id": "nacl-density-temperature-workbook-9",
+    "model": "nacl-density-temperature",
+    "kind": "bubble",
+    "molality": 1.0328334230464915,
+    "source_pressure": 3104.0,
+    "source_row": "9",
+    "half_unit": 0.005,
+    "refinement_limit": 0.0005,
+    "refine": false,
+    "T": 298.15,
+    "vapor_support": [
+      "water"
+    ]
+  },
+  {
+    "id": "nacl-density-temperature-workbook-10",
+    "model": "nacl-density-temperature",
+    "kind": "bubble",
+    "molality": 1.3272549324032503,
+    "source_pressure": 3071.0,
+    "source_row": "10",
+    "half_unit": 0.005,
+    "refinement_limit": 0.0005,
+    "refine": false,
+    "T": 298.15,
+    "vapor_support": [
+      "water"
+    ]
+  },
+  {
+    "id": "nacl-density-temperature-workbook-11",
+    "model": "nacl-density-temperature",
+    "kind": "bubble",
+    "molality": 1.6149228119730696,
+    "source_pressure": 3038.0,
+    "source_row": "11",
+    "half_unit": 0.005,
+    "refinement_limit": 0.0005,
+    "refine": false,
+    "T": 298.15,
+    "vapor_support": [
+      "water"
+    ]
+  },
+  {
+    "id": "nacl-density-temperature-workbook-12",
+    "model": "nacl-density-temperature",
+    "kind": "bubble",
+    "molality": 1.8964939313512317,
+    "source_pressure": 3005.0,
+    "source_row": "12",
+    "half_unit": 0.005,
+    "refinement_limit": 0.0005,
+    "refine": false,
+    "T": 298.15,
+    "vapor_support": [
+      "water"
+    ]
+  },
+  {
+    "id": "nacl-density-temperature-workbook-13",
+    "model": "nacl-density-temperature",
+    "kind": "bubble",
+    "molality": 2.173189821648142,
+    "source_pressure": 2972.0,
+    "source_row": "13",
+    "half_unit": 0.005,
+    "refinement_limit": 0.0005,
+    "refine": false,
+    "T": 298.15,
+    "vapor_support": [
+      "water"
+    ]
+  },
+  {
+    "id": "nacl-density-temperature-workbook-14",
+    "model": "nacl-density-temperature",
+    "kind": "bubble",
+    "molality": 2.4456769027747782,
+    "source_pressure": 2939.0,
+    "source_row": "14",
+    "half_unit": 0.005,
+    "refinement_limit": 0.0005,
+    "refine": false,
+    "T": 298.15,
+    "vapor_support": [
+      "water"
+    ]
+  },
+  {
+    "id": "nacl-density-temperature-workbook-15",
+    "model": "nacl-density-temperature",
+    "kind": "bubble",
+    "molality": 2.7146292597374697,
+    "source_pressure": 2906.0,
+    "source_row": "15",
+    "half_unit": 0.005,
+    "refinement_limit": 0.0005,
+    "refine": false,
+    "T": 298.15,
+    "vapor_support": [
+      "water"
+    ]
+  },
+  {
+    "id": "nacl-density-temperature-workbook-16",
+    "model": "nacl-density-temperature",
+    "kind": "bubble",
+    "molality": 2.9806332006683776,
+    "source_pressure": 2873.0,
+    "source_row": "16",
+    "half_unit": 0.005,
+    "refinement_limit": 0.0005,
+    "refine": false,
+    "T": 298.15,
+    "vapor_support": [
+      "water"
+    ]
+  },
+  {
+    "id": "nacl-density-temperature-workbook-17",
+    "model": "nacl-density-temperature",
+    "kind": "bubble",
+    "molality": 3.2442019656155408,
+    "source_pressure": 2840.0,
+    "source_row": "17",
+    "half_unit": 0.005,
+    "refinement_limit": 0.0005,
+    "refine": false,
+    "T": 298.15,
+    "vapor_support": [
+      "water"
+    ]
+  },
+  {
+    "id": "nacl-density-temperature-workbook-18",
+    "model": "nacl-density-temperature",
+    "kind": "bubble",
+    "molality": 3.5057880859235957,
+    "source_pressure": 2807.0,
+    "source_row": "18",
+    "half_unit": 0.005,
+    "refinement_limit": 0.0005,
+    "refine": false,
+    "T": 298.15,
+    "vapor_support": [
+      "water"
+    ]
+  },
+  {
+    "id": "nacl-density-temperature-workbook-19",
+    "model": "nacl-density-temperature",
+    "kind": "bubble",
+    "molality": 3.76579453852373,
+    "source_pressure": 2774.0,
+    "source_row": "19",
+    "half_unit": 0.005,
+    "refinement_limit": 0.0005,
+    "refine": false,
+    "T": 298.15,
+    "vapor_support": [
+      "water"
+    ]
+  },
+  {
+    "id": "nacl-density-temperature-workbook-20",
+    "model": "nacl-density-temperature",
+    "kind": "bubble",
+    "molality": 4.024582730522003,
+    "source_pressure": 2741.0,
+    "source_row": "20",
+    "half_unit": 0.005,
+    "refinement_limit": 0.0005,
+    "refine": false,
+    "T": 298.15,
+    "vapor_support": [
+      "water"
+    ]
+  },
+  {
+    "id": "nacl-density-temperature-workbook-21",
+    "model": "nacl-density-temperature",
+    "kind": "bubble",
+    "molality": 4.282479902997809,
+    "source_pressure": 2708.0,
+    "source_row": "21",
+    "half_unit": 0.005,
+    "refinement_limit": 0.0005,
+    "refine": false,
+    "T": 298.15,
+    "vapor_support": [
+      "water"
+    ]
+  },
+  {
+    "id": "nacl-density-temperature-workbook-22",
+    "model": "nacl-density-temperature",
+    "kind": "bubble",
+    "molality": 4.539784783050979,
+    "source_pressure": 2675.0,
+    "source_row": "22",
+    "half_unit": 0.005,
+    "refinement_limit": 0.0005,
+    "refine": false,
+    "T": 298.15,
+    "vapor_support": [
+      "water"
+    ]
+  },
+  {
+    "id": "nacl-density-temperature-workbook-23",
+    "model": "nacl-density-temperature",
+    "kind": "bubble",
+    "molality": 4.797577064037786,
+    "source_pressure": 2642.0,
+    "source_row": "23",
+    "half_unit": 0.005,
+    "refinement_limit": 0.0005,
+    "refine": false,
+    "T": 298.15,
+    "vapor_support": [
+      "water"
+    ]
+  },
+  {
+    "id": "nacl-density-temperature-workbook-24",
+    "model": "nacl-density-temperature",
+    "kind": "bubble",
+    "molality": 5.053697676339793,
+    "source_pressure": 2609.0,
+    "source_row": "24",
+    "half_unit": 0.005,
+    "refinement_limit": 0.0005,
+    "refine": false,
+    "T": 298.15,
+    "vapor_support": [
+      "water"
+    ]
+  },
+  {
+    "id": "nacl-density-temperature-workbook-25",
+    "model": "nacl-density-temperature",
+    "kind": "bubble",
+    "molality": 5.3107993931486375,
+    "source_pressure": 2576.0,
+    "source_row": "25",
+    "half_unit": 0.005,
+    "refinement_limit": 0.0005,
+    "refine": false,
+    "T": 298.15,
+    "vapor_support": [
+      "water"
+    ]
+  },
+  {
+    "id": "nacl-density-temperature-workbook-26",
+    "model": "nacl-density-temperature",
+    "kind": "bubble",
+    "molality": 5.568308964505821,
+    "source_pressure": 2543.0,
+    "source_row": "26",
+    "half_unit": 0.005,
+    "refinement_limit": 0.0005,
+    "refine": false,
+    "T": 298.15,
+    "vapor_support": [
+      "water"
+    ]
+  },
+  {
+    "id": "nacl-density-temperature-workbook-27",
+    "model": "nacl-density-temperature",
+    "kind": "bubble",
+    "molality": 5.599999992794862,
+    "source_pressure": 2541.0,
+    "source_row": "27",
+    "half_unit": 0.005,
+    "refinement_limit": 0.0005,
+    "refine": false,
+    "T": 298.15,
+    "vapor_support": [
+      "water"
+    ]
+  },
+  {
+    "id": "nacl-density-temperature-workbook-28",
+    "model": "nacl-density-temperature",
+    "kind": "bubble",
+    "molality": 5.842087210760663,
+    "source_pressure": 2508.0,
+    "source_row": "28",
+    "half_unit": 0.005,
+    "refinement_limit": 0.0005,
+    "refine": false,
+    "T": 298.15,
+    "vapor_support": [
+      "water"
+    ]
+  },
+  {
+    "id": "nacl-density-temperature-table3",
+    "model": "nacl-density-temperature",
+    "kind": "bubble",
+    "molality": 5.6,
+    "source_pressure": 2508.0,
+    "half_unit": 0.05,
+    "refinement_limit": 0.005,
+    "refine": true,
+    "T": 298.15,
+    "vapor_support": [
+      "water"
+    ]
+  },
+  {
+    "id": "nacl-density-temperature-fig1a-298k-0005-0.99",
+    "model": "nacl-density-temperature",
+    "kind": "discover",
+    "molality": 0.005000000139214637,
+    "P": 3181.454397,
+    "T": 298.15
+  },
+  {
+    "id": "nacl-density-temperature-fig1a-298k-0005-1.0",
+    "model": "nacl-density-temperature",
+    "kind": "discover",
+    "molality": 0.005000000139214637,
+    "P": 3213.5903,
+    "T": 298.15
+  },
+  {
+    "id": "nacl-density-temperature-fig1a-298k-0005-1.01",
+    "model": "nacl-density-temperature",
+    "kind": "discover",
+    "molality": 0.005000000139214637,
+    "P": 3245.7262029999997,
+    "T": 298.15
+  },
+  {
+    "id": "nacl-density-temperature-fig1a-298k-1033-0.99",
+    "model": "nacl-density-temperature",
+    "kind": "discover",
+    "molality": 1.0328334230464915,
+    "P": 3072.96,
+    "T": 298.15
+  },
+  {
+    "id": "nacl-density-temperature-fig1a-298k-1033-1.0",
+    "model": "nacl-density-temperature",
+    "kind": "discover",
+    "molality": 1.0328334230464915,
+    "P": 3104.0,
+    "T": 298.15
+  },
+  {
+    "id": "nacl-density-temperature-fig1a-298k-1033-1.01",
+    "model": "nacl-density-temperature",
+    "kind": "discover",
+    "molality": 1.0328334230464915,
+    "P": 3135.04,
+    "T": 298.15
+  },
+  {
+    "id": "nacl-density-temperature-fig1a-298k-2173-0.99",
+    "model": "nacl-density-temperature",
+    "kind": "discover",
+    "molality": 2.173189821648142,
+    "P": 2942.28,
+    "T": 298.15
+  },
+  {
+    "id": "nacl-density-temperature-fig1a-298k-2173-1.0",
+    "model": "nacl-density-temperature",
+    "kind": "discover",
+    "molality": 2.173189821648142,
+    "P": 2972.0,
+    "T": 298.15
+  },
+  {
+    "id": "nacl-density-temperature-fig1a-298k-2173-1.01",
+    "model": "nacl-density-temperature",
+    "kind": "discover",
+    "molality": 2.173189821648142,
+    "P": 3001.72,
+    "T": 298.15
+  },
+  {
+    "id": "nacl-density-temperature-fig1a-298k-3506-0.99",
+    "model": "nacl-density-temperature",
+    "kind": "discover",
+    "molality": 3.5057880859235957,
+    "P": 2778.93,
+    "T": 298.15
+  },
+  {
+    "id": "nacl-density-temperature-fig1a-298k-3506-1.0",
+    "model": "nacl-density-temperature",
+    "kind": "discover",
+    "molality": 3.5057880859235957,
+    "P": 2807.0,
+    "T": 298.15
+  },
+  {
+    "id": "nacl-density-temperature-fig1a-298k-3506-1.01",
+    "model": "nacl-density-temperature",
+    "kind": "discover",
+    "molality": 3.5057880859235957,
+    "P": 2835.07,
+    "T": 298.15
+  },
+  {
+    "id": "nacl-density-temperature-fig1a-298k-4798-0.99",
+    "model": "nacl-density-temperature",
+    "kind": "discover",
+    "molality": 4.797577064037786,
+    "P": 2615.58,
+    "T": 298.15
+  },
+  {
+    "id": "nacl-density-temperature-fig1a-298k-4798-1.0",
+    "model": "nacl-density-temperature",
+    "kind": "discover",
+    "molality": 4.797577064037786,
+    "P": 2642.0,
+    "T": 298.15
+  },
+  {
+    "id": "nacl-density-temperature-fig1a-298k-4798-1.01",
+    "model": "nacl-density-temperature",
+    "kind": "discover",
+    "molality": 4.797577064037786,
+    "P": 2668.42,
+    "T": 298.15
+  },
+  {
+    "id": "nacl-density-temperature-fig1a-298k-5600-0.99",
+    "model": "nacl-density-temperature",
+    "kind": "discover",
+    "molality": 5.599999992794862,
+    "P": 2515.59,
+    "T": 298.15
+  },
+  {
+    "id": "nacl-density-temperature-fig1a-298k-5600-1.0",
+    "model": "nacl-density-temperature",
+    "kind": "discover",
+    "molality": 5.599999992794862,
+    "P": 2541.0,
+    "T": 298.15
+  },
+  {
+    "id": "nacl-density-temperature-fig1a-298k-5600-1.01",
+    "model": "nacl-density-temperature",
+    "kind": "discover",
+    "molality": 5.599999992794862,
+    "P": 2566.41,
+    "T": 298.15
+  },
+  {
+    "id": "nacl-density-temperature-table3-nacl-5600-0.99",
+    "model": "nacl-density-temperature",
+    "kind": "discover",
+    "molality": 5.6,
+    "P": 2482.92,
+    "T": 298.15
+  },
+  {
+    "id": "nacl-density-temperature-table3-nacl-5600-1.0",
+    "model": "nacl-density-temperature",
+    "kind": "discover",
+    "molality": 5.6,
+    "P": 2508.0,
+    "T": 298.15
+  },
+  {
+    "id": "nacl-density-temperature-table3-nacl-5600-1.01",
+    "model": "nacl-density-temperature",
+    "kind": "discover",
+    "molality": 5.6,
+    "P": 2533.08,
+    "T": 298.15
+  },
+  {
+    "id": "nacl-density-temperature-fig1a-298k-6000-0.99",
+    "model": "nacl-density-temperature",
+    "kind": "discover",
+    "molality": 6.0,
+    "P": 2463.0003740933053,
+    "T": 298.15
+  },
+  {
+    "id": "nacl-density-temperature-fig1a-298k-6000-1.0",
+    "model": "nacl-density-temperature",
+    "kind": "discover",
+    "molality": 6.0,
+    "P": 2487.8791657508136,
+    "T": 298.15
+  },
+  {
+    "id": "nacl-density-temperature-fig1a-298k-6000-1.01",
+    "model": "nacl-density-temperature",
+    "kind": "discover",
+    "molality": 6.0,
+    "P": 2512.757957408322,
+    "T": 298.15
+  },
+  {
+    "id": "nacl-density-temperature-table3-state-liquid",
+    "model": "nacl-density-temperature",
+    "kind": "state",
+    "x": [
+      0.826112,
+      0.086944,
+      0.086944
+    ],
+    "phase": "liquid",
+    "P": 2508.0,
+    "T": 298.15,
+    "source_printed_x": [
+      0.826112,
+      0.086944,
+      0.086944
+    ]
+  },
+  {
+    "id": "nacl-density-temperature-table3-state-vapor",
+    "model": "nacl-density-temperature",
+    "kind": "state",
+    "x": [
+      1.0,
+      1.41063e-116,
+      1.41063e-116
+    ],
+    "phase": "vapor",
+    "P": 2508.0,
+    "T": 298.15,
+    "source_printed_x": [
+      1.0,
+      1.41063e-116,
+      1.41063e-116
+    ]
+  },
+  {
+    "id": "nacl-density-temperature-charged-vapor-pending-771",
+    "model": "nacl-density-temperature",
+    "kind": "charged",
+    "molality": 5.6,
+    "T": 298.15,
+    "vapor_support": [
+      "water",
+      "sodium-cation",
+      "chloride-anion"
+    ]
+  },
+  {
+    "id": "figure3-01",
+    "model": "licl-conditional",
+    "kind": "split",
+    "feed": [
+      30.690376752531243,
+      6.00274984769759,
+      0.0512112853634613,
+      0.0512112853634613
+    ],
+    "endpoints": [
+      [
+        0.9651188673205118,
+        0.03088942941752936,
+        0.0019958516309794496,
+        0.0019958516309794496
+      ],
+      [
+        0.5455948767578072,
+        0.45428127896373743,
+        6.192213922777519e-05,
+        6.192213922777519e-05
+      ]
+    ],
+    "P": 101300.0,
+    "T": 298.15,
+    "refine": false,
+    "limitation": "Conditional LiCl diagnostic: explicit zero assumptions for the three Li-containing diameter corrections; historical inputs retained; comparison between different models.",
+    "endpoint_source_amounts": [
+      [
+        48.83941637120866,
+        1.563146008097644,
+        0.10099919514700545,
+        0.10099919514700545
+      ],
+      [
+        12.541337133853833,
+        10.442353687297537,
+        0.0014233755799171399,
+        0.0014233755799171399
+      ]
+    ]
+  },
+  {
+    "id": "figure3-02",
+    "model": "licl-conditional",
+    "kind": "split",
+    "feed": [
+      30.502202266621694,
+      5.977290805201876,
+      0.1757001038764856,
+      0.1757001038764856
+    ],
+    "endpoints": [
+      [
+        0.9575637703905067,
+        0.028784105206873353,
+        0.006826062201310018,
+        0.006826062201310018
+      ],
+      [
+        0.5401108566464166,
+        0.45950060081361876,
+        0.00019427126998230074,
+        0.00019427126998230074
+      ]
+    ],
+    "P": 101300.0,
+    "T": 298.15,
+    "refine": false,
+    "limitation": "Conditional LiCl diagnostic: explicit zero assumptions for the three Li-containing diameter corrections; historical inputs retained; comparison between different models.",
+    "endpoint_source_amounts": [
+      [
+        48.67237530066704,
+        1.463078297909582,
+        0.3469645276495441,
+        0.3469645276495441
+      ],
+      [
+        12.33202923257635,
+        10.491503312494169,
+        0.0044356801034270785,
+        0.0044356801034270785
+      ]
+    ]
+  },
+  {
+    "id": "figure3-03",
+    "model": "licl-conditional",
+    "kind": "split",
+    "feed": [
+      30.297002053546244,
+      5.958497172433114,
+      0.29576977656454423,
+      0.29576977656454423
+    ],
+    "endpoints": [
+      [
+        0.9500192409923934,
+        0.027063610739500407,
+        0.011458574134053072,
+        0.011458574134053072
+      ],
+      [
+        0.5350149053845606,
+        0.464357976316573,
+        0.00031355914943314726,
+        0.00031355914943314726
+      ]
+    ],
+    "P": 101300.0,
+    "T": 298.15,
+    "refine": false,
+    "limitation": "Conditional LiCl diagnostic: explicit zero assumptions for the three Li-containing diameter corrections; historical inputs retained; comparison between different models.",
+    "endpoint_source_amounts": [
+      [
+        48.45407868468961,
+        1.3803323845248974,
+        0.5844246397849558,
+        0.5844246397849558
+      ],
+      [
+        12.139925422402875,
+        10.536661960341332,
+        0.007114913344132666,
+        0.007114913344132666
+      ]
+    ]
+  },
+  {
+    "id": "figure3-04",
+    "model": "licl-conditional",
+    "kind": "split",
+    "feed": [
+      30.081947158972284,
+      5.9446074097646475,
+      0.41145285214197896,
+      0.41145285214197896
+    ],
+    "endpoints": [
+      [
+        0.9425740384709923,
+        0.025619417977145217,
+        0.015903271775931236,
+        0.015903271775931236
+      ],
+      [
+        0.5301802253530181,
+        0.4689687845733488,
+        0.00042549503681652565,
+        0.00042549503681652565
+      ]
+    ],
+    "P": 101300.0,
+    "T": 298.15,
+    "refine": false,
+    "limitation": "Conditional LiCl diagnostic: explicit zero assumptions for the three Li-containing diameter corrections; historical inputs retained; comparison between different models.",
+    "endpoint_source_amounts": [
+      [
+        48.20406923278147,
+        1.3101996739451678,
+        0.8133073715442894,
+        0.8133073715442894
+      ],
+      [
+        11.959825085163097,
+        10.579015145584128,
+        0.009598332739668465,
+        0.009598332739668465
+      ]
+    ]
+  },
+  {
+    "id": "figure3-05",
+    "model": "licl-conditional",
+    "kind": "split",
+    "feed": [
+      29.86225175894018,
+      5.9346930931467226,
+      0.5221567718616661,
+      0.5221567718616661
+    ],
+    "endpoints": [
+      [
+        0.935318071404193,
+        0.024394706061722116,
+        0.02014361126704246,
+        0.02014361126704246
+      ],
+      [
+        0.5255463655174188,
+        0.473388439794399,
+        0.0005325973440910804,
+        0.0005325973440910804
+      ]
+    ],
+    "P": 101300.0,
+    "T": 298.15,
+    "refine": false,
+    "limitation": "Conditional LiCl diagnostic: explicit zero assumptions for the three Li-containing diameter corrections; historical inputs retained; comparison between different models.",
+    "endpoint_source_amounts": [
+      [
+        47.9353357668039,
+        1.250236108712797,
+        1.0323662069225426,
+        1.0323662069225426
+      ],
+      [
+        11.789167751076453,
+        10.619150077580649,
+        0.011947336800789703,
+        0.011947336800789703
+      ]
+    ]
+  },
+  {
+    "id": "figure3-06",
+    "model": "licl-conditional",
+    "kind": "split",
+    "feed": [
+      29.504995998744384,
+      5.924630507765697,
+      0.6915815767712735,
+      0.6915815767712735
+    ],
+    "endpoints": [
+      [
+        0.924005053969598,
+        0.022761661410719475,
+        0.026616642309841277,
+        0.026616642309841277
+      ],
+      [
+        0.5184545168866499,
+        0.48015037023836443,
+        0.00069755643749282,
+        0.00069755643749282
+      ]
+    ],
+    "P": 101300.0,
+    "T": 298.15,
+    "refine": false,
+    "limitation": "Conditional LiCl diagnostic: explicit zero assumptions for the three Li-containing diameter corrections; historical inputs retained; comparison between different models.",
+    "endpoint_source_amounts": [
+      [
+        47.478321642056514,
+        1.1695666348609413,
+        1.367647827454192,
+        1.367647827454192
+      ],
+      [
+        11.531670355432254,
+        10.679694380670451,
+        0.015515326088354917,
+        0.015515326088354917
+      ]
+    ]
+  },
+  {
+    "id": "figure3-07",
+    "model": "licl-conditional",
+    "kind": "split",
+    "feed": [
+      28.96834347859835,
+      5.9193206716642255,
+      0.9289375324380682,
+      0.9289375324380682
+    ],
+    "endpoints": [
+      [
+        0.9078037050518497,
+        0.02086332656430101,
+        0.035666484191924606,
+        0.035666484191924606
+      ],
+      [
+        0.5083741909429509,
+        0.4897516176266158,
+        0.0009370957152166781,
+        0.0009370957152166781
+      ]
+    ],
+    "P": 101300.0,
+    "T": 298.15,
+    "refine": false,
+    "limitation": "Conditional LiCl diagnostic: explicit zero assumptions for the three Li-containing diameter corrections; historical inputs retained; comparison between different models.",
+    "endpoint_source_amounts": [
+      [
+        46.76348057067215,
+        1.074727676258552,
+        1.837279283232259,
+        1.837279283232259
+      ],
+      [
+        11.173206386524546,
+        10.763913667069898,
+        0.020595781643877247,
+        0.020595781643877247
+      ]
+    ]
+  },
+  {
+    "id": "figure3-08",
+    "model": "licl-conditional",
+    "kind": "split",
+    "feed": [
+      28.108134941918184,
+      5.926250598269377,
+      1.2823992073337267,
+      1.2823992073337267
+    ],
+    "endpoints": [
+      [
+        0.8830472187909536,
+        0.018672063961265018,
+        0.04914035862389071,
+        0.04914035862389071
+      ],
+      [
+        0.492927128060887,
+        0.5044253913224841,
+        0.0013237403083143958,
+        0.0013237403083143958
+      ]
+    ],
+    "P": 101300.0,
+    "T": 298.15,
+    "refine": false,
+    "limitation": "Conditional LiCl diagnostic: explicit zero assumptions for the three Li-containing diameter corrections; historical inputs retained; comparison between different models.",
+    "endpoint_source_amounts": [
+      [
+        45.575675715329766,
+        0.9636992381898528,
+        2.5362234334918843,
+        2.5362234334918843
+      ],
+      [
+        10.640594168506604,
+        10.888801958348902,
+        0.02857498117556932,
+        0.02857498117556932
+      ]
+    ]
+  },
+  {
+    "id": "figure3-09",
+    "model": "licl-conditional",
+    "kind": "split",
+    "feed": [
+      28.014230360477498,
+      5.929032551410781,
+      1.3174431919992347,
+      1.3174431919992347
+    ],
+    "endpoints": [
+      [
+        0.8805623700916306,
+        0.018489161164604306,
+        0.050474234371882504,
+        0.050474234371882504
+      ],
+      [
+        0.49103936514570595,
+        0.5062140887260629,
+        0.0013732730641155873,
+        0.0013732730641155873
+      ]
+    ],
+    "P": 101300.0,
+    "T": 298.15,
+    "refine": false,
+    "limitation": "Conditional LiCl diagnostic: explicit zero assumptions for the three Li-containing diameter corrections; historical inputs retained; comparison between different models.",
+    "endpoint_source_amounts": [
+      [
+        45.4516021002228,
+        0.9543469321009476,
+        2.6053064438189275,
+        2.6053064438189275
+      ],
+      [
+        10.576858620732192,
+        10.903718170720616,
+        0.029579940179542,
+        0.029579940179542
+      ]
+    ]
+  },
+  {
+    "id": "figure3-10",
+    "model": "licl-conditional",
+    "kind": "split",
+    "feed": [
+      27.28166971401923,
+      5.945519272004343,
+      1.5999452692292229,
+      1.5999452692292229
+    ],
+    "endpoints": [
+      [
+        0.8602588308756258,
+        0.017197079247856458,
+        0.061272044938258906,
+        0.061272044938258906
+      ],
+      [
+        0.4782010389401238,
+        0.5183493115391082,
+        0.001724824760383976,
+        0.001724824760383976
+      ]
+    ],
+    "P": 101300.0,
+    "T": 298.15,
+    "refine": false,
+    "limitation": "Conditional LiCl diagnostic: explicit zero assumptions for the three Li-containing diameter corrections; historical inputs retained; comparison between different models.",
+    "endpoint_source_amounts": [
+      [
+        44.41237383376147,
+        0.8878294357376328,
+        3.1632769902369264,
+        3.1632769902369264
+      ],
+      [
+        10.150965594276986,
+        11.003209108271053,
+        0.03661354822151917,
+        0.03661354822151917
+      ]
+    ]
+  },
+  {
+    "id": "figure3-11",
+    "model": "licl-conditional",
+    "kind": "split",
+    "feed": [
+      26.528033295538457,
+      5.967737507455571,
+      1.8813823991255763,
+      1.8813823991255763
+    ],
+    "endpoints": [
+      [
+        0.8396473478745035,
+        0.01620045732035911,
+        0.07207609740256873,
+        0.07207609740256873
+      ],
+      [
+        0.4653137407891972,
+        0.5304648485117186,
+        0.0021107053495421106,
+        0.0021107053495421106
+      ]
+    ],
+    "P": 101300.0,
+    "T": 298.15,
+    "refine": false,
+    "limitation": "Conditional LiCl diagnostic: explicit zero assumptions for the three Li-containing diameter corrections; historical inputs retained; comparison between different models.",
+    "endpoint_source_amounts": [
+      [
+        43.31966347060079,
+        0.8358251365461119,
+        3.7185995902415363,
+        3.7185995902415363
+      ],
+      [
+        9.736403120476123,
+        11.099649878365032,
+        0.044165208009616035,
+        0.044165208009616035
+      ]
+    ]
+  },
+  {
+    "id": "figure3-12",
+    "model": "licl-conditional",
+    "kind": "split",
+    "feed": [
+      25.805823502494718,
+      5.994247729185116,
+      2.141958751790738,
+      2.141958751790738
+    ],
+    "endpoints": [
+      [
+        0.820239703042654,
+        0.0155032089619284,
+        0.08212854399770876,
+        0.08212854399770876
+      ],
+      [
+        0.45284928695778953,
+        0.5421024210904145,
+        0.002524145975897969,
+        0.002524145975897969
+      ]
+    ],
+    "P": 101300.0,
+    "T": 298.15,
+    "refine": false,
+    "limitation": "Conditional LiCl diagnostic: explicit zero assumptions for the three Li-containing diameter corrections; historical inputs retained; comparison between different models.",
+    "endpoint_source_amounts": [
+      [
+        42.26427661738042,
+        0.7988297927952407,
+        4.231816003085329,
+        4.231816003085329
+      ],
+      [
+        9.347370387609017,
+        11.189665665574992,
+        0.05210150049614711,
+        0.05210150049614711
+      ]
+    ]
+  },
+  {
+    "id": "figure3-13",
+    "model": "licl-conditional",
+    "kind": "split",
+    "feed": [
+      25.131815032014394,
+      6.022937242587028,
+      2.3782394472732493,
+      2.3782394472732493
+    ],
+    "endpoints": [
+      [
+        0.8023728990297119,
+        0.015043311158532356,
+        0.0912918949058779,
+        0.0912918949058779
+      ],
+      [
+        0.44103233848883144,
+        0.5530444917538618,
+        0.002961584878653378,
+        0.002961584878653378
+      ]
+    ],
+    "P": 101300.0,
+    "T": 298.15,
+    "refine": false,
+    "limitation": "Conditional LiCl diagnostic: explicit zero assumptions for the three Li-containing diameter corrections; historical inputs retained; comparison between different models.",
+    "endpoint_source_amounts": [
+      [
+        41.27460175989272,
+        0.7738380470843659,
+        4.696116494840086,
+        4.696116494840086
+      ],
+      [
+        8.989028304136074,
+        11.272036438089689,
+        0.0603623997064124,
+        0.0603623997064124
+      ]
+    ]
+  },
+  {
+    "id": "figure3-14",
+    "model": "licl-conditional",
+    "kind": "split",
+    "feed": [
+      23.8745492118991,
+      6.0849640232551865,
+      2.804105726061497,
+      2.804105726061497
+    ],
+    "endpoints": [
+      [
+        0.7695020744343823,
+        0.014614366705797735,
+        0.10794177942990997,
+        0.10794177942990997
+      ],
+      [
+        0.418439914953616,
+        0.5736360517471311,
+        0.0039620166496264824,
+        0.0039620166496264824
+      ]
+    ],
+    "P": 101300.0,
+    "T": 298.15,
+    "refine": false,
+    "limitation": "Conditional LiCl diagnostic: explicit zero assumptions for the three Li-containing diameter corrections; historical inputs retained; comparison between different models.",
+    "endpoint_source_amounts": [
+      [
+        39.41780495690017,
+        0.7486220966995893,
+        5.529326235275473,
+        5.529326235275473
+      ],
+      [
+        8.331293466898028,
+        11.421305949810783,
+        0.0788852168475212,
+        0.0788852168475212
+      ]
+    ]
+  },
+  {
+    "id": "figure3-15",
+    "model": "licl-conditional",
+    "kind": "split",
+    "feed": [
+      22.765299870070837,
+      6.143621333075011,
+      3.172958375915486,
+      3.172958375915486
+    ],
+    "endpoints": [
+      [
+        0.7401916936869837,
+        0.014681923106620769,
+        0.12256319160319783,
+        0.12256319160319783
+      ],
+      [
+        0.3993010203360778,
+        0.5906077817054844,
+        0.005045598979218833,
+        0.005045598979218833
+      ]
+    ],
+    "P": 101300.0,
+    "T": 298.15,
+    "refine": false,
+    "limitation": "Conditional LiCl diagnostic: explicit zero assumptions for the three Li-containing diameter corrections; historical inputs retained; comparison between different models.",
+    "endpoint_source_amounts": [
+      [
+        37.729343716100104,
+        0.748372790491351,
+        6.247339469462899,
+        6.247339469462899
+      ],
+      [
+        7.801256024041568,
+        11.538869875658671,
+        0.09857728236807227,
+        0.09857728236807227
+      ]
+    ]
+  },
+  {
+    "id": "figure3-16",
+    "model": "licl-conditional",
+    "kind": "split",
+    "feed": [
+      21.756164677101953,
+      6.203785373086915,
+      3.4966290093441774,
+      3.4966290093441774
+    ],
+    "endpoints": [
+      [
+        0.7137625190662344,
+        0.015139439077440081,
+        0.1355490209281628,
+        0.1355490209281628
+      ],
+      [
+        0.3814872026183802,
+        0.6058224071805859,
+        0.006345195100516963,
+        0.006345195100516963
+      ]
+    ],
+    "P": 101300.0,
+    "T": 298.15,
+    "refine": false,
+    "limitation": "Conditional LiCl diagnostic: explicit zero assumptions for the three Li-containing diameter corrections; historical inputs retained; comparison between different models.",
+    "endpoint_source_amounts": [
+      [
+        36.182534820668025,
+        0.7674587372582754,
+        6.871343112912307,
+        6.871343112912307
+      ],
+      [
+        7.329794533535884,
+        11.640112008915555,
+        0.12191490577604788,
+        0.12191490577604788
+      ]
+    ]
+  },
+  {
+    "id": "figure3-17",
+    "model": "licl-conditional",
+    "kind": "split",
+    "feed": [
+      20.809925015534166,
+      6.265412293189574,
+      3.791011800784794,
+      3.791011800784794
+    ],
+    "endpoints": [
+      [
+        0.6889949575496659,
+        0.01597264684318596,
+        0.14751619780357403,
+        0.14751619780357403
+      ],
+      [
+        0.3648656658550102,
+        0.6192580541378777,
+        0.007938140003556087,
+        0.007938140003556087
+      ]
+    ],
+    "P": 101300.0,
+    "T": 298.15,
+    "refine": false,
+    "limitation": "Conditional LiCl diagnostic: explicit zero assumptions for the three Li-containing diameter corrections; historical inputs retained; comparison between different models.",
+    "endpoint_source_amounts": [
+      [
+        34.71083086925155,
+        0.8046849066644253,
+        7.431708659588867,
+        7.431708659588867
+      ],
+      [
+        6.9090191618167776,
+        11.726139679714723,
+        0.15031494198072187,
+        0.15031494198072187
+      ]
+    ]
+  },
+  {
+    "id": "figure3-18",
+    "model": "licl-conditional",
+    "kind": "split",
+    "feed": [
+      19.945169115478436,
+      6.326866473287334,
+      4.051066943875661,
+      4.051066943875661
+    ],
+    "endpoints": [
+      [
+        0.6663899523426384,
+        0.017158987492051768,
+        0.1582255300826549,
+        0.1582255300826549
+      ],
+      [
+        0.3498097783141797,
+        0.6304546033561665,
+        0.009867809164826869,
+        0.009867809164826869
+      ]
+    ],
+    "P": 101300.0,
+    "T": 298.15,
+    "refine": false,
+    "limitation": "Conditional LiCl diagnostic: explicit zero assumptions for the three Li-containing diameter corrections; historical inputs retained; comparison between different models.",
+    "endpoint_source_amounts": [
+      [
+        33.345785086327474,
+        0.858626255089064,
+        7.9175181179706735,
+        7.9175181179706735
+      ],
+      [
+        6.544553144629393,
+        11.795106691485604,
+        0.18461576978064892,
+        0.18461576978064892
+      ]
+    ]
+  },
+  {
+    "id": "figure3-19",
+    "model": "licl-conditional",
+    "kind": "split",
+    "feed": [
+      19.117387665357455,
+      6.3906634015088555,
+      4.291311912214212,
+      4.291311912214212
+    ],
+    "endpoints": [
+      [
+        0.6446981180238318,
+        0.01878892430993594,
+        0.16825647883311612,
+        0.16825647883311612
+      ],
+      [
+        0.33588283205784836,
+        0.6394985459429936,
+        0.012309310999578936,
+        0.012309310999578936
+      ]
+    ],
+    "P": 101300.0,
+    "T": 298.15,
+    "refine": false,
+    "limitation": "Conditional LiCl diagnostic: explicit zero assumptions for the three Li-containing diameter corrections; historical inputs retained; comparison between different models.",
+    "endpoint_source_amounts": [
+      [
+        32.01166553853971,
+        0.9329401529544618,
+        8.354561576212008,
+        8.354561576212008
+      ],
+      [
+        6.223109792175202,
+        11.848386650063249,
+        0.22806224821641544,
+        0.22806224821641544
+      ]
+    ]
+  },
+  {
+    "id": "figure3-20",
+    "model": "licl-conditional",
+    "kind": "split",
+    "feed": [
+      18.85551867581674,
+      6.412003930179671,
+      4.365288063192419,
+      4.365288063192419
+    ],
+    "endpoints": [
+      [
+        0.6378220529763842,
+        0.019428850345611728,
+        0.17137454833900204,
+        0.17137454833900204
+      ],
+      [
+        0.3316212765126656,
+        0.6418981057014282,
+        0.013240308892953094,
+        0.013240308892953094
+      ]
+    ],
+    "P": 101300.0,
+    "T": 298.15,
+    "refine": false,
+    "limitation": "Conditional LiCl diagnostic: explicit zero assumptions for the three Li-containing diameter corrections; historical inputs retained; comparison between different models.",
+    "endpoint_source_amounts": [
+      [
+        31.582842339171254,
+        0.9620525261448238,
+        8.485901852844504,
+        8.485901852844504
+      ],
+      [
+        6.128195012462224,
+        11.86195533421452,
+        0.24467427354033308,
+        0.24467427354033308
+      ]
+    ]
+  },
+  {
+    "id": "figure3-21",
+    "model": "licl-conditional",
+    "kind": "split",
+    "feed": [
+      18.34558524988283,
+      6.455349372374381,
+      4.506211864121394,
+      4.506211864121394
+    ],
+    "endpoints": [
+      [
+        0.6244462355857897,
+        0.02087708850107726,
+        0.17733833795656653,
+        0.17733833795656653
+      ],
+      [
+        0.3234723248359081,
+        0.645796724200231,
+        0.0153654754819305,
+        0.0153654754819305
+      ]
+    ],
+    "P": 101300.0,
+    "T": 298.15,
+    "refine": false,
+    "limitation": "Conditional LiCl diagnostic: explicit zero assumptions for the three Li-containing diameter corrections; historical inputs retained; comparison between different models.",
+    "endpoint_source_amounts": [
+      [
+        30.73910968475709,
+        1.0276995468328496,
+        8.729690902285057,
+        8.729690902285057
+      ],
+      [
+        5.952060815008569,
+        11.882999197915913,
+        0.2827328259577311,
+        0.2827328259577311
+      ]
+    ]
+  },
+  {
+    "id": "figure3-22",
+    "model": "licl-conditional",
+    "kind": "split",
+    "feed": [
+      18.35317368408867,
+      6.454722843852888,
+      4.504082388525238,
+      4.504082388525238
+    ],
+    "endpoints": [
+      [
+        0.6247547461887338,
+        0.02084047555501369,
+        0.17720238912812625,
+        0.17720238912812625
+      ],
+      [
+        0.32326090839056215,
+        0.6458771088247074,
+        0.015430991392365275,
+        0.015430991392365275
+      ]
+    ],
+    "P": 101300.0,
+    "T": 298.15,
+    "refine": false,
+    "limitation": "Conditional LiCl diagnostic: explicit zero assumptions for the three Li-containing diameter corrections; historical inputs retained; comparison between different models.",
+    "endpoint_source_amounts": [
+      [
+        30.75871590598488,
+        1.0260446532864582,
+        8.72425216183513,
+        8.72425216183513
+      ],
+      [
+        5.947631462192463,
+        11.883401034419318,
+        0.2839126152153457,
+        0.2839126152153457
+      ]
+    ]
+  },
+  {
+    "id": "figure3-23",
+    "model": "licl-conditional",
+    "kind": "split",
+    "feed": [
+      17.22930477014527,
+      6.558883743714723,
+      4.799582285028829,
+      4.799582285028829
+    ],
+    "endpoints": [
+      [
+        0.5949358378973716,
+        0.025270045877328118,
+        0.18989705811265015,
+        0.18989705811265015
+      ],
+      [
+        0.3074849284622686,
+        0.6489667988776945,
+        0.021774136330018463,
+        0.021774136330018463
+      ]
+    ],
+    "P": 101300.0,
+    "T": 298.15,
+    "refine": false,
+    "limitation": "Conditional LiCl diagnostic: explicit zero assumptions for the three Li-containing diameter corrections; historical inputs retained; comparison between different models.",
+    "endpoint_source_amounts": [
+      [
+        28.823393793846293,
+        1.2242807326669003,
+        9.200114260418822,
+        9.200114260418822
+      ],
+      [
+        5.635215746444247,
+        11.893486754762547,
+        0.3990503096388366,
+        0.3990503096388366
+      ]
+    ]
+  },
+  {
+    "id": "figure3-24",
+    "model": "licl-conditional",
+    "kind": "split",
+    "feed": [
+      17.010852263080608,
+      6.58060557031543,
+      4.854440188753882,
+      4.854440188753882
+    ],
+    "endpoints": [
+      [
+        0.5891249982531059,
+        0.026377525818803156,
+        0.19224873796404546,
+        0.19224873796404546
+      ],
+      [
+        0.3046977608806945,
+        0.6484480422408623,
+        0.02342709843922162,
+        0.02342709843922162
+      ]
+    ],
+    "P": 101300.0,
+    "T": 298.15,
+    "refine": false,
+    "limitation": "Conditional LiCl diagnostic: explicit zero assumptions for the three Li-containing diameter corrections; historical inputs retained; comparison between different models.",
+    "endpoint_source_amounts": [
+      [
+        28.435665144224526,
+        1.2731805537716698,
+        9.279390203022235,
+        9.279390203022235
+      ],
+      [
+        5.586039381936692,
+        11.88803058685919,
+        0.42949017448552934,
+        0.42949017448552934
+      ]
+    ]
+  },
+  {
+    "id": "figure3-25",
+    "model": "licl-conditional",
+    "kind": "split",
+    "feed": [
+      16.60315576358727,
+      6.621402076161396,
+      4.956371406156098,
+      4.956371406156098
+    ],
+    "endpoints": [
+      [
+        0.5782760527132838,
+        0.028707422406504087,
+        0.19650826244010602,
+        0.19650826244010602
+      ],
+      [
+        0.29965949531530095,
+        0.645968470654199,
+        0.027186017015250023,
+        0.027186017015250023
+      ]
+    ],
+    "P": 101300.0,
+    "T": 298.15,
+    "refine": false,
+    "limitation": "Conditional LiCl diagnostic: explicit zero assumptions for the three Li-containing diameter corrections; historical inputs retained; comparison between different models.",
+    "endpoint_source_amounts": [
+      [
+        27.701010388921688,
+        1.375164339921257,
+        9.413285218748749,
+        9.413285218748749
+      ],
+      [
+        5.505301138252853,
+        11.867639812401535,
+        0.49945759356344754,
+        0.49945759356344754
+      ]
+    ]
+  },
+  {
+    "id": "figure3-26",
+    "model": "licl-conditional",
+    "kind": "split",
+    "feed": [
+      16.225881245929415,
+      6.658750261844733,
+      5.05140322480496,
+      5.05140322480496
+    ],
+    "endpoints": [
+      [
+        0.5681378668042015,
+        0.031232753835606825,
+        0.20031468968009586,
+        0.20031468968009586
+      ],
+      [
+        0.29544860393056327,
+        0.6413706710817823,
+        0.031590362493827254,
+        0.031590362493827254
+      ]
+    ],
+    "P": 101300.0,
+    "T": 298.15,
+    "refine": false,
+    "limitation": "Conditional LiCl diagnostic: explicit zero assumptions for the three Li-containing diameter corrections; historical inputs retained; comparison between different models.",
+    "endpoint_source_amounts": [
+      [
+        27.000794393905636,
+        1.484338950005807,
+        9.51997053207382,
+        9.51997053207382
+      ],
+      [
+        5.450968097953191,
+        11.83316157368366,
+        0.582835917536099,
+        0.582835917536099
+      ]
+    ]
+  },
+  {
+    "id": "figure3-27",
+    "model": "licl-conditional",
+    "kind": "split",
+    "feed": [
+      15.834223889090943,
+      6.698230567346386,
+      5.148819444083885,
+      5.148819444083885
+    ],
+    "endpoints": [
+      [
+        0.5573977722567224,
+        0.03432859175401337,
+        0.2041368179946321,
+        0.2041368179946321
+      ],
+      [
+        0.29201118863241665,
+        0.6340887566223243,
+        0.03695002737262949,
+        0.03695002737262949
+      ]
+    ],
+    "P": 101300.0,
+    "T": 298.15,
+    "refine": false,
+    "limitation": "Conditional LiCl diagnostic: explicit zero assumptions for the three Li-containing diameter corrections; historical inputs retained; comparison between different models.",
+    "endpoint_source_amounts": [
+      [
+        26.243417638599023,
+        1.616259725434657,
+        9.611175423895313,
+        9.611175423895313
+      ],
+      [
+        5.425030139582863,
+        11.780201409258115,
+        0.6864634642724575,
+        0.6864634642724575
+      ]
+    ]
+  },
+  {
+    "id": "figure3-28",
+    "model": "licl-conditional",
+    "kind": "split",
+    "feed": [
+      15.470176149669392,
+      6.731862589822938,
+      5.2447279753848575,
+      5.2447279753848575
+    ],
+    "endpoints": [
+      [
+        0.547172881280105,
+        0.037733443640658094,
+        0.20754683753961845,
+        0.20754683753961845
+      ],
+      [
+        0.28952733513634804,
+        0.623661762057843,
+        0.043405451402904485,
+        0.043405451402904485
+      ]
+    ],
+    "P": 101300.0,
+    "T": 298.15,
+    "refine": false,
+    "limitation": "Conditional LiCl diagnostic: explicit zero assumptions for the three Li-containing diameter corrections; historical inputs retained; comparison between different models.",
+    "endpoint_source_amounts": [
+      [
+        25.50655409287796,
+        1.758950697774652,
+        9.674830057595752,
+        9.674830057595752
+      ],
+      [
+        5.433798206460824,
+        11.704774481871222,
+        0.814625893173963,
+        0.814625893173963
+      ]
+    ]
+  },
+  {
+    "id": "figure3-29",
+    "model": "licl-conditional",
+    "kind": "split",
+    "feed": [
+      15.138717961385037,
+      6.738654343880079,
+      5.373718218194805,
+      5.373718218194805
+    ],
+    "endpoints": [
+      [
+        0.5371142153931244,
+        0.0415715982983665,
+        0.2106570931542545,
+        0.2106570931542545
+      ],
+      [
+        0.28794477974728966,
+        0.6039996129907652,
+        0.05402780363097253,
+        0.05402780363097253
+      ]
+    ],
+    "P": 101300.0,
+    "T": 298.15,
+    "refine": false,
+    "limitation": "Conditional LiCl diagnostic: explicit zero assumptions for the three Li-containing diameter corrections; historical inputs retained; comparison between different models.",
+    "endpoint_source_amounts": [
+      [
+        24.76622116842706,
+        1.9168574732820787,
+        9.71335334317609,
+        9.71335334317609
+      ],
+      [
+        5.511214754343017,
+        11.560451214478078,
+        1.03408309321352,
+        1.03408309321352
+      ]
+    ]
+  },
+  {
+    "id": "figure3-30",
+    "model": "licl-conditional",
+    "kind": "split",
+    "feed": [
+      14.820909193539508,
+      6.76159357524824,
+      5.46867272179032,
+      5.46867272179032
+    ],
+    "endpoints": [
+      [
+        0.5273771248247558,
+        0.045799489328909974,
+        0.21341169292316708,
+        0.21341169292316708
+      ],
+      [
+        0.2880460027081804,
+        0.5875046220437719,
+        0.06222468762402391,
+        0.06222468762402391
+      ]
+    ],
+    "P": 101300.0,
+    "T": 298.15,
+    "refine": false,
+    "limitation": "Conditional LiCl diagnostic: explicit zero assumptions for the three Li-containing diameter corrections; historical inputs retained; comparison between different models.",
+    "endpoint_source_amounts": [
+      [
+        24.03494346407097,
+        2.0872883651702905,
+        9.726129049841596,
+        9.726129049841596
+      ],
+      [
+        5.606874923008046,
+        11.435898785326188,
+        1.2112163937390426,
+        1.2112163937390426
+      ]
+    ]
+  },
+  {
+    "id": "figure3-31",
+    "model": "licl-conditional",
+    "kind": "split",
+    "feed": [
+      14.544062674977516,
+      6.751392689957124,
+      5.604166316697453,
+      5.604166316697453
+    ],
+    "endpoints": [
+      [
+        0.5176540706294169,
+        0.0505697069319243,
+        0.2158881112193294,
+        0.2158881112193294
+      ],
+      [
+        0.2896502616819456,
+        0.5609762026052023,
+        0.07468676785642606,
+        0.07468676785642606
+      ]
+    ],
+    "P": 101300.0,
+    "T": 298.15,
+    "refine": false,
+    "limitation": "Conditional LiCl diagnostic: explicit zero assumptions for the three Li-containing diameter corrections; historical inputs retained; comparison between different models.",
+    "endpoint_source_amounts": [
+      [
+        23.291010698810332,
+        2.2753024693789,
+        9.713537656608189,
+        9.713537656608189
+      ],
+      [
+        5.797114651144699,
+        11.227482910535349,
+        1.4947949767867175,
+        1.4947949767867175
+      ]
+    ]
+  },
+  {
+    "id": "figure3-32",
+    "model": "licl-conditional",
+    "kind": "split",
+    "feed": [
+      14.350302504560247,
+      6.6811403624725765,
+      5.8093528852228955,
+      5.8093528852228955
+    ],
+    "endpoints": [
+      [
+        0.5081233643624534,
+        0.055812040627742164,
+        0.21803229750490222,
+        0.21803229750490222
+      ],
+      [
+        0.2939888602801465,
+        0.5202991333581964,
+        0.09285600318082853,
+        0.09285600318082853
+      ]
+    ],
+    "P": 101300.0,
+    "T": 298.15,
+    "refine": false,
+    "limitation": "Conditional LiCl diagnostic: explicit zero assumptions for the three Li-containing diameter corrections; historical inputs retained; comparison between different models.",
+    "endpoint_source_amounts": [
+      [
+        22.549935316287545,
+        2.4768747007032856,
+        9.676024663353207,
+        9.676024663353207
+      ],
+      [
+        6.150669692832947,
+        10.885406024241867,
+        1.9426811070925833,
+        1.9426811070925833
+      ]
+    ]
+  },
+  {
+    "id": "figure3-33",
+    "model": "licl-conditional",
+    "kind": "split",
+    "feed": [
+      14.270197978637398,
+      6.6698632789809045,
+      5.863115115359809,
+      5.863115115359809
+    ],
+    "endpoints": [
+      [
+        0.5047044716890602,
+        0.05783413373049475,
+        0.2187306972902225,
+        0.2187306972902225
+      ],
+      [
+        0.29543788586703507,
+        0.5091632112809598,
+        0.09769945142600255,
+        0.09769945142600255
+      ]
+    ],
+    "P": 101300.0,
+    "T": 298.15,
+    "refine": false,
+    "limitation": "Conditional LiCl diagnostic: explicit zero assumptions for the three Li-containing diameter corrections; historical inputs retained; comparison between different models.",
+    "endpoint_source_amounts": [
+      [
+        22.281631596695412,
+        2.55325429787515,
+        9.6564962057868,
+        9.6564962057868
+      ],
+      [
+        6.258764360579384,
+        10.78647226008666,
+        2.0697340249328193,
+        2.0697340249328193
+      ]
+    ]
+  },
+  {
+    "id": "table5-licl-4.58molal-101300",
+    "source_case": "table5-licl-4.58molal",
+    "model": "licl-conditional",
+    "kind": "split",
+    "feed": [
+      0.49257,
+      0.345618,
+      0.08090349999999999,
+      0.08090349999999999
+    ],
+    "endpoints": [
+      [
+        0.680729530213423,
+        0.0526867376143266,
+        0.1332918660861252,
+        0.1332918660861252
+      ],
+      [
+        0.30441878232487074,
+        0.6385474458102168,
+        0.028516885932456274,
+        0.028516885932456274
+      ]
+    ],
+    "P": 101300.0,
+    "T": 298.15,
+    "refine": true,
+    "limitation": "Conditional LiCl diagnostic: explicit zero assumptions for the three Li-containing diameter corrections; historical inputs retained; comparison between different models.",
+    "endpoint_source_amounts": [
+      [
+        0.68072,
+        0.052686,
+        0.13329,
+        0.13329
+      ],
+      [
+        0.30442,
+        0.63855,
+        0.028517,
+        0.028517
+      ]
+    ]
+  },
+  {
+    "id": "table5-licl-4.58molal-101320",
+    "source_case": "table5-licl-4.58molal",
+    "model": "licl-conditional",
+    "kind": "split",
+    "feed": [
+      0.49257,
+      0.345618,
+      0.08090349999999999,
+      0.08090349999999999
+    ],
+    "endpoints": [
+      [
+        0.680729530213423,
+        0.0526867376143266,
+        0.1332918660861252,
+        0.1332918660861252
+      ],
+      [
+        0.30441878232487074,
+        0.6385474458102168,
+        0.028516885932456274,
+        0.028516885932456274
+      ]
+    ],
+    "P": 101320.0,
+    "T": 298.15,
+    "refine": true,
+    "limitation": "Conditional LiCl diagnostic: explicit zero assumptions for the three Li-containing diameter corrections; historical inputs retained; comparison between different models.",
+    "endpoint_source_amounts": [
+      [
+        0.68072,
+        0.052686,
+        0.13329,
+        0.13329
+      ],
+      [
+        0.30442,
+        0.63855,
+        0.028517,
+        0.028517
+      ]
+    ]
+  },
+  {
+    "id": "table5-licl-4.58molal-state-aqueous",
+    "source_case": "table5-licl-4.58molal",
+    "model": "licl-conditional",
+    "kind": "state",
+    "phase": "liquid",
+    "source_phase": "aqueous",
+    "x": [
+      0.680729530213423,
+      0.0526867376143266,
+      0.1332918660861252,
+      0.1332918660861252
+    ],
+    "T": 298.15,
+    "P": 101300.0,
+    "limitation": "Conditional LiCl diagnostic: explicit zero assumptions for the three Li-containing diameter corrections; historical inputs retained; comparison between different models.",
+    "source_printed_x": [
+      0.68072,
+      0.052686,
+      0.13329,
+      0.13329
+    ]
+  },
+  {
+    "id": "table5-licl-4.58molal-state-organic",
+    "source_case": "table5-licl-4.58molal",
+    "model": "licl-conditional",
+    "kind": "state",
+    "phase": "liquid",
+    "source_phase": "organic",
+    "x": [
+      0.30441878232487074,
+      0.6385474458102168,
+      0.028516885932456274,
+      0.028516885932456274
+    ],
+    "T": 298.15,
+    "P": 101300.0,
+    "limitation": "Conditional LiCl diagnostic: explicit zero assumptions for the three Li-containing diameter corrections; historical inputs retained; comparison between different models.",
+    "source_printed_x": [
+      0.30442,
+      0.63855,
+      0.028517,
+      0.028517
+    ]
+  },
+  {
+    "id": "table5-licl-4.95molal-101300",
+    "source_case": "table5-licl-4.95molal",
+    "model": "licl-conditional",
+    "kind": "split",
+    "feed": [
+      0.48896000000000006,
+      0.3423995,
+      0.08432049999999999,
+      0.08432049999999999
+    ],
+    "endpoints": [
+      [
+        0.6707306707306707,
+        0.058249058249058246,
+        0.1355101355101355,
+        0.1355101355101355
+      ],
+      [
+        0.30718938562122877,
+        0.6265487469025062,
+        0.03313093373813252,
+        0.03313093373813252
+      ]
+    ],
+    "P": 101300.0,
+    "T": 298.15,
+    "refine": true,
+    "limitation": "Conditional LiCl diagnostic: explicit zero assumptions for the three Li-containing diameter corrections; historical inputs retained; comparison between different models.",
+    "endpoint_source_amounts": [
+      [
+        0.67073,
+        0.058249,
+        0.13551,
+        0.13551
+      ],
+      [
+        0.30719,
+        0.62655,
+        0.033131,
+        0.033131
+      ]
+    ]
+  },
+  {
+    "id": "table5-licl-4.95molal-101320",
+    "source_case": "table5-licl-4.95molal",
+    "model": "licl-conditional",
+    "kind": "split",
+    "feed": [
+      0.48896000000000006,
+      0.3423995,
+      0.08432049999999999,
+      0.08432049999999999
+    ],
+    "endpoints": [
+      [
+        0.6707306707306707,
+        0.058249058249058246,
+        0.1355101355101355,
+        0.1355101355101355
+      ],
+      [
+        0.30718938562122877,
+        0.6265487469025062,
+        0.03313093373813252,
+        0.03313093373813252
+      ]
+    ],
+    "P": 101320.0,
+    "T": 298.15,
+    "refine": true,
+    "limitation": "Conditional LiCl diagnostic: explicit zero assumptions for the three Li-containing diameter corrections; historical inputs retained; comparison between different models.",
+    "endpoint_source_amounts": [
+      [
+        0.67073,
+        0.058249,
+        0.13551,
+        0.13551
+      ],
+      [
+        0.30719,
+        0.62655,
+        0.033131,
+        0.033131
+      ]
+    ]
+  },
+  {
+    "id": "table5-licl-4.95molal-state-aqueous",
+    "source_case": "table5-licl-4.95molal",
+    "model": "licl-conditional",
+    "kind": "state",
+    "phase": "liquid",
+    "source_phase": "aqueous",
+    "x": [
+      0.6707306707306707,
+      0.058249058249058246,
+      0.1355101355101355,
+      0.1355101355101355
+    ],
+    "T": 298.15,
+    "P": 101300.0,
+    "limitation": "Conditional LiCl diagnostic: explicit zero assumptions for the three Li-containing diameter corrections; historical inputs retained; comparison between different models.",
+    "source_printed_x": [
+      0.67073,
+      0.058249,
+      0.13551,
+      0.13551
+    ]
+  },
+  {
+    "id": "table5-licl-4.95molal-state-organic",
+    "source_case": "table5-licl-4.95molal",
+    "model": "licl-conditional",
+    "kind": "state",
+    "phase": "liquid",
+    "source_phase": "organic",
+    "x": [
+      0.30718938562122877,
+      0.6265487469025062,
+      0.03313093373813252,
+      0.03313093373813252
+    ],
+    "T": 298.15,
+    "P": 101300.0,
+    "limitation": "Conditional LiCl diagnostic: explicit zero assumptions for the three Li-containing diameter corrections; historical inputs retained; comparison between different models.",
+    "source_printed_x": [
+      0.30719,
+      0.62655,
+      0.033131,
+      0.033131
+    ]
+  },
+  {
+    "id": "table5-licl-5.74molal-101300",
+    "source_case": "table5-licl-5.74molal",
+    "model": "licl-conditional",
+    "kind": "split",
+    "feed": [
+      0.4871,
+      0.3225215,
+      0.09518599999999999,
+      0.09518599999999999
+    ],
+    "endpoints": [
+      [
+        0.6500745505218537,
+        0.07140349982449877,
+        0.13926097482682379,
+        0.13926097482682379
+      ],
+      [
+        0.3241319447916687,
+        0.5736434418606512,
+        0.051112306673840036,
+        0.051112306673840036
+      ]
+    ],
+    "P": 101300.0,
+    "T": 298.15,
+    "refine": true,
+    "limitation": "Conditional LiCl diagnostic: explicit zero assumptions for the three Li-containing diameter corrections; historical inputs retained; comparison between different models.",
+    "endpoint_source_amounts": [
+      [
+        0.65007,
+        0.071403,
+        0.13926,
+        0.13926
+      ],
+      [
+        0.32413,
+        0.57364,
+        0.051112,
+        0.051112
+      ]
+    ]
+  },
+  {
+    "id": "table5-licl-5.74molal-101320",
+    "source_case": "table5-licl-5.74molal",
+    "model": "licl-conditional",
+    "kind": "split",
+    "feed": [
+      0.4871,
+      0.3225215,
+      0.09518599999999999,
+      0.09518599999999999
+    ],
+    "endpoints": [
+      [
+        0.6500745505218537,
+        0.07140349982449877,
+        0.13926097482682379,
+        0.13926097482682379
+      ],
+      [
+        0.3241319447916687,
+        0.5736434418606512,
+        0.051112306673840036,
+        0.051112306673840036
+      ]
+    ],
+    "P": 101320.0,
+    "T": 298.15,
+    "refine": true,
+    "limitation": "Conditional LiCl diagnostic: explicit zero assumptions for the three Li-containing diameter corrections; historical inputs retained; comparison between different models.",
+    "endpoint_source_amounts": [
+      [
+        0.65007,
+        0.071403,
+        0.13926,
+        0.13926
+      ],
+      [
+        0.32413,
+        0.57364,
+        0.051112,
+        0.051112
+      ]
+    ]
+  },
+  {
+    "id": "table5-licl-5.74molal-state-aqueous",
+    "source_case": "table5-licl-5.74molal",
+    "model": "licl-conditional",
+    "kind": "state",
+    "phase": "liquid",
+    "source_phase": "aqueous",
+    "x": [
+      0.6500745505218537,
+      0.07140349982449877,
+      0.13926097482682379,
+      0.13926097482682379
+    ],
+    "T": 298.15,
+    "P": 101300.0,
+    "limitation": "Conditional LiCl diagnostic: explicit zero assumptions for the three Li-containing diameter corrections; historical inputs retained; comparison between different models.",
+    "source_printed_x": [
+      0.65007,
+      0.071403,
+      0.13926,
+      0.13926
+    ]
+  },
+  {
+    "id": "table5-licl-5.74molal-state-organic",
+    "source_case": "table5-licl-5.74molal",
+    "model": "licl-conditional",
+    "kind": "state",
+    "phase": "liquid",
+    "source_phase": "organic",
+    "x": [
+      0.3241319447916687,
+      0.5736434418606512,
+      0.051112306673840036,
+      0.051112306673840036
+    ],
+    "T": 298.15,
+    "P": 101300.0,
+    "limitation": "Conditional LiCl diagnostic: explicit zero assumptions for the three Li-containing diameter corrections; historical inputs retained; comparison between different models.",
+    "source_printed_x": [
+      0.32413,
+      0.57364,
+      0.051112,
+      0.051112
+    ]
+  }
+]

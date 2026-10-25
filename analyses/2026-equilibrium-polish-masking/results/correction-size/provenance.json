@@ -1,0 +1,78 @@
+{
+  "baseline_commit": "13a03f36cb823f19177f0eaf805561f622e87247",
+  "merged_main": "c1067020",
+  "branch": "issue-272-polish-floor",
+  "epsilon_x": 1e-12,
+  "row_tolerance": "Unchanged declared case value; see work.csv.",
+  "method": "Disposable gibbs_minimizer.cpp linked to the cached merged-main native archive; rule 0 unchanged, rule 4 current correction before trials, rule 5 previous accepted full direction before the next Jacobian.",
+  "previous_direction": "Infinity norm of the full delta; updated only after acceptance. Never alpha times delta.",
+  "physical_quantities": [
+    "temperature",
+    "pressure",
+    "phase amounts",
+    "normalized mole fractions",
+    "molar densities",
+    "packing fractions"
+  ],
+  "relative_change": "abs(probe-baseline)/max(abs(baseline),abs(probe)); both zero gives zero; maximum over returned physical entries.",
+  "baseline_verification": "Every unchanged probe returned physical state and iterations/evaluations/Hessians exactly equals an ordinary installed baseline-wheel solve, including separately propagated sequential starts.",
+  "threads": {
+    "OMP_NUM_THREADS": 1,
+    "OPENBLAS_NUM_THREADS": 1,
+    "MKL_NUM_THREADS": 1
+  },
+  "baseline_wheel_sha256": "e8ad39e0c5d7da471a6d3ace6ff62d60518c57bc1c96fe5198d8bf18747ba8b5",
+  "reference_wheel_sha256": "e28d258df06eac39711c59a79f9ce2b69fc8ac7565637bfba0dbef21863d8dc7",
+  "native_archive_sha256": "cd7d89a5e099664221310e8af71561361e6fc9a6783e08bd02de13932806d900",
+  "sha256": {
+    "engine/native/equilibrium/gibbs_minimizer.cpp": "678c6301230eeed8fb612d83a8fe9862f4635f7aec13e1cf6128d1a9cb54756d",
+    "engine/native/equilibrium/request_compile.cpp": "0fa343db265f14d928c1140fe66cd8c7a1784f18d4a54585391ba5735b33237c",
+    "engine/native/equilibrium/problem.hpp": "ab3d2bc0750144d9b660a756b7b0f1e6e6ce0418d33e946cd57b4d0868528f8f",
+    "engine/native/core/numerical_policy.hpp": "6ca0ec76b17bd64736e6939c7fe2d6753235e726c2fdef45a40d8dba6257b6da",
+    "engine/tests/equilibrium/test_trace_reliability.py": "01d51690d604086f8e672b5d8d903fdc9023c77e84bf4213ecdb7e5e3d27f236",
+    "analyses/2026-tpd-phase-discovery/scripts/baseline.py": "db6c413ea84549cd0426951bad156ee307dd14168f79e66b8c7409d08b2ca8f9",
+    "analyses/2026-khudaida-idaes-settler/scripts/run_fixed_settler.py": "2dabb36cea32bd22feb71b041d0e6577ec38d8cd6f7a41db50c13313f84f3589",
+    "build/issue-272/correction-size/probe.cpp": "3cb6744db2e1edfca509815711b201c19811cd0cd899d6cfec954c6749b66273",
+    "build/issue-272/correction-size/gibbs_minimizer.cpp": "e934d36920d95b8206527e7557f86488d651348902b375595d462c75975fe8de",
+    "build/issue-272/correction-size/compile_probe.py": "24d5157a277a16dbbffb557853ebaa38bfdbf4afbf1644bdef758270fbc0563c",
+    "build/issue-272/correction-size/masking.py": "81b279b9af5b46de8c52d9c76b1737459c119f313ef26035c1139bb43620f2bf",
+    "build/issue-272/correction-size/run_probe.py": "d56aebefba98a2ba9d6ee839f22e6fcfd30031a9a31e651dc6ac41651546e003",
+    "build/issue-272/correction-size/run_sequence.py": "9a1236af7da2ae0f43abca857f5a66c5d4af6de25d38e9af7d5ca65148db4f5c",
+    "build/issue-272/correction-size/unloaded_input.py": "220c223250c3aab3fd9c1faebdf5160b8fc6cb19df9e4e95fac3f3e0a7c2e5da",
+    "build/issue-272/correction-size/locked-run.sh": "450dbe955b84d51c6e5ada17a451c7ff5a2df4ab0bdc60f4ed6dfea62ad2cd03",
+    "build/issue-272/correction-size/body.sh": "1487cb67cf525ce2d1d1b3d8a63a3ff48d5bf62ee6f01a8bff6d5b0aaf8d16f5",
+    "build/issue-272/correction-size/summarize.py": "aba4e5bdb65b87096cc4d99c61d84ac9c87794e248e125a180411ab740561854",
+    "analyses/2026-khudaida-idaes-settler/inputs/data/khudaida-2026-figure-2-electrolyte-lle/7/parameters/parameters.json": "8babed899e7347e58c403c7aff24a7fdd6d60411af3b4d81eb6aa90c2431dfa4",
+    "data/packets/mea-co2-h2o-nine-species-estimation/3/parameters/parameters.json": "2ea3b41485a98d2cf49add620b87bb05fc5a275cdd132c1cdbb0cfc5f07f2ca4"
+  },
+  "evidence_sha256": {
+    "summary.csv": "1b236732fb8651b1df4cd4cedc318f95e2223b2bf6a1591c44dfc0e1adbf2e90",
+    "work.csv": "122965d873dc6afa1f84e97b7a823c66cce07553366ebd353b65366f307cc68c",
+    "physical-state-comparison.csv": "c8f737e984d8c2d1e4fbdf71f1caf1c108df6a72ac606b1d9c515b3bf732c4e4",
+    "steps.csv": "bcc93cbd14453caa64ca5c6d994b76c4f711909673ee4d6528d81b49833a11be",
+    "trials.csv": "ec21060d2c82faa5583d6559345296c7b8092602c86ece9775957013636027fa",
+    "rows.csv": "93708a9023bfcdcbe58189999c6cca40d0282b7d45be3bdd87a38a0b29ded9b1",
+    "inputs.json": "3e65f6d4790ec4e49310d4077c8b4aab863c7a3514547ee9289fdf5a76a49240"
+  },
+  "commands": [
+    "bash build/issue-272/correction-size/locked-run.sh bash build/issue-272/correction-size/body.sh",
+    "bash build/issue-272/correction-size/locked-run.sh .venv/bin/python build/issue-272/correction-size/summarize.py"
+  ],
+  "environment": "flock -w 3600 precedes agent-heavy --timeout 30m --max 8G --wait 0. No heavy admission wait inside the lock. EXIT trap installs and verifies the reference wheel before unlock.",
+  "production_changes": 0,
+  "candidate_wheel": null,
+  "limitations": [
+    "Numerical verification against unchanged polishing on these inputs, not physical validation.",
+    "No elapsed timing, production implementation, check-all or independent review.",
+    "The raw unscaled correction norm is not a universal relative state measure; normalization, density coupling, amount units and free intensive units need the scaling described in the notebook.",
+    "No bound on total remaining corrections follows from a single small correction.",
+    "The unchanged masking result has approximately 4.68e-9 relative error against its analytic composition; the 1e-12 falsifier here compares methods."
+  ],
+  "checks": {
+    "bash tools/check-affected.sh HEAD": "Passed: project map complete, runtime hard ceilings preserved, analysis layout clean (84 leaves); no Engine numerical replay was selected.",
+    "git diff --check": "Passed.",
+    "state_preservation": "All variants below 1e-12 relative on the six returned physical quantity families.",
+    "ordinary_baseline": "All twelve recorder states and work counts exactly match ordinary installed-wheel solves.",
+    "restored_reference": "e28d258df06eac39711c59a79f9ce2b69fc8ac7565637bfba0dbef21863d8dc7; 14 RECORD hashes verified after each guarded command."
+  }
+}

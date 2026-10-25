@@ -1,0 +1,11 @@
+record_id,component_id_a,site_id_a,component_id_b,site_id_b,family,value,unit,source_id,locator,domain_id
+water-association-energy,water,a,water,b,association_energy_over_k,2425.7,kelvin,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+water-association-volume,water,a,water,b,association_volume,0.04509,,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+methanol-association-energy,methanol,a,methanol,b,association_energy_over_k,2899.5,kelvin,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+methanol-association-volume,methanol,a,methanol,b,association_volume,0.035176,,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+ethanol-association-energy,ethanol,a,ethanol,b,association_energy_over_k,2653.4,kelvin,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+ethanol-association-volume,ethanol,a,ethanol,b,association_volume,0.032384,,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+water-a-ethanol-b-energy,water,a,ethanol,b,association_energy_over_k,2539.55,kelvin,figiel-yu-held-2025,compact association mixing from compact packets,figiel-298-k-1-bar
+water-a-ethanol-b-volume,water,a,ethanol,b,association_volume,0.03797842747120087,,figiel-yu-held-2025,compact association mixing from compact packets,figiel-298-k-1-bar
+water-b-ethanol-a-energy,water,b,ethanol,a,association_energy_over_k,2539.55,kelvin,figiel-yu-held-2025,compact association mixing from compact packets,figiel-298-k-1-bar
+water-b-ethanol-a-volume,water,b,ethanol,a,association_volume,0.03797842747120087,,figiel-yu-held-2025,compact association mixing from compact packets,figiel-298-k-1-bar

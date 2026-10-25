@@ -1,0 +1,99 @@
+{
+  "project": {
+    "type": "website",
+    "output-dir": "../build/issue-556/quarto",
+    "render": [
+      "index.qmd",
+      "2026-mixed-chloride-water-activity/notebook.qmd",
+      "2026-correlated-measurement-errors/notebook.qmd",
+      "2026-chloride-brine-refit/notebook.qmd",
+      "2026-audit-timing-campaign/notebook.qmd",
+      "2026-lithium-chloride-refit/notebook.qmd",
+      "2026-solver-capability-matrix/notebook.qmd",
+      "2026-hydrochloric-acid-chloride-basis/notebook.qmd",
+      "2026-strontium-barium-chloride-basis/notebook.qmd",
+      "2026-polar-dipole/notebook.qmd",
+      "2026-pure-saturation-regression/notebook.qmd",
+      "2026-dielectric-alternatives/notebook.qmd",
+      "reproduction/2018-wangler/notebook.qmd",
+      "reproduction/2020-cleeton/notebook.qmd",
+      "2026-release-computational-cost/notebook.qmd"
+    ]
+  },
+  "website": {
+    "title": "Engine research notebooks",
+    "sidebar": {
+      "contents": [
+        {
+          "href": "index.qmd",
+          "text": "Overview"
+        },
+        {
+          "href": "2026-mixed-chloride-water-activity/notebook.qmd",
+          "text": "Mixed chloride water properties"
+        },
+        {
+          "href": "2026-correlated-measurement-errors/notebook.qmd",
+          "text": "Correlated measurement errors"
+        },
+        {
+          "href": "2026-chloride-brine-refit/notebook.qmd",
+          "text": "Chloride brine ion refit"
+        },
+        {
+          "href": "2026-audit-timing-campaign/notebook.qmd",
+          "text": "Audit timing campaign"
+        },
+        {
+          "href": "2026-lithium-chloride-refit/notebook.qmd",
+          "text": "Lithium chloride refit"
+        },
+        {
+          "href": "2026-solver-capability-matrix/notebook.qmd",
+          "text": "Higher-order derivative comparisons"
+        },
+        {
+          "href": "2026-hydrochloric-acid-chloride-basis/notebook.qmd",
+          "text": "HCl parameter identification"
+        },
+        {
+          "href": "2026-strontium-barium-chloride-basis/notebook.qmd",
+          "text": "Sr and Ba binary calibration"
+        },
+        {
+          "href": "2026-polar-dipole/notebook.qmd",
+          "text": "Dipolar pure fluids and binary VLE"
+        },
+        {
+          "href": "2026-pure-saturation-regression/notebook.qmd",
+          "text": "Propane calibration and held-out states"
+        },
+        {
+          "href": "2026-dielectric-alternatives/notebook.qmd",
+          "text": "NaCl permittivity alternatives"
+        },
+        {
+          "href": "reproduction/2018-wangler/notebook.qmd",
+          "text": "Wangler MDEA transfer limit"
+        },
+        {
+          "href": "reproduction/2020-cleeton/notebook.qmd",
+          "text": "Cleeton competitive MDEA replay"
+        },
+        {
+          "href": "2026-release-computational-cost/notebook.qmd",
+          "text": "Release computational cost"
+        }
+      ]
+    }
+  },
+  "format": {
+    "html": {
+      "toc": true,
+      "embed-resources": true
+    }
+  },
+  "execute": {
+    "enabled": false
+  }
+}

@@ -1,0 +1,9 @@
+feed_point_id,experimental_tie_line_id,assignment_basis,source_reference
+1,8,reverse_figure_2_feed_order,analyses/reproduction/2026-khudaida/figures/figure-02/source/source-points.csv
+2,7,reverse_figure_2_feed_order,analyses/reproduction/2026-khudaida/figures/figure-02/source/source-points.csv
+3,6,reverse_figure_2_feed_order,analyses/reproduction/2026-khudaida/figures/figure-02/source/source-points.csv
+4,5,reverse_figure_2_feed_order,analyses/reproduction/2026-khudaida/figures/figure-02/source/source-points.csv
+5,4,reverse_figure_2_feed_order,analyses/reproduction/2026-khudaida/figures/figure-02/source/source-points.csv
+6,3,reverse_figure_2_feed_order,analyses/reproduction/2026-khudaida/figures/figure-02/source/source-points.csv
+7,2,reverse_figure_2_feed_order,analyses/reproduction/2026-khudaida/figures/figure-02/source/source-points.csv
+8,1,reverse_figure_2_feed_order,analyses/reproduction/2026-khudaida/figures/figure-02/source/source-points.csv

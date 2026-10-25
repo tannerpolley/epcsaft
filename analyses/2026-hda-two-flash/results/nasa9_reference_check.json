@@ -1,0 +1,34 @@
+{
+ "records": "data/packets/nasa-glenn-2002-hda-species/1/parameters/nasa9-records.json",
+ "records_sha256": "d1341f0776cd4c5512bb09d4e51bbbee53b15c513caa996e743aac113faac39b",
+ "source_gas_constant": 8.31451,
+ "engine_gas_constant": 8.31446261815324,
+ "coefficient_scale": 1.0000056987262962,
+ "standard_pressure_Pa": 100000.0,
+ "tolerances": {
+  "cp": 1e-06,
+  "h": 0.001,
+  "s": 1e-06
+ },
+ "rows": 16,
+ "max_abs_error": {
+  "cp": 4.35534275311511e-10,
+  "h": 4.656612873077393e-10,
+  "s": 4.716298462881241e-10
+ },
+ "max_engine_abs_error": {
+  "cp": 4.360458660812583e-10,
+  "h": 8.149072527885437e-10,
+  "s": 4.718003765447065e-10
+ },
+ "all_pass": true,
+ "engine_all_pass": true,
+ "delta_r_h_298_J_per_mol": -41890.00006754149,
+ "delta_r_h_expected": -41890.0,
+ "delta_r_h_pass": true,
+ "engine": [
+  "49aac619621b8e9fbbfce9937c742c003ee8e326",
+  true
+ ],
+ "claim_limit": "Checks record transcription and the NASA9 forms only; no comparison with calorimetric data."
+}

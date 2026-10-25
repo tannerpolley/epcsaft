@@ -1,0 +1,100 @@
+{
+  "outcome": "A",
+  "meaning": "Density-only comparison of published DES/TOPO tuples using Lithium benchmark assumptions; extraction remains unavailable.",
+  "declaration_url": "https://github.com/tannerpolley/Lithium_Extraction/issues/237#issuecomment-6355298159",
+  "source_repository": "tannerpolley/Lithium_Extraction",
+  "source_commit": "351b2c8904408f63b6909152637d3674e7fa96e5",
+  "evidence": [
+    {
+      "path": "analyses/legacy/rezaee_2026_topo_parameter_replay/config/rezaee_des_topo_self_site_bundle/single.csv",
+      "commit": "351b2c8904408f63b6909152637d3674e7fa96e5",
+      "sha256": "3f7709e21c8ce444c34d243080a89a3d1d656282829d3c388a010bd205b9d1e3",
+      "locator": "Published Tables 4/6 tuples and benchmark molar masses"
+    },
+    {
+      "path": "analyses/legacy/rezaee_2026_topo_parameter_replay/config/rezaee_des_topo_self_site_bundle/sites.csv",
+      "commit": "351b2c8904408f63b6909152637d3674e7fa96e5",
+      "sha256": "69c8cfe09da4bca309a5f3a1e36e5131954b87492f17a8d1a8aefce43bbe8ec8",
+      "locator": "Explicit DES donor/acceptor and single TOPO site"
+    },
+    {
+      "path": "analyses/legacy/rezaee_2026_topo_parameter_replay/config/rezaee_des_topo_self_site_bundle/association.csv",
+      "commit": "351b2c8904408f63b6909152637d3674e7fa96e5",
+      "sha256": "1f23171aa975f793011e797b083bbc2c1e59e6c5dae0ba9aba7a0a5819ffa51d",
+      "locator": "Self edges only"
+    },
+    {
+      "path": "analyses/legacy/rezaee_2026_topo_parameter_replay/config/rezaee_des_topo_self_site_bundle/pair.csv",
+      "commit": "351b2c8904408f63b6909152637d3674e7fa96e5",
+      "sha256": "d924398d04006466294761d9b6d1bfc15be1ba91f7e081520a89509479be34f0",
+      "locator": "Density-stage k_ij=0"
+    },
+    {
+      "path": "analyses/legacy/rezaee_2026_topo_parameter_replay/README.md",
+      "commit": "351b2c8904408f63b6909152637d3674e7fa96e5",
+      "sha256": "c74a8f461354d6d1019d75c05bc4e35bb1b435bb094e3a8b3a5bfcabb7854b20",
+      "locator": "Reconstruction decisions"
+    },
+    {
+      "path": "analyses/legacy/rezaee_2026_topo_parameter_replay/scripts/replay_published_tuple.py",
+      "commit": "351b2c8904408f63b6909152637d3674e7fa96e5",
+      "sha256": "40e28592a151bc8ee6ea0ad0a4d4a2b4208db167e4ccaa0ab63cabc981d6a8b7",
+      "locator": "PRESSURE_PA, mass composition and separate S5/S6 data inputs"
+    }
+  ],
+  "assumptions": {
+    "label": "Lithium's benchmark assumed",
+    "temperature_grid": "Literal SI S5/S6; datasets remain separate",
+    "pressure_Pa": 101325.0,
+    "DES_particle_basis": "F/3, the three-molecule average for TBAC:decanoic acid 1:2",
+    "molar_mass_kg_mol": {
+      "des": 0.20748,
+      "topo": 0.3866349
+    },
+    "mass_precision_limit": "Use the density replay value 0.20748, not the later formula-precise 0.20748558 or full-F mass 0.62245674.",
+    "TOPO_mass_fraction_S6": 0.1,
+    "DES_mass_fraction_S6": 0.9,
+    "sites": {
+      "DES": {
+        "donor": 1,
+        "acceptor": 1
+      },
+      "TOPO": {
+        "self-paired_site": 1
+      }
+    },
+    "self_edges": [
+      {
+        "species": "DES",
+        "sites": [
+          "donor",
+          "acceptor"
+        ],
+        "energy_over_k_K": 6900,
+        "volume": 0.15
+      },
+      {
+        "species": "TOPO",
+        "sites": [
+          "self-paired_site",
+          "self-paired_site"
+        ],
+        "energy_over_k_K": 1520,
+        "volume": 0.01
+      }
+    ],
+    "DES_TOPO_cross_association": false,
+    "DES_TOPO_dispersion_k_ij": 0.0,
+    "base": "PC-SAFT",
+    "electrolyte": "none",
+    "permittivity": "none",
+    "polar": "none"
+  },
+  "source_parameters": "source/rezaee-2026-organic-pcsaft-parameters.csv: DES Table 4 and TOPO Table 6 only",
+  "source_observations": "source/rezaee-2026-si-density-tables.csv: seven S5 plus eleven S6 rows",
+  "exclusions": {
+    "extraction": "Published A/B conversion is not decided in Lithium (#237).",
+    "temperature_discrepancy": "Whether S5 or the article range is erroneous is not decided in Lithium; no temperature correction.",
+    "other_coordinates": "No RLi/RNa, extraction-fitted k_ij=0.0623, Lithium fitted constants, or old Python root finder."
+  }
+}

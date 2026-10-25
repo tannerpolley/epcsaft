@@ -1,0 +1,23 @@
+{
+  "label": "current",
+  "warmups": 2,
+  "samples": 15,
+  "import_ms": 23.467881,
+  "model_setup_ms": 0.281885,
+  "first_solve_ms": 6.618911,
+  "first_solve_success": true,
+  "peak_rss_kib": 34124,
+  "wheel_sha256": "aa95dcf7ff164aea649a857f2a5bd12a52ad51d1906e714fa65ec9a7e3ae2bce",
+  "parameter_sha256": "109cfe8e80c4fcefadcbb4975ebe7436d371710ed9d20f2c7bd6d30d9c581bf2",
+  "affinity": [
+    9
+  ],
+  "nice": 0,
+  "maximum_independent_density_root_relative_error": 3.3373304120232206e-13,
+  "threads": {
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1"
+  },
+  "limits": "One binary interior-flash neighborhood; warm process, cold nonlinear starts. No external reruns."
+}

@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="410" viewBox="0 0 900 410">
+<rect width="900" height="410" fill="white"/>
+<style>text{font-family:system-ui,sans-serif;fill:#1a202c}.small{font-size:12px}.label{font-size:14px}.title{font-size:20px;font-weight:600}</style>
+<text x="20" y="30" class="title">Ionic-coordinate status</text>
+<text x="20" y="50" class="small">Green: established species structure. Amber: inherited value, not identified by independent MEA data.</text>
+<text x="180.0" y="60" text-anchor="middle" class="small">charge</text>
+<text x="300.0" y="60" text-anchor="middle" class="small">segment σ</text>
+<text x="420.0" y="60" text-anchor="middle" class="small">packing d</text>
+<text x="540.0" y="60" text-anchor="middle" class="small">DH d</text>
+<text x="660.0" y="60" text-anchor="middle" class="small">Born r</text>
+<text x="780.0" y="60" text-anchor="middle" class="small">ε/k</text>
+<text x="108" y="97" text-anchor="end" class="label">MEAH+</text>
+<rect x="122" y="72" width="116" height="38" rx="4" fill="#2f855a"/>
+<text x="180.0" y="97" text-anchor="middle" class="small" style="fill:white">established</text>
+<rect x="242" y="72" width="116" height="38" rx="4" fill="#d69e2e"/>
+<text x="300.0" y="97" text-anchor="middle" class="small" style="fill:white">provisional</text>
+<rect x="362" y="72" width="116" height="38" rx="4" fill="#d69e2e"/>
+<text x="420.0" y="97" text-anchor="middle" class="small" style="fill:white">provisional</text>
+<rect x="482" y="72" width="116" height="38" rx="4" fill="#d69e2e"/>
+<text x="540.0" y="97" text-anchor="middle" class="small" style="fill:white">provisional</text>
+<rect x="602" y="72" width="116" height="38" rx="4" fill="#d69e2e"/>
+<text x="660.0" y="97" text-anchor="middle" class="small" style="fill:white">provisional</text>
+<rect x="722" y="72" width="116" height="38" rx="4" fill="#d69e2e"/>
+<text x="780.0" y="97" text-anchor="middle" class="small" style="fill:white">provisional</text>
+<text x="108" y="139" text-anchor="end" class="label">MEACOO-</text>
+<rect x="122" y="114" width="116" height="38" rx="4" fill="#2f855a"/>
+<text x="180.0" y="139" text-anchor="middle" class="small" style="fill:white">established</text>
+<rect x="242" y="114" width="116" height="38" rx="4" fill="#d69e2e"/>
+<text x="300.0" y="139" text-anchor="middle" class="small" style="fill:white">provisional</text>
+<rect x="362" y="114" width="116" height="38" rx="4" fill="#d69e2e"/>
+<text x="420.0" y="139" text-anchor="middle" class="small" style="fill:white">provisional</text>
+<rect x="482" y="114" width="116" height="38" rx="4" fill="#d69e2e"/>
+<text x="540.0" y="139" text-anchor="middle" class="small" style="fill:white">provisional</text>
+<rect x="602" y="114" width="116" height="38" rx="4" fill="#d69e2e"/>
+<text x="660.0" y="139" text-anchor="middle" class="small" style="fill:white">provisional</text>
+<rect x="722" y="114" width="116" height="38" rx="4" fill="#d69e2e"/>
+<text x="780.0" y="139" text-anchor="middle" class="small" style="fill:white">provisional</text>
+<text x="108" y="181" text-anchor="end" class="label">HCO3-</text>
+<rect x="122" y="156" width="116" height="38" rx="4" fill="#2f855a"/>
+<text x="180.0" y="181" text-anchor="middle" class="small" style="fill:white">established</text>
+<rect x="242" y="156" width="116" height="38" rx="4" fill="#d69e2e"/>
+<text x="300.0" y="181" text-anchor="middle" class="small" style="fill:white">provisional</text>
+<rect x="362" y="156" width="116" height="38" rx="4" fill="#d69e2e"/>
+<text x="420.0" y="181" text-anchor="middle" class="small" style="fill:white">provisional</text>
+<rect x="482" y="156" width="116" height="38" rx="4" fill="#d69e2e"/>
+<text x="540.0" y="181" text-anchor="middle" class="small" style="fill:white">provisional</text>
+<rect x="602" y="156" width="116" height="38" rx="4" fill="#d69e2e"/>
+<text x="660.0" y="181" text-anchor="middle" class="small" style="fill:white">provisional</text>
+<rect x="722" y="156" width="116" height="38" rx="4" fill="#d69e2e"/>
+<text x="780.0" y="181" text-anchor="middle" class="small" style="fill:white">provisional</text>
+<text x="108" y="223" text-anchor="end" class="label">CO3^2-</text>
+<rect x="122" y="198" width="116" height="38" rx="4" fill="#2f855a"/>
+<text x="180.0" y="223" text-anchor="middle" class="small" style="fill:white">established</text>
+<rect x="242" y="198" width="116" height="38" rx="4" fill="#d69e2e"/>
+<text x="300.0" y="223" text-anchor="middle" class="small" style="fill:white">provisional</text>
+<rect x="362" y="198" width="116" height="38" rx="4" fill="#d69e2e"/>
+<text x="420.0" y="223" text-anchor="middle" class="small" style="fill:white">provisional</text>
+<rect x="482" y="198" width="116" height="38" rx="4" fill="#d69e2e"/>
+<text x="540.0" y="223" text-anchor="middle" class="small" style="fill:white">provisional</text>
+<rect x="602" y="198" width="116" height="38" rx="4" fill="#d69e2e"/>
+<text x="660.0" y="223" text-anchor="middle" class="small" style="fill:white">provisional</text>
+<rect x="722" y="198" width="116" height="38" rx="4" fill="#d69e2e"/>
+<text x="780.0" y="223" text-anchor="middle" class="small" style="fill:white">provisional</text>
+<text x="108" y="265" text-anchor="end" class="label">H3O+</text>
+<rect x="122" y="240" width="116" height="38" rx="4" fill="#2f855a"/>
+<text x="180.0" y="265" text-anchor="middle" class="small" style="fill:white">established</text>
+<rect x="242" y="240" width="116" height="38" rx="4" fill="#d69e2e"/>
+<text x="300.0" y="265" text-anchor="middle" class="small" style="fill:white">provisional</text>
+<rect x="362" y="240" width="116" height="38" rx="4" fill="#d69e2e"/>
+<text x="420.0" y="265" text-anchor="middle" class="small" style="fill:white">provisional</text>
+<rect x="482" y="240" width="116" height="38" rx="4" fill="#d69e2e"/>
+<text x="540.0" y="265" text-anchor="middle" class="small" style="fill:white">provisional</text>
+<rect x="602" y="240" width="116" height="38" rx="4" fill="#d69e2e"/>
+<text x="660.0" y="265" text-anchor="middle" class="small" style="fill:white">provisional</text>
+<rect x="722" y="240" width="116" height="38" rx="4" fill="#d69e2e"/>
+<text x="780.0" y="265" text-anchor="middle" class="small" style="fill:white">provisional</text>
+<text x="108" y="307" text-anchor="end" class="label">OH-</text>
+<rect x="122" y="282" width="116" height="38" rx="4" fill="#2f855a"/>
+<text x="180.0" y="307" text-anchor="middle" class="small" style="fill:white">established</text>
+<rect x="242" y="282" width="116" height="38" rx="4" fill="#d69e2e"/>
+<text x="300.0" y="307" text-anchor="middle" class="small" style="fill:white">provisional</text>
+<rect x="362" y="282" width="116" height="38" rx="4" fill="#d69e2e"/>
+<text x="420.0" y="307" text-anchor="middle" class="small" style="fill:white">provisional</text>
+<rect x="482" y="282" width="116" height="38" rx="4" fill="#d69e2e"/>
+<text x="540.0" y="307" text-anchor="middle" class="small" style="fill:white">provisional</text>
+<rect x="602" y="282" width="116" height="38" rx="4" fill="#d69e2e"/>
+<text x="660.0" y="307" text-anchor="middle" class="small" style="fill:white">provisional</text>
+<rect x="722" y="282" width="116" height="38" rx="4" fill="#d69e2e"/>
+<text x="780.0" y="307" text-anchor="middle" class="small" style="fill:white">provisional</text>
+<text x="20" y="350" class="label">Hilliard-weighted refit (50 rows, carbamate x1.0), chi-square: original Born 15.5, SSM 15.2, SSM+DS 15.0</text>
+<text x="20" y="372" class="small">SSM rejected on physical grounds. SSM+DS lower in every case by 0.3-1.3: not decisive. Packet v5: original Born; MEA application: SSM+DS (MEA PR #125).</text>
+</svg>

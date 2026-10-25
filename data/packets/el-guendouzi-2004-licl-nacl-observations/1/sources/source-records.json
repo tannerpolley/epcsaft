@@ -1,0 +1,19 @@
+{
+  "sources": [
+    {
+      "source_id": "el-guendouzi-2004",
+      "citation": "El Guendouzi, Benbiyi, Dinane and Azougen (2004), Calphad 28, 97–103.",
+      "doi": "10.1016/j.calphad.2004.05.004",
+      "use_basis": "Measurement: Zotero PPC82MCC. Read from UCN2I6PC Fig.22 p.244. Inverted legend interpreted as m(LiCl)/m(NaCl)=0.5,1,2; not checked against the original table; duplicate compositions kept."
+    },
+    {
+      "source_id": "lassin-2015",
+      "citation": "Lassin et al. (2015), American Journal of Science 315, 204–256.",
+      "doi": "10.2475/03.2015.02",
+      "use_basis": "Zotero UCN2I6PC; Fig.22 p.244 (PDF p.41), vector markers, plotted precision 0.001 in Phi; measurement attributed to El Guendouzi 2004."
+    }
+  ],
+  "description": "El Guendouzi 2004 LiCl-NaCl measurements read from Lassin 2015 Fig.22 at 298.15 K",
+  "source_pdf_sha256": "63d7731244ac310731965bf5d5a4619f6c0ea3cacd00cf754206d731eea30cec",
+  "source_pdf_name": "lassin-2015-am-j-sci-315-204.pdf"
+}

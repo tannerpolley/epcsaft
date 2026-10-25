@@ -1,0 +1,150 @@
+{
+ "sources": {
+  "key_517a3450": {
+   "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/wheels/key-solves-517a3450-20261015T195123/summary.json",
+   "sha256": "bf07fa68b565ff8fa12a46a2c2cdaa86ed2d226df7bd96246118999feedefb83"
+  },
+  "history_549": {
+   "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-578-shared-timing-campaign-for-the-four-5/analyses/2026-engine-performance-history/results/headline.csv",
+   "sha256": "7c7be5f7944381e956c1eda35052caf9752abd49a9573046070331c8fffa9f1f"
+  },
+  "issue_533_rows": {
+   "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-533/selected-row-statistics.csv",
+   "sha256": "5debe3c6eedda95ec34268cee2c9df3ed4401bbd240d4c5531794a9ef2d11219"
+  },
+  "issue_533_reuse": {
+   "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-533/supplemental-call-statistics.csv",
+   "sha256": "aa247088db6022a5ff2501c36b8e52f8b5f14855a9d8045406acf11e365f2346"
+  },
+  "f1_identity": {
+   "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-578-shared-timing-campaign-for-the-four-5/tools/fixtures/mea-f1-identity.json",
+   "sha256": "f034a3faca19633d12b336b660c44c6f4fe7fea4236e2352d29fc3bffdd4c2e2"
+  }
+ },
+ "key_517a3450": {
+  "case-6/figure-2-point-7/cold": {
+   "seconds": 0.008583912499999999,
+   "work": {
+    "iterations": 10,
+    "evaluations": 15,
+    "hessian_calls": 11
+   }
+  },
+  "case-6/figure-2-point-7/accepted": {
+   "seconds": 0.007210173,
+   "work": {
+    "iterations": 7,
+    "evaluations": 11,
+    "hessian_calls": 8
+   }
+  },
+  "case-7/flash-5918.5286-Pa/cold": {
+   "seconds": 0.019682982,
+   "work": {
+    "iterations": 19,
+    "evaluations": 35,
+    "hessian_calls": 20
+   }
+  },
+  "case-7/flash-5918.5286-Pa/accepted": {
+   "seconds": 0.014204861999999999,
+   "work": {
+    "iterations": 17,
+    "evaluations": 22,
+    "hessian_calls": 18
+   }
+  },
+  "khudaida/sequential-8": {
+   "seconds": 0.0458592005,
+   "work": {
+    "iterations": 46,
+    "evaluations": 70,
+    "hessian_calls": 54
+   }
+  },
+  "mea-nominally-unloaded/353.15-K": {
+   "seconds": 0.0108925165,
+   "work": {
+    "iterations": 13,
+    "evaluations": 19,
+    "hessian_calls": 14
+   }
+  },
+  "mea-f1/residual-jacobian": {
+   "seconds": 9.562017304997426,
+   "work": {
+    "reference_computations": 296,
+    "reference_columns": 3462,
+    "density_solves": 2637,
+    "equilibrium_iterations": 1426
+   }
+  }
+ },
+ "history_549": {
+  "C1-300": {
+   "seconds": 0.000453718
+  },
+  "C2-0.5": {
+   "seconds": 0.000916018
+  },
+  "methane-bubble": {
+   "seconds": 0.000539628
+  },
+  "A-propane-liquid": {
+   "seconds": 1.193621875e-05
+  }
+ },
+ "issue_533": {
+  "C1-300": {
+   "Engine_seconds": 0.000438328,
+   "Clapeyron_seconds": 2.6969999999999998e-05,
+   "FeOs_seconds": 3.221e-05,
+   "conditions": "strict confirmation"
+  },
+  "C2-0.5": {
+   "Engine_seconds": 0.001029154,
+   "Clapeyron_seconds": 0.000190449,
+   "FeOs_seconds": 0.00035614699999999996,
+   "conditions": "strict confirmation"
+  },
+  "C3-0.88sigma-1": {
+   "Engine_seconds": 0.000277019,
+   "Clapeyron_seconds": 3.663e-05,
+   "FeOs_seconds": 0.000144649,
+   "conditions": "loaded host, interleaved",
+   "reused_engine_seconds": 5.31095e-05
+  },
+  "A-propane-vapor": {
+   "Engine_seconds": 1.15645e-05,
+   "Clapeyron_seconds": 1.99e-06,
+   "FeOs_seconds": 3.563e-05,
+   "conditions": "strict confirmation"
+  },
+  "A-propane-liquid": {
+   "Engine_seconds": 1.2119499999999998e-05,
+   "Clapeyron_seconds": 4.7300000000000005e-06,
+   "FeOs_seconds": 4.0644999999999995e-05,
+   "conditions": "loaded host, interleaved"
+  }
+ },
+ "f1_frozen": {
+  "revision": "5ad73fb9ff2a7e21d44b4d2fb20924aaa643ab6e",
+  "serial_cpu_seconds": 16.279413456,
+  "work": {
+   "reference_computations": 295,
+   "reference_columns": 3388,
+   "density_solves": 2627,
+   "equilibrium_iterations": 1426
+  },
+  "fits": {
+   "A": {
+    "seconds": 31.26431085900549,
+    "iterations": 14
+   },
+   "B": {
+    "seconds": 31.56655494000006,
+    "iterations": 14
+   }
+  }
+ }
+}

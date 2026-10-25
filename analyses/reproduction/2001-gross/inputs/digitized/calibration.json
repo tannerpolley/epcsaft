@@ -1,0 +1,158 @@
+{
+  "03": {
+    "axis": [
+      140,
+      798,
+      0,
+      1200,
+      744,
+      113,
+      0,
+      600
+    ],
+    "kind": "density",
+    "source_sha256": "58b8b3acaaf04c28d6acf92f1c2f59b448aceacdb3375381942dd69a382610e3",
+    "qa": "pass: every model point retraced on solid PC-SAFT branch; separate source-crop and overlay inspection; same investigator; raster uncertainty remains"
+  },
+  "07": {
+    "axis": [
+      117,
+      802,
+      0,
+      1,
+      556,
+      17,
+      0,
+      150
+    ],
+    "kind": "pressure",
+    "components": [
+      "methane",
+      "butane"
+    ],
+    "k": 0,
+    "source_sha256": "4ad0212d6e25a9504ff6c290f96fca452771a91b92a4e07c7e69a0afe396f37c",
+    "qa": "pass: every model point retraced on solid PC-SAFT branch; separate source-crop and overlay inspection; same investigator; raster uncertainty remains"
+  },
+  "08": {
+    "axis": [
+      106,
+      793,
+      0,
+      1,
+      546,
+      20,
+      0,
+      150
+    ],
+    "kind": "pressure",
+    "components": [
+      "ethane",
+      "decane"
+    ],
+    "k": 0,
+    "source_sha256": "75eff50571334c7c92bb710289f2bb18ac1d31f4d35fffb107d1dd028e34b36f",
+    "qa": "pass: every model point retraced on solid PC-SAFT branch; separate source-crop and overlay inspection; same investigator; raster uncertainty remains"
+  },
+  "09": {
+    "axis": [
+      116,
+      796,
+      0,
+      1,
+      515,
+      21,
+      0,
+      50
+    ],
+    "kind": "pressure",
+    "components": [
+      "ethane",
+      "diethyl ether"
+    ],
+    "k": 0,
+    "source_sha256": "0465e1f6f31ca504bbf1dd4f24900567caa3f5205c87736555d3670da3d9d955",
+    "qa": "pass: every model point retraced on solid PC-SAFT branch; separate source-crop and overlay inspection; same investigator; raster uncertainty remains"
+  },
+  "10": {
+    "axis": [
+      110,
+      796,
+      0,
+      1,
+      532,
+      15,
+      0,
+      80
+    ],
+    "kind": "pressure",
+    "components": [
+      "propane",
+      "benzene"
+    ],
+    "k": 0,
+    "source_sha256": "c712ba20a1df0933d9ace88bd97a8e7eedc7ca852d3c8c79b02c48ac14898372",
+    "qa": "pass: every model point retraced on solid PC-SAFT branch; separate source-crop and overlay inspection; same investigator; raster uncertainty remains"
+  },
+  "12": {
+    "axis": [
+      114,
+      796,
+      0,
+      1,
+      541,
+      18,
+      0,
+      200
+    ],
+    "kind": "pressure",
+    "components": [
+      "CO2",
+      "decane"
+    ],
+    "k": 0.128,
+    "source_sha256": "006b3cba7f4fb9e667a4468663a627aee4b8ac4356ad674b3cad3a639b241e4e",
+    "qa": "pass: every model point retraced on solid PC-SAFT branch; separate source-crop and overlay inspection; same investigator; raster uncertainty remains"
+  },
+  "13": {
+    "axis": [
+      103,
+      802,
+      0,
+      1,
+      533,
+      19,
+      0,
+      120
+    ],
+    "kind": "pressure",
+    "components": [
+      "CO2",
+      "cyclohexane"
+    ],
+    "k": 0.13,
+    "source_sha256": "20e6cf68fc198f7c4ad2baa6bba7848dbe2a49314b7e130f60faaf9fd78ce77e",
+    "qa": "pass: every model point retraced on solid PC-SAFT branch; separate source-crop and overlay inspection; same investigator; raster uncertainty remains"
+  },
+  "15": {
+    "axis": [
+      105,
+      794,
+      0,
+      1,
+      526,
+      15,
+      60,
+      80
+    ],
+    "kind": "temperature",
+    "components": [
+      "hexane",
+      "1-chlorobutane"
+    ],
+    "k": 0.017,
+    "pressure_pa": 94400,
+    "source_sha256": "96e9a51211444bf79aa07d839c3dffc61a137de665c459e196f293ba37b16b1c",
+    "qa": "pass: every model point retraced on solid PC-SAFT branch; separate source-crop and overlay inspection; same investigator; raster uncertainty remains"
+  }
+}

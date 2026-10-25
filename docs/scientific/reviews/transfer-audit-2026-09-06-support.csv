@@ -1,0 +1,8 @@
+temperature_K,molar_density_mol_m3,water_x,monoethanolamine_x,carbon_dioxide_x,protonated_mea_x,carbamate_x,bicarbonate_x,carbonate_x,hydronium_x,hydroxide_x,probe,status,pressure_Pa,error
+313.15,30000.0,0.8,0.1,0.05,0.02,0.02,0.005,0.0,0.005,0.0,baseline,evaluated,-257265535.05598807,
+313.15,30000.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,pure-water,EosError,,association Hessian is singular
+313.15,30000.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,pure-carbon-dioxide,EosError,,association Hessian is singular
+313.15,10000.0,0.0,0.9,0.0,0.05,0.05,0.0,0.0,0.0,0.0,multiple-absent-sites-probe,EosError,,association Hessian is singular
+313.15,10000.0,0.01,0.89,0.0,0.05,0.05,0.0,0.0,0.0,0.0,multiple-absent-sites-control-still-singular,EosError,,association Hessian is singular
+313.15,10000.0,0.0,0.9,0.05,0.02,0.02,0.005,0.0,0.005,0.0,zero-water-positive-ions,EosError,,association Hessian is singular
+313.15,10000.0,0.01,0.89,0.05,0.02,0.02,0.005,0.0,0.005,0.0,positive-water-positive-ions-control,evaluated,-118866371.85326037,

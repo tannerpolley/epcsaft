@@ -1,0 +1,126 @@
+{
+  "results": [
+    {
+      "status": "converged",
+      "message": "local constrained estimate; global feasibility and optimality unresolved",
+      "usable": true,
+      "optimizer": [
+        2.839274308087426,
+        -0.999999999992046,
+        0.9999999999817044
+      ],
+      "physical": [
+        2.839274308087426,
+        2.498561391116935,
+        2.498561391116935,
+        -0.999999999992046,
+        0.9999999999817044,
+        3.852587089114635
+      ],
+      "iterations": 18,
+      "initial_cost": null,
+      "final_cost": null,
+      "residual_evaluations": 19,
+      "jacobian_evaluations": 20,
+      "trial_failures": 0,
+      "iteration_seconds": [],
+      "iteration_costs": [],
+      "holds": [
+        {
+          "energy_error": -9.778887033462524e-09,
+          "correction": 2.707098441510717e-14,
+          "uncertainty": 2.707098441510717e-14,
+          "derivative": 361231.30520533794,
+          "parameter_derivative": [
+            -72169.20970143471,
+            17404.99942951836,
+            9.634064643267847e-09,
+            72345.24075821176,
+            1.2824607219925468e-09,
+            361231.30520533794
+          ],
+          "cause": "converged"
+        }
+      ],
+      "covariance": {
+        "status": "minimax_unavailable",
+        "rank": 0,
+        "singular_values": [],
+        "active_bounds": [],
+        "optimizer": [],
+        "physical": [],
+        "variance_factor": null,
+        "projected_gradient_norm": 0.0,
+        "left_vectors": [],
+        "right_vectors": [],
+        "assumption": ""
+      },
+      "failures": [],
+      "minimax": {
+        "availability": "available",
+        "solver_status": "SUCCESS",
+        "feasible": true,
+        "stationary": true,
+        "t": 0.04834780429345934,
+        "target_maximum": 0.04834780429318533,
+        "primal": 0.0,
+        "stationarity": 8.253503436250753e-11,
+        "dual_sign": 0.0,
+        "complementarity": 3.81332698411372e-11,
+        "active_lower": [
+          1
+        ],
+        "active_upper": [
+          2
+        ],
+        "lower_distances": [
+          0.43927430808742596,
+          7.953970815322009e-12,
+          1.9999999999817044,
+          2.417390214672967
+        ],
+        "upper_distances": [
+          1.5607256919125745,
+          1.999999999992046,
+          1.829558726740288e-11,
+          null
+        ],
+        "hold_multipliers": [
+          -9.018154582458039e-10
+        ],
+        "hold_causes": [
+          "available"
+        ],
+        "full_stationarity": [
+          -1.55424284553618e-13,
+          7.935457846386385e-13,
+          1.6507645944630056e-12,
+          0.0
+        ]
+      }
+    }
+  ],
+  "declared_starts": [
+    [
+      2.832177178410024,
+      -1.0,
+      1.0
+    ]
+  ],
+  "completed_starts": 1,
+  "seconds": 2.762415154998962,
+  "wheel_sha256": "71ee347fb606352dff9b69df1ddd930b62a7ddbdacb0cec7a0c9f4aece94cfcc",
+  "source_sha256": "cec1bfc9c833f7196c7bc11d51d21aa8bc224cc388b04f165712acc5c4473626",
+  "evaluated_sha256": "cda600657e41e8518b08211edf874a771cb8287a98398a7cf6df90d7e6f311fb",
+  "script_sha256": "20b88e7e2095a139c68f3cf2a6ec27159544d9e6574dd8ce5cd9157a695c57ec",
+  "shared_seconds": 900,
+  "shared_iterations": 600,
+  "source_head": "ff6ac88429534425c25dc6953f8af7211fad3c24",
+  "controls": {
+    "maximum_iterations": 600,
+    "maximum_elapsed_time_seconds": 900.0,
+    "function_tolerance": 1e-12,
+    "gradient_tolerance": 1e-10,
+    "parameter_tolerance": 1e-12
+  }
+}

@@ -1,0 +1,336 @@
+{
+  "issue": 209,
+  "stage": "cse:research and cse:diagnose; diagnosis complete, no runtime correction or baseline adoption performed",
+  "basis": {
+    "temperature_K": 298.15,
+    "pressure_Pa": 100000.0,
+    "packet": "figiel-2025-chloride-activity-refit/1",
+    "preservation_relative_criterion": 1e-12,
+    "quantities": "All 948 original stage-1 target, guard and report predictions; accuracy probes cover all 40 changed osmotic rows at 0.001--0.1 mol/kg."
+  },
+  "responsible_merge": "19a0c8258c3f5f6fca2258395eb54e07503b7efb",
+  "responsible_pr": "https://github.com/tannerpolley/ePC-SAFT/pull/273",
+  "parent": "95988731bd35af522b5d4e986b8697545ad5fd98",
+  "corrected_candidate_inventory": [
+    {
+      "commit": "8f5f56855ccafbeb2b73329f7bc7ec0b62265ddc",
+      "title": "Merge pull request #270 from tannerpolley/issue-238-multistart",
+      "runtime_files": [
+        "engine/native/bindings/eos_bindings.cpp",
+        "engine/native/bindings/equilibrium_bindings.cpp",
+        "engine/native/equilibrium/gibbs_minimizer.cpp",
+        "engine/native/equilibrium/gibbs_minimizer.hpp",
+        "engine/native/equilibrium/ipopt.hpp",
+        "engine/native/equilibrium/phase_boundary.cpp",
+        "engine/native/equilibrium/problem.hpp",
+        "engine/native/equilibrium/request_compile.cpp",
+        "engine/src/epcsaft/_core.pyi",
+        "engine/src/epcsaft/equilibrium/__init__.py",
+        "engine/src/epcsaft/equilibrium/problem.py"
+      ]
+    },
+    {
+      "commit": "95988731bd35af522b5d4e986b8697545ad5fd98",
+      "title": "Merge pull request #271 from tannerpolley/issue-240-parameter-continuation",
+      "runtime_files": [
+        "engine/native/bindings/eos_bindings.cpp",
+        "engine/native/bindings/equilibrium_bindings.cpp",
+        "engine/native/core/parameters.hpp",
+        "engine/native/equilibrium/gibbs_minimizer.hpp",
+        "engine/native/equilibrium/phase_boundary.cpp",
+        "engine/native/properties/helmholtz_model.cpp",
+        "engine/native/properties/helmholtz_tape.hpp",
+        "engine/native/regression/coordinates.cpp",
+        "engine/src/epcsaft/_core.pyi",
+        "engine/src/epcsaft/equilibrium/problem.py",
+        "engine/src/epcsaft/regression.py"
+      ]
+    },
+    {
+      "commit": "19a0c8258c3f5f6fca2258395eb54e07503b7efb",
+      "title": "Merge pull request #273 from tannerpolley/issue-222-benchmark",
+      "runtime_files": [
+        "engine/native/core/numerical_policy.hpp",
+        "engine/native/properties/density.cpp"
+      ]
+    },
+    {
+      "commit": "c106702048e87d0c583a3a5516cb5746e7a6ac07",
+      "title": "Merge pull request #276 from tannerpolley/issue-269-zero-inventory-incipient",
+      "runtime_files": [
+        "engine/native/equilibrium/request_compile.cpp"
+      ]
+    },
+    {
+      "commit": "9fdfe7cec1526420b6a5d1da6a43db9db2a94441",
+      "title": "Merge pull request #293 from tannerpolley/issue-283-cuts",
+      "runtime_files": [
+        "engine/native/contributions/electrolyte.hpp",
+        "engine/native/contributions/helmholtz.hpp",
+        "engine/native/core/parameters.hpp",
+        "engine/native/core/scalar.hpp",
+        "engine/native/core/trace.hpp",
+        "engine/native/equilibrium/gibbs_minimizer.hpp",
+        "engine/native/equilibrium/request_compile.cpp",
+        "engine/native/equilibrium/stoichiometry.cpp",
+        "engine/native/properties/density.cpp",
+        "engine/native/properties/helmholtz_model.cpp",
+        "engine/native/properties/helmholtz_tape.hpp",
+        "engine/native/properties/infinite_dilution_reference.cpp"
+      ]
+    },
+    {
+      "commit": "d259302e63c3d993d046e705b28fa192e4bd687c",
+      "title": "Merge pull request #297 from tannerpolley/issue-284-trace",
+      "runtime_files": [
+        "engine/native/bindings/diagnostics_bindings.cpp",
+        "engine/native/contributions/association.hpp",
+        "engine/native/core/trace.hpp",
+        "engine/native/equilibrium/gibbs_minimizer.cpp",
+        "engine/native/properties/density.cpp",
+        "engine/native/properties/helmholtz_model.cpp",
+        "engine/native/properties/infinite_dilution_reference.cpp",
+        "engine/native/regression/fit.cpp",
+        "engine/src/epcsaft/_core.pyi"
+      ]
+    },
+    {
+      "commit": "ec0bafa71b5022821f1774b2b9fffb06622be87c",
+      "title": "Merge pull request #301 from tannerpolley/issue-225-current-calorics",
+      "runtime_files": [
+        "engine/native/bindings/equilibrium_bindings.cpp",
+        "engine/native/contributions/electrolyte.hpp",
+        "engine/native/contributions/helmholtz.hpp",
+        "engine/native/equilibrium/implicit_sensitivity.cpp",
+        "engine/native/equilibrium/problem.hpp",
+        "engine/native/equilibrium/request_compile.cpp",
+        "engine/native/properties/helmholtz_model.cpp",
+        "engine/native/properties/helmholtz_model.hpp",
+        "engine/native/properties/infinite_dilution_reference.cpp",
+        "engine/native/properties/thermochemistry.cpp",
+        "engine/native/properties/thermochemistry.hpp",
+        "engine/native/regression/coordinates.cpp",
+        "engine/native/regression/observations.cpp",
+        "engine/src/epcsaft/_core.pyi"
+      ]
+    }
+  ],
+  "excluded_merges": [
+    {
+      "commit": "f302a653b80080e5b629096bc70a63a59a7dd7b5",
+      "title": "Merge pull request #277 from tannerpolley/issue-234-batches-11-13",
+      "reason": "No changes under engine/native or engine/src"
+    },
+    {
+      "commit": "c938e399620b73143e9f5889c505e3541714c268",
+      "title": "Merge pull request #291 from tannerpolley/efficiency-steering",
+      "reason": "No changes under engine/native or engine/src"
+    },
+    {
+      "commit": "112dd5e0669215aabb924a5cb46ca99c4e6fcd93",
+      "title": "Merge pull request #292 from tannerpolley/issue-285-timing-tool",
+      "reason": "No changes under engine/native or engine/src"
+    },
+    {
+      "commit": "984ff7326b4f67d2be05b9d9ff5817e4ca106dda",
+      "title": "Merge pull request #294 from tannerpolley/issue-286-checks",
+      "reason": "No changes under engine/native or engine/src"
+    },
+    {
+      "commit": "94a6179e6cdd12372edcbe2cef1db3fab826ac46",
+      "title": "Merge pull request #295 from tannerpolley/issue-290-checkall",
+      "reason": "No changes under engine/native or engine/src"
+    },
+    {
+      "commit": "ea7b3f63140ee84ed0bf1784eac5170567f1be3b",
+      "title": "Merge pull request #296 from tannerpolley/issue-282-context-pointer",
+      "reason": "No changes under engine/native or engine/src"
+    },
+    {
+      "commit": "905b3d1e651af29e0b812434abf103ee11f27dba",
+      "title": "Merge pull request #298 from tannerpolley/issue-290-native-speed",
+      "reason": "No changes under engine/native or engine/src"
+    },
+    {
+      "commit": "d7739584458aa43a265dc7cc8b6f0e1a097c1480",
+      "title": "Merge pull request #299 from tannerpolley/issue-290-target",
+      "reason": "No changes under engine/native or engine/src"
+    }
+  ],
+  "causal_evidence": {
+    "disposition": "Reproduced",
+    "parent_to_merge_runtime_diff_files": [
+      "engine/native/properties/density.cpp",
+      "engine/native/core/numerical_policy.hpp"
+    ],
+    "policy_change": "Only explanatory text changes; no numerical value changes.",
+    "source_changes": [
+      {
+        "path": "engine/native/properties/density.cpp",
+        "merge_lines": [
+          86,
+          87,
+          88,
+          122,
+          123,
+          124
+        ],
+        "current_ec0bafa7_lines": [
+          71,
+          72,
+          73,
+          107,
+          108,
+          109
+        ],
+        "behavior": "Keep both bracket endpoint PressurePoints; choose smaller absolute pressure error as Newton origin and publication point, upper on tie."
+      },
+      {
+        "path": "engine/native/properties/density.cpp",
+        "merge_lines": [
+          328,
+          335,
+          336,
+          337,
+          338,
+          339,
+          340,
+          341,
+          342
+        ],
+        "current_ec0bafa7_lines": [
+          313,
+          320,
+          321,
+          322,
+          323,
+          324,
+          325,
+          326,
+          327
+        ],
+        "behavior": "Anchored success returns the sole stable local-scan root instead of the original anchor seed; convergence counts are composed."
+      }
+    ],
+    "policy_tolerance_unchanged": 1e-12,
+    "old_bisect_failures": 0,
+    "new_bisect_failures": 40,
+    "all_pre_merge_runtime_candidates_bit_identical": true,
+    "all_post_merge_candidates_bit_identical_to_ec0bafa7": true,
+    "post_merge_prediction_bit_changes": 847,
+    "rows_exceeding_preservation_criterion": 40,
+    "responsible_runtime_diff": "diff --git a/engine/native/core/numerical_policy.hpp b/engine/native/core/numerical_policy.hpp\nindex 8f104bca..9ea370d8 100644\n--- a/engine/native/core/numerical_policy.hpp\n+++ b/engine/native/core/numerical_policy.hpp\n@@ -116,8 +116,8 @@ inline constexpr Tolerance ASSOCIATION_JACOBIAN_RANK{\"ASSOCIATION_JACOBIAN_RANK\"\n // The pressure row is solved in reduced units where the residual is O(1).\n inline constexpr Tolerance DENSITY_ROOT_RESIDUAL = derived(ASSOCIATION_RESIDUAL, 5.0, \"DENSITY_ROOT_RESIDUAL\",\n     \"bracketed Newton on the reduced pressure residual; the tolerance is on \"\n-    \"the reduced residual; the delivered relative pressure error is |r|/z, \"\n-    \"about 1e-8 on a dense liquid root, measured worst 1.7e-8\"\n+    \"the reduced residual; publish the bracket endpoint with smaller |P_calc-P_target|; \"\n+    \"relative pressure error is |r|/Z_target, with Z_target=P_target/(rho R T)\"\n );\n \n inline constexpr Tolerance DENSITY_MAX_ITERATIONS{\"DENSITY_MAX_ITERATIONS\",\ndiff --git a/engine/native/properties/density.cpp b/engine/native/properties/density.cpp\nindex 9793261a..fdb0bf5d 100644\n--- a/engine/native/properties/density.cpp\n+++ b/engine/native/properties/density.cpp\n@@ -73,16 +73,19 @@ DensityRoot publish_root(\n     };\n }\n \n-// Safeguarded Newton from a cell endpoint inside [lower, upper]; lower_residual carries the\n-// sign at the lower end so the bracket keeps shrinking around one crossing. The caller\n+// Safeguarded Newton from the bracket endpoint with smaller absolute pressure error.\n+// Both endpoint evaluations enclose one crossing in [lower, upper]. The caller\n // isolates a mechanically stable interval, or supplies an exact scan-node root.\n DensityRoot refine(\n     const HelmholtzModel& model, double temperature, double pressure,\n-    const std::vector<double>& composition, double lower, double upper, double lower_residual,\n-    double density, PressurePoint point, core::Scope& parent_scope, std::size_t& evaluations\n+    const std::vector<double>& composition, double lower, PressurePoint low,\n+    double upper, PressurePoint high, core::Scope& parent_scope, std::size_t& evaluations\n ) {\n     const auto maximum = static_cast<std::size_t>(policy::DENSITY_MAX_ITERATIONS.value);\n     const double tolerance = policy::DENSITY_ROOT_RESIDUAL.value;\n+    const bool from_lower = std::abs(low.pressure - pressure) < std::abs(high.pressure - pressure);\n+    double density = from_lower ? lower : upper;\n+    PressurePoint point = from_lower ? low : high;\n     core::ResidualHistory history;\n     history.push(std::abs(point.residual));\n     std::size_t iterations = 0;\n@@ -109,14 +112,16 @@ DensityRoot refine(\n         const PressurePoint next = at_density(model, temperature, pressure, composition, candidate,\n                                               evaluations, DerivativeOrder::PressureSlope);\n         history.push(std::abs(next.residual));\n-        if (lower_residual * next.residual <= 0.0) {\n+        if (low.residual * next.residual <= 0.0) {\n             upper = candidate;\n+            high = next;\n         } else {\n             lower = candidate;\n-            lower_residual = next.residual;\n+            low = next;\n         }\n-        density = candidate;\n-        point = next;\n+        const bool from_lower = std::abs(low.pressure - pressure) < std::abs(high.pressure - pressure);\n+        density = from_lower ? lower : upper;\n+        point = from_lower ? low : high;\n     }\n     const double derivative = residual_derivative(point, density, pressure, temperature);\n     parent_scope.probe(\"density_root_bracket\", {lower, upper, derivative, point.residual});\n@@ -183,9 +188,8 @@ void scan_cell(\n     }\n     if (low.residual < 0.0 && high.residual > 0.0) {\n         scope.probe(\"density_bracket\", {lower, upper, low.residual, high.residual});\n-        const bool from_lower = std::abs(low.residual) < std::abs(high.residual);\n-        roots.push_back(refine(model, temperature, pressure, composition, lower, upper,\n-            low.residual, from_lower ? lower : upper, from_lower ? low : high, scope, evaluations));\n+        roots.push_back(refine(model, temperature, pressure, composition, lower, low,\n+            upper, high, scope, evaluations));\n     }\n }\n \n@@ -279,7 +283,7 @@ std::vector<DensityRoot> scan_roots(\n         const auto& node = points[i];\n         if (node.point.residual == 0.0 && node.point.slope > 0.0)\n             roots.push_back(refine(model, temperature, pressure, composition, node.density,\n-                node.density, 0.0, node.density, node.point, scope, evaluations));\n+                node.point, node.density, node.point, scope, evaluations));\n         if (i != 0 && points[i].linked) {\n             scan_cell(model, temperature, pressure, composition, points[i - 1].density,\n                       points[i - 1].point, points[i].density, points[i].point, scope, evaluations,\n@@ -321,20 +325,20 @@ DensityRoot anchor(\n         };\n         if (anchor_record.residual <= anchor_record.criterion->value\n             && point.slope > 0.0) {\n-            std::size_t local_stable_roots = 0;\n-            for (const auto& root : scan_roots(model, temperature, pressure, composition,\n-                     std::log(local_lower), std::log(local_upper),\n-                     static_cast<std::size_t>(policy::DENSITY_ANCHOR_SCAN_INTERVALS.value),\n-                     anchor_scope, evaluations)) {\n-                if (root.pressure_density_derivative > 0.0) ++local_stable_roots;\n-            }\n+            auto roots = scan_roots(model, temperature, pressure, composition,\n+                std::log(local_lower), std::log(local_upper),\n+                static_cast<std::size_t>(policy::DENSITY_ANCHOR_SCAN_INTERVALS.value),\n+                anchor_scope, evaluations);\n+            roots.erase(std::remove_if(roots.begin(), roots.end(),\n+                [](const auto& root) { return !(root.pressure_density_derivative > 0.0); }), roots.end());\n             anchor_record.evaluations = evaluations;\n-            anchor_record.stop = core::classify(anchor_record.residual, *anchor_record.criterion,\n-                anchor_record.floor, anchor_record.contraction, false, anchor_record.amplification);\n-            if (local_stable_roots == 1) {\n-                const auto result = publish_root(density, point.pressure - pressure, point.slope,\n-                                                 iteration + 1, std::nullopt, branch, anchor_record);\n-                anchor_scope.finish(anchor_record);\n+            if (roots.size() == 1) {\n+                auto result = roots.front();\n+                result.branch = branch;\n+                result.convergence.iterations += iteration + 1;\n+                result.convergence.evaluations = evaluations;\n+                result.iterations = result.convergence.iterations;\n+                anchor_scope.finish(result.convergence);\n                 return result;\n             }\n             anchor_record.stop = core::Stop::infeasible;\n"
+  },
+  "mechanism": {
+    "disposition": "Reproduced density/output movement; amplification follows exact identity, per-row rounding remainder retained.",
+    "authority": "engine/docs/equations.md#practical_osmotic_coefficient and engine/docs/science/algorithms.md#ALG-DENSITY",
+    "description": "The old refinement published the quarter-radius bracket witness. The correction retains the pressure-closest endpoint. The changed solution and pure-solvent densities alter the solvent chemical-potential difference in the unchanged osmotic Euler calculation. Dividing by s=2 m M_water amplifies small root and floating-point subtraction errors.",
+    "identity": "Phi_Euler - Phi_direct = ((P_EOS,f-P_target)/rho_f - (P_EOS,p-P_target)/rho_p)/(RT x_solvent s), apart from finite-precision Euler contraction error.",
+    "gibbs_duhem_identity": "Phi(m)=1+ln gamma_pm(m)-(1/m) integral_0^m ln gamma_pm(t) dt = 1+ln gamma_pm(m)-2 integral_0^1 u ln gamma_pm(m u^2) du.",
+    "reference_basis": "Binary electroneutral salt, constant T/P, solvent mass basis; Phi(0)=1. An additive finite ionic-reference constant cancels from this integrated identity."
+  },
+  "accuracy": {
+    "disposition": "Reproduced numerical verification; quadrature error estimates are empirical, not certified bounds.",
+    "pressure_closure_improved_rows": 40,
+    "positive_pressure_slopes_and_same_two_stable_roots": true,
+    "old_maximum_absolute_pressure_error_Pa": 3.961066249758005e-05,
+    "new_maximum_absolute_pressure_error_Pa": 1.2641918146982789e-05,
+    "old_pure_solvent_pressure_error_Pa": -3.5353979910723865e-05,
+    "new_pure_solvent_pressure_error_Pa": 5.625610356219113e-06,
+    "phi_errors_improved_rows": 20,
+    "phi_errors_worsened_rows": 20,
+    "old_maximum_absolute_phi_gd_error": 2.990925285217827e-10,
+    "new_maximum_absolute_phi_gd_error": 1.0203060618607651e-10,
+    "old_rms_phi_gd_error": 7.837649985992935e-11,
+    "new_rms_phi_gd_error": 4.1997958658140284e-11,
+    "maximum_128_vs_64_quadrature_change": 1.6209256159527285e-14,
+    "maximum_old_vs_new_gd_phi_change": 4.829470157119431e-14,
+    "worst_preservation_row": {
+      "row": "105",
+      "group": "T KCl osmotic",
+      "molality_mol_kg": "0.001",
+      "old_density_mol_m3": 55340.74157560849,
+      "new_density_mol_m3": 55340.741575609005,
+      "old_pure_density_mol_m3": 55340.379252153296,
+      "new_pure_density_mol_m3": 55340.37925215379,
+      "old_pressure_error_Pa": -3.355029912199825e-05,
+      "new_pressure_error_Pa": 9.03455656953156e-06,
+      "old_pure_pressure_error_Pa": -3.5353979910723865e-05,
+      "new_pure_pressure_error_Pa": 5.625610356219113e-06,
+      "old_phi_euler": 0.9882495888471027,
+      "new_phi_euler": 0.988249589131943,
+      "old_phi_gd_128": 0.9882495890888595,
+      "new_phi_gd_128": 0.9882495890888839,
+      "old_phi_pressure_substitution_effect": 3.6496027042711467e-10,
+      "new_phi_pressure_substitution_effect": 6.896768312618e-10,
+      "old_phi_direct_chemical": 0.9882495884965306,
+      "new_phi_direct_chemical": 0.9882495884362839,
+      "old_phi_gd_error": -2.417568367718559e-10,
+      "new_phi_gd_error": 4.3059111831666996e-11,
+      "old_quadrature_change": 4.773959005888173e-15,
+      "new_quadrature_change": 5.218048215738236e-15,
+      "phi_change": 2.8484037351006464e-10,
+      "density_change_mol_m3": 5.165929906070232e-10,
+      "pressure_closure_improved": true,
+      "phi_gd_error_improved": true,
+      "change_in_pressure_substitution_effect": 3.2471656083468533e-10,
+      "change_in_direct_chemical_phi": -6.024669652049397e-11,
+      "change_in_double_precision_euler_remainder": 2.0370509195873273e-11
+    },
+    "current_stage1_groups": {
+      "groups": 57,
+      "enforced": 45,
+      "enforced_failures": 0
+    }
+  },
+  "review_evidence": {
+    "disposition": "Verified from fetched PR body, issue current state and retained repository evidence; not independently replayed #222 campaigns.",
+    "github_pr_reviews": 0,
+    "github_inline_review_comments": 0,
+    "external_independent_review_record": "Issue #222 body records design Ready after revision 1 and delivered review round 2. PR body records owner-approved +4 ionic evaluations and qualification.",
+    "qualified_scope": "26 C3 pressure rows, five anchors, earned P2 closure check, 252 density-explained native-value refreshes plus one separately stale row; 790 changed benchmark values across 42 requests; unchanged verdicts.",
+    "issue209_specific_preservation_qualified_in_pr": false,
+    "interpretation": "Intentional, independently reviewed density correction with a missed cross-issue preservation reconciliation. No reproduced runtime regression in the 40 pressure closures. Current Phi is not uniformly closer in every row, and its absolute error is not established at 1e-12.",
+    "compared_pr301": "PR #301 reconciled 371 moved entries, but its merge changes zero of these 948 predictions relative to #273."
+  },
+  "recommendation": {
+    "action": "Re-baseline the 948 stage-1 prediction reference on the identified current wheel, preserving original rows and this old/new evidence; keep the 1e-12 preservation criterion and unchanged /1 parameters. Do not revert the density correction.",
+    "adoption": "Recommendation only; accountable lead/owner adopts the reconciliation. No reference values replaced here.",
+    "limits": "New pressure closures improve on all 40 cases; worst/RMS Phi inconsistency improves, but only 20/40 individual Phi rows are closer to Gibbs-Duhem. Current low-m Phi errors up to about 1e-10 remain. This diagnosis does not establish absolute 1e-12 Phi accuracy, physical validation, global stability, a new fit, provisional /2 acceptance or downstream adoption."
+  },
+  "git": {
+    "branch": "issue-209-preservation-diagnosis",
+    "base": "ec0bafa71b5022821f1774b2b9fffb06622be87c",
+    "runtime_lines_changed": 0,
+    "tolerances_changed": 0,
+    "preexisting_serena_modification_preserved": true
+  },
+  "logs": "build/issue-209-bisect/logs",
+  "scratch_worktree_removed": true,
+  "evidence_sha256": {
+    "19a0c825-preservation.csv": "a2002ec6978893162f947f624be8a082da7ff8afe8083bedeb9d72f60a43fe4e",
+    "19a0c825-summary.json": "61382bacbc6aed4c0f45241e62fdb6fb1b1f9d4f24de9fc774ea386b2dfe1ed9",
+    "8f5f5685-preservation.csv": "a7f7740a160e0168f573bc98f5e0d5ae4b6e955c24eb97ef337e3d038bea5d8e",
+    "8f5f5685-summary.json": "b6bcf62420d03b2a7250da43fa0624c37effdd41746e608e08c85abeeafcfbe0",
+    "95988731-identities.csv": "900afb48a3dbfe7264a3a7bcad0a4e0d50c6c9bdd18678c3d2938c5bb9bd1568",
+    "95988731-preservation.csv": "a7f7740a160e0168f573bc98f5e0d5ae4b6e955c24eb97ef337e3d038bea5d8e",
+    "95988731-summary.json": "1838e4ddb882ee7ff571c0f0056e2ab9dd2cbc4b0f771c81667e70f246ad447c",
+    "9fdfe7ce-preservation.csv": "a2002ec6978893162f947f624be8a082da7ff8afe8083bedeb9d72f60a43fe4e",
+    "9fdfe7ce-summary.json": "0f2e6992e854d1133e389c956aa630cb0b7374185b0fb56a4420a5482ec441c9",
+    "b0c82fb2-preservation.csv": "a7f7740a160e0168f573bc98f5e0d5ae4b6e955c24eb97ef337e3d038bea5d8e",
+    "b0c82fb2-summary.json": "7b56edc8d046b90976d850686308a34d3013f6b17f683c2674b37143f0673160",
+    "bisect-results.csv": "eb0c4986feace7a53cf3318b2df9ae6eef5289a21c58ef0d4593dbc410e8dca6",
+    "c1067020-preservation.csv": "a2002ec6978893162f947f624be8a082da7ff8afe8083bedeb9d72f60a43fe4e",
+    "c1067020-summary.json": "ceaa5ad865b380f22a7ef08600fd6e8f6fa13f4e77658b96450d42c51a736184",
+    "d259302e-preservation.csv": "a2002ec6978893162f947f624be8a082da7ff8afe8083bedeb9d72f60a43fe4e",
+    "d259302e-summary.json": "775f40c265c7030974ee000d6a287d2f1afaf1cf1e375f272fced5e68ba622fa",
+    "ec0bafa7-identities.csv": "582461988ccbb1d1e599d0abf29bbba2aa0c451106a2b5bd3a648899f9f5d6fd",
+    "ec0bafa7-preservation.csv": "a2002ec6978893162f947f624be8a082da7ff8afe8083bedeb9d72f60a43fe4e",
+    "ec0bafa7-stage1-group-summary.json": "0a23fcee43354488abc4ee779dd8b2c76a2cadaa345c13a5f6f0a4b7747a9559",
+    "ec0bafa7-stage1-groups.csv": "59694092bbe5a18409dc65bd1427b03f161ce759d47c31d185b05822d72cd6ce",
+    "ec0bafa7-summary.json": "3f01f1708f4ad039788c4839a8f7d6c38c419f1a2fafa4cbd903bcb71b0f50dd",
+    "merge-inventory.json": "f335420c349e86ed56fe9ee019f2a459af8db0fcc34338e1e7b517b70d23fe72",
+    "old-new-identities.csv": "04578074271ed1bc73f980bc52c63aa99def3ada7bce9d47ab86d084bae57350",
+    "reproduction.json": "228805d30f81f886d0679a58e0496abe5f2ed58d7f82462a5dfc24780cf3be23"
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "axis": {
+    "x1_pixel": [
+      296,
+      1294
+    ],
+    "x2_pixel": [
+      1915,
+      1294
+    ],
+    "x1_value": 0,
+    "x2_value": 1,
+    "y1_pixel": [
+      296,
+      1294
+    ],
+    "y2_pixel": [
+      296,
+      28
+    ],
+    "y1_value": 60,
+    "y2_value": 140
+  },
+  "source_pdf_attachment": "UGT3UV2L",
+  "page_index": 2,
+  "pdf_image_xref": 67,
+  "image_sha256": "e55334743fc40a560541bb9cae33c7f6310c9c19f23285a0ef43f06821a9cf39",
+  "coordinate_helper": "cse:digitize/scripts/digitize_xy_plot.py:AxisTransform",
+  "solid_curve_identity": "PC-SAFT in source legend; dashed line is SAFT",
+  "horizontal_coordinate": "propanol mole fraction; direct mapping",
+  "qa": "pass",
+  "uncertainty": "Original output and input uncertainties retained without widening; marked centers checked against rendered PDF.",
+  "independent_lane": "Per-column raster spans and visual source inspection; no independent second digitizer"
+}

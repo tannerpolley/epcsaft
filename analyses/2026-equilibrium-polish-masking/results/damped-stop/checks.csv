@@ -1,0 +1,5 @@
+case,comparison,model,reference,atol,rtol,baseline_passed,recording_identical
+caloric-action,e5-7/thermal-320/phase[0].property/TotalIsobaricHeatCapacity/A1,-0.03905144680598874,-0.03905144680598874,1e-12,1e-12,True,True
+fit,r4/recovery/variance_factor,3.4749350408803575e-27,3.4749350408803575e-27,0.0,1e-12,True,True
+isomerization,trace/1e-08/10/kkt_residual,1.4210854715202004e-14,0.0,1e-12,0.0,True,True
+two-phase-action,solved/thermal/3,-126.93949786517828,-126.93949786517828,1e-12,1e-12,True,True

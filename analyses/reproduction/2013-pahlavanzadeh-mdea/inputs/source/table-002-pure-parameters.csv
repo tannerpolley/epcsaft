@@ -1,0 +1,8 @@
+species,association_scheme,m,sigma_A,epsilon_over_k_K,kappa_AB,epsilon_AB_over_k_K,psat_aad_percent,rho_sat_aad_percent,source_reference,source_table,source_pdf_page,source_printed_page,source_row,zotero_parent_key,pdf_attachment_key,verification
+mdea,"6(4:2,0:0)",4.874,3.211,288.87,0.016894,513.2765,1.46,0.24,this_work,2,3,216,1,DUAIHQ7Y,YAUNIZGX,PDF image and text layer checked
+mdea,"4(2:2,0:0)",3.675,3.563,228.711,0.123858,2046.624,0.51,0.41,this_work,2,3,216,2,DUAIHQ7Y,YAUNIZGX,PDF image and text layer checked
+mdea,2(1:1),3.3044,3.5975,237.44,0.066454,3709.9,13.1,2.7,Zhang_and_Chen_2011,2,3,216,3,DUAIHQ7Y,YAUNIZGX,PDF image and text layer checked
+water,2(1:1),1.9599,2.362,279.42,0.1750,2059.28,1.18,3.92,Diamantonis_and_Economou_2011,2,3,216,4,DUAIHQ7Y,YAUNIZGX,PDF image and text layer checked
+water,4(2:2),2.1945,2.229,141.66,0.2039,1804.17,1.98,0.83,Diamantonis_and_Economou_2011,2,3,216,5,DUAIHQ7Y,YAUNIZGX,PDF image and text layer checked
+co2,non-associating,2.0729,2.7852,169.21,,,2.78,2.73,Gross_and_Sadowski_2001,2,3,216,6,DUAIHQ7Y,YAUNIZGX,PDF image and text layer checked
+ch4,non-associating,1.0,3.7039,150.03,,,0.36,0.67,Gross_and_Sadowski_2001,2,3,216,7,DUAIHQ7Y,YAUNIZGX,PDF image and text layer checked

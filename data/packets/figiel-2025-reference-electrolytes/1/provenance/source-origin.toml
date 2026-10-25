@@ -1,0 +1,48 @@
+provenance_kind = "repository-migration-v1"
+origin_repository = "ePC-SAFT/ePC-SAFT-eos"
+origin_commit = "e5cd64697d3fb33890f42e87b8779ddda4b52c6a"
+origin_tree = "7de4e53f5d81422039d621536053a66a3840d0f9"
+copy_mode = "byte-for-byte"
+scope = "Reusable parameter packet only; generated campaign results, scripts, receipts, plots, and full paper content remain in the origin repository."
+source_bundle_manifest_path = "src/epcsaft/data/bundles/figiel-2025-reference-electrolytes/1/bundle.toml"
+source_bundle_manifest_sha256 = "70d1bbf0f8eea398c50c0aeac77bcf78050757b4fc454e5552d288f6a5671960"
+
+[[files]]
+retained_path = "parameters/bundle.toml"
+origin_path = "src/epcsaft/data/bundles/figiel-2025-reference-electrolytes/1/bundle.toml"
+sha256 = "70d1bbf0f8eea398c50c0aeac77bcf78050757b4fc454e5552d288f6a5671960"
+
+[[files]]
+retained_path = "parameters/components.csv"
+origin_path = "src/epcsaft/data/bundles/figiel-2025-reference-electrolytes/1/components.csv"
+sha256 = "2c69d306b91c11cf41282230be462e4e59c4fb97b0cfd6e079412a4deb7f274c"
+
+[[files]]
+retained_path = "parameters/single.csv"
+origin_path = "src/epcsaft/data/bundles/figiel-2025-reference-electrolytes/1/single.csv"
+sha256 = "cc19719a1af3a9539934d33a647d242f46e926d7dbdaecc9f276a051b2ff1d98"
+
+[[files]]
+retained_path = "parameters/pair.csv"
+origin_path = "src/epcsaft/data/bundles/figiel-2025-reference-electrolytes/1/pair.csv"
+sha256 = "f457737377b1d56e4afc56eaead3ae62bf636383e2bd9afd5ad40208cb579e07"
+
+[[files]]
+retained_path = "parameters/sites.csv"
+origin_path = "src/epcsaft/data/bundles/figiel-2025-reference-electrolytes/1/sites.csv"
+sha256 = "72d780205783f84010b91a208cef84426b912d7bbe5c9d26a123998162fd7f51"
+
+[[files]]
+retained_path = "parameters/association.csv"
+origin_path = "src/epcsaft/data/bundles/figiel-2025-reference-electrolytes/1/association.csv"
+sha256 = "1f2480fc79719dca381c77839b4e216d227d423abc3b2c268e1dfd0ebb0c33bd"
+
+[[files]]
+retained_path = "parameters/model.csv"
+origin_path = "src/epcsaft/data/bundles/figiel-2025-reference-electrolytes/1/model.csv"
+sha256 = "ce1f9d985725f86ca8d2f4e2f9f786c4e942e1d32f207bc1b20957311102525e"
+
+[[files]]
+retained_path = "parameters/correlations.toml"
+origin_path = "src/epcsaft/data/bundles/figiel-2025-reference-electrolytes/1/correlations.toml"
+sha256 = "e3a8bc397624b232d0997ee134caa085df57028f1950e6cf316a37aeaf5ec6af"

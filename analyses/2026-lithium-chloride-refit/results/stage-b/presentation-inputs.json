@@ -1,0 +1,7 @@
+{
+  "results/stage-b/fit.json": "417ae1ea354d2644840c22b47881c9e8f29a573941dcb022461ea67805a42c40",
+  "results/stage-b/evaluation.json": "dd3996cfff4dd1fdcdf2f2dd869eef41fa02ba3857a506e828e783bfb2c1da08",
+  "results/held-out-nominal.csv": "c7a166893d5c4a23edd09048fbb6269c6e7e87d1ead4653e3639402e08367d8b",
+  "results/stage-b/optimum-1/yao-nominal.csv": "fd996d01b88357048435c6901693a4526d3b0fb16d9ba7725c460320a5e91bbd",
+  "results/stage-b/optimum-1/trace-divalent.csv": "68226ac3a8d03f59d8d41980cdd22013349db0ce2bad07f16290e5532a8c672c"
+}

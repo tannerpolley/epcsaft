@@ -1,0 +1,70 @@
+campaign,file,comparison,equal
+khudaida,transport.csv,bytes,True
+khudaida,ladders.csv,bytes,True
+khudaida,endpoints.csv,bytes,True
+khudaida,record.netstrings,bytes,True
+khudaida,summary.json,"JSON without identity and per-case elapsed_s, options.output_file, option_file_sha256",True
+khudaida,identity.json,record_sha256 only,True
+khudaida,failure-determinism.log,lines; changed wheel adds exactly one prepared line,True
+khudaida,failure-feed_map.log,lines; changed wheel adds exactly one prepared line,True
+khudaida,failure-negative.log,lines; changed wheel adds exactly one prepared line,True
+khudaida,failure-nonfinite.log,lines; changed wheel adds exactly one prepared line,True
+khudaida,failure-phase_swap.log,lines; changed wheel adds exactly one prepared line,True
+khudaida,failure-record_change.log,"lines; changed wheel adds exactly one prepared line, record-changed diagnostic becomes the parse message",True
+khudaida,failure-selector.log,lines; changed wheel adds exactly one prepared line,True
+khudaida,failure-support.log,lines; changed wheel adds exactly one prepared line,True
+khudaida,failure-truncated.log,lines; changed wheel adds exactly one prepared line,True
+khudaida,failure-version.log,lines; changed wheel adds exactly one prepared line,True
+lithium,(file set),52 files,True
+lithium,campaign.json,JSON without *_s keys,True
+lithium,derivatives/endpoints.csv,bytes,True
+lithium,derivatives/ladders.csv,bytes,True
+lithium,derivatives/mpmath.csv,bytes,True
+lithium,derivatives/result.json,JSON without *_s keys,True
+lithium,derivatives/summary.json,"JSON without *_s keys, library_sha256",True
+lithium,derivatives/transport.csv,bytes,True
+lithium,design1/result.json,JSON without *_s keys,True
+lithium,design1/upper_bound_corner/solver/ipopt.opt,bytes,True
+lithium,design1/upper_bound_corner/stage_rows.csv,bytes,True
+lithium,design2/result.json,JSON without *_s keys,True
+lithium,design2/upper_bound_corner/solver/ipopt.opt,bytes,True
+lithium,design2/upper_bound_corner/stage_rows.csv,bytes,True
+lithium,design3/optimized_stage_rows.csv,bytes,True
+lithium,design3/optimizer/ipopt.opt,bytes,True
+lithium,design3/result.json,JSON without *_s keys,True
+lithium,design3/solver/ipopt.opt,bytes,True
+lithium,design3/stage_rows.csv,bytes,True
+lithium,design4/optimized_stage_rows.csv,bytes,True
+lithium,design4/optimizer/ipopt.opt,bytes,True
+lithium,design4/result.json,JSON without *_s keys,True
+lithium,design4/solver/ipopt.opt,bytes,True
+lithium,design4/stage_rows.csv,bytes,True
+lithium,identity.json,"JSON without *_s keys, engine_wheel, engine_library_sha256",True
+lithium,opt1/optimized_stage_rows.csv,bytes,True
+lithium,opt1/optimizer/ipopt.opt,bytes,True
+lithium,opt1/result.json,JSON without *_s keys,True
+lithium,opt1/solver/ipopt.opt,bytes,True
+lithium,opt2/optimized_stage_rows.csv,bytes,True
+lithium,opt2/optimizer/ipopt.opt,bytes,True
+lithium,opt2/result.json,JSON without *_s keys,True
+lithium,opt2/solver/ipopt.opt,bytes,True
+lithium,opt3/optimized_stage_rows.csv,bytes,True
+lithium,opt3/optimizer/ipopt.opt,bytes,True
+lithium,opt3/result.json,JSON without *_s keys,True
+lithium,opt3/solver/ipopt.opt,bytes,True
+lithium,record.netstrings,bytes,True
+lithium,stage1/result.json,JSON without *_s keys,True
+lithium,stage1/solver/ipopt.opt,bytes,True
+lithium,stage1/stage_rows.csv,bytes,True
+lithium,stage2/result.json,JSON without *_s keys,True
+lithium,stage2/solver/ipopt.opt,bytes,True
+lithium,stage2/stage_rows.csv,bytes,True
+lithium,stage3/result.json,JSON without *_s keys,True
+lithium,stage3/solver/ipopt.opt,bytes,True
+lithium,stage3/stage_rows.csv,bytes,True
+lithium,stage4/result.json,JSON without *_s keys,True
+lithium,stage4/solver/ipopt.opt,bytes,True
+lithium,stage4/stage_rows.csv,bytes,True
+lithium,stage5/result.json,JSON without *_s keys,True
+lithium,stage5/solver/ipopt.opt,bytes,True
+lithium,stage5/stage_rows.csv,bytes,True

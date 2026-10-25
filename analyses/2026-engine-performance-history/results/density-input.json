@@ -1,0 +1,434 @@
+{
+  "id": "A-propane-liquid",
+  "tier": "A",
+  "model": "C1",
+  "T_K": 300,
+  "P_Pa": 1997321.7914793573,
+  "branch": "liquid",
+  "x": [
+    1
+  ],
+  "N": 32,
+  "source": "C1-300; 2 model P_sat",
+  "warmups": 5,
+  "mode": "changing pressure",
+  "sequence_source": "32 distinct pressures from base to base + 199.73217914793574 Pa; fixed T and x",
+  "states": [
+    {
+      "index": 0,
+      "T_K": 300,
+      "P_Pa": 1997321.7914793573,
+      "x": [
+        1
+      ],
+      "branch": "liquid",
+      "oracle_rho_mol_m3": 11175.52468969248,
+      "oracle_branch": "liquid",
+      "oracle_stable_root_count": 2,
+      "main_pressure_floor": 0.0
+    },
+    {
+      "index": 1,
+      "T_K": 300,
+      "P_Pa": 1997328.2344528781,
+      "x": [
+        1
+      ],
+      "branch": "liquid",
+      "oracle_rho_mol_m3": 11175.525161542424,
+      "oracle_branch": "liquid",
+      "oracle_stable_root_count": 2,
+      "main_pressure_floor": 0.0
+    },
+    {
+      "index": 2,
+      "T_K": 300,
+      "P_Pa": 1997334.6774263992,
+      "x": [
+        1
+      ],
+      "branch": "liquid",
+      "oracle_rho_mol_m3": 11175.525633392263,
+      "oracle_branch": "liquid",
+      "oracle_stable_root_count": 2,
+      "main_pressure_floor": 0.0
+    },
+    {
+      "index": 3,
+      "T_K": 300,
+      "P_Pa": 1997341.12039992,
+      "x": [
+        1
+      ],
+      "branch": "liquid",
+      "oracle_rho_mol_m3": 11175.526105241846,
+      "oracle_branch": "liquid",
+      "oracle_stable_root_count": 2,
+      "main_pressure_floor": 0.0
+    },
+    {
+      "index": 4,
+      "T_K": 300,
+      "P_Pa": 1997347.5633734409,
+      "x": [
+        1
+      ],
+      "branch": "liquid",
+      "oracle_rho_mol_m3": 11175.526577091285,
+      "oracle_branch": "liquid",
+      "oracle_stable_root_count": 2,
+      "main_pressure_floor": 0.0
+    },
+    {
+      "index": 5,
+      "T_K": 300,
+      "P_Pa": 1997354.0063469617,
+      "x": [
+        1
+      ],
+      "branch": "liquid",
+      "oracle_rho_mol_m3": 11175.527048940552,
+      "oracle_branch": "liquid",
+      "oracle_stable_root_count": 2,
+      "main_pressure_floor": 0.0
+    },
+    {
+      "index": 6,
+      "T_K": 300,
+      "P_Pa": 1997360.4493204828,
+      "x": [
+        1
+      ],
+      "branch": "liquid",
+      "oracle_rho_mol_m3": 11175.527520789688,
+      "oracle_branch": "liquid",
+      "oracle_stable_root_count": 2,
+      "main_pressure_floor": 0.0
+    },
+    {
+      "index": 7,
+      "T_K": 300,
+      "P_Pa": 1997366.8922940036,
+      "x": [
+        1
+      ],
+      "branch": "liquid",
+      "oracle_rho_mol_m3": 11175.527992638625,
+      "oracle_branch": "liquid",
+      "oracle_stable_root_count": 2,
+      "main_pressure_floor": 0.0
+    },
+    {
+      "index": 8,
+      "T_K": 300,
+      "P_Pa": 1997373.3352675245,
+      "x": [
+        1
+      ],
+      "branch": "liquid",
+      "oracle_rho_mol_m3": 11175.528464487434,
+      "oracle_branch": "liquid",
+      "oracle_stable_root_count": 2,
+      "main_pressure_floor": 0.0
+    },
+    {
+      "index": 9,
+      "T_K": 300,
+      "P_Pa": 1997379.7782410453,
+      "x": [
+        1
+      ],
+      "branch": "liquid",
+      "oracle_rho_mol_m3": 11175.52893633594,
+      "oracle_branch": "liquid",
+      "oracle_stable_root_count": 2,
+      "main_pressure_floor": 0.0
+    },
+    {
+      "index": 10,
+      "T_K": 300,
+      "P_Pa": 1997386.2212145664,
+      "x": [
+        1
+      ],
+      "branch": "liquid",
+      "oracle_rho_mol_m3": 11175.529408184451,
+      "oracle_branch": "liquid",
+      "oracle_stable_root_count": 2,
+      "main_pressure_floor": 0.0
+    },
+    {
+      "index": 11,
+      "T_K": 300,
+      "P_Pa": 1997392.6641880872,
+      "x": [
+        1
+      ],
+      "branch": "liquid",
+      "oracle_rho_mol_m3": 11175.529880032704,
+      "oracle_branch": "liquid",
+      "oracle_stable_root_count": 2,
+      "main_pressure_floor": 0.0
+    },
+    {
+      "index": 12,
+      "T_K": 300,
+      "P_Pa": 1997399.107161608,
+      "x": [
+        1
+      ],
+      "branch": "liquid",
+      "oracle_rho_mol_m3": 11175.530351880781,
+      "oracle_branch": "liquid",
+      "oracle_stable_root_count": 2,
+      "main_pressure_floor": 0.0
+    },
+    {
+      "index": 13,
+      "T_K": 300,
+      "P_Pa": 1997405.550135129,
+      "x": [
+        1
+      ],
+      "branch": "liquid",
+      "oracle_rho_mol_m3": 11175.530823728655,
+      "oracle_branch": "liquid",
+      "oracle_stable_root_count": 2,
+      "main_pressure_floor": 0.0
+    },
+    {
+      "index": 14,
+      "T_K": 300,
+      "P_Pa": 1997411.99310865,
+      "x": [
+        1
+      ],
+      "branch": "liquid",
+      "oracle_rho_mol_m3": 11175.53129557637,
+      "oracle_branch": "liquid",
+      "oracle_stable_root_count": 2,
+      "main_pressure_floor": 0.0
+    },
+    {
+      "index": 15,
+      "T_K": 300,
+      "P_Pa": 1997418.4360821708,
+      "x": [
+        1
+      ],
+      "branch": "liquid",
+      "oracle_rho_mol_m3": 11175.531767423941,
+      "oracle_branch": "liquid",
+      "oracle_stable_root_count": 2,
+      "main_pressure_floor": 0.0
+    },
+    {
+      "index": 16,
+      "T_K": 300,
+      "P_Pa": 1997424.8790556917,
+      "x": [
+        1
+      ],
+      "branch": "liquid",
+      "oracle_rho_mol_m3": 11175.53223927139,
+      "oracle_branch": "liquid",
+      "oracle_stable_root_count": 2,
+      "main_pressure_floor": 0.0
+    },
+    {
+      "index": 17,
+      "T_K": 300,
+      "P_Pa": 1997431.3220292125,
+      "x": [
+        1
+      ],
+      "branch": "liquid",
+      "oracle_rho_mol_m3": 11175.532711118602,
+      "oracle_branch": "liquid",
+      "oracle_stable_root_count": 2,
+      "main_pressure_floor": 0.0
+    },
+    {
+      "index": 18,
+      "T_K": 300,
+      "P_Pa": 1997437.7650027336,
+      "x": [
+        1
+      ],
+      "branch": "liquid",
+      "oracle_rho_mol_m3": 11175.533182965704,
+      "oracle_branch": "liquid",
+      "oracle_stable_root_count": 2,
+      "main_pressure_floor": 0.0
+    },
+    {
+      "index": 19,
+      "T_K": 300,
+      "P_Pa": 1997444.2079762544,
+      "x": [
+        1
+      ],
+      "branch": "liquid",
+      "oracle_rho_mol_m3": 11175.533654812534,
+      "oracle_branch": "liquid",
+      "oracle_stable_root_count": 2,
+      "main_pressure_floor": 0.0
+    },
+    {
+      "index": 20,
+      "T_K": 300,
+      "P_Pa": 1997450.6509497752,
+      "x": [
+        1
+      ],
+      "branch": "liquid",
+      "oracle_rho_mol_m3": 11175.534126659259,
+      "oracle_branch": "liquid",
+      "oracle_stable_root_count": 2,
+      "main_pressure_floor": 0.0
+    },
+    {
+      "index": 21,
+      "T_K": 300,
+      "P_Pa": 1997457.0939232963,
+      "x": [
+        1
+      ],
+      "branch": "liquid",
+      "oracle_rho_mol_m3": 11175.534598505881,
+      "oracle_branch": "liquid",
+      "oracle_stable_root_count": 2,
+      "main_pressure_floor": 0.0
+    },
+    {
+      "index": 22,
+      "T_K": 300,
+      "P_Pa": 1997463.5368968172,
+      "x": [
+        1
+      ],
+      "branch": "liquid",
+      "oracle_rho_mol_m3": 11175.53507035218,
+      "oracle_branch": "liquid",
+      "oracle_stable_root_count": 2,
+      "main_pressure_floor": 0.0
+    },
+    {
+      "index": 23,
+      "T_K": 300,
+      "P_Pa": 1997469.979870338,
+      "x": [
+        1
+      ],
+      "branch": "liquid",
+      "oracle_rho_mol_m3": 11175.53554219842,
+      "oracle_branch": "liquid",
+      "oracle_stable_root_count": 2,
+      "main_pressure_floor": 0.0
+    },
+    {
+      "index": 24,
+      "T_K": 300,
+      "P_Pa": 1997476.4228438588,
+      "x": [
+        1
+      ],
+      "branch": "liquid",
+      "oracle_rho_mol_m3": 11175.53601404453,
+      "oracle_branch": "liquid",
+      "oracle_stable_root_count": 2,
+      "main_pressure_floor": 0.0
+    },
+    {
+      "index": 25,
+      "T_K": 300,
+      "P_Pa": 1997482.86581738,
+      "x": [
+        1
+      ],
+      "branch": "liquid",
+      "oracle_rho_mol_m3": 11175.536485890341,
+      "oracle_branch": "liquid",
+      "oracle_stable_root_count": 2,
+      "main_pressure_floor": 0.0
+    },
+    {
+      "index": 26,
+      "T_K": 300,
+      "P_Pa": 1997489.3087909007,
+      "x": [
+        1
+      ],
+      "branch": "liquid",
+      "oracle_rho_mol_m3": 11175.536957736094,
+      "oracle_branch": "liquid",
+      "oracle_stable_root_count": 2,
+      "main_pressure_floor": 0.0
+    },
+    {
+      "index": 27,
+      "T_K": 300,
+      "P_Pa": 1997495.7517644216,
+      "x": [
+        1
+      ],
+      "branch": "liquid",
+      "oracle_rho_mol_m3": 11175.537429581549,
+      "oracle_branch": "liquid",
+      "oracle_stable_root_count": 2,
+      "main_pressure_floor": 0.0
+    },
+    {
+      "index": 28,
+      "T_K": 300,
+      "P_Pa": 1997502.1947379424,
+      "x": [
+        1
+      ],
+      "branch": "liquid",
+      "oracle_rho_mol_m3": 11175.537901426978,
+      "oracle_branch": "liquid",
+      "oracle_stable_root_count": 2,
+      "main_pressure_floor": 0.0
+    },
+    {
+      "index": 29,
+      "T_K": 300,
+      "P_Pa": 1997508.6377114635,
+      "x": [
+        1
+      ],
+      "branch": "liquid",
+      "oracle_rho_mol_m3": 11175.53837327216,
+      "oracle_branch": "liquid",
+      "oracle_stable_root_count": 2,
+      "main_pressure_floor": 0.0
+    },
+    {
+      "index": 30,
+      "T_K": 300,
+      "P_Pa": 1997515.0806849843,
+      "x": [
+        1
+      ],
+      "branch": "liquid",
+      "oracle_rho_mol_m3": 11175.53884511712,
+      "oracle_branch": "liquid",
+      "oracle_stable_root_count": 2,
+      "main_pressure_floor": 0.0
+    },
+    {
+      "index": 31,
+      "T_K": 300,
+      "P_Pa": 1997521.5236585052,
+      "x": [
+        1
+      ],
+      "branch": "liquid",
+      "oracle_rho_mol_m3": 11175.539316962064,
+      "oracle_branch": "liquid",
+      "oracle_stable_root_count": 2,
+      "main_pressure_floor": 0.0
+    }
+  ]
+}

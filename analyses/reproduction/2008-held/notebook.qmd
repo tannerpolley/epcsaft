@@ -1,0 +1,182 @@
+---
+title: "Held aqueous electrolytes: printed model and measured symbols"
+format:
+  html:
+    embed-resources: true
+    toc: true
+jupyter: python3
+execute:
+  echo: false
+  warning: false
+  error: false
+  daemon: false
+---
+
+```{python}
+import json
+from pathlib import Path
+import pandas as pd
+from IPython.display import Markdown, Image, display
+root = Path.cwd()
+def load(name):
+    return json.loads((root/name).read_text())
+def table(frame):
+    display(Markdown(frame.to_markdown(index=False, floatfmt='.8g')))
+e = load('results/run-identity.json')
+s = load('results/run-summary.json')
+v = load('results/numerical-checks.json')
+d = load('inputs/source/digitization-qa.json')
+u = load('inputs/source/supplements.json')
+c = pd.read_csv(root/'results/figure-comparisons.csv.gz')
+r = load('results/rerun-comparison.json')
+curation = load('results/source-curation.json')
+```
+
+## Outcome and evidence
+
+Does the fully dissociated model reproduce the paper's calculated curves and how does it compare with measured symbols?
+[Held, Cameretti and Sadowski (2008)](https://doi.org/10.1016/j.fluid.2008.06.010), Figures 1–8, supplies the model lines and measured symbols separately.
+Agreement is partial. Density differences and vapor pressures are generally closer to the printed curves than several mean ionic activity curves.
+Admitted disjoint source rectangles remain failed reproductions; their thermodynamic cause is undetermined where the convention probes do not isolate it.
+Model-line comparisons are numerical verification. Measured-symbol comparisons are physical comparison within figure reading precision, with no claim of physical validation or experimental uncertainty.
+
+```{python}
+display(Markdown(f"The frozen extraction contains {d['line_points']} model-ink coordinates and {d['marker_centres']} measured centres across {d['series']} plotted series. {d['review_centres']} centres remain unresolved at the ordinate axis; {d['review_line_points']} line candidates have unresolved ownership and {d['gap_columns']} sampling columns have masked or absent owned ink. The {s['native_rows']} retained native evaluations produced {s['source_rows']} source comparisons. These correlated source pixels are not independent observations or an aggregate accuracy measure."))
+table(pd.read_csv(root/'results/quantity-outcomes.csv'))
+```
+
+## Source ownership correction and scope
+
+The final source selection corrects the guide errors identified in delivered r2:
+CsBr density in Figure 2, lower LiI water-coefficient ink in Figure 4a,
+and upper CsOH ionic-coefficient ink in Figure 7. The original crops and
+every prior guide rejection were inspected without consulting Engine
+residuals. [guide-corrections.csv](inputs/source/guide-corrections.csv) records
+the local guide ordinates and the explicit reasons for remaining exclusions.
+Original pixel coordinates, source ordinates, abscissa intervals and reading
+allowances are unchanged. The same competing-guide check still applies.
+
+Figure 4a assigns its lower, middle and upper dotted curves to LiI, NaI and
+KI; Figure 4b assigns them to NaI, NaBr and NaCl. These assignments follow
+the visible ion labels and marker shapes, correcting the interchanged verbal
+caption. Figure 6 runs LiBr, NaBr, KBr, RbBr and CsBr from upper to lower
+separated activity curves; Figure 7 runs CsOH, KOH, NaOH and LiOH. Low-molality
+coincidences do not yield independently owned curves. Previously rejected
+KI and RbBr neighbouring-ink witnesses remain excluded. Two additional
+RbBr edge selections could not be separated from the nearby CsBr stroke
+and are now excluded explicitly, preserving their native values.
+
+The revised source selection was frozen before reclassification. The
+comparison-only command reads the original native interval samples and
+uses the existing overlap rule; a missing retained sample stops the command.
+It performs no model evaluation. Tables 3–5 and the complete native results
+remain unchanged. The [curation record](results/source-curation.json) links
+both source hashes to the original execution; [every changed disposition](results/source-curation-changes.csv)
+preserves its earlier result. The earlier disclosed delivery under #733 is
+historical. This corrected selection awaits independent delivered review
+and investigator promotion; sparse correlated pixels and remaining source
+exclusions still prevent a complete source-coverage or aggregate-accuracy claim.
+
+```{python}
+witnesses = c[c.target_id.isin([330, 914, 1798, 1815])]
+display(Markdown(f"Source review inspected {curation['source_review_rows']} candidates, recentered {curation['recentered_guides']} local guides, and newly excluded {curation['newly_excluded_line_candidates']} neighbouring-ink edges. It changed {curation['changed_coordinate_values']} physical coordinate values and required {curation['new_native_evaluations']} native evaluations. The witnesses now recover both agreements and disagreements suppressed by the old guide cutoff."))
+table(witnesses[['target_id','figure','salt','quantity','molality','value','native_value','outcome','comparison_cause']])
+table(pd.DataFrame({'outcome':list(curation['before_outcomes']), 'before':[curation['before_outcomes'][k] for k in curation['before_outcomes']], 'after':[curation['after_outcomes'][k] for k in curation['before_outcomes']]}))
+```
+
+## Historical rerun before source curation
+
+```{python}
+display(Markdown(f"The native producers were rerun after integrating main `{r['main_commit']}`. Against the reviewed `{r['baseline_commit']}` results, {len(r['files_compared'])} retained result files have {r['changed_values']} changed scientific values or dispositions; the maximum absolute numeric change is {r['maximum_absolute_numeric_change']:g}. The rerun retains {r['native_rows']} native rows and {r['source_rows']} source comparisons. Execution identifiers and wall time are excluded from this equality comparison and retained separately in `run-identity.json` and `run-summary.json`. Runner, packet, supplements and frozen-target hashes are unchanged. This is numerical repeatability evidence, not physical validation or a correction of the acquisition errors."))
+```
+
+## Physical basis, conditions and source limits
+
+The declared packet is `held-cameretti-sadowski-2008/4`: complete dissociation, water-only vapor, hard chain, dispersion, water association and Debye–Hückel; no Born term.
+Held's printed screening diameter is sigma; the separately sourced packing diameter is reduced as stated in Held et al. (2014), Eq. (21).
+Ion–ion dispersion exclusions, water parameters and its temperature-dependent diameter remain those of the packet.
+The packet's primary activity temperature and permittivity remain unchanged.
+Off-temperature results are conditional on [Ascani and Held (2021)](https://doi.org/10.1002/zaac.202100032), Table 5, water row, p.1309. This is not an exact replay of the authors' unstated dielectric law.
+
+Off-temperature dielectric supplements
+
+```{python}
+table(pd.DataFrame([{'temperature_K':T,'relative_permittivity':eps} for T,eps in u['dielectric_constants'].items() if float(T) != 298.15]))
+display(Markdown(f"Fixed-pressure comparisons assume {u['fixed_pressure_Pa']:g} Pa; the figure captions do not print that pressure. Bubble pressure is solved natively. Mass sums use [CIAAW 2024]({u['mass_source']}) central elemental values. Water retains {u['masses']['water']['molar_mass_kg_mol']:.8g} kg/mol. Effective H+ uses {u['element_masses_g_mol']['H']:.5g} g/mol without consuming water; no original acid observation list was recovered."))
+```
+
+Source citations per measured marker are retained in `inputs/source/figure-targets.csv`; captions for the bromide and hydroxide activity series do not assign individual data references.
+Figure 4's verbal cation/anion descriptions are interchanged; visible ion labels and marker shapes determine the salt assignment.
+Original Table 4 observations, their exact conditions and the overall weighting are unavailable. No grid was invented from maximum molality or point count.
+
+```{python}
+t4 = pd.read_csv(root/'results/table-4-comparisons.csv')
+table(t4.groupby(['quantity','outcome']).size().rename('records').reset_index())
+overall = pd.read_csv(root/'results/table-4-overall-comparisons.csv')
+table(overall[['quantity','reported_salt_count','count_from_rows','count_outcome']])
+table(overall[['quantity','ard_percent','aad','aad_unit','aggregate_outcome']])
+table(pd.read_csv(root/'results/structural-comparisons.csv'))
+```
+
+The printed versus recounted activity-summary discrepancy is preserved. Table 3's lithium fitted-size inconsistency also remains visible.
+Table 5 compares bare relative Pauling sizes; the electrolyte model supplies no prediction of that structural quantity.
+Neither structural table validates a thermodynamic property.
+
+## Digitization and numerical criteria
+
+Every legible centre is separate from model ink. Manual guides and a second source-ink lane use the original crop coordinates, calibrated axis endpoints and checked midpoint ticks.
+Marker masks, annotations, touching axes and coincident low-concentration strokes have named causes in `figure-extraction.csv`; hidden coordinates are not inferred.
+Candidates must lie within three vertical source pixels of their locally corrected guide and be more than two pixels closer to it than any competing guide at the same column. Source-inspected marker, axis and coincident-stroke exclusions remain review cases; no-ink columns remain gaps. The original guide is retained alongside each correction. Source-only checks for every series are in [the ownership recheck](inputs/source/figure-ownership-recheck.csv), with [gap locations](inputs/source/figure-gaps.csv). Shared ink remains excluded from agreement. The provisional Figure 4b anchors are retained only as historical anchors.
+Printed decimals use half the last printed unit; counts require exact equality. Figure rectangles have three original-source pixels of half-width per axis; these are reading criteria.
+Native predictions use the central abscissa, interval endpoints and fixed quarter-interval interior samples. Agreement requires ordinate-interval overlap with a continuous native range, preserving direction.
+Disjoint sampled ranges on locally monotone branches fail; intervals with unresolved turning extrema remain undetermined. Five samples do not provide a global extremum certificate.
+The water coefficient is only the permitted reporting normalization $\gamma_w=a_w/x_w$; its arithmetic identity supplies no independent thermodynamic test.
+
+```{python}
+table(pd.DataFrame({'quantity':list(v), 'value':[str(x) for x in v.values()]}))
+```
+
+Density residuals are reduced pressure residuals, equilibrium residuals are classified dimensionless defining rows, and ionic-reference changes are separate dimensionless convergence witnesses.
+The retained native criteria, mechanical slopes, compositions and equilibrium material/charge rows support solution verification at the evaluated points.
+No unavailable or unconverged value occurred; no numerical correction was needed. These calculations do not certify global phase stability.
+The shared chloride point reproduces the unchanged [chloride evidence](../../2026-held-2014-chlorides/README.md); that campaign is not the missing Table 4 observation list.
+
+## Source curves and measured symbols
+
+```{python}
+for figure in range(1,9):
+    display(Markdown(f"### Figure {figure} comparison"))
+    display(Image(filename=str(root/f'figures/comparison-{figure:02}.png')))
+```
+
+Dashed black lines follow retained source model traces; orange lines connect native evaluations over those same displayed domains; blue symbols are measured centres.
+Bars show the fixed reading rectangles. Unresolved marker, axis and shared-ink candidates remain in the tables and break the plotted paper trace; overlap masks leave parts of a source curve without independent coordinates.
+
+## Bounded convention diagnosis and execution
+
+Shortening the Debye–Hückel screening diameter while retaining the packing diameter lowers the ionic coefficient and raises the water coefficient in the evaluated cases. This reduces the source-curve differences for the hydroxides and several cesium salts, and worsens the LiBr, NaBr and KBr differences. The corrected-source comparisons also worsen CsNO3 and RbCl overall. The printed screening convention remains the primary declaration. The remaining disagreement with the paper's own curves is unresolved after the stated basis, reference, term and temperature checks; it is not attributed to omitted ion pairing or physical-model inaccuracy.
+
+The labelled shorter-screening probe uses the same source-selected abscissae, reading intervals and exclusions as the primary declaration for every activity model line, including the failing series. It is a departure from the printed screening statement, not evidence of Held's historical executable convention. The earlier fixed probes, including fixed off-temperature dielectric checks, remain in `results/diagnostics.json`.
+
+Held 2008 Eqs. (8)–(10) use formula-unit molality with total ion stoichiometry. The native molal coefficient conversion, infinite-dilution references at the same temperature and pressure, and terminal reference changes were checked in the delivered review and are retained with the native records. The screening and packing lengths are separate. Room-temperature activity runs keep the packet dielectric; only off-temperature runs use the conditional supplement. Equation (1) contains no Born term. Native same-sign exclusions and packet unlike-ion dispersion suppression remain applied, with water–ion binary coefficients unchanged. Water coefficients retain the native composition and the accepted reporting division. These checks establish no declaration defect; they do not identify the remaining cause of disagreement.
+
+The source-confirmed high-molality CsCl case below still misses with either screening declaration. An Engine defect would require disagreement with the governing equations or an independent implementation under identical declarations; the paper-curve discrepancy alone does not establish one.
+
+```{python}
+probes = pd.read_csv(root/'results/convention-probes.csv')
+table(probes.groupby(['quantity','mode','outcome']).size().unstack(fill_value=0).reset_index())
+counts = probes.groupby(['figure','panel','salt','mode','outcome']).size().unstack(fill_value=0)
+errors = probes[probes.qa.eq('pass') & probes.molality.ge(1)].groupby(['figure','panel','salt','mode']).signed_error.agg(mean_signed_error='mean', mean_absolute_error=lambda x: x.abs().mean())
+table(counts.join(errors).reset_index())
+table(probes[probes.figure.eq(5) & probes.salt.eq('CsCl') & probes.molality.eq(4.875)][['salt','temperature_K','molality','molality_half_width','value','value_half_width','mode','native_value','signed_error','outcome']])
+display(Markdown(f"NaI at the predeclared molality is retained with native water fraction and activity in `results/diagnostics.json`. Execution `{e['run_id']}` used `{e['python']}`; source `{e['source_commit']}`; loaded Engine `{e['engine_provenance']}`; extension SHA-256 `{e['core_sha256']}`. Native declarations and comparisons took {s['wall_seconds']:.6g} s, excluding setup/import. Frozen targets SHA-256 `{e['frozen_targets_sha256']}`; target commit `{u['frozen_target_commit']}`; runner SHA-256 `{e['runner_sha256']}`."))
+```
+
+Each calculated row links its original execution identity, declaration hash and exact composition. Rendering reads retained results and imports no Engine code.
+The original execution's frozen-target hash identifies its earlier acquisition.
+The revised acquisition hash is `{python} curation['revised_frozen_targets_sha256']`,
+frozen at `{python} curation['source_only_commit']`; the native-results bytes
+retain SHA-256 `{python} curation['original_native_results_sha256']`.
+The source PDF and crop hashes, table locators, source-only QA and mass/dielectric transformations remain in `inputs/source/`.
+The historical source record was retained at `ca719012c31e8b41edcb98ae82a388117b58d343`; superseded parameter templates and duplicate transcriptions are retired here.
+The corrected source selection and retained-value reclassification require independent delivered review. Investigator promotion for manuscript use remains open.

@@ -1,0 +1,109 @@
+{
+  "case_id": "held-nabr-ethanol-0.1422m",
+  "execution_identity": {
+    "run_id": "9fb14ff9-66cb-457f-b019-582c9ae82a2d",
+    "started_utc": "2026-10-22T04:29:48.083705+00:00",
+    "engine_provenance": [
+      "21e9065e81987347ccd5fea761ac8962d17e0161",
+      true
+    ],
+    "core_sha256": "0954372a1b5a726bf95c4592f0db781bcbb89061d00f1457a6fe01da88527498",
+    "runner_sha256": "bb99e2d4e4faa367bdbe7a4dd427b13b0ab7e3e4d237cbf8e3a042c62045a3ff",
+    "targets_sha256": "df810d59c99e7f1fa1a6a358565e6441eeb901f86696720d224f93bd1a689d54",
+    "solvent_sha256": "01b095784a1c74ca188446290ca31015c1118361dd0302ecee36ad0c861514b1"
+  },
+  "packet_version": "4",
+  "packet_sha256": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+  "component_ids": [
+    "ethanol",
+    "sodium-cation",
+    "bromide-anion"
+  ],
+  "solvent_fractions": [
+    1,
+    0,
+    0
+  ],
+  "molality": 0.1422,
+  "temperature_K": 298.15,
+  "pressure_Pa": 100000.0,
+  "ions": [
+    "sodium-cation",
+    "bromide-anion"
+  ],
+  "stoichiometry": [
+    1,
+    1
+  ],
+  "composition": [
+    0.9870674193765374,
+    0.006466290311731245,
+    0.006466290311731245
+  ],
+  "molar_masses_kg_mol": [
+    0.046069000000000006,
+    0.0,
+    0.0
+  ],
+  "density_diagnostic_recomputation": {
+    "molar_density": 17080.285695349678,
+    "pressure": 100000.00000007027,
+    "pressure_density_derivative": 50687.37917269679,
+    "density_convergence": {
+      "amplification": 835.3419526356519,
+      "amplification_over_declared": 167.06839052713036,
+      "contraction": null,
+      "criterion": "DENSITY_ROOT_RESIDUAL",
+      "evaluations": 7,
+      "floor": 1.130935123965945e-15,
+      "iterations": 1,
+      "residual": 8.079474589361979e-16,
+      "residual_over_criterion": 0.0008079474589361979,
+      "residual_over_floor": 0.7144065488946004,
+      "stop": "converged"
+    },
+    "density_branch": "Liquid",
+    "stable_root_count": 2
+  },
+  "value": null,
+  "unit": "kg/m^3",
+  "status": "MissingMolarMass",
+  "message": "",
+  "convergence": {
+    "amplification": 835.3419526356519,
+    "amplification_over_declared": 167.06839052713036,
+    "contraction": null,
+    "criterion": "DENSITY_ROOT_RESIDUAL",
+    "evaluations": 7,
+    "floor": 1.130935123965945e-15,
+    "iterations": 1,
+    "residual": 8.079474589361979e-16,
+    "residual_over_criterion": 0.0008079474589361979,
+    "residual_over_floor": 0.7144065488946004,
+    "stop": "converged"
+  },
+  "branch": "Liquid",
+  "stable_root_count": 2,
+  "requested_tolerance_met": null,
+  "solver_options": [
+    {
+      "name": "ASSOCIATION_RESIDUAL",
+      "value": 2e-13,
+      "unit": "1 (mass action)",
+      "default": 2e-13
+    },
+    {
+      "name": "DENSITY_ROOT_RESIDUAL",
+      "value": 1e-12,
+      "unit": "1 (reduced pressure)",
+      "default": 1e-12
+    },
+    {
+      "name": "EQUILIBRIUM_ROW_RESIDUAL",
+      "value": 1e-10,
+      "unit": "1 (classified rows)",
+      "default": 1e-10
+    }
+  ],
+  "wall_seconds": 0.0003035690024262294
+}

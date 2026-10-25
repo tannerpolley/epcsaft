@@ -1,0 +1,20 @@
+{
+  "source_model_packet": "data/packets/figiel-yu-held-2025/4",
+  "reference_family_packet": "data/packets/figiel-2025-reference-electrolytes/4",
+  "reference_family_role": "separate comparison; no per-row model selection",
+  "source_owner": "each figures/figure-0N/source CSV and existing source ledgers",
+  "comparison_tolerances": "legacy-derived-gates.json is historical and applies only to its original results; current source errors/RMSE/max are descriptive without a physical pass threshold",
+  "figure1": "schematic/source-only, not a numerical state",
+  "current_overlap_owners": [
+    "analyses/2026-wolbach-sandler-requalification",
+    "analyses/2026-figiel-divalent-chlorides"
+  ],
+  "execution": "revised design r2; no producer before Ready",
+  "scope": "Figure 9 interior mixed-solvent source rows only; positive molality, alcohol mole fraction strictly between zero and one",
+  "excluded_producers": [
+    "reference family",
+    "packet /3",
+    "divalent chloride fits/probes",
+    "Figures 2-8"
+  ]
+}

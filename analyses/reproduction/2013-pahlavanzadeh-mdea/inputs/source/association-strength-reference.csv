@@ -1,0 +1,4 @@
+pair,temperature_K,source_d3_over_engine_sigma3,engine_excess_percent,source_locator,evidence
+MDEA 4C self,443.15,0.9253975021703574,8.06167054208331,"Eqs. (4)-(7), Table 2; printed pp.215-216",source-equation arithmetic only; not a property-error estimate
+MDEA-water 4C,443.15,0.9031247077735627,10.726679426727248,"Eqs. (4)-(7), Table 2; printed pp.215-216",source-equation arithmetic only; not a property-error estimate
+water 4C self,443.15,0.8682692177657972,15.171651780212624,"Eqs. (4)-(7), Table 2; printed pp.215-216",source-equation arithmetic only; not a property-error estimate

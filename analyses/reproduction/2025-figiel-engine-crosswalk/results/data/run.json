@@ -1,0 +1,787 @@
+{
+  "gas_constant_J_per_mol_K": 8.31446261815324,
+  "engine": [
+    "8376a53572474efe5344240a9c28347cbe2066d8",
+    true
+  ],
+  "extension": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-728-live-reproduction-why-two-engines/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so",
+  "extension_sha256": "0954372a1b5a726bf95c4592f0db781bcbb89061d00f1457a6fe01da88527498",
+  "command": [
+    "analyses/reproduction/2025-figiel-engine-crosswalk/scripts/crosswalk.py"
+  ],
+  "source_commit": "8376a53572474efe5344240a9c28347cbe2066d8",
+  "git_status": " M analyses/README.md\n M analyses/reproduction/2025-figiel-engine-crosswalk/README.md\n M analyses/reproduction/2025-figiel-engine-crosswalk/results/data/crosswalk.csv\n M analyses/reproduction/2025-figiel-engine-crosswalk/scripts/crosswalk.py\n?? analyses/reproduction/2025-figiel-engine-crosswalk/inputs/\n?? analyses/reproduction/2025-figiel-engine-crosswalk/notebook.qmd\n?? analyses/reproduction/2025-figiel-engine-crosswalk/results/data/activities.json\n?? analyses/reproduction/2025-figiel-engine-crosswalk/results/data/failures.json\n?? analyses/reproduction/2025-figiel-engine-crosswalk/results/data/references.json\n?? analyses/reproduction/2025-figiel-engine-crosswalk/results/data/run.json\n?? analyses/reproduction/2025-figiel-engine-crosswalk/results/data/states.json\n",
+  "input_hashes": {
+    "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+    "analyses/reproduction/2025-figiel/figures/figure-05/source/libr-model-digitized.csv": "a4fc73b54ed77598cc5ff2f30d5eeff93daaf8cf274d0847157cb5f21a0e5ed9",
+    "analyses/reproduction/2025-figiel/figures/figure-05/source/libr-model-digitized.md": "13215d232cd9bdadacc91f41873b7c51796f08409caac3b1f6b66192d3a4a82c",
+    "analyses/reproduction/2025-figiel-engine-crosswalk/results/data/superseded.json": "3f356fc8edd31065e9fa2c476cba42f8fee787117e4d18e841e23e615c3a45d6",
+    "analyses/reproduction/2025-figiel-engine-crosswalk/results/data/greenfield.json": "fcb64a4d72a9e29e93452d939317bf21bc0a107c5931bb01e2840b1d4db3d8d8",
+    "analyses/reproduction/2025-figiel-engine-crosswalk/inputs/comparison.json": "f5556c500c0ac2d252ea2c7b75c1952779e23580341eda7bc7b8f14959659265",
+    "analyses/reproduction/2025-figiel-engine-crosswalk/inputs/all-pairs.json": "98751fb3103fcb969a9151cf373de8f907c89123fa81026ddc3182363364bf79",
+    "analyses/reproduction/2025-figiel-engine-crosswalk/scripts/crosswalk.py": "f53a9d311ef2689d1ac5029f3160f4ab379fdbcdaa1bf467396dba4f875e3f7f"
+  },
+  "native_tolerances": [
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "EQUILIBRIUM_WARM_PUSH",
+      "source": "Ipopt 3.11.9 manual, Warm-Starting Capabilities via AMPL; #505",
+      "upstream": null,
+      "value": 1e-06
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "EQUILIBRIUM_WARM_MU",
+      "source": "Ipopt 3.11.9 manual, monotone initial barrier for similar active sets; #505",
+      "upstream": null,
+      "value": 1e-06
+    },
+    {
+      "category": {
+        "name": "ThermodynamicConstraint",
+        "value": 2
+      },
+      "factor": 1.0,
+      "name": "CLOSE_PACKING_FRACTION",
+      "source": "equal-sphere face-centred-cubic admission bound; eta >= value is a domain failure",
+      "upstream": null,
+      "value": 0.7404804896930609
+    },
+    {
+      "category": {
+        "name": "ThermodynamicConstraint",
+        "value": 2
+      },
+      "factor": 1.0,
+      "name": "SITE_FRACTION_FLOOR",
+      "source": "X_a is the unbonded fraction of site a, so 0 < X_a <= 1",
+      "upstream": null,
+      "value": 0.0
+    },
+    {
+      "category": {
+        "name": "ThermodynamicConstraint",
+        "value": 2
+      },
+      "factor": 1.0,
+      "name": "SITE_FRACTION_CEILING",
+      "source": "X_a is the unbonded fraction of site a, so 0 < X_a <= 1",
+      "upstream": null,
+      "value": 1.0
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "ASSOCIATION_RESIDUAL",
+      "source": "Newton reaches it in 3-8 steps from a warm start",
+      "upstream": null,
+      "value": 2e-13
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "ASSOCIATION_ACTION_RESIDUAL",
+      "source": "approved P4 normalized mass-action coefficient residual; exceeding it makes the action unavailable",
+      "upstream": null,
+      "value": 1e-10
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "ASSOCIATION_MAX_ITERATIONS",
+      "source": "budget; measured 3-8 Newton steps",
+      "upstream": null,
+      "value": 50.0
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "ASSOCIATION_BOUNDARY_FRACTION",
+      "source": "fraction-to-boundary: a damped Newton step keeps X_a >= 0.1 X_a",
+      "upstream": null,
+      "value": 0.9
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "ASSOCIATION_JACOBIAN_CONDITION",
+      "source": "relative pivot floor in the dense solve",
+      "upstream": null,
+      "value": 1e-13
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "ASSOCIATION_JACOBIAN_RANK",
+      "source": "FullPivLU relative rank base; multiply by the site count",
+      "upstream": null,
+      "value": 2.220446049250313e-16
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 5.0,
+      "name": "DENSITY_ROOT_RESIDUAL",
+      "source": "bracketed Newton on the reduced pressure residual; the tolerance is on the reduced residual; publish the bracket endpoint with smaller |P_calc-P_target|; relative pressure error is |r|/Z_target, with Z_target=P_target/(rho R T)",
+      "upstream": {
+        "category": {
+          "name": "AlgorithmTolerance",
+          "value": 3
+        },
+        "factor": 1.0,
+        "name": "ASSOCIATION_RESIDUAL",
+        "source": "Newton reaches it in 3-8 steps from a warm start",
+        "upstream": null,
+        "value": 2e-13
+      },
+      "value": 1e-12
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "DENSITY_MAX_ITERATIONS",
+      "source": "budget for each root refinement, spinodal bisection and slope-minimum search",
+      "upstream": null,
+      "value": 60.0
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "DENSITY_BRACKET_INTERVALS",
+      "source": "coarse log-density scan; slope zeros separate stable brackets before safeguarded Newton",
+      "upstream": null,
+      "value": 40.0
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "DENSITY_LOWER_FRACTION",
+      "source": "fraction of the ideal-gas density P/RT where the log scan starts; a root lies above it unless Z > 1e8",
+      "upstream": null,
+      "value": 1e-08
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "DENSITY_UPPER_FRACTION",
+      "source": "fraction of the model's close-packing molar density where the log scan stops",
+      "upstream": null,
+      "value": 0.999
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "DENSITY_BISECTION_FRACTION",
+      "source": "bracket midpoint of the safeguarded Newton and the fold bisection",
+      "upstream": null,
+      "value": 0.5
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "DENSITY_ANCHOR_LOG_WINDOW",
+      "source": "approved P2 local density envelope log1p(0.01)",
+      "upstream": null,
+      "value": 0.009950330853168083
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "DENSITY_ANCHOR_SCAN_INTERVALS",
+      "source": "approved P2 centered local anchor uniqueness scan",
+      "upstream": null,
+      "value": 5.0
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "DENSITY_ANCHOR_REGULARITY",
+      "source": "admitted relative density error of an anchored root, one hundredth of DENSITY_ANCHOR_LOG_WINDOW",
+      "upstream": null,
+      "value": 9.950330853168083e-05
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "DENSITY_SLOPE_SEPARATION",
+      "source": "relative density separation above which two samples' P_rho order is inspected; not a rounding bound",
+      "upstream": null,
+      "value": 1e-06
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "DENSITY_STRUCTURE_ROUNDOFF",
+      "source": "ALG-DENSITY local derivative assembly and comparison gamma_16",
+      "upstream": null,
+      "value": 3.5527136788005136e-15
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "COMPOSITION_SUM_TOLERANCE",
+      "source": "absolute defect of a unit sum or charge balance of O(1) terms, about 4500 ulp at 1",
+      "upstream": null,
+      "value": 1e-12
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "REFERENCE_MOLALITY_ONE",
+      "source": "trace molality of the infinite-dilution ladder, mol/kg",
+      "upstream": null,
+      "value": 1e-06
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "OSMOTIC_MOLALITY_FLOOR",
+      "source": "owner decision #214: common-pressure scalar cancellation reporting floor, mol/kg",
+      "upstream": null,
+      "value": 1e-08
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "REFERENCE_MOLALITY_TWO",
+      "source": "trace molality of the infinite-dilution ladder, mol/kg",
+      "upstream": null,
+      "value": 1e-08
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "REFERENCE_MOLALITY_THREE",
+      "source": "trace molality of the infinite-dilution ladder, mol/kg",
+      "upstream": null,
+      "value": 1e-10
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "REFERENCE_MOLALITY_FOUR",
+      "source": "trace molality of the infinite-dilution ladder, mol/kg",
+      "upstream": null,
+      "value": 1e-12
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "REFERENCE_CONVERGENCE_WITNESS",
+      "source": "finest trace molality of the infinite-dilution ladder, mol/kg",
+      "upstream": null,
+      "value": 1e-14
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "REFERENCE_CONVERGENCE_TOLERANCE",
+      "source": "admitted change of the terminal-pair limit of ln(phi) and its scaled columns",
+      "upstream": null,
+      "value": 5e-05
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "REFERENCE_HEAT_CAPACITY_TOLERANCE",
+      "source": "terminal R T^2 d2C/dT2 change, J/(mol K); ~1e-4 of solution cp, ~40x below calorimetric uncertainty",
+      "upstream": null,
+      "value": 0.01
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "EQUILIBRIUM_COMPOSITION_BOX",
+      "source": "Pereira 2012 inner-problem composition bound; a regularising barrier, not a solution domain or accuracy bound",
+      "upstream": null,
+      "value": 1e-08
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "EQUILIBRIUM_BOX_INVENTORY_FRACTION",
+      "source": "largest fraction of a species' attainable inventory held by the composition box; not an accuracy bound",
+      "upstream": null,
+      "value": 0.01
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "EQUILIBRIUM_BOX_FLOOR",
+      "source": "dimensionless lower bound of the all-free optimizer log-composition box; not a solution domain or accuracy bound",
+      "upstream": null,
+      "value": 1e-20
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "PHASE_DISAPPEARANCE_AMOUNT",
+      "source": "dimensionless n_phase/feed_total; provisional free-phase disappearance topology cutoff and interior guard of the split seed; not a stability result or accuracy bound",
+      "upstream": null,
+      "value": 1e-08
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "EQUILIBRIUM_AMOUNT_STEP_RETENTION",
+      "source": "dimensionless kappa_N: an optimizer trial point keeps at least kappa_N of each free phase amount's distance to its relaxed lower bound at the search base (ALG-EQUILIBRIUM); provisional numerical choice, not an amount floor, stability result or accuracy bound",
+      "upstream": null,
+      "value": 0.1
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "FIT_FUNCTION_TOLERANCE",
+      "source": "relative cost decrease below which the trust-region iteration stops",
+      "upstream": null,
+      "value": 1e-12
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "FIT_GRADIENT_TOLERANCE",
+      "source": "infinity norm of the projected optimizer-coordinate gradient at which the fit stops",
+      "upstream": null,
+      "value": 1e-12
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "FIT_PARAMETER_TOLERANCE",
+      "source": "relative optimizer-coordinate step below which the fit stops",
+      "upstream": null,
+      "value": 1e-10
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "FIT_ACTIVE_BOUND_DISTANCE",
+      "source": "optimizer-coordinate distance to a bound below which the coordinate is on the bound",
+      "upstream": null,
+      "value": 0.0001
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "LOG_RATIO_NEAR_UNITY",
+      "source": "relative half-band around unity inside which ln(y / y_obs) is evaluated by log1p",
+      "upstream": null,
+      "value": 0.5
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "FIT_RANK_RECIPROCAL_CONDITION",
+      "source": "reciprocal condition number separating an identifiable direction from a null direction",
+      "upstream": null,
+      "value": 1e-14
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "FIT_DENSITY_PARAMETER_FRACTION",
+      "source": "abs(new-old)/max(1,abs(new),abs(old)); includes held diameters",
+      "upstream": null,
+      "value": 0.1
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "ADDITION_MATERIAL_BALANCE",
+      "source": "#210: component feed balance divided by max(1 mol, endpoint feed amounts); admission of two declared endpoints and of stability inventory conservation, independent of equilibrium stopping error",
+      "upstream": null,
+      "value": 1e-12
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "EQUILIBRIUM_ROW_RESIDUAL",
+      "source": "dimensionless equilibrium-row infinity norm; two decades above the association residual entering the assembly floor",
+      "upstream": null,
+      "value": 1e-10
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "EQUILIBRIUM_ACTION_BACKWARD_ERROR",
+      "source": "normwise backward error of each implicit Taylor solve; catches a stale Jacobian or jet mismatch",
+      "upstream": null,
+      "value": 1e-10
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "EQUILIBRIUM_ACTION_FORWARD_ERROR",
+      "source": "first-order relative forward-error bound 2 cond_inf(J) eta of each Taylor coefficient; owner decision 2026-09-23 (#87)",
+      "upstream": null,
+      "value": 1e-06
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "EQUILIBRIUM_INNER_TOLERANCE_FACTOR",
+      "source": "provisional decade below the caller row criterion for the Ipopt tol, acceptable_tol, constr_viol_tol and the objective-normalized dual stop; the caller criterion classifies rows",
+      "upstream": null,
+      "value": 0.1
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "EQUILIBRIUM_POLISH_STEPS",
+      "source": "raw-contracting Newton steps at positive compositions, more while raw rows exceed the caller criterion; return the lowest classified residual among the optimizer start and accepted steps",
+      "upstream": null,
+      "value": 3.0
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "EQUILIBRIUM_POLISH_CORRECTION",
+      "source": "#272 scaled undamped Newton correction and forward-error estimate; local termination, not a state-error certificate",
+      "upstream": null,
+      "value": 1e-12
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "EQUILIBRIUM_TRACE_MOIETY_FRACTION",
+      "source": "largest moiety size, per mol of feed, whose balance row is judged relative to that size; not an accuracy bound",
+      "upstream": null,
+      "value": 1e-06
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "EQUILIBRIUM_START_SPECIATION_STEP",
+      "source": "largest log-amount Newton step at which the ideal start speciation stops; a start, not an accuracy bound",
+      "upstream": null,
+      "value": 1e-06
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "EQUILIBRIUM_START_PRESSURE_STEP",
+      "source": "boundary start step; not an accuracy bound",
+      "upstream": null,
+      "value": 0.001
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "EQUILIBRIUM_START_PRESSURE_PASSES",
+      "source": "boundary start passes; not an accuracy bound",
+      "upstream": null,
+      "value": 8.0
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "EQUILIBRIUM_MAX_ITERATIONS",
+      "source": "budget; analytic equilibrium Jacobian with Ipopt",
+      "upstream": null,
+      "value": 200.0
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "TANGENT_PLANE_SUBSTITUTIONS",
+      "source": "count; Michelsen 1982 eq. 19 steps before eqs. 25-27, as in FeOs stability_analysis",
+      "upstream": null,
+      "value": 5.0
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "EQUILIBRIUM_CALORIC_SEED_ITERATIONS",
+      "source": "budget of the discardable PH/PS fixed-T seed; converged seeds took 4-14 (#579)",
+      "upstream": null,
+      "value": 20.0
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "COOLING_RATIO",
+      "source": "T_(j+1)/T_j of #565 recovery sources and #610 PH/PS starts",
+      "upstream": null,
+      "value": 0.95
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "EQUILIBRIUM_RECOVERY_SOURCES",
+      "source": "#565 lead-approved finite source schedule, ten retries per continuation step",
+      "upstream": null,
+      "value": 8.0
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "EQUILIBRIUM_RECOVERY_WORK",
+      "source": "#565 lead-approved added iterations and continuation attempts; 4x evaluations, 2x Hessian callbacks",
+      "upstream": null,
+      "value": 512.0
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "PHASE_COINCIDENCE_DISTANCE",
+      "source": "phase amount columns become numerically dependent below this composition or log-packing distance",
+      "upstream": null,
+      "value": 1e-06
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "PACKING_FRACTION_CEILING",
+      "source": "fluid-coordinate ceiling below close packing",
+      "upstream": null,
+      "value": 0.74
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "PACKING_FRACTION_FLOOR",
+      "source": "fluid-coordinate floor of the log-packing chart",
+      "upstream": null,
+      "value": 1e-12
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "SCREENING_SERIES_SWITCH",
+      "source": "crossover of closed-form cancellation and the 24-term series truncation in chi and its derivatives",
+      "upstream": null,
+      "value": 0.2
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "FLOOR_MARGIN",
+      "source": "provisional guessed decade of slack across first-order bound norm inequalities; predicate: residual <= FLOOR_MARGIN * floor; failure meaning: classified converged_to_floor; numerical adequacy/calibration remains open, not an accuracy bound",
+      "upstream": null,
+      "value": 10.0
+    },
+    {
+      "category": {
+        "name": "AlgorithmTolerance",
+        "value": 3
+      },
+      "factor": 1.0,
+      "name": "STALL_WINDOW",
+      "source": "provisional guessed window below Ipopt acceptable_iter default 15; predicate: residual history has STALL_WINDOW entries without contraction; failure meaning: classified stalled; numerical adequacy/calibration remains open, not an accuracy bound",
+      "upstream": null,
+      "value": 5.0
+    }
+  ],
+  "solver_options": [
+    {
+      "name": "ASSOCIATION_RESIDUAL",
+      "value": 2e-13,
+      "unit": "1 (mass action)",
+      "default": 2e-13
+    },
+    {
+      "name": "DENSITY_ROOT_RESIDUAL",
+      "value": 1e-12,
+      "unit": "1 (reduced pressure)",
+      "default": 1e-12
+    },
+    {
+      "name": "EQUILIBRIUM_ROW_RESIDUAL",
+      "value": 1e-10,
+      "unit": "1 (classified rows)",
+      "default": 1e-10
+    }
+  ],
+  "wall_seconds": 0.03668110799844726,
+  "state_calls": 216,
+  "activity_calls": 126,
+  "reference_calls": 12,
+  "failed_calls": 0
+}

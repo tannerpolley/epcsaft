@@ -1,0 +1,1 @@
+313.15, 353.15 and 393.15 K; CO2-free solvent MDEA mass fraction 0.18-0.20; 1 kg water basis. Source pressure is 100 kPa. The original-row limit is 1e-10; historical pressure/density and composition comparisons retain 1e-07.

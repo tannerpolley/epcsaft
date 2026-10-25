@@ -1,0 +1,12 @@
+{
+  "initial-output-failure/neutral.csv": {
+    "retained_file": "neutral.csv",
+    "sha256": "215201830181f1be37f86051fa219f01a682217f354d824093811c42dcccd732",
+    "note": "Identical numerical outputs from the initial retainer failure; stored once. The failed retention traceback is retained separately."
+  },
+  "initial-output-failure/feos.csv": {
+    "retained_file": "feos.csv",
+    "sha256": "e5b4c87eb9cf3e25872dd6dd2f00b541636ea8b04350304f8440c2dd9d7f869c",
+    "note": "Identical numerical outputs from the initial retainer failure; stored once. The failed retention traceback is retained separately."
+  }
+}

@@ -1,0 +1,79 @@
+{
+  "fold_count": 5,
+  "grouping_rule": "source-temperature-series-indivisible",
+  "groups": [
+    {
+      "fold": 0,
+      "group_id": "Bottinger2008|20C",
+      "source": "Bottinger2008",
+      "temperature_c": 20.0
+    },
+    {
+      "fold": 1,
+      "group_id": "Bottinger2008|40C",
+      "source": "Bottinger2008",
+      "temperature_c": 40.0
+    },
+    {
+      "fold": 2,
+      "group_id": "Bottinger2008|60C",
+      "source": "Bottinger2008",
+      "temperature_c": 60.0
+    },
+    {
+      "fold": 3,
+      "group_id": "Bottinger2008|80C",
+      "source": "Bottinger2008",
+      "temperature_c": 80.0
+    },
+    {
+      "fold": 4,
+      "group_id": "Hilliard2008|40C",
+      "source": "Hilliard2008",
+      "temperature_c": 40.0
+    },
+    {
+      "fold": 0,
+      "group_id": "Hilliard2008|60C",
+      "source": "Hilliard2008",
+      "temperature_c": 60.0
+    },
+    {
+      "fold": 1,
+      "group_id": "Jou1995|100C",
+      "source": "Jou1995",
+      "temperature_c": 100.0
+    },
+    {
+      "fold": 2,
+      "group_id": "Jou1995|120C",
+      "source": "Jou1995",
+      "temperature_c": 120.0
+    },
+    {
+      "fold": 3,
+      "group_id": "Jou1995|40C",
+      "source": "Jou1995",
+      "temperature_c": 40.0
+    },
+    {
+      "fold": 4,
+      "group_id": "Jou1995|60C",
+      "source": "Jou1995",
+      "temperature_c": 60.0
+    },
+    {
+      "fold": 0,
+      "group_id": "Jou1995|80C",
+      "source": "Jou1995",
+      "temperature_c": 80.0
+    },
+    {
+      "fold": 1,
+      "group_id": "Matin2012|20C",
+      "source": "Matin2012",
+      "temperature_c": 20.0
+    }
+  ],
+  "schema_version": 1
+}

@@ -1,0 +1,329 @@
+{
+  "identity": {
+    "wheel": "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-223-build-tpd-stability-test-and-phase-35ebff8f/build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+    "wheel_sha256": "411c8eff6af29de60974a34e5aa17d2537f019dc3f42f132b84160fcf5e8fbad",
+    "script_sha256": "24904b7583758b2303bfe982951547d56966922cb6d0f271f281cc2e5568beb8"
+  },
+  "inputs": {
+    "case-7/reactions": {
+      "species": [
+        "carbon-dioxide",
+        "monoethanolamine",
+        "water",
+        "protonated-monoethanolamine",
+        "carbamate-anion",
+        "bicarbonate-anion",
+        "carbonate-anion",
+        "hydronium-cation",
+        "hydroxide-anion"
+      ],
+      "stoichiometry": [
+        {
+          "water": -2.0,
+          "hydronium-cation": 1.0,
+          "hydroxide-anion": 1.0
+        },
+        {
+          "carbon-dioxide": -1.0,
+          "water": -2.0,
+          "bicarbonate-anion": 1.0,
+          "hydronium-cation": 1.0
+        },
+        {
+          "water": -1.0,
+          "bicarbonate-anion": -1.0,
+          "carbonate-anion": 1.0,
+          "hydronium-cation": 1.0
+        },
+        {
+          "monoethanolamine": 1.0,
+          "water": -1.0,
+          "carbamate-anion": -1.0,
+          "bicarbonate-anion": 1.0
+        },
+        {
+          "protonated-monoethanolamine": -1.0,
+          "water": -1.0,
+          "monoethanolamine": 1.0,
+          "hydronium-cation": 1.0
+        }
+      ],
+      "ln_k": [
+        -605.348,
+        -587.8,
+        -948.2312,
+        -25.1014,
+        -298.6415
+      ],
+      "T_ref": 318.15,
+      "T_min": 250.0,
+      "T_max": 450.0,
+      "standard_state": "eos-helmholtz-coordinate-basis"
+    },
+    "case-1/two-liquid": {
+      "components": [
+        "water",
+        "isobutanol"
+      ],
+      "T": 293.15,
+      "P": 100000.0,
+      "feed": {
+        "water": 0.6,
+        "isobutanol": 0.4
+      },
+      "row_tolerance": 1e-10,
+      "phases": [
+        {
+          "name": "Lw",
+          "kind": "liquid",
+          "support": null,
+          "amount": {
+            "kind": "Free",
+            "value": null
+          },
+          "composition_guess": [
+            0.999,
+            0.001
+          ],
+          "packing_guess": null
+        },
+        {
+          "name": "Lo",
+          "kind": "liquid",
+          "support": null,
+          "amount": {
+            "kind": "Free",
+            "value": null
+          },
+          "composition_guess": [
+            0.3,
+            0.7
+          ],
+          "packing_guess": null
+        }
+      ]
+    }
+  },
+  "costs": [
+    {
+      "case": "case-1/two-liquid",
+      "role": "declared",
+      "sample": 0,
+      "seconds": 0.027078910999989603,
+      "trial_spans": 0,
+      "driver_finalizations": 1,
+      "hessian_calls": 27.0,
+      "iterations": 26,
+      "evaluations": 70
+    },
+    {
+      "case": "case-1/two-liquid",
+      "role": "declared",
+      "sample": 1,
+      "seconds": 0.0279705489956541,
+      "trial_spans": 0,
+      "driver_finalizations": 1,
+      "hessian_calls": 27.0,
+      "iterations": 26,
+      "evaluations": 70
+    },
+    {
+      "case": "case-1/two-liquid",
+      "role": "declared",
+      "sample": 2,
+      "seconds": 0.027057940998929553,
+      "trial_spans": 0,
+      "driver_finalizations": 1,
+      "hessian_calls": 27.0,
+      "iterations": 26,
+      "evaluations": 70
+    },
+    {
+      "case": "case-1/two-liquid",
+      "role": "explicit-test",
+      "sample": 0,
+      "seconds": 0.05322591699950863,
+      "trial_spans": 0,
+      "driver_finalizations": 0,
+      "hessian_calls": 68.0,
+      "iterations": 61.0,
+      "evaluations": 119.0,
+      "native_work": {
+        "association_diagnostic_evaluations": 9.0,
+        "driver_invocations": 7.0,
+        "energy_evaluations": 528.0,
+        "evaluations": 119.0,
+        "hessian_calls": 68.0,
+        "iterations": 61.0,
+        "reconstruction_evaluations": 14.0,
+        "root_calls": 7.0,
+        "root_evaluations": 370.0,
+        "trial_driver_invocations": 7.0,
+        "trial_invocations": 7.0
+      }
+    },
+    {
+      "case": "case-1/two-liquid",
+      "role": "explicit-test",
+      "sample": 1,
+      "seconds": 0.0509455489955144,
+      "trial_spans": 0,
+      "driver_finalizations": 0,
+      "hessian_calls": 68.0,
+      "iterations": 61.0,
+      "evaluations": 119.0,
+      "native_work": {
+        "association_diagnostic_evaluations": 9.0,
+        "driver_invocations": 7.0,
+        "energy_evaluations": 528.0,
+        "evaluations": 119.0,
+        "hessian_calls": 68.0,
+        "iterations": 61.0,
+        "reconstruction_evaluations": 14.0,
+        "root_calls": 7.0,
+        "root_evaluations": 370.0,
+        "trial_driver_invocations": 7.0,
+        "trial_invocations": 7.0
+      }
+    },
+    {
+      "case": "case-1/two-liquid",
+      "role": "explicit-test",
+      "sample": 2,
+      "seconds": 0.051900045000365935,
+      "trial_spans": 0,
+      "driver_finalizations": 0,
+      "hessian_calls": 68.0,
+      "iterations": 61.0,
+      "evaluations": 119.0,
+      "native_work": {
+        "association_diagnostic_evaluations": 9.0,
+        "driver_invocations": 7.0,
+        "energy_evaluations": 528.0,
+        "evaluations": 119.0,
+        "hessian_calls": 68.0,
+        "iterations": 61.0,
+        "reconstruction_evaluations": 14.0,
+        "root_calls": 7.0,
+        "root_evaluations": 370.0,
+        "trial_driver_invocations": 7.0,
+        "trial_invocations": 7.0
+      }
+    },
+    {
+      "case": "case-1/two-liquid",
+      "role": "candidate-test",
+      "sample": 0,
+      "seconds": 0.05630573900270974,
+      "trial_spans": 0,
+      "driver_finalizations": 0,
+      "hessian_calls": 76.0,
+      "iterations": 69.0,
+      "evaluations": 125.0,
+      "native_work": {
+        "association_diagnostic_evaluations": 14.0,
+        "driver_invocations": 7.0,
+        "energy_evaluations": 538.0,
+        "evaluations": 125.0,
+        "finite_split_evaluations": 6.0,
+        "hessian_calls": 76.0,
+        "iterations": 69.0,
+        "reconstruction_evaluations": 14.0,
+        "root_calls": 7.0,
+        "root_evaluations": 370.0,
+        "trial_driver_invocations": 7.0,
+        "trial_invocations": 7.0
+      }
+    },
+    {
+      "case": "case-1/two-liquid",
+      "role": "candidate-test",
+      "sample": 1,
+      "seconds": 0.05634608500258764,
+      "trial_spans": 0,
+      "driver_finalizations": 0,
+      "hessian_calls": 76.0,
+      "iterations": 69.0,
+      "evaluations": 125.0,
+      "native_work": {
+        "association_diagnostic_evaluations": 14.0,
+        "driver_invocations": 7.0,
+        "energy_evaluations": 538.0,
+        "evaluations": 125.0,
+        "finite_split_evaluations": 6.0,
+        "hessian_calls": 76.0,
+        "iterations": 69.0,
+        "reconstruction_evaluations": 14.0,
+        "root_calls": 7.0,
+        "root_evaluations": 370.0,
+        "trial_driver_invocations": 7.0,
+        "trial_invocations": 7.0
+      }
+    },
+    {
+      "case": "case-1/two-liquid",
+      "role": "candidate-test",
+      "sample": 2,
+      "seconds": 0.055767432000720873,
+      "trial_spans": 0,
+      "driver_finalizations": 0,
+      "hessian_calls": 76.0,
+      "iterations": 69.0,
+      "evaluations": 125.0,
+      "native_work": {
+        "association_diagnostic_evaluations": 14.0,
+        "driver_invocations": 7.0,
+        "energy_evaluations": 538.0,
+        "evaluations": 125.0,
+        "finite_split_evaluations": 6.0,
+        "hessian_calls": 76.0,
+        "iterations": 69.0,
+        "reconstruction_evaluations": 14.0,
+        "root_calls": 7.0,
+        "root_evaluations": 370.0,
+        "trial_driver_invocations": 7.0,
+        "trial_invocations": 7.0
+      }
+    }
+  ],
+  "median3": [
+    {
+      "case": "case-1/two-liquid",
+      "role": "declared",
+      "seconds": 0.027078910999989603
+    },
+    {
+      "case": "case-1/two-liquid",
+      "role": "explicit-test",
+      "seconds": 0.051900045000365935
+    },
+    {
+      "case": "case-1/two-liquid",
+      "role": "candidate-test",
+      "seconds": 0.05630573900270974
+    }
+  ],
+  "failure": "ParameterError: discovery requires explicit unknown topology at fixed positive T/P",
+  "failures": [],
+  "unresolved": [
+    {
+      "case": "case-1/two-liquid/declared-reference",
+      "trial": 1,
+      "seed": "near-pure-0",
+      "evidence": "indeterminate",
+      "message": "converged: residual 5.7820525918507952e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 11 iterations, contraction absent, floor 1.5191395616672852e-10, amplification 0"
+    },
+    {
+      "case": "case-1/two-liquid/declared-reference",
+      "trial": 2,
+      "seed": "near-pure-1",
+      "evidence": "indeterminate",
+      "message": "converged: residual 1.6748210944901289e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 10 iterations, contraction absent, floor 4.1637066142682397e-11, amplification 0"
+    }
+  ],
+  "limits": [
+    "numerical verification of the supplied model and finite trial set",
+    "estimated uncertainty is not a rigorous bound",
+    "no physical validation or global stability certificate"
+  ]
+}

@@ -1,0 +1,14 @@
+section,key,value,unit,notes
+provenance,paper,Gross and Sadowski 2002,,
+provenance,figure,figure-02,,
+provenance,source_image,analyses/reproduction/2002-gross/figures/figure-02/source/figure-02.png,,
+provenance,source_pdf,not-retained-source-pdf,,
+source_method,published_figure_curve_trace,retained visible PC-SAFT curve points from the published figure,,
+source_method,production_scoring,retained literature pressure-composition points,,
+data_file,literature_points,analyses/reproduction/2002-gross/figures/figure-02/source/literature-points.csv,,Leu and Robinson 1992 Table I
+data_file,source_identity,analyses/reproduction/2002-gross/figures/figure-02/source/source-identity.csv,,row-level literature provenance payload
+metadata,normalized_plot_score,8.755679683182793,,
+metadata,score_basis,pressure-coordinate RMSE against Leu and Robinson 1992 Table I literature P-x/y points retained for Gross 2002 Figure 2,,
+metadata,scoring_source,analyses/reproduction/2002-gross/figures/figure-02/source/literature-points.csv,,
+metadata,scoring_source_reference,Leu and Robinson 1992 Table I,,
+metadata,source_point_count,14,,

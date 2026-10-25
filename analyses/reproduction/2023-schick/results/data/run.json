@@ -1,0 +1,24 @@
+{
+  "evidence_class": "PUBLISHED_TUPLE_PROPERTY_REPLAY",
+  "tolerances": {
+    "row": 1e-10,
+    "refinement": 1e-12,
+    "composition_error": 1e-08,
+    "composition_half_width": 5e-05,
+    "aard_percentage_point": 0.005,
+    "pressure_half_width_bar": 0.05,
+    "row23_pressure_half_width_bar": 0.5
+  },
+  "engine_provenance": [
+    "0da6065cb998fa4057277a0d6b9ae921e0d30590",
+    true
+  ],
+  "engine_module": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-727-live-reproduction-schick-2023-co-thf-2/engine/src/epcsaft/__init__.py",
+  "parameters_sha256": "5f7de9955ab6c262a6f1380759c0173a930acf60fbf939af78aa7b600de1f8b4",
+  "source_sha256": "377fd87c8dc9a58223dfc4f9d280faafd07e4a68155b3765cfc03eed60171528",
+  "row_count": 34,
+  "wall_seconds": 0.1324543850023474,
+  "source_aard_percent": 7.4776547433648615,
+  "printed_row_ard_mean_percent": 7.475294117647059,
+  "engine_aard_percent": 6.937349847933817
+}

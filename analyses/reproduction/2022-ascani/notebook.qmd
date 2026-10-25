@@ -1,0 +1,332 @@
+---
+title: "Ascani 2022 Case Study 2: water/1-butanol/NaCl/KCl with ions in both liquids"
+date: 2026-10-09
+format:
+  html:
+    toc: true
+execute:
+  enabled: true
+  echo: false
+---
+
+```{python}
+import csv
+import json
+import math
+from pathlib import Path
+
+s = json.loads(Path("results/summary.json").read_text())
+with Path("inputs/source/ascani-2022-case-study-2-tracer.csv").open(newline="") as stream:
+    src = next(csv.DictReader(stream))
+meta = json.loads(Path("inputs/source/ascani-2022-case-study-2-tracer.yaml").read_text())
+with Path("inputs/source/ascani-2022-case-study-2-gibbs.csv").open(newline="") as stream:
+    gibbs = {r["quantity"]: r for r in csv.DictReader(stream)}
+mw = {k: float(v) for k, v in meta["tracer_contract"]["formula_to_explicit_feed_transform"]["molar_masses_kg_per_mol"].items()}
+
+def e(v, d=1):
+    m, x = f"{v:.{d}e}".split("e")
+    return f"{m}e{int(x)}".replace("-", "−")
+def u(v, d):
+    return f"{v:.{d}f}".replace("-", "−")
+def solve(variant, system, start="generic"):
+    return next(r for r in s["solves"] if (r["variant"], r["system"], r["start"]) == (variant, system, start))
+
+NANN, SI, FLIP = "nann-2013-expression", "si-table-s3-printed", "l-ij-sign-flipped"
+k = {v: kl[0] for v, kl in s["parameters"]["water_butanol_k_ij_l_ij"].items()}
+lij = {v: kl[1] for v, kl in s["parameters"]["water_butanol_k_ij_l_ij"].items()}
+q = solve(NANN, "quaternary")
+qp = solve(NANN, "quaternary", "paper")
+b = solve(NANN, "binary")
+ph = {p["label"]: p for p in q["phases"]}
+T, P = s["temperature_K"], s["pressure_Pa"]
+FORMULA = ("water", "1-butanol", "NaCl", "KCl")
+def formula(x):  # explicit (w, b, Na, K, Cl) -> formula (w, b, NaCl, KCl)
+    return [v / (1 - x[4]) for v in x[:4]]
+def mass(xf):
+    m = [xf[0] * mw["water"], xf[1] * mw["1-butanol"], xf[2] * mw["NaCl"], xf[3] * mw["KCl"]]
+    return [v / sum(m) for v in m]
+paper_x = {p: [float(src[f"{p}_x_{n}_formula"]) for n in ("water", "butanol", "nacl", "kcl")] for p in ("organic", "aqueous")}
+paper_txt = {p: [src[f"{p}_x_{n}_formula"] for n in ("water", "butanol", "nacl", "kcl")] for p in ("organic", "aqueous")}
+def half_unit(text):  # half a unit in the last printed digit
+    mant = text.lower().split("e")[0]
+    d = len(mant.split(".")[1]) if "." in mant else 0
+    return 0.5 * 10 ** (-d)
+eng_x = {p: formula(ph[p]["x"]) for p in ph}
+start_gap = max(abs(a - c) for p in range(2) for a, c in zip(q["phases"][p]["x"], qp["phases"][p]["x"]))
+paper_lnf = s["paper_point_diagnostics"]["paper_ln_f"]
+diag = s["paper_point_diagnostics"]
+scales = [diag[p]["born_scale_matching_paper"][salt] for p in ("organic", "aqueous") for salt in ("KCl", "NaCl")]
+mean_scale = sum(scales) / len(scales)
+share = diag["printed_phase_organic_share_by_balance"]
+paper_dg = float(gibbs["two_phase_split"]["g_hat_J_per_mol"]) - float(gibbs["homogeneous_feed"]["g_hat_J_per_mol"])
+feed_x = [float(src[f"feed_x_{n}_explicit"]) for n in ("water", "butanol", "na", "k", "cl")]
+born_pct = f"{100 * (min(scales) - 1):.0f} to {100 * (max(scales) - 1):.0f}"
+```
+
+## Question, basis and method
+
+Ascani, Sadowski and Held (2022, Case Study 2) split a water/1-butanol/NaCl/KCl
+feed with formula mass fractions `{python} ", ".join(src[f"feed_w_{n}_formula"] for n in ("water", "butanol", "nacl", "kcl"))`
+at `{python} u(T, 2)` K and `{python} u(P / 1e5, 2)` bar into an organic and an aqueous liquid. All
+three ions may enter both liquids. The paper prints both phase compositions,
+the Gibbs energy of feed and split, and the Table 5 fugacities. This notebook
+solves the same declared two-liquid problem natively in the Engine and compares
+it with those model values (numerical verification). The experimental tie lines
+of Pedraza et al. 2004 are not available here; see the last section.
+
+The model is [packet v3](../../../data/packets/ascani-2022-case-study-2-electrolyte-lle/3/parameters/parameters.json):
+PC-SAFT with association; Debye–Hückel and the Ascani & Held 2021 Eq. 10 Born
+term, both at ion diameter σ; the Eq. 13 combined permittivity rule (salt-free
+solvent mass-fraction mixing, then mole-fraction mixing with ion permittivity
+`{python} u(8, 0)`); and dispersion between ions only for cation–anion pairs. The
+water/1-butanol k_ij is the one convention changed from the packet. SI Table S3
+prints `{python} u(k[SI], 3)` as k_ij at `{python} u(T, 2)` K and cites Nann et al. 2013, whose
+Table 3 expression k_ij = 0.000294 T/K − 0.102 gives `{python} u(k[NANN], 5)` at this
+temperature. The printed value is that expression's intercept. This run uses
+the Nann value, decided by the lead. It is an inferred resolution of
+conflicting source conventions, not a confirmed author error. The printed
+value is retained below as a separate run. The water/1-butanol l_ij =
+`{python} u(lij[NANN], 4)` enters in the SI Eq. S4 form σ_ij = ½(σ_i + σ_j)(1 − l_ij);
+the opposite sign is a diagnostic variant below.
+
+Python declares the problem and reads the returned states. The Engine solves
+the declared two-liquid Gibbs minimization from a generic start (aqueous and
+organic guesses that do not use the paper's answer) and, separately, from the
+paper's printed phases. Fugacities are ln(f_i/bar) = ln x_i + ln φ_i at 1 bar.
+Mean ionic values are (ln f₊ + ln f₋)/2.
+
+## Numerical result
+
+```{python}
+#| output: asis
+checks = [
+    ("Engine status", q["message"].split(" against")[0], "requested tolerance met: " + str(q["requested_tolerance_met"])),
+    ("classified residual, max abs", e(q["classified_residual_max_abs"]), f"≤ {e(s['row_tolerance'], 0)}"),
+    ("material balance, max abs", e(q["material_balance_max_abs"]), "≤ 1e−10"),
+    ("charge Σ z x per phase, max abs", e(q["charge_max_abs"]), "≤ 1e−10"),
+    ("pressure, max relative", e(q["pressure_max_rel"]), "≤ 1e−8"),
+    ("ln f gap between phases (neutrals, both salts)", e(q["ln_f_gap_max_abs"]), "≤ 1e−8"),
+    ("reduced Hessian minimum", e(q["reduced_hessian_minimum"], 2), "> 0"),
+    ("generic vs paper start, max abs Δx", e(start_gap), "same state"),
+    ("work: iterations / evaluations / Hessians", f"{q['iterations']} / {q['evaluations']} / {q['hessian_calls']}", ""),
+    ("solve wall time", f"{1000 * q['seconds']:.0f} ms", ""),
+]
+print("| check | value | criterion |\n|---|---|---|")
+for row in checks:
+    print("| " + " | ".join(row) + " |")
+```
+
+The split converges from both starts to the same state and closes every
+declared check. The organic liquid holds `{python} u(100 * ph["organic"]["amount"], 2)` % of
+the moles. Its permittivity is `{python} u(ph["organic"]["permittivity"], 1)`, against
+`{python} u(ph["aqueous"]["permittivity"], 1)` in the aqueous liquid. The Engine refuses its
+stability test and phase discovery for this permittivity form
+(`{python} s["phase_discovery"]`), so the two-phase result carries no stability
+certificate. Its Gibbs energy lies `{python} u(-q["delta_g_split_minus_feed_J_per_mol"], 2)` J/mol
+below the homogeneous feed liquid.
+
+## Comparison with the paper's model values
+
+```{python}
+#| output: asis
+print("| phase | species | Engine x (formula) | paper x | Δ | half unit of printed digit |\n|---|---|---|---|---|---|")
+for p in ("organic", "aqueous"):
+    for i, n in enumerate(FORMULA):
+        d = eng_x[p][i] - paper_x[p][i]
+        print(f"| {p} | {n} | {eng_x[p][i]:.4g} | {paper_txt[p][i]} | {d:+.2g} | {half_unit(paper_txt[p][i]):.1g} |".replace("e-", "e−").replace("| -", "| −"))
+```
+
+No printed composition agrees within its printed precision. The organic liquid
+is water-richer than the paper's (Δx_water = `{python} u(eng_x["organic"][0] - paper_x["organic"][0], 4)`)
+and carries `{python} u(eng_x["organic"][2] / paper_x["organic"][2], 1)` (NaCl) and
+`{python} u(eng_x["organic"][3] / paper_x["organic"][3], 1)` (KCl) times the paper's salt. The
+paper's aqueous salt fractions are `{python} u(paper_x["aqueous"][2] / eng_x["aqueous"][2], 1)` and
+`{python} u(paper_x["aqueous"][3] / eng_x["aqueous"][3], 1)` times the Engine's.
+
+The printed phases cannot come from the printed feed. On the formula basis,
+each component balance z_i = β x_i(organic) + (1 − β) x_i(aqueous) alone fixes
+the organic mole share β by plain division, with no fitting. The printed
+phases are renormalized to sum to one first.
+
+```{python}
+#| output: asis
+print("| formula component | organic share β from its balance alone |\n|---|---|")
+for n in FORMULA:
+    print(f"| {n} | {share[n]:.6f} |")
+```
+
+The neutral balances give β = `{python} u(share["water"], 3)` to `{python} u(share["1-butanol"], 3)`; the salt balances
+give `{python} u(share["NaCl"], 3)` to `{python} u(share["KCl"], 3)`. No single share closes all four balances.
+The paper's aqueous liquid holds about four times the feed's salt fraction
+while carrying almost all the water. The paper's split therefore belongs to a
+different feed, or its feed or compositions are misprinted. The Engine's split
+satisfies the printed feed.
+
+```{python}
+#| output: asis
+eng = ph["aqueous"]["ln_f_groups"]
+print("| quantity | Engine (both phases) | paper Table 5 | Δ |\n|---|---|---|---|")
+for key, label in (("water", "ln(f_water/bar)"), ("1-butanol", "ln(f_butanol/bar)"), ("KCl", "ln(f±,KCl/bar)"), ("NaCl", "ln(f±,NaCl/bar)")):
+    print(f"| {label} | {u(eng[key], 3)} | {u(paper_lnf[key], 3)} | {eng[key] - paper_lnf[key]:+.3f} |".replace("-", "−"))
+print(f"| Δg split − feed, J/mol | {u(q['delta_g_split_minus_feed_J_per_mol'], 3)} | {u(paper_dg, 3)} | |")
+```
+
+The paper's Δg is its printed two-phase ĝ minus its homogeneous-feed ĝ
+(`{python} u(float(gibbs["two_phase_split"]["g_hat_J_per_mol"]), 3)` and `{python} u(float(gibbs["homogeneous_feed"]["g_hat_J_per_mol"]), 3)` J/mol; `{python} gibbs["two_phase_split"]["locator"]`).
+
+The neutral fugacities differ by less than `{python} u(max(abs(eng[k_] - paper_lnf[k_]) for k_ in ("water", "1-butanol")), 2)`,
+consistent with the composition differences. The paper's mean ionic ln f values
+are lower by `{python} u(eng["KCl"] - paper_lnf["KCl"], 1)` (KCl) and `{python} u(eng["NaCl"] - paper_lnf["NaCl"], 1)` (NaCl). The paper's Δg is
+computed from its printed split and so inherits the material-balance
+inconsistency.
+
+To locate the ionic offset, the Engine model was evaluated at the paper's own
+printed phases, with and without the Born term. The Born part of the Engine's
+mean ionic ln f is `{python} u(diag["aqueous"]["born_part"]["NaCl"], 1)` (NaCl) and
+`{python} u(diag["aqueous"]["born_part"]["KCl"], 1)` (KCl) in the aqueous liquid. For each salt and
+phase separately, the factor on that Born part that reproduces the paper's
+Table 5 value is:
+
+```{python}
+#| output: asis
+print("| phase | salt | Born part, Engine | factor matching Table 5 | ln f± error with the mean factor |\n|---|---|---|---|---|")
+for p in ("organic", "aqueous"):
+    for salt in ("KCl", "NaCl"):
+        born = diag[p]["born_part"][salt]
+        err = diag[p]["ln_f"][salt] + (mean_scale - 1) * born - paper_lnf[salt]
+        print(f"| {p} | {salt} | {u(born, 2)} | {diag[p]['born_scale_matching_paper'][salt]:.6f} | {u(err, 2)} |".replace("| -", "| −"))
+```
+
+Four separately inferred factors suggest a Born term `{python} born_pct` % stronger than
+Eq. 10 as printed in Ascani & Held 2021 and Bülow et al. 2021 (Part I, Eq. 2).
+They are not one factor: their mean, `{python} f"{mean_scale:.6f}"`, leaves the ln f± errors in the
+last column, against a printed-digit tolerance of `{python} u(half_unit(f"{paper_lnf['KCl']:.3f}"), 4)`. The cause is not
+established. Four candidate causes were checked and ruled out, because none
+produces a 14–15 % multiplicative factor:
+
+- radius used for diameter: Born ∝ 1/σ, so the factor would be 2;
+- omitting the 1 − 1/ε_r factor: 1/(1 − 1/ε_r) at the paper's phases is
+  `{python} u(1 / (1 - 1 / diag["organic"]["permittivity"]), 3)` (organic, ε_r = `{python} u(diag["organic"]["permittivity"], 1)`) and
+  `{python} u(1 / (1 - 1 / diag["aqueous"]["permittivity"]), 3)` (aqueous, ε_r = `{python} u(diag["aqueous"]["permittivity"], 1)`);
+- pressure in Pa instead of bar: an additive shift ln(Pa/bar) = `{python} u(math.log(1e5), 2)`, not a factor;
+- formula-unit instead of ion mole fraction in ln x: −ln(1 − x_Cl) =
+  `{python} u(-math.log(1 - float(src["organic_x_cl_explicit"])), 4)` (organic) and `{python} u(-math.log(1 - float(src["aqueous_x_cl_explicit"])), 3)` (aqueous).
+
+The same printed phases are also not in mutual equilibrium under the Engine
+model (ln f_butanol `{python} u(diag["organic"]["ln_f"]["1-butanol"], 3)` organic against
+`{python} u(diag["aqueous"]["ln_f"]["1-butanol"], 3)` aqueous).
+
+## Ions in the organic liquid
+
+```{python}
+#| output: asis
+w = {p: mass(eng_x[p]) for p in ph}
+print("| species | organic x | aqueous x | partition x_aq/x_org | partition w_aq/w_org |\n|---|---|---|---|---|")
+for i, n in enumerate(("Na⁺", "K⁺", "Cl⁻")):
+    xo, xa = ph["organic"]["x"][2 + i], ph["aqueous"]["x"][2 + i]
+    salt = i if i < 2 else None
+    wk = f"{w['aqueous'][2 + salt] / w['organic'][2 + salt]:.3g}" if salt is not None else ""
+    print(f"| {n} | {xo:.3g} | {xa:.3g} | {xa / xo:.3g} | {wk} |")
+```
+
+The organic liquid carries `{python} u(100 * ph["organic"]["amount"] * ph["organic"]["x"][2] / feed_x[2], 1)` % of
+the feed sodium and `{python} u(100 * ph["organic"]["amount"] * ph["organic"]["x"][3] / feed_x[3], 1)` % of the feed
+potassium. K⁺ partitions into the organic liquid more than Na⁺, as expected
+for the larger ion's weaker Born solvation, ΔG ∝ 1/σ. Each phase is
+electroneutral to `{python} e(q["charge_max_abs"])` in Σ z_i x_i. The weight-fraction salt
+compositions of both phases are below for the pending physical comparison.
+
+```{python}
+#| output: asis
+print("| phase | w_water | w_1-butanol | w_NaCl | w_KCl |\n|---|---|---|---|---|")
+for p in ("organic", "aqueous"):
+    print(f"| {p} | " + " | ".join(f"{v:.4g}" for v in w[p]) + " |")
+```
+
+## The SI-printed k_ij
+
+```{python}
+si_b, si_q, si_qp = solve(SI, "binary"), solve(SI, "quaternary"), solve(SI, "quaternary", "paper")
+bph = {p["label"]: p["x"][1] for p in b["phases"]}
+```
+
+With k_ij = `{python} u(k[SI], 3)` a liquid disappears from the one binary
+water/1-butanol start ("`{python} si_b["message"]`") and from both quaternary
+starts ("`{python} si_q["message"]`"; "`{python} si_qp["message"]`"). These are
+bounded, fixed-start outcomes. Phase discovery and the stability test are
+unavailable for this permittivity form, so they do not show that the model has
+no miscibility gap, nor what the authors ran. With the Nann value the binary
+split from the same start is x_butanol = `{python} u(bph["aqueous"], 4)` (aqueous) and
+`{python} u(bph["organic"], 4)` (organic) at `{python} u(T, 2)` K.
+
+## Diagnostic variant: the l_ij sign
+
+```{python}
+fq = solve(FLIP, "quaternary")
+fqp = solve(FLIP, "quaternary", "paper")
+fph = {p["label"]: p for p in fq["phases"]}
+flip_x = {p: formula(fph[p]["x"]) for p in fph}
+fbph = {p["label"]: p["x"][1] for p in solve(FLIP, "binary")["phases"]}
+flip_start_gap = max(abs(a - c) for p in range(2) for a, c in zip(fq["phases"][p]["x"], fqp["phases"][p]["x"]))
+```
+
+Nann et al. 2013 Eq. 2 writes the segment-diameter rule with (1 + l_ij); Ascani
+SI Eq. S4 writes (1 − l_ij). Both print l_ij = `{python} u(lij[NANN], 4)` for water/1-butanol,
+and the primary run follows the SI sign. This diagnostic variant sets
+l_ij = `{python} u(lij[FLIP], 4)` in the Engine's (1 − l_ij) form, with k_ij = `{python} u(k[FLIP], 5)`, the
+same feed and the same tolerances. It is not adopted.
+
+```{python}
+#| output: asis
+print("| phase | species | paper x | primary (SI sign) | variant (sign flipped) |\n|---|---|---|---|---|")
+for p in ("organic", "aqueous"):
+    for i, n in enumerate(FORMULA):
+        print(f"| {p} | {n} | {paper_txt[p][i]} | {eng_x[p][i]:.4g} | {flip_x[p][i]:.4g} |".replace("e-", "e−"))
+print(f"| | Δg split − feed, J/mol | {u(paper_dg, 1)} | {u(q['delta_g_split_minus_feed_J_per_mol'], 1)} | {u(fq['delta_g_split_minus_feed_J_per_mol'], 1)} |")
+```
+
+The variant converges from both starts to the same state (max |Δx| `{python} e(flip_start_gap)`)
+and closes the same checks (material balance `{python} e(fq["material_balance_max_abs"])`, ln f gap
+`{python} e(fq["ln_f_gap_max_abs"])`, reduced Hessian minimum `{python} e(fq["reduced_hessian_minimum"], 2)`). It moves
+the organic water fraction from `{python} u(eng_x["organic"][0], 3)` to `{python} u(flip_x["organic"][0], 3)`, past the paper's
+`{python} paper_txt["organic"][0]`: the deviation changes from `{python} u(eng_x["organic"][0] - paper_x["organic"][0], 3)` to
+`{python} u(flip_x["organic"][0] - paper_x["organic"][0], 3)`. The aqueous 1-butanol deviation grows from
+`{python} u(eng_x["aqueous"][1] - paper_x["aqueous"][1], 4)` to `{python} u(flip_x["aqueous"][1] - paper_x["aqueous"][1], 4)`. The organic salt fractions come
+closer to the paper's (KCl `{python} e(flip_x["organic"][3], 2)` against `{python} paper_txt["organic"][3]`), and Δg comes
+closer to the paper's value. The aqueous salt fractions stay near the feed,
+as the balance shares above require. The binary split becomes
+x_butanol = `{python} u(fbph["aqueous"], 4)` (aqueous) and `{python} u(fbph["organic"], 4)` (organic).
+The variant does not fit the printed phases clearly better: it overshoots the
+organic water–butanol split by more than the primary misses it. The primary
+result stays on the SI sign.
+
+## Experimental tie lines
+
+Not compared. Figure 4 plots Pedraza et al. 2004 (Fluid Phase Equilib. 216,
+27–31, doi:10.1016/j.fluid.2003.09.003) as a 3-D perspective quaternary
+prism, from which three independent mass fractions cannot be recovered.
+Automatic acquisition of the article failed (the Elsevier article-retrieval service returned HTTP 403; the Zotero
+agent connector was inactive), leaving metadata-only Zotero item `UFBTEEBX`.
+The NIST TRC ThermoML archive has no record for the DOI. With the PDF, each
+tie line's overall composition becomes a feed, solved in parallel. That
+physical comparison with literature parameters uses the mass-fraction average
+absolute deviation over all components in both phases, printed as Ascani &
+Held 2021 Eq. 15 (the preceding prose swaps the equation numbers).
+
+## Evidence type, limits and provenance
+
+- Numerical verification against the paper's model values: not achieved. The
+  Engine solve is numerically sound, but the printed compositions violate the
+  printed feed balance, and the Table 5 ion fugacities imply a Born term
+  `{python} born_pct` % stronger than the printed equation. Both causes are open.
+- Physical comparison with literature parameters: pending the Pedraza 2004 data.
+- No stability certificate: the Engine refuses its stability test and phase
+  discovery for the component-mixing permittivity form. The two-liquid answer
+  is start-independent for the two starts tried; that is not global evidence.
+- One feed at `{python} u(T, 2)` K and `{python} u(P / 1e5, 2)` bar. Packet parameters taken
+  verbatim, except the water/1-butanol k_ij above.
+- Engine `{python} s["engine"][0][:8]` (editable, clean engine tree: `{python} s["engine"][1]`).
+  Parameter SHA-256 `{python} s["parameters"]["sha256"][:12]`…. The whole script (nine solves in parallel
+  processes on `{python} s["cpu_count"]` CPUs, plus diagnostics) took `{python} u(s["wall_seconds"], 2)` s.
+
+This notebook has not been independently reviewed or promoted.

@@ -1,0 +1,17 @@
+{
+  "run_id": "cc1f2d8c-8a43-4c66-89e4-572f6f7485d9",
+  "started_utc": "2026-10-23T00:41:06.672924+00:00",
+  "source_commit": "74acb87513b074092240e2f82abd6e011b8d63ec",
+  "dirty_paths": [],
+  "engine_provenance": [
+    "74acb87513b074092240e2f82abd6e011b8d63ec",
+    true
+  ],
+  "core_path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-789-live-literature-reproductions-the-6/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so",
+  "core_sha256": "6b4336e0d8490b0370e2eb0dbffb4b9bcf1b67b61b3b69b71567302d5681bffb",
+  "runner_sha256": "9e2d234c51f13b1b25be174e44d6825edd06d3a66aff1a9e219ecb48148399e9",
+  "packet_sha256": "8f0313b6ebecb891873866a2181b32f8aeb44a49860487f34aeab8aecfa596f9",
+  "supplements_sha256": "b4db86eaf53963a7b34caefdf320a2e839fd3ea675ecf326bcec21bbe9fe6ff6",
+  "frozen_targets_sha256": "3ec69e0949f60553f3596cf09f18fbd0ad676a2353138fb527d2d9f2f93ad6cb",
+  "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-789-live-literature-reproductions-the-6/.venv/bin/python"
+}

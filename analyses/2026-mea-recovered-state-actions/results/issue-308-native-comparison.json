@@ -1,0 +1,221 @@
+{
+ "old_rows": 319,
+ "native_rows": 395,
+ "F1": {
+  "old_paths_all_cold_packet_start": true,
+  "rows": 79,
+  "same_ok": true,
+  "values": 316,
+  "misses": 0,
+  "max_rel_difference": 0.0,
+  "miss_list": []
+ },
+ "F2": {
+  "rows": 158,
+  "same_neighbours": true,
+  "same_ok": true,
+  "values": 632,
+  "misses": 0,
+  "max_rel_difference": 0.0,
+  "miss_list": []
+ },
+ "F3": {
+  "frozen_rows": 79,
+  "accepted_old": 76,
+  "accepted_native": 76,
+  "stops": [
+   {
+    "identity": "vle_obs_0202",
+    "neighbour": "vle_obs_0201",
+    "ok": [
+     "False",
+     "False"
+    ],
+    "continuation_stop": [
+     "step_too_small",
+     "step_too_small"
+    ],
+    "cause": [
+     "branch_lost",
+     "branch_lost"
+    ],
+    "accepted_steps": [
+     "0",
+     "0"
+    ],
+    "attempts": [
+     "5",
+     "5"
+    ]
+   },
+   {
+    "identity": "vle_obs_0208",
+    "neighbour": "vle_obs_0209",
+    "ok": [
+     "False",
+     "False"
+    ],
+    "continuation_stop": [
+     "step_too_small",
+     "step_too_small"
+    ],
+    "cause": [
+     "branch_lost",
+     "branch_lost"
+    ],
+    "accepted_steps": [
+     "0",
+     "0"
+    ],
+    "attempts": [
+     "5",
+     "5"
+    ]
+   },
+   {
+    "identity": "vle_obs_0233",
+    "neighbour": "vle_obs_0232",
+    "ok": [
+     "False",
+     "False"
+    ],
+    "continuation_stop": [
+     "step_too_small",
+     "step_too_small"
+    ],
+    "cause": [
+     "branch_lost",
+     "branch_lost"
+    ],
+    "accepted_steps": [
+     "0",
+     "0"
+    ],
+    "attempts": [
+     "5",
+     "5"
+    ]
+   }
+  ],
+  "stops_reproduced": true,
+  "accepted_values": {
+   "values": 304,
+   "misses": 0,
+   "max_rel_difference": 0.0,
+   "miss_list": []
+  }
+ },
+ "F4": {
+  "old_fine_rows": 3,
+  "native_fine_rows": 79,
+  "old_fine_vs_native": {
+   "values": 12,
+   "misses": 0,
+   "max_rel_difference": 0.0,
+   "miss_list": []
+  },
+  "old_fine_step_history_same": true,
+  "added_fine_accepted": 76,
+  "added_fine_rows": 76,
+  "added_fine_vs_frozen": {
+   "values": 304,
+   "misses": 0,
+   "max_rel_difference": 0.0,
+   "miss_list": []
+  },
+  "added_fine_step_history_differs": 0,
+  "added_fine_same_branch": 76
+ },
+ "all_native_accepted_meet_criteria": false,
+ "F5": {
+  "rows_old": 405,
+  "rows_native": 405,
+  "same_keys": true,
+  "native_available_and_passed": 405,
+  "vle_state_values_compared": 57,
+  "vle_state_value_misses": 0,
+  "vle_state_max_rel_difference": 1.323653044661019e-12,
+  "value_misses": 0,
+  "action_misses": 0,
+  "max_rel_value_difference": 1.6236806806091582e-12,
+  "max_rel_action_difference": 1.9907588117691145e-12,
+  "action_miss_list": [],
+  "identity_passed": [
+   5,
+   5
+  ],
+  "max_error_over_criterion": [
+   0.4397901363413837,
+   0.4397901363413837
+  ],
+  "vle_states": [
+   {
+    "state": "B050",
+    "recovery": "cold packet start (#142 state)",
+    "recovered_ok": true,
+    "pressure_pa": 101325.0,
+    "work": [
+     13,
+     28
+    ]
+   },
+   {
+    "state": "R360",
+    "recovery": "345 K liquid anchor",
+    "recovered_ok": true,
+    "pressure_pa": 101325.0,
+    "work": [
+     14,
+     26
+    ]
+   },
+   {
+    "state": "vle_obs_0128",
+    "recovery": "packet start (#152 native speciated seed)",
+    "recovered_ok": true,
+    "pressure_pa": 6620.5327278466775,
+    "work": [
+     3,
+     5
+    ]
+   },
+   {
+    "state": "vle_obs_0145",
+    "recovery": "packet start (#152 native speciated seed)",
+    "recovered_ok": true,
+    "pressure_pa": 17897.854499314864,
+    "work": [
+     3,
+     5
+    ]
+   },
+   {
+    "state": "vle_obs_0227",
+    "recovery": "packet start (#152 native speciated seed)",
+    "recovered_ok": true,
+    "pressure_pa": 177605.39582444413,
+    "work": [
+     3,
+     5
+    ]
+   }
+  ]
+ },
+ "provenance": {
+  "old": {
+   "wheel": "epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+   "wheel_sha256": "4181cdf3d1b0f918709ddb8e6a4c5f117f963e9cd7f153099867ea5110e2cff6",
+   "mea_commit": "04a932835ae32f3855390ef9d2acd64a2877f63b",
+   "parameters_sha256": "868a501831b87e95dedf18ce40e9e7ac949f7c6a4aaf137f717cc493ecfcb7be",
+   "state_packet_sha256": "86f60041b28ec4493729b04c0238f44e86fba4becf33d6ddf47d86b7efb82448"
+  },
+  "native": {
+   "wheel": "epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+   "wheel_sha256": "4181cdf3d1b0f918709ddb8e6a4c5f117f963e9cd7f153099867ea5110e2cff6",
+   "mea_commit": "04a932835ae32f3855390ef9d2acd64a2877f63b",
+   "parameters_sha256": "868a501831b87e95dedf18ce40e9e7ac949f7c6a4aaf137f717cc493ecfcb7be",
+   "state_packet_sha256": "86f60041b28ec4493729b04c0238f44e86fba4becf33d6ddf47d86b7efb82448"
+  },
+  "actions_mea_commit": "799b2011e562a84c1bd93778cd43eb8340dae362"
+ }
+}

@@ -1,0 +1,54 @@
+{
+ "engine": [
+  "c88fe790d0fe7ed448c9a83663531fa730fe9fd3",
+  true
+ ],
+ "calculation_wall_seconds": 14.536243119999199,
+ "temperature_K": 298.15,
+ "pressure_Pa": 100000.0,
+ "scripts_sha256": {
+  "digitize.py": "c6b3bca7fb7a0e56e7d1bed63bfe82a120734be9a44c50c68bc13c42507c84f4",
+  "parameters.py": "75bd7c070517d8f7c99803de9813a6fad0ce382e8f903045c528aa1a4ae4fde3",
+  "plot.py": "75f17f3f8754cb055f685b6d6496024197d3fb1a13fd549bec5d37dac5f5bb35",
+  "run.py": "1f725296f3455f31c19e1f7df15f2294c409d57f98be318a130c6eefc37b22f3"
+ },
+ "inputs_sha256": {
+  "inputs/parameters/bulow-2020-advanced.json": "3179ca9b699179bdb2f14ecc9b93e4f234760cde2342c180ff1f2f3ad75e3129",
+  "inputs/parameters/mixed/binary-interaction/k-ij.csv": "6aed5d2cb1542f79530e23bcdb55c27b75561d092caaac481cd40f9da4a695eb",
+  "inputs/parameters/mixed/binary-interaction/source-manifest.csv": "d37a7150bdd23ffb57ada78feeed2702a72b62e5dab25ea2d844231d37f2aa86",
+  "inputs/parameters/pure/any-solvent.csv": "f8378173375a71d75de0bc35d065b4c1e517785236d34d4f0de1000c848df8ae",
+  "inputs/parameters/user-options.json": "d6513938ca598eacc781966cbfadc4da31908b0e740be45174eafddc26d71e57",
+  "inputs/source/figures-manifest.csv": "ecc88e654e540b23dc1b9a40c09f28d45134783d67f43bccbbf278fece79a98a",
+  "inputs/source/source-manifest.csv": "34708e72d558afd407767bfd7a40dd895940628907f7cc6d8c9d0d2a46265f57",
+  "inputs/source/zafarani-moattar-1998-osmotic.csv": "79e5c45e05919d59436c256f24f93f7efe77303031ef40ea47143e30bca8bf90",
+  "figures/figure-02/source/water-comparisons.csv": "d935e63869376351cf4add281c463e6c3e23e47169955642e44e157ae7ebe46b",
+  "figures/figure-03/source/water-comparisons.csv": "d935e63869376351cf4add281c463e6c3e23e47169955642e44e157ae7ebe46b",
+  "figures/figure-03/source/water-contributions.csv": "122481d347a098c02e4ef3ebd09228d334e00278c113069c1f2dd22bfbe84b9d",
+  "figures/figure-04/source/water-ethanol-comparison.csv": "ee2b2cc29f6a8422e719b2760320d8bb15b697096ed175fabbed4251d1f06929",
+  "figures/figure-04/source/water-methanol-comparison.csv": "4b5acdc67b3e0b1b520a573b0ecdc76e22e3f9cb7dc80491279a1e438c02a847",
+  "figures/figure-05/source/water-ethanol-comparison.csv": "ee2b2cc29f6a8422e719b2760320d8bb15b697096ed175fabbed4251d1f06929",
+  "figures/figure-05/source/water-ethanol-contributions.csv": "ae47eba2fd5e4e813be8920fe0fedb04e24db6edafefd792c84b9de3103c5bb8",
+  "figures/figure-05/source/water-methanol-comparison.csv": "4b5acdc67b3e0b1b520a573b0ecdc76e22e3f9cb7dc80491279a1e438c02a847",
+  "figures/figure-05/source/water-methanol-contributions.csv": "dc2ee8b20cca6132beaada8774eb363f98ff54d5385a8cadc6044f8e27d0b76e",
+  "figures/figure-06/libr-methanol-left.csv": "37631d52561ea1f90c42576bac2a9bb3ba2567410d24aeba0e7d4f11ba0528c6",
+  "figures/figure-06/libr-methanol-right.csv": "66fdb32f2bf720cfc0c71da77d45beb5621e7c40af17893f52277a197e5146e2",
+  "figures/figure-06/source/ethanol-libr.csv": "fc28d1c320667e8a27ad6e53de82f9ae01544c583c9d05ce619448cb9b7ea6d9",
+  "figures/figure-07/libr-methanol.csv": "6d43196926f3a452e1595d9b63b60beffc71a04f8ebac689504fbd0e73e88ac7",
+  "figures/figure-07/licl-methanol.csv": "cc007dc5e9c7753ee9b153c17c6e5c6f7e0dc30fb6230b252d3d9e0910d759b8",
+  "figures/figure-07/nabr-ethanol.csv": "628810761463fc56dfebc02d3d73c876f9f6486aa8b2c88978d0d0bfb4d0589a",
+  "figures/figure-07/nabr-methanol.csv": "530e3b6f9c207de023158fc5d557e06e1c7eb137dc002702670dc9d249faef80",
+  "figures/figure-07/source/ethanol-nabr.csv": "f8b76c4cb7a7276a7502c2a5d295474ffbe0d82fb6c3a11b7fd0e301b0b2129c",
+  "figures/figure-07/source/methanol-licl.csv": "b85a2d2424b6a72b80f88acc3816083b1a6bbbea98024dfec70fb211cd9a47e5",
+  "figures/figure-07/source/methanol-nabr.csv": "8a2abffb5fc40f716addbb7a6bf41551be9a33af7c8b569df79eba820c29570d"
+ },
+ "conditions": "298.15 K, 1e5 Pa; salt-free solvent molality; gamma_pm_x on the ion mole-fraction scale",
+ "tolerances": {
+  "figure-2 hydration": 10.0,
+  "figure-3 Born": 5.0,
+  "figure-4 transfer": 1.5,
+  "figure-5 Born transfer": 1.5,
+  "curve pixel distance": 3.0,
+  "Born closed form relative": 1e-10,
+  "partner independence": 0.001
+ }
+}

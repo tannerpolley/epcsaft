@@ -1,0 +1,74 @@
+{
+  "source_image": "page-5.png",
+  "source_image_sha256": "e4ee4c0cdfa72dba5f11eb87e5f8012d59a2f8cd6966b794ede4df8e4fc5626d",
+  "resolution": "1600 px long side; PDF page rendered by Poppler",
+  "calibration": {
+    "a": {
+      "left": 158,
+      "right": 581,
+      "top": 162,
+      "bottom": 551,
+      "x_min": 0,
+      "x_max": 1,
+      "y_min": 340,
+      "y_max": 520,
+      "x_scale": "linear",
+      "y_scale": "linear"
+    },
+    "b": {
+      "left": 659,
+      "right": 1082,
+      "top": 162,
+      "bottom": 551,
+      "x_min": 0,
+      "x_max": 1,
+      "y_min": 340,
+      "y_max": 520,
+      "x_scale": "linear",
+      "y_scale": "linear"
+    },
+    "c": {
+      "left": 158,
+      "right": 581,
+      "top": 644,
+      "bottom": 1031,
+      "x_min": 0,
+      "x_max": 1,
+      "y_min": 340,
+      "y_max": 520,
+      "x_scale": "linear",
+      "y_scale": "linear"
+    },
+    "d": {
+      "left": 659,
+      "right": 1082,
+      "top": 644,
+      "bottom": 1031,
+      "x_min": 0,
+      "x_max": 1,
+      "y_min": 340,
+      "y_max": 520,
+      "x_scale": "linear",
+      "y_scale": "linear"
+    }
+  },
+  "method": "manual points; no curve tracing or pixel selection algorithm",
+  "half_width_pixels": 2,
+  "second_reading": "Full panel followed by enlarged vertical strips at the selected abscissae",
+  "scope": "one interior point per branch and pressure in each panel; no global curve accuracy claim",
+  "figure_1": {
+    "image": "page-3.png",
+    "image_sha256": "eeccb08edb920151e71619574438a1392902d3c347861a8cdc13b063d6c22143",
+    "left": 660,
+    "right": 1093,
+    "top": 143,
+    "bottom": 539,
+    "x_min": 900,
+    "x_max": 1080,
+    "x_unit": "kg/m3",
+    "y_min": 0,
+    "y_max": 12000,
+    "y_unit": "Pa",
+    "second_reading": "horizontal strip, y329-354; full plot line styles"
+  }
+}

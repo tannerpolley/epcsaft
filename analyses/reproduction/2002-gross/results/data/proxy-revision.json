@@ -1,0 +1,29 @@
+{
+  "started_utc": "2026-10-10T03:13:26+00:00",
+  "recorded_utc": "2026-10-10T03:21:15.121423+00:00",
+  "wall_seconds": 469.121423,
+  "scope": "Source inspection, marker-overlap digitization, native recalculation, notebook revision, HTML rendering and required/common checks; final refresh and local commit follow this recording point",
+  "audited_figures": [
+    "figure-01",
+    "figure-02",
+    "figure-03",
+    "figure-04",
+    "figure-05",
+    "figure-06",
+    "figure-07",
+    "figure-08",
+    "figure-09",
+    "figure-10"
+  ],
+  "experimental_observations": "All retained separately; none removed",
+  "removed_model_rows": 9,
+  "reextracted_model_rows": 2,
+  "within_tolerance": 209,
+  "readable_model_rows": 223,
+  "undiagnosed_misses": 12,
+  "checks": {
+    "notebook_numbers": 0,
+    "affected": "passed",
+    "common_full": "passed"
+  }
+}

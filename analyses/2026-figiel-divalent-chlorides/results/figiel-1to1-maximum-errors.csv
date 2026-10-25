@@ -1,0 +1,4 @@
+salt,n_rows,max_abs_gamma_decade,gamma_worst_molality,max_abs_osmotic_decade,osmotic_worst_molality,gamma_fail_rows,osmotic_fail_rows
+LiCl,26,0.03576217474140092,1.8,0.02873823816842658,4.5,13,1
+NaCl,26,0.04297480006160615,2.0,0.017029640466203186,1.4,14,0
+KCl,26,0.032626059469137395,1.6,0.029032584258284363,4.5,11,2

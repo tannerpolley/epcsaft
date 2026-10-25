@@ -1,0 +1,25 @@
+{
+  "source_commit": "c358de722be1b5c1ad34d9a5b1c1a0e304cba9f5",
+  "central": {
+    "T_K": 300.0,
+    "P_Pa": 100000.0,
+    "rho_feed": 13390.825414876846,
+    "rho_incipient": 13390.825414876846,
+    "x0_incipient": 0.5,
+    "success": true,
+    "tolerance_met": true,
+    "residual": 3.459636350727868e-16,
+    "stop": "Stop.converged",
+    "message": "converged: residual 3.4596363507278681e-16 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 6 iterations, contraction absent, floor 3.2828869185396596e-11, amplification 0",
+    "bubble": false
+  },
+  "sha256": {
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/data/packets/gross-2001-methane-ethane/3/parameters/parameters.json": "109cfe8e80c4fcefadcbb4975ebe7436d371710ed9d20f2c7bd6d30d9c581bf2",
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/analyses/2026-open-source-equilibrium-comparison/results/issue-224-sliceB/reference/envelope-points.csv": "afcbcf549c54ae335e70cb6ec6ff45a4af260cf600d50c167b7c3a1bfc48c5da",
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/analyses/2026-open-source-equilibrium-comparison/results/issue-224-sliceB/reference/critical-binary.csv": "16f935393981c8f955a68279bba90ea960ec7af2d4cc9a8483ca7a291f8ff14d",
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/analyses/2026-tpd-phase-discovery/scripts/feos_compare.py": "f3d7e28bf0f72de8f31ff90f8e1e76509adc806d0b9c0920d7f67c09b147d1e7",
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/analyses/2026-tpd-phase-discovery/inputs/feos-test-parameters.json": "bd09af1cb49e4b525f4c589d66b10579ac13600634b889f551de9d533f843580",
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/analyses/2026-algorithm-illustrations/inputs/study.json": "703458f11f99947aa6f9e8112a8acb380f72d3574d1aa5563e2614f8e85d70e1",
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so": "c4a2d16b9c11f9532c728912caf1716311915bcded161d9c9e51eacb53a5ea1e"
+  }
+}

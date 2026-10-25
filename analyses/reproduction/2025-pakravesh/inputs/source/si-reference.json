@@ -1,0 +1,33 @@
+{
+  "doi": "10.1021/acs.jced.4c00390",
+  "article_zotero_parent": "ABY3LIRG",
+  "article_markdown_attachment": "DITJ2NS5",
+  "supporting_information": {
+    "url": "https://acs.figshare.com/articles/journal_contribution/27930361",
+    "download_url": "https://ndownloader.figshare.com/files/50879317",
+    "filename": "je4c00390_si_001.pdf",
+    "sha256": "96a0e25ce0b975372b6261a1df36a5f13d3c8c77e2a9fedb43273b1d4f36bc82",
+    "locator": "Tables S1 p.2, S6 pp.12-14, S9 p.20",
+    "extraction": "pdftotext -layout; visually checked PDF pages 2,12,20; all S6 rows parsed without model calculation",
+    "zotero_attachment": "not attached; no library attachment mutation",
+    "table_s6_rows": 120
+  },
+  "mdea_pcsaft": {
+    "m": 7.2069,
+    "sigma_angstrom": 2.8264,
+    "epsilon_over_k_K": 219.94,
+    "epsilon_assoc_over_k_K": 3187.2,
+    "kappa_assoc": 0.0135,
+    "association_scheme": "3B",
+    "molar_mass_kg_mol": 0.119162,
+    "locator": "SI Table S1 p.2; main Table 1 molar mass"
+  },
+  "comparison_tolerances": {
+    "rho_kg_m3": 0.005,
+    "alpha_kK_inv": 0.0005,
+    "kappa_TPa_inv": 0.005,
+    "P_sat_Pa": 0.005,
+    "basis": "half the last printed place; source parameter and T/P rounding remain separate limitations"
+  },
+  "source_warning": "S9 MDEA PC-SAFT pressure and density columns duplicate DEA PC-SAFT columns at different temperatures; visually confirmed p.20; preserve printed values without correction"
+}

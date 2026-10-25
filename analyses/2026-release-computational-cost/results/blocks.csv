@@ -1,0 +1,115 @@
+block,operation,repetition,arm,quiet,value_matched,samples,median_seconds,selected,disposition
+measurement-3.jsonl/property-bundle/0/Engine-A,property-bundle,0,Engine-A,True,True,25,8.19e-06,True,selected quiet block
+measurement-3.jsonl/property-bundle/0/FeOs,property-bundle,0,FeOs,True,True,25,0.00011871,True,selected quiet block
+measurement-3.jsonl/property-bundle/0/Clapeyron,property-bundle,0,Clapeyron,True,True,25,1.874e-05,True,selected quiet block
+measurement-3.jsonl/property-bundle/0/Engine-control,property-bundle,0,Engine-control,True,True,25,8.99e-06,True,selected quiet block
+measurement-3.jsonl/pressure-state/0/Engine-A,pressure-state,0,Engine-A,True,True,5,1.209275e-05,True,selected quiet block
+measurement-3.jsonl/pressure-state/0/FeOs,pressure-state,0,FeOs,True,True,5,4.450828125e-05,True,selected quiet block
+measurement-3.jsonl/pressure-state/0/Clapeyron,pressure-state,0,Clapeyron,True,True,5,1.181309375e-05,True,selected quiet block
+measurement-3.jsonl/pressure-state/0/Engine-control,pressure-state,0,Engine-control,True,True,5,1.124153125e-05,True,selected quiet block
+measurement-3.jsonl/C1-300/0/Engine-A,C1-300,0,Engine-A,True,True,25,0.00017882,False,superseded by complete retry
+measurement-3.jsonl/C1-300/0/FeOs,C1-300,0,FeOs,True,True,25,2.4279e-05,False,superseded by complete retry
+measurement-3.jsonl/C1-300/0/Clapeyron,C1-300,0,Clapeyron,True,True,25,3.902e-05,False,superseded by complete retry
+measurement-3.jsonl/C1-300/0/Engine-control,C1-300,0,Engine-control,True,True,25,0.000175509,False,superseded by complete retry
+measurement-3.jsonl/C2-0.5/0/Engine-A,C2-0.5,0,Engine-A,True,True,25,0.000692988,True,selected quiet block
+measurement-3.jsonl/C2-0.5/0/FeOs,C2-0.5,0,FeOs,True,True,25,0.000357128,True,selected quiet block
+measurement-3.jsonl/C2-0.5/0/Clapeyron,C2-0.5,0,Clapeyron,True,True,25,0.000817017,True,selected quiet block
+measurement-3.jsonl/C2-0.5/0/Engine-control,C2-0.5,0,Engine-control,True,True,25,0.000711978,True,selected quiet block
+measurement-3.jsonl/C4-298.15/0/Engine-A,C4-298.15,0,Engine-A,True,True,25,0.004688072,True,selected quiet block
+measurement-3.jsonl/C4-298.15/0/FeOs,C4-298.15,0,FeOs,True,True,25,0.016577868,True,selected quiet block
+measurement-3.jsonl/C4-298.15/0/Clapeyron,C4-298.15,0,Clapeyron,True,True,25,0.003141878,True,selected quiet block
+measurement-3.jsonl/C4-298.15/0/Engine-control,C4-298.15,0,Engine-control,True,True,25,0.004703822,True,selected quiet block
+measurement-3.jsonl/electrolyte-eight-feeds/0/Engine-A,electrolyte-eight-feeds,0,Engine-A,True,True,5,0.156631012,True,selected quiet block
+measurement-3.jsonl/electrolyte-eight-feeds/0/Engine-control,electrolyte-eight-feeds,0,Engine-control,True,True,5,0.164361903,True,selected quiet block
+measurement-3.jsonl/explicit-discovery/0/Engine-A,explicit-discovery,0,Engine-A,True,True,5,0.007319153,True,selected quiet block
+measurement-3.jsonl/explicit-discovery/0/FeOs,explicit-discovery,0,FeOs,True,True,5,0.000242859,True,selected quiet block
+measurement-3.jsonl/explicit-discovery/0/Clapeyron,explicit-discovery,0,Clapeyron,True,True,5,0.000703537,True,selected quiet block
+measurement-3.jsonl/explicit-discovery/0/Engine-control,explicit-discovery,0,Engine-control,True,True,5,0.007320123,True,selected quiet block
+measurement-3.jsonl/C2-0.5/actions-exact/0/Engine-A,C2-0.5/actions-exact,0,Engine-A,True,True,10,0.000225169,True,selected quiet block
+measurement-3.jsonl/C2-0.5/actions-exact/0/Engine-control,C2-0.5/actions-exact,0,Engine-control,True,True,10,0.0002053445,True,selected quiet block
+measurement-3.jsonl/C2-0.5/actions-fd/0/Engine-A,C2-0.5/actions-fd,0,Engine-A,True,True,10,0.007518872,True,selected quiet block
+measurement-3.jsonl/C2-0.5/actions-fd/0/Engine-control,C2-0.5/actions-fd,0,Engine-control,True,True,10,0.0073054725,True,selected quiet block
+measurement-3.jsonl/C4-298.15/actions-exact/0/Engine-A,C4-298.15/actions-exact,0,Engine-A,True,True,10,0.0002031545,True,selected quiet block
+measurement-3.jsonl/C4-298.15/actions-exact/0/Engine-control,C4-298.15/actions-exact,0,Engine-control,True,True,10,0.0002623745,True,selected quiet block
+measurement-3.jsonl/C4-298.15/actions-fd/0/Engine-A,C4-298.15/actions-fd,0,Engine-A,True,True,10,0.020577203000000002,True,selected quiet block
+measurement-3.jsonl/C4-298.15/actions-fd/0/Engine-control,C4-298.15/actions-fd,0,Engine-control,True,True,10,0.0216586235,True,selected quiet block
+measurement-3.jsonl/property-bundle/1/Engine-control,property-bundle,1,Engine-control,True,True,25,1.104e-05,True,selected quiet block
+measurement-3.jsonl/property-bundle/1/Clapeyron,property-bundle,1,Clapeyron,True,True,25,2.326e-05,True,selected quiet block
+measurement-3.jsonl/property-bundle/1/FeOs,property-bundle,1,FeOs,True,True,25,5.273e-05,True,selected quiet block
+measurement-3.jsonl/property-bundle/1/Engine-A,property-bundle,1,Engine-A,True,True,25,1.237e-05,True,selected quiet block
+measurement-3.jsonl/pressure-state/1/Engine-control,pressure-state,1,Engine-control,True,True,5,2.182990625e-05,True,selected quiet block
+measurement-3.jsonl/pressure-state/1/Clapeyron,pressure-state,1,Clapeyron,True,True,5,1.4863343749999998e-05,True,selected quiet block
+measurement-3.jsonl/pressure-state/1/FeOs,pressure-state,1,FeOs,True,True,5,4.49476875e-05,True,selected quiet block
+measurement-3.jsonl/pressure-state/1/Engine-A,pressure-state,1,Engine-A,True,True,5,1.099684375e-05,True,selected quiet block
+measurement-3.jsonl/C1-300/1/Engine-control,C1-300,1,Engine-control,True,True,25,0.000183299,False,superseded by complete retry
+measurement-3.jsonl/C1-300/1/Clapeyron,C1-300,1,Clapeyron,True,True,25,4.129e-05,False,superseded by complete retry
+measurement-3.jsonl/C1-300/1/FeOs,C1-300,1,FeOs,False,True,25,3.131e-05,False,disturbed; excluded
+measurement-3.jsonl/C1-300/1/Engine-A,C1-300,1,Engine-A,True,True,25,0.000172909,False,superseded by complete retry
+measurement-3.jsonl/C2-0.5/1/Engine-control,C2-0.5,1,Engine-control,True,True,25,0.000681118,True,selected quiet block
+measurement-3.jsonl/C2-0.5/1/Clapeyron,C2-0.5,1,Clapeyron,True,True,25,0.000841877,True,selected quiet block
+measurement-3.jsonl/C2-0.5/1/FeOs,C2-0.5,1,FeOs,True,True,25,0.000361808,True,selected quiet block
+measurement-3.jsonl/C2-0.5/1/Engine-A,C2-0.5,1,Engine-A,True,True,25,0.000697717,True,selected quiet block
+measurement-3.jsonl/C4-298.15/1/Engine-control,C4-298.15,1,Engine-control,True,True,25,0.004742252,True,selected quiet block
+measurement-3.jsonl/C4-298.15/1/Clapeyron,C4-298.15,1,Clapeyron,True,True,25,0.002349481,True,selected quiet block
+measurement-3.jsonl/C4-298.15/1/FeOs,C4-298.15,1,FeOs,True,True,25,0.016611727,True,selected quiet block
+measurement-3.jsonl/C4-298.15/1/Engine-A,C4-298.15,1,Engine-A,True,True,25,0.004720672,True,selected quiet block
+measurement-3.jsonl/electrolyte-eight-feeds/1/Engine-control,electrolyte-eight-feeds,1,Engine-control,True,True,5,0.158473298,True,selected quiet block
+measurement-3.jsonl/electrolyte-eight-feeds/1/Engine-A,electrolyte-eight-feeds,1,Engine-A,True,True,5,0.154626513,True,selected quiet block
+measurement-3.jsonl/explicit-discovery/1/Engine-control,explicit-discovery,1,Engine-control,True,True,5,0.007108593,True,selected quiet block
+measurement-3.jsonl/explicit-discovery/1/Clapeyron,explicit-discovery,1,Clapeyron,True,True,5,0.000447469,True,selected quiet block
+measurement-3.jsonl/explicit-discovery/1/FeOs,explicit-discovery,1,FeOs,True,True,5,0.000216469,True,selected quiet block
+measurement-3.jsonl/explicit-discovery/1/Engine-A,explicit-discovery,1,Engine-A,True,True,5,0.007080263,True,selected quiet block
+measurement-3.jsonl/C2-0.5/actions-exact/1/Engine-control,C2-0.5/actions-exact,1,Engine-control,True,True,10,0.000357954,True,selected quiet block
+measurement-3.jsonl/C2-0.5/actions-exact/1/Engine-A,C2-0.5/actions-exact,1,Engine-A,True,True,10,0.000192494,True,selected quiet block
+measurement-3.jsonl/C2-0.5/actions-fd/1/Engine-control,C2-0.5/actions-fd,1,Engine-control,True,True,10,0.0070552735000000005,True,selected quiet block
+measurement-3.jsonl/C2-0.5/actions-fd/1/Engine-A,C2-0.5/actions-fd,1,Engine-A,True,True,10,0.007073328,True,selected quiet block
+measurement-3.jsonl/C4-298.15/actions-exact/1/Engine-control,C4-298.15/actions-exact,1,Engine-control,True,True,10,0.00024531900000000003,True,selected quiet block
+measurement-3.jsonl/C4-298.15/actions-exact/1/Engine-A,C4-298.15/actions-exact,1,Engine-A,True,True,10,0.0001841795,True,selected quiet block
+measurement-3.jsonl/C4-298.15/actions-fd/1/Engine-control,C4-298.15/actions-fd,1,Engine-control,True,True,10,0.019894994,True,selected quiet block
+measurement-3.jsonl/C4-298.15/actions-fd/1/Engine-A,C4-298.15/actions-fd,1,Engine-A,True,True,10,0.0198458045,True,selected quiet block
+measurement-3.jsonl/property-bundle/2/Engine-A,property-bundle,2,Engine-A,True,True,25,1.106e-05,True,selected quiet block
+measurement-3.jsonl/property-bundle/2/FeOs,property-bundle,2,FeOs,True,True,25,4.731e-05,True,selected quiet block
+measurement-3.jsonl/property-bundle/2/Clapeyron,property-bundle,2,Clapeyron,True,True,25,1.229e-05,True,selected quiet block
+measurement-3.jsonl/property-bundle/2/Engine-control,property-bundle,2,Engine-control,True,True,25,1.041e-05,True,selected quiet block
+measurement-3.jsonl/pressure-state/2/Engine-A,pressure-state,2,Engine-A,True,True,5,1.074778125e-05,True,selected quiet block
+measurement-3.jsonl/pressure-state/2/FeOs,pressure-state,2,FeOs,True,True,5,3.876671875e-05,True,selected quiet block
+measurement-3.jsonl/pressure-state/2/Clapeyron,pressure-state,2,Clapeyron,True,True,5,1.87093125e-05,True,selected quiet block
+measurement-3.jsonl/pressure-state/2/Engine-control,pressure-state,2,Engine-control,True,True,5,1.0622125e-05,True,selected quiet block
+measurement-3.jsonl/C1-300/2/Engine-A,C1-300,2,Engine-A,True,True,25,0.000174179,False,superseded by complete retry
+measurement-3.jsonl/C1-300/2/FeOs,C1-300,2,FeOs,True,True,25,3.182e-05,False,superseded by complete retry
+measurement-3.jsonl/C1-300/2/Clapeyron,C1-300,2,Clapeyron,True,True,25,3.694e-05,False,superseded by complete retry
+measurement-3.jsonl/C1-300/2/Engine-control,C1-300,2,Engine-control,True,True,25,0.00017393,False,superseded by complete retry
+measurement-3.jsonl/C2-0.5/2/Engine-A,C2-0.5,2,Engine-A,True,True,25,0.000686328,True,selected quiet block
+measurement-3.jsonl/C2-0.5/2/FeOs,C2-0.5,2,FeOs,True,True,25,0.000353719,True,selected quiet block
+measurement-3.jsonl/C2-0.5/2/Clapeyron,C2-0.5,2,Clapeyron,True,True,25,0.000971116,True,selected quiet block
+measurement-3.jsonl/C2-0.5/2/Engine-control,C2-0.5,2,Engine-control,True,True,25,0.000745087,True,selected quiet block
+measurement-3.jsonl/C4-298.15/2/Engine-A,C4-298.15,2,Engine-A,True,True,25,0.004680842,True,selected quiet block
+measurement-3.jsonl/C4-298.15/2/FeOs,C4-298.15,2,FeOs,True,True,25,0.016475938,True,selected quiet block
+measurement-3.jsonl/C4-298.15/2/Clapeyron,C4-298.15,2,Clapeyron,True,True,25,0.002415861,True,selected quiet block
+measurement-3.jsonl/C4-298.15/2/Engine-control,C4-298.15,2,Engine-control,True,True,25,0.004773032,True,selected quiet block
+measurement-3.jsonl/electrolyte-eight-feeds/2/Engine-A,electrolyte-eight-feeds,2,Engine-A,True,True,5,0.154572263,True,selected quiet block
+measurement-3.jsonl/electrolyte-eight-feeds/2/Engine-control,electrolyte-eight-feeds,2,Engine-control,True,True,5,0.16047044,True,selected quiet block
+measurement-3.jsonl/explicit-discovery/2/Engine-A,explicit-discovery,2,Engine-A,True,True,5,0.007089993,True,selected quiet block
+measurement-3.jsonl/explicit-discovery/2/FeOs,explicit-discovery,2,FeOs,True,True,5,0.00021703,True,selected quiet block
+measurement-3.jsonl/explicit-discovery/2/Clapeyron,explicit-discovery,2,Clapeyron,True,True,5,0.000599917,True,selected quiet block
+measurement-3.jsonl/explicit-discovery/2/Engine-control,explicit-discovery,2,Engine-control,True,True,5,0.007018593,True,selected quiet block
+measurement-3.jsonl/C2-0.5/actions-exact/2/Engine-A,C2-0.5/actions-exact,2,Engine-A,True,True,10,0.00018793949999999999,True,selected quiet block
+measurement-3.jsonl/C2-0.5/actions-exact/2/Engine-control,C2-0.5/actions-exact,2,Engine-control,True,True,10,0.000190964,True,selected quiet block
+measurement-3.jsonl/C2-0.5/actions-fd/2/Engine-A,C2-0.5/actions-fd,2,Engine-A,True,True,10,0.007081863000000001,True,selected quiet block
+measurement-3.jsonl/C2-0.5/actions-fd/2/Engine-control,C2-0.5/actions-fd,2,Engine-control,True,True,10,0.007102758000000001,True,selected quiet block
+measurement-3.jsonl/C4-298.15/actions-exact/2/Engine-A,C4-298.15/actions-exact,2,Engine-A,True,True,10,0.000166649,True,selected quiet block
+measurement-3.jsonl/C4-298.15/actions-exact/2/Engine-control,C4-298.15/actions-exact,2,Engine-control,True,True,10,0.00016289,True,selected quiet block
+measurement-3.jsonl/C4-298.15/actions-fd/2/Engine-A,C4-298.15/actions-fd,2,Engine-A,True,True,10,0.0199166045,True,selected quiet block
+measurement-3.jsonl/C4-298.15/actions-fd/2/Engine-control,C4-298.15/actions-fd,2,Engine-control,True,True,10,0.019754845,True,selected quiet block
+measurement-3-retry-1.jsonl/C1-300/0/Engine-A,C1-300,0,Engine-A,True,True,25,0.000182089,True,selected quiet block
+measurement-3-retry-1.jsonl/C1-300/0/FeOs,C1-300,0,FeOs,True,True,25,2.42e-05,True,selected quiet block
+measurement-3-retry-1.jsonl/C1-300/0/Clapeyron,C1-300,0,Clapeyron,True,True,25,3.974e-05,True,selected quiet block
+measurement-3-retry-1.jsonl/C1-300/0/Engine-control,C1-300,0,Engine-control,True,True,25,0.000176689,True,selected quiet block
+measurement-3-retry-1.jsonl/C1-300/1/Engine-control,C1-300,1,Engine-control,True,True,25,0.000178519,True,selected quiet block
+measurement-3-retry-1.jsonl/C1-300/1/Clapeyron,C1-300,1,Clapeyron,True,True,25,3.4139e-05,True,selected quiet block
+measurement-3-retry-1.jsonl/C1-300/1/FeOs,C1-300,1,FeOs,True,True,25,2.432e-05,True,selected quiet block
+measurement-3-retry-1.jsonl/C1-300/1/Engine-A,C1-300,1,Engine-A,True,True,25,0.000175569,True,selected quiet block
+measurement-3-retry-1.jsonl/C1-300/2/Engine-A,C1-300,2,Engine-A,True,True,25,0.000173219,True,selected quiet block
+measurement-3-retry-1.jsonl/C1-300/2/FeOs,C1-300,2,FeOs,True,True,25,3.025e-05,True,selected quiet block
+measurement-3-retry-1.jsonl/C1-300/2/Clapeyron,C1-300,2,Clapeyron,True,True,25,4.234e-05,True,selected quiet block
+measurement-3-retry-1.jsonl/C1-300/2/Engine-control,C1-300,2,Engine-control,True,True,25,0.000174259,True,selected quiet block

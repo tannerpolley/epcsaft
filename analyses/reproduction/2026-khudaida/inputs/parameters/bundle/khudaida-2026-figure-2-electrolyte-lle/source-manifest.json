@@ -1,0 +1,129 @@
+{
+  "aggregate": {
+    "algorithm": "SHA-256 over each listed path UTF-8 bytes, NUL, raw file bytes, and LF in manifest order.",
+    "sha256": "3e5971a7d676d4863adb9149d35336d2d79bd976799393f9bbc033bf9d1525ed"
+  },
+  "bundle_id": "khudaida-2026-figure-2-electrolyte-lle",
+  "bundle_manifest": {
+    "domains": [
+      {
+        "domain_id": "khudaida-293-15-k-0-1-mpa",
+        "kind": "reported-conditions",
+        "pressure_max": 0.1,
+        "pressure_min": 0.1,
+        "pressure_unit": "megapascal",
+        "temperature_max": 293.15,
+        "temperature_min": 293.15,
+        "temperature_unit": "kelvin"
+      }
+    ],
+    "files": [
+      "components.csv",
+      "single.csv",
+      "pair.csv",
+      "sites.csv",
+      "association.csv",
+      "model.csv",
+      "correlations.toml"
+    ],
+    "sources": [
+      {
+        "citation": "Khudaida, S. H.; Rahayu, S. D.; Figiel, P.; Held, C.; Tiwikrama, A. H. Upgrading the Extraction of Ethanol and Isobutanol from an Aqueous Solution in the Presence of Sodium Chloride with Molecular Interaction Studies. Journal of Chemical & Engineering Data 2026, 71, 708-717.",
+        "doi": "10.1021/acs.jced.5c00780",
+        "source_id": "khudaida-et-al-2026",
+        "use_basis": "Figure 2 and Tables 2, 5, 6, and 7 model inputs for the 293.15 K, 0.1 MPa, 5 wt% NaCl electrolyte-LLE challenge"
+      },
+      {
+        "citation": "Figiel, P.; Yu, G.; Held, C. Predicting Thermodynamic Properties of Ions in Single Solvents and in Mixed Solvents Using a Modified Born Term within the ePC-SAFT Framework. Industrial & Engineering Chemistry Research 2025, 64, 9406-9418.",
+        "doi": "10.1021/acs.iecr.5c00475",
+        "source_id": "figiel-yu-held-2025",
+        "use_basis": "Khudaida cited ref. 21 convention that the corrected Born SSM+DS solvation factor equals one for ions"
+      },
+      {
+        "citation": "Held, C.; Reschke, T.; Mohammad, S.; Luza, A.; Sadowski, G. ePC-SAFT revised. Chemical Engineering Research and Design 2014, 92, 2884-2897.",
+        "doi": "10.1016/j.cherd.2014.05.017",
+        "source_id": "held-et-al-2014",
+        "use_basis": "Khudaida cited ref. 30 spherical-ion structural convention"
+      },
+      {
+        "citation": "Gross, J.; Sadowski, G. Application of the Perturbed-Chain SAFT Equation of State to Associating Systems. Industrial & Engineering Chemistry Research 2002, 41, 5510-5515.",
+        "doi": "10.1021/ie010954d",
+        "source_id": "gross-sadowski-2002",
+        "use_basis": "Eqs. 2-3 cross-association combining rules evaluated once at 293.15 K with no binary correction parameter"
+      }
+    ]
+  },
+  "bundle_version": 1,
+  "files": [
+    {
+      "bytes": 2090,
+      "path": "bundle.toml",
+      "retained_path": "analyses/reproduction/2026-khudaida/inputs/parameters/bundle/khudaida-2026-figure-2-electrolyte-lle/1/bundle.toml",
+      "sha256": "0306d78b578f3260ef485c40459ee5be1adec15446b1e9f75c2b51d7593947db",
+      "wheel_member": "epcsaft/data/bundles/khudaida-2026-figure-2-electrolyte-lle/1/bundle.toml"
+    },
+    {
+      "bytes": 240,
+      "path": "components.csv",
+      "retained_path": "analyses/reproduction/2026-khudaida/inputs/parameters/bundle/khudaida-2026-figure-2-electrolyte-lle/1/components.csv",
+      "sha256": "0ae7a793524cff50ef0285470b61c1282aad0db287c803882e8cac74ae73c44e",
+      "wheel_member": "epcsaft/data/bundles/khudaida-2026-figure-2-electrolyte-lle/1/components.csv"
+    },
+    {
+      "bytes": 4797,
+      "path": "single.csv",
+      "retained_path": "analyses/reproduction/2026-khudaida/inputs/parameters/bundle/khudaida-2026-figure-2-electrolyte-lle/1/single.csv",
+      "sha256": "c66a460176920dbab620d69b9c442fbceb5193247e491079759b2ef43414ad9d",
+      "wheel_member": "epcsaft/data/bundles/khudaida-2026-figure-2-electrolyte-lle/1/single.csv"
+    },
+    {
+      "bytes": 1558,
+      "path": "pair.csv",
+      "retained_path": "analyses/reproduction/2026-khudaida/inputs/parameters/bundle/khudaida-2026-figure-2-electrolyte-lle/1/pair.csv",
+      "sha256": "7222c0aa883688ceb985d8d34e6a4ff41014cb3c28e06c8a6feddd9314ca4d87",
+      "wheel_member": "epcsaft/data/bundles/khudaida-2026-figure-2-electrolyte-lle/1/pair.csv"
+    },
+    {
+      "bytes": 923,
+      "path": "sites.csv",
+      "retained_path": "analyses/reproduction/2026-khudaida/inputs/parameters/bundle/khudaida-2026-figure-2-electrolyte-lle/1/sites.csv",
+      "sha256": "0725701832d86877d49c7c11f6dd80b07a25feae9a4a7ec0a7392ef24459792a",
+      "wheel_member": "epcsaft/data/bundles/khudaida-2026-figure-2-electrolyte-lle/1/sites.csv"
+    },
+    {
+      "bytes": 3674,
+      "path": "association.csv",
+      "retained_path": "analyses/reproduction/2026-khudaida/inputs/parameters/bundle/khudaida-2026-figure-2-electrolyte-lle/1/association.csv",
+      "sha256": "ea8e7d42383d62ac7f3fa73392112c7d1e3d8fd008e2895a6a78ae928a341161",
+      "wheel_member": "epcsaft/data/bundles/khudaida-2026-figure-2-electrolyte-lle/1/association.csv"
+    },
+    {
+      "bytes": 589,
+      "path": "model.csv",
+      "retained_path": "analyses/reproduction/2026-khudaida/inputs/parameters/bundle/khudaida-2026-figure-2-electrolyte-lle/1/model.csv",
+      "sha256": "e2ec78e9067d6bf6bbb806a29e8814e2e087c73be064bed9b02c19affc73367c",
+      "wheel_member": "epcsaft/data/bundles/khudaida-2026-figure-2-electrolyte-lle/1/model.csv"
+    },
+    {
+      "bytes": 1659,
+      "path": "correlations.toml",
+      "retained_path": "analyses/reproduction/2026-khudaida/inputs/parameters/bundle/khudaida-2026-figure-2-electrolyte-lle/1/correlations.toml",
+      "sha256": "f284b10a36200624fea7f8c36ee0b6db5df891bbbbe0e4eea2ff97928b4cfbf7",
+      "wheel_member": "epcsaft/data/bundles/khudaida-2026-figure-2-electrolyte-lle/1/correlations.toml"
+    }
+  ],
+  "public_fingerprints": {
+    "bundle_fingerprint": "sha256:c675d388fb17ca0c1d875afada046527749fc30ae60dce89f7bc2554d939f406",
+    "selected_parameter_fingerprint": "sha256:b43fac77754d9d5cca8b3db2cbe709892a786d97b756084b167ce126ab4c3007"
+  },
+  "purpose": "installed-catalog",
+  "schema_version": 1,
+  "source_artifact": {
+    "distribution": "epcsaft",
+    "extraction": "Each retained member is copied byte-for-byte from the immutable installed EOS wheel; no EOS source checkout is used.",
+    "version": "0.2.0.dev0",
+    "wheel_filename": "epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+    "wheel_member_prefix": "epcsaft/data/bundles/khudaida-2026-figure-2-electrolyte-lle/1/",
+    "wheel_sha256": "66b7ea8fb29e0a268b555cbdf401c3502517c088669a4157e8f64ab985b59ce9"
+  }
+}

@@ -1,0 +1,7 @@
+case,quantity,kind,value,binary64
+case-6/figure-2-point-7/run-0,message,text,"converged: residual 5.0957303491161567e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 16 iterations, contraction absent, floor 2.1459040012727058e-10, amplification 0",
+case-6/figure-2-point-7/run-1,message,text,"converged: residual 5.0957303491161567e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 16 iterations, contraction absent, floor 2.1459040012727058e-10, amplification 0",
+case-6/figure-2-point-7/run-2,message,text,"converged: residual 5.0957303491161567e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 16 iterations, contraction absent, floor 2.1459040012727058e-10, amplification 0",
+case-7/flash-5918.5286-Pa/run-0,message,text,"converged: residual 1.1786531508163992e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 43 iterations, contraction absent, floor 2.6980472453645263e-09, amplification 0",
+case-7/flash-5918.5286-Pa/run-1,message,text,"converged: residual 1.1786531508163992e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 43 iterations, contraction absent, floor 2.6980472453645263e-09, amplification 0",
+case-7/flash-5918.5286-Pa/run-2,message,text,"converged: residual 1.1786531508163992e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 43 iterations, contraction absent, floor 2.6980472453645263e-09, amplification 0",

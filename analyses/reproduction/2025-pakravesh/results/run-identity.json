@@ -1,0 +1,32 @@
+{
+  "engine": [
+    "a41889b43b611de9634d537abdfa598e4dd41aa0",
+    true
+  ],
+  "native_library": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-789-live-literature-reproductions-the-5/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so",
+  "native_library_sha256": "bd27e11eb164394549e31714682bd8624eceb8bae0915c0ea53b4213da75b1ac",
+  "declared_model": {
+    "m": 7.2069,
+    "sigma_angstrom": 2.8264,
+    "epsilon_over_k_K": 219.94,
+    "epsilon_assoc_over_k_K": 3187.2,
+    "kappa_assoc": 0.0135,
+    "association_scheme": "3B",
+    "molar_mass_kg_mol": 0.119162,
+    "locator": "SI Table S1 p.2; main Table 1 molar mass"
+  },
+  "evidence_label": "numerical verification against printed PC-SAFT model",
+  "numerical_limits": {
+    "pressure_relative": 1e-08,
+    "density_ulps": 8,
+    "common_standard_mu_RT": 1e-08,
+    "defining_rows": 1e-10
+  },
+  "source_sha256": {
+    "si-reference.json": "1c6bd7c3320a7c1a90859cc13108385ca7e4be22fa3e2eec2fa070f967022fd7",
+    "pakravesh-2025-declared-conditions.csv": "211126a2559e3ca908994529189f53c9d4b1be46119e72aaadc80d1bd0b3ba38",
+    "si-table-s6-mdea.csv": "667d5ab07d9af3c3c0b47eaac4fdea9984e7c194f46b85f74c974217be5253bb",
+    "pakravesh-2025-source-ledger.json": "3c32daf0081afbe89ebfc8979209d0b0d4917b1a5c666c1b016f5e56a07182e2",
+    "si-table-s9-mdea.csv": "5f1062da8e9a3bcd968c45f58a7c3c6774165d58d1525149becd3064024d5b68"
+  }
+}

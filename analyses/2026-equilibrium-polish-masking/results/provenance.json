@@ -1,0 +1,45 @@
+{
+  "commit": "d2a4457e2cda4dfe5b58db8a64360d5706288e06",
+  "source_main": "c1067020",
+  "sha256": {
+    "engine/native/equilibrium/gibbs_minimizer.cpp": "678c6301230eeed8fb612d83a8fe9862f4635f7aec13e1cf6128d1a9cb54756d",
+    "engine/native/equilibrium/request_compile.cpp": "0fa343db265f14d928c1140fe66cd8c7a1784f18d4a54585391ba5735b33237c",
+    "engine/native/equilibrium/problem.hpp": "ab3d2bc0750144d9b660a756b7b0f1e6e6ce0418d33e946cd57b4d0868528f8f",
+    "engine/native/core/numerical_policy.hpp": "6ca0ec76b17bd64736e6939c7fe2d6753235e726c2fdef45a40d8dba6257b6da",
+    "engine/tests/equilibrium/test_trace_reliability.py": "01d51690d604086f8e672b5d8d903fdc9023c77e84bf4213ecdb7e5e3d27f236",
+    "build/issue-272/probe.cpp": "5941ddf6344684d9dddd92d537781fb706f13f7bd620176ca0cb8831d0ea4946",
+    "build/issue-272/gibbs_minimizer.cpp": "341568bc7db679961e27673e30d9fa78f046383a3de71403827ea4fe4c545604",
+    "build/issue-272/masking.py": "4400916dae9f6c8c83cde3ca1396e1e390eb69997c3c77b0b9f7206b0e54ed31"
+  },
+  "threads": 1,
+  "build_jobs": 2,
+  "baseline_wheel_sha256": "e8ad39e0c5d7da471a6d3ace6ff62d60518c57bc1c96fe5198d8bf18747ba8b5",
+  "reference_wheel_sha256": "e28d258df06eac39711c59a79f9ce2b69fc8ac7565637bfba0dbef21863d8dc7",
+  "ordinary_vs_disposable_main_max_physical_relative_change": 0.0,
+  "method": "Disposable instrumented gibbs_minimizer.cpp linked against the merged-main native archive; rule 0 versus pre-Jacobian norm rule 2 with margin 10.",
+  "input": "test_trace_inventory_below_the_composition_box, inventory=1e-12 mol, unchanged declaration in engine/tests/equilibrium/test_trace_reliability.py:158",
+  "T_K": 350.0,
+  "P_Pa": 200000.0,
+  "inert_feed_mol": 1.0,
+  "reacting_inventory_mol": 1e-12,
+  "equilibrium_constant": 3.0,
+  "row_tolerance": 1e-10,
+  "perturbation": null,
+  "probe_command": "bash build/issue-272/locked-run.sh bash build/issue-272/masking-body.sh",
+  "candidate_wheel": null,
+  "production_changes": 0,
+  "disposition": "The original input masks a material-balance row and exceeds the 1e-12 state-preservation limit. Production implementation stopped under Design amendment 1.",
+  "limitations": [
+    "Numerical verification of this manufactured neutral reacting vapor; no physical validation.",
+    "The unchanged baseline has approximately 4.68e-9 relative error against the analytic trace composition; the required 1e-12 comparison is between returned states.",
+    "No production candidate, paired timing, check-all, check-affected or independent delivered review was run."
+  ],
+  "evidence_sha256": {
+    "trials.csv": "93ebac323d3038e9a7ac65283feb2adb911cd7b7efc4b564c0f8860715911311",
+    "operands.csv": "5c0de14ed11a1f921c175d21e0e320835132588616b35f750eea0cc78a2824eb",
+    "rows.csv": "7b7844fe387169df3adad2bfa22bc77bcc6d3946c63f1f02625715d14272b76a",
+    "work.csv": "94e0a4914847c35ccfd398a24388f88d4eb3a3c2d3afcb453a7a3af0386de62d",
+    "physical-state-comparison.csv": "a46fc92159a9b1498d0960408e9ef9bfd99711d1617c49c4deda4063516b7f03",
+    "steps.csv": "56dfc409da4d3086a96db38f5676352431b9f4d37c40608552bad36f9b73e727"
+  }
+}

@@ -1,0 +1,72 @@
+{
+  "accounting_base": "163c96a736b784a2c47cf9aa640d1d2b89a3486b",
+  "gross_added_analysis_executable_lines": 70,
+  "ceiling": 70,
+  "line_counts": {
+    "analyses/2026-hydrochloric-acid-chloride-basis/inputs/fit-declaration-issue-798-retrial.json": {
+      "added": 17,
+      "removed": 0
+    },
+    "analyses/2026-hydrochloric-acid-chloride-basis/scripts/activity.cpp": {
+      "added": 6,
+      "removed": 2
+    },
+    "analyses/2026-hydrochloric-acid-chloride-basis/scripts/present.py": {
+      "added": 15,
+      "removed": 0
+    },
+    "analyses/2026-hydrochloric-acid-chloride-basis/scripts/run.py": {
+      "added": 4,
+      "removed": 3
+    },
+    "analyses/2026-hydrochloric-acid-chloride-basis/scripts/score.py": {
+      "added": 28,
+      "removed": 0
+    }
+  },
+  "engine_lines_added": 0,
+  "stage1_declaration_and_results_unchanged": true,
+  "outcome": "identified; 2a fail; stopped before reserved sources, 2b, /2 replay or /3",
+  "checks": {
+    "tools/check-affected.sh origin/main": {
+      "exit_code": 0,
+      "log": "build/issue-798/check-affected-retrial.log",
+      "log_sha256": "fd139633cbbb35c612f52107b05f76599d5d0995cab28390b7ba64727097e002"
+    },
+    "python3 tools/check-analysis-layout.py": {
+      "exit_code": 0,
+      "log": "build/issue-798/check-analysis-layout-retrial.log",
+      "log_sha256": "35a769a60eead75e0eeca0ed64cc147283eeca1d056e25120e1bd169e32c3b58"
+    },
+    "python3 tools/check-notebook-numbers.py analyses/2026-hydrochloric-acid-chloride-basis/notebook.qmd": {
+      "exit_code": 0,
+      "log": "build/issue-798/check-notebook-numbers-retrial.log",
+      "log_sha256": "de8151218a4198c48eab9c985186f52c74e31c725f79302598878c8e568ca85b"
+    },
+    "python3 tools/check-notebook-numbers.py": {
+      "exit_code": 0,
+      "note": "No default notebook selection; targeted check recorded separately."
+    }
+  },
+  "frozen_records_sha256": {
+    "build/issue-798/retrial-kHCl-1.md": "1d2083733f5843a20ef0e90055e51b9b9567a120afbacb8e11bcd4c74316687e",
+    "build/issue-798/design-r2.md": "f075b5cdb63ec1ecda1fd58bc3c20e7a1788b7e95dd22e57ade43b226f83b59a",
+    "build/issue-798/design-stage2.md": "2f4ae66da8ab42084b3100711e4e47fe70d26f47c2d9653a5f4fef657f2a13b5",
+    "build/issue-798/stage1-delivered-review-r1.md": "9a89aab4b6ba91ef6e87d361fc87a0625e4633f6e49cc668bb5593d5103945c9"
+  },
+  "final_presentation_and_scoring_sha256": {
+    "analyses/2026-hydrochloric-acid-chloride-basis/scripts/present.py": "64e11be76c33f9766a43f67ca2240cec88cb751b6d09bd7ccac9b4a203167eb4",
+    "analyses/2026-hydrochloric-acid-chloride-basis/scripts/score.py": "74a29b39c6d756d51339752e900692e4e6bcdb01d9d3338a6c7079c44053b1c2"
+  },
+  "execution_identity_note": "native-identity.json identifies the fit execution; the final retained-value scorer and presentation have separate hashes here.",
+  "independent_delivered_review": "remaining with lead",
+  "scoring_verification": {
+    "declaration_only_H_Cl_value_and_description_changed": true,
+    "stage1_RMS_exactly_reproduced": true,
+    "missing_prediction_refused": true,
+    "nonfinite_prediction_refused": true,
+    "unavailable_observation_refused": true,
+    "native_and_producer_sources_match_execution_hashes": true
+  },
+  "notebook_html": "build/issue-556/quarto/2026-hydrochloric-acid-chloride-basis/notebook.html"
+}

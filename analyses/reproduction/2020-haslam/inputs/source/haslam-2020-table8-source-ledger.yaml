@@ -1,0 +1,63 @@
+claim: physical comparison with Hamer–Wu; Haslam Table 8 predictions are not recomputed
+sources:
+  haslam_2020:
+    doi: 10.1021/acs.jced.0c00746
+    zotero_parent: 7JTIJER8
+    pdf_item: JGRVI5AH
+    pdf_sha256: ef1d694c61caa1cc9665a9569223d2a7acf3c9b834feea1de9afd9c08e433044
+    table_8: PDF page 19, printed page 5880
+    condition: Figure 7 discussion, printed page 5882; Table 8 does not separately state pressure
+    parameters: Tables 2–4; source-only Mie records, never ePC-SAFT inputs
+  hamer_wu_1972:
+    doi: 10.1063/1.3253108
+    zotero_parent: 28NPJ5H6
+    pdf_item: 5RS9QAMK
+    pdf_sha256: a20e0029c929b4e1df2cc8cd7aba10ecbbada3dd0f35689a102d16d18fc34ca6
+    markdown_sha256: 289c44242c919bc5902dc0eff395c20d29a7285e20c9c8e3432cad48461e2d33
+    official_nist_pdf_sha256: 8399084b29b4db4ce35ab47ed679446dbedb9bf1686f99f43fce7b2073ee4beb
+    byte_stream_note: Zotero and NIST are distinct byte streams of the same article
+    definition: Eq. 3.5, printed page 1051
+    tables: [9, 10, 11, 16, 17, 18, 28, 29, 30]
+    character: critically evaluated thermodynamically consistent composite; no independent raw-measurement claim
+  figiel_2025:
+    doi: 10.1021/acs.iecr.5c00475
+    zotero_parent: YEENX35P
+    markdown_item: 2M74BKJG
+    supporting_information_item: D5NILP7Y
+    statistic_locator: supporting information section S2, Table S2
+    approach: s-SSM+DS-f
+    aqueous_nabr_miac_aard_percent: 8.78
+    statistic_rows: exact rows and weights behind this statistic are unspecified
+    aqueous_concentration_comparison: main Figure 5, PDF page 7, printed page 9412
+transcriptions:
+  authority: accepted issue-726 design and independently Ready source inspection
+  fidelity_owner: scripts/check_haslam_2020_source_packet.py pins all three accepted CSV hashes
+  row_locators: each CSV owns its table, page and row identities
+  correction: NaBr has fifteen rows on PDF page 22 / printed 1067 and eight on PDF page 23 / printed 1068
+  kbr_ocr: gamma at 1.4 mol/kg is 0.602; visually verified
+selection:
+  exact_haslam_rows: not independently established for any salt/property selection
+  matched_counts: same reference and count only imply a possible shared grid
+  osmotic_sources: see references column of haslam-2020-table8.csv; several differ from Hamer–Wu
+  ref_185: Childs–Platford 1971 remained unavailable in the earlier ledger; acquisition would not establish Haslam row selections
+conditions:
+  temperature_K: 298.15
+  pressure_Pa: 101000
+  packet_domain_pressure_Pa: 100000
+  pressure_extrapolation_percent: 1
+  pressure_error_bound: not established
+  molality_basis: formula units per kg water, fully dissociated monovalent ions, stoichiometry (1,1)
+  mean_ionic_basis: molality scale, tends to unity at infinite dilution
+  solvent_reference: pure liquid water at the same temperature and pressure
+  osmotic_definition_owner: engine/docs/equations.md#practical_osmotic_coefficient
+parameters:
+  owner: existing Figiel packet documents, selected without refitting
+  reference_packet: figiel-2025-reference-electrolytes/4
+  iodide_packet: figiel-2025-aqueous-iodides/3
+  LiI: no source-backed Li+/I- pair in either selected packet
+  design_versions: both /2 selections were superseded; current accepted declarations used by owner instruction
+  version_changes: current packets declare ionic_dispersion; reference /4 also declares the Wolbach–Sandler cross-association size factor; no refitting or packet edits
+historical:
+  provenance: README.md identifies the prior wheel; results/historical holds its original values and figures
+  prior_source_ledgers: Git at 608dcdc51 retains superseded partial-source assertions and one-row duplicate
+  status: historical figures do not establish exact Haslam source membership or current Engine capability

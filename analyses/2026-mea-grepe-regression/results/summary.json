@@ -1,0 +1,44 @@
+{
+  "fit_input_sha256": "sha256:3aa0e900f78cb1f389e6966c23c2097dc0a9659319a352d5870db06510f65562",
+  "parameter_input_sha256": "sha256:679a90deb05242938bd3c52a51f2a81bb429344e9aacfdf09b8b566cc005c791",
+  "observation_input_sha256": "sha256:b45dc2c81b08d6594f313ec49f1e7431b75a433b12b11463e03660412f4c23bc",
+  "wheel_sha256": "sha256:79396bea906d7e4ca35485a066759764772e7fc51b41ed330d86f50ca15a1c10",
+  "state_count": 44,
+  "target_count": 131,
+  "backend": "simultaneous_sparse_full_space",
+  "elapsed_seconds": 95.8862459030006,
+  "accounting": {
+    "input_rows": 131,
+    "included_rows": 131,
+    "dropped_rows": 0,
+    "attempted_starts": 1,
+    "accepted_starts": 1,
+    "failed_starts": 0,
+    "evaluated_row_trials": 131,
+    "rejected_row_trials": 0,
+    "failed_row_trials": 0,
+    "non_evaluable_trials": 0
+  },
+  "fit_digest": "sha256:428de0174f246ab35f724d85d3214ea3d3ff268ab855543aea83a1bdb9a9a9f4",
+  "candidate_parameter_identity": "sha256:78be4510e3e27135a2e35f36b88135bc7f98164647f88742acba404f075c0027",
+  "fitted_values": [
+    [
+      "pair/carbon-dioxide/monoethanolamine/k_ij",
+      0.10159970424983134,
+      "dimensionless"
+    ],
+    [
+      "component/protonated-monoethanolamine/segment_diameter",
+      4.365905218305267,
+      "angstrom"
+    ],
+    [
+      "component/carbamate-anion/segment_diameter",
+      5.1809945813168845,
+      "angstrom"
+    ]
+  ],
+  "solver_status": "solve_succeeded",
+  "iterations": 26,
+  "cost": 0.0343599102370016
+}

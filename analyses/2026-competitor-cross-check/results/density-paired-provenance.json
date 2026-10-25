@@ -1,0 +1,339 @@
+{
+  "source_commit": "86b1ef1473618c7bed8322ec129ac379e5f2ae63",
+  "wheels": {
+    "A": "da6897394f85e0fd2a487899ad2296e209f2ee18c591cdfcc5aa7f68cf3ff382",
+    "B": "f10774c1ff665861e80e3449a9ad3bb5bb5557d002546e16596db108663b811d"
+  },
+  "reference_wheel_sha256": "e28d258df06eac39711c59a79f9ce2b69fc8ac7565637bfba0dbef21863d8dc7",
+  "wheel_B_origin": "Built from merged commit 86b1ef14, including main 8f5f5685.",
+  "method": {
+    "pairs": 6,
+    "order": "A,B,A,B,A,B,A,B,A,B,A,B",
+    "lease": "One A/B pair per short lease, as owner-authorized after the initial admission wait",
+    "warmups": 5,
+    "samples": 25,
+    "niceness": 19,
+    "cpu": 0,
+    "threads": 1,
+    "accepted_seed": "Cold accepted result on each wheel, fixed across accepted-start samples",
+    "tracing": "Untimed after samples; no tracing inside clocks",
+    "spread": "Minimum, maximum, and median absolute deviation of six paired percentage differences"
+  },
+  "leases": {
+    "build": {
+      "build_body_exit": 0,
+      "waiting_restore_guard_exit": 143,
+      "parent_lease_exit": 90,
+      "owner_authorized_pressure_threshold": 100,
+      "restoration_memory_max": "2G",
+      "restoration_log": "build-manual-restore.log",
+      "restored_verified_before_release": true,
+      "restored_utc": "2026-10-05T23:02:20Z",
+      "released_utc": "2026-10-05T23:02:20Z",
+      "reason": "The original admission waiter was stopped after the authorized small restoration succeeded; its termination is not an installation or verification failure."
+    },
+    "timing": [
+      {
+        "pair": 1,
+        "acquired_utc": "2026-10-05T23:40:48Z",
+        "restored_verified_before_release_utc": "2026-10-05T23:41:24Z",
+        "exit_code": "0 0"
+      },
+      {
+        "pair": 2,
+        "acquired_utc": "2026-10-05T23:45:03Z",
+        "restored_verified_before_release_utc": "2026-10-05T23:45:44Z",
+        "exit_code": "0 0"
+      },
+      {
+        "pair": 3,
+        "acquired_utc": "2026-10-05T23:46:05Z",
+        "restored_verified_before_release_utc": "2026-10-05T23:46:47Z",
+        "exit_code": "0 0"
+      },
+      {
+        "pair": 4,
+        "acquired_utc": "2026-10-05T23:48:01Z",
+        "restored_verified_before_release_utc": "2026-10-05T23:48:51Z",
+        "exit_code": "0 0"
+      },
+      {
+        "pair": 5,
+        "acquired_utc": "2026-10-05T23:48:51Z",
+        "restored_verified_before_release_utc": "2026-10-05T23:49:34Z",
+        "exit_code": "0 0"
+      },
+      {
+        "pair": 6,
+        "acquired_utc": "2026-10-05T23:49:34Z",
+        "restored_verified_before_release_utc": "2026-10-05T23:50:27Z",
+        "exit_code": "0 0"
+      }
+    ],
+    "documentation_initial": {
+      "acquired_utc": "2026-10-06T00:02:56Z",
+      "restored_verified_before_release_utc": "2026-10-06T00:03:00Z",
+      "exit_code": "2 0",
+      "readiness_passed": true,
+      "prose_configuration_failure": "configuration error: docs/scientific/CONTEXT.md: terminology table with Avoid, Prefer, Meaning, Scope, Exceptions, Evidence not found",
+      "correction": "Use the plugin-wide checker rules; the repository has a sourced Term/Meaning vocabulary, not the six-column scoped-rule table expected by --context. Inspect its scientific terminology manually."
+    },
+    "documentation_completion": {
+      "acquired_utc": "2026-10-06T00:03:45Z",
+      "restored_verified_before_release_utc": "2026-10-06T00:04:08Z",
+      "exit_code": "0 0"
+    },
+    "live_resource_refresh": {
+      "acquired_utc": "2026-10-06T00:05:23Z",
+      "restored_verified_before_release_utc": "2026-10-06T00:05:45Z",
+      "exit_code": "0 0",
+      "restoration_log": "density-paired-render-final-restore.log",
+      "reason": "Refresh linked retained tables after LF normalization and provenance hash correction; no calculation rerun."
+    }
+  },
+  "restoration_exception": "Owner authorized pressure threshold 100 only for reference restoration, under agent-heavy with a 2G cap and one thread; numerical runs retain the normal guard.",
+  "runner_sha256": {
+    "measure.py": "1780b3823bbcee79e5027dad142ced5f061cda8493e00ff26551a601b71bb61c",
+    "one-pair-body.sh": "fec41e5875ae6243d7a21b5fc148f20894cf2244cd0883695b5337d6f45c62ff",
+    "one-pair-lease.sh": "d4aad3adbe7ec558788e7cc00a14a08545f84f2e1c606c4ce7795f8b108bd90a",
+    "retain.py": "0c300993d7d166d7a8ae16a3b508b129a17981ee461974fec486442257edb64c"
+  },
+  "files": [
+    {
+      "path": "density-paired-traces-1-A.json.gz",
+      "sha256": "f0abbf691844a723120a0ac8916bb215a8bc56fbf017778933d302a814c19c9d"
+    },
+    {
+      "path": "density-paired-host-1-A.json",
+      "sha256": "13217b3d0ea30d2fc855cbb63e1ff015accbcbea7c43ff6ab95e40d9973a8c72"
+    },
+    {
+      "path": "density-paired-traces-1-B.json.gz",
+      "sha256": "179241cac1d64c1a9442c3aaa295594102cfdf87dd9fee769aab7f0a5485711a"
+    },
+    {
+      "path": "density-paired-host-1-B.json",
+      "sha256": "87bf076a62636b90fcdca18a226af88da43a3886eedb24d72d51e8ba01f68b28"
+    },
+    {
+      "path": "density-paired-traces-2-A.json.gz",
+      "sha256": "671fab7b73d413d186bb8cd37f5e1edf9a85ff44e64eb00b6ec5fcd44498f829"
+    },
+    {
+      "path": "density-paired-host-2-A.json",
+      "sha256": "9691fc1384776c9e0513db4cefe6054fb026adbc8b6d2badeed0d250832eaf28"
+    },
+    {
+      "path": "density-paired-traces-2-B.json.gz",
+      "sha256": "94d20e08c388033cc9a3794226525535ca8ebf2456df1ccf474b1a8b01705dcc"
+    },
+    {
+      "path": "density-paired-host-2-B.json",
+      "sha256": "3775b32859ffe0abb08fa0e53b372fc6629434dfeec4919439f37995a01b4569"
+    },
+    {
+      "path": "density-paired-traces-3-A.json.gz",
+      "sha256": "c9eb465803c04383c73a7c47f7ffd498bffebd0af8e1a164a2b5e81c9324ae68"
+    },
+    {
+      "path": "density-paired-host-3-A.json",
+      "sha256": "ab8c1a0933cb0607662d29f952b81d4fbc389cb8429f65b5b7d0857b92f27961"
+    },
+    {
+      "path": "density-paired-traces-3-B.json.gz",
+      "sha256": "dcfaf89194cf33255d9594b9718b0c48827159b0955b7b27f782c5cc5f805b5d"
+    },
+    {
+      "path": "density-paired-host-3-B.json",
+      "sha256": "ab52cb6d1abfef0a03823f2f323828a2394318eb9979259c207e05864cd176ad"
+    },
+    {
+      "path": "density-paired-traces-4-A.json.gz",
+      "sha256": "4047d97aa5bf2a23d7befdaa281a7f564a637f0249581ea32cded8f13f99b394"
+    },
+    {
+      "path": "density-paired-host-4-A.json",
+      "sha256": "d70cc2826d3ce1c22af68b3c6e2628fa98675ba6d4caf8dd2bdf87255514f362"
+    },
+    {
+      "path": "density-paired-traces-4-B.json.gz",
+      "sha256": "e6107fa68d74424c36ed53e6af8cc0f3950b8480764c3efbe9ee7744a91eb992"
+    },
+    {
+      "path": "density-paired-host-4-B.json",
+      "sha256": "8c6a5d0eb475c52c116e477411f08406714053602290f9c3a5d20b29cd264394"
+    },
+    {
+      "path": "density-paired-traces-5-A.json.gz",
+      "sha256": "f77a9089d6d6324a452b380380825db0b77b11ea4754cd2dc03e7f3e3c732f4d"
+    },
+    {
+      "path": "density-paired-host-5-A.json",
+      "sha256": "78482eaf41c972367a1e1b509f01a6331755995bd61210e931d5cb4c3203bbe8"
+    },
+    {
+      "path": "density-paired-traces-5-B.json.gz",
+      "sha256": "712b83156c5b2fbfb5a7472a9df1056c8401948a2e15548d0cee53605329dbc3"
+    },
+    {
+      "path": "density-paired-host-5-B.json",
+      "sha256": "f37d132d567a35b4e2a9183e0341588a6bfbe06046a84ddfb3793155a8024b98"
+    },
+    {
+      "path": "density-paired-traces-6-A.json.gz",
+      "sha256": "5d94e745c110e390512a66f4acb8bce174d96979111669bdf49603c2573a5238"
+    },
+    {
+      "path": "density-paired-host-6-A.json",
+      "sha256": "48216b34f7432730b72ba5011799b33946cbf21a3cd536020f06af797943570d"
+    },
+    {
+      "path": "density-paired-traces-6-B.json.gz",
+      "sha256": "84530007212c154f494e4ee2a8ba796a167b7b2f069373bbe94a8a0fa95608e6"
+    },
+    {
+      "path": "density-paired-host-6-B.json",
+      "sha256": "88e252ba5112bd9b77a3fac3b54f362c903e64c15110c32d81df0cb641f77849"
+    },
+    {
+      "path": "density-paired-returned-values.csv.gz",
+      "sha256": "b69afead2714458b61de04bc27ad525c9a00d96dc1c0039e24d43ada0fbc98f7"
+    },
+    {
+      "path": "density-paired-check-all.log.gz",
+      "sha256": "a5700208bec6848aadc4e4cfc9d742855a66ba1ae5409a1a76b44ca4da3b1a6e"
+    },
+    {
+      "path": "density-paired-source-identity.json",
+      "sha256": "0b465d18270616d443af3638a895c71ca0f318ec3a52e300c6cf231b5f759498"
+    },
+    {
+      "path": "density-paired-compile-settings.json",
+      "sha256": "7dc457541ccf083602235986974aa6cc34f1a01e747e99be8e2c5e0b84ee8c88"
+    },
+    {
+      "path": "density-paired-physical-inputs.json",
+      "sha256": "d7166a05dc994df7acb5b59e18535a12bd963dc20322e0f38b34cd8359e7b2a4"
+    },
+    {
+      "path": "density-paired-wheel-member-differences.json",
+      "sha256": "8c6b4a86b0eb2b1f851986e24e3d12f558d0a92e387cdd7c62b1414296ad2899"
+    },
+    {
+      "path": "density-paired-owner.diff",
+      "sha256": "46987380999f203327a96366fb308ab99f64c829740b2f26d0a7d54ae11ebe7e"
+    },
+    {
+      "path": "density-paired-changed-count.json",
+      "sha256": "1fa75072917393c28cf8098f24c42ee505f47f39ba901d2804b89461d0b51eb7"
+    },
+    {
+      "path": "density-paired-build-restore.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "density-paired-build-manual-restore.log",
+      "sha256": "a0c7e0d3b01bf5fd15a4761a96050969552e6aa572c4d7253bab7c74c6b84873"
+    },
+    {
+      "path": "density-paired-build-restoration-disposition.json",
+      "sha256": "136ca95d03dc731d62799085fd993b857f2815390208f3d366d87c7799773f39"
+    },
+    {
+      "path": "density-paired-pair-1-attempt-1-restore.log",
+      "sha256": "8b399b664399bcfdc178f27bc6a541761507c5f9bd23ebb2dea8c8e80de05073"
+    },
+    {
+      "path": "density-paired-pair-2-attempt-1-restore.log",
+      "sha256": "3b16966481470a45ab7bd70ee3f729fe59aa512f7ff61cfb578a8cb88f65bb7f"
+    },
+    {
+      "path": "density-paired-pair-3-attempt-1-restore.log",
+      "sha256": "06d47ac2f839d43f379c80e6cb820af94fcffecd923d0c6d10e14bc1482f6ff9"
+    },
+    {
+      "path": "density-paired-pair-4-attempt-1-restore.log",
+      "sha256": "1b3e16d8b0ac2fc50a4d23c49fd155a773b19ffe363a851c2c18702d43be661f"
+    },
+    {
+      "path": "density-paired-pair-5-attempt-1-restore.log",
+      "sha256": "e6551ea52afd5b117cc72aee6bd7922fb1f7fe27e4581aa7a6e4dda87420b05e"
+    },
+    {
+      "path": "density-paired-pair-6-attempt-1-restore.log",
+      "sha256": "7754a1ef41bc5371bde1d662743539f9e97bcb577bde826d0861caa11032ccc9"
+    },
+    {
+      "path": "density-paired-samples.csv",
+      "sha256": "6bf8563e7dadd2744225d41184425a83e7badb1663ab0bf0489fcabd92d27d4f"
+    },
+    {
+      "path": "density-paired-pairs.csv",
+      "sha256": "75fb7751a392f6f6e728bdad41cdee3f42b82dd8c8c4ffb6d79e8c8272c145f1"
+    },
+    {
+      "path": "density-paired-summary.csv",
+      "sha256": "7553952464a4f922de9b0f383c2939dc55d08de6d75ff5727af000d995b6f3e6"
+    },
+    {
+      "path": "density-paired-output-checks.csv",
+      "sha256": "c354b033a3e67a24b929d61ec35fce53d5cc42bdefaabcdc64066d5307278d01"
+    },
+    {
+      "path": "density-paired-first-calls.csv",
+      "sha256": "060f5e57f15f2ba2de476b45b6c979765803daadcf7661393b42381341a6a82f"
+    },
+    {
+      "path": "density-paired-host-observations.csv",
+      "sha256": "0ca7ffc9595a8864bc82e6d6039190e206838027ae2fdfb103d5b8c7b767452e"
+    },
+    {
+      "path": "density-paired-polish-trials.csv",
+      "sha256": "ee8964e49f5afad7ec9113b47a1a21f21d9d4b89753d72d8348a45cea6ac4be2"
+    },
+    {
+      "path": "density-paired-check-affected.log.gz",
+      "sha256": "e700939427d78033fa8814cef236d30eaf31bd23cf5cbf221caf0f13d826fd09"
+    },
+    {
+      "path": "density-paired-prose-check.log.gz",
+      "sha256": "4001220c73a37712c4e1641242b2fc8c889ff3d63e4f308d0586ccfcc7863e5a"
+    },
+    {
+      "path": "density-paired-render.log.gz",
+      "sha256": "91e9169a646351387e15ccedd3a42cab4af42534777f756748d8f6b7aa434dde"
+    },
+    {
+      "path": "density-paired-html-text-check.log",
+      "sha256": "ff048ac61d6e93e926eac24e57aac930dde585803779be4024e9ad71a776e7a6"
+    },
+    {
+      "path": "density-paired-doc-restore.log",
+      "sha256": "e149da9624802de4cd7cfb3c33390c63159a76b5967a3c61727aa179c81841c8"
+    },
+    {
+      "path": "density-paired-doc-finish-restore.log",
+      "sha256": "7ac95a1aba4dd4d5dbc55f92e4cd41701bd3e2ede36de6756f865512078fd13a"
+    },
+    {
+      "path": "density-paired-render-final-restore.log",
+      "sha256": "675f6ab91b5eab4c21bdc71f40f2213e6339f58ea484878bf173826d752d10cc"
+    }
+  ],
+  "limits": [
+    "Numerical verification and timing on this host, not physical validation.",
+    "Sequential A then B in each pair controls settings and reduces time drift but cannot eliminate host-load or fixed-order bias.",
+    "Cold medians repeat a cold solver start on a prepared model; first-call times are retained separately.",
+    "Accepted starts use each wheel's own accepted state; density can legitimately change iterates."
+  ],
+  "normal_resource_policy": "The user-replaced helper uses six slots and at least 4 GiB available; machine-wide PSI is recorded but is not an admission gate.",
+  "normal_resource_helper_sha256": "d0c3b236f3ca5836814289b5fc8ec72a28c5da50b67c26bd3ac25296db655004",
+  "documentation_checks": {
+    "readiness": "EPCSAFT_CHECK_SOURCE_ONLY=1 bash tools/check-affected.sh HEAD",
+    "prose": "CSE deterministic prose check of README.md and notebook.qmd: 24 plugin-wide rules pass; scientific-context vocabulary inspected manually, no six-column scoped-rule configuration is present",
+    "render": "CSE render.sh analyses/2026-competitor-cross-check/notebook.qmd --no-execute",
+    "HTML_text": "Corrected 42 count, both wheel identities and all five timing rows inspected",
+    "HTML_sha256": "f12d03af8b6d9d3723ecbe49db27811eeaff266b609342401797ff2f2ddec116"
+  },
+  "CSV_retention": "LF line endings, matching committed Git bytes; measurement values and rows are unchanged."
+}

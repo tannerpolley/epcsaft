@@ -1,0 +1,146 @@
+[
+  {
+    "case": "case-6/figure-2-point-7",
+    "seed": "positive-neutral-base",
+    "expected": "admitted",
+    "evidence": "no_resolved_descent",
+    "tpd_over_rt": 0.0,
+    "matches_design": true
+  },
+  {
+    "case": "case-6/figure-2-point-7",
+    "seed": "near-pure-0",
+    "expected": "admitted",
+    "evidence": "no_resolved_descent",
+    "tpd_over_rt": 3.552713678800501e-15,
+    "matches_design": true
+  },
+  {
+    "case": "case-6/figure-2-point-7",
+    "seed": "near-pure-1",
+    "expected": "admitted",
+    "evidence": "no_resolved_descent",
+    "tpd_over_rt": 0.0,
+    "matches_design": true
+  },
+  {
+    "case": "case-6/figure-2-point-7",
+    "seed": "near-pure-2",
+    "expected": "admitted",
+    "evidence": "no_resolved_descent",
+    "tpd_over_rt": 3.774758283725532e-15,
+    "matches_design": true
+  },
+  {
+    "case": "case-7/bubble",
+    "seed": "positive-neutral-base",
+    "expected": "admitted",
+    "evidence": "no_resolved_descent",
+    "tpd_over_rt": -5.684341886080802e-14,
+    "matches_design": true
+  },
+  {
+    "case": "case-7/bubble",
+    "seed": "near-pure-0",
+    "expected": "unresolved",
+    "evidence": "unresolved",
+    "tpd_over_rt": null,
+    "matches_design": true
+  },
+  {
+    "case": "case-7/bubble",
+    "seed": "near-pure-1",
+    "expected": "admitted",
+    "evidence": "no_resolved_descent",
+    "tpd_over_rt": -8.526512829121202e-14,
+    "matches_design": true
+  },
+  {
+    "case": "case-7/bubble",
+    "seed": "near-pure-2",
+    "expected": "admitted",
+    "evidence": "no_resolved_descent",
+    "tpd_over_rt": -5.684341886080802e-14,
+    "matches_design": true
+  },
+  {
+    "case": "case-7/flash-5918.5286-Pa",
+    "seed": "positive-neutral-base",
+    "expected": "admitted",
+    "evidence": "no_resolved_descent",
+    "tpd_over_rt": 2.842170943040401e-14,
+    "matches_design": true
+  },
+  {
+    "case": "case-7/flash-5918.5286-Pa",
+    "seed": "near-pure-0",
+    "expected": "unresolved",
+    "evidence": "unresolved",
+    "tpd_over_rt": null,
+    "matches_design": true
+  },
+  {
+    "case": "case-7/flash-5918.5286-Pa",
+    "seed": "near-pure-1",
+    "expected": "admitted",
+    "evidence": "no_resolved_descent",
+    "tpd_over_rt": 0.0,
+    "matches_design": true
+  },
+  {
+    "case": "case-7/flash-5918.5286-Pa",
+    "seed": "near-pure-2",
+    "expected": "admitted",
+    "evidence": "no_resolved_descent",
+    "tpd_over_rt": 5.684341886080802e-14,
+    "matches_design": true
+  },
+  {
+    "case": "case-7/liquid-8877.7929-Pa",
+    "seed": "positive-neutral-base",
+    "expected": "admitted",
+    "evidence": "no_resolved_descent",
+    "tpd_over_rt": 0.0,
+    "matches_design": true
+  },
+  {
+    "case": "case-7/liquid-8877.7929-Pa",
+    "seed": "near-pure-0",
+    "expected": "unresolved",
+    "evidence": "unresolved",
+    "tpd_over_rt": null,
+    "matches_design": true
+  },
+  {
+    "case": "case-7/liquid-8877.7929-Pa",
+    "seed": "near-pure-1",
+    "expected": "admitted",
+    "evidence": "no_resolved_descent",
+    "tpd_over_rt": -1.1368683772161603e-13,
+    "matches_design": true
+  },
+  {
+    "case": "case-7/liquid-8877.7929-Pa",
+    "seed": "near-pure-2",
+    "expected": "admitted",
+    "evidence": "no_resolved_descent",
+    "tpd_over_rt": -8.526512829121202e-14,
+    "matches_design": true
+  },
+  {
+    "case": "case-6/aqueous-salt-one-liquid",
+    "seed": "positive-neutral-base",
+    "expected": "admitted",
+    "evidence": "no_resolved_descent",
+    "tpd_over_rt": 5.329070518200751e-15,
+    "matches_design": true
+  },
+  {
+    "case": "case-6/aqueous-salt-one-liquid",
+    "seed": "near-pure-0",
+    "expected": "admitted",
+    "evidence": "no_resolved_descent",
+    "tpd_over_rt": 7.993605777301127e-15,
+    "matches_design": true
+  }
+]

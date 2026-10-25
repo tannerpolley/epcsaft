@@ -1,0 +1,44 @@
+comparison,quantity,unit,model,reference,absolute_error,atol,rtol,passed,inputs
+r1-f2/coupled-roundtrip/9,diameter,angstrom,2.8160000000000003,2.8160000000000003,0.0,5.002220859751106e-15,0,True,"{""v"":1.0000000000000009}"
+r1-f2/coupled-roundtrip/1,diameter,angstrom,3.2,3.2,0.0,5.684341886080802e-15,0,True,"{""v"":1.0000000000000009}"
+r1-f2/coupled-roundtrip/8,diameter,angstrom,2.8160000000000003,2.8160000000000003,0.0,5.002220859751106e-15,0,True,"{""v"":1.0000000000000009}"
+r1-f2/coupled-disagreement,verdict,bool,1,1,0,0,0,True,"{""message"":""coordinate tied values disagree""}"
+r1-f2/signed-pair/refinement,Richardson_uncertainty,per optimizer unit,1.1993203467379014e-06,0,1.1993203467379014e-06,0.005238224032890908,0,True,"{""step"":0.001,""coarse"":1047.63983648445,""middle"":1047.6398152641195,""fine"":1047.6398108585272,""uncertainty"":1.1993203467379014e-06,""tolerance"":0.020952896131563634}"
+r1-f2/signed-pair,optimizer_column,per optimizer unit,1047.6398065781816,1047.6398093899963,2.8118147383793257e-06,0.020952896131563634,0,True,"{""step"":0.001,""coarse"":1047.63983648445,""middle"":1047.6398152641195,""fine"":1047.6398108585272,""uncertainty"":1.1993203467379014e-06,""tolerance"":0.020952896131563634}"
+r1-f2/signed-signal,verdict,bool,1,1,0,0,0,True,"{""exact"":1047.6398065781816}"
+r1-f2/roundtrip/0,theta,native,204.0438,204.0438,0.0,9.814371537686384e-14,0,True,"{""origin"":221,""scale"":10,""u"":-1.6956199999999995}"
+r1-f2/roundtrip/1,theta,native,4.5354,4.5354,0.0,2.014122202353974e-15,0,True,"{""origin"":1.9489,""scale"":0.1,""u"":25.865}"
+r1-f2/roundtrip/2,theta,native,2.6019,2.6019,0.0,1.652411540931098e-15,0,True,"{""origin"":3.7209,""scale"":0.1,""u"":-11.189999999999998}"
+r1-f2/roundtrip/3,theta,native,-0.052,-0.052,0.0,2.3092638912203255e-17,0,True,"{""origin"":0,""scale"":1,""u"":-0.052}"
+r1-f2/roundtrip/4,theta,native,0,0,0,0,0,True,"{""origin"":0,""scale"":1,""u"":0}"
+r1-f2/roundtrip/5,theta,native,2383.4744,2383.4744,0.0,1.0584752629938521e-12,0,True,"{""origin"":0,""scale"":1,""u"":2383.4744}"
+r1-f2/roundtrip/6,theta,native,0.118488,0.118488,0.0,5.261924229671422e-17,0,True,"{""origin"":0,""scale"":1,""u"":0.118488}"
+r1-f2/apply_identity,verdict,bool,1,1,0,0,0,True,{}
+r1-f2/bound_inclusive,verdict,bool,1,1,0,0,0,True,"{""u0"":-7.1}"
+r1-f2/bound_exclusive,verdict,bool,1,1,0,0,0,True,"{""u0"":-7.100000001}"
+r1-f2/reject/start outside bounds,verdict,bool,1,1,0,0,0,True,"{""message"":""coordinate start outside bounds""}"
+r1-f2/reject/scale,verdict,bool,1,1,0,0,0,True,"{""message"":""coordinate scale""}"
+r1-f2/reject/bounds,verdict,bool,1,1,0,0,0,True,"{""message"":""coordinate bounds""}"
+r1-f2/reject/slot index,verdict,bool,1,1,0,0,0,True,"{""message"":""coordinate slot index""}"
+r1-f2/reject/targets,verdict,bool,1,1,0,0,0,True,"{""message"":""coordinate targets""}"
+r1-f2/reject/set is empty,verdict,bool,1,1,0,0,0,True,"{""message"":""coordinate set is empty""}"
+r1-f2/reject/diagonal parameter coordinate,verdict,bool,1,1,0,0,0,True,"{""message"":""invalid diagonal parameter coordinate""}"
+r1-f2/reject/reciprocal parameter coordinate,verdict,bool,1,1,0,0,0,True,"{""message"":""invalid reciprocal parameter coordinate""}"
+r1-f3/tie_map,verdict,bool,1,1,0,0,0,True,{}
+r1-f3/shared_slots,verdict,bool,1,1,0,0,0,True,"{""u"":[0.3,-0.02]}"
+r1-f3/state_identity,residual_helmholtz,1,-4.856323533641964,-4.856323533641964,0.0,0,0,True,"{""T"":300,""rho"":5000}"
+r1-f3/one_slot_rejected,verdict,bool,1,1,0,0,0,True,"{""message"":""invalid k_ij symmetry""}"
+r1-f3/tied_start_disagrees,verdict,bool,1,1,0,0,0,True,"{""message"":""coordinate tied values disagree""}"
+r1-f4/active_order,verdict,bool,1,1,0,0,0,True,{}
+r1-f4/fixed_projects_to_zero,density_action,mol/m^3 per K,0,0,0,1e-12,0,True,"{""family"":""DispersionEnergyOverK fixed""}"
+r1-f4/out_of_range_rejected,verdict,bool,1,1,0,0,0,True,"{""message"":""coordinate slot index""}"
+affine-recovery/sigma,sigma,angstrom,3.200000000000372,3.2,3.717026686445024e-13,1e-06,0,True,"{""status"":""converged"",""termination"":""convergence"",""iterations"":13,""residual_evaluations"":9,""jacobian_evaluations"":8,""trial_failures"":0,""final_cost"":5.017188334232805e-26,""covariance"":""available""}"
+affine-recovery/9,proportional_diameter,angstrom,2.816000000000327,2.8160000000000003,3.268496584496461e-13,8.8e-07,0,True,{}
+affine-recovery/8,proportional_diameter,angstrom,2.816000000000327,2.8160000000000003,3.268496584496461e-13,8.8e-07,0,True,{}
+affine-recovery/stored-hydration,energy_error,J/mol,-2.0954757928848267e-09,0,2.0954757928848267e-09,1e-06,0,True,{}
+affine-recovery/decade/0,log10_ratio,decade,6.171695785940993e-15,0,6.171695785940993e-15,1e-08,0,True,{}
+affine-recovery/decade/1,log10_ratio,decade,4.3298303248240433e-14,0,4.3298303248240433e-14,1e-08,0,True,{}
+affine-recovery/decade/2,log10_ratio,decade,1.542923946485232e-14,0,1.542923946485232e-14,1e-08,0,True,{}
+affine-recovery/decade/3,log10_ratio,decade,-1.196730385992794e-13,0,1.196730385992794e-13,1e-08,0,True,{}
+affine-recovery/decade/4,log10_ratio,decade,1.735789439795882e-14,0,1.735789439795882e-14,1e-08,0,True,{}
+affine-recovery/decade/5,log10_ratio,decade,-4.6432367514543254e-14,0,4.6432367514543254e-14,1e-08,0,True,{}

@@ -1,0 +1,12 @@
+{
+  "inputs": {
+    "results/summary.json": "0dfbed8f78350a8df6097b8a60bf7bc5fdc5a9d4730e8c2600bd88b777bffec5",
+    "results/verdicts.csv": "06a63d77dceb7fefb93a214c16a61d58ed538352228a536a6ce3e79a85ecd41b",
+    "results/nominal-residuals.csv": "592f34f07db4c1af95845f00c91e0f7539997f0c8e9b9839e9d604da11572eb4",
+    "results/bucket-metrics.csv": "0f47004a3b03bcb926f55642e1da0f74ac92db205cf8c2980bfdc6bfb62e7a7e",
+    "results/transfer-tests.csv": "76bc0d048eaedff1ab8dcbf54a167254735d75870d31dea52f37d2f502d0a521",
+    "results/binary-reference-checks.csv": "63aec35170831427b6342a1ca62af7a46cf3b87ecd8184708abe4fdc1892b829",
+    "results/ms2-formal-molalities.csv": "ad99e58f64ad08ac29d95b6d9cf8e5f5b7b9fe58d581c61d74f926a1ae232ac4"
+  },
+  "script_sha256": "c8f5a01795aec21b888590a6dc734f9c7e57e2aa535d8e1eacbedd36b303bb18"
+}

@@ -1,0 +1,7 @@
+pair,b_ij_K,b_ji_K,alpha,source_note,source_table
+1-2,670.444,-55.1698,0.3031,Aspen Plus V14 APV140 VLE-LIT,Table S3
+1-3,1068.11,95.5177,0.3023,Aspen Plus V14 APV140 VLE-LIT,Table S3
+2-3,26.7546,41.2861,0.3291,Aspen Plus V14 APV140 VLE-LIT,Table S3
+1-4,-2077.24,-1432.58,,experimental data regression,Table S3
+2-4,47983.8,3957.75,0.2,experimental data regression,Table S3
+3-4,7555.12,10616.7,,experimental data regression,Table S3

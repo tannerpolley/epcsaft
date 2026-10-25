@@ -1,0 +1,51 @@
+schema_version = 2
+packet_id = "feos-gross-sadowski-2001"
+packet_version = "1"
+title = "Gross-Sadowski 2001 PC-SAFT pure parameters (FeOs distribution)"
+description = "78 nonassociating pure fluids of Gross and Sadowski 2001 Table 2 as distributed by FeOs; no mixture parameters."
+license_or_use_basis = "FeOs MIT distribution (notice in source feos-distribution); publication values cited, no article content copied."
+attribution = "Gross, J.; Sadowski, G. (2001) PC-SAFT: An Equation of State Based on a Perturbation Theory for Chain Molecules. Ind. Eng. Chem. Res. 40, 1244-1260, DOI 10.1021/ie0003887. Numerical values from FeOs contributors, feos-org/feos af84e3f9da2fac2d102d449cd07cbbb48237617b, parameters/pcsaft/gross2001.json. Changes: decimal molar mass g/mol to kg/mol before binary64 rounding, explicit site topology, per-record admission or refusal."
+tolerance_rationale = "Copied source parameters; equality with the pinned FeOs decimals is the only check. No physical-validation tolerance or applicability range is asserted."
+
+[[sources]]
+source_id = "gross-sadowski-2001"
+citation = "Gross, J.; Sadowski, G. Ind. Eng. Chem. Res. 2001, 40, 1244-1260."
+doi = "10.1021/ie0003887"
+use_basis = "Table 2 pure-component parameters (cited, not copied)."
+
+[[sources]]
+source_id = "feos-distribution"
+citation = "FeOs contributors, feos-org/feos commit af84e3f9da2fac2d102d449cd07cbbb48237617b, parameters/pcsaft/gross2001.json"
+url = "https://github.com/feos-org/feos/blob/af84e3f9da2fac2d102d449cd07cbbb48237617b/parameters/pcsaft/gross2001.json"
+use_basis = "Copied numerical distribution under the FeOs MIT licence, notice retained verbatim: Copyright (c) 2021-2026 feos-org and Contributors.  https://github.com/feos-org/feos\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. The Apache-2.0 alternative at the same commit is not combined with it."
+
+[[domains]]
+domain_id = "feos-gross-sadowski-2001"
+description = "Source parametrization as distributed by FeOs; the FeOs file states no per-record fit range."
+
+[[files]]
+path = "parameters/parameters.json"
+role = "parameters"
+media_type = "application/json"
+sha256 = "cefc2e03edb436121c4270492071c86b1f1021a58168c3348fc421d9143aaa6f"
+source_refs = ["gross-sadowski-2001", "feos-distribution"]
+domain_refs = ["feos-gross-sadowski-2001"]
+units_basis = "Every coefficient declares its unit in the Parameters document; dimensionless values use the explicit dimensionless unit."
+
+[[files]]
+path = "sources/record-accounting.csv"
+role = "source"
+media_type = "text/csv"
+sha256 = "fd4854bef35cc4347743fc4b03ad13dbfa3afc336570277ae88fca7b13c3f2d8"
+source_refs = ["gross-sadowski-2001", "feos-distribution"]
+domain_refs = ["feos-gross-sadowski-2001"]
+units_basis = "Non-numeric source indices, identities and dispositions."
+
+[[files]]
+path = "provenance/source-origin.toml"
+role = "provenance"
+media_type = "application/toml"
+sha256 = "d51d740010fe5b669fa7dd0b0a4ae7038659d735a36775b817be86ef4f2f6a0a"
+source_refs = ["gross-sadowski-2001", "feos-distribution"]
+domain_refs = ["feos-gross-sadowski-2001"]
+units_basis = "Non-numeric repository, commit, path and hash identifiers."

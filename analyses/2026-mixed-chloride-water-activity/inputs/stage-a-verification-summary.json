@@ -1,0 +1,79 @@
+{
+  "main-helper.csv": {
+    "Phi": {
+      "raw_max": 0.0,
+      "scaled_max": null
+    },
+    "Phi_a": {
+      "raw_max": 0.0,
+      "scaled_max": 0.0
+    },
+    "aw": {
+      "raw_max": 0.0,
+      "scaled_max": null
+    },
+    "aw_a": {
+      "raw_max": 0.0,
+      "scaled_max": 0.0
+    }
+  },
+  "post-helper-final.csv": {
+    "Phi": {
+      "raw_max": 0.0,
+      "scaled_max": null
+    },
+    "Phi_a": {
+      "raw_max": 0.0,
+      "scaled_max": 0.0
+    },
+    "aw": {
+      "raw_max": 0.0,
+      "scaled_max": null
+    },
+    "aw_a": {
+      "raw_max": 0.0,
+      "scaled_max": 0.0
+    }
+  },
+  "limit-helper-final.csv": {
+    "Phi": {
+      "raw_max": 4.440892098500626e-16,
+      "scaled_max": null
+    },
+    "Phi_a": {
+      "raw_max": 4.440892098500626e-16,
+      "scaled_max": 4.440892098500626e-16
+    },
+    "aw": {
+      "raw_max": 1.1102230246251565e-16,
+      "scaled_max": null
+    },
+    "aw_a": {
+      "raw_max": 2.7755575615628914e-17,
+      "scaled_max": 3.467450481071855e-17
+    }
+  },
+  "verification": {
+    "rows": 706,
+    "failed": 0,
+    "permutation": {
+      "rows": 572,
+      "raw_max": 1.4701573292086323e-12,
+      "scaled_max": 1.7041239472608167e-12
+    },
+    "difference": {
+      "rows": 96,
+      "raw_max": 6.69011407383735e-09,
+      "scaled_max": 1.0291160708639034e-08
+    },
+    "fugacity": {
+      "rows": 5,
+      "raw_max": 3.2529534621517087e-14,
+      "scaled_max": 3.2529534621517087e-14
+    }
+  },
+  "inputs": {
+    "data/packets/held-2014-strategy2/1/parameters/parameters.json": "49e5dce5503979d157ec0a8251cf89f233d2bc8f190ac9102a4dfd1519f0ab71",
+    "data/packets/figiel-2025-chloride-activity-refit/2/parameters/parameters.json": "19c3b120355df92736cd2a057434629e8accd4723e83f9d2342fd9c6fba0cd76"
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "identity": {
+    "wheel": "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-223-build-tpd-stability-test-and-phase-35ebff8f/build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+    "wheel_sha256": "6e4b4e294439b26351e21c8b16041288959b3f794d3f30e0175118943e698192",
+    "script_sha256": "c791b9a60bcc0584d2742f00791a6c07a1efc9f551857885d841b8378399eeaf",
+    "baseline_script_sha256": "640a35eb50295dc97469ad32a7eb2836b5b9b5262c2a7d3d4b7293594a1c6d9f",
+    "source_mtimes": {
+      "engine/native/equilibrium/gibbs_minimizer.cpp": 1790928264812976410,
+      "engine/native/equilibrium/request_compile.cpp": 1790915612053935625
+    },
+    "thread_environment": {
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1"
+    }
+  },
+  "inputs": {
+    "reacting/reference": {
+      "path": "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json",
+      "sha256": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+      "construction": "equilibrium_checks.cpp manufactured charged reference; one Liquid x* state, frozen g"
+    }
+  },
+  "costs": {
+    "csv": "reacting-costs.csv",
+    "sha256": "85b74feb8f9bd09bc11ada4d52f65c5816d6f3419657101fe0d8dc5aadc131e0",
+    "samples": 0,
+    "first_report_work": "sample 0 native work references the identical reported CSV operands",
+    "count_aliases": "iterations/evaluations/Hessian counts alias native work where that map is present"
+  },
+  "failure": "TypeError: Reaction.__init__() takes 2 positional arguments but 3 positional arguments (and 1 keyword-only argument) were given",
+  "failures": [],
+  "unresolved": [],
+  "limits": [
+    "numerical verification of the supplied model and finite trial set",
+    "estimated uncertainty is not a rigorous bound",
+    "no physical validation or global stability certificate"
+  ]
+}

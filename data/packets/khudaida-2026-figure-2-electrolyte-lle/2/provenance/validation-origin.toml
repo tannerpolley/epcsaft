@@ -1,0 +1,59 @@
+schema_version = 1
+provenance_kind = "repository-migration-v1"
+origin_repository = "ePC-SAFT/ePC-SAFT-validation"
+origin_commit = "dc1841fc8c7b837d92b7fed9d976a22ba6d5b2e6"
+origin_tree = "f9312688db6c8f624310e628b9127f31f8fcb009"
+copy_mode = "byte-for-byte"
+scope = "Reviewed parameter bundle version 2, normalized Figure 2 observations, and Table 3 standard uncertainties only. Generated results, scripts, receipts, plots, and full paper content are excluded."
+source_bundle_manifest_path = "campaigns/2026-khudaida/parameters/bundle/khudaida-2026-figure-2-electrolyte-lle/2/bundle.toml"
+source_bundle_manifest_sha256 = "f5d0fb91d5d6fe4837411a0d27d1e53000685b4062ecd7d6398db6e2377b1fa2"
+
+[[files]]
+retained_path = "parameters/components.csv"
+origin_path = "campaigns/2026-khudaida/parameters/bundle/khudaida-2026-figure-2-electrolyte-lle/2/components.csv"
+sha256 = "0ae7a793524cff50ef0285470b61c1282aad0db287c803882e8cac74ae73c44e"
+
+[[files]]
+retained_path = "parameters/single.csv"
+origin_path = "campaigns/2026-khudaida/parameters/bundle/khudaida-2026-figure-2-electrolyte-lle/2/single.csv"
+sha256 = "c66a460176920dbab620d69b9c442fbceb5193247e491079759b2ef43414ad9d"
+
+[[files]]
+retained_path = "parameters/pair.csv"
+origin_path = "campaigns/2026-khudaida/parameters/bundle/khudaida-2026-figure-2-electrolyte-lle/2/pair.csv"
+sha256 = "7222c0aa883688ceb985d8d34e6a4ff41014cb3c28e06c8a6feddd9314ca4d87"
+
+[[files]]
+retained_path = "parameters/sites.csv"
+origin_path = "campaigns/2026-khudaida/parameters/bundle/khudaida-2026-figure-2-electrolyte-lle/2/sites.csv"
+sha256 = "0725701832d86877d49c7c11f6dd80b07a25feae9a4a7ec0a7392ef24459792a"
+
+[[files]]
+retained_path = "parameters/association.csv"
+origin_path = "campaigns/2026-khudaida/parameters/bundle/khudaida-2026-figure-2-electrolyte-lle/2/association.csv"
+sha256 = "ea8e7d42383d62ac7f3fa73392112c7d1e3d8fd008e2895a6a78ae928a341161"
+
+[[files]]
+retained_path = "parameters/model.csv"
+origin_path = "campaigns/2026-khudaida/parameters/bundle/khudaida-2026-figure-2-electrolyte-lle/2/model.csv"
+sha256 = "e2ec78e9067d6bf6bbb806a29e8814e2e087c73be064bed9b02c19affc73367c"
+
+[[files]]
+retained_path = "parameters/correlations.toml"
+origin_path = "campaigns/2026-khudaida/parameters/bundle/khudaida-2026-figure-2-electrolyte-lle/2/correlations.toml"
+sha256 = "f284b10a36200624fea7f8c36ee0b6db5df891bbbbe0e4eea2ff97928b4cfbf7"
+
+[[files]]
+retained_path = "observations/figure-02-source-points.csv"
+origin_path = "campaigns/2026-khudaida/figures/figure-02/source/source-points.csv"
+sha256 = "ded0dfac899510413a5149c029814f8250628674f9bd0966034a3c5a8e7bd084"
+
+[[files]]
+retained_path = "observations/figure-02-feed-compositions.csv"
+origin_path = "campaigns/2026-khudaida/figures/figure-02/source/feed-compositions.csv"
+sha256 = "9d8c485e84300db030365ae0a2d4409486e6dd403df8a46595bbae37aeda77ad"
+
+[[files]]
+retained_path = "observations/table-3-standard-uncertainties.csv"
+origin_path = "campaigns/2026-khudaida/source/table-3-standard-uncertainties.csv"
+sha256 = "124e65d33243fb5a06b3299aaf584553c516a70ba645e5f37caa1b8d409e3c87"

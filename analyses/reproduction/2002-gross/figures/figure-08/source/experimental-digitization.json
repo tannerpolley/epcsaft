@@ -1,0 +1,209 @@
+{
+  "source_pdf": "/home/tnnrpolley21/Zotero/storage/UGT3UV2L/Gross and Sadowski - 2002 - Application of the Perturbed-Chain SAFT Equation of State to Associating Systems.pdf",
+  "pdf_sha256": "e4991a757cad356c2d0f6ec20972adb74458218b2583cd92b19b825ccf1d89bb",
+  "page_index": 3,
+  "pdf_image_xref": 75,
+  "resolution": "Native embedded monochrome raster",
+  "transformation": "CCITT extracted pixels inverted to match rendered PDF",
+  "axis": {
+    "x1_pixel": [
+      262,
+      2138
+    ],
+    "x2_pixel": [
+      1900,
+      2138
+    ],
+    "x1_value": 0,
+    "x2_value": 1,
+    "y1_pixel": [
+      262,
+      2138
+    ],
+    "y2_pixel": [
+      262,
+      18
+    ],
+    "y1_value": 0,
+    "y2_value": 90
+  },
+  "manual_selection": "Manual centers on native raster crop [230,1040,1940,2150]; no resampling.",
+  "coordinate_helper": "cse:digitize/scripts/digitize_xy_plot.py:AxisTransform",
+  "uncertainty": {
+    "x": 0.005,
+    "T_C": 0.4,
+    "meaning": "Bound for marker-center selection and axis calibration; not measurement uncertainty"
+  },
+  "roi": [
+    262,
+    1040,
+    1900,
+    2138
+  ],
+  "points": [
+    [
+      370,
+      1993,
+      "Jones and Amstell 1930",
+      "experiment_paper",
+      "diamond"
+    ],
+    [
+      443,
+      1423,
+      "Jones and Amstell 1930",
+      "experiment_paper",
+      "diamond"
+    ],
+    [
+      520,
+      1384,
+      "Jones and Amstell 1930",
+      "experiment_paper",
+      "diamond"
+    ],
+    [
+      585,
+      1261,
+      "Jones and Amstell 1930",
+      "experiment_paper",
+      "diamond"
+    ],
+    [
+      727,
+      1137,
+      "Jones and Amstell 1930",
+      "experiment_paper",
+      "diamond"
+    ],
+    [
+      930,
+      1074,
+      "Jones and Amstell 1930",
+      "experiment_paper",
+      "diamond"
+    ],
+    [
+      970,
+      1072,
+      "Jones and Amstell 1930",
+      "experiment_paper",
+      "diamond"
+    ],
+    [
+      1200,
+      1073,
+      "Jones and Amstell 1930",
+      "experiment_paper",
+      "diamond"
+    ],
+    [
+      1310,
+      1092,
+      "Jones and Amstell 1930",
+      "experiment_paper",
+      "diamond"
+    ],
+    [
+      1398,
+      1137,
+      "Jones and Amstell 1930",
+      "experiment_paper",
+      "diamond"
+    ],
+    [
+      1648,
+      1737,
+      "Jones and Amstell 1930",
+      "experiment_paper",
+      "diamond"
+    ],
+    [
+      393,
+      1787,
+      "DECHEMA correlation",
+      "paper_correlation",
+      "square"
+    ],
+    [
+      413,
+      1670,
+      "DECHEMA correlation",
+      "paper_correlation",
+      "square"
+    ],
+    [
+      444,
+      1553,
+      "DECHEMA correlation",
+      "paper_correlation",
+      "square"
+    ],
+    [
+      495,
+      1437,
+      "DECHEMA correlation",
+      "paper_correlation",
+      "square"
+    ],
+    [
+      577,
+      1320,
+      "DECHEMA correlation",
+      "paper_correlation",
+      "square"
+    ],
+    [
+      685,
+      1202,
+      "DECHEMA correlation",
+      "paper_correlation",
+      "square"
+    ],
+    [
+      1457,
+      1201,
+      "DECHEMA correlation",
+      "paper_correlation",
+      "square"
+    ],
+    [
+      1530,
+      1318,
+      "DECHEMA correlation",
+      "paper_correlation",
+      "square"
+    ],
+    [
+      1577,
+      1434,
+      "DECHEMA correlation",
+      "paper_correlation",
+      "square"
+    ],
+    [
+      1608,
+      1552,
+      "DECHEMA correlation",
+      "paper_correlation",
+      "square"
+    ],
+    [
+      1639,
+      1668,
+      "DECHEMA correlation",
+      "paper_correlation",
+      "square"
+    ],
+    [
+      1664,
+      1786,
+      "DECHEMA correlation",
+      "paper_correlation",
+      "square"
+    ]
+  ],
+  "qa": "review",
+  "independent_lane": "Selected isolated symbols checked against rendered PDF page; no independent second digitizer",
+  "limits": "Crowded or overlapping symbols omitted; bounded readable subset. Figure 8 squares are a published correlation, not independent experiments."
+}

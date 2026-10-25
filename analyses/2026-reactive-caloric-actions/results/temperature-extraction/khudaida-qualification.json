@@ -1,0 +1,31 @@
+{
+  "claim_limits": [
+    "fixed-parameter paper-correlation-scale agreement",
+    "not agreement within experimental uncertainty",
+    "declared local two-liquid branch",
+    "not reactive Lithium qualification"
+  ],
+  "counts": {
+    "formula_comparisons": 64,
+    "stage_rows": 16
+  },
+  "grand_formula_aad": 0.011054929498369245,
+  "input_sha256": {
+    "experimental_tie_lines": "8f69d4fd5b01e4b9c9abaa94eb0698e685b1ec5a9936468de15fdec4509458b1",
+    "experimental_uncertainties": "124e65d33243fb5a06b3299aaf584553c516a70ba645e5f37caa1b8d409e3c87",
+    "feed_to_tie_lines": "00c5c669046dc933b8f5827eece16d1174866a038370ebf311a47aa3a091e706",
+    "paper_epcsaft_curve": "d00008864de1c505dd54fe3d32612911f997f5c83402869cfc1e6d7739de321d",
+    "paper_table_9": "defc0b23ac71bfd9fa0267354053711b13fa41e7ad7f991c65d3ef145b295ba8",
+    "source_feed": "21cf58a5373b2e2c337b6baf5a0423d0ab5d7cea9639bb727b061f5844ef78d7",
+    "stage_results": "fa39f166d6d2d671a59999dcff5e2a25deafbcd43ee08e43fbe227431aa61458",
+    "stage_summary": "8b4b25bfa2a4ba5f0dd0c0098db2f396f8cd68520b0205251b148227d67881f4"
+  },
+  "output_sha256": {
+    "qualification-comparison.csv": "a6a8ee82d3f682d954b3589faf5babb2ac0f875b2a201e4e17a99cc5ea977d0b",
+    "ternary-tie-lines.png": "b3280e2e5cea01cdea83fec39e795e8629333efc4be4becc973bf53d7bf53fe7"
+  },
+  "paper_epcsaft_grand_aad": 0.0161,
+  "paper_organic_salt_free_aad": 0.002378164505003031,
+  "paper_organic_salt_free_max_abs": 0.005251356545633745,
+  "status": "positive_reference"
+}

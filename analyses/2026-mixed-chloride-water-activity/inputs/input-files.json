@@ -1,0 +1,93 @@
+{
+  "meaning": "Frozen inputs before comparison residuals; no Stage B predictions or verdicts. Stage A numerical verification is retained separately.",
+  "files": [
+    {
+      "path": "activity-limit-calibration.json",
+      "sha256": "acada43f2125ab2a2981d2d9a542cf3a9c55673da9b0eb564fe7895758d49bb2"
+    },
+    {
+      "path": "application-basis.json",
+      "sha256": "88b5d35291fe844fc4b38d0963630c2a2f1b4b6a1d0189f3f34afe200e344588"
+    },
+    {
+      "path": "comparison-specification.json",
+      "sha256": "ee7a1a2df6c84f725be3427cbfe7df6cd06253b4ce4e527a165f9b25da9f539a"
+    },
+    {
+      "path": "figiel-2025-chloride-activity-refit/2/packet.toml",
+      "sha256": "b7de1e41e4d51d24737f1a29df576f6b5f145c0acea9b0d8bdf2cbe63dec5b55"
+    },
+    {
+      "path": "figiel-2025-chloride-activity-refit/2/parameters/parameters.json",
+      "sha256": "19c3b120355df92736cd2a057434629e8accd4723e83f9d2342fd9c6fba0cd76"
+    },
+    {
+      "path": "figiel-2025-chloride-activity-refit/2/provenance/source-origin.toml",
+      "sha256": "aa59e32a4de4ae7315309ee05fcce911ab7c7459bdafc6ab2105ac3335cea6ac"
+    },
+    {
+      "path": "frozen-realizations.csv",
+      "sha256": "1f6e16ad7d09cf1da9e2727b973b9d9dff9a7f3e9a94a4bf6c8ad23edbe01f27"
+    },
+    {
+      "path": "held-2014-strategy2/1/packet.toml",
+      "sha256": "ef9ac926bfcb0131189ea168197e59aa6d172d9262f2ecc8bebbfcb7cddf257f"
+    },
+    {
+      "path": "held-2014-strategy2/1/parameters/parameters.json",
+      "sha256": "49e5dce5503979d157ec0a8251cf89f233d2bc8f190ac9102a4dfd1519f0ab71"
+    },
+    {
+      "path": "mixed-chloride-water-observations/1/observations/dinane-mounir-2003-table-1.csv",
+      "sha256": "a9667e6be812cdfd04f958c546cbb4266d0fd679802cedf950917eeb740e7a30"
+    },
+    {
+      "path": "mixed-chloride-water-observations/1/observations/rard-miller-1987-source-converted.csv",
+      "sha256": "07882f6fd1238febb2cba2228ae0d9ac4ba4f3bd9f7c18883c9049042ab810bd"
+    },
+    {
+      "path": "mixed-chloride-water-observations/1/observations/rard-miller-1987-table-iii-mgcl2.csv",
+      "sha256": "ec3c260f1adb7ea14f6a310881241c469507ae628ddb70af274053f35f77c110"
+    },
+    {
+      "path": "mixed-chloride-water-observations/1/observations/rard-miller-1987-tables-i-ii-mixtures.csv",
+      "sha256": "d9c627943bf490aa88e33c2f1f1a17bcbc345473ec2be0f6f75151ddf64dea76"
+    },
+    {
+      "path": "mixed-chloride-water-observations/1/observations/robinson-bower-1966-source-converted.csv",
+      "sha256": "88f16575a27bf8c452b6caa4b900276f1fdd0d82e8196cb963fd6f96944fee7e"
+    },
+    {
+      "path": "mixed-chloride-water-observations/1/observations/robinson-bower-1966-table-1.csv",
+      "sha256": "4c21692a0f8ffc6a1a28955652de5e6c123d37cc88cd317178728060493a7d57"
+    },
+    {
+      "path": "mixed-chloride-water-observations/1/observations/robinson-bower-1966-table-2.csv",
+      "sha256": "24fe5a292a6a2fb0b85ef337d5fbb2e18b54ad1c2ed8aa3d60300e3985481acb"
+    },
+    {
+      "path": "mixed-chloride-water-observations/1/packet.toml",
+      "sha256": "9d42eaea61245f954bbf20b4cd6488d81169437e3c20d79fd20f3ac50f06fb89"
+    },
+    {
+      "path": "mixed-chloride-water-observations/1/sources/source-records.json",
+      "sha256": "83e3393ea6ecdcf9a04db51cb272433b3258deb7555461fb26ddf650c20e4ef2"
+    },
+    {
+      "path": "packet-locks.json",
+      "sha256": "51c658dadc65b0898c20b2aafbbdcfe44e9723cfe0bf4fb6abf6bdb8eb757e15"
+    },
+    {
+      "path": "smackover-selected-base-feed-ms2.csv",
+      "sha256": "fa80e502b2e45082a8d1fd27bfd45fc5fd316a7f28bb2aa690824987b74b4c88"
+    },
+    {
+      "path": "source-data-checks.json",
+      "sha256": "bf21e4c569c855920362736df1f19d03dad6f94f2f397cda4aa467751bed194d"
+    },
+    {
+      "path": "stage-a-verification-summary.json",
+      "sha256": "8fbae26d93eb4c5d13761c8e82a679c02d9022d42395b83dbb04c5f1c5874bd5"
+    }
+  ]
+}

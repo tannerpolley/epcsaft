@@ -1,0 +1,4 @@
+quantity,reported_salt_count,count_from_rows,ard_percent,aad,aad_unit,source_table,printed_page,pdf_page,source_parent,source_pdf
+density,97,97,0.75,9.14,kg/m^3,4,91,5,D6FBI6FG,QSAXJN6X
+vapor_pressure,37,37,3.29,0.24,kPa,4,91,5,D6FBI6FG,QSAXJN6X
+mean_ionic_activity_coefficient_molal,106,105,9.17,0.12,dimensionless,4,91,5,D6FBI6FG,QSAXJN6X

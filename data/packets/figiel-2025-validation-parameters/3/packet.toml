@@ -1,0 +1,73 @@
+schema_version = 2
+packet_id = "figiel-2025-validation-parameters"
+packet_version = "3"
+title = "figiel-2025-validation-parameters canonical Parameters packet"
+description = "Canonical JSON successor to the immutable accepted figiel-2025-validation-parameters parameter packet."
+license_or_use_basis = "Source-traceable numeric parameter transcription and project-authored packet metadata retained for scientific verification under the source-specific use bases listed below; no full paper content is included."
+tolerance_rationale = "The strict schema translation preserves accepted coefficient values and asserts no new numerical acceptance tolerance. Any validation tolerance or uncertainty must be declared by the consuming campaign."
+
+[[sources]]
+source_id = "figiel-yu-held-2025"
+citation = "Figiel, P.; Yu, G.; Held, C. Predicting Thermodynamic Properties of Ions in Single Solvents and in Mixed Solvents Using a Modified Born Term within the ePC-SAFT Framework. Industrial & Engineering Chemistry Research 2025, 64, 9406-9418."
+doi = "10.1021/acs.iecr.5c00475"
+use_basis = "compact validation-side transcription of the Figiel 2025 parameter packets"
+
+[[sources]]
+source_id = "nist-srd-69-water"
+citation = "NIST Chemistry WebBook, SRD 69, Water, CAS 7732-18-5."
+use_basis = "water identity and molecular weight"
+
+[[sources]]
+source_id = "nist-srd-69-methanol"
+citation = "NIST Chemistry WebBook, SRD 69, Methanol, CAS 67-56-1."
+use_basis = "methanol identity and molecular weight"
+
+[[sources]]
+source_id = "nist-srd-69-ethanol"
+citation = "NIST Chemistry WebBook, SRD 69, Ethanol, CAS 64-17-5."
+use_basis = "ethanol identity and molecular weight"
+
+[[domains]]
+domain_id = "figiel-298-k-1-bar"
+kind = "reported-conditions"
+temperature_min = 298.15
+temperature_max = 298.15
+temperature_unit = "kelvin"
+pressure_min = 1
+pressure_max = 1
+pressure_unit = "bar"
+ion_mole_fraction_max = 0.38
+description = "Source-defined reported-conditions domain figiel-298-k-1-bar (temperature 298.15–298.15 kelvin; pressure 1–1 bar); see the cited sources and canonical Parameters document."
+
+[[domains]]
+domain_id = "nist-water-identity"
+kind = "unknown"
+description = "Source-defined domain nist-water-identity has no numeric range stated in the origin bundle; retain the cited source limits and do not infer a broader range."
+
+[[domains]]
+domain_id = "nist-methanol-identity"
+kind = "unknown"
+description = "Source-defined domain nist-methanol-identity has no numeric range stated in the origin bundle; retain the cited source limits and do not infer a broader range."
+
+[[domains]]
+domain_id = "nist-ethanol-identity"
+kind = "unknown"
+description = "Source-defined domain nist-ethanol-identity has no numeric range stated in the origin bundle; retain the cited source limits and do not infer a broader range."
+
+[[files]]
+path = "parameters/parameters.json"
+role = "parameters"
+media_type = "application/json"
+sha256 = "34876926be8aa16ea9155a5a200045147fe040f0c9e3c7286b670af9860b640a"
+source_refs = ["figiel-yu-held-2025", "nist-srd-69-water", "nist-srd-69-methanol", "nist-srd-69-ethanol"]
+domain_refs = ["figiel-298-k-1-bar", "nist-water-identity", "nist-methanol-identity", "nist-ethanol-identity"]
+units_basis = "Every fixed specification and continuous coefficient declares its unit in the canonical Parameters document; dimensionless values use the explicit dimensionless unit."
+
+[[files]]
+path = "provenance/source-origin.toml"
+role = "provenance"
+media_type = "application/toml"
+sha256 = "daa09cafd20e0c8ff06fc495134d463765337febf5ff6694460d3ef5db7b6648"
+source_refs = ["figiel-yu-held-2025", "nist-srd-69-water", "nist-srd-69-methanol", "nist-srd-69-ethanol"]
+domain_refs = ["figiel-298-k-1-bar", "nist-water-identity", "nist-methanol-identity", "nist-ethanol-identity"]
+units_basis = "Origin repository, immutable source packet, paths, and hash metadata are non-numeric identifiers."

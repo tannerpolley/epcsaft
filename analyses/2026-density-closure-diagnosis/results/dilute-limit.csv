@@ -1,0 +1,5 @@
+temperature_K,density_mol_m3,pressure_over_rho_RT_error,slope_over_RT_error,independent_geometric_cap_mol_m3,replay_script,replay_script_sha256
+200.0,1e-06,3.7724356971580164e-10,7.544869173869984e-10,34182.871387016654,analyses/2026-density-closure-diagnosis/scripts/replay.py,6ead4e0d2dc4126e0b247da9ab6ecad91995d143cdbada5d06a0b44661e11e67
+200.0,5e-07,1.8862178485790082e-10,3.772434586934992e-10,34182.871387016654,analyses/2026-density-closure-diagnosis/scripts/replay.py,6ead4e0d2dc4126e0b247da9ab6ecad91995d143cdbada5d06a0b44661e11e67
+308.8,1e-06,1.7498991145004084e-10,3.4997960085547675e-10,35440.746932275506,analyses/2026-density-closure-diagnosis/scripts/replay.py,6ead4e0d2dc4126e0b247da9ab6ecad91995d143cdbada5d06a0b44661e11e67
+308.8,5e-07,8.749490021386919e-11,1.749896894054359e-10,35440.746932275506,analyses/2026-density-closure-diagnosis/scripts/replay.py,6ead4e0d2dc4126e0b247da9ab6ecad91995d143cdbada5d06a0b44661e11e67

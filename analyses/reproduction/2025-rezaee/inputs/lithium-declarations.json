@@ -1,0 +1,37 @@
+{
+  "outcome": "B",
+  "meaning": "Unavailable: no accepted conversion from published reactions/constants and reference conventions to an Engine extraction model. Lithium fitted F/3 cube-law coordinates define a different conditional application model.",
+  "declaration_url": "https://github.com/tannerpolley/Lithium_Extraction/issues/237#issuecomment-6355298159",
+  "source_repository": "tannerpolley/Lithium_Extraction",
+  "source_commit": "351b2c8904408f63b6909152637d3674e7fa96e5",
+  "evidence": [
+    {
+      "path": "analyses/prototypes/softened_ms2_epcsaft_sx/inputs/des0/issue216_6299720293.md",
+      "commit": "351b2c8904408f63b6909152637d3674e7fa96e5",
+      "sha256": "b7199bc8b3ae29c5d652c1fe24ffa87b96fa967cb0a048bf90646d0ea3bf42b0",
+      "locator": "Sections 2-3: particle basis, standard states and published OH-consumption constants"
+    },
+    {
+      "path": "analyses/prototypes/softened_ms2_epcsaft_sx/notebook.qmd",
+      "commit": "351b2c8904408f63b6909152637d3674e7fa96e5",
+      "sha256": "ba099ac5037e42de6c41bc9bc70e45a9acd816c1488187f4c2a4bb5439099551",
+      "locator": "DES-1 conditions and conditional chemistry; cube-law constants are not Rezaee constants"
+    }
+  ],
+  "unresolved": [
+    {
+      "label": "not decided in Lithium",
+      "choice": "Exact recovery of published reaction and reference transformation"
+    }
+  ],
+  "source_coverage": {
+    "reported_Table5_experiments": 26,
+    "invented_additional_rows": 0,
+    "meaning": "Retained measurements and source-derived phase compositions, not EOS predictions."
+  },
+  "excluded_substitutions": [
+    "Lithium fitted cube-law reaction coordinates",
+    "A response-surface surrogate",
+    "Unreported extra ten observations"
+  ]
+}

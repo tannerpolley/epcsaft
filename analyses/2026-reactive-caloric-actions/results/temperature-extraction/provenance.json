@@ -1,0 +1,118 @@
+{
+  "source_base_commit": "960ad3c0674d7fd5da28fd6683e6f7038e7ce9e9",
+  "branch": "issue-225-current-calorics",
+  "runtime_source_sha256": "5b15068e744ff9210a930f1a27a616e08dd1472ea9552ca16d36ef501b6dd2e4",
+  "corrected_preparation": {
+    "build_dir": "build/engine-meson/cpython-313-linux-x86_64-x86_64-f6db693e21e289603ae71c78242a17b102f1e324061021d5dca361f47a0bfef7",
+    "build_fingerprint": "5ee8316cca148d835ea433c1e5dd34357017caca626b2e6b2b713611b2b89728",
+    "schema_version": 1,
+    "wheel": "build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+    "wheel_sha256": "93c105d2101a73f836b5ee8eeab7119ecf04342b8946bf9eb8ca57df4d41c6c2"
+  },
+  "merged_baseline": {
+    "build_dir": "build/engine-meson/cpython-313-linux-x86_64-x86_64-f6db693e21e289603ae71c78242a17b102f1e324061021d5dca361f47a0bfef7",
+    "wheel_sha256": "47535cab611b6243509c57bca9c96bb08e49337084afe80bc533ce16768301de",
+    "runtime_source_commit": "960ad3c0674d7fd5da28fd6683e6f7038e7ce9e9",
+    "qualification_header_correction": "pointer/count copy and explicit binary128 zeros; no criteria changed"
+  },
+  "old_recorded_wheel_sha256": "286d37c40f46d932f74ab8f5afc0c2a780a5d70bb419b96e7a44270765b57535",
+  "reference_wheel_sha256": "e28d258df06eac39711c59a79f9ce2b69fc8ac7565637bfba0dbef21863d8dc7",
+  "correction": "Auxiliary temperature labels use central T0; extraction divides by fixed 1/T0/T0^2 once per call. Existing density restoration and zero-label values are unchanged.",
+  "compile_correction": "Binary128 reference headers use the merged pointer/count parameter views with explicitly constructed AD zero scalars; no equation, step, tolerance or selection rule changes.",
+  "native_logs": [
+    "build/current-calorics/temperature-extraction/corrected/F1-E-fix.log",
+    "build/current-calorics/temperature-extraction/corrected/F1-E-sys.log",
+    "build/current-calorics/temperature-extraction/corrected/F1-I-fix.log",
+    "build/current-calorics/temperature-extraction/corrected/F1-I-sys.log",
+    "build/current-calorics/temperature-extraction/corrected/F1-U.log",
+    "build/current-calorics/temperature-extraction/corrected/F6-E-P-fix.log",
+    "build/current-calorics/temperature-extraction/corrected/F6-E-P-sys.log",
+    "build/current-calorics/temperature-extraction/corrected/F6-E-T-fix.log",
+    "build/current-calorics/temperature-extraction/corrected/F6-E-T-sys.log",
+    "build/current-calorics/temperature-extraction/corrected/F6-N-P-fix.log",
+    "build/current-calorics/temperature-extraction/corrected/F6-N-P-sys.log",
+    "build/current-calorics/temperature-extraction/corrected/F6-N-T-fix.log",
+    "build/current-calorics/temperature-extraction/corrected/F6-N-T-sys.log",
+    "build/current-calorics/temperature-extraction/corrected/F6-addition.log",
+    "build/current-calorics/temperature-extraction/corrected/properties.log"
+  ],
+  "commands": {
+    "build": "EPCSAFT_PREPARE_NATIVE_BUILD=1 bash tools/ensure-engine-wheel.sh",
+    "fast_gate": "bash tools/check-all.sh",
+    "Khudaida": [
+      ".venv/bin/python analyses/2026-khudaida-idaes-settler/scripts/run_fixed_settler.py --output-dir build/current-calorics/temperature-extraction/corrected/khudaida",
+      ".venv/bin/python analyses/2026-khudaida-idaes-settler/scripts/qualify.py --results-dir build/current-calorics/temperature-extraction/corrected/khudaida --output-dir build/current-calorics/temperature-extraction/corrected/khudaida-qualification"
+    ],
+    "calorics": "build/current-calorics/temperature-extraction/corrected/calorics.sh",
+    "timing": [
+      "build/current-calorics/temperature-extraction/timing.sh",
+      "build/current-calorics/temperature-extraction/timing-repeat.sh"
+    ],
+    "independent_references": [
+      "build/current-calorics/temperature-extraction/references.sh",
+      "build/current-calorics/temperature-extraction/prediction.sh"
+    ],
+    "native_reduction": "build/current-calorics/temperature-extraction/reduce.sh",
+    "fast_gate_log": "build/current-calorics/temperature-extraction/corrected/check-all-final.log",
+    "presentation": "build/current-calorics/temperature-extraction/render.sh uses the installed CSE guarded render wrapper with --no-execute and build-local temporary directories",
+    "retained_data_plot": ".venv/bin/python analyses/2026-reactive-caloric-actions/scripts/plot_temperature_extraction.py",
+    "affected_source": "EPCSAFT_CHECK_SOURCE_ONLY=1 bash tools/check-affected.sh HEAD (passed; build/current-calorics/temperature-extraction/source-check.log)"
+  },
+  "qualification": {
+    "F6": "all eight full bubble selectors and six free-T addition comparisons satisfied",
+    "F1": "all five affected selectors satisfied",
+    "P4": 329,
+    "F8": 78,
+    "F9": 264,
+    "Born": 24,
+    "original_order_pass": true,
+    "moved_native_entries": 103,
+    "moved_by_scaling": 93,
+    "inherited_movement": 10,
+    "newly_recorded_entries": 103,
+    "superseded_refusal_entries": 1,
+    "refreshed_entries": 580,
+    "speed": "No reproducible slowdown across two identically specified interleaved warmed rounds; counts and complete numerical states agree exactly. First MEA median was +6.45%, repeated median -3.21%.",
+    "fast_gate": "Passed full check-all: 121 Python checks, 1 deselected, all 6 native groups; source, architecture and analysis-layout gates passed. No criterion or count-registration change.",
+    "pinned_residual_cv": "pinned-residual-cv.tsv retains the old failure and corrected pass against the same binary128 reference and 1e-12 J/(mol K) criterion.",
+    "affected_source_gate": "Passed source-only check-affected and final prose checks; analysis-layout clean (82 leaves)."
+  },
+  "environment": {
+    "OMP_NUM_THREADS": 1,
+    "OPENBLAS_NUM_THREADS": 1,
+    "MKL_NUM_THREADS": 1,
+    "EPCSAFT_BUILD_JOBS": 2,
+    "lock": "/tmp/epc-shared-env.lock",
+    "heavy_timeout": "30m",
+    "heavy_memory_max": "8G",
+    "admission_wait": "outside environment lock, free memory >=4 GiB and low memory pressure; agent-heavy --wait 0 inside lock",
+    "restore_memory_max": "2G",
+    "restore": "Reference wheel installed and all 14 RECORD hashes verified before each lease release"
+  },
+  "claims": "Numerical verification on declared manufactured caloric and ordinary timing cases; no physical validation, global stability, parameter adoption or infinite-dilution error bound. Independent delivered review remains with the orchestrator.",
+  "timing_state_retention": {
+    "file": "timing-states.tsv",
+    "repeat_sha256": "e0dcfd05e04d020fde3a55caa82ebe2085908036d28ae411cd15d48de4f1545e",
+    "meaning": "Both rounds have byte-identical states; retain once. Both sets of timing samples remain separate."
+  },
+  "retained_input_sha256": {
+    "comparisons.tsv": "24fd37c358dfea4007cb8f47658a6121372f68b3f7bf65494a3a1f580475e49d",
+    "original-order.tsv": "1ac96af809d3eed8115ac4f50639505e44efe9a3ba6765e5b95c0317e438ad15",
+    "pinned-residual-cv.tsv": "345d60e202ae29d3e22edcd3decaf6bb738abb85fc9c9ab3b1ceda0d0dadd754",
+    "native-row-movements.tsv": "b6a095767243310eaced1a79625247fe2f8249550ef61c39f06fcff129559ecd",
+    "timing-cost.tsv": "4ca941fa8c35516c36a9718b283b8c70f579446c5df0c7dc4e7a5080ba7ab71e",
+    "timing-repeat-cost.tsv": "f5e4786f17193199337c002f60e3e8863f0daf8196903806670ee6d3bd2b4bf5",
+    "timing-states.tsv": "e0dcfd05e04d020fde3a55caa82ebe2085908036d28ae411cd15d48de4f1545e"
+  },
+  "presentation": {
+    "renderer": "installed CSE guarded Quarto wrapper, HTML, --no-execute; no model execution",
+    "source_only_gate": "passed",
+    "prose_gate": "passed",
+    "outputs": {
+      "build/companion/analyses/2026-reactive-caloric-actions/notebook.html": "97274257ec362992bb4ffc61d0f0eb11dc63c2508ce040ba2958e164b0349563",
+      "build/companion/docs/scientific/CONTEXT.html": "332382a05f82c09eae43a03981d40f490c676981426c47ce2639a3c41858feb8",
+      "build/companion/engine/docs/science/algorithms.html": "4090e2ad968cee54f8a70ec926fbb393c2f8ef91caed19ebd3a96324ac056c84"
+    },
+    "transport": "All three renders succeeded. The generated algorithm asset directory already existed in the companion tree; identical assets retained once, missing/changed generated assets copied, source-tree generated directory removed."
+  }
+}

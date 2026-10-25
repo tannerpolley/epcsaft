@@ -1,0 +1,28 @@
+{
+  "case": 1,
+  "target": 0.0,
+  "criterion": 1e-10,
+  "structural_ln_cutoff": -46.051701859880914,
+  "requested_log_spacing": 0.25,
+  "CPU_budget_s": 250.0,
+  "CPU_s": 205.603225721,
+  "corrector_CPU_cap_s": 0.6,
+  "start_attempt_from_main_scan": null,
+  "wall_s": 205.94896617199993,
+  "native_evaluations": 13973,
+  "attempt_count": 338,
+  "root_witness_count": 0,
+  "completed_passes": [
+    [
+      5,
+      "ascending",
+      169,
+      -46.051701859880914,
+      -4.0646214857217835,
+      0.2499230974652349
+    ]
+  ],
+  "stopped": null,
+  "method": "fixed parameter; carbon row omitted only for chart correction; original 20 rows retained",
+  "limits": "finite seeded charts; failed corrections and intervals between samples do not exclude roots"
+}

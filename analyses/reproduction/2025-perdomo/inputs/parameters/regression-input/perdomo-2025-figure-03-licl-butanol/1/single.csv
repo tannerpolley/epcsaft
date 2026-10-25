@@ -1,0 +1,21 @@
+record_id,component_id,family,value,unit,source_id,locator,domain_id
+butanol-molar-mass,1-butanol,molar_mass,74.1216,gram / mole,ascani-et-al-2022,Supporting Information Table S1,perdomo-regression-298-15-k-1-bar
+butanol-segment-count,1-butanol,segment_count,2.7510,,ascani-et-al-2022,Supporting Information Table S1,perdomo-regression-298-15-k-1-bar
+butanol-segment-diameter,1-butanol,segment_diameter,3.6139,angstrom,ascani-et-al-2022,Supporting Information Table S1,perdomo-regression-298-15-k-1-bar
+butanol-dispersion-energy,1-butanol,dispersion_energy_over_k,259.59,kelvin,ascani-et-al-2022,Supporting Information Table S1,perdomo-regression-298-15-k-1-bar
+butanol-charge,1-butanol,charge_number,0,,ascani-et-al-2022,neutral-solvent identity,perdomo-regression-298-15-k-1-bar
+butanol-solvation-factor,1-butanol,solvation_factor,1.5,,ascani-et-al-2022,solvent SSM+DS setting,perdomo-regression-298-15-k-1-bar
+lithium-molar-mass,lithium-cation,molar_mass,6.94,gram / mole,figiel-yu-held-2025,Li+ identity,perdomo-regression-298-15-k-1-bar
+lithium-segment-count,lithium-cation,segment_count,1,,figiel-yu-held-2025,Table 3 spherical-ion convention,perdomo-regression-298-15-k-1-bar
+lithium-segment-diameter,lithium-cation,segment_diameter,2.8449,angstrom,figiel-yu-held-2025,Table 3 Li+ row,perdomo-regression-298-15-k-1-bar
+lithium-dispersion-energy,lithium-cation,dispersion_energy_over_k,360,kelvin,figiel-yu-held-2025,Table 3 Li+ row,perdomo-regression-298-15-k-1-bar
+lithium-charge,lithium-cation,charge_number,+1,,figiel-yu-held-2025,Li+ identity,perdomo-regression-298-15-k-1-bar
+lithium-born-diameter,lithium-cation,born_diameter,2.784,angstrom,figiel-yu-held-2025,Table 3 Li+ row,perdomo-regression-298-15-k-1-bar
+lithium-solvation-factor,lithium-cation,solvation_factor,1,,figiel-yu-held-2025,corrected Born SSM+DS convention,perdomo-regression-298-15-k-1-bar
+chloride-molar-mass,chloride-anion,molar_mass,35.45,gram / mole,figiel-yu-held-2025,Cl- identity,perdomo-regression-298-15-k-1-bar
+chloride-segment-count,chloride-anion,segment_count,1,,figiel-yu-held-2025,Table 3 spherical-ion convention,perdomo-regression-298-15-k-1-bar
+chloride-segment-diameter,chloride-anion,segment_diameter,2.756,angstrom,figiel-yu-held-2025,Table 3 Cl- row,perdomo-regression-298-15-k-1-bar
+chloride-dispersion-energy,chloride-anion,dispersion_energy_over_k,170,kelvin,figiel-yu-held-2025,Table 3 Cl- row,perdomo-regression-298-15-k-1-bar
+chloride-charge,chloride-anion,charge_number,-1,,figiel-yu-held-2025,Cl- identity,perdomo-regression-298-15-k-1-bar
+chloride-born-diameter,chloride-anion,born_diameter,4.1,angstrom,figiel-yu-held-2025,Table 3 Cl- row,perdomo-regression-298-15-k-1-bar
+chloride-solvation-factor,chloride-anion,solvation_factor,1,,figiel-yu-held-2025,corrected Born SSM+DS convention,perdomo-regression-298-15-k-1-bar

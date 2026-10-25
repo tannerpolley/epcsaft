@@ -1,0 +1,21 @@
+functional,reaction,change_per_mol_extent,change_at_1e_minus_6_mol_extent,expected_for_conserved_functional,source_locator,evidence_label
+Eq12_charge,I,0,0,0,PDF p4-5 printed217-218 reactions I-IV and Eqs12-15,numerical verification: exact stoichiometric source consistency
+Eq12_charge,II,0,0,0,PDF p4-5 printed217-218 reactions I-IV and Eqs12-15,numerical verification: exact stoichiometric source consistency
+Eq12_charge,III,0,0,0,PDF p4-5 printed217-218 reactions I-IV and Eqs12-15,numerical verification: exact stoichiometric source consistency
+Eq12_charge,IV,0,0,0,PDF p4-5 printed217-218 reactions I-IV and Eqs12-15,numerical verification: exact stoichiometric source consistency
+Eq13_MDEA,I,0,0,0,PDF p4-5 printed217-218 reactions I-IV and Eqs12-15,numerical verification: exact stoichiometric source consistency
+Eq13_MDEA,II,0,0,0,PDF p4-5 printed217-218 reactions I-IV and Eqs12-15,numerical verification: exact stoichiometric source consistency
+Eq13_MDEA,III,0,0,0,PDF p4-5 printed217-218 reactions I-IV and Eqs12-15,numerical verification: exact stoichiometric source consistency
+Eq13_MDEA,IV,0,0,0,PDF p4-5 printed217-218 reactions I-IV and Eqs12-15,numerical verification: exact stoichiometric source consistency
+Eq14_printed_carbon,I,0,0,0,PDF p4-5 printed217-218 reactions I-IV and Eqs12-15,numerical verification: exact stoichiometric source consistency
+Eq14_printed_carbon,II,-2,-2e-06,0,PDF p4-5 printed217-218 reactions I-IV and Eqs12-15,numerical verification: exact stoichiometric source consistency
+Eq14_printed_carbon,III,2,2e-06,0,PDF p4-5 printed217-218 reactions I-IV and Eqs12-15,numerical verification: exact stoichiometric source consistency
+Eq14_printed_carbon,IV,0,0,0,PDF p4-5 printed217-218 reactions I-IV and Eqs12-15,numerical verification: exact stoichiometric source consistency
+Eq14_corrected_plus_carbon_NOT_ADOPTED,I,0,0,0,PDF p4-5 printed217-218 reactions I-IV and Eqs12-15,numerical verification: exact stoichiometric source consistency
+Eq14_corrected_plus_carbon_NOT_ADOPTED,II,0,0,0,PDF p4-5 printed217-218 reactions I-IV and Eqs12-15,numerical verification: exact stoichiometric source consistency
+Eq14_corrected_plus_carbon_NOT_ADOPTED,III,0,0,0,PDF p4-5 printed217-218 reactions I-IV and Eqs12-15,numerical verification: exact stoichiometric source consistency
+Eq14_corrected_plus_carbon_NOT_ADOPTED,IV,0,0,0,PDF p4-5 printed217-218 reactions I-IV and Eqs12-15,numerical verification: exact stoichiometric source consistency
+Eq15_water,I,0,0,0,PDF p4-5 printed217-218 reactions I-IV and Eqs12-15,numerical verification: exact stoichiometric source consistency
+Eq15_water,II,0,0,0,PDF p4-5 printed217-218 reactions I-IV and Eqs12-15,numerical verification: exact stoichiometric source consistency
+Eq15_water,III,0,0,0,PDF p4-5 printed217-218 reactions I-IV and Eqs12-15,numerical verification: exact stoichiometric source consistency
+Eq15_water,IV,0,0,0,PDF p4-5 printed217-218 reactions I-IV and Eqs12-15,numerical verification: exact stoichiometric source consistency

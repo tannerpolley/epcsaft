@@ -1,0 +1,14 @@
+{
+  "design_sha256": "b86bd09b7a58f657ab9b9455e2d7479f0c910ad91af19a55d1420b0eebabad6a", "amendment_sha256": "1b233dd7950a029a7bc7cf30234f1de750a45b9f35643ae3086a7a349611a609", "readiness_sha256": "5318f3604d83f36757a766de5abb25d0fc2ef682e51dcf2ab73760af93e3ad18", "accounting_base": "a4ccd8a0ec3f6a8b4977e8f8f15459c9fdac7a95",
+  "temperature_K": 298.15, "pressure_Pa": 100000, "training_states": 39,
+  "maximum_iterations": 1500, "maximum_seconds": 450, "total_maximum_iterations": 9000, "total_maximum_seconds": 2700,
+  "starts": [[0, 0], [0, 0.7], [0, -5], [-3, 0], [-3, 0.7], [-3, -5]],
+  "screen_points": [[0, 0], [0, 0.7], [0, -5], [-3, 0], [-3, 0.7], [-3, -5], [-0.5778998203244021, 0], [-0.5778998203244021, 0.7], [-0.5778998203244021, -5]],
+  "coordinates": [{"family": "k_ij", "pair": ["strontium-cation", "water"], "origin": 0, "scale": 1, "bounds": [-50, 1]}, {"family": "k_ij", "pair": ["strontium-cation", "chloride-anion"], "origin": 0, "scale": 1, "bounds": [-50, 1]}],
+  "trial": {"ion": "strontium-cation", "label": "Sr", "source": "Goldberg–Nuttall Table 23", "training": "srcl2-evaluated.csv", "split": 1, "cutoff": 3.518, "low_states": 28, "stoichiometry": [1, 2], "candidate": "sr-candidate.json", "build": "build/issue-795/two-k/Sr"},
+  "fixed": {"segment_diameter": 2.9882, "dispersion_energy_over_k": 1677.6061, "packing_diameter": 2.629616, "debye_huckel_diameter": 2.629616, "born_diameter": 2.9882},
+  "identification": {"rank_ratio_strict": 1e-14, "bound_distance_strict": 1e-06, "cost_floor": 1e-10, "cost_fraction": 0.0001, "max_h": 0.051, "max_endpoint_distance": 0.051, "max_correlation": 0.99},
+  "accuracy": {"phi_RMS": 0.01, "phi_max": 0.03, "gamma_MARD_percent": 2, "gamma_max_percent": 5},
+  "input_hashes": {"sr-candidate.json": "3a16f1e9ce2331af263e3027eaf850d3e420c1feca84ddfb1b80e79327a37768", "srcl2-evaluated.csv": "a1573cc41a135dfeb5c8678c99486919413ec8bbe29b4374b82cc97458bfb7aa"},
+  "results": "results/two-k/Sr", "native_library": {"path": "build/engine-meson/shared/libepcsaft_native.so"}
+}

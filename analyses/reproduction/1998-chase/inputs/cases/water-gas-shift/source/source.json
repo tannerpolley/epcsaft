@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "case_id": "nist-janaf-water-gas-shift",
+  "claim": "source-derived temperature-dependent ideal-gas water-gas-shift benchmark with an analytic extent",
+  "reaction": "CO(g) + H2O(g) = CO2(g) + H2(g)",
+  "reaction_stoichiometry": [-1.0, -1.0, 1.0, 1.0],
+  "temperatures_k": [600.0, 900.0, 1100.0],
+  "pressure_pa": 100000.0,
+  "standard_pressure_pa": 100000.0,
+  "species": [
+    {
+      "id": "CO",
+      "molar_mass_kg_per_mol": 0.0280101,
+      "url": "https://webbook.nist.gov/cgi/cbook.cgi?ID=C630080&Mask=1",
+      "retrieved_utc_date": "2026-07-29",
+      "retrieved_sha256": "948d0f6043f12137ea1512f215848dd5626f8cc9e62466e998c36489f00de22c",
+      "ranges": [
+        {"temperature_range_k": [298.0, 1300.0], "shomate": [25.56759, 6.09613, 4.054656, -2.671301, 0.131021, -118.0089, 227.3665, -110.5271]}
+      ]
+    },
+    {
+      "id": "H2O",
+      "molar_mass_kg_per_mol": 0.01801528,
+      "url": "https://webbook.nist.gov/cgi/cbook.cgi?ID=C7732185&Mask=1",
+      "retrieved_utc_date": "2026-07-29",
+      "retrieved_sha256": "d765dc7b810b65f79c5b966b1a9fe2444808ec8a40d6a13907c2cd00fa475b97",
+      "ranges": [
+        {"temperature_range_k": [500.0, 1700.0], "shomate": [30.092, 6.832514, 6.793435, -2.53448, 0.082139, -250.881, 223.3967, -241.8264]}
+      ]
+    },
+    {
+      "id": "CO2",
+      "molar_mass_kg_per_mol": 0.0440095,
+      "url": "https://webbook.nist.gov/cgi/cbook.cgi?ID=C124389&Mask=1",
+      "retrieved_utc_date": "2026-07-29",
+      "retrieved_sha256": "7e70431916a1f5d4a2471153e5bb982e13f0f1740fcd82467eda1475d845aa28",
+      "ranges": [
+        {"temperature_range_k": [298.0, 1200.0], "shomate": [24.99735, 55.18696, -33.69137, 7.948387, -0.136638, -403.6075, 228.2431, -393.5224]}
+      ]
+    },
+    {
+      "id": "H2",
+      "molar_mass_kg_per_mol": 0.00201588,
+      "url": "https://webbook.nist.gov/cgi/cbook.cgi?ID=C1333740&Mask=1",
+      "retrieved_utc_date": "2026-07-29",
+      "retrieved_sha256": "4a34a9561ba22017343a850ad16eb63ea92e3efd82eaf9da87125d47abb2fa81",
+      "ranges": [
+        {"temperature_range_k": [298.0, 1000.0], "shomate": [33.066178, -11.363417, 11.432816, -2.772874, -0.158558, -9.980797, 172.707974, 0.0]},
+        {"temperature_range_k": [1000.0, 2500.0], "shomate": [18.563083, 12.257357, -2.859786, 0.268238, 1.97799, -1.147438, 156.288133, 0.0]}
+      ]
+    }
+  ],
+  "source_reference": "Chase, M. W., Jr., NIST-JANAF Thermochemical Tables, Fourth Edition, J. Phys. Chem. Ref. Data, Monograph 9 (1998)",
+  "provider_basis_transform": "delta_n=0, therefore Kc=Kp",
+  "analytic_extent": "xi=sqrt(Kp)/(1+sqrt(Kp)) for a 1 mol CO + 1 mol H2O feed",
+  "amount_absolute_tolerance_mol": 2e-9,
+  "limitations": [
+    "The benchmark validates ideal-gas chemical equilibrium and source thermochemistry transport, not nonideal ePC-SAFT gas behavior.",
+    "No experimental composition acceptance claim is made."
+  ]
+}

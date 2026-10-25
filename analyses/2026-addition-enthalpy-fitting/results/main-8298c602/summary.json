@@ -1,0 +1,12 @@
+{
+  "available": true,
+  "comparisons": 60,
+  "fine_comparisons": 30,
+  "failed": 0,
+  "max_error_over_allowance": 0.11415460811348142,
+  "max_fine_error_over_allowance": 0.11415365946954024,
+  "previous_comparisons": 60,
+  "previous_max_error_over_allowance": 0.1141608869659194,
+  "evidence_label": "numerical verification",
+  "criterion": "Each native row retains its unchanged allowance formula and step. The numeric allowance can move with the newly solved derivative. No reaction-a2 comparison rows are included."
+}

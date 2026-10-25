@@ -1,0 +1,28 @@
+{
+  "source": {
+    "source_id": "saad-padova-marcus-1980",
+    "citation": "D. Saad, J. Padova and Y. Marcus, Thermodynamics of mixed electrolyte solutions. XI. An isopiestic study of the quaternary system NaCl-KCl-CaCl2-H2O at 25 C, Journal of Solution Chemistry 9 (1980), 259-268.",
+    "doi": "10.1007/BF00644551",
+    "zotero": {
+      "item": "BHXKZXUP",
+      "attachment": "V67QRMAU"
+    },
+    "pdf_sha256": "b9ff9e913d1526e96c668f3199cf5f2480bde2d39fc856f84f4368ed4e693bec",
+    "pdf_kind": "scanned page images with a publisher OCR text layer"
+  },
+  "locators": {
+    "tables": "Table I p.260 (n = 0.3330), Table II p.261 (n = 1.0001), Table III p.262 (n = 3.0005)",
+    "procedure": "p.260 Section 2: stock solutions by weight, gravimetric chloride; NaCl and KCl treated as one pseudobinary salt NaCl.nKCl; NaCl isopiestic reference; I = 0.9-5.7 mol/kg at 25 C",
+    "definitions": "p.261: first column the NaCl reference molality m_r with the water activity in parentheses, both 'obtained from Hamer and Wu'; y_B = I_B/I = 3 m_B/(m_A + 3 m_B), m_A the total molality of the salt (NaCl.nKCl), m_B the CaCl2 molality; I the total ionic strength; phi_exp the observed mixture osmotic coefficient; phi(S) Scatchard-model values"
+  },
+  "transcription": "Every value read from the rendered page images (300 dpi) and compared with the OCR text layer; the OCR reads Table II row 17 phi(S) as 't.190', printed 1.190. Values are kept as printed decimal strings.",
+  "composition": "n is the KCl/NaCl amount ratio of the alkali salt; m_A = I (1 - y_B) is the total 1:1 molality, m_Na = m_A/(1 + n), m_K = n m_A/(1 + n), m_Ca = y_B I / 3, m_Cl = m_A + 2 m_Ca (formula molality per kg water).",
+  "isopiestic_relation": "phi_exp q = 2 m_r phi_NaCl(m_r) with q = 2 m_A + 3 m_B = I (2 - y_B); phi_NaCl from Hamer and Wu 1972.",
+  "printed_inconsistencies": [
+    "Table I row 1 (m_r 0.9834, y_B 0.2501): printed I = 1.1045 and phi_exp = 0.926 do not satisfy the isopiestic relation with the Hamer-Wu NaCl reference (it gives 0.952 from the printed I; I = 1.1345 would give 0.926).",
+    "Table I row 2 (m_r 0.9834, y_B 0.5002): the relation gives 0.926 against printed 0.931 (difference 0.005; other rows agree within 0.001).",
+    "Table III row 11 (m_r 2.7796, y_B 0.5003): printed phi_exp '10.32'; the relation gives 1.032 and phi(S) is 1.029.",
+    "The parenthesized water activities imply NaCl osmotic coefficients about 0.5% above Hamer-Wu at the same m_r, while phi_exp follows Hamer-Wu; the activities are retained as printed and are not an independent measurement."
+  ],
+  "uncertainty": "No measurement uncertainty is stated for phi_exp; values are printed to 0.001. No pointwise sigma is inferred."
+}

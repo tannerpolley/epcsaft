@@ -1,0 +1,12 @@
+component_id,family,magnitude,unit,source_id,source_locator
+water,dielectric_volume,0.3777,liter / mole,yang-2024-dielectric,"Table 6, water column, preset value (footnote a: Schreckenberg et al., ref. 24)"
+water,dielectric_temperature,1403,kelvin,yang-2024-dielectric,"Table 6, water column, preset value (footnote a: Schreckenberg et al., ref. 24)"
+water,dipole_scaling,5.199,debye ** 2,feos-epcsaft-water-fixture,"crates/feos/src/epcsaft/parameters.rs, water PerturbationTheory permittivity_record"
+water,polarizability_scaling,0.0,angstrom ** 3,feos-epcsaft-water-fixture,"crates/feos/src/epcsaft/parameters.rs, water PerturbationTheory permittivity_record"
+water,correlation_integral_parameter,0.1276,dimensionless,feos-epcsaft-water-fixture,"crates/feos/src/epcsaft/parameters.rs, water PerturbationTheory permittivity_record"
+sodium-cation,dipole_scaling,5.407,debye ** 2,rueben-2024,"Table 1, Na+ row, perturbation theory"
+sodium-cation,polarizability_scaling,0.0,angstrom ** 3,rueben-2024,"Section 2.3, ion scheme P fits only the dipole scaling and correlation integral parameters"
+sodium-cation,correlation_integral_parameter,0.215,dimensionless,rueben-2024,"Table 1, Na+ row, perturbation theory"
+chloride-anion,dipole_scaling,2.563,debye ** 2,rueben-2024,"Table 1, Cl- row, perturbation theory"
+chloride-anion,polarizability_scaling,0.0,angstrom ** 3,rueben-2024,"Section 2.3, ion scheme P fits only the dipole scaling and correlation integral parameters"
+chloride-anion,correlation_integral_parameter,0.138,dimensionless,rueben-2024,"Table 1, Cl- row, perturbation theory"

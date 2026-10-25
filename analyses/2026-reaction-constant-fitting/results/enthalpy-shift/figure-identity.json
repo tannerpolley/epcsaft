@@ -1,0 +1,6 @@
+{
+  "source": "results/enthalpy-shift/columns.csv",
+  "source_sha256": "a19a51c406cb4c212ac39c836c73caf5fc23409212f01766a7613f284a545dcc",
+  "figure": "figures/enthalpy-shift-refinement.png",
+  "basis": "zero physical shifts; native weighted residual columns; MEA 1e-5 relative and 1e-8 near-zero criterion"
+}

@@ -1,0 +1,61 @@
+schema_version = 2
+packet_id = "mea-co2-h2o-nine-species-estimation"
+packet_version = "1"
+title = "Nine-species CO2-MEA-H2O estimation candidate"
+description = "Complete reusable nine-species ePC-SAFT baseline with fail-closed source and candidate model domains and typed R4/R5 correlations."
+license_or_use_basis = "Project-authorized mixed-source parameter synthesis from the pinned MEA-Thermodynamics authority, retained Gross-Sadowski CO2 record, and project-authored Cai fit; no publisher full text is included."
+tolerance_rationale = "The packet asserts no fit tolerance. Source values are immutable inputs; the consuming analysis owns diagnostic scales, scoring, and candidate status."
+
+[[sources]]
+source_id = "mea-thermodynamics-authority"
+citation = "tannerpolley/MEA-Thermodynamics commit 412f85b4a34d713aa3b00985f6bef044c1f12327."
+use_basis = "Complete nine-species baseline, component and model records."
+
+[[sources]]
+source_id = "reaction-primary-records"
+citation = "Tong et al. (2012)/Aroua et al. (1999) R4 and Bates and Pinching (1951) R5 records."
+use_basis = "Source-centred R4/R5 correlation coefficients and original source-qualified ranges."
+
+[[sources]]
+source_id = "gross-sadowski-2001"
+citation = "Gross and Sadowski (2001), Table 2, carbon dioxide row."
+use_basis = "CO2 segment count m=2.0729 and its 216-304 K source fit range."
+
+[[sources]]
+source_id = "cai-1996-neutral-refit"
+citation = "Cai et al. (1996), doi:10.1021/je960118o; project-authored numerical fit."
+use_basis = "Provisional MEA-water k_ij fit to 25 admitted rows; not reactive acceptance evidence."
+
+[[domains]]
+domain_id = "mea-provider-source-qualified-313-15-k"
+description = "Original installed Provider source-transfer executable result at 313.15 K and 100 kPa; not the candidate support claim."
+
+[[domains]]
+domain_id = "mea-candidate-293-15-to-393-15-k"
+description = "Candidate evaluation domain 293.15-393.15 K and 1 Pa-10 MPa, qualified candidate_extrapolation pending campaign evidence."
+
+[[domains]]
+domain_id = "carbon-dioxide-fit-range"
+description = "Gross-Sadowski (2001) CO2 source fit range, 216-304 K; distinct from candidate extrapolation."
+
+[[domains]]
+domain_id = "cai-1996-neutral-refit"
+description = "Admitted Cai (1996) fit observations, 362.81-431.85 K and 66660-101330 Pa."
+
+[[files]]
+path = "parameters/parameters.json"
+role = "parameters"
+media_type = "application/json"
+sha256 = "12e380a27eb615e25bae580f8c1ec852020879917b08fa16a5821ae76311550d"
+source_refs = ["mea-thermodynamics-authority", "reaction-primary-records", "gross-sadowski-2001", "cai-1996-neutral-refit"]
+domain_refs = ["mea-provider-source-qualified-313-15-k", "mea-candidate-293-15-to-393-15-k", "carbon-dioxide-fit-range", "cai-1996-neutral-refit"]
+units_basis = "Every coefficient has an explicit canonical unit; reaction coefficients retain dimensionless, K, and K^-1 units."
+
+[[files]]
+path = "provenance/source-origin.toml"
+role = "provenance"
+media_type = "application/toml"
+sha256 = "a2d60d686b98896c5488198c8b81c6bbd795d6d779948147363f4659cfc61e15"
+source_refs = ["mea-thermodynamics-authority", "gross-sadowski-2001", "cai-1996-neutral-refit"]
+domain_refs = ["mea-provider-source-qualified-313-15-k", "mea-candidate-293-15-to-393-15-k"]
+units_basis = "Derived-output, neutral-selection, Gross-Sadowski, and Cai SHA-256 identities plus transformation names are non-numeric provenance."

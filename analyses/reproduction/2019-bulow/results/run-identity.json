@@ -1,0 +1,23 @@
+{
+  "engine": [
+    "1db7801846cf417a08663c26b08565b51d13200a",
+    true
+  ],
+  "native_library": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-789-live-literature-reproductions-the-3/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so",
+  "native_library_sha256": "017196f908ba022fd8e0e6726917b2c358224444efb44f9f7537f952b849db84",
+  "source_sha256": {
+    "inputs/parameters/user-options.json": "daa6acc498a7acc9c4f3a19d75e7d445c896de850e1914b21087149f247bca4d",
+    "inputs/source/reproduction-cases.json": "8e16b3db4b6cc67dc7bd63e348d06bbd210f1457892fcf1ee167dc3bcd58a1b3",
+    "inputs/source/figures-manifest.csv": "9d97277324ec33ddbe5bc6c219cb78b8a6c1b614339cfa12f9a0343306069247",
+    "inputs/source/source-manifest.csv": "1f03dcfef3f9551b232d1884a4673a1318ee82ea7d8728a5827d3cab1de3665e",
+    "inputs/parameters/pure/any-solvent.csv": "f2ebced908aeb5760f6931bae11e7e78068e27d06d0fe12decfa88f0dde02b60",
+    "inputs/parameters/mixed/binary-interaction/source-manifest.csv": "4e2b05e65522fb47c6758f553e0ba5c0c5c051d79c2ea2a8e5f9db018c421ebe",
+    "inputs/parameters/mixed/binary-interaction/k-ij.csv": "bd9802a65c4d3f612d16fbce8dcbd567179db542a643b0ed9894d63009eb0750"
+  },
+  "water_permittivity_override": 80,
+  "components": [
+    "H2O",
+    "C4mim+",
+    "NTf2-"
+  ]
+}

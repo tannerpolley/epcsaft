@@ -1,0 +1,44 @@
+{
+  "historical_record_commit": "566d57de5ec6b2bd36d1e1f0460b62a837e70e0e",
+  "historical_wheel_sha256": null,
+  "wheel_sha256": "33ef17f578714f55c65223e6b3d8b28e09344ac65cb317dfe9007bcfffc8db94",
+  "conditions": "313.15, 353.15 and 393.15 K; CO2-free solvent MDEA mass fraction 0.18-0.20; 1 kg water basis",
+  "reference_pressure_pa": 100000.0,
+  "row_tolerance": 1e-10,
+  "source_reference_convention": "water pure-component; all other components infinite dilution",
+  "fixed_start_anchor": "inputs/starts/313-15-k-t1-r08.json",
+  "fixed_start_anchor_rows": 4,
+  "pressure_only_replay": "pressure-only/uyan-2015-ermatchkov-2006-grepe-summary.json",
+  "coverage_interpretation": "Four additional roots use the owner-approved fixed t1-r08 composition and packing guesses at the original ordered pressure starts. Coverage recovery is an initialization change; equations, feeds, work limits and tolerances are unchanged.",
+  "historical_generator_default": "pure-water liquid / pure-CO2 vapor / other solutes infinite dilution",
+  "historical_table_lane_labels": [
+    [
+      "mole-fraction-to-molality-converted-k",
+      "pure-water"
+    ]
+  ],
+  "interpretation": "Difference between historical reconstruction and current source-ledger calculation. Historical wheel identity is unavailable and historical lane labels conflict, so reference-convention effects cannot be isolated from historical Engine differences.",
+  "reported_quantity_comparisons": 240,
+  "historical_equivalence_comparisons": 210,
+  "historical_equivalence_misses": 210,
+  "changed_values": 240,
+  "unavailable_values": 0,
+  "historical_roots": 30,
+  "source_ledger_roots": 30,
+  "failed_rows": [],
+  "historical_ard_percent": 118.97650898476668,
+  "source_ledger_ard_percent": 698.1003208617398,
+  "ard_comparison_basis": "The same 30 source rows when both lanes return 30 roots; otherwise each lane's evaluated rows with unequal coverage",
+  "historical_ard_by_temperature_percent": {
+    "313.15": 180.07157712238737,
+    "353.15": 79.1400531992161,
+    "393.15": 97.71789663269655
+  },
+  "source_ledger_ard_by_temperature_percent": {
+    "313.15": 1847.3329968835194,
+    "353.15": 218.61009726545936,
+    "393.15": 28.35786843624046
+  },
+  "maximum_original_row": 5.062616992290714e-14,
+  "limit": "Numerical verification, not physical validation"
+}

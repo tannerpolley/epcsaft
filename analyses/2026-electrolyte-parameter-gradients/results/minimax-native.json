@@ -1,0 +1,12 @@
+{
+  "base": "1fc771b032fe37c11649f5dd13b71a00d0a4e7bb",
+  "budget_amendment": "96e9ecde0d8c990804486f51b29d93f2ff7df174",
+  "wheel_sha256": "7e44fadae95055db943a787a4d2c624d24c8c60bd4c75c0b6db5308d2fe26890",
+  "comparisons": 261,
+  "misses": 0,
+  "commands": [
+    "regression_checks R2-D7",
+    "regression_checks minimax-consistency"
+  ],
+  "claim_limit": "Numerical verification of manufactured minimax/KKT and same-point electrolyte columns; no physical validation, parameter adoption or global optimization."
+}

@@ -1,0 +1,60 @@
+{
+  "axis": {
+    "x1_pixel": [
+      114,
+      287
+    ],
+    "x2_pixel": [
+      483,
+      287
+    ],
+    "x1_value": 0,
+    "x2_value": 1,
+    "y1_pixel": [
+      114,
+      287
+    ],
+    "y2_pixel": [
+      114,
+      10
+    ],
+    "y1_value": 0,
+    "y2_value": 150
+  },
+  "roi": [
+    195,
+    12,
+    471,
+    276
+  ],
+  "series": [
+    {
+      "name": "373 K model line",
+      "mode": "curve",
+      "hsv_lower": [
+        8,
+        160,
+        150
+      ],
+      "hsv_upper": [
+        25,
+        255,
+        255
+      ]
+    },
+    {
+      "name": "403 K model line",
+      "mode": "curve",
+      "hsv_lower": [
+        35,
+        140,
+        110
+      ],
+      "hsv_upper": [
+        85,
+        255,
+        255
+      ]
+    }
+  ]
+}

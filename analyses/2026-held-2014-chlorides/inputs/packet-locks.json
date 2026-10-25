@@ -1,0 +1,19 @@
+{
+  "repository": "tannerpolley/ePC-SAFT",
+  "packets": [
+    {
+      "packet_id": "held-2014-strategy2",
+      "packet_version": "1",
+      "packet_path": "data/packets/held-2014-strategy2/1",
+      "packet_fingerprint": "ed48d4398ada6597ad530ccde64c2672842870aa75fa2f243be27c245250232e",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "held-cameretti-sadowski-2008",
+      "packet_version": "4",
+      "packet_path": "data/packets/held-cameretti-sadowski-2008/4",
+      "packet_fingerprint": "3a9bed6bb3c20302615ae388b6b2fbd1bbd14c6153a2dd32faf0fe08c4cdb1e7",
+      "materialization": "byte-for-byte"
+    }
+  ]
+}

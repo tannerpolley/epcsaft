@@ -1,0 +1,88 @@
+---
+title: "Pure MDEA: PC-SAFT comparisons with S6 and S9"
+format:
+  html:
+    embed-resources: true
+execute:
+  echo: false
+  cache: false
+  daemon: false
+---
+
+```{python}
+import json, pandas as pd
+from IPython.display import display
+rows = pd.read_csv('results/comparison.csv')
+display(rows.groupby(['table','quantity','outcome']).size())
+display(rows)
+display(pd.json_normalize(json.load(open('results/diagnostics.json'))))
+display(json.load(open('results/run-identity.json')))
+```
+
+The tables compute every source-comparison outcome from this rerun's retained
+files. The diagnostic table retains every state and all returned-state checks.
+This is numerical verification against printed PC-SAFT predictions, without
+physical validation against measurements or a calculation of the distinct
+PρT-SAFT-HR model. The rerun applies the independently Ready criterion in
+`build/issue-789/2025-pakravesh/criterion-r1.md` and its readiness report.
+
+The source is Pakravesh and Zarei (2025), DOI `10.1021/acs.jced.4c00390`,
+SI Table S1 for the pure tuple, Table S6 for the pressure/temperature states
+and Table S9 for the saturation temperatures. The source identity and exact
+page locators remain in `inputs/source/si-reference.json` and the CSVs.
+Native declarations use the specified donor/acceptor multiplicities and only
+unlike-site association, with no polar or electrolyte contribution.
+Native density and exact derivative readouts are converted only to the
+source reporting units: kg/m³, inverse kilokelvin and inverse terapascal.
+No finite differences or caller saturation iteration is used.
+
+All S6 state calculations return mechanically stable liquids and finite
+response functions. The displayed errors exceed the source's fixed last-digit
+limits. These are discrepancies for the declared literal model, without an
+identified erroneous source coefficient. Rounded source inputs have not been
+shown to explain these differences, and no parameters or limits are altered.
+The comparison table retains every quantity with its actual error and limit.
+
+The S9 pressure allowance is the greater of the strict relative-pressure
+limit and the native pressure slope times eight density units in the last
+place. The retained per-phase operands show that this allowance changes only
+the cold liquid checks; every vapor and warmer liquid check keeps the strict
+limit. All returned saturation states pass this check, the common-standard
+chemical-potential check, ordered densities, positive slopes and defining-row
+checks. The common-standard difference uses the native residual chemical
+potentials and the ideal log-density difference; no phase-specific log-fugacity
+coefficient difference enters acceptance. Adjacent-density pressure probes
+remain diagnostic and never replace returned densities. Eight density units
+is a bounded engineering allowance for these binary64 readouts, not a rigorous
+error bound or physical uncertainty.
+
+Numerical admission does not imply agreement with the source. Every literal
+source comparison exceeds its unchanged printed-digit limit, including the
+cold-state comparisons that were previously numerically undetermined. The
+retained pressure and density comparisons expose their actual errors.
+
+The S6 discrepancy cause remains **undetermined** after the delivered review's
+checks of source rows, units, tuple and 3B association. Agreement of those
+declarations does not prove intrinsic model failure, erroneous published
+parameters or physical invalidity. Source rounding has not been shown to
+explain the discrepancy.
+
+S9 repeats the DEA PC-SAFT pressure/density columns under MDEA at different
+temperatures, as visually checked in the source. These targets remain literal;
+the repetition does not establish the intended corrected values or validate
+an Engine prediction. Vapor densities are diagnostics with no invented source
+target. Printed-digit limits measure reproduction of the table, not physical
+uncertainty. The table is the primary display for these separate quantity and
+state checks; no continuous curve or interpolation is inferred.
+
+Mixtures are outside this delivery. Article section 3.2 specifies zero binary
+interaction; missing binary interaction coefficients are therefore not an
+established blocker. Association/combining declarations and selected mixture
+row extraction still need confirmation. Caloric comparisons need source
+ideal-gas heat capacities. The primary PρT-SAFT-HR model remains excluded.
+
+The computed run identity above retains Engine/library/source hashes, fixed
+numerical criteria and the literal tuple for this execution. The earlier
+Engine-defect inference remains withdrawn. Independent delivered review of
+this rerun is pending; the earlier Not supported verdict is not replaced by
+this notebook. This notebook is not promoted for manuscript use.

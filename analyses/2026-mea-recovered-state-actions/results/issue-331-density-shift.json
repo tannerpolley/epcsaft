@@ -1,0 +1,53 @@
+{
+ "transition": "vle_obs_0131 -> vle_obs_0188, frozen continuation",
+ "ok": true,
+ "work": [
+  11,
+  21
+ ],
+ "pressure_pa": 6733.42923891827,
+ "liquid_molar_density": 50633.13870934664,
+ "row_tolerance": 1e-10,
+ "rows": [
+  {
+   "relative_density_shift": 0.0,
+   "reduced_pressure_residual_liquid": 3.9254942654715377e-14,
+   "predicted_shift_contribution": 0.0,
+   "fugacity_max": 1.092459456231154e-13,
+   "criteria_ok": true
+  },
+  {
+   "relative_density_shift": 1e-11,
+   "reduced_pressure_residual_liquid": 3.0144765015389727e-10,
+   "predicted_shift_contribution": 3.014809190514087e-10,
+   "fugacity_max": 9.224514485595137e-10,
+   "criteria_ok": false
+  },
+  {
+   "relative_density_shift": -1e-11,
+   "reduced_pressure_residual_liquid": 3.015222801622401e-10,
+   "predicted_shift_contribution": 3.014809190514087e-10,
+   "fugacity_max": 9.226415187413295e-10,
+   "criteria_ok": false
+  },
+  {
+   "relative_density_shift": 1e-12,
+   "reduced_pressure_residual_liquid": 3.011134677078678e-11,
+   "predicted_shift_contribution": 3.014809190514087e-11,
+   "fugacity_max": 9.214939922230769e-11,
+   "criteria_ok": true
+  },
+  {
+   "relative_density_shift": -1e-12,
+   "reduced_pressure_residual_liquid": 3.018224058697879e-11,
+   "predicted_shift_contribution": 3.014809190514087e-11,
+   "fugacity_max": 9.234835118832052e-11,
+   "criteria_ok": true
+  }
+ ],
+ "provenance": {
+  "wheel": "epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+  "wheel_sha256": "c921e015d791c68496527238fc8197c69a4eac6e91e10e630888afdf87a8ce23",
+  "mea_commit": "04a932835ae32f3855390ef9d2acd64a2877f63b"
+ }
+}

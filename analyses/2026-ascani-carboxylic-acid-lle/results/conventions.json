@@ -1,0 +1,10 @@
+{
+ "water_density_kg_m3": {
+  "literal": 996.9728722026989,
+  "constant-sigma": 1001.6494730296316
+ },
+ "no_cross_solves": 161,
+ "no_cross_success": 161,
+ "no_cross_x_acid_molecular_aq_min": 3.0380587287142643e-06,
+ "no_cross_x_acid_molecular_aq_max": 4.801957227459281e-06
+}

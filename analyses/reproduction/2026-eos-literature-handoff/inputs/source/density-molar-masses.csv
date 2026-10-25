@@ -1,0 +1,3 @@
+component_id,molar_mass_kg_mol,locator,basis
+sodium-cation,0.02298,d7738b23d^:engine/tests/test_density.py:186,historical removed comparison declaration; not a Figiel table value
+bromide-anion,0.0799,d7738b23d^:engine/tests/test_density.py:186,historical removed comparison declaration; not a Figiel table value

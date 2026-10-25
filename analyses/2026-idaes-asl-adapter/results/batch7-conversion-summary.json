@@ -1,0 +1,162 @@
+{
+  "issue": 234,
+  "base": "f4075c0f56774c301ba21e5601aa351360c3a08f",
+  "wheel_sha256": "298a360e532f6f4c5e7ef70c5be45e8b9852310d1c388d6225c504714c3dc410",
+  "parameter_strings": [
+    "2.002",
+    "3.6184",
+    "208.11",
+    "0.044096"
+  ],
+  "packet_fingerprint": "92634acb2bb24e3e83f938f4cf6239564940a1fdc88cba956ebcb0b7db041d5a",
+  "claim": "Numerical verification of the 400 K propane vapor pressure-cap reference; no physical validation.",
+  "comparison_tables": [
+    "batch7-pressure-cap-comparison.csv",
+    "batch7-process-comparison.csv"
+  ],
+  "identical_numerical_tables": {
+    "derivatives": true,
+    "lagrangian": true,
+    "domain": true,
+    "references": true
+  },
+  "derivatives": {
+    "derivative_ladders_passed": 72,
+    "gradient_max_scaled_error": 6.271841255608979e-06,
+    "hessian_max_scaled_error": 2.9346729078477685e-05,
+    "maximum_estimated_floor": 6.089446597856707e-06,
+    "transport_max_scaled_gradient_error": 0.0,
+    "transport_max_scaled_hessian_error": 0.0,
+    "transport_max_scaled_value_error": 0.0,
+    "transport_passed": true,
+    "unit_pressure_chain": {
+      "max_gradient_error": 2.220446049250313e-16,
+      "max_hessian_error": 3.608224830031759e-16,
+      "max_value_error": 2.220446049250313e-16,
+      "passed": true,
+      "state_count": 9
+    }
+  },
+  "whole_nlp": {
+    "cases": 216,
+    "changed_input_rejected": true,
+    "directions_per_case": 8,
+    "expected_step_rows": 1728,
+    "invalid_domain_rejected": true,
+    "matrix_cases": 27,
+    "maximum_estimated_floor": 1.0329772037742657e-09,
+    "maximum_scaled_lagrangian_hessian_error": 1.0329772037742657e-09,
+    "valid_after_failure": true
+  },
+  "max_stationarity": 1.7191623309546941e-16,
+  "max_complementarity": 9.090919626302153e-11,
+  "max_objective_reference_error": 2.6757920879028063e-10,
+  "campaigns": {
+    "before": "failed",
+    "after": "failed"
+  },
+  "limitations": [
+    "Both full campaigns stop at the existing forced cancellation probe: Ipopt completes before a live solver is observed. No cost stage is reached.",
+    "The batch write scope permits only the density reference replacement; cancellation lifecycle code is unchanged.",
+    "Diagnosis: entry output is read in 64-byte chunks; the 3 ms solver completes before /proc inspection. Logs retain the optimum and the missing live solver. A deterministic solver-entry pause would require a separate authorized change.",
+    "README and notebook updates belong to batch 15."
+  ],
+  "shared_retained_files": {
+    "batch7-after/solver/process-0/process-0.col": {
+      "path": "solver/process-0/process-0.col",
+      "sha256": "017ab2bf2959f8fcb8ce00578da81aca525af31de4e230f6cca76059b98c22c2"
+    },
+    "batch7-after/solver/process-0/process-0.nl": {
+      "path": "solver/process-0/process-0.nl",
+      "sha256": "3db46adde3eb05e412155f405fd767618d8707ecb60f1a770f4dc79d05efde55"
+    },
+    "batch7-after/solver/process-0/process-0.row": {
+      "path": "solver/process-0/process-0.row",
+      "sha256": "cbc55240c1fffb49db3a3828d03c6b22cfa12fcfd11d772d7cf2c71f8dc4ad01"
+    },
+    "batch7-after/solver/process-1/ipopt.log": {
+      "path": "batch7-after/solver/forced-post-entry-timeout/ipopt.log",
+      "sha256": "5b4335e65491213882ee876de90e6a23a661f6be5eb9fbe661e4d77b5beb2508"
+    },
+    "batch7-after/solver/process-1/process-1.nl": {
+      "path": "solver/process-1/process-1.nl",
+      "sha256": "95bff8c644265bc6d298dbc90d79578efcf6fa438d52bee7f152742ee9cf874a"
+    },
+    "batch7-after/solver/process-2/process-2.nl": {
+      "path": "solver/process-2/process-2.nl",
+      "sha256": "a66639ce0141ba95a5071edcfadbb444bba10c8bfdfac344d1d24003b74f3ae6"
+    },
+    "batch7-after/solver/process-3/process-3.nl": {
+      "path": "solver/process-3/process-3.nl",
+      "sha256": "d84dab7789ba14ee1dbb6cbd6459b9d234f832d15ddee8423dc4d7c1bdf6c062"
+    },
+    "batch7-before/derivatives.csv": {
+      "path": "derivatives.csv",
+      "sha256": "c76930b57de0b1a596378095ce4eadf173add685821f326e5af78be911b303a8",
+      "pre_git_crlf_sha256": "305e9427f199354ad42cab21d4478b8d4281b32376ea13748d3565feb6c24bad"
+    },
+    "batch7-after/derivatives.csv": {
+      "path": "derivatives.csv",
+      "sha256": "c76930b57de0b1a596378095ce4eadf173add685821f326e5af78be911b303a8"
+    },
+    "batch7-before/domain.csv": {
+      "path": "domain.csv",
+      "sha256": "5f7c832790ed81e991e6cdffe85b82a92f95ad60e6773d81ce76cd6f06d5be3d",
+      "pre_git_crlf_sha256": "f4f66587a6b4c01b6e545cf0efbedebec8dcf994aac95e87d4925a84011c8f19"
+    },
+    "batch7-after/domain.csv": {
+      "path": "domain.csv",
+      "sha256": "5f7c832790ed81e991e6cdffe85b82a92f95ad60e6773d81ce76cd6f06d5be3d"
+    },
+    "batch7-before/lagrangian.csv": {
+      "path": "lagrangian.csv",
+      "sha256": "d4353c5e2b20c19947a765d65fc250c67150074f80297cc407e57b9d1fff11c9",
+      "pre_git_crlf_sha256": "3928c8dafd0a94a80af8892ab593c5f9576d8b831160d5ac9ae8a2c4d63eeabd"
+    },
+    "batch7-after/lagrangian.csv": {
+      "path": "lagrangian.csv",
+      "sha256": "d4353c5e2b20c19947a765d65fc250c67150074f80297cc407e57b9d1fff11c9"
+    },
+    "batch7-before/references.csv": {
+      "path": "references.csv",
+      "sha256": "b4d706077d7318e448e92c60010402604430ae1e8283450944e4af9466cfa859",
+      "pre_git_crlf_sha256": "829c471165a1beea8560c3e7f7d2f732973c973235b3bff735c740f49a117220"
+    },
+    "batch7-after/references.csv": {
+      "path": "references.csv",
+      "sha256": "b4d706077d7318e448e92c60010402604430ae1e8283450944e4af9466cfa859"
+    },
+    "batch7-before/solver/process-0/process-0.col": {
+      "path": "solver/process-0/process-0.col",
+      "sha256": "017ab2bf2959f8fcb8ce00578da81aca525af31de4e230f6cca76059b98c22c2"
+    },
+    "batch7-before/solver/process-0/process-0.nl": {
+      "path": "solver/process-0/process-0.nl",
+      "sha256": "3db46adde3eb05e412155f405fd767618d8707ecb60f1a770f4dc79d05efde55"
+    },
+    "batch7-before/solver/process-0/process-0.row": {
+      "path": "solver/process-0/process-0.row",
+      "sha256": "cbc55240c1fffb49db3a3828d03c6b22cfa12fcfd11d772d7cf2c71f8dc4ad01"
+    },
+    "batch7-before/solver/process-1/ipopt.log": {
+      "path": "batch7-before/solver/forced-post-entry-timeout/ipopt.log",
+      "sha256": "59dad57a1b4c46551b059753662003b2a636fa9406dfefe0a77262a41fff1cc3"
+    },
+    "batch7-before/solver/process-1/process-1.nl": {
+      "path": "solver/process-1/process-1.nl",
+      "sha256": "95bff8c644265bc6d298dbc90d79578efcf6fa438d52bee7f152742ee9cf874a"
+    },
+    "batch7-before/solver/process-2/ipopt.log": {
+      "path": "batch7-after/solver/process-2/ipopt.log",
+      "sha256": "9af5dff2721896b1245d7a84907cfda2a07d908d4ece9b89158147a4fdfb9c0b"
+    },
+    "batch7-before/solver/process-2/process-2.nl": {
+      "path": "solver/process-2/process-2.nl",
+      "sha256": "a66639ce0141ba95a5071edcfadbb444bba10c8bfdfac344d1d24003b74f3ae6"
+    },
+    "batch7-before/solver/process-3/process-3.nl": {
+      "path": "solver/process-3/process-3.nl",
+      "sha256": "d84dab7789ba14ee1dbb6cbd6459b9d234f832d15ddee8423dc4d7c1bdf6c062"
+    }
+  }
+}

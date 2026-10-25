@@ -1,0 +1,28 @@
+{
+  "wheel_sha256": "e2c111ef1f4af97b105ac1e4bbcbc3cb53dac127a86512c303316a714a4a180a",
+  "script_sha256": "e65336cbd62daee65a9b8f1ae1608b99f5e313b7f8def4f313c21deef7dc1f1e",
+  "criterion": 1e-07,
+  "inputs": {
+    "analyses/phase-stability-cutover/results/current-engine.csv": "cf24341031bf4d34f81debbf24d726a681ab3e375dbb93f28dde314b08bcb529",
+    "analyses/phase-stability-cutover/results/native-e8ad39e0/current-engine.csv": "1e2626e4bdc6c320fd077d251f292655ac90f9621377900f7acb2a40ddfcf30e",
+    "data/packets/gross-2001-methane-ethane/3/parameters/parameters.json": "109cfe8e80c4fcefadcbb4975ebe7436d371710ed9d20f2c7bd6d30d9c581bf2",
+    "analyses/phase-stability-cutover/inputs/phase-stability-neutral-ternary.json": "ce87eb12ae9fe16c5e266cc0db83841049d49c2aa732eaf4f904cd878ec55b73",
+    "analyses/phase-stability-cutover/inputs/phase-stability-charged-singleton.json": "a5cd3e0d8434eda592ee07025093e2d14bb7758fb21328c06b3c8ff571160b98",
+    "analyses/2026-khudaida-lineage-diagnosis/inputs/data/khudaida-2026-figure-2-electrolyte-lle/6/parameters/parameters.json": "05d684f3ec8a58c51a3d86bcc35b808efc9ee0a858086f705cb1e4ea011ab2e7"
+  },
+  "outputs": {
+    "comparison.csv": "4081ce1028f0f028500f15362c24c64d11a2afa8af6abee566bdc7bdd45b41d5",
+    "candidates.csv": "54fa529be3feceaa3f9eb70ca44c5f3bfdb5ed7fbff93a7f8b205d1ca2e3ad68",
+    "quantities.csv": "481c1e61cd5f49e431e317ae9f6e3866e24a4df4fc015bbd00336ab0768a4b7f",
+    "unverifiable.csv": "f793765a0455eac62a992d85d3a8fc61e8be339de28f2908a114204bfd75a5d4"
+  },
+  "method": "Native supplied-composition evaluation without packing guesses; branch-selected density roots and newly solved candidate planes. One-phase guesses use historical source definitions; multiphase guesses use retained native candidates.",
+  "basis": "Historical TPD values retain full precision; historical argmins retain six decimals. Stationarity at a minimum makes composition rounding affect TPD at second order, provided the same local branch and plane apply. Unknown exact historical argmins preclude an exact displacement or rigorous rounding-error bound.",
+  "limits": [
+    "not global certificates",
+    "numerical verification, not physical validation",
+    "candidate planes are newly solved; historical snapshot equivalence unverifiable",
+    "charged whole-family refusal under density-independent permittivity"
+  ],
+  "stage": "Stopped before independent delivered review and PR"
+}

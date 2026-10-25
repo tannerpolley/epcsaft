@@ -1,0 +1,31 @@
+{
+  "base": "29fc98dd503527a4c2aef8b4a91017d76c0abdee",
+  "engine_runtime_changed": false,
+  "tolerances_changed": false,
+  "unchanged_runs": [
+    {
+      "producer": "trace",
+      "command": [
+        ".venv/bin/python",
+        "-B",
+        "analyses/2026-trace-solvent-activity/scripts/verify.py"
+      ],
+      "exit": 1
+    }
+  ],
+  "qualification_base": "8ffd627f0f7e4e68fdf9db634773ff00e058d85e",
+  "producer_head": "388ed38b12d618e711c64a3c05c7f88653f84d6a",
+  "final_runs": [
+    {
+      "producer": "trace",
+      "command": [
+        ".venv/bin/python",
+        "-B",
+        "analyses/2026-trace-solvent-activity/scripts/verify.py"
+      ],
+      "exit": 0,
+      "seconds": 0.22250156100017193,
+      "producer_sha256": "7c01c0d7ed833102e4617c9cc94cb45baa474e1fb6acf5edbf3f892f421c921a"
+    }
+  ]
+}

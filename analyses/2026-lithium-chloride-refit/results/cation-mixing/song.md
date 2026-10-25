@@ -1,0 +1,1 @@
+The eight divalent-background predictions use LiCl=1e-06 mol/kg at the declared background ionic strengths. Song's published θ=0.010196 kg/mol and ψ=-0.0005947 kg²/mol² remain a report-only native Pitzer comparator with shared Yao lineage.

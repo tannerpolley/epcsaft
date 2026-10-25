@@ -1,0 +1,1386 @@
+section,operation,comparison,quantity,passed,cause,reference,other,scaled_error,tolerance
+T7,case-6/figure-2-point-7/cold,same image,complete returned value,True,,,,,
+T7,case-6/figure-2-point-7/accepted,same image,complete returned value,True,,,,,
+T7,case-7/flash-5918.5286-Pa/cold,same image,complete returned value,True,,,,,
+T7,case-7/flash-5918.5286-Pa/accepted,same image,complete returned value,True,,,,,
+T7,khudaida/sequential-8,same image,complete returned value,True,,,,,
+T7,mea-nominally-unloaded/353.15-K,same image,complete returned value,True,,,,,
+T7,mea-f1/residual-jacobian,same image,complete returned value,True,,,,,
+T7,mea-cp/hilliard-353.15-K-0.358,same image,complete returned value,True,,,,,
+T3,C1-300,Engine vs FeOs,P,True,,998660.8957399135,998660.8955479692,1.9220168014839254e-10,1e-07
+T3,C1-300,Engine vs FeOs,rho[0],True,,11100.251233209614,11100.251234176576,8.711172510278017e-11,1e-07
+T3,C1-300,Engine vs FeOs,x[0][0],True,,1.0,1.0,0.0,1e-08
+T3,C1-300,Engine vs FeOs,rho[1],True,,482.51212681503523,482.51212670173845,2.348060740550548e-10,1e-07
+T3,C1-300,Engine vs FeOs,x[1][0],True,,1.0,1.0,0.0,1e-08
+T3,C1-300,Engine vs Clapeyron,P,True,,998660.8957399135,998660.895739916,2.5645713085571505e-15,1e-07
+T3,C1-300,Engine vs Clapeyron,rho[0],True,,11100.251233209614,11100.251233209623,8.193460514226125e-16,1e-07
+T3,C1-300,Engine vs Clapeyron,x[0][0],True,,1.0,1.0,0.0,1e-08
+T3,C1-300,Engine vs Clapeyron,rho[1],True,,482.51212681503523,482.51212681503665,2.9451808411541853e-15,1e-07
+T3,C1-300,Engine vs Clapeyron,x[1][0],True,,1.0,1.0,0.0,1e-08
+T3,C1-300,same image,P,True,,998660.8957399135,998660.8957399135,0.0,1e-10
+T3,C1-300,same image,rho[0],True,,11100.251233209614,11100.251233209614,0.0,1e-10
+T3,C1-300,same image,rho[1],True,,482.51212681503523,482.51212681503523,0.0,1e-10
+T3,C1-300,same image,x[0][0],True,,1.0,1.0,0.0,1e-10
+T3,C1-300,same image,x[1][0],True,,1.0,1.0,0.0,1e-10
+T3,C2-0.5,Engine vs FeOs,P,True,,1414326.665544729,1414326.6653261185,1.5456861375692972e-10,1e-07
+T3,C2-0.5,Engine vs FeOs,rho[0],True,,10841.806748043731,10841.806748901787,7.91432203479259e-11,1e-07
+T3,C2-0.5,Engine vs FeOs,x[0][0],True,,0.5,0.5,0.0,1e-08
+T3,C2-0.5,Engine vs FeOs,x[0][1],True,,0.5,0.5,0.0,1e-08
+T3,C2-0.5,Engine vs FeOs,rho[1],True,,581.0840261067516,581.0840259890864,2.024925649896111e-10,1e-07
+T3,C2-0.5,Engine vs FeOs,x[1][0],True,,0.13347906744642343,0.13347906743585775,1.0565687214025843e-11,1e-08
+T3,C2-0.5,Engine vs FeOs,x[1][1],True,,0.8665209325535767,0.8665209325641422,1.0565548436147765e-11,1e-08
+T3,C2-0.5,Engine vs Clapeyron,P,True,,1414326.665544729,1414326.6655442857,3.134421179467947e-13,1e-07
+T3,C2-0.5,Engine vs Clapeyron,rho[0],True,,10841.806748043731,10841.806748043704,2.5166323000648444e-15,1e-07
+T3,C2-0.5,Engine vs Clapeyron,x[0][0],True,,0.5,0.5,0.0,1e-08
+T3,C2-0.5,Engine vs Clapeyron,x[0][1],True,,0.5,0.5,0.0,1e-08
+T3,C2-0.5,Engine vs Clapeyron,rho[1],True,,581.0840261067516,581.0840261065543,3.3944602602234915e-13,1e-07
+T3,C2-0.5,Engine vs Clapeyron,x[1][0],True,,0.13347906744642343,0.13347906744642632,2.886579864025407e-15,1e-08
+T3,C2-0.5,Engine vs Clapeyron,x[1][1],True,,0.8665209325535767,0.8665209325535737,2.9976021664879227e-15,1e-08
+T3,C2-0.5,same image,P,True,,1414326.665544729,1414326.665544729,0.0,1e-10
+T3,C2-0.5,same image,rho[0],True,,10841.806748043731,10841.806748043731,0.0,1e-10
+T3,C2-0.5,same image,rho[1],True,,581.0840261067516,581.0840261067516,0.0,1e-10
+T3,C2-0.5,same image,x[0][0],True,,0.5,0.5,0.0,1e-10
+T3,C2-0.5,same image,x[0][1],True,,0.5,0.5,0.0,1e-10
+T3,C2-0.5,same image,x[1][0],True,,0.13347906744642343,0.13347906744642343,0.0,1e-10
+T3,C2-0.5,same image,x[1][1],True,,0.8665209325535767,0.8665209325535767,0.0,1e-10
+T3,methane-bubble,Engine vs FeOs,P,True,,1596859.1113027746,1596859.1112063883,6.035992646753849e-11,1e-07
+T3,methane-bubble,Engine vs FeOs,rho[0],True,,19698.500296312835,19698.500297765153,7.372731414740885e-11,1e-07
+T3,methane-bubble,Engine vs FeOs,x[0][0],True,,0.5,0.5,0.0,1e-08
+T3,methane-bubble,Engine vs FeOs,x[0][1],True,,0.5,0.5,0.0,1e-08
+T3,methane-bubble,Engine vs FeOs,rho[1],True,,1288.4550705292982,1288.4550704360895,7.23414088301943e-11,1e-07
+T3,methane-bubble,Engine vs FeOs,x[1][0],True,,0.9563602429614723,0.9563602429757846,1.4312329099652743e-11,1e-08
+T3,methane-bubble,Engine vs FeOs,x[1][1],True,,0.04363975703852775,0.04363975702421536,1.4312391549697878e-11,1e-08
+T3,methane-bubble,Engine vs Clapeyron,P,True,,1596859.1113027746,1596859.1113028142,2.4786913974437027e-14,1e-07
+T3,methane-bubble,Engine vs Clapeyron,rho[0],True,,19698.500296312835,19698.50029631284,1.8468303436138586e-16,1e-07
+T3,methane-bubble,Engine vs Clapeyron,x[0][0],True,,0.5,0.5,0.0,1e-08
+T3,methane-bubble,Engine vs Clapeyron,x[0][1],True,,0.5,0.5,0.0,1e-08
+T3,methane-bubble,Engine vs Clapeyron,rho[1],True,,1288.4550705292982,1288.455070529291,5.4705702200734335e-15,1e-07
+T3,methane-bubble,Engine vs Clapeyron,x[1][0],True,,0.9563602429614723,0.956360242961472,2.220446049250313e-16,1e-08
+T3,methane-bubble,Engine vs Clapeyron,x[1][1],True,,0.04363975703852775,0.043639757038528,2.498001805406602e-16,1e-08
+T3,methane-bubble,same image,P,True,,1596859.1113027746,1596859.1113027746,0.0,1e-10
+T3,methane-bubble,same image,rho[0],True,,19698.500296312835,19698.500296312835,0.0,1e-10
+T3,methane-bubble,same image,rho[1],True,,1288.4550705292982,1288.4550705292982,0.0,1e-10
+T3,methane-bubble,same image,x[0][0],True,,0.5,0.5,0.0,1e-10
+T3,methane-bubble,same image,x[0][1],True,,0.5,0.5,0.0,1e-10
+T3,methane-bubble,same image,x[1][0],True,,0.9563602429614723,0.9563602429614723,0.0,1e-10
+T3,methane-bubble,same image,x[1][1],True,,0.04363975703852775,0.04363975703852775,0.0,1e-10
+T1,O-P01/propane-dilute/bundle,Engine vs FeOs,P,True,,1027555.346013367,1027555.3460099576,3.3179128776380894e-12,1e-08
+T1,O-P01/propane-dilute/bundle,Engine vs FeOs,h_res,True,,-1244.955786583384,-1244.9557866026082,1.5441686437324242e-11,1e-08
+T1,O-P01/propane-dilute/bundle,Engine vs FeOs,cv_res,True,,1.2861592273215545,1.2861592273570663,2.7610745975238658e-11,1e-08
+T1,O-P01/propane-dilute/bundle,Engine vs FeOs,a_res,True,,-0.18065232059197256,-0.18065232059479033,2.817773792074263e-12,1e-08
+T1,O-P01/propane-dilute/bundle,Engine vs FeOs,lnphi[0],True,,-0.1630483442503253,-0.16304834425255887,2.2335744365165056e-12,1e-08
+T1,O-P01/propane-dilute/bundle,Engine vs Clapeyron,P,True,,1027555.346013367,1027555.346013367,0.0,1e-08
+T1,O-P01/propane-dilute/bundle,Engine vs Clapeyron,h_res,True,,-1244.955786583384,-1244.955786583384,0.0,1e-08
+T1,O-P01/propane-dilute/bundle,Engine vs Clapeyron,cv_res,True,,1.2861592273215545,1.2861592273215532,1.0358496842763821e-15,1e-08
+T1,O-P01/propane-dilute/bundle,Engine vs Clapeyron,a_res,True,,-0.18065232059197256,-0.1806523205919726,2.7755575615628914e-17,1e-08
+T1,O-P01/propane-dilute/bundle,Engine vs Clapeyron,lnphi[0],True,,-0.1630483442503253,-0.1630483442503251,1.942890293094024e-16,1e-08
+T1,O-P01/propane-dilute/bundle,same image,P,True,,1027555.346013367,1027555.346013367,0.0,1e-10
+T1,O-P01/propane-dilute/bundle,same image,h_res,True,,-1244.955786583384,-1244.955786583384,0.0,1e-10
+T1,O-P01/propane-dilute/bundle,same image,cv_res,True,,1.2861592273215545,1.2861592273215545,0.0,1e-10
+T1,O-P01/propane-dilute/bundle,same image,a_res,True,,-0.18065232059197256,-0.18065232059197256,0.0,1e-10
+T1,O-P01/propane-dilute/bundle,same image,lnphi[0],True,,-0.1630483442503253,-0.1630483442503253,0.0,1e-10
+T1,O-P01/propane-dilute/helmholtz-Value,Engine vs Clapeyron,value,True,,-0.18065232059197256,-0.1806523205919726,2.7755575615628914e-17,1e-08
+T1,O-P01/propane-dilute/helmholtz-Value,same image,value,True,,-0.18065232059197256,-0.18065232059197256,0.0,1e-10
+T1,O-P01/propane-dilute/helmholtz-Gradient,Engine vs Clapeyron,value,True,,-0.18065232059197256,-0.1806523205919726,2.7755575615628914e-17,1e-08
+T1,O-P01/propane-dilute/helmholtz-Gradient,Engine vs Clapeyron,gradient[0],True,,0.0010767418575554977,0.0010767418575554975,2.168404344971009e-19,1e-08
+T1,O-P01/propane-dilute/helmholtz-Gradient,Engine vs Clapeyron,gradient[1],True,,-0.00035217998130972157,-0.00035217998130972157,0.0,1e-08
+T1,O-P01/propane-dilute/helmholtz-Gradient,same image,value,True,,-0.18065232059197256,-0.18065232059197256,0.0,1e-10
+T1,O-P01/propane-dilute/helmholtz-Gradient,same image,gradient[0],True,,0.0010767418575554977,0.0010767418575554977,0.0,1e-10
+T1,O-P01/propane-dilute/helmholtz-Gradient,same image,gradient[1],True,,-0.00035217998130972157,-0.00035217998130972157,0.0,1e-10
+T1,O-P01/propane-dilute/helmholtz-Hessian,Engine vs Clapeyron,value,True,,-0.18065232059197256,-0.1806523205919726,2.7755575615628914e-17,1e-08
+T1,O-P01/propane-dilute/helmholtz-Hessian,Engine vs Clapeyron,gradient[0],True,,0.0010767418575554977,0.0010767418575554975,2.168404344971009e-19,1e-08
+T1,O-P01/propane-dilute/helmholtz-Hessian,Engine vs Clapeyron,gradient[1],True,,-0.00035217998130972157,-0.00035217998130972157,0.0,1e-08
+T1,O-P01/propane-dilute/helmholtz-Hessian,Engine vs Clapeyron,hessian[0],True,,-8.897050152924387e-06,-8.897050152924383e-06,3.3881317890172014e-21,1e-08
+T1,O-P01/propane-dilute/helmholtz-Hessian,Engine vs Clapeyron,hessian[1],True,,2.094972230125479e-06,2.094972230125479e-06,0.0,1e-08
+T1,O-P01/propane-dilute/helmholtz-Hessian,Engine vs Clapeyron,hessian[2],True,,2.094972230125479e-06,2.094972230125479e-06,0.0,1e-08
+T1,O-P01/propane-dilute/helmholtz-Hessian,Engine vs Clapeyron,hessian[3],True,,3.616181110400742e-08,3.616181110400739e-08,2.6469779601696886e-23,1e-08
+T1,O-P01/propane-dilute/helmholtz-Hessian,same image,value,True,,-0.18065232059197256,-0.18065232059197256,0.0,1e-10
+T1,O-P01/propane-dilute/helmholtz-Hessian,same image,gradient[0],True,,0.0010767418575554977,0.0010767418575554977,0.0,1e-10
+T1,O-P01/propane-dilute/helmholtz-Hessian,same image,gradient[1],True,,-0.00035217998130972157,-0.00035217998130972157,0.0,1e-10
+T1,O-P01/propane-dilute/helmholtz-Hessian,same image,hessian[0],True,,-8.897050152924387e-06,-8.897050152924387e-06,0.0,1e-10
+T1,O-P01/propane-dilute/helmholtz-Hessian,same image,hessian[1],True,,2.094972230125479e-06,2.094972230125479e-06,0.0,1e-10
+T1,O-P01/propane-dilute/helmholtz-Hessian,same image,hessian[2],True,,2.094972230125479e-06,2.094972230125479e-06,0.0,1e-10
+T1,O-P01/propane-dilute/helmholtz-Hessian,same image,hessian[3],True,,3.616181110400742e-08,3.616181110400742e-08,0.0,1e-10
+T1,O-P01/propane-dilute/action-T,same image,value,True,,-1244.9557865833842,-1244.9557865833842,0.0,1e-10
+T1,O-P01/propane-dilute/action-rho,same image,value,True,,-1244.9557865833842,-1244.9557865833842,0.0,1e-10
+T1,O-P01/propane-dilute/action-T+T,same image,value,True,,-1244.9557865833842,-1244.9557865833842,0.0,1e-10
+T1,O-P01/propane-dilute/action-T+rho,same image,value,True,,-1244.9557865833842,-1244.9557865833842,0.0,1e-10
+T1,O-P01/propane-dilute/action-rho+rho,same image,value,True,,-1244.9557865833842,-1244.9557865833842,0.0,1e-10
+T1,O-P01/propane-liquid/bundle,Engine vs FeOs,P,False,,-243233.50618167038,-243233.51820974424,4.9450725177282115e-08,1e-08
+T1,O-P01/propane-liquid/bundle,Engine vs FeOs,h_res,True,,-16128.603601683315,-16128.603603219006,9.521536623195999e-11,1e-08
+T1,O-P01/propane-liquid/bundle,Engine vs FeOs,cv_res,True,,11.793616015373823,11.793616015392104,1.550032509996062e-12,1e-08
+T1,O-P01/propane-liquid/bundle,Engine vs FeOs,a_res,True,,-2.5075584675704277,-2.5075584677216396,6.030245508178606e-11,1e-08
+T1,O-P01/propane-liquid/bundle,Engine vs Clapeyron,P,True,,-243233.50618167038,-243233.50618159326,3.1708275689920685e-13,1e-08
+T1,O-P01/propane-liquid/bundle,Engine vs Clapeyron,h_res,True,,-16128.603601683315,-16128.603601683313,1.127803403486221e-16,1e-08
+T1,O-P01/propane-liquid/bundle,Engine vs Clapeyron,cv_res,True,,11.793616015373823,11.793616015373814,7.531010154496475e-16,1e-08
+T1,O-P01/propane-liquid/bundle,Engine vs Clapeyron,a_res,True,,-2.5075584675704277,-2.5075584675704294,7.0840096547035275e-16,1e-08
+T1,O-P01/propane-liquid/bundle,Engine vs Clapeyron,lnphi,True,,,,,
+T1,O-P01/propane-liquid/bundle,same image,P,True,,-243233.50618167038,-243233.50618167038,0.0,1e-10
+T1,O-P01/propane-liquid/bundle,same image,h_res,True,,-16128.603601683315,-16128.603601683315,0.0,1e-10
+T1,O-P01/propane-liquid/bundle,same image,cv_res,True,,11.793616015373823,11.793616015373823,0.0,1e-10
+T1,O-P01/propane-liquid/bundle,same image,a_res,True,,-2.5075584675704277,-2.5075584675704277,0.0,1e-10
+T1,O-P01/propane-liquid/bundle,same image,lnphi,True,,,,,
+T1,O-P01/propane-liquid/helmholtz-Value,Engine vs Clapeyron,value,True,,-2.5075584675704277,-2.5075584675704294,7.0840096547035275e-16,1e-08
+T1,O-P01/propane-liquid/helmholtz-Value,same image,value,True,,-2.5075584675704277,-2.5075584675704277,0.0,1e-10
+T1,O-P01/propane-liquid/helmholtz-Gradient,Engine vs Clapeyron,value,True,,-2.5075584675704277,-2.5075584675704294,7.0840096547035275e-16,1e-08
+T1,O-P01/propane-liquid/helmholtz-Gradient,Engine vs Clapeyron,gradient[0],True,,0.018190729554910842,0.01819072955491085,6.938893903907228e-18,1e-08
+T1,O-P01/propane-liquid/helmholtz-Gradient,Engine vs Clapeyron,gradient[1],True,,-9.171499357062724e-05,-9.171499357062715e-05,9.486769009248164e-20,1e-08
+T1,O-P01/propane-liquid/helmholtz-Gradient,same image,value,True,,-2.5075584675704277,-2.5075584675704277,0.0,1e-10
+T1,O-P01/propane-liquid/helmholtz-Gradient,same image,gradient[0],True,,0.018190729554910842,0.018190729554910842,0.0,1e-10
+T1,O-P01/propane-liquid/helmholtz-Gradient,same image,gradient[1],True,,-9.171499357062724e-05,-9.171499357062724e-05,0.0,1e-10
+T1,O-P01/propane-liquid/helmholtz-Hessian,Engine vs Clapeyron,value,True,,-2.5075584675704277,-2.5075584675704294,7.0840096547035275e-16,1e-08
+T1,O-P01/propane-liquid/helmholtz-Hessian,Engine vs Clapeyron,gradient[0],True,,0.018190729554910842,0.01819072955491085,6.938893903907228e-18,1e-08
+T1,O-P01/propane-liquid/helmholtz-Hessian,Engine vs Clapeyron,gradient[1],True,,-9.171499357062724e-05,-9.171499357062715e-05,9.486769009248164e-20,1e-08
+T1,O-P01/propane-liquid/helmholtz-Hessian,Engine vs Clapeyron,hessian[0],True,,-0.00013703204117316805,-0.0001370320411731681,5.421010862427522e-20,1e-08
+T1,O-P01/propane-liquid/helmholtz-Hessian,Engine vs Clapeyron,hessian[1],True,,1.5932290686413251e-06,1.593229068641326e-06,8.470329472543003e-22,1e-08
+T1,O-P01/propane-liquid/helmholtz-Hessian,Engine vs Clapeyron,hessian[2],True,,1.5932290686413251e-06,1.593229068641326e-06,8.470329472543003e-22,1e-08
+T1,O-P01/propane-liquid/helmholtz-Hessian,Engine vs Clapeyron,hessian[3],True,,4.7837261526039536e-08,4.783726152603965e-08,1.1249656330721176e-22,1e-08
+T1,O-P01/propane-liquid/helmholtz-Hessian,same image,value,True,,-2.5075584675704277,-2.5075584675704277,0.0,1e-10
+T1,O-P01/propane-liquid/helmholtz-Hessian,same image,gradient[0],True,,0.018190729554910842,0.018190729554910842,0.0,1e-10
+T1,O-P01/propane-liquid/helmholtz-Hessian,same image,gradient[1],True,,-9.171499357062724e-05,-9.171499357062724e-05,0.0,1e-10
+T1,O-P01/propane-liquid/helmholtz-Hessian,same image,hessian[0],True,,-0.00013703204117316805,-0.00013703204117316805,0.0,1e-10
+T1,O-P01/propane-liquid/helmholtz-Hessian,same image,hessian[1],True,,1.5932290686413251e-06,1.5932290686413251e-06,0.0,1e-10
+T1,O-P01/propane-liquid/helmholtz-Hessian,same image,hessian[2],True,,1.5932290686413251e-06,1.5932290686413251e-06,0.0,1e-10
+T1,O-P01/propane-liquid/helmholtz-Hessian,same image,hessian[3],True,,4.7837261526039536e-08,4.7837261526039536e-08,0.0,1e-10
+T1,O-P01/propane-liquid/action-T,same image,value,True,,-16128.603601683308,-16128.603601683308,0.0,1e-10
+T1,O-P01/propane-liquid/action-rho,same image,value,True,,-16128.603601683308,-16128.603601683308,0.0,1e-10
+T1,O-P01/propane-liquid/action-T+T,same image,value,True,,-16128.603601683308,-16128.603601683308,0.0,1e-10
+T1,O-P01/propane-liquid/action-T+rho,same image,value,True,,-16128.603601683308,-16128.603601683308,0.0,1e-10
+T1,O-P01/propane-liquid/action-rho+rho,same image,value,True,,-16128.603601683308,-16128.603601683308,0.0,1e-10
+T1,O-P01/methanol-liquid/bundle,Engine vs FeOs,P,True,,-16333098.796221307,-16333098.831680007,2.170972030281251e-09,1e-08
+T1,O-P01/methanol-liquid/bundle,Engine vs FeOs,h_res,True,,-37608.5120110396,-37608.51201303643,5.309511737288508e-11,1e-08
+T1,O-P01/methanol-liquid/bundle,Engine vs FeOs,cv_res,True,,21.782796799078877,21.782796799255934,8.128276329347595e-12,1e-08
+T1,O-P01/methanol-liquid/bundle,Engine vs FeOs,a_res,True,,-7.183258619297888,-7.183258619463368,2.3036908853543612e-11,1e-08
+T1,O-P01/methanol-liquid/bundle,Engine vs Clapeyron,P,True,,-16333098.796221307,-16333098.796221724,2.5545214575218956e-14,1e-08
+T1,O-P01/methanol-liquid/bundle,Engine vs Clapeyron,h_res,True,,-37608.5120110396,-37608.512011039624,5.803971408425548e-16,1e-08
+T1,O-P01/methanol-liquid/bundle,Engine vs Clapeyron,cv_res,True,,21.782796799078877,21.782796799078795,3.75123614135109e-15,1e-08
+T1,O-P01/methanol-liquid/bundle,Engine vs Clapeyron,a_res,True,,-7.183258619297888,-7.183258619297892,4.945824544387282e-16,1e-08
+T1,O-P01/methanol-liquid/bundle,Engine vs Clapeyron,lnphi,True,,,,,
+T1,O-P01/methanol-liquid/bundle,same image,P,True,,-16333098.796221307,-16333098.796221307,0.0,1e-10
+T1,O-P01/methanol-liquid/bundle,same image,h_res,True,,-37608.5120110396,-37608.5120110396,0.0,1e-10
+T1,O-P01/methanol-liquid/bundle,same image,cv_res,True,,21.782796799078877,21.782796799078877,0.0,1e-10
+T1,O-P01/methanol-liquid/bundle,same image,a_res,True,,-7.183258619297888,-7.183258619297888,0.0,1e-10
+T1,O-P01/methanol-liquid/bundle,same image,lnphi,True,,,,,
+T1,O-P01/methanol-liquid/action-T,same image,value,True,,-37608.512011039595,-37608.512011039595,0.0,1e-10
+T1,O-P01/methanol-liquid/action-rho,same image,value,True,,-37608.512011039595,-37608.512011039595,0.0,1e-10
+T1,O-P01/methanol-liquid/action-T+T,same image,value,True,,-37608.512011039595,-37608.512011039595,0.0,1e-10
+T1,O-P01/methanol-liquid/action-T+rho,same image,value,True,,-37608.512011039595,-37608.512011039595,0.0,1e-10
+T1,O-P01/methanol-liquid/action-rho+rho,same image,value,True,,-37608.512011039595,-37608.512011039595,0.0,1e-10
+T1,O-P01/methanol-vapor/bundle,Engine vs FeOs,P,True,,982630.7392882592,982630.7392877319,5.365647251541132e-13,1e-08
+T1,O-P01/methanol-vapor/bundle,Engine vs FeOs,h_res,True,,-3225.264586095601,-3225.2645861000474,1.378652658802336e-12,1e-08
+T1,O-P01/methanol-vapor/bundle,Engine vs FeOs,cv_res,True,,30.206702278650425,30.206702278654525,1.3572589114545324e-13,1e-08
+T1,O-P01/methanol-vapor/bundle,Engine vs FeOs,a_res,True,,-0.13612870851771997,-0.1361287085181914,4.714284518314571e-13,1e-08
+T1,O-P01/methanol-vapor/bundle,Engine vs FeOs,lnphi[0],True,,-0.12765890112370973,-0.12765890112411457,4.0484282592956333e-13,1e-08
+T1,O-P01/methanol-vapor/bundle,Engine vs Clapeyron,P,True,,982630.7392882592,982630.7392882592,0.0,1e-08
+T1,O-P01/methanol-vapor/bundle,Engine vs Clapeyron,h_res,True,,-3225.264586095601,-3225.264586095601,0.0,1e-08
+T1,O-P01/methanol-vapor/bundle,Engine vs Clapeyron,cv_res,True,,30.206702278650425,30.2067022786504,8.232939670869164e-16,1e-08
+T1,O-P01/methanol-vapor/bundle,Engine vs Clapeyron,a_res,True,,-0.13612870851771997,-0.13612870851771997,0.0,1e-08
+T1,O-P01/methanol-vapor/bundle,Engine vs Clapeyron,lnphi[0],True,,-0.12765890112370973,-0.12765890112370987,1.3877787807814457e-16,1e-08
+T1,O-P01/methanol-vapor/bundle,same image,P,True,,982630.7392882592,982630.7392882592,0.0,1e-10
+T1,O-P01/methanol-vapor/bundle,same image,h_res,True,,-3225.264586095601,-3225.264586095601,0.0,1e-10
+T1,O-P01/methanol-vapor/bundle,same image,cv_res,True,,30.206702278650425,30.206702278650425,0.0,1e-10
+T1,O-P01/methanol-vapor/bundle,same image,a_res,True,,-0.13612870851771997,-0.13612870851771997,0.0,1e-10
+T1,O-P01/methanol-vapor/bundle,same image,lnphi[0],True,,-0.12765890112370973,-0.12765890112370973,0.0,1e-10
+T1,O-P01/methanol-vapor/action-T,same image,value,True,,-3225.2645860956,-3225.2645860956,0.0,1e-10
+T1,O-P01/methanol-vapor/action-rho,same image,value,True,,-3225.2645860956,-3225.2645860956,0.0,1e-10
+T1,O-P01/methanol-vapor/action-T+T,same image,value,True,,-3225.2645860956,-3225.2645860956,0.0,1e-10
+T1,O-P01/methanol-vapor/action-T+rho,same image,value,True,,-3225.2645860956,-3225.2645860956,0.0,1e-10
+T1,O-P01/methanol-vapor/action-rho+rho,same image,value,True,,-3225.2645860956,-3225.2645860956,0.0,1e-10
+T1,O-P01/acetone-polar/bundle,Engine vs FeOs,P,False,,-16949035.598691568,-16949033.584796652,1.1882061984318555e-07,1e-08
+T1,O-P01/acetone-polar/bundle,Engine vs FeOs,h_res,False,,-32230.56342281335,-32230.562555706063,2.6903261823014345e-08,1e-08
+T1,O-P01/acetone-polar/bundle,Engine vs FeOs,cv_res,False,,18.008938488629298,18.00893465901237,2.12650897318e-07,1e-08
+T1,O-P01/acetone-polar/bundle,Engine vs FeOs,a_res,False,,-5.892521636814719,-5.892521518738524,2.0038313360780132e-08,1e-08
+T1,O-P01/acetone-polar/bundle,Engine vs Clapeyron,P,True,,-16949035.598691568,-16949035.57417452,1.4465158213599863e-09,1e-08
+T1,O-P01/acetone-polar/bundle,Engine vs Clapeyron,h_res,True,,-32230.56342281335,-32230.563418784364,1.2500511016345864e-10,1e-08
+T1,O-P01/acetone-polar/bundle,Engine vs Clapeyron,cv_res,True,,18.008938488629298,18.008938495156258,3.6242892979613994e-10,1e-08
+T1,O-P01/acetone-polar/bundle,Engine vs Clapeyron,a_res,True,,-5.892521636814719,-5.8925216359781105,1.419779455522401e-10,1e-08
+T1,O-P01/acetone-polar/bundle,Engine vs Clapeyron,lnphi,True,,,,,
+T1,O-P01/acetone-polar/bundle,same image,P,True,,-16949035.598691568,-16949035.598691568,0.0,1e-10
+T1,O-P01/acetone-polar/bundle,same image,h_res,True,,-32230.56342281335,-32230.56342281335,0.0,1e-10
+T1,O-P01/acetone-polar/bundle,same image,cv_res,True,,18.008938488629298,18.008938488629298,0.0,1e-10
+T1,O-P01/acetone-polar/bundle,same image,a_res,True,,-5.892521636814719,-5.892521636814719,0.0,1e-10
+T1,O-P01/acetone-polar/bundle,same image,lnphi,True,,,,,
+T1,O-P01/acetone-polar/action-T,same image,value,True,,-32230.563422813346,-32230.563422813346,0.0,1e-10
+T1,O-P01/acetone-polar/action-rho,same image,value,True,,-32230.563422813346,-32230.563422813346,0.0,1e-10
+T1,O-P01/acetone-polar/action-T+T,same image,value,True,,-32230.563422813346,-32230.563422813346,0.0,1e-10
+T1,O-P01/acetone-polar/action-T+rho,same image,value,True,,-32230.563422813346,-32230.563422813346,0.0,1e-10
+T1,O-P01/acetone-polar/action-rho+rho,same image,value,True,,-32230.563422813346,-32230.563422813346,0.0,1e-10
+T1,O-P01/methane-ethane/bundle,Engine vs FeOs,P,True,,585985.3612640388,585985.3606145345,1.108396909669856e-09,1e-08
+T1,O-P01/methane-ethane/bundle,Engine vs FeOs,h_res,True,,-6158.935479558548,-6158.935479726129,2.720951945525627e-11,1e-08
+T1,O-P01/methane-ethane/bundle,Engine vs FeOs,cv_res,True,,5.324849856150349,5.324849856253557,1.938235096052245e-11,1e-08
+T1,O-P01/methane-ethane/bundle,Engine vs FeOs,a_res,True,,-1.245702476502669,-1.245702476540452,3.033076572102037e-11,1e-08
+T1,O-P01/methane-ethane/bundle,Engine vs FeOs,lnphi[0],True,,1.8630576747843257,1.8630576758272201,5.597757122640477e-10,1e-08
+T1,O-P01/methane-ethane/bundle,Engine vs FeOs,lnphi[1],True,,0.5160002530843988,0.5160002541027371,1.0183383025719195e-09,1e-08
+T1,O-P01/methane-ethane/bundle,Engine vs Clapeyron,P,True,,585985.3612640388,585985.361264051,2.0859921765724915e-14,1e-08
+T1,O-P01/methane-ethane/bundle,Engine vs Clapeyron,h_res,True,,-6158.935479558548,-6158.935479558546,2.9534152607752853e-16,1e-08
+T1,O-P01/methane-ethane/bundle,Engine vs Clapeyron,cv_res,True,,5.324849856150349,5.324849856150349,0.0,1e-08
+T1,O-P01/methane-ethane/bundle,Engine vs Clapeyron,a_res,True,,-1.245702476502669,-1.2457024765026687,1.782485056531519e-16,1e-08
+T1,O-P01/methane-ethane/bundle,Engine vs Clapeyron,lnphi[0],True,,1.8630576747843257,1.863057674784306,1.060727754475744e-14,1e-08
+T1,O-P01/methane-ethane/bundle,Engine vs Clapeyron,lnphi[1],True,,0.5160002530843988,0.5160002530843797,1.9095836023552692e-14,1e-08
+T1,O-P01/methane-ethane/bundle,same image,P,True,,585985.3612640388,585985.3612640388,0.0,1e-10
+T1,O-P01/methane-ethane/bundle,same image,h_res,True,,-6158.935479558548,-6158.935479558548,0.0,1e-10
+T1,O-P01/methane-ethane/bundle,same image,cv_res,True,,5.324849856150349,5.324849856150349,0.0,1e-10
+T1,O-P01/methane-ethane/bundle,same image,a_res,True,,-1.245702476502669,-1.245702476502669,0.0,1e-10
+T1,O-P01/methane-ethane/bundle,same image,lnphi[0],True,,1.8630576747843257,1.8630576747843257,0.0,1e-10
+T1,O-P01/methane-ethane/bundle,same image,lnphi[1],True,,0.5160002530843988,0.5160002530843988,0.0,1e-10
+T1,O-P01/methane-ethane/action-T,same image,value,True,,-6158.935479558549,-6158.935479558549,0.0,1e-10
+T1,O-P01/methane-ethane/action-rho,same image,value,True,,-6158.935479558549,-6158.935479558549,0.0,1e-10
+T1,O-P01/methane-ethane/action-x0-x1,same image,value,True,,-6158.935479558549,-6158.935479558549,0.0,1e-10
+T1,O-P01/methane-ethane/action-T+T,same image,value,True,,-6158.935479558549,-6158.935479558549,0.0,1e-10
+T1,O-P01/methane-ethane/action-T+rho,same image,value,True,,-6158.935479558549,-6158.935479558549,0.0,1e-10
+T1,O-P01/methane-ethane/action-T+x0-x1,same image,value,True,,-6158.935479558549,-6158.935479558549,0.0,1e-10
+T1,O-P01/methane-ethane/action-rho+rho,same image,value,True,,-6158.935479558549,-6158.935479558549,0.0,1e-10
+T1,O-P01/methane-ethane/action-rho+x0-x1,same image,value,True,,-6158.935479558549,-6158.935479558549,0.0,1e-10
+T1,O-P01/methane-ethane/action-x0-x1+x0-x1,same image,value,True,,-6158.935479558549,-6158.935479558549,0.0,1e-10
+T1,O-P01/methanol-hexane/bundle,Engine vs FeOs,P,True,,-33924579.12134827,-33924579.12895391,2.241926731469972e-10,1e-08
+T1,O-P01/methanol-hexane/bundle,Engine vs FeOs,h_res,True,,-30845.42257652554,-30845.422578082347,5.04712666177763e-11,1e-08
+T1,O-P01/methanol-hexane/bundle,Engine vs FeOs,cv_res,True,,29.28737284616262,29.28737284615049,4.1413630929392527e-13,1e-08
+T1,O-P01/methanol-hexane/bundle,Engine vs FeOs,a_res,True,,-4.208610684362631,-4.20861068451647,3.655353731942873e-11,1e-08
+T1,O-P01/methanol-hexane/bundle,Engine vs Clapeyron,P,True,,-33924579.12134827,-33924579.121348426,4.612059945555527e-15,1e-08
+T1,O-P01/methanol-hexane/bundle,Engine vs Clapeyron,h_res,True,,-30845.42257652554,-30845.42257652556,7.07653551783792e-16,1e-08
+T1,O-P01/methanol-hexane/bundle,Engine vs Clapeyron,cv_res,True,,29.28737284616262,29.287372846162683,2.1834954795813236e-15,1e-08
+T1,O-P01/methanol-hexane/bundle,Engine vs Clapeyron,a_res,True,,-4.208610684362631,-4.2086106843626325,4.220767784486268e-16,1e-08
+T1,O-P01/methanol-hexane/bundle,Engine vs Clapeyron,lnphi,True,,,,,
+T1,O-P01/methanol-hexane/bundle,same image,P,True,,-33924579.12134827,-33924579.12134827,0.0,1e-10
+T1,O-P01/methanol-hexane/bundle,same image,h_res,True,,-30845.42257652554,-30845.42257652554,0.0,1e-10
+T1,O-P01/methanol-hexane/bundle,same image,cv_res,True,,29.28737284616262,29.28737284616262,0.0,1e-10
+T1,O-P01/methanol-hexane/bundle,same image,a_res,True,,-4.208610684362631,-4.208610684362631,0.0,1e-10
+T1,O-P01/methanol-hexane/bundle,same image,lnphi,True,,,,,
+T1,O-P01/methanol-hexane/action-T,same image,value,True,,-30845.42257652554,-30845.42257652554,0.0,1e-10
+T1,O-P01/methanol-hexane/action-rho,same image,value,True,,-30845.42257652554,-30845.42257652554,0.0,1e-10
+T1,O-P01/methanol-hexane/action-x0-x1,same image,value,True,,-30845.42257652554,-30845.42257652554,0.0,1e-10
+T1,O-P01/methanol-hexane/action-T+T,same image,value,True,,-30845.42257652554,-30845.42257652554,0.0,1e-10
+T1,O-P01/methanol-hexane/action-T+rho,same image,value,True,,-30845.42257652554,-30845.42257652554,0.0,1e-10
+T1,O-P01/methanol-hexane/action-T+x0-x1,same image,value,True,,-30845.42257652554,-30845.42257652554,0.0,1e-10
+T1,O-P01/methanol-hexane/action-rho+rho,same image,value,True,,-30845.42257652554,-30845.42257652554,0.0,1e-10
+T1,O-P01/methanol-hexane/action-rho+x0-x1,same image,value,True,,-30845.42257652554,-30845.42257652554,0.0,1e-10
+T1,O-P01/methanol-hexane/action-x0-x1+x0-x1,same image,value,True,,-30845.42257652554,-30845.42257652554,0.0,1e-10
+T1,O-P07/nacl-0.01/bundle,Engine vs FeOs,P,False,,-56398621.0134906,-56398622.83669248,3.23270638210125e-08,1e-08
+T1,O-P07/nacl-0.01/bundle,Engine vs FeOs,h_res,False,,-55352.67499796585,-55352.71024552565,6.367811015640623e-07,1e-08
+T1,O-P07/nacl-0.01/bundle,Engine vs FeOs,cv_res,True,,39.78708024438079,39.78708036699511,3.0817622930958913e-09,1e-08
+T1,O-P07/nacl-0.01/bundle,Engine vs FeOs,a_res,False,,-14.045713935507578,-14.045728129518178,1.0105571223421598e-06,1e-08
+T1,O-P07/nacl-0.01/bundle,same image,P,True,,-56398621.0134906,-56398621.0134906,0.0,1e-10
+T1,O-P07/nacl-0.01/bundle,same image,h_res,True,,-55352.67499796585,-55352.67499796585,0.0,1e-10
+T1,O-P07/nacl-0.01/bundle,same image,cv_res,True,,39.78708024438079,39.78708024438079,0.0,1e-10
+T1,O-P07/nacl-0.01/bundle,same image,a_res,True,,-14.045713935507578,-14.045713935507578,0.0,1e-10
+T1,O-P07/nacl-0.01/bundle,same image,lnphi,True,,,,,
+T1,O-P07/nacl-0.01/action-T,same image,value,True,,-55352.67499796588,-55352.67499796588,0.0,1e-10
+T1,O-P07/nacl-0.01/action-rho,same image,value,True,,-55352.67499796588,-55352.67499796588,0.0,1e-10
+T1,O-P07/nacl-0.01/action-T+T,same image,value,True,,-55352.67499796588,-55352.67499796588,0.0,1e-10
+T1,O-P07/nacl-0.01/action-T+rho,same image,value,True,,-55352.67499796588,-55352.67499796588,0.0,1e-10
+T1,O-P07/nacl-0.01/action-rho+rho,same image,value,True,,-55352.67499796588,-55352.67499796588,0.0,1e-10
+T1,O-P07/nacl-0.05/bundle,Engine vs FeOs,P,False,,-278760259.0944308,-278760267.1971302,2.906690928540573e-08,1e-08
+T1,O-P07/nacl-0.05/bundle,Engine vs FeOs,h_res,False,,-101506.00508321551,-101506.18142072116,1.7372095293016384e-06,1e-08
+T1,O-P07/nacl-0.05/bundle,Engine vs FeOs,cv_res,True,,50.31178529702933,50.31178577941964,9.588017956536139e-09,1e-08
+T1,O-P07/nacl-0.05/bundle,Engine vs FeOs,a_res,False,,-31.346098501940332,-31.34616951110874,2.2653220318751935e-06,1e-08
+T1,O-P07/nacl-0.05/bundle,same image,P,True,,-278760259.0944308,-278760259.0944308,0.0,1e-10
+T1,O-P07/nacl-0.05/bundle,same image,h_res,True,,-101506.00508321551,-101506.00508321551,0.0,1e-10
+T1,O-P07/nacl-0.05/bundle,same image,cv_res,True,,50.31178529702933,50.31178529702933,0.0,1e-10
+T1,O-P07/nacl-0.05/bundle,same image,a_res,True,,-31.346098501940332,-31.346098501940332,0.0,1e-10
+T1,O-P07/nacl-0.05/bundle,same image,lnphi,True,,,,,
+T1,O-P07/nacl-0.05/action-T,same image,value,True,,-101506.00508321551,-101506.00508321551,0.0,1e-10
+T1,O-P07/nacl-0.05/action-rho,same image,value,True,,-101506.00508321551,-101506.00508321551,0.0,1e-10
+T1,O-P07/nacl-0.05/action-T+T,same image,value,True,,-101506.00508321551,-101506.00508321551,0.0,1e-10
+T1,O-P07/nacl-0.05/action-T+rho,same image,value,True,,-101506.00508321551,-101506.00508321551,0.0,1e-10
+T1,O-P07/nacl-0.05/action-rho+rho,same image,value,True,,-101506.00508321551,-101506.00508321551,0.0,1e-10
+T1,O-P07/nacl-0.10/bundle,Engine vs FeOs,P,False,,-334581598.40077996,-334581613.9183889,4.637914426578862e-08,1e-08
+T1,O-P07/nacl-0.10/bundle,Engine vs FeOs,h_res,False,,-154929.93182510103,-154930.2843576042,2.275426683864473e-06,1e-08
+T1,O-P07/nacl-0.10/bundle,Engine vs FeOs,cv_res,False,,51.05535903744184,51.05535990549619,1.7002217823652623e-08,1e-08
+T1,O-P07/nacl-0.10/bundle,Engine vs FeOs,a_res,False,,-52.90276269227165,-52.90290465254739,2.6834117459755665e-06,1e-08
+T1,O-P07/nacl-0.10/bundle,same image,P,True,,-334581598.40077996,-334581598.40077996,0.0,1e-10
+T1,O-P07/nacl-0.10/bundle,same image,h_res,True,,-154929.93182510103,-154929.93182510103,0.0,1e-10
+T1,O-P07/nacl-0.10/bundle,same image,cv_res,True,,51.05535903744184,51.05535903744184,0.0,1e-10
+T1,O-P07/nacl-0.10/bundle,same image,a_res,True,,-52.90276269227165,-52.90276269227165,0.0,1e-10
+T1,O-P07/nacl-0.10/bundle,same image,lnphi,True,,,,,
+T1,O-P07/nacl-0.10/action-T,same image,value,True,,-154929.93182510108,-154929.93182510108,0.0,1e-10
+T1,O-P07/nacl-0.10/action-rho,same image,value,True,,-154929.93182510108,-154929.93182510108,0.0,1e-10
+T1,O-P07/nacl-0.10/action-T+T,same image,value,True,,-154929.93182510108,-154929.93182510108,0.0,1e-10
+T1,O-P07/nacl-0.10/action-T+rho,same image,value,True,,-154929.93182510108,-154929.93182510108,0.0,1e-10
+T1,O-P07/nacl-0.10/action-rho+rho,same image,value,True,,-154929.93182510108,-154929.93182510108,0.0,1e-10
+T1,A-Q01/300-5000/bundle,Engine vs FeOs,P,True,,7157489.427225645,7157489.427008594,3.032492274790786e-11,1e-08
+T1,A-Q01/300-5000/bundle,Engine vs FeOs,h_res,True,,-3708.239394155674,-3708.2393942506465,2.5611242935888513e-11,1e-08
+T1,A-Q01/300-5000/bundle,Engine vs FeOs,cv_res,True,,2.8590169799372944,2.8590169800027128,2.2881409194617935e-11,1e-08
+T1,A-Q01/300-5000/bundle,Engine vs FeOs,a_res,True,,-0.5113100859905957,-0.5113100860068763,1.6280643500010683e-11,1e-08
+T1,A-Q01/300-5000/bundle,Engine vs FeOs,lnphi[0],True,,-0.01625382522213914,-0.016253825220168494,1.970645868709653e-12,1e-08
+T1,A-Q01/300-5000/bundle,Engine vs FeOs,lnphi[1],True,,-0.6260125105532766,-0.6260125105601891,6.912581618223612e-12,1e-08
+T1,A-Q01/300-5000/bundle,Engine vs Clapeyron,P,True,,7157489.427225645,7157489.427225638,9.1083026927157e-16,1e-08
+T1,A-Q01/300-5000/bundle,Engine vs Clapeyron,h_res,True,,-3708.239394155674,-3708.2393941556757,4.905264224344987e-16,1e-08
+T1,A-Q01/300-5000/bundle,Engine vs Clapeyron,cv_res,True,,2.8590169799372944,2.859016979937298,1.24263469008093e-15,1e-08
+T1,A-Q01/300-5000/bundle,Engine vs Clapeyron,a_res,True,,-0.5113100859905957,-0.5113100859905957,0.0,1e-08
+T1,A-Q01/300-5000/bundle,Engine vs Clapeyron,lnphi[0],True,,-0.01625382522213914,-0.01625382522213925,1.1102230246251565e-16,1e-08
+T1,A-Q01/300-5000/bundle,Engine vs Clapeyron,lnphi[1],True,,-0.6260125105532766,-0.6260125105532762,3.3306690738754696e-16,1e-08
+T1,A-Q01/300-5000/bundle,same image,P,True,,7157489.427225645,7157489.427225645,0.0,1e-10
+T1,A-Q01/300-5000/bundle,same image,h_res,True,,-3708.239394155674,-3708.239394155674,0.0,1e-10
+T1,A-Q01/300-5000/bundle,same image,cv_res,True,,2.8590169799372944,2.8590169799372944,0.0,1e-10
+T1,A-Q01/300-5000/bundle,same image,a_res,True,,-0.5113100859905957,-0.5113100859905957,0.0,1e-10
+T1,A-Q01/300-5000/bundle,same image,lnphi[0],True,,-0.01625382522213914,-0.01625382522213914,0.0,1e-10
+T1,A-Q01/300-5000/bundle,same image,lnphi[1],True,,-0.6260125105532766,-0.6260125105532766,0.0,1e-10
+T1,A-Q01/300-5000/action-T,same image,value,True,,-3708.2393941556743,-3708.2393941556743,0.0,1e-10
+T1,A-Q01/300-5000/action-rho,same image,value,True,,-3708.2393941556743,-3708.2393941556743,0.0,1e-10
+T1,A-Q01/300-5000/action-x0-x1,same image,value,True,,-3708.2393941556743,-3708.2393941556743,0.0,1e-10
+T1,A-Q01/300-5000/action-T+T,same image,value,True,,-3708.2393941556743,-3708.2393941556743,0.0,1e-10
+T1,A-Q01/300-5000/action-T+rho,same image,value,True,,-3708.2393941556743,-3708.2393941556743,0.0,1e-10
+T1,A-Q01/300-5000/action-T+x0-x1,same image,value,True,,-3708.2393941556743,-3708.2393941556743,0.0,1e-10
+T1,A-Q01/300-5000/action-rho+rho,same image,value,True,,-3708.2393941556743,-3708.2393941556743,0.0,1e-10
+T1,A-Q01/300-5000/action-rho+x0-x1,same image,value,True,,-3708.2393941556743,-3708.2393941556743,0.0,1e-10
+T1,A-Q01/300-5000/action-x0-x1+x0-x1,same image,value,True,,-3708.2393941556743,-3708.2393941556743,0.0,1e-10
+T1,A-Q01/180-200/bundle,Engine vs FeOs,P,True,,283489.65856006515,283489.6585596445,1.4838875165970086e-12,1e-08
+T1,A-Q01/180-200/bundle,Engine vs FeOs,h_res,True,,-213.45358976762807,-213.45358977322326,2.6212644114076705e-11,1e-08
+T1,A-Q01/180-200/bundle,Engine vs FeOs,cv_res,True,,0.3684079774706495,0.3684079774857426,1.5093093441720384e-11,1e-08
+T1,A-Q01/180-200/bundle,Engine vs FeOs,a_res,True,,-0.053208562347806444,-0.0532085623492316,1.425158602241794e-12,1e-08
+T1,A-Q01/180-200/bundle,Engine vs FeOs,lnphi[0],True,,-0.02043256725335263,-0.020432567254159074,8.06445188406002e-13,1e-08
+T1,A-Q01/180-200/bundle,Engine vs FeOs,lnphi[1],True,,-0.08308451242865247,-0.08308451243053938,1.8869072970773004e-12,1e-08
+T1,A-Q01/180-200/bundle,Engine vs Clapeyron,P,True,,283489.65856006515,283489.65856006515,0.0,1e-08
+T1,A-Q01/180-200/bundle,Engine vs Clapeyron,h_res,True,,-213.45358976762807,-213.45358976762805,1.331517050678076e-16,1e-08
+T1,A-Q01/180-200/bundle,Engine vs Clapeyron,cv_res,True,,0.3684079774706495,0.36840797747064946,5.551115123125783e-17,1e-08
+T1,A-Q01/180-200/bundle,Engine vs Clapeyron,a_res,True,,-0.053208562347806444,-0.05320856234780645,6.938893903907228e-18,1e-08
+T1,A-Q01/180-200/bundle,Engine vs Clapeyron,lnphi[0],True,,-0.02043256725335263,-0.0204325672533526,2.7755575615628914e-17,1e-08
+T1,A-Q01/180-200/bundle,Engine vs Clapeyron,lnphi[1],True,,-0.08308451242865247,-0.08308451242865247,0.0,1e-08
+T1,A-Q01/180-200/bundle,same image,P,True,,283489.65856006515,283489.65856006515,0.0,1e-10
+T1,A-Q01/180-200/bundle,same image,h_res,True,,-213.45358976762807,-213.45358976762807,0.0,1e-10
+T1,A-Q01/180-200/bundle,same image,cv_res,True,,0.3684079774706495,0.3684079774706495,0.0,1e-10
+T1,A-Q01/180-200/bundle,same image,a_res,True,,-0.053208562347806444,-0.053208562347806444,0.0,1e-10
+T1,A-Q01/180-200/bundle,same image,lnphi[0],True,,-0.02043256725335263,-0.02043256725335263,0.0,1e-10
+T1,A-Q01/180-200/bundle,same image,lnphi[1],True,,-0.08308451242865247,-0.08308451242865247,0.0,1e-10
+T1,A-Q01/180-200/action-T,same image,value,True,,-213.4535897676281,-213.4535897676281,0.0,1e-10
+T1,A-Q01/180-200/action-rho,same image,value,True,,-213.4535897676281,-213.4535897676281,0.0,1e-10
+T1,A-Q01/180-200/action-x0-x1,same image,value,True,,-213.4535897676281,-213.4535897676281,0.0,1e-10
+T1,A-Q01/180-200/action-T+T,same image,value,True,,-213.4535897676281,-213.4535897676281,0.0,1e-10
+T1,A-Q01/180-200/action-T+rho,same image,value,True,,-213.4535897676281,-213.4535897676281,0.0,1e-10
+T1,A-Q01/180-200/action-T+x0-x1,same image,value,True,,-213.4535897676281,-213.4535897676281,0.0,1e-10
+T1,A-Q01/180-200/action-rho+rho,same image,value,True,,-213.4535897676281,-213.4535897676281,0.0,1e-10
+T1,A-Q01/180-200/action-rho+x0-x1,same image,value,True,,-213.4535897676281,-213.4535897676281,0.0,1e-10
+T1,A-Q01/180-200/action-x0-x1+x0-x1,same image,value,True,,-213.4535897676281,-213.4535897676281,0.0,1e-10
+T1,A-Q01/180-18000/bundle,Engine vs FeOs,P,True,,-14018602.142670833,-14018602.15372796,7.88746777023118e-10,1e-08
+T1,A-Q01/180-18000/bundle,Engine vs FeOs,h_res,True,,-10802.937988845173,-10802.937989712018,8.024158409994694e-11,1e-08
+T1,A-Q01/180-18000/bundle,Engine vs FeOs,cv_res,True,,9.480908833619162,9.48090883353316,9.071104668214949e-12,1e-08
+T1,A-Q01/180-18000/bundle,Engine vs FeOs,a_res,True,,-3.0443339002883367,-3.0443339004418184,5.0415518414062804e-11,1e-08
+T1,A-Q01/180-18000/bundle,Engine vs Clapeyron,P,True,,-14018602.142670833,-14018602.142670818,1.0629562806758334e-15,1e-08
+T1,A-Q01/180-18000/bundle,Engine vs Clapeyron,h_res,True,,-10802.937988845173,-10802.93798884517,3.3675827916888843e-16,1e-08
+T1,A-Q01/180-18000/bundle,Engine vs Clapeyron,cv_res,True,,9.480908833619162,9.480908833619196,3.559867576083516e-15,1e-08
+T1,A-Q01/180-18000/bundle,Engine vs Clapeyron,a_res,True,,-3.0443339002883367,-3.0443339002883363,1.4587401526751115e-16,1e-08
+T1,A-Q01/180-18000/bundle,Engine vs Clapeyron,lnphi,True,,,,,
+T1,A-Q01/180-18000/bundle,same image,P,True,,-14018602.142670833,-14018602.142670833,0.0,1e-10
+T1,A-Q01/180-18000/bundle,same image,h_res,True,,-10802.937988845173,-10802.937988845173,0.0,1e-10
+T1,A-Q01/180-18000/bundle,same image,cv_res,True,,9.480908833619162,9.480908833619162,0.0,1e-10
+T1,A-Q01/180-18000/bundle,same image,a_res,True,,-3.0443339002883367,-3.0443339002883367,0.0,1e-10
+T1,A-Q01/180-18000/bundle,same image,lnphi,True,,,,,
+T1,A-Q01/180-18000/action-T,same image,value,True,,-10802.93798884517,-10802.93798884517,0.0,1e-10
+T1,A-Q01/180-18000/action-rho,same image,value,True,,-10802.93798884517,-10802.93798884517,0.0,1e-10
+T1,A-Q01/180-18000/action-x0-x1,same image,value,True,,-10802.93798884517,-10802.93798884517,0.0,1e-10
+T1,A-Q01/180-18000/action-T+T,same image,value,True,,-10802.93798884517,-10802.93798884517,0.0,1e-10
+T1,A-Q01/180-18000/action-T+rho,same image,value,True,,-10802.93798884517,-10802.93798884517,0.0,1e-10
+T1,A-Q01/180-18000/action-T+x0-x1,same image,value,True,,-10802.93798884517,-10802.93798884517,0.0,1e-10
+T1,A-Q01/180-18000/action-rho+rho,same image,value,True,,-10802.93798884517,-10802.93798884517,0.0,1e-10
+T1,A-Q01/180-18000/action-rho+x0-x1,same image,value,True,,-10802.93798884517,-10802.93798884517,0.0,1e-10
+T1,A-Q01/180-18000/action-x0-x1+x0-x1,same image,value,True,,-10802.93798884517,-10802.93798884517,0.0,1e-10
+T1,A-Q01/300-dilute/bundle,Engine vs FeOs,P,True,,2.4943387854459424e-07,2.4943387854459424e-07,0.0,1e-08
+T1,A-Q01/300-dilute/bundle,Engine vs FeOs,h_res,True,,-8.917056969632886e-11,-8.922368999387654e-11,5.312029754767833e-14,1e-08
+T1,A-Q01/300-dilute/bundle,Engine vs FeOs,cv_res,True,,8.524004148724187e-14,8.524015429949972e-14,1.1281225785579475e-19,1e-08
+T1,A-Q01/300-dilute/bundle,Engine vs FeOs,a_res,True,,-1.199930042517432e-14,-1.1999359134779159e-14,5.87096048379583e-20,1e-08
+T1,A-Q01/300-dilute/bundle,Engine vs FeOs,lnphi[0],True,,-3.175792891034986e-15,-3.286914609854854e-15,1.1112171881986784e-16,1e-08
+T1,A-Q01/300-dilute/bundle,Engine vs FeOs,lnphi[1],True,,-1.7848965517763612e-14,-1.7960019392563095e-14,1.1105387479948358e-16,1e-08
+T1,A-Q01/300-dilute/bundle,Engine vs Clapeyron,P,True,,2.4943387854459424e-07,2.4943387854459424e-07,0.0,1e-08
+T1,A-Q01/300-dilute/bundle,Engine vs Clapeyron,h_res,True,,-8.917056969632886e-11,-8.922368999170379e-11,5.3120295374933354e-14,1e-08
+T1,A-Q01/300-dilute/bundle,Engine vs Clapeyron,cv_res,True,,8.524004148724187e-14,8.524015429633158e-14,1.1280908971466873e-19,1e-08
+T1,A-Q01/300-dilute/bundle,Engine vs Clapeyron,a_res,True,,-1.199930042517432e-14,-1.1999359134438895e-14,5.870926457385089e-20,1e-08
+T1,A-Q01/300-dilute/bundle,Engine vs Clapeyron,lnphi[0],True,,-3.175792891034986e-15,-3.2869146092902882e-15,1.1112171825530218e-16,1e-08
+T1,A-Q01/300-dilute/bundle,Engine vs Clapeyron,lnphi[1],True,,-1.7848965517763612e-14,-1.7960019391805246e-14,1.1105387404163438e-16,1e-08
+T1,A-Q01/300-dilute/bundle,same image,P,True,,2.4943387854459424e-07,2.4943387854459424e-07,0.0,1e-10
+T1,A-Q01/300-dilute/bundle,same image,h_res,True,,-8.917056969632886e-11,-8.917056969632886e-11,0.0,1e-10
+T1,A-Q01/300-dilute/bundle,same image,cv_res,True,,8.524004148724187e-14,8.524004148724187e-14,0.0,1e-10
+T1,A-Q01/300-dilute/bundle,same image,a_res,True,,-1.199930042517432e-14,-1.199930042517432e-14,0.0,1e-10
+T1,A-Q01/300-dilute/bundle,same image,lnphi[0],True,,-3.175792891034986e-15,-3.175792891034986e-15,0.0,1e-10
+T1,A-Q01/300-dilute/bundle,same image,lnphi[1],True,,-1.7848965517763612e-14,-1.7848965517763612e-14,0.0,1e-10
+T1,A-Q01/300-dilute/action-T,same image,value,True,,-8.922364149813178e-11,-8.922364149813178e-11,0.0,1e-10
+T1,A-Q01/300-dilute/action-rho,same image,value,True,,-8.922364149813178e-11,-8.922364149813178e-11,0.0,1e-10
+T1,A-Q01/300-dilute/action-x0-x1,same image,value,True,,-8.922364149813178e-11,-8.922364149813178e-11,0.0,1e-10
+T1,A-Q01/300-dilute/action-T+T,same image,value,True,,-8.922364149813178e-11,-8.922364149813178e-11,0.0,1e-10
+T1,A-Q01/300-dilute/action-T+rho,same image,value,True,,-8.922364149813178e-11,-8.922364149813178e-11,0.0,1e-10
+T1,A-Q01/300-dilute/action-T+x0-x1,same image,value,True,,-8.922364149813178e-11,-8.922364149813178e-11,0.0,1e-10
+T1,A-Q01/300-dilute/action-rho+rho,same image,value,True,,-8.922364149813178e-11,-8.922364149813178e-11,0.0,1e-10
+T1,A-Q01/300-dilute/action-rho+x0-x1,same image,value,True,,-8.922364149813178e-11,-8.922364149813178e-11,0.0,1e-10
+T1,A-Q01/300-dilute/action-x0-x1+x0-x1,same image,value,True,,-8.922364149813178e-11,-8.922364149813178e-11,0.0,1e-10
+T1,Sol-1/ethane-100/bundle,Engine vs FeOs,P,True,,244855.5912434685,244855.5912433664,4.169651047122872e-13,1e-08
+T1,Sol-1/ethane-100/bundle,Engine vs FeOs,h_res,True,,-131.92998580455338,-131.92998580728727,2.072223545982943e-11,1e-08
+T1,Sol-1/ethane-100/bundle,Engine vs FeOs,cv_res,True,,0.1305752187894173,0.13057521879398643,4.569122857844832e-12,1e-08
+T1,Sol-1/ethane-100/bundle,Engine vs FeOs,a_res,True,,-0.01841723965539474,-0.018417239655806442,4.1170192255357563e-13,1e-08
+T1,Sol-1/ethane-100/bundle,Engine vs FeOs,lnphi[0],True,,-0.018246701902706337,-0.018246701903110313,4.0397546419157493e-13,1e-08
+T1,Sol-1/ethane-100/bundle,Engine vs Clapeyron,P,True,,244855.5912434685,244855.5912434685,0.0,1e-08
+T1,Sol-1/ethane-100/bundle,Engine vs Clapeyron,h_res,True,,-131.92998580455338,-131.92998580455333,4.3086049402762946e-16,1e-08
+T1,Sol-1/ethane-100/bundle,Engine vs Clapeyron,cv_res,True,,0.1305752187894173,0.13057521878941766,3.608224830031759e-16,1e-08
+T1,Sol-1/ethane-100/bundle,Engine vs Clapeyron,a_res,True,,-0.01841723965539474,-0.018417239655394747,6.938893903907228e-18,1e-08
+T1,Sol-1/ethane-100/bundle,Engine vs Clapeyron,lnphi[0],True,,-0.018246701902706337,-0.018246701902706466,1.2836953722228372e-16,1e-08
+T1,Sol-1/ethane-100/bundle,same image,P,True,,244855.5912434685,244855.5912434685,0.0,1e-10
+T1,Sol-1/ethane-100/bundle,same image,h_res,True,,-131.92998580455338,-131.92998580455338,0.0,1e-10
+T1,Sol-1/ethane-100/bundle,same image,cv_res,True,,0.1305752187894173,0.1305752187894173,0.0,1e-10
+T1,Sol-1/ethane-100/bundle,same image,a_res,True,,-0.01841723965539474,-0.01841723965539474,0.0,1e-10
+T1,Sol-1/ethane-100/bundle,same image,lnphi[0],True,,-0.018246701902706337,-0.018246701902706337,0.0,1e-10
+T1,Sol-1/ethane-100/helmholtz-Value,Engine vs Clapeyron,value,True,,-0.01841723965539474,-0.018417239655394747,6.938893903907228e-18,1e-08
+T1,Sol-1/ethane-100/helmholtz-Value,same image,value,True,,-0.01841723965539474,-0.01841723965539474,0.0,1e-10
+T1,Sol-1/ethane-100/helmholtz-Gradient,Engine vs Clapeyron,value,True,,-0.01841723965539474,-0.018417239655394747,6.938893903907228e-18,1e-08
+T1,Sol-1/ethane-100/helmholtz-Gradient,Engine vs Clapeyron,gradient[0],True,,0.00011512351261974986,0.0001151235126197499,4.0657581468206416e-20,1e-08
+T1,Sol-1/ethane-100/helmholtz-Gradient,Engine vs Clapeyron,gradient[1],True,,-0.00018354713192298515,-0.0001835471319229852,5.421010862427522e-20,1e-08
+T1,Sol-1/ethane-100/helmholtz-Gradient,same image,value,True,,-0.01841723965539474,-0.01841723965539474,0.0,1e-10
+T1,Sol-1/ethane-100/helmholtz-Gradient,same image,gradient[0],True,,0.00011512351261974986,0.00011512351261974986,0.0,1e-10
+T1,Sol-1/ethane-100/helmholtz-Gradient,same image,gradient[1],True,,-0.00018354713192298515,-0.00018354713192298515,0.0,1e-10
+T1,Sol-1/ethane-100/helmholtz-Hessian,Engine vs Clapeyron,value,True,,-0.01841723965539474,-0.018417239655394747,6.938893903907228e-18,1e-08
+T1,Sol-1/ethane-100/helmholtz-Hessian,Engine vs Clapeyron,gradient[0],True,,0.00011512351261974986,0.0001151235126197499,4.0657581468206416e-20,1e-08
+T1,Sol-1/ethane-100/helmholtz-Hessian,Engine vs Clapeyron,gradient[1],True,,-0.00018354713192298515,-0.0001835471319229852,5.421010862427522e-20,1e-08
+T1,Sol-1/ethane-100/helmholtz-Hessian,Engine vs Clapeyron,hessian[0],True,,-9.419855182874705e-07,-9.41985518287471e-07,5.293955920339377e-22,1e-08
+T1,Sol-1/ethane-100/helmholtz-Hessian,Engine vs Clapeyron,hessian[1],True,,1.147585660512798e-06,1.1475856605127985e-06,4.235164736271502e-22,1e-08
+T1,Sol-1/ethane-100/helmholtz-Hessian,Engine vs Clapeyron,hessian[2],True,,1.147585660512798e-06,1.1475856605127983e-06,2.117582368135751e-22,1e-08
+T1,Sol-1/ethane-100/helmholtz-Hessian,Engine vs Clapeyron,hessian[3],True,,1.2483007454928868e-08,1.2483007454930197e-08,1.3284520637601624e-21,1e-08
+T1,Sol-1/ethane-100/helmholtz-Hessian,same image,value,True,,-0.01841723965539474,-0.01841723965539474,0.0,1e-10
+T1,Sol-1/ethane-100/helmholtz-Hessian,same image,gradient[0],True,,0.00011512351261974986,0.00011512351261974986,0.0,1e-10
+T1,Sol-1/ethane-100/helmholtz-Hessian,same image,gradient[1],True,,-0.00018354713192298515,-0.00018354713192298515,0.0,1e-10
+T1,Sol-1/ethane-100/helmholtz-Hessian,same image,hessian[0],True,,-9.419855182874705e-07,-9.419855182874705e-07,0.0,1e-10
+T1,Sol-1/ethane-100/helmholtz-Hessian,same image,hessian[1],True,,1.147585660512798e-06,1.147585660512798e-06,0.0,1e-10
+T1,Sol-1/ethane-100/helmholtz-Hessian,same image,hessian[2],True,,1.147585660512798e-06,1.147585660512798e-06,0.0,1e-10
+T1,Sol-1/ethane-100/helmholtz-Hessian,same image,hessian[3],True,,1.2483007454928868e-08,1.2483007454928868e-08,0.0,1e-10
+T1,Sol-1/ethane-100/action-T,same image,value,True,,-131.92998580455327,-131.92998580455327,0.0,1e-10
+T1,Sol-1/ethane-100/action-rho,same image,value,True,,-131.92998580455327,-131.92998580455327,0.0,1e-10
+T1,Sol-1/ethane-100/action-T+T,same image,value,True,,-131.92998580455327,-131.92998580455327,0.0,1e-10
+T1,Sol-1/ethane-100/action-T+rho,same image,value,True,,-131.92998580455327,-131.92998580455327,0.0,1e-10
+T1,Sol-1/ethane-100/action-rho+rho,same image,value,True,,-131.92998580455327,-131.92998580455327,0.0,1e-10
+T1,Sol-1/ethane-10000/bundle,Engine vs FeOs,P,True,,4316185.179414275,4316185.177540872,4.340413532823838e-10,1e-08
+T1,Sol-1/ethane-10000/bundle,Engine vs FeOs,h_res,True,,-8917.616021264384,-8917.616021591264,3.665549974156389e-11,1e-08
+T1,Sol-1/ethane-10000/bundle,Engine vs FeOs,cv_res,True,,5.877922518607876,5.877922518664332,9.604783474186994e-12,1e-08
+T1,Sol-1/ethane-10000/bundle,Engine vs FeOs,a_res,True,,-1.3011759924848851,-1.3011759925341673,3.7875071636784626e-11,1e-08
+T1,Sol-1/ethane-10000/bundle,Engine vs FeOs,lnphi[0],True,,-0.37389992096182345,-0.3738999206521729,3.09650527441363e-10,1e-08
+T1,Sol-1/ethane-10000/bundle,Engine vs Clapeyron,P,True,,4316185.179414275,4316185.179414248,6.25745966430338e-15,1e-08
+T1,Sol-1/ethane-10000/bundle,Engine vs Clapeyron,h_res,True,,-8917.616021264384,-8917.61602126439,6.119312827133646e-16,1e-08
+T1,Sol-1/ethane-10000/bundle,Engine vs Clapeyron,cv_res,True,,5.877922518607876,5.877922518607878,4.533124161921484e-16,1e-08
+T1,Sol-1/ethane-10000/bundle,Engine vs Clapeyron,a_res,True,,-1.3011759924848851,-1.3011759924848867,1.1945441995951003e-15,1e-08
+T1,Sol-1/ethane-10000/bundle,Engine vs Clapeyron,lnphi[0],True,,-0.37389992096182345,-0.373899920961821,2.4424906541753444e-15,1e-08
+T1,Sol-1/ethane-10000/bundle,same image,P,True,,4316185.179414275,4316185.179414275,0.0,1e-10
+T1,Sol-1/ethane-10000/bundle,same image,h_res,True,,-8917.616021264384,-8917.616021264384,0.0,1e-10
+T1,Sol-1/ethane-10000/bundle,same image,cv_res,True,,5.877922518607876,5.877922518607876,0.0,1e-10
+T1,Sol-1/ethane-10000/bundle,same image,a_res,True,,-1.3011759924848851,-1.3011759924848851,0.0,1e-10
+T1,Sol-1/ethane-10000/bundle,same image,lnphi[0],True,,-0.37389992096182345,-0.37389992096182345,0.0,1e-10
+T1,Sol-1/ethane-10000/helmholtz-Value,Engine vs Clapeyron,value,True,,-1.3011759924848851,-1.3011759924848867,1.1945441995951003e-15,1e-08
+T1,Sol-1/ethane-10000/helmholtz-Value,same image,value,True,,-1.3011759924848851,-1.3011759924848851,0.0,1e-10
+T1,Sol-1/ethane-10000/helmholtz-Gradient,Engine vs Clapeyron,value,True,,-1.3011759924848851,-1.3011759924848867,1.1945441995951003e-15,1e-08
+T1,Sol-1/ethane-10000/helmholtz-Gradient,Engine vs Clapeyron,gradient[0],True,,0.009160605065300873,0.009160605065300875,1.734723475976807e-18,1e-08
+T1,Sol-1/ethane-10000/helmholtz-Gradient,Engine vs Clapeyron,gradient[1],True,,-8.269607478904447e-05,-8.269607478904462e-05,1.4907779871675686e-19,1e-08
+T1,Sol-1/ethane-10000/helmholtz-Gradient,same image,value,True,,-1.3011759924848851,-1.3011759924848851,0.0,1e-10
+T1,Sol-1/ethane-10000/helmholtz-Gradient,same image,gradient[0],True,,0.009160605065300873,0.009160605065300873,0.0,1e-10
+T1,Sol-1/ethane-10000/helmholtz-Gradient,same image,gradient[1],True,,-8.269607478904447e-05,-8.269607478904447e-05,0.0,1e-10
+T1,Sol-1/ethane-10000/helmholtz-Hessian,Engine vs Clapeyron,value,True,,-1.3011759924848851,-1.3011759924848867,1.1945441995951003e-15,1e-08
+T1,Sol-1/ethane-10000/helmholtz-Hessian,Engine vs Clapeyron,gradient[0],True,,0.009160605065300873,0.009160605065300875,1.734723475976807e-18,1e-08
+T1,Sol-1/ethane-10000/helmholtz-Hessian,Engine vs Clapeyron,gradient[1],True,,-8.269607478904447e-05,-8.269607478904462e-05,1.4907779871675686e-19,1e-08
+T1,Sol-1/ethane-10000/helmholtz-Hessian,Engine vs Clapeyron,hessian[0],True,,-6.892571803613516e-05,-6.892571803613517e-05,1.3552527156068805e-20,1e-08
+T1,Sol-1/ethane-10000/helmholtz-Hessian,Engine vs Clapeyron,hessian[1],True,,8.315004443712838e-07,8.315004443712837e-07,1.0587911840678754e-22,1e-08
+T1,Sol-1/ethane-10000/helmholtz-Hessian,Engine vs Clapeyron,hessian[2],True,,8.315004443712838e-07,8.315004443712837e-07,1.0587911840678754e-22,1e-08
+T1,Sol-1/ethane-10000/helmholtz-Hessian,Engine vs Clapeyron,hessian[3],True,,9.172634469330298e-09,9.17263446933028e-09,1.819797347616661e-23,1e-08
+T1,Sol-1/ethane-10000/helmholtz-Hessian,same image,value,True,,-1.3011759924848851,-1.3011759924848851,0.0,1e-10
+T1,Sol-1/ethane-10000/helmholtz-Hessian,same image,gradient[0],True,,0.009160605065300873,0.009160605065300873,0.0,1e-10
+T1,Sol-1/ethane-10000/helmholtz-Hessian,same image,gradient[1],True,,-8.269607478904447e-05,-8.269607478904447e-05,0.0,1e-10
+T1,Sol-1/ethane-10000/helmholtz-Hessian,same image,hessian[0],True,,-6.892571803613516e-05,-6.892571803613516e-05,0.0,1e-10
+T1,Sol-1/ethane-10000/helmholtz-Hessian,same image,hessian[1],True,,8.315004443712838e-07,8.315004443712838e-07,0.0,1e-10
+T1,Sol-1/ethane-10000/helmholtz-Hessian,same image,hessian[2],True,,8.315004443712838e-07,8.315004443712838e-07,0.0,1e-10
+T1,Sol-1/ethane-10000/helmholtz-Hessian,same image,hessian[3],True,,9.172634469330298e-09,9.172634469330298e-09,0.0,1e-10
+T1,Sol-1/ethane-10000/action-T,same image,value,True,,-8917.616021264384,-8917.616021264384,0.0,1e-10
+T1,Sol-1/ethane-10000/action-rho,same image,value,True,,-8917.616021264384,-8917.616021264384,0.0,1e-10
+T1,Sol-1/ethane-10000/action-T+T,same image,value,True,,-8917.616021264384,-8917.616021264384,0.0,1e-10
+T1,Sol-1/ethane-10000/action-T+rho,same image,value,True,,-8917.616021264384,-8917.616021264384,0.0,1e-10
+T1,Sol-1/ethane-10000/action-rho+rho,same image,value,True,,-8917.616021264384,-8917.616021264384,0.0,1e-10
+T1,Sol-1/ethane-loop/bundle,Engine vs FeOs,P,True,,5147500.000000006,5147499.999562677,8.495941562754477e-11,1e-08
+T1,Sol-1/ethane-loop/bundle,Engine vs FeOs,h_res,True,,-5990.019418069814,-5990.019418219081,2.4919314868273673e-11,1e-08
+T1,Sol-1/ethane-loop/bundle,Engine vs FeOs,cv_res,True,,4.221254239337661,4.221254239415746,1.849807889258141e-11,1e-08
+T1,Sol-1/ethane-loop/bundle,Engine vs FeOs,a_res,True,,-0.8424371466818686,-0.8424371467055314,2.3662738435348274e-11,1e-08
+T1,Sol-1/ethane-loop/bundle,Engine vs FeOs,lnphi[0],True,,-0.4198561333938653,-0.41985613336129113,3.257416558710702e-11,1e-08
+T1,Sol-1/ethane-loop/bundle,Engine vs Clapeyron,P,True,,5147500.000000006,5147499.999999989,3.2566889447457204e-15,1e-08
+T1,Sol-1/ethane-loop/bundle,Engine vs Clapeyron,h_res,True,,-5990.019418069814,-5990.019418069818,7.591750863355276e-16,1e-08
+T1,Sol-1/ethane-loop/bundle,Engine vs Clapeyron,cv_res,True,,4.221254239337661,4.221254239337668,1.6832502746188234e-15,1e-08
+T1,Sol-1/ethane-loop/bundle,Engine vs Clapeyron,a_res,True,,-0.8424371466818686,-0.8424371466818693,6.661338147750939e-16,1e-08
+T1,Sol-1/ethane-loop/bundle,Engine vs Clapeyron,lnphi[0],True,,-0.4198561333938653,-0.4198561333938633,1.9984014443252818e-15,1e-08
+T1,Sol-1/ethane-loop/bundle,same image,P,True,,5147500.000000006,5147500.000000006,0.0,1e-10
+T1,Sol-1/ethane-loop/bundle,same image,h_res,True,,-5990.019418069814,-5990.019418069814,0.0,1e-10
+T1,Sol-1/ethane-loop/bundle,same image,cv_res,True,,4.221254239337661,4.221254239337661,0.0,1e-10
+T1,Sol-1/ethane-loop/bundle,same image,a_res,True,,-0.8424371466818686,-0.8424371466818686,0.0,1e-10
+T1,Sol-1/ethane-loop/bundle,same image,lnphi[0],True,,-0.4198561333938653,-0.4198561333938653,0.0,1e-10
+T1,Sol-1/ethane-loop/helmholtz-Value,Engine vs Clapeyron,value,True,,-0.8424371466818686,-0.8424371466818693,6.661338147750939e-16,1e-08
+T1,Sol-1/ethane-loop/helmholtz-Value,same image,value,True,,-0.8424371466818686,-0.8424371466818686,0.0,1e-10
+T1,Sol-1/ethane-loop/helmholtz-Gradient,Engine vs Clapeyron,value,True,,-0.8424371466818686,-0.8424371466818693,6.661338147750939e-16,1e-08
+T1,Sol-1/ethane-loop/helmholtz-Gradient,Engine vs Clapeyron,gradient[0],True,,0.0054115167589437905,0.005411516758943793,2.6020852139652106e-18,1e-08
+T1,Sol-1/ethane-loop/helmholtz-Gradient,Engine vs Clapeyron,gradient[1],True,,-0.00011161717437445052,-0.0001116171743744507,1.7618285302889447e-19,1e-08
+T1,Sol-1/ethane-loop/helmholtz-Gradient,same image,value,True,,-0.8424371466818686,-0.8424371466818686,0.0,1e-10
+T1,Sol-1/ethane-loop/helmholtz-Gradient,same image,gradient[0],True,,0.0054115167589437905,0.0054115167589437905,0.0,1e-10
+T1,Sol-1/ethane-loop/helmholtz-Gradient,same image,gradient[1],True,,-0.00011161717437445052,-0.00011161717437445052,0.0,1e-10
+T1,Sol-1/ethane-loop/helmholtz-Hessian,Engine vs Clapeyron,value,True,,-0.8424371466818686,-0.8424371466818693,6.661338147750939e-16,1e-08
+T1,Sol-1/ethane-loop/helmholtz-Hessian,Engine vs Clapeyron,gradient[0],True,,0.0054115167589437905,0.005411516758943793,2.6020852139652106e-18,1e-08
+T1,Sol-1/ethane-loop/helmholtz-Hessian,Engine vs Clapeyron,gradient[1],True,,-0.00011161717437445052,-0.0001116171743744507,1.7618285302889447e-19,1e-08
+T1,Sol-1/ethane-loop/helmholtz-Hessian,Engine vs Clapeyron,hessian[0],True,,-4.0372863815586036e-05,-4.037286381558606e-05,2.710505431213761e-20,1e-08
+T1,Sol-1/ethane-loop/helmholtz-Hessian,Engine vs Clapeyron,hessian[1],True,,7.965491441442824e-07,7.96549144144283e-07,6.352747104407253e-22,1e-08
+T1,Sol-1/ethane-loop/helmholtz-Hessian,Engine vs Clapeyron,hessian[2],True,,7.965491441442824e-07,7.96549144144283e-07,6.352747104407253e-22,1e-08
+T1,Sol-1/ethane-loop/helmholtz-Hessian,Engine vs Clapeyron,hessian[3],True,,9.298696531227379e-09,9.298696531227389e-09,9.926167350636332e-24,1e-08
+T1,Sol-1/ethane-loop/helmholtz-Hessian,same image,value,True,,-0.8424371466818686,-0.8424371466818686,0.0,1e-10
+T1,Sol-1/ethane-loop/helmholtz-Hessian,same image,gradient[0],True,,0.0054115167589437905,0.0054115167589437905,0.0,1e-10
+T1,Sol-1/ethane-loop/helmholtz-Hessian,same image,gradient[1],True,,-0.00011161717437445052,-0.00011161717437445052,0.0,1e-10
+T1,Sol-1/ethane-loop/helmholtz-Hessian,same image,hessian[0],True,,-4.0372863815586036e-05,-4.0372863815586036e-05,0.0,1e-10
+T1,Sol-1/ethane-loop/helmholtz-Hessian,same image,hessian[1],True,,7.965491441442824e-07,7.965491441442824e-07,0.0,1e-10
+T1,Sol-1/ethane-loop/helmholtz-Hessian,same image,hessian[2],True,,7.965491441442824e-07,7.965491441442824e-07,0.0,1e-10
+T1,Sol-1/ethane-loop/helmholtz-Hessian,same image,hessian[3],True,,9.298696531227379e-09,9.298696531227379e-09,0.0,1e-10
+T1,Sol-1/ethane-loop/action-T,same image,value,True,,-5990.0194180698145,-5990.0194180698145,0.0,1e-10
+T1,Sol-1/ethane-loop/action-rho,same image,value,True,,-5990.0194180698145,-5990.0194180698145,0.0,1e-10
+T1,Sol-1/ethane-loop/action-T+T,same image,value,True,,-5990.0194180698145,-5990.0194180698145,0.0,1e-10
+T1,Sol-1/ethane-loop/action-T+rho,same image,value,True,,-5990.0194180698145,-5990.0194180698145,0.0,1e-10
+T1,Sol-1/ethane-loop/action-rho+rho,same image,value,True,,-5990.0194180698145,-5990.0194180698145,0.0,1e-10
+T1,O-S1/MEA-liquid/bundle,same image,P,True,,5918.528591251153,5918.528591251153,0.0,1e-10
+T1,O-S1/MEA-liquid/bundle,same image,h_res,True,,-190227.8462371147,-190227.8462371147,0.0,1e-10
+T1,O-S1/MEA-liquid/bundle,same image,cv_res,True,,27.048723971328794,27.048723971328794,0.0,1e-10
+T1,O-S1/MEA-liquid/bundle,same image,a_res,True,,-63.80540894249152,-63.80540894249152,0.0,1e-10
+T1,O-S1/MEA-liquid/bundle,same image,lnphi[0],True,,9.936445410573867,9.936445410573867,0.0,1e-10
+T1,O-S1/MEA-liquid/bundle,same image,lnphi[1],True,,-2.842015313348174,-2.842015313348174,0.0,1e-10
+T1,O-S1/MEA-liquid/bundle,same image,lnphi[2],True,,0.2985226756481758,0.2985226756481758,0.0,1e-10
+T1,O-S1/MEA-liquid/bundle,same image,lnphi[3],True,,-138.67024994854026,-138.67024994854026,0.0,1e-10
+T1,O-S1/MEA-liquid/bundle,same image,lnphi[4],True,,-144.98094785057665,-144.98094785057665,0.0,1e-10
+T1,O-S1/MEA-liquid/bundle,same image,lnphi[5],True,,-160.95107167000847,-160.95107167000847,0.0,1e-10
+T1,O-S1/MEA-liquid/bundle,same image,lnphi[6],True,,-688.417856997734,-688.417856997734,0.0,1e-10
+T1,O-S1/MEA-liquid/bundle,same image,lnphi[7],True,,-419.1111010454136,-419.1111010454136,0.0,1e-10
+T1,O-S1/MEA-liquid/bundle,same image,lnphi[8],True,,-167.68168286073316,-167.68168286073316,0.0,1e-10
+T1,O-S1/MEA-liquid/action-T,same image,value,True,,-190227.8462371147,-190227.8462371147,0.0,1e-10
+T1,O-S1/MEA-liquid/action-rho,same image,value,True,,-190227.8462371147,-190227.8462371147,0.0,1e-10
+T1,O-S1/MEA-liquid/action-x4-x8,same image,value,True,,-190227.8462371147,-190227.8462371147,0.0,1e-10
+T1,O-S1/MEA-liquid/action-x5-x8,same image,value,True,,-190227.8462371147,-190227.8462371147,0.0,1e-10
+T1,O-S1/MEA-liquid/action-T+T,same image,value,True,,-190227.8462371147,-190227.8462371147,0.0,1e-10
+T1,O-S1/MEA-liquid/action-T+rho,same image,value,True,,-190227.8462371147,-190227.8462371147,0.0,1e-10
+T1,O-S1/MEA-liquid/action-T+x4-x8,same image,value,True,,-190227.8462371147,-190227.8462371147,0.0,1e-10
+T1,O-S1/MEA-liquid/action-T+x5-x8,same image,value,True,,-190227.8462371147,-190227.8462371147,0.0,1e-10
+T1,O-S1/MEA-liquid/action-rho+rho,same image,value,True,,-190227.8462371147,-190227.8462371147,0.0,1e-10
+T1,O-S1/MEA-liquid/action-rho+x4-x8,same image,value,True,,-190227.8462371147,-190227.8462371147,0.0,1e-10
+T1,O-S1/MEA-liquid/action-rho+x5-x8,same image,value,True,,-190227.8462371147,-190227.8462371147,0.0,1e-10
+T1,O-S1/MEA-liquid/action-x4-x8+x4-x8,same image,value,True,,-190227.8462371147,-190227.8462371147,0.0,1e-10
+T1,O-S1/MEA-liquid/action-x4-x8+x5-x8,same image,value,True,,-190227.8462371147,-190227.8462371147,0.0,1e-10
+T1,O-S1/MEA-liquid/action-x5-x8+x5-x8,same image,value,True,,-190227.8462371147,-190227.8462371147,0.0,1e-10
+T1,A-Q05/associating-binary/bundle,same image,P,True,,922317943.1575532,922317943.1575532,0.0,1e-10
+T1,A-Q05/associating-binary/bundle,same image,h_res,True,,-28784.799904786545,-28784.799904786545,0.0,1e-10
+T1,A-Q05/associating-binary/bundle,same image,cv_res,True,,35.01735695914856,35.01735695914856,0.0,1e-10
+T1,A-Q05/associating-binary/bundle,same image,a_res,True,,-9.261469228812356,-9.261469228812356,0.0,1e-10
+T1,A-Q05/associating-binary/bundle,same image,lnphi[0],True,,2.424849902211725,2.424849902211725,0.0,1e-10
+T1,A-Q05/associating-binary/bundle,same image,lnphi[1],True,,-6.1906290576108,-6.1906290576108,0.0,1e-10
+T1,A-Q05/associating-binary/action-T,same image,value,True,,-28784.799904786556,-28784.799904786556,0.0,1e-10
+T1,A-Q05/associating-binary/action-rho,same image,value,True,,-28784.799904786556,-28784.799904786556,0.0,1e-10
+T1,A-Q05/associating-binary/action-x0-x1,same image,value,True,,-28784.799904786556,-28784.799904786556,0.0,1e-10
+T1,A-Q05/associating-binary/action-T+T,same image,value,True,,-28784.799904786556,-28784.799904786556,0.0,1e-10
+T1,A-Q05/associating-binary/action-T+rho,same image,value,True,,-28784.799904786556,-28784.799904786556,0.0,1e-10
+T1,A-Q05/associating-binary/action-T+x0-x1,same image,value,True,,-28784.799904786556,-28784.799904786556,0.0,1e-10
+T1,A-Q05/associating-binary/action-rho+rho,same image,value,True,,-28784.799904786556,-28784.799904786556,0.0,1e-10
+T1,A-Q05/associating-binary/action-rho+x0-x1,same image,value,True,,-28784.799904786556,-28784.799904786556,0.0,1e-10
+T1,A-Q05/associating-binary/action-x0-x1+x0-x1,same image,value,True,,-28784.799904786556,-28784.799904786556,0.0,1e-10
+T1,A-Q05/associating-binary/action-T+T+T,same image,value,True,,-28784.799904786556,-28784.799904786556,0.0,1e-10
+T1,A-Q05/associating-binary/action-T+T+rho,same image,value,True,,-28784.799904786556,-28784.799904786556,0.0,1e-10
+T1,A-Q05/associating-binary/action-T+T+x0-x1,same image,value,True,,-28784.799904786556,-28784.799904786556,0.0,1e-10
+T1,A-Q05/associating-binary/action-T+rho+rho,same image,value,True,,-28784.799904786556,-28784.799904786556,0.0,1e-10
+T1,A-Q05/associating-binary/action-T+rho+x0-x1,same image,value,True,,-28784.799904786556,-28784.799904786556,0.0,1e-10
+T1,A-Q05/associating-binary/action-T+x0-x1+x0-x1,same image,value,True,,-28784.799904786556,-28784.799904786556,0.0,1e-10
+T1,A-Q05/associating-binary/action-rho+rho+rho,same image,value,True,,-28784.799904786556,-28784.799904786556,0.0,1e-10
+T1,A-Q05/associating-binary/action-rho+rho+x0-x1,same image,value,True,,-28784.799904786556,-28784.799904786556,0.0,1e-10
+T1,A-Q05/associating-binary/action-rho+x0-x1+x0-x1,same image,value,True,,-28784.799904786556,-28784.799904786556,0.0,1e-10
+T1,A-Q05/associating-binary/action-x0-x1+x0-x1+x0-x1,same image,value,True,,-28784.799904786556,-28784.799904786556,0.0,1e-10
+T2,A-propane-vapor/pressure-cold,FeOs vs density oracle,rho[0],True,,217.30215263291302,217.30215263322842,1.4515055823949297e-12,1e-10
+T2,A-propane-vapor/pressure-cold,FeOs vs density oracle,rho[1],True,,217.3029175733232,217.30291757363926,1.454392162258955e-12,1e-10
+T2,A-propane-vapor/pressure-cold,FeOs vs density oracle,rho[2],True,,217.30368251421515,217.30368251453055,1.4515055823949297e-12,1e-10
+T2,A-propane-vapor/pressure-cold,FeOs vs density oracle,rho[3],True,,217.30444745558663,217.30444745590222,1.4523937608146298e-12,1e-10
+T2,A-propane-vapor/pressure-cold,FeOs vs density oracle,rho[4],True,,217.30521239743882,217.30521239775433,1.4519496716047797e-12,1e-10
+T2,A-propane-vapor/pressure-cold,FeOs vs density oracle,rho[5],True,,217.3059773397705,217.30597734008686,1.4559464744934303e-12,1e-10
+T2,A-propane-vapor/pressure-cold,FeOs vs density oracle,rho[6],True,,217.30674228258374,217.30674228289988,1.4548362514688051e-12,1e-10
+T2,A-propane-vapor/pressure-cold,FeOs vs density oracle,rho[7],True,,217.30750722587692,217.30750722619325,1.4557244298885053e-12,1e-10
+T2,A-propane-vapor/pressure-cold,FeOs vs density oracle,rho[8],True,,217.30827216965088,217.30827216996713,1.4552803406786552e-12,1e-10
+T2,A-propane-vapor/pressure-cold,FeOs vs density oracle,rho[9],True,,217.30903711390528,217.30903711422138,1.45461420686388e-12,1e-10
+T2,A-propane-vapor/pressure-cold,FeOs vs density oracle,rho[10],True,,217.30980205864034,217.3098020589561,1.4530598946294049e-12,1e-10
+T2,A-propane-vapor/pressure-cold,FeOs vs density oracle,rho[11],True,,217.31056700385557,217.31056700417128,1.4528378500244798e-12,1e-10
+T2,A-propane-vapor/pressure-cold,FeOs vs density oracle,rho[12],True,,217.3113319495514,217.31133194986685,1.4515055823949297e-12,1e-10
+T2,A-propane-vapor/pressure-cold,FeOs vs density oracle,rho[13],True,,217.31209689572734,217.3120968960429,1.4521717162097048e-12,1e-10
+T2,A-propane-vapor/pressure-cold,FeOs vs density oracle,rho[14],True,,217.3128618423838,217.31286184269933,1.4519496716047797e-12,1e-10
+T2,A-propane-vapor/pressure-cold,FeOs vs density oracle,rho[15],True,,217.3136267895205,217.31362678983623,1.4528378500244798e-12,1e-10
+T2,A-propane-vapor/pressure-cold,FeOs vs density oracle,rho[16],True,,217.3143917371375,217.31439173745358,1.454392162258955e-12,1e-10
+T2,A-propane-vapor/pressure-cold,FeOs vs density oracle,rho[17],True,,217.3151566852349,217.31515668555133,1.4559464744934303e-12,1e-10
+T2,A-propane-vapor/pressure-cold,FeOs vs density oracle,rho[18],True,,217.31592163381316,217.3159216341296,1.4561685190983553e-12,1e-10
+T2,A-propane-vapor/pressure-cold,FeOs vs density oracle,rho[19],True,,217.31668658287225,217.31668658318827,1.45417011765403e-12,1e-10
+T2,A-propane-vapor/pressure-cold,FeOs vs density oracle,rho[20],True,,217.3174515324115,217.31745153272732,1.45328193923433e-12,1e-10
+T2,A-propane-vapor/pressure-cold,FeOs vs density oracle,rho[21],True,,217.3182164824306,217.31821648274692,1.4555023852835802e-12,1e-10
+T2,A-propane-vapor/pressure-cold,FeOs vs density oracle,rho[22],True,,217.31898143293148,217.31898143324688,1.4512835377900046e-12,1e-10
+T2,A-propane-vapor/pressure-cold,FeOs vs density oracle,rho[23],True,,217.3197463839117,217.31974638422733,1.4523937608146298e-12,1e-10
+T2,A-propane-vapor/pressure-cold,FeOs vs density oracle,rho[24],True,,217.32051133537277,217.32051133568817,1.4512835377900046e-12,1e-10
+T2,A-propane-vapor/pressure-cold,FeOs vs density oracle,rho[25],True,,217.32127628731308,217.3212762876295,1.4559464744934303e-12,1e-10
+T2,A-propane-vapor/pressure-cold,FeOs vs density oracle,rho[26],True,,217.32204123973497,217.32204124005133,1.4557244298885053e-12,1e-10
+T2,A-propane-vapor/pressure-cold,FeOs vs density oracle,rho[27],True,,217.32280619263815,217.3228061929535,1.4510614931850796e-12,1e-10
+T2,A-propane-vapor/pressure-cold,FeOs vs density oracle,rho[28],True,,217.32357114601973,217.3235711463362,1.4561685190983553e-12,1e-10
+T2,A-propane-vapor/pressure-cold,FeOs vs density oracle,rho[29],True,,217.32433609988317,217.3243361001993,1.45461420686388e-12,1e-10
+T2,A-propane-vapor/pressure-cold,FeOs vs density oracle,rho[30],True,,217.32510105422708,217.32510105454296,1.453503983839255e-12,1e-10
+T2,A-propane-vapor/pressure-cold,FeOs vs density oracle,rho[31],True,,217.32586600905069,217.32586600936696,1.4552803406786552e-12,1e-10
+T2,A-propane-vapor/pressure-cold,Clapeyron vs density oracle,rho[0],True,,217.30215263291302,217.30215263291254,2.220446049250313e-15,1e-10
+T2,A-propane-vapor/pressure-cold,Clapeyron vs density oracle,rho[1],True,,217.3029175733232,217.3029175733234,8.881784197001252e-16,1e-10
+T2,A-propane-vapor/pressure-cold,Clapeyron vs density oracle,rho[2],True,,217.30368251421515,217.30368251421461,2.4424906541753444e-15,1e-10
+T2,A-propane-vapor/pressure-cold,Clapeyron vs density oracle,rho[3],True,,217.30444745558663,217.3044474555863,1.4432899320127035e-15,1e-10
+T2,A-propane-vapor/pressure-cold,Clapeyron vs density oracle,rho[4],True,,217.30521239743882,217.30521239743848,1.5543122344752192e-15,1e-10
+T2,A-propane-vapor/pressure-cold,Clapeyron vs density oracle,rho[5],True,,217.3059773397705,217.3059773397709,1.7763568394002505e-15,1e-10
+T2,A-propane-vapor/pressure-cold,Clapeyron vs density oracle,rho[6],True,,217.30674228258374,217.306742282584,1.1102230246251565e-15,1e-10
+T2,A-propane-vapor/pressure-cold,Clapeyron vs density oracle,rho[7],True,,217.30750722587692,217.3075072258773,1.7763568394002505e-15,1e-10
+T2,A-propane-vapor/pressure-cold,Clapeyron vs density oracle,rho[8],True,,217.30827216965088,217.30827216965125,1.7763568394002505e-15,1e-10
+T2,A-propane-vapor/pressure-cold,Clapeyron vs density oracle,rho[9],True,,217.30903711390528,217.30903711390556,1.3322676295501878e-15,1e-10
+T2,A-propane-vapor/pressure-cold,Clapeyron vs density oracle,rho[10],True,,217.30980205864034,217.3098020586403,2.220446049250313e-16,1e-10
+T2,A-propane-vapor/pressure-cold,Clapeyron vs density oracle,rho[11],True,,217.31056700385557,217.3105670038554,7.771561172376096e-16,1e-10
+T2,A-propane-vapor/pressure-cold,Clapeyron vs density oracle,rho[12],True,,217.3113319495514,217.31133194955086,2.4424906541753444e-15,1e-10
+T2,A-propane-vapor/pressure-cold,Clapeyron vs density oracle,rho[13],True,,217.31209689572734,217.31209689572688,2.1094237467877974e-15,1e-10
+T2,A-propane-vapor/pressure-cold,Clapeyron vs density oracle,rho[14],True,,217.3128618423838,217.31286184238343,1.6653345369377348e-15,1e-10
+T2,A-propane-vapor/pressure-cold,Clapeyron vs density oracle,rho[15],True,,217.3136267895205,217.3136267895203,8.881784197001252e-16,1e-10
+T2,A-propane-vapor/pressure-cold,Clapeyron vs density oracle,rho[16],True,,217.3143917371375,217.31439173713764,6.661338147750939e-16,1e-10
+T2,A-propane-vapor/pressure-cold,Clapeyron vs density oracle,rho[17],True,,217.3151566852349,217.3151566852355,2.6645352591003757e-15,1e-10
+T2,A-propane-vapor/pressure-cold,Clapeyron vs density oracle,rho[18],True,,217.31592163381316,217.31592163381362,1.9984014443252818e-15,1e-10
+T2,A-propane-vapor/pressure-cold,Clapeyron vs density oracle,rho[19],True,,217.31668658287225,217.31668658287222,1.1102230246251565e-16,1e-10
+T2,A-propane-vapor/pressure-cold,Clapeyron vs density oracle,rho[20],True,,217.3174515324115,217.31745153241147,1.1102230246251565e-16,1e-10
+T2,A-propane-vapor/pressure-cold,Clapeyron vs density oracle,rho[21],True,,217.3182164824306,217.31821648243096,1.5543122344752192e-15,1e-10
+T2,A-propane-vapor/pressure-cold,Clapeyron vs density oracle,rho[22],True,,217.31898143293148,217.318981432931,2.220446049250313e-15,1e-10
+T2,A-propane-vapor/pressure-cold,Clapeyron vs density oracle,rho[23],True,,217.3197463839117,217.31974638391148,9.992007221626409e-16,1e-10
+T2,A-propane-vapor/pressure-cold,Clapeyron vs density oracle,rho[24],True,,217.32051133537277,217.32051133537237,1.7763568394002505e-15,1e-10
+T2,A-propane-vapor/pressure-cold,Clapeyron vs density oracle,rho[25],True,,217.32127628731308,217.32127628731365,2.6645352591003757e-15,1e-10
+T2,A-propane-vapor/pressure-cold,Clapeyron vs density oracle,rho[26],True,,217.32204123973497,217.32204123973543,1.9984014443252818e-15,1e-10
+T2,A-propane-vapor/pressure-cold,Clapeyron vs density oracle,rho[27],True,,217.32280619263815,217.32280619263761,2.4424906541753444e-15,1e-10
+T2,A-propane-vapor/pressure-cold,Clapeyron vs density oracle,rho[28],True,,217.32357114601973,217.32357114602027,2.4424906541753444e-15,1e-10
+T2,A-propane-vapor/pressure-cold,Clapeyron vs density oracle,rho[29],True,,217.32433609988317,217.32433609988348,1.3322676295501878e-15,1e-10
+T2,A-propane-vapor/pressure-cold,Clapeyron vs density oracle,rho[30],True,,217.32510105422708,217.325101054227,4.440892098500626e-16,1e-10
+T2,A-propane-vapor/pressure-cold,Clapeyron vs density oracle,rho[31],True,,217.32586600905069,217.325866009051,1.3322676295501878e-15,1e-10
+T2,A-propane-vapor/pressure-cold,same image,complete returned value,True,,,,,
+T2,A-propane-vapor/pressure-anchored,same image,complete returned value,True,,,,,
+T2,A-propane-vapor/fixed-density,same image,complete returned value,True,,,,,
+T2,A-propane-liquid/pressure-cold,FeOs vs density oracle,rho[0],True,,11175.52468969248,11175.524690654727,8.610312463019909e-11,1e-10
+T2,A-propane-liquid/pressure-cold,FeOs vs density oracle,rho[1],True,,11175.525161542424,11175.525162504693,8.610512303164342e-11,1e-10
+T2,A-propane-liquid/pressure-cold,FeOs vs density oracle,rho[2],True,,11175.525633392263,11175.52563435446,8.609868373810059e-11,1e-10
+T2,A-propane-liquid/pressure-cold,FeOs vs density oracle,rho[3],True,,11175.526105241846,11175.526106204083,8.610201440717447e-11,1e-10
+T2,A-propane-liquid/pressure-cold,FeOs vs density oracle,rho[4],True,,11175.526577091285,11175.526578053525,8.610245849638432e-11,1e-10
+T2,A-propane-liquid/pressure-cold,FeOs vs density oracle,rho[5],True,,11175.527048940552,11175.527049902808,8.610379076401387e-11,1e-10
+T2,A-propane-liquid/pressure-cold,FeOs vs density oracle,rho[6],True,,11175.527520789688,11175.527521751897,8.609957191652029e-11,1e-10
+T2,A-propane-liquid/pressure-cold,FeOs vs density oracle,rho[7],True,,11175.527992638625,11175.527993600825,8.609890578270551e-11,1e-10
+T2,A-propane-liquid/pressure-cold,FeOs vs density oracle,rho[8],True,,11175.528464487434,11175.528465449586,8.609468693521194e-11,1e-10
+T2,A-propane-liquid/pressure-cold,FeOs vs density oracle,rho[9],True,,11175.52893633594,11175.528937298193,8.610356871940894e-11,1e-10
+T2,A-propane-liquid/pressure-cold,FeOs vs density oracle,rho[10],True,,11175.529408184451,11175.529409146604,8.609468693521194e-11,1e-10
+T2,A-propane-liquid/pressure-cold,FeOs vs density oracle,rho[11],True,,11175.529880032704,11175.529880994869,8.609579715823656e-11,1e-10
+T2,A-propane-liquid/pressure-cold,FeOs vs density oracle,rho[12],True,,11175.530351880781,11175.530352842938,8.609490897981686e-11,1e-10
+T2,A-propane-liquid/pressure-cold,FeOs vs density oracle,rho[13],True,,11175.530823728655,11175.530824690837,8.609712942586611e-11,1e-10
+T2,A-propane-liquid/pressure-cold,FeOs vs density oracle,rho[14],True,,11175.53129557637,11175.531296538607,8.610223645177939e-11,1e-10
+T2,A-propane-liquid/pressure-cold,FeOs vs density oracle,rho[15],True,,11175.531767423941,11175.531768386167,8.610112622875477e-11,1e-10
+T2,A-propane-liquid/pressure-cold,FeOs vs density oracle,rho[16],True,,11175.53223927139,11175.532240233573,8.609735147047104e-11,1e-10
+T2,A-propane-liquid/pressure-cold,FeOs vs density oracle,rho[17],True,,11175.532711118602,11175.532712080807,8.609934987191536e-11,1e-10
+T2,A-propane-liquid/pressure-cold,FeOs vs density oracle,rho[18],True,,11175.533182965704,11175.533183927857,8.609446489060701e-11,1e-10
+T2,A-propane-liquid/pressure-cold,FeOs vs density oracle,rho[19],True,,11175.533654812534,11175.533655774758,8.610090418414984e-11,1e-10
+T2,A-propane-liquid/pressure-cold,FeOs vs density oracle,rho[20],True,,11175.534126659259,11175.534127621477,8.610046009493999e-11,1e-10
+T2,A-propane-liquid/pressure-cold,FeOs vs density oracle,rho[21],True,,11175.534598505881,11175.534599468045,8.609557511363164e-11,1e-10
+T2,A-propane-liquid/pressure-cold,FeOs vs density oracle,rho[22],True,,11175.53507035218,11175.53507131442,8.610245849638432e-11,1e-10
+T2,A-propane-liquid/pressure-cold,FeOs vs density oracle,rho[23],True,,11175.53554219842,11175.535543160637,8.610023805033507e-11,1e-10
+T2,A-propane-liquid/pressure-cold,FeOs vs density oracle,rho[24],True,,11175.53601404453,11175.536015006683,8.609446489060701e-11,1e-10
+T2,A-propane-liquid/pressure-cold,FeOs vs density oracle,rho[25],True,,11175.536485890341,11175.536486852556,8.610001600573014e-11,1e-10
+T2,A-propane-liquid/pressure-cold,FeOs vs density oracle,rho[26],True,,11175.536957736094,11175.536958698252,8.609513102442179e-11,1e-10
+T2,A-propane-liquid/pressure-cold,FeOs vs density oracle,rho[27],True,,11175.537429581549,11175.537430543794,8.610290258559417e-11,1e-10
+T2,A-propane-liquid/pressure-cold,FeOs vs density oracle,rho[28],True,,11175.537901426978,11175.53790238915,8.609624124744641e-11,1e-10
+T2,A-propane-liquid/pressure-cold,FeOs vs density oracle,rho[29],True,,11175.53837327216,11175.538374234355,8.609823964889074e-11,1e-10
+T2,A-propane-liquid/pressure-cold,FeOs vs density oracle,rho[30],True,,11175.53884511712,11175.538846079382,8.610423485322372e-11,1e-10
+T2,A-propane-liquid/pressure-cold,FeOs vs density oracle,rho[31],True,,11175.539316962064,11175.539317924235,8.609624124744641e-11,1e-10
+T2,A-propane-liquid/pressure-cold,Clapeyron vs density oracle,rho[0],True,,11175.52468969248,11175.524689692535,4.884981308350689e-15,1e-10
+T2,A-propane-liquid/pressure-cold,Clapeyron vs density oracle,rho[1],True,,11175.525161542424,11175.525161542471,4.218847493575595e-15,1e-10
+T2,A-propane-liquid/pressure-cold,Clapeyron vs density oracle,rho[2],True,,11175.525633392263,11175.52563339225,1.1102230246251565e-15,1e-10
+T2,A-propane-liquid/pressure-cold,Clapeyron vs density oracle,rho[3],True,,11175.526105241846,11175.52610524187,2.220446049250313e-15,1e-10
+T2,A-propane-liquid/pressure-cold,Clapeyron vs density oracle,rho[4],True,,11175.526577091285,11175.526577091312,2.4424906541753444e-15,1e-10
+T2,A-propane-liquid/pressure-cold,Clapeyron vs density oracle,rho[5],True,,11175.527048940552,11175.527048940576,2.220446049250313e-15,1e-10
+T2,A-propane-liquid/pressure-cold,Clapeyron vs density oracle,rho[6],True,,11175.527520789688,11175.527520789681,6.661338147750939e-16,1e-10
+T2,A-propane-liquid/pressure-cold,Clapeyron vs density oracle,rho[7],True,,11175.527992638625,11175.527992638627,2.220446049250313e-16,1e-10
+T2,A-propane-liquid/pressure-cold,Clapeyron vs density oracle,rho[8],True,,11175.528464487434,11175.528464487394,3.552713678800501e-15,1e-10
+T2,A-propane-liquid/pressure-cold,Clapeyron vs density oracle,rho[9],True,,11175.52893633594,11175.52893633598,3.552713678800501e-15,1e-10
+T2,A-propane-liquid/pressure-cold,Clapeyron vs density oracle,rho[10],True,,11175.529408184451,11175.529408184391,5.329070518200751e-15,1e-10
+T2,A-propane-liquid/pressure-cold,Clapeyron vs density oracle,rho[11],True,,11175.529880032704,11175.529880032662,3.774758283725532e-15,1e-10
+T2,A-propane-liquid/pressure-cold,Clapeyron vs density oracle,rho[12],True,,11175.530351880781,11175.530351880714,5.995204332975845e-15,1e-10
+T2,A-propane-liquid/pressure-cold,Clapeyron vs density oracle,rho[13],True,,11175.530823728655,11175.530823728648,6.661338147750939e-16,1e-10
+T2,A-propane-liquid/pressure-cold,Clapeyron vs density oracle,rho[14],True,,11175.53129557637,11175.531295576384,1.3322676295501878e-15,1e-10
+T2,A-propane-liquid/pressure-cold,Clapeyron vs density oracle,rho[15],True,,11175.531767423941,11175.53176742396,1.5543122344752192e-15,1e-10
+T2,A-propane-liquid/pressure-cold,Clapeyron vs density oracle,rho[16],True,,11175.53223927139,11175.532239271357,2.886579864025407e-15,1e-10
+T2,A-propane-liquid/pressure-cold,Clapeyron vs density oracle,rho[17],True,,11175.532711118602,11175.532711118596,4.440892098500626e-16,1e-10
+T2,A-propane-liquid/pressure-cold,Clapeyron vs density oracle,rho[18],True,,11175.533182965704,11175.533182965657,4.218847493575595e-15,1e-10
+T2,A-propane-liquid/pressure-cold,Clapeyron vs density oracle,rho[19],True,,11175.533654812534,11175.533654812558,2.220446049250313e-15,1e-10
+T2,A-propane-liquid/pressure-cold,Clapeyron vs density oracle,rho[20],True,,11175.534126659259,11175.534126659282,2.220446049250313e-15,1e-10
+T2,A-propane-liquid/pressure-cold,Clapeyron vs density oracle,rho[21],True,,11175.534598505881,11175.534598505827,4.884981308350689e-15,1e-10
+T2,A-propane-liquid/pressure-cold,Clapeyron vs density oracle,rho[22],True,,11175.53507035218,11175.535070352213,2.886579864025407e-15,1e-10
+T2,A-propane-liquid/pressure-cold,Clapeyron vs density oracle,rho[23],True,,11175.53554219842,11175.535542198439,1.5543122344752192e-15,1e-10
+T2,A-propane-liquid/pressure-cold,Clapeyron vs density oracle,rho[24],True,,11175.53601404453,11175.536014044468,5.551115123125783e-15,1e-10
+T2,A-propane-liquid/pressure-cold,Clapeyron vs density oracle,rho[25],True,,11175.536485890341,11175.536485890358,1.5543122344752192e-15,1e-10
+T2,A-propane-liquid/pressure-cold,Clapeyron vs density oracle,rho[26],True,,11175.536957736094,11175.536957736049,4.107825191113079e-15,1e-10
+T2,A-propane-liquid/pressure-cold,Clapeyron vs density oracle,rho[27],True,,11175.537429581549,11175.53742958158,2.6645352591003757e-15,1e-10
+T2,A-propane-liquid/pressure-cold,Clapeyron vs density oracle,rho[28],True,,11175.537901426978,11175.537901426953,2.3314683517128287e-15,1e-10
+T2,A-propane-liquid/pressure-cold,Clapeyron vs density oracle,rho[29],True,,11175.53837327216,11175.53837327215,9.992007221626409e-16,1e-10
+T2,A-propane-liquid/pressure-cold,Clapeyron vs density oracle,rho[30],True,,11175.53884511712,11175.538845117166,3.9968028886505635e-15,1e-10
+T2,A-propane-liquid/pressure-cold,Clapeyron vs density oracle,rho[31],True,,11175.539316962064,11175.539316962024,3.552713678800501e-15,1e-10
+T2,A-propane-liquid/pressure-cold,same image,complete returned value,True,,,,,
+T2,A-propane-liquid/pressure-anchored,same image,complete returned value,True,,,,,
+T2,A-propane-liquid/fixed-density,same image,complete returned value,True,,,,,
+T2,A-methane-ethane-vapor/pressure-cold,FeOs vs density oracle,rho[0],True,,520.570362273691,520.5703622749875,2.490452288839151e-12,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,FeOs vs density oracle,rho[1],True,,520.5721867788727,520.5721867801662,2.4849011737160254e-12,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,FeOs vs density oracle,rho[2],True,,520.5740112851215,520.5740112864175,2.489564110419451e-12,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,FeOs vs density oracle,rho[3],True,,520.5758357924474,520.5758357937414,2.4855673075308005e-12,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,FeOs vs density oracle,rho[4],True,,520.5776603008405,520.5776603021379,2.4922286456785514e-12,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,FeOs vs density oracle,rho[5],True,,520.5794848103105,520.5794848116071,2.490674333444076e-12,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,FeOs vs density oracle,rho[6],True,,520.581309320854,520.581309322149,2.4875657089751257e-12,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,FeOs vs density oracle,rho[7],True,,520.5831338324701,520.5831338337632,2.4837909506914002e-12,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,FeOs vs density oracle,rho[8],True,,520.5849583451542,520.5849583464502,2.489564110419451e-12,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,FeOs vs density oracle,rho[9],True,,520.5867828589121,520.5867828602098,2.4928947794933265e-12,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,FeOs vs density oracle,rho[10],True,,520.5886073737457,520.588607375042,2.490008199629301e-12,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,FeOs vs density oracle,rho[11],True,,520.5904318896512,520.5904318909468,2.488675931999751e-12,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,FeOs vs density oracle,rho[12],True,,520.592256406627,520.5922564079243,2.4920066010736264e-12,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,FeOs vs density oracle,rho[13],True,,520.5940809246786,520.5940809259744,2.489120021209601e-12,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,FeOs vs density oracle,rho[14],True,,520.5959054438023,520.595905445097,2.4868995751603507e-12,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,FeOs vs density oracle,rho[15],True,,520.597729963996,520.5977299652924,2.490230244234226e-12,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,FeOs vs density oracle,rho[16],True,,520.5995544852647,520.5995544865601,2.488453887394826e-12,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,FeOs vs density oracle,rho[17],True,,520.6013790076056,520.6013790089008,2.488009798184976e-12,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,FeOs vs density oracle,rho[18],True,,520.6032035310197,520.6032035323141,2.4862334413455756e-12,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,FeOs vs density oracle,rho[19],True,,520.6050280555032,520.6050280567997,2.490452288839151e-12,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,FeOs vs density oracle,rho[20],True,,520.6068525810626,520.6068525823581,2.488453887394826e-12,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,FeOs vs density oracle,rho[21],True,,520.608677107695,520.6086771089892,2.4860113967406505e-12,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,FeOs vs density oracle,rho[22],True,,520.6105016353974,520.610501636693,2.488675931999751e-12,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,FeOs vs density oracle,rho[23],True,,520.6123261641725,520.6123261654693,2.4908963780490012e-12,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,FeOs vs density oracle,rho[24],True,,520.61415069402,520.6141506953182,2.4935609133081016e-12,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,FeOs vs density oracle,rho[25],True,,520.6159752249436,520.6159752262398,2.489786155024376e-12,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,FeOs vs density oracle,rho[26],True,,520.617799756938,520.6177997582342,2.489786155024376e-12,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,FeOs vs density oracle,rho[27],True,,520.6196242900054,520.6196242913011,2.488675931999751e-12,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,FeOs vs density oracle,rho[28],True,,520.6214488241453,520.6214488254407,2.488009798184976e-12,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,FeOs vs density oracle,rho[29],True,,520.6232733593545,520.6232733606528,2.4937829579130266e-12,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,FeOs vs density oracle,rho[30],True,,520.625097895643,520.6250978969376,2.4866775305554256e-12,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,FeOs vs density oracle,rho[31],True,,520.6269224329976,520.6269224342951,2.4922286456785514e-12,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Clapeyron vs density oracle,rho[0],True,,520.570362273691,520.5703622736921,2.220446049250313e-15,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Clapeyron vs density oracle,rho[1],True,,520.5721867788727,520.572186778871,3.3306690738754696e-15,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Clapeyron vs density oracle,rho[2],True,,520.5740112851215,520.5740112851221,1.1102230246251565e-15,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Clapeyron vs density oracle,rho[3],True,,520.5758357924474,520.5758357924459,2.886579864025407e-15,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Clapeyron vs density oracle,rho[4],True,,520.5776603008405,520.5776603008425,3.774758283725532e-15,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Clapeyron vs density oracle,rho[5],True,,520.5794848103105,520.5794848103117,2.220446049250313e-15,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Clapeyron vs density oracle,rho[6],True,,520.581309320854,520.5813093208536,6.661338147750939e-16,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Clapeyron vs density oracle,rho[7],True,,520.5831338324701,520.5831338324681,3.885780586188048e-15,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Clapeyron vs density oracle,rho[8],True,,520.5849583451542,520.5849583451546,8.881784197001252e-16,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Clapeyron vs density oracle,rho[9],True,,520.5867828589121,520.5867828589141,3.9968028886505635e-15,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Clapeyron vs density oracle,rho[10],True,,520.5886073737457,520.5886073737468,1.9984014443252818e-15,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Clapeyron vs density oracle,rho[11],True,,520.5904318896512,520.5904318896512,0.0,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Clapeyron vs density oracle,rho[12],True,,520.592256406627,520.5922564066286,3.1086244689504383e-15,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Clapeyron vs density oracle,rho[13],True,,520.5940809246786,520.5940809246785,2.220446049250313e-16,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Clapeyron vs density oracle,rho[14],True,,520.5959054438023,520.5959054438015,1.5543122344752192e-15,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Clapeyron vs density oracle,rho[15],True,,520.597729963996,520.5977299639966,1.1102230246251565e-15,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Clapeyron vs density oracle,rho[16],True,,520.5995544852647,520.5995544852648,2.220446049250313e-16,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Clapeyron vs density oracle,rho[17],True,,520.6013790076056,520.6013790076051,8.881784197001252e-16,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Clapeyron vs density oracle,rho[18],True,,520.6032035310197,520.6032035310183,2.886579864025407e-15,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Clapeyron vs density oracle,rho[19],True,,520.6050280555032,520.6050280555041,1.7763568394002505e-15,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Clapeyron vs density oracle,rho[20],True,,520.6068525810626,520.6068525810626,0.0,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Clapeyron vs density oracle,rho[21],True,,520.608677107695,520.6086771076937,2.6645352591003757e-15,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Clapeyron vs density oracle,rho[22],True,,520.6105016353974,520.6105016353972,4.440892098500626e-16,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Clapeyron vs density oracle,rho[23],True,,520.6123261641725,520.6123261641739,2.6645352591003757e-15,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Clapeyron vs density oracle,rho[24],True,,520.61415069402,520.6141506940224,4.6629367034256575e-15,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Clapeyron vs density oracle,rho[25],True,,520.6159752249436,520.6159752249445,1.7763568394002505e-15,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Clapeyron vs density oracle,rho[26],True,,520.617799756938,520.6177997569383,6.661338147750939e-16,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Clapeyron vs density oracle,rho[27],True,,520.6196242900054,520.6196242900052,4.440892098500626e-16,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Clapeyron vs density oracle,rho[28],True,,520.6214488241453,520.6214488241449,8.881784197001252e-16,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Clapeyron vs density oracle,rho[29],True,,520.6232733593545,520.6232733593572,5.329070518200751e-15,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Clapeyron vs density oracle,rho[30],True,,520.625097895643,520.6250978956419,1.9984014443252818e-15,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Clapeyron vs density oracle,rho[31],True,,520.6269224329976,520.6269224329993,3.3306690738754696e-15,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,same image,complete returned value,True,,,,,
+T2,A-methane-ethane-vapor/pressure-anchored,same image,complete returned value,True,,,,,
+T2,A-methane-ethane-vapor/fixed-density,same image,complete returned value,True,,,,,
+T2,A-C2-liquid/pressure-cold,FeOs vs density oracle,rho[0],True,,10875.397728880602,10875.39772974412,7.940115231974687e-11,1e-10
+T2,A-C2-liquid/pressure-cold,FeOs vs density oracle,rho[1],True,,10875.398094303722,10875.39809516719,7.939626733843852e-11,1e-10
+T2,A-C2-liquid/pressure-cold,FeOs vs density oracle,rho[2],True,,10875.398459726668,10875.398460590153,7.939804369527792e-11,1e-10
+T2,A-C2-liquid/pressure-cold,FeOs vs density oracle,rho[3],True,,10875.39882514956,10875.398826013014,7.93951571154139e-11,1e-10
+T2,A-C2-liquid/pressure-cold,FeOs vs density oracle,rho[4],True,,10875.399190572269,10875.399191435788,7.940115231974687e-11,1e-10
+T2,A-C2-liquid/pressure-cold,FeOs vs density oracle,rho[5],True,,10875.399555994967,10875.399556858461,7.939893187369762e-11,1e-10
+T2,A-C2-liquid/pressure-cold,FeOs vs density oracle,rho[6],True,,10875.399921417506,10875.399922281025,7.940115231974687e-11,1e-10
+T2,A-C2-liquid/pressure-cold,FeOs vs density oracle,rho[7],True,,10875.400286839968,10875.400287703498,7.94022625427715e-11,1e-10
+T2,A-C2-liquid/pressure-cold,FeOs vs density oracle,rho[8],True,,10875.400652262382,10875.400653125871,7.939826573988285e-11,1e-10
+T2,A-C2-liquid/pressure-cold,FeOs vs density oracle,rho[9],True,,10875.401017684611,10875.401018548142,7.94022625427715e-11,1e-10
+T2,A-C2-liquid/pressure-cold,FeOs vs density oracle,rho[10],True,,10875.401383106857,10875.401383970311,7.93951571154139e-11,1e-10
+T2,A-C2-liquid/pressure-cold,FeOs vs density oracle,rho[11],True,,10875.401748528939,10875.401749392388,7.939471302620404e-11,1e-10
+T2,A-C2-liquid/pressure-cold,FeOs vs density oracle,rho[12],True,,10875.402113950919,10875.402114814355,7.93933807585745e-11,1e-10
+T2,A-C2-liquid/pressure-cold,FeOs vs density oracle,rho[13],True,,10875.40247937271,10875.40248023623,7.940115231974687e-11,1e-10
+T2,A-C2-liquid/pressure-cold,FeOs vs density oracle,rho[14],True,,10875.402844794562,10875.402845658009,7.939449098159912e-11,1e-10
+T2,A-C2-liquid/pressure-cold,FeOs vs density oracle,rho[15],True,,10875.40321021622,10875.403211079678,7.939537916001882e-11,1e-10
+T2,A-C2-liquid/pressure-cold,FeOs vs density oracle,rho[16],True,,10875.403575637727,10875.403576501245,7.940093027514195e-11,1e-10
+T2,A-C2-liquid/pressure-cold,FeOs vs density oracle,rho[17],True,,10875.40394105926,10875.403941922725,7.93960452938336e-11,1e-10
+T2,A-C2-liquid/pressure-cold,FeOs vs density oracle,rho[18],True,,10875.404306480581,10875.404307344115,7.940248458737642e-11,1e-10
+T2,A-C2-liquid/pressure-cold,FeOs vs density oracle,rho[19],True,,10875.404671901939,10875.404672765382,7.939404689238927e-11,1e-10
+T2,A-C2-liquid/pressure-cold,FeOs vs density oracle,rho[20],True,,10875.405037323057,10875.40503818655,7.93987098290927e-11,1e-10
+T2,A-C2-liquid/pressure-cold,FeOs vs density oracle,rho[21],True,,10875.405402744142,10875.405403607632,7.939848778448777e-11,1e-10
+T2,A-C2-liquid/pressure-cold,FeOs vs density oracle,rho[22],True,,10875.405768165107,10875.405769028594,7.939804369527792e-11,1e-10
+T2,A-C2-liquid/pressure-cold,FeOs vs density oracle,rho[23],True,,10875.406133585951,10875.406134449486,7.940248458737642e-11,1e-10
+T2,A-C2-liquid/pressure-cold,FeOs vs density oracle,rho[24],True,,10875.406499006758,10875.40649987028,7.94013743643518e-11,1e-10
+T2,A-C2-liquid/pressure-cold,FeOs vs density oracle,rho[25],True,,10875.406864427443,10875.406865290946,7.93995980075124e-11,1e-10
+T2,A-C2-liquid/pressure-cold,FeOs vs density oracle,rho[26],True,,10875.407229848086,10875.407230711524,7.939360280317942e-11,1e-10
+T2,A-C2-liquid/pressure-cold,FeOs vs density oracle,rho[27],True,,10875.407595268513,10875.407596132014,7.939937596290747e-11,1e-10
+T2,A-C2-liquid/pressure-cold,FeOs vs density oracle,rho[28],True,,10875.407960688932,10875.407961552384,7.939493507080897e-11,1e-10
+T2,A-C2-liquid/pressure-cold,FeOs vs density oracle,rho[29],True,,10875.408326109207,10875.408326972669,7.939582324922867e-11,1e-10
+T2,A-C2-liquid/pressure-cold,FeOs vs density oracle,rho[30],True,,10875.408691529396,10875.408692392853,7.939537916001882e-11,1e-10
+T2,A-C2-liquid/pressure-cold,FeOs vs density oracle,rho[31],True,,10875.4090569494,10875.409057812938,7.940270663198135e-11,1e-10
+T2,A-C2-liquid/pressure-cold,Clapeyron vs density oracle,rho[0],True,,10875.397728880602,10875.397728880633,2.886579864025407e-15,1e-10
+T2,A-C2-liquid/pressure-cold,Clapeyron vs density oracle,rho[1],True,,10875.398094303722,10875.398094303693,2.6645352591003757e-15,1e-10
+T2,A-C2-liquid/pressure-cold,Clapeyron vs density oracle,rho[2],True,,10875.398459726668,10875.398459726668,0.0,1e-10
+T2,A-C2-liquid/pressure-cold,Clapeyron vs density oracle,rho[3],True,,10875.39882514956,10875.39882514954,1.887379141862766e-15,1e-10
+T2,A-C2-liquid/pressure-cold,Clapeyron vs density oracle,rho[4],True,,10875.399190572269,10875.399190572307,3.552713678800501e-15,1e-10
+T2,A-C2-liquid/pressure-cold,Clapeyron vs density oracle,rho[5],True,,10875.399555994967,10875.39955599497,4.440892098500626e-16,1e-10
+T2,A-C2-liquid/pressure-cold,Clapeyron vs density oracle,rho[6],True,,10875.399921417506,10875.399921417533,2.4424906541753444e-15,1e-10
+T2,A-C2-liquid/pressure-cold,Clapeyron vs density oracle,rho[7],True,,10875.400286839968,10875.400286840028,5.551115123125783e-15,1e-10
+T2,A-C2-liquid/pressure-cold,Clapeyron vs density oracle,rho[8],True,,10875.400652262382,10875.40065226238,2.220446049250313e-16,1e-10
+T2,A-C2-liquid/pressure-cold,Clapeyron vs density oracle,rho[9],True,,10875.401017684611,10875.40101768465,3.552713678800501e-15,1e-10
+T2,A-C2-liquid/pressure-cold,Clapeyron vs density oracle,rho[10],True,,10875.401383106857,10875.401383106835,1.9984014443252818e-15,1e-10
+T2,A-C2-liquid/pressure-cold,Clapeyron vs density oracle,rho[11],True,,10875.401748528939,10875.401748528897,3.885780586188048e-15,1e-10
+T2,A-C2-liquid/pressure-cold,Clapeyron vs density oracle,rho[12],True,,10875.402113950919,10875.402113950873,4.218847493575595e-15,1e-10
+T2,A-C2-liquid/pressure-cold,Clapeyron vs density oracle,rho[13],True,,10875.40247937271,10875.402479372748,3.552713678800501e-15,1e-10
+T2,A-C2-liquid/pressure-cold,Clapeyron vs density oracle,rho[14],True,,10875.402844794562,10875.402844794517,4.218847493575595e-15,1e-10
+T2,A-C2-liquid/pressure-cold,Clapeyron vs density oracle,rho[15],True,,10875.40321021622,10875.403210216184,3.3306690738754696e-15,1e-10
+T2,A-C2-liquid/pressure-cold,Clapeyron vs density oracle,rho[16],True,,10875.403575637727,10875.403575637767,3.774758283725532e-15,1e-10
+T2,A-C2-liquid/pressure-cold,Clapeyron vs density oracle,rho[17],True,,10875.40394105926,10875.403941059245,1.3322676295501878e-15,1e-10
+T2,A-C2-liquid/pressure-cold,Clapeyron vs density oracle,rho[18],True,,10875.404306480581,10875.40430648062,3.552713678800501e-15,1e-10
+T2,A-C2-liquid/pressure-cold,Clapeyron vs density oracle,rho[19],True,,10875.404671901939,10875.404671901892,4.3298697960381105e-15,1e-10
+T2,A-C2-liquid/pressure-cold,Clapeyron vs density oracle,rho[20],True,,10875.405037323057,10875.405037323058,2.220446049250313e-16,1e-10
+T2,A-C2-liquid/pressure-cold,Clapeyron vs density oracle,rho[21],True,,10875.405402744142,10875.40540274414,2.220446049250313e-16,1e-10
+T2,A-C2-liquid/pressure-cold,Clapeyron vs density oracle,rho[22],True,,10875.405768165107,10875.405768165121,1.3322676295501878e-15,1e-10
+T2,A-C2-liquid/pressure-cold,Clapeyron vs density oracle,rho[23],True,,10875.406133585951,10875.406133585997,4.218847493575595e-15,1e-10
+T2,A-C2-liquid/pressure-cold,Clapeyron vs density oracle,rho[24],True,,10875.406499006758,10875.406499006789,2.886579864025407e-15,1e-10
+T2,A-C2-liquid/pressure-cold,Clapeyron vs density oracle,rho[25],True,,10875.406864427443,10875.406864427458,1.3322676295501878e-15,1e-10
+T2,A-C2-liquid/pressure-cold,Clapeyron vs density oracle,rho[26],True,,10875.407229848086,10875.40722984804,4.218847493575595e-15,1e-10
+T2,A-C2-liquid/pressure-cold,Clapeyron vs density oracle,rho[27],True,,10875.407595268513,10875.407595268523,1.1102230246251565e-15,1e-10
+T2,A-C2-liquid/pressure-cold,Clapeyron vs density oracle,rho[28],True,,10875.407960688932,10875.4079606889,2.886579864025407e-15,1e-10
+T2,A-C2-liquid/pressure-cold,Clapeyron vs density oracle,rho[29],True,,10875.408326109207,10875.408326109173,3.219646771412954e-15,1e-10
+T2,A-C2-liquid/pressure-cold,Clapeyron vs density oracle,rho[30],True,,10875.408691529396,10875.408691529363,2.9976021664879227e-15,1e-10
+T2,A-C2-liquid/pressure-cold,Clapeyron vs density oracle,rho[31],True,,10875.4090569494,10875.409056949447,4.440892098500626e-15,1e-10
+T2,A-C2-liquid/pressure-cold,same image,complete returned value,True,,,,,
+T2,A-C2-liquid/pressure-anchored,same image,complete returned value,True,,,,,
+T2,A-C2-liquid/fixed-density,same image,complete returned value,True,,,,,
+T2,A-Q02/308.8-vapor/pressure-cold,Engine vs FeOs,rho[0],False,,5930.399614235989,5930.3996685591155,9.16011222429347e-09,1e-10
+T2,A-Q02/308.8-vapor/pressure-cold,Engine vs FeOs,rho[1],False,,5930.3869373999005,5930.386991720339,9.159678571180052e-09,1e-10
+T2,A-Q02/308.8-vapor/pressure-cold,Engine vs FeOs,rho[2],False,,5930.393275692665,5930.393330011645,9.159422775795178e-09,1e-10
+T2,A-Q02/308.8-vapor/pressure-cold,Engine vs FeOs,rho[3],False,,5930.405953029414,5930.406007352971,9.160175062916665e-09,1e-10
+T2,A-Q02/308.8-vapor/pressure-cold,Engine vs FeOs,rho[4],False,,5930.412292074803,5930.41234640193,9.160767255878e-09,1e-10
+T2,A-Q02/308.8-vapor/pressure-cold,Engine vs Clapeyron,rho[0],True,,5930.399614235989,5930.399614704544,7.900879950284434e-11,1e-10
+T2,A-Q02/308.8-vapor/pressure-cold,Engine vs Clapeyron,rho[1],True,,5930.3869373999005,5930.386937868249,7.897438258908096e-11,1e-10
+T2,A-Q02/308.8-vapor/pressure-cold,Engine vs Clapeyron,rho[2],True,,5930.393275692665,5930.393276160329,7.885891939451994e-11,1e-10
+T2,A-Q02/308.8-vapor/pressure-cold,Engine vs Clapeyron,rho[3],True,,5930.405953029414,5930.405953498258,7.905764931592785e-11,1e-10
+T2,A-Q02/308.8-vapor/pressure-cold,Engine vs Clapeyron,rho[4],True,,5930.412292074803,5930.412292544108,7.913536492765161e-11,1e-10
+T2,A-Q02/308.8-vapor/pressure-cold,same image,complete returned value,True,,,,,
+T2,A-Q02/308.8-vapor/pressure-anchored,same image,complete returned value,True,,,,,
+T2,A-Q02/308.8-vapor/fixed-density,same image,complete returned value,True,,,,,
+T2,A-Q02/308.8-vapor/pressure-action-[0],same image,complete returned value,True,,,,,
+T2,A-Q02/308.8-vapor/pressure-action-[1],same image,complete returned value,True,,,,,
+T2,"A-Q02/308.8-vapor/pressure-action-[0, 0]",same image,complete returned value,True,,,,,
+T2,"A-Q02/308.8-vapor/pressure-action-[0, 1]",same image,complete returned value,True,,,,,
+T2,"A-Q02/308.8-vapor/pressure-action-[1, 1]",same image,complete returned value,True,,,,,
+T2,A-Q02/308.8-liquid/pressure-cold,Engine vs FeOs,rho[0],False,,6828.295025036727,6828.295115888984,1.3305262447360633e-08,1e-10
+T2,A-Q02/308.8-liquid/pressure-cold,Engine vs FeOs,rho[1],False,,6828.280129780382,6828.280220641859,1.3306641788446427e-08,1e-10
+T2,A-Q02/308.8-liquid/pressure-cold,Engine vs FeOs,rho[2],False,,6828.287577607851,6828.287668462751,1.3305663904006337e-08,1e-10
+T2,A-Q02/308.8-liquid/pressure-cold,Engine vs FeOs,rho[3],False,,6828.302472062377,6828.302562906626,1.3304075174858099e-08,1e-10
+T2,A-Q02/308.8-liquid/pressure-cold,Engine vs FeOs,rho[4],False,,6828.309918689325,6828.310009529655,1.3303486756655047e-08,1e-10
+T2,A-Q02/308.8-liquid/pressure-cold,Engine vs Clapeyron,rho[0],True,,6828.295025036727,6828.295025027835,1.3020695632803836e-12,1e-10
+T2,A-Q02/308.8-liquid/pressure-cold,Engine vs Clapeyron,rho[1],True,,6828.280129780382,6828.280129772425,1.1651790643441018e-12,1e-10
+T2,A-Q02/308.8-liquid/pressure-cold,Engine vs Clapeyron,rho[2],True,,6828.287577607851,6828.287577600899,1.018185535883731e-12,1e-10
+T2,A-Q02/308.8-liquid/pressure-cold,Engine vs Clapeyron,rho[3],True,,6828.302472062377,6828.302472056737,8.25894908018654e-13,1e-10
+T2,A-Q02/308.8-liquid/pressure-cold,Engine vs Clapeyron,rho[4],True,,6828.309918689325,6828.309918680678,1.266431404189916e-12,1e-10
+T2,A-Q02/308.8-liquid/pressure-cold,same image,complete returned value,True,,,,,
+T2,A-Q02/308.8-liquid/pressure-anchored,same image,complete returned value,True,,,,,
+T2,A-Q02/308.8-liquid/fixed-density,same image,complete returned value,True,,,,,
+T2,A-Q02/308.8-liquid/pressure-action-[0],same image,complete returned value,True,,,,,
+T2,A-Q02/308.8-liquid/pressure-action-[1],same image,complete returned value,True,,,,,
+T2,"A-Q02/308.8-liquid/pressure-action-[0, 0]",same image,complete returned value,True,,,,,
+T2,"A-Q02/308.8-liquid/pressure-action-[0, 1]",same image,complete returned value,True,,,,,
+T2,"A-Q02/308.8-liquid/pressure-action-[1, 1]",same image,complete returned value,True,,,,,
+T2,A-Q02/308.0-vapor/pressure-cold,Engine vs FeOs,rho[0],False,,5124.770478882956,5124.770483373855,8.763123560129316e-10,1e-10
+T2,A-Q02/308.0-vapor/pressure-cold,Engine vs FeOs,rho[1],False,,5124.768985975094,5124.7689904660365,8.763207937079187e-10,1e-10
+T2,A-Q02/308.0-vapor/pressure-cold,Engine vs FeOs,rho[2],False,,5124.769732428387,5124.769736919544,8.763625380936446e-10,1e-10
+T2,A-Q02/308.0-vapor/pressure-cold,Engine vs FeOs,rho[3],False,,5124.771225338569,5124.771229829313,8.762817138574519e-10,1e-10
+T2,A-Q02/308.0-vapor/pressure-cold,Engine vs FeOs,rho[4],False,,5124.771971795395,5124.771976286318,8.763165748604251e-10,1e-10
+T2,A-Q02/308.0-vapor/pressure-cold,Engine vs Clapeyron,rho[0],True,,5124.770478882956,5124.770478882946,1.9984014443252818e-15,1e-10
+T2,A-Q02/308.0-vapor/pressure-cold,Engine vs Clapeyron,rho[1],True,,5124.768985975094,5124.768985975268,3.397282455352979e-14,1e-10
+T2,A-Q02/308.0-vapor/pressure-cold,Engine vs Clapeyron,rho[2],True,,5124.769732428387,5124.769732428488,1.9761969838327786e-14,1e-10
+T2,A-Q02/308.0-vapor/pressure-cold,Engine vs Clapeyron,rho[3],True,,5124.771225338569,5124.771225338668,1.9317880628477724e-14,1e-10
+T2,A-Q02/308.0-vapor/pressure-cold,Engine vs Clapeyron,rho[4],True,,5124.771971795395,5124.7719717953905,8.881784197001252e-16,1e-10
+T2,A-Q02/308.0-vapor/pressure-cold,same image,complete returned value,True,,,,,
+T2,A-Q02/308.0-vapor/pressure-anchored,same image,complete returned value,True,,,,,
+T2,A-Q02/308.0-vapor/fixed-density,same image,complete returned value,True,,,,,
+T2,A-Q02/308.0-vapor/pressure-action-[0],same image,complete returned value,True,,,,,
+T2,A-Q02/308.0-vapor/pressure-action-[1],same image,complete returned value,True,,,,,
+T2,"A-Q02/308.0-vapor/pressure-action-[0, 0]",same image,complete returned value,True,,,,,
+T2,"A-Q02/308.0-vapor/pressure-action-[0, 1]",same image,complete returned value,True,,,,,
+T2,"A-Q02/308.0-vapor/pressure-action-[1, 1]",same image,complete returned value,True,,,,,
+T2,A-Q02/308.0-liquid/pressure-cold,Engine vs FeOs,rho[0],False,,7160.554342618743,7160.554428273568,1.1962038248825024e-08,1e-10
+T2,A-Q02/308.0-liquid/pressure-cold,Engine vs FeOs,rho[1],False,,7160.542168700017,7160.5422543658215,1.1963591894925685e-08,1e-10
+T2,A-Q02/308.0-liquid/pressure-cold,Engine vs FeOs,rho[2],False,,7160.5482558547565,7160.54834151637,1.1962996371295276e-08,1e-10
+T2,A-Q02/308.0-liquid/pressure-cold,Engine vs FeOs,rho[3],False,,7160.560428989128,7160.5605146410835,1.1961627244261308e-08,1e-10
+T2,A-Q02/308.0-liquid/pressure-cold,Engine vs FeOs,rho[4],False,,7160.566514969339,7160.566600612126,1.1960336943062089e-08,1e-10
+T2,A-Q02/308.0-liquid/pressure-cold,Engine vs Clapeyron,rho[0],True,,7160.554342618743,7160.554342627371,1.2048140263232199e-12,1e-10
+T2,A-Q02/308.0-liquid/pressure-cold,Engine vs Clapeyron,rho[1],True,,7160.542168700017,7160.5421687115295,1.6078249842621517e-12,1e-10
+T2,A-Q02/308.0-liquid/pressure-cold,Engine vs Clapeyron,rho[2],True,,7160.5482558547565,7160.548255863955,1.2845280394913061e-12,1e-10
+T2,A-Q02/308.0-liquid/pressure-cold,Engine vs Clapeyron,rho[3],True,,7160.560428989128,7160.560428999006,1.3795631303992195e-12,1e-10
+T2,A-Q02/308.0-liquid/pressure-cold,Engine vs Clapeyron,rho[4],True,,7160.566514969339,7160.566514978092,1.2223555501122974e-12,1e-10
+T2,A-Q02/308.0-liquid/pressure-cold,same image,complete returned value,True,,,,,
+T2,A-Q02/308.0-liquid/pressure-anchored,same image,complete returned value,True,,,,,
+T2,A-Q02/308.0-liquid/fixed-density,same image,complete returned value,True,,,,,
+T2,A-Q02/308.0-liquid/pressure-action-[0],same image,complete returned value,True,,,,,
+T2,A-Q02/308.0-liquid/pressure-action-[1],same image,complete returned value,True,,,,,
+T2,"A-Q02/308.0-liquid/pressure-action-[0, 0]",same image,complete returned value,True,,,,,
+T2,"A-Q02/308.0-liquid/pressure-action-[0, 1]",same image,complete returned value,True,,,,,
+T2,"A-Q02/308.0-liquid/pressure-action-[1, 1]",same image,complete returned value,True,,,,,
+T2,A-propane-vapor/pressure-cold,Engine vs density oracle,rho[0],True,,217.30215263291302,217.30215263291257,2.1094237467877974e-15,1e-10
+T2,A-propane-vapor/pressure-cold,Engine vs density oracle,rho[1],True,,217.3029175733232,217.30291757332336,6.661338147750939e-16,1e-10
+T2,A-propane-vapor/pressure-cold,Engine vs density oracle,rho[2],True,,217.30368251421515,217.30368251421464,2.3314683517128287e-15,1e-10
+T2,A-propane-vapor/pressure-cold,Engine vs density oracle,rho[3],True,,217.30444745558663,217.30444745558634,1.3322676295501878e-15,1e-10
+T2,A-propane-vapor/pressure-cold,Engine vs density oracle,rho[4],True,,217.30521239743882,217.30521239743845,1.6653345369377348e-15,1e-10
+T2,A-propane-vapor/pressure-cold,Engine vs density oracle,rho[5],True,,217.3059773397705,217.305977339771,2.4424906541753444e-15,1e-10
+T2,A-propane-vapor/pressure-cold,Engine vs density oracle,rho[6],True,,217.30674228258374,217.306742282584,1.1102230246251565e-15,1e-10
+T2,A-propane-vapor/pressure-cold,Engine vs density oracle,rho[7],True,,217.30750722587692,217.3075072258774,2.220446049250313e-15,1e-10
+T2,A-propane-vapor/pressure-cold,Engine vs density oracle,rho[8],True,,217.30827216965088,217.30827216965122,1.5543122344752192e-15,1e-10
+T2,A-propane-vapor/pressure-cold,Engine vs density oracle,rho[9],True,,217.30903711390528,217.30903711390553,1.1102230246251565e-15,1e-10
+T2,A-propane-vapor/pressure-cold,Engine vs density oracle,rho[10],True,,217.30980205864034,217.30980205864026,4.440892098500626e-16,1e-10
+T2,A-propane-vapor/pressure-cold,Engine vs density oracle,rho[11],True,,217.31056700385557,217.3105670038554,7.771561172376096e-16,1e-10
+T2,A-propane-vapor/pressure-cold,Engine vs density oracle,rho[12],True,,217.3113319495514,217.31133194955095,2.1094237467877974e-15,1e-10
+T2,A-propane-vapor/pressure-cold,Engine vs density oracle,rho[13],True,,217.31209689572734,217.312096895727,1.5543122344752192e-15,1e-10
+T2,A-propane-vapor/pressure-cold,Engine vs density oracle,rho[14],True,,217.3128618423838,217.31286184238346,1.5543122344752192e-15,1e-10
+T2,A-propane-vapor/pressure-cold,Engine vs density oracle,rho[15],True,,217.3136267895205,217.31362678952036,6.661338147750939e-16,1e-10
+T2,A-propane-vapor/pressure-cold,Engine vs density oracle,rho[16],True,,217.3143917371375,217.31439173713767,8.881784197001252e-16,1e-10
+T2,A-propane-vapor/pressure-cold,Engine vs density oracle,rho[17],True,,217.3151566852349,217.31515668523545,2.4424906541753444e-15,1e-10
+T2,A-propane-vapor/pressure-cold,Engine vs density oracle,rho[18],True,,217.31592163381316,217.31592163381367,2.4424906541753444e-15,1e-10
+T2,A-propane-vapor/pressure-cold,Engine vs density oracle,rho[19],True,,217.31668658287225,217.31668658287234,4.440892098500626e-16,1e-10
+T2,A-propane-vapor/pressure-cold,Engine vs density oracle,rho[20],True,,217.3174515324115,217.3174515324114,4.440892098500626e-16,1e-10
+T2,A-propane-vapor/pressure-cold,Engine vs density oracle,rho[21],True,,217.3182164824306,217.318216482431,1.7763568394002505e-15,1e-10
+T2,A-propane-vapor/pressure-cold,Engine vs density oracle,rho[22],True,,217.31898143293148,217.31898143293097,2.3314683517128287e-15,1e-10
+T2,A-propane-vapor/pressure-cold,Engine vs density oracle,rho[23],True,,217.3197463839117,217.31974638391142,1.3322676295501878e-15,1e-10
+T2,A-propane-vapor/pressure-cold,Engine vs density oracle,rho[24],True,,217.32051133537277,217.3205113353723,2.220446049250313e-15,1e-10
+T2,A-propane-vapor/pressure-cold,Engine vs density oracle,rho[25],True,,217.32127628731308,217.32127628731362,2.4424906541753444e-15,1e-10
+T2,A-propane-vapor/pressure-cold,Engine vs density oracle,rho[26],True,,217.32204123973497,217.3220412397354,1.9984014443252818e-15,1e-10
+T2,A-propane-vapor/pressure-cold,Engine vs density oracle,rho[27],True,,217.32280619263815,217.3228061926376,2.6645352591003757e-15,1e-10
+T2,A-propane-vapor/pressure-cold,Engine vs density oracle,rho[28],True,,217.32357114601973,217.3235711460203,2.6645352591003757e-15,1e-10
+T2,A-propane-vapor/pressure-cold,Engine vs density oracle,rho[29],True,,217.32433609988317,217.32433609988345,1.3322676295501878e-15,1e-10
+T2,A-propane-vapor/pressure-cold,Engine vs density oracle,rho[30],True,,217.32510105422708,217.325101054227,4.440892098500626e-16,1e-10
+T2,A-propane-vapor/pressure-cold,Engine vs density oracle,rho[31],True,,217.32586600905069,217.325866009051,1.3322676295501878e-15,1e-10
+T2,A-propane-liquid/pressure-cold,Engine vs density oracle,rho[0],True,,11175.52468969248,11175.524689692525,3.9968028886505635e-15,1e-10
+T2,A-propane-liquid/pressure-cold,Engine vs density oracle,rho[1],True,,11175.525161542424,11175.52516154248,5.10702591327572e-15,1e-10
+T2,A-propane-liquid/pressure-cold,Engine vs density oracle,rho[2],True,,11175.525633392263,11175.525633392255,6.661338147750939e-16,1e-10
+T2,A-propane-liquid/pressure-cold,Engine vs density oracle,rho[3],True,,11175.526105241846,11175.526105241874,2.4424906541753444e-15,1e-10
+T2,A-propane-liquid/pressure-cold,Engine vs density oracle,rho[4],True,,11175.526577091285,11175.52657709131,2.220446049250313e-15,1e-10
+T2,A-propane-liquid/pressure-cold,Engine vs density oracle,rho[5],True,,11175.527048940552,11175.527048940585,2.886579864025407e-15,1e-10
+T2,A-propane-liquid/pressure-cold,Engine vs density oracle,rho[6],True,,11175.527520789688,11175.527520789685,3.3306690738754696e-16,1e-10
+T2,A-propane-liquid/pressure-cold,Engine vs density oracle,rho[7],True,,11175.527992638625,11175.52799263862,4.440892098500626e-16,1e-10
+T2,A-propane-liquid/pressure-cold,Engine vs density oracle,rho[8],True,,11175.528464487434,11175.528464487383,4.551914400963142e-15,1e-10
+T2,A-propane-liquid/pressure-cold,Engine vs density oracle,rho[9],True,,11175.52893633594,11175.528936335975,3.1086244689504383e-15,1e-10
+T2,A-propane-liquid/pressure-cold,Engine vs density oracle,rho[10],True,,11175.529408184451,11175.529408184397,4.884981308350689e-15,1e-10
+T2,A-propane-liquid/pressure-cold,Engine vs density oracle,rho[11],True,,11175.529880032704,11175.529880032647,4.9960036108132044e-15,1e-10
+T2,A-propane-liquid/pressure-cold,Engine vs density oracle,rho[12],True,,11175.530351880781,11175.530351880732,4.440892098500626e-15,1e-10
+T2,A-propane-liquid/pressure-cold,Engine vs density oracle,rho[13],True,,11175.530823728655,11175.53082372865,4.440892098500626e-16,1e-10
+T2,A-propane-liquid/pressure-cold,Engine vs density oracle,rho[14],True,,11175.53129557637,11175.531295576391,1.9984014443252818e-15,1e-10
+T2,A-propane-liquid/pressure-cold,Engine vs density oracle,rho[15],True,,11175.531767423941,11175.531767423961,1.7763568394002505e-15,1e-10
+T2,A-propane-liquid/pressure-cold,Engine vs density oracle,rho[16],True,,11175.53223927139,11175.532239271362,2.4424906541753444e-15,1e-10
+T2,A-propane-liquid/pressure-cold,Engine vs density oracle,rho[17],True,,11175.532711118602,11175.532711118603,2.220446049250313e-16,1e-10
+T2,A-propane-liquid/pressure-cold,Engine vs density oracle,rho[18],True,,11175.533182965704,11175.533182965659,4.107825191113079e-15,1e-10
+T2,A-propane-liquid/pressure-cold,Engine vs density oracle,rho[19],True,,11175.533654812534,11175.533654812562,2.4424906541753444e-15,1e-10
+T2,A-propane-liquid/pressure-cold,Engine vs density oracle,rho[20],True,,11175.534126659259,11175.53412665928,1.9984014443252818e-15,1e-10
+T2,A-propane-liquid/pressure-cold,Engine vs density oracle,rho[21],True,,11175.534598505881,11175.534598505821,5.329070518200751e-15,1e-10
+T2,A-propane-liquid/pressure-cold,Engine vs density oracle,rho[22],True,,11175.53507035218,11175.535070352224,3.9968028886505635e-15,1e-10
+T2,A-propane-liquid/pressure-cold,Engine vs density oracle,rho[23],True,,11175.53554219842,11175.535542198428,6.661338147750939e-16,1e-10
+T2,A-propane-liquid/pressure-cold,Engine vs density oracle,rho[24],True,,11175.53601404453,11175.536014044472,5.218048215738236e-15,1e-10
+T2,A-propane-liquid/pressure-cold,Engine vs density oracle,rho[25],True,,11175.536485890341,11175.536485890345,2.220446049250313e-16,1e-10
+T2,A-propane-liquid/pressure-cold,Engine vs density oracle,rho[26],True,,11175.536957736094,11175.536957736054,3.552713678800501e-15,1e-10
+T2,A-propane-liquid/pressure-cold,Engine vs density oracle,rho[27],True,,11175.537429581549,11175.537429581585,3.3306690738754696e-15,1e-10
+T2,A-propane-liquid/pressure-cold,Engine vs density oracle,rho[28],True,,11175.537901426978,11175.537901426957,1.9984014443252818e-15,1e-10
+T2,A-propane-liquid/pressure-cold,Engine vs density oracle,rho[29],True,,11175.53837327216,11175.538373272155,4.440892098500626e-16,1e-10
+T2,A-propane-liquid/pressure-cold,Engine vs density oracle,rho[30],True,,11175.53884511712,11175.53884511717,4.440892098500626e-15,1e-10
+T2,A-propane-liquid/pressure-cold,Engine vs density oracle,rho[31],True,,11175.539316962064,11175.539316962024,3.552713678800501e-15,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Engine vs density oracle,rho[0],True,,520.570362273691,520.570362273692,1.9984014443252818e-15,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Engine vs density oracle,rho[1],True,,520.5721867788727,520.5721867788708,3.6637359812630166e-15,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Engine vs density oracle,rho[2],True,,520.5740112851215,520.5740112851221,1.1102230246251565e-15,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Engine vs density oracle,rho[3],True,,520.5758357924474,520.5758357924459,2.886579864025407e-15,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Engine vs density oracle,rho[4],True,,520.5776603008405,520.5776603008425,3.774758283725532e-15,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Engine vs density oracle,rho[5],True,,520.5794848103105,520.5794848103116,1.9984014443252818e-15,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Engine vs density oracle,rho[6],True,,520.581309320854,520.5813093208534,1.1102230246251565e-15,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Engine vs density oracle,rho[7],True,,520.5831338324701,520.5831338324678,4.551914400963142e-15,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Engine vs density oracle,rho[8],True,,520.5849583451542,520.5849583451546,8.881784197001252e-16,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Engine vs density oracle,rho[9],True,,520.5867828589121,520.5867828589141,3.9968028886505635e-15,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Engine vs density oracle,rho[10],True,,520.5886073737457,520.5886073737464,1.3322676295501878e-15,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Engine vs density oracle,rho[11],True,,520.5904318896512,520.5904318896512,0.0,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Engine vs density oracle,rho[12],True,,520.592256406627,520.5922564066287,3.3306690738754696e-15,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Engine vs density oracle,rho[13],True,,520.5940809246786,520.5940809246787,2.220446049250313e-16,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Engine vs density oracle,rho[14],True,,520.5959054438023,520.5959054438014,1.7763568394002505e-15,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Engine vs density oracle,rho[15],True,,520.597729963996,520.5977299639967,1.3322676295501878e-15,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Engine vs density oracle,rho[16],True,,520.5995544852647,520.5995544852647,0.0,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Engine vs density oracle,rho[17],True,,520.6013790076056,520.6013790076051,8.881784197001252e-16,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Engine vs density oracle,rho[18],True,,520.6032035310197,520.6032035310184,2.6645352591003757e-15,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Engine vs density oracle,rho[19],True,,520.6050280555032,520.6050280555041,1.7763568394002505e-15,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Engine vs density oracle,rho[20],True,,520.6068525810626,520.6068525810625,2.220446049250313e-16,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Engine vs density oracle,rho[21],True,,520.608677107695,520.6086771076937,2.6645352591003757e-15,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Engine vs density oracle,rho[22],True,,520.6105016353974,520.6105016353973,2.220446049250313e-16,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Engine vs density oracle,rho[23],True,,520.6123261641725,520.6123261641737,2.4424906541753444e-15,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Engine vs density oracle,rho[24],True,,520.61415069402,520.6141506940226,4.884981308350689e-15,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Engine vs density oracle,rho[25],True,,520.6159752249436,520.6159752249442,1.3322676295501878e-15,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Engine vs density oracle,rho[26],True,,520.617799756938,520.6177997569384,8.881784197001252e-16,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Engine vs density oracle,rho[27],True,,520.6196242900054,520.6196242900054,0.0,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Engine vs density oracle,rho[28],True,,520.6214488241453,520.621448824145,6.661338147750939e-16,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Engine vs density oracle,rho[29],True,,520.6232733593545,520.6232733593571,5.10702591327572e-15,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Engine vs density oracle,rho[30],True,,520.625097895643,520.6250978956419,1.9984014443252818e-15,1e-10
+T2,A-methane-ethane-vapor/pressure-cold,Engine vs density oracle,rho[31],True,,520.6269224329976,520.6269224329994,3.552713678800501e-15,1e-10
+T2,A-C2-liquid/pressure-cold,Engine vs density oracle,rho[0],True,,10875.397728880602,10875.397728880627,2.4424906541753444e-15,1e-10
+T2,A-C2-liquid/pressure-cold,Engine vs density oracle,rho[1],True,,10875.398094303722,10875.398094303697,2.3314683517128287e-15,1e-10
+T2,A-C2-liquid/pressure-cold,Engine vs density oracle,rho[2],True,,10875.398459726668,10875.398459726666,2.220446049250313e-16,1e-10
+T2,A-C2-liquid/pressure-cold,Engine vs density oracle,rho[3],True,,10875.39882514956,10875.398825149534,2.3314683517128287e-15,1e-10
+T2,A-C2-liquid/pressure-cold,Engine vs density oracle,rho[4],True,,10875.399190572269,10875.399190572307,3.552713678800501e-15,1e-10
+T2,A-C2-liquid/pressure-cold,Engine vs density oracle,rho[5],True,,10875.399555994967,10875.399555994974,6.661338147750939e-16,1e-10
+T2,A-C2-liquid/pressure-cold,Engine vs density oracle,rho[6],True,,10875.399921417506,10875.399921417546,3.774758283725532e-15,1e-10
+T2,A-C2-liquid/pressure-cold,Engine vs density oracle,rho[7],True,,10875.400286839968,10875.400286840015,4.440892098500626e-15,1e-10
+T2,A-C2-liquid/pressure-cold,Engine vs density oracle,rho[8],True,,10875.400652262382,10875.400652262384,2.220446049250313e-16,1e-10
+T2,A-C2-liquid/pressure-cold,Engine vs density oracle,rho[9],True,,10875.401017684611,10875.40101768465,3.552713678800501e-15,1e-10
+T2,A-C2-liquid/pressure-cold,Engine vs density oracle,rho[10],True,,10875.401383106857,10875.401383106824,2.9976021664879227e-15,1e-10
+T2,A-C2-liquid/pressure-cold,Engine vs density oracle,rho[11],True,,10875.401748528939,10875.401748528899,3.6637359812630166e-15,1e-10
+T2,A-C2-liquid/pressure-cold,Engine vs density oracle,rho[12],True,,10875.402113950919,10875.40211395087,4.551914400963142e-15,1e-10
+T2,A-C2-liquid/pressure-cold,Engine vs density oracle,rho[13],True,,10875.40247937271,10875.40247937274,2.886579864025407e-15,1e-10
+T2,A-C2-liquid/pressure-cold,Engine vs density oracle,rho[14],True,,10875.402844794562,10875.402844794511,4.6629367034256575e-15,1e-10
+T2,A-C2-liquid/pressure-cold,Engine vs density oracle,rho[15],True,,10875.40321021622,10875.403210216195,2.3314683517128287e-15,1e-10
+T2,A-C2-liquid/pressure-cold,Engine vs density oracle,rho[16],True,,10875.403575637727,10875.403575637769,3.774758283725532e-15,1e-10
+T2,A-C2-liquid/pressure-cold,Engine vs density oracle,rho[17],True,,10875.40394105926,10875.403941059245,1.3322676295501878e-15,1e-10
+T2,A-C2-liquid/pressure-cold,Engine vs density oracle,rho[18],True,,10875.404306480581,10875.404306480616,3.1086244689504383e-15,1e-10
+T2,A-C2-liquid/pressure-cold,Engine vs density oracle,rho[19],True,,10875.404671901939,10875.404671901893,4.218847493575595e-15,1e-10
+T2,A-C2-liquid/pressure-cold,Engine vs density oracle,rho[20],True,,10875.405037323057,10875.405037323071,1.3322676295501878e-15,1e-10
+T2,A-C2-liquid/pressure-cold,Engine vs density oracle,rho[21],True,,10875.405402744142,10875.405402744145,4.440892098500626e-16,1e-10
+T2,A-C2-liquid/pressure-cold,Engine vs density oracle,rho[22],True,,10875.405768165107,10875.405768165117,1.1102230246251565e-15,1e-10
+T2,A-C2-liquid/pressure-cold,Engine vs density oracle,rho[23],True,,10875.406133585951,10875.406133585997,4.218847493575595e-15,1e-10
+T2,A-C2-liquid/pressure-cold,Engine vs density oracle,rho[24],True,,10875.406499006758,10875.406499006778,1.7763568394002505e-15,1e-10
+T2,A-C2-liquid/pressure-cold,Engine vs density oracle,rho[25],True,,10875.406864427443,10875.40686442747,2.4424906541753444e-15,1e-10
+T2,A-C2-liquid/pressure-cold,Engine vs density oracle,rho[26],True,,10875.407229848086,10875.407229848037,4.551914400963142e-15,1e-10
+T2,A-C2-liquid/pressure-cold,Engine vs density oracle,rho[27],True,,10875.407595268513,10875.407595268514,2.220446049250313e-16,1e-10
+T2,A-C2-liquid/pressure-cold,Engine vs density oracle,rho[28],True,,10875.407960688932,10875.407960688892,3.6637359812630166e-15,1e-10
+T2,A-C2-liquid/pressure-cold,Engine vs density oracle,rho[29],True,,10875.408326109207,10875.408326109184,2.220446049250313e-15,1e-10
+T2,A-C2-liquid/pressure-cold,Engine vs density oracle,rho[30],True,,10875.408691529396,10875.408691529368,2.55351295663786e-15,1e-10
+T2,A-C2-liquid/pressure-cold,Engine vs density oracle,rho[31],True,,10875.4090569494,10875.40905694945,4.440892098500626e-15,1e-10
+T4,methane_ethane/200.0-3000000.0/discover,Engine vs FeOs,phase count,True,,1,1,0.0,0.0
+T4,methane_ethane/200.0-3000000.0/discover,Engine vs Clapeyron,phase count,True,,1,1,0.0,0.0
+T4,methane_ethane/200.0-3000000.0/discover,Engine vs Clapeyron,rho[0],True,,18359.379210589166,18359.379210589177,6.661338147750939e-16,1e-07
+T4,methane_ethane/200.0-3000000.0/discover,Engine vs Clapeyron,x[0],True,,"[0.5, 0.5]","[0.5, 0.5]",0.0,1e-08
+T4,methane_ethane/200.0-3000000.0/discover,same image,phase count,True,,1,1,0.0,0.0
+T4,methane_ethane/200.0-3000000.0/discover,same image,rho[0],True,,18359.379210589166,18359.379210589166,0.0,1e-07
+T4,methane_ethane/200.0-3000000.0/discover,same image,x[0],True,,"[0.5, 0.5]","[0.5, 0.5]",0.0,1e-08
+T4,methane_ethane/220.0-4000000.0/discover,Engine vs FeOs,phase count,True,,2,2,0.0,0.0
+T4,methane_ethane/220.0-4000000.0/discover,Engine vs FeOs,rho[0],True,,16650.17033678742,16650.17033065959,3.6803426972653597e-10,1e-07
+T4,methane_ethane/220.0-4000000.0/discover,Engine vs FeOs,x[0],True,,"[0.496566817348567, 0.503433182651433]","[0.49656681884657516, 0.5034331811534247]",1.4980082729820765e-09,1e-08
+T4,methane_ethane/220.0-4000000.0/discover,Engine vs FeOs,rho[1],True,,3199.4777863121653,3199.4777889430984,8.223006719987325e-10,1e-07
+T4,methane_ethane/220.0-4000000.0/discover,Engine vs FeOs,x[1],True,,"[0.8518075555523958, 0.14819244444760418]","[0.8518075548636004, 0.14819244513639962]",6.887954651091377e-10,1e-08
+T4,methane_ethane/220.0-4000000.0/discover,Engine vs Clapeyron,phase count,True,,2,2,0.0,0.0
+T4,methane_ethane/220.0-4000000.0/discover,Engine vs Clapeyron,rho[0],True,,16650.17033678742,16650.17033672104,3.9869219037314e-12,1e-07
+T4,methane_ethane/220.0-4000000.0/discover,Engine vs Clapeyron,x[0],True,,"[0.496566817348567, 0.503433182651433]","[0.49656681735274094, 0.5034331826472591]",4.173938972229507e-12,1e-08
+T4,methane_ethane/220.0-4000000.0/discover,Engine vs Clapeyron,rho[1],True,,3199.4777863121653,3199.477786309699,7.709388682997087e-13,1e-07
+T4,methane_ethane/220.0-4000000.0/discover,Engine vs Clapeyron,x[1],True,,"[0.8518075555523958, 0.14819244444760418]","[0.8518075555524692, 0.1481924444475308]",7.338574192772285e-14,1e-08
+T4,methane_ethane/220.0-4000000.0/discover,same image,phase count,True,,2,2,0.0,0.0
+T4,methane_ethane/220.0-4000000.0/discover,same image,rho[0],True,,16650.17033678742,16650.17033678742,0.0,1e-07
+T4,methane_ethane/220.0-4000000.0/discover,same image,x[0],True,,"[0.496566817348567, 0.503433182651433]","[0.496566817348567, 0.503433182651433]",0.0,1e-08
+T4,methane_ethane/220.0-4000000.0/discover,same image,rho[1],True,,3199.4777863121653,3199.4777863121653,0.0,1e-07
+T4,methane_ethane/220.0-4000000.0/discover,same image,x[1],True,,"[0.8518075555523958, 0.14819244444760418]","[0.8518075555523958, 0.14819244444760418]",0.0,1e-08
+T4,methane_ethane/240.0-5000000.0/discover,Engine vs FeOs,phase count,True,,2,2,0.0,0.0
+T4,methane_ethane/240.0-5000000.0/discover,Engine vs FeOs,rho[0],True,,14828.369526568675,14828.369550491509,1.613315259163528e-09,1e-07
+T4,methane_ethane/240.0-5000000.0/discover,Engine vs FeOs,x[0],True,,"[0.4407157279299632, 0.5592842720700368]","[0.4407157256074548, 0.5592842743925452]",2.322508407814894e-09,1e-08
+T4,methane_ethane/240.0-5000000.0/discover,Engine vs FeOs,rho[1],True,,4014.4118724662617,4014.411862281649,2.537012377956671e-09,1e-07
+T4,methane_ethane/240.0-5000000.0/discover,Engine vs FeOs,x[1],True,,"[0.7433905451230033, 0.2566094548769967]","[0.7433905467523997, 0.25660945324760026]",1.6293964510971648e-09,1e-08
+T4,methane_ethane/240.0-5000000.0/discover,Engine vs Clapeyron,phase count,True,,2,2,0.0,0.0
+T4,methane_ethane/240.0-5000000.0/discover,Engine vs Clapeyron,rho[0],True,,14828.369526568675,14828.369524350284,1.496044399473817e-10,1e-07
+T4,methane_ethane/240.0-5000000.0/discover,Engine vs Clapeyron,x[0],True,,"[0.4407157279299632, 0.5592842720700368]","[0.4407157280160195, 0.5592842719839805]",8.605638424086237e-11,1e-08
+T4,methane_ethane/240.0-5000000.0/discover,Engine vs Clapeyron,rho[1],True,,4014.4118724662617,4014.411872389159,1.920652525910782e-11,1e-07
+T4,methane_ethane/240.0-5000000.0/discover,Engine vs Clapeyron,x[1],True,,"[0.7433905451230033, 0.2566094548769967]","[0.7433905451257472, 0.2566094548742528]",2.7439162053610744e-12,1e-08
+T4,methane_ethane/240.0-5000000.0/discover,same image,phase count,True,,2,2,0.0,0.0
+T4,methane_ethane/240.0-5000000.0/discover,same image,rho[0],True,,14828.369526568675,14828.369526568675,0.0,1e-07
+T4,methane_ethane/240.0-5000000.0/discover,same image,x[0],True,,"[0.4407157279299632, 0.5592842720700368]","[0.4407157279299632, 0.5592842720700368]",0.0,1e-08
+T4,methane_ethane/240.0-5000000.0/discover,same image,rho[1],True,,4014.4118724662617,4014.4118724662617,0.0,1e-07
+T4,methane_ethane/240.0-5000000.0/discover,same image,x[1],True,,"[0.7433905451230033, 0.2566094548769967]","[0.7433905451230033, 0.2566094548769967]",0.0,1e-08
+T4,methane_ethane/190.0-1000000.0/discover,Engine vs FeOs,phase count,True,,2,2,0.0,0.0
+T4,methane_ethane/190.0-1000000.0/discover,Engine vs FeOs,rho[0],True,,18534.052764709046,18534.052766171197,7.889000563920945e-11,1e-07
+T4,methane_ethane/190.0-1000000.0/discover,Engine vs FeOs,x[0],True,,"[0.21537559277379106, 0.784624407226209]","[0.2153755927785505, 0.7846244072214494]",4.759526106568046e-12,1e-08
+T4,methane_ethane/190.0-1000000.0/discover,Engine vs FeOs,rho[1],True,,704.5546642306405,704.5546642269405,5.251465928779453e-12,1e-07
+T4,methane_ethane/190.0-1000000.0/discover,Engine vs FeOs,x[1],True,,"[0.864780349140013, 0.13521965085998705]","[0.8647803491880447, 0.13521965081195533]",4.8031717492236226e-11,1e-08
+T4,methane_ethane/190.0-1000000.0/discover,Engine vs Clapeyron,phase count,True,,2,2,0.0,0.0
+T4,methane_ethane/190.0-1000000.0/discover,Engine vs Clapeyron,rho[0],True,,18534.052764709046,18534.052764499014,1.1332157434651435e-11,1e-07
+T4,methane_ethane/190.0-1000000.0/discover,Engine vs Clapeyron,x[0],True,,"[0.21537559277379106, 0.784624407226209]","[0.21537559276304116, 0.7846244072369588]",1.0749900969386772e-11,1e-08
+T4,methane_ethane/190.0-1000000.0/discover,Engine vs Clapeyron,rho[1],True,,704.5546642306405,704.5546642308683,3.232969447708456e-13,1e-07
+T4,methane_ethane/190.0-1000000.0/discover,Engine vs Clapeyron,x[1],True,,"[0.864780349140013, 0.13521965085998705]","[0.8647803491399874, 0.13521965086001272]",2.5673907444456745e-14,1e-08
+T4,methane_ethane/190.0-1000000.0/discover,same image,phase count,True,,2,2,0.0,0.0
+T4,methane_ethane/190.0-1000000.0/discover,same image,rho[0],True,,18534.052764709046,18534.052764709046,0.0,1e-07
+T4,methane_ethane/190.0-1000000.0/discover,same image,x[0],True,,"[0.21537559277379106, 0.784624407226209]","[0.21537559277379106, 0.784624407226209]",0.0,1e-08
+T4,methane_ethane/190.0-1000000.0/discover,same image,rho[1],True,,704.5546642306405,704.5546642306405,0.0,1e-07
+T4,methane_ethane/190.0-1000000.0/discover,same image,x[1],True,,"[0.864780349140013, 0.13521965085998705]","[0.864780349140013, 0.13521965085998705]",0.0,1e-08
+T4,methane_ethane/250.0-6500000.0/discover,Engine vs FeOs,phase count,True,,1,1,0.0,0.0
+T4,methane_ethane/250.0-6500000.0/discover,Engine vs Clapeyron,phase count,True,,1,1,0.0,0.0
+T4,methane_ethane/250.0-6500000.0/discover,Engine vs Clapeyron,rho[0],True,,12955.256490182997,12955.25649018301,8.881784197001252e-16,1e-07
+T4,methane_ethane/250.0-6500000.0/discover,Engine vs Clapeyron,x[0],True,,"[0.5, 0.5]","[0.5, 0.5]",0.0,1e-08
+T4,methane_ethane/250.0-6500000.0/discover,same image,phase count,True,,1,1,0.0,0.0
+T4,methane_ethane/250.0-6500000.0/discover,same image,rho[0],True,,12955.256490182997,12955.256490182997,0.0,1e-07
+T4,methane_ethane/250.0-6500000.0/discover,same image,x[0],True,,"[0.5, 0.5]","[0.5, 0.5]",0.0,1e-08
+T4,methane_ethane/200.0-500000.0/discover,Engine vs FeOs,phase count,True,,2,2,0.0,0.0
+T4,methane_ethane/200.0-500000.0/discover,Engine vs FeOs,rho[0],True,,17680.46685233276,17680.466853157748,4.666089736815593e-11,1e-07
+T4,methane_ethane/200.0-500000.0/discover,Engine vs FeOs,x[0],True,,"[0.05660837091824969, 0.9433916290817503]","[0.056608370646395983, 0.943391629353604]",2.7185370621296556e-10,1e-08
+T4,methane_ethane/200.0-500000.0/discover,Engine vs FeOs,rho[1],True,,321.836965547374,321.8369655448989,7.690625913880922e-12,1e-07
+T4,methane_ethane/200.0-500000.0/discover,Engine vs FeOs,x[1],True,,"[0.5592420931386004, 0.44075790686139954]","[0.5592420932434086, 0.44075790675659143]",1.0480816214908373e-10,1e-08
+T4,methane_ethane/200.0-500000.0/discover,Engine vs Clapeyron,phase count,True,,2,2,0.0,0.0
+T4,methane_ethane/200.0-500000.0/discover,Engine vs Clapeyron,rho[0],True,,17680.46685233276,17680.46685233282,3.3306690738754696e-15,1e-07
+T4,methane_ethane/200.0-500000.0/discover,Engine vs Clapeyron,x[0],True,,"[0.05660837091824969, 0.9433916290817503]","[0.05660837091825147, 0.9433916290817486]",1.7832957333041577e-15,1e-08
+T4,methane_ethane/200.0-500000.0/discover,Engine vs Clapeyron,rho[1],True,,321.836965547374,321.83696554737264,4.218847493575595e-15,1e-07
+T4,methane_ethane/200.0-500000.0/discover,Engine vs Clapeyron,x[1],True,,"[0.5592420931386004, 0.44075790686139954]","[0.5592420931386042, 0.44075790686139577]",3.774758283725532e-15,1e-08
+T4,methane_ethane/200.0-500000.0/discover,same image,phase count,True,,2,2,0.0,0.0
+T4,methane_ethane/200.0-500000.0/discover,same image,rho[0],True,,17680.46685233276,17680.46685233276,0.0,1e-07
+T4,methane_ethane/200.0-500000.0/discover,same image,x[0],True,,"[0.05660837091824969, 0.9433916290817503]","[0.05660837091824969, 0.9433916290817503]",0.0,1e-08
+T4,methane_ethane/200.0-500000.0/discover,same image,rho[1],True,,321.836965547374,321.836965547374,0.0,1e-07
+T4,methane_ethane/200.0-500000.0/discover,same image,x[1],True,,"[0.5592420931386004, 0.44075790686139954]","[0.5592420931386004, 0.44075790686139954]",0.0,1e-08
+T4,methanol_hexane/250.0-100000.0/discover,Engine vs FeOs,phase count,False,RuntimeError: `rachford_rice` encountered illegal values during the iteration.,,,,0.0
+T4,methanol_hexane/250.0-100000.0/discover,Engine vs Clapeyron,phase count,True,,2,2,0.0,0.0
+T4,methanol_hexane/250.0-100000.0/discover,Engine vs Clapeyron,rho[0],True,,19545.80097747306,19545.800785176947,9.838231340708603e-09,1e-07
+T4,methanol_hexane/250.0-100000.0/discover,Engine vs Clapeyron,x[0],True,,"[0.8571867269397445, 0.1428132730602556]","[0.857186721215906, 0.14281327878409406]",5.723838514271051e-09,1e-08
+T4,methanol_hexane/250.0-100000.0/discover,Engine vs Clapeyron,rho[1],True,,8167.412018802891,8167.412033800299,1.836249596820494e-09,1e-07
+T4,methanol_hexane/250.0-100000.0/discover,Engine vs Clapeyron,x[1],True,,"[0.02654211769012288, 0.9734578823098772]","[0.02654212037012759, 0.9734578796298724]",2.6800047736585952e-09,1e-08
+T4,methanol_hexane/250.0-100000.0/discover,same image,phase count,True,,2,2,0.0,0.0
+T4,methanol_hexane/250.0-100000.0/discover,same image,rho[0],True,,19545.80097747306,19545.80097747306,0.0,1e-07
+T4,methanol_hexane/250.0-100000.0/discover,same image,x[0],True,,"[0.8571867269397445, 0.1428132730602556]","[0.8571867269397445, 0.1428132730602556]",0.0,1e-08
+T4,methanol_hexane/250.0-100000.0/discover,same image,rho[1],True,,8167.412018802891,8167.412018802891,0.0,1e-07
+T4,methanol_hexane/250.0-100000.0/discover,same image,x[1],True,,"[0.02654211769012288, 0.9734578823098772]","[0.02654211769012288, 0.9734578823098772]",0.0,1e-08
+T4,methanol_hexane/270.0-100000.0/discover,Engine vs FeOs,phase count,False,RuntimeError: `stability analysis` did not converge within the maximum number of iterations.,,,,0.0
+T4,methanol_hexane/270.0-100000.0/discover,Engine vs Clapeyron,phase count,True,,2,2,0.0,0.0
+T4,methanol_hexane/270.0-100000.0/discover,Engine vs Clapeyron,rho[0],True,,16798.30137624549,16798.30132352532,3.1384226328867726e-09,1e-07
+T4,methanol_hexane/270.0-100000.0/discover,Engine vs Clapeyron,x[0],True,,"[0.7772657998390268, 0.22273420016097317]","[0.7772657977634088, 0.2227342022365913]",2.075618121821776e-09,1e-08
+T4,methanol_hexane/270.0-100000.0/discover,Engine vs Clapeyron,rho[1],True,,8431.190638727658,8431.190638006463,8.553890928908459e-11,1e-07
+T4,methanol_hexane/270.0-100000.0/discover,Engine vs Clapeyron,x[1],True,,"[0.10743761753041317, 0.8925623824695869]","[0.10743761741324473, 0.8925623825867552]",1.171684416156893e-10,1e-08
+T4,methanol_hexane/270.0-100000.0/discover,same image,phase count,True,,2,2,0.0,0.0
+T4,methanol_hexane/270.0-100000.0/discover,same image,rho[0],True,,16798.30137624549,16798.30137624549,0.0,1e-07
+T4,methanol_hexane/270.0-100000.0/discover,same image,x[0],True,,"[0.7772657998390268, 0.22273420016097317]","[0.7772657998390268, 0.22273420016097317]",0.0,1e-08
+T4,methanol_hexane/270.0-100000.0/discover,same image,rho[1],True,,8431.190638727658,8431.190638727658,0.0,1e-07
+T4,methanol_hexane/270.0-100000.0/discover,same image,x[1],True,,"[0.10743761753041317, 0.8925623824695869]","[0.10743761753041317, 0.8925623824695869]",0.0,1e-08
+T4,methanol_hexane/290.0-100000.0/discover,Engine vs FeOs,phase count,False,RuntimeError: `stability analysis` did not converge within the maximum number of iterations.,,,,0.0
+T4,methanol_hexane/290.0-100000.0/discover,Engine vs Clapeyron,phase count,True,,1,1,0.0,0.0
+T4,methanol_hexane/290.0-100000.0/discover,Engine vs Clapeyron,rho[0],True,,11565.179307660834,11565.179307660837,2.220446049250313e-16,1e-07
+T4,methanol_hexane/290.0-100000.0/discover,Engine vs Clapeyron,x[0],True,,"[0.5, 0.5]","[0.5, 0.5]",0.0,1e-08
+T4,methanol_hexane/290.0-100000.0/discover,same image,phase count,True,,1,1,0.0,0.0
+T4,methanol_hexane/290.0-100000.0/discover,same image,rho[0],True,,11565.179307660834,11565.179307660834,0.0,1e-07
+T4,methanol_hexane/290.0-100000.0/discover,same image,x[0],True,,"[0.5, 0.5]","[0.5, 0.5]",0.0,1e-08
+T4,methanol_hexane/300.0-100000.0/discover,Engine vs FeOs,phase count,False,RuntimeError: `stability analysis` did not converge within the maximum number of iterations.,,,,0.0
+T4,methanol_hexane/300.0-100000.0/discover,Engine vs Clapeyron,phase count,True,,1,1,0.0,0.0
+T4,methanol_hexane/300.0-100000.0/discover,Engine vs Clapeyron,rho[0],True,,11409.454759302698,11409.45475930271,8.881784197001252e-16,1e-07
+T4,methanol_hexane/300.0-100000.0/discover,Engine vs Clapeyron,x[0],True,,"[0.5, 0.5]","[0.5, 0.5]",0.0,1e-08
+T4,methanol_hexane/300.0-100000.0/discover,same image,phase count,True,,1,1,0.0,0.0
+T4,methanol_hexane/300.0-100000.0/discover,same image,rho[0],True,,11409.454759302698,11409.454759302698,0.0,1e-07
+T4,methanol_hexane/300.0-100000.0/discover,same image,x[0],True,,"[0.5, 0.5]","[0.5, 0.5]",0.0,1e-08
+T4,methanol_hexane/310.0-100000.0/discover,Engine vs FeOs,phase count,False,RuntimeError: `stability analysis` did not converge within the maximum number of iterations.,,,,0.0
+T4,methanol_hexane/310.0-100000.0/discover,Engine vs Clapeyron,phase count,True,,1,1,0.0,0.0
+T4,methanol_hexane/310.0-100000.0/discover,Engine vs Clapeyron,rho[0],True,,11249.834920264086,11249.834920264082,3.3306690738754696e-16,1e-07
+T4,methanol_hexane/310.0-100000.0/discover,Engine vs Clapeyron,x[0],True,,"[0.5, 0.5]","[0.5, 0.5]",0.0,1e-08
+T4,methanol_hexane/310.0-100000.0/discover,same image,phase count,True,,1,1,0.0,0.0
+T4,methanol_hexane/310.0-100000.0/discover,same image,rho[0],True,,11249.834920264086,11249.834920264086,0.0,1e-07
+T4,methanol_hexane/310.0-100000.0/discover,same image,x[0],True,,"[0.5, 0.5]","[0.5, 0.5]",0.0,1e-08
+T6,nacl/reused,same image,complete returned value,True,,,,,
+T6,nacl/fresh,same image,complete returned value,True,,,,,
+T6,nacl/fresh,reused vs fresh reference,gamma(m=0.001),True,,0.9644032810301054,0.9644032810301054,0.0,1e-08
+T6,nacl/fresh,reused vs fresh reference,gamma(m=0.00134984),True,,0.9589562204481118,0.9589562204481118,0.0,1e-08
+T6,nacl/fresh,reused vs fresh reference,gamma(m=0.00182206),True,,0.9527316416231802,0.9527316416231802,0.0,1e-08
+T6,nacl/fresh,reused vs fresh reference,gamma(m=0.00245948),True,,0.9456370186154796,0.9456370186154796,0.0,1e-08
+T6,nacl/fresh,reused vs fresh reference,gamma(m=0.00331989),True,,0.9375749045722693,0.9375749045722693,0.0,1e-08
+T6,nacl/fresh,reused vs fresh reference,gamma(m=0.00448131),True,,0.9284448563461778,0.9284448563461778,0.0,1e-08
+T6,nacl/fresh,reused vs fresh reference,gamma(m=0.00604904),True,,0.9181462508917313,0.9181462508917313,0.0,1e-08
+T6,nacl/fresh,reused vs fresh reference,gamma(m=0.00816521),True,,0.9065821851734902,0.9065821851734902,0.0,1e-08
+T6,nacl/fresh,reused vs fresh reference,gamma(m=0.0110217),True,,0.8936646461395423,0.8936646461395423,0.0,1e-08
+T6,nacl/fresh,reused vs fresh reference,gamma(m=0.0148775),True,,0.8793211090297666,0.8793211090297666,0.0,1e-08
+T6,nacl/fresh,reused vs fresh reference,gamma(m=0.0200822),True,,0.8635026634457122,0.8635026634457122,0.0,1e-08
+T6,nacl/fresh,reused vs fresh reference,gamma(m=0.0271076),True,,0.8461936722331633,0.8461936722331633,0.0,1e-08
+T6,nacl/fresh,reused vs fresh reference,gamma(m=0.0365909),True,,0.8274228395486646,0.8274228395486646,0.0,1e-08
+T6,nacl/fresh,reused vs fresh reference,gamma(m=0.0493917),True,,0.8072754140516707,0.8072754140516707,0.0,1e-08
+T6,nacl/fresh,reused vs fresh reference,gamma(m=0.0666707),True,,0.7859061107425307,0.7859061107425307,0.0,1e-08
+T6,nacl/fresh,reused vs fresh reference,gamma(m=0.0899945),True,,0.7635522528696526,0.7635522528696526,0.0,1e-08
+T6,nacl/fresh,reused vs fresh reference,gamma(m=0.121478),True,,0.7405466912188001,0.7405466912188001,0.0,1e-08
+T6,nacl/fresh,reused vs fresh reference,gamma(m=0.163975),True,,0.7173303533474359,0.7173303533474359,0.0,1e-08
+T6,nacl/fresh,reused vs fresh reference,gamma(m=0.22134),True,,0.6944649287599995,0.6944649287599995,0.0,1e-08
+T6,nacl/fresh,reused vs fresh reference,gamma(m=0.298772),True,,0.6726473367896384,0.6726473367896384,0.0,1e-08
+T6,nacl/fresh,reused vs fresh reference,gamma(m=0.403294),True,,0.6527293933277025,0.6527293933277025,0.0,1e-08
+T6,nacl/fresh,reused vs fresh reference,gamma(m=0.544381),True,,0.6357486696447767,0.6357486696447767,0.0,1e-08
+T6,nacl/fresh,reused vs fresh reference,gamma(m=0.734825),True,,0.6229802026389503,0.6229802026389503,0.0,1e-08
+T6,nacl/fresh,reused vs fresh reference,gamma(m=0.991893),True,,0.6160239540147596,0.6160239540147596,0.0,1e-08
+T6,nacl/fresh,reused vs fresh reference,gamma(m=1.33889),True,,0.6169504823161202,0.6169504823161202,0.0,1e-08
+T6,nacl/fresh,reused vs fresh reference,gamma(m=1.80729),True,,0.6285380162022233,0.6285380162022233,0.0,1e-08
+T6,nacl/fresh,reused vs fresh reference,gamma(m=2.43954),True,,0.654647677156408,0.654647677156408,0.0,1e-08
+T6,nacl/fresh,reused vs fresh reference,gamma(m=3.29298),True,,0.700794093155878,0.700794093155878,0.0,1e-08
+T6,nacl/fresh,reused vs fresh reference,gamma(m=4.44498),True,,0.7749512940082578,0.7749512940082578,0.0,1e-08
+T6,nacl/fresh,reused vs fresh reference,gamma(m=6),True,,0.888510578720204,0.888510578720204,0.0,1e-08
+T6,nacl/clapeyron-curve,Engine vs Clapeyron,gamma(m=0.001),False,,0.9644032810301054,0.9644021422375082,1.1387925972217161e-06,1e-08
+T6,nacl/clapeyron-curve,Engine vs Clapeyron,gamma(m=0.00134984),False,,0.9589562204481118,0.9589550880875605,1.1323605513258173e-06,1e-08
+T6,nacl/clapeyron-curve,Engine vs Clapeyron,gamma(m=0.00182206),False,,0.9527316416231802,0.952730516612769,1.1250104112736636e-06,1e-08
+T6,nacl/clapeyron-curve,Engine vs Clapeyron,gamma(m=0.00245948),False,,0.9456370186154796,0.9456359019825835,1.1166328960365846e-06,1e-08
+T6,nacl/clapeyron-curve,Engine vs Clapeyron,gamma(m=0.00331989),False,,0.9375749045722693,0.9375737974593117,1.1071129576434302e-06,1e-08
+T6,nacl/clapeyron-curve,Engine vs Clapeyron,gamma(m=0.00448131),False,,0.9284448563461778,0.9284437600142522,1.0963319255763437e-06,1e-08
+T6,nacl/clapeyron-curve,Engine vs Clapeyron,gamma(m=0.00604904),False,,0.9181462508917313,0.9181451667206691,1.0841710621489753e-06,1e-08
+T6,nacl/clapeyron-curve,Engine vs Clapeyron,gamma(m=0.00816521),False,,0.9065821851734902,0.906581114657598,1.0705158921542335e-06,1e-08
+T6,nacl/clapeyron-curve,Engine vs Clapeyron,gamma(m=0.0110217),False,,0.8936646461395423,0.893663590876991,1.0552625513415848e-06,1e-08
+T6,nacl/clapeyron-curve,Engine vs Clapeyron,gamma(m=0.0148775),False,,0.8793211090297666,0.87932007070443,1.0383253365997547e-06,1e-08
+T6,nacl/clapeyron-curve,Engine vs Clapeyron,gamma(m=0.0200822),False,,0.8635026634457122,0.8635016437992487,1.019646463595869e-06,1e-08
+T6,nacl/clapeyron-curve,Engine vs Clapeyron,gamma(m=0.0271076),False,,0.8461936722331633,0.8461926730255687,9.99207594665208e-07,1e-08
+T6,nacl/clapeyron-curve,Engine vs Clapeyron,gamma(m=0.0365909),False,,0.8274228395486646,0.827421862506163,9.77042501570935e-07,1e-08
+T6,nacl/clapeyron-curve,Engine vs Clapeyron,gamma(m=0.0493917),False,,0.8072754140516707,0.8072744607997722,9.53251898527796e-07,1e-08
+T6,nacl/clapeyron-curve,Engine vs Clapeyron,gamma(m=0.0666707),False,,0.7859061107425307,0.7859051827240783,9.280184524174118e-07,1e-08
+T6,nacl/clapeyron-curve,Engine vs Clapeyron,gamma(m=0.0899945),False,,0.7635522528696526,0.7635513512472961,9.016223564417558e-07,1e-08
+T6,nacl/clapeyron-curve,Engine vs Clapeyron,gamma(m=0.121478),False,,0.7405466912188001,0.7405458167621651,8.744566349916383e-07,1e-08
+T6,nacl/clapeyron-curve,Engine vs Clapeyron,gamma(m=0.163975),False,,0.7173303533474359,0.7173295063060513,8.47041384588465e-07,1e-08
+T6,nacl/clapeyron-curve,Engine vs Clapeyron,gamma(m=0.22134),False,,0.6944649287599995,0.6944641087215311,8.200384684631246e-07,1e-08
+T6,nacl/clapeyron-curve,Engine vs Clapeyron,gamma(m=0.298772),False,,0.6726473367896384,0.672646542524113,7.94265525350113e-07,1e-08
+T6,nacl/clapeyron-curve,Engine vs Clapeyron,gamma(m=0.403294),False,,0.6527293933277025,0.6527286226166278,7.707110747379176e-07,1e-08
+T6,nacl/clapeyron-curve,Engine vs Clapeyron,gamma(m=0.544381),False,,0.6357486696447767,0.6357479190994616,7.505453151201991e-07,1e-08
+T6,nacl/clapeyron-curve,Engine vs Clapeyron,gamma(m=0.734825),False,,0.6229802026389503,0.6229794675314251,7.351075251849082e-07,1e-08
+T6,nacl/clapeyron-curve,Engine vs Clapeyron,gamma(m=0.991893),False,,0.6160239540147596,0.6160232282056566,7.258091030415414e-07,1e-08
+T6,nacl/clapeyron-curve,Engine vs Clapeyron,gamma(m=1.33889),False,,0.6169504823161202,0.616949758531531,7.23784589151677e-07,1e-08
+T6,nacl/clapeyron-curve,Engine vs Clapeyron,gamma(m=1.80729),False,,0.6285380162022233,0.6285372873166473,7.288855760068103e-07,1e-08
+T6,nacl/clapeyron-curve,Engine vs Clapeyron,gamma(m=2.43954),False,,0.654647677156408,0.6546469400692362,7.370871718537231e-07,1e-08
+T6,nacl/clapeyron-curve,Engine vs Clapeyron,gamma(m=3.29298),False,,0.700794093155878,0.7007933588557751,7.343001029447294e-07,1e-08
+T6,nacl/clapeyron-curve,Engine vs Clapeyron,gamma(m=4.44498),False,,0.7749512940082578,0.7749503789255242,9.150827335879796e-07,1e-08
+T6,nacl/clapeyron-curve,Engine vs Clapeyron,gamma(m=6),False,,0.888510578720204,0.8885095295437088,1.0491764952380578e-06,1e-08
+T8,isomerisation/first-batch-1,same image,complete returned value,True,,,,,
+T8,isomerisation/first-batch-2,same image,complete returned value,True,,,,,
+T8,isomerisation/first-batch-all,same image,complete returned value,True,,,,,
+T8,isomerisation/first-separate-1,same image,complete returned value,True,,,,,
+T8,isomerisation/first-separate-2,same image,complete returned value,True,,,,,
+T8,isomerisation/first-separate-all,same image,complete returned value,True,,,,,
+T8,"isomerisation/order-2-[0, 0]",same image,complete returned value,True,,,,,
+T8,"isomerisation/order-2-[0, 1]",same image,complete returned value,True,,,,,
+T8,"isomerisation/order-2-[0, 2]",same image,complete returned value,True,,,,,
+T8,"isomerisation/order-2-[1, 1]",same image,complete returned value,True,,,,,
+T8,"isomerisation/order-2-[1, 2]",same image,complete returned value,True,,,,,
+T8,"isomerisation/order-2-[2, 2]",same image,complete returned value,True,,,,,
+T8,"isomerisation/order-3-[0, 0, 0]",same image,complete returned value,True,,,,,
+T8,"isomerisation/order-3-[0, 0, 1]",same image,complete returned value,True,,,,,
+T8,"isomerisation/order-3-[0, 0, 2]",same image,complete returned value,True,,,,,
+T8,"isomerisation/order-3-[0, 1, 1]",same image,complete returned value,True,,,,,
+T8,"isomerisation/order-3-[0, 1, 2]",same image,complete returned value,True,,,,,
+T8,"isomerisation/order-3-[0, 2, 2]",same image,complete returned value,True,,,,,
+T8,"isomerisation/order-3-[1, 1, 1]",same image,complete returned value,True,,,,,
+T8,"isomerisation/order-3-[1, 1, 2]",same image,complete returned value,True,,,,,
+T8,"isomerisation/order-3-[1, 2, 2]",same image,complete returned value,True,,,,,
+T8,"isomerisation/order-3-[2, 2, 2]",same image,complete returned value,True,,,,,
+T8,bubble-C2/first-batch-1,same image,complete returned value,True,,,,,
+T8,bubble-C2/first-batch-2,same image,complete returned value,True,,,,,
+T8,bubble-C2/first-batch-all,same image,complete returned value,True,,,,,
+T8,bubble-C2/first-separate-1,same image,complete returned value,True,,,,,
+T8,bubble-C2/first-separate-2,same image,complete returned value,True,,,,,
+T8,bubble-C2/first-separate-all,same image,complete returned value,True,,,,,
+T8,"bubble-C2/order-2-[0, 0]",same image,complete returned value,True,,,,,
+T8,"bubble-C2/order-2-[0, 1]",same image,complete returned value,True,,,,,
+T8,"bubble-C2/order-2-[0, 2]",same image,complete returned value,True,,,,,
+T8,"bubble-C2/order-2-[0, 3]",same image,complete returned value,True,,,,,
+T8,"bubble-C2/order-2-[1, 1]",same image,complete returned value,True,,,,,
+T8,"bubble-C2/order-2-[1, 2]",same image,complete returned value,True,,,,,
+T8,"bubble-C2/order-2-[1, 3]",same image,complete returned value,True,,,,,
+T8,"bubble-C2/order-2-[2, 2]",same image,complete returned value,True,,,,,
+T8,"bubble-C2/order-2-[2, 3]",same image,complete returned value,True,,,,,
+T8,"bubble-C2/order-2-[3, 3]",same image,complete returned value,True,,,,,
+T8,"bubble-C2/order-3-[0, 0, 0]",same image,complete returned value,True,,,,,
+T8,"bubble-C2/order-3-[0, 0, 1]",same image,complete returned value,True,,,,,
+T8,"bubble-C2/order-3-[0, 0, 2]",same image,complete returned value,True,,,,,
+T8,"bubble-C2/order-3-[0, 0, 3]",same image,complete returned value,True,,,,,
+T8,"bubble-C2/order-3-[0, 1, 1]",same image,complete returned value,True,,,,,
+T8,"bubble-C2/order-3-[0, 1, 2]",same image,complete returned value,True,,,,,
+T8,"bubble-C2/order-3-[0, 1, 3]",same image,complete returned value,True,,,,,
+T8,"bubble-C2/order-3-[0, 2, 2]",same image,complete returned value,True,,,,,
+T8,"bubble-C2/order-3-[0, 2, 3]",same image,complete returned value,True,,,,,
+T8,"bubble-C2/order-3-[0, 3, 3]",same image,complete returned value,True,,,,,
+T8,"bubble-C2/order-3-[1, 1, 1]",same image,complete returned value,True,,,,,
+T8,"bubble-C2/order-3-[1, 1, 2]",same image,complete returned value,True,,,,,
+T8,"bubble-C2/order-3-[1, 1, 3]",same image,complete returned value,True,,,,,
+T8,"bubble-C2/order-3-[1, 2, 2]",same image,complete returned value,True,,,,,
+T8,"bubble-C2/order-3-[1, 2, 3]",same image,complete returned value,True,,,,,
+T8,"bubble-C2/order-3-[1, 3, 3]",same image,complete returned value,True,,,,,
+T8,"bubble-C2/order-3-[2, 2, 2]",same image,complete returned value,True,,,,,
+T8,"bubble-C2/order-3-[2, 2, 3]",same image,complete returned value,True,,,,,
+T8,"bubble-C2/order-3-[2, 3, 3]",same image,complete returned value,True,,,,,
+T8,"bubble-C2/order-3-[3, 3, 3]",same image,complete returned value,True,,,,,
+T8,ionic-lle/first-batch-1,same image,complete returned value,True,,,,,
+T8,ionic-lle/first-batch-2,same image,complete returned value,True,,,,,
+T8,ionic-lle/first-batch-all,same image,complete returned value,True,,,,,
+T8,ionic-lle/first-separate-1,same image,complete returned value,True,,,,,
+T8,ionic-lle/first-separate-2,same image,complete returned value,True,,,,,
+T8,ionic-lle/first-separate-all,same image,complete returned value,True,,,,,
+T8,"ionic-lle/order-2-[0, 0]",same image,complete returned value,True,,,,,
+T8,"ionic-lle/order-2-[0, 1]",same image,complete returned value,True,,,,,
+T8,"ionic-lle/order-2-[0, 2]",same image,complete returned value,True,,,,,
+T8,"ionic-lle/order-2-[0, 3]",same image,complete returned value,True,,,,,
+T8,"ionic-lle/order-2-[1, 1]",same image,complete returned value,True,,,,,
+T8,"ionic-lle/order-2-[1, 2]",same image,complete returned value,True,,,,,
+T8,"ionic-lle/order-2-[1, 3]",same image,complete returned value,True,,,,,
+T8,"ionic-lle/order-2-[2, 2]",same image,complete returned value,True,,,,,
+T8,"ionic-lle/order-2-[2, 3]",same image,complete returned value,True,,,,,
+T8,"ionic-lle/order-2-[3, 3]",same image,complete returned value,True,,,,,
+T8,"ionic-lle/order-3-[0, 0, 0]",same image,complete returned value,True,,,,,
+T8,"ionic-lle/order-3-[0, 0, 1]",same image,complete returned value,True,,,,,
+T8,"ionic-lle/order-3-[0, 0, 2]",same image,complete returned value,True,,,,,
+T8,"ionic-lle/order-3-[0, 0, 3]",same image,complete returned value,True,,,,,
+T8,"ionic-lle/order-3-[0, 1, 1]",same image,complete returned value,True,,,,,
+T8,"ionic-lle/order-3-[0, 1, 2]",same image,complete returned value,True,,,,,
+T8,"ionic-lle/order-3-[0, 1, 3]",same image,complete returned value,True,,,,,
+T8,"ionic-lle/order-3-[0, 2, 2]",same image,complete returned value,True,,,,,
+T8,"ionic-lle/order-3-[0, 2, 3]",same image,complete returned value,True,,,,,
+T8,"ionic-lle/order-3-[0, 3, 3]",same image,complete returned value,True,,,,,
+T8,"ionic-lle/order-3-[1, 1, 1]",same image,complete returned value,True,,,,,
+T8,"ionic-lle/order-3-[1, 1, 2]",same image,complete returned value,True,,,,,
+T8,"ionic-lle/order-3-[1, 1, 3]",same image,complete returned value,True,,,,,
+T8,"ionic-lle/order-3-[1, 2, 2]",same image,complete returned value,True,,,,,
+T8,"ionic-lle/order-3-[1, 2, 3]",same image,complete returned value,True,,,,,
+T8,"ionic-lle/order-3-[1, 3, 3]",same image,complete returned value,True,,,,,
+T8,"ionic-lle/order-3-[2, 2, 2]",same image,complete returned value,True,,,,,
+T8,"ionic-lle/order-3-[2, 2, 3]",same image,complete returned value,True,,,,,
+T8,"ionic-lle/order-3-[2, 3, 3]",same image,complete returned value,True,,,,,
+T8,"ionic-lle/order-3-[3, 3, 3]",same image,complete returned value,True,,,,,
+T9-serial,propane/evaluate-shift-0.0,same image,complete returned value,True,,,,,
+T9-serial,propane/evaluate-shift-0.0001,same image,complete returned value,True,,,,,
+T9-serial,electrolyte/evaluate-shift-0.0,same image,complete returned value,True,,,,,
+T9-serial,electrolyte/evaluate-shift-0.0001,same image,complete returned value,True,,,,,
+T9-serial,F1/evaluate-shift-0.0,same image,complete returned value,True,,,,,
+T9-serial,F1/evaluate-shift-0.0001,same image,complete returned value,True,,,,,
+T9-fits,propane/workers-1/iterations-1,same image,complete returned value,True,,,,,
+T10,property/fgh0/same,same image,complete returned value,True,,,,,
+T10,property/fgh0/same/native,same image,complete returned value,True,,,,,
+T10,property/fgh0/alternating,same image,complete returned value,True,,,,,
+T10,property/fgh0/alternating/native,same image,complete returned value,True,,,,,
+T10,property/fgh1/same,same image,complete returned value,True,,,,,
+T10,property/fgh1/same/native,same image,complete returned value,True,,,,,
+T10,property/fgh1/alternating,same image,complete returned value,True,,,,,
+T10,property/fgh1/alternating/native,same image,complete returned value,True,,,,,
+T10,property/fgh2/same,same image,complete returned value,True,,,,,
+T10,property/fgh2/same/native,same image,complete returned value,True,,,,,
+T10,property/fgh2/alternating,same image,complete returned value,True,,,,,
+T10,property/fgh2/alternating/native,same image,complete returned value,True,,,,,
+T10,equilibrium/fgh0/same,same image,complete returned value,True,,,,,
+T10,equilibrium/fgh0/same/native,same image,complete returned value,True,,,,,
+T10,equilibrium/fgh0/alternating,same image,complete returned value,True,,,,,
+T10,equilibrium/fgh0/alternating/native,same image,complete returned value,True,,,,,
+T10,equilibrium/fgh1/same,same image,complete returned value,True,,,,,
+T10,equilibrium/fgh1/same/native,same image,complete returned value,True,,,,,
+T10,equilibrium/fgh1/alternating,same image,complete returned value,True,,,,,
+T10,equilibrium/fgh1/alternating/native,same image,complete returned value,True,,,,,
+T10,equilibrium/fgh2/same,same image,complete returned value,True,,,,,
+T10,equilibrium/fgh2/same/native,same image,complete returned value,True,,,,,
+T10,equilibrium/fgh2/alternating,same image,complete returned value,True,,,,,
+T10,equilibrium/fgh2/alternating/native,same image,complete returned value,True,,,,,
+T10,property/fgh0/same,ASL vs native,"value, gradient and Hessian entries",True,,,,0.0,1e-10
+T10,property/fgh0/alternating,ASL vs native,"value, gradient and Hessian entries",True,,,,0.0,1e-10
+T10,property/fgh1/same,ASL vs native,"value, gradient and Hessian entries",True,,,,0.0,1e-10
+T10,property/fgh1/alternating,ASL vs native,"value, gradient and Hessian entries",True,,,,0.0,1e-10
+T10,property/fgh2/same,ASL vs native,"value, gradient and Hessian entries",True,,,,0.0,1e-10
+T10,property/fgh2/alternating,ASL vs native,"value, gradient and Hessian entries",True,,,,0.0,1e-10
+T10,equilibrium/fgh0/same,ASL vs native,"value, gradient and Hessian entries",True,,,,0.0,1e-10
+T10,equilibrium/fgh0/alternating,ASL vs native,"value, gradient and Hessian entries",True,,,,4.30710020556777e-14,1e-10
+T10,equilibrium/fgh1/same,ASL vs native,"value, gradient and Hessian entries",True,,,,0.0,1e-10
+T10,equilibrium/fgh1/alternating,ASL vs native,"value, gradient and Hessian entries",True,,,,4.30710020556777e-14,1e-10
+T10,equilibrium/fgh2/same,ASL vs native,"value, gradient and Hessian entries",True,,,,0.0,1e-10
+T10,equilibrium/fgh2/alternating,ASL vs native,"value, gradient and Hessian entries",True,,,,4.30710020556777e-14,1e-10
+T10-cohorts,property/1-same,same image,complete returned value,True,,,,,
+T10-cohorts,property/16-same,same image,complete returned value,True,,,,,
+T10-cohorts,property/16-distinct,same image,complete returned value,True,,,,,
+T10-cohorts,property/32-same,same image,complete returned value,True,,,,,
+T10-cohorts,equilibrium/1-same,same image,complete returned value,True,,,,,
+T10-cohorts,equilibrium/16-same,same image,complete returned value,True,,,,,
+T10-cohorts,equilibrium/16-distinct,same image,complete returned value,True,,,,,
+T10-cohorts,equilibrium/32-same,same image,complete returned value,True,,,,,
+T11,sequence/two-repeated,same image,complete returned value,True,,,,,
+T11,sequence/three-repeated,same image,complete returned value,True,,,,,
+T11,sequence/three-permuted-578,same image,complete returned value,True,,,,,
+T11,sequence/three-partitioned,same image,complete returned value,True,,,,,
+T11,replay/t4-two-phase,same image,complete returned value,True,,,,,
+T7-disturbed-amine-fit,case-6/figure-2-point-7/cold,same image,complete returned value,True,,,,,
+T7-disturbed-amine-fit,case-6/figure-2-point-7/accepted,same image,complete returned value,True,,,,,
+T7-disturbed-amine-fit,case-7/flash-5918.5286-Pa/cold,same image,complete returned value,True,,,,,
+T7-disturbed-amine-fit,case-7/flash-5918.5286-Pa/accepted,same image,complete returned value,True,,,,,
+T7-disturbed-amine-fit,khudaida/sequential-8,same image,complete returned value,True,,,,,
+T7-disturbed-amine-fit,mea-nominally-unloaded/353.15-K,same image,complete returned value,True,,,,,
+T7-disturbed-amine-fit,mea-f1/residual-jacobian,same image,complete returned value,True,,,,,
+T7-disturbed-amine-fit,mea-cp/hilliard-353.15-K-0.358,same image,complete returned value,True,,,,,

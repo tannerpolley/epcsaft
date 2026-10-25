@@ -1,0 +1,24 @@
+record_id,source,zotero_item_key,zotero_attachment_key,source_table,source_printed_page,solution,nominal_mea_molality_mol_per_kg_h2o,temperature_C,reported_loading_mol_co2_per_mol_mea,mea_plus_meah_mol_per_kg_h2o,meacoo_mol_per_kg_h2o,hco3_plus_co3_mol_per_kg_h2o
+hilliard2008_F2_12-1_27C,Hilliard (2008) PhD dissertation UT Austin hdl:2152/3900,DNQUPRMT,LB7LUETY,Appendix F.2,933,12-1,7.0,27,0.1012,6.4223,0.6859,0.0024
+hilliard2008_F2_12-2_27C,Hilliard (2008) PhD dissertation UT Austin hdl:2152/3900,DNQUPRMT,LB7LUETY,Appendix F.2,933,12-2,7.0,27,0.2622,5.2108,1.6689,0.0108
+hilliard2008_F2_12-3_27C,Hilliard (2008) PhD dissertation UT Austin hdl:2152/3900,DNQUPRMT,LB7LUETY,Appendix F.2,933,12-3,7.0,27,0.4046,4.2466,2.8087,0.0382
+hilliard2008_F2_12-4_27C,Hilliard (2008) PhD dissertation UT Austin hdl:2152/3900,DNQUPRMT,LB7LUETY,Appendix F.2,933,12-4,7.0,27,0.4542,3.8610,3.0386,0.0950
+hilliard2008_F2_13-1_27C,Hilliard (2008) PhD dissertation UT Austin hdl:2152/3900,DNQUPRMT,LB7LUETY,Appendix F.2,933,13-1,7.0,27,0.0861,6.5884,0.5717,0.0031
+hilliard2008_F2_13-2_27C,Hilliard (2008) PhD dissertation UT Austin hdl:2152/3900,DNQUPRMT,LB7LUETY,Appendix F.2,933,13-2,7.0,27,0.3179,4.6827,2.1535,0.0199
+hilliard2008_F2_13-3_27C,Hilliard (2008) PhD dissertation UT Austin hdl:2152/3900,DNQUPRMT,LB7LUETY,Appendix F.2,933,13-3,7.0,27,0.4565,4.0565,3.2187,0.1027
+hilliard2008_F2_13-4_27C,Hilliard (2008) PhD dissertation UT Austin hdl:2152/3900,DNQUPRMT,LB7LUETY,Appendix F.2,933,13-4,7.0,27,0.4630,3.7045,2.8442,0.1879
+hilliard2008_F2_18-1_27C,Hilliard (2008) PhD dissertation UT Austin hdl:2152/3900,DNQUPRMT,LB7LUETY,Appendix F.2,933,18-1,7.0,27,0.1445,6.1159,1.0250,0.0071
+hilliard2008_F2_18-2_27C,Hilliard (2008) PhD dissertation UT Austin hdl:2152/3900,DNQUPRMT,LB7LUETY,Appendix F.2,933,18-2,7.0,27,0.1714,5.7571,1.1788,0.0099
+hilliard2008_F2_18-4_27C,Hilliard (2008) PhD dissertation UT Austin hdl:2152/3900,DNQUPRMT,LB7LUETY,Appendix F.2,933,18-4,7.0,27,0.3431,4.6126,2.3917,0.0117
+hilliard2008_F2_18-5_27C,Hilliard (2008) PhD dissertation UT Austin hdl:2152/3900,DNQUPRMT,LB7LUETY,Appendix F.2,933,18-5,7.0,27,0.4181,4.2196,2.9042,0.0745
+hilliard2008_F2_18-6_27C,Hilliard (2008) PhD dissertation UT Austin hdl:2152/3900,DNQUPRMT,LB7LUETY,Appendix F.2,933,18-6,7.0,27,0.4228,4.0659,3.0689,0.1979
+hilliard2008_F2_12-1_40C,Hilliard (2008) PhD dissertation UT Austin hdl:2152/3900,DNQUPRMT,LB7LUETY,Appendix F.2,933,12-1,7.0,40,0.1112,6.3907,0.5873,0.0045
+hilliard2008_F2_12-2_40C,Hilliard (2008) PhD dissertation UT Austin hdl:2152/3900,DNQUPRMT,LB7LUETY,Appendix F.2,933,12-2,7.0,40,0.2604,5.1628,1.8179,0.0253
+hilliard2008_F2_12-3_40C,Hilliard (2008) PhD dissertation UT Austin hdl:2152/3900,DNQUPRMT,LB7LUETY,Appendix F.2,933,12-3,7.0,40,0.3800,4.7634,2.8458,0.0461
+hilliard2008_F2_12-4_40C,Hilliard (2008) PhD dissertation UT Austin hdl:2152/3900,DNQUPRMT,LB7LUETY,Appendix F.2,933,12-4,7.0,40,0.4609,4.3537,3.7264,0.1977
+hilliard2008_F2_12-5_40C,Hilliard (2008) PhD dissertation UT Austin hdl:2152/3900,DNQUPRMT,LB7LUETY,Appendix F.2,933,12-5,7.0,40,0.5171,4.2513,3.5219,0.9180
+hilliard2008_F2_12-1_60C,Hilliard (2008) PhD dissertation UT Austin hdl:2152/3900,DNQUPRMT,LB7LUETY,Appendix F.2,933,12-1,7.0,60,0.1024,6.5781,0.7451,0.0047
+hilliard2008_F2_12-2_60C,Hilliard (2008) PhD dissertation UT Austin hdl:2152/3900,DNQUPRMT,LB7LUETY,Appendix F.2,933,12-2,7.0,60,0.2616,5.9469,2.0765,0.0226
+hilliard2008_F2_12-3_60C,Hilliard (2008) PhD dissertation UT Austin hdl:2152/3900,DNQUPRMT,LB7LUETY,Appendix F.2,933,12-3,7.0,60,0.4647,4.6812,3.9251,0.0738
+hilliard2008_F2_12-4_60C,Hilliard (2008) PhD dissertation UT Austin hdl:2152/3900,DNQUPRMT,LB7LUETY,Appendix F.2,933,12-4,7.0,60,0.4613,4.6668,3.9102,0.1691
+hilliard2008_F2_12-5_60C,Hilliard (2008) PhD dissertation UT Austin hdl:2152/3900,DNQUPRMT,LB7LUETY,Appendix F.2,933,12-5,7.0,60,0.4751,4.6002,4.0205,0.2128

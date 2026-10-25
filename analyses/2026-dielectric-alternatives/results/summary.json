@@ -1,0 +1,417 @@
+{
+ "question": "Do the admitted density-temperature and dipolar-perturbation epsilon_r forms, paired with the Figiel 2025 water/Na+/Cl- base, describe NaCl(aq) MIAC, dielectric decrement, solvation and density better than Figiel's ion-fraction suppression at 298.15 K and 1 bar?",
+ "wheel_sha256": "298a360e532f6f4c5e7ef70c5be45e8b9852310d1c388d6225c504714c3dc410",
+ "method": {
+  "owner": "Engine Ceres",
+  "objective": "sum(relative MIAC residual squared) = 2 * final_cost",
+  "origin": -0.3,
+  "scale": 1.0,
+  "bounds": [
+   -0.8,
+   0.4
+  ],
+  "optimizer_starts": [
+   [
+    0.0
+   ]
+  ],
+  "holds": [],
+  "holdout_weights": 0.0,
+  "uncertainty": "conditional SSE/(21-1), exact tied columns"
+ },
+ "engine_version": "0.2.0.dev0",
+ "extension_sha256": "0f72ef9c8b52a277626e3a140dc872a093f6e51e7a77aca0affdcfdad17d7869",
+ "inputs": {
+  "data/packets/hamer-wu-1972-aqueous-alkali-halides/1/observations/hamer-wu-1972-aqueous-alkali-halides.csv": "2f63e13f06a5b0f4e8bca2980b6a8d9d7fb0f839153c43e3a71952daf9796595",
+  "analyses/reproduction/2025-figiel/inputs/source/figiel-2025-regression-target-ledger.csv": "4d6ce439f732d44c6cee08d9d800cef6f844eb297a30ebf935daa1c65403c5e7",
+  "analyses/2026-shared-derivative-qualification/inputs/nist-srd69-solvent-isobars.tsv": "178283d3acbc800d43f86368eebbcac7b6da646482f1835553231c0da3964cd4",
+  "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+  "analyses/2026-dielectric-alternatives/inputs/selections/dipolar-perturbation.json": "fc4dc4c855e01aa48c95273cceee8b079d5c6710e38b987c1587126ad6e3176e",
+  "analyses/2026-dielectric-alternatives/inputs/selections/ion-fraction-suppression.json": "9b61400b766f17ea0445a0035e3c5fd821261de65f8f32f3d29901d9fe12e243",
+  "data/packets/dielectric-response-records/1/parameters/dielectric-records.csv": "799138464224807d833b9c6c563a4d4e1526285eccb3d716a075cc7515b18616"
+ },
+ "calibration": "shared water-ion k_ij, Hamer-Wu NaCl m <= 2.0 mol/kg, relative loss",
+ "refits": [
+  {
+   "form": "F",
+   "calibration_rows": 21,
+   "k_water_ion": -0.16447084056547956,
+   "sigma_k": 0.004692459174452564,
+   "uncertainty_status": "available",
+   "relative_loss": 0.0016085468958930006,
+   "at_bound": false,
+   "status": "ok",
+   "rank": 1,
+   "singular_value": 1.9111789913895778,
+   "variance_factor": 8.042734479465003e-05,
+   "projected_gradient_norm": 5.910605338499408e-12,
+   "fit_status": "converged",
+   "fit_message": "Parameter tolerance reached. Relative step_norm: 1.193970e-11 <= 1.000000e-10.",
+   "iterations": 6,
+   "trial_failures": 0,
+   "failures": [],
+   "holdout_check": {
+    "maximum": 0.30925290825643337,
+    "mean": 0.1575890199576654,
+    "failed_rows": []
+   },
+   "covariance_assumption": "unit-variance weighted residuals, independent errors and a regular local linearization at an interior point; multiply by variance_factor for an unknown common variance; no claim under bounds, rank deficiency or model discrepancy",
+   "native_failed_fit_predictions": [],
+   "native_failed_fit_residuals": []
+  },
+  {
+   "form": "D",
+   "calibration_rows": 21,
+   "k_water_ion": -0.6233391496775064,
+   "sigma_k": 0.014770550693720153,
+   "uncertainty_status": "available",
+   "relative_loss": 0.011925173168603252,
+   "at_bound": false,
+   "status": "ok",
+   "rank": 1,
+   "singular_value": 1.6531819763677866,
+   "variance_factor": 0.0005962586584301626,
+   "projected_gradient_norm": 6.873061014767146e-08,
+   "fit_status": "converged",
+   "fit_message": "Function tolerance reached. |cost_change|/cost: 1.038637e-13 <= 1.000000e-12",
+   "iterations": 5,
+   "trial_failures": 0,
+   "failures": [],
+   "holdout_check": {
+    "maximum": 0.18749594781645929,
+    "mean": 0.11710396268460516,
+    "failed_rows": []
+   },
+   "covariance_assumption": "unit-variance weighted residuals, independent errors and a regular local linearization at an interior point; multiply by variance_factor for an unknown common variance; no claim under bounds, rank deficiency or model discrepancy",
+   "native_failed_fit_predictions": [],
+   "native_failed_fit_residuals": []
+  },
+  {
+   "form": "P",
+   "calibration_rows": 21,
+   "k_water_ion": -0.6686822273361985,
+   "sigma_k": 0.0169695953725407,
+   "uncertainty_status": "available",
+   "relative_loss": 0.015338192263957637,
+   "at_bound": false,
+   "status": "ok",
+   "rank": 1,
+   "singular_value": 1.6319265340794344,
+   "variance_factor": 0.0007669096131978819,
+   "projected_gradient_norm": 1.21622931170684e-07,
+   "fit_status": "converged",
+   "fit_message": "Function tolerance reached. |cost_change|/cost: 2.992581e-13 <= 1.000000e-12",
+   "iterations": 5,
+   "trial_failures": 0,
+   "failures": [],
+   "holdout_check": {
+    "maximum": 0.23427755397195948,
+    "mean": 0.142050408565223,
+    "failed_rows": []
+   },
+   "covariance_assumption": "unit-variance weighted residuals, independent errors and a regular local linearization at an interior point; multiply by variance_factor for an unknown common variance; no claim under bounds, rank deficiency or model discrepancy",
+   "native_failed_fit_predictions": [],
+   "native_failed_fit_residuals": []
+  }
+ ],
+ "metrics": {
+  "D0/liquid_molar_density_mol_m3/difference_from_same_fit_F": {
+   "n": 4,
+   "failed": 0,
+   "mard": 0.0010880189142700228,
+   "max_ard": 0.0014761067587256566,
+   "mean_abs_error": 63.16661431532884,
+   "mard_sigma_from_k": null
+  },
+  "D0/liquid_molar_density_mol_m3/vs_iapws_pure_water": {
+   "n": 1,
+   "failed": 0,
+   "mard": 7.372336081821795e-05,
+   "max_ard": 7.372336081821795e-05,
+   "mean_abs_error": 4.080179551972833,
+   "mard_sigma_from_k": null
+  },
+  "D0/miac/unfitted_m_gt_2": {
+   "n": 8,
+   "failed": 0,
+   "mard": 0.3361865705210309,
+   "max_ard": 0.43632224367841566,
+   "mean_abs_error": 0.2815198129721589,
+   "mard_sigma_from_k": null
+  },
+  "D0/miac/unfitted_m_le_2": {
+   "n": 21,
+   "failed": 0,
+   "mard": 0.09201381380761271,
+   "max_ard": 0.20491780514334693,
+   "mean_abs_error": 0.062044010897410413,
+   "mard_sigma_from_k": null
+  },
+  "D0/relative_permittivity/unfitted": {
+   "n": 17,
+   "failed": 0,
+   "mard": 0.2039958831335716,
+   "max_ard": 0.5928108484571379,
+   "mean_abs_error": 10.955500699811713,
+   "mard_sigma_from_k": null
+  },
+  "D0/solvation_gibbs_kJ_mol/unfitted": {
+   "n": 2,
+   "failed": 0,
+   "mard": 0.0013163053363466268,
+   "max_ard": 0.0022145045923329144,
+   "mean_abs_error": 0.4878046524217723,
+   "mard_sigma_from_k": null
+  },
+  "D1/liquid_molar_density_mol_m3/difference_from_same_fit_F": {
+   "n": 4,
+   "failed": 0,
+   "mard": 0.013145106714189846,
+   "max_ard": 0.02227111078200638,
+   "mean_abs_error": 763.0752493179516,
+   "mard_sigma_from_k": null
+  },
+  "D1/liquid_molar_density_mol_m3/vs_iapws_pure_water": {
+   "n": 1,
+   "failed": 0,
+   "mard": 7.372336081821795e-05,
+   "max_ard": 7.372336081821795e-05,
+   "mean_abs_error": 4.080179551972833,
+   "mard_sigma_from_k": null
+  },
+  "D1/miac/fitted_m_le_2": {
+   "n": 21,
+   "failed": 0,
+   "mard": 0.01985691624090961,
+   "max_ard": 0.038649164563066316,
+   "mean_abs_error": 0.013855525373855381,
+   "mard_sigma_from_k": 8.50469919152068e-05
+  },
+  "D1/miac/unfitted_m_gt_2": {
+   "n": 8,
+   "failed": 0,
+   "mard": 0.13841999015437137,
+   "max_ard": 0.1901581620856585,
+   "mean_abs_error": 0.11710396268460516,
+   "mard_sigma_from_k": 0.02751720127045417
+  },
+  "D1/relative_permittivity/unfitted": {
+   "n": 17,
+   "failed": 0,
+   "mard": 0.2096465946898752,
+   "max_ard": 0.6122086277852298,
+   "mean_abs_error": 11.25134677232686,
+   "mard_sigma_from_k": null
+  },
+  "D1/solvation_gibbs_kJ_mol/unfitted": {
+   "n": 2,
+   "failed": 0,
+   "mard": 0.027273268566130708,
+   "max_ard": 0.028210302794521903,
+   "mean_abs_error": 9.522113293973234,
+   "mard_sigma_from_k": null
+  },
+  "F0/liquid_molar_density_mol_m3/difference_from_same_fit_F": {
+   "n": 4,
+   "failed": 0,
+   "mard": 0.0,
+   "max_ard": 0.0,
+   "mean_abs_error": 0.0,
+   "mard_sigma_from_k": null
+  },
+  "F0/liquid_molar_density_mol_m3/vs_iapws_pure_water": {
+   "n": 1,
+   "failed": 0,
+   "mard": 7.372336081821795e-05,
+   "max_ard": 7.372336081821795e-05,
+   "mean_abs_error": 4.080179551972833,
+   "mard_sigma_from_k": null
+  },
+  "F0/miac/fitted_m_gt_2": {
+   "n": 8,
+   "failed": 0,
+   "mard": 0.0534633534184244,
+   "max_ard": 0.10091025246087239,
+   "mean_abs_error": 0.04122552269961875,
+   "mard_sigma_from_k": null
+  },
+  "F0/miac/fitted_m_le_2": {
+   "n": 21,
+   "failed": 0,
+   "mard": 0.043924790202017214,
+   "max_ard": 0.10401455718101679,
+   "mean_abs_error": 0.029291966979887445,
+   "mard_sigma_from_k": null
+  },
+  "F0/relative_permittivity/fitted": {
+   "n": 17,
+   "failed": 0,
+   "mard": 0.07268114276236429,
+   "max_ard": 0.15815757276888445,
+   "mean_abs_error": 4.234191745910453,
+   "mard_sigma_from_k": null
+  },
+  "F0/solvation_gibbs_kJ_mol/fitted": {
+   "n": 2,
+   "failed": 0,
+   "mard": 0.001273751191773221,
+   "max_ard": 0.0021723066892953523,
+   "mean_abs_error": 0.4730076017050635,
+   "mard_sigma_from_k": null
+  },
+  "F1/liquid_molar_density_mol_m3/difference_from_same_fit_F": {
+   "n": 4,
+   "failed": 0,
+   "mard": 0.0,
+   "max_ard": 0.0,
+   "mean_abs_error": 0.0,
+   "mard_sigma_from_k": null
+  },
+  "F1/liquid_molar_density_mol_m3/vs_iapws_pure_water": {
+   "n": 1,
+   "failed": 0,
+   "mard": 7.372336081821795e-05,
+   "max_ard": 7.372336081821795e-05,
+   "mean_abs_error": 4.080179551972833,
+   "mard_sigma_from_k": null
+  },
+  "F1/miac/fitted_m_le_2": {
+   "n": 21,
+   "failed": 0,
+   "mard": 0.0066636354869780605,
+   "max_ard": 0.022437160100821887,
+   "mean_abs_error": 0.004553274737551352,
+   "mard_sigma_from_k": 0.0002825335670709909
+  },
+  "F1/miac/unfitted_m_gt_2": {
+   "n": 8,
+   "failed": 0,
+   "mard": 0.182286255057359,
+   "max_ard": 0.3136439231809669,
+   "mean_abs_error": 0.1575890199576654,
+   "mard_sigma_from_k": 0.006839835440541044
+  },
+  "F1/relative_permittivity/fitted": {
+   "n": 17,
+   "failed": 0,
+   "mard": 0.07268114276236429,
+   "max_ard": 0.15815757276888445,
+   "mean_abs_error": 4.234191745910453,
+   "mard_sigma_from_k": null
+  },
+  "F1/solvation_gibbs_kJ_mol/fitted": {
+   "n": 2,
+   "failed": 0,
+   "mard": 0.009531842265423257,
+   "max_ard": 0.010419598660445718,
+   "mean_abs_error": 3.28769637169205,
+   "mard_sigma_from_k": null
+  },
+  "P0/liquid_molar_density_mol_m3/difference_from_same_fit_F": {
+   "n": 4,
+   "failed": 0,
+   "mard": 0.00109005913327053,
+   "max_ard": 0.001291582860031973,
+   "mean_abs_error": 63.144668448047014,
+   "mard_sigma_from_k": null
+  },
+  "P0/liquid_molar_density_mol_m3/vs_iapws_pure_water": {
+   "n": 1,
+   "failed": 0,
+   "mard": 7.372336081821795e-05,
+   "max_ard": 7.372336081821795e-05,
+   "mean_abs_error": 4.080179551972833,
+   "mard_sigma_from_k": null
+  },
+  "P0/miac/unfitted_m_gt_2": {
+   "n": 8,
+   "failed": 0,
+   "mard": 0.36769110503888713,
+   "max_ard": 0.4715821154114185,
+   "mean_abs_error": 0.3075732170361612,
+   "mard_sigma_from_k": null
+  },
+  "P0/miac/unfitted_m_le_2": {
+   "n": 21,
+   "failed": 0,
+   "mard": 0.10323713942632404,
+   "max_ard": 0.2287472829985275,
+   "mean_abs_error": 0.06964931706597309,
+   "mard_sigma_from_k": null
+  },
+  "P0/relative_permittivity/unfitted": {
+   "n": 17,
+   "failed": 0,
+   "mard": 0.22753174436518483,
+   "max_ard": 0.6910391180359428,
+   "mean_abs_error": 12.132238596498576,
+   "mard_sigma_from_k": null
+  },
+  "P0/solvation_gibbs_kJ_mol/unfitted": {
+   "n": 2,
+   "failed": 0,
+   "mard": 0.0012610692446615244,
+   "max_ard": 0.00215973090895658,
+   "mean_abs_error": 0.46859779823037684,
+   "mard_sigma_from_k": null
+  },
+  "P1/liquid_molar_density_mol_m3/difference_from_same_fit_F": {
+   "n": 4,
+   "failed": 0,
+   "mard": 0.014211401359884562,
+   "max_ard": 0.023879696768655048,
+   "mean_abs_error": 824.8442140217212,
+   "mard_sigma_from_k": null
+  },
+  "P1/liquid_molar_density_mol_m3/vs_iapws_pure_water": {
+   "n": 1,
+   "failed": 0,
+   "mard": 7.372336081821795e-05,
+   "max_ard": 7.372336081821795e-05,
+   "mean_abs_error": 4.080179551972833,
+   "mard_sigma_from_k": null
+  },
+  "P1/miac/fitted_m_le_2": {
+   "n": 21,
+   "failed": 0,
+   "mard": 0.022628102042370295,
+   "max_ard": 0.043858854107990494,
+   "mean_abs_error": 0.01581658875723287,
+   "mard_sigma_from_k": 0.00011890760144972815
+  },
+  "P1/miac/unfitted_m_gt_2": {
+   "n": 8,
+   "failed": 0,
+   "mard": 0.16744394656789285,
+   "max_ard": 0.23760401011354917,
+   "mean_abs_error": 0.142050408565223,
+   "mard_sigma_from_k": 0.0322725831024372
+  },
+  "P1/relative_permittivity/unfitted": {
+   "n": 17,
+   "failed": 0,
+   "mard": 0.234586960651491,
+   "max_ard": 0.7144572452396193,
+   "mean_abs_error": 12.50318667682196,
+   "mard_sigma_from_k": null
+  },
+  "P1/solvation_gibbs_kJ_mol/unfitted": {
+   "n": 2,
+   "failed": 0,
+   "mard": 0.030878073373798512,
+   "max_ard": 0.031822488722229154,
+   "mean_abs_error": 10.776829682114936,
+   "mard_sigma_from_k": null
+  }
+ },
+ "sole_root_states": [],
+ "failures": [],
+ "derivative_failures": [],
+ "limits": [
+  "Hybrids: Figiel ion, Born and water parameters were fitted with ion-fraction suppression; only one shared water-ion k_ij is refitted, so D1/P1 are not source models.",
+  "Hamer-Wu MIAC uncertainty is not retained; propagated bands cover k_ij only.",
+  "Dielectric rows are Figiel Fig. 2 digitizations without pointwise uncertainty; static-permittivity data can include kinetic depolarization (Rueben 2024). They calibrated Figiel's C_epsilon.",
+  "No retained NaCl(aq) solution-density reference: solution density is a model difference only.",
+  "298.15 K and 1 bar only; no temperature, mixed-solvent or other-salt claim."
+ ]
+}

@@ -1,0 +1,44 @@
+{
+  "historical_record_commit": "566d57de5ec6b2bd36d1e1f0460b62a837e70e0e",
+  "historical_wheel_sha256": null,
+  "wheel_sha256": "33ef17f578714f55c65223e6b3d8b28e09344ac65cb317dfe9007bcfffc8db94",
+  "conditions": "313.15, 353.15 and 393.15 K; CO2-free solvent MDEA mass fraction 0.18-0.20; 1 kg water basis",
+  "reference_pressure_pa": 100000.0,
+  "row_tolerance": 1e-10,
+  "source_reference_convention": "water pure-component; all other components infinite dilution",
+  "historical_generator_default": "pure-water liquid / pure-CO2 vapor / other solutes infinite dilution",
+  "historical_table_lane_labels": [
+    [
+      "mole-fraction-to-molality-converted-k",
+      "pure-water"
+    ]
+  ],
+  "interpretation": "Difference between historical reconstruction and current source-ledger calculation. Historical-identity limitations are stated in the Uyan notebook.",
+  "historical_equivalence_comparisons": 240,
+  "historical_equivalence_misses": 240,
+  "changed_values": 208,
+  "unavailable_values": 32,
+  "historical_roots": 30,
+  "source_ledger_roots": 26,
+  "failed_rows": [
+    "ermatchkov-2006-t1-r09",
+    "ermatchkov-2006-t1-r10",
+    "ermatchkov-2006-t1-r11",
+    "ermatchkov-2006-t1-r12"
+  ],
+  "historical_ard_percent": 118.97650898476668,
+  "source_ledger_ard_percent": 425.3950943438712,
+  "ard_comparison_basis": "Each lane's evaluated rows; not a matched-subset accuracy comparison when roots are unavailable",
+  "historical_ard_by_temperature_percent": {
+    "313.15": 180.07157712238737,
+    "353.15": 79.1400531992161,
+    "393.15": 97.71789663269655
+  },
+  "source_ledger_ard_by_temperature_percent": {
+    "313.15": 1431.7654659872758,
+    "353.15": 218.61009726545936,
+    "393.15": 28.35786843624046
+  },
+  "maximum_original_row": 5.062616992290714e-14,
+  "limit": "Numerical verification, not physical validation"
+}

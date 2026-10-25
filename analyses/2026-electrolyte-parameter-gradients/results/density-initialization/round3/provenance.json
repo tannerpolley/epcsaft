@@ -1,0 +1,66 @@
+{
+  "base": "5b4769f637b5715a7ecbaa86713b210f2ed5db6f",
+  "main": "bb4d403ff9ded58e0cc8cf2c5d273ad98d39b737",
+  "conditions": {
+    "temperature_K": 298.15,
+    "pressure_Pa": 100000,
+    "branch": "liquid",
+    "source_packet": "figiel-2025-reference-electrolytes/4",
+    "numerical_threads": 1
+  },
+  "criterion": {
+    "relative": 1e-10,
+    "absolute_floor": 1e-12,
+    "osmotic_absolute_floor": "1e-12/(M_w sum(nu) m), M_w from the parameter packet, nu and m from each observation",
+    "slope_derivative_relative_or_one": 1e-06
+  },
+  "replay": "seeded full fit on the merged wheel versus same-point fresh cold evaluate_observations",
+  "fallbacks": "native verdicts and causes identical to round2/fallbacks.json",
+  "cold_wheel_source": "seeded source with previous-trial offers omitted, built before the anchor-failure probe reason was made lazy; trace text only",
+  "endpoints": "one full F2 and B4 fit on the cold comparator wheel (previous-trial density offers omitted in fit.cpp) and on the seeded wheel",
+  "timing": {
+    "retained": "round2/timing",
+    "base": "5fec07f8a501209c3300cfee465b5f603805998a",
+    "note": "not rerun on the merged wheel"
+  },
+  "evidence_type": "numerical verification; no physical validation",
+  "wheels": {
+    "seeded": {
+      "path": "build/issue-245-round3/wheel",
+      "sha256": "722d12588b61eb2e3f0ee59f9fc4f908d1166282f55474b82c6383590203669f"
+    },
+    "cold": {
+      "path": "build/issue-245-round3/cold-wheel",
+      "sha256": "c5bb76626597eb520314095d9de703c21263e097f516e30fcad6a25eae967110"
+    },
+    "main": {
+      "path": "build/wheels/main-1218dc78.whl (main checkout), key-solve work comparison",
+      "sha256": "dad141bae630ce8eef63106ba2ae3714d994a5c1543928b455f4ba8ecf464adf"
+    }
+  },
+  "source_sha256": {
+    "engine/native/regression/fit.cpp": "8de7a7bbf1ad69b1f86fd99ab1f10dbf47f6dcb919273f4e79686191406c5ec4",
+    "engine/native/regression/observations.cpp": "b78185b409a9df9a6aca7fc10c4c08e96e35430406cb86710dff64465d6e2ce4",
+    "engine/native/properties/density.cpp": "228a3b95574c7a27a36875320f178bec56fcb048e6aa7ac1995af9447e51bba6",
+    "engine/native/properties/infinite_dilution_reference.cpp": "240b015c3f42cd4a3c504fa885e87fca49f7b258eefcc7908531b8c36915a295",
+    "engine/tests/native/regression_checks.cpp": "07ef0f859eba4bec96f5343868a830ea0cc2148f5144184a0dd45678fab2a3a4",
+    "analyses/2026-electrolyte-parameter-gradients/scripts/density_seed_pairs.py": "c494d5255338cf820b7e360a0e95f81ad66a1f396c47093bf6ff44a50b213e52",
+    "analyses/2026-electrolyte-parameter-gradients/scripts/declarations.py": "a22d73496bd91a95c30560510a93b814287503506cd572c4eb980135d58f5b7e",
+    "analyses/2026-electrolyte-parameter-gradients/scripts/minimax.py": "97adca7f9f93b0c526b9d7e14b6bb43b4881945669621c32358492c9edc16763",
+    "analyses/2026-electrolyte-parameter-gradients/scripts/run.py": "4f9d2fe84c9a924b0d05da97c2ed04107c78f66a802285db425bf83d894d7aff",
+    "analyses/2026-electrolyte-parameter-gradients/inputs/files.json": "cf22532a210d764e46312427fbae10c4177fe44f1ab79a3dc69f223380d68ea2"
+  },
+  "variance_factor": {
+    "comparison_id": "r4/recovery/variance_factor",
+    "criterion": {
+      "type": "scalar",
+      "rule": "symmetric_close",
+      "atol": 6.6666666666666666e-21,
+      "rtol": 1e-12
+    },
+    "evidence_status": "valid",
+    "judgment": "Criterion satisfied",
+    "model": 3.4765369926558705e-27,
+    "reference": 3.4749350408803575e-27
+  }
+}

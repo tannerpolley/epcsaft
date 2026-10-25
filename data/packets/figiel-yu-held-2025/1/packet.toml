@@ -1,0 +1,142 @@
+schema_version = 2
+packet_id = "figiel-yu-held-2025"
+packet_version = "1"
+title = "figiel-yu-held-2025 source parameter packet"
+description = "Reusable parameter packet for figiel-yu-held-2025, copied byte-for-byte from the admitted EOS source bundle and retained with source/domain metadata."
+license_or_use_basis = "Source-traceable numeric parameter transcription and project-authored packet metadata retained for scientific verification under the source-specific use bases listed below; no full paper content is included."
+tolerance_rationale = "The packet preserves source values byte-for-byte and asserts no new numerical acceptance tolerance. Any validation tolerance or uncertainty must be declared by the consuming campaign."
+
+[[sources]]
+source_id = "figiel-yu-held-2025"
+citation = "Figiel, P.; Yu, G.; Held, C. Predicting Thermodynamic Properties of Ions in Single Solvents and in Mixed Solvents Using a Modified Born Term within the ePC-SAFT Framework. Industrial & Engineering Chemistry Research 2025, 64, 9406-9418."
+doi = "10.1021/acs.iecr.5c00475"
+use_basis = "source-complete Tables 1-5 model inputs; main PDF SHA-256 a3c940895c530f72f47f22f8c0f4796b5ad37918a4edd274f85497c6dd81ad1f and supporting-information PDF SHA-256 005b38ed566ec3c09b87e1ca3a9dd6eeafc9ba75e1a30b9322291d770bb93895"
+
+[[sources]]
+source_id = "gross-sadowski-2002"
+citation = "Gross, J.; Sadowski, G. Application of the Perturbed-Chain SAFT Equation of State to Associating Systems. Industrial & Engineering Chemistry Research 2002, 41, 5510-5515."
+doi = "10.1021/ie010954d"
+use_basis = "Eqs. 2-3 cross-association combining rules evaluated once at 298.15 K with no binary correction parameter; inspected PDF SHA-256 e4991a757cad356c2d0f6ec20972adb74458218b2583cd92b19b825ccf1d89bb"
+
+[[sources]]
+source_id = "nist-srd-69-water"
+citation = "NIST Chemistry WebBook, SRD 69, Water, CAS 7732-18-5."
+use_basis = "water identity and molecular weight"
+
+[[sources]]
+source_id = "nist-srd-69-methanol"
+citation = "NIST Chemistry WebBook, SRD 69, Methanol, CAS 67-56-1."
+use_basis = "methanol identity and molecular weight"
+
+[[sources]]
+source_id = "nist-srd-69-ethanol"
+citation = "NIST Chemistry WebBook, SRD 69, Ethanol, CAS 64-17-5."
+use_basis = "ethanol identity and molecular weight"
+
+[[domains]]
+domain_id = "figiel-298-k-1-bar"
+kind = "reported-conditions"
+temperature_min = 298.15
+temperature_max = 298.15
+temperature_unit = "kelvin"
+pressure_min = 1
+pressure_max = 1
+pressure_unit = "bar"
+ion_mole_fraction_max = 0.38
+description = "Source-defined reported-conditions domain figiel-298-k-1-bar (temperature 298.15–298.15 kelvin; pressure 1–1 bar); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "nist-water-identity"
+kind = "unknown"
+description = "Source-defined domain nist-water-identity has no numeric range stated in the origin bundle; retain the cited source limits and do not infer a broader range."
+
+[[domains]]
+domain_id = "nist-methanol-identity"
+kind = "unknown"
+description = "Source-defined domain nist-methanol-identity has no numeric range stated in the origin bundle; retain the cited source limits and do not infer a broader range."
+
+[[domains]]
+domain_id = "nist-ethanol-identity"
+kind = "unknown"
+description = "Source-defined domain nist-ethanol-identity has no numeric range stated in the origin bundle; retain the cited source limits and do not infer a broader range."
+
+[[files]]
+path = "parameters/bundle.toml"
+role = "parameters"
+media_type = "application/toml"
+sha256 = "bace628d366310dccb9329779218be56602e56db294dda2bc468fef4fd94f0c5"
+source_refs = ["figiel-yu-held-2025", "gross-sadowski-2002", "nist-srd-69-water", "nist-srd-69-methanol", "nist-srd-69-ethanol"]
+domain_refs = ["figiel-298-k-1-bar", "nist-water-identity", "nist-methanol-identity", "nist-ethanol-identity"]
+units_basis = "Bundle identity, file membership, and source metadata are non-numeric identifiers."
+
+[[files]]
+path = "parameters/components.csv"
+role = "parameters"
+media_type = "text/csv"
+sha256 = "d225a917affa50e0f2b18616398cef7755fd10d9b5f618b0fce9915d8181bb11"
+source_refs = ["figiel-yu-held-2025", "gross-sadowski-2002", "nist-srd-69-water", "nist-srd-69-methanol", "nist-srd-69-ethanol"]
+domain_refs = ["figiel-298-k-1-bar", "nist-water-identity", "nist-methanol-identity", "nist-ethanol-identity"]
+units_basis = "Numeric units and conventions are declared by the retained source bundle and its source-specific metadata."
+
+[[files]]
+path = "parameters/single.csv"
+role = "parameters"
+media_type = "text/csv"
+sha256 = "5a3f4aa0fae30fb3ca768ebb6f92e063d7be68fce6ec2a08fb6c1d6410148d46"
+source_refs = ["figiel-yu-held-2025", "gross-sadowski-2002", "nist-srd-69-water", "nist-srd-69-methanol", "nist-srd-69-ethanol"]
+domain_refs = ["figiel-298-k-1-bar", "nist-water-identity", "nist-methanol-identity", "nist-ethanol-identity"]
+units_basis = "Numeric units and conventions are declared by the retained source bundle and its source-specific metadata."
+
+[[files]]
+path = "parameters/pair.csv"
+role = "parameters"
+media_type = "text/csv"
+sha256 = "f9c27292f9d19b245ed1311a3e8f2bada68e33928c0bf76c8bd33fba22a64536"
+source_refs = ["figiel-yu-held-2025", "gross-sadowski-2002", "nist-srd-69-water", "nist-srd-69-methanol", "nist-srd-69-ethanol"]
+domain_refs = ["figiel-298-k-1-bar", "nist-water-identity", "nist-methanol-identity", "nist-ethanol-identity"]
+units_basis = "Numeric units and conventions are declared by the retained source bundle and its source-specific metadata."
+
+[[files]]
+path = "parameters/sites.csv"
+role = "parameters"
+media_type = "text/csv"
+sha256 = "b6e378eb4c4727221d0baee7b4b35411f868521153d29e5493996515acc82726"
+source_refs = ["figiel-yu-held-2025", "gross-sadowski-2002", "nist-srd-69-water", "nist-srd-69-methanol", "nist-srd-69-ethanol"]
+domain_refs = ["figiel-298-k-1-bar", "nist-water-identity", "nist-methanol-identity", "nist-ethanol-identity"]
+units_basis = "Numeric units and conventions are declared by the retained source bundle and its source-specific metadata."
+
+[[files]]
+path = "parameters/association.csv"
+role = "parameters"
+media_type = "text/csv"
+sha256 = "9750cc3a7490b5576ece45b1daa46851ac0528c0aefae94d8a84fd11f844e2cc"
+source_refs = ["figiel-yu-held-2025", "gross-sadowski-2002", "nist-srd-69-water", "nist-srd-69-methanol", "nist-srd-69-ethanol"]
+domain_refs = ["figiel-298-k-1-bar", "nist-water-identity", "nist-methanol-identity", "nist-ethanol-identity"]
+units_basis = "Numeric units and conventions are declared by the retained source bundle and its source-specific metadata."
+
+[[files]]
+path = "parameters/model.csv"
+role = "parameters"
+media_type = "text/csv"
+sha256 = "ce1f9d985725f86ca8d2f4e2f9f786c4e942e1d32f207bc1b20957311102525e"
+source_refs = ["figiel-yu-held-2025", "gross-sadowski-2002", "nist-srd-69-water", "nist-srd-69-methanol", "nist-srd-69-ethanol"]
+domain_refs = ["figiel-298-k-1-bar", "nist-water-identity", "nist-methanol-identity", "nist-ethanol-identity"]
+units_basis = "Numeric units and conventions are declared by the retained source bundle and its source-specific metadata."
+
+[[files]]
+path = "parameters/correlations.toml"
+role = "parameters"
+media_type = "application/toml"
+sha256 = "dc939a7d6fbcea980f60fbe1ea41e8a54631cd2ee80d6de2622bb9eedd17193c"
+source_refs = ["figiel-yu-held-2025", "gross-sadowski-2002", "nist-srd-69-water", "nist-srd-69-methanol", "nist-srd-69-ethanol"]
+domain_refs = ["figiel-298-k-1-bar", "nist-water-identity", "nist-methanol-identity", "nist-ethanol-identity"]
+units_basis = "Numeric units and conventions are declared by the retained source bundle and its source-specific metadata."
+
+[[files]]
+path = "provenance/source-origin.toml"
+role = "provenance"
+media_type = "application/toml"
+sha256 = "ab9f476dbc1f202cfdad8251bdf17bd8c206b0b611232f29fe1e74edd7b540eb"
+source_refs = ["figiel-yu-held-2025", "gross-sadowski-2002", "nist-srd-69-water", "nist-srd-69-methanol", "nist-srd-69-ethanol"]
+domain_refs = ["figiel-298-k-1-bar", "nist-water-identity", "nist-methanol-identity", "nist-ethanol-identity"]
+units_basis = "Origin repository, commit, tree, path, and hash metadata are non-numeric identifiers."

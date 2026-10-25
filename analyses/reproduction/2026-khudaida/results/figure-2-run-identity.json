@@ -1,0 +1,30 @@
+{
+  "engine": [
+    "74a7c45f578deae4dc87966935748f82f2361d16",
+    true
+  ],
+  "packet": "data/packets/khudaida-2026-figure-2-electrolyte-lle/7",
+  "sha256": {
+    "data/packets/khudaida-2026-figure-2-electrolyte-lle/7/packet.toml": "6ff2684d816df92dc0c5a26b52dbce68d628e9961512fad479433edbfc92ee41",
+    "data/packets/khudaida-2026-figure-2-electrolyte-lle/7/provenance/source-origin.toml": "cd12c9af98c214c5d68355823bf47662e27c4585ddce6cf5c29f592f29c50c8e",
+    "data/packets/khudaida-2026-figure-2-electrolyte-lle/7/parameters/parameters.json": "8babed899e7347e58c403c7aff24a7fdd6d60411af3b4d81eb6aa90c2431dfa4",
+    "analyses/reproduction/2026-khudaida/inputs/source/table-s3-enrtl-bips.csv": "cf0c10bbd556b7a964d366c420c26ccb4b0d7ddd519c79a636e26b0ca688dbcc",
+    "analyses/reproduction/2026-khudaida/inputs/source/born-ssm-ds-options.json": "586d76610eee38797122b0424c6519886f0b9c0d4a48be35868a1bef0c476d3a",
+    "analyses/reproduction/2026-khudaida/inputs/source/figures-manifest.csv": "f588392db33f62fee23a581530594a67a52b8e6b9c0d1e527c58386bc068eca9",
+    "analyses/reproduction/2026-khudaida/inputs/source/figure-02-feed-to-table-3-tie-lines.csv": "00c5c669046dc933b8f5827eece16d1174866a038370ebf311a47aa3a091e706",
+    "analyses/reproduction/2026-khudaida/inputs/source/source-manifest.csv": "82072f9a70fef3243075dc54bb57c4ebf5be3c4efcad0c70ef57e5e83e4dcd9a",
+    "analyses/reproduction/2026-khudaida/inputs/source/table-s1-s2-distribution-separation.csv": "9843a9e553eab5433d4fd55e262d2aa13f93fbf6c800c7b9bf3b655f51731d03",
+    "analyses/reproduction/2026-khudaida/inputs/source/table-3-standard-uncertainties.csv": "124e65d33243fb5a06b3299aaf584553c516a70ba645e5f37caa1b8d409e3c87",
+    "analyses/reproduction/2026-khudaida/inputs/source/figure-manifest.csv": "6cb9ee9fb4a7b3515b53e6d9fcc45fe5399b9dc43e4fdc73598777e1ac4e4c0f",
+    "analyses/reproduction/2026-khudaida/inputs/source/table-s4-enrtl-aad.csv": "fe6e239ae8263790628af29f05fb13dd32281e3d0446c7ea45d5cb49375778aa",
+    "analyses/reproduction/2026-khudaida/inputs/source/table-7-epcsaft-kij.csv": "40fa2ea886f1be927d202f2b5accc994d5b835986352093f999ea199ac4ac9fd",
+    "analyses/reproduction/2026-khudaida/inputs/source/table-6-relative-dielectric-constants.csv": "3703544898f04b164fda6e83d2d0bbd7d65d35d688c23a75d6ac95eaafe495e8",
+    "analyses/reproduction/2026-khudaida/inputs/source/table-3-4-experimental-tielines.csv": "8f69d4fd5b01e4b9c9abaa94eb0698e685b1ec5a9936468de15fdec4509458b1",
+    "analyses/reproduction/2026-khudaida/inputs/source/live-reproduction.json": "7b1389fec7016be970e48a9a6d004e4f21f950d53ae27754a0f3f95d93d9b7fe",
+    "analyses/reproduction/2026-khudaida/inputs/source/table-5-pure-component-parameters.csv": "6afcee917abcf5b1b496a8d2e4312a993adbc53d9afaa78da49f7b06a567206c",
+    "analyses/reproduction/2026-khudaida/figures/figure-02/source/source-points.csv": "21cf58a5373b2e2c337b6baf5a0423d0ab5d7cea9639bb727b061f5844ef78d7",
+    "analyses/reproduction/2026-khudaida/scripts/figure2.cpp": "a1516a52e3e1e0bfb4e36ec041dec7aab510781588594865857cbc4e5d4f22cf",
+    "build/engine-meson/shared/libepcsaft_native.so": "00d3ab7dad01aef879046a7446acc6a9408c849172589898d6351b50de36491b",
+    "build/issue-789/2026-khudaida/figure2.so": "238cecc0bdd77c8a44e768cdd92163d1aeef0af1fa05bebb6ec4f91b668187bb"
+  }
+}

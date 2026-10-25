@@ -1,0 +1,28 @@
+{
+  "reference_source": "d7739584458aa43a265dc7cc8b6f0e1a097c1480",
+  "candidate_source_sha256": {
+    "engine/native/core/numerical_policy.hpp": "f93bf6b4f0c913b094ed84f90098c88269ec0dd3cc33874d7e31420d602764b6",
+    "engine/native/equilibrium/problem.hpp": "7e792182d2d702adb536f9a55d41cd596962eb588d6d3fa7a857f15b7472787b",
+    "engine/native/equilibrium/gibbs_minimizer.cpp": "0efe6ecfb48d1d8730cac9ebf7087bb702ecec501260d0118f129dad10e35009",
+    "analyses/2026-equilibrium-polish-masking/scripts/qualify_polish.py": "40ef625f5759c71b2d1f787bf3616acd1c19986cd3946b6c0ff7736f14db428d",
+    "analyses/2026-equilibrium-polish-masking/scripts/compare_polish.py": "9de71922af6c3ac855b7dd3f2c2a476f390746ee84779fd8abcf04dcd4d8f83b",
+    "engine/tests/native/specification_checks.cpp": "2f3a457b8379190ccd37a1df7835a3d3ebda3d740894bd981f7f2ca4dc7eda42"
+  },
+  "threads": 1,
+  "qualification_cases": 15,
+  "timed_state_pairs": 195,
+  "admission_falsifier_inputs": {
+    "J22": 1e-14,
+    "r2": 1e-20,
+    "computed_delta": 0
+  },
+  "qualification_basis": "Ten times the installed numerical-policy local correction tolerance in the approved observable-relative, trace-relative and phase-relative bases; budget excess requires diagnosis.",
+  "reference_states_owner": "analyses/2026-equilibrium-polish-masking/results/amendment-2/baseline-states.csv",
+  "reference_states_identity": "Fresh merged-main run serialized states byte-identical to the retained state owner; reused without duplicating numerical rows.",
+  "claim_limit": "Candidate is unqualified: four unchanged Python checks fail; all four pass on merged-main wheel. Full-rank local correction admission omits a step needed by the extensive KKT identity. Owner decision required before changing stopping criteria; no tolerance was widened.",
+  "amount_scaling_probe": {
+    "input_sha256": "1b64d39a4c07d3e022e68124dff61cffdad839126b40c09dbbb3dd6c339bd2b6",
+    "source_sha256": "c9636ed670c938ff8b59f1200bc32124f9ce0d0144405b5f7c82b2598234ec80",
+    "basis": "One native Eigen Newton solve of the installed Engine Jacobian and raw rows at the unchanged small-positive-phase returned point. Per-phase scale rejects; replacing only the free-amount scale by feed admits the full forward bound."
+  }
+}

@@ -1,0 +1,2666 @@
+[
+  {
+    "convention": "exclusion",
+    "salt": "LiCl",
+    "molality": 0.001,
+    "chart": "activity",
+    "gamma": 0.9650445606713491,
+    "log_gamma": -0.035581001847767885,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "exclusion",
+    "salt": "LiCl",
+    "molality": 0.01,
+    "chart": "activity",
+    "gamma": 0.9035912363172526,
+    "log_gamma": -0.10137819306607276,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "exclusion",
+    "salt": "LiCl",
+    "molality": 0.1,
+    "chart": "activity",
+    "gamma": 0.7946252269590369,
+    "log_gamma": -0.22988468810781426,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "exclusion",
+    "salt": "LiCl",
+    "molality": 0.5,
+    "chart": "activity",
+    "gamma": 0.7686650502654166,
+    "log_gamma": -0.2630999696871785,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "exclusion",
+    "salt": "LiCl",
+    "molality": 1.0,
+    "chart": "activity",
+    "gamma": 0.8280755535282999,
+    "log_gamma": -0.18865088053715884,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "exclusion",
+    "salt": "LiCl",
+    "molality": 2.0,
+    "chart": "activity",
+    "gamma": 1.0029304309690747,
+    "log_gamma": 0.002926145626135662,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "exclusion",
+    "salt": "LiBr",
+    "molality": 0.001,
+    "chart": "activity",
+    "gamma": 0.9651254512219991,
+    "log_gamma": -0.035497184826263156,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "exclusion",
+    "salt": "LiBr",
+    "molality": 0.01,
+    "chart": "activity",
+    "gamma": 0.9043051070549366,
+    "log_gamma": -0.10058846772877394,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "exclusion",
+    "salt": "LiBr",
+    "molality": 0.1,
+    "chart": "activity",
+    "gamma": 0.8001130123255442,
+    "log_gamma": -0.22300229588429743,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "exclusion",
+    "salt": "LiBr",
+    "molality": 0.5,
+    "chart": "activity",
+    "gamma": 0.7921309307259962,
+    "log_gamma": -0.2330285842577626,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "exclusion",
+    "salt": "LiBr",
+    "molality": 1.0,
+    "chart": "activity",
+    "gamma": 0.8763361846548519,
+    "log_gamma": -0.13200548923050637,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "exclusion",
+    "salt": "LiBr",
+    "molality": 2.0,
+    "chart": "activity",
+    "gamma": 1.1143441687549043,
+    "log_gamma": 0.10826604240331691,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "exclusion",
+    "salt": "LiBr",
+    "molality": 2.16,
+    "chart": "figure-5",
+    "gamma": 1.158478917412714,
+    "source_gamma": 1.161,
+    "uncertainty": 0.0093,
+    "signed_relative_error": -0.002171475096715003,
+    "absolute_relative_error": 0.002171475096715003,
+    "uncertainty_ratio": 0.2710841491705502
+  },
+  {
+    "convention": "exclusion",
+    "salt": "LiBr",
+    "molality": 2.251,
+    "chart": "figure-5",
+    "gamma": 1.184293915994544,
+    "source_gamma": 1.191,
+    "uncertainty": 0.0094,
+    "signed_relative_error": -0.005630633086025183,
+    "absolute_relative_error": 0.005630633086025183,
+    "uncertainty_ratio": 0.7134131920697899
+  },
+  {
+    "convention": "exclusion",
+    "salt": "LiBr",
+    "molality": 2.343,
+    "chart": "figure-5",
+    "gamma": 1.2109212344450018,
+    "source_gamma": 1.211,
+    "uncertainty": 0.0094,
+    "signed_relative_error": -6.504174648913619e-05,
+    "absolute_relative_error": 6.504174648913619e-05,
+    "uncertainty_ratio": 0.008379314361521886
+  },
+  {
+    "convention": "exclusion",
+    "salt": "LiBr",
+    "molality": 2.669,
+    "chart": "figure-5",
+    "gamma": 1.309611512704058,
+    "source_gamma": 1.312,
+    "uncertainty": 0.0094,
+    "signed_relative_error": -0.0018204933658094724,
+    "absolute_relative_error": 0.0018204933658094724,
+    "uncertainty_ratio": 0.25409439318532967
+  },
+  {
+    "convention": "exclusion",
+    "salt": "LiBr",
+    "molality": 2.761,
+    "chart": "figure-5",
+    "gamma": 1.338707844604589,
+    "source_gamma": 1.342,
+    "uncertainty": 0.0094,
+    "signed_relative_error": -0.0024531709354777,
+    "absolute_relative_error": 0.0024531709354777,
+    "uncertainty_ratio": 0.35022929738415487
+  },
+  {
+    "convention": "exclusion",
+    "salt": "LiBr",
+    "molality": 2.842,
+    "chart": "figure-5",
+    "gamma": 1.3647878175369608,
+    "source_gamma": 1.372,
+    "uncertainty": 0.0094,
+    "signed_relative_error": -0.005256692757317327,
+    "absolute_relative_error": 0.005256692757317327,
+    "uncertainty_ratio": 0.7672534535148234
+  },
+  {
+    "convention": "exclusion",
+    "salt": "LiBr",
+    "molality": 3.168,
+    "chart": "figure-5",
+    "gamma": 1.4742281617342536,
+    "source_gamma": 1.482,
+    "uncertainty": 0.0095,
+    "signed_relative_error": -0.005244155374997561,
+    "absolute_relative_error": 0.005244155374997561,
+    "uncertainty_ratio": 0.8180882384996152
+  },
+  {
+    "convention": "exclusion",
+    "salt": "LiBr",
+    "molality": 3.25,
+    "chart": "figure-5",
+    "gamma": 1.5029105355779317,
+    "source_gamma": 1.508,
+    "uncertainty": 0.0095,
+    "signed_relative_error": -0.0033749764072070754,
+    "absolute_relative_error": 0.0033749764072070754,
+    "uncertainty_ratio": 0.5357330970598165
+  },
+  {
+    "convention": "exclusion",
+    "salt": "LiBr",
+    "molality": 3.331,
+    "chart": "figure-5",
+    "gamma": 1.5317094096875594,
+    "source_gamma": 1.538,
+    "uncertainty": 0.0095,
+    "signed_relative_error": -0.004090110736307273,
+    "absolute_relative_error": 0.004090110736307273,
+    "uncertainty_ratio": 0.6621674013095383
+  },
+  {
+    "convention": "exclusion",
+    "salt": "LiBr",
+    "molality": 3.657,
+    "chart": "figure-5",
+    "gamma": 1.6524160404370472,
+    "source_gamma": 1.653,
+    "uncertainty": 0.0096,
+    "signed_relative_error": -0.0003532725728692121,
+    "absolute_relative_error": 0.0003532725728692121,
+    "uncertainty_ratio": 0.060829121140924355
+  },
+  {
+    "convention": "exclusion",
+    "salt": "LiBr",
+    "molality": 3.759,
+    "chart": "figure-5",
+    "gamma": 1.6918029442788576,
+    "source_gamma": 1.693,
+    "uncertainty": 0.0096,
+    "signed_relative_error": -0.0007070618553706165,
+    "absolute_relative_error": 0.0007070618553706165,
+    "uncertainty_ratio": 0.12469330428567517
+  },
+  {
+    "convention": "exclusion",
+    "salt": "LiBr",
+    "molality": 3.851,
+    "chart": "figure-5",
+    "gamma": 1.7280080105631208,
+    "source_gamma": 1.734,
+    "uncertainty": 0.0096,
+    "signed_relative_error": -0.0034555879105415688,
+    "absolute_relative_error": 0.0034555879105415688,
+    "uncertainty_ratio": 0.6241655663415807
+  },
+  {
+    "convention": "exclusion",
+    "salt": "LiBr",
+    "molality": 3.973,
+    "chart": "figure-5",
+    "gamma": 1.7770291117330306,
+    "source_gamma": 1.774,
+    "uncertainty": 0.0078,
+    "signed_relative_error": 0.0017075037953948602,
+    "absolute_relative_error": 0.0017075037953948602,
+    "uncertainty_ratio": 0.38834765808084026
+  },
+  {
+    "convention": "exclusion",
+    "salt": "LiBr",
+    "molality": 4.136,
+    "chart": "figure-5",
+    "gamma": 1.8443560126392793,
+    "source_gamma": 1.849,
+    "uncertainty": 0.0097,
+    "signed_relative_error": -0.002511621071238923,
+    "absolute_relative_error": 0.002511621071238923,
+    "uncertainty_ratio": 0.47876158357945275
+  },
+  {
+    "convention": "exclusion",
+    "salt": "LiBr",
+    "molality": 4.238,
+    "chart": "figure-5",
+    "gamma": 1.8875734244213553,
+    "source_gamma": 1.884,
+    "uncertainty": 0.0097,
+    "signed_relative_error": 0.0018967220920145245,
+    "absolute_relative_error": 0.0018967220920145245,
+    "uncertainty_ratio": 0.3683942702428291
+  },
+  {
+    "convention": "exclusion",
+    "salt": "LiBr",
+    "molality": 4.34,
+    "chart": "figure-5",
+    "gamma": 1.9316426197424679,
+    "source_gamma": 1.935,
+    "uncertainty": 0.0097,
+    "signed_relative_error": -0.0017350802364507478,
+    "absolute_relative_error": 0.0017350802364507478,
+    "uncertainty_ratio": 0.34612167603424565
+  },
+  {
+    "convention": "exclusion",
+    "salt": "LiBr",
+    "molality": 4.503,
+    "chart": "figure-5",
+    "gamma": 2.0038675668546744,
+    "source_gamma": 2.0,
+    "uncertainty": 0.0097,
+    "signed_relative_error": 0.0019337834273371879,
+    "absolute_relative_error": 0.0019337834273371879,
+    "uncertainty_ratio": 0.3987182324406573
+  },
+  {
+    "convention": "exclusion",
+    "salt": "LiBr",
+    "molality": 4.666,
+    "chart": "figure-5",
+    "gamma": 2.0783547893217937,
+    "source_gamma": 2.075,
+    "uncertainty": 0.0098,
+    "signed_relative_error": 0.0016167659382138044,
+    "absolute_relative_error": 0.0016167659382138044,
+    "uncertainty_ratio": 0.342325440999343
+  },
+  {
+    "convention": "exclusion",
+    "salt": "LiBr",
+    "molality": 4.757,
+    "chart": "figure-5",
+    "gamma": 2.1209439383662647,
+    "source_gamma": 2.121,
+    "uncertainty": 0.0098,
+    "signed_relative_error": -2.643169907368126e-05,
+    "absolute_relative_error": 2.643169907368126e-05,
+    "uncertainty_ratio": 0.005720574870947206
+  },
+  {
+    "convention": "exclusion",
+    "salt": "LiBr",
+    "molality": 4.839,
+    "chart": "figure-5",
+    "gamma": 2.1599474270731385,
+    "source_gamma": 2.166,
+    "uncertainty": 0.0098,
+    "signed_relative_error": -0.002794354998550963,
+    "absolute_relative_error": 0.002794354998550963,
+    "uncertainty_ratio": 0.6176094823328016
+  },
+  {
+    "convention": "exclusion",
+    "salt": "LiBr",
+    "molality": 5.002,
+    "chart": "figure-5",
+    "gamma": 2.2392709858827837,
+    "source_gamma": 2.236,
+    "uncertainty": 0.0099,
+    "signed_relative_error": 0.0014628738295097143,
+    "absolute_relative_error": 0.0014628738295097143,
+    "uncertainty_ratio": 0.33040261442257746
+  },
+  {
+    "convention": "exclusion",
+    "salt": "LiBr",
+    "molality": 5.165,
+    "chart": "figure-5",
+    "gamma": 2.32102611037002,
+    "source_gamma": 2.332,
+    "uncertainty": 0.01,
+    "signed_relative_error": -0.004705784575463001,
+    "absolute_relative_error": 0.004705784575463001,
+    "uncertainty_ratio": 1.0973889629979805
+  },
+  {
+    "convention": "exclusion",
+    "salt": "LiBr",
+    "molality": 5.297,
+    "chart": "figure-5",
+    "gamma": 2.38905343454191,
+    "source_gamma": 2.397,
+    "uncertainty": 0.01,
+    "signed_relative_error": -0.0033152129570670485,
+    "absolute_relative_error": 0.0033152129570670485,
+    "uncertainty_ratio": 0.7946565458089694
+  },
+  {
+    "convention": "exclusion",
+    "salt": "LiBr",
+    "molality": 5.44,
+    "chart": "figure-5",
+    "gamma": 2.4646262979815776,
+    "source_gamma": 2.477,
+    "uncertainty": 0.012,
+    "signed_relative_error": -0.0049954388447405185,
+    "absolute_relative_error": 0.0049954388447405185,
+    "uncertainty_ratio": 1.0311418348685208
+  },
+  {
+    "convention": "exclusion",
+    "salt": "LiBr",
+    "molality": 5.572,
+    "chart": "figure-5",
+    "gamma": 2.5361508642747923,
+    "source_gamma": 2.548,
+    "uncertainty": 0.0121,
+    "signed_relative_error": -0.004650367239092512,
+    "absolute_relative_error": 0.004650367239092512,
+    "uncertainty_ratio": 0.9792674153064247
+  },
+  {
+    "convention": "exclusion",
+    "salt": "LiBr",
+    "molality": 5.715,
+    "chart": "figure-5",
+    "gamma": 2.6155846164191305,
+    "source_gamma": 2.628,
+    "uncertainty": 0.0121,
+    "signed_relative_error": -0.004724270768976302,
+    "absolute_relative_error": 0.004724270768976302,
+    "uncertainty_ratio": 1.0260647587495517
+  },
+  {
+    "convention": "exclusion",
+    "salt": "LiBr",
+    "molality": 5.847,
+    "chart": "figure-5",
+    "gamma": 2.690740215872585,
+    "source_gamma": 2.693,
+    "uncertainty": 0.0122,
+    "signed_relative_error": -0.000839132613224991,
+    "absolute_relative_error": 0.000839132613224991,
+    "uncertainty_ratio": 0.18522820716516472
+  },
+  {
+    "convention": "exclusion",
+    "salt": "NaCl",
+    "molality": 0.001,
+    "chart": "activity",
+    "gamma": 0.9648860807018965,
+    "log_gamma": -0.03574523569784657,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "exclusion",
+    "salt": "NaCl",
+    "molality": 0.01,
+    "chart": "activity",
+    "gamma": 0.9021128988843583,
+    "log_gamma": -0.10301560169174173,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "exclusion",
+    "salt": "NaCl",
+    "molality": 0.1,
+    "chart": "activity",
+    "gamma": 0.7818232507025814,
+    "log_gamma": -0.24612658610313587,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "exclusion",
+    "salt": "NaCl",
+    "molality": 0.5,
+    "chart": "activity",
+    "gamma": 0.7095586880458037,
+    "log_gamma": -0.343112068331759,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "exclusion",
+    "salt": "NaCl",
+    "molality": 1.0,
+    "chart": "activity",
+    "gamma": 0.7072051933082519,
+    "log_gamma": -0.3464344242068035,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "exclusion",
+    "salt": "NaCl",
+    "molality": 2.0,
+    "chart": "activity",
+    "gamma": 0.7374808532725513,
+    "log_gamma": -0.30451515276950925,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "exclusion",
+    "salt": "NaBr",
+    "molality": 0.001,
+    "chart": "activity",
+    "gamma": 0.9649825914959184,
+    "log_gamma": -0.03564521770647486,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "exclusion",
+    "salt": "NaBr",
+    "molality": 0.01,
+    "chart": "activity",
+    "gamma": 0.9029718582331367,
+    "log_gamma": -0.10206389079813938,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "exclusion",
+    "salt": "NaBr",
+    "molality": 0.1,
+    "chart": "activity",
+    "gamma": 0.7884972508653173,
+    "log_gamma": -0.23762635912244945,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "exclusion",
+    "salt": "NaBr",
+    "molality": 0.5,
+    "chart": "activity",
+    "gamma": 0.7371322858459816,
+    "log_gamma": -0.3049879105712878,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "exclusion",
+    "salt": "NaBr",
+    "molality": 1.0,
+    "chart": "activity",
+    "gamma": 0.7605127883017538,
+    "log_gamma": -0.27376235177426456,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "exclusion",
+    "salt": "NaBr",
+    "molality": 2.0,
+    "chart": "activity",
+    "gamma": 0.8458584243143834,
+    "log_gamma": -0.16740328052612866,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "exclusion",
+    "salt": "KCl",
+    "molality": 0.001,
+    "chart": "activity",
+    "gamma": 0.9648365422099704,
+    "log_gamma": -0.03579657830154401,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "exclusion",
+    "salt": "KCl",
+    "molality": 0.01,
+    "chart": "activity",
+    "gamma": 0.9015760425415721,
+    "log_gamma": -0.10361088876847624,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "exclusion",
+    "salt": "KCl",
+    "molality": 0.1,
+    "chart": "activity",
+    "gamma": 0.7759009855340956,
+    "log_gamma": -0.25373036290119244,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "exclusion",
+    "salt": "KCl",
+    "molality": 0.5,
+    "chart": "activity",
+    "gamma": 0.679053256760553,
+    "log_gamma": -0.3870557203894367,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "exclusion",
+    "salt": "KCl",
+    "molality": 1.0,
+    "chart": "activity",
+    "gamma": 0.6460254259152279,
+    "log_gamma": -0.43691641697217964,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "exclusion",
+    "salt": "KCl",
+    "molality": 2.0,
+    "chart": "activity",
+    "gamma": 0.6149714944055731,
+    "log_gamma": -0.4861793628098833,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "exclusion",
+    "salt": "KBr",
+    "molality": 0.001,
+    "chart": "activity",
+    "gamma": 0.9648667157242911,
+    "log_gamma": -0.035765305602802305,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "exclusion",
+    "salt": "KBr",
+    "molality": 0.01,
+    "chart": "activity",
+    "gamma": 0.9018144911651118,
+    "log_gamma": -0.10334644396800463,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "exclusion",
+    "salt": "KBr",
+    "molality": 0.1,
+    "chart": "activity",
+    "gamma": 0.7771814081922949,
+    "log_gamma": -0.2520814832880143,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "exclusion",
+    "salt": "KBr",
+    "molality": 0.5,
+    "chart": "activity",
+    "gamma": 0.6820379991788684,
+    "log_gamma": -0.38266990541975643,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "exclusion",
+    "salt": "KBr",
+    "molality": 1.0,
+    "chart": "activity",
+    "gamma": 0.6502501476842031,
+    "log_gamma": -0.4303981475342892,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "exclusion",
+    "salt": "KBr",
+    "molality": 2.0,
+    "chart": "activity",
+    "gamma": 0.6211740823678551,
+    "log_gamma": -0.47614391045845206,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "LiCl",
+    "molality": 0.001,
+    "chart": "activity",
+    "gamma": 0.964882657792977,
+    "log_gamma": -0.035748783178797344,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "LiCl",
+    "molality": 0.01,
+    "chart": "activity",
+    "gamma": 0.9020768288755827,
+    "log_gamma": -0.10305558640978496,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "LiCl",
+    "molality": 0.1,
+    "chart": "activity",
+    "gamma": 0.7814400720781509,
+    "log_gamma": -0.2466168152622552,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "LiCl",
+    "molality": 0.5,
+    "chart": "activity",
+    "gamma": 0.7076252855232112,
+    "log_gamma": -0.3458405831303071,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "LiCl",
+    "molality": 1.0,
+    "chart": "activity",
+    "gamma": 0.703375986142018,
+    "log_gamma": -0.35186369921507865,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "LiCl",
+    "molality": 2.0,
+    "chart": "activity",
+    "gamma": 0.7300616897758593,
+    "log_gamma": -0.3146262418679039,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "LiBr",
+    "molality": 0.001,
+    "chart": "activity",
+    "gamma": 0.9649371060134658,
+    "log_gamma": -0.035692354882720684,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "LiBr",
+    "molality": 0.01,
+    "chart": "activity",
+    "gamma": 0.902542416049814,
+    "log_gamma": -0.10253959148634528,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "LiBr",
+    "molality": 0.1,
+    "chart": "activity",
+    "gamma": 0.7846981873492317,
+    "log_gamma": -0.24245610984343613,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "LiBr",
+    "molality": 0.5,
+    "chart": "activity",
+    "gamma": 0.7196169928993402,
+    "log_gamma": -0.3290361628163967,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "LiBr",
+    "molality": 1.0,
+    "chart": "activity",
+    "gamma": 0.7254790983213533,
+    "log_gamma": -0.3209230171055052,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "LiBr",
+    "molality": 2.0,
+    "chart": "activity",
+    "gamma": 0.7729507608008169,
+    "log_gamma": -0.25753993125822017,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "LiBr",
+    "molality": 2.16,
+    "chart": "figure-5",
+    "gamma": 0.7819752427818775,
+    "source_gamma": 1.161,
+    "uncertainty": 0.0093,
+    "signed_relative_error": -0.32646404583817623,
+    "absolute_relative_error": 0.32646404583817623,
+    "uncertainty_ratio": 40.75535023850781
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "LiBr",
+    "molality": 2.251,
+    "chart": "figure-5",
+    "gamma": 0.7872143476221485,
+    "source_gamma": 1.191,
+    "uncertainty": 0.0094,
+    "signed_relative_error": -0.33903077445663443,
+    "absolute_relative_error": 0.33903077445663443,
+    "uncertainty_ratio": 42.95592046572889
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "LiBr",
+    "molality": 2.343,
+    "chart": "figure-5",
+    "gamma": 0.7925841683190151,
+    "source_gamma": 1.211,
+    "uncertainty": 0.0094,
+    "signed_relative_error": -0.34551266034763417,
+    "absolute_relative_error": 0.34551266034763417,
+    "uncertainty_ratio": 44.512322519253715
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "LiBr",
+    "molality": 2.669,
+    "chart": "figure-5",
+    "gamma": 0.8121609005902537,
+    "source_gamma": 1.312,
+    "uncertainty": 0.0094,
+    "signed_relative_error": -0.38097492333059935,
+    "absolute_relative_error": 0.38097492333059935,
+    "uncertainty_ratio": 53.17437227763259
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "LiBr",
+    "molality": 2.761,
+    "chart": "figure-5",
+    "gamma": 0.8178320859656392,
+    "source_gamma": 1.342,
+    "uncertainty": 0.0094,
+    "signed_relative_error": -0.3905871192506415,
+    "absolute_relative_error": 0.3905871192506415,
+    "uncertainty_ratio": 55.7625440462086
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "LiBr",
+    "molality": 2.842,
+    "chart": "figure-5",
+    "gamma": 0.8228765388630289,
+    "source_gamma": 1.372,
+    "uncertainty": 0.0094,
+    "signed_relative_error": -0.4002357588461889,
+    "absolute_relative_error": 0.4002357588461889,
+    "uncertainty_ratio": 58.41738948265651
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "LiBr",
+    "molality": 3.168,
+    "chart": "figure-5",
+    "gamma": 0.8436547567773065,
+    "source_gamma": 1.482,
+    "uncertainty": 0.0095,
+    "signed_relative_error": -0.4307322828763114,
+    "absolute_relative_error": 0.4307322828763114,
+    "uncertainty_ratio": 67.19423612870457
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "LiBr",
+    "molality": 3.25,
+    "chart": "figure-5",
+    "gamma": 0.8489996751081436,
+    "source_gamma": 1.508,
+    "uncertainty": 0.0095,
+    "signed_relative_error": -0.4370028679654221,
+    "absolute_relative_error": 0.4370028679654221,
+    "uncertainty_ratio": 69.36845525177436
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "LiBr",
+    "molality": 3.331,
+    "chart": "figure-5",
+    "gamma": 0.8543258957571639,
+    "source_gamma": 1.538,
+    "uncertainty": 0.0095,
+    "signed_relative_error": -0.44452152421510804,
+    "absolute_relative_error": 0.44452152421510804,
+    "uncertainty_ratio": 71.96569518345643
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "LiBr",
+    "molality": 3.657,
+    "chart": "figure-5",
+    "gamma": 0.8762297119436508,
+    "source_gamma": 1.653,
+    "uncertainty": 0.0096,
+    "signed_relative_error": -0.4699154797679064,
+    "absolute_relative_error": 0.4699154797679064,
+    "uncertainty_ratio": 80.91357167253638
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "LiBr",
+    "molality": 3.759,
+    "chart": "figure-5",
+    "gamma": 0.8832374591946728,
+    "source_gamma": 1.693,
+    "uncertainty": 0.0096,
+    "signed_relative_error": -0.47830037850285134,
+    "absolute_relative_error": 0.47830037850285134,
+    "uncertainty_ratio": 84.3502646672216
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "LiBr",
+    "molality": 3.851,
+    "chart": "figure-5",
+    "gamma": 0.8896217152953633,
+    "source_gamma": 1.734,
+    "uncertainty": 0.0096,
+    "signed_relative_error": -0.4869540280880258,
+    "absolute_relative_error": 0.4869540280880258,
+    "uncertainty_ratio": 87.95607132339967
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "LiBr",
+    "molality": 3.973,
+    "chart": "figure-5",
+    "gamma": 0.8981812235382792,
+    "source_gamma": 1.774,
+    "uncertainty": 0.0078,
+    "signed_relative_error": -0.49369716824223264,
+    "absolute_relative_error": 0.49369716824223264,
+    "uncertainty_ratio": 112.28445852073344
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "LiBr",
+    "molality": 4.136,
+    "chart": "figure-5",
+    "gamma": 0.9097846608577291,
+    "source_gamma": 1.849,
+    "uncertainty": 0.0097,
+    "signed_relative_error": -0.5079585392873287,
+    "absolute_relative_error": 0.5079585392873287,
+    "uncertainty_ratio": 96.82632362291451
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "LiBr",
+    "molality": 4.238,
+    "chart": "figure-5",
+    "gamma": 0.9171438176046023,
+    "source_gamma": 1.884,
+    "uncertainty": 0.0097,
+    "signed_relative_error": -0.5131933027576421,
+    "absolute_relative_error": 0.5131933027576421,
+    "uncertainty_ratio": 99.67589509230903
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "LiBr",
+    "molality": 4.34,
+    "chart": "figure-5",
+    "gamma": 0.924579053418919,
+    "source_gamma": 1.935,
+    "uncertainty": 0.0097,
+    "signed_relative_error": -0.5221813677421607,
+    "absolute_relative_error": 0.5221813677421607,
+    "uncertainty_ratio": 104.1671078949568
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "LiBr",
+    "molality": 4.503,
+    "chart": "figure-5",
+    "gamma": 0.936619963211606,
+    "source_gamma": 2.0,
+    "uncertainty": 0.0097,
+    "signed_relative_error": -0.531690018394197,
+    "absolute_relative_error": 0.531690018394197,
+    "uncertainty_ratio": 109.62680791632928
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "LiBr",
+    "molality": 4.666,
+    "chart": "figure-5",
+    "gamma": 0.9488583225134545,
+    "source_gamma": 2.075,
+    "uncertainty": 0.0098,
+    "signed_relative_error": -0.5427188807164075,
+    "absolute_relative_error": 0.5427188807164075,
+    "uncertainty_ratio": 114.91241607005567
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "LiBr",
+    "molality": 4.757,
+    "chart": "figure-5",
+    "gamma": 0.9557773935342072,
+    "source_gamma": 2.121,
+    "uncertainty": 0.0098,
+    "signed_relative_error": -0.5493741661790631,
+    "absolute_relative_error": 0.5493741661790631,
+    "uncertainty_ratio": 118.90026596589722
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "LiBr",
+    "molality": 4.839,
+    "chart": "figure-5",
+    "gamma": 0.9620656749378185,
+    "source_gamma": 2.166,
+    "uncertainty": 0.0098,
+    "signed_relative_error": -0.5558330217276923,
+    "absolute_relative_error": 0.5558330217276923,
+    "uncertainty_ratio": 122.85044133287566
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "LiBr",
+    "molality": 5.002,
+    "chart": "figure-5",
+    "gamma": 0.974717187627646,
+    "source_gamma": 2.236,
+    "uncertainty": 0.0099,
+    "signed_relative_error": -0.5640799697550778,
+    "absolute_relative_error": 0.5640799697550778,
+    "uncertainty_ratio": 127.40230428003578
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "LiBr",
+    "molality": 5.165,
+    "chart": "figure-5",
+    "gamma": 0.9875720352669172,
+    "source_gamma": 2.332,
+    "uncertainty": 0.01,
+    "signed_relative_error": -0.5765128493709617,
+    "absolute_relative_error": 0.5765128493709617,
+    "uncertainty_ratio": 134.44279647330828
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "LiBr",
+    "molality": 5.297,
+    "chart": "figure-5",
+    "gamma": 0.9981323564009235,
+    "source_gamma": 2.397,
+    "uncertainty": 0.01,
+    "signed_relative_error": -0.583591006924938,
+    "absolute_relative_error": 0.583591006924938,
+    "uncertainty_ratio": 139.88676435990763
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "LiBr",
+    "molality": 5.44,
+    "chart": "figure-5",
+    "gamma": 1.009725621949275,
+    "source_gamma": 2.477,
+    "uncertainty": 0.012,
+    "signed_relative_error": -0.5923594582360618,
+    "absolute_relative_error": 0.5923594582360618,
+    "uncertainty_ratio": 122.2728648375604
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "LiBr",
+    "molality": 5.572,
+    "chart": "figure-5",
+    "gamma": 1.0205692219375844,
+    "source_gamma": 2.548,
+    "uncertainty": 0.0121,
+    "signed_relative_error": -0.5994626287529103,
+    "absolute_relative_error": 0.5994626287529103,
+    "uncertainty_ratio": 126.23394860019964
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "LiBr",
+    "molality": 5.715,
+    "chart": "figure-5",
+    "gamma": 1.0324714614928359,
+    "source_gamma": 2.628,
+    "uncertainty": 0.0121,
+    "signed_relative_error": -0.6071265367226653,
+    "absolute_relative_error": 0.6071265367226653,
+    "uncertainty_ratio": 131.8618626865425
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "LiBr",
+    "molality": 5.847,
+    "chart": "figure-5",
+    "gamma": 1.0436021232472574,
+    "source_gamma": 2.693,
+    "uncertainty": 0.0122,
+    "signed_relative_error": -0.6124760032501829,
+    "absolute_relative_error": 0.6124760032501829,
+    "uncertainty_ratio": 135.19654727481498
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "NaCl",
+    "molality": 0.001,
+    "chart": "activity",
+    "gamma": 0.9647674130260289,
+    "log_gamma": -0.03586822946476173,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "NaCl",
+    "molality": 0.01,
+    "chart": "activity",
+    "gamma": 0.9010043442130484,
+    "log_gamma": -0.10424519983930913,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "NaCl",
+    "molality": 0.1,
+    "chart": "activity",
+    "gamma": 0.7722949133666118,
+    "log_gamma": -0.25838878977250146,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "NaCl",
+    "molality": 0.5,
+    "chart": "activity",
+    "gamma": 0.6678561065190406,
+    "log_gamma": -0.4036825380520628,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "NaCl",
+    "molality": 1.0,
+    "chart": "activity",
+    "gamma": 0.6276568541631903,
+    "log_gamma": -0.4657616724187631,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "NaCl",
+    "molality": 2.0,
+    "chart": "activity",
+    "gamma": 0.5849998373457092,
+    "log_gamma": -0.5361437097918421,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "NaBr",
+    "molality": 0.001,
+    "chart": "activity",
+    "gamma": 0.9648374857787606,
+    "log_gamma": -0.03579560034487725,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "NaBr",
+    "molality": 0.01,
+    "chart": "activity",
+    "gamma": 0.9016154015254155,
+    "log_gamma": -0.10356723396523371,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "NaBr",
+    "molality": 0.1,
+    "chart": "activity",
+    "gamma": 0.7767694339268375,
+    "log_gamma": -0.2526117114830677,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "NaBr",
+    "molality": 0.5,
+    "chart": "activity",
+    "gamma": 0.6846401360960752,
+    "log_gamma": -0.37886192752877745,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "NaBr",
+    "molality": 1.0,
+    "chart": "activity",
+    "gamma": 0.6577435320509539,
+    "log_gamma": -0.4189401925559918,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "NaBr",
+    "molality": 2.0,
+    "chart": "activity",
+    "gamma": 0.6389944066930917,
+    "log_gamma": -0.4478595778618607,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "KCl",
+    "molality": 0.001,
+    "chart": "activity",
+    "gamma": 0.9646869352177059,
+    "log_gamma": -0.03595164974204676,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "KCl",
+    "molality": 0.01,
+    "chart": "activity",
+    "gamma": 0.9001795820047521,
+    "log_gamma": -0.10516100000156292,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "KCl",
+    "molality": 0.1,
+    "chart": "activity",
+    "gamma": 0.7640122201165626,
+    "log_gamma": -0.2691714950265671,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "KCl",
+    "molality": 0.5,
+    "chart": "activity",
+    "gamma": 0.6294215574704577,
+    "log_gamma": -0.4629540441114659,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "KCl",
+    "molality": 1.0,
+    "chart": "activity",
+    "gamma": 0.5567999985576231,
+    "log_gamma": -0.585549172552403,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "KCl",
+    "molality": 2.0,
+    "chart": "activity",
+    "gamma": 0.4623527674004348,
+    "log_gamma": -0.7714271134666485,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "KBr",
+    "molality": 0.001,
+    "chart": "activity",
+    "gamma": 0.9646906823890786,
+    "log_gamma": -0.03594776541029274,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "KBr",
+    "molality": 0.01,
+    "chart": "activity",
+    "gamma": 0.9001712555386117,
+    "log_gamma": -0.1051702498277266,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "KBr",
+    "molality": 0.1,
+    "chart": "activity",
+    "gamma": 0.763195709170824,
+    "log_gamma": -0.27024078101949356,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "KBr",
+    "molality": 0.5,
+    "chart": "activity",
+    "gamma": 0.6239073983243948,
+    "log_gamma": -0.47175332174625906,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "KBr",
+    "molality": 1.0,
+    "chart": "activity",
+    "gamma": 0.5463821933131385,
+    "log_gamma": -0.6044365603613909,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  {
+    "convention": "all-pairs",
+    "salt": "KBr",
+    "molality": 2.0,
+    "chart": "activity",
+    "gamma": 0.44545977541437576,
+    "log_gamma": -0.8086483270245618,
+    "solver_options": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  }
+]

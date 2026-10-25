@@ -1,0 +1,12 @@
+{
+  "build_body_exit": 0,
+  "waiting_restore_guard_exit": 143,
+  "parent_lease_exit": 90,
+  "owner_authorized_pressure_threshold": 100,
+  "restoration_memory_max": "2G",
+  "restoration_log": "build-manual-restore.log",
+  "restored_verified_before_release": true,
+  "restored_utc": "2026-10-05T23:02:20Z",
+  "released_utc": "2026-10-05T23:02:20Z",
+  "reason": "The original admission waiter was stopped after the authorized small restoration succeeded; its termination is not an installation or verification failure."
+}

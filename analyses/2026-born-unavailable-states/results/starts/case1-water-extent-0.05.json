@@ -1,0 +1,22 @@
+{
+  "case": 1,
+  "value": 0,
+  "success": false,
+  "solver_status": "MAXITER_EXCEEDED",
+  "message": "budget_exhausted: residual 0.1143610938818187 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 200 iterations, contraction absent, floor 2.0739699618024733e-10, amplification 0",
+  "iterations": 200,
+  "evaluations": 462,
+  "reduced_hessian_minimum": null,
+  "criterion_met": false,
+  "wall_s": 12.804911305996939,
+  "convergence": {
+    "residual": 0.1143610938818187,
+    "floor": 2.0739699618024733e-10,
+    "amplification": 0.0,
+    "contraction": null,
+    "stop": "Stop.budget_exhausted"
+  },
+  "state_file": null,
+  "generic_jacobian_rank": 20,
+  "generic_nullity": 0
+}

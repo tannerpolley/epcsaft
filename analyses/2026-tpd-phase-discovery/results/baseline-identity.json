@@ -1,0 +1,18 @@
+{
+  "source_inputs": {
+    "engine/tests/equilibrium/test_continuation.py": "e79983970d644f836f5882d3dedb52b2b0b17ffdaf3bc2babf2d17c5064153df",
+    "engine/tests/equilibrium/test_trace_reliability.py": "47120df68539654fb66c6a5b3486b87d2283dd1fbe15ffa1ea340567efe6780f",
+    "engine/tests/regression/test_fit.py": "645f1b385dd1f4922a6723e3a841ed07be4de22695f549f9475e20c6e0673b7d",
+    "analyses/2026-khudaida-idaes-settler/scripts/run_fixed_settler.py": "2dabb36cea32bd22feb71b041d0e6577ec38d8cd6f7a41db50c13313f84f3589",
+    "analyses/2026-khudaida-idaes-settler/scripts/run_live_settler.py": "a8568c4eceab8ca03d0838d71a2b979157644b71edc6af1b598ce25d37c9bfbf",
+    "analyses/2026-idaes-asl-adapter/scripts/run.py": "fe95226ecddc142a24cc423a3c578cb20fd23b3dfbd7ea622748a13d717ab117",
+    "analyses/reproduction/2026-khudaida/figures/figure-02/source/source-points.csv": "21cf58a5373b2e2c337b6baf5a0423d0ab5d7cea9639bb727b061f5844ef78d7"
+  },
+  "wheel_preparation": {
+    "build_dir": "build/engine-meson/cpython-313-linux-x86_64-x86_64-f6db693e21e289603ae71c78242a17b102f1e324061021d5dca361f47a0bfef7",
+    "build_fingerprint": "c0b44c05b7a8d4c72e6d1d43161d3c8777173600638066b8a871ed22132d7702",
+    "schema_version": 1,
+    "wheel": "build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+    "wheel_sha256": "298a360e532f6f4c5e7ef70c5be45e8b9852310d1c388d6225c504714c3dc410"
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "case_id": "iapws-water-self-ionization-298k",
+  "diagnostics": {
+    "balance_inf_norm": 9.838443824654663e-17,
+    "boundary_status": "strict_interior",
+    "callback_error": "",
+    "charge_inf_norm": 0.0,
+    "chemical_certification_level": "LOCAL_EQUILIBRIUM",
+    "complementarity_inf_norm": 0.0,
+    "failure_reason": "",
+    "globality_status": "not_guaranteed",
+    "kkt_stationarity_inf_norm": 4.9960036108132044e-15,
+    "local_minimum_status": "passed",
+    "negative_curvature_recovery_attempts": 0,
+    "negative_curvature_recovery_selected_sign": 0,
+    "negative_curvature_recovery_status": "not_needed",
+    "numerical_status": "passed",
+    "packing_fraction": 0.0003619095952444507,
+    "physical_status": "passed",
+    "predictive_status": "not_adjudicated",
+    "pressure_relative_residual": 0.0,
+    "provider_domain_status": "passed",
+    "reaction_affinity_inf_norm": 1.450389285877886e-15,
+    "reference_convergence_error": 1.0628611260443677e-05,
+    "reference_derivative_availability": 0,
+    "reference_representation_residual_inf_norm": 1.1102230246251565e-16,
+    "solver_status": "solve_succeeded",
+    "structural_zero_species_indices": [],
+    "trace_status": "interior"
+  },
+  "observed_amounts_mol": [
+    0.9999999999956605,
+    2.1697889642857363e-12,
+    2.1697889642857363e-12
+  ],
+  "observed_mole_fractions": [
+    0.9999999999956605,
+    2.1697889642857363e-12,
+    2.1697889642857363e-12
+  ],
+  "provider_parameter_fingerprint": "sha256:6af6c7aec1106723cf6fa536391b7ba08f2e70ef9fe7064bcb6bb61db18644e8",
+  "source_sha256": "0ca6f84527481db34e9a0b4bc5a3679c29d1e0f5e4d816438fe2126b02706b12",
+  "evidence_classification": "historical_non_admission",
+  "reproduction_status": "not_reproduced_by_current_installed_artifact",
+  "authority_boundary": "Historical source-bound result retained for context; it is not current installed-artifact acceptance evidence."
+}

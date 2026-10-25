@@ -1,0 +1,599 @@
+{
+  "schema": "epcsaft.parameters",
+  "schema_version": 1,
+  "document_id": "aqueous-electrolyte-fixture",
+  "document_version": 1,
+  "purpose": "package-test-fixture",
+  "sources": [
+    {
+      "source_id": "engine-numerical-fixture",
+      "citation": "Project-authored compact numerical EOS fixture.",
+      "use_basis": "Numerical invariants and independent equation oracles."
+    }
+  ],
+  "domains": [
+    {
+      "domain_id": "engine-numerical-fixture-domain",
+      "kind": "reported-conditions",
+      "temperature_min": {
+        "magnitude": 298.15,
+        "unit": "kelvin"
+      },
+      "temperature_max": {
+        "magnitude": 298.15,
+        "unit": "kelvin"
+      },
+      "pressure_min": {
+        "magnitude": 100000.0,
+        "unit": "pascal"
+      },
+      "pressure_max": {
+        "magnitude": 100000.0,
+        "unit": "pascal"
+      },
+      "ion_mole_fraction_max": {
+        "magnitude": 0.38,
+        "unit": "dimensionless"
+      }
+    }
+  ],
+  "components": [
+    {
+      "component_id": "water",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 0.0180153,
+            "unit": "kilogram / mole"
+          },
+          "provenance": {
+            "source_id": "engine-numerical-fixture",
+            "locator": "compact numerical fixture values",
+            "domain_id": "engine-numerical-fixture-domain"
+          }
+        },
+        "charge_number": {
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "engine-numerical-fixture",
+            "locator": "compact numerical fixture values",
+            "domain_id": "engine-numerical-fixture-domain"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/water/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 353.95,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "engine-numerical-fixture",
+            "locator": "compact numerical fixture values",
+            "domain_id": "engine-numerical-fixture-domain"
+          }
+        },
+        {
+          "identity": "component/water/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 1.2047,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "engine-numerical-fixture",
+            "locator": "compact numerical fixture values",
+            "domain_id": "engine-numerical-fixture-domain"
+          }
+        },
+        {
+          "identity": "component/water/solvation_factor",
+          "family": "solvation_factor",
+          "value": {
+            "magnitude": 1.5,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "engine-numerical-fixture",
+            "locator": "compact numerical fixture values",
+            "domain_id": "engine-numerical-fixture-domain"
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "sodium-cation",
+      "fixed": {
+        "charge_number": {
+          "value": {
+            "magnitude": 1,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "engine-numerical-fixture",
+            "locator": "compact numerical fixture values",
+            "domain_id": "engine-numerical-fixture-domain"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/sodium-cation/born_diameter",
+          "family": "born_diameter",
+          "value": {
+            "magnitude": 3.445,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "engine-numerical-fixture",
+            "locator": "compact numerical fixture values",
+            "domain_id": "engine-numerical-fixture-domain"
+          }
+        },
+        {
+          "identity": "component/sodium-cation/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 2.484416,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "engine-numerical-fixture",
+            "locator": "compact numerical fixture values",
+            "domain_id": "engine-numerical-fixture-domain"
+          }
+        },
+        {
+          "identity": "component/sodium-cation/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 230.0,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "engine-numerical-fixture",
+            "locator": "compact numerical fixture values",
+            "domain_id": "engine-numerical-fixture-domain"
+          }
+        },
+        {
+          "identity": "component/sodium-cation/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 2.484416,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "engine-numerical-fixture",
+            "locator": "compact numerical fixture values",
+            "domain_id": "engine-numerical-fixture-domain"
+          }
+        },
+        {
+          "identity": "component/sodium-cation/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "engine-numerical-fixture",
+            "locator": "compact numerical fixture values",
+            "domain_id": "engine-numerical-fixture-domain"
+          }
+        },
+        {
+          "identity": "component/sodium-cation/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 2.8232,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "engine-numerical-fixture",
+            "locator": "compact numerical fixture values",
+            "domain_id": "engine-numerical-fixture-domain"
+          }
+        },
+        {
+          "identity": "component/sodium-cation/solvation_factor",
+          "family": "solvation_factor",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "engine-numerical-fixture",
+            "locator": "compact numerical fixture values",
+            "domain_id": "engine-numerical-fixture-domain"
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "chloride-anion",
+      "fixed": {
+        "charge_number": {
+          "value": {
+            "magnitude": -1,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "engine-numerical-fixture",
+            "locator": "compact numerical fixture values",
+            "domain_id": "engine-numerical-fixture-domain"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/chloride-anion/born_diameter",
+          "family": "born_diameter",
+          "value": {
+            "magnitude": 4.1,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "engine-numerical-fixture",
+            "locator": "compact numerical fixture values",
+            "domain_id": "engine-numerical-fixture-domain"
+          }
+        },
+        {
+          "identity": "component/chloride-anion/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 2.42528,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "engine-numerical-fixture",
+            "locator": "compact numerical fixture values",
+            "domain_id": "engine-numerical-fixture-domain"
+          }
+        },
+        {
+          "identity": "component/chloride-anion/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 170.0,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "engine-numerical-fixture",
+            "locator": "compact numerical fixture values",
+            "domain_id": "engine-numerical-fixture-domain"
+          }
+        },
+        {
+          "identity": "component/chloride-anion/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 2.42528,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "engine-numerical-fixture",
+            "locator": "compact numerical fixture values",
+            "domain_id": "engine-numerical-fixture-domain"
+          }
+        },
+        {
+          "identity": "component/chloride-anion/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "engine-numerical-fixture",
+            "locator": "compact numerical fixture values",
+            "domain_id": "engine-numerical-fixture-domain"
+          }
+        },
+        {
+          "identity": "component/chloride-anion/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 2.756,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "engine-numerical-fixture",
+            "locator": "compact numerical fixture values",
+            "domain_id": "engine-numerical-fixture-domain"
+          }
+        },
+        {
+          "identity": "component/chloride-anion/solvation_factor",
+          "family": "solvation_factor",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "engine-numerical-fixture",
+            "locator": "compact numerical fixture values",
+            "domain_id": "engine-numerical-fixture-domain"
+          }
+        }
+      ]
+    }
+  ],
+  "pairs": [
+    {
+      "component_id_a": "sodium-cation",
+      "component_id_b": "water",
+      "coefficients": [
+        {
+          "identity": "pair/sodium-cation/water/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": -0.3,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "engine-numerical-fixture",
+            "locator": "compact numerical fixture values",
+            "domain_id": "engine-numerical-fixture-domain"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "chloride-anion",
+      "component_id_b": "water",
+      "coefficients": [
+        {
+          "identity": "pair/chloride-anion/water/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": -0.3,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "engine-numerical-fixture",
+            "locator": "compact numerical fixture values",
+            "domain_id": "engine-numerical-fixture-domain"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "chloride-anion",
+      "component_id_b": "sodium-cation",
+      "coefficients": [
+        {
+          "identity": "pair/chloride-anion/sodium-cation/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0.8,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "engine-numerical-fixture",
+            "locator": "compact numerical fixture values",
+            "domain_id": "engine-numerical-fixture-domain"
+          }
+        }
+      ]
+    }
+  ],
+  "model_families": [
+    {
+      "family_id": "model/association",
+      "kind": "association",
+      "choice": "general-site",
+      "provenance": {
+        "source_id": "engine-numerical-fixture",
+        "locator": "compact numerical fixture values",
+        "domain_id": "engine-numerical-fixture-domain"
+      }
+    },
+    {
+      "family_id": "model/base",
+      "kind": "base",
+      "choice": "pc-saft",
+      "provenance": {
+        "source_id": "engine-numerical-fixture",
+        "locator": "compact numerical fixture values",
+        "domain_id": "engine-numerical-fixture-domain"
+      }
+    },
+    {
+      "family_id": "model/electrolyte",
+      "kind": "electrolyte",
+      "choice": "born",
+      "provenance": {
+        "source_id": "engine-numerical-fixture",
+        "locator": "compact numerical fixture values",
+        "domain_id": "engine-numerical-fixture-domain"
+      },
+      "c_shell": 1.0,
+      "c_dielectric": 1.0,
+      "ionic_dispersion": "exclude-same-sign-ion-pairs"
+    },
+    {
+      "family_id": "model/relative_permittivity",
+      "kind": "permittivity",
+      "choice": "ion-fraction-suppression",
+      "provenance": {
+        "source_id": "engine-numerical-fixture",
+        "locator": "compact numerical fixture values",
+        "domain_id": "engine-numerical-fixture-domain"
+      }
+    }
+  ],
+  "model_coefficients": [
+    {
+      "identity": "model/relative_permittivity/ionic_region_relative_permittivity",
+      "family": "ionic_region_relative_permittivity",
+      "value": {
+        "magnitude": 8.0,
+        "unit": "dimensionless"
+      },
+      "provenance": {
+        "source_id": "engine-numerical-fixture",
+        "locator": "compact numerical fixture values",
+        "domain_id": "engine-numerical-fixture-domain"
+      }
+    },
+    {
+      "identity": "model/relative_permittivity/ion_fraction_suppression_coefficient",
+      "family": "ion_fraction_suppression_coefficient",
+      "value": {
+        "magnitude": 7.01,
+        "unit": "dimensionless"
+      },
+      "provenance": {
+        "source_id": "engine-numerical-fixture",
+        "locator": "compact numerical fixture values",
+        "domain_id": "engine-numerical-fixture-domain"
+      }
+    }
+  ],
+  "correlations": [
+    {
+      "correlation_id": "component/water/segment_diameter/constant-plus-sum-of-exponentials",
+      "component_id": "water",
+      "family": "segment_diameter",
+      "form": "constant-plus-sum-of-exponentials",
+      "independent_variables": [
+        "temperature"
+      ],
+      "constant": {
+        "identity": "component/water/segment_diameter/constant-plus-sum-of-exponentials/constant",
+        "value": {
+          "magnitude": 2.7927,
+          "unit": "angstrom"
+        }
+      },
+      "terms": [
+        {
+          "amplitude": {
+            "identity": "component/water/segment_diameter/constant-plus-sum-of-exponentials/term-0/amplitude",
+            "value": {
+              "magnitude": 10.11,
+              "unit": "angstrom"
+            }
+          },
+          "exponent_coefficient": {
+            "identity": "component/water/segment_diameter/constant-plus-sum-of-exponentials/term-0/exponent_coefficient",
+            "value": {
+              "magnitude": -0.01775,
+              "unit": "1 / kelvin"
+            }
+          }
+        },
+        {
+          "amplitude": {
+            "identity": "component/water/segment_diameter/constant-plus-sum-of-exponentials/term-1/amplitude",
+            "value": {
+              "magnitude": -1.417,
+              "unit": "angstrom"
+            }
+          },
+          "exponent_coefficient": {
+            "identity": "component/water/segment_diameter/constant-plus-sum-of-exponentials/term-1/exponent_coefficient",
+            "value": {
+              "magnitude": -0.01146,
+              "unit": "1 / kelvin"
+            }
+          }
+        }
+      ],
+      "provenance": {
+        "source_id": "engine-numerical-fixture",
+        "locator": "compact numerical fixture values",
+        "domain_id": "engine-numerical-fixture-domain"
+      }
+    },
+    {
+      "correlation_id": "component/water/relative_permittivity/constant",
+      "component_id": "water",
+      "family": "relative_permittivity",
+      "form": "constant",
+      "independent_variables": [],
+      "constant": {
+        "identity": "component/water/relative_permittivity/constant/constant",
+        "value": {
+          "magnitude": 78.09,
+          "unit": "dimensionless"
+        }
+      },
+      "provenance": {
+        "source_id": "engine-numerical-fixture",
+        "locator": "compact numerical fixture values",
+        "domain_id": "engine-numerical-fixture-domain"
+      }
+    }
+  ],
+  "topology": {
+    "presets": [],
+    "sites": [
+      {
+        "component_id": "water",
+        "site_id": "a",
+        "site_role": "donor",
+        "multiplicity": 1,
+        "provenance": {
+          "source_id": "engine-numerical-fixture",
+          "locator": "compact numerical fixture values",
+          "domain_id": "engine-numerical-fixture-domain"
+        }
+      },
+      {
+        "component_id": "water",
+        "site_id": "b",
+        "site_role": "acceptor",
+        "multiplicity": 1,
+        "provenance": {
+          "source_id": "engine-numerical-fixture",
+          "locator": "compact numerical fixture values",
+          "domain_id": "engine-numerical-fixture-domain"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "endpoint_a": {
+          "component_id": "water",
+          "site_id": "a"
+        },
+        "endpoint_b": {
+          "component_id": "water",
+          "site_id": "b"
+        },
+        "energy_over_k": {
+          "identity": "association/water/a/water/b/energy_over_k",
+          "value": {
+            "magnitude": 2425.7,
+            "unit": "kelvin"
+          }
+        },
+        "volume": {
+          "identity": "association/water/a/water/b/volume",
+          "value": {
+            "magnitude": 0.04509,
+            "unit": "dimensionless"
+          }
+        },
+        "source": {
+          "kind": "explicit",
+          "provenance": [
+            {
+              "source_id": "engine-numerical-fixture",
+              "locator": "compact numerical fixture values",
+              "domain_id": "engine-numerical-fixture-domain"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

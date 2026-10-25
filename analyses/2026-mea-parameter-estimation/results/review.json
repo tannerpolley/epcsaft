@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "campaign_id": "2026-mea-parameter-estimation",
+  "workflow": "CSE Review",
+  "review_result": "Block",
+  "review_claim": "Issue 80 ePC-SAFT implementation and retained full-range nine-species candidate evidence",
+  "findings": [
+    {
+      "severity": "blocking",
+      "finding": "None of the four frozen reactive candidates passes the mixed N=8 exact physical-certification gate, so the fail-closed campaign correctly did not begin a complete fit or export a bundle."
+    },
+    {
+      "severity": "blocking",
+      "finding": "The reactive hierarchy remains incomplete: the driver exposes one frozen candidate at a time, and grouped fold refits, one-SE selection, rank/correlation/bound checks, and profiles were not executed."
+    },
+    {
+      "severity": "blocking",
+      "finding": "With no frozen complete candidate, calibration/validation metrics and separate observable-wise validated domains do not exist; Xu2011 and Jakobsen2005 remain untouched as required."
+    },
+    {
+      "severity": "nonblocking_risk",
+      "finding": "The focused slope test establishes public-model/static-model value equivalence and active-fit AD/centered-difference agreement, but does not independently compare active-fit observable values with ordinary public-model values at an identical state."
+    }
+  ],
+  "accepted_evidence": [
+    "the canonical packet validates, is governance-locked, and carries record-level candidate-domain provenance",
+    "all 123 retained states and all 210 pressure/speciation targets are present in each complete candidate input",
+    "target-independent row-consistent continuation inputs and model-only neighboring pressures are immutable and hash-traced",
+    "Cai 2B/3B/4C comparison selected 2B by the frozen one-SE rule and Kiepe evaluated all 39 rows",
+    "solved-pressure pressure/vapor derivatives and frozen residual scales pass independent focused numerical checks",
+    "the finite trial wall catches only explicit physical-domain failures; unexpected exceptions fail loudly",
+    "candidate 3 propagates its inverse-temperature pair coordinate through records, resolution, native parameters, and the shared Helmholtz path used by ordinary models and active fits",
+    "public-model values match equivalent static k(T) models at 293.15, 313.15, and 393.15 K; exact active-fit slope derivatives match centered differences and are zero at T_ref",
+    "candidate 4 is only the already-specified candidate-3 nesting with the frozen R4/R5 coordinates",
+    "ASAN/UBSAN passes the 12 current native numerical checks",
+    "no caloric thermochemistry, approximate heat, reduced-space export, or downstream MEA mutation was introduced"
+  ],
+  "smallest_next_action": "Design and review a numerical-method correction for the mixed full-space retained-liquid final-certificate mismatch without weakening the certificate or broadening the finite rejection wall; no further candidate is specified for replay."
+}

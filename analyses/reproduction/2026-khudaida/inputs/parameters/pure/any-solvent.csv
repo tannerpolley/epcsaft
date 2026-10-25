@@ -1,0 +1,6 @@
+component,m,s,e,e_assoc,vol_a,assoc_scheme,z,dielc,d_born,f_solv,MW,source
+H2O,1.2047,2.7927+(10.11*exp(-0.01775*T)-1.417*exp(-0.01146*T)),353.95,2425.7,0.04509,2B,0,78.09,0,1.5,0.01801528,2026_Khudaida reference dataset
+Ethanol,2.3827,3.1771,198.24,2653.4,0.03238,2B,0,24.88,0,1.6,0.046068,2026_Khudaida reference dataset
+Butanol,2.8440,3.5561,257.13,2514.3,0.00391,2B,0,17.20,0,1.5,0.0741216,2026_Khudaida reference dataset
+Na+,1,2.8232,230.00,0,0,,1,8.0,3.445,1.0,0.02298,2026_Khudaida reference dataset
+Cl-,1,2.7560,170.00,0,0,,-1,8.0,4.100,1.0,0.03545,2026_Khudaida reference dataset

@@ -1,0 +1,15 @@
+provenance_kind = "derived-record-provenance-v1"
+schema_version = 1
+transformations = ["Change every unlike-pair association rule edge from arithmetic-energy-geometric-volume to wolbach-sandler, which applies the Gross-Sadowski 2002 Eq. 3 size factor [sqrt(sigma_i sigma_j)/((sigma_i+sigma_j)/2)]^3 with the state segment diameters. Add the MEA source equation to the edge provenance. Preserve every other coefficient, unit, site, correlation, source locator and domain. Increment document version."]
+
+[[records]]
+retained_path = "parameters/parameters.json"
+sha256 = "7f87d3a81be71aae05be80c94eaf7af36554f96d07c8beb17d64da13e83f4c25"
+
+[[sources]]
+source_id = "predecessor-parameters"
+role = "Immutable predecessor parameter document"
+packet_id = "mea-co2-h2o-nine-species-estimation"
+packet_version = "3"
+packet_member = "parameters/parameters.json"
+sha256 = "2ea3b41485a98d2cf49add620b87bb05fc5a275cdd132c1cdbb0cfc5f07f2ca4"

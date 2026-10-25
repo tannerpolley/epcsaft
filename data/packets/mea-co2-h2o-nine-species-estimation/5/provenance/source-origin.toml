@@ -1,0 +1,15 @@
+provenance_kind = "derived-record-provenance-v1"
+schema_version = 1
+transformations = ["Replace the monoethanolamine 2B association volume 0.03747 (Fakouri Baygi and Pahlavanzadeh 2015 Table 2, regressed with d_ij^3 in their Eq. 4) with 0.036287, the constant value that best reproduces their d^3 model (Eq. 8 form, saturation pressure and liquid density) over the packet domain 293.15-393.15 K under the Engine sigma_ij^3 convention, with m, sigma and epsilon fixed (analyses/2026-mea-association-diameter). Add that locator to the edge provenance and the conversion to the source use basis. Preserve every other coefficient, unit, site, rule, correlation, source locator and domain. Increment document version."]
+
+[[records]]
+retained_path = "parameters/parameters.json"
+sha256 = "1ba95275f9e23264250e891aee3d6284d801f73205dad255101e6561b29aee5f"
+
+[[sources]]
+source_id = "predecessor-parameters"
+role = "Immutable predecessor parameter document"
+packet_id = "mea-co2-h2o-nine-species-estimation"
+packet_version = "4"
+packet_member = "parameters/parameters.json"
+sha256 = "7f87d3a81be71aae05be80c94eaf7af36554f96d07c8beb17d64da13e83f4c25"

@@ -1,0 +1,71 @@
+{
+  "design_sha256": "19ce41e804decb9d4f2a1fd7959406e291a38577a2164994f374e611f6881c7f",
+  "amendment_sha256": "7d251cc1e4ba6f7eb33e838ca7eed2bd3420a468a754295704d031fc5195ec7f",
+  "readiness_sha256": "1f014716b45e2ba05d2deb2f09fa2202605b55211ee4142aa0c7211acce6ec1a",
+  "accounting_base": "e4d87ac84bb95bfefb0463cc756fe49c3226ad2e",
+  "basis": {
+    "path": "data/packets/figiel-2025-chloride-mixture-refit/2/parameters/parameters.json",
+    "sha256": "7e32db55f77fe437bc8f918685b6287899e658810ebb575a10e31fcc61e63bf7"
+  },
+  "sources": [
+    {
+      "source": "Guendouzi2003",
+      "doi": "10.1016/S0021-9614(02)00315-4",
+      "zotero": "TKG576P4",
+      "url": "https://www.researchgate.net/publication/256738819_Water_activity_osmotic_and_activity_coefficients_of_aqueous_solutions_of_Li2SO4_Na2SO4_K2SO4_NH42SO4_MgSO4_MnSO4_NiSO4_CuSO4_and_ZnSO4_at_T29815_K",
+      "locators": "Table 1 p. 211 water activities; Table 3 p. 212 Na2SO4 experimental Phi; Table 6 p. 214 MgSO4 experimental Phi; Eq. 1 and table footnotes",
+      "basis": "298.15 K; analytical mol/kg water; effective fully dissociated salt; no hydration-water subtraction",
+      "audit": "All 23 admitted water-activity and experimental Phi cells read in author-posted full text. Experimental Phi derives from those water activities. Pitzer-calculated Phi and gamma columns are excluded. Table 1 parenthesized growth ratios refer to reference aw 0.98. No selected-row phase conflict found; concentration caps are prospective restrictions rather than verified liquidus boundaries. PDF retrieval failed (403); readback uses author-posted text.",
+      "uncertainty": "Temperature maintained within 0.02 K; droplet-diameter uncertainty 0.25%; molality uncertainty less than 0.01 mol/kg; aw uncertainty about 0.00015 to 0.0009. NaCl hygrometric reference; correlated source measurements. These uncertainties do not define the discrepancy objective."
+    },
+    {
+      "source": "Zhang2016",
+      "doi": "10.1021/acs.jced.5b00987",
+      "zotero": "4YMZZM7N/CLZ7GGNS",
+      "ThermoML_sha256": "24a8aca82752e09ac1926a06b8d40eb7fcc0fdb8d31be0d914071d2b632410e4",
+      "locators": "ThermoML dataset 1 variables 1=T, 2=LiCl molality, 3=MgSO4 molality, property 1=water activity; original Table 3 pp. 2280-2281, uncertainty footnote p. 2283",
+      "basis": "298.15 K; both molalities positive; MgSO4 <=2 mol/kg and I=m_LiCl+4m_MgSO4 <=8.3 mol/kg; exactly 21 rows",
+      "audit": "Admitted composition/activity cells checked against original Table 3; shared aw applies to isopiestic groups, including continuation pages. CaCl2 reference convention. No exact sample pressure supplied; 100000 Pa is the nominal calculation convention, not a measured pressure. No selected-row solid/oversaturation footnote found.",
+      "uncertainty": "u(T)=0.01 K; relative molality uncertainty 0.0012; u(Phi)=0.002 combined with relative CaCl2-reference uncertainty 0.010 gives relative reported Phi uncertainty 0.012, aw 0.003. Archive repeated expanded 0.0387 is compiler supplied and is not adopted."
+    }
+  ],
+  "inputs": {
+    "sulfate-candidate.json": "69e99f4b9d53214b04e66f01337425de47570422d3fd28ca8ed0f49aac9c04fd",
+    "sulfate-training.csv": "bcae8ca58f2e6ecec36e5536f6c6549b523507f77a64f4ae392bf900c6d552b7",
+    "sulfate-unused.json": "1b1ac2fac45379daf8c8fec7b9221dff2d77feb854a89ca32259b0b1d07acf47"
+  },
+  "transfer_assumptions": "Held 2014 strategy-2 sulfate sigma=2.6491 angstrom and epsilon/k=80 K; m=1; packing=DH=0.88sigma, Born=sigma, solvation=1; Li/Na/Mg/Ca/K sulfate k=-0.952/-1/-1/-0.908/1. Sulfate-Cl dispersion is excluded by the same-sign rule: its inactive zero is omitted from the parameter document because the Engine rejects unconsumed same-sign coefficients. All existing /2 fields are preserved.",
+  "risk": "Held Table 3 corrections were fitted with its strategy-2 ions, not the refitted /2 cations and Born/permittivity model. Transferring them may miss concentration shape; no alternative corrections or new coordinates are authorized.",
+  "admission": {
+    "native_message": "invalid cation mixing requires exactly one anion",
+    "owner": "engine/native/properties/helmholtz_model.cpp:696 validate_cation_mixing",
+    "equation": "engine/docs/equations.md#cation_pair_triple_mixing_helmholtz",
+    "domain": "engine/docs/science/full-eos.md section 12",
+    "control": "unchanged /2 admitted by Parameters.from_mapping in this checkout environment",
+    "interpretation": "The frozen request is outside the current native cation-mixing admission domain. There is no sulfate model prediction, derivative, weighted column, resolution, fitted parameter or physical-validation result. Removing the Li-Mg term changes frozen physics; relaxing native admission requires a separately authorized design and Engine work."
+  },
+  "requested_screen": [
+    {
+      "k": 0.25,
+      "h": null,
+      "outcome": "not evaluated: native parameter admission rejected"
+    },
+    {
+      "k": 0,
+      "h": null,
+      "outcome": "not evaluated: native parameter admission rejected"
+    },
+    {
+      "k": -1.5,
+      "h": null,
+      "outcome": "not evaluated: native parameter admission rejected"
+    },
+    {
+      "k": -3,
+      "h": null,
+      "outcome": "not evaluated: native parameter admission rejected"
+    }
+  ],
+  "stopping_point": "Before ObservationEvaluator, derivative verification or any fitting; identification and accuracy not reached. Reserved 2008 and 2015 studies remain unopened and unhashed. No packet. Any later successful fit must return to the owner.",
+  "review": "Independent delivered review pending; no notebook or plot added because no useful numerical result exists."
+}

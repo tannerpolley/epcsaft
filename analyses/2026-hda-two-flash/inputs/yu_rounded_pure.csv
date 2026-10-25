@@ -1,0 +1,3 @@
+component,m,sigma_A,epsilon_over_k_K,locator
+benzene,2.465,3.648,287.355,"Yu et al. 2026 AIChE J. 72(2):e70114, Table 1 (p. 6 of 17), benzene row (footnote a: DES-related systems), reference 46 = Gross and Sadowski 2001"
+toluene,2.815,3.717,285.690,"Yu et al. 2026 AIChE J. 72(2):e70114, Table 1 (p. 6 of 17), toluene row, reference 46 = Gross and Sadowski 2001"

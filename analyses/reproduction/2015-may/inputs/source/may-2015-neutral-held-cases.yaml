@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "contract_id": "neutral-held-v1-may-2015-cases",
+  "authority_effect": "none",
+  "source": {
+    "csv_path": "analyses/reproduction/2015-may/inputs/source/may-2015-methane-ethane-vle.csv",
+    "csv_sha256": "5cd1e74925a3c6504f5106dcf911f2cae2d6e99a5133fccc20454d8991bdbc7f",
+    "metadata_path": "analyses/reproduction/2015-may/inputs/source/may-2015-methane-ethane-vle.yaml",
+    "metadata_sha256": "d3fbd456f0285c022c2236c3966eb5e913f711a677d09191d99d5e2629a3b2e7",
+    "tolerance_sha256": "ad744526678355be6ca47cf27ab9ff7ae66b7661c27e36ffe259c5b6295f1016",
+    "source_contract_commit": "73a37f5935e919a34d1e4fa3af285951d6fac8e7"
+  },
+  "public_feed_domain_methane": [0.4661, 0.66705],
+  "sampled_gibbs_audit": {
+    "case_ids": [
+      "may2015-row-001-midpoint",
+      "may2015-row-012-midpoint",
+      "may2015-row-011-liquid-side"
+    ],
+    "composition_grid": {
+      "points": 1001,
+      "minimum": 1e-8,
+      "maximum": 0.99999999,
+      "spacing": 0.00099999998,
+      "localization_allowance": 0.00199999996,
+      "localization_rule": "2*composition_grid.spacing"
+    },
+    "dimensionless_tangent_chord_allowance": 1e-6,
+    "oracle_route": "public EPCSAFT.evaluate pressure-state branches only",
+    "independence": "No explicit-volume optimizer or local-polishing route is owned by Validation.",
+    "interpretation": "Finite sampled audit evidence only; not a continuous or mathematical globality proof."
+  },
+  "cases": [
+    {"case_id": "may2015-row-001-midpoint", "source_row_id": "may2015-ch4-c2h6-001", "T_K": 243.58, "P_Pa": 3949000, "feed_z_methane": 0.48815, "derivation": "0.5*x_methane + 0.5*y_methane", "expected_phase_count": 2, "phase_count_evidence": "direct-coexistence-observation"},
+    {"case_id": "may2015-row-002-midpoint", "source_row_id": "may2015-ch4-c2h6-002", "T_K": 203.22, "P_Pa": 2124000, "feed_z_methane": 0.6160, "derivation": "0.5*x_methane + 0.5*y_methane", "expected_phase_count": 2, "phase_count_evidence": "direct-coexistence-observation"},
+    {"case_id": "may2015-row-003-midpoint", "source_row_id": "may2015-ch4-c2h6-003", "T_K": 213.39, "P_Pa": 2517000, "feed_z_methane": 0.58765, "derivation": "0.5*x_methane + 0.5*y_methane", "expected_phase_count": 2, "phase_count_evidence": "direct-coexistence-observation"},
+    {"case_id": "may2015-row-004-midpoint", "source_row_id": "may2015-ch4-c2h6-004", "T_K": 223.50, "P_Pa": 2945000, "feed_z_methane": 0.5560, "derivation": "0.5*x_methane + 0.5*y_methane", "expected_phase_count": 2, "phase_count_evidence": "direct-coexistence-observation"},
+    {"case_id": "may2015-row-005-midpoint", "source_row_id": "may2015-ch4-c2h6-005", "T_K": 233.56, "P_Pa": 3417000, "feed_z_methane": 0.52165, "derivation": "0.5*x_methane + 0.5*y_methane", "expected_phase_count": 2, "phase_count_evidence": "direct-coexistence-observation"},
+    {"case_id": "may2015-row-006-midpoint", "source_row_id": "may2015-ch4-c2h6-006", "T_K": 243.60, "P_Pa": 3942000, "feed_z_methane": 0.4871, "derivation": "0.5*x_methane + 0.5*y_methane", "expected_phase_count": 2, "phase_count_evidence": "direct-coexistence-observation"},
+    {"case_id": "may2015-row-007-midpoint", "source_row_id": "may2015-ch4-c2h6-007", "T_K": 243.60, "P_Pa": 4831000, "feed_z_methane": 0.55095, "derivation": "0.5*x_methane + 0.5*y_methane", "expected_phase_count": 2, "phase_count_evidence": "direct-coexistence-observation"},
+    {"case_id": "may2015-row-008-midpoint", "source_row_id": "may2015-ch4-c2h6-008", "T_K": 243.60, "P_Pa": 5395000, "feed_z_methane": 0.58825, "derivation": "0.5*x_methane + 0.5*y_methane", "expected_phase_count": 2, "phase_count_evidence": "direct-coexistence-observation"},
+    {"case_id": "may2015-row-009-midpoint", "source_row_id": "may2015-ch4-c2h6-009", "T_K": 243.61, "P_Pa": 6080000, "feed_z_methane": 0.62475, "derivation": "0.5*x_methane + 0.5*y_methane", "expected_phase_count": 2, "phase_count_evidence": "direct-coexistence-observation"},
+    {"case_id": "may2015-row-010-midpoint", "source_row_id": "may2015-ch4-c2h6-010", "T_K": 243.61, "P_Pa": 6469000, "feed_z_methane": 0.6471, "derivation": "0.5*x_methane + 0.5*y_methane", "expected_phase_count": 2, "phase_count_evidence": "direct-coexistence-observation"},
+    {"case_id": "may2015-row-011-midpoint", "source_row_id": "may2015-ch4-c2h6-011", "T_K": 243.61, "P_Pa": 6691000, "feed_z_methane": 0.65725, "derivation": "0.5*x_methane + 0.5*y_methane", "expected_phase_count": 2, "phase_count_evidence": "direct-coexistence-observation"},
+    {"case_id": "may2015-row-012-midpoint", "source_row_id": "may2015-ch4-c2h6-012", "T_K": 243.60, "P_Pa": 6885000, "feed_z_methane": 0.66705, "derivation": "0.5*x_methane + 0.5*y_methane", "expected_phase_count": 2, "phase_count_evidence": "direct-coexistence-observation"},
+    {"case_id": "may2015-row-013-midpoint", "source_row_id": "may2015-ch4-c2h6-013", "T_K": 243.60, "P_Pa": 6487000, "feed_z_methane": 0.64765, "derivation": "0.5*x_methane + 0.5*y_methane", "expected_phase_count": 2, "phase_count_evidence": "direct-coexistence-observation"},
+    {"case_id": "may2015-row-014-midpoint", "source_row_id": "may2015-ch4-c2h6-014", "T_K": 243.60, "P_Pa": 5564000, "feed_z_methane": 0.5998, "derivation": "0.5*x_methane + 0.5*y_methane", "expected_phase_count": 2, "phase_count_evidence": "direct-coexistence-observation"},
+    {"case_id": "may2015-row-015-midpoint", "source_row_id": "may2015-ch4-c2h6-015", "T_K": 243.60, "P_Pa": 5094000, "feed_z_methane": 0.56995, "derivation": "0.5*x_methane + 0.5*y_methane", "expected_phase_count": 2, "phase_count_evidence": "direct-coexistence-observation"},
+    {"case_id": "may2015-row-016-midpoint", "source_row_id": "may2015-ch4-c2h6-016", "T_K": 243.61, "P_Pa": 3718000, "feed_z_methane": 0.4722, "derivation": "0.5*x_methane + 0.5*y_methane", "expected_phase_count": 2, "phase_count_evidence": "direct-coexistence-observation"},
+    {"case_id": "may2015-row-017-midpoint", "source_row_id": "may2015-ch4-c2h6-017", "T_K": 243.60, "P_Pa": 3675000, "feed_z_methane": 0.4661, "derivation": "0.5*x_methane + 0.5*y_methane", "expected_phase_count": 2, "phase_count_evidence": "direct-coexistence-observation"},
+    {
+      "case_id": "may2015-row-011-liquid-side",
+      "source_row_id": "may2015-ch4-c2h6-011",
+      "T_K": 243.61,
+      "P_Pa": 6691000,
+      "feed_z_methane": 0.5627,
+      "derivation": "x_methane - 2*x_comparison_allowance",
+      "derivation_inputs": {"x_methane": 0.5957, "x_comparison_allowance": 0.0165, "multiplier": 2.0},
+      "uncertainty_expanded_liquid_boundary": 0.5792,
+      "expected_side": "below_uncertainty_expanded_liquid_boundary",
+      "expected_phase_count": 1,
+      "phase_count_evidence": "source-backed-inference",
+      "interpretation": "A feed on the liquid side of the measured coexistence interval; no new experimental observable or global phase proof is claimed."
+    }
+  ]
+}

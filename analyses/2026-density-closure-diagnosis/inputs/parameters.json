@@ -1,0 +1,262 @@
+{
+  "schema": "epcsaft.parameters",
+  "schema_version": 1,
+  "document_id": "gross-2001-methane-ethane",
+  "document_version": 2,
+  "purpose": "external-document",
+  "sources": [
+    {
+      "source_id": "gross-sadowski-2001",
+      "citation": "Gross, J.; Sadowski, G. PC-SAFT: An Equation of State Based on a Perturbation Theory for Chain Molecules. Industrial & Engineering Chemistry Research 2001, 40, 1244-1260.",
+      "doi": "10.1021/ie0003887",
+      "use_basis": "source-backed installed parameter catalog"
+    }
+  ],
+  "domains": [
+    {
+      "domain_id": "methane-fit-range",
+      "kind": "fit-range",
+      "temperature_min": {
+        "magnitude": 97,
+        "unit": "kelvin"
+      },
+      "temperature_max": {
+        "magnitude": 300,
+        "unit": "kelvin"
+      }
+    },
+    {
+      "domain_id": "ethane-fit-range",
+      "kind": "fit-range",
+      "temperature_min": {
+        "magnitude": 90,
+        "unit": "kelvin"
+      },
+      "temperature_max": {
+        "magnitude": 305,
+        "unit": "kelvin"
+      }
+    },
+    {
+      "domain_id": "gross-pair-unknown",
+      "kind": "unknown"
+    }
+  ],
+  "components": [
+    {
+      "component_id": "ethane",
+      "aliases": [],
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 0.03007,
+            "unit": "kg / mol"
+          },
+          "provenance": {
+            "source_id": "gross-sadowski-2001",
+            "locator": "Table 2, ethane row, M_i and T range columns",
+            "domain_id": "ethane-fit-range"
+          }
+        },
+        "charge_number": {
+          "value": {
+            "magnitude": 0.0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "gross-sadowski-2001",
+            "locator": "Table 2, neutral methane and ethane molecular species"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/ethane/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 191.42,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "gross-sadowski-2001",
+            "locator": "Table 2, ethane row, u_i/k_B and T range columns",
+            "domain_id": "ethane-fit-range"
+          }
+        },
+        {
+          "identity": "component/ethane/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 1.6069,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-sadowski-2001",
+            "locator": "Table 2, ethane row, m_i^seg and T range columns",
+            "domain_id": "ethane-fit-range"
+          }
+        },
+        {
+          "identity": "component/ethane/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 3.5206,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "gross-sadowski-2001",
+            "locator": "Table 2, ethane row, sigma_i and T range columns",
+            "domain_id": "ethane-fit-range"
+          }
+        }
+      ],
+      "name": "ethane",
+      "formula": "C2H6"
+    },
+    {
+      "component_id": "methane",
+      "aliases": [],
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 0.016043,
+            "unit": "kg / mol"
+          },
+          "provenance": {
+            "source_id": "gross-sadowski-2001",
+            "locator": "Table 2, methane row, M_i and T range columns",
+            "domain_id": "methane-fit-range"
+          }
+        },
+        "charge_number": {
+          "value": {
+            "magnitude": 0.0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "gross-sadowski-2001",
+            "locator": "Table 2, neutral methane and ethane molecular species"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/methane/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 150.03,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "gross-sadowski-2001",
+            "locator": "Table 2, methane row, u_i/k_B and T range columns",
+            "domain_id": "methane-fit-range"
+          }
+        },
+        {
+          "identity": "component/methane/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-sadowski-2001",
+            "locator": "Table 2, methane row, m_i^seg and T range columns",
+            "domain_id": "methane-fit-range"
+          }
+        },
+        {
+          "identity": "component/methane/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 3.7039,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "gross-sadowski-2001",
+            "locator": "Table 2, methane row, sigma_i and T range columns",
+            "domain_id": "methane-fit-range"
+          }
+        }
+      ],
+      "name": "methane",
+      "formula": "CH4"
+    }
+  ],
+  "pairs": [
+    {
+      "component_id_a": "ethane",
+      "component_id_b": "methane",
+      "coefficients": [
+        {
+          "identity": "pair/ethane/methane/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-sadowski-2001",
+            "locator": "p. 1254, paragraph beginning \"Results for a ternary system of CO2-methane-ethane\", statement \"one can safely assume a kij equal to 0\"",
+            "domain_id": "gross-pair-unknown"
+          }
+        }
+      ]
+    }
+  ],
+  "model_families": [
+    {
+      "family_id": "model/association",
+      "kind": "association",
+      "choice": "none",
+      "provenance": {
+        "source_id": "gross-sadowski-2001",
+        "locator": "Table 2, methane row, M_i and T range columns",
+        "domain_id": "methane-fit-range"
+      }
+    },
+    {
+      "family_id": "model/base",
+      "kind": "base",
+      "choice": "pc-saft",
+      "provenance": {
+        "source_id": "gross-sadowski-2001",
+        "locator": "Table 2, methane row, m_i^seg and T range columns",
+        "domain_id": "methane-fit-range"
+      }
+    },
+    {
+      "family_id": "model/electrolyte",
+      "kind": "electrolyte",
+      "choice": "none",
+      "provenance": {
+        "source_id": "gross-sadowski-2001",
+        "locator": "Table 2, methane row, M_i and T range columns",
+        "domain_id": "methane-fit-range"
+      }
+    },
+    {
+      "family_id": "model/relative_permittivity",
+      "kind": "permittivity",
+      "choice": "none",
+      "provenance": {
+        "source_id": "gross-sadowski-2001",
+        "locator": "Neutral PC-SAFT formulation without electrolyte relative permittivity",
+        "domain_id": "gross-pair-unknown"
+      }
+    }
+  ],
+  "model_coefficients": [],
+  "correlations": [],
+  "topology": {
+    "presets": [],
+    "sites": [],
+    "edges": []
+  },
+  "materialization": {
+    "source": "data/packets/gross-2001-methane-ethane/2/parameters/parameters.json",
+    "source_sha256": "7dd1899712aacfbc3395d86349768b0d93dd5dfd75b2e0f0700640be618aa9c2",
+    "declaration": "Explicit zero molecular charges; all source coefficients and model choices unchanged."
+  }
+}

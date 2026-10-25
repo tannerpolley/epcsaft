@@ -1,0 +1,29 @@
+{
+  "series": 45,
+  "line_points": 1755,
+  "marker_centres": 441,
+  "review_centres": 45,
+  "half_width_source_pixels": 3,
+  "overlays_inspected": [
+    "figure-01-qa.png",
+    "figure-02-qa.png",
+    "figure-03-qa.png",
+    "figure-04-qa.png",
+    "figure-05-qa.png",
+    "figure-06-qa.png",
+    "figure-07-qa.png",
+    "figure-08-qa.png"
+  ],
+  "extraction": "Source-only guides, masked original ink and local guide corrections in guide-corrections.csv. The same three-pixel own-guide and two-pixel competing-guide tests apply; explicit marker/axis/overlap decisions remain review. Every corrected guide uses the retained original source pixel, without moving a coordinate or changing a reading allowance.",
+  "limitations": "Masks exclude hidden model strokes; no inferred hidden marker centres. Touching ordinate-axis markers retain review and are excluded from agreement. Very low-m coincident filled symbols in Figure 4 cannot be uniquely assigned. Dotted strokes that merge at low concentration are not independent targets for each salt. No experimental uncertainty is inferred.",
+  "NaI_panels": "Both depicted NaI curves checked source-only; same calibration units and trends. Near m=3 source ordinates agree within three pixels.",
+  "execution_order": "Original native execution remains frozen under its recorded source acquisition. Issue #832 freezes revised source ownership separately, then reclassifies retained native interval samples without any new model evaluation.",
+  "review_line_points": 131,
+  "gap_columns": 2434,
+  "overlay_colors": "green axes, cyan initial guides, yellow locally inspected guide positions, red confirmed ink, blue measured centres, magenta review candidates, orange no-ink gaps",
+  "source_errata": [
+    "Figure 2 caption says six salts but shows five panels and states no CsF data.",
+    "Figure 4 caption interchanges verbal cation/anion descriptions; visible ion labels and marker shapes own the assignments."
+  ],
+  "corrections": "guide-corrections.csv records all 247 prior guide rejections and two newly excluded RbBr edge assignments. 118 local guides recentered from original source crops. Original KI 980 and RbBr 1692/1693 remain excluded; RbBr 1696/1697 and CsBr 1738/1739/1740 remain unresolved against shared neighbouring ink. Figure 4a uses lower LiI, middle NaI, upper KI; Figure 4b uses lower NaI, middle NaBr, upper NaCl, following the visible labels rather than the interchanged verbal caption."
+}

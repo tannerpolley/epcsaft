@@ -1,0 +1,90 @@
+{
+  "manufactured_probe_byte_identical": true,
+  "manufactured_log_sha256": "eb1eac73ad62081fe321d0588647a17e8be8aa03e1f1de192520139fec59be30",
+  "bubble": {
+    "1e-10": {
+      "bit_identical": true,
+      "counters": [
+        4,
+        7,
+        5
+      ],
+      "guard_calls": 0,
+      "root_calls": 9
+    },
+    "1e-11": {
+      "bit_identical": true,
+      "counters": [
+        4,
+        7,
+        5
+      ],
+      "guard_calls": 0,
+      "root_calls": 9
+    }
+  },
+  "supplied_points_byte_identical": true,
+  "supplied_points_guard_calls": 0,
+  "trace_curvature_operands_bit_identical": true,
+  "before": [
+    {
+      "referenced": false,
+      "cause": "ParameterError: charged vapor cannot be the omitted-charge phase",
+      "eos_evaluations": 0,
+      "density_solves": 0
+    },
+    {
+      "referenced": true,
+      "cause": "ParameterError: charged vapor cannot be the omitted-charge phase",
+      "eos_evaluations": 33,
+      "density_solves": 5
+    }
+  ],
+  "after": [
+    {
+      "referenced": false,
+      "cause": "ParameterError: charged vapor cannot be the omitted-charge phase",
+      "eos_evaluations": 0,
+      "density_solves": 0
+    },
+    {
+      "referenced": true,
+      "cause": "ParameterError: charged vapor cannot be the omitted-charge phase",
+      "eos_evaluations": 0,
+      "density_solves": 0
+    }
+  ],
+  "conditions": "298.15 K, 100000 Pa; water/Na+/Cl- feed (1, 1e-6, 1e-6) mol, one free explicitly charged Vapor. Referenced admission probe: synthetic water = Na+ + Cl-, source K=1e-8 on raw mole-fraction infinite-dilution basis with water solvent and equal ion molality ratios; no physical reaction-model claim.",
+  "identity": {
+    "reference_head": "4bb675d8f55a31a5f3d34c4912cb80f07259c984",
+    "comparison_main": "382289ddb8edb4468b5736610992c3a0c102d831",
+    "source_diff_sha256": "4941de5613ce6477ef8d21bb2bf55b848b4e6c9bbb4d4d87414bd8a8f0993237",
+    "native_library_sha256": "479897c10dff3e53cf07831b09405a7f38edb7539e59c974342352a2908f884b",
+    "reference_native_library_sha256": "507446dd95e5b5e867faf96d24fe14e5619c53295c1eb136d54f547cb79f1dde",
+    "reference_probe_log": "build-r3/trial-probe-after-null-fix.log",
+    "reference_bubble_arrays": "build-r3/bubble/bubble.json",
+    "input": "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json",
+    "input_sha256": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+    "refusal_probe_source_sha256": "82a80e5fd046cbdc4bdd55c5105fe54670de263f5b737580bfa39d5bfd1dc469"
+  },
+  "unsupported_permittivity_refusals": [
+    {
+      "permittivity_form": 4,
+      "eos_evaluations": 0,
+      "density_solves": 0,
+      "cause": "vapor phase L support contains charged component index 1 (z=1); explicit charged vapor under DipolarPerturbation is not numerically qualified"
+    },
+    {
+      "permittivity_form": 1,
+      "eos_evaluations": 0,
+      "density_solves": 0,
+      "cause": "vapor phase L support contains charged component index 1 (z=1); charged vapor outside the condensed domain of the selected permittivity"
+    },
+    {
+      "permittivity_form": 2,
+      "eos_evaluations": 0,
+      "density_solves": 0,
+      "cause": "vapor phase L support contains charged component index 1 (z=1); charged vapor outside the condensed domain of the selected permittivity"
+    }
+  ]
+}

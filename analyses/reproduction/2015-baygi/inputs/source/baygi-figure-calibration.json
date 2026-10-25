@@ -1,0 +1,49 @@
+{
+  "source_pdf": "/home/tnnrpolley21/Zotero/storage/JWH69DKG/Fakouri Baygi and Pahlavanzadeh - 2015 - Application of the perturbed chain-SAFT equation of state for modeling CO2 solubility in aqueous mon.pdf",
+  "pdf_sha256": "7e8e77577a34bd9867489faee992dd192e8cbbc728c50a26e8264b0e09192365",
+  "zotero_key": "B8EJJPCJ",
+  "pdf_attachment": "JWH69DKG",
+  "markdown_attachment": "ICDS2PAA",
+  "page": 792,
+  "svg_sha256": "4dbc98e979067428cfcbe90d900a42fa5998e73b5029feeb16e523d0c133fc83",
+  "axes": {
+    "2": {
+      "x0": 70.734375,
+      "x1": 278.921875,
+      "y0": 726.824219,
+      "y1": 510.644532,
+      "xmin": 880,
+      "xmax": 1020,
+      "ymin": 0,
+      "ymax": 110,
+      "x_unit": "kg/m3",
+      "y_unit": "kPa"
+    },
+    "3": {
+      "x0": 327.398438,
+      "x1": 534.09375,
+      "y0": 557.792969,
+      "y1": 342.707031,
+      "xmin": 880,
+      "xmax": 1020,
+      "ymin": 300,
+      "ymax": 450,
+      "x_unit": "kg/m3",
+      "y_unit": "K"
+    }
+  },
+  "series": {
+    "rgb(4.711914%, 66.096497%, 29.670715%)": "MEA-2B",
+    "rgb(18.328857%, 20.950317%, 58.694458%)": "MEA-3B",
+    "rgb(94.049072%, 24.172974%, 11.898804%)": "MEA-4C",
+    "rgb(69.471741%, 17.247009%, 61.331177%)": "DIPPR"
+  },
+  "method": "pdftocairo -f 4 -l 4 -svg; direct vector paths preferred to pixels",
+  "calibration": "PDF page coordinates in points, origin upper left; frame intersections at labelled endpoint ticks; interior ticks inspected visually; source has minor tick spacing quantization",
+  "uncertainty": "Conservative two-PDF-point coordinate allowance: figure 2 +/-1.35 kg/m3 and +/-1.02 kPa; figure 3 +/-1.36 kg/m3 and +/-1.40 K. Comparison tolerances round up to 1.5 kg/m3, 1.1 kPa, 1.5 K. Figure 2 pressure near zero is unresolved at that absolute scale.",
+  "qa": "review: vector points overlaid on independently rasterized PDF; series labels checked against legend. No second numerical extraction lane. Stroke overlaps and source plotting resolution prevent sub-percent pressure claims.",
+  "row_counts": {
+    "2": 448,
+    "3": 58
+  }
+}

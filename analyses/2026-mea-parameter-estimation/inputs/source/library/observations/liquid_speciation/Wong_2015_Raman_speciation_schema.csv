@@ -1,0 +1,14 @@
+column,required,unit_or_domain,description
+source_key,yes,Wong2015,Stable source identifier.
+row_status,yes,extracted|staged|ambiguous|excluded,Extraction status for this row.
+temperature_C,yes,degC,Reported solution temperature.
+pressure_bar,no,bar,Reported equilibrium or reactor pressure when available.
+mea_mass_fraction,no,mass fraction,MEA mass fraction in the aqueous feed or liquid phase.
+co2_loading_mol_per_mol_mea,yes,mol CO2/mol MEA,CO2 loading associated with the measured species composition.
+species,yes,MEA|MEAH+|MEACOO-|HCO3-|CO3^2-|CO2(aq)|H2O|other,Reported or inferred chemical species label.
+value,yes,reported basis,Measured concentration or amount for the species.
+value_basis,yes,mol/L|mol/kg|mole_fraction|relative_fraction|other,Unit/basis used by the source table or figure.
+source_table_or_figure,yes,text,Source table/figure/caption identifier from repo-local Markdown.
+source_line_start,no,line number,First line in repo-local Markdown used for traceability.
+source_line_end,no,line number,Last line in repo-local Markdown used for traceability.
+notes,no,text,Short extraction note; do not paste article text.

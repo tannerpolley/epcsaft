@@ -1,0 +1,101 @@
+{
+  "packet": {
+    "packet_id": "figiel-2025-chloride-activity-refit",
+    "packet_version": "2",
+    "packet_path": "data/packets/figiel-2025-chloride-activity-refit/2",
+    "packet_fingerprint": "d79865152abaf527b4602c13b20e3e2c46db8eb0b3f2b294b138b8bdde65a865",
+    "materialization": "byte-for-byte"
+  },
+  "packet_parameters_sha256": "19c3b120355df92736cd2a057434629e8accd4723e83f9d2342fd9c6fba0cd76",
+  "wheel_sha256": "fdf3fbb51244eb4991f0743a6acd377dc0296d5909b77e896d050c6e36fdf57c",
+  "source_commit": "71c8a69c3feefd01c0b1aa77b00e9418180cca29",
+  "qualification_rows": 1685,
+  "required_rows": 1477,
+  "required_failures": 0,
+  "qualification_sha256": "de9e60a2904b61bf5d68a273243c82cc4f6f97132a06b49a4ccc7db38d9fa7a3",
+  "checks": {
+    "packet_validation": {
+      "command": "tools/heavy .venv/bin/python data/tools/validate_packets.py",
+      "exit_code": 0
+    },
+    "check_affected": {
+      "command": "tools/heavy bash tools/check-affected.sh origin/main",
+      "exit_code": 0,
+      "log": "build/issue-209-provisional/check-affected.log",
+      "log_sha256": "dec24df844b0a629857356af71f08e5762eb5ca199f72c9bc855f13c56253c6c",
+      "note": "origin/main advanced during the run; the comparison selected equilibrium, boundary and native fitting checks in addition to the fast gate and declarations."
+    },
+    "check_all": {
+      "command": "tools/heavy bash tools/check-all.sh",
+      "exit_code": 0,
+      "python_passed": 121,
+      "python_deselected": 1,
+      "log": "build/issue-209-provisional/check-all.log",
+      "native_programs_passed": 6,
+      "log_sha256": "2f6f8f8b9c4d3f97769aaf2a0aab4d6a2870b8a7336542e7b1f9702d485e4e77"
+    },
+    "render": {
+      "command": "tools/heavy quarto render analyses/2026-figiel-divalent-chlorides/notebook.qmd --to html",
+      "exit_code": 0,
+      "html": "build/companion/analyses/2026-figiel-divalent-chlorides/notebook.html"
+    },
+    "retained_reference_operands": {
+      "rows": 948,
+      "exact_matches": 948,
+      "reference": "results/stage1-rebaseline/stage1-reference.csv",
+      "comparison": "results/provisional-stage2/stage2-combined-stage1-preservation.csv"
+    },
+    "stage1_packet_bytes": {
+      "command": "git diff -- data/packets/figiel-2025-chloride-activity-refit/1",
+      "changed_files": 0
+    },
+    "notebook_numbers": {
+      "command": "python3 tools/check-notebook-numbers.py analyses/2026-figiel-divalent-chlorides/notebook.qmd",
+      "literal_numbers": 0,
+      "exit_code": 0
+    },
+    "retained_hashes": {
+      "packet_files": "all hashes match",
+      "provenance_inputs": "all hashes match",
+      "inherited_stage1_parameters": "all component, pair, model, correlation and topology entries exactly preserved"
+    }
+  },
+  "review": "Not performed: authorized stopping point before delivered review and PR.",
+  "unchanged_result_files_reused": {
+    "analyses/2026-figiel-divalent-chlorides/results/provisional-stage2/stage2-CaCl2-ceres-starts.csv": "analyses/2026-figiel-divalent-chlorides/results/stage2-CaCl2-ceres-starts.csv",
+    "analyses/2026-figiel-divalent-chlorides/results/provisional-stage2/stage2-MgCl2-ceres-starts.csv": "analyses/2026-figiel-divalent-chlorides/results/stage2-MgCl2-ceres-starts.csv",
+    "analyses/2026-figiel-divalent-chlorides/results/provisional-stage2/stage2-MgCl2-candidate.json": "analyses/2026-figiel-divalent-chlorides/results/provisional-stage2/stage2-combined-candidate.json",
+    "analyses/2026-figiel-divalent-chlorides/results/provisional-stage2/stage2-CaCl2-candidate.json": "analyses/2026-figiel-divalent-chlorides/results/provisional-stage2/stage2-combined-candidate.json"
+  },
+  "local_commands": [
+    {
+      "path": "build/issue-209-provisional/rebaseline_fit.py",
+      "sha256": "d7f1b5c5ca468f75745a08d55c3e0991984e1a53231087994e5ddeefee6a2a88"
+    },
+    {
+      "path": "build/issue-209-provisional/packet.py",
+      "sha256": "ca8ee9730b641c1ac669fddc3b7cd93b43a913af174463abb0b06721c855c25e"
+    },
+    {
+      "path": "build/issue-209-provisional/qualification.py",
+      "sha256": "bbbd219922cc65a30114b9c60b3d8d37357d524986a9fb231dcf673cae808f0f"
+    },
+    {
+      "path": "build/issue-209-provisional/present.py",
+      "sha256": "4793a67ede6f41efd9e2f609d06cc60d3a9a928e1b60ba3dd4095669af2de90c"
+    }
+  ],
+  "accounting": {
+    "resolved_base_at_initial_accounting": "ec0bafa71b5022821f1774b2b9fffb06622be87c",
+    "report": "build/issue-209-provisional/change-accounting.json",
+    "engine_runtime_additions": 0,
+    "existing_stage2_analysis_executable_additions": 446,
+    "existing_stage2_analysis_ceiling": 450,
+    "task_round_durable_executable_additions": 0
+  },
+  "task_round_engine_runtime_added": 0,
+  "stage1_packet_fingerprint": "b83cf1c817c51dee492388494df015eab28c5c7f4cdec4ac472c629fe4992d26",
+  "original_target_rows_not_met": 73,
+  "remote_main_at_handoff": "d564389c3acf4e80f325cfd902a8d06e9955eb08",
+  "qualification_snapshot_note": "Merged origin/main ec0bafa7 at build-round start; origin/main advanced during this run. Numerical evidence applies only to source_commit and wheel_sha256, not the later remote snapshot."
+}

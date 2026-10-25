@@ -1,0 +1,18 @@
+case,implementation,work,first_ms,median_ms,min_ms,max_ms,samples
+C2-0.5,Engine,solve_plus_actions,19.330146,17.5776535,17.068212,18.124645,10
+C2-0.5,Engine,actions_on_solved_state,0.64794,0.6256785,0.595232,0.934275,10
+C2-0.5,Engine,central_fd_all_directions,130.289799,134.321578,132.168637,134.561777,3
+C2-0.5,Clapeyron,"solve + IFT derivative, direction T",73326.827444,0.35800750000000003,0.260486,0.415264,10
+C2-0.5,Clapeyron,"solve + IFT derivative, direction k_ij",38608.463702,0.355288,0.324616,0.390409,10
+C2-0.5,Clapeyron,"solve + IFT derivative, direction association_energy_over_k",0.379729,0.3545815,0.327741,0.390519,10
+C2-0.5,Clapeyron,"solve + IFT derivative, direction association_volume",0.353129,0.3636435,0.332381,0.40213,10
+C2-0.5,Clapeyron,primal solve only,111343.086126,0.2667275,0.238314,0.310649,10
+C2-0.5,Clapeyron,"solve + joint IFT Jacobian, k_ij and T",97326.179346,0.23651149999999999,0.211615,0.415014,10
+C4-298.15,Engine,solve_plus_actions,16.823425,16.310628,15.818018,16.856156,10
+C4-298.15,Engine,actions_on_solved_state,0.667165,0.675011,0.634194,1.06083,10
+C4-298.15,Engine,central_fd_all_directions,60.515485,60.624608,59.631845,61.012303,3
+C4-298.15,Clapeyron,"solve + IFT derivative, direction T",132481.591456,0.896644,0.848624,1.051634,10
+C4-298.15,Clapeyron,"solve + IFT derivative, direction k_ij",17640.1734,0.915284,0.852271,0.987975,10
+C4-298.15,Clapeyron,primal solve only,80762.16627,0.7442995,0.716308,0.764377,10
+C4-298.15,Clapeyron,"solve + joint IFT Jacobian, k_ij and T",54792.145522,0.8783595,0.871808,0.993816,10
+C2-0.5,FeOs,"bubble_point_pressure_derivatives (k_ij, epsilon_k_ab, kappa_ab), incl. its pressure-guess bubble solve",23.883337,1.169448,,,10

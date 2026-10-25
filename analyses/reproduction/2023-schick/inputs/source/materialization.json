@@ -1,0 +1,10 @@
+{
+  "packet_id": "schick-2023-co2-thf",
+  "packet_version": "1",
+  "packet_path": "data/packets/schick-2023-co2-thf/1",
+  "packet_fingerprint": "69f0d49548046c6c25f235c460a9ba19c88cec4ac9593cc3df78fb3556073301",
+  "materialization": "byte-for-byte",
+  "repository": "tannerpolley/ePC-SAFT",
+  "destination": "analyses/reproduction/2023-schick/inputs/parameters.json",
+  "sha256": "5f7de9955ab6c262a6f1380759c0173a930acf60fbf939af78aa7b600de1f8b4"
+}

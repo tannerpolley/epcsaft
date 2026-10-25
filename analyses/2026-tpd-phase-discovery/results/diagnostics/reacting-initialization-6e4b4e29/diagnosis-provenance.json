@@ -1,0 +1,92 @@
+{
+  "sources": {
+    "/tmp/issue223-reacting-initial-public.py": {
+      "retained": "scripts/diagnostics/reacting-initialization/issue223-reacting-initial-public.py",
+      "sha256": "892124411368ae9326b5841bddb9d1e23e1ddf120fe054298ad23da2d10e8b38"
+    },
+    "/tmp/issue223-reacting-initial-native.cpp": {
+      "retained": "scripts/diagnostics/reacting-initialization/issue223-reacting-initial-native.cpp",
+      "sha256": "bf4f4719e403074fe40b3343b2a4b72412917b19e51a631ae32f10b84c83278c"
+    },
+    "/tmp/issue223-reacting-initial-native.compile.py": {
+      "retained": "scripts/diagnostics/reacting-initialization/issue223-reacting-initial-native.compile.py",
+      "sha256": "32391e58b49cf77fa888db0201d29a88f90c8dd75432053991bcdc6eb0305908"
+    },
+    "/tmp/issue223-reacting-exact-inputs.hpp": {
+      "retained": "scripts/diagnostics/reacting-initialization/issue223-reacting-exact-inputs.hpp",
+      "sha256": "fb38af5a3c887dfc0b38939bc5568fe6888dac06c257058d58035047e18b8393"
+    },
+    "/tmp/issue223-reacting-exact-inputs.json": {
+      "retained": "inputs/reacting-initialization/issue223-reacting-exact-inputs.json",
+      "sha256": "e85679056173172796b921d3268cd785cd160c01124300a8ba8af0f0164ef1d0"
+    },
+    "/tmp/issue223-reacting-initial-native.log": {
+      "retained": "results/diagnostics/reacting-initialization-6e4b4e29/issue223-reacting-initial-native.log",
+      "sha256": "4de955424a9ada63d3957ac3e6a00985273729ca6790bf47d6feacd5a3d03b81"
+    },
+    "/tmp/issue223-reacting-initial-public.json": {
+      "sha256": "e25f67553e3618bae2ebc9adfb11b1a6439271016ceef872004467e1641221d7",
+      "retained": "diagnosis-operands.csv and compact annotations; numeric JSON not copied"
+    },
+    "/tmp/issue223-reacting-initial-native": {
+      "sha256": "3ed2559c052d1f88a8149935fbb85d0f3a6f9d259aa2a743b07cd7b137bc3912",
+      "retained": null
+    }
+  },
+  "public_annotations": {
+    "message": "discovery has no accepted initial candidate",
+    "solver_status": "",
+    "coordinates": "empty array",
+    "residuals": "empty array",
+    "classified_residuals": "empty array",
+    "amounts": "empty array",
+    "mole_fractions": "empty array",
+    "molar_densities": "empty array",
+    "convergence/stop": "Stop.stalled",
+    "convergence/floor": null,
+    "convergence/amplification": null,
+    "convergence/contraction": null,
+    "roles/0": "initial",
+    "attempts/0": "empty array",
+    "declarations/0/message": "invalid composition",
+    "declarations/0/solver_status": "INVALID_NUMBER_DETECTED",
+    "declarations/0/coordinates": "empty array",
+    "declarations/0/residuals": "empty array",
+    "declarations/0/classified_residuals": "empty array",
+    "declarations/0/amounts": "empty array",
+    "declarations/0/mole_fractions": "empty array",
+    "declarations/0/molar_densities": "empty array",
+    "declarations/0/convergence/stop": "Stop.stalled",
+    "declarations/0/convergence/floor": null,
+    "declarations/0/convergence/amplification": null,
+    "declarations/0/convergence/contraction": null,
+    "trace_events": "empty array"
+  },
+  "operands_csv": "diagnosis-operands.csv",
+  "operands_sha256": "066b4fc5afc09fb671c060b1d05c9788881748e880f49e655dadc1b9b145ced2",
+  "numeric_rows": 427,
+  "frozen_reference": {
+    "csv": "../reacting-reaction-mapping/reacting.csv",
+    "sha256": "287dd38cef97b6f0919756692f4369dd1631721b4483d83d77a5485dee09d58a"
+  },
+  "cause": "The unchanged ideal-speciation initializer produces an exactly zero chloride fraction and a nonfinite log coordinate. The existing strictly positive charge-neutral base before that same speciation calculation yields an admitted initial candidate.",
+  "correction_scope": "Root correction is confined to explicit reacting discovery initialization; ordinary declared initialization, trial starts, budgets and tolerances remain unchanged.",
+  "units": {
+    "g": "J/mol",
+    "K": "dimensionless density-basis equilibrium constant",
+    "amount": "mol",
+    "density": "mol/m3",
+    "volume": "m3/mol",
+    "composition": "mol/mol",
+    "rows": "native equation residuals",
+    "objective": "G/RT in mol on the request feed basis",
+    "tpd_over_rt": "dimensionless per-mole RT quantity",
+    "coordinates": "native mixed log composition/direct amount/log packing/multipliers"
+  },
+  "limits": [
+    "Exact retained supplied source/log/input snapshot; no Engine call, compiler or probe replay during retention",
+    "The bounded probe repairs the diagnosed initial domain failure; it does not establish final installed-wheel discovery acceptance or physical validation",
+    "Mapped input JSON is a single input snapshot; its g/K match the original frozen CSV hash",
+    "The separately queried public result recovers message invalid composition and attempts=[[]]; the earlier qualifier honestly did not capture those fields"
+  ]
+}

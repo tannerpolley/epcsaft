@@ -1,0 +1,42 @@
+termination,status,timed_out,entry_observed,numeric_iteration_zero_line,solver_nl,solver_row,solver_col,solver_nl_sha256,ipopt_process,cancellation_deadline_monotonic,signals,process_group_terminated,cap,start_rho,start_Q,outer_elapsed_s,returncode,process_group,stdout_tail,stderr_tail,parent_stdout_log,parent_stderr_log,timeout_scope
+forced-post-entry-timeout,failed,True,True,0 -1.7500000e-01 4.85e-01 1.15e-01  -1.0 0.00e+00    -  0.00e+00 0.00e+00   0,/home/tnnrpolley21/.codex/worktrees/9dd4/ePC-SAFT-greenfield/build/idaes-neutral-latest/solver/process-1/process-1.nl,/home/tnnrpolley21/.codex/worktrees/9dd4/ePC-SAFT-greenfield/build/idaes-neutral-latest/solver/process-0/process-0.row,/home/tnnrpolley21/.codex/worktrees/9dd4/ePC-SAFT-greenfield/build/idaes-neutral-latest/solver/process-0/process-0.col,95bff8c644265bc6d298dbc90d79578efcf6fa438d52bee7f152742ee9cf874a,"{'pid': 666699, 'process_group': 666443, 'executable': '/home/tnnrpolley21/.local/share/micromamba/envs/ipopt-viz/bin/ipopt', 'cmdline': '/home/tnnrpolley21/.local/share/micromamba/envs/ipopt-viz/bin/ipopt /home/tnnrpolley21/.codex/worktrees/9dd4/ePC-SAFT-greenfield/build/idaes-neutral-latest/solver/process-1/process-1 nl -AMPL nlp_scaling_method=none tol=1e-09 max_iter=200 hessian_approximation=exact point_perturbation_radius=0 bound_relax_factor=0 constr_viol_tol=1e-08 dual_inf_tol=1e-07 compl_inf_tol=1e-07 acceptable_iter=0 print_level=5 output_file=/home/tnnrpolley21/.codex/worktrees/9dd4/ePC-SAFT-greenfield/build/idaes-neutral-latest/solver/forced-post-entry-timeout/ipopt.log file_print_level=5'}",10631.370268301,['SIGTERM'],True,200000.0,60.0,0.0005,1.5176110510001308,-15,666443,"Ipopt 3.14.19: nlp_scaling_method=none
+tol=1e-09
+max_iter=200
+hessian_approximation=exact
+point_perturbation_radius=0
+bound_relax_factor=0
+constr_viol_tol=1e-08
+dual_inf_tol=1e-07
+compl_inf_tol=1e-07
+acceptable_iter=0
+print_level=5
+output_file=/home/tnnrpolley21/.codex/worktrees/9dd4/ePC-SAFT-greenfield/build/idaes-neutral-latest/solver/forced-post-entry-timeout/ipopt.log
+file_print_level=5
+
+
+******************************************************************************
+This program contains Ipopt, a library for large-scale nonlinear optimization.
+ Ipopt is released as open source code under the Eclipse Public License (EPL).
+         For more information visit https://github.com/coin-or/Ipopt
+******************************************************************************
+
+This is Ipopt version 3.14.19, running with linear solver MUMPS 5.8.2.
+
+Number of nonzeros in equality constraint Jacobian...:        9
+Number of nonzeros in inequality constraint Jacobian.:        0
+Number of nonzeros in Lagrangian Hessian.............:        3
+
+Total number of variables............................:        6
+                     variables with only lower bounds:        0
+                variables with lower and upper bounds:        6
+                     variables with only upper bounds:        0
+Total number of equality constraints.................:        4
+Total number of inequality constraints...............:        0
+        inequality constraints with only lower bounds:        0
+   inequality constraints with lower and upper bounds:        0
+        inequality constraints with only upper bounds:        0
+
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+   0 -1.7500000e-01 4.85e-01 1.15e-01  -1.0 0.00e+00    -  0.00e+00 0.00e+00   0
+   1 -7.3786728e-02 1.35e-02 2.71e-01  -1.7 2.11e-01    -  6.70e-01 1.00e+00h  1
+",,/home/tnnrpolley21/.codex/worktrees/9dd4/ePC-SAFT-greenfield/build/idaes-neutral-latest/solver/forced-post-entry-timeout/parent.stdout.log,,forced-post-entry

@@ -1,0 +1,59 @@
+{
+  "reference_source": "5fec07f8a501209c3300cfee465b5f603805998a",
+  "runtime_snapshot": "c25d438db9fe89fc99fd658af8b08632a8490a90",
+  "runtime_source_sha256": {
+    "engine/native/core/numerical_policy.hpp": "f93bf6b4f0c913b094ed84f90098c88269ec0dd3cc33874d7e31420d602764b6",
+    "engine/native/equilibrium/gibbs_minimizer.cpp": "edb7797e2b3fcd4911ff4767ecc64a1815138162a15b15d43371018cb2d1a9c9",
+    "engine/native/equilibrium/problem.hpp": "67c2c081d1aac9a80a85abc16e91b39389197ef76d72c3cdaf99ed9814c4d38e"
+  },
+  "wheels": {
+    "baseline": {
+      "path": "build/issue-272/requalification/main-source/build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "sha256": "f86662014979aceb7b39c9a25c415fd187eafda2e9c8d59b1463ce676b02cd34",
+      "states_path": "analyses/2026-equilibrium-polish-masking/results/amendment-2/baseline-states.csv",
+      "states_sha256": "9b722bff579037206b048a599b600d832f82a8142f0165289f852786c060c163",
+      "inputs_path": "analyses/2026-equilibrium-polish-masking/results/resumed/inputs.json",
+      "inputs_sha256": "577bd90565f348a5652cab8d4492a2cc646c4412e4121559a56ceed07a4dd06a"
+    },
+    "candidate": {
+      "path": "build/issue-272/requalification/candidate-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "sha256": "3d494e4810af5748afc83af75f58d0c0703992d74d61ed4d1715588ee1f30797",
+      "states_path": "analyses/2026-equilibrium-polish-masking/results/resumed/candidate-states.csv",
+      "states_sha256": "5e38f97f3b9cd772aeb0c5587f59f6f64afbd95840d518ad24c6c40b4fd828db",
+      "inputs_path": "analyses/2026-equilibrium-polish-masking/results/resumed/inputs.json",
+      "inputs_sha256": "577bd90565f348a5652cab8d4492a2cc646c4412e4121559a56ceed07a4dd06a"
+    }
+  },
+  "equivalence_relative_limit": 1e-10,
+  "action_absolute_floor": 1e-12,
+  "stationarity_scale": "max(abs(compiled objective gradient)) on the extensive G/RT objective; absolute floor 1e-12",
+  "variance_absolute_floor": 1e-24,
+  "variance_floor_basis": "Square of the 1e-12 normalized-residual absolute floor for a noise-free variance; raw relative difference is not the controlling criterion.",
+  "preservation_limit": 1e-11,
+  "qualification_cases": 15,
+  "timing_pairs": 7,
+  "threads": 1,
+  "claim_limit": "The four original checks and preservation/work gates pass. The required affected check fails two additional native scientific checks; candidate remains unqualified. No additional native criterion was changed; owner decision required before delivered review.",
+  "replay_commands": [
+    "tools/heavy <installed-wheel-python> build/issue-272/requalification/replay.py <baseline|candidate>",
+    "tools/heavy <installed-wheel-python> build/issue-272/requalification/qualify.py <baseline|candidate> <wheel>",
+    "tools/heavy .venv/bin/python build/issue-272/requalification/qualify.py compare",
+    "tools/heavy tools/time-key-solves <main-wheel> <candidate-wheel> --pairs 7 --out analyses/2026-equilibrium-polish-masking/results/equivalence/timing"
+  ],
+  "numerical_owners": {
+    "candidate-states.csv": "analyses/2026-equilibrium-polish-masking/results/resumed/candidate-states.csv",
+    "baseline-trace.csv": "analyses/2026-equilibrium-polish-masking/results/resumed/baseline-trace.csv",
+    "candidate-trace.csv": "analyses/2026-equilibrium-polish-masking/results/resumed/candidate-trace.csv",
+    "inputs.json": "analyses/2026-equilibrium-polish-masking/results/resumed/inputs.json",
+    "work.csv": "analyses/2026-equilibrium-polish-masking/results/resumed/work.csv",
+    "physical-state-comparison.csv": "analyses/2026-equilibrium-polish-masking/results/resumed/physical-state-comparison.csv",
+    "budget-maxima.csv": "analyses/2026-equilibrium-polish-masking/results/resumed/budget-maxima.csv",
+    "candidate-policy.json": "analyses/2026-equilibrium-polish-masking/results/resumed/candidate-policy.json",
+    "timing/states.csv": "analyses/2026-equilibrium-polish-masking/results/resumed/timing/states.csv",
+    "timing/starts.csv": "analyses/2026-equilibrium-polish-masking/results/resumed/timing/starts.csv",
+    "timing/work.csv": "analyses/2026-equilibrium-polish-masking/results/resumed/timing/work.csv"
+  },
+  "identical_replay": "Fresh computations serialized these rows byte-identically to the retained owners; the original rows remain the sole numerical owners.",
+  "checks": "analyses/2026-equilibrium-polish-masking/results/equivalence/checks.json",
+  "bounded_native_reference_source": "5fec07f8a501209c3300cfee465b5f603805998a"
+}

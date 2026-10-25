@@ -1,0 +1,289 @@
+{
+  "base_commit": "37f54f8d5",
+  "base_packet": "figiel-2025-chloride-mixture-refit/2",
+  "design_sha256": "8273999eec8503aa9f17269a0e42d916aba3cebe17a9eeaa67aac1c990db9fa4",
+  "temperature_K": 298.15,
+  "pressure_Pa": 100000,
+  "maximum_iterations": 1500,
+  "maximum_seconds": 450,
+  "starts": [
+    [
+      2.274,
+      2.274,
+      2.274,
+      0,
+      0.7
+    ],
+    [
+      4,
+      4,
+      4,
+      -3,
+      -5
+    ],
+    [
+      8,
+      8,
+      8,
+      0,
+      -5
+    ],
+    [
+      2.274,
+      16,
+      2,
+      -3,
+      0.7
+    ],
+    [
+      4,
+      16,
+      1.5,
+      0,
+      0.7
+    ],
+    [
+      8,
+      4,
+      12,
+      -3,
+      -5
+    ],
+    [
+      2.274,
+      4,
+      0,
+      0.7
+    ],
+    [
+      4,
+      16,
+      -3,
+      -5
+    ],
+    [
+      8,
+      8,
+      -3,
+      0.7
+    ],
+    [
+      2.274,
+      4,
+      0
+    ],
+    [
+      4,
+      16,
+      -3
+    ],
+    [
+      4,
+      8
+    ]
+  ],
+  "allocation": [
+    6,
+    3,
+    2,
+    1
+  ],
+  "bounds": [
+    [
+      0.5,
+      30
+    ],
+    [
+      0.5,
+      30
+    ],
+    [
+      0.5,
+      30
+    ],
+    [
+      -50,
+      1
+    ],
+    [
+      -50,
+      1
+    ]
+  ],
+  "identification": {
+    "rank_ratio_strict": 1e-14,
+    "bound_distance_strict": 1e-06,
+    "max_correlation": 0.99,
+    "max_resolution": 0.001,
+    "cost_floor": 1e-10,
+    "cost_fraction": 0.0001,
+    "max_endpoint_distance": 0.001
+  },
+  "weights": "Four equal-total-weight groups: phi/gamma each at m<=3 or 3<m<=7; phi difference scale .01; gamma log ratio with ln(1.02) discrepancy scale",
+  "evidence": "Hamer-Wu evaluated reference training; mixtures reserved; 2020 adjusted water reference-dependent; all accuracy targets model discrepancy",
+  "coverage": "No measurement-backed claim at I=15 mol/kg or MgCl2=4.7 mol/kg",
+  "input_hashes": {
+    "candidate.json": "bdf8038c1b16b2a68f11a51623fd23af739a851059d5d42855077a822531f2ad",
+    "el-guendouzi2001-hcl.csv": "6f918fedfbf353474f23daff27dfbcaa2111dee7cf408ed7dde541c52ab2e34c",
+    "hamer-wu-hcl.csv": "04371336304c9ddc5625c314adcaee453bcce72c859be651999f831ef62233c2",
+    "jiang1996-hcl-li.csv": "7906e1604cd646f2907122d4a0050ac60edcee949e04f3dee0f38db7051aa934",
+    "khoo1977-hcl-ca.csv": "19dbb71c6a3e860150b0487f1f8d77d007373805bf2ccacc9cd3ce4c5e2ad938",
+    "khoo1977-hcl-mg.csv": "07966ab4640a68d558ea20d5f5ed86dd4b4a2a635d54db80f684cff19cdc3dd2",
+    "messnaoui2020-hcl.csv": "997d571aa6a39eb424da686d2eb27fc864061a633f5ad3aaf28a7313776cc659",
+    "roy1980-hcl-mg.csv": "f2468d1399d26b71a245707077899067a566edc0864d5d15d513790be2836f18",
+    "source-identities.json": "18aa21af199d49715386e62fc6640d69d8853f8fffb4a7a6f3e58d3bdbe6b06e"
+  },
+  "native_library": {
+    "path": "build/engine-meson/shared/libepcsaft_native.so",
+    "sha256": "56738a230c027567b1866328b88d4343a7a65efd56e37eeb38edfcc14476d907"
+  },
+  "native_source_sha256": {
+    "engine/native/bindings/.gitkeep": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "engine/native/bindings/asl_adapter.cpp": "a75024bd7a9ac731b88e640fafd02805f315af0455d4bb0c6d404b43b0a1df54",
+    "engine/native/bindings/diagnostics_bindings.cpp": "6421b2b0226bcb47e9938f06a186a145b14851cf4bb44cc09dd32dbac8fadaf7",
+    "engine/native/bindings/eos_bindings.cpp": "f55752fbfbcee104240476384de88ef46f0fd7ddb50dc6010d89d727a08ac78b",
+    "engine/native/bindings/equilibrium_bindings.cpp": "1ae61a5e42106ba0e567dbcdcd0a80ed4e3b1e0490f879f8a78346d91e3a9cf5",
+    "engine/native/bindings/equilibrium_record.hpp": "897f470ff9282808f7a92c8f515081bab32d04ead3863e807bfce7d6bceae7ec",
+    "engine/native/bindings/fields.hpp": "a7ac949fa32159abc90fc8813183026b3c9037df2acd922e8f58b0322e23b110",
+    "engine/native/bindings/module.cpp": "70d6f68774ea54fb3eac145b78243c6129229b331dea32a34bce151922055782",
+    "engine/native/bindings/regression_bindings.cpp": "5f75dbaa5a2ce4fc4590de8e878117eb400b7a0228b8a4c9c59b2a89c59f1e23",
+    "engine/native/bindings/solver_options.hpp": "37a9c8240f919a8057c640f3c8614c42b2b76e2b63953025302a7ada8576a66d",
+    "engine/native/contributions/.gitkeep": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "engine/native/contributions/association.hpp": "b7a3f7292ddee6d0d443af3e45972162dc5f6e8e419a8e64ab49b90be6f8b50c",
+    "engine/native/contributions/born.hpp": "e56f7e373990595099ff145c7a0bce5dbe13661d9920601cefbeec6d42cba779",
+    "engine/native/contributions/electrolyte.hpp": "6fbb96407cc6b40b308d8a0dcacd44e01d4f0a45e0fd56ab75220d88373ea559",
+    "engine/native/contributions/helmholtz.hpp": "b5830500833e8bf64566bb3658bb7a0ad4d57629f6ebe03e3ce01c8bcb938988",
+    "engine/native/contributions/ideal.hpp": "a3051f11bfc661ca4ff9a2fc53e57c3d92129457ca9b8ecdef87750eee821543",
+    "engine/native/core/convergence.hpp": "cda2cda8612be4ea5fb26cdd237ea97b386ee483aa76cdcea082213d17a7ec2a",
+    "engine/native/core/declared.hpp": "3088e0cc142c09e716f16ed7e923de916d1efb457633efac35afc8ebb0ce0d5c",
+    "engine/native/core/numerical_policy.hpp": "ee258c6ce645797fe53a7b2a832bd5622bea5a4e1fd0fce0492448fdcfd62e13",
+    "engine/native/core/parameters.hpp": "7900bc3cba3dd426d9ae8d025c83f045751861871aa00c07d0ba83b824e34bc8",
+    "engine/native/core/physical_constants.hpp": "f52b1e67c4f3c4726817ea257231e4e1511bd3bbb7d4b975b975913d37e66190",
+    "engine/native/core/scalar.hpp": "c9ec4b2ca4c8a3f97ddb1c1eaae2276728cf985a894a4862fc6a1fdf4cfe02e9",
+    "engine/native/core/trace.cpp": "1482b5124cb3d2f2ef3e002909a7d0e3e9334f2f0c61329b20b46fbd904bcc3d",
+    "engine/native/core/trace.hpp": "94a657d0c6cf9a9d109db02f411a728f66d0bcc7377b96cf795a81c897f0db51",
+    "engine/native/equilibrium/.gitkeep": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "engine/native/equilibrium/gibbs_minimizer.cpp": "22f0dc2bd8d31a1b0991b44568a3f159a3ae3e796408a07f693a6ff86ee7cf3c",
+    "engine/native/equilibrium/gibbs_minimizer.hpp": "83aedc1659279a8b917cb201f5dc3a06efd60a366c7e2177f791a2825b78b4f4",
+    "engine/native/equilibrium/implicit_sensitivity.cpp": "94bdf22e1d32dbef1d0b9eff13fb3652d3fe3a7aeaf8f9a207e0fc0f34ddb878",
+    "engine/native/equilibrium/ipopt.hpp": "5dbddaf5c509f1d42c6e168deb9d3bd2618fc69e1ba7c62359a023ade4635a23",
+    "engine/native/equilibrium/phase_boundary.cpp": "13fcac2530b8c7d818b527c85d421c0fa68d14ff641563b38d1850d037b501d0",
+    "engine/native/equilibrium/phase_stability.cpp": "baded4062ac8dc07bbb362d5aa3383464f7227c736bca4fe9e994debb01289b5",
+    "engine/native/equilibrium/problem.hpp": "c41ef17c78e97a0a9b2d337d6e2d0fa2897cc7f3c80e8ae2ab7f43a90f082c70",
+    "engine/native/equilibrium/request_compile.cpp": "fbafd7bee106da69362a5312d7a4dff29cd2eabcac31a3cb71a3dc87299970a4",
+    "engine/native/equilibrium/stoichiometry.cpp": "7815fc126eb10d536f7e17f07f4acce7e92892a87fcbe6dddf8b8fe9db1da988",
+    "engine/native/equilibrium/stoichiometry.hpp": "4378a4a34bc5ca7e4940211fe517760c23f7d03014a15cdb9247ac554979a66b",
+    "engine/native/properties/.gitkeep": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "engine/native/properties/density.cpp": "8dd13940f548218af90b8e14b62072649e5a9d2cdd1d6f511326745b96c8729a",
+    "engine/native/properties/helmholtz_model.cpp": "4befc66f9d729a928cc19eeba67db2e0455267bbfcd383f3df2c219ada5164e2",
+    "engine/native/properties/helmholtz_model.hpp": "bf6ba5c5edce7cbd5af7663ab06f30c76f7448a0899deb4c919e4967c5b64396",
+    "engine/native/properties/helmholtz_tape.hpp": "d53c30b393792e347aeecd4813c5749a4d525587f934f04ed0c2ebf8fa0c4d9e",
+    "engine/native/properties/infinite_dilution_reference.cpp": "0f476b007b8a7c04e81432fa23fe7503e7954e089a21499e06ce8080faf3d23a",
+    "engine/native/properties/thermochemistry.cpp": "6e78528b60e9595ad1d61cab978f47b768a588634341d12db6db41c4db635448",
+    "engine/native/properties/thermochemistry.hpp": "e4bce1ee604489630302f5e9461c9d689b30536dc34627729b0ef49f91328fe0",
+    "engine/native/regression/coordinates.cpp": "30948f72754eeb93ae75aaf901aee3e5e0d4434de9c6fc67b3ded6f4a5619539",
+    "engine/native/regression/coordinates.hpp": "b1557e00dc9db7b5be2657ef3218792e8d2f35a1989b16c77bd2f9ccfeac7f4d",
+    "engine/native/regression/fit.cpp": "fde0005917f5b2327c38fab97346f953fb8269f5c5b82be1a2e31273fe41f14a",
+    "engine/native/regression/fit.hpp": "83b8653bc51848fdda5a9374a659f2d17633901e30c7369f0fb4db3b23376694",
+    "engine/native/regression/minimax.cpp": "68244ec84d24a7aaba8be6f33dd4aff23bbaff6913106a558d1e0eb2b4e7d014",
+    "engine/native/regression/observations.cpp": "8309e9a8418dfe6fc43a9fa128696396f9372510a9d7ec5ddda56bddf136bdea",
+    "engine/native/regression/observations.hpp": "2a4123014239b8c004beae88330205f74a45e638682741d75c65caa0572df8cf",
+    "engine/native/surface/parameter_builder.cpp": "370dffcd428c6af4ca6ba446f59f6b8ffe5cde90688b5df784a34d4085aff343",
+    "engine/native/surface/parameter_builder.hpp": "879b4fd7896bbfa90d421ed0fdcf667daad5808920971ebd623776e039a98504"
+  },
+  "source_counts": {
+    "Hamer-Wu-training": 30,
+    "Hamer-Wu-report-only": 9,
+    "Messnaoui-water": 14,
+    "El-Guendouzi-water": 14,
+    "Roy-mixtures": 47,
+    "Khoo-Mg-mixtures": 25,
+    "Jiang-Li-mixtures": 36,
+    "Khoo-Ca-mixtures": 25
+  },
+  "accuracy_targets": {
+    "binary_phi_RMS_max": [
+      0.01,
+      0.03
+    ],
+    "binary_gamma_AARD_max_percent": [
+      2,
+      5
+    ],
+    "adjusted_aw_RMS_max": [
+      0.003,
+      0.006
+    ],
+    "mixture_gamma_AARD_max_percent": [
+      5,
+      10
+    ]
+  },
+  "total_maximum_iterations": 18000,
+  "total_maximum_seconds": 5400,
+  "source_commit": "1b9697813142412625ede782aa0975249ed333ef",
+  "accounting_base": "382289ddb8edb4468b5736610992c3a0c102d831",
+  "reuse_r1_endpoints": false,
+  "authority_sha256": {
+    "design-h-r3.md": "8273999eec8503aa9f17269a0e42d916aba3cebe17a9eeaa67aac1c990db9fa4",
+    "readiness-h-r3.md": "16a3863430db4ac67ac733d31a82b35b8521f612ff4938e1e85580d34ab1b26f",
+    "amendment-r2.md": "83b030f78ad36062b41045e1deb30078970ab0938cea69f35108c547b8df68ce",
+    "amendment-readiness-r2.md": "13450a1b7dfe31364dfafd3d90168b2e99bbbf58b773df09f5f589d2f0b2c4bc",
+    "amendment-readiness-r1.md": "b639d80ebd37a7a064baad0ed1d2fb06ca2dc6cde2c9bf885f46fe63ef2b4788"
+  },
+  "full_identification_rule": "### Identification, conditioning and reduction before fitting\n\nLet A be the **exact weighted optimizer Jacobian of the positive-weight training rows**, in the declared origin-zero, scale-one coordinates; at an unreduced endpoint it has 60 rows and five columns. With q free coordinates, retain its singular values s\u2081 \u2265 \u2026 \u2265 s_q, right/left singular vectors, weak directions, projected gradient, native bound diagnostics and covariance availability. The native owner is `engine/native/regression/fit.cpp`, `covariance`, especially the `FIT_RANK_RECIPROCAL_CONDITION` comparison; its policy value is in `engine/native/core/numerical_policy.hpp`. ALG-FIT owns the exact-column, positive-weight, converged/interior restrictions. #658 \u00a75.7 and its delivered Li fit establish withholding covariance at a bound or deficient rank; they set no universal practical correlation cutoff.\n\nA selected endpoint passes identification only when all of the following hold:\n\n1. The native fit is **converged**, usable and finite; all allocated starts have completed within their limits. An unfinished or failed evaluation cannot establish absence of a second endpoint.\n2. **Numerical rank is q:** each retained singular value satisfies s_j > 10\u207b\u00b9\u2074 s\u2081 and s_j > 0, hence s_q/s\u2081 > 10\u207b\u00b9\u2074. Report the actual ratio and \u03ba\u2082(A) = s\u2081/s_q; this rank condition implies \u03ba\u2082(A) < 10\u00b9\u2074, while the separate correlation and local-resolution limits supply the practical screening conditions. Equality with the threshold fails, matching the native strict comparison. This is the existing numerical-rank rule, not a physical precision claim.\n3. The native covariance diagnostic is available, there is no native active bound, and every free/tied physical coordinate is farther than 10\u207b\u2076 from a numerical box end.\n4. From the existing native optimizer inverse-information matrix C = (A\u1d40A)\u207b\u00b9, compute \u03c1_ab = C_ab / \u221a(C_aa C_bb) in the C++ result reader, and require **max over a \u2260 b of |\u03c1_ab| \u2264 0.99** among independent free coordinates. Nonpositive or nonfinite diagonals, nonfinite correlations or unavailable C fail. The derived packing row and tied Born row are excluded from this pairwise check because their perfect correlation is imposed. This task-specific 0.99 limit rejects near-compensating free directions; for a two-coordinate pair it corresponds to a variance-inflation factor no larger than about 50.3. It is a newly declared local-conditioning target for this HCl question, not a threshold inherited from #658 or a universal rule. It adds no Engine policy or solver tolerance.\n5. **Local parameter resolution:** at each model size choose the lowest binary cost J_min among the converged allocated starts, using declared order for an exact tie, and set \u0394J = max(10\u207b\u00b9\u2070, 10\u207b\u2074 |J_min|). For every independent free coordinate a, at the selected endpoint and every comparable endpoint, require\n\n   $$\n   S_a=u_a^{\\max}-u_a^{\\min},\\qquad\n   h_a=\\sqrt{2\\Delta J\\,C_{aa}},\\qquad\n   R_a=\\frac{h_a}{S_a}\\leq 10^{-3}.\n   $$\n\n   Here h_a is the maximum absolute coordinate excursion in the local linearized discrepancy ellipsoid \u03b4u\u1d40 C\u207b\u00b9 \u03b4u \u2264 2\u0394J, allowing all other free coordinates to move. It has units \u00c5 for lengths and is dimensionless for k. This is a sensitivity quantity, not a standard error or 95% confidence half-width. Use **unscaled `FitResult.covariance.optimizer`**, the q \u00d7 q matrix produced by `covariance` in `engine/native/regression/fit.cpp` and declared in `engine/native/regression/fit.hpp`; that producer forms C from the existing weighted-Jacobian singular vectors and inverse squared singular values. Use the returned `FitResult.final_cost` for J, and the declared optimizer bounds for S_a. Do not multiply C by `variance_factor`, estimate a noise variance, invert or factor another matrix, or iterate in Python. The existing C++ result reader performs only scalar readout/algebra and the declared decision. Nonfinite h_a or R_a, unavailable C, or nonpositive/nonfinite C_aa or S_a fails identification. Do not clip h_a to a box edge: a numerical bound must not manufacture apparent resolution. Apply the same \u0394J from J_min at every comparable endpoint, using that endpoint's own C. Exclude imposed packing and Born rows; a tied length is one independent coordinate with span 29.5 \u00c5. The k spans are 51. Thus the allowed local excursions are **0.0295 \u00c5** for each free length and **0.051** for each free k. Equality passes. Retain C_aa, S_a, J_min, \u0394J, h_a, R_a and the failing coordinate for each endpoint, beside rank, correlations and bounds.\n6. Near-equal-cost starts must not leave materially different endpoints unresolved. Define the comparable set by J \u2264 J_min + \u0394J using rule 5. For every comparable endpoint require the same rank, correlation, bound and local-resolution rules and, relative to the selected endpoint, max_a |u_a \u2212 u_a*|/(upper_a \u2212 lower_a) \u2264 10\u207b\u00b3 in the independent free coordinates. Retain all values and distances. This is a declared finite-multistart consistency test, not proof of a unique global optimum. A failing comparable endpoint rejects identification of that model size; do not resolve the ambiguity with mixture errors.\n\n**Resolution threshold and data scale.** The 10\u207b\u00b3 span limit is a task-specific practical-resolution requirement, matching round 2's already declared endpoint-distance tolerance, rather than a new Engine rank cutoff or a physical prior. It asks that local indistinguishability within the same comparable-cost band not exceed the separation already allowed between restarts. The cost band uses the unchanged \u00a74 discrepancy scales, 0.01 for \u03a6 and ln(1.02) for \u03b3\u00b1, rather than treating the evaluated rows as independent uncertain measurements. The adopted binary accuracy limits imply J_min < 2 for an accurate candidate: each \u03a6 group's mean squared standardized residual is at most 1, and each \u03b3\u00b1 group's is at most [|ln(0.95)|/ln(1.02)]\u00b2, giving J_min \u2264 {1 + [|ln(0.95)|/ln(1.02)]\u00b2}/4 < 2. Thus \u0394J \u2264 2 \u00d7 10\u207b\u2074 and the local ellipsoid has ||A \u03b4u||\u2082 \u2264 0.02. Each of the four equally weighted groups then has root-mean-square standardized prediction change at most 0.04, corresponding to **0.0004 in \u03a6** or **less than 0.000793 in ln \u03b3\u00b1**. These are bounds on local model changes, not prediction-error or uncertainty bounds. They are below the retained Hamer\u2013Wu Table 4 fit scatter u(\u03a6) = 0.00238 and Roy's reported maximum 0.0006 uncertainty in log\u2081\u2080 \u03b3\u00b1 (0.0006 ln 10 \u2248 0.001382 in natural log), and below the adopted model-discrepancy targets. The source uncertainty statements, independently checked in readiness r1, justify keeping the local comparison band well below model-accuracy scales; they do not give independent row variances. At a cost too large for these accuracy limits, the separate accuracy rejection still applies. The floor \u0394J = 10\u207b\u00b9\u2070 avoids a zero-radius screen at zero cost. No measurement-based Gaussian precision is claimed by the span threshold.\n\n**Analytic counterexample check, not an Engine evaluation.** Readiness r2 gives\n\n$$\nA=\\begin{bmatrix}\\operatorname{diag}(1,10^{-13})\\\\0_{58\\times2}\\end{bmatrix},\n\\qquad C=\\operatorname{diag}(1,10^{26}).\n$$\n\nIt passes numerical rank (10\u207b\u00b9\u00b3 > 10\u207b\u00b9\u2074) and has zero correlation. In the two-free-length reduction S\u2082 = 29.5 \u00c5. Since \u0394J \u2265 10\u207b\u00b9\u2070, rule 5 gives h\u2082 \u2265 \u221a(2 \u00d7 10\u00b9\u2076) = 1.4142 \u00d7 10\u2078 \u00c5 and **R\u2082 \u2265 4.7939 \u00d7 10\u2076**, far above **10\u207b\u00b3**. The new rule therefore rejects this example even with one start and an interior stationary endpoint. Failure rejects that model size and invokes the predeclared next reduction, if any; it does not authorize fixing only the failing coordinate at a newly chosen value. If this is the final two-coordinate model, no identified set is promoted and no `/3` is produced.\n\nC, \u03c1 and the local excursions h_a describe local sensitivity under the declared discrepancy weighting. \u03a6 and \u03b3\u00b1 share evaluated-data lineage, and their discrepancy scales are not independent measurement sigmas. Therefore no Gaussian parameter confidence intervals, microscopic proton radii, or experimental standard uncertainties are inferred from C or its optional variance factor. Full rank alone does not establish practical identification or physical uniqueness. Passing the added excursion screen establishes only the declared local resolution, not nonlinear or global uniqueness; no profile fit or additional search is implied.\n\nIf the identification rule fails at a completed stage, retain that result and advance only in this fixed order, refitting the **same binary rows with the same objective, bounds and accuracy limits**:\n\n| Model | Free coordinates | Restriction added relative to the preceding model | Allocated ordered starts |\n|---|---|---|---|\n| Five coordinates | \u03c3_H, d_DH,H, d_B,H, k_H,w, k_H,Cl | None | 1\u20136 |\n| Four coordinates | \u03c3_H, d_H, k_H,w, k_H,Cl | Tie d_B,H = d_DH,H = d_H | 7\u20139 |\n| Three coordinates | \u03c3_H, d_H, k_H,w | Keep the diameter tie; fix k_H,Cl = 0 | 10\u201311 |\n| Two coordinates | \u03c3_H, d_H | Keep the diameter tie; also fix k_H,w = 0 | 12 |\n\nThese restrictions select simpler effective parameterizations; the diameter equality is a modelling restriction, not a measured equality of Born and screening lengths. Fixing k to zero uses the existing geometric unlike-energy rule. No coordinate is fixed at an arbitrary proton Born radius. No H\u2013cation coefficient is introduced. The first model size whose selected endpoint and comparable endpoints pass identification is frozen **before** any held-out mixture scores are inspected. It must then pass the binary accuracy checks before qualification. An identified endpoint that fails an accuracy check yields a failed capability at that declared freedom; it does not authorize trying reductions or tuning restrictions using qualification data. A budget stop is incomplete evidence and returns to the lead; it does not trigger automatic reduction.\n\nIf a stage exhausts its budget, report incomplete parameter estimation at that model size with its retained diagnostics; stop the sequence without a completed negative conclusion. If every completed model size in the sequence fails identification, report **\u201cNo identified HCl parameter set under the declared binary data, conventions, reductions and work limits.\u201d** Retain every fitted vector, bound, singular spectrum, correlation matrix, local-resolution readout, competing endpoint and binary residual; report the first failing rule for each stage. Produce no `/3` packet and make no HCl qualification or global-infeasibility claim. If identification passes but a required accuracy or preservation check fails, report that failed check separately and retain no qualified `/3`.\n\n",
+  "amendment": "# #676 H\u207a fit: amendment r2 (replaces amendment-r1)\n\nOwner disposition (2026-10-22): \"Finish the reductions\". The readiness check of amendment-r1\n(`amendment-readiness-r1.md`, Revise) found:\n- Finding 1: build r1's frozen declaration records native identities that don't match the committed source.\n  The `infinite_dilution_reference.cpp` hash and the library hash both differ.\n  So start 8 cannot be shown to come from the same numerical implementation as the amended runs.\n- Findings 2\u20135 supported the budget change, with guidance.\n\n## The change\n1. **Rerun the whole predeclared sequence under one reconciled frozen identity.** No r1 endpoint, including start 8, is\n   reused as evidence for a decision. The r1 declaration and results stay retained, unchanged, as the first frozen run.\n   - Before running, record in the new frozen declaration the exact committed source hashes and the built library hash.\n   - Verify that every hash matches the code that actually executes.\n2. **Work limits.** The per-start limits are **1500 iterations and 450 s** at every stage. The total is at most 12 starts,\n   18000 iterations and 5400 s. Native stopping tolerances and policies are unchanged.\n   - The limits must reach the executed controls: `scripts/activity.cpp` hard-codes 300/90 in both the per-start\n     controls and the shared `fit_sequence` allowance.\n3. **Sequence and decision rule, unchanged from design-h-r3 \u00a72.** The full six-part identification rule applies, including:\n   - finite convergence of every allocated start;\n   - covariance availability;\n   - comparable-cost membership;\n   - the 1e-3 endpoint-distance condition.\n\n   Stages and their starts are fixed:\n   - stage 1: five coordinates, 6 starts;\n   - stage 2: Born diameter tied to Debye\u2013H\u00fcckel, 3 starts;\n   - stage 3: k_H\u2013Cl = 0, 2 starts;\n   - stage 4: k_H\u2013water = 0, 1 start.\n\n   Each stage uses its declared original seeds. A completed identification failure advances to the next stage. The\n   sequence stops at the first identified model size, freezing its lowest-binary-cost endpoint.\n4. **Budget stop.** A budget stop at the new limit is incomplete evidence. Report it and stop; no further amendment.\n5. **After identification.** The binary accuracy checks come first. Only if they pass are the held-out mixture\n   qualification sets opened, then the unchanged-basis replay. A `/3` packet is made only if every check passes.\n6. **Everything else stays fixed:** data, objective, weights, seeds, bounds, conventions, identification thresholds,\n   accuracy targets, the 350-line analysis ceiling and the Properties allowance.\n",
+  "producer_sha256": {
+    "analyses/2026-hydrochloric-acid-chloride-basis/scripts/activity.cpp": "7b25caa0a7a1ab406708fc459823456fa121c1c997bca686facd5235ffe4f4ce",
+    "analyses/2026-hydrochloric-acid-chloride-basis/scripts/run.py": "efbfe2cf1f31eaf04fb2b1063a151ad97fcdaf8479ed5c0da6087f0cc943c030",
+    "tools/native-driver": "25c09de6da5c9544671676a71e21f551fe51718dca3195e7e376f1713ccb99cc"
+  },
+  "r1_declaration_sha256": "2047bd477092ef09341be392bd1d442f964d2b49a3752415ead15ece5159ea6f",
+  "r1_result_sha256": {
+    "results/activity-library.json": "4ff03316c86058cd6133c35f59e8a3ff85d6758026dfd0739c4c949562611ded",
+    "results/activity-verification.csv": "62f32987ac0673fcf1e759b4fa9c133feb24664e39116315ce7cd9abe7ab2991",
+    "results/conditions.md": "9314532660e4dc89cb37d5d506f3ce4c7998dacebe569b4e2b7a3bf3d72b6a72",
+    "results/coordinate-order-error/fit-status.csv": "e2b45b340666c2e16be063b4292685375229cca7c872e22bcd9299a666b2613f",
+    "results/coordinate-order-error/fit-values.csv": "b58adcc8efeadfc95b1aac5b9f6fc7191d01cdb20b3bcb0edc9866a992b53c6c",
+    "results/coordinate-order-error/identification.csv": "b627740ae8cb5db3d979ed3db469e1a4ad9f3648fbcc4a3ac785a2315c464710",
+    "results/coordinate-order-error/local-resolution.csv": "b9736438c2ee739bd688abf07096b16941f930da615694c7d0ce48f7593c27e4",
+    "results/coordinate-order-error/native-identity.json": "596efdcdfe3d138177b17eea83e0b902f81b74f543e7da1b547c278605552e7a",
+    "results/coordinate-order-error/outcome.txt": "007766fa9e23f961ffc0c49786a509bf1cb485f43a486727eb702c74f1d4efdb",
+    "results/coordinate-order-error/trial-failures.csv": "838f0706416c18d02b4735d9cf6ba0eb0bc2c85cadd3b055672abb501b8fbc8f",
+    "results/declaration-error/fit-status.csv": "7416f8e3279145b34982b16470b542fcfae33a6749af39192ad509c1f25a76ff",
+    "results/declaration-error/fit-values.csv": "b58adcc8efeadfc95b1aac5b9f6fc7191d01cdb20b3bcb0edc9866a992b53c6c",
+    "results/declaration-error/identification.csv": "b627740ae8cb5db3d979ed3db469e1a4ad9f3648fbcc4a3ac785a2315c464710",
+    "results/declaration-error/local-resolution.csv": "b9736438c2ee739bd688abf07096b16941f930da615694c7d0ce48f7593c27e4",
+    "results/declaration-error/native-identity.json": "596efdcdfe3d138177b17eea83e0b902f81b74f543e7da1b547c278605552e7a",
+    "results/declaration-error/outcome.txt": "007766fa9e23f961ffc0c49786a509bf1cb485f43a486727eb702c74f1d4efdb",
+    "results/declaration-error/trial-failures.csv": "838f0706416c18d02b4735d9cf6ba0eb0bc2c85cadd3b055672abb501b8fbc8f",
+    "results/diagnosis.md": "66fce9e1a92655ed72b639611347bd0c8c090841632bb64014b59f770f544c2a",
+    "results/fit-status.csv": "1c8ffd4d2d46f77a65d4cfdc9c89758356f2091597300ed1acaa868bd22dbcdf",
+    "results/fit-table.md": "41f325ba4a7baed232b041212a828e2e6e5d29df8804731cee5fc457afd10707",
+    "results/fit-values.csv": "3027e536ae87c890499a8c613b99d5da52847e0f0803571fe95bbdb198ccfb74",
+    "results/identification-table.md": "3ef6606f1953abd1231c4ee40adda89f49f1b3e65da7b103d9ccb85bc5db2d0c",
+    "results/identification.csv": "7d40fd728fa02f00966d979d75aae065d0f4d42642c4535437e2bf42a5664979",
+    "results/liquid-declaration-error/fit-status.csv": "1ef35bfe63217336a949dd0f6070cc3f4f5161ef38c855eaaa8412e87251dd05",
+    "results/liquid-declaration-error/fit-values.csv": "dea73cdbec05f58cc1fcb41d5c9db8577595f02be625a0262200c73413f331b8",
+    "results/liquid-declaration-error/identification.csv": "b627740ae8cb5db3d979ed3db469e1a4ad9f3648fbcc4a3ac785a2315c464710",
+    "results/liquid-declaration-error/local-resolution.csv": "b9736438c2ee739bd688abf07096b16941f930da615694c7d0ce48f7593c27e4",
+    "results/liquid-declaration-error/native-identity.json": "596efdcdfe3d138177b17eea83e0b902f81b74f543e7da1b547c278605552e7a",
+    "results/liquid-declaration-error/outcome.txt": "007766fa9e23f961ffc0c49786a509bf1cb485f43a486727eb702c74f1d4efdb",
+    "results/liquid-declaration-error/trial-failures.csv": "838f0706416c18d02b4735d9cf6ba0eb0bc2c85cadd3b055672abb501b8fbc8f",
+    "results/local-resolution.csv": "30146c8f0b59d5ceb6adb2e5e09067ed84c7b8ee8ac12f53a98613883f8a2631",
+    "results/native-identity.json": "596efdcdfe3d138177b17eea83e0b902f81b74f543e7da1b547c278605552e7a",
+    "results/outcome.txt": "007766fa9e23f961ffc0c49786a509bf1cb485f43a486727eb702c74f1d4efdb",
+    "results/parameter-table.md": "d84eca49483fa346a87ee78f130db6c1d90da71f6aa143bf5d0298178be773bc",
+    "results/plot-note.md": "c5cb26a4058af72b4d6084df3e371a57a45ef983738905bf57b88c7272221e80",
+    "results/qualification-table.md": "55f0eb317e3cd7ffedadf0fd1e59229c9d481d11e3860b7ac2fa59e4b36521dc",
+    "results/resolution-table.md": "27d63362d5702507bfc4b4c066baa975c49c3c12e27b1092defaae49a65d8b81",
+    "results/trial-failures.csv": "7ec65109084bd93dc2b3b65a588553e235a056c0f3a16d40f7a9175519e96b4b"
+  },
+  "base_packet_sha256": "7e32db55f77fe437bc8f918685b6287899e658810ebb575a10e31fcc61e63bf7",
+  "executable_sha256": "7b8e9ff5d0b94402dee2ec0c5bcaaf363d7b401837f4cb3df94fdd5af2c6cb8a",
+  "generated_inputs_sha256": "96a2c279f92783ff68d4a41efb6cc32f5bc074f839a443261ac974c0a9844ae9",
+  "build_identity_sha256": {
+    "build/engine-meson/shared/compile_commands.json": "68050ca866045b2d16537099fd3e0c6a2301ea097c3b04bebb34fc2e7b8e9c7c",
+    "build/engine-meson/shared/build.ninja": "7ac5c3272b843d58d14cee879ed19df7c9bc24f4883c1214856afce6e2f79606"
+  }
+}

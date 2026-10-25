@@ -1,0 +1,2381 @@
+{
+  "shared_point": {
+    "salt": "LiCl",
+    "temperature_K": 298.15,
+    "quantity": "mean_ionic_activity_coefficient_molal",
+    "molality": 0.001,
+    "mode": "primary",
+    "value": 0.9645487485200079,
+    "cause": "",
+    "component_ids": [
+      "water",
+      "lithium-cation",
+      "chloride-anion"
+    ],
+    "composition": [
+      0.9999639707381545,
+      1.8014630922759662e-05,
+      1.8014630922759662e-05
+    ],
+    "declaration_sha256": "5d56993e72a9eaddb21cf2f75793a3ef290a2029912b8d552dd5aaf115e54e04",
+    "pressure": 100000.00000133285,
+    "pressure_density_derivative": 81845.01377278767,
+    "density_convergence": {
+      "amplification": 1676.2605511956958,
+      "amplification_over_declared": 335.25211023913914,
+      "contraction": null,
+      "criterion": {
+        "category": "AlgorithmTolerance",
+        "factor": 5.0,
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "source": "bracketed Newton on the reduced pressure residual; the tolerance is on the reduced residual; publish the bracket endpoint with smaller |P_calc-P_target|; relative pressure error is |r|/Z_target, with Z_target=P_target/(rho R T)",
+        "upstream": {
+          "category": "AlgorithmTolerance",
+          "factor": 1.0,
+          "name": "ASSOCIATION_RESIDUAL",
+          "source": "Newton reaches it in 3-8 steps from a warm start",
+          "upstream": null,
+          "value": 2e-13
+        },
+        "value": 1e-12
+      },
+      "evaluations": 8,
+      "floor": 1.3960879723155881e-15,
+      "iterations": 1,
+      "residual": 2.747151464643771e-15,
+      "residual_over_criterion": 0.002747151464643771,
+      "residual_over_floor": 1.9677495395130964,
+      "stop": "converged"
+    },
+    "density_branch": "Liquid",
+    "reference": {
+      "molality": 1e-14,
+      "convergence_error": 1.3084644479022245e-11,
+      "solvent_cause": "",
+      "solvent_convergence": null,
+      "solver_options": [
+        {
+          "name": "ASSOCIATION_RESIDUAL",
+          "value": 2e-13,
+          "unit": "1 (mass action)",
+          "default": 2e-13
+        },
+        {
+          "name": "DENSITY_ROOT_RESIDUAL",
+          "value": 1e-12,
+          "unit": "1 (reduced pressure)",
+          "default": 1e-12
+        },
+        {
+          "name": "EQUILIBRIUM_ROW_RESIDUAL",
+          "value": 1e-10,
+          "unit": "1 (classified rows)",
+          "default": 1e-10
+        }
+      ]
+    },
+    "osmotic_coefficient": 0.988174383011451,
+    "numerically_qualified": true,
+    "gamma_error": 0.0,
+    "osmotic_error": 0.0,
+    "execution_run_id": "cc1f2d8c-8a43-4c66-89e4-572f6f7485d9"
+  },
+  "fixed_probes": [
+    {
+      "salt": "CsBr",
+      "temperature_K": 298.15,
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "molality": 1,
+      "mode": "primary",
+      "value": 0.5837254795122157,
+      "cause": "",
+      "component_ids": [
+        "water",
+        "cesium-cation",
+        "bromide-anion"
+      ],
+      "composition": [
+        0.9652224930507841,
+        0.017388753474607933,
+        0.017388753474607933
+      ],
+      "declaration_sha256": "5d56993e72a9eaddb21cf2f75793a3ef290a2029912b8d552dd5aaf115e54e04",
+      "pressure": 99999.99999972757,
+      "pressure_density_derivative": 77024.92020653386,
+      "density_convergence": {
+        "amplification": 1758.7117547190094,
+        "amplification_over_declared": 351.74235094380185,
+        "contraction": null,
+        "criterion": {
+          "category": "AlgorithmTolerance",
+          "factor": 5.0,
+          "name": "DENSITY_ROOT_RESIDUAL",
+          "source": "bracketed Newton on the reduced pressure residual; the tolerance is on the reduced residual; publish the bracket endpoint with smaller |P_calc-P_target|; relative pressure error is |r|/Z_target, with Z_target=P_target/(rho R T)",
+          "upstream": {
+            "category": "AlgorithmTolerance",
+            "factor": 1.0,
+            "name": "ASSOCIATION_RESIDUAL",
+            "source": "Newton reaches it in 3-8 steps from a warm start",
+            "upstream": null,
+            "value": 2e-13
+          },
+          "value": 1e-12
+        },
+        "evaluations": 8,
+        "floor": 1.33089817484702e-15,
+        "iterations": 1,
+        "residual": 1.4784180824012338e-15,
+        "residual_over_criterion": 0.0014784180824012338,
+        "residual_over_floor": 1.1108423697186078,
+        "stop": "converged"
+      },
+      "density_branch": "Liquid",
+      "reference": {
+        "molality": 1e-14,
+        "convergence_error": 1.574917973812262e-11,
+        "solvent_cause": "",
+        "solvent_convergence": null,
+        "solver_options": [
+          {
+            "name": "ASSOCIATION_RESIDUAL",
+            "value": 2e-13,
+            "unit": "1 (mass action)",
+            "default": 2e-13
+          },
+          {
+            "name": "DENSITY_ROOT_RESIDUAL",
+            "value": 1e-12,
+            "unit": "1 (reduced pressure)",
+            "default": 1e-12
+          },
+          {
+            "name": "EQUILIBRIUM_ROW_RESIDUAL",
+            "value": 1e-10,
+            "unit": "1 (classified rows)",
+            "default": 1e-10
+          }
+        ]
+      },
+      "osmotic_coefficient": 0.8848311671356046,
+      "numerically_qualified": true,
+      "execution_run_id": "cc1f2d8c-8a43-4c66-89e4-572f6f7485d9"
+    },
+    {
+      "salt": "CsBr",
+      "temperature_K": 298.15,
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "molality": 1,
+      "mode": "short-screening",
+      "value": 0.5629854837959326,
+      "cause": "",
+      "component_ids": [
+        "water",
+        "cesium-cation",
+        "bromide-anion"
+      ],
+      "composition": [
+        0.9652224930507841,
+        0.017388753474607933,
+        0.017388753474607933
+      ],
+      "declaration_sha256": "6128ab850556c21b792d8383b4767e990683275b61b9ce7b475d24e93a984904",
+      "pressure": 99999.99999974562,
+      "pressure_density_derivative": 77032.31386492873,
+      "density_convergence": {
+        "amplification": 1758.568967755883,
+        "amplification_over_declared": 351.7137935511766,
+        "contraction": null,
+        "criterion": {
+          "category": "AlgorithmTolerance",
+          "factor": 5.0,
+          "name": "DENSITY_ROOT_RESIDUAL",
+          "source": "bracketed Newton on the reduced pressure residual; the tolerance is on the reduced residual; publish the bracket endpoint with smaller |P_calc-P_target|; relative pressure error is |r|/Z_target, with Z_target=P_target/(rho R T)",
+          "upstream": {
+            "category": "AlgorithmTolerance",
+            "factor": 1.0,
+            "name": "ASSOCIATION_RESIDUAL",
+            "source": "Newton reaches it in 3-8 steps from a warm start",
+            "upstream": null,
+            "value": 2e-13
+          },
+          "value": 1e-12
+        },
+        "evaluations": 8,
+        "floor": 1.330924461323185e-15,
+        "iterations": 1,
+        "residual": 1.7446981359636737e-15,
+        "residual_over_criterion": 0.0017446981359636737,
+        "residual_over_floor": 1.3108919301318733,
+        "stop": "converged"
+      },
+      "density_branch": "Liquid",
+      "reference": {
+        "molality": 1e-14,
+        "convergence_error": 1.411759598113349e-11,
+        "solvent_cause": "",
+        "solvent_convergence": null,
+        "solver_options": [
+          {
+            "name": "ASSOCIATION_RESIDUAL",
+            "value": 2e-13,
+            "unit": "1 (mass action)",
+            "default": 2e-13
+          },
+          {
+            "name": "DENSITY_ROOT_RESIDUAL",
+            "value": 1e-12,
+            "unit": "1 (reduced pressure)",
+            "default": 1e-12
+          },
+          {
+            "name": "EQUILIBRIUM_ROW_RESIDUAL",
+            "value": 1e-10,
+            "unit": "1 (classified rows)",
+            "default": 1e-10
+          }
+        ]
+      },
+      "osmotic_coefficient": 0.8722384110187635,
+      "numerically_qualified": true,
+      "execution_run_id": "cc1f2d8c-8a43-4c66-89e4-572f6f7485d9"
+    },
+    {
+      "salt": "CsBr",
+      "temperature_K": 298.15,
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "molality": 1,
+      "mode": "fixed-dielectric",
+      "value": 0.5837254795122157,
+      "cause": "",
+      "component_ids": [
+        "water",
+        "cesium-cation",
+        "bromide-anion"
+      ],
+      "composition": [
+        0.9652224930507841,
+        0.017388753474607933,
+        0.017388753474607933
+      ],
+      "declaration_sha256": "33c9b0728dc9a917d3868b245e0f6563ffd1f06bb0fe653659800e16dee93873",
+      "pressure": 99999.99999972757,
+      "pressure_density_derivative": 77024.92020653386,
+      "density_convergence": {
+        "amplification": 1758.7117547190094,
+        "amplification_over_declared": 351.74235094380185,
+        "contraction": null,
+        "criterion": {
+          "category": "AlgorithmTolerance",
+          "factor": 5.0,
+          "name": "DENSITY_ROOT_RESIDUAL",
+          "source": "bracketed Newton on the reduced pressure residual; the tolerance is on the reduced residual; publish the bracket endpoint with smaller |P_calc-P_target|; relative pressure error is |r|/Z_target, with Z_target=P_target/(rho R T)",
+          "upstream": {
+            "category": "AlgorithmTolerance",
+            "factor": 1.0,
+            "name": "ASSOCIATION_RESIDUAL",
+            "source": "Newton reaches it in 3-8 steps from a warm start",
+            "upstream": null,
+            "value": 2e-13
+          },
+          "value": 1e-12
+        },
+        "evaluations": 8,
+        "floor": 1.33089817484702e-15,
+        "iterations": 1,
+        "residual": 1.4784180824012338e-15,
+        "residual_over_criterion": 0.0014784180824012338,
+        "residual_over_floor": 1.1108423697186078,
+        "stop": "converged"
+      },
+      "density_branch": "Liquid",
+      "reference": {
+        "molality": 1e-14,
+        "convergence_error": 1.574917973812262e-11,
+        "solvent_cause": "",
+        "solvent_convergence": null,
+        "solver_options": [
+          {
+            "name": "ASSOCIATION_RESIDUAL",
+            "value": 2e-13,
+            "unit": "1 (mass action)",
+            "default": 2e-13
+          },
+          {
+            "name": "DENSITY_ROOT_RESIDUAL",
+            "value": 1e-12,
+            "unit": "1 (reduced pressure)",
+            "default": 1e-12
+          },
+          {
+            "name": "EQUILIBRIUM_ROW_RESIDUAL",
+            "value": 1e-10,
+            "unit": "1 (classified rows)",
+            "default": 1e-10
+          }
+        ]
+      },
+      "osmotic_coefficient": 0.8848311671356046,
+      "numerically_qualified": true,
+      "execution_run_id": "cc1f2d8c-8a43-4c66-89e4-572f6f7485d9"
+    },
+    {
+      "salt": "CsBr",
+      "temperature_K": 293.15,
+      "quantity": "density_difference",
+      "molality": 4,
+      "mode": "primary",
+      "value": 540.3317286950779,
+      "cause": "",
+      "component_ids": [
+        "water",
+        "cesium-cation",
+        "bromide-anion"
+      ],
+      "composition": [
+        0.8740324810048269,
+        0.06298375949758656,
+        0.06298375949758656
+      ],
+      "declaration_sha256": "5267ad402379f18a40786696329bc5b4767708ddc1cafffa273389aee27b927b",
+      "pressure": 99999.99999999875,
+      "pressure_density_derivative": 65048.71181453117,
+      "density_convergence": {
+        "amplification": 1977.5985993263982,
+        "amplification_over_declared": 395.5197198652796,
+        "contraction": null,
+        "criterion": {
+          "category": "AlgorithmTolerance",
+          "factor": 5.0,
+          "name": "DENSITY_ROOT_RESIDUAL",
+          "source": "bracketed Newton on the reduced pressure residual; the tolerance is on the reduced residual; publish the bracket endpoint with smaller |P_calc-P_target|; relative pressure error is |r|/Z_target, with Z_target=P_target/(rho R T)",
+          "upstream": {
+            "category": "AlgorithmTolerance",
+            "factor": 1.0,
+            "name": "ASSOCIATION_RESIDUAL",
+            "source": "Newton reaches it in 3-8 steps from a warm start",
+            "upstream": null,
+            "value": 2e-13
+          },
+          "value": 1e-12
+        },
+        "evaluations": 8,
+        "floor": 1.1699458493541992e-15,
+        "iterations": 1,
+        "residual": 2.1960515003693892e-15,
+        "residual_over_criterion": 0.0021960515003693892,
+        "residual_over_floor": 1.8770539692769475,
+        "stop": "converged"
+      },
+      "density_branch": "Liquid",
+      "status": "Available",
+      "message": "",
+      "convergence": {
+        "amplification": 1977.5985993263982,
+        "amplification_over_declared": 395.5197198652796,
+        "contraction": null,
+        "criterion": {
+          "category": "AlgorithmTolerance",
+          "factor": 5.0,
+          "name": "DENSITY_ROOT_RESIDUAL",
+          "source": "bracketed Newton on the reduced pressure residual; the tolerance is on the reduced residual; publish the bracket endpoint with smaller |P_calc-P_target|; relative pressure error is |r|/Z_target, with Z_target=P_target/(rho R T)",
+          "upstream": {
+            "category": "AlgorithmTolerance",
+            "factor": 1.0,
+            "name": "ASSOCIATION_RESIDUAL",
+            "source": "Newton reaches it in 3-8 steps from a warm start",
+            "upstream": null,
+            "value": 2e-13
+          },
+          "value": 1e-12
+        },
+        "evaluations": 8,
+        "floor": 1.1699458493541992e-15,
+        "iterations": 1,
+        "residual": 2.1960515003693892e-15,
+        "residual_over_criterion": 0.0021960515003693892,
+        "residual_over_floor": 1.8770539692769475,
+        "stop": "converged"
+      },
+      "requested_tolerance_met": null,
+      "mass_density_kg_m3": 1538.4657440792503,
+      "pure_water_density_kg_m3": 998.1340153841724,
+      "numerically_qualified": true,
+      "execution_run_id": "cc1f2d8c-8a43-4c66-89e4-572f6f7485d9"
+    },
+    {
+      "salt": "CsBr",
+      "temperature_K": 293.15,
+      "quantity": "density_difference",
+      "molality": 4,
+      "mode": "short-screening",
+      "value": 540.4618507725969,
+      "cause": "",
+      "component_ids": [
+        "water",
+        "cesium-cation",
+        "bromide-anion"
+      ],
+      "composition": [
+        0.8740324810048269,
+        0.06298375949758656,
+        0.06298375949758656
+      ],
+      "declaration_sha256": "145d667c392cdbbfd5415f03dbef1634425eef8a1ff382ac1f092ab3f2d122c5",
+      "pressure": 99999.9999984204,
+      "pressure_density_derivative": 65086.24209715419,
+      "density_convergence": {
+        "amplification": 1976.6254358128708,
+        "amplification_over_declared": 395.32508716257416,
+        "contraction": null,
+        "criterion": {
+          "category": "AlgorithmTolerance",
+          "factor": 5.0,
+          "name": "DENSITY_ROOT_RESIDUAL",
+          "source": "bracketed Newton on the reduced pressure residual; the tolerance is on the reduced residual; publish the bracket endpoint with smaller |P_calc-P_target|; relative pressure error is |r|/Z_target, with Z_target=P_target/(rho R T)",
+          "upstream": {
+            "category": "AlgorithmTolerance",
+            "factor": 1.0,
+            "name": "ASSOCIATION_RESIDUAL",
+            "source": "Newton reaches it in 3-8 steps from a warm start",
+            "upstream": null,
+            "value": 2e-13
+          },
+          "value": 1e-12
+        },
+        "evaluations": 8,
+        "floor": 1.1700741654656482e-15,
+        "iterations": 1,
+        "residual": 6.902031030042721e-15,
+        "residual_over_criterion": 0.006902031030042721,
+        "residual_over_floor": 5.898797899957014,
+        "stop": "converged"
+      },
+      "density_branch": "Liquid",
+      "status": "Available",
+      "message": "",
+      "convergence": {
+        "amplification": 1976.6254358128708,
+        "amplification_over_declared": 395.32508716257416,
+        "contraction": null,
+        "criterion": {
+          "category": "AlgorithmTolerance",
+          "factor": 5.0,
+          "name": "DENSITY_ROOT_RESIDUAL",
+          "source": "bracketed Newton on the reduced pressure residual; the tolerance is on the reduced residual; publish the bracket endpoint with smaller |P_calc-P_target|; relative pressure error is |r|/Z_target, with Z_target=P_target/(rho R T)",
+          "upstream": {
+            "category": "AlgorithmTolerance",
+            "factor": 1.0,
+            "name": "ASSOCIATION_RESIDUAL",
+            "source": "Newton reaches it in 3-8 steps from a warm start",
+            "upstream": null,
+            "value": 2e-13
+          },
+          "value": 1e-12
+        },
+        "evaluations": 8,
+        "floor": 1.1700741654656482e-15,
+        "iterations": 1,
+        "residual": 6.902031030042721e-15,
+        "residual_over_criterion": 0.006902031030042721,
+        "residual_over_floor": 5.898797899957014,
+        "stop": "converged"
+      },
+      "requested_tolerance_met": null,
+      "mass_density_kg_m3": 1538.5958661567693,
+      "pure_water_density_kg_m3": 998.1340153841724,
+      "numerically_qualified": true,
+      "execution_run_id": "cc1f2d8c-8a43-4c66-89e4-572f6f7485d9"
+    },
+    {
+      "salt": "CsBr",
+      "temperature_K": 293.15,
+      "quantity": "density_difference",
+      "molality": 4,
+      "mode": "fixed-dielectric",
+      "value": 540.3501000357104,
+      "cause": "",
+      "component_ids": [
+        "water",
+        "cesium-cation",
+        "bromide-anion"
+      ],
+      "composition": [
+        0.8740324810048269,
+        0.06298375949758656,
+        0.06298375949758656
+      ],
+      "declaration_sha256": "2c921240be65e51cdef972d75c2d9a8faff5f1b878a2973828bb92237d2fe49b",
+      "pressure": 99999.99999781743,
+      "pressure_density_derivative": 65054.26184075671,
+      "density_convergence": {
+        "amplification": 1977.4534960369076,
+        "amplification_over_declared": 395.4906992073815,
+        "contraction": null,
+        "criterion": {
+          "category": "AlgorithmTolerance",
+          "factor": 5.0,
+          "name": "DENSITY_ROOT_RESIDUAL",
+          "source": "bracketed Newton on the reduced pressure residual; the tolerance is on the reduced residual; publish the bracket endpoint with smaller |P_calc-P_target|; relative pressure error is |r|/Z_target, with Z_target=P_target/(rho R T)",
+          "upstream": {
+            "category": "AlgorithmTolerance",
+            "factor": 1.0,
+            "name": "ASSOCIATION_RESIDUAL",
+            "source": "Newton reaches it in 3-8 steps from a warm start",
+            "upstream": null,
+            "value": 2e-13
+          },
+          "value": 1e-12
+        },
+        "evaluations": 8,
+        "floor": 1.1699639646179068e-15,
+        "iterations": 1,
+        "residual": 1.972348066120455e-14,
+        "residual_over_criterion": 0.01972348066120455,
+        "residual_over_floor": 16.858195002310136,
+        "stop": "converged"
+      },
+      "density_branch": "Liquid",
+      "status": "Available",
+      "message": "",
+      "convergence": {
+        "amplification": 1977.4534960369076,
+        "amplification_over_declared": 395.4906992073815,
+        "contraction": null,
+        "criterion": {
+          "category": "AlgorithmTolerance",
+          "factor": 5.0,
+          "name": "DENSITY_ROOT_RESIDUAL",
+          "source": "bracketed Newton on the reduced pressure residual; the tolerance is on the reduced residual; publish the bracket endpoint with smaller |P_calc-P_target|; relative pressure error is |r|/Z_target, with Z_target=P_target/(rho R T)",
+          "upstream": {
+            "category": "AlgorithmTolerance",
+            "factor": 1.0,
+            "name": "ASSOCIATION_RESIDUAL",
+            "source": "Newton reaches it in 3-8 steps from a warm start",
+            "upstream": null,
+            "value": 2e-13
+          },
+          "value": 1e-12
+        },
+        "evaluations": 8,
+        "floor": 1.1699639646179068e-15,
+        "iterations": 1,
+        "residual": 1.972348066120455e-14,
+        "residual_over_criterion": 0.01972348066120455,
+        "residual_over_floor": 16.858195002310136,
+        "stop": "converged"
+      },
+      "requested_tolerance_met": null,
+      "mass_density_kg_m3": 1538.4841154198828,
+      "pure_water_density_kg_m3": 998.1340153841724,
+      "numerically_qualified": true,
+      "execution_run_id": "cc1f2d8c-8a43-4c66-89e4-572f6f7485d9"
+    },
+    {
+      "salt": "CsCl",
+      "temperature_K": 333.15,
+      "quantity": "vapor_pressure",
+      "molality": 6,
+      "mode": "primary",
+      "value": 0.1665588854361931,
+      "cause": "",
+      "component_ids": [
+        "water",
+        "cesium-cation",
+        "chloride-anion"
+      ],
+      "composition": [
+        0.8222444352470009,
+        0.08887778237649956,
+        0.08887778237649956
+      ],
+      "declaration_sha256": "3f4048d3c8c7b8746e8884689d293b3ae059a82d1044a8a30202c91c18e51cdb",
+      "success": true,
+      "message": "converged: residual 4.4408920985006262e-16 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 4 iterations, contraction absent, floor 5.2183465747052148e-11, amplification 0",
+      "pressure": 16655.88854361931,
+      "convergence": {
+        "amplification": 0.0,
+        "amplification_over_declared": 0.0,
+        "contraction": null,
+        "criterion": {
+          "category": "AlgorithmTolerance",
+          "factor": 1.0,
+          "name": "EQUILIBRIUM_ROW_RESIDUAL",
+          "source": "dimensionless equilibrium-row infinity norm; two decades above the association residual entering the assembly floor",
+          "upstream": null,
+          "value": 1e-10
+        },
+        "evaluations": 6,
+        "floor": 5.218346574705215e-11,
+        "iterations": 4,
+        "residual": 4.440892098500626e-16,
+        "residual_over_criterion": 4.440892098500626e-06,
+        "residual_over_floor": 8.510151702125098e-06,
+        "stop": "converged"
+      },
+      "residuals": [
+        -2.220446049250313e-16,
+        0.0,
+        0.0,
+        -2.5506569135317976e-16,
+        4.440892098500626e-16,
+        4.4052306234314393e-16,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mole_fractions": [
+        0.8222444352470009,
+        0.08887778237649956,
+        0.08887778237649956,
+        1.0,
+        0.0,
+        0.0
+      ],
+      "amounts": [
+        67.50843506179199,
+        0.0
+      ],
+      "molar_densities": [
+        51716.97463270696,
+        6.04857154340048
+      ],
+      "iterations": 4,
+      "solver_options": [
+        {
+          "name": "ASSOCIATION_RESIDUAL",
+          "value": 2e-13,
+          "unit": "1 (mass action)",
+          "default": 2e-13
+        },
+        {
+          "name": "DENSITY_ROOT_RESIDUAL",
+          "value": 1e-12,
+          "unit": "1 (reduced pressure)",
+          "default": 1e-12
+        },
+        {
+          "name": "EQUILIBRIUM_ROW_RESIDUAL",
+          "value": 1e-10,
+          "unit": "1 (classified rows)",
+          "default": 1e-10
+        }
+      ],
+      "numerically_qualified": true,
+      "execution_run_id": "cc1f2d8c-8a43-4c66-89e4-572f6f7485d9"
+    },
+    {
+      "salt": "CsCl",
+      "temperature_K": 333.15,
+      "quantity": "vapor_pressure",
+      "molality": 6,
+      "mode": "short-screening",
+      "value": 0.16713645125330773,
+      "cause": "",
+      "component_ids": [
+        "water",
+        "cesium-cation",
+        "chloride-anion"
+      ],
+      "composition": [
+        0.8222444352470009,
+        0.08887778237649956,
+        0.08887778237649956
+      ],
+      "declaration_sha256": "da2fd8d19a9dba606fc9325be57affc62bcbcbb9ac495061f816872e79314326",
+      "success": true,
+      "message": "converged: residual 3.5527136788005009e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 4 iterations, contraction absent, floor 5.2207699627456758e-11, amplification 0",
+      "pressure": 16713.64512533077,
+      "convergence": {
+        "amplification": 0.0,
+        "amplification_over_declared": 0.0,
+        "contraction": null,
+        "criterion": {
+          "category": "AlgorithmTolerance",
+          "factor": 1.0,
+          "name": "EQUILIBRIUM_ROW_RESIDUAL",
+          "source": "dimensionless equilibrium-row infinity norm; two decades above the association residual entering the assembly floor",
+          "upstream": null,
+          "value": 1e-10
+        },
+        "evaluations": 6,
+        "floor": 5.220769962745676e-11,
+        "iterations": 4,
+        "residual": 3.552713678800501e-15,
+        "residual_over_criterion": 3.552713678800501e-05,
+        "residual_over_floor": 6.804961153530846e-05,
+        "stop": "converged"
+      },
+      "residuals": [
+        2.220446049250313e-15,
+        3.552713678800501e-15,
+        3.552713678800501e-15,
+        2.4082132392555093e-15,
+        -8.881784197001252e-16,
+        -5.853223948965181e-16,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mole_fractions": [
+        0.8222444352470009,
+        0.08887778237649956,
+        0.08887778237649956,
+        1.0,
+        0.0,
+        0.0
+      ],
+      "amounts": [
+        67.50843506179199,
+        0.0
+      ],
+      "molar_densities": [
+        51727.754928193935,
+        6.069669826025711
+      ],
+      "iterations": 4,
+      "solver_options": [
+        {
+          "name": "ASSOCIATION_RESIDUAL",
+          "value": 2e-13,
+          "unit": "1 (mass action)",
+          "default": 2e-13
+        },
+        {
+          "name": "DENSITY_ROOT_RESIDUAL",
+          "value": 1e-12,
+          "unit": "1 (reduced pressure)",
+          "default": 1e-12
+        },
+        {
+          "name": "EQUILIBRIUM_ROW_RESIDUAL",
+          "value": 1e-10,
+          "unit": "1 (classified rows)",
+          "default": 1e-10
+        }
+      ],
+      "numerically_qualified": true,
+      "execution_run_id": "cc1f2d8c-8a43-4c66-89e4-572f6f7485d9"
+    },
+    {
+      "salt": "CsCl",
+      "temperature_K": 333.15,
+      "quantity": "vapor_pressure",
+      "molality": 6,
+      "mode": "fixed-dielectric",
+      "value": 0.16605748873475484,
+      "cause": "",
+      "component_ids": [
+        "water",
+        "cesium-cation",
+        "chloride-anion"
+      ],
+      "composition": [
+        0.8222444352470009,
+        0.08887778237649956,
+        0.08887778237649956
+      ],
+      "declaration_sha256": "92b756d031cab0289f4fab7b52125c29b93c398a856f59f5816559782f59f59b",
+      "success": true,
+      "message": "converged: residual 1.2656542480726785e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 4 iterations, contraction absent, floor 5.2162334901929235e-11, amplification 0",
+      "pressure": 16605.748873475484,
+      "convergence": {
+        "amplification": 0.0,
+        "amplification_over_declared": 0.0,
+        "contraction": null,
+        "criterion": {
+          "category": "AlgorithmTolerance",
+          "factor": 1.0,
+          "name": "EQUILIBRIUM_ROW_RESIDUAL",
+          "source": "dimensionless equilibrium-row infinity norm; two decades above the association residual entering the assembly floor",
+          "upstream": null,
+          "value": 1e-10
+        },
+        "evaluations": 6,
+        "floor": 5.2162334901929235e-11,
+        "iterations": 4,
+        "residual": 1.2656542480726785e-14,
+        "residual_over_criterion": 0.00012656542480726785,
+        "residual_over_floor": 0.00024263757564768596,
+        "stop": "converged"
+      },
+      "residuals": [
+        1.2656542480726785e-14,
+        5.329070518200751e-15,
+        1.7763568394002505e-15,
+        7.515225277754584e-15,
+        0.0,
+        -1.4728700776227371e-16,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mole_fractions": [
+        0.8222444352470009,
+        0.08887778237649956,
+        0.08887778237649956,
+        1.0,
+        0.0,
+        0.0
+      ],
+      "amounts": [
+        67.50843506179199,
+        0.0
+      ],
+      "molar_densities": [
+        51707.57115965849,
+        6.03025638984856
+      ],
+      "iterations": 4,
+      "solver_options": [
+        {
+          "name": "ASSOCIATION_RESIDUAL",
+          "value": 2e-13,
+          "unit": "1 (mass action)",
+          "default": 2e-13
+        },
+        {
+          "name": "DENSITY_ROOT_RESIDUAL",
+          "value": 1e-12,
+          "unit": "1 (reduced pressure)",
+          "default": 1e-12
+        },
+        {
+          "name": "EQUILIBRIUM_ROW_RESIDUAL",
+          "value": 1e-10,
+          "unit": "1 (classified rows)",
+          "default": 1e-10
+        }
+      ],
+      "numerically_qualified": true,
+      "execution_run_id": "cc1f2d8c-8a43-4c66-89e4-572f6f7485d9"
+    },
+    {
+      "salt": "NaI",
+      "temperature_K": 303.15,
+      "quantity": "water_activity_coefficient",
+      "molality": 3,
+      "mode": "primary",
+      "value": 0.9719556046519596,
+      "cause": "",
+      "component_ids": [
+        "water",
+        "sodium-cation",
+        "iodide-anion"
+      ],
+      "composition": [
+        0.9024524035772924,
+        0.04877379821135378,
+        0.04877379821135378
+      ],
+      "declaration_sha256": "b9bcfde0b8fb575a1bdd58873a891ca7e2b779fc333859294d056e4cbaa836d6",
+      "pressure": 100000.00000084644,
+      "pressure_density_derivative": 72763.85365199542,
+      "density_convergence": {
+        "amplification": 1893.4457702284678,
+        "amplification_over_declared": 378.68915404569356,
+        "contraction": null,
+        "criterion": {
+          "category": "AlgorithmTolerance",
+          "factor": 5.0,
+          "name": "DENSITY_ROOT_RESIDUAL",
+          "source": "bracketed Newton on the reduced pressure residual; the tolerance is on the reduced residual; publish the bracket endpoint with smaller |P_calc-P_target|; relative pressure error is |r|/Z_target, with Z_target=P_target/(rho R T)",
+          "upstream": {
+            "category": "AlgorithmTolerance",
+            "factor": 1.0,
+            "name": "ASSOCIATION_RESIDUAL",
+            "source": "Newton reaches it in 3-8 steps from a warm start",
+            "upstream": null,
+            "value": 2e-13
+          },
+          "value": 1e-12
+        },
+        "evaluations": 8,
+        "floor": 1.2252697696363122e-15,
+        "iterations": 1,
+        "residual": 1.027010507886894e-14,
+        "residual_over_criterion": 0.01027010507886894,
+        "residual_over_floor": 8.38191338215856,
+        "stop": "converged"
+      },
+      "density_branch": "Liquid",
+      "reference": {
+        "molality": 0.0,
+        "convergence_error": 0.0,
+        "solvent_cause": "",
+        "solvent_convergence": null,
+        "solver_options": [
+          {
+            "name": "ASSOCIATION_RESIDUAL",
+            "value": 2e-13,
+            "unit": "1 (mass action)",
+            "default": 2e-13
+          },
+          {
+            "name": "DENSITY_ROOT_RESIDUAL",
+            "value": 1e-12,
+            "unit": "1 (reduced pressure)",
+            "default": 1e-12
+          },
+          {
+            "name": "EQUILIBRIUM_ROW_RESIDUAL",
+            "value": 1e-10,
+            "unit": "1 (classified rows)",
+            "default": 1e-10
+          }
+        ]
+      },
+      "status": "Available",
+      "solvent_activity": 0.8771436715885815,
+      "water_mole_fraction": 0.9024524035772924,
+      "normalization_error": 0.0,
+      "numerically_qualified": true,
+      "execution_run_id": "cc1f2d8c-8a43-4c66-89e4-572f6f7485d9"
+    },
+    {
+      "salt": "NaI",
+      "temperature_K": 303.15,
+      "quantity": "water_activity_coefficient",
+      "molality": 3,
+      "mode": "short-screening",
+      "value": 0.9737108530485618,
+      "cause": "",
+      "component_ids": [
+        "water",
+        "sodium-cation",
+        "iodide-anion"
+      ],
+      "composition": [
+        0.9024524035772924,
+        0.04877379821135378,
+        0.04877379821135378
+      ],
+      "declaration_sha256": "0cbdf0095423194ed29aabfc958e80d768f9b6c2cdb65f4ab2dde4a386cf8868",
+      "pressure": 100000.00000137828,
+      "pressure_density_derivative": 72794.61198605539,
+      "density_convergence": {
+        "amplification": 1892.7655904206133,
+        "amplification_over_declared": 378.5531180841227,
+        "contraction": null,
+        "criterion": {
+          "category": "AlgorithmTolerance",
+          "factor": 5.0,
+          "name": "DENSITY_ROOT_RESIDUAL",
+          "source": "bracketed Newton on the reduced pressure residual; the tolerance is on the reduced residual; publish the bracket endpoint with smaller |P_calc-P_target|; relative pressure error is |r|/Z_target, with Z_target=P_target/(rho R T)",
+          "upstream": {
+            "category": "AlgorithmTolerance",
+            "factor": 1.0,
+            "name": "ASSOCIATION_RESIDUAL",
+            "source": "Newton reaches it in 3-8 steps from a warm start",
+            "upstream": null,
+            "value": 2e-13
+          },
+          "value": 1e-12
+        },
+        "evaluations": 8,
+        "floor": 1.2253724276562055e-15,
+        "iterations": 1,
+        "residual": 7.341241330116599e-15,
+        "residual_over_criterion": 0.007341241330116599,
+        "residual_over_floor": 5.991028657433022,
+        "stop": "converged"
+      },
+      "density_branch": "Liquid",
+      "reference": {
+        "molality": 0.0,
+        "convergence_error": 0.0,
+        "solvent_cause": "",
+        "solvent_convergence": null,
+        "solver_options": [
+          {
+            "name": "ASSOCIATION_RESIDUAL",
+            "value": 2e-13,
+            "unit": "1 (mass action)",
+            "default": 2e-13
+          },
+          {
+            "name": "DENSITY_ROOT_RESIDUAL",
+            "value": 1e-12,
+            "unit": "1 (reduced pressure)",
+            "default": 1e-12
+          },
+          {
+            "name": "EQUILIBRIUM_ROW_RESIDUAL",
+            "value": 1e-10,
+            "unit": "1 (classified rows)",
+            "default": 1e-10
+          }
+        ]
+      },
+      "status": "Available",
+      "solvent_activity": 0.8787276997229703,
+      "water_mole_fraction": 0.9024524035772924,
+      "normalization_error": 0.0,
+      "numerically_qualified": true,
+      "execution_run_id": "cc1f2d8c-8a43-4c66-89e4-572f6f7485d9"
+    },
+    {
+      "salt": "NaI",
+      "temperature_K": 303.15,
+      "quantity": "water_activity_coefficient",
+      "molality": 3,
+      "mode": "fixed-dielectric",
+      "value": 0.9716583930768662,
+      "cause": "",
+      "component_ids": [
+        "water",
+        "sodium-cation",
+        "iodide-anion"
+      ],
+      "composition": [
+        0.9024524035772924,
+        0.04877379821135378,
+        0.04877379821135378
+      ],
+      "declaration_sha256": "7ebd88d856b497d7e9d577d0bbe0d63db2073d3c512eb4e9e5880c2beab00e58",
+      "pressure": 100000.0000002229,
+      "pressure_density_derivative": 72758.37441792719,
+      "density_convergence": {
+        "amplification": 1893.5680265049914,
+        "amplification_over_declared": 378.71360530099827,
+        "contraction": null,
+        "criterion": {
+          "category": "AlgorithmTolerance",
+          "factor": 5.0,
+          "name": "DENSITY_ROOT_RESIDUAL",
+          "source": "bracketed Newton on the reduced pressure residual; the tolerance is on the reduced residual; publish the bracket endpoint with smaller |P_calc-P_target|; relative pressure error is |r|/Z_target, with Z_target=P_target/(rho R T)",
+          "upstream": {
+            "category": "AlgorithmTolerance",
+            "factor": 1.0,
+            "name": "ASSOCIATION_RESIDUAL",
+            "source": "Newton reaches it in 3-8 steps from a warm start",
+            "upstream": null,
+            "value": 2e-13
+          },
+          "value": 1e-12
+        },
+        "evaluations": 8,
+        "floor": 1.2252523650324491e-15,
+        "iterations": 1,
+        "residual": 3.972842020638634e-15,
+        "residual_over_criterion": 0.003972842020638634,
+        "residual_over_floor": 3.2424683551077402,
+        "stop": "converged"
+      },
+      "density_branch": "Liquid",
+      "reference": {
+        "molality": 0.0,
+        "convergence_error": 0.0,
+        "solvent_cause": "",
+        "solvent_convergence": null,
+        "solver_options": [
+          {
+            "name": "ASSOCIATION_RESIDUAL",
+            "value": 2e-13,
+            "unit": "1 (mass action)",
+            "default": 2e-13
+          },
+          {
+            "name": "DENSITY_ROOT_RESIDUAL",
+            "value": 1e-12,
+            "unit": "1 (reduced pressure)",
+            "default": 1e-12
+          },
+          {
+            "name": "EQUILIBRIUM_ROW_RESIDUAL",
+            "value": 1e-10,
+            "unit": "1 (classified rows)",
+            "default": 1e-10
+          }
+        ]
+      },
+      "status": "Available",
+      "solvent_activity": 0.8768754522882675,
+      "water_mole_fraction": 0.9024524035772924,
+      "normalization_error": 0.0,
+      "numerically_qualified": true,
+      "execution_run_id": "cc1f2d8c-8a43-4c66-89e4-572f6f7485d9"
+    },
+    {
+      "salt": "Cs2SO4",
+      "temperature_K": 303.15,
+      "quantity": "water_activity_coefficient",
+      "molality": 1,
+      "mode": "primary",
+      "value": 1.0145433753692694,
+      "cause": "",
+      "component_ids": [
+        "water",
+        "cesium-cation",
+        "sulfate-anion"
+      ],
+      "composition": [
+        0.9487253419642546,
+        0.034183105357163596,
+        0.017091552678581798
+      ],
+      "declaration_sha256": "b9bcfde0b8fb575a1bdd58873a891ca7e2b779fc333859294d056e4cbaa836d6",
+      "pressure": 100000.00000238694,
+      "pressure_density_derivative": 74089.93906259233,
+      "density_convergence": {
+        "amplification": 1866.4557158652492,
+        "amplification_over_declared": 373.2911431730498,
+        "contraction": null,
+        "criterion": {
+          "category": "AlgorithmTolerance",
+          "factor": 5.0,
+          "name": "DENSITY_ROOT_RESIDUAL",
+          "source": "bracketed Newton on the reduced pressure residual; the tolerance is on the reduced residual; publish the bracket endpoint with smaller |P_calc-P_target|; relative pressure error is |r|/Z_target, with Z_target=P_target/(rho R T)",
+          "upstream": {
+            "category": "AlgorithmTolerance",
+            "factor": 1.0,
+            "name": "ASSOCIATION_RESIDUAL",
+            "source": "Newton reaches it in 3-8 steps from a warm start",
+            "upstream": null,
+            "value": 2e-13
+          },
+          "value": 1e-12
+        },
+        "evaluations": 8,
+        "floor": 1.2938428756714762e-15,
+        "iterations": 1,
+        "residual": 1.5669431897846753e-14,
+        "residual_over_criterion": 0.015669431897846753,
+        "residual_over_floor": 12.110768774542782,
+        "stop": "converged"
+      },
+      "density_branch": "Liquid",
+      "reference": {
+        "molality": 0.0,
+        "convergence_error": 0.0,
+        "solvent_cause": "",
+        "solvent_convergence": null,
+        "solver_options": [
+          {
+            "name": "ASSOCIATION_RESIDUAL",
+            "value": 2e-13,
+            "unit": "1 (mass action)",
+            "default": 2e-13
+          },
+          {
+            "name": "DENSITY_ROOT_RESIDUAL",
+            "value": 1e-12,
+            "unit": "1 (reduced pressure)",
+            "default": 1e-12
+          },
+          {
+            "name": "EQUILIBRIUM_ROW_RESIDUAL",
+            "value": 1e-10,
+            "unit": "1 (classified rows)",
+            "default": 1e-10
+          }
+        ]
+      },
+      "status": "Available",
+      "solvent_activity": 0.9625230107347792,
+      "water_mole_fraction": 0.9487253419642546,
+      "normalization_error": 1.1102230246251565e-16,
+      "numerically_qualified": true,
+      "execution_run_id": "cc1f2d8c-8a43-4c66-89e4-572f6f7485d9"
+    },
+    {
+      "salt": "Cs2SO4",
+      "temperature_K": 303.15,
+      "quantity": "water_activity_coefficient",
+      "molality": 1,
+      "mode": "short-screening",
+      "value": 1.016625041781911,
+      "cause": "",
+      "component_ids": [
+        "water",
+        "cesium-cation",
+        "sulfate-anion"
+      ],
+      "composition": [
+        0.9487253419642546,
+        0.034183105357163596,
+        0.017091552678581798
+      ],
+      "declaration_sha256": "0cbdf0095423194ed29aabfc958e80d768f9b6c2cdb65f4ab2dde4a386cf8868",
+      "pressure": 99999.99999987446,
+      "pressure_density_derivative": 74124.4523665393,
+      "density_convergence": {
+        "amplification": 1865.7177765258818,
+        "amplification_over_declared": 373.1435553051764,
+        "contraction": null,
+        "criterion": {
+          "category": "AlgorithmTolerance",
+          "factor": 5.0,
+          "name": "DENSITY_ROOT_RESIDUAL",
+          "source": "bracketed Newton on the reduced pressure residual; the tolerance is on the reduced residual; publish the bracket endpoint with smaller |P_calc-P_target|; relative pressure error is |r|/Z_target, with Z_target=P_target/(rho R T)",
+          "upstream": {
+            "category": "AlgorithmTolerance",
+            "factor": 1.0,
+            "name": "ASSOCIATION_RESIDUAL",
+            "source": "Newton reaches it in 3-8 steps from a warm start",
+            "upstream": null,
+            "value": 2e-13
+          },
+          "value": 1e-12
+        },
+        "evaluations": 8,
+        "floor": 1.2939632989398629e-15,
+        "iterations": 1,
+        "residual": 4.661852501253172e-15,
+        "residual_over_criterion": 0.004661852501253172,
+        "residual_over_floor": 3.6027702679609246,
+        "stop": "converged"
+      },
+      "density_branch": "Liquid",
+      "reference": {
+        "molality": 0.0,
+        "convergence_error": 0.0,
+        "solvent_cause": "",
+        "solvent_convergence": null,
+        "solver_options": [
+          {
+            "name": "ASSOCIATION_RESIDUAL",
+            "value": 2e-13,
+            "unit": "1 (mass action)",
+            "default": 2e-13
+          },
+          {
+            "name": "DENSITY_ROOT_RESIDUAL",
+            "value": 1e-12,
+            "unit": "1 (reduced pressure)",
+            "default": 1e-12
+          },
+          {
+            "name": "EQUILIBRIUM_ROW_RESIDUAL",
+            "value": 1e-10,
+            "unit": "1 (classified rows)",
+            "default": 1e-10
+          }
+        ]
+      },
+      "status": "Available",
+      "solvent_activity": 0.9644979404139681,
+      "water_mole_fraction": 0.9487253419642546,
+      "normalization_error": 0.0,
+      "numerically_qualified": true,
+      "execution_run_id": "cc1f2d8c-8a43-4c66-89e4-572f6f7485d9"
+    },
+    {
+      "salt": "Cs2SO4",
+      "temperature_K": 303.15,
+      "quantity": "water_activity_coefficient",
+      "molality": 1,
+      "mode": "fixed-dielectric",
+      "value": 1.0141795397224778,
+      "cause": "",
+      "component_ids": [
+        "water",
+        "cesium-cation",
+        "sulfate-anion"
+      ],
+      "composition": [
+        0.9487253419642546,
+        0.034183105357163596,
+        0.017091552678581798
+      ],
+      "declaration_sha256": "7ebd88d856b497d7e9d577d0bbe0d63db2073d3c512eb4e9e5880c2beab00e58",
+      "pressure": 100000.00000117655,
+      "pressure_density_derivative": 74083.57983812393,
+      "density_convergence": {
+        "amplification": 1866.5929678262971,
+        "amplification_over_declared": 373.31859356525945,
+        "contraction": null,
+        "criterion": {
+          "category": "AlgorithmTolerance",
+          "factor": 5.0,
+          "name": "DENSITY_ROOT_RESIDUAL",
+          "source": "bracketed Newton on the reduced pressure residual; the tolerance is on the reduced residual; publish the bracket endpoint with smaller |P_calc-P_target|; relative pressure error is |r|/Z_target, with Z_target=P_target/(rho R T)",
+          "upstream": {
+            "category": "AlgorithmTolerance",
+            "factor": 1.0,
+            "name": "ASSOCIATION_RESIDUAL",
+            "source": "Newton reaches it in 3-8 steps from a warm start",
+            "upstream": null,
+            "value": 2e-13
+          },
+          "value": 1e-12
+        },
+        "evaluations": 8,
+        "floor": 1.2938217980251252e-15,
+        "iterations": 1,
+        "residual": 9.70176630005204e-15,
+        "residual_over_criterion": 0.00970176630005204,
+        "residual_over_floor": 7.49853365808236,
+        "stop": "converged"
+      },
+      "density_branch": "Liquid",
+      "reference": {
+        "molality": 0.0,
+        "convergence_error": 0.0,
+        "solvent_cause": "",
+        "solvent_convergence": null,
+        "solver_options": [
+          {
+            "name": "ASSOCIATION_RESIDUAL",
+            "value": 2e-13,
+            "unit": "1 (mass action)",
+            "default": 2e-13
+          },
+          {
+            "name": "DENSITY_ROOT_RESIDUAL",
+            "value": 1e-12,
+            "unit": "1 (reduced pressure)",
+            "default": 1e-12
+          },
+          {
+            "name": "EQUILIBRIUM_ROW_RESIDUAL",
+            "value": 1e-10,
+            "unit": "1 (classified rows)",
+            "default": 1e-10
+          }
+        ]
+      },
+      "status": "Available",
+      "solvent_activity": 0.9621778306363581,
+      "water_mole_fraction": 0.9487253419642546,
+      "normalization_error": 0.0,
+      "numerically_qualified": true,
+      "execution_run_id": "cc1f2d8c-8a43-4c66-89e4-572f6f7485d9"
+    }
+  ],
+  "convention_probes": [
+    {
+      "figure": 4,
+      "panel": "a",
+      "salt": "KI",
+      "quantity": "water_activity_coefficient",
+      "mode": "primary",
+      "outcome": "not reproduced",
+      "source_rows": 8
+    },
+    {
+      "figure": 4,
+      "panel": "a",
+      "salt": "KI",
+      "quantity": "water_activity_coefficient",
+      "mode": "primary",
+      "outcome": "reproduced",
+      "source_rows": 8
+    },
+    {
+      "figure": 4,
+      "panel": "a",
+      "salt": "KI",
+      "quantity": "water_activity_coefficient",
+      "mode": "primary",
+      "outcome": "undetermined",
+      "source_rows": 4
+    },
+    {
+      "figure": 4,
+      "panel": "a",
+      "salt": "KI",
+      "quantity": "water_activity_coefficient",
+      "mode": "short-screening",
+      "outcome": "reproduced",
+      "source_rows": 16
+    },
+    {
+      "figure": 4,
+      "panel": "a",
+      "salt": "KI",
+      "quantity": "water_activity_coefficient",
+      "mode": "short-screening",
+      "outcome": "undetermined",
+      "source_rows": 4
+    },
+    {
+      "figure": 4,
+      "panel": "a",
+      "salt": "LiI",
+      "quantity": "water_activity_coefficient",
+      "mode": "primary",
+      "outcome": "not reproduced",
+      "source_rows": 1
+    },
+    {
+      "figure": 4,
+      "panel": "a",
+      "salt": "LiI",
+      "quantity": "water_activity_coefficient",
+      "mode": "primary",
+      "outcome": "reproduced",
+      "source_rows": 29
+    },
+    {
+      "figure": 4,
+      "panel": "a",
+      "salt": "LiI",
+      "quantity": "water_activity_coefficient",
+      "mode": "primary",
+      "outcome": "undetermined",
+      "source_rows": 1
+    },
+    {
+      "figure": 4,
+      "panel": "a",
+      "salt": "LiI",
+      "quantity": "water_activity_coefficient",
+      "mode": "short-screening",
+      "outcome": "reproduced",
+      "source_rows": 30
+    },
+    {
+      "figure": 4,
+      "panel": "a",
+      "salt": "LiI",
+      "quantity": "water_activity_coefficient",
+      "mode": "short-screening",
+      "outcome": "undetermined",
+      "source_rows": 1
+    },
+    {
+      "figure": 4,
+      "panel": "a",
+      "salt": "NaI",
+      "quantity": "water_activity_coefficient",
+      "mode": "primary",
+      "outcome": "not reproduced",
+      "source_rows": 1
+    },
+    {
+      "figure": 4,
+      "panel": "a",
+      "salt": "NaI",
+      "quantity": "water_activity_coefficient",
+      "mode": "primary",
+      "outcome": "reproduced",
+      "source_rows": 22
+    },
+    {
+      "figure": 4,
+      "panel": "a",
+      "salt": "NaI",
+      "quantity": "water_activity_coefficient",
+      "mode": "primary",
+      "outcome": "undetermined",
+      "source_rows": 2
+    },
+    {
+      "figure": 4,
+      "panel": "a",
+      "salt": "NaI",
+      "quantity": "water_activity_coefficient",
+      "mode": "short-screening",
+      "outcome": "reproduced",
+      "source_rows": 23
+    },
+    {
+      "figure": 4,
+      "panel": "a",
+      "salt": "NaI",
+      "quantity": "water_activity_coefficient",
+      "mode": "short-screening",
+      "outcome": "undetermined",
+      "source_rows": 2
+    },
+    {
+      "figure": 4,
+      "panel": "b",
+      "salt": "NaBr",
+      "quantity": "water_activity_coefficient",
+      "mode": "primary",
+      "outcome": "not reproduced",
+      "source_rows": 4
+    },
+    {
+      "figure": 4,
+      "panel": "b",
+      "salt": "NaBr",
+      "quantity": "water_activity_coefficient",
+      "mode": "primary",
+      "outcome": "reproduced",
+      "source_rows": 17
+    },
+    {
+      "figure": 4,
+      "panel": "b",
+      "salt": "NaBr",
+      "quantity": "water_activity_coefficient",
+      "mode": "primary",
+      "outcome": "undetermined",
+      "source_rows": 6
+    },
+    {
+      "figure": 4,
+      "panel": "b",
+      "salt": "NaBr",
+      "quantity": "water_activity_coefficient",
+      "mode": "short-screening",
+      "outcome": "reproduced",
+      "source_rows": 21
+    },
+    {
+      "figure": 4,
+      "panel": "b",
+      "salt": "NaBr",
+      "quantity": "water_activity_coefficient",
+      "mode": "short-screening",
+      "outcome": "undetermined",
+      "source_rows": 6
+    },
+    {
+      "figure": 4,
+      "panel": "b",
+      "salt": "NaCl",
+      "quantity": "water_activity_coefficient",
+      "mode": "primary",
+      "outcome": "not reproduced",
+      "source_rows": 10
+    },
+    {
+      "figure": 4,
+      "panel": "b",
+      "salt": "NaCl",
+      "quantity": "water_activity_coefficient",
+      "mode": "primary",
+      "outcome": "reproduced",
+      "source_rows": 11
+    },
+    {
+      "figure": 4,
+      "panel": "b",
+      "salt": "NaCl",
+      "quantity": "water_activity_coefficient",
+      "mode": "primary",
+      "outcome": "undetermined",
+      "source_rows": 2
+    },
+    {
+      "figure": 4,
+      "panel": "b",
+      "salt": "NaCl",
+      "quantity": "water_activity_coefficient",
+      "mode": "short-screening",
+      "outcome": "not reproduced",
+      "source_rows": 4
+    },
+    {
+      "figure": 4,
+      "panel": "b",
+      "salt": "NaCl",
+      "quantity": "water_activity_coefficient",
+      "mode": "short-screening",
+      "outcome": "reproduced",
+      "source_rows": 17
+    },
+    {
+      "figure": 4,
+      "panel": "b",
+      "salt": "NaCl",
+      "quantity": "water_activity_coefficient",
+      "mode": "short-screening",
+      "outcome": "undetermined",
+      "source_rows": 2
+    },
+    {
+      "figure": 4,
+      "panel": "b",
+      "salt": "NaI",
+      "quantity": "water_activity_coefficient",
+      "mode": "primary",
+      "outcome": "not reproduced",
+      "source_rows": 8
+    },
+    {
+      "figure": 4,
+      "panel": "b",
+      "salt": "NaI",
+      "quantity": "water_activity_coefficient",
+      "mode": "primary",
+      "outcome": "reproduced",
+      "source_rows": 13
+    },
+    {
+      "figure": 4,
+      "panel": "b",
+      "salt": "NaI",
+      "quantity": "water_activity_coefficient",
+      "mode": "primary",
+      "outcome": "undetermined",
+      "source_rows": 4
+    },
+    {
+      "figure": 4,
+      "panel": "b",
+      "salt": "NaI",
+      "quantity": "water_activity_coefficient",
+      "mode": "short-screening",
+      "outcome": "reproduced",
+      "source_rows": 21
+    },
+    {
+      "figure": 4,
+      "panel": "b",
+      "salt": "NaI",
+      "quantity": "water_activity_coefficient",
+      "mode": "short-screening",
+      "outcome": "undetermined",
+      "source_rows": 4
+    },
+    {
+      "figure": 5,
+      "panel": "Cs2SO4",
+      "salt": "Cs2SO4",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "primary",
+      "outcome": "not reproduced",
+      "source_rows": 31
+    },
+    {
+      "figure": 5,
+      "panel": "Cs2SO4",
+      "salt": "Cs2SO4",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "primary",
+      "outcome": "reproduced",
+      "source_rows": 31
+    },
+    {
+      "figure": 5,
+      "panel": "Cs2SO4",
+      "salt": "Cs2SO4",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "short-screening",
+      "outcome": "not reproduced",
+      "source_rows": 7
+    },
+    {
+      "figure": 5,
+      "panel": "Cs2SO4",
+      "salt": "Cs2SO4",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "short-screening",
+      "outcome": "reproduced",
+      "source_rows": 55
+    },
+    {
+      "figure": 5,
+      "panel": "CsBr",
+      "salt": "CsBr",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "primary",
+      "outcome": "not reproduced",
+      "source_rows": 28
+    },
+    {
+      "figure": 5,
+      "panel": "CsBr",
+      "salt": "CsBr",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "primary",
+      "outcome": "reproduced",
+      "source_rows": 14
+    },
+    {
+      "figure": 5,
+      "panel": "CsBr",
+      "salt": "CsBr",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "short-screening",
+      "outcome": "not reproduced",
+      "source_rows": 3
+    },
+    {
+      "figure": 5,
+      "panel": "CsBr",
+      "salt": "CsBr",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "short-screening",
+      "outcome": "reproduced",
+      "source_rows": 39
+    },
+    {
+      "figure": 5,
+      "panel": "CsCl",
+      "salt": "CsCl",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "primary",
+      "outcome": "not reproduced",
+      "source_rows": 31
+    },
+    {
+      "figure": 5,
+      "panel": "CsCl",
+      "salt": "CsCl",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "primary",
+      "outcome": "reproduced",
+      "source_rows": 2
+    },
+    {
+      "figure": 5,
+      "panel": "CsCl",
+      "salt": "CsCl",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "short-screening",
+      "outcome": "not reproduced",
+      "source_rows": 25
+    },
+    {
+      "figure": 5,
+      "panel": "CsCl",
+      "salt": "CsCl",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "short-screening",
+      "outcome": "reproduced",
+      "source_rows": 8
+    },
+    {
+      "figure": 5,
+      "panel": "CsF",
+      "salt": "CsF",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "primary",
+      "outcome": "not reproduced",
+      "source_rows": 47
+    },
+    {
+      "figure": 5,
+      "panel": "CsF",
+      "salt": "CsF",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "primary",
+      "outcome": "reproduced",
+      "source_rows": 23
+    },
+    {
+      "figure": 5,
+      "panel": "CsF",
+      "salt": "CsF",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "short-screening",
+      "outcome": "not reproduced",
+      "source_rows": 1
+    },
+    {
+      "figure": 5,
+      "panel": "CsF",
+      "salt": "CsF",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "short-screening",
+      "outcome": "reproduced",
+      "source_rows": 69
+    },
+    {
+      "figure": 5,
+      "panel": "CsI",
+      "salt": "CsI",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "primary",
+      "outcome": "not reproduced",
+      "source_rows": 40
+    },
+    {
+      "figure": 5,
+      "panel": "CsI",
+      "salt": "CsI",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "primary",
+      "outcome": "reproduced",
+      "source_rows": 4
+    },
+    {
+      "figure": 5,
+      "panel": "CsI",
+      "salt": "CsI",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "short-screening",
+      "outcome": "reproduced",
+      "source_rows": 44
+    },
+    {
+      "figure": 5,
+      "panel": "CsNO3",
+      "salt": "CsNO3",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "primary",
+      "outcome": "not reproduced",
+      "source_rows": 3
+    },
+    {
+      "figure": 5,
+      "panel": "CsNO3",
+      "salt": "CsNO3",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "primary",
+      "outcome": "reproduced",
+      "source_rows": 46
+    },
+    {
+      "figure": 5,
+      "panel": "CsNO3",
+      "salt": "CsNO3",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "short-screening",
+      "outcome": "not reproduced",
+      "source_rows": 20
+    },
+    {
+      "figure": 5,
+      "panel": "CsNO3",
+      "salt": "CsNO3",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "short-screening",
+      "outcome": "reproduced",
+      "source_rows": 29
+    },
+    {
+      "figure": 6,
+      "panel": "CsBr",
+      "salt": "CsBr",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "primary",
+      "outcome": "not reproduced",
+      "source_rows": 10
+    },
+    {
+      "figure": 6,
+      "panel": "CsBr",
+      "salt": "CsBr",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "primary",
+      "outcome": "reproduced",
+      "source_rows": 11
+    },
+    {
+      "figure": 6,
+      "panel": "CsBr",
+      "salt": "CsBr",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "primary",
+      "outcome": "undetermined",
+      "source_rows": 8
+    },
+    {
+      "figure": 6,
+      "panel": "CsBr",
+      "salt": "CsBr",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "short-screening",
+      "outcome": "reproduced",
+      "source_rows": 21
+    },
+    {
+      "figure": 6,
+      "panel": "CsBr",
+      "salt": "CsBr",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "short-screening",
+      "outcome": "undetermined",
+      "source_rows": 8
+    },
+    {
+      "figure": 6,
+      "panel": "KBr",
+      "salt": "KBr",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "primary",
+      "outcome": "not reproduced",
+      "source_rows": 8
+    },
+    {
+      "figure": 6,
+      "panel": "KBr",
+      "salt": "KBr",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "primary",
+      "outcome": "reproduced",
+      "source_rows": 31
+    },
+    {
+      "figure": 6,
+      "panel": "KBr",
+      "salt": "KBr",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "primary",
+      "outcome": "undetermined",
+      "source_rows": 10
+    },
+    {
+      "figure": 6,
+      "panel": "KBr",
+      "salt": "KBr",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "short-screening",
+      "outcome": "not reproduced",
+      "source_rows": 36
+    },
+    {
+      "figure": 6,
+      "panel": "KBr",
+      "salt": "KBr",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "short-screening",
+      "outcome": "reproduced",
+      "source_rows": 3
+    },
+    {
+      "figure": 6,
+      "panel": "KBr",
+      "salt": "KBr",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "short-screening",
+      "outcome": "undetermined",
+      "source_rows": 10
+    },
+    {
+      "figure": 6,
+      "panel": "LiBr",
+      "salt": "LiBr",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "primary",
+      "outcome": "not reproduced",
+      "source_rows": 35
+    },
+    {
+      "figure": 6,
+      "panel": "LiBr",
+      "salt": "LiBr",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "primary",
+      "outcome": "reproduced",
+      "source_rows": 8
+    },
+    {
+      "figure": 6,
+      "panel": "LiBr",
+      "salt": "LiBr",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "primary",
+      "outcome": "undetermined",
+      "source_rows": 7
+    },
+    {
+      "figure": 6,
+      "panel": "LiBr",
+      "salt": "LiBr",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "short-screening",
+      "outcome": "not reproduced",
+      "source_rows": 38
+    },
+    {
+      "figure": 6,
+      "panel": "LiBr",
+      "salt": "LiBr",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "short-screening",
+      "outcome": "reproduced",
+      "source_rows": 4
+    },
+    {
+      "figure": 6,
+      "panel": "LiBr",
+      "salt": "LiBr",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "short-screening",
+      "outcome": "undetermined",
+      "source_rows": 8
+    },
+    {
+      "figure": 6,
+      "panel": "NaBr",
+      "salt": "NaBr",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "primary",
+      "outcome": "not reproduced",
+      "source_rows": 20
+    },
+    {
+      "figure": 6,
+      "panel": "NaBr",
+      "salt": "NaBr",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "primary",
+      "outcome": "reproduced",
+      "source_rows": 14
+    },
+    {
+      "figure": 6,
+      "panel": "NaBr",
+      "salt": "NaBr",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "primary",
+      "outcome": "undetermined",
+      "source_rows": 13
+    },
+    {
+      "figure": 6,
+      "panel": "NaBr",
+      "salt": "NaBr",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "short-screening",
+      "outcome": "not reproduced",
+      "source_rows": 30
+    },
+    {
+      "figure": 6,
+      "panel": "NaBr",
+      "salt": "NaBr",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "short-screening",
+      "outcome": "reproduced",
+      "source_rows": 6
+    },
+    {
+      "figure": 6,
+      "panel": "NaBr",
+      "salt": "NaBr",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "short-screening",
+      "outcome": "undetermined",
+      "source_rows": 11
+    },
+    {
+      "figure": 6,
+      "panel": "RbBr",
+      "salt": "RbBr",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "primary",
+      "outcome": "not reproduced",
+      "source_rows": 21
+    },
+    {
+      "figure": 6,
+      "panel": "RbBr",
+      "salt": "RbBr",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "primary",
+      "outcome": "undetermined",
+      "source_rows": 16
+    },
+    {
+      "figure": 6,
+      "panel": "RbBr",
+      "salt": "RbBr",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "short-screening",
+      "outcome": "reproduced",
+      "source_rows": 21
+    },
+    {
+      "figure": 6,
+      "panel": "RbBr",
+      "salt": "RbBr",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "short-screening",
+      "outcome": "undetermined",
+      "source_rows": 16
+    },
+    {
+      "figure": 7,
+      "panel": "CsOH",
+      "salt": "CsOH",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "primary",
+      "outcome": "not reproduced",
+      "source_rows": 47
+    },
+    {
+      "figure": 7,
+      "panel": "CsOH",
+      "salt": "CsOH",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "primary",
+      "outcome": "reproduced",
+      "source_rows": 4
+    },
+    {
+      "figure": 7,
+      "panel": "CsOH",
+      "salt": "CsOH",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "primary",
+      "outcome": "undetermined",
+      "source_rows": 2
+    },
+    {
+      "figure": 7,
+      "panel": "CsOH",
+      "salt": "CsOH",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "short-screening",
+      "outcome": "reproduced",
+      "source_rows": 51
+    },
+    {
+      "figure": 7,
+      "panel": "CsOH",
+      "salt": "CsOH",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "short-screening",
+      "outcome": "undetermined",
+      "source_rows": 2
+    },
+    {
+      "figure": 7,
+      "panel": "KOH",
+      "salt": "KOH",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "primary",
+      "outcome": "not reproduced",
+      "source_rows": 31
+    },
+    {
+      "figure": 7,
+      "panel": "KOH",
+      "salt": "KOH",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "primary",
+      "outcome": "reproduced",
+      "source_rows": 9
+    },
+    {
+      "figure": 7,
+      "panel": "KOH",
+      "salt": "KOH",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "primary",
+      "outcome": "undetermined",
+      "source_rows": 4
+    },
+    {
+      "figure": 7,
+      "panel": "KOH",
+      "salt": "KOH",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "short-screening",
+      "outcome": "not reproduced",
+      "source_rows": 3
+    },
+    {
+      "figure": 7,
+      "panel": "KOH",
+      "salt": "KOH",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "short-screening",
+      "outcome": "reproduced",
+      "source_rows": 37
+    },
+    {
+      "figure": 7,
+      "panel": "KOH",
+      "salt": "KOH",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "short-screening",
+      "outcome": "undetermined",
+      "source_rows": 4
+    },
+    {
+      "figure": 7,
+      "panel": "LiOH",
+      "salt": "LiOH",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "primary",
+      "outcome": "not reproduced",
+      "source_rows": 29
+    },
+    {
+      "figure": 7,
+      "panel": "LiOH",
+      "salt": "LiOH",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "primary",
+      "outcome": "reproduced",
+      "source_rows": 16
+    },
+    {
+      "figure": 7,
+      "panel": "LiOH",
+      "salt": "LiOH",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "primary",
+      "outcome": "undetermined",
+      "source_rows": 3
+    },
+    {
+      "figure": 7,
+      "panel": "LiOH",
+      "salt": "LiOH",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "short-screening",
+      "outcome": "not reproduced",
+      "source_rows": 2
+    },
+    {
+      "figure": 7,
+      "panel": "LiOH",
+      "salt": "LiOH",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "short-screening",
+      "outcome": "reproduced",
+      "source_rows": 43
+    },
+    {
+      "figure": 7,
+      "panel": "LiOH",
+      "salt": "LiOH",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "short-screening",
+      "outcome": "undetermined",
+      "source_rows": 3
+    },
+    {
+      "figure": 7,
+      "panel": "NaOH",
+      "salt": "NaOH",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "primary",
+      "outcome": "not reproduced",
+      "source_rows": 31
+    },
+    {
+      "figure": 7,
+      "panel": "NaOH",
+      "salt": "NaOH",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "primary",
+      "outcome": "reproduced",
+      "source_rows": 17
+    },
+    {
+      "figure": 7,
+      "panel": "NaOH",
+      "salt": "NaOH",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "primary",
+      "outcome": "undetermined",
+      "source_rows": 7
+    },
+    {
+      "figure": 7,
+      "panel": "NaOH",
+      "salt": "NaOH",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "short-screening",
+      "outcome": "not reproduced",
+      "source_rows": 2
+    },
+    {
+      "figure": 7,
+      "panel": "NaOH",
+      "salt": "NaOH",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "short-screening",
+      "outcome": "reproduced",
+      "source_rows": 46
+    },
+    {
+      "figure": 7,
+      "panel": "NaOH",
+      "salt": "NaOH",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "short-screening",
+      "outcome": "undetermined",
+      "source_rows": 7
+    },
+    {
+      "figure": 8,
+      "panel": "b",
+      "salt": "RbCl",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "primary",
+      "outcome": "not reproduced",
+      "source_rows": 16
+    },
+    {
+      "figure": 8,
+      "panel": "b",
+      "salt": "RbCl",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "primary",
+      "outcome": "reproduced",
+      "source_rows": 4
+    },
+    {
+      "figure": 8,
+      "panel": "b",
+      "salt": "RbCl",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "primary",
+      "outcome": "undetermined",
+      "source_rows": 1
+    },
+    {
+      "figure": 8,
+      "panel": "b",
+      "salt": "RbCl",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "short-screening",
+      "outcome": "not reproduced",
+      "source_rows": 20
+    },
+    {
+      "figure": 8,
+      "panel": "b",
+      "salt": "RbCl",
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "mode": "short-screening",
+      "outcome": "reproduced",
+      "source_rows": 1
+    }
+  ],
+  "CsCl_case": [
+    {
+      "target_id": 1200,
+      "figure": 5,
+      "panel": "CsCl",
+      "salt": "CsCl",
+      "temperature_K": 298.15,
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "molality": 4.875,
+      "molality_half_width": 0.075,
+      "value": 0.4122596153846154,
+      "value_half_width": 0.0108173076923076,
+      "qa": "pass",
+      "cause": null,
+      "mode": "primary",
+      "native_value": 0.4765468661434341,
+      "signed_error": 0.0642872507588186,
+      "abscissae": "[4.8, 4.8375, 4.875, 4.9125, 4.95]",
+      "native_ordinates": "[0.4779362187213532, 0.4772413779205992, 0.4765468661434341, 0.4758526445996004, 0.4751586760449343]",
+      "outcome": "not reproduced",
+      "comparison_cause": "directional native range disjoint from source ordinate interval",
+      "execution_run_id": "cc1f2d8c-8a43-4c66-89e4-572f6f7485d9"
+    },
+    {
+      "target_id": 1200,
+      "figure": 5,
+      "panel": "CsCl",
+      "salt": "CsCl",
+      "temperature_K": 298.15,
+      "quantity": "mean_ionic_activity_coefficient_molal",
+      "molality": 4.875,
+      "molality_half_width": 0.075,
+      "value": 0.4122596153846154,
+      "value_half_width": 0.0108173076923076,
+      "qa": "pass",
+      "cause": null,
+      "mode": "short-screening",
+      "native_value": 0.4474231491475955,
+      "signed_error": 0.0351635337629801,
+      "abscissae": "[4.8, 4.8375, 4.875, 4.9125, 4.95]",
+      "native_ordinates": "[0.44882715349858326, 0.4481246388277444, 0.44742314914759557, 0.4467226366322196, 0.44602305516541085]",
+      "outcome": "not reproduced",
+      "comparison_cause": "directional native range disjoint from source ordinate interval",
+      "execution_run_id": "cc1f2d8c-8a43-4c66-89e4-572f6f7485d9"
+    }
+  ],
+  "basis_reference_term_audit": "Held 2008 Eqs. (8)-(10): formula-unit molality, stoichiometric ion sum and native molal conversion. Same T/P infinite-dilution ion reference; native terminal changes retained. Screening sigma and packing 0.88 sigma are separate; short-screening varies only the former. Constant 78.09 at 298.15 K; conditional Ascani-Held 2021 water dielectric off temperature. No Born term in Eq. (1). Same-sign ionic dispersion excluded by native family; packet unlike-ion k_ij=1 and water-ion k_ij=0 preserved. Water coefficient uses unchanged native composition and a_w/x_w reporting. No declaration defect established by delivered-r1 audit; no attribution of remaining curve differences to ion pairing."
+}

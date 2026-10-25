@@ -1,0 +1,13 @@
+parameter,component_i,component_j,value,source,provenance_status
+k_ij,Ethanol,H2O,-0.06167,Khudaida 2026 Table 7 reference 39,source_backed
+k_ij,Ethanol,Butanol,0.00154,Khudaida 2026 Table 7 reference 19,source_backed
+k_ij,Ethanol,Na+,0.05,Khudaida 2026 Table 7 reference 31,source_backed
+k_ij,Ethanol,Cl-,0.8,Khudaida 2026 Table 7 reference 31,source_backed
+k_ij,H2O,Butanol,-0.0071,Khudaida 2026 Table 7 reference 34,source_backed
+k_ij,H2O,Na+,-0.3,Khudaida 2026 Table 7 reference 31,source_backed
+k_ij,H2O,Cl-,-0.3,Khudaida 2026 Table 7 reference 31,source_backed
+k_ij,Butanol,Na+,0,Khudaida 2026 Table 7 explicit zero without a source reference,unresolved_explicit_zero
+k_ij,Butanol,Cl-,0,Khudaida 2026 Table 7 explicit zero without a source reference,unresolved_explicit_zero
+k_ij,Na+,Cl-,0.317,Khudaida 2026 Table 7 reference 30,source_backed
+l_ij,*,,,Khudaida 2026 does not supply this interaction family,unresolved_parameter_family
+k_hb_ij,*,,,Khudaida 2026 does not supply this interaction family,unresolved_parameter_family

@@ -1,0 +1,23 @@
+provenance_kind = "source-record-provenance-v1"
+schema_version = 1
+transformations = ["molarweight g/mol -> molar_mass kg/mol (decimal division before binary64)", "na, nb -> donor site a, acceptor site b; kappa_ab, epsilon_k_ab -> self edge", "Eqs. 2-3 -> wolbach-sandler rules both directions for every associating pair"]
+
+[[records]]
+retained_path = "parameters/parameters.json"
+sha256 = "10c9e8fb1a65c4e063b34165ef56590e3b6282cbcbbb1de990978c022e80bd73"
+origin_repository = "feos-org/feos"
+origin_commit = "af84e3f9da2fac2d102d449cd07cbbb48237617b"
+origin_tree = "1e7fb4770d9055b96d010e0b3f3f2d0241269508"
+origin_path = "parameters/pcsaft/gross2002.json"
+origin_sha256 = "9680ae8998565feabf6b3808bc2f11df288f55db049677ccebe08a937332c491"
+recipe = "data/tools/import_feos.py"
+
+[[records]]
+retained_path = "sources/record-accounting.csv"
+sha256 = "9b0f781a2efad4b0de8de73574946a8502c21456168621f5ff82d376dcc99ce4"
+origin_repository = "feos-org/feos"
+origin_commit = "af84e3f9da2fac2d102d449cd07cbbb48237617b"
+origin_tree = "1e7fb4770d9055b96d010e0b3f3f2d0241269508"
+origin_path = "parameters/pcsaft/gross2002.json"
+origin_sha256 = "9680ae8998565feabf6b3808bc2f11df288f55db049677ccebe08a937332c491"
+recipe = "data/tools/import_feos.py"

@@ -1,0 +1,32 @@
+provenance_kind = "source-record-provenance-v1"
+schema_version = 1
+transformations = ["molarweight g/mol -> molar_mass kg/mol (decimal division before binary64)", "na, nb -> donor site a, acceptor site b; acceptor-only records keep site b alone", "mu -> dipole_moment with dipole_count 1 (Gross-Vrabec 2006 as implemented by FeOs); no mu -> 0, 0"]
+
+[[records]]
+retained_path = "parameters/parameters.json"
+sha256 = "06ce938221db4f0dd7954bfcea728f2f411daec84f71f43cfe1c9662e93580fe"
+origin_repository = "feos-org/feos"
+origin_commit = "af84e3f9da2fac2d102d449cd07cbbb48237617b"
+origin_tree = "1e7fb4770d9055b96d010e0b3f3f2d0241269508"
+origin_path = "parameters/pcsaft/esper2023.json"
+origin_sha256 = "87fdcd8733245d90cd6ad9e9d7d0583bd3f7ffb3c4d67a25197190f289e2a679"
+recipe = "data/tools/import_feos.py"
+
+[[records]]
+retained_path = "sources/record-accounting.csv"
+sha256 = "617461c51881e838cd10146e6c091fa5f899e054ae978c92dd036ce87ebabcd0"
+origin_repository = "feos-org/feos"
+origin_commit = "af84e3f9da2fac2d102d449cd07cbbb48237617b"
+origin_tree = "1e7fb4770d9055b96d010e0b3f3f2d0241269508"
+origin_path = "parameters/pcsaft/esper2023.json"
+origin_sha256 = "87fdcd8733245d90cd6ad9e9d7d0583bd3f7ffb3c4d67a25197190f289e2a679"
+recipe = "data/tools/import_feos.py"
+
+[[records]]
+retained_path = "parameters/LICENSE-NOTICE.md"
+sha256 = "d60a11900cbff0d16b42f43aee09dc6bd0e36348612f389a9d26f66100645ff5"
+origin_repository = "tannerpolley/ePC-SAFT"
+origin_commit = "667861df3754726aeddc6ab2d5e2500a90d12be2"
+origin_tree = "c92ce1ceabb59c60c68bdfba3eaccad243d98a1d"
+origin_path = "data/packets/feos-esper-2023/1/packet.toml"
+recipe = "Extract the recorded MIT notice and CC BY-NC attribution into an adjacent per-file notice; no numerical changes."

@@ -1,0 +1,2 @@
+dataset,series,point_id,tie_line,phase,temperature_K,salt_wtfrac,x_water,x_ethanol,x_isobutanol,x_nacl,x_water_salt_free,x_ethanol_salt_free,x_isobutanol_salt_free,source_method,source_reference
+source_image,sigma_profile,1,,,,,,,,,,,,published_figure_image,Khudaida 2026 main Figure 10

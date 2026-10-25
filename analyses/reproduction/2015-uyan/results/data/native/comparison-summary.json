@@ -1,0 +1,13 @@
+{
+  "historical_commit": "566d57de5ec6b2bd36d1e1f0460b62a837e70e0e",
+  "historical_wheel_sha256": null,
+  "historical_rows": 30,
+  "native_rows": 30,
+  "missing_rows": [],
+  "unexpected_rows": [],
+  "comparisons": 238,
+  "misses": 189,
+  "maximum_relative_error": 59.589566888229804,
+  "maximum_composition_error": 0.5851705927164594,
+  "meaning": "Numerical comparison of the declared historical reconstruction, not physical validation or a global-stability test."
+}

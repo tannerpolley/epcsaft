@@ -1,0 +1,16 @@
+start 2026-10-12T17:55:34-06:00 load 26.30 14.98 10.78
+epcsaft_equilibrium prepared record 1 of at most 16
+stage1: accepted in 2.0 s
+stage2: accepted in 3.8 s
+stage3: accepted in 5.3 s
+stage4: accepted in 7.2 s
+stage5: accepted in 8.9 s
+opt1: accepted in 9.2 s
+opt2: accepted in 26.9 s
+opt3: accepted in 35.1 s
+design1: accepted in 1.8 s
+design2: accepted in 3.6 s
+design3: accepted in 16.4 s
+design4: accepted in 25.6 s
+derivatives: accepted in 38.5 s
+end 2026-10-12T17:58:41-06:00 load 12.41 14.09 11.22

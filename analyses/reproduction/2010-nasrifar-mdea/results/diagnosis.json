@@ -1,0 +1,68 @@
+{
+  "records": [
+    {
+      "name": "inverse-bubble",
+      "source_row_id": "6a/bubble/1",
+      "execution_identity": {
+        "parent_run_id": "ac17a817-364a-4c9f-97ca-5fb7b905f320",
+        "engine_provenance": [
+          "7b5721a9669877c91b3bfddf234cd8f34ec54180",
+          true
+        ],
+        "extension_sha256": "0954372a1b5a726bf95c4592f0db781bcbb89061d00f1457a6fe01da88527498",
+        "producer_sha256": "1a1a56c3ccc2079e460eb0169dcd6b43a6e71d494949a155e49a254b41f7c5cc",
+        "parent_result_sha256": "0ea47119343c0d776aaa5af3c81d6d6092414701a2fdd3f5e8791aa902c533be"
+      },
+      "temperature_K": 358.14061032075256,
+      "pressure_Pa": 40000.000000000015,
+      "success": true,
+      "residuals": [
+        -1.3322676295501878e-14,
+        3.1086244689504383e-15,
+        -6.636065498945008e-15,
+        8.881784197001252e-16,
+        0.0,
+        -1.3095471455873766e-16,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "message": "converged: residual 1.3322676295501878e-14 against EQUILIBRIUM_ROW_RESIDUAL 9.9999999999999994e-12 after 0 iterations, contraction absent, floor 3.8394161391230697e-11, amplification 0",
+      "requested_tolerance_met": true
+    },
+    {
+      "name": "MDEA-site-label-swap",
+      "source_row_id": "6a/bubble/1",
+      "execution_identity": {
+        "parent_run_id": "ac17a817-364a-4c9f-97ca-5fb7b905f320",
+        "engine_provenance": [
+          "7b5721a9669877c91b3bfddf234cd8f34ec54180",
+          true
+        ],
+        "extension_sha256": "0954372a1b5a726bf95c4592f0db781bcbb89061d00f1457a6fe01da88527498",
+        "producer_sha256": "1a1a56c3ccc2079e460eb0169dcd6b43a6e71d494949a155e49a254b41f7c5cc",
+        "parent_result_sha256": "0ea47119343c0d776aaa5af3c81d6d6092414701a2fdd3f5e8791aa902c533be"
+      },
+      "temperature_K": 358.1406103207524,
+      "pressure_Pa": 40000.0,
+      "success": true,
+      "residuals": [
+        1.3322676295501878e-14,
+        -3.552713678800501e-15,
+        2.9029404491341723e-16,
+        8.881784197001252e-16,
+        -4.440892098500626e-16,
+        -2.6190942911747533e-16,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "message": "converged: residual 1.3322676295501878e-14 against EQUILIBRIUM_ROW_RESIDUAL 9.9999999999999994e-12 after 0 iterations, contraction absent, floor 3.8394161391230717e-11, amplification 0",
+      "requested_tolerance_met": true
+    }
+  ],
+  "wall_seconds": 0.0023468770014005713,
+  "conclusion": "Tighter row tolerance, inverse pressure solve and site-label invariance do not explain the bubble-curve disagreement; cause undetermined. No parameter change adopted."
+}

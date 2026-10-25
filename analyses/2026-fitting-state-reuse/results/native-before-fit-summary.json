@@ -1,0 +1,27 @@
+{
+  "wheel_sha256": "28181e72e429c6e87fc6361082af1a7b21c8747e76bda65a1c30abb4a97402f2",
+  "input_sha256": "013f57c6390a821599942f33f22445e37904e50ee85f272ac153fd5073fe39ba",
+  "mode": "initial",
+  "states": 84,
+  "targets": 160,
+  "initial_cost": 40.20153733056146,
+  "final_cost": 40.20153733056146,
+  "physical": [
+    -0.06655083320547248,
+    0.1466880086746801,
+    0.5,
+    -1.0,
+    88.44665375790703
+  ],
+  "status": "limit_reached",
+  "message": "Maximum solver time reached. Total solver time: 9.894371e-05 >= 1.000000e-06.",
+  "residual_evaluations": 0,
+  "jacobian_evaluations": 1,
+  "trial_failures": 0,
+  "iterations": 1,
+  "residual_to_jacobian_promotions": 0,
+  "values_file": "results/corrected-initial.csv",
+  "values_sha256": "bda78a0f6db914be76107951309816144ee374d0de74b3afe6d53ab089f649fd",
+  "instrumentation_source": "scripts/pinned-hessian-packing-profile.cpp",
+  "instrumentation_source_sha256": "282543f164927d902f5c59ce955e8f62675b5d3a818a8c08955a22e82ec13435"
+}

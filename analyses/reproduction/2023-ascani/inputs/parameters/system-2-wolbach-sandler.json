@@ -1,0 +1,1199 @@
+{
+ "schema": "epcsaft.parameters",
+ "schema_version": 1,
+ "document_id": "ascani-2023-system-2-wolbach-sandler",
+ "document_version": 1,
+ "purpose": "external-document",
+ "sources": [
+  {
+   "source_id": "ascani-2023",
+   "citation": "Ascani, M.; Sadowski, G.; Held, C. Simultaneous Predictions of Chemical and Phase Equilibria in Systems with an Esterification Reaction Using PC-SAFT. Molecules 2023, 28, 1768.",
+   "doi": "10.3390/molecules28041768",
+   "use_basis": "Tables 1, 2 and 4; Appendix A Eqs. A4-A8"
+  }
+ ],
+ "domains": [
+  {
+   "domain_id": "system-2-353.6-K-1-bar",
+   "kind": "reported-conditions",
+   "temperature_min": {
+    "magnitude": 353.6,
+    "unit": "kelvin"
+   },
+   "temperature_max": {
+    "magnitude": 353.6,
+    "unit": "kelvin"
+   },
+   "pressure_min": {
+    "magnitude": 1,
+    "unit": "bar"
+   },
+   "pressure_max": {
+    "magnitude": 1,
+    "unit": "bar"
+   }
+  }
+ ],
+ "components": [
+  {
+   "component_id": "acetic-acid",
+   "aliases": [],
+   "coefficients": [
+    {
+     "identity": "component/acetic-acid/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 1.3402,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "Table 1 acetic-acid row",
+      "domain_id": "system-2-353.6-K-1-bar"
+     }
+    },
+    {
+     "identity": "component/acetic-acid/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 311.59,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "Table 1 acetic-acid row",
+      "domain_id": "system-2-353.6-K-1-bar"
+     }
+    },
+    {
+     "identity": "component/acetic-acid/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.8582,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "Table 1 acetic-acid row",
+      "domain_id": "system-2-353.6-K-1-bar"
+     }
+    }
+   ],
+   "fixed": {
+    "charge_number": {
+     "value": {
+      "magnitude": 0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "neutral",
+      "domain_id": "system-2-353.6-K-1-bar"
+     }
+    },
+    "molar_mass": {
+     "value": {
+      "magnitude": 60.05196,
+      "unit": "gram / mole"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "IUPAC atomic weights",
+      "domain_id": "system-2-353.6-K-1-bar"
+     }
+    }
+   }
+  },
+  {
+   "component_id": "1-hexanol",
+   "aliases": [],
+   "coefficients": [
+    {
+     "identity": "component/1-hexanol/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 3.5146,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "Table 1 1-hexanol row",
+      "domain_id": "system-2-353.6-K-1-bar"
+     }
+    },
+    {
+     "identity": "component/1-hexanol/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 262.32,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "Table 1 1-hexanol row",
+      "domain_id": "system-2-353.6-K-1-bar"
+     }
+    },
+    {
+     "identity": "component/1-hexanol/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.6735,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "Table 1 1-hexanol row",
+      "domain_id": "system-2-353.6-K-1-bar"
+     }
+    }
+   ],
+   "fixed": {
+    "charge_number": {
+     "value": {
+      "magnitude": 0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "neutral",
+      "domain_id": "system-2-353.6-K-1-bar"
+     }
+    },
+    "molar_mass": {
+     "value": {
+      "magnitude": 102.17476,
+      "unit": "gram / mole"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "IUPAC atomic weights",
+      "domain_id": "system-2-353.6-K-1-bar"
+     }
+    }
+   }
+  },
+  {
+   "component_id": "hexyl-acetate",
+   "aliases": [],
+   "coefficients": [
+    {
+     "identity": "component/hexyl-acetate/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 4.8847,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "Table 1 hexyl-acetate row",
+      "domain_id": "system-2-353.6-K-1-bar"
+     }
+    },
+    {
+     "identity": "component/hexyl-acetate/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 241.42,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "Table 1 hexyl-acetate row",
+      "domain_id": "system-2-353.6-K-1-bar"
+     }
+    },
+    {
+     "identity": "component/hexyl-acetate/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.5834,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "Table 1 hexyl-acetate row",
+      "domain_id": "system-2-353.6-K-1-bar"
+     }
+    }
+   ],
+   "fixed": {
+    "charge_number": {
+     "value": {
+      "magnitude": 0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "neutral",
+      "domain_id": "system-2-353.6-K-1-bar"
+     }
+    },
+    "molar_mass": {
+     "value": {
+      "magnitude": 144.21144,
+      "unit": "gram / mole"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "IUPAC atomic weights",
+      "domain_id": "system-2-353.6-K-1-bar"
+     }
+    }
+   }
+  },
+  {
+   "component_id": "water",
+   "aliases": [],
+   "coefficients": [
+    {
+     "identity": "component/water/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 1.2047,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "Table 1 water row",
+      "domain_id": "system-2-353.6-K-1-bar"
+     }
+    },
+    {
+     "identity": "component/water/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 353.95,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "Table 1 water row",
+      "domain_id": "system-2-353.6-K-1-bar"
+     }
+    }
+   ],
+   "fixed": {
+    "charge_number": {
+     "value": {
+      "magnitude": 0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "neutral",
+      "domain_id": "system-2-353.6-K-1-bar"
+     }
+    },
+    "molar_mass": {
+     "value": {
+      "magnitude": 18.01528,
+      "unit": "gram / mole"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "IUPAC atomic weights",
+      "domain_id": "system-2-353.6-K-1-bar"
+     }
+    }
+   }
+  }
+ ],
+ "pairs": [
+  {
+   "component_id_a": "acetic-acid",
+   "component_id_b": "1-hexanol",
+   "coefficients": [
+    {
+     "identity": "pair/acetic-acid/1-hexanol/k_ij",
+     "family": "k_ij",
+     "value": {
+      "magnitude": -0.033,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "Table 2, Eq. A8 at 353.6 K",
+      "domain_id": "system-2-353.6-K-1-bar"
+     }
+    },
+    {
+     "identity": "pair/acetic-acid/1-hexanol/l_ij",
+     "family": "l_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "Eq. A4 has no l_ij",
+      "domain_id": "system-2-353.6-K-1-bar"
+     }
+    }
+   ]
+  },
+  {
+   "component_id_a": "acetic-acid",
+   "component_id_b": "hexyl-acetate",
+   "coefficients": [
+    {
+     "identity": "pair/acetic-acid/hexyl-acetate/k_ij",
+     "family": "k_ij",
+     "value": {
+      "magnitude": -0.10218000000000002,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "Table 2, Eq. A8 at 353.6 K",
+      "domain_id": "system-2-353.6-K-1-bar"
+     }
+    },
+    {
+     "identity": "pair/acetic-acid/hexyl-acetate/l_ij",
+     "family": "l_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "Eq. A4 has no l_ij",
+      "domain_id": "system-2-353.6-K-1-bar"
+     }
+    }
+   ]
+  },
+  {
+   "component_id_a": "acetic-acid",
+   "component_id_b": "water",
+   "coefficients": [
+    {
+     "identity": "pair/acetic-acid/water/k_ij",
+     "family": "k_ij",
+     "value": {
+      "magnitude": -0.1247,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "Table 2, Eq. A8 at 353.6 K",
+      "domain_id": "system-2-353.6-K-1-bar"
+     }
+    },
+    {
+     "identity": "pair/acetic-acid/water/l_ij",
+     "family": "l_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "Eq. A4 has no l_ij",
+      "domain_id": "system-2-353.6-K-1-bar"
+     }
+    }
+   ]
+  },
+  {
+   "component_id_a": "1-hexanol",
+   "component_id_b": "hexyl-acetate",
+   "coefficients": [
+    {
+     "identity": "pair/1-hexanol/hexyl-acetate/k_ij",
+     "family": "k_ij",
+     "value": {
+      "magnitude": -0.0042,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "Table 2, Eq. A8 at 353.6 K",
+      "domain_id": "system-2-353.6-K-1-bar"
+     }
+    },
+    {
+     "identity": "pair/1-hexanol/hexyl-acetate/l_ij",
+     "family": "l_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "Eq. A4 has no l_ij",
+      "domain_id": "system-2-353.6-K-1-bar"
+     }
+    }
+   ]
+  },
+  {
+   "component_id_a": "1-hexanol",
+   "component_id_b": "water",
+   "coefficients": [
+    {
+     "identity": "pair/1-hexanol/water/k_ij",
+     "family": "k_ij",
+     "value": {
+      "magnitude": 0.032506800000000016,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "Table 2, Eq. A8 at 353.6 K",
+      "domain_id": "system-2-353.6-K-1-bar"
+     }
+    },
+    {
+     "identity": "pair/1-hexanol/water/l_ij",
+     "family": "l_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "Eq. A4 has no l_ij",
+      "domain_id": "system-2-353.6-K-1-bar"
+     }
+    }
+   ]
+  },
+  {
+   "component_id_a": "hexyl-acetate",
+   "component_id_b": "water",
+   "coefficients": [
+    {
+     "identity": "pair/hexyl-acetate/water/k_ij",
+     "family": "k_ij",
+     "value": {
+      "magnitude": 0.07317500000000007,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "Table 2, Eq. A8 at 353.6 K",
+      "domain_id": "system-2-353.6-K-1-bar"
+     }
+    },
+    {
+     "identity": "pair/hexyl-acetate/water/l_ij",
+     "family": "l_ij",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "ascani-2023",
+      "locator": "Eq. A4 has no l_ij",
+      "domain_id": "system-2-353.6-K-1-bar"
+     }
+    }
+   ]
+  }
+ ],
+ "model_families": [
+  {
+   "family_id": "model/association",
+   "kind": "association",
+   "choice": "general-site",
+   "provenance": {
+    "source_id": "ascani-2023",
+    "locator": "Table 1 two-site association",
+    "domain_id": "system-2-353.6-K-1-bar"
+   }
+  },
+  {
+   "family_id": "model/base",
+   "kind": "base",
+   "choice": "pc-saft",
+   "provenance": {
+    "source_id": "ascani-2023",
+    "locator": "Eq. A3",
+    "domain_id": "system-2-353.6-K-1-bar"
+   }
+  },
+  {
+   "family_id": "model/electrolyte",
+   "kind": "electrolyte",
+   "choice": "none",
+   "provenance": {
+    "source_id": "ascani-2023",
+    "locator": "neutral components",
+    "domain_id": "system-2-353.6-K-1-bar"
+   }
+  },
+  {
+   "family_id": "model/permittivity",
+   "kind": "permittivity",
+   "choice": "none",
+   "provenance": {
+    "source_id": "ascani-2023",
+    "locator": "neutral components",
+    "domain_id": "system-2-353.6-K-1-bar"
+   }
+  }
+ ],
+ "model_coefficients": [],
+ "correlations": [
+  {
+   "correlation_id": "component/water/segment_diameter/constant-plus-sum-of-exponentials",
+   "component_id": "water",
+   "family": "segment_diameter",
+   "form": "constant-plus-sum-of-exponentials",
+   "independent_variables": [
+    "temperature"
+   ],
+   "constant": {
+    "identity": "component/water/segment_diameter/constant-plus-sum-of-exponentials/constant",
+    "value": {
+     "magnitude": 2.7927,
+     "unit": "angstrom"
+    }
+   },
+   "provenance": {
+    "source_id": "ascani-2023",
+    "locator": "Table 1 water sigma footnote",
+    "domain_id": "system-2-353.6-K-1-bar"
+   },
+   "terms": [
+    {
+     "amplitude": {
+      "identity": "component/water/segment_diameter/constant-plus-sum-of-exponentials/term-0/amplitude",
+      "value": {
+       "magnitude": 10.11,
+       "unit": "angstrom"
+      }
+     },
+     "exponent_coefficient": {
+      "identity": "component/water/segment_diameter/constant-plus-sum-of-exponentials/term-0/exponent_coefficient",
+      "value": {
+       "magnitude": -0.01775,
+       "unit": "1 / kelvin"
+      }
+     }
+    },
+    {
+     "amplitude": {
+      "identity": "component/water/segment_diameter/constant-plus-sum-of-exponentials/term-1/amplitude",
+      "value": {
+       "magnitude": -1.417,
+       "unit": "angstrom"
+      }
+     },
+     "exponent_coefficient": {
+      "identity": "component/water/segment_diameter/constant-plus-sum-of-exponentials/term-1/exponent_coefficient",
+      "value": {
+       "magnitude": -0.01146,
+       "unit": "1 / kelvin"
+      }
+     }
+    }
+   ]
+  }
+ ],
+ "topology": {
+  "presets": [],
+  "sites": [
+   {
+    "component_id": "acetic-acid",
+    "site_id": "a",
+    "site_role": "donor",
+    "multiplicity": 1,
+    "provenance": {
+     "source_id": "ascani-2023",
+     "locator": "Table 1 acetic-acid N_i = 2",
+     "domain_id": "system-2-353.6-K-1-bar"
+    }
+   },
+   {
+    "component_id": "acetic-acid",
+    "site_id": "b",
+    "site_role": "acceptor",
+    "multiplicity": 1,
+    "provenance": {
+     "source_id": "ascani-2023",
+     "locator": "Table 1 acetic-acid N_i = 2",
+     "domain_id": "system-2-353.6-K-1-bar"
+    }
+   },
+   {
+    "component_id": "1-hexanol",
+    "site_id": "a",
+    "site_role": "donor",
+    "multiplicity": 1,
+    "provenance": {
+     "source_id": "ascani-2023",
+     "locator": "Table 1 1-hexanol N_i = 2",
+     "domain_id": "system-2-353.6-K-1-bar"
+    }
+   },
+   {
+    "component_id": "1-hexanol",
+    "site_id": "b",
+    "site_role": "acceptor",
+    "multiplicity": 1,
+    "provenance": {
+     "source_id": "ascani-2023",
+     "locator": "Table 1 1-hexanol N_i = 2",
+     "domain_id": "system-2-353.6-K-1-bar"
+    }
+   },
+   {
+    "component_id": "hexyl-acetate",
+    "site_id": "a",
+    "site_role": "donor",
+    "multiplicity": 1,
+    "provenance": {
+     "source_id": "ascani-2023",
+     "locator": "Table 1 hexyl-acetate N_i = 2",
+     "domain_id": "system-2-353.6-K-1-bar"
+    }
+   },
+   {
+    "component_id": "hexyl-acetate",
+    "site_id": "b",
+    "site_role": "acceptor",
+    "multiplicity": 1,
+    "provenance": {
+     "source_id": "ascani-2023",
+     "locator": "Table 1 hexyl-acetate N_i = 2",
+     "domain_id": "system-2-353.6-K-1-bar"
+    }
+   },
+   {
+    "component_id": "water",
+    "site_id": "a",
+    "site_role": "donor",
+    "multiplicity": 1,
+    "provenance": {
+     "source_id": "ascani-2023",
+     "locator": "Table 1 water N_i = 2",
+     "domain_id": "system-2-353.6-K-1-bar"
+    }
+   },
+   {
+    "component_id": "water",
+    "site_id": "b",
+    "site_role": "acceptor",
+    "multiplicity": 1,
+    "provenance": {
+     "source_id": "ascani-2023",
+     "locator": "Table 1 water N_i = 2",
+     "domain_id": "system-2-353.6-K-1-bar"
+    }
+   }
+  ],
+  "edges": [
+   {
+    "endpoint_a": {
+     "component_id": "acetic-acid",
+     "site_id": "a"
+    },
+    "endpoint_b": {
+     "component_id": "acetic-acid",
+     "site_id": "b"
+    },
+    "energy_over_k": {
+     "identity": "association/acetic-acid/a/acetic-acid/b/energy_over_k",
+     "value": {
+      "magnitude": 3044.4,
+      "unit": "kelvin"
+     }
+    },
+    "volume": {
+     "identity": "association/acetic-acid/a/acetic-acid/b/volume",
+     "value": {
+      "magnitude": 0.07555,
+      "unit": "dimensionless"
+     }
+    },
+    "source": {
+     "kind": "explicit",
+     "provenance": [
+      {
+       "source_id": "ascani-2023",
+       "locator": "Table 1 acetic-acid association",
+       "domain_id": "system-2-353.6-K-1-bar"
+      }
+     ]
+    }
+   },
+   {
+    "endpoint_a": {
+     "component_id": "1-hexanol",
+     "site_id": "a"
+    },
+    "endpoint_b": {
+     "component_id": "1-hexanol",
+     "site_id": "b"
+    },
+    "energy_over_k": {
+     "identity": "association/1-hexanol/a/1-hexanol/b/energy_over_k",
+     "value": {
+      "magnitude": 2538.9,
+      "unit": "kelvin"
+     }
+    },
+    "volume": {
+     "identity": "association/1-hexanol/a/1-hexanol/b/volume",
+     "value": {
+      "magnitude": 0.00575,
+      "unit": "dimensionless"
+     }
+    },
+    "source": {
+     "kind": "explicit",
+     "provenance": [
+      {
+       "source_id": "ascani-2023",
+       "locator": "Table 1 1-hexanol association",
+       "domain_id": "system-2-353.6-K-1-bar"
+      }
+     ]
+    }
+   },
+   {
+    "endpoint_a": {
+     "component_id": "hexyl-acetate",
+     "site_id": "a"
+    },
+    "endpoint_b": {
+     "component_id": "hexyl-acetate",
+     "site_id": "b"
+    },
+    "energy_over_k": {
+     "identity": "association/hexyl-acetate/a/hexyl-acetate/b/energy_over_k",
+     "value": {
+      "magnitude": 0.0,
+      "unit": "kelvin"
+     }
+    },
+    "volume": {
+     "identity": "association/hexyl-acetate/a/hexyl-acetate/b/volume",
+     "value": {
+      "magnitude": 0.04509,
+      "unit": "dimensionless"
+     }
+    },
+    "source": {
+     "kind": "explicit",
+     "provenance": [
+      {
+       "source_id": "ascani-2023",
+       "locator": "Table 1 hexyl-acetate association",
+       "domain_id": "system-2-353.6-K-1-bar"
+      }
+     ]
+    }
+   },
+   {
+    "endpoint_a": {
+     "component_id": "water",
+     "site_id": "a"
+    },
+    "endpoint_b": {
+     "component_id": "water",
+     "site_id": "b"
+    },
+    "energy_over_k": {
+     "identity": "association/water/a/water/b/energy_over_k",
+     "value": {
+      "magnitude": 2425.7,
+      "unit": "kelvin"
+     }
+    },
+    "volume": {
+     "identity": "association/water/a/water/b/volume",
+     "value": {
+      "magnitude": 0.04509,
+      "unit": "dimensionless"
+     }
+    },
+    "source": {
+     "kind": "explicit",
+     "provenance": [
+      {
+       "source_id": "ascani-2023",
+       "locator": "Table 1 water association",
+       "domain_id": "system-2-353.6-K-1-bar"
+      }
+     ]
+    }
+   },
+   {
+    "endpoint_a": {
+     "component_id": "acetic-acid",
+     "site_id": "a"
+    },
+    "endpoint_b": {
+     "component_id": "1-hexanol",
+     "site_id": "b"
+    },
+    "source": {
+     "kind": "combining-rule",
+     "rule_id": "wolbach-sandler",
+     "inputs": {
+      "energy_over_k": [
+       "association/acetic-acid/a/acetic-acid/b/energy_over_k",
+       "association/1-hexanol/a/1-hexanol/b/energy_over_k"
+      ],
+      "volume": [
+       "association/acetic-acid/a/acetic-acid/b/volume",
+       "association/1-hexanol/a/1-hexanol/b/volume"
+      ]
+     },
+     "provenance": [
+      {
+       "source_id": "ascani-2023",
+       "locator": "Eq. A6; Eq. A7 bracket cubed (Gross 2002 Eqs. 2-3)",
+       "domain_id": "system-2-353.6-K-1-bar"
+      }
+     ]
+    }
+   },
+   {
+    "endpoint_a": {
+     "component_id": "acetic-acid",
+     "site_id": "b"
+    },
+    "endpoint_b": {
+     "component_id": "1-hexanol",
+     "site_id": "a"
+    },
+    "source": {
+     "kind": "combining-rule",
+     "rule_id": "wolbach-sandler",
+     "inputs": {
+      "energy_over_k": [
+       "association/acetic-acid/a/acetic-acid/b/energy_over_k",
+       "association/1-hexanol/a/1-hexanol/b/energy_over_k"
+      ],
+      "volume": [
+       "association/acetic-acid/a/acetic-acid/b/volume",
+       "association/1-hexanol/a/1-hexanol/b/volume"
+      ]
+     },
+     "provenance": [
+      {
+       "source_id": "ascani-2023",
+       "locator": "Eq. A6; Eq. A7 bracket cubed (Gross 2002 Eqs. 2-3)",
+       "domain_id": "system-2-353.6-K-1-bar"
+      }
+     ]
+    }
+   },
+   {
+    "endpoint_a": {
+     "component_id": "acetic-acid",
+     "site_id": "a"
+    },
+    "endpoint_b": {
+     "component_id": "hexyl-acetate",
+     "site_id": "b"
+    },
+    "source": {
+     "kind": "combining-rule",
+     "rule_id": "wolbach-sandler",
+     "inputs": {
+      "energy_over_k": [
+       "association/acetic-acid/a/acetic-acid/b/energy_over_k",
+       "association/hexyl-acetate/a/hexyl-acetate/b/energy_over_k"
+      ],
+      "volume": [
+       "association/acetic-acid/a/acetic-acid/b/volume",
+       "association/hexyl-acetate/a/hexyl-acetate/b/volume"
+      ]
+     },
+     "provenance": [
+      {
+       "source_id": "ascani-2023",
+       "locator": "Eq. A6; Eq. A7 bracket cubed (Gross 2002 Eqs. 2-3)",
+       "domain_id": "system-2-353.6-K-1-bar"
+      }
+     ]
+    }
+   },
+   {
+    "endpoint_a": {
+     "component_id": "acetic-acid",
+     "site_id": "b"
+    },
+    "endpoint_b": {
+     "component_id": "hexyl-acetate",
+     "site_id": "a"
+    },
+    "source": {
+     "kind": "combining-rule",
+     "rule_id": "wolbach-sandler",
+     "inputs": {
+      "energy_over_k": [
+       "association/acetic-acid/a/acetic-acid/b/energy_over_k",
+       "association/hexyl-acetate/a/hexyl-acetate/b/energy_over_k"
+      ],
+      "volume": [
+       "association/acetic-acid/a/acetic-acid/b/volume",
+       "association/hexyl-acetate/a/hexyl-acetate/b/volume"
+      ]
+     },
+     "provenance": [
+      {
+       "source_id": "ascani-2023",
+       "locator": "Eq. A6; Eq. A7 bracket cubed (Gross 2002 Eqs. 2-3)",
+       "domain_id": "system-2-353.6-K-1-bar"
+      }
+     ]
+    }
+   },
+   {
+    "endpoint_a": {
+     "component_id": "acetic-acid",
+     "site_id": "a"
+    },
+    "endpoint_b": {
+     "component_id": "water",
+     "site_id": "b"
+    },
+    "source": {
+     "kind": "combining-rule",
+     "rule_id": "wolbach-sandler",
+     "inputs": {
+      "energy_over_k": [
+       "association/acetic-acid/a/acetic-acid/b/energy_over_k",
+       "association/water/a/water/b/energy_over_k"
+      ],
+      "volume": [
+       "association/acetic-acid/a/acetic-acid/b/volume",
+       "association/water/a/water/b/volume"
+      ]
+     },
+     "provenance": [
+      {
+       "source_id": "ascani-2023",
+       "locator": "Eq. A6; Eq. A7 bracket cubed (Gross 2002 Eqs. 2-3)",
+       "domain_id": "system-2-353.6-K-1-bar"
+      }
+     ]
+    }
+   },
+   {
+    "endpoint_a": {
+     "component_id": "acetic-acid",
+     "site_id": "b"
+    },
+    "endpoint_b": {
+     "component_id": "water",
+     "site_id": "a"
+    },
+    "source": {
+     "kind": "combining-rule",
+     "rule_id": "wolbach-sandler",
+     "inputs": {
+      "energy_over_k": [
+       "association/acetic-acid/a/acetic-acid/b/energy_over_k",
+       "association/water/a/water/b/energy_over_k"
+      ],
+      "volume": [
+       "association/acetic-acid/a/acetic-acid/b/volume",
+       "association/water/a/water/b/volume"
+      ]
+     },
+     "provenance": [
+      {
+       "source_id": "ascani-2023",
+       "locator": "Eq. A6; Eq. A7 bracket cubed (Gross 2002 Eqs. 2-3)",
+       "domain_id": "system-2-353.6-K-1-bar"
+      }
+     ]
+    }
+   },
+   {
+    "endpoint_a": {
+     "component_id": "1-hexanol",
+     "site_id": "a"
+    },
+    "endpoint_b": {
+     "component_id": "hexyl-acetate",
+     "site_id": "b"
+    },
+    "source": {
+     "kind": "combining-rule",
+     "rule_id": "wolbach-sandler",
+     "inputs": {
+      "energy_over_k": [
+       "association/1-hexanol/a/1-hexanol/b/energy_over_k",
+       "association/hexyl-acetate/a/hexyl-acetate/b/energy_over_k"
+      ],
+      "volume": [
+       "association/1-hexanol/a/1-hexanol/b/volume",
+       "association/hexyl-acetate/a/hexyl-acetate/b/volume"
+      ]
+     },
+     "provenance": [
+      {
+       "source_id": "ascani-2023",
+       "locator": "Eq. A6; Eq. A7 bracket cubed (Gross 2002 Eqs. 2-3)",
+       "domain_id": "system-2-353.6-K-1-bar"
+      }
+     ]
+    }
+   },
+   {
+    "endpoint_a": {
+     "component_id": "1-hexanol",
+     "site_id": "b"
+    },
+    "endpoint_b": {
+     "component_id": "hexyl-acetate",
+     "site_id": "a"
+    },
+    "source": {
+     "kind": "combining-rule",
+     "rule_id": "wolbach-sandler",
+     "inputs": {
+      "energy_over_k": [
+       "association/1-hexanol/a/1-hexanol/b/energy_over_k",
+       "association/hexyl-acetate/a/hexyl-acetate/b/energy_over_k"
+      ],
+      "volume": [
+       "association/1-hexanol/a/1-hexanol/b/volume",
+       "association/hexyl-acetate/a/hexyl-acetate/b/volume"
+      ]
+     },
+     "provenance": [
+      {
+       "source_id": "ascani-2023",
+       "locator": "Eq. A6; Eq. A7 bracket cubed (Gross 2002 Eqs. 2-3)",
+       "domain_id": "system-2-353.6-K-1-bar"
+      }
+     ]
+    }
+   },
+   {
+    "endpoint_a": {
+     "component_id": "1-hexanol",
+     "site_id": "a"
+    },
+    "endpoint_b": {
+     "component_id": "water",
+     "site_id": "b"
+    },
+    "source": {
+     "kind": "combining-rule",
+     "rule_id": "wolbach-sandler",
+     "inputs": {
+      "energy_over_k": [
+       "association/1-hexanol/a/1-hexanol/b/energy_over_k",
+       "association/water/a/water/b/energy_over_k"
+      ],
+      "volume": [
+       "association/1-hexanol/a/1-hexanol/b/volume",
+       "association/water/a/water/b/volume"
+      ]
+     },
+     "provenance": [
+      {
+       "source_id": "ascani-2023",
+       "locator": "Eq. A6; Eq. A7 bracket cubed (Gross 2002 Eqs. 2-3)",
+       "domain_id": "system-2-353.6-K-1-bar"
+      }
+     ]
+    }
+   },
+   {
+    "endpoint_a": {
+     "component_id": "1-hexanol",
+     "site_id": "b"
+    },
+    "endpoint_b": {
+     "component_id": "water",
+     "site_id": "a"
+    },
+    "source": {
+     "kind": "combining-rule",
+     "rule_id": "wolbach-sandler",
+     "inputs": {
+      "energy_over_k": [
+       "association/1-hexanol/a/1-hexanol/b/energy_over_k",
+       "association/water/a/water/b/energy_over_k"
+      ],
+      "volume": [
+       "association/1-hexanol/a/1-hexanol/b/volume",
+       "association/water/a/water/b/volume"
+      ]
+     },
+     "provenance": [
+      {
+       "source_id": "ascani-2023",
+       "locator": "Eq. A6; Eq. A7 bracket cubed (Gross 2002 Eqs. 2-3)",
+       "domain_id": "system-2-353.6-K-1-bar"
+      }
+     ]
+    }
+   },
+   {
+    "endpoint_a": {
+     "component_id": "hexyl-acetate",
+     "site_id": "a"
+    },
+    "endpoint_b": {
+     "component_id": "water",
+     "site_id": "b"
+    },
+    "source": {
+     "kind": "combining-rule",
+     "rule_id": "wolbach-sandler",
+     "inputs": {
+      "energy_over_k": [
+       "association/hexyl-acetate/a/hexyl-acetate/b/energy_over_k",
+       "association/water/a/water/b/energy_over_k"
+      ],
+      "volume": [
+       "association/hexyl-acetate/a/hexyl-acetate/b/volume",
+       "association/water/a/water/b/volume"
+      ]
+     },
+     "provenance": [
+      {
+       "source_id": "ascani-2023",
+       "locator": "Eq. A6; Eq. A7 bracket cubed (Gross 2002 Eqs. 2-3)",
+       "domain_id": "system-2-353.6-K-1-bar"
+      }
+     ]
+    }
+   },
+   {
+    "endpoint_a": {
+     "component_id": "hexyl-acetate",
+     "site_id": "b"
+    },
+    "endpoint_b": {
+     "component_id": "water",
+     "site_id": "a"
+    },
+    "source": {
+     "kind": "combining-rule",
+     "rule_id": "wolbach-sandler",
+     "inputs": {
+      "energy_over_k": [
+       "association/hexyl-acetate/a/hexyl-acetate/b/energy_over_k",
+       "association/water/a/water/b/energy_over_k"
+      ],
+      "volume": [
+       "association/hexyl-acetate/a/hexyl-acetate/b/volume",
+       "association/water/a/water/b/volume"
+      ]
+     },
+     "provenance": [
+      {
+       "source_id": "ascani-2023",
+       "locator": "Eq. A6; Eq. A7 bracket cubed (Gross 2002 Eqs. 2-3)",
+       "domain_id": "system-2-353.6-K-1-bar"
+      }
+     ]
+    }
+   }
+  ]
+ }
+}

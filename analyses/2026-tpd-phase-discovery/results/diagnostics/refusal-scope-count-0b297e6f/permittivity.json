@@ -1,0 +1,110 @@
+{
+  "identity": {
+    "wheel": "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-223-build-tpd-stability-test-and-phase-35ebff8f/build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+    "wheel_sha256": "0b297e6f8e7c557c5b76986bc2f1a3266587793029bef63bdc3cb190d890a75b",
+    "script_sha256": "3c6d83672e59e43ec9ac81395c0f3b2bb153c7047c533c5563a536bca62b7321",
+    "baseline_script_sha256": "640a35eb50295dc97469ad32a7eb2836b5b9b5262c2a7d3d4b7293594a1c6d9f",
+    "source_mtimes": {
+      "engine/native/equilibrium/gibbs_minimizer.cpp": 1790931505488857342,
+      "engine/native/equilibrium/request_compile.cpp": 1790915612053935625
+    },
+    "thread_environment": {
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1"
+    },
+    "permittivity_script_sha256": "851555687c0cd7582cfa1379ea3915947dc680cfe767ade1fb05835cb5667af7"
+  },
+  "inputs": {
+    "permittivity/density-temperature": {
+      "path": "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json",
+      "sha256": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+      "components": [
+        "water",
+        "sodium-cation",
+        "chloride-anion"
+      ],
+      "defining_equations": "full-eos sections 6.1-6.4; density_correlated_bulk_permittivity / effective_dipolar_density / dipolar_correlation_integral / dipolar_perturbation_bulk_permittivity"
+    },
+    "permittivity/dipolar-perturbation": {
+      "path": "analyses/2026-dielectric-alternatives/inputs/selections/dipolar-perturbation.json",
+      "sha256": "fc4dc4c855e01aa48c95273cceee8b079d5c6710e38b987c1587126ad6e3176e",
+      "components": [
+        "water",
+        "sodium-cation",
+        "chloride-anion"
+      ],
+      "defining_equations": "full-eos sections 6.1-6.4; density_correlated_bulk_permittivity / effective_dipolar_density / dipolar_correlation_integral / dipolar_perturbation_bulk_permittivity"
+    },
+    "permittivity/ion-fraction-suppression": {
+      "components": [
+        "water",
+        "sodium-cation",
+        "chloride-anion"
+      ],
+      "T": 298.15,
+      "P": 100000.0,
+      "feed": {
+        "water": 0.98,
+        "sodium-cation": 0.01,
+        "chloride-anion": 0.01
+      },
+      "row_tolerance": 1e-10,
+      "phases": [
+        {
+          "name": "L",
+          "kind": "liquid",
+          "support": null,
+          "amount": {
+            "kind": "Free",
+            "value": null
+          },
+          "composition_guess": [
+            0.98,
+            0.01,
+            0.01
+          ],
+          "packing_guess": null
+        }
+      ]
+    }
+  },
+  "costs": {
+    "csv": "permittivity-costs.csv",
+    "sha256": "54552c634365f6c59a114c2aac46c50396b9844f49899a293d384334113de74a",
+    "samples": 19,
+    "first_report_work": "sample 0 native work references the identical reported CSV operands",
+    "count_aliases": "iterations/evaluations/Hessian counts alias native work where that map is present"
+  },
+  "failure": "RuntimeError: permittivity/ion-fraction-suppression: refused call performed numerical work: {'case': 'permittivity/ion-fraction-suppression', 'role': 'refused-discover', 'sample': 0, 'seconds': 0.0001586560028954409, 'trial_spans': 0, 'driver_finalizations': 0, 'hessian_calls': 0, 'iterations': 0, 'evaluations': 0, 'trace_work': {'driver_invocations': 0, 'driver_spans': 1, 'trial_invocations': 0, 'root_calls': 0, 'root_evaluations': 0}}",
+  "failures": [
+    "permittivity/ion-fraction-suppression: refused call performed numerical work: {'case': 'permittivity/ion-fraction-suppression', 'role': 'refused-discover', 'sample': 0, 'seconds': 0.0001586560028954409, 'trial_spans': 0, 'driver_finalizations': 0, 'hessian_calls': 0, 'iterations': 0, 'evaluations': 0, 'trace_work': {'driver_invocations': 0, 'driver_spans': 1, 'trial_invocations': 0, 'root_calls': 0, 'root_evaluations': 0}}"
+  ],
+  "unresolved": [
+    {
+      "case": "permittivity/density-temperature",
+      "trial": 0,
+      "seed": "positive-neutral-base",
+      "evidence": "indeterminate",
+      "message": "converged: residual 6.7531701349965172e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 11 iterations, contraction absent, floor 7.638335574634072e-11, amplification 0"
+    },
+    {
+      "case": "permittivity/dipolar-perturbation",
+      "trial": 0,
+      "seed": "positive-neutral-base",
+      "evidence": "indeterminate",
+      "message": "converged: residual 3.11471549657158e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 11 iterations, contraction absent, floor 7.6395824869079155e-11, amplification 0"
+    },
+    {
+      "case": "permittivity/dipolar-perturbation",
+      "trial": 1,
+      "seed": "near-pure-0",
+      "evidence": "indeterminate",
+      "message": "converged: residual 7.0519602754825828e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 8 iterations, contraction absent, floor 7.6395824869079051e-11, amplification 0"
+    }
+  ],
+  "limits": [
+    "numerical verification of the supplied model and finite trial set",
+    "estimated uncertainty is not a rigorous bound",
+    "no physical validation or global stability certificate"
+  ]
+}

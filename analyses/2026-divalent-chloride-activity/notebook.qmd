@@ -1,0 +1,8 @@
+---
+title: "Divalent chloride activity diagnosis"
+format: html
+execute:
+  enabled: false
+---
+
+{{< include README.md >}}

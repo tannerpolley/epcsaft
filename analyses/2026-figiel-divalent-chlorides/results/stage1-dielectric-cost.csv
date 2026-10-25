@@ -1,0 +1,21 @@
+suppression_c,group,metric,rows,max_abs_error,mean_abs_error
+7.01,"water, x_ion <= 0.14 (1:1 salt <= 4.5 mol/kg)",relative permittivity,25,6.757713957314948,2.922470748854405
+7.01,"water, all rows",relative permittivity,29,7.0299173096677166,3.197886215415209
+7.01,methanol,ratio to salt-free solvent,7,0.15613586595797402,0.117287583986172
+7.01,ethanol,ratio to salt-free solvent,11,0.2680478524769556,0.12164503265264721
+6.01,"water, x_ion <= 0.14 (1:1 salt <= 4.5 mol/kg)",relative permittivity,25,3.763559112782609,2.107920227287949
+6.01,"water, all rows",relative permittivity,29,8.605254847024625,2.6907566187881002
+6.01,methanol,ratio to salt-free solvent,7,0.19027815727528408,0.14000499976863906
+6.01,ethanol,ratio to salt-free solvent,11,0.2899239881213608,0.136909237366659
+5.01,"water, x_ion <= 0.14 (1:1 salt <= 4.5 mol/kg)",relative permittivity,25,6.221769121767615,1.6974705162737584
+5.01,"water, all rows",relative permittivity,29,12.127390918950447,2.575434728828626
+5.01,methanol,ratio to salt-free solvent,7,0.22820398709208567,0.1649333528539211
+5.01,ethanol,ratio to salt-free solvent,11,0.3130034989942396,0.1535440710131652
+4.01,"water, x_ion <= 0.14 (1:1 salt <= 4.5 mol/kg)",relative permittivity,25,9.723471786821072,3.0941363946907092
+4.01,"water, all rows",relative permittivity,29,16.46890976115069,4.33310028907852
+4.01,methanol,ratio to salt-free solvent,7,0.27625544242745187,0.19250569950971644
+4.01,ethanol,ratio to salt-free solvent,11,0.3373884872938572,0.17878713558937542
+3.01,"water, x_ion <= 0.14 (1:1 salt <= 4.5 mol/kg)",relative permittivity,25,13.706521008223085,4.965783315583747
+3.01,"water, all rows",relative permittivity,29,21.95337766561716,6.681410598023698
+3.01,methanol,ratio to salt-free solvent,7,0.33998330971043883,0.22329514982038878
+3.01,ethanol,ratio to salt-free solvent,11,0.3631929420931571,0.218779195806819

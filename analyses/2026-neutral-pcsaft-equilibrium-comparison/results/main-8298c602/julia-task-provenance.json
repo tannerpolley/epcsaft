@@ -1,0 +1,7 @@
+{
+  "executed_path": "analyses/2026-neutral-pcsaft-equilibrium-comparison/results/main-8298c602/saturation-task.jl",
+  "executed_source": "ENV[\"EPCSAFT_COMPARISON_T\"] = \"300.0\"\nENV[\"CLAPEYRON_OUTPUT\"] = joinpath(@__DIR__, \"clapeyron.json\")\ninclude(joinpath(@__DIR__, \"..\", \"..\", \"scripts\", \"collect_clapeyron.jl\"))\ndelete!(ENV, \"EPCSAFT_COMPARISON_T\")\ndelete!(ENV, \"CLAPEYRON_OUTPUT\")\n",
+  "executed_sha256": "5b2ebb9fdfc3622d76344d9f1e2b717fd6120b220158b52890b599104194f15e",
+  "rerun_task": "analyses/2026-neutral-pcsaft-equilibrium-comparison/scripts/saturation-task.jl",
+  "note": "The retained rerun task selects the same declared temperature and collector; relative output paths reflect its move into scripts."
+}

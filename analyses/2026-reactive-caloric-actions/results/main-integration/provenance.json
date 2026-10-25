@@ -1,0 +1,206 @@
+{
+  "source": {
+    "merge_revision": "f242f778565ff23a767eb74526d1e94413a56ffb",
+    "main_revision": "19a0c8258c3f5f6fca2258395eb54e07503b7efb",
+    "branch_revision": "e4342588ae7c1f7b5fc97d760ad58b14fec28037",
+    "controls": {
+      "OMP_NUM_THREADS": 1,
+      "OPENBLAS_NUM_THREADS": 1,
+      "MKL_NUM_THREADS": 1,
+      "EPCSAFT_BUILD_JOBS": 2,
+      "lock": "/tmp/epc-shared-env.lock",
+      "timeout": "30m",
+      "memory_cap": "8G",
+      "heavy_admission_wait": 0
+    },
+    "issue_body_sha256": "6f7882d2ac37a5d98f004d67ca240b55145a169f258820162fd0a3869f659d8d",
+    "files": {
+      "engine/native/properties/density.cpp": "cb6cd5f9d4d9e56fb91fc516faf72c0704c0adf2340cb73c84ff65155a34c90f",
+      "engine/native/properties/helmholtz_model.cpp": "5b15068e744ff9210a930f1a27a616e08dd1472ea9552ca16d36ef501b6dd2e4",
+      "build/current-calorics/main-integration/main-source/engine/native/properties/density.cpp": "cb6cd5f9d4d9e56fb91fc516faf72c0704c0adf2340cb73c84ff65155a34c90f",
+      "build/current-calorics/main-integration/main-source/engine/native/properties/helmholtz_model.cpp": "4439cebe91004b82f8bdea37805022fa3b901c2b4b5a5f67c1cd657092801e61"
+    },
+    "old_recordings": {
+      "branch": {
+        "rows": 580,
+        "recorded_at_revision": "960ad3c0674d7fd5da28fd6683e6f7038e7ce9e9",
+        "build_fingerprint": "5ee8316cca148d835ea433c1e5dd34357017caca626b2e6b2b713611b2b89728",
+        "wheel_sha256": "93c105d2101a73f836b5ee8eeab7119ecf04342b8946bf9eb8ca57df4d41c6c2",
+        "recording": "build/current-calorics/main-integration/branch-native-rows.tsv",
+        "recording_sha256": "e431cf645142b7dc9ebdc1fc9301dca90b178d78db4ef4d14eec3cd4f8d3f90c"
+      },
+      "main": {
+        "rows": 478,
+        "recorded_at_revision": "81cd85825fcf37ead7fc44f5c8084e5156036ab9",
+        "build_fingerprint": "3918686e884f7ace4a3afdd56df8fd4a12ed20d093a027f439c0d245ca4881cd",
+        "wheel_sha256": "835d9bc27b243acb6d2288f4911828be973f07dc0d20766f397538065a9368b0",
+        "recording": "build/current-calorics/main-integration/main-native-rows.tsv",
+        "recording_sha256": "1f2f34269d0c8f8f15fd970cd8646588b318b4cc19981167513f51fa4c89c4b5"
+      }
+    }
+  },
+  "integrated_preparation": {
+    "build_dir": "build/engine-meson/cpython-313-linux-x86_64-x86_64-f6db693e21e289603ae71c78242a17b102f1e324061021d5dca361f47a0bfef7",
+    "build_fingerprint": "ecde5250dfb6e40ff45ca8c72ca8a1063ec5991c2a738c37090c34ab73d335ad",
+    "schema_version": 1,
+    "wheel": "build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+    "wheel_sha256": "1cbf00c7e46a3380a15339c10ba68d57b9fe53472050c2aff55480a4c6bcaec8"
+  },
+  "main_preparation": {
+    "build_dir": "build/engine-meson/cpython-313-linux-x86_64-x86_64-f6db693e21e289603ae71c78242a17b102f1e324061021d5dca361f47a0bfef7",
+    "build_fingerprint": "b4fcd7e281913052b3dc9c6299db9277ef5ff09e2617ba937b7460e9c191eddc",
+    "schema_version": 1,
+    "wheel": "build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+    "wheel_sha256": "d763371800eadb607ebb8491fcfa5190ef2709077c9a721b3afd57dce7d545b3"
+  },
+  "retained_raw_directory": "build/current-calorics/main-integration",
+  "claim": "Numerical verification of integrated slices 1\u20133 and temperature scaling on the declared manufactured branches; no physical calorimetry, global stability, reacting constant-volume heat capacity or apparent-Cp F2/F7 qualification.",
+  "review": "Temperature correction Supported at e4342588; independent delivered review of this merged source remains open. No manuscript promotion.",
+  "classification": {
+    "density": 209,
+    "scaling": 36,
+    "both": 126,
+    "failed": 0,
+    "missing_reference": 0,
+    "changed_from_branch": 335,
+    "changed_from_main": 100,
+    "unchanged_in_both": 209
+  },
+  "diagnostic_corrections": [
+    {
+      "cause": "51 moved observations lacked a mapped independent comparison",
+      "evidence": "build/current-calorics/main-integration/classification-coverage-gap.txt",
+      "correction": "Attach existing R2 checks and original-criterion native R2/R3, P3/P4 and surface mathematical comparisons."
+    },
+    {
+      "cause": "Reducer applied an upper error bound to the required gauge discrimination",
+      "evidence": "build/current-calorics/main-integration/gauge-discrimination-reducer-diagnosis.txt",
+      "correction": "Preserve the native lower-bound discrimination; all thermodynamic criteria and tolerances remain unchanged."
+    },
+    {
+      "cause": "Final check-all rejected byte-identical timing state records as duplicate results",
+      "evidence": "build/current-calorics/main-integration/integrated/analysis-layout-failure-check-all.log",
+      "correction": "Retain one canonical state table and both distinct timing records. No scientific criterion changes."
+    },
+    {
+      "cause": "Plot lint check rejected five inherited E701/E702 one-line statements after all numerical gates passed",
+      "evidence": "build/current-calorics/main-integration/logs/plot-formatting-failure-final-gates.log",
+      "correction": "Split the statements onto separate lines; data, plotting series and all numerical criteria remain unchanged."
+    }
+  ],
+  "comparison_meaning": "Agreement ratios use the native allowed error. ReferenceLimits uses scaled terminal change/limit. Gauge discrimination requires abs(V_row-V_anchored)>10*target. Joint density, balance and Gram-matrix rows use their named residual metric; model/reference operands retain the reported quantity.",
+  "commands": [
+    {
+      "stage": "merged build and numerical qualification",
+      "command": "bash build/current-calorics/main-integration/lease.sh qualify bash build/current-calorics/main-integration/qualify.sh"
+    },
+    {
+      "stage": "initial independent references and intended main preparation; reducer exposed 51 missing row mappings",
+      "command": "bash build/current-calorics/main-integration/lease.sh references-main bash build/current-calorics/main-integration/references-and-main.sh",
+      "exit": 1
+    },
+    {
+      "stage": "additional original-criterion row references; reducer exposed gauge-discrimination interpretation",
+      "command": "bash build/current-calorics/main-integration/lease.sh row-coverage bash build/current-calorics/main-integration/row-coverage.sh",
+      "exit": 1
+    },
+    {
+      "stage": "main wheel",
+      "command": "bash build/current-calorics/main-integration/lease.sh main-wheel bash build/current-calorics/main-integration/main-wheel.sh"
+    },
+    {
+      "stage": "classification and warmed four-pair A/B",
+      "command": "bash build/current-calorics/main-integration/lease.sh classify-timing bash build/current-calorics/main-integration/classify-timing.sh"
+    },
+    {
+      "stage": "repeat warmed four-pair A/B",
+      "command": "bash build/current-calorics/main-integration/lease.sh timing-repeat bash build/current-calorics/main-integration/timing-repeat.sh"
+    },
+    {
+      "stage": "required final gates",
+      "command": "bash build/current-calorics/main-integration/lease.sh final-gates bash build/current-calorics/main-integration/final-gates.sh"
+    }
+  ],
+  "snapshots": "main-source was extracted with git archive 19a0c825 engine tools .codex; it uses the shared .venv and copied build dependency trees. All Engine calculations use native code and one installed non-editable wheel at a time.",
+  "sha256": {
+    "build/current-calorics/main-integration/logs/classify-timing-cleanup.txt": "80223ca084b4284fdcc9f0c5770db700ad468e5e0035f23c6165a033dbb385bc",
+    "build/current-calorics/main-integration/logs/classify-timing-restore-install.log": "c4f8291e9c588686ef2ef08ba18c1c001cfcdff311866eecc04153bc989b0832",
+    "build/current-calorics/main-integration/logs/classify-timing-restore-verify.log": "76c50932a18ad1f9ac7cecbb1174bdf882e6fec9eb3169477d89ab8782e1c371",
+    "build/current-calorics/main-integration/logs/classify-timing.cost.txt": "6a7ef33cb33795f88b4d5cf2543d0dc9d2c439dba7a21f329d56b59fd47b9661",
+    "build/current-calorics/main-integration/logs/classify-timing.log": "8191a098ec8592f1619863927c899bfa070ec62b1934f1e8af77acf1821af027",
+    "build/current-calorics/main-integration/logs/main-wheel-cleanup.txt": "e4b101478abe01cbeb22d64818303da59a1efc436fbce09533e47e078ecd042a",
+    "build/current-calorics/main-integration/logs/main-wheel-restore-install.log": "037c50f5a005959a4bf9feac8e19c9ec3bddc38dfba2b934639afc1da429fb15",
+    "build/current-calorics/main-integration/logs/main-wheel-restore-verify.log": "76c50932a18ad1f9ac7cecbb1174bdf882e6fec9eb3169477d89ab8782e1c371",
+    "build/current-calorics/main-integration/logs/main-wheel.cost.txt": "4c4be4051b055bb646a7a0edfac1eee6287e6b9a3f72f3aeb5fc80c2445ce1b2",
+    "build/current-calorics/main-integration/logs/main-wheel.log": "74ed9c816d2adf8fc87f514120883ef6be5b7bbd1bce67f386117bc10c484312",
+    "build/current-calorics/main-integration/logs/qualify-cleanup.txt": "a47d99452529ecb72117612ceb2e6fb9d541ce45f96868002a21514761ad3e07",
+    "build/current-calorics/main-integration/logs/qualify-restore-install.log": "bbea7dd7f3d6ba68ac01db1d107369c49fd0b3cbc9a99be7eabbcb06fbdf35f8",
+    "build/current-calorics/main-integration/logs/qualify-restore-verify.log": "76c50932a18ad1f9ac7cecbb1174bdf882e6fec9eb3169477d89ab8782e1c371",
+    "build/current-calorics/main-integration/logs/qualify.cost.txt": "56d27122a1af354459a34ff05e4b48a3cbe4b9159db4e532bda7a7cfb7efea83",
+    "build/current-calorics/main-integration/logs/qualify.log": "54ea601729cf11a3d92f60358f41661adc41a23ac83013544905db016075392c",
+    "build/current-calorics/main-integration/logs/references-main-cleanup.txt": "7868bb31e90be7eb8eee8b93ded5ee565c8cea15d5ee86d3287f07b4d2d668a6",
+    "build/current-calorics/main-integration/logs/references-main-restore-install.log": "b7c4190984543295b3a15daa5c0155b26edd4aae1a8dc74490e3a961be200393",
+    "build/current-calorics/main-integration/logs/references-main-restore-verify.log": "76c50932a18ad1f9ac7cecbb1174bdf882e6fec9eb3169477d89ab8782e1c371",
+    "build/current-calorics/main-integration/logs/references-main.cost.txt": "d3d4aae5a0688b9e9d78032773b69061f3b47b1efe9e15c49687586bf2ae958c",
+    "build/current-calorics/main-integration/logs/references-main.log": "5e9b766128bf0d4be4339d81375a850b65330520ed4ff54bff82f313ab2e9291",
+    "build/current-calorics/main-integration/logs/row-coverage-cleanup.txt": "d38f29549d0c24cf86f2a46a1b2b6649416d7d0611dcf6cc91ea7497310be887",
+    "build/current-calorics/main-integration/logs/row-coverage-restore-install.log": "3c50382f8c518bf950eb9dc76290c748e3e651bb4c54887826bc5cb4962862eb",
+    "build/current-calorics/main-integration/logs/row-coverage-restore-verify.log": "76c50932a18ad1f9ac7cecbb1174bdf882e6fec9eb3169477d89ab8782e1c371",
+    "build/current-calorics/main-integration/logs/row-coverage.cost.txt": "f97de3e2061207f038a3488246d63f4e8d0034da23c6987d2ae78b21b66cad3b",
+    "build/current-calorics/main-integration/logs/row-coverage.log": "c3a077a96653adebb4289e8cc67690e86b3ab00aba71dcadcea0140d53e1db64",
+    "build/current-calorics/main-integration/logs/timing-repeat-cleanup.txt": "c15e66565215c7f96311ec0bb10ec4ab083519439e61b53236a0793eed4e57b7",
+    "build/current-calorics/main-integration/logs/timing-repeat-restore-install.log": "1e727ae47fed4b33ce0eea737773e65d07ed640a6eb037e763993772caa0daef",
+    "build/current-calorics/main-integration/logs/timing-repeat-restore-verify.log": "76c50932a18ad1f9ac7cecbb1174bdf882e6fec9eb3169477d89ab8782e1c371",
+    "build/current-calorics/main-integration/logs/timing-repeat.cost.txt": "8ffd95c5646bd29689dc665eacdc132917bc850de627466c416dde01523485be",
+    "build/current-calorics/main-integration/logs/timing-repeat.log": "6bd453bb7b539bb5c19e2cc265a25a4a3b43199ee8e823ede1bd43ceac6f65f2",
+    "analyses/2026-reactive-caloric-actions/results/main-integration/reproduction/calorics.sh": "77e313a4ecc1b365463bd227e6d1542c57294e562e14f7c083c3698b717b2a18",
+    "analyses/2026-reactive-caloric-actions/results/main-integration/reproduction/classify.cpp": "4ccab73370eb4da83c8b02b019b2f7a90237104584500adf4b98710cf6d39563",
+    "analyses/2026-reactive-caloric-actions/results/main-integration/reproduction/final-gates.sh": "77360e5ef4a1a0f2bb6ae030ceb60f0b4be5d098f044457b30be4a4e62853b3c",
+    "analyses/2026-reactive-caloric-actions/results/main-integration/reproduction/fit-row-references.cpp": "2380785db0479610e859bf16c651c28a1cda3d4c7674d3b305b6ef2f55a3bc7d",
+    "analyses/2026-reactive-caloric-actions/results/main-integration/reproduction/fresh_rows.py": "bf3617f70ad2a64851d14386ff39f654c7388192d5c67ac322170f7639926c0a",
+    "analyses/2026-reactive-caloric-actions/results/main-integration/reproduction/gates.sh": "ba4dc303bd7813cd3c3fcf945ec432338b09922cc38bb24a1dc1afd78bc5df73",
+    "analyses/2026-reactive-caloric-actions/results/main-integration/reproduction/lease.sh": "a398530ddc917c5ce28a9aa9770edc4dd71f413b9f55d38e6acd7c16d6b3c5b5",
+    "analyses/2026-reactive-caloric-actions/results/main-integration/reproduction/main-wheel.sh": "a3363b2f648056f3cdd372cbcffa67cc755226282d73141a1babd0d2cef8d396",
+    "analyses/2026-reactive-caloric-actions/results/main-integration/reproduction/prediction-reference.cpp": "9da5560bb744f23196afd3f9369b142b51cb4828eb8a1e8697c89d0c2680a44f",
+    "analyses/2026-reactive-caloric-actions/results/main-integration/reproduction/prediction.sh": "5fa307cef9eb7af884b9cc1cbc2da96bd30e26e8b09de54d8bbe87b5954777fb",
+    "analyses/2026-reactive-caloric-actions/results/main-integration/reproduction/qualify.sh": "151db018143992e45872f4b599812bf2d08484f870b2c5d3a285048041790e48",
+    "analyses/2026-reactive-caloric-actions/results/main-integration/reproduction/reduce.sh": "d034ada244e5c5b862552dc406a2baa6f01b3f87dabbb096c334fabe756e9d35",
+    "analyses/2026-reactive-caloric-actions/results/main-integration/reproduction/references.sh": "ae2f38ada9b25a01f04cd7fdebe827895260c983bc92102e08b48a514f6a2cc7",
+    "analyses/2026-reactive-caloric-actions/results/main-integration/reproduction/refresh-rows.sh": "3a8a789afa06b994f39ec30e982de2f980ec80b925642f8389aa42f82a8ee8c5",
+    "analyses/2026-reactive-caloric-actions/results/main-integration/reproduction/row-coverage.sh": "c783be30bdaeb76e6c1e0d058c65b295c63873e47c9a54a12599d3b487535aaa",
+    "analyses/2026-reactive-caloric-actions/results/main-integration/reproduction/surface-equilibrium.cpp": "543af1b7710f7925b0737f14454ea665fb14e6d5dccc8dd744516560715bce5c",
+    "analyses/2026-reactive-caloric-actions/results/main-integration/reproduction/surface-properties.cpp": "9469dd3062b4a86dd4336f9f9f138c4227e2d8cdc8c7a4f116c91605826f7205",
+    "analyses/2026-reactive-caloric-actions/results/main-integration/reproduction/surface-state-references.cpp": "bc42666e6164d22f08aec79ab0f74dd9c95b0ebda6726096a282d4354dd1757b",
+    "analyses/2026-reactive-caloric-actions/results/main-integration/reproduction/temperature-extraction-transport.py": "53e43e47288768af5699e0254eeb438289d3a11d171d12ea1e8c816ed69d67ad",
+    "analyses/2026-reactive-caloric-actions/results/main-integration/reproduction/timing-and-reduce.sh": "5b5dc5c97f4e12c6360a8c984f57e35e96d7deab55fb41a4d2b17dcbbe74d8af",
+    "analyses/2026-reactive-caloric-actions/results/main-integration/reproduction/timing-reduce.sh": "c395e8bc0d8fa8aa4e47d1fbf038f7288c97ad5510e3fc2bfcf089632555bdf0",
+    "analyses/2026-reactive-caloric-actions/results/main-integration/reproduction/timing-repeat-transport.py": "0b6fbb9a286c6f97448d57f0d2551cdba30d1b3032c1696a1e9e4a5689f8c9bc",
+    "analyses/2026-reactive-caloric-actions/results/main-integration/reproduction/timing-repeat.sh": "b60ab49018b3a5f191b5f835794a0b490c9aa7f54e463ad01310f50a8171eb05",
+    "analyses/2026-reactive-caloric-actions/results/main-integration/reproduction/timing-summary.cpp": "fc86c932c5d638413fe8ddfbcdaccd930420e666072affaa230bc0b8c955c879",
+    "analyses/2026-reactive-caloric-actions/results/main-integration/reproduction/timing-transport.py": "673fcea084f9f391d2b4a55cc2103fc0eaa947dce4924a19e6ddece9e371dfb9",
+    "analyses/2026-reactive-caloric-actions/results/main-integration/reproduction/timing.py": "8d413611ca21f53a0936d307f1963e2979a5b0bb231b781515f9ae65e98f3c5b",
+    "analyses/2026-reactive-caloric-actions/results/main-integration/reproduction/timing.sh": "31aabfd76e4f6e22c21a8ef806478886c9aa0bc9dc95d1f3ebf515df1596c2d2",
+    "analyses/2026-reactive-caloric-actions/results/main-integration/reproduction/transport.py": "5338b9130bc717ef3ff5227d87537b73c4b37c717adf4947a32d8cae33e312f2"
+  },
+  "removed_main_only_entry": {
+    "source": "equilibrium_checks S2",
+    "id": "reference-calorics/parameter/reaction-c-at-Tref/order-refusal",
+    "unit": "1/K",
+    "value": "0.00044760141036436255",
+    "disposition": "Already superseded on the accepted #225 branch by the admitted mixed T/source-c action; original row retained in results/temperature-extraction/superseded-row.tsv."
+  },
+  "pre_scaling_recording": "analyses/2026-reactive-caloric-actions/results/temperature-extraction/merged-native-rows.tsv; byte-identical to the pre-scaling build recording.",
+  "canonical_timing_states": {
+    "file": "timing-states.tsv",
+    "rounds": [
+      1,
+      2
+    ],
+    "meaning": "Byte-identical complete states in both rounds; both raw rounds remain retained in the build directory."
+  },
+  "canonical_zero_state_differences": {
+    "file": "../temperature-extraction/timing-state-differences.tsv",
+    "meaning": "Byte-identical zero differences in the two integrated rounds and the earlier replay; new raw tables remain retained in the build directory."
+  },
+  "reproduction": "Copy retained reproduction/* into build/current-calorics/main-integration/. Recover branch and main recordings with git show e4342588:engine/tests/oracle/native-rows.tsv and git show 19a0c825:engine/tests/oracle/native-rows.tsv. Extract main-source with git archive 19a0c825 engine tools .codex, link the shared .venv and copy the configured dependency source trees. Invoke each calculation script through lease.sh in the recorded command order. The transport reads the durable pre-scaling table and retained transport source; no Python thermodynamic calculation is performed."
+}

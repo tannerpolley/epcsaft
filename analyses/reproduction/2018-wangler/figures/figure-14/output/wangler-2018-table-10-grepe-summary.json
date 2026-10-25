@@ -1,0 +1,13 @@
+{
+  "all_rows_evaluated": true,
+  "row_count": 3,
+  "grepe_paper_parameter_ard_percent": 65.17255192685649,
+  "grepe_binary_refit_ard_percent": 60.82079470281682,
+  "paper_reported_model_ard_percent": 10.25,
+  "binary_refit_transfer_conclusion": "The independent osmotic refit lowers three-row ARD but collapses the loading trend; water-MDEAH+ binary refitting alone does not reproduce reactive VLE.",
+  "phase_topology": [
+    "finite reacting liquid",
+    "incipient neutral vapor"
+  ],
+  "interpretation": "Generic GREPE solve using the paper's rational solvent-blend reference and fixed salt-free 60 wt% MDEA dielectric medium; remaining deviation is model-transfer and parameter-formulation evidence, not a topology or routing failure."
+}

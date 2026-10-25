@@ -1,0 +1,87 @@
+{
+  "dataset_id": "rezaee_2026_des_topo_li_na_epcsaft",
+  "purpose": "Analysis-local source manifest for reproducing the Rezaee 2026 DES/TOPO Li/Na reactive phase-equilibrium workflow.",
+  "source_boundary": {
+    "modeling_article": "Rezaee2026, Fluid Phase Equilibria, DOI 10.1016/j.fluid.2026.114737",
+    "experimental_article": "Rezaee2025, Industrial & Engineering Chemistry Research, DOI 10.1021/acs.iecr.4c03496",
+    "reaction_equilibrium_section": "Rezaee 2026 Section 3.2",
+    "note": "The 2025 supporting information provides 26 designed-experiment equilibrium-composition rows. The 2026 text mentions 36 equilibrium data points, but this workflow treats that as a clerical source-text mismatch unless a new source table is supplied."
+  },
+  "phase_species": {
+    "aqueous": ["H2O", "Li+", "Na+", "Cl-", "H+", "OH-", "NH4+"],
+    "organic": ["DES", "TOPO", "RLi", "RNa"]
+  },
+  "reaction_equilibria": [
+    {
+      "name": "Reaction A",
+      "equation": "Li+ + OH- + DES <-> RLi(org) + H2O(aq)",
+      "delta_g0_kj_mol": 48.41,
+      "equilibrium_constant_298K": 3.2983e-9,
+      "source": "rezaee_2026_reaction_constants.csv"
+    },
+    {
+      "name": "Reaction B",
+      "equation": "Na+ + OH- + DES <-> RNa(org) + H2O(aq)",
+      "delta_g0_kj_mol": 68.15,
+      "equilibrium_constant_298K": 1.1476e-12,
+      "source": "rezaee_2026_reaction_constants.csv"
+    }
+  ],
+  "organic_pcsaft_parameters": [
+    {
+      "component": "DES",
+      "m": 10.9898,
+      "sigma_A": 3.1570,
+      "epsilon_over_k_K": 305.09,
+      "association_sites": 2,
+      "kappa_assoc": 0.15,
+      "epsilon_assoc_over_k_K": 6900.0,
+      "source": "Rezaee2026 Table 4"
+    },
+    {
+      "component": "TOPO",
+      "m": 13.2090,
+      "sigma_A": 3.7550,
+      "epsilon_over_k_K": 395.55,
+      "association_sites": 1,
+      "kappa_assoc": 0.01,
+      "epsilon_assoc_over_k_K": 1520.0,
+      "source": "Rezaee2026 Table 6"
+    },
+    {
+      "component": "RLi",
+      "m": 11.1223,
+      "sigma_A": 3.8327,
+      "epsilon_over_k_K": 392.09,
+      "association_sites": 0,
+      "kappa_assoc": 0.0,
+      "epsilon_assoc_over_k_K": 0.0,
+      "source": "Rezaee2026 Table 8"
+    },
+    {
+      "component": "RNa",
+      "m": 11.1504,
+      "sigma_A": 4.0254,
+      "epsilon_over_k_K": 427.44,
+      "association_sites": 0,
+      "kappa_assoc": 0.0,
+      "epsilon_assoc_over_k_K": 0.0,
+      "source": "Rezaee2026 Table 8"
+    }
+  ],
+  "organic_binary_interactions": [
+    {"component_i": "DES", "component_j": "TOPO", "kij": 0.0623, "source": "Rezaee2026 Table 9"},
+    {"component_i": "DES", "component_j": "RLi", "kij": 0.0104, "source": "Rezaee2026 Table 9"},
+    {"component_i": "DES", "component_j": "RNa", "kij": 0.0158, "source": "Rezaee2026 Table 9"},
+    {"component_i": "TOPO", "component_j": "RLi", "kij": 0.0115, "source": "Rezaee2026 Table 9"},
+    {"component_i": "TOPO", "component_j": "RNa", "kij": -0.0139, "source": "Rezaee2026 Table 9"},
+    {"component_i": "RLi", "component_j": "RNa", "kij": -0.0127, "source": "Rezaee2026 Table 9"}
+  ],
+  "source_files": {
+    "reaction_constants": "rezaee-2026-reaction-constants.csv",
+    "organic_pcsaft_parameters": "rezaee-2026-organic-pcsaft-parameters.csv",
+    "organic_binary_interactions": "rezaee-2026-organic-binary-interactions.csv",
+    "equilibrium_mole_fractions": "rezaee-2025-extraction-equilibrium-mole-fractions.csv",
+    "density_tables": "rezaee-2026-si-density-tables.csv"
+  }
+}

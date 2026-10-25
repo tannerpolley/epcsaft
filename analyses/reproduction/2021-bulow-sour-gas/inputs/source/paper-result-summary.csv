@@ -1,0 +1,14 @@
+figure,system,temperature_K,MDEA_wt_percent,sulfolane_wt_percent,loading_condition,reported_ARD_percent,source_locator,quantity,role
+4,water-MDEA-CO2,313;333;373;393,19,,,not-tabulated-in-article,lines 326-335 and caption line 340,CO2 partial pressure vs alpha,reported-paper-summary
+5,water-MDEA-H2S,313;333;373;393,19,,,not-tabulated-in-article,lines 335-340,H2S partial pressure vs alpha,reported-paper-summary
+6,water-MDEA-sulfolane-H2S,313,20.9,30.5,,13.15,caption line 350,H2S partial pressure vs alpha,reported-paper-summary
+6,water-MDEA-sulfolane-H2S,373,20.9,30.5,,27.26,caption line 350,H2S partial pressure vs alpha,reported-paper-summary
+7,water-MDEA-sulfolane-CO2,313,20.9,30.5,,35.62,caption line 359,CO2 partial pressure vs alpha,reported-paper-summary
+7,water-MDEA-sulfolane-CO2,373,20.9,30.5,,36.50,caption line 359,CO2 partial pressure vs alpha,reported-paper-summary
+8,water-MDEA-sulfolane-CO2,328.15,40,10,,26.38,caption line 375,CO2 partial pressure vs alpha,reported-paper-summary
+8,water-MDEA-sulfolane-CO2,328.15,30,20,,27.34,caption line 375,CO2 partial pressure vs alpha,reported-paper-summary
+8,water-MDEA-sulfolane-CO2,328.15,40,20,,19.26,caption line 375,CO2 partial pressure vs alpha,reported-paper-summary
+9,water-MDEA-C4mim-Ac-CO2,not-specified,30,10,,32.44,caption line 381,CO2 partial pressure vs alpha,reported-paper-summary
+9,water-MDEA-CO2,not-specified,30,0,,32.68,caption line 381,CO2 partial pressure vs alpha,reported-paper-summary
+10,water-MDEA-sulfolane-CO2-H2S,373,20.9,30.5,alpha_H2S=0.5+/-0.05;vary-alpha_CO2,39.95,caption line 388,selected sour-gas partial pressure,reported-paper-summary
+10,water-MDEA-sulfolane-CO2-H2S,313,20.9,30.5,alpha_CO2=0.35+/-0.05;vary-alpha_H2S,41.72,caption line 388,selected sour-gas partial pressure,reported-paper-summary

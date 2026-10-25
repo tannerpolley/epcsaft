@@ -1,0 +1,52 @@
+{
+ "historical_wheel_sha256": "b55665901b881836f90af010c22bd16a51a687a4e83242ab6d7d5d10118e582a",
+ "baseline_wheel_sha256": "298a360e532f6f4c5e7ef70c5be45e8b9852310d1c388d6225c504714c3dc410",
+ "selected_start_diagnosis": {
+  "case": "dimethyl-sulfoxide/polar/refit",
+  "before": 1.0,
+  "after": 1.1,
+  "sse_change": -8.033938098117588e-17,
+  "cause": "common affine origin changes floating-point paths between numerically tied local fits; objective, pressure/density predictions, rank, bounds and model gap decisions are compared in the table"
+ },
+ "claim_changes": [],
+ "limits": [
+  "same physical dipoles and other inactive source parameters; native Ceres exact first columns",
+  "five unavailable polar starts remain unavailable with their row causes; all fitted prediction rows are available",
+  "covariance remains conditional unit-variance local sensitivity; not physical uncertainty",
+  "old historical rows are retained in before columns; source and reference limitations unchanged"
+ ],
+ "wheel_sha256": "298a360e532f6f4c5e7ef70c5be45e8b9852310d1c388d6225c504714c3dc410",
+ "build_fingerprint": "c0b44c05b7a8d4c72e6d1d43161d3c8777173600638066b8a871ed22132d7702",
+ "base": "f4075c0f56774c301ba21e5601aa351360c3a08f",
+ "comparison_rows": 5644,
+ "comparison_rules": {
+  "pressure_density_relative": 1e-07,
+  "dimensionless_residual_absolute": 1e-07,
+  "sse_allowed_increase": "1e-8*max(1,before)",
+  "conditioning_covariance_parameters": "descriptive; rank, bounds and availability compared exactly"
+ },
+ "scientific_basis": "numerical verification of the same log-ratio least-squares problem; no parameter adoption or physical validation",
+ "inputs": {
+  "analyses/2026-polar-dipole/inputs/reference-saturation.csv": "6d8496fb51e5f2c8d3e2fb43da7ea12ea0ba152896466c9823c6cfec00c6d958",
+  "analyses/2026-polar-dipole/inputs/gv2006-fig15-acetone-pentane-digitized.csv": "aea291dc27dc6bac9871021a10da3557ff10d9d41d4fee329238b499920ef240",
+  "analyses/2026-polar-dipole/inputs/dmso-saturation.csv": "be5cd2fe0c916882424c69fd4a59ef1f38a3efe75fd99e237ba76067203a5974",
+  "analyses/2026-polar-dipole/inputs/campbell1986-table1.csv": "9d2f9ae3f35c1bb3ad29a19ebfc8a963698a6147b8b161142674bd73f7d6f6f1"
+ },
+ "comparison_failures": [],
+ "retained_binary_evidence": {
+  "wheel_sha256": "b55665901b881836f90af010c22bd16a51a687a4e83242ab6d7d5d10118e582a",
+  "fields": [
+   "binary_kij_fits",
+   "binary_summary",
+   "binary_xy_summary"
+  ],
+  "meaning": "unchanged historical binary-mixture results; not recomputed or qualified by this pure-fluid conversion"
+ },
+ "preservation_replay": {
+  "historical_binary_fields_equal": true,
+  "binary_wheel_sha256": "b55665901b881836f90af010c22bd16a51a687a4e83242ab6d7d5d10118e582a",
+  "updated_comparison_cells": 0,
+  "max_pressure_density_relative_or_log_residual_absolute_change": 0.0,
+  "meaning": "last-bit changes in repeated native cold predictions; existing comparison tolerances unchanged"
+ }
+}

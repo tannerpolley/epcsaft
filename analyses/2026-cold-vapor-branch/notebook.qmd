@@ -1,0 +1,118 @@
+---
+title: "Cold-start incipient vapor density"
+format: html
+execute:
+  enabled: false
+---
+
+## Question and conditions
+
+Why did the #204 free-temperature bubble return no admitted state despite
+Ipopt success and a 1.2382e-11 scaled equilibrium residual? The exact
+[manufactured input](../2026-reaction-constant-fitting/results/cold-start.json)
+uses an equimolar methane/ethane pseudo-mixture, a liquid with free amount,
+a vapor pinned at zero amount, pressure 1,596,859.1113027716 Pa and a
+temperature guess of 180 K. The unreferenced isomerization uses the retained
+ln K polynomial on the EOS Helmholtz basis. J1 is a manufactured numerical
+reference, not a physical experiment.
+
+## Diagnosis
+
+The equimolar feed's vapor spinodal maximum is 1,595,392.9545692347 Pa.
+The target lies 1,466.15673354 Pa above it, leaving only a dense stable
+pressure root. The density owner correctly leaves that root unlabelled;
+the shared initializer uses it as both phase estimates and obtains K=1.
+Both phases start at 19,698.5002963 mol/m³ and packing 0.367749292482.
+
+The resulting corrector approaches a nearly coincident dense pair at
+201.101220717 K. Its liquid composition is (0.781981108, 0.218018892),
+and its vapor-labelled composition is (0.781971398, 0.218028602).
+The nominal vapor is a mechanically stable dense pressure root. It is
+not the declared vapor root, so the failed admission is correct.
+
+| Vapor quantity | Dense corrector | Repaired cold start / J1 |
+|---|---:|---:|
+| Temperature / K | 201.101220717 | 180.000000000 |
+| Corrector density / mol m⁻³ | 15,112.6344208 | 1,288.45507053 |
+| Corrector packing | 0.253523129240 | 0.0203906816053 |
+| Declared vapor anchor / mol m⁻³ | 1,143.15865409 | 1,288.45507053 |
+| Window lower / mol m⁻³ | 1,131.84025158 | 1,275.69808963 |
+| Window upper / mol m⁻³ | 1,154.59024063 | 1,301.33962124 |
+| Absolute log displacement | 2.58173593042 | 3.75e-13 |
+| Allowed log displacement | 0.00995033085317 | 0.00995033085317 |
+| Corrector pressure slope / Pa m³ mol⁻¹ | 744.938386317 | 998.162662232 |
+
+At the rejected temperature and nominal vapor composition, the pressure
+crossings are 1,143.15865409, 10,949.4020299 and 15,112.6344208 mol/m³.
+Their packing fractions are 0.0191771435167, 0.183682512833 and
+0.253523129240. Slopes are respectively +1,137.99114403, −373.552110814
+and +744.938386326 Pa m³ mol⁻¹. The middle root is mechanically unstable;
+the last is the dense root actually reached. J1's corresponding crossings
+are 1,288.45507053, 11,307.3069900 and 16,936.9792000 mol/m³, with packing
+0.0203906816053, 0.178945856880 and 0.268039265102. J1 uses the low-density
+stable crossing. [The retained root rows](results/pressure-roots.csv)
+also include both spinodals for each probed isotherm.
+
+These are a few scalar branch comparisons; a table states the density
+window and root identities more directly than a plot. No interpolated
+pressure curve or complete-root-enumeration claim is needed.
+
+## Correction and numerical evidence
+
+When the feed search returns one unlabelled root, `start_compositions`
+uses the ideal-vapor limit ln phi=0 only for its fugacity estimate. From
+EqID `log_fugacity_coefficient`, residual chemical potential vanishes
+and Z tends to one in that limit. Actual phase density seeds still solve
+the shared EOS closure at the resulting compositions. Two-root estimates,
+caller-guessed compositions, window width, residual criteria and failed
+admission behavior retain their existing owners and rules.
+
+The exact repaired cold start converges at residual 1.8122e-15 against
+1e-10, recovering 180 K and the fixed pressure. Liquid composition is
+(0.5, 0.5); vapor composition is (0.9563602429614723, 0.04363975703852775).
+Liquid and vapor packing are 0.367749292481815 and 0.020390681605308048.
+The existing J1 comparison criteria are 1e-10 relative for temperature,
+pressure and packing, and 1e-10 absolute for composition. All pass.
+The same previous-failure test fails on the baseline wheel at admission.
+
+The [density rows](results/densities.csv) retain seeds, corrected states,
+pressure slopes, selected anchors and unchanged windows. The
+[summary](results/summary.json) identifies the wheel and numerical diagnostics.
+The native diagnostic reproduces the former identical composition seed
+with the existing internal corrector; it never treats that unadmitted
+point as a published state. The independent pressure-root probe uses the
+same installed EOS and analytic slope with Brent refinement of 512
+log-density cells. This separates branch identity from equilibrium row
+convergence, while retaining ALG-DENSITY's finite-search limits.
+
+## Preservation and limits
+
+Explicit native equilibrium and boundary programs pass. All 7,197 and
+3,813 unique comparison ID/model values are exactly unchanged from runs on
+the baseline. The equilibrium log emits 7,198 rows: `c3-availability` repeats
+the same value, so the retained count and hash use 7,197 unique IDs. The Khudaida slice passes its retained fixed-settler
+qualification. Properties stays at 4,223 lines and bindings at 1,719;
+equilibrium grows by three lines to 6,021. Its 21-line soft-ceiling excess
+contains the prior 18-line excess plus the sole-root fugacity estimate.
+No ceiling was increased.
+
+This evidence verifies the requested declared bubble state and the
+exercised prior states. A positive pressure slope establishes local
+mechanical stability only. It does not establish a distinct vapor, a Gibbs
+minimum for a pinned square problem, global phase stability, uniqueness
+outside an anchor window or complete root enumeration. The manufactured
+reaction does not describe physically reacting methane and ethane.
+
+## Delivery checks
+
+The full installed-wheel gate passes: 108 Python checks, the selected native
+fast programs, packet verification, typing, equation registry, analysis layout
+and architecture. [Verification](results/verification.json) retains the native
+comparison counts and hashes. The independent GPT-6.1 Sol high CSE review
+returned **Supported, with no required corrections** for commit
+`b98b430d283e77620478f97f28d7b5410580a5ee` against `bea7655d`. It confirmed
+the shared calculation owner, the unchanged safeguards and tolerance criteria,
+the retained numbers and their stated limits. Preservation remains bounded
+to the exercised states; universal cold-start convergence, global stability,
+critical-point passage and physical validation remain unestablished. This
+notebook has not been promoted for manuscript use.

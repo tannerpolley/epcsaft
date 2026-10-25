@@ -1,0 +1,3 @@
+row_id,coordinate,step,native_exact_dlnP,finite_difference_dlnP,absolute_difference,relative_difference
+kiepe-373.26-08,pair/carbon-dioxide/water/k_ij,1e-06,17.379391438023355,17.3793914413716,3.3482443484444957e-09,1.9265600226248125e-10
+kiepe-373.26-08,pair/carbon-dioxide/water/k_ij/reciprocal_temperature_slope,0.01,-0.0026569791529157815,-0.0026569791528446244,7.115705594196164e-14,2.6781243889217876e-11

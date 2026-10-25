@@ -1,0 +1,34 @@
+{
+  "axis": {
+    "x1_pixel": [
+      321,
+      1303
+    ],
+    "x2_pixel": [
+      1904,
+      1303
+    ],
+    "x1_value": 0,
+    "x2_value": 1,
+    "y1_pixel": [
+      321,
+      1303
+    ],
+    "y2_pixel": [
+      321,
+      23
+    ],
+    "y1_value": 0,
+    "y2_value": 0.25
+  },
+  "source_pdf_attachment": "UGT3UV2L",
+  "page_index": 2,
+  "pdf_image_xref": 68,
+  "image_sha256": "d5f96cfd50b058350efc8f4453b1ed794a37891dcffdfdf30df390db385f8158",
+  "coordinate_helper": "cse:digitize/scripts/digitize_xy_plot.py:AxisTransform",
+  "solid_curve_identity": "PC-SAFT in source legend; dashed line is SAFT",
+  "horizontal_coordinate": "benzene mole fraction; Engine pentanol coordinate = 1 - source x/y",
+  "qa": "pass",
+  "uncertainty": "Original output and input uncertainties retained without widening; marked centers checked against rendered PDF.",
+  "independent_lane": "Per-column raster spans and visual source inspection; no independent second digitizer"
+}

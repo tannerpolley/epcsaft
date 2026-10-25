@@ -1,0 +1,4 @@
+Component,$m_{i}^{\text {seg }} /-$,$\sigma_{i} / \AA$,$\boldsymbol{u}_{\boldsymbol{i}} \boldsymbol{k}_{\boldsymbol{B}}^{\boldsymbol{-} \mathbf{1}} \boldsymbol{/} \boldsymbol{K}$,$N_{i}$,$\varepsilon^{A_{i} B_{i}} k_{B}^{-1} / K$,$\kappa^{A_{i} B_{i}} \boldsymbol{/}$
+A,2.4000,3.2000,200.00,2,2500.0,0.05
+B,1.0800,3.0000,400.00,2,2500.0,0.05
+C,2.8000,3.8000,280.00,0,-,-

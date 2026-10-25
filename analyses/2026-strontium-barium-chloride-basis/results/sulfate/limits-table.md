@@ -1,0 +1,10 @@
+| rule | limit |
+| --- | --- |
+| rank_ratio_strict | 1e-14 |
+| bound_distance_strict | 1e-06 |
+| cost_floor | 1e-10 |
+| cost_fraction | 0.0001 |
+| max_h | 0.051 |
+| max_endpoint_distance | 0.051 |
+| max_correlation | 0.99 |
+| relative_resolution | 0.001 |

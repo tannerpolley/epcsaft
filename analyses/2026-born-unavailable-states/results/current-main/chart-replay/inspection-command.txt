@@ -1,0 +1,104 @@
+# One-time diagnosis from the checkout root; outputs go to build/issue-762/.
+# Uses the checkout's editable Engine. No Python corrector or root find.
+nice -n 10 env -u EPCSAFT_HSL_LIBRARY EPCSAFT_BUILD_JOBS=6 .venv/bin/python - <<'PY'
+import csv
+import hashlib
+import json
+import sys
+from pathlib import Path
+
+root = Path.cwd()
+sys.path.insert(0, str(root / 'analyses/2026-born-unavailable-states/scripts'))
+import epcsaft
+from epcsaft import equilibrium as eq
+from reproduce import HERE, archived, changed, load_case, problem_from_request
+
+archive = archived()
+records = []
+compiled_cases = {}
+
+def compiled_for(case, value):
+    key = (case, value)
+    if key not in compiled_cases:
+        base, request, anchor = load_case(case)
+        model = epcsaft.Mixture(epcsaft.Parameters.from_mapping(changed(base, case, value)))
+        problem = problem_from_request(request, anchor)
+        compiled_cases[key] = (model, problem, eq.compile_problem(model, problem))
+    return compiled_cases[key]
+
+def compare(producer, location, index, case, value, x, old):
+    compiled = compiled_for(case, value)[2]
+    raw = list(compiled.evaluate(x).values)
+    assert len(raw) == len(old) == 20
+    diffs = [abs(a - b) for a, b in zip(raw, old, strict=True)]
+    records.append(dict(producer=producer, location=location, point=index, case=case,
+        maximum_row_difference=max(diffs), worst_row=diffs.index(max(diffs)),
+        historical_noncarbon_row_max=max(abs(v) for i,v in enumerate(old) if i != 16),
+        current_noncarbon_row_max=max(abs(v) for i,v in enumerate(raw) if i != 16),
+        historical_carbon_row=old[16], current_carbon_row=raw[16]))
+
+for name in sorted(archive):
+    if not name.endswith('-coordinates.csv') or name.startswith('newton/'):
+        continue
+    stem = name.replace('-failed-coordinates.csv', '').replace('-coordinates.csv', '')
+    summary = json.loads(archive[stem + '.json'])
+    if 'convergence' not in summary or stem + '-point-diagnostics.json' not in archive:
+        continue
+    x = [float(r['value']) for r in csv.DictReader(archive[name].splitlines())]
+    old_text = archive.get(stem + '-rows.csv') or (HERE / 'results' / (stem + '-rows.csv')).read_text()
+    old = [float(r['residual']) for r in csv.DictReader(old_text.splitlines())]
+    compare('probe.py', name, '', summary['case'], summary['value'], x, old)
+
+restart = None
+for case in (1, 2):
+    for folder in sorted((HERE / 'results/global-scan').iterdir()):
+        if not folder.is_dir() or not (folder.name == f'case{case}' or folder.name.startswith(f'case{case}-completion')):
+            continue
+        attempts = {int(r['attempt']): r for r in csv.DictReader((folder / 'attempts.csv').open())}
+        rows = {}
+        for r in csv.DictReader((folder / 'rows.csv').open()):
+            rows.setdefault(int(r['attempt']), []).append(float(r['residual']))
+        points = {int(r['attempt']): [float(r[f'coordinate_{i}']) for i in range(20)]
+            for r in csv.DictReader((folder / 'coordinates.csv').open())}
+        for index, old in rows.items():
+            if attempts[index]['chart_criterion_met'] != 'True':
+                continue
+            compare('verify_global_scan.py', folder.name, index, case, 0 if case == 1 else 2, points[index], old)
+            if restart is None:
+                restart = (case, folder.name, index, points[index], attempts[index])
+
+out = root / 'build/issue-762'
+with (out / 'row-differences.csv').open('w') as f:
+    w = csv.DictWriter(f, fieldnames=list(records[0]), lineterminator='\n')
+    w.writeheader()
+    w.writerows(records)
+
+case, folder, index, x, attempt = restart
+model, problem, compiled = compiled_for(case, 0 if case == 1 else 2)
+start = eq.EquilibriumStart(coordinates=x)
+result = eq.solve_equilibrium_starts(model, problem, [start], eq.EquilibriumWorkLimits()).results[0]
+probe = dict(case=case, scan=folder, attempt=index, held_coordinate=attempt['coordinate'],
+    held_log_fraction=float(attempt['ln_x_target']),
+    old_coordinates=x, old_rows=list(compiled.evaluate(x).values),
+    success=result.success, requested_tolerance_met=result.requested_tolerance_met,
+    message=result.message, iterations=result.iterations, coordinates=list(result.coordinates))
+if result.coordinates:
+    probe['returned_rows'] = list(compiled.evaluate(result.coordinates).values)
+(out / 'native-restart.json').write_text(json.dumps(probe, indent=2) + '\n')
+summary = dict(engine_provenance=list(epcsaft.provenance()), criterion=1e-10,
+    rows_file='row-differences.csv', native_restart='native-restart.json', producers={})
+for name in ('probe.py', 'verify_global_scan.py'):
+    entries = [r for r in records if r['producer'] == name]
+    summary['producers'][name] = dict(points=len(entries),
+        maximum_row_difference=max(r['maximum_row_difference'] for r in entries),
+        minimum_row_difference=min(r['maximum_row_difference'] for r in entries),
+        maximum_current_noncarbon_row=max(r['current_noncarbon_row_max'] for r in entries),
+        differences_above_criterion=sum(r['maximum_row_difference'] >= 1e-10 for r in entries))
+summary['historical_inputs'] = {str(p.relative_to(HERE)): hashlib.sha256(p.read_bytes()).hexdigest()
+    for p in sorted((HERE / 'results/global-scan').glob('*/*.csv'))}
+p = HERE / 'results/retired-charts.tar.gz'
+summary['historical_inputs'][str(p.relative_to(HERE))] = hashlib.sha256(p.read_bytes()).hexdigest()
+(out / 'summary.json').write_text(json.dumps(summary, indent=2) + '\n')
+print(json.dumps(summary['producers'], indent=2), flush=True)
+print(json.dumps({k:v for k,v in probe.items() if k not in ('old_coordinates','old_rows','coordinates','held_log_fraction')}, indent=2), flush=True)
+PY

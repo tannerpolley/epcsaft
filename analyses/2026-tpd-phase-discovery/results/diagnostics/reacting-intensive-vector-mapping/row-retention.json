@@ -1,0 +1,17 @@
+{
+  "original_csv_sha256": "6c0c3e8061112354f1b83e64e04d353a5604bf9e6395f4a83a8a029e35ba81a3",
+  "original_rows": 98,
+  "stored_rows": 91,
+  "stored_csv": "reacting.csv",
+  "stored_csv_sha256": "ab86f3d805c63bc412fb83ed25ab29c7deb624d08b5a5185d1ae127d71ac68ff",
+  "prefix_rows": [
+    {
+      "csv": "../reacting-reaction-mapping/reacting.csv",
+      "first_row": 10,
+      "stop_row": 17
+    }
+  ],
+  "index_basis": "zero-based data rows, stop excluded; prefix followed by stored suffix reconstructs original order",
+  "reconstructed_original_bytes_identical": true,
+  "limits": "Only duplicate numerical rows are linked; original attempt JSON provenance and distinct timing samples remain unchanged."
+}

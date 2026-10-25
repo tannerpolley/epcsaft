@@ -1,0 +1,67 @@
+{
+  "identity": {
+    "wheel": "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-223-build-tpd-stability-test-and-phase-35ebff8f/build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+    "wheel_sha256": "8470b49a9283528b83dbbdab46dc62dee0fc70e5e2149f8f218b823dd85812cb",
+    "script_sha256": "713dff4f4993d0a8c430381cf43279351e9f189f0037d8b9a144b0a73c4b26a3",
+    "baseline_script_sha256": "640a35eb50295dc97469ad32a7eb2836b5b9b5262c2a7d3d4b7293594a1c6d9f",
+    "source_mtimes": {
+      "engine/native/equilibrium/gibbs_minimizer.cpp": 1790935477428563179,
+      "engine/native/equilibrium/request_compile.cpp": 1790915612053935625
+    },
+    "thread_environment": {
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1"
+    }
+  },
+  "inputs": {
+    "case-1/100-mol": {
+      "components": [
+        "water",
+        "isobutanol"
+      ],
+      "T": 293.15,
+      "P": 100000.0,
+      "feed": {
+        "water": 60.0,
+        "isobutanol": 40.0
+      },
+      "row_tolerance": 1e-10,
+      "phases": "Discover(default trial families and budgets)",
+      "parameters": {
+        "path": "analyses/2026-khudaida-idaes-settler/inputs/data/khudaida-2026-figure-2-electrolyte-lle/7/parameters/parameters.json",
+        "sha256": "8babed899e7347e58c403c7aff24a7fdd6d60411af3b4d81eb6aa90c2431dfa4"
+      },
+      "one_mol_reference": {
+        "csv": "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-223-build-tpd-stability-test-and-phase-35ebff8f/analyses/2026-tpd-phase-discovery/results/qualification-8470b49a/neutral.csv",
+        "sha256": "8fb022ede486e0627835b7cdb190e5b7cf88c0f3d515f92d8e3bc27c705dce27",
+        "metadata_sha256": "c132708afd319df880e29031471a9a158e544e93978f52bcc06681ccdc9b4a86"
+      },
+      "purpose": "Extensive addition-error weighting and feed scaling; numerical verification, not an application prediction",
+      "scope_limit": "No 100-mol cold declaration or returned-declaration reuse; those separately retained calls coalesce."
+    }
+  },
+  "costs": {
+    "csv": "gibbs-scaling-costs.csv",
+    "sha256": "cc90e9db3801ff7c083484af804e190d26e2f2338ba89a9604e939deb99e92bd",
+    "samples": 3,
+    "first_report_work": "sample 0 native work references the identical reported CSV operands",
+    "count_aliases": "iterations/evaluations/Hessian counts alias native work where that map is present"
+  },
+  "failure": null,
+  "failures": [],
+  "unresolved": [
+    {
+      "case": "case-1/100-mol/round-1",
+      "trial": 2,
+      "seed": "near-pure-1",
+      "evidence": "indeterminate",
+      "message": "converged: residual 2.981268936007901e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 10 iterations, contraction absent, floor 4.163706614268263e-11, amplification 0"
+    }
+  ],
+  "limits": [
+    "numerical verification of the supplied model and finite trial set",
+    "estimated uncertainty is not a rigorous bound",
+    "Refused discovery compiles before admission, including generic-point Jacobian/EOS work inside its private trace; outer zero evaluations denote no observed driver callbacks, not no EOS work.",
+    "no physical validation or global stability certificate"
+  ]
+}

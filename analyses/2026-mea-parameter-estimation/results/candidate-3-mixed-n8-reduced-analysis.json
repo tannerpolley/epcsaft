@@ -1,0 +1,124 @@
+{
+  "schema_version": 1,
+  "campaign_id": "2026-mea-parameter-estimation",
+  "workflow": "CSE Analyze",
+  "analysis_status": "blocked_before_complete_fit",
+  "method": "diagnostic_reduced_space_not_issue_80_promotion",
+  "git_commit": "a09bf97cafcfaa715693a4f6d3ded622e4bbcef8",
+  "command": "OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 .venv/bin/python validation/campaigns/2026-mea-parameter-estimation/scripts/run_campaign.py --diagnostic-reduced-candidate-3",
+  "runtime_seconds": null,
+  "runtime_note": "The replay command was not wrapped by an external wall-time recorder; no runtime is inferred from timestamps.",
+  "wheel_sha256": "41707aef9c61dd2fe6d6d21db624b27f44e9e63db4827e42794f0e64a00bd8c7",
+  "package_fingerprint": "sha256:897df337c971809db59f1a546d0eaf3a0c179a4e85058b670c62e86c41541534",
+  "packet_fingerprint": "sha256:69bbcf1e59d312a0da94031491d430af8686566b9e38ed2a208d792d90510050",
+  "input": {
+    "path": "validation/campaigns/2026-mea-parameter-estimation/inputs/candidate-3-mixed-n8-reduced-input.json",
+    "sha256": "86b47333af8b330a1508ce439eddd0ecd91f6f80756b7d2c08b455316053860b",
+    "states": 8,
+    "targets": 12,
+    "maximum_iterations": 80,
+    "optimizer_tolerance": 1e-8,
+    "target_values_used_for_initial_guesses": false
+  },
+  "result": {
+    "path": "validation/campaigns/2026-mea-parameter-estimation/results/candidate-3-mixed-n8-reduced-result.json",
+    "sha256": "68543e865384dcba22ae19f1131e10d90f60def9865cf85b0fc33d6cc211a3a8",
+    "digest": "sha256:3ac037182c055afbf5b2e606b8657a9ece0a102db5f9d91594fba18ae6dba208",
+    "specification_digest": "sha256:785af3a20eee7a1efda8754d25ea1ea980e25fb40c5f5ed84c02eab326b15021",
+    "evaluation_strategy": "reduced_space",
+    "solver_status": "maximum_iterations_exceeded",
+    "iterations_reported": 80,
+    "usable": false,
+    "cost": null,
+    "failure_reason": "maximum_iterations_exceeded",
+    "trial_failure_code": "optimizer_failure",
+    "final_physical": [0.8559838864249132, 1.5, 1.5, -221.63165825642616],
+    "owner_failures": [
+      {
+        "code": "provider_domain_rejection",
+        "count": 1,
+        "reason": "temperature-dependent pair dispersion is outside its physical domain"
+      }
+    ],
+    "owner_diagnostics": {
+      "retained_in_result": 8,
+      "accepted": 8,
+      "maximum_balance_inf_norm": 1.5600991635708605e-16,
+      "maximum_pressure_relative_inf_norm": 1.1847467301960515e-10,
+      "maximum_reaction_affinity_inf_norm": 3.126388037344441e-13,
+      "maximum_transfer_chemical_potential_inf_norm": 0.0,
+      "maximum_local_kkt_stationarity_inf_norm": 5.684341886080802e-14,
+      "minimum_amount_mol": 1.6643657799039747e-12,
+      "minimum_bound_margin": 0.49459365248674864,
+      "minimum_reduced_hessian_margin": 2.9984522564281474e-6
+    },
+    "accounting": {
+      "input_rows": 12,
+      "included_rows": 12,
+      "evaluated_row_trials": 12,
+      "rejected_row_trials": 0,
+      "failed_row_trials": 0,
+      "non_evaluable_trials": 1,
+      "dropped_rows": 0,
+      "attempted_starts": 1,
+      "accepted_starts": 0,
+      "failed_starts": 1
+    },
+    "outcomes": {
+      "solver_convergence": "not_converged",
+      "numerical_convergence": "not_converged",
+      "physical_certification": "not_evaluated",
+      "scientific_fit_acceptance": "not_declared"
+    }
+  },
+  "endpoint_constraints": [
+    {
+      "temperature_k": 293.15,
+      "upper": 1.0,
+      "affine_jacobian": [1.0, 0.0, 0.0, 0.21786510767479164],
+      "initial_value": 0.9283255272633684,
+      "initial_margin": 0.07167447273663163,
+      "final_value": 0.8076980813347343,
+      "final_margin": 0.1923019186652657
+    },
+    {
+      "temperature_k": 393.15,
+      "upper": 1.0,
+      "affine_jacobian": [1.0, 0.0, 0.0, -0.6497993774881353],
+      "initial_value": 0.9999996853307187,
+      "initial_margin": 3.146692812983076e-7,
+      "final_value": 0.999999999991602,
+      "final_margin": 8.397949002869609e-12
+    }
+  ],
+  "retained_numerical_diagnostics": {
+    "cost_recomputed_from_retained_residuals": 305.6141824110117,
+    "affine_objective_gradient": [-0.01081657055625752, 646.053446536603, 911.9433643071205, 0.009389644591566023],
+    "interior_projected_stationarity_inf_norm": 0.01081657055625752,
+    "diameter_lower_bound_gradient_signs_satisfy_first_order_bound_direction": true,
+    "endpoint_constraints_active_at_final_point": true,
+    "endpoint_constraint_multipliers_assumed_for_projected_check": null,
+    "ipopt_kkt_multipliers_retained": false,
+    "local_equilibrium_certificate_components_retained": true,
+    "diagnostic_limit": "Ipopt exhausted the frozen 80-iteration limit. The result retains the final parameter vector, residual/Jacobian, endpoint geometry, one defensive provider-domain rejection, and all eight local equilibrium certificates, but not Ipopt bound/constraint multipliers; a complete optimizer KKT residual is therefore unavailable and is not inferred."
+  },
+  "interpretation": "The shared row-consistent continuation fix removed the unexpected callback exception. All 12 rows evaluated at the retained final point, and all eight equilibrium batches passed their exact local numerical and physical certificates. The optimizer nevertheless exhausted 80 iterations with both ionic diameters at their 1.5 angstrom lower bounds, the 393.15 K pair endpoint only 8.397949002869609e-12 below its ceiling, and one defensive provider-domain rejection. This is a genuine terminal optimization failure, not an exception-classification defect and not a usable fit.",
+  "conditional_actions": {
+    "complete_123_state_210_target_fit": "not_started",
+    "candidate_bundle": "not_produced",
+    "xu_validation": "untouched",
+    "jakobsen_validation": "untouched",
+    "mea_thermodynamics": "untouched"
+  },
+  "failed_gates": [
+    "candidate-3 reduced-space mixed N=8 did not converge",
+    "candidate-3 reduced-space mixed N=8 did not receive exact final physical certification",
+    "the frozen 80-iteration reduced-space optimization limit was exhausted",
+    "the final hot endpoint constraint is active to 8.397949002869609e-12 and both ionic diameters are at their lower bounds",
+    "the diagnostic reduced-space method cannot satisfy the Issue #80 full-space promotion gate",
+    "the complete 123-state/210-target fit was not started",
+    "no deterministic nine-species candidate bundle was produced",
+    "validated pressure and speciation domains and metrics remain null"
+  ],
+  "smallest_next_action": "Stop before another campaign retry. Independently inspect the retained final affine gradient together with the missing Ipopt bound and endpoint multipliers to determine whether the next root action is multiplier/KKT retention or optimizer scaling at the coupled active corner; do not alter candidates, starts, bounds, residual scales, tolerances, floors, or endpoint geometry."
+}

@@ -1,0 +1,14 @@
+{
+  "title": "ePC-SAFT: an electrolyte equation-of-state engine with exact derivatives for phase and reaction equilibrium and parameter estimation",
+  "upload_type": "software",
+  "creators": [
+    {
+      "name": "Polley, Tanner W.",
+      "orcid": "0009-0008-5957-4152",
+      "affiliation": "Department of Chemical Engineering, Brigham Young University"
+    }
+  ],
+  "license": "GPL-3.0",
+  "version": "1.0.0",
+  "description": "GPL version 3 with the additional permission under section 7 for linking with EPL-licensed Ipopt; see LICENSE. Retained third-party data have separate terms in NOTICE."
+}

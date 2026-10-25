@@ -1,0 +1,13 @@
+reaction_id,T_K,engine_log10_K,phreeqc_log10_K,signed_difference,absolute_difference,tolerance,outcome,evidence_label
+calcium_bicarbonate,298.15,1.1056629833301082,1.10566298333,1.0813572259849025e-13,1.0813572259849025e-13,1e-10,pass,numerical verification against the PHREEQC source model
+calcium_bicarbonate,323.15,1.2072451726687516,1.207245172669,-2.4846791291111003e-13,2.4846791291111003e-13,1e-10,pass,numerical verification against the PHREEQC source model
+calcium_bicarbonate,348.15,1.2615333501405457,1.261533350141,-4.5430326167661406e-13,4.5430326167661406e-13,1e-10,pass,numerical verification against the PHREEQC source model
+calcium_bicarbonate,373.15,1.355639967778515,1.355639967778,5.149214388211476e-13,5.149214388211476e-13,1e-10,pass,numerical verification against the PHREEQC source model
+calcium_bicarbonate,398.15,1.5450286307892767,1.545028630789,2.76667577736589e-13,2.76667577736589e-13,1e-10,pass,numerical verification against the PHREEQC source model
+calcium_bicarbonate,423.15,1.8645999308380774,1.864599930838,7.749356711883593e-14,7.749356711883593e-14,1e-10,pass,numerical verification against the PHREEQC source model
+calcium_carbonate,298.15,3.224090853945311,3.224090853945,3.1086244689504383e-13,3.1086244689504383e-13,1e-10,pass,numerical verification against the PHREEQC source model
+calcium_carbonate,323.15,3.5119410663258765,3.511941066326,-1.234568003383174e-13,1.234568003383174e-13,1e-10,pass,numerical verification against the PHREEQC source model
+calcium_carbonate,348.15,3.8566049493894385,3.856604949389,4.3876013933186186e-13,4.3876013933186186e-13,1e-10,pass,numerical verification against the PHREEQC source model
+calcium_carbonate,373.15,4.167916200393392,4.167916200394,-6.084022174945858e-13,6.084022174945858e-13,1e-10,pass,numerical verification against the PHREEQC source model
+calcium_carbonate,398.15,4.388267943031841,4.388267943032,-1.5898393712632242e-13,1.5898393712632242e-13,1e-10,pass,numerical verification against the PHREEQC source model
+calcium_carbonate,423.15,4.481232384536382,4.481232384536,3.8191672047105385e-13,3.8191672047105385e-13,1e-10,pass,numerical verification against the PHREEQC source model

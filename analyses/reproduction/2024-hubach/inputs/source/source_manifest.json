@@ -1,0 +1,29 @@
+{
+  "article": {
+    "attachment_key": "23AN4WPP",
+    "attachment_sha256": "fb462b0a97c58e250c03a4c11f374f1b86aa0c147bd6e8106538b3811cfa84e4",
+    "attachment_kind": "zotero_mathpix_markdown",
+    "pdf_attachment_key": "CBJZ36VC",
+    "pdf_attachment_sha256": "c5471692bcb5682d367f6c3b9a6426e5b64322e09317bed576f09a1a32199712",
+    "doi": "10.1021/acs.jced.4c00074",
+    "locators": [
+      "Tables 2-4",
+      "Equations 3-13",
+      "Section 4.3.1"
+    ],
+    "zotero_item_key": "FGAE94M4"
+  },
+  "supporting_information": {
+    "attachment_key": "URGR4TEB",
+    "attachment_sha256": "756f18cb607a8b622f051f50417cbaceb1cc85a57fdbd530be44d1e3b61e4c96",
+    "attachment_kind": "zotero_mathpix_markdown",
+    "pdf_attachment_key": "MJR4ID8X",
+    "pdf_attachment_sha256": "71243892508d34f2832a1dc3158da9a58270eb85a08ce65ec4b81cac80ca088a",
+    "locators": [
+      "Tables S1, S6, and S11"
+    ],
+    "zotero_item_key": "FGAE94M4"
+  },
+  "schema_version": 1,
+  "transcription_note": "Values are transcribed from the Zotero-resolved article and supporting-information Markdown attachments; no values were digitized from a plotted curve."
+}

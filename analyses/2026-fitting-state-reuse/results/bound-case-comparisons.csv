@@ -1,0 +1,8 @@
+callback,comparison,quantity,model,reference,atol,rtol,criterion_passed,iterations,residual_evaluations,jacobian_evaluations
+membership_change,r2-j2/bound_start/cost,cost,0.0020816903804324652,0.002081690380433803,1e-12,1e-08,True,6,6,7
+membership_change,r2-j2/bound_start/kij,k_ij,-0.027772139946327108,-0.027772140767741173,1e-07,0,True,6,6,7
+membership_change,r2-j2/bound_start/feasible,verdict,1,1,0,0,True,6,6,7
+membership_change,r2-j2/bound_start/projected_gradient,projected_gradient_max,7.256037992675601e-10,0,1e-06,0,True,6,6,7
+membership_change,r2-j2/bound_start/inward,dispersion_energy_over_k,150.00000000002808,150,0,1e-06,True,5,4,5
+membership_change,r2-j2/bound_start/inward_cost,cost,1.7234876947455287e-24,0,1e-14,0,True,5,4,5
+new_contact_only,r2-j2/bound_start/cost,cost,0.0031494214595652998,0.002081690380433803,1e-12,1e-08,False,13,12,10

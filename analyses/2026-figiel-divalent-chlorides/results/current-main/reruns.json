@@ -1,0 +1,93 @@
+{
+  "base": "29fc98dd503527a4c2aef8b4a91017d76c0abdee",
+  "engine_runtime_changed": false,
+  "tolerances_changed": false,
+  "unchanged_runs": [
+    {
+      "producer": "baseline",
+      "command": [
+        ".venv/bin/python",
+        "-B",
+        "analyses/2026-figiel-divalent-chlorides/scripts/baseline.py"
+      ],
+      "exit": 1
+    },
+    {
+      "producer": "stage1-fit",
+      "command": [
+        ".venv/bin/python",
+        "-B",
+        "analyses/2026-figiel-divalent-chlorides/scripts/stage1_fit.py"
+      ],
+      "exit": 1
+    },
+    {
+      "producer": "stage1-minimax",
+      "command": [
+        ".venv/bin/python",
+        "-B",
+        "analyses/2026-figiel-divalent-chlorides/scripts/stage1_minimax.py"
+      ],
+      "exit": 1
+    },
+    {
+      "producer": "stage2-preflight",
+      "command": [
+        ".venv/bin/python",
+        "-B",
+        "analyses/2026-figiel-divalent-chlorides/scripts/stage2_fit.py",
+        "preflight"
+      ],
+      "exit": 1
+    }
+  ],
+  "qualification_base": "8ffd627f0f7e4e68fdf9db634773ff00e058d85e",
+  "producer_head": "388ed38b12d618e711c64a3c05c7f88653f84d6a",
+  "final_runs": [
+    {
+      "producer": "baseline",
+      "command": [
+        ".venv/bin/python",
+        "-B",
+        "analyses/2026-figiel-divalent-chlorides/scripts/baseline.py"
+      ],
+      "exit": 0,
+      "seconds": 0.32814598900040437,
+      "producer_sha256": "27773b826276b4056a1909d6e11cb8292e5421d88646f3cf4390a2bc433838dd"
+    },
+    {
+      "producer": "stage1-fit",
+      "command": [
+        ".venv/bin/python",
+        "-B",
+        "analyses/2026-figiel-divalent-chlorides/scripts/stage1_fit.py"
+      ],
+      "exit": 0,
+      "seconds": 42.25080376000005,
+      "producer_sha256": "fadbd3b7b8e5e6fcbfffbcaf452259697a59a88a022bd349c0b15803aee0f7be"
+    },
+    {
+      "producer": "stage1-minimax",
+      "command": [
+        ".venv/bin/python",
+        "-B",
+        "analyses/2026-figiel-divalent-chlorides/scripts/stage1_minimax.py"
+      ],
+      "exit": 1,
+      "producer_sha256": "0c7fd0ae09eddfcc2a18a0be5bb9eb198a6bc9e4c947823f0edef4f8daf755be",
+      "note": "Rerun after removing packet publication; stopped at the unchanged cold-replay assertion."
+    },
+    {
+      "producer": "stage2-preflight",
+      "command": [
+        ".venv/bin/python",
+        "-B",
+        "analyses/2026-figiel-divalent-chlorides/scripts/stage2_fit.py",
+        "preflight"
+      ],
+      "exit": 0,
+      "seconds": 0.8103203200007556,
+      "producer_sha256": "0033e2a2efbe22e3df3f2c0d9c47c14a40db90a6b1b8eb3a98cb8cdf18f20aed"
+    }
+  ]
+}

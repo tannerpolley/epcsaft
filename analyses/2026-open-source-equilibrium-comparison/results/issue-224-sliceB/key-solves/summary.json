@@ -1,0 +1,179 @@
+{
+  "wheels": {
+    "A": {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/wheels/main-current/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "sha256": "7181e0a0123f9e574bc2d316fe8f4f6d89a85667168b1f4df4ad133fd5227151"
+    },
+    "B": {
+      "path": "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-224-slice-b-readiness-re-measure-dbaa15c3/build/issue-224/wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "sha256": "be54d59d93a3ed0dd6be530d33448bf9c3908614b0be92c0dea7df00e44e4fbd"
+    }
+  },
+  "source_commit": "1fa7ec18bfc732d371a5683a2bbabec7583a936a",
+  "cpu": 0,
+  "nice": 10,
+  "threads": 1,
+  "host": "tnnrpolley21-MS-7C95",
+  "pairs": 3,
+  "warmups": 1,
+  "time_boundary": "sum of equilibrium call wall times; preparation, imports and result reading excluded",
+  "change_percent": "100*(B_seconds/A_seconds-1)",
+  "state_difference": "abs(A-B)/max(abs(A),abs(B)); two zeros equal; declared phase order",
+  "evaluation_meaning": "native Engine evaluations, including exact polish; not every EOS evaluation",
+  "limits": "shared-host timing; declared local states only; no physical validation or global stability",
+  "cases": {
+    "case-6/figure-2-point-7/cold": {
+      "work_A": {
+        "iterations": 16,
+        "evaluations": 47,
+        "hessian_calls": 17
+      },
+      "work_B": {
+        "iterations": 16,
+        "evaluations": 47,
+        "hessian_calls": 17
+      },
+      "work_identical": true,
+      "max_relative_state_difference": 0.0,
+      "median_change_percent": -4.112335118846044,
+      "range_percent": [
+        -15.64251371313583,
+        38.028955619236186
+      ],
+      "mad_percent": 11.530178594289787,
+      "median_A_seconds": 0.07025749049999999,
+      "median_B_seconds": 0.061048519,
+      "zero_within_spread": true
+    },
+    "case-6/figure-2-point-7/accepted": {
+      "work_A": {
+        "iterations": 7,
+        "evaluations": 11,
+        "hessian_calls": 8
+      },
+      "work_B": {
+        "iterations": 7,
+        "evaluations": 11,
+        "hessian_calls": 8
+      },
+      "work_identical": true,
+      "max_relative_state_difference": 0.0,
+      "median_change_percent": -0.0735403171446436,
+      "range_percent": [
+        -0.6338201884580563,
+        10.29470563714737
+      ],
+      "mad_percent": 0.5602798713134127,
+      "median_A_seconds": 0.0322443625,
+      "median_B_seconds": 0.032040071,
+      "zero_within_spread": true
+    },
+    "case-7/flash-5918.5286-Pa/cold": {
+      "work_A": {
+        "iterations": 43,
+        "evaluations": 57,
+        "hessian_calls": 44
+      },
+      "work_B": {
+        "iterations": 43,
+        "evaluations": 57,
+        "hessian_calls": 44
+      },
+      "work_identical": true,
+      "max_relative_state_difference": 0.0,
+      "median_change_percent": -9.689959849095464,
+      "range_percent": [
+        -24.235518855984,
+        25.71566572115271
+      ],
+      "mad_percent": 14.545559006888537,
+      "median_A_seconds": 0.14040136250000002,
+      "median_B_seconds": 0.12031982899999999,
+      "zero_within_spread": true
+    },
+    "case-7/flash-5918.5286-Pa/accepted": {
+      "work_A": {
+        "iterations": 17,
+        "evaluations": 22,
+        "hessian_calls": 18
+      },
+      "work_B": {
+        "iterations": 17,
+        "evaluations": 22,
+        "hessian_calls": 18
+      },
+      "work_identical": true,
+      "max_relative_state_difference": 0.0,
+      "median_change_percent": 11.067794237618156,
+      "range_percent": [
+        -8.315877184380465,
+        72.0681251486254
+      ],
+      "mad_percent": 19.38367142199862,
+      "median_A_seconds": 0.049498045,
+      "median_B_seconds": 0.0488421445,
+      "zero_within_spread": true
+    },
+    "khudaida/sequential-8": {
+      "work_A": {
+        "iterations": 66,
+        "evaluations": 93,
+        "hessian_calls": 74
+      },
+      "work_B": {
+        "iterations": 66,
+        "evaluations": 93,
+        "hessian_calls": 74
+      },
+      "work_identical": true,
+      "max_relative_state_difference": 0.0,
+      "median_change_percent": -2.854201858878047,
+      "range_percent": [
+        -7.0601094174202075,
+        15.79946079960559
+      ],
+      "mad_percent": 4.20590755854216,
+      "median_A_seconds": 0.29447092,
+      "median_B_seconds": 0.29904519500000004,
+      "zero_within_spread": true
+    },
+    "mea-nominally-unloaded/353.15-K": {
+      "work_A": {
+        "iterations": 13,
+        "evaluations": 19,
+        "hessian_calls": 14
+      },
+      "work_B": {
+        "iterations": 13,
+        "evaluations": 19,
+        "hessian_calls": 14
+      },
+      "work_identical": true,
+      "max_relative_state_difference": 0.0,
+      "median_change_percent": -5.403256501868764,
+      "range_percent": [
+        -6.692507593935354,
+        21.79835524231118
+      ],
+      "mad_percent": 1.28925109206659,
+      "median_A_seconds": 0.07731595399999999,
+      "median_B_seconds": 0.07167428149999999,
+      "zero_within_spread": true
+    }
+  },
+  "identical_wheels": false,
+  "self_check_passed": null,
+  "runtime_seconds": 25.22006357400096,
+  "input_sha256": {
+    "tools/time-key-solves": "b9b65314746b65c9f41f31d625e9a0a47064fbd2e8d85a1dd7a4aa064d94833d",
+    "analyses/2026-tpd-phase-discovery/scripts/baseline.py": "db6c413ea84549cd0426951bad156ee307dd14168f79e66b8c7409d08b2ca8f9",
+    "analyses/2026-khudaida-idaes-settler/scripts/run_fixed_settler.py": "2dabb36cea32bd22feb71b041d0e6577ec38d8cd6f7a41db50c13313f84f3589",
+    "analyses/reproduction/2026-khudaida/figures/figure-02/source/source-points.csv": "21cf58a5373b2e2c337b6baf5a0423d0ab5d7cea9639bb727b061f5844ef78d7",
+    "analyses/2026-khudaida-idaes-settler/inputs/data/khudaida-2026-figure-2-electrolyte-lle/7/parameters/parameters.json": "8babed899e7347e58c403c7aff24a7fdd6d60411af3b4d81eb6aa90c2431dfa4",
+    "data/packets/mea-co2-h2o-nine-species-estimation/3/parameters/parameters.json": "2ea3b41485a98d2cf49add620b87bb05fc5a275cdd132c1cdbb0cfc5f07f2ca4",
+    "engine/tests/equilibrium/test_trace_reliability.py": "8e43ecd07d742c54632b2f2e3d272c410fcf1515ce32fef2e0aff3c7f5924df3",
+    "engine/data/reference/mea-nominally-unloaded/request.json": "bc8a03e13efab9a9675a63121c12538dbb9f42a18dbe4ddc7fe6742b6ab6da61",
+    "engine/data/reference/mea-nominally-unloaded/parameters.json": "756fec502d3a1433d538abb073c4caeabf91902013ab7e27d5459ce70396543b",
+    "engine/data/reference/mea-zero-inventory/ideal-calorics.json": "c94d504e68c6dc6e85d3d950cc51422499846729b1a06994b362040be991924a"
+  }
+}

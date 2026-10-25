@@ -1,0 +1,1023 @@
+Building wheel...
++ meson setup --reconfigure /home/tnnrpolley21/.t3/worktrees/ePC-SAFT/issue-272-polish-floor/engine /home/tnnrpolley21/.t3/worktrees/ePC-SAFT/issue-272-polish-floor/build/engine-meson/cpython-313-linux-x86_64-x86_64-f6db693e21e289603ae71c78242a17b102f1e324061021d5dca361f47a0bfef7 -Dbuildtype=release -Db_ndebug=if-release -Db_vscrt=md --native-file=/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/issue-272-polish-floor/build/engine-meson/cpython-313-linux-x86_64-x86_64-f6db693e21e289603ae71c78242a17b102f1e324061021d5dca361f47a0bfef7/meson-python-native-file.ini
+The Meson build system
+Version: 1.12.0
+Source dir: /home/tnnrpolley21/.t3/worktrees/ePC-SAFT/issue-272-polish-floor/engine
+Build dir: /home/tnnrpolley21/.t3/worktrees/ePC-SAFT/issue-272-polish-floor/build/engine-meson/cpython-313-linux-x86_64-x86_64-f6db693e21e289603ae71c78242a17b102f1e324061021d5dca361f47a0bfef7
+Build type: native build
+Project name: epcsaft
+Project version: 0.2.0.dev0
+C compiler for the host machine: /usr/bin/ccache cc (gcc 13.3.0 "cc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0")
+C linker for the host machine: cc ld.bfd 2.42
+C++ compiler for the host machine: /usr/bin/ccache c++ (gcc 13.3.0 "c++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0")
+C++ linker for the host machine: c++ ld.bfd 2.42
+Host machine cpu family: x86_64
+Host machine cpu: x86_64
+Program python3 found: YES (/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/issue-272-polish-floor/.venv/bin/python3)
+Compiler for C++ supports arguments -Wall: YES (cached)
+Compiler for C++ supports arguments -Wextra: YES (cached)
+Compiler for C++ supports arguments -Wpedantic: YES (cached)
+Compiler for C++ supports link arguments -s: YES (cached)
+Dependency threads for host machine found: YES unknown (cached)
+Dependency ipopt for host machine found: YES 3.11.9 (cached)
+Dependency eigen3 for host machine found: YES 3.4.0 (cached)
+Dependency Ceres (modules: Ceres::ceres) for host machine found: YES 2.2.0 (cached)
+
+Executing subproject cppad for machine: host 
+
+cppad| Project name: cppad
+cppad| Project version: 20250000.3
+cppad| C++ compiler for the host machine: /usr/bin/ccache c++ (gcc 13.3.0 "c++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0")
+cppad| C++ linker for the host machine: c++ ld.bfd 2.42
+cppad| Checking if "CppAD mkstemp" compiles: YES (cached)
+cppad| Checking for size of "void *" : 8 (cached)
+cppad| Configuring configure.hpp using configuration
+cppad| Build targets in project: 0
+cppad| Subproject cppad finished.
+
+
+Executing subproject highs for machine: host 
+
+highs| Project name: highs
+highs| Project version: 1.15.1
+highs| C compiler for the host machine: /usr/bin/ccache cc (gcc 13.3.0 "cc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0")
+highs| C linker for the host machine: cc ld.bfd 2.42
+highs| C++ compiler for the host machine: /usr/bin/ccache c++ (gcc 13.3.0 "c++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0")
+highs| C++ linker for the host machine: c++ ld.bfd 2.42
+highs| Compiler for C++ supports arguments -Wno-invalid-offsetof: YES (cached)
+highs| Compiler for C++ supports arguments -Wno-maybe-uninitialized: YES (cached)
+highs| Compiler for C++ supports arguments -Wno-reorder: YES (cached)
+highs| Compiler for C++ supports arguments -Wno-reorder-ctor: NO (cached)
+highs| Compiler for C++ supports arguments -Wno-sometimes-uninitialized: NO (cached)
+highs| Compiler for C++ supports arguments -Wno-unused-but-set-variable: YES (cached)
+highs| Compiler for C++ supports arguments -Wno-unused-variable: YES (cached)
+highs| Compiler for C++ supports arguments -Wno-use-after-free: YES (cached)
+highs| Compiler for C++ supports arguments -Wno-comment: YES (cached)
+highs| Compiler for C supports arguments -Wno-comment: YES (cached)
+highs| Compiler for C supports arguments -Wno-invalid-offsetof: NO (cached)
+highs| Compiler for C supports arguments -Wno-maybe-uninitialized: YES (cached)
+highs| Compiler for C supports arguments -Wno-sometimes-uninitialized: NO (cached)
+highs| Compiler for C supports arguments -Wno-unused-label: YES (cached)
+highs| Compiler for C supports arguments -Wno-unused-but-set-variable: YES (cached)
+highs| Compiler for C supports arguments -Wno-unused-variable: YES (cached)
+highs| Compiler for C supports arguments -Wno-use-after-free: YES (cached)
+highs| Compiler for C++ supports arguments -mpopcnt: YES (cached)
+highs| Dependency threads for host machine found: YES unknown (cached)
+highs| Checking if "Check atomic builtins without -latomic" links: YES (cached)
+highs| Dependency zlib for host machine skipped: feature use_zlib disabled
+highs| Compiler for C supports arguments -fno-omit-frame-pointer: YES (cached)
+highs| Checking if "mm_pause check" compiles: YES (cached)
+highs| Checking if "builtin_clz check" compiles: YES (cached)
+highs| Configuring HConfig.h.meson.interim using configuration
+highs| Found git repository at /home/tnnrpolley21/.t3/worktrees/ePC-SAFT/issue-272-polish-floor
+highs| Build targets in project: 2
+highs| Subproject highs finished.
+
+Build targets in project: 15
+
+epcsaft 0.2.0.dev0
+
+  Subprojects (for host machine)
+    cppad       : YES
+    highs       : YES
+
+  User defined options
+    Native files: /home/tnnrpolley21/.t3/worktrees/ePC-SAFT/issue-272-polish-floor/build/engine-meson/cpython-313-linux-x86_64-x86_64-f6db693e21e289603ae71c78242a17b102f1e324061021d5dca361f47a0bfef7/meson-python-native-file.ini
+    b_ndebug    : if-release
+    b_vscrt     : md
+    buildtype   : release
+
+Found ninja-1.11.1 at /usr/bin/ninja
+Cleaning... 0 files.
++ /usr/bin/ninja -j1
+[1/246] Generating build/subprojects/HiGHS-1.15.1/highs/HConfig.h with a custom command
+[2/32] Compiling C++ object libepcsaft_native.a.p/native_equilibrium_stoichiometry.cpp.o
+In file included from ../../../engine/native/properties/helmholtz_tape.hpp:5,
+                 from ../../../engine/native/properties/helmholtz_model.hpp:4,
+                 from ../../../engine/native/equilibrium/problem.hpp:4,
+                 from ../../../engine/native/equilibrium/stoichiometry.hpp:3,
+                 from ../../../engine/native/equilibrium/stoichiometry.cpp:1:
+../../../engine/native/contributions/electrolyte.hpp: In instantiation of 'epcsaft::ElectrolyteResult<Scalar> epcsaft::electrolyte_contribution(const Scalar&, const Scalar&, double, double, const std::vector<Scalar>&, const std::vector<double>&, const ParameterSet&) [with Scalar = CppAD::AD<double>; ParameterSet = ParameterRecord<CppAD::AD<double> >]':
+../../../engine/native/properties/helmholtz_tape.hpp:40:54:   required from 'std::pair<epcsaft::ElectrolyteResult<Scalar>, Scalar> epcsaft::detail::supported_electrostatics(const Scalar&, const Scalar&, double, double, const std::vector<Scalar>&, const std::vector<double>&, const ParameterSet&) [with Scalar = CppAD::AD<double>; ParameterSet = epcsaft::ParameterRecord<CppAD::AD<double> >]'
+../../../engine/native/properties/helmholtz_tape.hpp:172:70:   required from here
+../../../engine/native/contributions/electrolyte.hpp:198:12: warning: unused parameter 'reference_temperature' [-Wunused-parameter]
+  198 |     double reference_temperature,
+      |     ~~~~~~~^~~~~~~~~~~~~~~~~~~~~
+../../../engine/native/contributions/electrolyte.hpp:199:12: warning: unused parameter 'reference_molar_density' [-Wunused-parameter]
+  199 |     double reference_molar_density,
+      |     ~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~
+In file included from /usr/include/eigen3/Eigen/Core:341,
+                 from /usr/include/eigen3/Eigen/Dense:1,
+                 from ../../../engine/native/contributions/association.hpp:12,
+                 from ../../../engine/native/properties/helmholtz_tape.hpp:3:
+/usr/include/eigen3/Eigen/src/Core/products/TriangularMatrixVector.h: In function 'static void Eigen::internal::trmv_selector<Mode, 1>::run(const Lhs&, const Rhs&, Dest&, const typename Dest::Scalar&) [with Lhs = Eigen::Transpose<const Eigen::Block<const Eigen::Block<Eigen::Matrix<double, -1, -1>, -1, -1, false>, -1, -1, false> >; Rhs = Eigen::Transpose<const Eigen::CwiseBinaryOp<Eigen::internal::scalar_product_op<double, double>, const Eigen::CwiseNullaryOp<Eigen::internal::scalar_constant_op<double>, const Eigen::Matrix<double, 1, -1> >, const Eigen::Transpose<const Eigen::Block<const Eigen::Block<const Eigen::Block<Eigen::Matrix<double, -1, -1>, -1, -1, false>, -1, 1, true>, -1, 1, false> > > >; Dest = Eigen::Transpose<Eigen::Block<Eigen::Block<Eigen::Matrix<double, -1, -1, 1>, 1, -1, true>, 1, -1, false> >; int Mode = 6]':
+/usr/include/eigen3/Eigen/src/Core/products/TriangularMatrixVector.h:332:12: warning: 'result' may be used uninitialized [-Wmaybe-uninitialized]
+  327 |     internal::triangular_matrix_vector_product
+      |     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  328 |       <Index,Mode,
+      |       ~~~~~~~~~~~~
+  329 |        LhsScalar, LhsBlasTraits::NeedToConjugate,
+      |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  330 |        RhsScalar, RhsBlasTraits::NeedToConjugate,
+      |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  331 |        RowMajor>
+      |        ~~~~~~~~~
+  332 |       ::run(actualLhs.rows(),actualLhs.cols(),
+      |       ~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  333 |             actualLhs.data(),actualLhs.outerStride(),
+      |             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  334 |             actualRhsPtr,1,
+      |             ~~~~~~~~~~~~~~~
+  335 |             dest.data(),dest.innerStride(),
+      |             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  336 |             actualAlpha);
+      |             ~~~~~~~~~~~~
+/usr/include/eigen3/Eigen/src/Core/products/TriangularMatrixVector.h:105:24: note: by argument 5 of type 'const double*' to 'static void Eigen::internal::triangular_matrix_vector_product<Index, Mode, LhsScalar, ConjLhs, RhsScalar, ConjRhs, 1, Version>::run(Index, Index, const LhsScalar*, Index, const RhsScalar*, Index, ResScalar*, Index, const ResScalar&) [with Index = long int; int Mode = 6; LhsScalar = double; bool ConjLhs = false; RhsScalar = double; bool ConjRhs = false; int Version = 0]' declared here
+  105 | EIGEN_DONT_INLINE void triangular_matrix_vector_product<Index,Mode,LhsScalar,ConjLhs,RhsScalar,ConjRhs,RowMajor,Version>
+      |                        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[3/32] Compiling C++ object libepcsaft_native.a.p/native_equilibrium_request_compile.cpp.o
+In file included from ../../../engine/native/properties/helmholtz_tape.hpp:5,
+                 from ../../../engine/native/properties/helmholtz_model.hpp:4,
+                 from ../../../engine/native/equilibrium/problem.hpp:4,
+                 from ../../../engine/native/equilibrium/stoichiometry.hpp:3,
+                 from ../../../engine/native/equilibrium/request_compile.cpp:1:
+../../../engine/native/contributions/electrolyte.hpp: In instantiation of 'epcsaft::ElectrolyteResult<Scalar> epcsaft::electrolyte_contribution(const Scalar&, const Scalar&, double, double, const std::vector<Scalar>&, const std::vector<double>&, const ParameterSet&) [with Scalar = CppAD::AD<double>; ParameterSet = ParameterRecord<CppAD::AD<double> >]':
+../../../engine/native/properties/helmholtz_tape.hpp:40:54:   required from 'std::pair<epcsaft::ElectrolyteResult<Scalar>, Scalar> epcsaft::detail::supported_electrostatics(const Scalar&, const Scalar&, double, double, const std::vector<Scalar>&, const std::vector<double>&, const ParameterSet&) [with Scalar = CppAD::AD<double>; ParameterSet = epcsaft::ParameterRecord<CppAD::AD<double> >]'
+../../../engine/native/properties/helmholtz_tape.hpp:172:70:   required from here
+../../../engine/native/contributions/electrolyte.hpp:198:12: warning: unused parameter 'reference_temperature' [-Wunused-parameter]
+  198 |     double reference_temperature,
+      |     ~~~~~~~^~~~~~~~~~~~~~~~~~~~~
+../../../engine/native/contributions/electrolyte.hpp:199:12: warning: unused parameter 'reference_molar_density' [-Wunused-parameter]
+  199 |     double reference_molar_density,
+      |     ~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~
+[4/32] Compiling C++ object libepcsaft_native.a.p/native_equilibrium_gibbs_minimizer.cpp.o
+In file included from /usr/include/coin/IpTNLP.hpp:13,
+                 from ../../../engine/native/equilibrium/gibbs_minimizer.hpp:5,
+                 from ../../../engine/native/equilibrium/gibbs_minimizer.cpp:1:
+/usr/include/coin/IpReferenced.hpp: In member function 'void Ipopt::ReferencedObject::AddRef(const Ipopt::Referencer*) const':
+/usr/include/coin/IpReferenced.hpp:215:51: warning: unused parameter 'referencer' [-Wunused-parameter]
+  215 |   void ReferencedObject::AddRef(const Referencer* referencer) const
+      |                                 ~~~~~~~~~~~~~~~~~~^~~~~~~~~~
+/usr/include/coin/IpReferenced.hpp: In member function 'void Ipopt::ReferencedObject::ReleaseRef(const Ipopt::Referencer*) const':
+/usr/include/coin/IpReferenced.hpp:227:55: warning: unused parameter 'referencer' [-Wunused-parameter]
+  227 |   void ReferencedObject::ReleaseRef(const Referencer* referencer) const
+      |                                     ~~~~~~~~~~~~~~~~~~^~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp: In member function 'virtual bool Ipopt::TNLP::get_var_con_metadata(Ipopt::Index, StringMetaDataMapType&, IntegerMetaDataMapType&, NumericMetaDataMapType&, Ipopt::Index, StringMetaDataMapType&, IntegerMetaDataMapType&, NumericMetaDataMapType&)':
+/usr/include/coin/IpTNLP.hpp:90:45: warning: unused parameter 'n' [-Wunused-parameter]
+   90 |     virtual bool get_var_con_metadata(Index n,
+      |                                       ~~~~~~^
+/usr/include/coin/IpTNLP.hpp:91:62: warning: unused parameter 'var_string_md' [-Wunused-parameter]
+   91 |                                       StringMetaDataMapType& var_string_md,
+      |                                       ~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:92:63: warning: unused parameter 'var_integer_md' [-Wunused-parameter]
+   92 |                                       IntegerMetaDataMapType& var_integer_md,
+      |                                       ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:93:63: warning: unused parameter 'var_numeric_md' [-Wunused-parameter]
+   93 |                                       NumericMetaDataMapType& var_numeric_md,
+      |                                       ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:94:45: warning: unused parameter 'm' [-Wunused-parameter]
+   94 |                                       Index m,
+      |                                       ~~~~~~^
+/usr/include/coin/IpTNLP.hpp:95:62: warning: unused parameter 'con_string_md' [-Wunused-parameter]
+   95 |                                       StringMetaDataMapType& con_string_md,
+      |                                       ~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:96:63: warning: unused parameter 'con_integer_md' [-Wunused-parameter]
+   96 |                                       IntegerMetaDataMapType& con_integer_md,
+      |                                       ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:97:63: warning: unused parameter 'con_numeric_md' [-Wunused-parameter]
+   97 |                                       NumericMetaDataMapType& con_numeric_md)
+      |                                       ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp: In member function 'virtual bool Ipopt::TNLP::get_scaling_parameters(Ipopt::Number&, bool&, Ipopt::Index, Ipopt::Number*, bool&, Ipopt::Index, Ipopt::Number*)':
+/usr/include/coin/IpTNLP.hpp:119:49: warning: unused parameter 'obj_scaling' [-Wunused-parameter]
+  119 |     virtual bool get_scaling_parameters(Number& obj_scaling,
+      |                                         ~~~~~~~~^~~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:120:47: warning: unused parameter 'use_x_scaling' [-Wunused-parameter]
+  120 |                                         bool& use_x_scaling, Index n,
+      |                                         ~~~~~~^~~~~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:120:68: warning: unused parameter 'n' [-Wunused-parameter]
+  120 |                                         bool& use_x_scaling, Index n,
+      |                                                              ~~~~~~^
+/usr/include/coin/IpTNLP.hpp:121:49: warning: unused parameter 'x_scaling' [-Wunused-parameter]
+  121 |                                         Number* x_scaling,
+      |                                         ~~~~~~~~^~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:122:47: warning: unused parameter 'use_g_scaling' [-Wunused-parameter]
+  122 |                                         bool& use_g_scaling, Index m,
+      |                                         ~~~~~~^~~~~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:122:68: warning: unused parameter 'm' [-Wunused-parameter]
+  122 |                                         bool& use_g_scaling, Index m,
+      |                                                              ~~~~~~^
+/usr/include/coin/IpTNLP.hpp:123:49: warning: unused parameter 'g_scaling' [-Wunused-parameter]
+  123 |                                         Number* g_scaling)
+      |                                         ~~~~~~~~^~~~~~~~~
+/usr/include/coin/IpTNLP.hpp: In member function 'virtual bool Ipopt::TNLP::get_variables_linearity(Ipopt::Index, LinearityType*)':
+/usr/include/coin/IpTNLP.hpp:132:48: warning: unused parameter 'n' [-Wunused-parameter]
+  132 |     virtual bool get_variables_linearity(Index n, LinearityType* var_types)
+      |                                          ~~~~~~^
+/usr/include/coin/IpTNLP.hpp:132:66: warning: unused parameter 'var_types' [-Wunused-parameter]
+  132 |     virtual bool get_variables_linearity(Index n, LinearityType* var_types)
+      |                                                   ~~~~~~~~~~~~~~~^~~~~~~~~
+/usr/include/coin/IpTNLP.hpp: In member function 'virtual bool Ipopt::TNLP::get_constraints_linearity(Ipopt::Index, LinearityType*)':
+/usr/include/coin/IpTNLP.hpp:140:50: warning: unused parameter 'm' [-Wunused-parameter]
+  140 |     virtual bool get_constraints_linearity(Index m, LinearityType* const_types)
+      |                                            ~~~~~~^
+/usr/include/coin/IpTNLP.hpp:140:68: warning: unused parameter 'const_types' [-Wunused-parameter]
+  140 |     virtual bool get_constraints_linearity(Index m, LinearityType* const_types)
+      |                                                     ~~~~~~~~~~~~~~~^~~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp: In member function 'virtual bool Ipopt::TNLP::get_warm_start_iterate(Ipopt::IteratesVector&)':
+/usr/include/coin/IpTNLP.hpp:161:57: warning: unused parameter 'warm_start_iterate' [-Wunused-parameter]
+  161 |     virtual bool get_warm_start_iterate(IteratesVector& warm_start_iterate)
+      |                                         ~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp: In member function 'virtual bool Ipopt::TNLP::eval_h(Ipopt::Index, const Ipopt::Number*, bool, Ipopt::Number, Ipopt::Index, const Ipopt::Number*, bool, Ipopt::Index, Ipopt::Index*, Ipopt::Index*, Ipopt::Number*)':
+/usr/include/coin/IpTNLP.hpp:196:31: warning: unused parameter 'n' [-Wunused-parameter]
+  196 |     virtual bool eval_h(Index n, const Number* x, bool new_x,
+      |                         ~~~~~~^
+/usr/include/coin/IpTNLP.hpp:196:48: warning: unused parameter 'x' [-Wunused-parameter]
+  196 |     virtual bool eval_h(Index n, const Number* x, bool new_x,
+      |                                  ~~~~~~~~~~~~~~^
+/usr/include/coin/IpTNLP.hpp:196:56: warning: unused parameter 'new_x' [-Wunused-parameter]
+  196 |     virtual bool eval_h(Index n, const Number* x, bool new_x,
+      |                                                   ~~~~~^~~~~
+/usr/include/coin/IpTNLP.hpp:197:32: warning: unused parameter 'obj_factor' [-Wunused-parameter]
+  197 |                         Number obj_factor, Index m, const Number* lambda,
+      |                         ~~~~~~~^~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:197:50: warning: unused parameter 'm' [-Wunused-parameter]
+  197 |                         Number obj_factor, Index m, const Number* lambda,
+      |                                            ~~~~~~^
+/usr/include/coin/IpTNLP.hpp:197:67: warning: unused parameter 'lambda' [-Wunused-parameter]
+  197 |                         Number obj_factor, Index m, const Number* lambda,
+      |                                                     ~~~~~~~~~~~~~~^~~~~~
+/usr/include/coin/IpTNLP.hpp:198:30: warning: unused parameter 'new_lambda' [-Wunused-parameter]
+  198 |                         bool new_lambda, Index nele_hess,
+      |                         ~~~~~^~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:198:48: warning: unused parameter 'nele_hess' [-Wunused-parameter]
+  198 |                         bool new_lambda, Index nele_hess,
+      |                                          ~~~~~~^~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:199:32: warning: unused parameter 'iRow' [-Wunused-parameter]
+  199 |                         Index* iRow, Index* jCol, Number* values)
+      |                         ~~~~~~~^~~~
+/usr/include/coin/IpTNLP.hpp:199:45: warning: unused parameter 'jCol' [-Wunused-parameter]
+  199 |                         Index* iRow, Index* jCol, Number* values)
+      |                                      ~~~~~~~^~~~
+/usr/include/coin/IpTNLP.hpp:199:59: warning: unused parameter 'values' [-Wunused-parameter]
+  199 |                         Index* iRow, Index* jCol, Number* values)
+      |                                                   ~~~~~~~~^~~~~~
+/usr/include/coin/IpTNLP.hpp: In member function 'virtual void Ipopt::TNLP::finalize_metadata(Ipopt::Index, const StringMetaDataMapType&, const IntegerMetaDataMapType&, const NumericMetaDataMapType&, Ipopt::Index, const StringMetaDataMapType&, const IntegerMetaDataMapType&, const NumericMetaDataMapType&)':
+/usr/include/coin/IpTNLP.hpp:226:42: warning: unused parameter 'n' [-Wunused-parameter]
+  226 |     virtual void finalize_metadata(Index n,
+      |                                    ~~~~~~^
+/usr/include/coin/IpTNLP.hpp:227:65: warning: unused parameter 'var_string_md' [-Wunused-parameter]
+  227 |                                    const StringMetaDataMapType& var_string_md,
+      |                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:228:66: warning: unused parameter 'var_integer_md' [-Wunused-parameter]
+  228 |                                    const IntegerMetaDataMapType& var_integer_md,
+      |                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:229:66: warning: unused parameter 'var_numeric_md' [-Wunused-parameter]
+  229 |                                    const NumericMetaDataMapType& var_numeric_md,
+      |                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:230:42: warning: unused parameter 'm' [-Wunused-parameter]
+  230 |                                    Index m,
+      |                                    ~~~~~~^
+/usr/include/coin/IpTNLP.hpp:231:65: warning: unused parameter 'con_string_md' [-Wunused-parameter]
+  231 |                                    const StringMetaDataMapType& con_string_md,
+      |                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:232:66: warning: unused parameter 'con_integer_md' [-Wunused-parameter]
+  232 |                                    const IntegerMetaDataMapType& con_integer_md,
+      |                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:233:66: warning: unused parameter 'con_numeric_md' [-Wunused-parameter]
+  233 |                                    const NumericMetaDataMapType& con_numeric_md)
+      |                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp: In member function 'virtual bool Ipopt::TNLP::intermediate_callback(Ipopt::AlgorithmMode, Ipopt::Index, Ipopt::Number, Ipopt::Number, Ipopt::Number, Ipopt::Number, Ipopt::Number, Ipopt::Number, Ipopt::Number, Ipopt::Number, Ipopt::Index, const Ipopt::IpoptData*, Ipopt::IpoptCalculatedQuantities*)':
+/usr/include/coin/IpTNLP.hpp:240:54: warning: unused parameter 'mode' [-Wunused-parameter]
+  240 |     virtual bool intermediate_callback(AlgorithmMode mode,
+      |                                        ~~~~~~~~~~~~~~^~~~
+/usr/include/coin/IpTNLP.hpp:241:46: warning: unused parameter 'iter' [-Wunused-parameter]
+  241 |                                        Index iter, Number obj_value,
+      |                                        ~~~~~~^~~~
+/usr/include/coin/IpTNLP.hpp:241:59: warning: unused parameter 'obj_value' [-Wunused-parameter]
+  241 |                                        Index iter, Number obj_value,
+      |                                                    ~~~~~~~^~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:242:47: warning: unused parameter 'inf_pr' [-Wunused-parameter]
+  242 |                                        Number inf_pr, Number inf_du,
+      |                                        ~~~~~~~^~~~~~
+/usr/include/coin/IpTNLP.hpp:242:62: warning: unused parameter 'inf_du' [-Wunused-parameter]
+  242 |                                        Number inf_pr, Number inf_du,
+      |                                                       ~~~~~~~^~~~~~
+/usr/include/coin/IpTNLP.hpp:243:47: warning: unused parameter 'mu' [-Wunused-parameter]
+  243 |                                        Number mu, Number d_norm,
+      |                                        ~~~~~~~^~
+/usr/include/coin/IpTNLP.hpp:243:58: warning: unused parameter 'd_norm' [-Wunused-parameter]
+  243 |                                        Number mu, Number d_norm,
+      |                                                   ~~~~~~~^~~~~~
+/usr/include/coin/IpTNLP.hpp:244:47: warning: unused parameter 'regularization_size' [-Wunused-parameter]
+  244 |                                        Number regularization_size,
+      |                                        ~~~~~~~^~~~~~~~~~~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:245:47: warning: unused parameter 'alpha_du' [-Wunused-parameter]
+  245 |                                        Number alpha_du, Number alpha_pr,
+      |                                        ~~~~~~~^~~~~~~~
+/usr/include/coin/IpTNLP.hpp:245:64: warning: unused parameter 'alpha_pr' [-Wunused-parameter]
+  245 |                                        Number alpha_du, Number alpha_pr,
+      |                                                         ~~~~~~~^~~~~~~~
+/usr/include/coin/IpTNLP.hpp:246:46: warning: unused parameter 'ls_trials' [-Wunused-parameter]
+  246 |                                        Index ls_trials,
+      |                                        ~~~~~~^~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:247:57: warning: unused parameter 'ip_data' [-Wunused-parameter]
+  247 |                                        const IpoptData* ip_data,
+      |                                        ~~~~~~~~~~~~~~~~~^~~~~~~
+/usr/include/coin/IpTNLP.hpp:248:67: warning: unused parameter 'ip_cq' [-Wunused-parameter]
+  248 |                                        IpoptCalculatedQuantities* ip_cq)
+      |                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~
+/usr/include/coin/IpTNLP.hpp: In member function 'virtual bool Ipopt::TNLP::get_list_of_nonlinear_variables(Ipopt::Index, Ipopt::Index*)':
+/usr/include/coin/IpTNLP.hpp:272:56: warning: unused parameter 'num_nonlin_vars' [-Wunused-parameter]
+  272 |     virtual bool get_list_of_nonlinear_variables(Index num_nonlin_vars,
+      |                                                  ~~~~~~^~~~~~~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:273:16: warning: unused parameter 'pos_nonlin_vars' [-Wunused-parameter]
+  273 |         Index* pos_nonlin_vars)
+      |         ~~~~~~~^~~~~~~~~~~~~~~
+In file included from /usr/include/coin/IpTaggedObject.hpp:15,
+                 from /usr/include/coin/IpVector.hpp:13,
+                 from /usr/include/coin/IpNLP.hpp:13,
+                 from /usr/include/coin/IpIpoptApplication.hpp:28,
+                 from ../../../engine/native/equilibrium/ipopt.hpp:2,
+                 from ../../../engine/native/equilibrium/gibbs_minimizer.cpp:3:
+/usr/include/coin/IpObserver.hpp: In member function 'void Ipopt::Subject::AttachObserver(Ipopt::Observer::NotifyType, Ipopt::Observer*) const':
+/usr/include/coin/IpObserver.hpp:309:53: warning: unused parameter 'notify_type' [-Wunused-parameter]
+  309 |   void Subject::AttachObserver(Observer::NotifyType notify_type, Observer* observer) const
+      |                                ~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~
+/usr/include/coin/IpObserver.hpp: In member function 'void Ipopt::Subject::DetachObserver(Ipopt::Observer::NotifyType, Ipopt::Observer*) const':
+/usr/include/coin/IpObserver.hpp:329:53: warning: unused parameter 'notify_type' [-Wunused-parameter]
+  329 |   void Subject::DetachObserver(Observer::NotifyType notify_type, Observer* observer) const
+      |                                ~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~
+/usr/include/coin/IpNLP.hpp: In member function 'virtual bool Ipopt::NLP::ProcessOptions(const Ipopt::OptionsList&, const std::string&)':
+/usr/include/coin/IpNLP.hpp:56:52: warning: unused parameter 'options' [-Wunused-parameter]
+   56 |     virtual bool ProcessOptions(const OptionsList& options,
+      |                                 ~~~~~~~~~~~~~~~~~~~^~~~~~~
+/usr/include/coin/IpNLP.hpp:57:52: warning: unused parameter 'prefix' [-Wunused-parameter]
+   57 |                                 const std::string& prefix)
+      |                                 ~~~~~~~~~~~~~~~~~~~^~~~~~
+/usr/include/coin/IpNLP.hpp: In member function 'virtual bool Ipopt::NLP::GetWarmStartIterate(Ipopt::IteratesVector&)':
+/usr/include/coin/IpNLP.hpp:109:54: warning: unused parameter 'warm_start_iterate' [-Wunused-parameter]
+  109 |     virtual bool GetWarmStartIterate(IteratesVector& warm_start_iterate)
+      |                                      ~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~
+/usr/include/coin/IpNLP.hpp: In member function 'virtual void Ipopt::NLP::FinalizeSolution(Ipopt::SolverReturn, const Ipopt::Vector&, const Ipopt::Vector&, const Ipopt::Vector&, const Ipopt::Vector&, const Ipopt::Vector&, const Ipopt::Vector&, const Ipopt::Vector&, Ipopt::Number, const Ipopt::IpoptData*, Ipopt::IpoptCalculatedQuantities*)':
+/usr/include/coin/IpNLP.hpp:145:48: warning: unused parameter 'status' [-Wunused-parameter]
+  145 |     virtual void FinalizeSolution(SolverReturn status,
+      |                                   ~~~~~~~~~~~~~^~~~~~
+/usr/include/coin/IpNLP.hpp:146:49: warning: unused parameter 'x' [-Wunused-parameter]
+  146 |                                   const Vector& x, const Vector& z_L,
+      |                                   ~~~~~~~~~~~~~~^
+/usr/include/coin/IpNLP.hpp:146:66: warning: unused parameter 'z_L' [-Wunused-parameter]
+  146 |                                   const Vector& x, const Vector& z_L,
+      |                                                    ~~~~~~~~~~~~~~^~~
+/usr/include/coin/IpNLP.hpp:147:49: warning: unused parameter 'z_U' [-Wunused-parameter]
+  147 |                                   const Vector& z_U,
+      |                                   ~~~~~~~~~~~~~~^~~
+/usr/include/coin/IpNLP.hpp:148:49: warning: unused parameter 'c' [-Wunused-parameter]
+  148 |                                   const Vector& c, const Vector& d,
+      |                                   ~~~~~~~~~~~~~~^
+/usr/include/coin/IpNLP.hpp:148:66: warning: unused parameter 'd' [-Wunused-parameter]
+  148 |                                   const Vector& c, const Vector& d,
+      |                                                    ~~~~~~~~~~~~~~^
+/usr/include/coin/IpNLP.hpp:149:49: warning: unused parameter 'y_c' [-Wunused-parameter]
+  149 |                                   const Vector& y_c, const Vector& y_d,
+      |                                   ~~~~~~~~~~~~~~^~~
+/usr/include/coin/IpNLP.hpp:149:68: warning: unused parameter 'y_d' [-Wunused-parameter]
+  149 |                                   const Vector& y_c, const Vector& y_d,
+      |                                                      ~~~~~~~~~~~~~~^~~
+/usr/include/coin/IpNLP.hpp:150:42: warning: unused parameter 'obj_value' [-Wunused-parameter]
+  150 |                                   Number obj_value,
+      |                                   ~~~~~~~^~~~~~~~~
+/usr/include/coin/IpNLP.hpp:151:52: warning: unused parameter 'ip_data' [-Wunused-parameter]
+  151 |                                   const IpoptData* ip_data,
+      |                                   ~~~~~~~~~~~~~~~~~^~~~~~~
+/usr/include/coin/IpNLP.hpp:152:62: warning: unused parameter 'ip_cq' [-Wunused-parameter]
+  152 |                                   IpoptCalculatedQuantities* ip_cq)
+      |                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~
+/usr/include/coin/IpNLP.hpp: In member function 'virtual bool Ipopt::NLP::IntermediateCallBack(Ipopt::AlgorithmMode, Ipopt::Index, Ipopt::Number, Ipopt::Number, Ipopt::Number, Ipopt::Number, Ipopt::Number, Ipopt::Number, Ipopt::Number, Ipopt::Number, Ipopt::Index, const Ipopt::IpoptData*, Ipopt::IpoptCalculatedQuantities*)':
+/usr/include/coin/IpNLP.hpp:170:53: warning: unused parameter 'mode' [-Wunused-parameter]
+  170 |     virtual bool IntermediateCallBack(AlgorithmMode mode,
+      |                                       ~~~~~~~~~~~~~~^~~~
+/usr/include/coin/IpNLP.hpp:171:45: warning: unused parameter 'iter' [-Wunused-parameter]
+  171 |                                       Index iter, Number obj_value,
+      |                                       ~~~~~~^~~~
+/usr/include/coin/IpNLP.hpp:171:58: warning: unused parameter 'obj_value' [-Wunused-parameter]
+  171 |                                       Index iter, Number obj_value,
+      |                                                   ~~~~~~~^~~~~~~~~
+/usr/include/coin/IpNLP.hpp:172:46: warning: unused parameter 'inf_pr' [-Wunused-parameter]
+  172 |                                       Number inf_pr, Number inf_du,
+      |                                       ~~~~~~~^~~~~~
+/usr/include/coin/IpNLP.hpp:172:61: warning: unused parameter 'inf_du' [-Wunused-parameter]
+  172 |                                       Number inf_pr, Number inf_du,
+      |                                                      ~~~~~~~^~~~~~
+/usr/include/coin/IpNLP.hpp:173:46: warning: unused parameter 'mu' [-Wunused-parameter]
+  173 |                                       Number mu, Number d_norm,
+      |                                       ~~~~~~~^~
+/usr/include/coin/IpNLP.hpp:173:57: warning: unused parameter 'd_norm' [-Wunused-parameter]
+  173 |                                       Number mu, Number d_norm,
+      |                                                  ~~~~~~~^~~~~~
+/usr/include/coin/IpNLP.hpp:174:46: warning: unused parameter 'regularization_size' [-Wunused-parameter]
+  174 |                                       Number regularization_size,
+      |                                       ~~~~~~~^~~~~~~~~~~~~~~~~~~
+/usr/include/coin/IpNLP.hpp:175:46: warning: unused parameter 'alpha_du' [-Wunused-parameter]
+  175 |                                       Number alpha_du, Number alpha_pr,
+      |                                       ~~~~~~~^~~~~~~~
+/usr/include/coin/IpNLP.hpp:175:63: warning: unused parameter 'alpha_pr' [-Wunused-parameter]
+  175 |                                       Number alpha_du, Number alpha_pr,
+      |                                                        ~~~~~~~^~~~~~~~
+/usr/include/coin/IpNLP.hpp:176:45: warning: unused parameter 'ls_trials' [-Wunused-parameter]
+  176 |                                       Index ls_trials,
+      |                                       ~~~~~~^~~~~~~~~
+/usr/include/coin/IpNLP.hpp:177:56: warning: unused parameter 'ip_data' [-Wunused-parameter]
+  177 |                                       const IpoptData* ip_data,
+      |                                       ~~~~~~~~~~~~~~~~~^~~~~~~
+/usr/include/coin/IpNLP.hpp:178:66: warning: unused parameter 'ip_cq' [-Wunused-parameter]
+  178 |                                       IpoptCalculatedQuantities* ip_cq)
+      |                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~
+/usr/include/coin/IpNLP.hpp: In member function 'virtual void Ipopt::NLP::GetScalingParameters(Ipopt::SmartPtr<const Ipopt::VectorSpace>, Ipopt::SmartPtr<const Ipopt::VectorSpace>, Ipopt::SmartPtr<const Ipopt::VectorSpace>, Ipopt::Number&, Ipopt::SmartPtr<Ipopt::Vector>&, Ipopt::SmartPtr<Ipopt::Vector>&, Ipopt::SmartPtr<Ipopt::Vector>&) const':
+/usr/include/coin/IpNLP.hpp:189:41: warning: unused parameter 'x_space' [-Wunused-parameter]
+  189 |       const SmartPtr<const VectorSpace> x_space,
+      |       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+/usr/include/coin/IpNLP.hpp:190:41: warning: unused parameter 'c_space' [-Wunused-parameter]
+  190 |       const SmartPtr<const VectorSpace> c_space,
+      |       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+/usr/include/coin/IpNLP.hpp:191:41: warning: unused parameter 'd_space' [-Wunused-parameter]
+  191 |       const SmartPtr<const VectorSpace> d_space,
+      |       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+/usr/include/coin/IpNLP.hpp:192:15: warning: unused parameter 'obj_scaling' [-Wunused-parameter]
+  192 |       Number& obj_scaling,
+      |       ~~~~~~~~^~~~~~~~~~~
+/usr/include/coin/IpNLP.hpp:193:25: warning: unused parameter 'x_scaling' [-Wunused-parameter]
+  193 |       SmartPtr<Vector>& x_scaling,
+      |       ~~~~~~~~~~~~~~~~~~^~~~~~~~~
+/usr/include/coin/IpNLP.hpp:194:25: warning: unused parameter 'c_scaling' [-Wunused-parameter]
+  194 |       SmartPtr<Vector>& c_scaling,
+      |       ~~~~~~~~~~~~~~~~~~^~~~~~~~~
+/usr/include/coin/IpNLP.hpp:195:25: warning: unused parameter 'd_scaling' [-Wunused-parameter]
+  195 |       SmartPtr<Vector>& d_scaling) const
+      |       ~~~~~~~~~~~~~~~~~~^~~~~~~~~
+In file included from ../../../engine/build/subprojects/HiGHS-1.15.1/highs/Highs.h:20,
+                 from ../../../engine/native/equilibrium/gibbs_minimizer.cpp:11:
+../../../engine/build/subprojects/HiGHS-1.15.1/highs/lp_data/HighsRunData.h: In member function 'void HighsRunData::initRecords()':
+../../../engine/build/subprojects/HiGHS-1.15.1/highs/lp_data/HighsRunData.h:150:25: warning: unused variable 'record_int64' [-Wunused-variable]
+  150 |     RunDataRecordInt64* record_int64;
+      |                         ^~~~~~~~~~~~
+../../../engine/build/subprojects/HiGHS-1.15.1/highs/Highs.h: In member function 'HighsStatus Highs::setHotStart(const HotStart&)':
+../../../engine/build/subprojects/HiGHS-1.15.1/highs/Highs.h:1563:43: warning: unused parameter 'hot_start' [-Wunused-parameter]
+ 1563 |   HighsStatus setHotStart(const HotStart& hot_start) {
+      |                           ~~~~~~~~~~~~~~~~^~~~~~~~~
+../../../engine/build/subprojects/HiGHS-1.15.1/highs/Highs.h: In member function 'HighsStatus Highs::freezeBasis(HighsInt&)':
+../../../engine/build/subprojects/HiGHS-1.15.1/highs/Highs.h:1574:37: warning: unused parameter 'frozen_basis_id' [-Wunused-parameter]
+ 1574 |   HighsStatus freezeBasis(HighsInt& frozen_basis_id) {
+      |                           ~~~~~~~~~~^~~~~~~~~~~~~~~
+../../../engine/build/subprojects/HiGHS-1.15.1/highs/Highs.h: In member function 'HighsStatus Highs::unfreezeBasis(HighsInt)':
+../../../engine/build/subprojects/HiGHS-1.15.1/highs/Highs.h:1583:44: warning: unused parameter 'frozen_basis_id' [-Wunused-parameter]
+ 1583 |   HighsStatus unfreezeBasis(const HighsInt frozen_basis_id) {
+      |                             ~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~
+In file included from ../../../engine/native/properties/helmholtz_tape.hpp:5,
+                 from ../../../engine/native/properties/helmholtz_model.hpp:4,
+                 from ../../../engine/native/equilibrium/problem.hpp:4,
+                 from ../../../engine/native/equilibrium/gibbs_minimizer.hpp:3:
+../../../engine/native/contributions/electrolyte.hpp: In instantiation of 'epcsaft::ElectrolyteResult<Scalar> epcsaft::electrolyte_contribution(const Scalar&, const Scalar&, double, double, const std::vector<Scalar>&, const std::vector<double>&, const ParameterSet&) [with Scalar = CppAD::AD<double>; ParameterSet = ParameterRecord<CppAD::AD<double> >]':
+../../../engine/native/properties/helmholtz_tape.hpp:40:54:   required from 'std::pair<epcsaft::ElectrolyteResult<Scalar>, Scalar> epcsaft::detail::supported_electrostatics(const Scalar&, const Scalar&, double, double, const std::vector<Scalar>&, const std::vector<double>&, const ParameterSet&) [with Scalar = CppAD::AD<double>; ParameterSet = epcsaft::ParameterRecord<CppAD::AD<double> >]'
+../../../engine/native/properties/helmholtz_tape.hpp:172:70:   required from here
+../../../engine/native/contributions/electrolyte.hpp:198:12: warning: unused parameter 'reference_temperature' [-Wunused-parameter]
+  198 |     double reference_temperature,
+      |     ~~~~~~~^~~~~~~~~~~~~~~~~~~~~
+../../../engine/native/contributions/electrolyte.hpp:199:12: warning: unused parameter 'reference_molar_density' [-Wunused-parameter]
+  199 |     double reference_molar_density,
+      |     ~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~
+In file included from /usr/include/coin/IpVector.hpp:14:
+/usr/include/coin/IpCachedResults.hpp: In instantiation of 'void Ipopt::DependentResult<T>::RecieveNotification(Ipopt::Observer::NotifyType, const Ipopt::Subject*) [with T = double]':
+/usr/include/coin/IpCachedResults.hpp:405:8:   required from here
+/usr/include/coin/IpCachedResults.hpp:405:87: warning: unused parameter 'subject' [-Wunused-parameter]
+  405 |   void DependentResult<T>::RecieveNotification(NotifyType notify_type, const Subject* subject)
+      |                                                                        ~~~~~~~~~~~~~~~^~~~~~~
+In file included from /usr/include/eigen3/Eigen/Core:341,
+                 from /usr/include/eigen3/Eigen/Dense:1,
+                 from ../../../engine/native/contributions/association.hpp:12,
+                 from ../../../engine/native/properties/helmholtz_tape.hpp:3:
+/usr/include/eigen3/Eigen/src/Core/products/TriangularMatrixVector.h: In function 'static void Eigen::internal::trmv_selector<Mode, 1>::run(const Lhs&, const Rhs&, Dest&, const typename Dest::Scalar&) [with Lhs = Eigen::Transpose<const Eigen::Block<const Eigen::Block<Eigen::Matrix<double, -1, -1>, -1, -1, false>, -1, -1, false> >; Rhs = Eigen::Transpose<const Eigen::CwiseBinaryOp<Eigen::internal::scalar_product_op<double, double>, const Eigen::CwiseNullaryOp<Eigen::internal::scalar_constant_op<double>, const Eigen::Matrix<double, 1, -1> >, const Eigen::Transpose<const Eigen::Block<const Eigen::Block<const Eigen::Block<Eigen::Matrix<double, -1, -1>, -1, -1, false>, -1, 1, true>, -1, 1, false> > > >; Dest = Eigen::Transpose<Eigen::Block<Eigen::Block<Eigen::Matrix<double, -1, -1, 1>, 1, -1, true>, 1, -1, false> >; int Mode = 6]':
+/usr/include/eigen3/Eigen/src/Core/products/TriangularMatrixVector.h:332:12: warning: 'result' may be used uninitialized [-Wmaybe-uninitialized]
+  327 |     internal::triangular_matrix_vector_product
+      |     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  328 |       <Index,Mode,
+      |       ~~~~~~~~~~~~
+  329 |        LhsScalar, LhsBlasTraits::NeedToConjugate,
+      |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  330 |        RhsScalar, RhsBlasTraits::NeedToConjugate,
+      |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  331 |        RowMajor>
+      |        ~~~~~~~~~
+  332 |       ::run(actualLhs.rows(),actualLhs.cols(),
+      |       ~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  333 |             actualLhs.data(),actualLhs.outerStride(),
+      |             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  334 |             actualRhsPtr,1,
+      |             ~~~~~~~~~~~~~~~
+  335 |             dest.data(),dest.innerStride(),
+      |             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  336 |             actualAlpha);
+      |             ~~~~~~~~~~~~
+/usr/include/eigen3/Eigen/src/Core/products/TriangularMatrixVector.h:105:24: note: by argument 5 of type 'const double*' to 'static void Eigen::internal::triangular_matrix_vector_product<Index, Mode, LhsScalar, ConjLhs, RhsScalar, ConjRhs, 1, Version>::run(Index, Index, const LhsScalar*, Index, const RhsScalar*, Index, ResScalar*, Index, const ResScalar&) [with Index = long int; int Mode = 6; LhsScalar = double; bool ConjLhs = false; RhsScalar = double; bool ConjRhs = false; int Version = 0]' declared here
+  105 | EIGEN_DONT_INLINE void triangular_matrix_vector_product<Index,Mode,LhsScalar,ConjLhs,RhsScalar,ConjRhs,RowMajor,Version>
+      |                        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In file included from /usr/include/eigen3/Eigen/Core:337:
+/usr/include/eigen3/Eigen/src/Core/products/SelfadjointMatrixVector.h: In function 'static void Eigen::internal::selfadjoint_product_impl<Lhs, LhsMode, false, Rhs, 0, true>::run(Dest&, const Lhs&, const Rhs&, const Scalar&) [with Dest = Eigen::Block<Eigen::Matrix<double, -1, 1>, -1, 1, false>; Lhs = Eigen::Block<Eigen::Matrix<double, -1, -1>, -1, -1, false>; int LhsMode = 17; Rhs = Eigen::CwiseBinaryOp<Eigen::internal::scalar_product_op<double, double>, const Eigen::CwiseNullaryOp<Eigen::internal::scalar_constant_op<double>, const Eigen::Matrix<double, -1, 1> >, const Eigen::Block<Eigen::Block<Eigen::Matrix<double, -1, -1>, -1, 1, true>, -1, 1, false> >]':
+/usr/include/eigen3/Eigen/src/Core/products/SelfadjointMatrixVector.h:229:7: warning: 'result' may be used uninitialized [-Wmaybe-uninitialized]
+  227 |     internal::selfadjoint_matrix_vector_product<Scalar, Index, (internal::traits<ActualLhsTypeCleaned>::Flags&RowMajorBit) ? RowMajor : ColMajor,
+      |     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  228 |                                                 int(LhsUpLo), bool(LhsBlasTraits::NeedToConjugate), bool(RhsBlasTraits::NeedToConjugate)>::run
+      |                                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  229 |       (
+      |       ^
+  230 |         lhs.rows(),                             // size
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  231 |         &lhs.coeffRef(0,0),  lhs.outerStride(), // lhs info
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  232 |         actualRhsPtr,                           // rhs info
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  233 |         actualDestPtr,                          // result info
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  234 |         actualAlpha                             // scale factor
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  235 |       );
+      |       ~
+/usr/include/eigen3/Eigen/src/Core/products/SelfadjointMatrixVector.h:41:6: note: by argument 4 of type 'const double*' to 'static void Eigen::internal::selfadjoint_matrix_vector_product<Scalar, Index, StorageOrder, UpLo, ConjugateLhs, ConjugateRhs, Version>::run(Index, const Scalar*, Index, const Scalar*, Scalar*, Scalar) [with Scalar = double; Index = long int; int StorageOrder = 0; int UpLo = 1; bool ConjugateLhs = false; bool ConjugateRhs = false; int Version = 0]' declared here
+   41 | void selfadjoint_matrix_vector_product<Scalar,Index,StorageOrder,UpLo,ConjugateLhs,ConjugateRhs,Version>::run(
+      |      ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[5/32] Compiling C++ object libepcsaft_native.a.p/native_equilibrium_phase_boundary.cpp.o
+In file included from /usr/include/coin/IpTNLP.hpp:13,
+                 from ../../../engine/native/equilibrium/gibbs_minimizer.hpp:5,
+                 from ../../../engine/native/equilibrium/phase_boundary.cpp:1:
+/usr/include/coin/IpReferenced.hpp: In member function 'void Ipopt::ReferencedObject::AddRef(const Ipopt::Referencer*) const':
+/usr/include/coin/IpReferenced.hpp:215:51: warning: unused parameter 'referencer' [-Wunused-parameter]
+  215 |   void ReferencedObject::AddRef(const Referencer* referencer) const
+      |                                 ~~~~~~~~~~~~~~~~~~^~~~~~~~~~
+/usr/include/coin/IpReferenced.hpp: In member function 'void Ipopt::ReferencedObject::ReleaseRef(const Ipopt::Referencer*) const':
+/usr/include/coin/IpReferenced.hpp:227:55: warning: unused parameter 'referencer' [-Wunused-parameter]
+  227 |   void ReferencedObject::ReleaseRef(const Referencer* referencer) const
+      |                                     ~~~~~~~~~~~~~~~~~~^~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp: In member function 'virtual bool Ipopt::TNLP::get_var_con_metadata(Ipopt::Index, StringMetaDataMapType&, IntegerMetaDataMapType&, NumericMetaDataMapType&, Ipopt::Index, StringMetaDataMapType&, IntegerMetaDataMapType&, NumericMetaDataMapType&)':
+/usr/include/coin/IpTNLP.hpp:90:45: warning: unused parameter 'n' [-Wunused-parameter]
+   90 |     virtual bool get_var_con_metadata(Index n,
+      |                                       ~~~~~~^
+/usr/include/coin/IpTNLP.hpp:91:62: warning: unused parameter 'var_string_md' [-Wunused-parameter]
+   91 |                                       StringMetaDataMapType& var_string_md,
+      |                                       ~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:92:63: warning: unused parameter 'var_integer_md' [-Wunused-parameter]
+   92 |                                       IntegerMetaDataMapType& var_integer_md,
+      |                                       ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:93:63: warning: unused parameter 'var_numeric_md' [-Wunused-parameter]
+   93 |                                       NumericMetaDataMapType& var_numeric_md,
+      |                                       ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:94:45: warning: unused parameter 'm' [-Wunused-parameter]
+   94 |                                       Index m,
+      |                                       ~~~~~~^
+/usr/include/coin/IpTNLP.hpp:95:62: warning: unused parameter 'con_string_md' [-Wunused-parameter]
+   95 |                                       StringMetaDataMapType& con_string_md,
+      |                                       ~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:96:63: warning: unused parameter 'con_integer_md' [-Wunused-parameter]
+   96 |                                       IntegerMetaDataMapType& con_integer_md,
+      |                                       ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:97:63: warning: unused parameter 'con_numeric_md' [-Wunused-parameter]
+   97 |                                       NumericMetaDataMapType& con_numeric_md)
+      |                                       ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp: In member function 'virtual bool Ipopt::TNLP::get_scaling_parameters(Ipopt::Number&, bool&, Ipopt::Index, Ipopt::Number*, bool&, Ipopt::Index, Ipopt::Number*)':
+/usr/include/coin/IpTNLP.hpp:119:49: warning: unused parameter 'obj_scaling' [-Wunused-parameter]
+  119 |     virtual bool get_scaling_parameters(Number& obj_scaling,
+      |                                         ~~~~~~~~^~~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:120:47: warning: unused parameter 'use_x_scaling' [-Wunused-parameter]
+  120 |                                         bool& use_x_scaling, Index n,
+      |                                         ~~~~~~^~~~~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:120:68: warning: unused parameter 'n' [-Wunused-parameter]
+  120 |                                         bool& use_x_scaling, Index n,
+      |                                                              ~~~~~~^
+/usr/include/coin/IpTNLP.hpp:121:49: warning: unused parameter 'x_scaling' [-Wunused-parameter]
+  121 |                                         Number* x_scaling,
+      |                                         ~~~~~~~~^~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:122:47: warning: unused parameter 'use_g_scaling' [-Wunused-parameter]
+  122 |                                         bool& use_g_scaling, Index m,
+      |                                         ~~~~~~^~~~~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:122:68: warning: unused parameter 'm' [-Wunused-parameter]
+  122 |                                         bool& use_g_scaling, Index m,
+      |                                                              ~~~~~~^
+/usr/include/coin/IpTNLP.hpp:123:49: warning: unused parameter 'g_scaling' [-Wunused-parameter]
+  123 |                                         Number* g_scaling)
+      |                                         ~~~~~~~~^~~~~~~~~
+/usr/include/coin/IpTNLP.hpp: In member function 'virtual bool Ipopt::TNLP::get_variables_linearity(Ipopt::Index, LinearityType*)':
+/usr/include/coin/IpTNLP.hpp:132:48: warning: unused parameter 'n' [-Wunused-parameter]
+  132 |     virtual bool get_variables_linearity(Index n, LinearityType* var_types)
+      |                                          ~~~~~~^
+/usr/include/coin/IpTNLP.hpp:132:66: warning: unused parameter 'var_types' [-Wunused-parameter]
+  132 |     virtual bool get_variables_linearity(Index n, LinearityType* var_types)
+      |                                                   ~~~~~~~~~~~~~~~^~~~~~~~~
+/usr/include/coin/IpTNLP.hpp: In member function 'virtual bool Ipopt::TNLP::get_constraints_linearity(Ipopt::Index, LinearityType*)':
+/usr/include/coin/IpTNLP.hpp:140:50: warning: unused parameter 'm' [-Wunused-parameter]
+  140 |     virtual bool get_constraints_linearity(Index m, LinearityType* const_types)
+      |                                            ~~~~~~^
+/usr/include/coin/IpTNLP.hpp:140:68: warning: unused parameter 'const_types' [-Wunused-parameter]
+  140 |     virtual bool get_constraints_linearity(Index m, LinearityType* const_types)
+      |                                                     ~~~~~~~~~~~~~~~^~~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp: In member function 'virtual bool Ipopt::TNLP::get_warm_start_iterate(Ipopt::IteratesVector&)':
+/usr/include/coin/IpTNLP.hpp:161:57: warning: unused parameter 'warm_start_iterate' [-Wunused-parameter]
+  161 |     virtual bool get_warm_start_iterate(IteratesVector& warm_start_iterate)
+      |                                         ~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp: In member function 'virtual bool Ipopt::TNLP::eval_h(Ipopt::Index, const Ipopt::Number*, bool, Ipopt::Number, Ipopt::Index, const Ipopt::Number*, bool, Ipopt::Index, Ipopt::Index*, Ipopt::Index*, Ipopt::Number*)':
+/usr/include/coin/IpTNLP.hpp:196:31: warning: unused parameter 'n' [-Wunused-parameter]
+  196 |     virtual bool eval_h(Index n, const Number* x, bool new_x,
+      |                         ~~~~~~^
+/usr/include/coin/IpTNLP.hpp:196:48: warning: unused parameter 'x' [-Wunused-parameter]
+  196 |     virtual bool eval_h(Index n, const Number* x, bool new_x,
+      |                                  ~~~~~~~~~~~~~~^
+/usr/include/coin/IpTNLP.hpp:196:56: warning: unused parameter 'new_x' [-Wunused-parameter]
+  196 |     virtual bool eval_h(Index n, const Number* x, bool new_x,
+      |                                                   ~~~~~^~~~~
+/usr/include/coin/IpTNLP.hpp:197:32: warning: unused parameter 'obj_factor' [-Wunused-parameter]
+  197 |                         Number obj_factor, Index m, const Number* lambda,
+      |                         ~~~~~~~^~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:197:50: warning: unused parameter 'm' [-Wunused-parameter]
+  197 |                         Number obj_factor, Index m, const Number* lambda,
+      |                                            ~~~~~~^
+/usr/include/coin/IpTNLP.hpp:197:67: warning: unused parameter 'lambda' [-Wunused-parameter]
+  197 |                         Number obj_factor, Index m, const Number* lambda,
+      |                                                     ~~~~~~~~~~~~~~^~~~~~
+/usr/include/coin/IpTNLP.hpp:198:30: warning: unused parameter 'new_lambda' [-Wunused-parameter]
+  198 |                         bool new_lambda, Index nele_hess,
+      |                         ~~~~~^~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:198:48: warning: unused parameter 'nele_hess' [-Wunused-parameter]
+  198 |                         bool new_lambda, Index nele_hess,
+      |                                          ~~~~~~^~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:199:32: warning: unused parameter 'iRow' [-Wunused-parameter]
+  199 |                         Index* iRow, Index* jCol, Number* values)
+      |                         ~~~~~~~^~~~
+/usr/include/coin/IpTNLP.hpp:199:45: warning: unused parameter 'jCol' [-Wunused-parameter]
+  199 |                         Index* iRow, Index* jCol, Number* values)
+      |                                      ~~~~~~~^~~~
+/usr/include/coin/IpTNLP.hpp:199:59: warning: unused parameter 'values' [-Wunused-parameter]
+  199 |                         Index* iRow, Index* jCol, Number* values)
+      |                                                   ~~~~~~~~^~~~~~
+/usr/include/coin/IpTNLP.hpp: In member function 'virtual void Ipopt::TNLP::finalize_metadata(Ipopt::Index, const StringMetaDataMapType&, const IntegerMetaDataMapType&, const NumericMetaDataMapType&, Ipopt::Index, const StringMetaDataMapType&, const IntegerMetaDataMapType&, const NumericMetaDataMapType&)':
+/usr/include/coin/IpTNLP.hpp:226:42: warning: unused parameter 'n' [-Wunused-parameter]
+  226 |     virtual void finalize_metadata(Index n,
+      |                                    ~~~~~~^
+/usr/include/coin/IpTNLP.hpp:227:65: warning: unused parameter 'var_string_md' [-Wunused-parameter]
+  227 |                                    const StringMetaDataMapType& var_string_md,
+      |                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:228:66: warning: unused parameter 'var_integer_md' [-Wunused-parameter]
+  228 |                                    const IntegerMetaDataMapType& var_integer_md,
+      |                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:229:66: warning: unused parameter 'var_numeric_md' [-Wunused-parameter]
+  229 |                                    const NumericMetaDataMapType& var_numeric_md,
+      |                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:230:42: warning: unused parameter 'm' [-Wunused-parameter]
+  230 |                                    Index m,
+      |                                    ~~~~~~^
+/usr/include/coin/IpTNLP.hpp:231:65: warning: unused parameter 'con_string_md' [-Wunused-parameter]
+  231 |                                    const StringMetaDataMapType& con_string_md,
+      |                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:232:66: warning: unused parameter 'con_integer_md' [-Wunused-parameter]
+  232 |                                    const IntegerMetaDataMapType& con_integer_md,
+      |                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:233:66: warning: unused parameter 'con_numeric_md' [-Wunused-parameter]
+  233 |                                    const NumericMetaDataMapType& con_numeric_md)
+      |                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp: In member function 'virtual bool Ipopt::TNLP::intermediate_callback(Ipopt::AlgorithmMode, Ipopt::Index, Ipopt::Number, Ipopt::Number, Ipopt::Number, Ipopt::Number, Ipopt::Number, Ipopt::Number, Ipopt::Number, Ipopt::Number, Ipopt::Index, const Ipopt::IpoptData*, Ipopt::IpoptCalculatedQuantities*)':
+/usr/include/coin/IpTNLP.hpp:240:54: warning: unused parameter 'mode' [-Wunused-parameter]
+  240 |     virtual bool intermediate_callback(AlgorithmMode mode,
+      |                                        ~~~~~~~~~~~~~~^~~~
+/usr/include/coin/IpTNLP.hpp:241:46: warning: unused parameter 'iter' [-Wunused-parameter]
+  241 |                                        Index iter, Number obj_value,
+      |                                        ~~~~~~^~~~
+/usr/include/coin/IpTNLP.hpp:241:59: warning: unused parameter 'obj_value' [-Wunused-parameter]
+  241 |                                        Index iter, Number obj_value,
+      |                                                    ~~~~~~~^~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:242:47: warning: unused parameter 'inf_pr' [-Wunused-parameter]
+  242 |                                        Number inf_pr, Number inf_du,
+      |                                        ~~~~~~~^~~~~~
+/usr/include/coin/IpTNLP.hpp:242:62: warning: unused parameter 'inf_du' [-Wunused-parameter]
+  242 |                                        Number inf_pr, Number inf_du,
+      |                                                       ~~~~~~~^~~~~~
+/usr/include/coin/IpTNLP.hpp:243:47: warning: unused parameter 'mu' [-Wunused-parameter]
+  243 |                                        Number mu, Number d_norm,
+      |                                        ~~~~~~~^~
+/usr/include/coin/IpTNLP.hpp:243:58: warning: unused parameter 'd_norm' [-Wunused-parameter]
+  243 |                                        Number mu, Number d_norm,
+      |                                                   ~~~~~~~^~~~~~
+/usr/include/coin/IpTNLP.hpp:244:47: warning: unused parameter 'regularization_size' [-Wunused-parameter]
+  244 |                                        Number regularization_size,
+      |                                        ~~~~~~~^~~~~~~~~~~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:245:47: warning: unused parameter 'alpha_du' [-Wunused-parameter]
+  245 |                                        Number alpha_du, Number alpha_pr,
+      |                                        ~~~~~~~^~~~~~~~
+/usr/include/coin/IpTNLP.hpp:245:64: warning: unused parameter 'alpha_pr' [-Wunused-parameter]
+  245 |                                        Number alpha_du, Number alpha_pr,
+      |                                                         ~~~~~~~^~~~~~~~
+/usr/include/coin/IpTNLP.hpp:246:46: warning: unused parameter 'ls_trials' [-Wunused-parameter]
+  246 |                                        Index ls_trials,
+      |                                        ~~~~~~^~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:247:57: warning: unused parameter 'ip_data' [-Wunused-parameter]
+  247 |                                        const IpoptData* ip_data,
+      |                                        ~~~~~~~~~~~~~~~~~^~~~~~~
+/usr/include/coin/IpTNLP.hpp:248:67: warning: unused parameter 'ip_cq' [-Wunused-parameter]
+  248 |                                        IpoptCalculatedQuantities* ip_cq)
+      |                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~
+/usr/include/coin/IpTNLP.hpp: In member function 'virtual bool Ipopt::TNLP::get_list_of_nonlinear_variables(Ipopt::Index, Ipopt::Index*)':
+/usr/include/coin/IpTNLP.hpp:272:56: warning: unused parameter 'num_nonlin_vars' [-Wunused-parameter]
+  272 |     virtual bool get_list_of_nonlinear_variables(Index num_nonlin_vars,
+      |                                                  ~~~~~~^~~~~~~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:273:16: warning: unused parameter 'pos_nonlin_vars' [-Wunused-parameter]
+  273 |         Index* pos_nonlin_vars)
+      |         ~~~~~~~^~~~~~~~~~~~~~~
+In file included from ../../../engine/native/properties/helmholtz_tape.hpp:5,
+                 from ../../../engine/native/properties/helmholtz_model.hpp:4,
+                 from ../../../engine/native/equilibrium/problem.hpp:4,
+                 from ../../../engine/native/equilibrium/gibbs_minimizer.hpp:3:
+../../../engine/native/contributions/electrolyte.hpp: In instantiation of 'epcsaft::ElectrolyteResult<Scalar> epcsaft::electrolyte_contribution(const Scalar&, const Scalar&, double, double, const std::vector<Scalar>&, const std::vector<double>&, const ParameterSet&) [with Scalar = CppAD::AD<double>; ParameterSet = ParameterRecord<CppAD::AD<double> >]':
+../../../engine/native/properties/helmholtz_tape.hpp:40:54:   required from 'std::pair<epcsaft::ElectrolyteResult<Scalar>, Scalar> epcsaft::detail::supported_electrostatics(const Scalar&, const Scalar&, double, double, const std::vector<Scalar>&, const std::vector<double>&, const ParameterSet&) [with Scalar = CppAD::AD<double>; ParameterSet = epcsaft::ParameterRecord<CppAD::AD<double> >]'
+../../../engine/native/properties/helmholtz_tape.hpp:172:70:   required from here
+../../../engine/native/contributions/electrolyte.hpp:198:12: warning: unused parameter 'reference_temperature' [-Wunused-parameter]
+  198 |     double reference_temperature,
+      |     ~~~~~~~^~~~~~~~~~~~~~~~~~~~~
+../../../engine/native/contributions/electrolyte.hpp:199:12: warning: unused parameter 'reference_molar_density' [-Wunused-parameter]
+  199 |     double reference_molar_density,
+      |     ~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~
+[6/32] Compiling C++ object libepcsaft_native.a.p/native_equilibrium_implicit_sensitivity.cpp.o
+In file included from /usr/include/coin/IpTNLP.hpp:13,
+                 from ../../../engine/native/equilibrium/gibbs_minimizer.hpp:5,
+                 from ../../../engine/native/equilibrium/implicit_sensitivity.cpp:1:
+/usr/include/coin/IpReferenced.hpp: In member function 'void Ipopt::ReferencedObject::AddRef(const Ipopt::Referencer*) const':
+/usr/include/coin/IpReferenced.hpp:215:51: warning: unused parameter 'referencer' [-Wunused-parameter]
+  215 |   void ReferencedObject::AddRef(const Referencer* referencer) const
+      |                                 ~~~~~~~~~~~~~~~~~~^~~~~~~~~~
+/usr/include/coin/IpReferenced.hpp: In member function 'void Ipopt::ReferencedObject::ReleaseRef(const Ipopt::Referencer*) const':
+/usr/include/coin/IpReferenced.hpp:227:55: warning: unused parameter 'referencer' [-Wunused-parameter]
+  227 |   void ReferencedObject::ReleaseRef(const Referencer* referencer) const
+      |                                     ~~~~~~~~~~~~~~~~~~^~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp: In member function 'virtual bool Ipopt::TNLP::get_var_con_metadata(Ipopt::Index, StringMetaDataMapType&, IntegerMetaDataMapType&, NumericMetaDataMapType&, Ipopt::Index, StringMetaDataMapType&, IntegerMetaDataMapType&, NumericMetaDataMapType&)':
+/usr/include/coin/IpTNLP.hpp:90:45: warning: unused parameter 'n' [-Wunused-parameter]
+   90 |     virtual bool get_var_con_metadata(Index n,
+      |                                       ~~~~~~^
+/usr/include/coin/IpTNLP.hpp:91:62: warning: unused parameter 'var_string_md' [-Wunused-parameter]
+   91 |                                       StringMetaDataMapType& var_string_md,
+      |                                       ~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:92:63: warning: unused parameter 'var_integer_md' [-Wunused-parameter]
+   92 |                                       IntegerMetaDataMapType& var_integer_md,
+      |                                       ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:93:63: warning: unused parameter 'var_numeric_md' [-Wunused-parameter]
+   93 |                                       NumericMetaDataMapType& var_numeric_md,
+      |                                       ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:94:45: warning: unused parameter 'm' [-Wunused-parameter]
+   94 |                                       Index m,
+      |                                       ~~~~~~^
+/usr/include/coin/IpTNLP.hpp:95:62: warning: unused parameter 'con_string_md' [-Wunused-parameter]
+   95 |                                       StringMetaDataMapType& con_string_md,
+      |                                       ~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:96:63: warning: unused parameter 'con_integer_md' [-Wunused-parameter]
+   96 |                                       IntegerMetaDataMapType& con_integer_md,
+      |                                       ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:97:63: warning: unused parameter 'con_numeric_md' [-Wunused-parameter]
+   97 |                                       NumericMetaDataMapType& con_numeric_md)
+      |                                       ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp: In member function 'virtual bool Ipopt::TNLP::get_scaling_parameters(Ipopt::Number&, bool&, Ipopt::Index, Ipopt::Number*, bool&, Ipopt::Index, Ipopt::Number*)':
+/usr/include/coin/IpTNLP.hpp:119:49: warning: unused parameter 'obj_scaling' [-Wunused-parameter]
+  119 |     virtual bool get_scaling_parameters(Number& obj_scaling,
+      |                                         ~~~~~~~~^~~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:120:47: warning: unused parameter 'use_x_scaling' [-Wunused-parameter]
+  120 |                                         bool& use_x_scaling, Index n,
+      |                                         ~~~~~~^~~~~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:120:68: warning: unused parameter 'n' [-Wunused-parameter]
+  120 |                                         bool& use_x_scaling, Index n,
+      |                                                              ~~~~~~^
+/usr/include/coin/IpTNLP.hpp:121:49: warning: unused parameter 'x_scaling' [-Wunused-parameter]
+  121 |                                         Number* x_scaling,
+      |                                         ~~~~~~~~^~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:122:47: warning: unused parameter 'use_g_scaling' [-Wunused-parameter]
+  122 |                                         bool& use_g_scaling, Index m,
+      |                                         ~~~~~~^~~~~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:122:68: warning: unused parameter 'm' [-Wunused-parameter]
+  122 |                                         bool& use_g_scaling, Index m,
+      |                                                              ~~~~~~^
+/usr/include/coin/IpTNLP.hpp:123:49: warning: unused parameter 'g_scaling' [-Wunused-parameter]
+  123 |                                         Number* g_scaling)
+      |                                         ~~~~~~~~^~~~~~~~~
+/usr/include/coin/IpTNLP.hpp: In member function 'virtual bool Ipopt::TNLP::get_variables_linearity(Ipopt::Index, LinearityType*)':
+/usr/include/coin/IpTNLP.hpp:132:48: warning: unused parameter 'n' [-Wunused-parameter]
+  132 |     virtual bool get_variables_linearity(Index n, LinearityType* var_types)
+      |                                          ~~~~~~^
+/usr/include/coin/IpTNLP.hpp:132:66: warning: unused parameter 'var_types' [-Wunused-parameter]
+  132 |     virtual bool get_variables_linearity(Index n, LinearityType* var_types)
+      |                                                   ~~~~~~~~~~~~~~~^~~~~~~~~
+/usr/include/coin/IpTNLP.hpp: In member function 'virtual bool Ipopt::TNLP::get_constraints_linearity(Ipopt::Index, LinearityType*)':
+/usr/include/coin/IpTNLP.hpp:140:50: warning: unused parameter 'm' [-Wunused-parameter]
+  140 |     virtual bool get_constraints_linearity(Index m, LinearityType* const_types)
+      |                                            ~~~~~~^
+/usr/include/coin/IpTNLP.hpp:140:68: warning: unused parameter 'const_types' [-Wunused-parameter]
+  140 |     virtual bool get_constraints_linearity(Index m, LinearityType* const_types)
+      |                                                     ~~~~~~~~~~~~~~~^~~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp: In member function 'virtual bool Ipopt::TNLP::get_warm_start_iterate(Ipopt::IteratesVector&)':
+/usr/include/coin/IpTNLP.hpp:161:57: warning: unused parameter 'warm_start_iterate' [-Wunused-parameter]
+  161 |     virtual bool get_warm_start_iterate(IteratesVector& warm_start_iterate)
+      |                                         ~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp: In member function 'virtual bool Ipopt::TNLP::eval_h(Ipopt::Index, const Ipopt::Number*, bool, Ipopt::Number, Ipopt::Index, const Ipopt::Number*, bool, Ipopt::Index, Ipopt::Index*, Ipopt::Index*, Ipopt::Number*)':
+/usr/include/coin/IpTNLP.hpp:196:31: warning: unused parameter 'n' [-Wunused-parameter]
+  196 |     virtual bool eval_h(Index n, const Number* x, bool new_x,
+      |                         ~~~~~~^
+/usr/include/coin/IpTNLP.hpp:196:48: warning: unused parameter 'x' [-Wunused-parameter]
+  196 |     virtual bool eval_h(Index n, const Number* x, bool new_x,
+      |                                  ~~~~~~~~~~~~~~^
+/usr/include/coin/IpTNLP.hpp:196:56: warning: unused parameter 'new_x' [-Wunused-parameter]
+  196 |     virtual bool eval_h(Index n, const Number* x, bool new_x,
+      |                                                   ~~~~~^~~~~
+/usr/include/coin/IpTNLP.hpp:197:32: warning: unused parameter 'obj_factor' [-Wunused-parameter]
+  197 |                         Number obj_factor, Index m, const Number* lambda,
+      |                         ~~~~~~~^~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:197:50: warning: unused parameter 'm' [-Wunused-parameter]
+  197 |                         Number obj_factor, Index m, const Number* lambda,
+      |                                            ~~~~~~^
+/usr/include/coin/IpTNLP.hpp:197:67: warning: unused parameter 'lambda' [-Wunused-parameter]
+  197 |                         Number obj_factor, Index m, const Number* lambda,
+      |                                                     ~~~~~~~~~~~~~~^~~~~~
+/usr/include/coin/IpTNLP.hpp:198:30: warning: unused parameter 'new_lambda' [-Wunused-parameter]
+  198 |                         bool new_lambda, Index nele_hess,
+      |                         ~~~~~^~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:198:48: warning: unused parameter 'nele_hess' [-Wunused-parameter]
+  198 |                         bool new_lambda, Index nele_hess,
+      |                                          ~~~~~~^~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:199:32: warning: unused parameter 'iRow' [-Wunused-parameter]
+  199 |                         Index* iRow, Index* jCol, Number* values)
+      |                         ~~~~~~~^~~~
+/usr/include/coin/IpTNLP.hpp:199:45: warning: unused parameter 'jCol' [-Wunused-parameter]
+  199 |                         Index* iRow, Index* jCol, Number* values)
+      |                                      ~~~~~~~^~~~
+/usr/include/coin/IpTNLP.hpp:199:59: warning: unused parameter 'values' [-Wunused-parameter]
+  199 |                         Index* iRow, Index* jCol, Number* values)
+      |                                                   ~~~~~~~~^~~~~~
+/usr/include/coin/IpTNLP.hpp: In member function 'virtual void Ipopt::TNLP::finalize_metadata(Ipopt::Index, const StringMetaDataMapType&, const IntegerMetaDataMapType&, const NumericMetaDataMapType&, Ipopt::Index, const StringMetaDataMapType&, const IntegerMetaDataMapType&, const NumericMetaDataMapType&)':
+/usr/include/coin/IpTNLP.hpp:226:42: warning: unused parameter 'n' [-Wunused-parameter]
+  226 |     virtual void finalize_metadata(Index n,
+      |                                    ~~~~~~^
+/usr/include/coin/IpTNLP.hpp:227:65: warning: unused parameter 'var_string_md' [-Wunused-parameter]
+  227 |                                    const StringMetaDataMapType& var_string_md,
+      |                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:228:66: warning: unused parameter 'var_integer_md' [-Wunused-parameter]
+  228 |                                    const IntegerMetaDataMapType& var_integer_md,
+      |                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:229:66: warning: unused parameter 'var_numeric_md' [-Wunused-parameter]
+  229 |                                    const NumericMetaDataMapType& var_numeric_md,
+      |                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:230:42: warning: unused parameter 'm' [-Wunused-parameter]
+  230 |                                    Index m,
+      |                                    ~~~~~~^
+/usr/include/coin/IpTNLP.hpp:231:65: warning: unused parameter 'con_string_md' [-Wunused-parameter]
+  231 |                                    const StringMetaDataMapType& con_string_md,
+      |                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:232:66: warning: unused parameter 'con_integer_md' [-Wunused-parameter]
+  232 |                                    const IntegerMetaDataMapType& con_integer_md,
+      |                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:233:66: warning: unused parameter 'con_numeric_md' [-Wunused-parameter]
+  233 |                                    const NumericMetaDataMapType& con_numeric_md)
+      |                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp: In member function 'virtual bool Ipopt::TNLP::intermediate_callback(Ipopt::AlgorithmMode, Ipopt::Index, Ipopt::Number, Ipopt::Number, Ipopt::Number, Ipopt::Number, Ipopt::Number, Ipopt::Number, Ipopt::Number, Ipopt::Number, Ipopt::Index, const Ipopt::IpoptData*, Ipopt::IpoptCalculatedQuantities*)':
+/usr/include/coin/IpTNLP.hpp:240:54: warning: unused parameter 'mode' [-Wunused-parameter]
+  240 |     virtual bool intermediate_callback(AlgorithmMode mode,
+      |                                        ~~~~~~~~~~~~~~^~~~
+/usr/include/coin/IpTNLP.hpp:241:46: warning: unused parameter 'iter' [-Wunused-parameter]
+  241 |                                        Index iter, Number obj_value,
+      |                                        ~~~~~~^~~~
+/usr/include/coin/IpTNLP.hpp:241:59: warning: unused parameter 'obj_value' [-Wunused-parameter]
+  241 |                                        Index iter, Number obj_value,
+      |                                                    ~~~~~~~^~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:242:47: warning: unused parameter 'inf_pr' [-Wunused-parameter]
+  242 |                                        Number inf_pr, Number inf_du,
+      |                                        ~~~~~~~^~~~~~
+/usr/include/coin/IpTNLP.hpp:242:62: warning: unused parameter 'inf_du' [-Wunused-parameter]
+  242 |                                        Number inf_pr, Number inf_du,
+      |                                                       ~~~~~~~^~~~~~
+/usr/include/coin/IpTNLP.hpp:243:47: warning: unused parameter 'mu' [-Wunused-parameter]
+  243 |                                        Number mu, Number d_norm,
+      |                                        ~~~~~~~^~
+/usr/include/coin/IpTNLP.hpp:243:58: warning: unused parameter 'd_norm' [-Wunused-parameter]
+  243 |                                        Number mu, Number d_norm,
+      |                                                   ~~~~~~~^~~~~~
+/usr/include/coin/IpTNLP.hpp:244:47: warning: unused parameter 'regularization_size' [-Wunused-parameter]
+  244 |                                        Number regularization_size,
+      |                                        ~~~~~~~^~~~~~~~~~~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:245:47: warning: unused parameter 'alpha_du' [-Wunused-parameter]
+  245 |                                        Number alpha_du, Number alpha_pr,
+      |                                        ~~~~~~~^~~~~~~~
+/usr/include/coin/IpTNLP.hpp:245:64: warning: unused parameter 'alpha_pr' [-Wunused-parameter]
+  245 |                                        Number alpha_du, Number alpha_pr,
+      |                                                         ~~~~~~~^~~~~~~~
+/usr/include/coin/IpTNLP.hpp:246:46: warning: unused parameter 'ls_trials' [-Wunused-parameter]
+  246 |                                        Index ls_trials,
+      |                                        ~~~~~~^~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:247:57: warning: unused parameter 'ip_data' [-Wunused-parameter]
+  247 |                                        const IpoptData* ip_data,
+      |                                        ~~~~~~~~~~~~~~~~~^~~~~~~
+/usr/include/coin/IpTNLP.hpp:248:67: warning: unused parameter 'ip_cq' [-Wunused-parameter]
+  248 |                                        IpoptCalculatedQuantities* ip_cq)
+      |                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~
+/usr/include/coin/IpTNLP.hpp: In member function 'virtual bool Ipopt::TNLP::get_list_of_nonlinear_variables(Ipopt::Index, Ipopt::Index*)':
+/usr/include/coin/IpTNLP.hpp:272:56: warning: unused parameter 'num_nonlin_vars' [-Wunused-parameter]
+  272 |     virtual bool get_list_of_nonlinear_variables(Index num_nonlin_vars,
+      |                                                  ~~~~~~^~~~~~~~~~~~~~~
+/usr/include/coin/IpTNLP.hpp:273:16: warning: unused parameter 'pos_nonlin_vars' [-Wunused-parameter]
+  273 |         Index* pos_nonlin_vars)
+      |         ~~~~~~~^~~~~~~~~~~~~~~
+In file included from ../../../engine/native/properties/helmholtz_tape.hpp:5,
+                 from ../../../engine/native/properties/helmholtz_model.hpp:4,
+                 from ../../../engine/native/equilibrium/problem.hpp:4,
+                 from ../../../engine/native/equilibrium/gibbs_minimizer.hpp:3:
+../../../engine/native/contributions/electrolyte.hpp: In instantiation of 'epcsaft::ElectrolyteResult<Scalar> epcsaft::electrolyte_contribution(const Scalar&, const Scalar&, double, double, const std::vector<Scalar>&, const std::vector<double>&, const ParameterSet&) [with Scalar = CppAD::AD<double>; ParameterSet = ParameterRecord<CppAD::AD<double> >]':
+../../../engine/native/properties/helmholtz_tape.hpp:40:54:   required from 'std::pair<epcsaft::ElectrolyteResult<Scalar>, Scalar> epcsaft::detail::supported_electrostatics(const Scalar&, const Scalar&, double, double, const std::vector<Scalar>&, const std::vector<double>&, const ParameterSet&) [with Scalar = CppAD::AD<double>; ParameterSet = epcsaft::ParameterRecord<CppAD::AD<double> >]'
+../../../engine/native/properties/helmholtz_tape.hpp:172:70:   required from here
+../../../engine/native/contributions/electrolyte.hpp:198:12: warning: unused parameter 'reference_temperature' [-Wunused-parameter]
+  198 |     double reference_temperature,
+      |     ~~~~~~~^~~~~~~~~~~~~~~~~~~~~
+../../../engine/native/contributions/electrolyte.hpp:199:12: warning: unused parameter 'reference_molar_density' [-Wunused-parameter]
+  199 |     double reference_molar_density,
+      |     ~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~
+In file included from /usr/include/eigen3/Eigen/Core:341,
+                 from /usr/include/eigen3/Eigen/Dense:1,
+                 from ../../../engine/native/contributions/association.hpp:12,
+                 from ../../../engine/native/properties/helmholtz_tape.hpp:3:
+/usr/include/eigen3/Eigen/src/Core/products/TriangularMatrixVector.h: In function 'static void Eigen::internal::trmv_selector<Mode, 1>::run(const Lhs&, const Rhs&, Dest&, const typename Dest::Scalar&) [with Lhs = Eigen::Transpose<const Eigen::Block<const Eigen::Block<Eigen::Matrix<double, -1, -1>, -1, -1, false>, -1, -1, false> >; Rhs = Eigen::Transpose<const Eigen::CwiseBinaryOp<Eigen::internal::scalar_product_op<double, double>, const Eigen::CwiseNullaryOp<Eigen::internal::scalar_constant_op<double>, const Eigen::Matrix<double, 1, -1> >, const Eigen::Transpose<const Eigen::Block<const Eigen::Block<const Eigen::Block<Eigen::Matrix<double, -1, -1>, -1, -1, false>, -1, 1, true>, -1, 1, false> > > >; Dest = Eigen::Transpose<Eigen::Block<Eigen::Block<Eigen::Matrix<double, -1, -1, 1>, 1, -1, true>, 1, -1, false> >; int Mode = 6]':
+/usr/include/eigen3/Eigen/src/Core/products/TriangularMatrixVector.h:332:12: warning: 'result' may be used uninitialized [-Wmaybe-uninitialized]
+  327 |     internal::triangular_matrix_vector_product
+      |     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  328 |       <Index,Mode,
+      |       ~~~~~~~~~~~~
+  329 |        LhsScalar, LhsBlasTraits::NeedToConjugate,
+      |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  330 |        RhsScalar, RhsBlasTraits::NeedToConjugate,
+      |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  331 |        RowMajor>
+      |        ~~~~~~~~~
+  332 |       ::run(actualLhs.rows(),actualLhs.cols(),
+      |       ~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  333 |             actualLhs.data(),actualLhs.outerStride(),
+      |             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  334 |             actualRhsPtr,1,
+      |             ~~~~~~~~~~~~~~~
+  335 |             dest.data(),dest.innerStride(),
+      |             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  336 |             actualAlpha);
+      |             ~~~~~~~~~~~~
+/usr/include/eigen3/Eigen/src/Core/products/TriangularMatrixVector.h:105:24: note: by argument 5 of type 'const double*' to 'static void Eigen::internal::triangular_matrix_vector_product<Index, Mode, LhsScalar, ConjLhs, RhsScalar, ConjRhs, 1, Version>::run(Index, Index, const LhsScalar*, Index, const RhsScalar*, Index, ResScalar*, Index, const ResScalar&) [with Index = long int; int Mode = 6; LhsScalar = double; bool ConjLhs = false; RhsScalar = double; bool ConjRhs = false; int Version = 0]' declared here
+  105 | EIGEN_DONT_INLINE void triangular_matrix_vector_product<Index,Mode,LhsScalar,ConjLhs,RhsScalar,ConjRhs,RowMajor,Version>
+      |                        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[7/32] Compiling C++ object libepcsaft_native.a.p/native_regression_coordinates.cpp.o
+In file included from ../../../engine/native/properties/helmholtz_tape.hpp:5,
+                 from ../../../engine/native/properties/helmholtz_model.hpp:4,
+                 from ../../../engine/native/regression/coordinates.hpp:3,
+                 from ../../../engine/native/regression/coordinates.cpp:1:
+../../../engine/native/contributions/electrolyte.hpp: In instantiation of 'epcsaft::ElectrolyteResult<Scalar> epcsaft::electrolyte_contribution(const Scalar&, const Scalar&, double, double, const std::vector<Scalar>&, const std::vector<double>&, const ParameterSet&) [with Scalar = CppAD::AD<double>; ParameterSet = ParameterRecord<CppAD::AD<double> >]':
+../../../engine/native/properties/helmholtz_tape.hpp:40:54:   required from 'std::pair<epcsaft::ElectrolyteResult<Scalar>, Scalar> epcsaft::detail::supported_electrostatics(const Scalar&, const Scalar&, double, double, const std::vector<Scalar>&, const std::vector<double>&, const ParameterSet&) [with Scalar = CppAD::AD<double>; ParameterSet = epcsaft::ParameterRecord<CppAD::AD<double> >]'
+../../../engine/native/properties/helmholtz_tape.hpp:172:70:   required from here
+../../../engine/native/contributions/electrolyte.hpp:198:12: warning: unused parameter 'reference_temperature' [-Wunused-parameter]
+  198 |     double reference_temperature,
+      |     ~~~~~~~^~~~~~~~~~~~~~~~~~~~~
+../../../engine/native/contributions/electrolyte.hpp:199:12: warning: unused parameter 'reference_molar_density' [-Wunused-parameter]
+  199 |     double reference_molar_density,
+      |     ~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~
+[8/32] Compiling C++ object libepcsaft_native.a.p/native_regression_observations.cpp.o
+../../../engine/native/regression/observations.cpp: In function 'void epcsaft::regression::project_prediction(const epcsaft::HelmholtzModel&, const Observation&, Prediction&)':
+../../../engine/native/regression/observations.cpp:432:150: warning: missing initializer for member 'epcsaft::equilibrium::SolvedStateActionDirection::reaction_log_constants' [-Wmissing-field-initializers]
+  432 |         equilibrium::SolvedStateActionDirection zero{0.0, 0.0, std::vector<double>(components), std::vector<double>(model.active_parameters().size())};
+      |                                                                                                                                                      ^
+../../../engine/native/regression/observations.cpp:432:150: warning: missing initializer for member 'epcsaft::equilibrium::SolvedStateActionDirection::reaction_log_constant_temperature_slopes' [-Wmissing-field-initializers]
+../../../engine/native/regression/observations.cpp:430:12: warning: enumeration value 'MeanIonicActivityCoefficient' not handled in switch [-Wswitch]
+  430 |     switch (observation.kind) {
+      |            ^
+../../../engine/native/regression/observations.cpp:430:12: warning: enumeration value 'OsmoticCoefficient' not handled in switch [-Wswitch]
+../../../engine/native/regression/observations.cpp:430:12: warning: enumeration value 'SolvationGibbsEnergy' not handled in switch [-Wswitch]
+../../../engine/native/regression/observations.cpp:430:12: warning: enumeration value 'TransferGibbsEnergy' not handled in switch [-Wswitch]
+../../../engine/native/regression/observations.cpp:430:12: warning: enumeration value 'BulkRelativePermittivity' not handled in switch [-Wswitch]
+../../../engine/native/regression/observations.cpp: In function 'std::vector<epcsaft::regression::PredictionGradient> epcsaft::regression::differentiate_group(const epcsaft::HelmholtzModel&, const std::vector<const Observation*>&, const Prediction&, const CoordinateSet&)':
+../../../engine/native/regression/observations.cpp:637:16: warning: enumeration value 'MeanIonicActivityCoefficient' not handled in switch [-Wswitch]
+  637 |         switch (observation.kind) {
+      |                ^
+../../../engine/native/regression/observations.cpp:637:16: warning: enumeration value 'OsmoticCoefficient' not handled in switch [-Wswitch]
+../../../engine/native/regression/observations.cpp:637:16: warning: enumeration value 'SolvationGibbsEnergy' not handled in switch [-Wswitch]
+../../../engine/native/regression/observations.cpp:637:16: warning: enumeration value 'TransferGibbsEnergy' not handled in switch [-Wswitch]
+../../../engine/native/regression/observations.cpp:637:16: warning: enumeration value 'BulkRelativePermittivity' not handled in switch [-Wswitch]
+In file included from ../../../engine/native/properties/helmholtz_tape.hpp:5,
+                 from ../../../engine/native/properties/helmholtz_model.hpp:4,
+                 from ../../../engine/native/equilibrium/problem.hpp:4,
+                 from ../../../engine/native/regression/observations.hpp:3,
+                 from ../../../engine/native/regression/observations.cpp:1:
+../../../engine/native/contributions/electrolyte.hpp: In instantiation of 'epcsaft::ElectrolyteResult<Scalar> epcsaft::electrolyte_contribution(const Scalar&, const Scalar&, double, double, const std::vector<Scalar>&, const std::vector<double>&, const ParameterSet&) [with Scalar = CppAD::AD<double>; ParameterSet = ParameterRecord<CppAD::AD<double> >]':
+../../../engine/native/properties/helmholtz_tape.hpp:40:54:   required from 'std::pair<epcsaft::ElectrolyteResult<Scalar>, Scalar> epcsaft::detail::supported_electrostatics(const Scalar&, const Scalar&, double, double, const std::vector<Scalar>&, const std::vector<double>&, const ParameterSet&) [with Scalar = CppAD::AD<double>; ParameterSet = epcsaft::ParameterRecord<CppAD::AD<double> >]'
+../../../engine/native/properties/helmholtz_tape.hpp:172:70:   required from here
+../../../engine/native/contributions/electrolyte.hpp:198:12: warning: unused parameter 'reference_temperature' [-Wunused-parameter]
+  198 |     double reference_temperature,
+      |     ~~~~~~~^~~~~~~~~~~~~~~~~~~~~
+../../../engine/native/contributions/electrolyte.hpp:199:12: warning: unused parameter 'reference_molar_density' [-Wunused-parameter]
+  199 |     double reference_molar_density,
+      |     ~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~
+../../../engine/native/regression/observations.cpp: In function 'epcsaft::regression::Prediction epcsaft::regression::predict(const epcsaft::HelmholtzModel&, const Observation&, const std::optional<epcsaft::equilibrium::EquilibriumResult>&, std::optional<epcsaft::equilibrium::CompiledSystem>, ReferenceCache*)':
+../../../engine/native/regression/observations.cpp:348:19: warning: '*(double*)((char*)&caloric + offsetof(std::optional<double>,std::optional<double>::<unnamed>.std::_Optional_base<double, true, true>::<unnamed>))' may be used uninitialized [-Wmaybe-uninitialized]
+  348 |             value *= mean_molar_mass(parameters, observation.composition.data(), missing_mass);
+      |             ~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../../../engine/native/regression/observations.cpp:324:31: note: '*(double*)((char*)&caloric + offsetof(std::optional<double>,std::optional<double>::<unnamed>.std::_Optional_base<double, true, true>::<unnamed>))' was declared here
+  324 |         std::optional<double> caloric = state.total_isobaric_heat_capacity;
+      |                               ^~~~~~~

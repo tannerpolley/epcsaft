@@ -1,0 +1,12 @@
+baseline_source=d0e992c234656e1a8771c2afed3dfb01d17506c0 (engine/native, engine/src, engine/tests identical to 517a3450f2445f298b36d67302dcf6d5e9a76076)
+candidate_source=a76554be (#572 on d0e992c2); rerun after merging main 16fccc32 at de02b1ac: identical
+baseline_library_sha256=2d95f74366006f229f00eecaca7bc6c3bc6492ddd02e6a3827ca25677ab6ad5e
+candidate_library_sha256=c330204b07bae6ca3a1e24fedc625ffb3abe168c81ea8779dcb5ef91088ad062
+compiler=c++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0
+eigen=3.4.0
+ceres=2.2.0.
+build_flags=-std=c++17 -O3 -falign-functions=64 -DNDEBUG (Meson release, build/engine-meson/shared)
+driver=build/issue-572/bitwise/records.cpp via tools/native-driver regression_checks; serial fit (no worker host); MALLOC_PERTURB_=0
+records=1444 labeled lines each; binary64 values as bit patterns; iteration_seconds excluded
+records_sha256: baseline 2ca7a4a04fa762d6bd0332215f838c6ad4273531fe3ebb3102c5de7d07a30f5f, candidate 2ca7a4a04fa762d6bd0332215f838c6ad4273531fe3ebb3102c5de7d07a30f5f; records.txt is the shared content (cmp identical; baseline rerun identical)
+merged_candidate_library_sha256=1c011ee991d4c2067051ad9d84484cc4a31eee2289fc7ead1218d668100b8426

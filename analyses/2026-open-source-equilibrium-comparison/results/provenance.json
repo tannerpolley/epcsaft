@@ -1,0 +1,27 @@
+{
+  "wheel_sha256": "aa95dcf7ff164aea649a857f2a5bd12a52ad51d1906e714fa65ec9a7e3ae2bce",
+  "source_commit": "4e723ea13d93acb2bc54d553abfdc13ac0f8be44",
+  "source_dirty": true,
+  "sources": {
+    "2026-binary-methane-ethane-tp-flash/results/performance-current.json": "b5cd533d904a9ad329765c62be944da77c6e0873c27afca0f8c7a1f0c1637552",
+    "2026-binary-methane-ethane-tp-flash/results/performance-current.csv": "5e1be34aff4096fedc3978b9e748b696baf75733b72ad2dc7fef5766dee26775",
+    "2026-neutral-pcsaft-equilibrium-comparison/scripts/collect_results.py": "a2cfa6486ccf6ec04275bf67faaf58ed51e5eff6f9b87789607ee4e773a9f72d",
+    "2026-neutral-pcsaft-equilibrium-comparison/results/values.csv": "d91ec21c2f305d3576cdcb99090659658ead0f793ae3dafdbf87d350c9bb258a",
+    "2026-neutral-pcsaft-equilibrium-comparison/results/provenance.json": "55acabffe1d1af6f369ebf94cdd1e413f829dda3eb92e06238301754c60c9dc3",
+    "2026-binary-methane-ethane-bubble-point/scripts/collect_results.py": "cb57ff8e22d3bae4d59e9f2222b125f15518235edbf9d04f596da3d23aeb1f2a",
+    "2026-binary-methane-ethane-bubble-point/results/values.csv": "702a748310fd19039f163c2cd85775a57958dcf45dbbd5673f9fdad962ed0ea6",
+    "2026-binary-methane-ethane-bubble-point/results/provenance.json": "a4e2aa13401f22063adad4e850c08b8da8b8a9ff78e1f2193c327edd731cf4f3",
+    "2026-binary-methane-ethane-tp-flash/results/values.csv": "2169ddcb8dc508b1af48284e9681dafa65523fb78110aa1f795536ca8ac545a4",
+    "2026-binary-methane-ethane-tp-flash/results/provenance.json": "9d02dd406450295d51c69e598c8d36c0831fa2db2f8afc2781b66ecc1a777fee"
+  },
+  "parameter_sha256": {
+    "gross-2001-propane": "5b72b92f1b47162e5fffee8641a83fc5354d15eeec2ac51658cb051c727bd099",
+    "gross-2001-methane-ethane": "7dd1899712aacfbc3395d86349768b0d93dd5dfd75b2e0f0700640be618aa9c2"
+  },
+  "peak_rss_kib": 59744,
+  "affinity": [
+    9
+  ],
+  "nice": 0,
+  "limits": "Engine-only refresh. Flash reuses same-wheel central cold samples, not the nine-case pooled median. External measurements are historical, not rerun. No pure-fluid runtime measurement."
+}

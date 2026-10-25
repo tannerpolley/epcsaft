@@ -1,0 +1,32 @@
+{
+  "rule": "tools/check-engine-architecture.py:rule_trace_payloads_inside_observation",
+  "main_revision": "9fdfe7ce",
+  "main_hits": [
+    "engine/native/equilibrium/gibbs_minimizer.cpp:723: eager trace payload: container/string temporary",
+    "engine/native/properties/helmholtz_model.cpp:908: eager trace payload: declared_choices",
+    "engine/native/properties/helmholtz_model.cpp:913: eager trace payload: container/string temporary",
+    "engine/native/properties/infinite_dilution_reference.cpp:649: eager trace payload: container/string temporary",
+    "engine/native/properties/infinite_dilution_reference.cpp:651: eager trace payload: container/string temporary",
+    "engine/native/properties/infinite_dilution_reference.cpp:654: eager trace payload: container/string temporary",
+    "engine/native/properties/infinite_dilution_reference.cpp:698: eager trace payload: container/string temporary",
+    "engine/native/regression/fit.cpp:271: eager trace payload: mask",
+    "engine/native/regression/fit.cpp:273: eager trace payload: projected",
+    "engine/native/regression/fit.cpp:632: eager trace payload: mask"
+  ],
+  "branch_before_revision": "854d5b72",
+  "branch_before_hits": [
+    "engine/native/equilibrium/gibbs_minimizer.cpp:723: eager trace payload: container/string temporary",
+    "engine/native/regression/fit.cpp:271: eager trace payload: mask",
+    "engine/native/regression/fit.cpp:273: eager trace payload: projected",
+    "engine/native/regression/fit.cpp:632: eager trace payload: mask"
+  ],
+  "branch_after_hits": [],
+  "falsification": {
+    "mutation": "replace the ipopt_iteration initializer list with std::vector<double>{...} in a scratch source copy",
+    "exit_code": 1,
+    "findings": [
+      "engine/native/equilibrium/gibbs_minimizer.cpp:723: eager trace payload: container/string temporary"
+    ]
+  },
+  "limits": "deterministic source scan of standard container/string construction, native functions returning them by value, and trace-only locals; not C++ type inference"
+}

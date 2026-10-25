@@ -1,0 +1,31 @@
+| Case and operation | Median of three (s) | Driver calls | Trial calls | Density roots | Density evaluations | Iterations | Evaluations | Hessian calls |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| case-1/two-liquid / declared | 0.028969250997761264 | 1 | 0 | 6 | 233 | 26 | 70 | 27 |
+| case-1/two-liquid / explicit-test | 0.052740952000021935 | 7 | 7 | 7 | 370 | 61 | 119 | 68 |
+| case-1/two-liquid / candidate-test | 0.056895743997301906 | 7 | 7 | 7 | 370 | 69 | 125 | 76 |
+| case-1/two-liquid / discover | 0.14153365699894493 | 17 | 14 | 25 | 1152 | 157 | 300 | 174 |
+| case-3/VLLE / declared | 0.04866042800131254 | 1 | 0 | 9 | 340 | 19 | 51 | 20 |
+| case-3/VLLE / explicit-test | 0.10730154300108552 | 9 | 9 | 9 | 474 | 114 | 179 | 123 |
+| case-3/VLLE / discover | 0.43851704899861943 | 31 | 27 | 45 | 2058 | 364 | 640 | 395 |
+| case-2/water-ethanol / declared | 0.03078057499806164 | 1 | 0 | 3 | 115 | 16 | 265 | 17 |
+| case-2/water-ethanol / explicit-test | 0.052218696000636555 | 7 | 7 | 7 | 369 | 61 | 124 | 68 |
+| case-2/water-ethanol / discover | 0.09224040599656291 | 9 | 7 | 13 | 599 | 83 | 398 | 92 |
+| case-2/dilute-isobutanol / declared | 0.007880843004386406 | 1 | 0 | 3 | 117 | 6 | 12 | 7 |
+| case-2/dilute-isobutanol / explicit-test | 0.05264723699656315 | 7 | 7 | 7 | 370 | 61 | 129 | 68 |
+| case-2/dilute-isobutanol / discover | 0.06912800700229127 | 9 | 7 | 13 | 603 | 73 | 153 | 82 |
+| case-4/three-liquid-1e+07-Pa / declared | 0.012979187995370012 | 1 | 0 | 9 | 628 | 8 | 15 | 9 |
+| case-4/three-liquid-1e+07-Pa / explicit-test | 0.07694691399956355 | 9 | 9 | 9 | 884 | 125 | 241 | 134 |
+| case-4/three-liquid-1e+07-Pa / discover | 0.26271317699865904 | 31 | 27 | 45 | 3844 | 427 | 692 | 458 |
+| case-4/three-liquid-100000-Pa / declared | 0.014725451001140755 | 1 | 0 | 9 | 351 | 8 | 17 | 9 |
+| case-4/three-liquid-100000-Pa / explicit-test | 0.06511871600378072 | 9 | 9 | 9 | 481 | 112 | 177 | 121 |
+| case-4/three-liquid-100000-Pa / discover | 0.07594714599690633 | 11 | 9 | 15 | 723 | 121 | 189 | 132 |
+| case-5/FeOs / declared | 0.00597361900145188 | 1 | 0 | 3 | 115 | 6 | 11 | 7 |
+| case-5/FeOs / explicit-test | 0.048363016998337116 | 7 | 7 | 7 | 368 | 73 | 126 | 80 |
+| case-5/FeOs / discover | 0.13498500500281807 | 17 | 14 | 25 | 1150 | 225 | 375 | 242 |
+| case-6/figure-2-point-7 / declared | 0.059845964999112766 | 1 | 0 | 6 | 233 | 16 | 49 | 17 |
+| case-6/figure-2-point-7 / explicit-test | 0.25044716599950334 | 13 | 13 | 13 | 683 | 215 | 387 | 228 |
+| case-6/figure-2-point-7 / candidate-test | 0.25293402199895354 | 13 | 13 | 13 | 683 | 204 | 337 | 217 |
+| case-6/figure-2-point-7 / discover | 0.6405952400018577 | 28 | 26 | 34 | 1662 | 451 | 881 | 479 |
+| case-6/aqueous-salt-one-liquid / declared | 0.0092266460051178 | 1 | 0 | 3 | 117 | 6 | 13 | 7 |
+| case-6/aqueous-salt-one-liquid / explicit-test | 0.0527040439992561 | 4 | 4 | 5 | 269 | 42 | 276 | 46 |
+| case-6/aqueous-salt-one-liquid / discover | 0.06207196300238138 | 5 | 4 | 8 | 386 | 48 | 289 | 53 |

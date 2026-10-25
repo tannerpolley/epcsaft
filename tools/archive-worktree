@@ -1,0 +1,204 @@
+#!/usr/bin/env python3
+"""Archive the ignored files `git worktree remove` would delete, then remove the worktree (#429).
+
+Usage: tools/archive-worktree <worktree-path> [name]
+Writes <main checkout of this script's repository>/build/archive/<name>.tar.zst. A file is left out only if it is a
+regular *.whl file or lies under a directory marked as a Python environment (regular pyvenv.cfg or conda-meta/), a build
+tree (regular build.ninja or meson-private/) or a cache (CACHEDIR.TAG with its standard signature); each omission is
+printed. Commits must be reachable from a local or remote branch: a local branch outlives the worktree.
+"""
+import hashlib
+import os
+import stat
+import subprocess
+import sys
+import tarfile
+
+MARKERS = (("pyvenv.cfg", stat.S_ISREG), ("conda-meta", stat.S_ISDIR), ("build.ninja", stat.S_ISREG),
+           ("meson-private", stat.S_ISDIR), ("CACHEDIR.TAG", stat.S_ISREG))
+CACHEDIR_SIGNATURE = b"Signature: 8a477f597d28d172789f06886806bc55"
+
+
+def die(message):
+    sys.exit(f"archive-worktree: {message}")
+
+
+def git(directory, *args):
+    return subprocess.run(["git", "-C", directory, *args], check=True, stdout=subprocess.PIPE).stdout
+
+
+def worktrees(directory):
+    """Registered worktrees of the repository containing `directory`, main first: [(real path, attributes)]."""
+    records = git(directory, "worktree", "list", "--porcelain", "-z").split(b"\0\0")
+    entries = []
+    for record in filter(None, records):
+        fields = record.strip(b"\0").split(b"\0")
+        entries.append((os.path.realpath(os.fsdecode(fields[0].removeprefix(b"worktree "))), fields[1:]))
+    return entries
+
+
+def marker(directory):
+    for name, is_type in MARKERS:
+        try:
+            mode = os.lstat(os.path.join(directory, name)).st_mode
+        except FileNotFoundError:
+            continue
+        if is_type(mode) and (name != "CACHEDIR.TAG" or _starts_with_signature(os.path.join(directory, name))):
+            return name
+    return None
+
+
+def _starts_with_signature(path):
+    with open(path, "rb") as tag:
+        return tag.read(len(CACHEDIR_SIGNATURE)) == CACHEDIR_SIGNATURE
+
+
+def sha256(path):
+    with open(path, "rb") as source:
+        return hashlib.file_digest(source, "sha256").hexdigest()
+
+
+def _raise(error):
+    raise error
+
+
+def retained_files(wt, report=True):
+    """Ignored and untracked files (all ignored, since the worktree is clean), less marked directories and wheels."""
+    marks, kept = {}, []
+    for raw in filter(None, git(wt, "ls-files", "-z", "--others", "--ignored", "--exclude-standard").split(b"\0")):
+        path = os.fsdecode(raw)
+        parts = path.split("/")
+        ancestors = ["/".join(parts[:i]) for i in range(1, len(parts))]
+        for directory in ancestors:
+            if directory not in marks:
+                marks[directory] = marker(os.path.join(wt, directory))
+                if marks[directory] and report:
+                    print(f"excluded {directory} ({marks[directory]})")
+            if marks[directory]:
+                break
+        else:
+            if path.endswith(".whl") and stat.S_ISREG(os.lstat(os.path.join(wt, path)).st_mode):
+                if report:
+                    print(f"excluded {path}")
+            else:
+                kept.append(path)
+    return kept
+
+
+def reaped(child):
+    """Never leave a compressor running after an error or an interrupt."""
+    if child.poll() is None:
+        child.kill()
+        child.wait()
+
+
+def stats(wt, files):
+    return {path: (lambda s: (s.st_mode, s.st_size, s.st_mtime_ns, s.st_ino))(os.lstat(os.path.join(wt, path)))
+            for path in files}
+
+
+def write_and_verify(wt, files, archive, out):
+    """Write and verify the archive; return each member's lstat at verification, to detect later writes."""
+    with archive:
+        zstd = subprocess.Popen(["zstd", "-q", "-c"], stdin=subprocess.PIPE, stdout=archive)
+        try:
+            with tarfile.open(fileobj=zstd.stdin, mode="w|", format=tarfile.PAX_FORMAT) as tar:
+                for path in files:
+                    tar.inodes.clear()  # store every hard link as a full copy, so each member verifies alone
+                    tar.add(os.path.join(wt, path), arcname=path, recursive=False)
+            zstd.stdin.close()
+            if zstd.wait():
+                raise RuntimeError(f"zstd exited {zstd.returncode}")
+        finally:
+            reaped(zstd)
+    # Read the archive back and compare every member with the worktree.
+    unzstd = subprocess.Popen(["zstd", "-q", "-d", "-c", out], stdout=subprocess.PIPE)
+    try:
+        verified = verify(wt, files, unzstd)
+    finally:
+        reaped(unzstd)
+    return verified
+
+
+def verify(wt, files, unzstd):
+    """Compare every member with the worktree; return each file's lstat taken around its own comparison."""
+    verified = {}
+    with tarfile.open(fileobj=unzstd.stdout, mode="r|") as tar:
+        for member in tar:
+            source = os.path.join(wt, member.name)
+            before = stats(wt, [member.name])
+            mode = before[member.name][0]
+            if member.issym():
+                same = stat.S_ISLNK(mode) and member.linkname == os.readlink(source)
+            else:
+                same = (member.isreg() and stat.S_ISREG(mode) and member.size == before[member.name][1]
+                        and hashlib.file_digest(tar.extractfile(member), "sha256").hexdigest() == sha256(source))
+            if not same or stats(wt, [member.name]) != before:
+                raise RuntimeError(f"member {member.name!r} differs from the worktree")
+            verified.update(before)
+    unzstd.stdout.read()  # tarfile stops at the end-of-archive marker; drain the rest so zstd can exit
+    if unzstd.wait():
+        raise RuntimeError(f"zstd -d exited {unzstd.returncode}")
+    if list(verified) != files:
+        raise RuntimeError("archive members differ from the retained file list")
+    return verified
+
+
+def main():
+    if len(sys.argv) not in (2, 3):
+        die("usage: tools/archive-worktree <worktree-path> [name]")
+    wt = os.path.realpath(sys.argv[1])
+    name = sys.argv[2] if len(sys.argv) == 3 else os.path.basename(wt)
+    if name in ("", ".", "..") or "/" in name:
+        die(f"invalid archive name {name!r}")
+    if not os.path.isdir(wt):
+        die(f"{wt!r} is not a directory")
+    registered = worktrees(wt)
+    if wt == registered[0][0]:
+        die(f"{wt!r} is a main working tree, not a linked worktree")
+    entry = next((fields for path, fields in registered[1:] if path == wt), None)
+    if entry is None:
+        die(f"{wt!r} is not a registered linked worktree of its repository")
+    if any(field.startswith(b"locked") for field in entry):
+        die(f"{wt!r} is locked")
+    for directory, subdirs, names in os.walk(wt, onerror=_raise):
+        if directory != wt and ".git" in subdirs + names:
+            die(f"{directory!r} is a repository, worktree or submodule inside {wt!r}; worktree kept")
+        if directory == wt and ".git" in subdirs:
+            subdirs.remove(".git")
+    if git(wt, "status", "--porcelain=v1", "-z", "--untracked-files=all"):
+        die(f"{wt!r} has uncommitted or untracked changes")
+    if git(wt, "rev-list", "HEAD", "--not", "--branches", "--remotes"):
+        die(f"{wt!r} has commits reachable from no local or remote branch")
+
+    files = retained_files(wt)
+    verified = {}
+    if files:
+        main_checkout = worktrees(os.path.dirname(os.path.realpath(__file__)))[0][0]
+        out = os.path.join(main_checkout, "build", "archive", f"{name}.tar.zst")
+        os.makedirs(os.path.dirname(out), exist_ok=True)
+        try:
+            archive = open(out, "xb")
+        except FileExistsError:
+            die(f"{out!r} already exists; worktree kept")
+        try:
+            verified = write_and_verify(wt, files, archive, out)
+        except BaseException as error:
+            os.remove(out)
+            die(f"archiving failed ({error!r}); partial archive deleted, worktree kept")
+        print(f"{out!r}: {len(files)} files, {os.path.getsize(out)} bytes, verified")
+    else:
+        print("nothing to archive")
+    # A writer still active in the worktree would lose whatever it wrote after verification.
+    if (retained_files(wt, report=False) != files or stats(wt, files) != verified
+            or git(wt, "status", "--porcelain=v1", "-z", "--untracked-files=all")):
+        die(f"{wt!r} changed while it was archived; archive kept, worktree kept")
+    subprocess.run(["git", "-C", registered[0][0], "worktree", "remove", wt], check=True)
+    print(f"removed {wt!r}")
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except subprocess.CalledProcessError as error:
+        die(f"{error.cmd!r} exited {error.returncode}; worktree kept")

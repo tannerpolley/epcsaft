@@ -1,0 +1,4 @@
+co2_loading_mol_per_mol_mdea,experimental_total_pressure_bar,pressure_standard_uncertainty_bar,temperature_k,temperature_standard_uncertainty_k,loading_standard_uncertainty
+0.9374,9.2,0.3,303.0,0.1,0.001
+0.9973,14.2,0.3,303.0,0.1,0.001
+1.0448,24.5,0.3,303.0,0.1,0.001

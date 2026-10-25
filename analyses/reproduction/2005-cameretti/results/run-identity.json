@@ -1,0 +1,10 @@
+{
+ "engine": [
+  "49aac619621b8e9fbbfce9937c742c003ee8e326",
+  "True"
+ ],
+ "processes": 32,
+ "native_solves": 4476,
+ "wall_seconds": 5.7,
+ "parallel_solve_seconds": 4.2
+}

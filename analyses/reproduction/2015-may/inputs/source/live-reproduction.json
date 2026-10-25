@@ -1,0 +1,22 @@
+{
+  "source_rows": "may-2015-methane-ethane-vle.csv",
+  "source_metadata": "may-2015-methane-ethane-vle.yaml",
+  "feed_owner": "may-2015-neutral-held-cases.yaml",
+  "parameter_owner": "data/packets/gross-sadowski-2001/2",
+  "components": [
+    "methane",
+    "ethane"
+  ],
+  "binary_interaction": {
+    "value": 0,
+    "meaning": "unfitted baseline assumption"
+  },
+  "comparison": "physical comparison against Table 5 measured liquid/vapor methane compositions",
+  "tolerance_owner": "source CSV x_comparison_allowance and y_comparison_allowance",
+  "excluded": [
+    "parameter fitting",
+    "phase discovery",
+    "measured density comparison"
+  ],
+  "execution": "Ready r1; seventeen declared TP attempts retained; delivered review pending"
+}

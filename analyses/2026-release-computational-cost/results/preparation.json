@@ -1,0 +1,43 @@
+{
+  "tag": "main-8298c6029ebb8b467929badc4a223c580ec591ab",
+  "commit": "8298c6029ebb8b467929badc4a223c580ec591ab",
+  "build_jobs": "6",
+  "compiler": "c++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+  "files_sha256": {
+    "build/issue-681/release/README.md": "7d981c49f87ab1462aa87d39b10d6df46a6065181eb15fc6a570e48013f9ab21",
+    "build/issue-681/release/uv.lock": "dd74f4edabd565bb49cd88de6bcc414e005e585b93d946a844ef6860b45ddc30",
+    "build/issue-681/release/build/environment-wheel/build-jobs": "06e9d52c1720fca412803e3b07c4b228ff113e303f4c7ab94665319d832bbfb7",
+    "build/issue-681/release/build/engine-meson/shared/meson-info/intro-buildoptions.json": "420eacfa1de2b428649c01d73a921e2f7401277d5d40674beab58c78e5475488",
+    "analyses/2026-competitor-cross-check/inputs/Project.toml": "5227aef4f460b6bb233087c9dd46a18aa40ffffcb502555b2b1d765fd1425efc",
+    "analyses/2026-competitor-cross-check/inputs/Manifest.toml": "cd7c2cc2632477bfbd11bda09b30c9e51ce89d15987ce1d3a7db58727d244dd5",
+    "build/issue-681/release/analyses/2026-competitor-cross-check/scripts/engine.py": "fcb6b0bf8f981525854dcf244ece35a105d63ccd3044558e14cd6f8d30a76d1b",
+    "build/issue-681/release/analyses/2026-head-to-head-comparisons/scripts/h2h_engine.py": "986ab2ee8915480a455561ffe78e5a30c51e6205c3584045bb37eabf823f064e",
+    "build/issue-681/release/data/packets/gross-2001-propane/3/parameters/parameters.json": "6dc4d60f10ef4364c01cbccf9821447ff9c4c815cc8e94284b853d1cdee71ccb",
+    "build/issue-681/release/data/packets/gross-2001-methane-ethane/3/parameters/parameters.json": "109cfe8e80c4fcefadcbb4975ebe7436d371710ed9d20f2c7bd6d30d9c581bf2",
+    "build/issue-681/release/data/packets/khudaida-2026-figure-2-electrolyte-lle/7/parameters/parameters.json": "8babed899e7347e58c403c7aff24a7fdd6d60411af3b4d81eb6aa90c2431dfa4",
+    "build/issue-681/release/analyses/reproduction/2026-khudaida/figures/figure-02/source/source-points.csv": "21cf58a5373b2e2c337b6baf5a0423d0ab5d7cea9639bb727b061f5844ef78d7"
+  },
+  "release_engine_clean": true,
+  "post_measurement_image_checks": {
+    "native_library_hashes_match": true,
+    "worker_rechecks": [
+      [
+        "measurement-3-retry-1.jsonl.gz",
+        "Engine-A"
+      ],
+      [
+        "measurement-3-retry-1.jsonl.gz",
+        "Engine-control"
+      ],
+      [
+        "measurement-3.jsonl.gz",
+        "Engine-A"
+      ],
+      [
+        "measurement-3.jsonl.gz",
+        "Engine-control"
+      ]
+    ]
+  },
+  "release_checkout_removed_after_measurement": true
+}

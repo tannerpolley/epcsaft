@@ -1,0 +1,7 @@
+index,extent,seconds,iterations,evaluations,hessian_calls,phase_count,success,state_available,raw_rows,classified_rows,native_termination,cause
+0,0.005,0.367649549,9,16,10,2,False,False,185.47568909850332,185.47568909850332,INVALID_NUMBER_DETECTED,elapsed work budget exhausted; elapsed work budget exhausted
+1,0.02,0.354856097,9,16,10,2,False,False,221.4320092906285,221.4320092906285,INVALID_NUMBER_DETECTED,elapsed work budget exhausted; elapsed work budget exhausted
+2,0.05,0.2533981,6,13,7,2,False,False,,,INVALID_NUMBER_DETECTED,elapsed work budget exhausted; elapsed work budget exhausted
+3,0.1,0.0,0,0,0,0,False,False,,,,unattempted
+4,0.2,0.0,0,0,0,0,False,False,,,,unattempted
+5,0.3,0.0,0,0,0,0,False,False,,,,unattempted

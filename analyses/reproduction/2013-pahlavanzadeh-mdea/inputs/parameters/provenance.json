@@ -1,0 +1,10 @@
+{
+  "packet_id": "pahlavanzadeh-2013-mdea",
+  "packet_version": "1",
+  "packet_path": "data/packets/pahlavanzadeh-2013-mdea/1",
+  "packet_fingerprint": "d7c29cdb4377bde7649b0c445bacba65b3b000f99395dc9e6a5b7a0c08050a73",
+  "materialization": "byte-for-byte",
+  "packet_member": "parameters/parameters.json",
+  "sha256": "9986458c4316102385373b8c622d895e8f5f3c7f3c633ed674d62dbcaa85122a",
+  "gas_packet_reuse": "gross-sadowski-2001/3; no gas states executed in the neutral subset"
+}

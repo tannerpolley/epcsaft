@@ -1,0 +1,10 @@
+condition_id,temperature_K,mdea_mass_fraction,co2_loading_min_mol_per_mol_mdea,co2_loading_max_mol_per_mol_mdea,pressure_max_MPa,source_locator,observation_status
+fig5-low-mdea,313,0.19,0.01,1.32,5.0,Uyan2015 Figure 5 caption,missing-point-table
+fig5-low-mdea,333,0.19,0.01,1.32,5.0,Uyan2015 Figure 5 caption,missing-point-table
+fig5-low-mdea,373,0.19,0.01,1.32,5.0,Uyan2015 Figure 5 caption,missing-point-table
+fig5-low-mdea,393,0.19,0.01,1.32,5.0,Uyan2015 Figure 5 caption,missing-point-table
+fig5-low-mdea,413,0.19,0.01,1.32,5.0,Uyan2015 Figure 5 caption,missing-point-table
+fig7-high-mdea,313,0.30,0.01,1.26,5.0,Uyan2015 Figure 7 caption,missing-point-table
+fig7-high-mdea,333,0.30,0.01,1.26,5.0,Uyan2015 Figure 7 caption,missing-point-table
+fig7-high-mdea,353,0.30,0.01,1.26,5.0,Uyan2015 Figure 7 caption,missing-point-table
+fig7-high-mdea,373,0.30,0.01,1.26,5.0,Uyan2015 Figure 7 caption,missing-point-table

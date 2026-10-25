@@ -1,0 +1,4 @@
+case,budget,quantity,index,baseline,candidate,scale,difference
+masking,observable-relative,temperature,0,350.0,350.0,350.0,0.0
+masking,trace-relative,amount/0/s1,1,2.500000000000006e-13,2.500000000000006e-13,2.500000000000006e-13,0.0
+masking,phase-relative,phase_amount,0,1.0000000000009999,1.0000000000009999,1.0000000000009999,0.0

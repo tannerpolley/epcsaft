@@ -1,0 +1,68 @@
+# CC BY-NC packet use basis; Rehner CC BY attribution and FeOs MIT terms.
+# Per-file notice: parameters/LICENSE-NOTICE.md; numerical files are unchanged.
+schema_version = 2
+packet_id = "feos-rehner-2023"
+packet_version = "1"
+title = "Rehner 2023 PCP-SAFT binary parameters with their Esper 2023 pure dependencies (FeOs distribution)"
+description = "Rehner et al. 2023 binary k_ij and induced-association records (7848 FeOs rows; the article SI MOESM4 has 7861, a different distribution) with the Esper 2023 pure records they reference."
+license_or_use_basis = "CC-BY-NC-4.0; https://creativecommons.org/licenses/by-nc/4.0/; non-commercial use; exclude from commercial redistribution or obtain permission"
+attribution = "Esper, T.; Bauer, G.; Rehner, P.; Gross, J. (2023) PCP-SAFT Parameters of Pure Substances Using Large Experimental Databases. Ind. Eng. Chem. Res., DOI 10.1021/acs.iecr.3c02255; Supporting Information DOI 10.1021/acs.iecr.3c02255.s001. Rehner, P.; Bardow, A.; Gross, J. (2023) Modeling Mixtures with PCP-SAFT: Insights from Large-Scale Parametrization and Group-Contribution Method for Binary Interaction Parameters. Int. J. Thermophys. 44, 179, DOI 10.1007/s10765-023-03290-3. Numerical values from FeOs contributors, feos-org/feos af84e3f9da2fac2d102d449cd07cbbb48237617b, parameters/pcsaft/rehner2023_binary.json and esper2023.json (MIT notice in source feos-distribution). Changes: decimal molar mass g/mol to kg/mol before binary64 rounding, explicit site topology, per-record admission or refusal, constant-sigma association-volume basis conversion for fitted cross edges, Eqs. 17-18 rules and zero-strength declarations made explicit."
+tolerance_rationale = "Copied source parameters; equality with the pinned FeOs decimals is the only check. No physical-validation tolerance or applicability range is asserted."
+
+[[sources]]
+source_id = "esper-2023"
+citation = "Esper, T.; Bauer, G.; Rehner, P.; Gross, J. (2023) PCP-SAFT Parameters of Pure Substances Using Large Experimental Databases. Ind. Eng. Chem. Res., DOI 10.1021/acs.iecr.3c02255; Supporting Information DOI 10.1021/acs.iecr.3c02255.s001."
+doi = "10.1021/acs.iecr.3c02255"
+use_basis = "Pure PCP-SAFT parameters; Supporting Information 10.1021/acs.iecr.3c02255.s001 is CC BY-NC 4.0 (https://creativecommons.org/licenses/by-nc/4.0/); the article and SI files are linked, not copied."
+
+[[sources]]
+source_id = "rehner-2023"
+citation = "Rehner, P.; Bardow, A.; Gross, J. (2023) Modeling Mixtures with PCP-SAFT: Insights from Large-Scale Parametrization and Group-Contribution Method for Binary Interaction Parameters. Int. J. Thermophys. 44, 179, DOI 10.1007/s10765-023-03290-3."
+doi = "10.1007/s10765-023-03290-3"
+use_basis = "Binary parameters and Eqs. 13, 17-18; publication terms CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/) with attribution and indication of changes, subject to separately credited third-party exclusions. The Esper dependencies make this packet CC BY-NC 4.0."
+
+[[sources]]
+source_id = "feos-distribution"
+citation = "FeOs contributors, feos-org/feos commit af84e3f9da2fac2d102d449cd07cbbb48237617b, parameters/pcsaft/rehner2023_binary.json"
+url = "https://github.com/feos-org/feos/blob/af84e3f9da2fac2d102d449cd07cbbb48237617b/parameters/pcsaft/rehner2023_binary.json"
+use_basis = "Copied numerical distribution under the FeOs MIT licence, notice retained verbatim: Copyright (c) 2021-2026 feos-org and Contributors.  https://github.com/feos-org/feos\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. The Apache-2.0 alternative at the same commit is not combined with it."
+
+[[domains]]
+domain_id = "feos-rehner-2023"
+description = "Source parametrization as distributed by FeOs; the FeOs file states no per-record fit range."
+
+[[files]]
+path = "parameters/parameters.json"
+role = "parameters"
+media_type = "application/json"
+sha256 = "034476de9da3640685728b3656f5a6663bd71b699960094b4fbdc5355b7f5eb4"
+source_refs = ["esper-2023", "rehner-2023", "feos-distribution"]
+domain_refs = ["feos-rehner-2023"]
+units_basis = "Every coefficient declares its unit in the Parameters document; dimensionless values use the explicit dimensionless unit."
+
+[[files]]
+path = "sources/record-accounting.csv"
+role = "source"
+media_type = "text/csv"
+sha256 = "5c36da22fdf3684d2d6a20f02d1d80e8ffde5e3920246b5c124c27e376a3dd15"
+source_refs = ["esper-2023", "rehner-2023", "feos-distribution"]
+domain_refs = ["feos-rehner-2023"]
+units_basis = "Non-numeric source indices, identities and dispositions."
+
+[[files]]
+path = "provenance/source-origin.toml"
+role = "provenance"
+media_type = "application/toml"
+sha256 = "e5f1b618b59fbbe6fda782886c370db2b57d314ca3cb0dee1d07dbbfdb52a61b"
+source_refs = ["esper-2023", "rehner-2023", "feos-distribution"]
+domain_refs = ["feos-rehner-2023"]
+units_basis = "Non-numeric repository, commit, path and hash identifiers."
+
+[[files]]
+path = "parameters/LICENSE-NOTICE.md"
+role = "source"
+media_type = "text/markdown"
+sha256 = "d79b5ca197a7d05918fd01bf0037ab9e8e962bcd4b7394c9a02a544ca2745598"
+source_refs = ["esper-2023", "rehner-2023", "feos-distribution"]
+domain_refs = ["feos-rehner-2023"]
+units_basis = "Non-numeric attribution and licence terms."

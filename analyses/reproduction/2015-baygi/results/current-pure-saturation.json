@@ -1,0 +1,4053 @@
+{
+  "class": "PUBLISHED_TUPLE_PROPERTY_REPLAY",
+  "association_convention": "sigma^3",
+  "engine_provenance": [
+    "69f61380367b0b8d9d6e726ebc78c70f3c661818",
+    true
+  ],
+  "engine_module": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-725-live-reproduction-baygi-2015-pure/engine/src/epcsaft/__init__.py",
+  "interpreter": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-725-live-reproduction-baygi-2015-pure/.venv/bin/python",
+  "base_main": "69f61380367b0b8d9d6e726ebc78c70f3c661818",
+  "input_sha256": {
+    "baygi-table-1.csv": "b7bce1b1fc829333c945d50ad1b712198d7993bfdd53a6d898a94985db3de73a",
+    "baygi-figures-02-03-overlay.png": "bf64f4d7b09679388a5d54d7595af347ab39f6c8ecbc60473b65b25254616fae",
+    "figures-manifest.csv": "61ff86756a7102d293ee058ff49024534885b47eb01459e1af8a835caddd7070",
+    "source-manifest.csv": "21335bbecf779209a9116318c5e9f3703c936d2072a843ffa5776b39ef1bea67",
+    "eq10-detail.png": "cb8126b692f8c2d9ca216843c2ffec8d862ba127caf2216a53b5f4beacf44c95",
+    "baygi-page-792.svg": "4dbc98e979067428cfcbe90d900a42fa5998e73b5029feeb16e523d0c133fc83",
+    "baygi-figure-02.csv": "fa6202ad249b4211bedaa7827083883a9b3143d28246e9c860660506a727ca02",
+    "baygi-figure-calibration.json": "dc167221d014ff519bda11b134dac0d126b67fb7e02e30ce68b22a90145cb812",
+    "baygi-page-792.png": "ccfd8286105338a0d8686818eac0de93683cf23b0022a4f00edcfe0ef09c8a8a",
+    "baygi-figure-03.csv": "e0950928bb5356972a597969f7b8e944d6021d88e8b0e4ace5783ed00603e772",
+    "baygi-table-2.csv": "6e426d0935ef1e2ae8ae2c2d93a087b1242d8a787742550d423471bc0728dc02"
+  },
+  "producer_sha256": "7d4c6cd991f5ee0df28a64b80e04b6f248b17a78223828a3ca374c67ac1729e0",
+  "molar_mass_kg_mol": 0.061083,
+  "tolerances": {
+    "row": 1e-10,
+    "density_kg_m3": 1.5,
+    "figure2_pressure_kPa": 1.1,
+    "figure3_temperature_K": 1.5,
+    "table2_percentage_point": 0.005
+  },
+  "parameter_mappings": {
+    "2B": {
+      "schema": "epcsaft.parameters",
+      "schema_version": 1,
+      "components": [
+        {
+          "component_id": "monoethanolamine",
+          "fixed": {
+            "charge_number": {
+              "value": {
+                "magnitude": 0,
+                "unit": "elementary-charge"
+              }
+            },
+            "molar_mass": {
+              "value": {
+                "magnitude": 0.061083,
+                "unit": "kilogram / mole"
+              }
+            }
+          },
+          "coefficients": [
+            {
+              "family": "segment_count",
+              "identity": "MEA/2B/segment_count",
+              "value": {
+                "magnitude": 3.0353,
+                "unit": "dimensionless"
+              }
+            },
+            {
+              "family": "segment_diameter",
+              "identity": "MEA/2B/segment_diameter",
+              "value": {
+                "magnitude": 3.0435,
+                "unit": "angstrom"
+              }
+            },
+            {
+              "family": "dispersion_energy_over_k",
+              "identity": "MEA/2B/dispersion_energy_over_k",
+              "value": {
+                "magnitude": 277.174,
+                "unit": "kelvin"
+              }
+            }
+          ]
+        }
+      ],
+      "model_families": [
+        {
+          "kind": "base",
+          "choice": "pc-saft"
+        },
+        {
+          "kind": "association",
+          "choice": "general-site"
+        },
+        {
+          "kind": "electrolyte",
+          "choice": "none"
+        },
+        {
+          "kind": "permittivity",
+          "choice": "none"
+        }
+      ],
+      "topology": {
+        "sites": [
+          {
+            "component_id": "monoethanolamine",
+            "site_id": "donor",
+            "multiplicity": 1
+          },
+          {
+            "component_id": "monoethanolamine",
+            "site_id": "acceptor",
+            "multiplicity": 1
+          }
+        ],
+        "edges": [
+          {
+            "endpoint_a": {
+              "component_id": "monoethanolamine",
+              "site_id": "donor"
+            },
+            "endpoint_b": {
+              "component_id": "monoethanolamine",
+              "site_id": "acceptor"
+            },
+            "source": {
+              "kind": "explicit"
+            },
+            "volume": {
+              "identity": "MEA/2B/association_volume",
+              "value": {
+                "magnitude": 0.03747,
+                "unit": "dimensionless"
+              }
+            },
+            "energy_over_k": {
+              "identity": "MEA/2B/association_energy_over_k",
+              "value": {
+                "magnitude": 2586.3,
+                "unit": "kelvin"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "3B": {
+      "schema": "epcsaft.parameters",
+      "schema_version": 1,
+      "components": [
+        {
+          "component_id": "monoethanolamine",
+          "fixed": {
+            "charge_number": {
+              "value": {
+                "magnitude": 0,
+                "unit": "elementary-charge"
+              }
+            },
+            "molar_mass": {
+              "value": {
+                "magnitude": 0.061083,
+                "unit": "kilogram / mole"
+              }
+            }
+          },
+          "coefficients": [
+            {
+              "family": "segment_count",
+              "identity": "MEA/3B/segment_count",
+              "value": {
+                "magnitude": 4.5354,
+                "unit": "dimensionless"
+              }
+            },
+            {
+              "family": "segment_diameter",
+              "identity": "MEA/3B/segment_diameter",
+              "value": {
+                "magnitude": 2.6019,
+                "unit": "angstrom"
+              }
+            },
+            {
+              "family": "dispersion_energy_over_k",
+              "identity": "MEA/3B/dispersion_energy_over_k",
+              "value": {
+                "magnitude": 204.0438,
+                "unit": "kelvin"
+              }
+            }
+          ]
+        }
+      ],
+      "model_families": [
+        {
+          "kind": "base",
+          "choice": "pc-saft"
+        },
+        {
+          "kind": "association",
+          "choice": "general-site"
+        },
+        {
+          "kind": "electrolyte",
+          "choice": "none"
+        },
+        {
+          "kind": "permittivity",
+          "choice": "none"
+        }
+      ],
+      "topology": {
+        "sites": [
+          {
+            "component_id": "monoethanolamine",
+            "site_id": "donor",
+            "multiplicity": 2
+          },
+          {
+            "component_id": "monoethanolamine",
+            "site_id": "acceptor",
+            "multiplicity": 1
+          }
+        ],
+        "edges": [
+          {
+            "endpoint_a": {
+              "component_id": "monoethanolamine",
+              "site_id": "donor"
+            },
+            "endpoint_b": {
+              "component_id": "monoethanolamine",
+              "site_id": "acceptor"
+            },
+            "source": {
+              "kind": "explicit"
+            },
+            "volume": {
+              "identity": "MEA/3B/association_volume",
+              "value": {
+                "magnitude": 0.118488,
+                "unit": "dimensionless"
+              }
+            },
+            "energy_over_k": {
+              "identity": "MEA/3B/association_energy_over_k",
+              "value": {
+                "magnitude": 2383.4744,
+                "unit": "kelvin"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "4C": {
+      "schema": "epcsaft.parameters",
+      "schema_version": 1,
+      "components": [
+        {
+          "component_id": "monoethanolamine",
+          "fixed": {
+            "charge_number": {
+              "value": {
+                "magnitude": 0,
+                "unit": "elementary-charge"
+              }
+            },
+            "molar_mass": {
+              "value": {
+                "magnitude": 0.061083,
+                "unit": "kilogram / mole"
+              }
+            }
+          },
+          "coefficients": [
+            {
+              "family": "segment_count",
+              "identity": "MEA/4C/segment_count",
+              "value": {
+                "magnitude": 4.5208,
+                "unit": "dimensionless"
+              }
+            },
+            {
+              "family": "segment_diameter",
+              "identity": "MEA/4C/segment_diameter",
+              "value": {
+                "magnitude": 2.6574,
+                "unit": "angstrom"
+              }
+            },
+            {
+              "family": "dispersion_energy_over_k",
+              "identity": "MEA/4C/dispersion_energy_over_k",
+              "value": {
+                "magnitude": 237.6864,
+                "unit": "kelvin"
+              }
+            }
+          ]
+        }
+      ],
+      "model_families": [
+        {
+          "kind": "base",
+          "choice": "pc-saft"
+        },
+        {
+          "kind": "association",
+          "choice": "general-site"
+        },
+        {
+          "kind": "electrolyte",
+          "choice": "none"
+        },
+        {
+          "kind": "permittivity",
+          "choice": "none"
+        }
+      ],
+      "topology": {
+        "sites": [
+          {
+            "component_id": "monoethanolamine",
+            "site_id": "donor",
+            "multiplicity": 2
+          },
+          {
+            "component_id": "monoethanolamine",
+            "site_id": "acceptor",
+            "multiplicity": 2
+          }
+        ],
+        "edges": [
+          {
+            "endpoint_a": {
+              "component_id": "monoethanolamine",
+              "site_id": "donor"
+            },
+            "endpoint_b": {
+              "component_id": "monoethanolamine",
+              "site_id": "acceptor"
+            },
+            "source": {
+              "kind": "explicit"
+            },
+            "volume": {
+              "identity": "MEA/4C/association_volume",
+              "value": {
+                "magnitude": 0.187533,
+                "unit": "dimensionless"
+              }
+            },
+            "energy_over_k": {
+              "identity": "MEA/4C/association_energy_over_k",
+              "value": {
+                "magnitude": 989.8984,
+                "unit": "kelvin"
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "figure_readout_units": {
+    "figure2": "kPa at native liquid density",
+    "figure3": "kg/m3 at native T"
+  },
+  "readout_unavailable": "native coordinate outside source path; no extrapolation",
+  "evidence": "numerical verification against paper model and empirical correlation curves; no raw measurements",
+  "exact_d3_falsifier": {
+    "scheme": "2B",
+    "molar_density_mol_m3": 15000,
+    "temperature_K": [
+      303.15,
+      373.15,
+      443.15
+    ],
+    "ratio_relative_tolerance": 1e-12
+  },
+  "wall_seconds": 0.10244921299818088,
+  "states": 45,
+  "verified_states": 45,
+  "historical_sigma3_comparison": [
+    {
+      "scheme": "2B",
+      "maximum_relative_change_from_historical_sigma3": {
+        "pressure_Pa": 1.7952306308188781e-12,
+        "rhoL_mol_m3": 1.2212453270876722e-15
+      }
+    },
+    {
+      "scheme": "3B",
+      "maximum_relative_change_from_historical_sigma3": {
+        "pressure_Pa": 1.5143442055887135e-12,
+        "rhoL_mol_m3": 6.661338147750939e-16
+      }
+    },
+    {
+      "scheme": "4C",
+      "maximum_relative_change_from_historical_sigma3": {
+        "pressure_Pa": 2.6866286972904163e-12,
+        "rhoL_mol_m3": 8.881784197001252e-16
+      }
+    }
+  ],
+  "table2": [
+    {
+      "scheme": "4C",
+      "quantity": "pressure_AAD",
+      "reported_percent": 0.24,
+      "outcome": "undetermined",
+      "cause": "author sampling grid unknown; density Eq. 10 grouping unresolved"
+    },
+    {
+      "scheme": "4C",
+      "quantity": "liquid_density_AAD",
+      "reported_percent": 0.23,
+      "outcome": "undetermined",
+      "cause": "author sampling grid unknown; density Eq. 10 grouping unresolved"
+    },
+    {
+      "scheme": "3B",
+      "quantity": "pressure_AAD",
+      "reported_percent": 1.75,
+      "outcome": "undetermined",
+      "cause": "author sampling grid unknown; density Eq. 10 grouping unresolved"
+    },
+    {
+      "scheme": "3B",
+      "quantity": "liquid_density_AAD",
+      "reported_percent": 0.43,
+      "outcome": "undetermined",
+      "cause": "author sampling grid unknown; density Eq. 10 grouping unresolved"
+    },
+    {
+      "scheme": "2B",
+      "quantity": "pressure_AAD",
+      "reported_percent": 0.62,
+      "outcome": "undetermined",
+      "cause": "author sampling grid unknown; density Eq. 10 grouping unresolved"
+    },
+    {
+      "scheme": "2B",
+      "quantity": "liquid_density_AAD",
+      "reported_percent": 0.12,
+      "outcome": "undetermined",
+      "cause": "author sampling grid unknown; density Eq. 10 grouping unresolved"
+    }
+  ],
+  "diagnostics": [
+    {
+      "scheme": "2B",
+      "temperature_K": 303.15,
+      "message": "converged: residual 2.9309887850104133e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 9 iterations, contraction absent, floor 4.621317306922327e-10, amplification 0",
+      "solver_status": "SUCCESS",
+      "amounts_mol": [
+        1.0,
+        0.0
+      ],
+      "mole_fractions": [
+        1.0,
+        1.0
+      ],
+      "residuals": [
+        -2.930988785010413e-14,
+        -1.952040117959169e-14,
+        -4.440892098500626e-16,
+        -5.918350306454773e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "classified_residuals": [
+        -2.930988785010413e-14,
+        -1.952040117959169e-14,
+        -4.440892098500626e-16,
+        -5.918350306454773e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rows": [
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "material_balance",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 1,
+          "index": 0
+        }
+      ],
+      "convergence": {
+        "residual": 2.930988785010413e-14,
+        "floor": 4.621317306922327e-10,
+        "amplification": 0.0,
+        "contraction": null,
+        "iterations": 9,
+        "evaluations": 18
+      },
+      "criterion": 1e-10,
+      "stop": "Stop.converged",
+      "linear_solver": "mumps"
+    },
+    {
+      "scheme": "2B",
+      "temperature_K": 313.15,
+      "message": "converged: residual 1.5099033134902129e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 9 iterations, contraction absent, floor 2.0947120643588019e-11, amplification 0",
+      "solver_status": "SUCCESS",
+      "amounts_mol": [
+        1.0,
+        0.0
+      ],
+      "mole_fractions": [
+        1.0,
+        1.0
+      ],
+      "residuals": [
+        -1.509903313490213e-14,
+        -1.1906408569013152e-14,
+        -4.440892098500626e-16,
+        -9.000359790907481e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "classified_residuals": [
+        -1.509903313490213e-14,
+        -1.1906408569013152e-14,
+        -4.440892098500626e-16,
+        -9.000359790907481e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rows": [
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "material_balance",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 1,
+          "index": 0
+        }
+      ],
+      "convergence": {
+        "residual": 1.509903313490213e-14,
+        "floor": 2.094712064358802e-11,
+        "amplification": 0.0,
+        "contraction": null,
+        "iterations": 9,
+        "evaluations": 18
+      },
+      "criterion": 1e-10,
+      "stop": "Stop.converged",
+      "linear_solver": "mumps"
+    },
+    {
+      "scheme": "2B",
+      "temperature_K": 323.15,
+      "message": "converged: residual 2.8421709430404007e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 9 iterations, contraction absent, floor 2.0404634227555068e-11, amplification 0",
+      "solver_status": "SUCCESS",
+      "amounts_mol": [
+        1.0,
+        0.0
+      ],
+      "mole_fractions": [
+        1.0,
+        1.0
+      ],
+      "residuals": [
+        2.842170943040401e-14,
+        2.179599172099433e-14,
+        1.3322676295501878e-15,
+        7.907811048448866e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "classified_residuals": [
+        2.842170943040401e-14,
+        2.179599172099433e-14,
+        1.3322676295501878e-15,
+        7.907811048448866e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rows": [
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "material_balance",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 1,
+          "index": 0
+        }
+      ],
+      "convergence": {
+        "residual": 2.842170943040401e-14,
+        "floor": 2.0404634227555068e-11,
+        "amplification": 0.0,
+        "contraction": null,
+        "iterations": 9,
+        "evaluations": 18
+      },
+      "criterion": 1e-10,
+      "stop": "Stop.converged",
+      "linear_solver": "mumps"
+    },
+    {
+      "scheme": "2B",
+      "temperature_K": 333.15,
+      "message": "converged: residual 2.2870594307278225e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 7 iterations, contraction absent, floor 1.9866122270459324e-11, amplification 0",
+      "solver_status": "SUCCESS",
+      "amounts_mol": [
+        1.0,
+        0.0
+      ],
+      "mole_fractions": [
+        1.0,
+        1.0
+      ],
+      "residuals": [
+        -2.2870594307278225e-14,
+        -2.206437637692575e-14,
+        -2.220446049250313e-16,
+        -1.192198586198429e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "classified_residuals": [
+        -2.2870594307278225e-14,
+        -2.206437637692575e-14,
+        -2.220446049250313e-16,
+        -1.192198586198429e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rows": [
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "material_balance",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 1,
+          "index": 0
+        }
+      ],
+      "convergence": {
+        "residual": 2.2870594307278225e-14,
+        "floor": 1.9866122270459324e-11,
+        "amplification": 0.0,
+        "contraction": null,
+        "iterations": 7,
+        "evaluations": 12
+      },
+      "criterion": 1e-10,
+      "stop": "Stop.converged",
+      "linear_solver": "mumps"
+    },
+    {
+      "scheme": "2B",
+      "temperature_K": 343.15,
+      "message": "converged: residual 1.1102230246251565e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor 1.9330817982890192e-11, amplification 0",
+      "solver_status": "NEWTON_CONVERGED",
+      "amounts_mol": [
+        1.0,
+        0.0
+      ],
+      "mole_fractions": [
+        1.0,
+        1.0
+      ],
+      "residuals": [
+        1.1102230246251565e-14,
+        8.257439809987485e-15,
+        1.1102230246251565e-16,
+        2.6326011333921137e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "classified_residuals": [
+        1.1102230246251565e-14,
+        8.257439809987485e-15,
+        1.1102230246251565e-16,
+        2.6326011333921137e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rows": [
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "material_balance",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 1,
+          "index": 0
+        }
+      ],
+      "convergence": {
+        "residual": 1.1102230246251565e-14,
+        "floor": 1.9330817982890192e-11,
+        "amplification": 0.0,
+        "contraction": null,
+        "iterations": 0,
+        "evaluations": 15
+      },
+      "criterion": 1e-10,
+      "stop": "Stop.converged",
+      "linear_solver": ""
+    },
+    {
+      "scheme": "2B",
+      "temperature_K": 353.15,
+      "message": "converged: residual 1.9595436384634013e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor 7.8012059991396285e-10, amplification 0",
+      "solver_status": "NEWTON_CONVERGED",
+      "amounts_mol": [
+        1.0,
+        0.0
+      ],
+      "mole_fractions": [
+        1.0,
+        1.0
+      ],
+      "residuals": [
+        -1.9595436384634013e-14,
+        -1.6427537823096103e-14,
+        -1.6653345369377348e-16,
+        -4.542920317412964e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "classified_residuals": [
+        -1.9595436384634013e-14,
+        -1.6427537823096103e-14,
+        -1.6653345369377348e-16,
+        -4.542920317412964e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rows": [
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "material_balance",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 1,
+          "index": 0
+        }
+      ],
+      "convergence": {
+        "residual": 1.9595436384634013e-14,
+        "floor": 7.801205999139629e-10,
+        "amplification": 0.0,
+        "contraction": null,
+        "iterations": 0,
+        "evaluations": 14
+      },
+      "criterion": 1e-10,
+      "stop": "Stop.converged",
+      "linear_solver": ""
+    },
+    {
+      "scheme": "2B",
+      "temperature_K": 363.15,
+      "message": "converged: residual 1.7777946024343056e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor 1.8267409777343781e-11, amplification 0",
+      "solver_status": "NEWTON_CONVERGED",
+      "amounts_mol": [
+        1.0,
+        0.0
+      ],
+      "mole_fractions": [
+        1.0,
+        1.0
+      ],
+      "residuals": [
+        -1.7763568394002505e-15,
+        -1.7777946024343056e-15,
+        -7.494005416219807e-16,
+        -7.234538310147256e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "classified_residuals": [
+        -1.7763568394002505e-15,
+        -1.7777946024343056e-15,
+        -7.494005416219807e-16,
+        -7.234538310147256e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rows": [
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "material_balance",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 1,
+          "index": 0
+        }
+      ],
+      "convergence": {
+        "residual": 1.7777946024343056e-15,
+        "floor": 1.826740977734378e-11,
+        "amplification": 0.0,
+        "contraction": null,
+        "iterations": 0,
+        "evaluations": 9
+      },
+      "criterion": 1e-10,
+      "stop": "Stop.converged",
+      "linear_solver": ""
+    },
+    {
+      "scheme": "2B",
+      "temperature_K": 373.15,
+      "message": "converged: residual 1.1102230246251565e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor 1.7738369819269199e-11, amplification 0",
+      "solver_status": "NEWTON_CONVERGED",
+      "amounts_mol": [
+        1.0,
+        0.0
+      ],
+      "mole_fractions": [
+        1.0,
+        1.0
+      ],
+      "residuals": [
+        1.1102230246251565e-15,
+        2.8750490561070845e-16,
+        -6.661338147750939e-16,
+        -6.7061864734411545e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "classified_residuals": [
+        1.1102230246251565e-15,
+        2.8750490561070845e-16,
+        -6.661338147750939e-16,
+        -6.7061864734411545e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rows": [
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "material_balance",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 1,
+          "index": 0
+        }
+      ],
+      "convergence": {
+        "residual": 1.1102230246251565e-15,
+        "floor": 1.77383698192692e-11,
+        "amplification": 0.0,
+        "contraction": null,
+        "iterations": 0,
+        "evaluations": 11
+      },
+      "criterion": 1e-10,
+      "stop": "Stop.converged",
+      "linear_solver": ""
+    },
+    {
+      "scheme": "2B",
+      "temperature_K": 383.15,
+      "message": "converged: residual 5.0240282317774504e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor 1.7210638554632043e-11, amplification 0",
+      "solver_status": "NEWTON_CONVERGED",
+      "amounts_mol": [
+        1.0,
+        0.0
+      ],
+      "mole_fractions": [
+        1.0,
+        1.0
+      ],
+      "residuals": [
+        4.440892098500626e-15,
+        5.02402823177745e-15,
+        -2.220446049250313e-16,
+        -1.425354694981097e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "classified_residuals": [
+        4.440892098500626e-15,
+        5.02402823177745e-15,
+        -2.220446049250313e-16,
+        -1.425354694981097e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rows": [
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "material_balance",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 1,
+          "index": 0
+        }
+      ],
+      "convergence": {
+        "residual": 5.02402823177745e-15,
+        "floor": 1.7210638554632043e-11,
+        "amplification": 0.0,
+        "contraction": null,
+        "iterations": 0,
+        "evaluations": 9
+      },
+      "criterion": 1e-10,
+      "stop": "Stop.converged",
+      "linear_solver": ""
+    },
+    {
+      "scheme": "2B",
+      "temperature_K": 393.15,
+      "message": "converged: residual 7.9931763214020899e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor 1.6683965556242174e-11, amplification 0",
+      "solver_status": "NEWTON_CONVERGED",
+      "amounts_mol": [
+        1.0,
+        0.0
+      ],
+      "mole_fractions": [
+        1.0,
+        1.0
+      ],
+      "residuals": [
+        -7.105427357601002e-15,
+        -7.99317632140209e-15,
+        0.0,
+        1.870537038214923e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "classified_residuals": [
+        -7.105427357601002e-15,
+        -7.99317632140209e-15,
+        0.0,
+        1.870537038214923e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rows": [
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "material_balance",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 1,
+          "index": 0
+        }
+      ],
+      "convergence": {
+        "residual": 7.99317632140209e-15,
+        "floor": 1.6683965556242174e-11,
+        "amplification": 0.0,
+        "contraction": null,
+        "iterations": 0,
+        "evaluations": 8
+      },
+      "criterion": 1e-10,
+      "stop": "Stop.converged",
+      "linear_solver": ""
+    },
+    {
+      "scheme": "2B",
+      "temperature_K": 403.15,
+      "message": "converged: residual 7.1054273576010019e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor 1.6158168537277662e-11, amplification 0",
+      "solver_status": "NEWTON_CONVERGED",
+      "amounts_mol": [
+        1.0,
+        0.0
+      ],
+      "mole_fractions": [
+        1.0,
+        1.0
+      ],
+      "residuals": [
+        7.105427357601002e-15,
+        3.915951707982612e-15,
+        2.220446049250313e-16,
+        5.040108342618892e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "classified_residuals": [
+        7.105427357601002e-15,
+        3.915951707982612e-15,
+        2.220446049250313e-16,
+        5.040108342618892e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rows": [
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "material_balance",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 1,
+          "index": 0
+        }
+      ],
+      "convergence": {
+        "residual": 7.105427357601002e-15,
+        "floor": 1.6158168537277662e-11,
+        "amplification": 0.0,
+        "contraction": null,
+        "iterations": 0,
+        "evaluations": 6
+      },
+      "criterion": 1e-10,
+      "stop": "Stop.converged",
+      "linear_solver": ""
+    },
+    {
+      "scheme": "2B",
+      "temperature_K": 413.15,
+      "message": "converged: residual 4.1090393891952975e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor 1.5633124719395453e-11, amplification 0",
+      "solver_status": "NEWTON_CONVERGED",
+      "amounts_mol": [
+        1.0,
+        0.0
+      ],
+      "mole_fractions": [
+        1.0,
+        1.0
+      ],
+      "residuals": [
+        3.552713678800501e-15,
+        4.1090393891952975e-15,
+        -4.440892098500626e-16,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "classified_residuals": [
+        3.552713678800501e-15,
+        4.1090393891952975e-15,
+        -4.440892098500626e-16,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rows": [
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "material_balance",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 1,
+          "index": 0
+        }
+      ],
+      "convergence": {
+        "residual": 4.1090393891952975e-15,
+        "floor": 1.5633124719395453e-11,
+        "amplification": 0.0,
+        "contraction": null,
+        "iterations": 0,
+        "evaluations": 6
+      },
+      "criterion": 1e-10,
+      "stop": "Stop.converged",
+      "linear_solver": ""
+    },
+    {
+      "scheme": "2B",
+      "temperature_K": 423.15,
+      "message": "converged: residual 9.5279138209118143e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor 4.6081727589124852e-10, amplification 0",
+      "solver_status": "NEWTON_CONVERGED",
+      "amounts_mol": [
+        1.0,
+        0.0
+      ],
+      "mole_fractions": [
+        1.0,
+        1.0
+      ],
+      "residuals": [
+        8.881784197001252e-15,
+        9.527913820911814e-15,
+        0.0,
+        -2.4532484516763795e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "classified_residuals": [
+        8.881784197001252e-15,
+        9.527913820911814e-15,
+        0.0,
+        -2.4532484516763795e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rows": [
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "material_balance",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 1,
+          "index": 0
+        }
+      ],
+      "convergence": {
+        "residual": 9.527913820911814e-15,
+        "floor": 4.608172758912485e-10,
+        "amplification": 0.0,
+        "contraction": null,
+        "iterations": 0,
+        "evaluations": 6
+      },
+      "criterion": 1e-10,
+      "stop": "Stop.converged",
+      "linear_solver": ""
+    },
+    {
+      "scheme": "2B",
+      "temperature_K": 433.15,
+      "message": "converged: residual 4.4408920985006262e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor 1.4585057768896705e-11, amplification 0",
+      "solver_status": "NEWTON_CONVERGED",
+      "amounts_mol": [
+        1.0,
+        0.0
+      ],
+      "mole_fractions": [
+        1.0,
+        1.0
+      ],
+      "residuals": [
+        4.440892098500626e-15,
+        3.900140144515284e-15,
+        0.0,
+        -5.297646445813602e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "classified_residuals": [
+        4.440892098500626e-15,
+        3.900140144515284e-15,
+        0.0,
+        -5.297646445813602e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rows": [
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "material_balance",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 1,
+          "index": 0
+        }
+      ],
+      "convergence": {
+        "residual": 4.440892098500626e-15,
+        "floor": 1.4585057768896705e-11,
+        "amplification": 0.0,
+        "contraction": null,
+        "iterations": 0,
+        "evaluations": 5
+      },
+      "criterion": 1e-10,
+      "stop": "Stop.converged",
+      "linear_solver": ""
+    },
+    {
+      "scheme": "2B",
+      "temperature_K": 443.15,
+      "message": "converged: residual 3.5527136788005009e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor 1.4062021207372525e-11, amplification 0",
+      "solver_status": "NEWTON_CONVERGED",
+      "amounts_mol": [
+        1.0,
+        0.0
+      ],
+      "mole_fractions": [
+        1.0,
+        1.0
+      ],
+      "residuals": [
+        3.552713678800501e-15,
+        1.6374765927094238e-15,
+        0.0,
+        -3.8846381720911085e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "classified_residuals": [
+        3.552713678800501e-15,
+        1.6374765927094238e-15,
+        0.0,
+        -3.8846381720911085e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rows": [
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "material_balance",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 1,
+          "index": 0
+        }
+      ],
+      "convergence": {
+        "residual": 3.552713678800501e-15,
+        "floor": 1.4062021207372525e-11,
+        "amplification": 0.0,
+        "contraction": null,
+        "iterations": 0,
+        "evaluations": 4
+      },
+      "criterion": 1e-10,
+      "stop": "Stop.converged",
+      "linear_solver": ""
+    },
+    {
+      "scheme": "3B",
+      "temperature_K": 303.15,
+      "message": "converged: residual 1.2935253869970748e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 9 iterations, contraction absent, floor 2.0359773836630104e-11, amplification 0",
+      "solver_status": "SUCCESS",
+      "amounts_mol": [
+        1.0,
+        0.0
+      ],
+      "mole_fractions": [
+        1.0,
+        1.0
+      ],
+      "residuals": [
+        -1.2434497875801753e-14,
+        -1.2935253869970748e-14,
+        -4.440892098500626e-16,
+        -6.889207605415676e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "classified_residuals": [
+        -1.2434497875801753e-14,
+        -1.2935253869970748e-14,
+        -4.440892098500626e-16,
+        -6.889207605415676e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rows": [
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "material_balance",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 1,
+          "index": 0
+        }
+      ],
+      "convergence": {
+        "residual": 1.2935253869970748e-14,
+        "floor": 2.0359773836630104e-11,
+        "amplification": 0.0,
+        "contraction": null,
+        "iterations": 9,
+        "evaluations": 18
+      },
+      "criterion": 1e-10,
+      "stop": "Stop.converged",
+      "linear_solver": "mumps"
+    },
+    {
+      "scheme": "3B",
+      "temperature_K": 313.15,
+      "message": "converged: residual 2.3092638912203256e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 9 iterations, contraction absent, floor 1.9904194434993231e-11, amplification 0",
+      "solver_status": "SUCCESS",
+      "amounts_mol": [
+        1.0,
+        0.0
+      ],
+      "mole_fractions": [
+        1.0,
+        1.0
+      ],
+      "residuals": [
+        2.3092638912203256e-14,
+        1.7233067356749006e-14,
+        -1.7763568394002505e-15,
+        -8.877342549903412e-16,
+        -1.1102230246251565e-16,
+        -1.1102230246251565e-16,
+        -1.1102230246251565e-16
+      ],
+      "classified_residuals": [
+        2.3092638912203256e-14,
+        1.7233067356749006e-14,
+        -1.7763568394002505e-15,
+        -8.877342549903412e-16,
+        -1.1102230246251565e-16,
+        -1.1102230246251565e-16,
+        -1.1102230246251565e-16
+      ],
+      "rows": [
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "material_balance",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 1,
+          "index": 0
+        }
+      ],
+      "convergence": {
+        "residual": 2.3092638912203256e-14,
+        "floor": 1.990419443499323e-11,
+        "amplification": 0.0,
+        "contraction": null,
+        "iterations": 9,
+        "evaluations": 18
+      },
+      "criterion": 1e-10,
+      "stop": "Stop.converged",
+      "linear_solver": "mumps"
+    },
+    {
+      "scheme": "3B",
+      "temperature_K": 323.15,
+      "message": "converged: residual 7.5495165674510645e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 9 iterations, contraction absent, floor 1.9461406532904341e-11, amplification 0",
+      "solver_status": "SUCCESS",
+      "amounts_mol": [
+        1.0,
+        0.0
+      ],
+      "mole_fractions": [
+        1.0,
+        1.0
+      ],
+      "residuals": [
+        -7.549516567451064e-15,
+        -5.030766211649877e-15,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "classified_residuals": [
+        -7.549516567451064e-15,
+        -5.030766211649877e-15,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rows": [
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "material_balance",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 1,
+          "index": 0
+        }
+      ],
+      "convergence": {
+        "residual": 7.549516567451064e-15,
+        "floor": 1.946140653290434e-11,
+        "amplification": 0.0,
+        "contraction": null,
+        "iterations": 9,
+        "evaluations": 18
+      },
+      "criterion": 1e-10,
+      "stop": "Stop.converged",
+      "linear_solver": "mumps"
+    },
+    {
+      "scheme": "3B",
+      "temperature_K": 333.15,
+      "message": "converged: residual 3.4861002973229915e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 9 iterations, contraction absent, floor 1.9029775275221111e-11, amplification 0",
+      "solver_status": "SUCCESS",
+      "amounts_mol": [
+        1.0,
+        0.0
+      ],
+      "mole_fractions": [
+        1.0,
+        1.0
+      ],
+      "residuals": [
+        3.4861002973229915e-14,
+        3.407932311865358e-14,
+        -2.220446049250313e-16,
+        -4.829353842466719e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "classified_residuals": [
+        3.4861002973229915e-14,
+        3.407932311865358e-14,
+        -2.220446049250313e-16,
+        -4.829353842466719e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rows": [
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "material_balance",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 1,
+          "index": 0
+        }
+      ],
+      "convergence": {
+        "residual": 3.4861002973229915e-14,
+        "floor": 1.902977527522111e-11,
+        "amplification": 0.0,
+        "contraction": null,
+        "iterations": 9,
+        "evaluations": 18
+      },
+      "criterion": 1e-10,
+      "stop": "Stop.converged",
+      "linear_solver": "mumps"
+    },
+    {
+      "scheme": "3B",
+      "temperature_K": 343.15,
+      "message": "converged: residual 2.9976021664879227e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor 1.8607734582678394e-11, amplification 0",
+      "solver_status": "NEWTON_CONVERGED",
+      "amounts_mol": [
+        1.0,
+        0.0
+      ],
+      "mole_fractions": [
+        1.0,
+        1.0
+      ],
+      "residuals": [
+        -2.9976021664879227e-15,
+        -2.9514963848763194e-15,
+        -7.771561172376096e-16,
+        -8.077318606649903e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "classified_residuals": [
+        -2.9976021664879227e-15,
+        -2.9514963848763194e-15,
+        -7.771561172376096e-16,
+        -8.077318606649903e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rows": [
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "material_balance",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 1,
+          "index": 0
+        }
+      ],
+      "convergence": {
+        "residual": 2.9976021664879227e-15,
+        "floor": 1.8607734582678394e-11,
+        "amplification": 0.0,
+        "contraction": null,
+        "iterations": 0,
+        "evaluations": 15
+      },
+      "criterion": 1e-10,
+      "stop": "Stop.converged",
+      "linear_solver": ""
+    },
+    {
+      "scheme": "3B",
+      "temperature_K": 353.15,
+      "message": "converged: residual 2.9476682287717838e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor 1.8193764325274099e-11, amplification 0",
+      "solver_status": "NEWTON_CONVERGED",
+      "amounts_mol": [
+        1.0,
+        0.0
+      ],
+      "mole_fractions": [
+        1.0,
+        1.0
+      ],
+      "residuals": [
+        -2.942091015256665e-15,
+        -2.9476682287717838e-15,
+        -5.551115123125783e-17,
+        -1.560781072478422e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "classified_residuals": [
+        -2.942091015256665e-15,
+        -2.9476682287717838e-15,
+        -5.551115123125783e-17,
+        -1.560781072478422e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rows": [
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "material_balance",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 1,
+          "index": 0
+        }
+      ],
+      "convergence": {
+        "residual": 2.9476682287717838e-15,
+        "floor": 1.81937643252741e-11,
+        "amplification": 0.0,
+        "contraction": null,
+        "iterations": 0,
+        "evaluations": 14
+      },
+      "criterion": 1e-10,
+      "stop": "Stop.converged",
+      "linear_solver": ""
+    },
+    {
+      "scheme": "3B",
+      "temperature_K": 363.15,
+      "message": "converged: residual 2.3536728122053319e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor 1.7786373107189189e-11, amplification 0",
+      "solver_status": "NEWTON_CONVERGED",
+      "amounts_mol": [
+        1.0,
+        0.0
+      ],
+      "mole_fractions": [
+        1.0,
+        1.0
+      ],
+      "residuals": [
+        2.353672812205332e-14,
+        1.6327800718603063e-14,
+        -7.494005416219807e-16,
+        -7.499615315563698e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "classified_residuals": [
+        2.353672812205332e-14,
+        1.6327800718603063e-14,
+        -7.494005416219807e-16,
+        -7.499615315563698e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rows": [
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "material_balance",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 1,
+          "index": 0
+        }
+      ],
+      "convergence": {
+        "residual": 2.353672812205332e-14,
+        "floor": 1.778637310718919e-11,
+        "amplification": 0.0,
+        "contraction": null,
+        "iterations": 0,
+        "evaluations": 12
+      },
+      "criterion": 1e-10,
+      "stop": "Stop.converged",
+      "linear_solver": ""
+    },
+    {
+      "scheme": "3B",
+      "temperature_K": 373.15,
+      "message": "converged: residual 2.5705867794716064e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor 1.7384086921778689e-11, amplification 0",
+      "solver_status": "NEWTON_CONVERGED",
+      "amounts_mol": [
+        1.0,
+        0.0
+      ],
+      "mole_fractions": [
+        1.0,
+        1.0
+      ],
+      "residuals": [
+        -2.55351295663786e-15,
+        -2.5705867794716064e-15,
+        -3.3306690738754696e-16,
+        -2.3262966512815835e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "classified_residuals": [
+        -2.55351295663786e-15,
+        -2.5705867794716064e-15,
+        -3.3306690738754696e-16,
+        -2.3262966512815835e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rows": [
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "material_balance",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 1,
+          "index": 0
+        }
+      ],
+      "convergence": {
+        "residual": 2.5705867794716064e-15,
+        "floor": 1.738408692177869e-11,
+        "amplification": 0.0,
+        "contraction": null,
+        "iterations": 0,
+        "evaluations": 11
+      },
+      "criterion": 1e-10,
+      "stop": "Stop.converged",
+      "linear_solver": ""
+    },
+    {
+      "scheme": "3B",
+      "temperature_K": 383.15,
+      "message": "converged: residual 7.5719572062956234e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor 1.6985443826346686e-11, amplification 0",
+      "solver_status": "NEWTON_CONVERGED",
+      "amounts_mol": [
+        1.0,
+        0.0
+      ],
+      "mole_fractions": [
+        1.0,
+        1.0
+      ],
+      "residuals": [
+        -7.549516567451064e-15,
+        -7.571957206295623e-15,
+        2.220446049250313e-16,
+        -1.4864518453505013e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "classified_residuals": [
+        -7.549516567451064e-15,
+        -7.571957206295623e-15,
+        2.220446049250313e-16,
+        -1.4864518453505013e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rows": [
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "material_balance",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 1,
+          "index": 0
+        }
+      ],
+      "convergence": {
+        "residual": 7.571957206295623e-15,
+        "floor": 1.6985443826346686e-11,
+        "amplification": 0.0,
+        "contraction": null,
+        "iterations": 0,
+        "evaluations": 9
+      },
+      "criterion": 1e-10,
+      "stop": "Stop.converged",
+      "linear_solver": ""
+    },
+    {
+      "scheme": "3B",
+      "temperature_K": 393.15,
+      "message": "converged: residual 7.3274719625260332e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor 1.6588994529299712e-11, amplification 0",
+      "solver_status": "NEWTON_CONVERGED",
+      "amounts_mol": [
+        1.0,
+        0.0
+      ],
+      "mole_fractions": [
+        1.0,
+        1.0
+      ],
+      "residuals": [
+        -7.327471962526033e-15,
+        -5.539234073041621e-15,
+        -8.881784197001252e-16,
+        -5.854914883507976e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "classified_residuals": [
+        -7.327471962526033e-15,
+        -5.539234073041621e-15,
+        -8.881784197001252e-16,
+        -5.854914883507976e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rows": [
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "material_balance",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 1,
+          "index": 0
+        }
+      ],
+      "convergence": {
+        "residual": 7.327471962526033e-15,
+        "floor": 1.6588994529299712e-11,
+        "amplification": 0.0,
+        "contraction": null,
+        "iterations": 0,
+        "evaluations": 8
+      },
+      "criterion": 1e-10,
+      "stop": "Stop.converged",
+      "linear_solver": ""
+    },
+    {
+      "scheme": "3B",
+      "temperature_K": 403.15,
+      "message": "converged: residual 2.4513865056099295e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor 1.6193308416111812e-11, amplification 0",
+      "solver_status": "NEWTON_CONVERGED",
+      "amounts_mol": [
+        1.0,
+        0.0
+      ],
+      "mole_fractions": [
+        1.0,
+        1.0
+      ],
+      "residuals": [
+        0.0,
+        2.4513865056099295e-15,
+        -6.661338147750939e-16,
+        -6.566433354689106e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "classified_residuals": [
+        0.0,
+        2.4513865056099295e-15,
+        -6.661338147750939e-16,
+        -6.566433354689106e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rows": [
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "material_balance",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 1,
+          "index": 0
+        }
+      ],
+      "convergence": {
+        "residual": 2.4513865056099295e-15,
+        "floor": 1.6193308416111812e-11,
+        "amplification": 0.0,
+        "contraction": null,
+        "iterations": 0,
+        "evaluations": 8
+      },
+      "criterion": 1e-10,
+      "stop": "Stop.converged",
+      "linear_solver": ""
+    },
+    {
+      "scheme": "3B",
+      "temperature_K": 413.15,
+      "message": "converged: residual 5.3290705182007514e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor 1.579698412680357e-11, amplification 0",
+      "solver_status": "NEWTON_CONVERGED",
+      "amounts_mol": [
+        1.0,
+        0.0
+      ],
+      "mole_fractions": [
+        1.0,
+        1.0
+      ],
+      "residuals": [
+        5.329070518200751e-15,
+        4.754004944449864e-15,
+        0.0,
+        3.6159489370361067e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "classified_residuals": [
+        5.329070518200751e-15,
+        4.754004944449864e-15,
+        0.0,
+        3.6159489370361067e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rows": [
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "material_balance",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 1,
+          "index": 0
+        }
+      ],
+      "convergence": {
+        "residual": 5.329070518200751e-15,
+        "floor": 1.579698412680357e-11,
+        "amplification": 0.0,
+        "contraction": null,
+        "iterations": 0,
+        "evaluations": 6
+      },
+      "criterion": 1e-10,
+      "stop": "Stop.converged",
+      "linear_solver": ""
+    },
+    {
+      "scheme": "3B",
+      "temperature_K": 423.15,
+      "message": "converged: residual 1.1990408665951691e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor 1.5398663410677303e-11, amplification 0",
+      "solver_status": "NEWTON_CONVERGED",
+      "amounts_mol": [
+        1.0,
+        0.0
+      ],
+      "mole_fractions": [
+        1.0,
+        1.0
+      ],
+      "residuals": [
+        1.199040866595169e-14,
+        9.685938674322999e-15,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "classified_residuals": [
+        1.199040866595169e-14,
+        9.685938674322999e-15,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rows": [
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "material_balance",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 1,
+          "index": 0
+        }
+      ],
+      "convergence": {
+        "residual": 1.199040866595169e-14,
+        "floor": 1.5398663410677303e-11,
+        "amplification": 0.0,
+        "contraction": null,
+        "iterations": 0,
+        "evaluations": 6
+      },
+      "criterion": 1e-10,
+      "stop": "Stop.converged",
+      "linear_solver": ""
+    },
+    {
+      "scheme": "3B",
+      "temperature_K": 433.15,
+      "message": "converged: residual 5.3290705182007514e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor 1.4997046696153863e-11, amplification 0",
+      "solver_status": "NEWTON_CONVERGED",
+      "amounts_mol": [
+        1.0,
+        0.0
+      ],
+      "mole_fractions": [
+        1.0,
+        1.0
+      ],
+      "residuals": [
+        -5.329070518200751e-15,
+        -3.679598252261715e-15,
+        -4.440892098500626e-16,
+        -3.640651529215177e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "classified_residuals": [
+        -5.329070518200751e-15,
+        -3.679598252261715e-15,
+        -4.440892098500626e-16,
+        -3.640651529215177e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rows": [
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "material_balance",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 1,
+          "index": 0
+        }
+      ],
+      "convergence": {
+        "residual": 5.329070518200751e-15,
+        "floor": 1.4997046696153863e-11,
+        "amplification": 0.0,
+        "contraction": null,
+        "iterations": 0,
+        "evaluations": 6
+      },
+      "criterion": 1e-10,
+      "stop": "Stop.converged",
+      "linear_solver": ""
+    },
+    {
+      "scheme": "3B",
+      "temperature_K": 443.15,
+      "message": "converged: residual 3.9968028886505635e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor 1.4590908678680892e-11, amplification 0",
+      "solver_status": "NEWTON_CONVERGED",
+      "amounts_mol": [
+        1.0,
+        0.0
+      ],
+      "mole_fractions": [
+        1.0,
+        1.0
+      ],
+      "residuals": [
+        -3.9968028886505635e-15,
+        -8.166700801958283e-16,
+        8.881784197001252e-16,
+        5.307580088929708e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "classified_residuals": [
+        -3.9968028886505635e-15,
+        -8.166700801958283e-16,
+        8.881784197001252e-16,
+        5.307580088929708e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rows": [
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "material_balance",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 1,
+          "index": 0
+        }
+      ],
+      "convergence": {
+        "residual": 3.9968028886505635e-15,
+        "floor": 1.4590908678680892e-11,
+        "amplification": 0.0,
+        "contraction": null,
+        "iterations": 0,
+        "evaluations": 5
+      },
+      "criterion": 1e-10,
+      "stop": "Stop.converged",
+      "linear_solver": ""
+    },
+    {
+      "scheme": "4C",
+      "temperature_K": 303.15,
+      "message": "converged: residual 2.1760371282653068e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 9 iterations, contraction absent, floor 3.6183824566624731e-11, amplification 0",
+      "solver_status": "SUCCESS",
+      "amounts_mol": [
+        1.0,
+        0.0
+      ],
+      "mole_fractions": [
+        1.0,
+        1.0
+      ],
+      "residuals": [
+        2.1760371282653068e-14,
+        1.4840052907095996e-14,
+        -4.440892098500626e-16,
+        -2.4841299315086116e-16,
+        -1.1102230246251565e-16,
+        -1.1102230246251565e-16,
+        0.0
+      ],
+      "classified_residuals": [
+        2.1760371282653068e-14,
+        1.4840052907095996e-14,
+        -4.440892098500626e-16,
+        -2.4841299315086116e-16,
+        -1.1102230246251565e-16,
+        -1.1102230246251565e-16,
+        0.0
+      ],
+      "rows": [
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "material_balance",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 1,
+          "index": 0
+        }
+      ],
+      "convergence": {
+        "residual": 2.1760371282653068e-14,
+        "floor": 3.618382456662473e-11,
+        "amplification": 0.0,
+        "contraction": null,
+        "iterations": 9,
+        "evaluations": 18
+      },
+      "criterion": 1e-10,
+      "stop": "Stop.converged",
+      "linear_solver": "mumps"
+    },
+    {
+      "scheme": "4C",
+      "temperature_K": 313.15,
+      "message": "converged: residual 2.6645352591003757e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 9 iterations, contraction absent, floor 3.4834890853290042e-11, amplification 0",
+      "solver_status": "SUCCESS",
+      "amounts_mol": [
+        1.0,
+        0.0
+      ],
+      "mole_fractions": [
+        1.0,
+        1.0
+      ],
+      "residuals": [
+        -2.6645352591003757e-14,
+        -1.4765287621570612e-14,
+        -4.440892098500626e-16,
+        -5.829439628016457e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "classified_residuals": [
+        -2.6645352591003757e-14,
+        -1.4765287621570612e-14,
+        -4.440892098500626e-16,
+        -5.829439628016457e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rows": [
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "material_balance",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 1,
+          "index": 0
+        }
+      ],
+      "convergence": {
+        "residual": 2.6645352591003757e-14,
+        "floor": 3.483489085329004e-11,
+        "amplification": 0.0,
+        "contraction": null,
+        "iterations": 9,
+        "evaluations": 18
+      },
+      "criterion": 1e-10,
+      "stop": "Stop.converged",
+      "linear_solver": "mumps"
+    },
+    {
+      "scheme": "4C",
+      "temperature_K": 323.15,
+      "message": "converged: residual 8.4376949871511897e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 9 iterations, contraction absent, floor 3.3525677257095804e-11, amplification 0",
+      "solver_status": "SUCCESS",
+      "amounts_mol": [
+        1.0,
+        0.0
+      ],
+      "mole_fractions": [
+        1.0,
+        1.0
+      ],
+      "residuals": [
+        -8.43769498715119e-15,
+        -7.609096380549131e-15,
+        -8.881784197001252e-16,
+        -6.962571187299541e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "classified_residuals": [
+        -8.43769498715119e-15,
+        -7.609096380549131e-15,
+        -8.881784197001252e-16,
+        -6.962571187299541e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rows": [
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "material_balance",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 1,
+          "index": 0
+        }
+      ],
+      "convergence": {
+        "residual": 8.43769498715119e-15,
+        "floor": 3.3525677257095804e-11,
+        "amplification": 0.0,
+        "contraction": null,
+        "iterations": 9,
+        "evaluations": 18
+      },
+      "criterion": 1e-10,
+      "stop": "Stop.converged",
+      "linear_solver": "mumps"
+    },
+    {
+      "scheme": "4C",
+      "temperature_K": 333.15,
+      "message": "converged: residual 2.0589312330102694e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 8 iterations, contraction absent, floor 3.2253941727243312e-11, amplification 0",
+      "solver_status": "SUCCESS",
+      "amounts_mol": [
+        1.0,
+        0.0
+      ],
+      "mole_fractions": [
+        1.0,
+        1.0
+      ],
+      "residuals": [
+        -1.2656542480726785e-14,
+        -2.0589312330102694e-14,
+        2.220446049250313e-16,
+        3.652619892017424e-16,
+        -1.1102230246251565e-16,
+        -1.1102230246251565e-16,
+        -1.1102230246251565e-16
+      ],
+      "classified_residuals": [
+        -1.2656542480726785e-14,
+        -2.0589312330102694e-14,
+        2.220446049250313e-16,
+        3.652619892017424e-16,
+        -1.1102230246251565e-16,
+        -1.1102230246251565e-16,
+        -1.1102230246251565e-16
+      ],
+      "rows": [
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "material_balance",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 1,
+          "index": 0
+        }
+      ],
+      "convergence": {
+        "residual": 2.0589312330102694e-14,
+        "floor": 3.225394172724331e-11,
+        "amplification": 0.0,
+        "contraction": null,
+        "iterations": 8,
+        "evaluations": 15
+      },
+      "criterion": 1e-10,
+      "stop": "Stop.converged",
+      "linear_solver": "mumps"
+    },
+    {
+      "scheme": "4C",
+      "temperature_K": 343.15,
+      "message": "converged: residual 6.1104927933310542e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor 3.1017668994780314e-11, amplification 0",
+      "solver_status": "NEWTON_CONVERGED",
+      "amounts_mol": [
+        1.0,
+        0.0
+      ],
+      "mole_fractions": [
+        1.0,
+        1.0
+      ],
+      "residuals": [
+        5.551115123125783e-15,
+        6.110492793331054e-15,
+        7.771561172376096e-16,
+        9.378048613632284e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "classified_residuals": [
+        5.551115123125783e-15,
+        6.110492793331054e-15,
+        7.771561172376096e-16,
+        9.378048613632284e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rows": [
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "material_balance",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 1,
+          "index": 0
+        }
+      ],
+      "convergence": {
+        "residual": 6.110492793331054e-15,
+        "floor": 3.1017668994780314e-11,
+        "amplification": 0.0,
+        "contraction": null,
+        "iterations": 0,
+        "evaluations": 15
+      },
+      "criterion": 1e-10,
+      "stop": "Stop.converged",
+      "linear_solver": ""
+    },
+    {
+      "scheme": "4C",
+      "temperature_K": 353.15,
+      "message": "converged: residual 1.7763568394002505e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor 4.2784580358340853e-09, amplification 0",
+      "solver_status": "NEWTON_CONVERGED",
+      "amounts_mol": [
+        1.0,
+        0.0
+      ],
+      "mole_fractions": [
+        1.0,
+        1.0
+      ],
+      "residuals": [
+        -1.7763568394002505e-14,
+        -8.913560262682308e-15,
+        3.885780586188048e-16,
+        4.616983842951787e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "classified_residuals": [
+        -1.7763568394002505e-14,
+        -8.913560262682308e-15,
+        3.885780586188048e-16,
+        4.616983842951787e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rows": [
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "material_balance",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 1,
+          "index": 0
+        }
+      ],
+      "convergence": {
+        "residual": 1.7763568394002505e-14,
+        "floor": 4.278458035834085e-09,
+        "amplification": 0.0,
+        "contraction": null,
+        "iterations": 0,
+        "evaluations": 14
+      },
+      "criterion": 1e-10,
+      "stop": "Stop.converged",
+      "linear_solver": ""
+    },
+    {
+      "scheme": "4C",
+      "temperature_K": 363.15,
+      "message": "converged: residual 8.9138112652777336e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor 6.8746556296171085e-10, amplification 0",
+      "solver_status": "NEWTON_CONVERGED",
+      "amounts_mol": [
+        1.0,
+        0.0
+      ],
+      "mole_fractions": [
+        1.0,
+        1.0
+      ],
+      "residuals": [
+        8.909539772616881e-15,
+        8.913811265277734e-15,
+        5.828670879282072e-16,
+        7.352906199351654e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "classified_residuals": [
+        8.909539772616881e-15,
+        8.913811265277734e-15,
+        5.828670879282072e-16,
+        7.352906199351654e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rows": [
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "material_balance",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 1,
+          "index": 0
+        }
+      ],
+      "convergence": {
+        "residual": 8.913811265277734e-15,
+        "floor": 6.874655629617109e-10,
+        "amplification": 0.0,
+        "contraction": null,
+        "iterations": 0,
+        "evaluations": 9
+      },
+      "criterion": 1e-10,
+      "stop": "Stop.converged",
+      "linear_solver": ""
+    },
+    {
+      "scheme": "4C",
+      "temperature_K": 373.15,
+      "message": "converged: residual 2.4759621827330119e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor 1.1001697281585324e-10, amplification 0",
+      "solver_status": "NEWTON_CONVERGED",
+      "amounts_mol": [
+        1.0,
+        0.0
+      ],
+      "mole_fractions": [
+        1.0,
+        1.0
+      ],
+      "residuals": [
+        -2.4424906541753444e-15,
+        -2.475962182733012e-15,
+        2.220446049250313e-16,
+        2.2747742788593804e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "classified_residuals": [
+        -2.4424906541753444e-15,
+        -2.475962182733012e-15,
+        2.220446049250313e-16,
+        2.2747742788593804e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rows": [
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "material_balance",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 1,
+          "index": 0
+        }
+      ],
+      "convergence": {
+        "residual": 2.475962182733012e-15,
+        "floor": 1.1001697281585324e-10,
+        "amplification": 0.0,
+        "contraction": null,
+        "iterations": 0,
+        "evaluations": 11
+      },
+      "criterion": 1e-10,
+      "stop": "Stop.converged",
+      "linear_solver": ""
+    },
+    {
+      "scheme": "4C",
+      "temperature_K": 383.15,
+      "message": "converged: residual 1.3100631690576847e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor 2.6393195620378947e-11, amplification 0",
+      "solver_status": "NEWTON_CONVERGED",
+      "amounts_mol": [
+        1.0,
+        0.0
+      ],
+      "mole_fractions": [
+        1.0,
+        1.0
+      ],
+      "residuals": [
+        1.3100631690576847e-14,
+        9.578472181742847e-15,
+        2.220446049250313e-16,
+        1.4535373503684348e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "classified_residuals": [
+        1.3100631690576847e-14,
+        9.578472181742847e-15,
+        2.220446049250313e-16,
+        1.4535373503684348e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rows": [
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "material_balance",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 1,
+          "index": 0
+        }
+      ],
+      "convergence": {
+        "residual": 1.3100631690576847e-14,
+        "floor": 2.6393195620378947e-11,
+        "amplification": 0.0,
+        "contraction": null,
+        "iterations": 0,
+        "evaluations": 9
+      },
+      "criterion": 1e-10,
+      "stop": "Stop.converged",
+      "linear_solver": ""
+    },
+    {
+      "scheme": "4C",
+      "temperature_K": 393.15,
+      "message": "converged: residual 7.0506648289249536e-16 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor 2.5309991185037158e-11, amplification 0",
+      "solver_status": "NEWTON_CONVERGED",
+      "amounts_mol": [
+        1.0,
+        0.0
+      ],
+      "mole_fractions": [
+        1.0,
+        1.0
+      ],
+      "residuals": [
+        6.661338147750939e-16,
+        7.050664828924954e-16,
+        -4.440892098500626e-16,
+        -3.8255571669228727e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "classified_residuals": [
+        6.661338147750939e-16,
+        7.050664828924954e-16,
+        -4.440892098500626e-16,
+        -3.8255571669228727e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rows": [
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "material_balance",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 1,
+          "index": 0
+        }
+      ],
+      "convergence": {
+        "residual": 7.050664828924954e-16,
+        "floor": 2.5309991185037158e-11,
+        "amplification": 0.0,
+        "contraction": null,
+        "iterations": 0,
+        "evaluations": 8
+      },
+      "criterion": 1e-10,
+      "stop": "Stop.converged",
+      "linear_solver": ""
+    },
+    {
+      "scheme": "4C",
+      "temperature_K": 403.15,
+      "message": "converged: residual 4.7369075564125402e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor 2.4253464748315303e-11, amplification 0",
+      "solver_status": "NEWTON_CONVERGED",
+      "amounts_mol": [
+        1.0,
+        0.0
+      ],
+      "mole_fractions": [
+        1.0,
+        1.0
+      ],
+      "residuals": [
+        -4.6629367034256575e-15,
+        -4.73690755641254e-15,
+        8.881784197001252e-16,
+        7.755489129508698e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "classified_residuals": [
+        -4.6629367034256575e-15,
+        -4.73690755641254e-15,
+        8.881784197001252e-16,
+        7.755489129508698e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rows": [
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "material_balance",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 1,
+          "index": 0
+        }
+      ],
+      "convergence": {
+        "residual": 4.73690755641254e-15,
+        "floor": 2.4253464748315303e-11,
+        "amplification": 0.0,
+        "contraction": null,
+        "iterations": 0,
+        "evaluations": 6
+      },
+      "criterion": 1e-10,
+      "stop": "Stop.converged",
+      "linear_solver": ""
+    },
+    {
+      "scheme": "4C",
+      "temperature_K": 413.15,
+      "message": "converged: residual 1.3322676295501878e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor 2.3222539030519931e-11, amplification 0",
+      "solver_status": "NEWTON_CONVERGED",
+      "amounts_mol": [
+        1.0,
+        0.0
+      ],
+      "mole_fractions": [
+        1.0,
+        1.0
+      ],
+      "residuals": [
+        -1.3322676295501878e-15,
+        -1.2319703252406465e-15,
+        -1.3322676295501878e-15,
+        -1.252952649906664e-15,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "classified_residuals": [
+        -1.3322676295501878e-15,
+        -1.2319703252406465e-15,
+        -1.3322676295501878e-15,
+        -1.252952649906664e-15,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rows": [
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "material_balance",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 1,
+          "index": 0
+        }
+      ],
+      "convergence": {
+        "residual": 1.3322676295501878e-15,
+        "floor": 2.322253903051993e-11,
+        "amplification": 0.0,
+        "contraction": null,
+        "iterations": 0,
+        "evaluations": 6
+      },
+      "criterion": 1e-10,
+      "stop": "Stop.converged",
+      "linear_solver": ""
+    },
+    {
+      "scheme": "4C",
+      "temperature_K": 423.15,
+      "message": "converged: residual 8.3376869040614525e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor 2.2216214570699092e-11, amplification 0",
+      "solver_status": "NEWTON_CONVERGED",
+      "amounts_mol": [
+        1.0,
+        0.0
+      ],
+      "mole_fractions": [
+        1.0,
+        1.0
+      ],
+      "residuals": [
+        -7.549516567451064e-15,
+        -8.337686904061453e-15,
+        -4.440892098500626e-16,
+        -2.5341661841078355e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "classified_residuals": [
+        -7.549516567451064e-15,
+        -8.337686904061453e-15,
+        -4.440892098500626e-16,
+        -2.5341661841078355e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rows": [
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "material_balance",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 1,
+          "index": 0
+        }
+      ],
+      "convergence": {
+        "residual": 8.337686904061453e-15,
+        "floor": 2.2216214570699092e-11,
+        "amplification": 0.0,
+        "contraction": null,
+        "iterations": 0,
+        "evaluations": 6
+      },
+      "criterion": 1e-10,
+      "stop": "Stop.converged",
+      "linear_solver": ""
+    },
+    {
+      "scheme": "4C",
+      "temperature_K": 433.15,
+      "message": "converged: residual 1.7763568394002505e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor 2.1233560837820899e-11, amplification 0",
+      "solver_status": "NEWTON_CONVERGED",
+      "amounts_mol": [
+        1.0,
+        0.0
+      ],
+      "mole_fractions": [
+        1.0,
+        1.0
+      ],
+      "residuals": [
+        -1.7763568394002505e-15,
+        -1.3516593490744878e-15,
+        4.440892098500626e-16,
+        1.830503291680191e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "classified_residuals": [
+        -1.7763568394002505e-15,
+        -1.3516593490744878e-15,
+        4.440892098500626e-16,
+        1.830503291680191e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rows": [
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "material_balance",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 1,
+          "index": 0
+        }
+      ],
+      "convergence": {
+        "residual": 1.7763568394002505e-15,
+        "floor": 2.12335608378209e-11,
+        "amplification": 0.0,
+        "contraction": null,
+        "iterations": 0,
+        "evaluations": 5
+      },
+      "criterion": 1e-10,
+      "stop": "Stop.converged",
+      "linear_solver": ""
+    },
+    {
+      "scheme": "4C",
+      "temperature_K": 443.15,
+      "message": "converged: residual 6.2172489379008766e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor 2.0273708267658036e-11, amplification 0",
+      "solver_status": "NEWTON_CONVERGED",
+      "amounts_mol": [
+        1.0,
+        0.0
+      ],
+      "mole_fractions": [
+        1.0,
+        1.0
+      ],
+      "residuals": [
+        6.217248937900877e-15,
+        -1.1322942642083946e-15,
+        0.0,
+        4.0403116546781805e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "classified_residuals": [
+        6.217248937900877e-15,
+        -1.1322942642083946e-15,
+        0.0,
+        4.0403116546781805e-16,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rows": [
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "chemical_potential_stationarity",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "pressure_equality",
+          "phase": 1,
+          "index": 0
+        },
+        {
+          "eqid": "material_balance",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 0,
+          "index": 0
+        },
+        {
+          "eqid": "phase_normalization",
+          "phase": 1,
+          "index": 0
+        }
+      ],
+      "convergence": {
+        "residual": 6.217248937900877e-15,
+        "floor": 2.0273708267658036e-11,
+        "amplification": 0.0,
+        "contraction": null,
+        "iterations": 0,
+        "evaluations": 5
+      },
+      "criterion": 1e-10,
+      "stop": "Stop.converged",
+      "linear_solver": ""
+    }
+  ]
+}

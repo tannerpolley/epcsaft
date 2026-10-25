@@ -1,0 +1,14 @@
+{
+  "success": false,
+  "stop": "ContinuationStop.infeasible",
+  "message": "infeasible: infeasible: residual 5.2113932330551979e-06 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 110 iterations, contraction absent, floor 1.8192528548204609e-10, amplification 0",
+  "reached_s": 0.23749999999999974,
+  "attempted_s": 0.24999999999999972,
+  "cause": "ContinuationStop.infeasible",
+  "cause_message": "infeasible: residual 5.2113932330551979e-06 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 110 iterations, contraction absent, floor 1.8192528548204609e-10, amplification 0",
+  "attempts": 13,
+  "retries": 1,
+  "accepted_steps": 11,
+  "wall_s": 18.397218469999643,
+  "cause_residual": 5.211393233055198e-06
+}

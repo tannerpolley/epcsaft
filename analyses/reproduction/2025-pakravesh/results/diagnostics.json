@@ -1,0 +1,1712 @@
+[
+  {
+    "table": "S6",
+    "row": 0,
+    "T_K": 313.09,
+    "P_Pa": 1010000.0,
+    "pressure_relative": 3.0753177782116836e-13,
+    "pressure_slope": 211471.30314567316
+  },
+  {
+    "table": "S6",
+    "row": 1,
+    "T_K": 313.09,
+    "P_Pa": 1990000.0,
+    "pressure_relative": 1.0103029524088925e-13,
+    "pressure_slope": 212309.4294210407
+  },
+  {
+    "table": "S6",
+    "row": 2,
+    "T_K": 313.09,
+    "P_Pa": 3030000.0,
+    "pressure_relative": 9.492406860545088e-14,
+    "pressure_slope": 213197.15568104608
+  },
+  {
+    "table": "S6",
+    "row": 3,
+    "T_K": 313.09,
+    "P_Pa": 4000000.0,
+    "pressure_relative": 1.5076828674409626e-13,
+    "pressure_slope": 214023.55386888093
+  },
+  {
+    "table": "S6",
+    "row": 4,
+    "T_K": 313.09,
+    "P_Pa": 5000000.0,
+    "pressure_relative": 3.9968028886505635e-15,
+    "pressure_slope": 214873.9304365861
+  },
+  {
+    "table": "S6",
+    "row": 5,
+    "T_K": 313.09,
+    "P_Pa": 6000000.0,
+    "pressure_relative": 2.4646951146678475e-14,
+    "pressure_slope": 215722.715798842
+  },
+  {
+    "table": "S6",
+    "row": 6,
+    "T_K": 313.09,
+    "P_Pa": 7000000.0,
+    "pressure_relative": 4.3076653355456074e-14,
+    "pressure_slope": 216569.9230830725
+  },
+  {
+    "table": "S6",
+    "row": 7,
+    "T_K": 313.09,
+    "P_Pa": 8010000.0,
+    "pressure_relative": 2.5757174171303632e-14,
+    "pressure_slope": 217424.01378681234
+  },
+  {
+    "table": "S6",
+    "row": 8,
+    "T_K": 313.09,
+    "P_Pa": 9070000.0,
+    "pressure_relative": 5.3290705182007514e-14,
+    "pressure_slope": 218318.68344922818
+  },
+  {
+    "table": "S6",
+    "row": 9,
+    "T_K": 313.09,
+    "P_Pa": 10020000.0,
+    "pressure_relative": 1.765254609153999e-14,
+    "pressure_slope": 219119.0402832682
+  },
+  {
+    "table": "S6",
+    "row": 10,
+    "T_K": 313.09,
+    "P_Pa": 11010000.0,
+    "pressure_relative": 1.5210055437364645e-14,
+    "pressure_slope": 219951.6299499746
+  },
+  {
+    "table": "S6",
+    "row": 11,
+    "T_K": 313.09,
+    "P_Pa": 12000000.0,
+    "pressure_relative": 1.8318679906315083e-14,
+    "pressure_slope": 220782.73466502494
+  },
+  {
+    "table": "S6",
+    "row": 12,
+    "T_K": 313.09,
+    "P_Pa": 13020000.0,
+    "pressure_relative": 4.551914400963142e-14,
+    "pressure_slope": 221637.48358056188
+  },
+  {
+    "table": "S6",
+    "row": 13,
+    "T_K": 313.09,
+    "P_Pa": 13980000.0,
+    "pressure_relative": 2.4868995751603507e-14,
+    "pressure_slope": 222440.53580580163
+  },
+  {
+    "table": "S6",
+    "row": 14,
+    "T_K": 313.09,
+    "P_Pa": 14990000.0,
+    "pressure_relative": 5.3290705182007514e-14,
+    "pressure_slope": 223283.94164443645
+  },
+  {
+    "table": "S6",
+    "row": 15,
+    "T_K": 313.09,
+    "P_Pa": 15990000.0,
+    "pressure_relative": 6.006306563222097e-14,
+    "pressure_slope": 224117.5213754771
+  },
+  {
+    "table": "S6",
+    "row": 16,
+    "T_K": 313.09,
+    "P_Pa": 16980000.0,
+    "pressure_relative": 2.5868196473766147e-14,
+    "pressure_slope": 224941.33026312204
+  },
+  {
+    "table": "S6",
+    "row": 17,
+    "T_K": 313.09,
+    "P_Pa": 17990000.0,
+    "pressure_relative": 1.0103029524088925e-14,
+    "pressure_slope": 225780.321704878
+  },
+  {
+    "table": "S6",
+    "row": 18,
+    "T_K": 313.09,
+    "P_Pa": 19000000.0,
+    "pressure_relative": 9.992007221626409e-16,
+    "pressure_slope": 226617.84983559354
+  },
+  {
+    "table": "S6",
+    "row": 19,
+    "T_K": 313.09,
+    "P_Pa": 19990000.0,
+    "pressure_relative": 4.218847493575595e-15,
+    "pressure_slope": 227437.38397337619
+  },
+  {
+    "table": "S6",
+    "row": 20,
+    "T_K": 323.01,
+    "P_Pa": 1000000.0,
+    "pressure_relative": 2.345901251032956e-13,
+    "pressure_slope": 204555.22223430342
+  },
+  {
+    "table": "S6",
+    "row": 21,
+    "T_K": 323.01,
+    "P_Pa": 2020000.0,
+    "pressure_relative": 1.4521717162097048e-13,
+    "pressure_slope": 205440.88914382763
+  },
+  {
+    "table": "S6",
+    "row": 22,
+    "T_K": 323.01,
+    "P_Pa": 3010000.0,
+    "pressure_relative": 8.204548151979907e-14,
+    "pressure_slope": 206298.80497484433
+  },
+  {
+    "table": "S6",
+    "row": 23,
+    "T_K": 323.01,
+    "P_Pa": 4030000.0000000005,
+    "pressure_relative": 5.473399511402022e-14,
+    "pressure_slope": 207180.9802359693
+  },
+  {
+    "table": "S6",
+    "row": 24,
+    "T_K": 323.01,
+    "P_Pa": 5000000.0,
+    "pressure_relative": 3.9968028886505635e-14,
+    "pressure_slope": 208018.28946610633
+  },
+  {
+    "table": "S6",
+    "row": 25,
+    "T_K": 323.01,
+    "P_Pa": 6020000.0,
+    "pressure_relative": 7.172040739078511e-14,
+    "pressure_slope": 208897.0680869211
+  },
+  {
+    "table": "S6",
+    "row": 26,
+    "T_K": 323.01,
+    "P_Pa": 7000000.0,
+    "pressure_relative": 4.529709940470639e-14,
+    "pressure_slope": 209739.76603110612
+  },
+  {
+    "table": "S6",
+    "row": 27,
+    "T_K": 323.01,
+    "P_Pa": 8000000.0,
+    "pressure_relative": 1.2245759961615477e-13,
+    "pressure_slope": 210598.04063855176
+  },
+  {
+    "table": "S6",
+    "row": 28,
+    "T_K": 323.01,
+    "P_Pa": 9010000.0,
+    "pressure_relative": 1.5543122344752192e-15,
+    "pressure_slope": 211463.2498398428
+  },
+  {
+    "table": "S6",
+    "row": 29,
+    "T_K": 323.01,
+    "P_Pa": 9990000.0,
+    "pressure_relative": 1.2323475573339238e-14,
+    "pressure_slope": 212301.18983980722
+  },
+  {
+    "table": "S6",
+    "row": 30,
+    "T_K": 323.01,
+    "P_Pa": 11010000.0,
+    "pressure_relative": 2.0872192862952943e-14,
+    "pressure_slope": 213171.7031305911
+  },
+  {
+    "table": "S6",
+    "row": 31,
+    "T_K": 323.01,
+    "P_Pa": 12000000.0,
+    "pressure_relative": 1.63202784619898e-14,
+    "pressure_slope": 214015.0379740688
+  },
+  {
+    "table": "S6",
+    "row": 32,
+    "T_K": 323.01,
+    "P_Pa": 13010000.0,
+    "pressure_relative": 1.7985612998927536e-14,
+    "pressure_slope": 214873.82431602068
+  },
+  {
+    "table": "S6",
+    "row": 33,
+    "T_K": 323.01,
+    "P_Pa": 14000000.0,
+    "pressure_relative": 3.907985046680551e-14,
+    "pressure_slope": 215714.06360305165
+  },
+  {
+    "table": "S6",
+    "row": 34,
+    "T_K": 323.01,
+    "P_Pa": 14990000.0,
+    "pressure_relative": 1.0325074129013956e-14,
+    "pressure_slope": 216552.78939525093
+  },
+  {
+    "table": "S6",
+    "row": 35,
+    "T_K": 323.01,
+    "P_Pa": 15990000.0,
+    "pressure_relative": 2.5868196473766147e-14,
+    "pressure_slope": 217398.4631030512
+  },
+  {
+    "table": "S6",
+    "row": 36,
+    "T_K": 323.01,
+    "P_Pa": 17010000.0,
+    "pressure_relative": 9.547918011776346e-15,
+    "pressure_slope": 218259.4851312319
+  },
+  {
+    "table": "S6",
+    "row": 37,
+    "T_K": 323.01,
+    "P_Pa": 17990000.0,
+    "pressure_relative": 3.2862601528904634e-14,
+    "pressure_slope": 219085.26468984564
+  },
+  {
+    "table": "S6",
+    "row": 38,
+    "T_K": 323.01,
+    "P_Pa": 19000000.0,
+    "pressure_relative": 8.881784197001252e-16,
+    "pressure_slope": 219934.82087148208
+  },
+  {
+    "table": "S6",
+    "row": 39,
+    "T_K": 323.01,
+    "P_Pa": 20010000.0,
+    "pressure_relative": 8.770761894538737e-15,
+    "pressure_slope": 220782.8641872903
+  },
+  {
+    "table": "S6",
+    "row": 40,
+    "T_K": 332.95,
+    "P_Pa": 1050000.0,
+    "pressure_relative": 4.085620730620576e-14,
+    "pressure_slope": 197705.28849941163
+  },
+  {
+    "table": "S6",
+    "row": 41,
+    "T_K": 332.95,
+    "P_Pa": 2029999.9999999998,
+    "pressure_relative": 1.609823385706477e-14,
+    "pressure_slope": 198568.58099910975
+  },
+  {
+    "table": "S6",
+    "row": 42,
+    "T_K": 332.95,
+    "P_Pa": 3000000.0,
+    "pressure_relative": 2.728928194528635e-13,
+    "pressure_slope": 199421.36650190197
+  },
+  {
+    "table": "S6",
+    "row": 43,
+    "T_K": 332.95,
+    "P_Pa": 3990000.0,
+    "pressure_relative": 3.2862601528904634e-14,
+    "pressure_slope": 200290.00920010748
+  },
+  {
+    "table": "S6",
+    "row": 44,
+    "T_K": 332.95,
+    "P_Pa": 4980000.0,
+    "pressure_relative": 1.2290168882600483e-13,
+    "pressure_slope": 201156.92400947327
+  },
+  {
+    "table": "S6",
+    "row": 45,
+    "T_K": 332.95,
+    "P_Pa": 6020000.0,
+    "pressure_relative": 1.6653345369377348e-15,
+    "pressure_slope": 202065.7784720405
+  },
+  {
+    "table": "S6",
+    "row": 46,
+    "T_K": 332.95,
+    "P_Pa": 7000000.0,
+    "pressure_relative": 8.637535131583718e-14,
+    "pressure_slope": 202920.48573803273
+  },
+  {
+    "table": "S6",
+    "row": 47,
+    "T_K": 332.95,
+    "P_Pa": 8010000.0,
+    "pressure_relative": 3.5416114485542494e-14,
+    "pressure_slope": 203799.63379171415
+  },
+  {
+    "table": "S6",
+    "row": 48,
+    "T_K": 332.95,
+    "P_Pa": 8990000.0,
+    "pressure_relative": 9.614531393253856e-14,
+    "pressure_slope": 204651.0107949821
+  },
+  {
+    "table": "S6",
+    "row": 49,
+    "T_K": 332.95,
+    "P_Pa": 9990000.0,
+    "pressure_relative": 4.418687638008123e-14,
+    "pressure_slope": 205518.09463720315
+  },
+  {
+    "table": "S6",
+    "row": 50,
+    "T_K": 332.95,
+    "P_Pa": 10990000.0,
+    "pressure_relative": 3.674838211509268e-14,
+    "pressure_slope": 206383.50816570668
+  },
+  {
+    "table": "S6",
+    "row": 51,
+    "T_K": 332.95,
+    "P_Pa": 12010000.0,
+    "pressure_relative": 1.9984014443252818e-14,
+    "pressure_slope": 207264.5243574751
+  },
+  {
+    "table": "S6",
+    "row": 52,
+    "T_K": 332.95,
+    "P_Pa": 13080000.0,
+    "pressure_relative": 7.105427357601002e-14,
+    "pressure_slope": 208186.89295983085
+  },
+  {
+    "table": "S6",
+    "row": 53,
+    "T_K": 332.95,
+    "P_Pa": 13990000.0,
+    "pressure_relative": 1.1435297153639112e-14,
+    "pressure_slope": 208969.87184739817
+  },
+  {
+    "table": "S6",
+    "row": 54,
+    "T_K": 332.95,
+    "P_Pa": 15000000.0,
+    "pressure_relative": 4.1300296516055823e-14,
+    "pressure_slope": 209837.3286588973
+  },
+  {
+    "table": "S6",
+    "row": 55,
+    "T_K": 332.95,
+    "P_Pa": 16000000.0,
+    "pressure_relative": 1.787459069646502e-14,
+    "pressure_slope": 210694.58942192633
+  },
+  {
+    "table": "S6",
+    "row": 56,
+    "T_K": 332.95,
+    "P_Pa": 16990000.0,
+    "pressure_relative": 1.8207657603852567e-14,
+    "pressure_slope": 211541.71544967795
+  },
+  {
+    "table": "S6",
+    "row": 57,
+    "T_K": 332.95,
+    "P_Pa": 18000000.0,
+    "pressure_relative": 1.554312234475219e-14,
+    "pressure_slope": 212404.3669063389
+  },
+  {
+    "table": "S6",
+    "row": 58,
+    "T_K": 332.95,
+    "P_Pa": 19010000.0,
+    "pressure_relative": 1.765254609153999e-14,
+    "pressure_slope": 213265.427696441
+  },
+  {
+    "table": "S6",
+    "row": 59,
+    "T_K": 332.95,
+    "P_Pa": 19960000.0,
+    "pressure_relative": 7.560618797697316e-14,
+    "pressure_slope": 214073.8965602692
+  },
+  {
+    "table": "S6",
+    "row": 60,
+    "T_K": 342.78,
+    "P_Pa": 1000000.0,
+    "pressure_relative": 6.772360450213455e-14,
+    "pressure_slope": 190873.5229292691
+  },
+  {
+    "table": "S6",
+    "row": 61,
+    "T_K": 342.78,
+    "P_Pa": 2000000.0,
+    "pressure_relative": 2.426947531830592e-13,
+    "pressure_slope": 191766.684252853
+  },
+  {
+    "table": "S6",
+    "row": 62,
+    "T_K": 342.78,
+    "P_Pa": 3050000.0,
+    "pressure_relative": 1.1712852909795402e-13,
+    "pressure_slope": 192702.47421560204
+  },
+  {
+    "table": "S6",
+    "row": 63,
+    "T_K": 342.78,
+    "P_Pa": 4019999.9999999995,
+    "pressure_relative": 1.1501910535116622e-13,
+    "pressure_slope": 193565.13654130828
+  },
+  {
+    "table": "S6",
+    "row": 64,
+    "T_K": 342.78,
+    "P_Pa": 5000000.0,
+    "pressure_relative": 1.3100631690576847e-13,
+    "pressure_slope": 194434.92528310692
+  },
+  {
+    "table": "S6",
+    "row": 65,
+    "T_K": 342.78,
+    "P_Pa": 6020000.0,
+    "pressure_relative": 1.3988810110276972e-14,
+    "pressure_slope": 195338.3471410378
+  },
+  {
+    "table": "S6",
+    "row": 66,
+    "T_K": 342.78,
+    "P_Pa": 7010000.0,
+    "pressure_relative": 2.4313884239290928e-14,
+    "pressure_slope": 196213.39240464638
+  },
+  {
+    "table": "S6",
+    "row": 67,
+    "T_K": 342.78,
+    "P_Pa": 8029999.999999999,
+    "pressure_relative": 6.561418075534675e-14,
+    "pressure_slope": 197113.11179485306
+  },
+  {
+    "table": "S6",
+    "row": 68,
+    "T_K": 342.78,
+    "P_Pa": 9000000.0,
+    "pressure_relative": 4.263256414560601e-14,
+    "pressure_slope": 197967.0087407744
+  },
+  {
+    "table": "S6",
+    "row": 69,
+    "T_K": 342.78,
+    "P_Pa": 10000000.0,
+    "pressure_relative": 1.4876988529977098e-14,
+    "pressure_slope": 198845.57718747508
+  },
+  {
+    "table": "S6",
+    "row": 70,
+    "T_K": 342.78,
+    "P_Pa": 11000000.0,
+    "pressure_relative": 3.5083047578154947e-14,
+    "pressure_slope": 199722.3975751822
+  },
+  {
+    "table": "S6",
+    "row": 71,
+    "T_K": 342.78,
+    "P_Pa": 12010000.0,
+    "pressure_relative": 4.96269692007445e-14,
+    "pressure_slope": 200606.2280820671
+  },
+  {
+    "table": "S6",
+    "row": 72,
+    "T_K": 342.78,
+    "P_Pa": 12950000.0,
+    "pressure_relative": 2.4646951146678475e-14,
+    "pressure_slope": 201427.22979546268
+  },
+  {
+    "table": "S6",
+    "row": 73,
+    "T_K": 342.78,
+    "P_Pa": 13990000.0,
+    "pressure_relative": 3.086420008457935e-14,
+    "pressure_slope": 202333.8206516149
+  },
+  {
+    "table": "S6",
+    "row": 74,
+    "T_K": 342.78,
+    "P_Pa": 15000000.0,
+    "pressure_relative": 1.532107773982716e-14,
+    "pressure_slope": 203212.5144966734
+  },
+  {
+    "table": "S6",
+    "row": 75,
+    "T_K": 342.78,
+    "P_Pa": 15990000.0,
+    "pressure_relative": 3.5083047578154947e-14,
+    "pressure_slope": 204072.15444956065
+  },
+  {
+    "table": "S6",
+    "row": 76,
+    "T_K": 342.78,
+    "P_Pa": 17000000.0,
+    "pressure_relative": 1.6653345369377348e-14,
+    "pressure_slope": 204947.48839969424
+  },
+  {
+    "table": "S6",
+    "row": 77,
+    "T_K": 342.78,
+    "P_Pa": 18010000.0,
+    "pressure_relative": 3.375077994860476e-14,
+    "pressure_slope": 205821.14803493753
+  },
+  {
+    "table": "S6",
+    "row": 78,
+    "T_K": 342.78,
+    "P_Pa": 18980000.0,
+    "pressure_relative": 1.3766765505351941e-14,
+    "pressure_slope": 206658.6448228016
+  },
+  {
+    "table": "S6",
+    "row": 79,
+    "T_K": 342.78,
+    "P_Pa": 19980000.0,
+    "pressure_relative": 2.5091040356528538e-14,
+    "pressure_slope": 207520.45470851441
+  },
+  {
+    "table": "S6",
+    "row": 80,
+    "T_K": 352.68,
+    "P_Pa": 1010000.0,
+    "pressure_relative": 6.887823644774471e-13,
+    "pressure_slope": 184076.7530535985
+  },
+  {
+    "table": "S6",
+    "row": 81,
+    "T_K": 352.68,
+    "P_Pa": 2009999.9999999998,
+    "pressure_relative": 3.7259084706420253e-13,
+    "pressure_slope": 184981.90348633556
+  },
+  {
+    "table": "S6",
+    "row": 82,
+    "T_K": 352.68,
+    "P_Pa": 3000000.0,
+    "pressure_relative": 7.671641100159832e-14,
+    "pressure_slope": 185876.0482307614
+  },
+  {
+    "table": "S6",
+    "row": 83,
+    "T_K": 352.68,
+    "P_Pa": 4000000.0,
+    "pressure_relative": 1.5132339825640884e-13,
+    "pressure_slope": 186777.2708165225
+  },
+  {
+    "table": "S6",
+    "row": 84,
+    "T_K": 352.68,
+    "P_Pa": 5000000.0,
+    "pressure_relative": 2.0095036745715333e-14,
+    "pressure_slope": 187676.54940366527
+  },
+  {
+    "table": "S6",
+    "row": 85,
+    "T_K": 352.68,
+    "P_Pa": 6020000.0,
+    "pressure_relative": 9.092726571680032e-14,
+    "pressure_slope": 188591.83103633416
+  },
+  {
+    "table": "S6",
+    "row": 86,
+    "T_K": 352.68,
+    "P_Pa": 7010000.0,
+    "pressure_relative": 7.971401316808624e-14,
+    "pressure_slope": 189478.29701552365
+  },
+  {
+    "table": "S6",
+    "row": 87,
+    "T_K": 352.68,
+    "P_Pa": 8000000.0,
+    "pressure_relative": 4.440892098500626e-15,
+    "pressure_slope": 190362.9140944231
+  },
+  {
+    "table": "S6",
+    "row": 88,
+    "T_K": 352.68,
+    "P_Pa": 8980000.0,
+    "pressure_relative": 3.0309088572266774e-14,
+    "pressure_slope": 191236.7922520153
+  },
+  {
+    "table": "S6",
+    "row": 89,
+    "T_K": 352.68,
+    "P_Pa": 9980000.0,
+    "pressure_relative": 2.3314683517128287e-14,
+    "pressure_slope": 192126.67290728397
+  },
+  {
+    "table": "S6",
+    "row": 90,
+    "T_K": 352.68,
+    "P_Pa": 11030000.0,
+    "pressure_relative": 3.275157922644212e-14,
+    "pressure_slope": 193059.07565411192
+  },
+  {
+    "table": "S6",
+    "row": 91,
+    "T_K": 352.68,
+    "P_Pa": 11980000.0,
+    "pressure_relative": 1.3766765505351941e-14,
+    "pressure_slope": 193900.95418210514
+  },
+  {
+    "table": "S6",
+    "row": 92,
+    "T_K": 352.68,
+    "P_Pa": 13050000.0,
+    "pressure_relative": 3.774758283725532e-14,
+    "pressure_slope": 194847.23319244772
+  },
+  {
+    "table": "S6",
+    "row": 93,
+    "T_K": 352.68,
+    "P_Pa": 14000000.0,
+    "pressure_relative": 4.440892098500626e-16,
+    "pressure_slope": 195685.6792925209
+  },
+  {
+    "table": "S6",
+    "row": 94,
+    "T_K": 352.68,
+    "P_Pa": 14990000.0,
+    "pressure_relative": 3.197442310920451e-14,
+    "pressure_slope": 196557.73486901782
+  },
+  {
+    "table": "S6",
+    "row": 95,
+    "T_K": 352.68,
+    "P_Pa": 16020000.0,
+    "pressure_relative": 1.6653345369377348e-14,
+    "pressure_slope": 197463.20730579543
+  },
+  {
+    "table": "S6",
+    "row": 96,
+    "T_K": 352.68,
+    "P_Pa": 16980000.0,
+    "pressure_relative": 1.6653345369377348e-14,
+    "pressure_slope": 198305.4890795084
+  },
+  {
+    "table": "S6",
+    "row": 97,
+    "T_K": 352.68,
+    "P_Pa": 17980000.0,
+    "pressure_relative": 1.2212453270876722e-14,
+    "pressure_slope": 199181.18479952615
+  },
+  {
+    "table": "S6",
+    "row": 98,
+    "T_K": 352.68,
+    "P_Pa": 19000000.0,
+    "pressure_relative": 2.4646951146678475e-14,
+    "pressure_slope": 200072.64317863938
+  },
+  {
+    "table": "S6",
+    "row": 99,
+    "T_K": 352.68,
+    "P_Pa": 19990000.0,
+    "pressure_relative": 2.7533531010703882e-14,
+    "pressure_slope": 200936.2062090197
+  },
+  {
+    "table": "S6",
+    "row": 100,
+    "T_K": 362.52,
+    "P_Pa": 1010000.0,
+    "pressure_relative": 3.297362383136715e-13,
+    "pressure_slope": 177340.12881094593
+  },
+  {
+    "table": "S6",
+    "row": 101,
+    "T_K": 362.52,
+    "P_Pa": 2049999.9999999998,
+    "pressure_relative": 2.327027459614328e-13,
+    "pressure_slope": 178293.6807355635
+  },
+  {
+    "table": "S6",
+    "row": 102,
+    "T_K": 362.52,
+    "P_Pa": 2980000.0,
+    "pressure_relative": 5.617728504603292e-14,
+    "pressure_slope": 179144.46234552996
+  },
+  {
+    "table": "S6",
+    "row": 103,
+    "T_K": 362.52,
+    "P_Pa": 4030000.0000000005,
+    "pressure_relative": 2.1760371282653068e-14,
+    "pressure_slope": 180102.8737795567
+  },
+  {
+    "table": "S6",
+    "row": 104,
+    "T_K": 362.52,
+    "P_Pa": 5010000.0,
+    "pressure_relative": 5.395683899678261e-14,
+    "pressure_slope": 180995.35673758545
+  },
+  {
+    "table": "S6",
+    "row": 105,
+    "T_K": 362.52,
+    "P_Pa": 6010000.0,
+    "pressure_relative": 3.108624468950438e-14,
+    "pressure_slope": 181904.05034420823
+  },
+  {
+    "table": "S6",
+    "row": 106,
+    "T_K": 362.52,
+    "P_Pa": 7020000.0,
+    "pressure_relative": 4.1300296516055823e-14,
+    "pressure_slope": 182819.7982372078
+  },
+  {
+    "table": "S6",
+    "row": 107,
+    "T_K": 362.52,
+    "P_Pa": 8000000.0,
+    "pressure_relative": 3.552713678800501e-14,
+    "pressure_slope": 183706.4131679104
+  },
+  {
+    "table": "S6",
+    "row": 108,
+    "T_K": 362.52,
+    "P_Pa": 9000000.0,
+    "pressure_relative": 7.216449660063518e-14,
+    "pressure_slope": 184609.18028012515
+  },
+  {
+    "table": "S6",
+    "row": 109,
+    "T_K": 362.52,
+    "P_Pa": 9990000.0,
+    "pressure_relative": 3.8968828164342995e-14,
+    "pressure_slope": 185501.00690229246
+  },
+  {
+    "table": "S6",
+    "row": 110,
+    "T_K": 362.52,
+    "P_Pa": 11000000.0,
+    "pressure_relative": 3.1086244689504383e-15,
+    "pressure_slope": 186408.90876568123
+  },
+  {
+    "table": "S6",
+    "row": 111,
+    "T_K": 362.52,
+    "P_Pa": 12010000.0,
+    "pressure_relative": 6.661338147750939e-16,
+    "pressure_slope": 187314.86947572703
+  },
+  {
+    "table": "S6",
+    "row": 112,
+    "T_K": 362.52,
+    "P_Pa": 13000000.0,
+    "pressure_relative": 3.774758283725532e-14,
+    "pressure_slope": 188201.0252961504
+  },
+  {
+    "table": "S6",
+    "row": 113,
+    "T_K": 362.52,
+    "P_Pa": 13990000.0,
+    "pressure_relative": 6.128431095930864e-14,
+    "pressure_slope": 189085.35286277038
+  },
+  {
+    "table": "S6",
+    "row": 114,
+    "T_K": 362.52,
+    "P_Pa": 15010000.0,
+    "pressure_relative": 7.72715225139109e-14,
+    "pressure_slope": 189994.5847756219
+  },
+  {
+    "table": "S6",
+    "row": 115,
+    "T_K": 362.52,
+    "P_Pa": 15980000.0,
+    "pressure_relative": 3.175237850427948e-14,
+    "pressure_slope": 190857.4809966799
+  },
+  {
+    "table": "S6",
+    "row": 116,
+    "T_K": 362.52,
+    "P_Pa": 17010000.0,
+    "pressure_relative": 8.770761894538737e-15,
+    "pressure_slope": 191771.8864267041
+  },
+  {
+    "table": "S6",
+    "row": 117,
+    "T_K": 362.52,
+    "P_Pa": 17990000.0,
+    "pressure_relative": 7.327471962526033e-15,
+    "pressure_slope": 192640.13611211933
+  },
+  {
+    "table": "S6",
+    "row": 118,
+    "T_K": 362.52,
+    "P_Pa": 18990000.0,
+    "pressure_relative": 1.709743457922741e-14,
+    "pressure_slope": 193524.34585502348
+  },
+  {
+    "table": "S6",
+    "row": 119,
+    "T_K": 362.52,
+    "P_Pa": 19990000.0,
+    "pressure_relative": 2.220446049250313e-15,
+    "pressure_slope": 194406.79517875132
+  },
+  {
+    "table": "S9",
+    "row": 0,
+    "T_K": 260.0,
+    "success": true,
+    "message": "converged: residual 1.6952376806940585e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 15 iterations, contraction absent, floor 6.5382688456957149e-11, amplification 0",
+    "solver_status": "SUCCESS",
+    "pressure": 7.466002812081004e-05,
+    "amounts": [
+      1.0,
+      0.0
+    ],
+    "mole_fractions": [
+      1.0,
+      1.0
+    ],
+    "molar_densities": [
+      8770.904071511588,
+      3.453668244287311e-08
+    ],
+    "residuals": [
+      -3.552713678800501e-15,
+      -1.6952376806940585e-14,
+      0.0,
+      -1.5328501598542574e-15,
+      -1.1102230246251565e-16,
+      -1.1102230246251565e-16,
+      -1.1102230246251565e-16
+    ],
+    "classified_residuals": [
+      -3.552713678800501e-15,
+      -1.6952376806940585e-14,
+      0.0,
+      -1.5328501598542574e-15,
+      -1.1102230246251565e-16,
+      -1.1102230246251565e-16,
+      -1.1102230246251565e-16
+    ],
+    "iterations": 15,
+    "evaluations": 37,
+    "requested_tolerance_met": true,
+    "pressure_checks": [
+      {
+        "pressure_Pa": 7.444477093411125e-05,
+        "rho_mol_m3": 8770.904071511588,
+        "slope": 247546.2001422858,
+        "density_ulp": 1.8189894035458565e-12,
+        "ulp_pressure_Pa": 4.5028391494685963e-07,
+        "allowance_Pa": 3.602271319574877e-06,
+        "scaled_defect": 0.05975596161484893,
+        "relative_defect": 0.0028831650900328124,
+        "density_backward_error": 9.914185364690275e-17
+      },
+      {
+        "pressure_Pa": 7.46600281208099e-05,
+        "rho_mol_m3": 3.453668244287311e-08,
+        "slope": 2161.760268441447,
+        "density_ulp": 6.617444900424222e-24,
+        "ulp_pressure_Pa": 1.430532946433755e-20,
+        "allowance_Pa": 7.466002812081004e-13,
+        "scaled_defect": 1.8152319918951786e-07,
+        "relative_defect": 1.8152319918951785e-15,
+        "density_backward_error": 1.8152319970502717e-15
+      }
+    ],
+    "common_standard_mu_RT": [
+      -17.18124382423492,
+      -17.18124382423492
+    ],
+    "coexistence_defect": 0.0,
+    "liquid_neighbor_pressures_Pa": [
+      7.443690649602397e-05,
+      7.524301139996929e-05
+    ]
+  },
+  {
+    "table": "S9",
+    "row": 1,
+    "T_K": 308.0,
+    "success": true,
+    "message": "converged: residual 1.5987211554602254e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 13 iterations, contraction absent, floor 1.0653287885357421e-11, amplification 0",
+    "solver_status": "SUCCESS",
+    "pressure": 0.09928285019674336,
+    "amounts": [
+      1.0,
+      0.0
+    ],
+    "mole_fractions": [
+      1.0,
+      1.0
+    ],
+    "molar_densities": [
+      8407.088779099999,
+      3.8769445332634485e-05
+    ],
+    "residuals": [
+      -1.5987211554602254e-14,
+      -1.3535847347669473e-14,
+      0.0,
+      -1.7478360909977813e-16,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "classified_residuals": [
+      -1.5987211554602254e-14,
+      -1.3535847347669473e-14,
+      0.0,
+      -1.7478360909977813e-16,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "iterations": 13,
+    "evaluations": 33,
+    "requested_tolerance_met": true,
+    "pressure_checks": [
+      {
+        "pressure_Pa": 0.0992839841781607,
+        "rho_mol_m3": 8407.088779099999,
+        "slope": 214165.55468402078,
+        "density_ulp": 1.8189894035458565e-12,
+        "ulp_pressure_Pa": 3.8956487457475447e-07,
+        "allowance_Pa": 3.1165189965980358e-06,
+        "scaled_defect": 0.3638615450682365,
+        "relative_defect": 1.1421725052106409e-05,
+        "density_backward_error": 6.298116384661746e-16
+      },
+      {
+        "pressure_Pa": 0.09928285019674338,
+        "rho_mol_m3": 3.8769445332634485e-05,
+        "slope": 2560.8515037218976,
+        "density_ulp": 6.776263578034403e-21,
+        "ulp_pressure_Pa": 1.7353004773425327e-17,
+        "allowance_Pa": 9.928285019674337e-10,
+        "scaled_defect": 1.3978031231288794e-08,
+        "relative_defect": 1.3978031231288796e-16,
+        "density_backward_error": 1.397803937151753e-16
+      }
+    ],
+    "common_standard_mu_RT": [
+      -10.15787927771306,
+      -10.157879277713127
+    ],
+    "coexistence_defect": 6.572520305780927e-14,
+    "liquid_neighbor_pressures_Pa": [
+      0.09928255877900523,
+      0.09928412858134313
+    ]
+  },
+  {
+    "table": "S9",
+    "row": 2,
+    "T_K": 356.0,
+    "success": true,
+    "message": "converged: residual 1.2445038839567618e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 10 iterations, contraction absent, floor 9.6066322742348805e-12, amplification 0",
+    "solver_status": "SUCCESS",
+    "pressure": 14.394927559374981,
+    "amounts": [
+      1.0,
+      0.0
+    ],
+    "mole_fractions": [
+      1.0,
+      1.0
+    ],
+    "molar_densities": [
+      8068.842155236474,
+      0.004863367260276266
+    ],
+    "residuals": [
+      4.440892098500626e-15,
+      1.2445038839567618e-14,
+      0.0,
+      3.5669185219589293e-16,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "classified_residuals": [
+      4.440892098500626e-15,
+      1.2445038839567618e-14,
+      0.0,
+      3.5669185219589293e-16,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "iterations": 10,
+    "evaluations": 26,
+    "requested_tolerance_met": true,
+    "pressure_checks": [
+      {
+        "pressure_Pa": 14.39492791313752,
+        "rho_mol_m3": 8068.842155236474,
+        "slope": 180880.5922624092,
+        "density_ulp": 9.094947017729282e-13,
+        "ulp_pressure_Pa": 1.6450994031621048e-07,
+        "allowance_Pa": 1.3160795225296838e-06,
+        "scaled_defect": 0.26880027628001385,
+        "relative_defect": 2.4575499793470852e-08,
+        "density_backward_error": 2.423866249044076e-16
+      },
+      {
+        "pressure_Pa": 14.394927559374985,
+        "rho_mol_m3": 0.004863367260276266,
+        "slope": 2959.7883096519577,
+        "density_ulp": 8.673617379884035e-19,
+        "ulp_pressure_Pa": 2.567207132337481e-15,
+        "allowance_Pa": 1.4394927559374983e-07,
+        "scaled_defect": 2.468031648055586e-08,
+        "relative_defect": 2.468031648055586e-16,
+        "density_backward_error": 2.4680985154073034e-16
+      }
+    ],
+    "common_standard_mu_RT": [
+      -5.326078413761884,
+      -5.3260784137618975
+    ],
+    "coexistence_defect": 1.3322676295501878e-14,
+    "liquid_neighbor_pressures_Pa": [
+      14.39492791313752,
+      14.39492785660431
+    ]
+  },
+  {
+    "table": "S9",
+    "row": 3,
+    "T_K": 404.0,
+    "success": true,
+    "message": "converged: residual 4.7803538055696631e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 9 iterations, contraction absent, floor 8.6053980843412943e-12, amplification 0",
+    "solver_status": "SUCCESS",
+    "pressure": 519.3231279804667,
+    "amounts": [
+      1.0,
+      0.0
+    ],
+    "mole_fractions": [
+      1.0,
+      1.0
+    ],
+    "molar_densities": [
+      7727.34676136146,
+      0.1546794993333672
+    ],
+    "residuals": [
+      4.6629367034256575e-15,
+      4.780353805569663e-15,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "classified_residuals": [
+      4.6629367034256575e-15,
+      4.780353805569663e-15,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "iterations": 9,
+    "evaluations": 33,
+    "requested_tolerance_met": true,
+    "pressure_checks": [
+      {
+        "pressure_Pa": 519.3231281045479,
+        "rho_mol_m3": 7727.34676136146,
+        "slope": 148192.76769311997,
+        "density_ulp": 9.094947017729282e-13,
+        "ulp_pressure_Pa": 1.3478053705795898e-07,
+        "allowance_Pa": 5.193231279804667e-06,
+        "scaled_defect": 0.023892874899877452,
+        "relative_defect": 2.389287489987745e-10,
+        "density_backward_error": 1.0835492674830172e-16
+      },
+      {
+        "pressure_Pa": 519.3231279804667,
+        "rho_mol_m3": 0.1546794993333672,
+        "slope": 3355.785519104533,
+        "density_ulp": 2.7755575615628914e-17,
+        "ulp_pressure_Pa": 9.314175872533839e-14,
+        "allowance_Pa": 5.193231279804667e-06,
+        "scaled_defect": 0.0,
+        "relative_defect": 0.0,
+        "density_backward_error": 0.0
+      }
+    ],
+    "common_standard_mu_RT": [
+      -1.8673699034858426,
+      -1.8673699034858473
+    ],
+    "coexistence_defect": 4.6629367034256575e-15,
+    "liquid_neighbor_pressures_Pa": [
+      519.3231277593293,
+      519.3231281045479
+    ]
+  },
+  {
+    "table": "S9",
+    "row": 4,
+    "T_K": 452.0,
+    "success": true,
+    "message": "converged: residual 3.1086244689504383e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor 7.2569512437328845e-10, amplification 0",
+    "solver_status": "NEWTON_CONVERGED",
+    "pressure": 7294.981535869572,
+    "amounts": [
+      1.0,
+      0.0
+    ],
+    "mole_fractions": [
+      1.0,
+      1.0
+    ],
+    "molar_densities": [
+      7354.829142159131,
+      1.9493168942689063
+    ],
+    "residuals": [
+      -3.108624468950438e-14,
+      -2.1830465466276037e-14,
+      -4.440892098500626e-16,
+      -3.4172679502935733e-16,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "classified_residuals": [
+      -3.108624468950438e-14,
+      -2.1830465466276037e-14,
+      -4.440892098500626e-16,
+      -3.4172679502935733e-16,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "iterations": 0,
+    "evaluations": 10,
+    "requested_tolerance_met": true,
+    "pressure_checks": [
+      {
+        "pressure_Pa": 7294.981535266168,
+        "rho_mol_m3": 7354.829142159131,
+        "slope": 115948.4121760534,
+        "density_ulp": 9.094947017729282e-13,
+        "ulp_pressure_Pa": 1.0545446655310425e-07,
+        "allowance_Pa": 7.294981535869573e-05,
+        "scaled_defect": 0.008271498110369412,
+        "relative_defect": 8.271498110369412e-11,
+        "density_backward_error": 7.075725527427227e-16
+      },
+      {
+        "pressure_Pa": 7294.98153586957,
+        "rho_mol_m3": 1.9493168942689063,
+        "slope": 3726.5436743497253,
+        "density_ulp": 2.220446049250313e-16,
+        "ulp_pressure_Pa": 8.274589179068593e-13,
+        "allowance_Pa": 7.294981535869573e-05,
+        "scaled_defect": 3.740220714614249e-08,
+        "relative_defect": 3.7402207146142496e-16,
+        "density_backward_error": 3.756062117491471e-16
+      }
+    ],
+    "common_standard_mu_RT": [
+      0.6590617537178112,
+      0.6590617537178418
+    ],
+    "coexistence_defect": 3.064215547965432e-14,
+    "liquid_neighbor_pressures_Pa": [
+      7294.981535372127,
+      7294.981536045474
+    ]
+  },
+  {
+    "table": "S9",
+    "row": 5,
+    "T_K": 500.0,
+    "success": true,
+    "message": "converged: residual 6.8851324846671514e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor 6.1408298843846493e-12, amplification 0",
+    "solver_status": "NEWTON_CONVERGED",
+    "pressure": 52487.100996257854,
+    "amounts": [
+      1.0,
+      0.0
+    ],
+    "mole_fractions": [
+      1.0,
+      1.0
+    ],
+    "molar_densities": [
+      6924.175382534941,
+      12.895148457067702
+    ],
+    "residuals": [
+      -6.661338147750939e-15,
+      -6.8851324846671514e-15,
+      4.440892098500626e-16,
+      -1.3775388824055354e-16,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "classified_residuals": [
+      -6.661338147750939e-15,
+      -6.8851324846671514e-15,
+      4.440892098500626e-16,
+      -1.3775388824055354e-16,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "iterations": 0,
+    "evaluations": 6,
+    "requested_tolerance_met": true,
+    "pressure_checks": [
+      {
+        "pressure_Pa": 52487.100996059664,
+        "rho_mol_m3": 6924.175382534941,
+        "slope": 84789.65510511376,
+        "density_ulp": 9.094947017729282e-13,
+        "ulp_pressure_Pa": 7.711574208325489e-08,
+        "allowance_Pa": 0.0005248710099625785,
+        "scaled_defect": 0.0003775971728117973,
+        "relative_defect": 3.775971728117972e-12,
+        "density_backward_error": 3.375750897657725e-16
+      },
+      {
+        "pressure_Pa": 52487.10099625785,
+        "rho_mol_m3": 12.895148457067702,
+        "slope": 3984.2961225843555,
+        "density_ulp": 1.7763568394002505e-15,
+        "ulp_pressure_Pa": 7.077531667548619e-12,
+        "allowance_Pa": 0.0005248710099625785,
+        "scaled_defect": 1.386237280413368e-08,
+        "relative_defect": 1.3862372804133678e-16,
+        "density_backward_error": 1.4161596148313427e-16
+      }
+    ],
+    "common_standard_mu_RT": [
+      2.5149155444126823,
+      2.5149155444126894
+    ],
+    "coexistence_defect": 7.105427357601002e-15,
+    "liquid_neighbor_pressures_Pa": [
+      52487.10099606344,
+      52487.1009966873
+    ]
+  },
+  {
+    "table": "S9",
+    "row": 6,
+    "T_K": 548.0,
+    "success": true,
+    "message": "converged: residual 1.1546319456101628e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor 4.6409699206908637e-12, amplification 0",
+    "solver_status": "NEWTON_CONVERGED",
+    "pressure": 234792.62729926233,
+    "amounts": [
+      1.0,
+      0.0
+    ],
+    "mole_fractions": [
+      1.0,
+      1.0
+    ],
+    "molar_densities": [
+      6405.230864287843,
+      55.34731686886535
+    ],
+    "residuals": [
+      1.1546319456101628e-14,
+      6.389662206864452e-15,
+      -4.440892098500626e-16,
+      1.2837889458012792e-16,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "classified_residuals": [
+      1.1546319456101628e-14,
+      6.389662206864452e-15,
+      -4.440892098500626e-16,
+      1.2837889458012792e-16,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "iterations": 0,
+    "evaluations": 6,
+    "requested_tolerance_met": true,
+    "pressure_checks": [
+      {
+        "pressure_Pa": 234792.6272992665,
+        "rho_mol_m3": 6405.230864287843,
+        "slope": 56070.96835583317,
+        "density_ulp": 9.094947017729282e-13,
+        "ulp_pressure_Pa": 5.099624864290778e-08,
+        "allowance_Pa": 0.0023479262729926235,
+        "scaled_defect": 1.7725632202276545e-06,
+        "relative_defect": 1.7725632202276547e-14,
+        "density_backward_error": 1.1588129637211384e-17
+      },
+      {
+        "pressure_Pa": 234792.62729926236,
+        "rho_mol_m3": 55.34731686886535,
+        "slope": 3941.838369403485,
+        "density_ulp": 7.105427357601002e-15,
+        "ulp_pressure_Pa": 2.8008446189200847e-11,
+        "allowance_Pa": 0.0023479262729926235,
+        "scaled_defect": 1.2395546994598982e-08,
+        "relative_defect": 1.2395546994598982e-16,
+        "density_backward_error": 1.3339967368570186e-16
+      }
+    ],
+    "common_standard_mu_RT": [
+      3.8741473069940575,
+      3.8741473069940517
+    ],
+    "coexistence_defect": 5.773159728050814e-15,
+    "liquid_neighbor_pressures_Pa": [
+      234792.62729924163,
+      234792.62729944882
+    ]
+  },
+  {
+    "table": "S9",
+    "row": 7,
+    "T_K": 596.0,
+    "success": true,
+    "message": "converged: residual 3.5527136788005009e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor 3.1221446205816965e-12, amplification 0",
+    "solver_status": "NEWTON_CONVERGED",
+    "pressure": 756576.0633540164,
+    "amounts": [
+      1.0,
+      0.0
+    ],
+    "mole_fractions": [
+      1.0,
+      1.0
+    ],
+    "molar_densities": [
+      5750.018269817632,
+      183.89372932678404
+    ],
+    "residuals": [
+      -3.552713678800501e-15,
+      -1.5916106709831983e-15,
+      0.0,
+      -1.545550766437385e-16,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "classified_residuals": [
+      -3.552713678800501e-15,
+      -1.5916106709831983e-15,
+      0.0,
+      -1.545550766437385e-16,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "iterations": 0,
+    "evaluations": 7,
+    "requested_tolerance_met": true,
+    "pressure_checks": [
+      {
+        "pressure_Pa": 756576.0633539711,
+        "rho_mol_m3": 5750.018269817632,
+        "slope": 31305.294790076798,
+        "density_ulp": 9.094947017729282e-13,
+        "ulp_pressure_Pa": 2.84719997490145e-08,
+        "allowance_Pa": 0.007565760633540164,
+        "scaled_defect": 5.985592511335858e-06,
+        "relative_defect": 5.985592511335858e-14,
+        "density_backward_error": 2.5157803583009826e-16
+      },
+      {
+        "pressure_Pa": 756576.0633540163,
+        "rho_mol_m3": 183.89372932678404,
+        "slope": 3379.9009097674266,
+        "density_ulp": 2.842170943040401e-14,
+        "ulp_pressure_Pa": 9.606256156096795e-11,
+        "allowance_Pa": 0.007565760633540164,
+        "scaled_defect": 1.538712727849835e-08,
+        "relative_defect": 1.5387127278498349e-16,
+        "density_backward_error": 1.8730063715871303e-16
+      }
+    ],
+    "common_standard_mu_RT": [
+      4.862598475261437,
+      4.86259847526144
+    ],
+    "coexistence_defect": 3.552713678800501e-15,
+    "liquid_neighbor_pressures_Pa": [
+      756576.0633538134,
+      756576.0633539531
+    ]
+  },
+  {
+    "table": "S9",
+    "row": 8,
+    "T_K": 644.0,
+    "success": true,
+    "message": "converged: residual 7.9936057773011271e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor 1.7166512785214627e-12, amplification 0",
+    "solver_status": "NEWTON_CONVERGED",
+    "pressure": 1961034.1524650585,
+    "amounts": [
+      1.0,
+      0.0
+    ],
+    "mole_fractions": [
+      1.0,
+      1.0
+    ],
+    "molar_densities": [
+      4840.977358779216,
+      554.9313925264508
+    ],
+    "residuals": [
+      7.993605777301127e-15,
+      2.4658487483155574e-15,
+      8.881784197001252e-16,
+      -1.0243323702055397e-16,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "classified_residuals": [
+      7.993605777301127e-15,
+      2.4658487483155574e-15,
+      8.881784197001252e-16,
+      -1.0243323702055397e-16,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "iterations": 0,
+    "evaluations": 8,
+    "requested_tolerance_met": true,
+    "pressure_checks": [
+      {
+        "pressure_Pa": 1961034.1524651223,
+        "rho_mol_m3": 4840.977358779216,
+        "slope": 11938.114168450382,
+        "density_ulp": 9.094947017729282e-13,
+        "ulp_pressure_Pa": 1.085765158536595e-08,
+        "allowance_Pa": 0.019610341524650587,
+        "scaled_defect": 3.253160903953047e-06,
+        "relative_defect": 3.253160903953047e-14,
+        "density_backward_error": 1.1038801457090038e-15
+      },
+      {
+        "pressure_Pa": 1961034.152465058,
+        "rho_mol_m3": 554.9313925264508,
+        "slope": 2205.4502072997734,
+        "density_ulp": 1.1368683772161603e-13,
+        "ulp_pressure_Pa": 2.5073065982039377e-10,
+        "allowance_Pa": 0.019610341524650587,
+        "scaled_defect": 2.374570002885436e-08,
+        "relative_defect": 2.374570002885436e-16,
+        "density_backward_error": 3.8048153383601645e-16
+      }
+    ],
+    "common_standard_mu_RT": [
+      5.575693334787889,
+      5.575693334787882
+    ],
+    "coexistence_defect": 7.105427357601002e-15,
+    "liquid_neighbor_pressures_Pa": [
+      1961034.1524651223,
+      1961034.152465059
+    ]
+  },
+  {
+    "table": "S9",
+    "row": 9,
+    "T_K": 692.0,
+    "success": true,
+    "message": "converged: residual 2.6645352591003757e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor 3.0887123471332735e-13, amplification 0",
+    "solver_status": "NEWTON_CONVERGED",
+    "pressure": 4406083.45899752,
+    "amounts": [
+      1.0,
+      0.0
+    ],
+    "mole_fractions": [
+      1.0,
+      1.0
+    ],
+    "molar_densities": [
+      2601.2898822595293,
+      2382.526813483636
+    ],
+    "residuals": [
+      2.6645352591003757e-15,
+      1.6170489203786944e-15,
+      0.0,
+      7.157537771131376e-16,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "classified_residuals": [
+      2.6645352591003757e-15,
+      1.6170489203786944e-15,
+      0.0,
+      7.157537771131376e-16,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "iterations": 0,
+    "evaluations": 4,
+    "requested_tolerance_met": true,
+    "pressure_checks": [
+      {
+        "pressure_Pa": 4406083.458997544,
+        "rho_mol_m3": 2601.2898822595293,
+        "slope": 11.731949927636519,
+        "density_ulp": 4.547473508864641e-13,
+        "ulp_pressure_Pa": 5.335073150325351e-12,
+        "allowance_Pa": 0.0440608345899752,
+        "scaled_defect": 5.495671420057881e-07,
+        "relative_defect": 5.495671420057881e-15,
+        "density_backward_error": 7.934407940379396e-13
+      },
+      {
+        "pressure_Pa": 4406083.45899753,
+        "rho_mol_m3": 2382.526813483636,
+        "slope": 10.74513492432187,
+        "density_ulp": 4.547473508864641e-13,
+        "ulp_pressure_Pa": 4.886321641752998e-12,
+        "allowance_Pa": 0.0440608345899752,
+        "scaled_defect": 2.3250917546398727e-07,
+        "relative_defect": 2.325091754639873e-15,
+        "density_backward_error": 4.001687263893806e-13
+      }
+    ],
+    "common_standard_mu_RT": [
+      6.089826968062697,
+      6.089826968062694
+    ],
+    "coexistence_defect": 2.6645352591003757e-15,
+    "liquid_neighbor_pressures_Pa": [
+      4406083.458997544,
+      4406083.458997528
+    ]
+  }
+]

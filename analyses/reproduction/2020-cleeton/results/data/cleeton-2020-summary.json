@@ -1,0 +1,221 @@
+{
+  "wheel_sha256": "3da83fae632df817a1f7b9d9f92b183dedc92ad42ef58db2a2b9091782092e3f",
+  "permittivity_expected": 69.85546584170802,
+  "gate_tolerance": "|ln(p_native/p_figure)| <= 0.05 + 0.003 |d ln p_figure/d loading|",
+  "ladder": {
+    "fig2-vapor-pressure": {
+      "points": 10,
+      "solved": 10,
+      "native_aad_percent": 9.342699578517934,
+      "native_symmetric_percent": 9.430886996628809,
+      "published_aad_percent": 6.3
+    },
+    "fig2-density": {
+      "points": 10,
+      "solved": 10,
+      "native_aad_percent": 1.407713581367207,
+      "native_symmetric_percent": 1.397501943926318,
+      "published_aad_percent": 0.4
+    },
+    "h2s-water bubble pressure": {
+      "points": 17,
+      "solved": 17,
+      "native_aad_percent": 8.792394849915055,
+      "native_symmetric_percent": 9.325939653362255,
+      "published_aad_percent": 7.26
+    },
+    "co2-water bubble pressure": {
+      "points": 20,
+      "solved": 20,
+      "native_aad_percent": 18.509433278592347,
+      "native_symmetric_percent": 20.96799281069462,
+      "published_aad_percent": 13.72
+    }
+  },
+  "lanes": {
+    "main-0.88sigma": {
+      "rows": 28,
+      "solved": 28,
+      "reaction_affinity_max": 3.319566843629218e-14,
+      "reference_status": [
+        "Available"
+      ],
+      "reference_admitted_change_max": 3.42898226612931e-06,
+      "liquid_density_kg_m3_range": [
+        1067.059375970463,
+        1657.8511217789783
+      ],
+      "mdeah_ln_gamma_star_range": [
+        -0.5687221399711246,
+        -0.09066453865527446
+      ],
+      "permittivity_range": [
+        69.85546584170802,
+        69.85546584170804
+      ],
+      "figure_16_gate": {
+        "points": 30,
+        "solved": 30,
+        "within_tolerance": 22,
+        "max_abs_ln_ratio": 0.32407249522909964,
+        "median_abs_ln_ratio": 0.053426337489149045
+      },
+      "figure_16_diagnostic_dicko_group_loading": {
+        "within_tolerance": 23,
+        "max_abs_ln_ratio": 0.13154232699179147,
+        "median_abs_ln_ratio": 0.04719533661276021
+      },
+      "dicko_symmetric_deviation_percent": {
+        "co2_figure_16_left_12": 56.051062004198165,
+        "h2s_figure_16_right_18": 79.08979549680504,
+        "co2_curve_states_left_12": 50.71872236984749,
+        "h2s_curve_states_right_18": 78.33335843764871,
+        "digitized_curve_left_12": 55.94388633435702,
+        "digitized_curve_right_18": 79.09984201996178
+      },
+      "dicko_aad_percent": {
+        "co2_figure_16_left_12": 64.3780871225166,
+        "h2s_figure_16_right_18": 143.71545896284454,
+        "co2_mixed_18": 65.80345260326845,
+        "co2_all_23": 72.51236122825942,
+        "h2s_all_23": 131.93153403127044,
+        "published_co2": 57.18,
+        "published_h2s": 79.32
+      },
+      "overpredicted_mixed_rows": {
+        "co2": 14,
+        "h2s": 16
+      },
+      "co2_pressure_rises_with_h2s_loading": {
+        "0.093": true,
+        "0.306": true,
+        "0.510": true,
+        "0.706": true
+      }
+    },
+    "diagnostic-sigma": {
+      "rows": 28,
+      "solved": 28,
+      "reaction_affinity_max": 2.78388423424758e-14,
+      "reference_status": [
+        "Available"
+      ],
+      "reference_admitted_change_max": 3.4279791520930303e-06,
+      "liquid_density_kg_m3_range": [
+        1057.8966543457548,
+        1539.4748659503794
+      ],
+      "mdeah_ln_gamma_star_range": [
+        -0.9313933878943015,
+        -0.6769894409172936
+      ],
+      "permittivity_range": [
+        69.85546584170802,
+        69.85546584170802
+      ],
+      "figure_16_gate": {
+        "points": 30,
+        "solved": 30,
+        "within_tolerance": 0,
+        "max_abs_ln_ratio": 1.0422430194329149,
+        "median_abs_ln_ratio": 0.4998321877261329
+      },
+      "figure_16_diagnostic_dicko_group_loading": {
+        "within_tolerance": 0,
+        "max_abs_ln_ratio": 0.9988107792211469,
+        "median_abs_ln_ratio": 0.4878572085404773
+      },
+      "dicko_symmetric_deviation_percent": {
+        "co2_figure_16_left_12": 59.753647432572926,
+        "h2s_figure_16_right_18": 54.15428429570778,
+        "co2_curve_states_left_12": 61.1249131737217,
+        "h2s_curve_states_right_18": 54.38178563289646,
+        "digitized_curve_left_12": 55.94388633435702,
+        "digitized_curve_right_18": 79.09984201996178
+      },
+      "dicko_aad_percent": {
+        "co2_figure_16_left_12": 40.754079964381724,
+        "h2s_figure_16_right_18": 67.7160859587034,
+        "co2_mixed_18": 34.18974539561631,
+        "co2_all_23": 39.331237085443476,
+        "h2s_all_23": 66.01990688217762,
+        "published_co2": 57.18,
+        "published_h2s": 79.32
+      },
+      "overpredicted_mixed_rows": {
+        "co2": 0,
+        "h2s": 15
+      },
+      "co2_pressure_rises_with_h2s_loading": {
+        "0.093": true,
+        "0.306": true,
+        "0.510": true,
+        "0.706": true
+      }
+    },
+    "diagnostic-mdea-infinite-dilution": {
+      "rows": 28,
+      "solved": 28,
+      "reaction_affinity_max": 3.8413716652030416e-14,
+      "reference_status": [
+        "Available"
+      ],
+      "reference_admitted_change_max": 3.428827296758641e-06,
+      "liquid_density_kg_m3_range": [
+        1067.1079716663157,
+        1685.1130453848298
+      ],
+      "mdeah_ln_gamma_star_range": [
+        -0.5787580520474709,
+        -0.05442602906012839
+      ],
+      "permittivity_range": [
+        69.85546584170802,
+        69.85546584170804
+      ],
+      "figure_16_gate": {
+        "points": 30,
+        "solved": 30,
+        "within_tolerance": 2,
+        "max_abs_ln_ratio": 0.4785354220892497,
+        "median_abs_ln_ratio": 0.2867567485213596
+      },
+      "figure_16_diagnostic_dicko_group_loading": {
+        "within_tolerance": 2,
+        "max_abs_ln_ratio": 0.49601472260606627,
+        "median_abs_ln_ratio": 0.27291076145146054
+      },
+      "dicko_symmetric_deviation_percent": {
+        "co2_figure_16_left_12": 56.83163271935265,
+        "h2s_figure_16_right_18": 71.2489013772202,
+        "co2_curve_states_left_12": 51.80465385937768,
+        "h2s_curve_states_right_18": 71.13540408664275,
+        "digitized_curve_left_12": 55.94388633435702,
+        "digitized_curve_right_18": 79.09984201996178
+      },
+      "dicko_aad_percent": {
+        "co2_figure_16_left_12": 51.022105819024226,
+        "h2s_figure_16_right_18": 109.75553652377317,
+        "co2_mixed_18": 50.28369289265371,
+        "co2_all_23": 57.28052169451805,
+        "h2s_all_23": 100.6606474474277,
+        "published_co2": 57.18,
+        "published_h2s": 79.32
+      },
+      "overpredicted_mixed_rows": {
+        "co2": 10,
+        "h2s": 15
+      },
+      "co2_pressure_rises_with_h2s_loading": {
+        "0.093": true,
+        "0.306": true,
+        "0.510": true,
+        "0.706": true
+      }
+    }
+  },
+  "mdea_infinite_dilution": {
+    "ln_gamma_inf_mdea_in_water_1e+05_pa": -0.4556881825209871,
+    "ln_gamma_inf_mdea_in_water_2e+06_pa": -0.45840439175833225
+  }
+}

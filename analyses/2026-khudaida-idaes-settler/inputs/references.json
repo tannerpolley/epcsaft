@@ -1,0 +1,26 @@
+{
+  "source_feed": {
+    "path": "analyses/reproduction/2026-khudaida/figures/figure-02/source/source-points.csv",
+    "sha256": "21cf58a5373b2e2c337b6baf5a0423d0ab5d7cea9639bb727b061f5844ef78d7"
+  },
+  "feed_to_tie_lines": {
+    "path": "analyses/reproduction/2026-khudaida/inputs/source/figure-02-feed-to-table-3-tie-lines.csv",
+    "sha256": "00c5c669046dc933b8f5827eece16d1174866a038370ebf311a47aa3a091e706"
+  },
+  "experimental_tie_lines": {
+    "path": "analyses/reproduction/2026-khudaida/inputs/source/table-3-4-experimental-tielines.csv",
+    "sha256": "8f69d4fd5b01e4b9c9abaa94eb0698e685b1ec5a9936468de15fdec4509458b1"
+  },
+  "experimental_uncertainties": {
+    "path": "analyses/reproduction/2026-khudaida/inputs/source/table-3-standard-uncertainties.csv",
+    "sha256": "124e65d33243fb5a06b3299aaf584553c516a70ba645e5f37caa1b8d409e3c87"
+  },
+  "paper_epcsaft_curve": {
+    "path": "analyses/reproduction/2026-khudaida/figures/figure-02/source/paper-epcsaft-points.csv",
+    "sha256": "d00008864de1c505dd54fe3d32612911f997f5c83402869cfc1e6d7739de321d"
+  },
+  "paper_table_9": {
+    "path": "analyses/reproduction/2026-khudaida/results/tables/table-009/source/table-009.csv",
+    "sha256": "defc0b23ac71bfd9fa0267354053711b13fa41e7ad7f991c65d3ef145b295ba8"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "case": "F2",
+  "results": [
+    {
+      "physical_chart_bit_identical": true,
+      "cold_replay_with_and_without_holds_bit_identical": true,
+      "maximum_relative_difference": 1.0761669237992212e-10,
+      "failed_rows": [
+        107
+      ]
+    }
+  ],
+  "remaining_cause": "unresolved pressure-closed property discrepancy"
+}

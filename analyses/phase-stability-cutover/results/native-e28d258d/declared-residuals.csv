@@ -1,0 +1,100 @@
+case,kind,phase,index,raw,classified,eqid
+NEUTRAL_SINGLETON/1 vapor,RowKind.Chemical,0,0,0.0,0.0,chemical_potential_stationarity
+NEUTRAL_SINGLETON/1 vapor,RowKind.Chemical,0,1,0.0,0.0,chemical_potential_stationarity
+NEUTRAL_SINGLETON/1 vapor,RowKind.Pressure,0,0,-1.764825974321383e-16,-1.764825974321383e-16,pressure_equality
+NEUTRAL_SINGLETON/1 vapor,RowKind.Moiety,0,0,0.0,0.0,material_balance
+NEUTRAL_SINGLETON/1 vapor,RowKind.Moiety,0,1,0.0,0.0,material_balance
+NEUTRAL_SINGLETON/1 vapor,RowKind.Normalization,0,0,0.0,0.0,phase_normalization
+CHARGED_SINGLETON/1 liquid,RowKind.Chemical,0,0,-1.0824674490095276e-14,-1.060818100029337e-14,chemical_potential_stationarity
+CHARGED_SINGLETON/1 liquid,RowKind.Chemical,0,1,-2.842170943040401e-14,-2.842170943040402e-16,chemical_potential_stationarity
+CHARGED_SINGLETON/1 liquid,RowKind.Chemical,0,2,-2.842170943040401e-14,-2.842170943040402e-16,chemical_potential_stationarity
+CHARGED_SINGLETON/1 liquid,RowKind.Pressure,0,0,-1.1619724682767281e-14,-1.1619724682767281e-14,pressure_equality
+CHARGED_SINGLETON/1 liquid,RowKind.Moiety,0,0,0.0,0.0,material_balance
+CHARGED_SINGLETON/1 liquid,RowKind.Moiety,0,1,3.469446951953614e-18,3.469446951953614e-18,material_balance
+CHARGED_SINGLETON/1 liquid,RowKind.Moiety,0,2,3.469446951953614e-18,3.469446951953614e-18,material_balance
+CHARGED_SINGLETON/1 liquid,RowKind.Normalization,0,0,0.0,0.0,phase_normalization
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,RowKind.Chemical,0,0,0.0,0.0,chemical_potential_stationarity
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,RowKind.Chemical,0,1,0.0,0.0,chemical_potential_stationarity
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,RowKind.Chemical,0,2,0.0,0.0,chemical_potential_stationarity
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,RowKind.Pressure,0,0,0.0,0.0,pressure_equality
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,RowKind.Moiety,0,0,0.0,0.0,material_balance
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,RowKind.Moiety,0,1,0.0,0.0,material_balance
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,RowKind.Moiety,0,2,0.0,0.0,material_balance
+NEUTRAL_TERNARY_IMMISCIBLE/1 vapor,RowKind.Normalization,0,0,0.0,0.0,phase_normalization
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,RowKind.Chemical,0,0,-8.881784197001252e-16,-2.9605947323337506e-16,chemical_potential_stationarity
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,RowKind.Chemical,0,1,-8.881784197001252e-16,-2.9605947323337506e-16,chemical_potential_stationarity
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,RowKind.Chemical,0,2,-8.881784197001252e-16,-2.9605947323337506e-16,chemical_potential_stationarity
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,RowKind.Pressure,0,0,-6.767846893678459e-16,-6.767846893678459e-16,pressure_equality
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,RowKind.Moiety,0,0,0.0,0.0,material_balance
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,RowKind.Moiety,0,1,0.0,0.0,material_balance
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,RowKind.Moiety,0,2,0.0,0.0,material_balance
+NEUTRAL_TERNARY_IMMISCIBLE/1 liquid,RowKind.Normalization,0,0,0.0,0.0,phase_normalization
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),RowKind.Chemical,0,0,1.1546319456101628e-14,1.1595341530403922e-15,chemical_potential_stationarity
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),RowKind.Chemical,0,1,7.105427357601002e-15,5.033697395485936e-17,chemical_potential_stationarity
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),RowKind.Chemical,0,2,1.2434497875801753e-14,6.171526592187144e-17,chemical_potential_stationarity
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),RowKind.Pressure,0,0,6.034257499604167e-15,6.7868559821498585e-16,pressure_equality
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),RowKind.Chemical,1,0,-5.329070518200751e-15,-1.2411872303046854e-15,chemical_potential_stationarity
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),RowKind.Chemical,1,1,-2.6645352591003757e-15,-8.69302054467053e-16,chemical_potential_stationarity
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),RowKind.Chemical,1,2,-6.217248937900877e-15,-2.0415586796726896e-15,chemical_potential_stationarity
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),RowKind.Pressure,1,0,-2.1974446822446453e-15,-1.9502934695542066e-15,pressure_equality
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),RowKind.Moiety,0,0,7.401486830834377e-17,7.401486830834377e-17,material_balance
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),RowKind.Moiety,0,1,0.0,0.0,material_balance
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),RowKind.Moiety,0,2,0.0,0.0,material_balance
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),RowKind.Normalization,0,0,2.220446049250313e-16,2.220446049250313e-16,phase_normalization
+NEUTRAL_TERNARY_IMMISCIBLE/2 liquids (alpha-rich / rest),RowKind.Normalization,1,0,0.0,0.0,phase_normalization
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,RowKind.Chemical,0,0,-8.881784197001252e-15,-2.1222316493596677e-15,chemical_potential_stationarity
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,RowKind.Chemical,0,1,-3.552713678800501e-15,-5.2212423190226844e-17,chemical_potential_stationarity
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,RowKind.Chemical,0,2,-1.7763568394002505e-15,-1.9197758853668285e-17,chemical_potential_stationarity
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,RowKind.Pressure,0,0,-4.308681216619211e-15,-1.1394131238723755e-15,pressure_equality
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,RowKind.Chemical,1,0,-4.440892098500626e-15,-1.5738621515123033e-16,chemical_potential_stationarity
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,RowKind.Chemical,1,1,-7.105427357601002e-15,-1.9213978013920492e-15,chemical_potential_stationarity
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,RowKind.Chemical,1,2,-1.1546319456101628e-14,-2.487558584430813e-16,chemical_potential_stationarity
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,RowKind.Pressure,1,0,-5.6967134530148556e-15,-1.8650874341971847e-15,pressure_equality
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,RowKind.Chemical,2,0,-2.6645352591003757e-15,-1.5707719580148684e-16,chemical_potential_stationarity
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,RowKind.Chemical,2,1,2.6645352591003757e-15,1.2849492678543657e-16,chemical_potential_stationarity
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,RowKind.Chemical,2,2,8.881784197001252e-16,2.673255277724578e-16,chemical_potential_stationarity
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,RowKind.Pressure,2,0,-1.8740184498020404e-15,-7.648937400855044e-16,pressure_equality
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,RowKind.Moiety,0,0,7.401486830834377e-17,7.401486830834377e-17,material_balance
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,RowKind.Moiety,0,1,0.0,0.0,material_balance
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,RowKind.Moiety,0,2,0.0,0.0,material_balance
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,RowKind.Normalization,0,0,0.0,0.0,phase_normalization
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,RowKind.Normalization,1,0,0.0,0.0,phase_normalization
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 0.1 MPa,RowKind.Normalization,2,0,0.0,0.0,phase_normalization
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,RowKind.Chemical,0,0,-2.6645352591003757e-15,-6.72523134151001e-16,chemical_potential_stationarity
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,RowKind.Chemical,0,1,-2.6645352591003757e-15,-3.721332146343709e-17,chemical_potential_stationarity
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,RowKind.Chemical,0,2,-4.440892098500626e-15,-4.5492171539221397e-17,chemical_potential_stationarity
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,RowKind.Pressure,0,0,-8.008152472731192e-16,-2.215119007886593e-16,pressure_equality
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,RowKind.Chemical,1,0,2.6645352591003757e-15,8.443565174839171e-17,chemical_potential_stationarity
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,RowKind.Chemical,1,1,6.217248937900877e-15,1.7386399099243806e-15,chemical_potential_stationarity
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,RowKind.Chemical,1,2,2.6645352591003757e-15,5.0512593820117675e-17,chemical_potential_stationarity
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,RowKind.Pressure,1,0,3.905398063959782e-15,1.2899290009446416e-15,pressure_equality
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,RowKind.Chemical,2,0,0.0,0.0,chemical_potential_stationarity
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,RowKind.Chemical,2,1,2.6645352591003757e-15,1.0583370826909657e-16,chemical_potential_stationarity
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,RowKind.Chemical,2,2,8.881784197001252e-16,2.7012350765215825e-16,chemical_potential_stationarity
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,RowKind.Pressure,2,0,2.7543967882998325e-15,1.0827482653733452e-15,pressure_equality
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,RowKind.Moiety,0,0,0.0,0.0,material_balance
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,RowKind.Moiety,0,1,0.0,0.0,material_balance
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,RowKind.Moiety,0,2,0.0,0.0,material_balance
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,RowKind.Normalization,0,0,0.0,0.0,phase_normalization
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,RowKind.Normalization,1,0,0.0,0.0,phase_normalization
+NEUTRAL_TERNARY_IMMISCIBLE/3 liquids at 10 MPa,RowKind.Normalization,2,0,0.0,0.0,phase_normalization
+KHUDAIDA_ROW_7/2 liquids,RowKind.Chemical,0,0,-1.0963452368173421e-14,-4.8391285469727475e-15,chemical_potential_stationarity
+KHUDAIDA_ROW_7/2 liquids,RowKind.Chemical,0,1,-4.3520742565306136e-14,-4.741896007840023e-17,chemical_potential_stationarity
+KHUDAIDA_ROW_7/2 liquids,RowKind.Chemical,0,2,-2.353672812205332e-14,-8.709441902070476e-18,chemical_potential_stationarity
+KHUDAIDA_ROW_7/2 liquids,RowKind.Chemical,0,3,0.0,0.0,chemical_potential_stationarity
+KHUDAIDA_ROW_7/2 liquids,RowKind.Chemical,0,4,0.0,0.0,chemical_potential_stationarity
+KHUDAIDA_ROW_7/2 liquids,RowKind.Pressure,0,0,-9.733554881808245e-15,-4.86117687864353e-15,pressure_equality
+KHUDAIDA_ROW_7/2 liquids,RowKind.Chemical,1,0,1.3905543383430086e-14,2.8581153825414744e-15,chemical_potential_stationarity
+KHUDAIDA_ROW_7/2 liquids,RowKind.Chemical,1,1,2.3092638912203256e-14,1.6017951857166805e-15,chemical_potential_stationarity
+KHUDAIDA_ROW_7/2 liquids,RowKind.Chemical,1,2,4.440892098500626e-15,1.000431643606479e-15,chemical_potential_stationarity
+KHUDAIDA_ROW_7/2 liquids,RowKind.Chemical,1,3,1.992850329202156e-14,3.9506210156997535e-18,chemical_potential_stationarity
+KHUDAIDA_ROW_7/2 liquids,RowKind.Chemical,1,4,8.493206138382448e-15,1.6836908507021234e-18,chemical_potential_stationarity
+KHUDAIDA_ROW_7/2 liquids,RowKind.Pressure,1,0,7.594263557760313e-15,3.801501420434044e-15,pressure_equality
+KHUDAIDA_ROW_7/2 liquids,RowKind.Electro,1,0,0.0,0.0,phase_electroneutrality
+KHUDAIDA_ROW_7/2 liquids,RowKind.Moiety,0,0,0.0,0.0,material_balance
+KHUDAIDA_ROW_7/2 liquids,RowKind.Moiety,0,1,-1.387778780781446e-17,-1.387778780781446e-17,material_balance
+KHUDAIDA_ROW_7/2 liquids,RowKind.Moiety,0,2,-5.551115123125784e-17,-5.551115123125784e-17,material_balance
+KHUDAIDA_ROW_7/2 liquids,RowKind.Moiety,0,3,3.469446951953615e-18,3.469446951953615e-18,material_balance
+KHUDAIDA_ROW_7/2 liquids,RowKind.Moiety,0,4,3.469446951953615e-18,3.469446951953615e-18,material_balance
+KHUDAIDA_ROW_7/2 liquids,RowKind.Normalization,0,0,0.0,0.0,phase_normalization
+KHUDAIDA_ROW_7/2 liquids,RowKind.Normalization,1,0,0.0,0.0,phase_normalization

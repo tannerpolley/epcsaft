@@ -1,0 +1,16 @@
+{
+  "release": "main-8298c6029ebb8b467929badc4a223c580ec591ab",
+  "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/build/issue-680-release-PRNBCX/venv/bin/python",
+  "engine": [
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/build/issue-680-release-PRNBCX/epcsaft-0.2.0.dev0-cp313-cp313-manylinux_2_39_x86_64.whl",
+    "8897a0caab9f2508ed642f42c8b5226957fbe7035ed7bfdad71e4166798785b3"
+  ],
+  "listing_source": "docs/scientific/latex/sections/implementation.tex",
+  "listing_sha256": "1df6088547c546fdf6d43c26fa06bcb2183aef55e0dfaadd7b96dafc29ec26eb",
+  "parameter_record": "data/packets/gross-2001-methane-ethane/3/parameters/parameters.json",
+  "parameter_sha256": "109cfe8e80c4fcefadcbb4975ebe7436d371710ed9d20f2c7bd6d30d9c581bf2",
+  "output_sha256": "22708607ab3ef1dceb953eea27949510c111e1bbbebb726910cd4dfcda8ceb3a",
+  "returncode": 0,
+  "stderr": "",
+  "evidence": "numerical verification of the printed example; no physical validation"
+}

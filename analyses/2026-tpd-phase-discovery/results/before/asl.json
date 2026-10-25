@@ -1,0 +1,80 @@
+{
+  "identity": {
+    "wheel": "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-223-build-tpd-stability-test-and-phase-35ebff8f/build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+    "wheel_sha256": "298a360e532f6f4c5e7ef70c5be45e8b9852310d1c388d6225c504714c3dc410",
+    "direct_url": {
+      "url": "file:///home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-223-build-tpd-stability-test-and-phase-35ebff8f/build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "archive_info": {}
+    },
+    "engine_import": "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-223-build-tpd-stability-test-and-phase-35ebff8f/.venv/lib/python3.13/site-packages/epcsaft/__init__.py",
+    "source_head": "443d828908f4ad5127ab14384f97635dca30bd30",
+    "thread_environment": {
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1"
+    },
+    "dependencies": {
+      "epcsaft": "0.2.0.dev0",
+      "numpy": "2.5.1",
+      "scipy": "1.18.0",
+      "pyomo": "6.10.1",
+      "idaes-pse": "2.12.0"
+    },
+    "physical_inputs": {
+      "analyses/2026-khudaida-idaes-settler/inputs/data/khudaida-2026-figure-2-electrolyte-lle/7/parameters/parameters.json": "8babed899e7347e58c403c7aff24a7fdd6d60411af3b4d81eb6aa90c2431dfa4",
+      "data/packets/mea-co2-h2o-nine-species-estimation/3/parameters/parameters.json": "2ea3b41485a98d2cf49add620b87bb05fc5a275cdd132c1cdbb0cfc5f07f2ca4",
+      "data/packets/gross-2001-methane-ethane/3/parameters/parameters.json": "109cfe8e80c4fcefadcbb4975ebe7436d371710ed9d20f2c7bd6d30d9c581bf2",
+      "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d"
+    },
+    "script_sha256": "24b2cd45d8a2d82710469b59911ad7ebacfaabc4ca32856741d0ca262fea64c9",
+    "source_mtimes": {
+      "engine/native/equilibrium/gibbs_minimizer.cpp": 1790903527934235179,
+      "engine/native/equilibrium/request_compile.cpp": 1790903527933918467
+    }
+  },
+  "inputs": {
+    "asl/anchor": {
+      "feed": [
+        0.7198946513021484,
+        0.03377833329223333,
+        0.21864518731791907,
+        0.02768182808769922
+      ]
+    },
+    "asl/start-0.9": {
+      "feed": [
+        0.7198946513021484,
+        0.03377833329223333,
+        0.19678066858612717,
+        0.0249136452789293
+      ]
+    },
+    "asl/start-1.1": {
+      "feed": [
+        0.7198946513021484,
+        0.03377833329223333,
+        0.240509706049711,
+        0.030450010896469145
+      ]
+    }
+  },
+  "costs": [
+    {
+      "case": "asl/anchor",
+      "seconds": 0.29410831299901474
+    },
+    {
+      "case": "asl/start-0.9",
+      "seconds": 0.48084450899841613
+    },
+    {
+      "case": "asl/start-1.1",
+      "seconds": 0.4879707239997515
+    }
+  ],
+  "failure": null,
+  "comparison": null,
+  "limits": [
+    "declared topology numerical replay; no physical validation",
+    "ASL internal driver work counts are not exposed by the current installed interface"
+  ]
+}

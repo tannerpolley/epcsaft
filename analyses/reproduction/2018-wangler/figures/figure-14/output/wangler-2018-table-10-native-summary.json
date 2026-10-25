@@ -1,0 +1,416 @@
+{
+  "wheel_sha256": "3da83fae632df817a1f7b9d9f92b183dedc92ad42ef58db2a2b9091782092e3f",
+  "figure_10_summary_sha256": "5e44edeb09a838231893322003996ed0d98a50de6de3f41321f9bb6ec899abb4",
+  "declaration": {
+    "basis": "RawMoleFractionInfiniteDilution",
+    "solvent": "water",
+    "species_reference": "water pure liquid; every other species infinite dilution in water",
+    "reference_pressure_pa": 100000.0,
+    "reaction_constants": "Table 2, Eq. 19, unconverted",
+    "permittivity": "fixed 60 wt% blend 0.4 eps_water + 0.6 * 22.4 on every neutral species",
+    "ions": "MDEAH+ m 3.675; packing 0.88 sigma; Debye-Hueckel diameter sigma",
+    "l_hb": "Table 7 at 303 K",
+    "k_ij_303_k": "printed-S0: Table 6; fitted lanes: Figure 10 fits, Eq. 34 linear 0.25 k(273 K) + 0.75 k(313 K), and -/+ its u(phi) allowance"
+  },
+  "paper_reported_model_ard_percent": 10.25,
+  "working_tolerance_points": 3.0,
+  "lanes": {
+    "printed-S0": {
+      "conventions": "S0",
+      "k_ij_303_k": -0.18978753437887502,
+      "pressure_seed_bar": [
+        257.0,
+        257.0,
+        257.0
+      ],
+      "row_count": 3,
+      "solved_row_count": 3,
+      "reference_status": [
+        "Available"
+      ],
+      "reference_admitted_change": [
+        "K1=4.23e-06;K2=4.23e-06;K3=8.46e-06;K4=1.112e-12"
+      ],
+      "maximum_original_row": 7.993605777301127e-14,
+      "reaction_affinity_max": 1.4358884451818692e-14,
+      "native_pressure_bar": [
+        196.86267514716633,
+        265.91497047650705,
+        322.7992627622432
+      ],
+      "native_ard_percent": 1676.666778271735,
+      "F2": {
+        "all_rows_solve": true,
+        "affinity_closed": true,
+        "references_admitted": true,
+        "ard_within_tolerance": false
+      },
+      "mdeah_ln_gamma_star": [
+        10.216675805607421,
+        10.347984659794664,
+        10.45531217458465
+      ],
+      "mdeah_fraction_of_mdea": [
+        0.18803017816531864,
+        0.19696049888920575,
+        0.20425106785248145
+      ],
+      "liquid_density_kg_m3": [
+        1130.5750142048032,
+        1137.5336501545303,
+        1143.1855922410841
+      ],
+      "matching_k_ij_303_k": [
+        null,
+        null,
+        null
+      ]
+    },
+    "fitted-S0": {
+      "conventions": "S0",
+      "k_ij_303_k": 0.33182765655274027,
+      "pressure_seed_bar": [
+        9.2,
+        14.2,
+        24.5
+      ],
+      "row_count": 3,
+      "solved_row_count": 3,
+      "reference_status": [
+        "Available"
+      ],
+      "reference_admitted_change": [
+        "K1=4.23e-06;K2=4.23e-06;K3=8.46e-06;K4=4.263e-14"
+      ],
+      "maximum_original_row": 6.591882376867687e-14,
+      "reaction_affinity_max": 1.1250259982868252e-14,
+      "native_pressure_bar": [
+        0.4638465452168829,
+        0.5390547790490855,
+        0.5927103796500115
+      ],
+      "native_ard_percent": 96.24760109022567,
+      "F2": {
+        "all_rows_solve": true,
+        "affinity_closed": true,
+        "references_admitted": true,
+        "ard_within_tolerance": false,
+        "passes": false
+      },
+      "mdeah_ln_gamma_star": [
+        -5.55809164564061,
+        -5.614697039436411,
+        -5.667155587003386
+      ],
+      "mdeah_fraction_of_mdea": [
+        0.8199311393288159,
+        0.840416905147824,
+        0.8557383325409148
+      ],
+      "liquid_density_kg_m3": [
+        1260.5995958219853,
+        1260.0408400333827,
+        1259.1420830257352
+      ],
+      "matching_k_ij_303_k": [
+        0.10635115899586271,
+        0.06868555271012189,
+        0.010522594757444154
+      ],
+      "F3": {
+        "k_ij_303_k_band": [
+          0.32968614218545206,
+          0.3339691709200285
+        ],
+        "native_pressure_bar_band": [
+          [
+            0.4812019697212312,
+            0.5586449435862021,
+            0.6138570183945764
+          ],
+          [
+            0.44706135268672537,
+            0.5200818735082756,
+            0.5722176560203733
+          ]
+        ],
+        "maximum_relative_pressure_change": 0.037416306499024055
+      }
+    },
+    "fitted-S0-minus": {
+      "conventions": "S0",
+      "k_ij_303_k": 0.32968614218545206,
+      "pressure_seed_bar": [
+        9.2,
+        14.2,
+        24.5
+      ],
+      "row_count": 3,
+      "solved_row_count": 3,
+      "reference_status": [
+        "Available"
+      ],
+      "reference_admitted_change": [
+        "K1=4.23e-06;K2=4.23e-06;K3=8.46e-06;K4=7.461e-14"
+      ],
+      "maximum_original_row": 7.460698725481052e-14,
+      "reaction_affinity_max": 1.9539925233402755e-14,
+      "native_pressure_bar": [
+        0.4812019697212312,
+        0.5586449435862021,
+        0.6138570183945764
+      ],
+      "native_ard_percent": 96.10996187858608,
+      "F2": {
+        "all_rows_solve": true,
+        "affinity_closed": true,
+        "references_admitted": true,
+        "ard_within_tolerance": false
+      },
+      "mdeah_ln_gamma_star": [
+        -5.458851230038874,
+        -5.514087409914977,
+        -5.565362795874558
+      ],
+      "mdeah_fraction_of_mdea": [
+        0.8174193154749664,
+        0.8377063765842205,
+        0.8528903213314946
+      ],
+      "liquid_density_kg_m3": [
+        1261.1197585159168,
+        1260.6774840773376,
+        1259.88032360201
+      ],
+      "matching_k_ij_303_k": [
+        null,
+        null,
+        null
+      ]
+    },
+    "fitted-S0-plus": {
+      "conventions": "S0",
+      "k_ij_303_k": 0.3339691709200285,
+      "pressure_seed_bar": [
+        9.2,
+        14.2,
+        24.5
+      ],
+      "row_count": 3,
+      "solved_row_count": 3,
+      "reference_status": [
+        "Available"
+      ],
+      "reference_admitted_change": [
+        "K1=4.23e-06;K2=4.23e-06;K3=8.46e-06;K4=6.395e-14"
+      ],
+      "maximum_original_row": 6.781707712177812e-14,
+      "reaction_affinity_max": 8.881784197001252e-15,
+      "native_pressure_bar": [
+        0.44706135268672537,
+        0.5200818735082756,
+        0.5722176560203733
+      ],
+      "native_ard_percent": 96.38083559877924,
+      "F2": {
+        "all_rows_solve": true,
+        "affinity_closed": true,
+        "references_admitted": true,
+        "ard_within_tolerance": false
+      },
+      "mdeah_ln_gamma_star": [
+        -5.657814462461415,
+        -5.715842719086041,
+        -5.769530044856211
+      ],
+      "mdeah_fraction_of_mdea": [
+        0.8224476337586801,
+        0.8431370839694169,
+        0.858599120876742
+      ],
+      "liquid_density_kg_m3": [
+        1260.0558869256195,
+        1259.3753063629765,
+        1258.3703066750386
+      ],
+      "matching_k_ij_303_k": [
+        null,
+        null,
+        null
+      ]
+    },
+    "fitted-S1": {
+      "conventions": "S1",
+      "k_ij_303_k": 0.017812190433318293,
+      "pressure_seed_bar": [
+        9.2,
+        14.2,
+        24.5
+      ],
+      "row_count": 3,
+      "solved_row_count": 3,
+      "reference_status": [
+        "Available"
+      ],
+      "reference_admitted_change": [
+        "K1=4.23e-06;K2=4.23e-06;K3=8.46e-06;K4=5.098e-13"
+      ],
+      "maximum_original_row": 1.1013412404281553e-13,
+      "reaction_affinity_max": 1.2730557349035129e-14,
+      "native_pressure_bar": [
+        0.7142025253734218,
+        1.5658278914932766,
+        3.075202792905012
+      ],
+      "native_ard_percent": 89.55270798512497,
+      "F2": {
+        "all_rows_solve": true,
+        "affinity_closed": true,
+        "references_admitted": true,
+        "ard_within_tolerance": false,
+        "passes": false
+      },
+      "mdeah_ln_gamma_star": [
+        -3.199495895430248,
+        -3.2476277536200957,
+        -3.2785048996910433
+      ],
+      "mdeah_fraction_of_mdea": [
+        0.9979793110508912,
+        0.9990238679589696,
+        0.9995013932323132
+      ],
+      "liquid_density_kg_m3": [
+        1504.0454732535597,
+        1510.1031558078407,
+        1510.617705322995
+      ],
+      "matching_k_ij_303_k": [
+        -0.14107712239770637,
+        -0.14705484243699163,
+        -0.16385577448033362
+      ],
+      "F3": {
+        "k_ij_303_k_band": [
+          0.015472910204107432,
+          0.020151470662529154
+        ],
+        "native_pressure_bar_band": [
+          [
+            0.7280823010947468,
+            1.5934078225879167,
+            3.1212461184332714
+          ],
+          [
+            0.7006807083876804,
+            1.5388761875723047,
+            3.030019647153082
+          ]
+        ],
+        "maximum_relative_pressure_change": 0.019433949374609183
+      }
+    },
+    "fitted-S1-minus": {
+      "conventions": "S1",
+      "k_ij_303_k": 0.015472910204107432,
+      "pressure_seed_bar": [
+        9.2,
+        14.2,
+        24.5
+      ],
+      "row_count": 3,
+      "solved_row_count": 3,
+      "reference_status": [
+        "Available"
+      ],
+      "reference_admitted_change": [
+        "K1=4.23e-06;K2=4.23e-06;K3=8.46e-06;K4=5.382e-13"
+      ],
+      "maximum_original_row": 2.220446049250313e-13,
+      "reaction_affinity_max": 2.457987517227404e-14,
+      "native_pressure_bar": [
+        0.7280823010947468,
+        1.5934078225879167,
+        3.1212461184332714
+      ],
+      "native_ard_percent": 89.37503334005793,
+      "F2": {
+        "all_rows_solve": true,
+        "affinity_closed": true,
+        "references_admitted": true,
+        "ard_within_tolerance": false
+      },
+      "mdeah_ln_gamma_star": [
+        -3.0789050335338137,
+        -3.1267204636574846,
+        -3.157501402936613
+      ],
+      "mdeah_fraction_of_mdea": [
+        0.9978222260111417,
+        0.9989441663988337,
+        0.9994586157003426
+      ],
+      "liquid_density_kg_m3": [
+        1504.4360305367502,
+        1510.521734455393,
+        1511.0590417088222
+      ],
+      "matching_k_ij_303_k": [
+        null,
+        null,
+        null
+      ]
+    },
+    "fitted-S1-plus": {
+      "conventions": "S1",
+      "k_ij_303_k": 0.020151470662529154,
+      "pressure_seed_bar": [
+        9.2,
+        14.2,
+        24.5
+      ],
+      "row_count": 3,
+      "solved_row_count": 3,
+      "reference_status": [
+        "Available"
+      ],
+      "reference_admitted_change": [
+        "K1=4.23e-06;K2=4.23e-06;K3=8.46e-06;K4=5e-13"
+      ],
+      "maximum_original_row": 1.652011860642233e-13,
+      "reaction_affinity_max": 2.0617766753143012e-14,
+      "native_pressure_bar": [
+        0.7006807083876804,
+        1.5388761875723047,
+        3.030019647153082
+      ],
+      "native_ard_percent": 89.7264406539553,
+      "F2": {
+        "all_rows_solve": true,
+        "affinity_closed": true,
+        "references_admitted": true,
+        "ard_within_tolerance": false
+      },
+      "mdeah_ln_gamma_star": [
+        -3.320088197721687,
+        -3.368537103894714,
+        -3.399510599908452
+      ],
+      "mdeah_fraction_of_mdea": [
+        0.9981252252171082,
+        0.9990976437856053,
+        0.9995408274855757
+      ],
+      "liquid_density_kg_m3": [
+        1503.6485919189886,
+        1509.6802247242133,
+        1510.1731916139347
+      ],
+      "matching_k_ij_303_k": [
+        null,
+        null,
+        null
+      ]
+    }
+  }
+}

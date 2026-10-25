@@ -1,0 +1,437 @@
+runtime physical lines: current / floor target / soft / hard
+WARN core            851 /   700 /   850 /  1000
+WARN contributions  1476 /  1100 /  1300 /  1500
+WARN properties     3453 /  2400 /  2900 /  3460
+ok   equilibrium    5213 /  5000 /  6000 /  7000
+ok   regression      995 /   800 /  1000 /  1200
+ok   surface         460 /   450 /   550 /   650
+WARN bindings       1479 /   500 /   650 /  1700
+WARN python         2143 /  1350 /  1600 /  2150
+WARN total         16070 / 12300 / 14850 / 17450
+engine                    80 files  configuration=2, data=1, evidence=8, specification=34, test=30, tooling=5
+engine.core                7 files  runtime=7
+engine.contributions       6 files  runtime=6
+engine.properties          8 files  runtime=8
+engine.equilibrium         9 files  runtime=9
+engine.regression          6 files  runtime=6
+engine.surface             2 files  runtime=2
+engine.bindings           16 files  runtime=16
+data                     211 files  data=199, specification=9, tooling=3
+analyses                1334 files  data=450, evidence=738, specification=61, test=1, tooling=84
+applications               1 files  specification=1
+tooling                   14 files  tooling=14
+documentation             90 files  evidence=67, specification=20, tooling=3
+workspace                 13 files  configuration=13
+generated                 10 files  external=10
+project map complete
+Resolved 49 packages in 0.85ms
+Uninstalled 1 package in 0.73ms
+ - epcsaft==0.2.0.dev0 (from file:///home/tnnrpolley21/.codex/worktrees/9dd4/ePC-SAFT-greenfield/build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl)
+cmake: /home/tnnrpolley21/.local/share/micromamba/envs/ipopt-viz/lib/libcurl.so.4: no version information available (required by cmake)
+cmake: /home/tnnrpolley21/.local/share/micromamba/envs/ipopt-viz/lib/libcurl.so.4: no version information available (required by cmake)
+Resolved 1 package in 1ms
+Prepared 1 package in 0.12ms
+Installed 1 package in 1ms
+ + epcsaft==0.2.0.dev0 (from file:///home/tnnrpolley21/.codex/worktrees/9dd4/ePC-SAFT-greenfield/build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl)
+Checked 46 packages in 0.81ms
+All installed packages are compatible
+epcsaft 0.2.0.dev0 installed from /home/tnnrpolley21/.codex/worktrees/9dd4/ePC-SAFT-greenfield/build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl
+module origins: epcsaft=epcsaft/__init__.py, epcsaft.equilibrium=epcsaft/equilibrium/__init__.py
+Serena C++ compile database already current: /home/tnnrpolley21/.codex/worktrees/9dd4/ePC-SAFT-greenfield/build/engine-meson/cpython-313-linux-x86_64-x86_64-9b6cae1efc17457d2567ebb7393340de76f8faf246d4c8cf9ad08d5d0ee8f6a6/compile_commands.json
+Engine wheel installed from the current checkout wheel
+
+[packets]
+packet_validation: clean
+packet ascani-2022-case-study-2-electrolyte-lle/1 sha256:7d01b793359d60c978a978f354bf85b439b7f560ce20572ee062a1d0539e3203
+packet ascani-2022-case-study-2-electrolyte-lle/2 sha256:f6b3774774a68ab193de8c7d2c6eac928038d49bda16bee73c88b165d0ee32dd
+packet ascani-2022-case-study-2-electrolyte-lle/3 sha256:d444b517c6c341eaebdcfaeb43a24b1eae0a39326c16273adbb9deab169243d8
+packet crespo-2021-deea/1 sha256:64b63aa6938926cbc77b93b75eee69b05c2460825d7cba007e40fdd7898680a7
+packet crespo-2021-deea/2 sha256:ba2848e954f77a96b3d965d90aea1155ad06f7456c05a84871dfd1081d6a4bc4
+packet figiel-2025-aqueous-iodides/1 sha256:f44f9d208ee2a72d755b1e3a929017f03f98dcff5d249ee322ab26e0e2fbf81a
+packet figiel-2025-aqueous-iodides/2 sha256:40db4c770a04f29eb09674005ad32f8f7539d3599322d2cba60eca61063359ed
+packet figiel-2025-aqueous-iodides/3 sha256:5f49e6206658b60d41729cedb64eafdf47a199ceff815eb31ff88c1769e0f4bf
+packet figiel-2025-reference-electrolytes/1 sha256:5ea86c44f67ded4c309e17f396b9414cfadcb2b0f00b2ac41f8c48c047af42e5
+packet figiel-2025-reference-electrolytes/2 sha256:bce1faecebd668fd2dd982a4713a13377e6e87b1e993cf4315c607e2ded25d03
+packet figiel-2025-reference-electrolytes/3 sha256:06356afa716ce28953158a4efe46f493bc1fc9639cf4a1a15f6d6b4b1be2611c
+packet figiel-2025-validation-parameters/1 sha256:373f3e74858eba2dc32a244d0da2eb62c24c35f3cb784b5dc7b66f8168feccc2
+packet figiel-2025-validation-parameters/2 sha256:813c104f1b9f422475296663d927a8f10baf71ad806c4176abd4527b5950db63
+packet figiel-2025-validation-parameters/3 sha256:e4f3ce8ce75424be7871080cb824b3fb672bc2d774b3a8e1dba6f86624a7f537
+packet figiel-yu-held-2025/1 sha256:caac02d8f8855583f769a01092aa3868a25097a2989f6e3672461ebde4e7f347
+packet figiel-yu-held-2025/2 sha256:02a55e65f1a6a80c54668880d9f8a3c5c9b4ecd560b3cd80d7c12d5b45fd3520
+packet figiel-yu-held-2025/3 sha256:9d7aba59c7cdb83bcdef07f8bcb96e8a0ed20ba8c952291fd5dae3dece69aa7d
+packet gross-2001-methane-ethane/1 sha256:4b20a82c7ed8f34ec9a60ab547014b78064c3331ce636c49d32c10bfb7298ca7
+packet gross-2001-methane-ethane/2 sha256:0007890df92c43ede99f978c0558ea420becd29131e6681dc2d4b51d8f87d207
+packet gross-2001-propane/1 sha256:b039bdf6b9622019c46c1cb7342c6c88b64714b8ac64f2dc3d7f413e1b5a720a
+packet gross-2001-propane/2 sha256:4593b9dbd813004096c7e396fc65df6ae3f4c1c65933c36918a6d316111326e2
+packet gross-sadowski-2001/1 sha256:a138aaee4ccde627dad82f6a25b48467cc0849af3018c3a8db97a32b9654b548
+packet gross-sadowski-2001/2 sha256:d26b819571172306039d87e085777c601e7c6cd992276774cbc226aa8fe61ea1
+packet hamer-wu-1972-aqueous-alkali-halides/1 sha256:41df247ea3c3de03df9f17daa69dc8f9c834d5de61a7270a986e2a89db9e4bdc
+packet held-cameretti-sadowski-2008/1 sha256:6850a420751cc323f2700450aef8b900af95aa388b6acb003b1d8eaad04e8dbb
+packet held-cameretti-sadowski-2008/2 sha256:abb954b1e76183947fc09ba1c86a5204479829f842a1b13f7a21933b24898d81
+packet held-cameretti-sadowski-2008/3 sha256:23dd06664f38338230d5ec5c553f1ebfabdc02a3831f8d53de12cf73012a1720
+packet khudaida-2026-figure-2-electrolyte-lle/2 sha256:ed173d78fcaeca527c89a49af1f34c6880fdc642fc1c08c2d395f131991e53af
+packet khudaida-2026-figure-2-electrolyte-lle/3 sha256:73c48ac9fb97f06185bd78d27ceaa7ffe6308abe9feee34b15eadff31cc985eb
+packet khudaida-2026-figure-2-electrolyte-lle/4 sha256:6dfd71dfbad011834685c192a310314cdc844146843e060f1135d3993261ae43
+packet khudaida-2026-figure-2-electrolyte-lle/5 sha256:52b7f5c6db76447e1262c70937e21e7c523f13ab965c6c483afe58ad2fc509a2
+packet khudaida-2026-figure-2-electrolyte-lle/6 sha256:60e1912fb91ccbf052420d7d94d0b40374b3b2be6e851be4caf7c633bbcfc29e
+packet mea-co2-h2o-nine-species-estimation/1 sha256:e01bbf95f5dde2edb2453296592f64fd71b34720a45ed4ad7899d1a032aa3704
+packet mea-co2-h2o-nine-species-estimation/2 sha256:f58eabf45a149ecce312a1c49e4095a57bb6f399fa7d6da731439597058dabd0
+packet mea-co2-h2o-nine-species-estimation/3 sha256:056288b6967b4d7c8421183cb9e1f7d2db61bac6cf91d8b56be914ca628e442f
+packet nist-srd69-pure-saturation-properties/1 sha256:902fb0a9150c68866629747c44ef49650ff056ecfe7b3d597accc882e7dc890c
+packet zuber-2014-electrolyte-permittivity/1 sha256:84951da9b6aff197c07d874a2283263d9f1466c3db7dc9f9b5e2dfccb68747ef
+packets: 0.20 s
+
+[python-tests]
+......................F.FF.........F...                                  [100%]
+=================================== FAILURES ===================================
+___________ test_log_activity_actions_follow_the_correlated_reaction ___________
+
+evidence = <tests.conftest.Report object at 0x7ee7e41f7650>
+
+    def test_log_activity_actions_follow_the_correlated_reaction(evidence: Any) -> None:
+        """E5-10 on A + B = C: sum_i nu_i D^k ln a_i equals d^k ln K / dT^k within CRITERION[k-1] sum |nu_i D^k ln a_i|."""
+        model = reactive_model()
+        problem = reactive_problem(T0, correlation=correlation())
+        logs = [SolvedStateObservable(Kind.PhaseLogActivity, phase, i) for phase in range(2) for i in range(3)]
+        dT, dP = (1.0, 0.0, [0.0] * 3), (0.0, 1.0e5, [0.0] * 3)
+        cases = (("temperature-temperature-temperature", [dT, dT, dT], -6.0 * B / T0**4), ("pressure-temperature", [dP, dT], 0.0))
+        for label, directions, reference in cases:
+            batch = actions(model, problem, logs, directions)
+            assert batch.diagnostics.rank == batch.diagnostics.state_dimension
+            for phase in range(2):
+                terms = [nu * batch.results[3 * phase + i].action for i, nu in enumerate(NU)]
+                bound = CRITERION[len(directions) - 1] * sum(abs(term) for term in terms)
+>               same(evidence, f"e5-10/manifold/{label}/phase{phase}", sum(terms))
+
+tests/equilibrium/test_native_transport.py:131: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+evidence = <tests.conftest.Report object at 0x7ee7e41f7650>
+name = 'e5-10/manifold/pressure-temperature/phase0'
+model = -2.0852765315274718e-16, reference = 1.9661159365077369e-16, atol = 0.0
+rtol = 1e-12, inputs = {}
+
+    def same(evidence: Any, name: str, model: float | None, reference: float | None = None,
+             atol: float = 1e-12, rtol: float = 1e-12, **inputs: Any) -> None:
+        """Record and assert |model - reference| <= max(atol, rtol max(|model|, |reference|)).
+    
+        The default is the retained same-owner transport rule against the recorded C++ row `name`,
+        without the absolute floor when that row lies below 1e-9.
+        """
+        if reference is None:  # a recorded row below the absolute floor must still match relatively
+            reference, atol = ROWS[name], 0.0 if abs(ROWS[name]) < 1e-9 else atol
+        evidence.compare(name, model=model, reference=reference, **inputs,
+                         criterion={"type": "scalar", "rule": "symmetric_close", "atol": atol, "rtol": rtol})
+>       assert model is not None and math.isclose(model, reference, rel_tol=rtol, abs_tol=atol), name
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: e5-10/manifold/pressure-temperature/phase0
+
+tests/native_inputs.py:40: AssertionError
+----------------------------- Captured stdout call -----------------------------
+EPCSAFT_COMPARE_JSON {"comparison_id":"e5-10/manifold/temperature-temperature-temperature/phase0","criterion":{"type":"scalar","rule":"symmetric_close","atol":1e-12,"rtol":1e-12},"evidence_status":"valid","judgment":"Criterion satisfied","model":-1.138946317394634e-06,"reference":-1.1389463173943713e-06}
+EPCSAFT_COMPARE_JSON {"comparison_id":"manifold/temperature-temperature-temperature/phase0","criterion":{"type":"scalar","rule":"symmetric_close","atol":2.5210299238118823e-08,"rtol":0.0},"evidence_status":"valid","judgment":"Criterion satisfied","model":-1.138946317394634e-06,"reference":-1.1389463173944493e-06}
+EPCSAFT_COMPARE_JSON {"comparison_id":"e5-10/manifold/temperature-temperature-temperature/phase1","criterion":{"type":"scalar","rule":"symmetric_close","atol":1e-12,"rtol":1e-12},"evidence_status":"valid","judgment":"Criterion satisfied","model":-1.1389463173959917e-06,"reference":-1.1389463173952218e-06}
+EPCSAFT_COMPARE_JSON {"comparison_id":"manifold/temperature-temperature-temperature/phase1","criterion":{"type":"scalar","rule":"symmetric_close","atol":2.5210299238121282e-08,"rtol":0.0},"evidence_status":"valid","judgment":"Criterion satisfied","model":-1.1389463173959917e-06,"reference":-1.1389463173944493e-06}
+EPCSAFT_COMPARE_JSON {"comparison_id":"e5-10/manifold/pressure-temperature/phase0","criterion":{"type":"scalar","rule":"symmetric_close","atol":0.0,"rtol":1e-12},"evidence_status":"valid","judgment":"Criterion failed","model":-2.0852765315274718e-16,"reference":1.9661159365077369e-16}
+_________________ test_two_phase_actions_match_the_cpp_example _________________
+
+evidence = <tests.conftest.Report object at 0x7ee77d99b070>
+
+    def test_two_phase_actions_match_the_cpp_example(evidence: Any) -> None:
+        """Declaration-order phases; thermal and radial-feed actions of amount, ln a, x, total h and density."""
+        observables = [SolvedStateObservable(Kind.PhaseComponentAmount, 0, 1), SolvedStateObservable(Kind.PhaseLogActivity, 0, 1),
+                       SolvedStateObservable(Kind.PhaseMoleFraction, 0, 1),
+                       SolvedStateObservable(Kind.PhaseProperty, 0, 0, PropertyObservable.TotalEnthalpy),
+                       SolvedStateObservable(Kind.PhaseMolarDensity, 0)]
+        thermal = actions(surface_model(), surface_flash(1.8e4), observables, [(1.0, 0.0, [0.0, 0.0])])
+        radial = actions(surface_model(), surface_flash(1.8e4), observables, [(0.0, 0.0, [0.25, 0.75])])
+        for index, unit in enumerate(("mol", "1", "1", "J/mol", "mol/m^3")):
+            assert thermal.results[index].unit == unit
+>           same(evidence, f"solved/thermal/{index}", thermal.results[index].action)
+
+tests/equilibrium/test_native_transport.py:177: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+evidence = <tests.conftest.Report object at 0x7ee77d99b070>
+name = 'solved/thermal/3', model = -126.93949786579556
+reference = -126.93949786646165, atol = 1e-12, rtol = 1e-12, inputs = {}
+
+    def same(evidence: Any, name: str, model: float | None, reference: float | None = None,
+             atol: float = 1e-12, rtol: float = 1e-12, **inputs: Any) -> None:
+        """Record and assert |model - reference| <= max(atol, rtol max(|model|, |reference|)).
+    
+        The default is the retained same-owner transport rule against the recorded C++ row `name`,
+        without the absolute floor when that row lies below 1e-9.
+        """
+        if reference is None:  # a recorded row below the absolute floor must still match relatively
+            reference, atol = ROWS[name], 0.0 if abs(ROWS[name]) < 1e-9 else atol
+        evidence.compare(name, model=model, reference=reference, **inputs,
+                         criterion={"type": "scalar", "rule": "symmetric_close", "atol": atol, "rtol": rtol})
+>       assert model is not None and math.isclose(model, reference, rel_tol=rtol, abs_tol=atol), name
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: solved/thermal/3
+
+tests/native_inputs.py:40: AssertionError
+----------------------------- Captured stdout call -----------------------------
+EPCSAFT_COMPARE_JSON {"comparison_id":"solved/thermal/0","criterion":{"type":"scalar","rule":"symmetric_close","atol":1e-12,"rtol":1e-12},"evidence_status":"valid","judgment":"Criterion satisfied","model":-0.018884589385356892,"reference":-0.01888458938535662}
+EPCSAFT_COMPARE_JSON {"comparison_id":"solved/radial/0","criterion":{"type":"scalar","rule":"symmetric_close","atol":1e-12,"rtol":1e-12},"evidence_status":"valid","judgment":"Criterion satisfied","model":0.23180399706654992,"reference":0.23180399706654675}
+EPCSAFT_COMPARE_JSON {"comparison_id":"solved/thermal/1","criterion":{"type":"scalar","rule":"symmetric_close","atol":1e-12,"rtol":1e-12},"evidence_status":"valid","judgment":"Criterion satisfied","model":-0.007779278901165055,"reference":-0.007779278901165175}
+EPCSAFT_COMPARE_JSON {"comparison_id":"solved/radial/1","criterion":{"type":"scalar","rule":"symmetric_close","atol":0.0,"rtol":1e-12},"evidence_status":"valid","judgment":"Criterion satisfied","model":0.0,"reference":0.0}
+EPCSAFT_COMPARE_JSON {"comparison_id":"solved/thermal/2","criterion":{"type":"scalar","rule":"symmetric_close","atol":1e-12,"rtol":1e-12},"evidence_status":"valid","judgment":"Criterion satisfied","model":-0.016319143832039175,"reference":-0.016319143832039085}
+EPCSAFT_COMPARE_JSON {"comparison_id":"solved/radial/2","criterion":{"type":"scalar","rule":"symmetric_close","atol":0.0,"rtol":1e-12},"evidence_status":"valid","judgment":"Criterion satisfied","model":0.0,"reference":0.0}
+EPCSAFT_COMPARE_JSON {"comparison_id":"solved/thermal/3","criterion":{"type":"scalar","rule":"symmetric_close","atol":1e-12,"rtol":1e-12},"evidence_status":"valid","judgment":"Criterion failed","model":-126.93949786579556,"reference":-126.93949786646165}
+________________ test_result_diagnostics_match_the_cpp_example _________________
+
+evidence = <tests.conftest.Report object at 0x7ee77d99b330>
+
+    def test_result_diagnostics_match_the_cpp_example(evidence: Any) -> None:
+        model = surface_model()
+        split = solve_equilibrium(model, surface_flash(1.8e4))
+        for name, values in (("amounts", split.amounts), ("mole_fractions", split.mole_fractions),
+                             ("multipliers", split.multipliers), ("constraint_multipliers", split.constraint_multipliers)):
+            for index, value in enumerate(values):
+>               same(evidence, f"flash/{name}/{index}", value)
+
+tests/equilibrium/test_native_transport.py:196: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+evidence = <tests.conftest.Report object at 0x7ee77d99b330>
+name = 'flash/constraint_multipliers/2', model = -3.4304199888691134e-12
+reference = -3.429370264454753e-12, atol = 0.0, rtol = 1e-12, inputs = {}
+
+    def same(evidence: Any, name: str, model: float | None, reference: float | None = None,
+             atol: float = 1e-12, rtol: float = 1e-12, **inputs: Any) -> None:
+        """Record and assert |model - reference| <= max(atol, rtol max(|model|, |reference|)).
+    
+        The default is the retained same-owner transport rule against the recorded C++ row `name`,
+        without the absolute floor when that row lies below 1e-9.
+        """
+        if reference is None:  # a recorded row below the absolute floor must still match relatively
+            reference, atol = ROWS[name], 0.0 if abs(ROWS[name]) < 1e-9 else atol
+        evidence.compare(name, model=model, reference=reference, **inputs,
+                         criterion={"type": "scalar", "rule": "symmetric_close", "atol": atol, "rtol": rtol})
+>       assert model is not None and math.isclose(model, reference, rel_tol=rtol, abs_tol=atol), name
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: flash/constraint_multipliers/2
+
+tests/native_inputs.py:40: AssertionError
+----------------------------- Captured stdout call -----------------------------
+EPCSAFT_COMPARE_JSON {"comparison_id":"flash/amounts/0","criterion":{"type":"scalar","rule":"symmetric_close","atol":1e-12,"rtol":1e-12},"evidence_status":"valid","judgment":"Criterion satisfied","model":0.457012965292005,"reference":0.45701296529200125}
+EPCSAFT_COMPARE_JSON {"comparison_id":"flash/amounts/1","criterion":{"type":"scalar","rule":"symmetric_close","atol":1e-12,"rtol":1e-12},"evidence_status":"valid","judgment":"Criterion satisfied","model":0.542987034707995,"reference":0.5429870347079987}
+EPCSAFT_COMPARE_JSON {"comparison_id":"flash/mole_fractions/0","criterion":{"type":"scalar","rule":"symmetric_close","atol":1e-12,"rtol":1e-12},"evidence_status":"valid","judgment":"Criterion satisfied","model":0.49278463704319514,"reference":0.4927846370431979}
+EPCSAFT_COMPARE_JSON {"comparison_id":"flash/mole_fractions/1","criterion":{"type":"scalar","rule":"symmetric_close","atol":1e-12,"rtol":1e-12},"evidence_status":"valid","judgment":"Criterion satisfied","model":0.5072153629568048,"reference":0.5072153629568021}
+EPCSAFT_COMPARE_JSON {"comparison_id":"flash/mole_fractions/2","criterion":{"type":"scalar","rule":"symmetric_close","atol":1e-12,"rtol":1e-12},"evidence_status":"valid","judgment":"Criterion satisfied","model":0.04565676561297097,"reference":0.045656765612971696}
+EPCSAFT_COMPARE_JSON {"comparison_id":"flash/mole_fractions/3","criterion":{"type":"scalar","rule":"symmetric_close","atol":1e-12,"rtol":1e-12},"evidence_status":"valid","judgment":"Criterion satisfied","model":0.9543432343870291,"reference":0.9543432343870283}
+EPCSAFT_COMPARE_JSON {"comparison_id":"flash/multipliers/0","criterion":{"type":"scalar","rule":"symmetric_close","atol":1e-12,"rtol":1e-12},"evidence_status":"valid","judgment":"Criterion satisfied","model":-1.2878437705842076,"reference":-1.2878437705842167}
+EPCSAFT_COMPARE_JSON {"comparison_id":"flash/multipliers/1","criterion":{"type":"scalar","rule":"symmetric_close","atol":1e-12,"rtol":1e-12},"evidence_status":"valid","judgment":"Criterion satisfied","model":1.7608110095218563,"reference":1.760811009521857}
+EPCSAFT_COMPARE_JSON {"comparison_id":"flash/constraint_multipliers/0","criterion":{"type":"scalar","rule":"symmetric_close","atol":1e-12,"rtol":1e-12},"evidence_status":"valid","judgment":"Criterion satisfied","model":1.2878437705820736,"reference":1.2878437705820567}
+EPCSAFT_COMPARE_JSON {"comparison_id":"flash/constraint_multipliers/1","criterion":{"type":"scalar","rule":"symmetric_close","atol":1e-12,"rtol":1e-12},"evidence_status":"valid","judgment":"Criterion satisfied","model":-1.7608110095214806,"reference":-1.7608110095214802}
+EPCSAFT_COMPARE_JSON {"comparison_id":"flash/constraint_multipliers/2","criterion":{"type":"scalar","rule":"symmetric_close","atol":0.0,"rtol":1e-12},"evidence_status":"valid","judgment":"Criterion failed","model":-3.4304199888691134e-12,"reference":-3.429370264454753e-12}
+_________________ test_public_recovery_matches_the_native_rows _________________
+
+evidence = <tests.conftest.Report object at 0x7ee77d98efd0>
+
+    def test_public_recovery_matches_the_native_rows(evidence: Any) -> None:
+        """The same manufactured request through epcsaft.regression reproduces regression_checks R2-J2 (r4/*)."""
+        _, observations = manufactured()
+        start = neutral_binary(148.0, 0.0)
+        result = regression.fit(start, coordinates(start), observations)
+        assert result.status == "converged" and result.usable and result.trial_failures == 0
+        same(evidence, "r4/recovery/epsilon", result.physical[0])
+        same(evidence, "r4/recovery/kij", result.physical[1])
+>       same(evidence, "r4/recovery/initial_cost", result.initial_cost)
+
+tests/regression/test_fit.py:59: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+evidence = <tests.conftest.Report object at 0x7ee77d98efd0>
+name = 'r4/recovery/initial_cost', model = 0.08983832361021037
+reference = 0.08983832360404212, atol = 1e-12, rtol = 1e-12, inputs = {}
+
+    def same(evidence: Any, name: str, model: float | None, reference: float | None = None,
+             atol: float = 1e-12, rtol: float = 1e-12, **inputs: Any) -> None:
+        """Record and assert |model - reference| <= max(atol, rtol max(|model|, |reference|)).
+    
+        The default is the retained same-owner transport rule against the recorded C++ row `name`,
+        without the absolute floor when that row lies below 1e-9.
+        """
+        if reference is None:  # a recorded row below the absolute floor must still match relatively
+            reference, atol = ROWS[name], 0.0 if abs(ROWS[name]) < 1e-9 else atol
+        evidence.compare(name, model=model, reference=reference, **inputs,
+                         criterion={"type": "scalar", "rule": "symmetric_close", "atol": atol, "rtol": rtol})
+>       assert model is not None and math.isclose(model, reference, rel_tol=rtol, abs_tol=atol), name
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: r4/recovery/initial_cost
+
+tests/native_inputs.py:40: AssertionError
+----------------------------- Captured stdout call -----------------------------
+EPCSAFT_COMPARE_JSON {"comparison_id":"r4/recovery/epsilon","criterion":{"type":"scalar","rule":"symmetric_close","atol":1e-12,"rtol":1e-12},"evidence_status":"valid","judgment":"Criterion satisfied","model":152.00000000000088,"reference":152.00000000000065}
+EPCSAFT_COMPARE_JSON {"comparison_id":"r4/recovery/kij","criterion":{"type":"scalar","rule":"symmetric_close","atol":1e-12,"rtol":1e-12},"evidence_status":"valid","judgment":"Criterion satisfied","model":-0.020000000000053624,"reference":-0.020000000000054773}
+EPCSAFT_COMPARE_JSON {"comparison_id":"r4/recovery/initial_cost","criterion":{"type":"scalar","rule":"symmetric_close","atol":1e-12,"rtol":1e-12},"evidence_status":"valid","judgment":"Criterion failed","model":0.08983832361021037,"reference":0.08983832360404212}
+=========================== short test summary info ============================
+FAILED tests/equilibrium/test_native_transport.py::test_log_activity_actions_follow_the_correlated_reaction
+FAILED tests/equilibrium/test_native_transport.py::test_two_phase_actions_match_the_cpp_example
+FAILED tests/equilibrium/test_native_transport.py::test_result_diagnostics_match_the_cpp_example
+FAILED tests/regression/test_fit.py::test_public_recovery_matches_the_native_rows
+4 failed, 35 passed in 5.69s
+Command exited with non-zero status 1
+python-tests: 5.83 s
+[python-tests FAILED]
+
+[native-tests]
+1/6 epcsaft:contributions   OK              0.05s
+2/6 epcsaft:diagnostics     OK              0.05s
+3/6 epcsaft:specification   OK              0.92s
+4/6 epcsaft:surface_example OK              1.10s
+5/6 epcsaft:properties      OK              3.42s
+6/6 epcsaft:regression      FAIL            4.04s   exit status 1
+>>> MSAN_OPTIONS=halt_on_error=1:abort_on_error=1:print_summary=1:print_stacktrace=1 MESON_TEST_ITERATION=1 ASAN_OPTIONS=halt_on_error=1:abort_on_error=1:print_summary=1 MALLOC_PERTURB_=7 UBSAN_OPTIONS=halt_on_error=1:abort_on_error=1:print_summary=1:print_stacktrace=1 /home/tnnrpolley21/.codex/worktrees/9dd4/ePC-SAFT-greenfield/build/engine-meson/cpython-313-linux-x86_64-x86_64-9b6cae1efc17457d2567ebb7393340de76f8faf246d4c8cf9ad08d5d0ee8f6a6/regression_checks R1
+――――――――――――――――――――――――――――――――――――― ✀  ―――――――――――――――――――――――――――――――――――――
+Listing only the last 100 lines from a long log.
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"r1-f2/roundtrip/3","quantity":"theta","unit":"native","model":-0.051999999999999998,"reference":-0.051999999999999998,"inputs":{"origin":0,"scale":1,"u":-0.051999999999999998},"basis":"Relationship","method":"regression","claim":"u -> theta -> u returns the start within 2 ulp of max(|theta|, |origin|)","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"symmetric_close","rule":"symmetric_close","atol":2.3092638912203255e-17,"rtol":0,"verdict":true,"comparison_group_id":"r1-f2","point_id":"r1-f2/roundtrip/3"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"r1-f2/roundtrip/4","quantity":"theta","unit":"native","model":0,"reference":0,"inputs":{"origin":0,"scale":1,"u":0},"basis":"Relationship","method":"regression","claim":"u -> theta -> u returns the start within 2 ulp of max(|theta|, |origin|)","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"symmetric_close","rule":"symmetric_close","atol":0,"rtol":0,"verdict":true,"comparison_group_id":"r1-f2","point_id":"r1-f2/roundtrip/4"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"r1-f2/roundtrip/5","quantity":"theta","unit":"native","model":2383.4744000000001,"reference":2383.4744000000001,"inputs":{"origin":0,"scale":1,"u":2383.4744000000001},"basis":"Relationship","method":"regression","claim":"u -> theta -> u returns the start within 2 ulp of max(|theta|, |origin|)","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"symmetric_close","rule":"symmetric_close","atol":1.0584752629938521e-12,"rtol":0,"verdict":true,"comparison_group_id":"r1-f2","point_id":"r1-f2/roundtrip/5"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"r1-f2/roundtrip/6","quantity":"theta","unit":"native","model":0.118488,"reference":0.118488,"inputs":{"origin":0,"scale":1,"u":0.118488},"basis":"Relationship","method":"regression","claim":"u -> theta -> u returns the start within 2 ulp of max(|theta|, |origin|)","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"symmetric_close","rule":"symmetric_close","atol":5.2619242296714218e-17,"rtol":0,"verdict":true,"comparison_group_id":"r1-f2","point_id":"r1-f2/roundtrip/6"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"r1-f2/apply_identity","quantity":"verdict","unit":"bool","model":1,"reference":1,"inputs":{},"basis":"Relationship","method":"regression","claim":"applying the start reproduces every family array bit for bit","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"absolute","rule":"absolute","atol":0,"rtol":0,"verdict":true,"comparison_group_id":"r1-f2","point_id":"r1-f2/apply_identity"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"r1-f2/bound_inclusive","quantity":"verdict","unit":"bool","model":1,"reference":1,"inputs":{"u0":-7.0999999999999996},"basis":"Relationship","method":"regression","claim":"theta = lower is admitted","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"absolute","rule":"absolute","atol":0,"rtol":0,"verdict":true,"comparison_group_id":"r1-f2","point_id":"r1-f2/bound_inclusive"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"r1-f2/bound_exclusive","quantity":"verdict","unit":"bool","model":1,"reference":1,"inputs":{"u0":-7.1000000009999997},"basis":"Relationship","method":"regression","claim":"theta below lower is rejected","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"absolute","rule":"absolute","atol":0,"rtol":0,"verdict":true,"comparison_group_id":"r1-f2","point_id":"r1-f2/bound_exclusive"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"r1-f2/reject/start outside bounds","quantity":"verdict","unit":"bool","model":1,"reference":1,"inputs":{"message":"coordinate start outside bounds"},"basis":"Relationship","method":"regression","claim":"rejected by name","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"absolute","rule":"absolute","atol":0,"rtol":0,"verdict":true,"comparison_group_id":"r1-f2","point_id":"r1-f2/reject/start outside bounds"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"r1-f2/reject/scale","quantity":"verdict","unit":"bool","model":1,"reference":1,"inputs":{"message":"coordinate scale"},"basis":"Relationship","method":"regression","claim":"rejected by name","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"absolute","rule":"absolute","atol":0,"rtol":0,"verdict":true,"comparison_group_id":"r1-f2","point_id":"r1-f2/reject/scale"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"r1-f2/reject/bounds","quantity":"verdict","unit":"bool","model":1,"reference":1,"inputs":{"message":"coordinate bounds"},"basis":"Relationship","method":"regression","claim":"rejected by name","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"absolute","rule":"absolute","atol":0,"rtol":0,"verdict":true,"comparison_group_id":"r1-f2","point_id":"r1-f2/reject/bounds"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"r1-f2/reject/slot index","quantity":"verdict","unit":"bool","model":1,"reference":1,"inputs":{"message":"coordinate slot index"},"basis":"Relationship","method":"regression","claim":"rejected by name","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"absolute","rule":"absolute","atol":0,"rtol":0,"verdict":true,"comparison_group_id":"r1-f2","point_id":"r1-f2/reject/slot index"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"r1-f2/reject/slots","quantity":"verdict","unit":"bool","model":1,"reference":1,"inputs":{"message":"coordinate slots"},"basis":"Relationship","method":"regression","claim":"rejected by name","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"absolute","rule":"absolute","atol":0,"rtol":0,"verdict":true,"comparison_group_id":"r1-f2","point_id":"r1-f2/reject/slots"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"r1-f2/reject/set is empty","quantity":"verdict","unit":"bool","model":1,"reference":1,"inputs":{"message":"coordinate set is empty"},"basis":"Relationship","method":"regression","claim":"rejected by name","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"absolute","rule":"absolute","atol":0,"rtol":0,"verdict":true,"comparison_group_id":"r1-f2","point_id":"r1-f2/reject/set is empty"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"r1-f2/reject/diagonal parameter coordinate","quantity":"verdict","unit":"bool","model":1,"reference":1,"inputs":{"message":"invalid diagonal parameter coordinate"},"basis":"Relationship","method":"regression","claim":"rejected by name","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"absolute","rule":"absolute","atol":0,"rtol":0,"verdict":true,"comparison_group_id":"r1-f2","point_id":"r1-f2/reject/diagonal parameter coordinate"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"r1-f2/reject/reciprocal parameter coordinate","quantity":"verdict","unit":"bool","model":1,"reference":1,"inputs":{"message":"invalid reciprocal parameter coordinate"},"basis":"Relationship","method":"regression","claim":"rejected by name","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"absolute","rule":"absolute","atol":0,"rtol":0,"verdict":true,"comparison_group_id":"r1-f2","point_id":"r1-f2/reject/reciprocal parameter coordinate"}
+EPCSAFT_CASE schema_version=1 test_id=native.regression.r1-f2 execution=Passed
+EPCSAFT_CASE schema_version=1 test_id=native.regression.r1-f3 execution=Running
+EPCSAFT_EXPECT_JSON {"schema_version":1,"test_id":"native.regression.r1-f3","expected_comparison_keys":["r1-f3/*","r1-f4/*"],"expected_comparison_counts":{"r1-f3/*":5,"r1-f4/*":3}}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"r1-f3/tie_map","quantity":"verdict","unit":"bool","model":1,"reference":1,"inputs":{},"basis":"Relationship","method":"regression","claim":"the tie map has one column per physical row: [0, 0, 1]","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"absolute","rule":"absolute","atol":0,"rtol":0,"verdict":true,"comparison_group_id":"r1-f3","point_id":"r1-f3/tie_map"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"r1-f3/shared_slots","quantity":"verdict","unit":"bool","model":1,"reference":1,"inputs":{"u":[0.29999999999999999,-0.02]},"basis":"Relationship","method":"regression","claim":"a tied coordinate writes both slots and a pair writes both mirrored entries","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"absolute","rule":"absolute","atol":0,"rtol":0,"verdict":true,"comparison_group_id":"r1-f3","point_id":"r1-f3/shared_slots"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"r1-f3/state_identity","quantity":"residual_helmholtz","unit":"1","model":-4.8563235336419641,"reference":-4.8563235336419641,"inputs":{"T":300,"rho":5000},"basis":"Relationship","method":"regression","claim":"the applied and hand-built models agree bit for bit","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"symmetric_close","rule":"symmetric_close","atol":0,"rtol":0,"verdict":true,"comparison_group_id":"r1-f3","point_id":"r1-f3/state_identity"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"r1-f3/one_slot_rejected","quantity":"verdict","unit":"bool","model":1,"reference":1,"inputs":{"message":"invalid k_ij symmetry"},"basis":"Relationship","method":"regression","claim":"writing one mirrored slot only fails the model's own symmetry admission","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"absolute","rule":"absolute","atol":0,"rtol":0,"verdict":true,"comparison_group_id":"r1-f3","point_id":"r1-f3/one_slot_rejected"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"r1-f3/tied_start_disagrees","quantity":"verdict","unit":"bool","model":1,"reference":1,"inputs":{"message":"coordinate tied values disagree"},"basis":"Relationship","method":"regression","claim":"tied slots with different values are rejected, never averaged","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"absolute","rule":"absolute","atol":0,"rtol":0,"verdict":true,"comparison_group_id":"r1-f3","point_id":"r1-f3/tied_start_disagrees"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"r1-f4/active_order","quantity":"verdict","unit":"bool","model":1,"reference":1,"inputs":{},"basis":"Relationship","method":"regression","claim":"HelmholtzModel::active_parameters equals CoordinateSet::active in order","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"absolute","rule":"absolute","atol":0,"rtol":0,"verdict":true,"comparison_group_id":"r1-f4","point_id":"r1-f4/active_order"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"r1-f4/fixed_projects_to_zero","quantity":"density_action","unit":"mol/m^3 per K","model":0,"reference":0,"inputs":{"family":"DispersionEnergyOverK fixed"},"basis":"Relationship","method":"regression","claim":"a well-formed coordinate absent from the active list projects to zero","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"symmetric_close","rule":"symmetric_close","atol":9.9999999999999998e-13,"rtol":0,"verdict":true,"comparison_group_id":"r1-f4","point_id":"r1-f4/fixed_projects_to_zero"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"r1-f4/out_of_range_rejected","quantity":"verdict","unit":"bool","model":1,"reference":1,"inputs":{"message":"coordinate slot index"},"basis":"Relationship","method":"regression","claim":"an out-of-range slot raises by name","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"absolute","rule":"absolute","atol":0,"rtol":0,"verdict":true,"comparison_group_id":"r1-f4","point_id":"r1-f4/out_of_range_rejected"}
+EPCSAFT_CASE schema_version=1 test_id=native.regression.r1-f3 execution=Passed
+EPCSAFT_CASE schema_version=1 test_id=native.regression.r1-f5 execution=Running
+EPCSAFT_EXPECT_JSON {"schema_version":1,"test_id":"native.regression.r1-f5","expected_comparison_keys":["r1-f5/*","r1-f6/*"],"expected_comparison_counts":{"r1-f5/*":5,"r1-f6/*":3}}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"r1-f5/bubble_pressure","quantity":"pressure","unit":"Pa","model":1596859.111302699,"reference":1596859.111302699,"inputs":{"T_K":180},"basis":"Relationship","method":"regression","claim":"the O2 value is the driver's pressure bit for bit","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"symmetric_close","rule":"symmetric_close","atol":0,"rtol":0,"verdict":true,"comparison_group_id":"r1-f5","point_id":"r1-f5/bubble_pressure"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"r1-f5/bubble_temperature_status","quantity":"verdict","unit":"bool","model":1,"reference":1,"inputs":{"status":"available"},"basis":"Relationship","method":"regression","claim":"the cold pinned-zero free-T solve from above is accepted (new route)","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"absolute","rule":"absolute","atol":0,"rtol":0,"verdict":true,"comparison_group_id":"r1-f5","point_id":"r1-f5/bubble_temperature_status"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"r1-f5/bubble_temperature","quantity":"temperature","unit":"K","model":179.99999999999423,"reference":180,"inputs":{"P_Pa":1596859.111302699,"T_guess":190},"basis":"Relationship","method":"regression","claim":"the round trip P(T) -> T(P) returns 180 K within 1e-6 K (observed 1e-11 K)","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"symmetric_close","rule":"symmetric_close","atol":9.9999999999999995e-07,"rtol":0,"verdict":true,"comparison_group_id":"r1-f5","point_id":"r1-f5/bubble_temperature"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"r1-f5/bubble_temperature_from_below","quantity":"verdict","unit":"bool","model":1,"reference":1,"inputs":{"status":"topology_event","T_guess":170},"basis":"Relationship","method":"regression","claim":"a cold guess below the answer is a typed topology event, a domain limit of the route","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"absolute","rule":"absolute","atol":0,"rtol":0,"verdict":true,"comparison_group_id":"r1-f5","point_id":"r1-f5/bubble_temperature_from_below"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"r1-f5/dew_distinct","quantity":"verdict","unit":"bool","model":1,"reference":1,"inputs":{"P_bubble":1596859.111302699,"P_dew":157730.59300492701},"basis":"Relationship","method":"regression","claim":"the dew specification gives a distinct pressure","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"absolute","rule":"absolute","atol":0,"rtol":0,"verdict":true,"comparison_group_id":"r1-f5","point_id":"r1-f5/dew_distinct"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"r1-f6/pure_bubble_dew","quantity":"pressure","unit":"Pa","model":217800.69494692402,"reference":217800.69494692405,"inputs":{"T_K":200},"basis":"Relationship","method":"regression","claim":"a one-component bubble and dew specification give the same saturation pressure","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"symmetric_close","rule":"symmetric_close","atol":0,"rtol":1e-08,"verdict":true,"comparison_group_id":"r1-f6","point_id":"r1-f6/pure_bubble_dew"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"r1-f6/pure_fraction/0","quantity":"mole_fraction","unit":"1","model":1,"reference":1,"inputs":{"phase":0},"basis":"Relationship","method":"regression","claim":"a pure phase composition is exactly one","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"symmetric_close","rule":"symmetric_close","atol":0,"rtol":0,"verdict":true,"comparison_group_id":"r1-f6","point_id":"r1-f6/pure_fraction/0"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"r1-f6/pure_fraction/1","quantity":"mole_fraction","unit":"1","model":1,"reference":1,"inputs":{"phase":1},"basis":"Relationship","method":"regression","claim":"a pure phase composition is exactly one","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"symmetric_close","rule":"symmetric_close","atol":0,"rtol":0,"verdict":true,"comparison_group_id":"r1-f6","point_id":"r1-f6/pure_fraction/1"}
+EPCSAFT_CASE schema_version=1 test_id=native.regression.r1-f5 execution=Passed
+EPCSAFT_CASE schema_version=1 test_id=native.regression.r1-f7 execution=Running
+EPCSAFT_EXPECT_JSON {"schema_version":1,"test_id":"native.regression.r1-f7","expected_comparison_keys":["r1-f7/*","r1-f8/*"],"expected_comparison_counts":{"r1-f7/*":5,"r1-f8/*":12}}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"r1-f7/fraction_sum","quantity":"sum_beta","unit":"1","model":1,"reference":1,"inputs":{"T_K":180,"P_Pa":798429.55565134948,"z":[0.72818012148073619,0.27181987851926376]},"basis":"Relationship","method":"regression","claim":"mole-basis phase fractions sum to one","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"symmetric_close","rule":"symmetric_close","atol":1e-14,"rtol":0,"verdict":true,"comparison_group_id":"r1-f7","point_id":"r1-f7/fraction_sum"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"r1-f7/lever/0","quantity":"feed_fraction","unit":"1","model":0.72818012148073619,"reference":0.72818012148073619,"inputs":{"T_K":180,"P_Pa":798429.55565134948,"z":[0.72818012148073619,0.27181987851926376]},"basis":"Relationship","method":"regression","claim":"the lever rule z_i = sum_p beta_p x_pi holds","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"symmetric_close","rule":"symmetric_close","atol":9.9999999999999998e-13,"rtol":0,"verdict":true,"comparison_group_id":"r1-f7","point_id":"r1-f7/lever/0"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"r1-f7/lever/1","quantity":"feed_fraction","unit":"1","model":0.2718198785192637,"reference":0.27181987851926376,"inputs":{"T_K":180,"P_Pa":798429.55565134948,"z":[0.72818012148073619,0.27181987851926376]},"basis":"Relationship","method":"regression","claim":"the lever rule z_i = sum_p beta_p x_pi holds","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"symmetric_close","rule":"symmetric_close","atol":9.9999999999999998e-13,"rtol":0,"verdict":true,"comparison_group_id":"r1-f7","point_id":"r1-f7/lever/1"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"r1-f7/fraction_homogeneous","quantity":"beta_L","unit":"1","model":0.25979825064205558,"reference":0.25979825064205658,"inputs":{"T_K":180,"P_Pa":798429.55565134948,"z":[0.72818012148073619,0.27181987851926376]},"basis":"Relationship","method":"regression","claim":"tripling the feed leaves the phase fraction unchanged","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"symmetric_close","rule":"symmetric_close","atol":0,"rtol":9.9999999999999998e-13,"verdict":true,"comparison_group_id":"r1-f7","point_id":"r1-f7/fraction_homogeneous"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"r1-f7/amount_scales","quantity":"n_L","unit":"mol","model":0.77939475192616658,"reference":0.77939475192616769,"inputs":{"T_K":180,"P_Pa":798429.55565134948,"z":[0.72818012148073619,0.27181987851926376]},"basis":"Relationship","method":"regression","claim":"tripling the feed triples the absolute phase amount","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"symmetric_close","rule":"symmetric_close","atol":0,"rtol":9.9999999999999998e-13,"verdict":true,"comparison_group_id":"r1-f7","point_id":"r1-f7/amount_scales"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"r1-f8/aggregate_sum","quantity":"x_CH4+x_C2H6","unit":"1","model":1,"reference":1,"inputs":{"T_K":243.58000000000001,"P_Pa":3949000,"z":[0.48643933063201572,0.51356066936798417]},"basis":"Relationship","method":"regression","claim":"the full species set sums to one","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"symmetric_close","rule":"symmetric_close","atol":1.0000000000000001e-15,"rtol":0,"verdict":true,"comparison_group_id":"r1-f8","point_id":"r1-f8/aggregate_sum"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"r1-f8/single_species","quantity":"x_CH4","unit":"1","model":0.3025223259393951,"reference":0.30252232593939471,"inputs":{"T_K":243.58000000000001,"P_Pa":3949000,"z":[0.48643933063201572,0.51356066936798417]},"basis":"Relationship","method":"regression","claim":"a one-element set is the driver's mole fraction bit for bit","judgment":"Criterion failed","evidence_state":"Complete","criterion":"symmetric_close","rule":"symmetric_close","atol":0,"rtol":0,"verdict":false,"comparison_group_id":"r1-f8","point_id":"r1-f8/single_species"}
+EPCSAFT_CASE schema_version=1 test_id=native.regression.r1-f7 execution=Failed outcome_reason=../../../engine/tests/native/regression_checks.cpp:406: failed: agree("r1-f8/single_species", "x_CH4", "1", *x0.value, both.solved->mole_fractions[0], 0.0, 0.0, may_inputs, "a one-element set is the driver's mole fraction bit for bit", "r1-f8")
+EPCSAFT_CASE schema_version=1 test_id=native.regression.r1-f9 execution=Running
+EPCSAFT_EXPECT_JSON {"schema_version":1,"test_id":"native.regression.r1-f9","expected_comparison_keys":["r1-f9/*","r1-f10/*"],"expected_comparison_counts":{"r1-f9/*":4,"r1-f10/*":13}}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"r1-f9/unmet_tolerance","quantity":"verdict","unit":"bool","model":1,"reference":1,"inputs":{"status":"central_solve_unavailable","message":["STOP_AT_TINY_STEP: stalled: residual 9.4650055110210199e-16 against EQUILIBRIUM_REQUESTED_ROW_RESIDUAL 1.0000000000000001e-18 after 15 iterations"," contraction absent"," floor absent"," amplification 0"],"residual":9.4650055110210199e-16},"basis":"Relationship","method":"regression","claim":"a floor-limited rejected solve keeps its cause and returns no value","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"absolute","rule":"absolute","atol":0,"rtol":0,"verdict":true,"comparison_group_id":"r1-f9","point_id":"r1-f9/unmet_tolerance"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"r1-f9/topology_event","quantity":"verdict","unit":"bool","model":1,"reference":1,"inputs":{"status":"topology_event","message":"SUCCESS: phases_coincide: phase distance between L and V is too small: 0.000000"},"basis":"Relationship","method":"regression","claim":"the s15c coincident state is typed topology_event whatever success says","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"absolute","rule":"absolute","atol":0,"rtol":0,"verdict":true,"comparison_group_id":"r1-f9","point_id":"r1-f9/topology_event"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"r1-f9/single_root_branch","quantity":"verdict","unit":"bool","model":1,"reference":1,"inputs":{"status":"available","rho":20042.858168912455},"basis":"Relationship","method":"regression","claim":"a declared vapor branch at a one-root state reports Unspecified and count 1","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"absolute","rule":"absolute","atol":0,"rtol":0,"verdict":true,"comparison_group_id":"r1-f9","point_id":"r1-f9/single_root_branch"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"r1-f9/density_unavailable","quantity":"verdict","unit":"bool","model":1,"reference":1,"inputs":{"status":"density_unavailable","message":"no stable density root (count 0)","exception_shape":"runtime_error without record"},"basis":"Relationship","method":"regression","claim":"a state without a stable root is typed with the thrown cause","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"absolute","rule":"absolute","atol":0,"rtol":0,"verdict":true,"comparison_group_id":"r1-f9","point_id":"r1-f9/density_unavailable"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"r1-f10/difference","quantity":"residual","unit":"1","model":4,"reference":4,"inputs":{"y":3,"y_obs":1,"scale":0.5},"basis":"Relationship","method":"regression","claim":"(3 - 1) / 0.5 is exactly 4","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"symmetric_close","rule":"symmetric_close","atol":0,"rtol":0,"verdict":true,"comparison_group_id":"r1-f10","point_id":"r1-f10/difference"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"r1-f10/log_ratio","quantity":"residual","unit":"1","model":1,"reference":1,"inputs":{"y":2.7182818284590451,"y_obs":1},"basis":"Relationship","method":"regression","claim":"ln(e / 1) is one within 4 ulp","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"symmetric_close","rule":"symmetric_close","atol":8.8817841970012523e-16,"rtol":0,"verdict":true,"comparison_group_id":"r1-f10","point_id":"r1-f10/log_ratio"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"r1-f10/log_ratio_swapped","quantity":"residual","unit":"1","model":-1,"reference":-1,"inputs":{"y":1,"y_obs":2.7182818284590451},"basis":"Relationship","method":"regression","claim":"ln(1 / e) is minus one","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"symmetric_close","rule":"symmetric_close","atol":8.8817841970012523e-16,"rtol":0,"verdict":true,"comparison_group_id":"r1-f10","point_id":"r1-f10/log_ratio_swapped"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"r1-f10/nonpositive_log","quantity":"verdict","unit":"bool","model":1,"reference":1,"inputs":{"status":"nonpositive_log_argument"},"basis":"Relationship","method":"regression","claim":"a nonpositive log argument is typed, not NaN","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"absolute","rule":"absolute","atol":0,"rtol":0,"verdict":true,"comparison_group_id":"r1-f10","point_id":"r1-f10/nonpositive_log"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"r1-f10/scale_rejected","quantity":"verdict","unit":"bool","model":1,"reference":1,"inputs":{"message":"observation scale"},"basis":"Relationship","method":"regression","claim":"a nonpositive Difference scale is rejected by name","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"absolute","rule":"absolute","atol":0,"rtol":0,"verdict":true,"comparison_group_id":"r1-f10","point_id":"r1-f10/scale_rejected"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"r1-f10/log_ratio_wide_range","quantity":"residual","unit":"1","model":719.09651530094914,"reference":719.09651530094914,"inputs":{"y":19936.48319859253,"y_obs":9.9999999999999991e-309},"basis":"Relationship","method":"regression","claim":"a ratio that overflows still gives the finite log residual (finiteness and branch selection; the formula is the reference)","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"symmetric_close","rule":"symmetric_close","atol":0,"rtol":9.9999999999999998e-13,"verdict":true,"comparison_group_id":"r1-f10","point_id":"r1-f10/log_ratio_wide_range"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"r1-f10/log_ratio_near_unity","quantity":"residual","unit":"1","model":1.0000617126413954e-12,"reference":1.0000617126413952e-12,"inputs":{"y":17541.251290854474,"y_obs":17541.251290836932,"naive_log":1.000088900581841e-12},"basis":"Relationship","method":"regression","claim":"the residual near unity keeps its leading digits (log1p), where log(y / y_obs) is off by 3e-5","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"symmetric_close","rule":"symmetric_close","atol":0,"rtol":1.0000000000000001e-09,"verdict":true,"comparison_group_id":"r1-f10","point_id":"r1-f10/log_ratio_near_unity"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"r1-f10/difference_overflow","quantity":"verdict","unit":"bool","model":1,"reference":1,"inputs":{"status":"nonfinite"},"basis":"Relationship","method":"regression","claim":"an overflowing Difference residual is typed nonfinite, not inf","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"absolute","rule":"absolute","atol":0,"rtol":0,"verdict":true,"comparison_group_id":"r1-f10","point_id":"r1-f10/difference_overflow"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"r1-f10/value_survives_nonfinite_residual","quantity":"verdict","unit":"bool","model":1,"reference":1,"inputs":{"status":"nonfinite","value":17536.058245123309},"basis":"Relationship","method":"regression","claim":"the prediction keeps its finite value beside a nonfinite residual","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"absolute","rule":"absolute","atol":0,"rtol":0,"verdict":true,"comparison_group_id":"r1-f10","point_id":"r1-f10/value_survives_nonfinite_residual"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"r1-f10/fit_nonfinite_typed","quantity":"verdict","unit":"bool","model":1,"reference":1,"inputs":{"status":"initial_evaluation_failed","termination":"not_run","iterations":0,"residual_evaluations":0,"jacobian_evaluations":1,"trial_failures":1,"final_cost":0,"covariance":"not_evaluated"},"basis":"Relationship","method":"regression","claim":"a nonfinite residual at the start is a typed initial failure with its row","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"absolute","rule":"absolute","atol":0,"rtol":0,"verdict":true,"comparison_group_id":"r1-f10","point_id":"r1-f10/fit_nonfinite_typed"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"r1-f10/weighted_overflow_typed","quantity":"verdict","unit":"bool","model":1,"reference":1,"inputs":{"status":"initial_evaluation_failed","termination":"not_run","iterations":0,"residual_evaluations":0,"jacobian_evaluations":1,"trial_failures":1,"final_cost":0,"covariance":"not_evaluated"},"basis":"Relationship","method":"regression","claim":"an overflowing weighted residual is a typed initial failure naming its row","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"absolute","rule":"absolute","atol":0,"rtol":0,"verdict":true,"comparison_group_id":"r1-f10","point_id":"r1-f10/weighted_overflow_typed"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"r1-f10/jacobian_overflow_typed","quantity":"verdict","unit":"bool","model":1,"reference":1,"inputs":{"status":"failed","termination":"failure","iterations":0,"residual_evaluations":0,"jacobian_evaluations":3,"trial_failures":2,"final_cost":4.9999999999999995e+299,"covariance":"not_evaluated"},"basis":"Relationship","method":"regression","claim":"an overflowing optimizer Jacobian is recorded by the trial and final recorders and the fit fails typed","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"absolute","rule":"absolute","atol":0,"rtol":0,"verdict":true,"comparison_group_id":"r1-f10","point_id":"r1-f10/jacobian_overflow_typed"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"r1-f10/accumulated_cost_typed","quantity":"verdict","unit":"bool","model":1,"reference":1,"inputs":{"status":"initial_evaluation_failed","termination":"not_run","iterations":0,"residual_evaluations":0,"jacobian_evaluations":1,"trial_failures":1,"final_cost":0,"covariance":"not_evaluated","row_residual":1.2000000000000001e+154},"basis":"Relationship","method":"regression","claim":"an accumulated objective that overflows is a typed initial failure naming the row where the sum stops being finite","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"absolute","rule":"absolute","atol":0,"rtol":0,"verdict":true,"comparison_group_id":"r1-f10","point_id":"r1-f10/accumulated_cost_typed"}
+EPCSAFT_CASE schema_version=1 test_id=native.regression.r1-f9 execution=Passed
+EPCSAFT_CASE schema_version=1 test_id=native.regression.d86 execution=Running
+EPCSAFT_EXPECT_JSON {"schema_version":1,"test_id":"native.regression.d86","expected_comparison_keys":["d86/*"],"expected_comparison_counts":{"d86/*":25}}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"d86/density_value","quantity":"molar_density","unit":"mol/m^3","model":17541.251290836932,"reference":17541.251290836932,"inputs":{"T_K":200,"P_Pa":217800.69494692481},"basis":"Relationship","method":"regression","claim":"the density-only batch carries the resolved root","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"symmetric_close","rule":"symmetric_close","atol":0,"rtol":0,"verdict":true,"comparison_group_id":"d86","point_id":"d86/density_value"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"d86/parameter/epsilon/fine","quantity":"drho_dtheta","unit":"native","model":45.091360588112543,"reference":45.091362844905234,"inputs":{"T_K":200,"P_Pa":217800.69494692481,"step":0.050000000000000003},"basis":"Relationship","method":"regression","claim":"the pressure-chart density action equals the rebuilt-model closure ladder","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"symmetric_close","rule":"symmetric_close","atol":0.0002254568142245262,"rtol":0,"verdict":true,"comparison_group_id":"d86","point_id":"d86/parameter/epsilon/fine"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"d86/parameter/epsilon/coarse","quantity":"drho_dtheta","unit":"native","model":45.091360588112543,"reference":45.091369614783616,"inputs":{"T_K":200,"P_Pa":217800.69494692481,"step":0.050000000000000003},"basis":"Relationship","method":"regression","claim":"the pressure-chart density action equals the rebuilt-model closure ladder","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"symmetric_close","rule":"symmetric_close","atol":0.0009018272568981048,"rtol":0,"verdict":true,"comparison_group_id":"d86","point_id":"d86/parameter/epsilon/coarse"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"d86/implicit/epsilon","quantity":"drho_dtheta","unit":"native","model":45.091360588112543,"reference":45.091360453976414,"inputs":{"T_K":200,"P_Pa":217800.69494692481,"step":0.050000000000000003},"basis":"Relationship","method":"regression","claim":"the implicit lift equals minus the explicit pressure slope over dP/drho","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"symmetric_close","rule":"symmetric_close","atol":0.00022545680294056274,"rtol":0,"verdict":true,"comparison_group_id":"d86","point_id":"d86/implicit/epsilon"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"d86/omitted_term/epsilon","quantity":"verdict","unit":"bool","model":1,"reference":1,"inputs":{"action":45.091360588112543},"basis":"Relationship","method":"regression","claim":"omitting the implicit term leaves an order-unity error","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"absolute","rule":"absolute","atol":0,"rtol":0,"verdict":true,"comparison_group_id":"d86","point_id":"d86/omitted_term/epsilon"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"d86/parameter/m/fine","quantity":"drho_dtheta","unit":"native","model":-8782.8905981691642,"reference":-8782.8907097427873,"inputs":{"T_K":200,"P_Pa":217800.69494692481,"step":0.00050000000000000001},"basis":"Relationship","method":"regression","claim":"the pressure-chart density action equals the rebuilt-model closure ladder","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"symmetric_close","rule":"symmetric_close","atol":0.043914453548713941,"rtol":0,"verdict":true,"comparison_group_id":"d86","point_id":"d86/parameter/m/fine"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"d86/parameter/m/coarse","quantity":"drho_dtheta","unit":"native","model":-8782.8905981691642,"reference":-8782.8910444986832,"inputs":{"T_K":200,"P_Pa":217800.69494692481,"step":0.00050000000000000001},"basis":"Relationship","method":"regression","claim":"the pressure-chart density action equals the rebuilt-model closure ladder","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"symmetric_close","rule":"symmetric_close","atol":0.17565781419485577,"rtol":0,"verdict":true,"comparison_group_id":"d86","point_id":"d86/parameter/m/coarse"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"d86/implicit/m","quantity":"drho_dtheta","unit":"native","model":-8782.8905981691642,"reference":-8782.8922837368118,"inputs":{"T_K":200,"P_Pa":217800.69494692481,"step":0.00050000000000000001},"basis":"Relationship","method":"regression","claim":"the implicit lift equals minus the explicit pressure slope over dP/drho","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"symmetric_close","rule":"symmetric_close","atol":0.043914452990845822,"rtol":0,"verdict":true,"comparison_group_id":"d86","point_id":"d86/implicit/m"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"d86/omitted_term/m","quantity":"verdict","unit":"bool","model":1,"reference":1,"inputs":{"action":-8782.8905981691642},"basis":"Relationship","method":"regression","claim":"omitting the implicit term leaves an order-unity error","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"absolute","rule":"absolute","atol":0,"rtol":0,"verdict":true,"comparison_group_id":"d86","point_id":"d86/omitted_term/m"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"d86/parameter/sigma/fine","quantity":"drho_dtheta","unit":"native","model":-14939.210833137411,"reference":-14939.211084223643,"inputs":{"T_K":200,"P_Pa":217800.69494692481,"step":0.00050000000000000001},"basis":"Relationship","method":"regression","claim":"the pressure-chart density action equals the rebuilt-model closure ladder","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"symmetric_close","rule":"symmetric_close","atol":0.074696055421118221,"rtol":0,"verdict":true,"comparison_group_id":"d86","point_id":"d86/parameter/sigma/fine"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"d86/parameter/sigma/coarse","quantity":"drho_dtheta","unit":"native","model":-14939.210833137411,"reference":-14939.211837547191,"inputs":{"T_K":200,"P_Pa":217800.69494692481,"step":0.00050000000000000001},"basis":"Relationship","method":"regression","claim":"the pressure-chart density action equals the rebuilt-model closure ladder","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"symmetric_close","rule":"symmetric_close","atol":0.29878422168447288,"rtol":0,"verdict":true,"comparison_group_id":"d86","point_id":"d86/parameter/sigma/coarse"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"d86/implicit/sigma","quantity":"drho_dtheta","unit":"native","model":-14939.210833137411,"reference":-14939.214851014251,"inputs":{"T_K":200,"P_Pa":217800.69494692481,"step":0.00050000000000000001},"basis":"Relationship","method":"regression","claim":"the implicit lift equals minus the explicit pressure slope over dP/drho","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"symmetric_close","rule":"symmetric_close","atol":0.074696054165687059,"rtol":0,"verdict":true,"comparison_group_id":"d86","point_id":"d86/implicit/sigma"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"d86/omitted_term/sigma","quantity":"verdict","unit":"bool","model":1,"reference":1,"inputs":{"action":-14939.210833137411},"basis":"Relationship","method":"regression","claim":"omitting the implicit term leaves an order-unity error","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"absolute","rule":"absolute","atol":0,"rtol":0,"verdict":true,"comparison_group_id":"d86","point_id":"d86/omitted_term/sigma"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"d86/temperature/fine","quantity":"drho_dT","unit":"native","model":-43.204888241152752,"reference":-43.204888894179021,"inputs":{"T_K":200,"P_Pa":217800.69494692481},"basis":"Relationship","method":"regression","claim":"drho/dT at fixed P equals the closure ladder","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"symmetric_close","rule":"symmetric_close","atol":0.00021602444447089511,"rtol":0,"verdict":true,"comparison_group_id":"d86","point_id":"d86/temperature/fine"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"d86/temperature/coarse","quantity":"drho_dT","unit":"native","model":-43.204888241152752,"reference":-43.204890852612152,"inputs":{"T_K":200,"P_Pa":217800.69494692481},"basis":"Relationship","method":"regression","claim":"drho/dT at fixed P equals the closure ladder","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"symmetric_close","rule":"symmetric_close","atol":0.00086409777788358044,"rtol":0,"verdict":true,"comparison_group_id":"d86","point_id":"d86/temperature/coarse"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"d86/pressure","quantity":"drho_dP","unit":"mol/(m^3 Pa)","model":4.4028346457110687e-05,"reference":4.4028346457110694e-05,"inputs":{"dP_drho":22712.640388939642},"basis":"Relationship","method":"regression","claim":"drho/dP is the reciprocal pressure slope","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"symmetric_close","rule":"symmetric_close","atol":0,"rtol":9.9999999999999998e-13,"verdict":true,"comparison_group_id":"d86","point_id":"d86/pressure"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"d86/composition/fine","quantity":"drho_dx","unit":"native","model":17.177518097300478,"reference":17.177502618906146,"inputs":{"T_K":180,"P_Pa":3193718.2226053979,"direction":[0.01,-0.01]},"basis":"Relationship","method":"regression","claim":"a zero-sum composition direction at fixed P equals the closure ladder","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"symmetric_close","rule":"symmetric_close","atol":8.5887513094530743e-05,"rtol":0,"verdict":true,"comparison_group_id":"d86","point_id":"d86/composition/fine"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"d86/composition/coarse","quantity":"drho_dx","unit":"native","model":17.177518097300478,"reference":17.177456183471804,"inputs":{"T_K":180,"P_Pa":3193718.2226053979,"direction":[0.01,-0.01]},"basis":"Relationship","method":"regression","claim":"a zero-sum composition direction at fixed P equals the closure ladder","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"symmetric_close","rule":"symmetric_close","atol":0.00034355005237812297,"rtol":0,"verdict":true,"comparison_group_id":"d86","point_id":"d86/composition/coarse"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"d86/density_unavailable","quantity":"verdict","unit":"bool","model":1,"reference":1,"inputs":{},"basis":"Relationship","method":"regression","claim":"a state without a stable root keeps density_unavailable and no action","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"absolute","rule":"absolute","atol":0,"rtol":0,"verdict":true,"comparison_group_id":"d86","point_id":"d86/density_unavailable"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"d86/density_failure_record","quantity":"verdict","unit":"bool","model":1,"reference":1,"inputs":{"message":["left_domain: residual 0 against DENSITY_ROOT_RESIDUAL 9.9999999999999998e-13 after 0 iterations"," contraction absent"," floor absent"," amplification absent"],"anchor":9.9999999999999995e-07},"basis":"Relationship","method":"regression","claim":"a root search that throws with a convergence record carries it (stop left_domain)","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"absolute","rule":"absolute","atol":0,"rtol":0,"verdict":true,"comparison_group_id":"d86","point_id":"d86/density_failure_record"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"d86/density_failure_cause","quantity":"verdict","unit":"bool","model":1,"reference":1,"inputs":{"message":"no stable density root (count 0)","resolved_pressure_residual":2.5608460418879986e-07},"basis":"Relationship","method":"regression","claim":"the failed root search keeps its message and its absent record","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"absolute","rule":"absolute","atol":0,"rtol":0,"verdict":true,"comparison_group_id":"d86","point_id":"d86/density_failure_cause"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"d86/density_chart_rejected","quantity":"verdict","unit":"bool","model":1,"reference":1,"inputs":{"message":"invalid observables"},"basis":"Relationship","method":"regression","claim":"a density-chart request without observables is rejected by name","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"absolute","rule":"absolute","atol":0,"rtol":0,"verdict":true,"comparison_group_id":"d86","point_id":"d86/density_chart_rejected"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"d86/support_change","quantity":"verdict","unit":"bool","model":1,"reference":1,"inputs":{"status":4},"basis":"Relationship","method":"regression","claim":"a direction into an absent species is typed support_change with no action","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"absolute","rule":"absolute","atol":0,"rtol":0,"verdict":true,"comparison_group_id":"d86","point_id":"d86/support_change"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"d86/association/fine","quantity":"drho_depsAB","unit":"native","model":0.0064586854627673379,"reference":0.0064586847292957827,"inputs":{"T_K":300,"P_Pa":100000},"basis":"Relationship","method":"regression","claim":"the association route carries the implicit site chain","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"symmetric_close","rule":"symmetric_close","atol":5.0000000000000004e-06,"rtol":0,"verdict":true,"comparison_group_id":"d86","point_id":"d86/association/fine"}
+EPCSAFT_COMPARE_JSON {"schema_version":1,"comparison_id":"d86/association/coarse","quantity":"drho_depsAB","unit":"native","model":0.0064586854627673379,"reference":0.0064586825519654667,"inputs":{"T_K":300,"P_Pa":100000},"basis":"Relationship","method":"regression","claim":"the association route carries the implicit site chain","judgment":"Criterion satisfied","evidence_state":"Complete","criterion":"symmetric_close","rule":"symmetric_close","atol":2.0000000000000002e-05,"rtol":0,"verdict":true,"comparison_group_id":"d86","point_id":"d86/association/coarse"}
+EPCSAFT_CASE schema_version=1 test_id=native.regression.d86 execution=Passed
+stderr:
+../../../engine/tests/native/regression_checks.cpp:406: failed: agree("r1-f8/single_species", "x_CH4", "1", *x0.value, both.solved->mole_fractions[0], 0.0, 0.0, may_inputs, "a one-element set is the driver's mole fraction bit for bit", "r1-f8")
+WARNING: Logging before InitGoogleLogging() is written to STDERR
+E20260922 02:27:25.480227 695621 trust_region_minimizer.cc:72] Terminating: Initial residual and Jacobian evaluation failed.
+――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――
+
+
+Summary of Failures:
+
+6/6 epcsaft:regression      FAIL            4.04s   exit status 1
+
+Ok:                5   
+Fail:              1   
+
+Full log written to /home/tnnrpolley21/.codex/worktrees/9dd4/ePC-SAFT-greenfield/build/engine-meson/cpython-313-linux-x86_64-x86_64-9b6cae1efc17457d2567ebb7393340de76f8faf246d4c8cf9ad08d5d0ee8f6a6/meson-logs/testlog-695605-1790065641338287212.txt
+Command exited with non-zero status 1
+native-tests: 4.31 s
+[native-tests FAILED]
+
+[ruff]
+All checks passed!
+ruff: 0.00 s
+
+[mypy]
+Success: no issues found in 27 source files
+mypy: 0.14 s
+
+[analysis-layout]
+analysis_layout: clean (50 leaves)
+analysis-layout: 0.95 s
+
+[architecture]
+ok    one archive, one extension
+ok    archive is Python-free
+ok    include direction is downward
+ok    regression stays below stability
+ok    constants defined once
+ok    no threshold literals
+ok    solvers are case-blind
+ok    policy entries name themselves
+ok    budget readers carry records
+ok    core and trace boundaries
+ok    selectors are declared
+ok    surface has no physical defaults
+ok    bound functions open a Scope
+ok    no hand-named residual stops
+ok    exact Hessian callback
+ok    identified installed wheel
+
+41 sources under engine/native, 0 rule(s) failing
+architecture: 0.34 s

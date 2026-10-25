@@ -1,0 +1,8 @@
+section,key,value,unit,notes
+provenance,paper,Khudaida 2026 Supporting Information,,
+provenance,figure,Figure S2,,figure-11
+provenance,source_image,analyses/reproduction/2026-khudaida/figures/figure-11/source/figure-11.png,,
+basis,composition,salt-free ternary projection with NaCl retained in source/model CSV rows,,
+model,route,internal electrolyte LLE validation,,three-panel retained package/source comparison
+parameters,parameter_dataset,campaigns/2026-khudaida/parameters,,retained 2026_Khudaida Tables 5-7 parameter bundle for internal component validation
+parameters,figiel_2025_ssm_ds_born_options,retained_in_2026_Khudaida,,Figiel 2025 SSM+DS/Born option family is carried by the Khudaida parameter bundle

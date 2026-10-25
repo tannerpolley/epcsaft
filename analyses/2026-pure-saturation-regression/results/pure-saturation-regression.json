@@ -1,0 +1,434 @@
+{
+  "campaign": {
+    "campaign_id": "2026-pure-saturation-regression",
+    "campaign_root": "campaigns/2026-pure-saturation-regression/",
+    "evidence_owner_repository": "ePC-SAFT/ePC-SAFT-validation",
+    "accountable_task": "package-rooted-task-required",
+    "coordination_issue": "ePC-SAFT/ePC-SAFT-validation#19"
+  },
+  "admission": {
+    "artifact_status": "PASS",
+    "predictive_status": "NOT_ADJUDICATED_NO_APPROVED_HELD_OUT_CUTOFF",
+    "stress_policy": "Stress rows are descriptive and excluded from artifact admission; ethane 100 K remains an excluded failure."
+  },
+  "artifacts": {
+    "ethane_candidate_receipt_sha256": "e4729aa0d089973c1041e68b8b0abd028a440a04a0b4a47da2b7ccdbcb6cf529",
+    "ethane_candidate_receipt_subject_sha256": "a324cc2ba665b06c84660e6d815c7d39d1f898640a3b3fcc5833c10dc84b1f4f",
+    "methane_accepted_receipt": "promotion-0020-regression-methane-saturation-v1",
+    "provider": {
+      "distribution": "epcsaft",
+      "installed_root": "environment/site-packages",
+      "path": "../artifacts/provider-native-sdk-v1/4b10cb8/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "record_members_verified": 29,
+      "sha256": "f92f79c8d6f614660e5c201b7061c9b02b5cd1a25a4ed8c8fee0b59adaabf2bf",
+      "version": "0.1.0.dev0"
+    },
+    "regression": {
+      "distribution": "epcsaft-regression",
+      "installed_root": "environment/site-packages",
+      "path": "../artifacts/regression-pure-saturation-v1/50a488b/epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "record_members_verified": 9,
+      "sha256": "e4bf7ec673a9e6f5b70ce1ef39d9f28a73c709cf38974019c09790cc4f9bfa49",
+      "version": "0.1.0.dev0"
+    },
+    "regression_evidence_commit": "1c0c8bdbabbed20795cb2d093a7d15ee03accedb",
+    "regression_implementation_commit": "50a488b91686388432fd50a0d6bfc5b15825e4f1"
+  },
+  "campaign_id": "consumer-slice-2-pure-saturation-regression-v1",
+  "command": [
+    "environment/bin/python",
+    "campaigns/2026-pure-saturation-regression/scripts/pure_saturation_regression.py",
+    "--provider-wheel",
+    "../artifacts/provider-native-sdk-v1/4b10cb8/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+    "--regression-wheel",
+    "../artifacts/regression-pure-saturation-v1/50a488b/epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+    "--output-dir",
+    "reports/data"
+  ],
+  "components": [
+    {
+      "artifact_admission": "PASS",
+      "component_id": "methane",
+      "confirmation": {
+        "cost_relative_delta": 3.4416966344142195e-11,
+        "parameter_scaled_max_delta": 2.2115622559937265e-06,
+        "solution_usable": true,
+        "termination": "CONVERGENCE"
+      },
+      "dataset_id": "nist-webbook-methane-saturation-100-180-k-v1",
+      "failure_reasons": [],
+      "final_cost": 4.798586497669576e-06,
+      "fitted_parameter_sha256": "32434db0c35848223ca3c72e70b454e96a28d48ccf6bb3c0a68056be5ba0767a",
+      "initial_cost": 14340.021563034428,
+      "iterations": 282,
+      "jacobian": {
+        "complete_columns": true,
+        "full_condition_number": 502465.22577539383,
+        "full_rank": 11,
+        "full_singular_values": [
+          2608.931243051706,
+          387.7201834384377,
+          69.66858270349849,
+          10.03603093288209,
+          0.7665322999770852,
+          0.6324548191976115,
+          0.5279311042695605,
+          0.3652622699490841,
+          0.3418146025811784,
+          0.11989075292313389,
+          0.005192262288451222
+        ],
+        "parameter_condition_number": 4806.140456669111,
+        "parameter_rank": 3,
+        "parameter_singular_values": [
+          336.08769981347007,
+          5.559012203901723,
+          0.06992881353417524
+        ]
+      },
+      "local_physical_status": "PASS",
+      "methane_parity_failures": [],
+      "methane_parity_status": "PASS",
+      "metrics": {
+        "held_out": {
+          "liquid_density_relative_error_max_abs": 0.021013716245584985,
+          "liquid_density_relative_error_rms": 0.009874690419026068,
+          "pressure_relative_error_max_abs": 0.007277982826095972,
+          "pressure_relative_error_rms": 0.003588469984233625,
+          "rows": 5
+        },
+        "training": {
+          "liquid_density_relative_error_max_abs": 0.0042954344988820736,
+          "liquid_density_relative_error_rms": 0.0028550922784309706,
+          "pressure_relative_error_max_abs": 0.0027056257393234247,
+          "pressure_relative_error_rms": 0.0019413723457415734,
+          "rows": 4
+        }
+      },
+      "numerical_status": "PASS",
+      "parameters": [
+        {
+          "active_bound": null,
+          "final": 0.9932081279826167,
+          "lower_bound": 0.5,
+          "movement": -0.08679187201738336,
+          "name": "segment_count",
+          "start": 1.08,
+          "unit": "1",
+          "upper_bound": 3.5
+        },
+        {
+          "active_bound": null,
+          "final": 3.717121437945618,
+          "lower_bound": 2.0,
+          "movement": 0.16137743794561832,
+          "name": "segment_diameter_angstrom",
+          "start": 3.555744,
+          "unit": "angstrom",
+          "upper_bound": 5.0
+        },
+        {
+          "active_bound": null,
+          "final": 150.4888402511307,
+          "lower_bound": 50.0,
+          "movement": -7.0426597488692835,
+          "name": "dispersion_energy_over_k_kelvin",
+          "start": 157.5315,
+          "unit": "K",
+          "upper_bound": 400.0
+        }
+      ],
+      "predictive_status": "DESCRIPTIVE_ONLY_NO_APPROVED_CUTOFF",
+      "solution_usable": true,
+      "solver_status": "PASS",
+      "source": {
+        "citation": "NIST Chemistry WebBook, SRD 69, methane (CAS 74-82-8) fluid properties",
+        "data_sha256": "a5e16df3bf8ec78483fc340782cddc89ab8b284a9f6dfaecd6cda3ffde579227",
+        "locator": "Saturation properties query, 100 K through 180 K in 10 K increments",
+        "packaged_data_sha256": "dec64d5a6cac414a4a92393a0d728fa27c02135c6a159d0d1881d7b6dde6d26c",
+        "retrieved_on": "2026-07-17",
+        "source_id": "nist-webbook-srd69-methane-saturation",
+        "transformation": "Exact retained CSV fields and decimal strings; CRLF line endings normalized to LF. Retained source SHA-256: a5e16df3bf8ec78483fc340782cddc89ab8b284a9f6dfaecd6cda3ffde579227; packaged SHA-256: dec64d5a6cac414a4a92393a0d728fa27c02135c6a159d0d1881d7b6dde6d26c.",
+        "units": [
+          [
+            "temperature",
+            "K"
+          ],
+          [
+            "pressure",
+            "Pa"
+          ],
+          [
+            "saturated_liquid_mass_density",
+            "kg/m3"
+          ]
+        ],
+        "url": "https://webbook.nist.gov/cgi/fluid.cgi?Action=Data&Wide=on&ID=C74828&Type=SatP&Digits=8&THigh=180&TLow=100&TInc=10&RefState=DEF&TUnit=K&PUnit=Pa&DUnit=kg%2Fm3&HUnit=kJ%2Fmol&WUnit=m%2Fs&VisUnit=uPa*s&STUnit=N%2Fm",
+        "use_basis": "NIST Standard Reference Data retained as compact source-backed candidate evidence; redistribution and use remain subject to the NIST SRD terms"
+      },
+      "specification_id": "pure-methane-saturation-lifted-volumes-v1",
+      "stress_status": "EXCLUDED_PASS",
+      "termination": "CONVERGENCE"
+    },
+    {
+      "artifact_admission": "PASS",
+      "component_id": "ethane",
+      "confirmation": {
+        "cost_relative_delta": 7.982199324593492e-11,
+        "parameter_scaled_max_delta": 5.758141628994795e-07,
+        "solution_usable": true,
+        "termination": "CONVERGENCE"
+      },
+      "dataset_id": "nist-webbook-ethane-saturation-100-280-k-v1",
+      "failure_reasons": [],
+      "final_cost": 1.4622626154617253e-06,
+      "fitted_parameter_sha256": "0105f5a9e78828e021e06d2a31e332cd78d0a6f8a7afd33732427255feba7099",
+      "initial_cost": 89326.40642623953,
+      "iterations": 109,
+      "jacobian": {
+        "complete_columns": true,
+        "full_condition_number": 11109431.31223781,
+        "full_rank": 11,
+        "full_singular_values": [
+          110930.12603242454,
+          3386.4271096172583,
+          283.5312095761962,
+          29.07478889175281,
+          0.8421246455673201,
+          0.6884216417409594,
+          0.6147149267377807,
+          0.4593331538145367,
+          0.35491336159981984,
+          0.09969177998135477,
+          0.009985220927575951
+        ],
+        "parameter_condition_number": 55379.02895965166,
+        "parameter_rank": 3,
+        "parameter_singular_values": [
+          11361.916807103227,
+          25.106802377454297,
+          0.20516641444510253
+        ]
+      },
+      "local_physical_status": "PASS",
+      "methane_parity_failures": [],
+      "methane_parity_status": "NOT_APPLICABLE",
+      "metrics": {
+        "held_out": {
+          "liquid_density_relative_error_max_abs": 0.002724851441449376,
+          "liquid_density_relative_error_rms": 0.0017998174698751956,
+          "pressure_relative_error_max_abs": 0.0016494176381099516,
+          "pressure_relative_error_rms": 0.0009844536927324824,
+          "rows": 4
+        },
+        "stress": {
+          "liquid_density_relative_error_max_abs": 0.00673019332862954,
+          "liquid_density_relative_error_rms": 0.004759001586024371,
+          "pressure_relative_error_max_abs": 0.9097537025122855,
+          "pressure_relative_error_rms": 0.6432950925392231,
+          "rows": 2
+        },
+        "training": {
+          "liquid_density_relative_error_max_abs": 0.002140617802384123,
+          "liquid_density_relative_error_rms": 0.0016433548269994434,
+          "pressure_relative_error_max_abs": 0.0010570878872143204,
+          "pressure_relative_error_rms": 0.0006855603212503168,
+          "rows": 4
+        }
+      },
+      "numerical_status": "PASS",
+      "parameters": [
+        {
+          "active_bound": null,
+          "final": 1.6101710205193558,
+          "lower_bound": 0.5,
+          "movement": 0.003271020519355794,
+          "name": "segment_count",
+          "start": 1.6069,
+          "unit": "1",
+          "upper_bound": 3.5
+        },
+        {
+          "active_bound": null,
+          "final": 3.524959232756593,
+          "lower_bound": 2.0,
+          "movement": 0.004359232756593112,
+          "name": "segment_diameter_angstrom",
+          "start": 3.5206,
+          "unit": "angstrom",
+          "upper_bound": 5.0
+        },
+        {
+          "active_bound": null,
+          "final": 191.09459145171377,
+          "lower_bound": 50.0,
+          "movement": -0.32540854828621946,
+          "name": "dispersion_energy_over_k_kelvin",
+          "start": 191.42,
+          "unit": "K",
+          "upper_bound": 400.0
+        }
+      ],
+      "predictive_status": "DESCRIPTIVE_ONLY_NO_APPROVED_CUTOFF",
+      "solution_usable": true,
+      "solver_status": "PASS",
+      "source": {
+        "citation": "NIST Chemistry WebBook, SRD 69, ethane (CAS 74-84-0) fluid properties",
+        "data_sha256": "ed09b8781acfb7025ca505878b884f6353ddd9f3f4bd7aae2e6df88bbe847a67",
+        "locator": "Saturation properties query, 100 K through 280 K in 20 K increments",
+        "packaged_data_sha256": "b01333e827933c0a7148672c8ae3eef78393320c0d18f2c4d5a0fc40d9bef6b2",
+        "retrieved_on": "2026-07-17",
+        "source_id": "nist-webbook-srd69-ethane-saturation",
+        "transformation": "Exact retained CSV fields and decimal strings; CRLF line endings normalized to LF. Retained source SHA-256: ed09b8781acfb7025ca505878b884f6353ddd9f3f4bd7aae2e6df88bbe847a67; packaged SHA-256: b01333e827933c0a7148672c8ae3eef78393320c0d18f2c4d5a0fc40d9bef6b2.",
+        "units": [
+          [
+            "temperature",
+            "K"
+          ],
+          [
+            "pressure",
+            "Pa"
+          ],
+          [
+            "saturated_liquid_mass_density",
+            "kg/m3"
+          ]
+        ],
+        "url": "https://webbook.nist.gov/cgi/fluid.cgi?Action=Data&Wide=on&ID=C74840&Type=SatP&Digits=8&THigh=280&TLow=100&TInc=20&RefState=DEF&TUnit=K&PUnit=Pa&DUnit=kg%2Fm3&HUnit=kJ%2Fmol&WUnit=m%2Fs&VisUnit=uPa*s&STUnit=N%2Fm",
+        "use_basis": "NIST Standard Reference Data retained as compact source-backed candidate evidence; redistribution and use remain subject to the NIST SRD terms"
+      },
+      "specification_id": "pure-ethane-saturation-lifted-volumes-v1",
+      "stress_status": "EXCLUDED_FAILURE",
+      "termination": "CONVERGENCE"
+    },
+    {
+      "component_id": "propane",
+      "dataset_id": "glos-2004-experimental-propane-saturation-110-340-k-v1",
+      "specification_id": "pure-propane-saturation-lifted-volumes-v1",
+      "artifact_admission": "BLOCKED_CHECKPOINT_A_120_K_PRESSURE_CLOSURE",
+      "solver_status": "PASS",
+      "numerical_status": "PASS",
+      "local_physical_status": "FAIL",
+      "predictive_status": "NOT_ADJUDICATED_NO_APPROVED_HELD_OUT_CUTOFF",
+      "confirmation": {
+        "cost_relative_delta": 1.492895523259907e-11,
+        "parameter_scaled_max_delta": 1.5353816804064557e-7,
+        "solution_usable": true,
+        "termination": "CONVERGENCE"
+      },
+      "parameters": [
+        {"name": "segment_count", "unit": "1", "start": 2.002, "final": 1.9835426308533168, "movement": -0.018457369146682945, "lower_bound": 0.5, "upper_bound": 3.5},
+        {"name": "segment_diameter_angstrom", "unit": "angstrom", "start": 3.6184, "final": 3.627861545037305, "movement": 0.009461545037305008, "lower_bound": 2.0, "upper_bound": 5.0},
+        {"name": "dispersion_energy_over_k_kelvin", "unit": "K", "start": 208.11, "final": 209.27852823846877, "movement": 1.1685282384687525, "lower_bound": 50.0, "upper_bound": 400.0}
+      ],
+      "metrics": {
+        "held_out": {"rows": 18, "pressure_relative_error_max_abs": 0.027968971141426578, "pressure_relative_error_rms": 0.007199215483923339, "liquid_density_relative_error_max_abs": 0.002956015127421603, "liquid_density_relative_error_rms": 0.0020546315218905186},
+        "training": {"rows": 4, "pressure_relative_error_max_abs": 0.002682335279055999, "pressure_relative_error_rms": 0.001696317876566564, "liquid_density_relative_error_max_abs": 0.0021503631844169905, "liquid_density_relative_error_rms": 0.0015485098659833798},
+        "stress": {"rows": 2, "pressure_relative_error_max_abs": 0.002614828093422219, "pressure_relative_error_rms": 0.002614828093422219, "liquid_density_relative_error_max_abs": 0.0007930127771348944, "liquid_density_relative_error_rms": 0.0007930127771348944}
+      },
+      "diagnostics": {
+        "initial_cost": 11454581.481462626,
+        "final_cost": 0.000001832340482302248,
+        "iterations": 1090,
+        "full_rank": 11,
+        "parameter_rank": 3,
+        "full_condition_number": 126868267.68702322,
+        "parameter_condition_number": 534619.7827608634,
+        "failed_held_out_row": "glos2004-propane-sat-120-k",
+        "liquid_pressure_closure_pa": 1.0540036887718429e-7,
+        "scaled_liquid_pressure_closure": 3.293761527412009e-8,
+        "required_scaled_pressure_closure": 1.0e-8,
+        "failure_reasons": ["glos2004-propane-sat-120-k: reporting scaled pressure closure exceeded its threshold", "training or reporting physical validity gate failed"]
+      },
+      "source": {
+        "source_id": "glos-2004-propane-coexistence-experiment",
+        "citation": "Glos, Kleinrahm, and Wagner, Journal of Chemical Thermodynamics 36 (2004) 1037-1059, doi:10.1016/j.jct.2004.07.017",
+        "locator": "Table 2 propane coexistence measurements; NIST ThermoML datasets 1, 2, and 3",
+        "target_csv_sha256": "ccd1cfa15ec44432b06cbf22316d168c61b282631c9b1e1591e497b8d48b5676",
+        "packet_yaml_sha256": "ba31448989f565d05d63908076e836977780aa87199f208310e9b80b03f64697",
+        "source_evidence_sha256": "ed5eb703ccd3e6bb4c4cfa82ecd58c58f9da0c93ab07a204dee94d8b0ae8d081",
+        "validation_commit": "7e51590757f1cb85f51df98e9fe1f88cd4255a88",
+        "validation_tree": "05af9e948c786ddfcf43dba701970f1cbb6435a2"
+      },
+      "artifacts": {
+        "regression_implementation_commit": "aab87ebd4a40cb29f21486e06687c10eb1e44624",
+        "regression_implementation_tree": "462cda550cf5461e4b13cc7e40630708dd336bd7",
+        "regression_wheel_sha256": "32b815fc00241516f13574594af3cf631f8fe30629bbec45ac3828d9357d705f",
+        "provider_commit": "4b10cb899c94687cae734980285badb224dc95e6",
+        "provider_wheel_sha256": "f92f79c8d6f614660e5c201b7061c9b02b5cd1a25a4ed8c8fee0b59adaabf2bf",
+        "provider_parameter_fingerprint": "sha256:9bfbc8d7789e51609945e61dbdf7a020decc8f9e31b408b0977724c7cb3e1551"
+      },
+      "claim_limits": [
+        "Descriptive candidate evidence; validation owns admission.",
+        "No predictive accuracy cutoff is approved.",
+        "The 120 K held-out row failed scaled liquid pressure closure: 3.293761527412009e-8 > 1.0e-8.",
+        "No runtime authority, provider persistence, or global identifiability claim is made."
+      ]
+    }
+  ],
+  "environment": {
+    "contract_sha256": "873a17d92e244f8bb054607a5e3d1854bb927fd6a7e7cab58eca38bff27b2f46",
+    "implementation": "CPython",
+    "imports": {
+      "epcsaft": "environment/site-packages/epcsaft/__init__.py",
+      "epcsaft_regression": "environment/site-packages/epcsaft_regression/__init__.py"
+    },
+    "installed_distributions": [
+      {
+        "name": "Pint",
+        "version": "0.25.3"
+      },
+      {
+        "name": "epcsaft",
+        "version": "0.1.0.dev0"
+      },
+      {
+        "name": "epcsaft-regression",
+        "version": "0.1.0.dev0"
+      },
+      {
+        "name": "flexcache",
+        "version": "0.3"
+      },
+      {
+        "name": "flexparser",
+        "version": "0.4"
+      },
+      {
+        "name": "platformdirs",
+        "version": "4.10.0"
+      },
+      {
+        "name": "typing_extensions",
+        "version": "4.16.0"
+      }
+    ],
+    "machine": "x86_64",
+    "platform": "Linux-6.17.0-40-generic-x86_64-with-glibc2.39",
+    "python": "3.13.14 (main, Jun 23 2026, 15:18:27) [Clang 22.1.3 ]",
+    "python_executable": "environment/bin/python",
+    "python_executable_sha256": "b200d6c7ae464af64f81808ba246a856b1a1cdf3b2ae7088d37d87d31aebe9ff",
+    "python_isolated": true
+  },
+  "executed_at_utc": "2026-07-17T23:19:38.849658+00:00",
+  "limitations": [
+    "The public regression result does not expose start-model saturation predictions. Start/fitted parameters and initial/final objective values are retained; start-prediction CSV cells remain empty rather than being reconstructed downstream.",
+    "Held-out errors are descriptive because no predictive accuracy cutoff is approved.",
+    "The ethane 100 K reporting solve is a retained excluded stress failure and is not an accepted prediction.",
+    "Local rank and condition diagnostics do not establish global identifiability or parameter uncertainty.",
+    "This validation transfers no runtime, release, or publication authority."
+  ],
+  "outputs": {
+    "parameter_csv": {
+      "path": "pure-saturation-regression-parameters.csv",
+      "rows": 9,
+      "sha256": "51e76bbade580467a788858cba5a7b07900efa62953ba4c64f7de36daf27440f"
+    },
+    "prediction_csv": {
+      "path": "pure-saturation-regression.csv",
+      "rows": 43,
+      "sha256": "dc19b7a346b49153b3d8427997f4d67382f26dc1be6bdd8899d5aeb270fca4d6"
+    }
+  },
+  "schema_version": 1
+}

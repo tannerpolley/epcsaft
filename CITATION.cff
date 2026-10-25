@@ -1,0 +1,12 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using this metadata."
+type: software
+title: "ePC-SAFT: an electrolyte equation-of-state engine with exact derivatives for phase and reaction equilibrium and parameter estimation"
+authors:
+  - family-names: Polley
+    given-names: Tanner W.
+    orcid: "https://orcid.org/0009-0008-5957-4152"
+    affiliation: "Department of Chemical Engineering, Brigham Young University"
+version: 1.0.0
+license: GPL-3.0-only
+# Additional permission under section 7 for EPL-licensed Ipopt: see LICENSE.

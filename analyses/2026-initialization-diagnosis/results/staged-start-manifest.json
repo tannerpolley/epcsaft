@@ -1,0 +1,103 @@
+{
+  "schema_version": 1,
+  "analysis": "2026-initialization-diagnosis/staged-start",
+  "issue": 90,
+  "source_commit": "f909bb21a93171c38465adba8777cd3b0bc6c53d",
+  "branch": "roadmap/application-preparation",
+  "wheel": "build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+  "wheel_sha256": "9f73aeb466c54eff80c89a8776c90d49cb9c9c2d130f0eb15bf0311c1f76e606",
+  "parameter_packet": "data/packets/gross-2001-methane-ethane/2/parameters/parameters.json",
+  "parameter_packet_sha256": "7dd1899712aacfbc3395d86349768b0d93dd5dfd75b2e0f0700640be618aa9c2",
+  "installed_distribution": "0.2.0.dev0",
+  "workflow": "one fixed-T/free-P anchor at caller guess, then one original free-T/fixed-P solve from that accepted result",
+  "frozen_inputs": {
+    "temperature_guesses_K": [
+      170.0,
+      179.0,
+      180.0,
+      181.0,
+      190.0
+    ],
+    "anchor_pressure_guess_Pa": 100000.0,
+    "target_pressure_Pa": 1596859.1113026983,
+    "feed_mol": {
+      "methane": 0.5,
+      "ethane": 0.5
+    },
+    "phase_order": [
+      "L",
+      "V"
+    ],
+    "row_tolerance": 1e-10,
+    "temperature_atol_K": 1e-06,
+    "pressure_rtol": 1e-08,
+    "driver_call_limit": 10,
+    "time_limit_s": 30.0
+  },
+  "reference_anchor": {
+    "source": "analyses/2026-initialization-diagnosis/results/manifest.json",
+    "temperature_K": 180.0,
+    "pressure_Pa": 1596859.1113026983,
+    "phase_order": [
+      "L",
+      "V"
+    ],
+    "comparison_criteria": {
+      "pressure_relative": 1e-08,
+      "composition_absolute": 1e-08,
+      "amount_absolute_mol": 1e-08,
+      "density_log_window": 0.009950330853168083
+    }
+  },
+  "acceptance": {
+    "stage": "success=true, requested_tolerance_met=true, topology_event=None_, convergence residual <= 1e-10",
+    "target": "stage acceptance plus T=180 K, P=1596859.1113026983 Pa, and retained E4/P2 anchor comparison",
+    "failure": "retain topology/solver diagnostics; no physical nonexistence inference"
+  },
+  "driver_calls": 10,
+  "elapsed_s": 0.23077700400062895,
+  "outcomes": [
+    {
+      "guess_K": 170.0,
+      "anchor_accepted": true,
+      "target_call_made": true,
+      "target_accepted": true,
+      "target_branch_match": true,
+      "target_topology_event": "None_"
+    },
+    {
+      "guess_K": 179.0,
+      "anchor_accepted": true,
+      "target_call_made": true,
+      "target_accepted": true,
+      "target_branch_match": true,
+      "target_topology_event": "None_"
+    },
+    {
+      "guess_K": 180.0,
+      "anchor_accepted": true,
+      "target_call_made": true,
+      "target_accepted": true,
+      "target_branch_match": true,
+      "target_topology_event": "None_"
+    },
+    {
+      "guess_K": 181.0,
+      "anchor_accepted": true,
+      "target_call_made": true,
+      "target_accepted": true,
+      "target_branch_match": true,
+      "target_topology_event": "None_"
+    },
+    {
+      "guess_K": 190.0,
+      "anchor_accepted": true,
+      "target_call_made": true,
+      "target_accepted": true,
+      "target_branch_match": true,
+      "target_topology_event": "None_"
+    }
+  ],
+  "row_count": 5,
+  "run_utc": "2026-09-21T21:23:29.967541+00:00"
+}

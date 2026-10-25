@@ -1,0 +1,23 @@
+{
+  "available": true,
+  "temperature_K": 300.0,
+  "engine": {
+    "pressure_Pa": 998660.8957399072,
+    "rho_liquid_mol_m3": 11100.251233209618,
+    "rho_vapor_mol_m3": 482.5121268150313
+  },
+  "previous_engine": {
+    "pressure_Pa": 998660.8957396769,
+    "rho_liquid_mol_m3": 11100.251233209596,
+    "rho_vapor_mol_m3": 482.51212681502574
+  },
+  "pressure_relative_spread": 1.0983097200309635e-09,
+  "previous_pressure_relative_spread": 1.0983022594601374e-09,
+  "vapor_density_relative_spread": 1.3643725779425008e-09,
+  "previous_vapor_density_relative_spread": 1.3643725779425165e-09,
+  "criterion": "Same Gross-Sadowski neutral PC-SAFT inputs at the declared temperature; no cross-code spread acceptance tolerance is declared by this producer.",
+  "listing_available": false,
+  "listing_failure": "TypeError: 'float' object is not subscriptable at print(bubble.pressure[0], bubble.phase_mole_fractions(1))",
+  "listing_source_commit": "ac02f8651c2bf7eb9a14c0b4ca48714af23bcd89",
+  "evidence_label": "numerical verification"
+}

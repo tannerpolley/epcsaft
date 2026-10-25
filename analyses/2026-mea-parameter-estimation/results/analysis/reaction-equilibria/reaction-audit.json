@@ -1,0 +1,109 @@
+{
+  "schema_version": 1,
+  "issue": 118,
+  "parent_issue": 80,
+  "target_temperature_k": [293.15, 393.15],
+  "species_order": ["CO2", "MEA", "H2O", "MEAH+", "MEACOO-", "HCO3-", "CO3^2-", "H3O+", "OH-"],
+  "common_standard_state": {
+    "solute_basis": "aqueous molality, ideal infinite dilution",
+    "solvent_basis": "pure liquid water",
+    "standard_molality_mol_per_kg": 1.0,
+    "water_molar_mass_kg_per_mol": 0.01801528,
+    "provider_reference_pressure_pa": 100000.0,
+    "pressure_note": "Provider transformation convention; not attributed to the primary temperature correlations."
+  },
+  "audit_temperatures_k": [293.15, 313.15, 323.0, 323.15, 333.15, 353.15, 373.15, 393.15],
+  "reactions": [
+    {
+      "id": "R1",
+      "equation": "2 H2O <=> H3O+ + OH-",
+      "stoichiometry": [0, 0, -2, 0, 0, 0, 0, 1, 1],
+      "source_standard_state": "unsymmetric aqueous mole fraction at system T and P; solvent pure liquid; solutes ideal infinite dilution",
+      "correlation": {"form": "A + B_K/T + C*ln(T/K) + D_per_K*T", "parameters": {"A": 132.899, "B_K": -13445.9, "C": -22.4773, "D_per_K": 0.0}},
+      "source_to_common_ln_k_offset": 8.033069984598958,
+      "source_domain_k": [273.15, 498.15],
+      "target_segments": [{"classification": "source-qualified", "lower_k": 293.15, "lower_closed": true, "upper_k": 393.15, "upper_closed": true}],
+      "source": "austgen-1991",
+      "locator": "printed pp. 546-547, Eq. (7), reaction (1a), Table V",
+      "fit": {"eligible": false, "coordinates": [], "reason": "Fixed primary water-ionization relation; no reaction-specific independent evidence supports refitting."},
+      "rejected_transcription": {"field": "B_K", "value": 13445.9, "reason": "Opposite sign to primary Table V and physically impossible at 298.15 K."}
+    },
+    {
+      "id": "R2",
+      "equation": "CO2 + 2 H2O <=> H3O+ + HCO3-",
+      "stoichiometry": [-1, 0, -2, 0, 0, 1, 0, 1, 0],
+      "source_standard_state": "unsymmetric aqueous mole fraction at system T and P; solvent pure liquid; solutes ideal infinite dilution",
+      "correlation": {"form": "A + B_K/T + C*ln(T/K) + D_per_K*T", "parameters": {"A": 231.465, "B_K": -12092.1, "C": -36.7816, "D_per_K": 0.0}},
+      "source_to_common_ln_k_offset": 4.016534992299479,
+      "source_domain_k": [273.15, 498.15],
+      "target_segments": [{"classification": "source-qualified", "lower_k": 293.15, "lower_closed": true, "upper_k": 393.15, "upper_closed": true}],
+      "source": "austgen-1991",
+      "locator": "printed pp. 546-547, Eq. (7), reaction (4a), Table V",
+      "fit": {"eligible": false, "coordinates": [], "reason": "Fixed primary carbonic-acid relation; pressure-only VLE does not identify it."}
+    },
+    {
+      "id": "R3",
+      "equation": "H2O + HCO3- <=> H3O+ + CO3^2-",
+      "stoichiometry": [0, 0, -1, 0, 0, -1, 1, 1, 0],
+      "source_standard_state": "unsymmetric aqueous mole fraction at system T and P; solvent pure liquid; solutes ideal infinite dilution",
+      "correlation": {"form": "A + B_K/T + C*ln(T/K) + D_per_K*T", "parameters": {"A": 216.049, "B_K": -12431.7, "C": -35.4819, "D_per_K": 0.0}},
+      "source_to_common_ln_k_offset": 4.016534992299479,
+      "source_domain_k": [273.15, 498.15],
+      "target_segments": [{"classification": "source-qualified", "lower_k": 293.15, "lower_closed": true, "upper_k": 393.15, "upper_closed": true}],
+      "source": "austgen-1991",
+      "locator": "printed pp. 546-547, Eq. (7), reaction (5a), Table V",
+      "fit": {"eligible": false, "coordinates": [], "reason": "Fixed primary bicarbonate relation; pressure-only VLE does not identify it."}
+    },
+    {
+      "id": "R4",
+      "equation": "MEACOO- + H2O <=> MEA + HCO3-",
+      "stoichiometry": [0, 1, -1, 0, -1, 1, 0, 0, 0],
+      "source_standard_state": "thermodynamic molality basis; water solvent activity omitted from mass action",
+      "correlation": {"form": "A + B_K/T", "parameters": {"A": 2.151, "B_K": -1545.3}},
+      "source_to_common_ln_k_offset": 0.0,
+      "source_domain_k": [293.0, 323.0],
+      "target_segments": [
+        {"classification": "source-qualified", "lower_k": 293.15, "lower_closed": true, "upper_k": 323.0, "upper_closed": true},
+        {"classification": "extrapolated", "lower_k": 323.0, "lower_closed": false, "upper_k": 393.15, "upper_closed": true}
+      ],
+      "source": "tong-2012",
+      "locator": "printed pp. 43-44, Eqs. (9) and (12), Table 5 K5 and footnote b",
+      "conversion_provenance": {
+        "precursor": "Aroua et al. (1999), Eqs. (1), (2), and (14): log10 K_form = -0.934 + 671/T",
+        "precursor_direction": "carbamate formation",
+        "precursor_basis_and_units": "concentration basis; K_form in dm3 mol-1",
+        "direction_change": "inversion to carbamate hydrolysis; inverse units mol dm-3",
+        "selected_transformation": "Tong et al. Table 5 footnote b converts the original relation to Eq. (12), reports all Ki on a mol/kg basis, and supplies the rounded natural-log coefficients used here"
+      },
+      "fit": {"eligible": false, "coordinates": [], "reason": "Matin resolves species at one temperature; Böttinger spans temperature but aggregates MEA and MEAH+. No source-backed coefficient prior/bound or independent multi-temperature identification exists."}
+    },
+    {
+      "id": "R5",
+      "equation": "MEAH+ + H2O <=> MEA + H3O+",
+      "stoichiometry": [0, 1, -1, -1, 0, 0, 0, 1, 0],
+      "source_standard_state": "thermodynamic aqueous molality at zero ionic strength; H+ represented locally as H3O+",
+      "correlation": {"form": "-ln(10)*(A_K/T + B + C_per_K*T)", "parameters": {"A_K": 2677.91, "B": 0.3869, "C_per_K": 0.0004277}},
+      "source_to_common_ln_k_offset": 0.0,
+      "source_domain_k": [273.15, 323.15],
+      "target_segments": [
+        {"classification": "source-qualified", "lower_k": 293.15, "lower_closed": true, "upper_k": 323.15, "upper_closed": true},
+        {"classification": "extrapolated", "lower_k": 323.15, "lower_closed": false, "upper_k": 393.15, "upper_closed": true}
+      ],
+      "source": "bates-pinching-1951",
+      "locator": "printed p. 349 abstract and p. 351 Eq. (10)/Table 2",
+      "fit": {"eligible": false, "coordinates": [], "reason": "Matin resolves species at one temperature; Böttinger's MEA+MEAH+ aggregate cannot identify protonation. Pressure-only VLE is insufficient."}
+    }
+  ],
+  "sources": {
+    "austgen-1991": {"doi": "10.1021/ie00051a018", "sha256": "8c0a6a57e5bf9e28b1f9da8022d54290506fe04b4286b6494ef8a44fd924f8db", "evidence": "primary full text, visually verified"},
+    "aroua-1999": {"doi": "10.1021/je980290n", "sha256": "8ff86fb4dc598900c7540bb8ce0b08abd3b2b17121fb027048949bd0fa51eb6a", "evidence": "primary full text, independently verified", "locator": "Eqs. (1), (2), and (14)", "measurement_temperatures_k": [298.0, 308.0, 318.0, 328.0], "reported_direction": "carbamate formation", "reported_basis_and_units": "concentration basis; K_form in dm3 mol-1", "reported_relation": "log10 K_form = -0.934 + 671/T"},
+    "tong-2012": {"doi": "10.1016/j.ijggc.2011.11.005", "sha256": "78af3d67d58ff610dcc7c34fd55a75763470b7cd5bac0f3e39c256c7d7ffd61c", "evidence": "primary full text, visually verified"},
+    "bates-pinching-1951": {"doi": "10.6028/jres.046.039", "sha256": "aff8621efd41dbce106bb189fd104840a1513d9d163f4f57dfb1abbf53a30db1", "evidence": "primary official full text, visually verified"}
+  },
+  "fit_decision": {
+    "pressure_only_refit_sufficient": false,
+    "eligible_coordinates": [],
+    "source_backed_priors_or_bounds": [],
+    "reconsider_when": "Independent multi-temperature true-species or thermochemical evidence is admitted and a rank/profile check identifies a reaction coordinate without absorbing activity-model error."
+  }
+}

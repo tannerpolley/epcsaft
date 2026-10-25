@@ -1,0 +1,22 @@
+[
+  {
+    "pre_applied_J_mol": -8201.9,
+    "increment_J_mol": 250,
+    "total_J_mol": -7951.9,
+    "native_total_enthalpy_J_mol": -7951.899999999998,
+    "law_a": -2.6541074247621057,
+    "law_b_K": 1036.393740064253,
+    "lower_increment_J_mol": -1798.1000000000004,
+    "upper_increment_J_mol": 18201.9
+  },
+  {
+    "pre_applied_J_mol": 8418.5,
+    "increment_J_mol": -200,
+    "total_J_mol": 8218.5,
+    "native_total_enthalpy_J_mol": 8218.500000000002,
+    "law_a": -17.575974980069006,
+    "law_b_K": -7014.323538284062,
+    "lower_increment_J_mol": -18418.5,
+    "upper_increment_J_mol": 1581.5
+  }
+]

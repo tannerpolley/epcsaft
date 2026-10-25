@@ -1,0 +1,124 @@
+{
+ "historical_wheel_sha256": "9f73aeb466c54eff80c89a8776c90d49cb9c9c2d130f0eb15bf0311c1f76e606",
+ "baseline_wheel_sha256": "298a360e532f6f4c5e7ef70c5be45e8b9852310d1c388d6225c504714c3dc410",
+ "claim_changes": [
+  "Historical confirmation-1 had no candidate (boundary seed has no coexisting density roots); on the current wheel both the unmodified Python loop and native sequence converge all four starts. This updates available-start count from three to four and the spread accordingly; the first-start reference and physical holdout limits are unchanged."
+ ],
+ "diagnosis": {
+  "case": "confirmation-1, [191 K, 2.1489, 3.5209 angstrom]",
+  "historical_failure": [
+   {
+    "start": "confirmation-1",
+    "status": "initial_evaluation_failed",
+    "message": "boundary seed has no coexisting density roots",
+    "trial_failures": [
+     [
+      4,
+      "CentralSolveUnavailable",
+      "boundary seed has no coexisting density roots"
+     ]
+    ]
+   }
+  ],
+  "unmodified_current_wheel_status": "converged",
+  "unmodified_current_wheel_sse": 7.401580471511961e-06,
+  "native_status": "converged",
+  "native_sse": 7.401580471511961e-06,
+  "cause": "The historical result rejected confirmation-1 at the 330 K pressure guess because it did not find two coexisting density roots. The current installed wheel returns two roots at the same literal physical start and pressure guess, and the saturation solve closes to 1.42e-15. The unmodified script already converges this start before conversion. This is a resolved historical initialization/density-root availability limit, not a changed fit objective or start. Attribution to a specific intervening Engine change remains unverified without replaying that historical wheel.",
+  "required_action": "report the historical failure resolution; do not restore the old rejection or change tolerances/starts",
+  "current_cold_start_probe": {
+   "T_K": 330.0,
+   "pressure_guess_Pa": 1983000.0,
+   "start": {
+    "identity": "confirmation-1",
+    "values": [
+     191.0,
+     2.1489,
+     3.5209
+    ]
+   },
+   "pressure": {
+    "value": 2665418.49276717,
+    "status": "Available",
+    "message": "SUCCESS: converged: residual 1.4188058673835669e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 5 iterations, contraction absent, floor absent, amplification 0",
+    "residual": 0.2957502286850406,
+    "closure": 1.418805867383567e-15
+   },
+   "phase_density": {
+    "value": 392.2016219183696,
+    "status": "Available",
+    "message": "SUCCESS: converged: residual 1.4188058673835669e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 5 iterations, contraction absent, floor absent, amplification 0",
+    "residual": -0.10326878711816331,
+    "closure": 1.418805867383567e-15
+   },
+   "liquid_at_pressure": {
+    "molar_density": 8640.921027095736,
+    "stable_root_count": 2
+   },
+   "vapor_at_pressure": {
+    "molar_density": 958.8880500621813,
+    "stable_root_count": 2
+   }
+  }
+ },
+ "limits": [
+  "first declared start remains the reference, even though another start has a slightly smaller cost",
+  "holdout and 110 K stress rows remain descriptive Glos comparisons; no accuracy bar or physical validation",
+  "conditional covariance uses the same unit-variance assumption and three residual degrees of freedom"
+ ],
+ "wheel_sha256": "298a360e532f6f4c5e7ef70c5be45e8b9852310d1c388d6225c504714c3dc410",
+ "build_fingerprint": "c0b44c05b7a8d4c72e6d1d43161d3c8777173600638066b8a871ed22132d7702",
+ "base": "f4075c0f56774c301ba21e5601aa351360c3a08f",
+ "comparison_rows": 619,
+ "comparison_rules": {
+  "pressure_density_relative": 1e-07,
+  "dimensionless_residual_absolute": 1e-07,
+  "sse_allowed_increase": "1e-8*max(1,before)",
+  "conditioning_covariance_parameters": "descriptive; rank, bounds and availability compared exactly"
+ },
+ "scientific_basis": "numerical verification of the same log-ratio least-squares problem; no parameter adoption or physical validation",
+ "inputs": {
+  "analyses/2026-pure-saturation-regression/inputs/propane-baseline-v3.fit.json": "f2b504cd7b17e64252dd886e12f6614556a66272bbf35903402f9f22c2add277",
+  "analyses/2026-pure-saturation-regression/inputs/propane-baseline.fit.json": "74da1e1064259b4b149371435d32e74e9b47bd9c9c552d20155f736d376fc86b"
+ },
+ "comparison_failures": [
+  {
+   "comparison": "historical_to_native",
+   "case": "confirmation-1",
+   "role": "",
+   "T_K": "",
+   "quantity": "start_status",
+   "unit": "1",
+   "observed": "",
+   "before": "initial_evaluation_failed",
+   "after": "converged",
+   "difference": "",
+   "rule": "exact",
+   "tolerance": 1e-07,
+   "passed": false,
+   "before_status": "",
+   "after_status": "",
+   "declared_phase": "",
+   "native_closure_residual": ""
+  },
+  {
+   "comparison": "historical_to_native",
+   "case": "confirmation-1",
+   "role": "",
+   "T_K": "",
+   "quantity": "sse",
+   "unit": "1",
+   "observed": "",
+   "before": null,
+   "after": 7.401580471511961e-06,
+   "difference": "",
+   "rule": "objective_increase",
+   "tolerance": 1e-07,
+   "passed": false,
+   "before_status": "",
+   "after_status": "",
+   "declared_phase": "",
+   "native_closure_residual": ""
+  }
+ ]
+}

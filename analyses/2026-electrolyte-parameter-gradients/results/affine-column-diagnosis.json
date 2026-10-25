@@ -1,0 +1,23 @@
+{
+  "base": "5fe2a70acd33b972e483545f0e56b31ef860c920",
+  "wheel_sha256": "8a38e39c1d7df1daef9e9ad186142d3ee16c0963adacad6935baf7521b1fc6ee",
+  "conditions": {
+    "temperature_K": 298.15,
+    "pressure_Pa": 100000,
+    "molality_mol_kg": 0.1,
+    "q_angstrom": 3.2,
+    "born_diameter_angstrom": 3.5
+  },
+  "column_comparison_parameters": "properties_support::aqueous_electrolyte with explicit coupled Na lengths",
+  "basis_probe_parameters": "Figiel reference electrolytes /4 water/Na/Cl with explicit coupled Na lengths and Born",
+  "failed_groups": [
+    "coupled exact columns"
+  ],
+  "unexecuted": [],
+  "diagnosis": "Public ObservationEvaluator::evaluate divides optimizer columns by residual_slope, returning prediction columns. Fit residual columns retain their declared basis. Revision-1 design assigns residual-column meaning to the public field.",
+  "stage2_started": false,
+  "evidence_type": "numerical verification and column-basis diagnosis",
+  "subsequent_independent_evidence": "affine-coordinate-recovery.csv",
+  "resolution": "Revision 2 Ready; native pre-division residual output passes the independent ln-observable references.",
+  "resolution_evidence": "affine-coordinate-qualification.csv"
+}

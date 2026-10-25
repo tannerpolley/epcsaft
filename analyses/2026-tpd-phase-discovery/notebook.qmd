@@ -1,0 +1,253 @@
+---
+title: "Declared phase equilibrium and explicit tangent-plane calculations"
+execute:
+  enabled: true
+---
+
+## Named-release rerun (#680)
+
+This section reads only the retained named-release outputs. The evidence is
+**numerical verification** on the stated manufactured or shared-model inputs.
+It establishes no physical validation or global-stability certificate.
+Independent delivered review and owner promotion for manuscript use remain open.
+
+```{python}
+#| output: asis
+import csv as _csv
+import json as _json
+from pathlib import Path as _Path
+_rr = _Path("results/main-8298c602")
+_rp = _json.loads((_rr / "provenance.json").read_text())
+_rs = _json.loads((_rr / "summary.json").read_text())
+def _rt(headers, data):
+    print()
+    print("| " + " | ".join(headers) + " |")
+    print("| " + " | ".join("---" for _ in headers) + " |")
+    for row in data:
+        print("| " + " | ".join(str(x) for x in row) + " |")
+print("Release: `" + _rp["release"] + "`. Wheel SHA-256: `" + _rp["wheel_sha256"] + "`.")
+_rt(["Case", "Quantity", "Named release", "Previous retained value", "Criterion"],
+    [[r['case'], r['quantity'], r['new_value'], r['previous_value'], r['criterion'] if r['criterion'] is not None else "reported; no separate allowance"] for r in _rs['comparison_rows']])
+print("\nCharged-trial portion: **unavailable**. " + _rs['charged_failure'])
+print("\n" + _rs['charged_followup'])
+```
+
+The complete requests, returned operands, causes and wheel identity stay in
+[the retained run](results/main-8298c602/). No start, physical input, method,
+option or criterion was adjusted to obtain agreement.
+
+The composition differences have mole-fraction units. Gibbs differences are
+scaled by the larger of unity and the absolute reference $G/(RT)$; density
+differences are relative to the independent FeOs result. Amount differences
+are reported in moles without introducing a separate allowance. The neutral
+and FeOs stages run separately from the charged stage and retain their own
+successful numerical checks.
+
+## Earlier retained studies
+
+The original result tables remain in this analysis. The
+[earlier notebook](https://github.com/tannerpolley/ePC-SAFT/blob/8298c6029ebb8b467929badc4a223c580ec591ab/analyses/2026-tpd-phase-discovery/notebook.qmd)
+records their conditions, detailed interpretation and review boundaries. Those
+older wheels do not supply numbers for the current-method placeholders.
+
+## Charged-trial qualification on the named release
+
+This section records numerical verification of the current per-trial admission
+rule on release `main-8298c6029ebb8b467929badc4a223c580ec591ab`. Earlier sections
+retain their historical wheels and admission rules. The
+[current rule](../../engine/docs/science/algorithms.md#alg-stability) and
+[accepted amendment](../../docs/scientific/decisions/0012-native-tangent-plane-phase-discovery.md)
+require a charged trial under density-independent permittivity to match a stable
+root on the liquid side of its own composition's density loop.
+
+The [ionic report](results/main-8298c602-ionic-qualification/ionic.json),
+[complete numerical rows](results/main-8298c602-ionic-qualification/ionic.csv),
+[three-sample costs](results/main-8298c602-ionic-qualification/ionic-costs.csv),
+[seed outcomes](results/main-8298c602-ionic-qualification/seed-outcomes.json),
+[supplied-point replay](results/main-8298c602-ionic-qualification/supplied-boundary.json)
+and [installed-wheel provenance](results/main-8298c602-ionic-qualification/provenance.json)
+retain the conditions, quantities and identities. The
+[native MEA seed evidence](results/main-8298c602-ionic-qualification/mea-seed-evidence.json)
+identifies the excluded default seeds as vapor-side sole roots with a density
+loop, distinct from the historical loop-less MEA point. Python declares inputs
+and reads native results; it performs no thermodynamic search.
+
+{{< include results/main-8298c602-ionic-qualification/summary.md >}}
+
+These discrete admission categories are presented as tables. The evidence
+qualifies the supplied model selections and finite trial set. Estimated
+numerical uncertainty is not a rigorous bound. It establishes no physical
+validation, complete root enumeration, global stability, universal convergence
+or successful MEA flash phase discovery. Other permittivity selections are not
+qualified here. Independent delivered review and investigator promotion remain
+pending before manuscript use.
+
+## Explicit charged Vapor qualification attempt (#771)
+
+The selected solvent-density-temperature model admits the explicitly declared
+water, sodium-cation and chloride-anion Vapor support, including an intensive
+charge row on the zero-pinned vapor. The bubble meets the stated absolute
+pressure, chemical, charge, normalization, inventory and refinement limits.
+The manufactured trace recovery fails its log-fraction limit, so charged Vapor
+remains numerically unqualified. The permitted Newton row-equilibration probe
+also fails; its change was removed from the runtime.
+
+```{python}
+#| output: asis
+_q771 = _Path("results/issue-771-partial")
+_p771 = _json.loads((_q771 / "bubble.json").read_text())
+_b771 = list(_csv.DictReader((_q771 / "bubble.csv").open()))
+_t771 = list(_csv.DictReader((_q771 / "trace-fractions.csv").open()))
+print("Conditions and basis: " + str(_p771["conditions"]) + ".")
+_rt(["Requested row tolerance", "Quantity", "Value", "Unit"],
+    [[r["case"], r["quantity"], r["value"], r["unit"]] for r in _b771
+     if r["quantity"] in ("P", "water_gap_over_RT", "full_salt_gap_over_RT", "1/relative_charge", "1/ion_log_gap", "pressure_change", "max_endpoint_change")])
+_rt(["Newton representation", "Ionic coordinate", "Target fraction", "Returned fraction", "Log error", "Limit"],
+    [[r["variant"], r["coordinate"], r["target"], r["returned"], r["log_error"], r["log_error_limit"]]
+     for r in _t771 if r["coordinate"] != "0"])
+```
+
+The small absolute charge residual does not resolve the vapor-ion ratio.
+The trial balance rows mix charge with normalization, leaving the charge
+direction numerically unresolved at trace scale even after left row scaling.
+At that partial-build revision, a different charge representation required a design decision.
+The [retained rows and diagnostics](results/issue-771-partial/) identify the
+input hash, loaded libraries, raw coordinates, reconstructed fractions,
+supplied-point root failures and failed correction. Tables suffice for these
+scalar checks and the failed recovery; a curve would imply an unmeasured trend.
+
+This section records numerical verification attempts for explicit declared
+calculations and supplied-point branch evaluation only. It establishes no
+charged-vapor discovery, physical vapor validation or relative accuracy of the
+real bubble's trace-ion concentrations. Discovery initial candidates and its
+charged-vapor addition veto remain unchanged. These results have not been
+independently reviewed or promoted for manuscript use. The implementation
+handoff must retain this no-discovery limit while qualification is incomplete.
+
+### Log charge-balance correction: bubble closure and failed manufactured recovery
+
+The subsequent correction retains normalization and charge as separate trial
+balance rows and uses the exact log charge-balance row in the existing Newton
+correction and convergence assessment. It closes the literal bubble's relative
+vapor charge at both requested tolerances. The manufactured separated-seed
+calculation instead reaches a different stationary point with negative
+pressure–density slope, and the existing curvature check rejects it. Full
+transformed rank and a small charge defect therefore do not establish recovery
+of the manufactured Vapor solution. No start, damping budget, tolerance or
+solver was changed to avoid this failure.
+
+```{python}
+#| output: asis
+_l771 = _Path("results/issue-771-log-charge")
+_lb771 = list(_csv.DictReader((_l771 / "bubble.csv").open()))
+_lt771 = list(_csv.DictReader((_l771 / "trace-fractions.csv").open()))
+_ld771 = _json.loads((_l771 / "diagnosis.json").read_text())
+_rt(["Requested row tolerance", "Quantity", "Value", "Unit"],
+    [[r["case"], r["quantity"], r["value"], r["unit"]] for r in _lb771
+     if r["quantity"] in ("P", "water_gap_over_RT", "full_salt_gap_over_RT", "1/relative_charge", "1/x/1", "1/x/2", "pressure_change", "max_endpoint_change")])
+_rt(["Ionic coordinate", "Target fraction", "Reconstructed fraction", "Log error", "Limit"],
+    [[r[k] for k in ("coordinate", "target", "returned", "log_error", "log_error_limit")]
+     for r in _lt771 if r["coordinate"] != "0"])
+_rt(["Native diagnostic", "Retained output"], list(_ld771["native_probe"].items()))
+```
+
+The [retained correction evidence](results/issue-771-log-charge/) includes
+physical rows, classified rows, raw coordinates, endpoint ranks, returned
+fractions, chemical gaps and root checks. The derivative probe checks the exact
+log-charge Jacobian by finite differences; it does not change runtime
+derivatives. The target is evaluated directly only as a diagnostic, never used
+as the falsifier's seed. The actual solve retains the original separated seed.
+
+These are numerical verification attempts for explicit declared calculations.
+They establish neither charged-vapor discovery nor physical vapor
+applicability, and no experimental uncertainty for vapor-ion concentrations
+is available. The earlier Liquid manufactured check did not compare recovered
+log fractions; this result supplies no broader Liquid trace-ion qualification.
+The mandatory recovery failure keeps the capability unqualified. Independent
+delivered review, owner allowance approval and manuscript promotion remain open.
+
+
+### Newton refinement leaves an initially correct vapor root
+
+The initial density and the optimizer endpoint both lie on their own stable
+vapor pressure roots. The full numerical Jacobian agrees with centered finite
+differences, and the linear correction solves that system to arithmetic
+precision. Reclosing the optimizer endpoint with the existing vapor-root
+owner before refinement returns the same unstable stationary point. That
+unsuccessful probe was removed from runtime. These observations locate the
+failure in the nonlinear refinement trajectory; they do not identify a
+wrong density-root selector or an inaccurate linear system.
+
+
+
+The accepted first damped correction reduces the largest numerical residual
+while increasing the normalization error. The existing refinement permits
+such intermediate points and ultimately reaches the rejected branch.
+At that revision, changing nonlinear step acceptance needed a method decision
+beyond the accepted log-charge correction. The subsequent branch-preserving
+method and its recovered solution are reported below. The
+[branch diagnosis](results/issue-771-log-charge/branch-selection.json) retains
+the conditions, source identities, attempted density reclosure and limits.
+Scalar tables clarify this failed recovery; a curve would imply an unmeasured
+continuous trajectory. This diagnosis supplies no charged-vapor numerical
+qualification or physical validation and has not received independent
+review or manuscript promotion.
+
+### Scoped branch checks recover the manufactured Vapor solution
+
+The branch-preserving Newton polish recovers the manufactured trace fractions
+from the unchanged separated seed. It inspects common-normalized coordinates
+at unchanged packing, without charge reconstruction. The first otherwise
+merit-admissible proposal leaves the declared Vapor root window; rejecting it
+allows the existing damping and recovery to reach the intended solution.
+The [retained branch inspections](results/issue-771-log-charge/branch-preserving.csv)
+include raw coordinates and rows, normalized composition, declared and anchored
+roots, pressure slopes, log-fraction errors and work. Scalar tables expose these
+checks directly; a fitted or interpolated curve would add no measured quantity.
+
+```{python}
+#| output: asis
+_bp771 = list(_csv.DictReader((_l771 / "branch-preserving.csv").open()))
+_rt(["Point", "Quantity", "Value", "Unit"],
+    [[r[k] for k in ("point", "quantity", "value", "unit")] for r in _bp771
+     if r["quantity"] in ("root_displacement", "pressure_slope", "normalization_defect", "charge_residual", "reduced_hessian_equilibrated", "reduced_hessian_band", "h", "numerical_rank", "physical_rank", "log_error/1", "log_error/2", "log_error/3", "iterations", "evaluations", "hessian_calls", "root_calls", "eos_evaluations")])
+_a771 = _json.loads((_l771 / "admission.json").read_text())
+print(_a771["conditions"])
+_rt(["Compiler", "Reaction reference", "EOS evaluations", "Density solves", "Cause"],
+    [[stage, r["referenced"], r["eos_evaluations"], r["density_solves"], r["cause"]] for stage in ("before", "after") for r in _a771[stage]])
+```
+
+The real bubble and supplied-point calculations skip this inspection. Their
+finite physical arrays and work match the pushed log-charge implementation
+bit-for-bit at the checked inputs. The owner approved the source allowance on
+2026-10-22; [the calculation identities and limits](results/issue-771-log-charge/branch-preserving.json)
+retain that authority separately from numerical evidence.
+
+This is numerical verification of explicit declared calculations and the scoped
+optimized trial. It adds no charged-vapor discovery and does not validate the
+physical vapor applicability, vapor-ion concentrations or their uncertainty.
+Independent delivered review and investigator promotion remain pending.
+
+
+### Omitted-charge admission precedes reference calculations
+
+The compiler refuses a free charged Vapor selected as the omitted-charge phase
+before preparing reaction or solid references. It retains effective-support
+pruning and the internal trial exemption. The preceding tables retain the
+manufactured recovery, admission counts, physical inputs and reference basis. This is an admission
+check; it supplies no physical reaction model.
+
+The existing native check fails on the preceding implementation with the
+referenced declaration and passes after reference preparation moves later.
+DipolarPerturbation, IonSuppression and ComponentMixing declaration refusals
+also perform zero EOS evaluations and zero density solves. The manufactured
+diagnostic is byte-identical to round 3; the real bubble's finite arrays and
+work, supplied-point values and trace-curvature operands remain bit-identical.
+Supplied-point evaluation retains its declared thermodynamic work and adds no
+optimized-trial branch inspections. The [admission counts and calculation
+identities](results/issue-771-log-charge/admission.json) retain the comparisons.
+A table suffices for these discrete refusals and scalar counts.
+
+These are numerical verification results for the declared inputs. Physical
+vapor-ion applicability and uncertainty remain unvalidated. Independent
+delivered review of this correction and investigator promotion remain pending.

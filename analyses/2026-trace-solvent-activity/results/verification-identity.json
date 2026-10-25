@@ -1,0 +1,35 @@
+{
+  "wheel_sha256": "9e6a76cf59d4e2fef3347d895bf3a966ecced01f13dc6e0caec74c3c3d618dc4",
+  "source_base": "502e8099051c00bf169198c970f3525bbcfac7fd",
+  "prior_delivery": "c5ba43b1376777884620b3ad9aeea938dbbba116",
+  "diagnosis_base": "3f5ee19f",
+  "runtime_source_sha256": {
+    "engine/native/core/numerical_policy.hpp": "1155861db579458c21d299bfe1cd3fe5396da0b17aea03d183b5bc12f967912c",
+    "engine/native/properties/helmholtz_model.hpp": "28666de553715100bd55f8b8dd3761e6addd81ac24bccc90d524234c4711f523",
+    "engine/native/properties/infinite_dilution_reference.cpp": "cab64eca7789e1510565e8f7fe93c35e2f4864d422c1650c30d8897c70bf8f3a",
+    "engine/src/epcsaft/_core.pyi": "872b4200c2629099cc4105c821e58f080baa518ee19293010211ec37c4ac23b1"
+  },
+  "script_sha256": "93aa149609294643cc8829fc5dcf1b098e49edf4be425ddba522ade9807afef3",
+  "retained_values_path": "analyses/2026-divalent-chloride-activity/results/model-curves.csv",
+  "retained_values_sha256": "5d3b72bf6b88af3b8cc19ad1556783fab8d262d063c2139da55ef9a9382773e3",
+  "input_sha256": {
+    "packet3": "79259c245dd748121d557ccd5c931306005a0ae01e21f6d9173a6a8de6db892d",
+    "packet4": "8f0313b6ebecb891873866a2181b32f8aeb44a49860487f34aeab8aecfa596f9"
+  },
+  "temperature_K": 298.15,
+  "pressure_Pa": 100000.0,
+  "resolved_row_count": 748,
+  "maximum_resolved_change": 9.481757139440106e-07,
+  "maximum_pressure_corrected_identity_error": 3.6925035089436928e-09,
+  "rounded_six_changed": 21,
+  "trace_debye_absolute_error": 4.088214223940678e-05,
+  "mixed_solvent_osmotic": "absent",
+  "mixed_input_path": "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json",
+  "mixed_input_sha256": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+  "debye_A_ln": 1.1809649178535253,
+  "falsifier_criteria": {
+    "trace_absolute": 0.0001,
+    "resolved_absolute": 1e-06,
+    "pressure_corrected_absolute": 5e-09
+  }
+}

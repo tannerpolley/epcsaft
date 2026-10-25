@@ -1,0 +1,39 @@
+component_a,component_b,k_ij_298_15,set,locator
+lithium-cation,water,-0.25,all,Table 3
+sodium-cation,water,0.00046485,all,"Table 3 printed -7.981e-4 T/K + 2.38; evaluated with the Held 2014 slope -7.981e-3 (see README)"
+potassium-cation,water,0.1998222,all,"Table 3 printed -4.012e-4 T/K + 1.396; evaluated with the Held 2014 slope -4.012e-3 (see README)"
+chloride-anion,water,-0.25,all,Table 3
+bromide-anion,water,-0.25,all,Table 3
+iodide-anion,water,-0.25,all,Table 3
+chloride-anion,lithium-cation,0.669,all,Table 4
+bromide-anion,lithium-cation,0.591,all,Table 4
+iodide-anion,lithium-cation,0.002,all,Table 4
+chloride-anion,sodium-cation,0.317,all,Table 4
+bromide-anion,sodium-cation,0.290,all,Table 4
+iodide-anion,sodium-cation,0.018,all,Table 4
+chloride-anion,potassium-cation,0.064,all,Table 4
+bromide-anion,potassium-cation,-0.102,all,Table 4
+iodide-anion,potassium-cation,-0.312,all,Table 4
+methanol,sodium-cation,-0.31,correlation,Table 8
+methanol,potassium-cation,0.47,correlation,Table 8
+chloride-anion,methanol,-0.21,correlation,Table 8
+bromide-anion,methanol,-0.42,correlation,Table 8
+ethanol,sodium-cation,0.42,correlation,Table 8
+ethanol,potassium-cation,-0.2,correlation,Table 8
+chloride-anion,ethanol,-0.15,correlation,Table 8
+bromide-anion,ethanol,-0.35,correlation,Table 8
+ethanol,iodide-anion,-0.38,correlation,Table 8
+iodide-anion,methanol,0,all,"Section 2.2 ion-organic solvent k_ij = 0; Table 8 gives no value (-)"
+lithium-cation,methanol,0,all,Section 2.2 ion-organic solvent k_ij = 0; Table 8 has no Li+
+lithium-cation,ethanol,0,all,Section 2.2 ion-organic solvent k_ij = 0; Table 8 has no Li+
+c4mim-cation,triflate-anion,0,all,Ji 2012 strategy 6: no k_ij between IL ions
+sodium-cation,c4mim-cation,0,all,Section 2.2: k_ij between ion and IL-ions set to zero
+sodium-cation,triflate-anion,0,all,Section 2.2: k_ij between ion and IL-ions set to zero
+potassium-cation,c4mim-cation,0,all,Section 2.2: k_ij between ion and IL-ions set to zero
+potassium-cation,triflate-anion,0,all,Section 2.2: k_ij between ion and IL-ions set to zero
+chloride-anion,c4mim-cation,0,all,Section 2.2: k_ij between ion and IL-ions set to zero
+chloride-anion,triflate-anion,0,all,Section 2.2: k_ij between ion and IL-ions set to zero
+bromide-anion,c4mim-cation,0,all,Section 2.2: k_ij between ion and IL-ions set to zero
+bromide-anion,triflate-anion,0,all,Section 2.2: k_ij between ion and IL-ions set to zero
+iodide-anion,c4mim-cation,0,all,Section 2.2: k_ij between ion and IL-ions set to zero
+iodide-anion,triflate-anion,0,all,Section 2.2: k_ij between ion and IL-ions set to zero

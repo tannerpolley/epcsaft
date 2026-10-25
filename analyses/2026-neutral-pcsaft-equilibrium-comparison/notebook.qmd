@@ -1,0 +1,87 @@
+---
+title: "Neutral propane saturation on the named release"
+format: html
+execute:
+  enabled: true
+  echo: false
+---
+
+The package's propane saturation state is compared with fresh FeOs, Clapeyron,
+teqp and ThermoPack returns using the study's original neutral PC-SAFT inputs.
+The pressure and vapor-density spreads remain at the scale of the earlier
+cross-code comparison. The declared producer sets no spread tolerance, so these
+are measured implementation differences rather than a new pass/fail threshold.
+
+## Named-release rerun (#680)
+
+This is **numerical verification** against independent implementations of the
+same equations at the declared propane saturation state. It supplies no physical
+validation. Independent delivered review and owner promotion remain open.
+
+```{python}
+#| output: asis
+import csv as _csv
+import json as _json
+from pathlib import Path as _Path
+_rr = _Path('results/main-8298c602')
+_rp = _json.loads((_rr / 'provenance.json').read_text())
+_rs = _json.loads((_rr / 'summary.json').read_text())
+def _rt(headers, rows):
+    print()
+    print('| ' + ' | '.join(headers) + ' |')
+    print('| ' + ' | '.join('---' for _ in headers) + ' |')
+    for row in rows:
+        print('| ' + ' | '.join(str(v) for v in row) + ' |')
+print('Release: `' + _rp['release'] + '`. Wheel SHA-256: `' + _rp['wheel_sha256'] + '`.')
+_values = list(_csv.DictReader((_rr / 'values.csv').open()))
+_rt(['Implementation', 'Temperature / K', 'Pressure / Pa', 'Liquid density / mol m⁻³', 'Vapor density / mol m⁻³'],
+    [[r[k] for k in ('implementation','temperature_K','pressure_Pa','rho_liquid_mol_m3','rho_vapor_mol_m3')] for r in _values])
+print('\nOld/new comparison:\n')
+_rt(['Quantity', 'Named release', 'Previous retained value'], [
+    ['Pressure relative spread', _rs['pressure_relative_spread'], _rs['previous_pressure_relative_spread']],
+    ['Vapor-density relative spread', _rs['vapor_density_relative_spread'], _rs['previous_vapor_density_relative_spread']],
+    *[[k, _rs['engine'][k], _rs['previous_engine'][k]] for k in _rs['engine']],
+])
+print('\nCriterion: ' + _rs['criterion'])
+print('\nListing: **unavailable as printed**. ' + _rs['listing_failure'])
+```
+
+The spread is the largest value minus the smallest, divided by the magnitude
+of the package's value. [The comparison table](results/main-8298c602/comparison.csv)
+retains each new value, previous value and difference. The previous numbers
+come from the retained table, whose package pressure differs from the older
+rounded README narrative. No value is borrowed from that narrative.
+
+The parameter record is Gross and Sadowski's neutral propane model, with
+association, polarity and electrolyte terms disabled as declared in
+[the study](README.md). The comparison is one pure-fluid saturation point; it
+does not qualify mixtures, reacting states or other phases. The actual loaded
+comparator environments and versions are recorded in
+[provenance](results/main-8298c602/provenance.json). The collector's fork records
+identify its declared checkouts and parameter input; they are not the loaded
+FeOs or Clapeyron versions. All Clapeyron tasks used one Julia process.
+
+## Listing execution
+
+[The exact listing source](scripts/listing1.py) was extracted from the paper's
+recorded head and executed unchanged. [Its traceback](results/main-8298c602/listing1.log)
+shows that the first pressure print indexes a scalar return. The derivative
+request was not reached. No pressure or derivative from this failed listing
+is promoted or quoted as its result; the manuscript remains unchanged.
+
+## Listing 1 interface rerun (#720)
+
+The separate [methane/ethane listing](scripts/listing1.py) now reads scalar
+`bubble.pressure`. Commit `b11d69d64` (#609 leg 2) made public temperature and
+pressure readouts plain numbers. The listing's input composition and temperature
+remain unchanged. Its returned pressure, vapor fractions and available
+temperature action on `ca719012` are retained below.
+
+```{python}
+#| echo: false
+print(_Path('results/issue-720/listing1-repaired.log').read_text())
+```
+
+The listing has no stored numerical assertion; these returned quantities verify
+the current input and readout path. They do not rerun or replace the propane
+cross-package rows and supply no physical validation.

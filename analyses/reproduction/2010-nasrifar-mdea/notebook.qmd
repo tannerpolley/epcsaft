@@ -1,0 +1,303 @@
+---
+title: "Nasrifar and Tafazzol: neutral MDEA reproduction and reactive limits"
+format:
+  html:
+    toc: true
+    embed-resources: true
+jupyter: python3
+execute:
+  echo: false
+  warning: false
+---
+
+The retained molecular PC-SAFT declarations reproduce the selected dew-curve
+readings. Bubble-curve temperatures remain outside the source-reading bounds.
+The tighter solve and bounded inverse/association checks do not explain that
+disagreement. Its cause remains undetermined. These are numerical-verification
+comparisons with the paper's predictions; agreement with measurements is a
+separate physical comparison. This attempt does not establish physical validation
+of an MDEA application model or complete the reactive part of the paper.
+
+```{python}
+import csv, gzip, json
+from pathlib import Path
+from IPython.display import Markdown, display
+import matplotlib.pyplot as plt
+root = Path.cwd()
+source = root / 'inputs/source'
+run = json.loads(gzip.decompress((root / 'results/native-results.json.gz').read_bytes()))
+diag = json.loads((root / 'results/diagnosis.json').read_text())
+with (root / 'results/comparisons.csv').open() as f:
+    rows = list(csv.DictReader(f))
+with (source / 'mdea-cases.csv').open() as f:
+    cases = list(csv.DictReader(f))
+cal = json.loads((source / 'figure-calibration.json').read_text())
+def table(headers, data):
+    display(Markdown('| '+' | '.join(headers)+' |\n| '+' | '.join(['---']*len(headers))+' |\n'+'\n'.join('| '+' | '.join(map(str,r))+' |' for r in data)))
+model = [r for r in rows if r['prediction'] and r['series'] != 'measured']
+measured = [r for r in rows if r['prediction'] and r['series'] == 'measured']
+points = run['points']
+```
+
+The source is Nasrifar and Tafazzol (2010), DOI
+[10.1021/ie901181n](https://doi.org/10.1021/ie901181n), Tables 1–3 and Figures
+6–7 and 15–17. The adopted packet declares neutral molecules, MDEA 3B, water
+2B, sigma-cubed association, the Wolbach–Sandler combining rule and the
+published binary interactions. It includes no polar or electrolyte terms.
+The packet is materialized byte-for-byte; its [provenance](inputs/parameters/provenance.json)
+binds the file hash and complete-packet fingerprint. Molar masses have
+independent repository/formula provenance. No parameters were fitted here.
+
+## Original cases
+
+```{python}
+case_rows = []
+for case in cases:
+    selected = [r for r in model if r['panel'] == case['figure']]
+    description = f"dew {sum(r['outcome']=='reproduced' for r in selected if r['series']=='dew')}/{sum(r['series']=='dew' for r in selected)}; bubble {sum(r['outcome']=='reproduced' for r in selected if r['series']=='bubble')}/{sum(r['series']=='bubble' for r in selected)} within rectangles; bubble cause undetermined" if selected else ('scoring withheld: printed axis conflicts with caption; no guessed inputs' if case['figure']=='7' else 'unavailable: Engine #776')
+    case_rows.append([case['figure'], case['system'], description])
+table(['Figure','System','Outcome'], case_rows)
+```
+
+## Neutral comparisons
+
+Horizontal coordinates are liquid MDEA mole fractions for bubbles and vapor
+MDEA mole fractions for dews. Source model readings are points with fixed
+source-reading rectangles. Native values are independent evaluations at those
+coordinates and both horizontal bounds; they are not an interpolated curve.
+The lower branch disagrees despite small defining-equation residuals. Upper
+branch agreement alone cannot verify the entire binary model.
+
+```{python}
+fig, axes = plt.subplots(1,3,figsize=(13,4),layout='constrained')
+for ax,panel in zip(axes,['6a','6b','6c']):
+    for series,color in [('dew','#0072B2'),('bubble','#D55E00')]:
+        data = [r for r in model if r['panel']==panel and r['series']==series]
+        x,y = [float(r['source_x']) for r in data],[float(r['source_y']) for r in data]
+        ax.errorbar(x,y,xerr=[float(r['x_half_width']) for r in data],yerr=[float(r['y_half_width']) for r in data],fmt='o',color=color,label=f'paper {series}')
+        ax.plot(x,[float(r['prediction']) for r in data],'x',color=color,label=f'Engine {series}')
+    ax.set(title=f"Figure {panel}: {float(data[0]['pressure_Pa'])/1000:g} kPa",xlabel='MDEA mole fraction',ylabel='Temperature / K')
+axes[0].legend(fontsize=8)
+plt.show()
+table(['Figure','Branch','Targets within bounds','Center difference range / K'],[[p,s,f"{sum(r['outcome']=='reproduced' for r in model if r['panel']==p and r['series']==s)}/{sum(r['panel']==p and r['series']==s for r in model)}",f"{min(float(r['delta']) for r in model if r['panel']==p and r['series']==s):.3f} to {max(float(r['delta']) for r in model if r['panel']==p and r['series']==s):.3f}"] for p in ['6a','6b','6c'] for s in ['dew','bubble']])
+table(['Figure','Measured-marker outcome','Center difference range / K'],[[p,', '.join(sorted({r['outcome'] for r in measured if r['panel']==p})),f"{min(float(r['delta']) for r in measured if r['panel']==p):.3f} to {max(float(r['delta']) for r in measured if r['panel']==p):.3f}"] for p in ['6a','6b','6c']])
+```
+
+Figure 6c model values use the paper's printed pressure. Its measured markers
+have a separate primary-source pressure; those differences are descriptive,
+with scoring withheld until condition ownership is resolved. Figure 7 retains
+the printed MDEA mole-fraction axis and methane-solubility caption as conflicting
+source information. No methane coordinate was substituted. The missing primary
+Voutsas and Jou tables are identified in the [source notes](inputs/source/README.md).
+
+## Numerical verification and reading limits
+
+```{python}
+refinements = []
+for point in points:
+    if point['requested_tolerance'] == 1e-11:
+        original = next(p for p in points if p['row_id']==point['row_id'] and p['offset']==0 and p['requested_tolerance']==1e-10)
+        target = next(r for r in rows if r['row_id']==point['row_id'])
+        refinements.append([point['row_id'],abs(point['temperature_K']-original['temperature_K']),float(target['y_half_width'])*0.01])
+table(['Quantity','Retained value'],[['Native evaluations',len(points)],['Maximum scaled residual',max(p['convergence']['residual'] for p in points)],['Requested residual tolerance',points[0]['requested_tolerance']],['Temperature range / K',f"{min(p['temperature_K'] for p in points):.6f} to {max(p['temperature_K'] for p in points):.6f}"],['Run wall time / s',run['wall_seconds']],['Pixel half-width per coordinate',cal['coordinate_half_width_px']],['Figure targets',len([r for r in rows if r['panel'] in cal['panels']])],['Unavailable measured table rows',sum(r['y_scale']=='linear Pa' for r in rows)]])
+table(['Refinement point','Temperature change / K','Limit: 1% reading half-width / K'],refinements)
+table(['Bounded diagnostic','Temperature / K','Pressure / Pa','Maximum scaled residual'],[[r['name'],r['temperature_K'],r['pressure_Pa'],max(map(abs,r['residuals']))] for r in diag['records']])
+```
+
+All native results retain phase amounts, mole fractions, densities, packing
+fractions, equation residuals, stopping evidence, inner association/density
+residual maxima and execution identity. Full traces remain in the archived
+build directory. The refinement change is below the fixed share of reading
+resolution. The inverse bubble-pressure solve and the equivalent MDEA A/B-site
+multiplicity swap retain the same equilibrium point. Thus neither requested
+row tolerance nor the equivalent site orientation explains the discrepancy;
+no Engine defect has been established. No parameter change or tolerance
+relaxation is adopted. Declared phases and local closure do not establish global
+phase stability. The high-temperature dew states extrapolate the Table 3
+MDEA–water interaction fit interval; per-row notes retain that limitation.
+
+## Reactive source targets and limits
+
+Figure 15's isolated species curves are retained in log10 mole-fraction
+coordinates, solely as source model targets. Overlapping bicarbonate and
+protonated-MDEA curves do not identify separate fractions or their sum.
+Figure 16 and Figure 17 model curves are **not digitized: ambiguous ownership**.
+Kamps Tables 2–3 and Rho Tables 1 and 3 supply the measured total/partial-pressure
+rows. Their original conditions and decimal precision remain in the source
+CSVs. Every target remains in [comparisons.csv](results/comparisons.csv) with
+an unavailable cause. Rho's measured composition and the Figure 17b model
+composition remain distinct; no rescaling is performed.
+
+The pressure criterion is half the last printed digit, with Kamps' printed
+`10p/MPa` and Rho's kPa units mapped once into Pa. It is agreement to print,
+not experimental uncertainty. The separate reported experimental uncertainties
+and input rounding are described in the source notes; they cannot supply a
+row pressure band when transducer identity or complete uncertainty is missing.
+
+[Engine #776](https://github.com/tannerpolley/ePC-SAFT/issues/776) owns ideal
+mole-fraction reaction equilibrium and the native effective-water conversion.
+The falsifier is the source R1 water/hydroxide/hydronium ideal equilibrium,
+with positive normalized fractions, charge closure, conserved water-equivalent
+amount and logarithmic mass-action closure at the prescribed residual tolerance.
+The delivered numerical verification of that independent ideal calculation
+is recorded below. Subsequent molecular VLE already exists; the unperformed
+paper comparisons remain unavailable. The required
+conversion retains free molecular acid gas and MDEA and replaces water with
+true water plus the named ionic amounts. No Python chemistry is used here.
+
+Separately, the paper prints hydronium stoichiometry but omits hydronium from
+its Eq. (12) water balance: the R1 reaction vector has a nonzero contraction
+with that printed water functional. This source inconsistency is not an Engine
+conservation defect. Neither a proton substitution nor a corrected balance is
+claimed as the authors' calculation. Pure-MDEA controls and aggregate fit errors
+remain outside this original-case reproduction.
+
+### Engine ideal mole-fraction numerical verification
+
+The delivered Engine checks now provide cold single-liquid speciation with
+ideal mole-fraction activities and native effective-water amounts. The
+following tables read [retained native values](results/ideal-mole-fraction.json.gz)
+from the refreshed `ideal-mole-fraction` check in PR #785; they do not run the
+model. The refreshed values are identical to the original delivered values.
+The native record retains all comparison operands, source-law values, species
+amounts and fractions, rows, endpoint rank, conditioning and consumed work.
+The equations and source locators are owned by
+[ideal mole-fraction reaction equilibrium](../../../engine/docs/equations.md#ideal_mole_fraction_reaction)
+and [effective-water amounts](../../../engine/docs/equations.md#effective_water_amounts).
+Nasrifar Table 1 supplies the reaction constants; the first left-block rows
+of Kamps Tables 2 and 3 supply the two acid-gas feed declarations. These are
+Engine reference checks, separate from the unavailable paper comparisons above.
+
+```{python}
+ideal = json.loads(gzip.decompress((root / 'results/ideal-mole-fraction.json.gz').read_bytes()))
+checks = ideal['comparisons']
+by_name = {r['comparison_id']: r for r in checks}
+def deviation(name):
+    r = by_name[name]
+    return abs(r['model'] - r['reference'])
+def largest(names):
+    return max(deviation(name) for name in names)
+r1 = by_name['R1-log-mass-action']['inputs']
+acid = {gas: by_name[f'{gas}-R1']['inputs'] for gas in ['CO2', 'H2S']}
+table(['Case', 'Temperature / K', 'Pressure / Pa', 'Initial amounts / mol', 'Reactions'], [
+    ['R1', r1['T_K'], r1['P_Pa'], f"water: {r1['N_mol']}", 'R1'],
+    *[[gas, data['T_K'], data['P_Pa'], ', '.join(f'{s}: {n:.12g}' for s, n in zip(data['species'], data['feed_mol']) if n),
+       'R1/R2/R3/R6' if gas == 'CO2' else 'R1/R4/R5/R6'] for gas, data in acid.items()]
+])
+table(['R1 species', 'Mole fraction'], zip(r1['species'], r1['x']))
+table(['R1 verification quantity', 'Absolute error', 'Limit', 'Unit'], [
+    [name, deviation(name), by_name[name]['atol'], by_name[name]['unit']]
+    for name in ['R1-log-mass-action', 'R1-water', 'R1-log-ion-1', 'R1-log-ion-2',
+                 'R1-W', 'R1-normalization', 'R1-charge', 'R1-effective-water', 'log-reference-scale']
+])
+```
+
+R1 agrees with the analytical water-autoprotolysis fractions, including the
+trace-ion logarithms. The acid-gas cases use one kilogram of initial water;
+the retained mol amounts use the source-backed water molar mass declared in
+the native check. All reaction laws are evaluated within their printed fit
+intervals. The returned fractions and conserved inventories verify the
+declared ideal chemistry. They do not quantify the physical error of unit
+ionic activity coefficients.
+
+```{python}
+table(['Case', 'Species', 'Amount / mol', 'Mole fraction'], [
+    [gas, species, n, x] for gas, data in acid.items()
+    for species, n, x in zip(data['species'], data['n_mol'], data['x'])
+])
+table(['Case', 'Maximum log mass-action error', 'Maximum inventory/charge error / mol',
+       'Normalization error', 'Endpoint rank', 'Condition estimate'], [
+    [gas, largest(f'{gas}-{r}' for r in (['R1', 'R2', 'R3', 'R6'] if gas == 'CO2' else ['R1', 'R4', 'R5', 'R6'])),
+     largest(f'{gas}-{r}' for r in ['W', 'M', 'gas', 'charge']), deviation(f'{gas}-normalization'),
+     f"{data['rank']}/{len(data['species'])}", data['condition']]
+    for gas, data in acid.items()
+])
+table(['Comparison', 'Absolute error limit', 'Unit'], [[name, by_name[f'CO2-{name}']['atol'], by_name[f'CO2-{name}']['unit']] for name in ['R1', 'W', 'normalization']])
+table(['Case', 'Effective water / mol', 'Free MDEA / mol', 'Free acid gas / mol', 'Speciated total / mol'], [
+    [gas, data['effective_water_mol'], by_name[f'{gas}-free-MDEA']['model'],
+     by_name[f'{gas}-free-gas']['model'], by_name[f'{gas}-converted-total']['reference']]
+    for gas, data in acid.items()
+])
+table(['Conversion invariant', 'CO2 absolute error / mol', 'H2S absolute error / mol', 'Limit / mol'], [
+    [name, deviation(f'CO2-{name}'), deviation(f'H2S-{name}'), by_name[f'CO2-{name}']['atol']]
+    for name in ['converted-total', 'free-MDEA', 'free-gas', 'effective-water', 'effective-inventory', 'changed-total']
+])
+```
+
+The conversion preserves each free molecular amount and the **speciated mole
+total**. It does not generally preserve the initial feed mole total: the CO2
+reaction subset changes that total. Effective water includes every declared
+ion; it is distinct from the conserved water-equivalent inventory. The
+molecular representation cannot replace the true-species inventory record.
+
+```{python}
+derivative = by_name['Jacobian-analytical']['inputs']
+table(['Derivative condition', 'Retained value'], [
+    ['Log-amount coordinates', derivative['y']], ['Direction', derivative['direction']],
+    ['Selected material row', derivative['B_row']], ['Row multipliers', derivative['weights']],
+    ['Analytical Hessian action', derivative['hstar']]
+])
+table(['Exact derivative comparison', 'Maximum scaled error', 'Limit'], [
+    [name, deviation(name), by_name[name]['atol']]
+    for name in ['Jacobian-analytical', 'Hessian-action-analytical']
+])
+jacobian_steps = [r for r in checks if r['comparison_id'] == 'Jacobian-centered']
+hessian_steps = [r for r in checks if r['comparison_id'] == 'Hessian-action-centered']
+table(['Centered step', 'Jacobian difference/analytical error', 'Jacobian native/difference error',
+       'Hessian-action difference/analytical error', 'Hessian-action native/difference error'], [
+    [j['inputs']['step'], j['inputs']['E_J_fd'], abs(j['model']-j['reference']),
+     h['inputs']['E_H_fd'], abs(h['model']-h['reference'])]
+    for j, h in zip(jacobian_steps, hessian_steps)
+])
+pressure = by_name['pressure-n-0']['inputs']
+table(['Pressure invariant', 'Retained value'], [
+    ['Compared pressures / Pa', [pressure['P_Pa'], pressure['other_P_Pa']]],
+    ['Maximum species-amount difference / mol', largest(f'pressure-n-{i}' for i in range(len(pressure['species'])))],
+    ['Maximum species-fraction difference', largest(f'pressure-x-{i}' for i in range(len(pressure['species'])))],
+    ['Maximum fraction of declared comparison limit', max(deviation(r['comparison_id'])/r['atol'] for r in checks if r['comparison_id'].startswith('pressure-'))]
+])
+```
+
+The positive derivative point need not be an equilibrium solution. Its nonzero
+reaction and material multipliers expose both composition-normalization and
+exponential-inventory curvature. Centered differences are verification only;
+they never enter a solve. The errors decrease over the retained steps, and the
+finest-step comparisons meet their native Jacobian and Hessian-action limits.
+The reduction now rejects nonfinite operands or differences. Tables are used
+for these few scalar reference checks and selected steps; no continuous
+physical curve is inferred. Pressure is absent from the ideal chemistry rows,
+so equality between the declared pressures verifies an invariant rather than
+a pressure prediction.
+
+```{python}
+table(['Refusal', 'Retained evidence'], [
+    ['Ideal previous-result start', by_name['refusal-previous-result starts unsupported before calculation']['inputs']['cause']],
+    ['Native calculation spans during start refusal', by_name['start-refusal-native-spans']['model']]
+])
+table(['Engine verification identity', 'Value'], ideal['execution_identity'].items())
+```
+
+Ideal warm starts remain refused before compilation or reaction-law work;
+there is no implicit cold retry. These results are **numerical verification
+only**. They provide no physical validation of ideal ionic activities, no
+Figure 15 reproduction, no agreement with the paper's printed water balance
+and no prediction of the measured pressures. Hot-condition extrapolation is
+deferred. Source-coefficient uncertainty, ideal-activity model error and global
+solution uniqueness are not established by these residuals. All unperformed
+#734 paper comparisons remain unavailable. Independent review of this
+correction and notebook remains with the lead; no investigator promotion or
+manuscript use is implied.
+
+## Execution identity and review boundary
+
+```{python}
+identity = run['execution_identity']
+table(['Identity','Value'],[[key,str(identity[key])] for key in ['run_id','checkout_commit','target_freeze_commit','engine_provenance','extension_sha256','producer_sha256']])
+```
+
+The recorded checkout was dirty with this producer under development; source
+inputs were already frozen. `engine_provenance` reports the execution checkout;
+the loaded native extension has its own path and SHA-256. Comparison-only
+refreshes retain that original identity. This notebook reads retained results
+and runs no Engine calculation. Independent delivered review and investigator
+promotion have not been performed; no manuscript use is authorized by this report.

@@ -1,0 +1,13 @@
+{
+ "wheel_sha256": "4105e2a454f086cafc069a06d51d2cbaa83bdf819481d4b4ca7e97ef94612fb7",
+ "label": "after",
+ "omp_num_threads": "1",
+ "states": 350,
+ "failures": 0,
+ "failure_messages": [],
+ "iterations": {
+  "median": 13,
+  "p90": 14,
+  "max": 17
+ }
+}

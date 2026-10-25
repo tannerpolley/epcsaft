@@ -1,0 +1,100 @@
+{
+  "schema": "epcsaft.khudaida.figure-2-held2-summary.v1",
+  "campaign_id": "khudaida-2026-figure-2-held2-v1",
+  "claim": "historical source-point-4 HELD2 continuity and current immutable eight-feed compatibility",
+  "public_route": "epcsaft_equilibrium.tp_flash",
+  "contracts": {"historical_output_abs_tolerance": 1e-07, "kkt_abs_tolerance": 1e-08, "performance_approved_ceiling_seconds": 35.0, "performance_target_seconds": 30.0, "phase_distance_minimum": 0.001, "physical_abs_tolerance": 1e-10, "predictive_policy": "DESCRIPTIVE_ONLY_NO_APPROVED_CUTOFF", "pressure_relative_tolerance": 1e-08},
+  "conditions": {
+    "temperature_K": 293.15,
+    "pressure_Pa": 100000.0,
+    "feed_count": 8,
+    "feed_to_experimental_tie_line": {"1": 8, "2": 7, "3": 6, "4": 5, "5": 4, "6": 3, "7": 2, "8": 1},
+    "endpoint_seeding": "NOT_USED",
+    "parameter_bundle": "khudaida-2026-figure-2-electrolyte-lle/2",
+    "parameter_bundle_fingerprint": "sha256:269790447bfc9b9d5e131d8e8c811100be2cd91aef4a5a326b42a1f2a026b44b",
+    "parameter_fingerprint": "sha256:5d58d5d1158921e8c11ad3a8ff3b49c20cbefad93b9f17869dacc6adaa486c01"
+  },
+  "source": {
+    "data_packet": {
+      "repository": "ePCSAFT/ePC-SAFT-data",
+      "commit": "2190657b2691b18a94dec04a4853e0971635deb0",
+      "path": "packets/khudaida-2026-figure-2-electrolyte-lle/3",
+      "version": "3",
+      "fingerprint": "sha256:73c48ac9fb97f06185bd78d27ceaa7ffe6308abe9feee34b15eadff31cc985eb"
+    },
+    "figure_2_points": {"path": "figures/figure-02/source/source-points.csv", "sha256": "ded0dfac899510413a5149c029814f8250628674f9bd0966034a3c5a8e7bd084"},
+    "feed_mapping": {"path": "source/figure-02-feed-to-table-3-tie-lines.csv", "sha256": "0bb010b87846c3b1c11046a50b9f7e40f2d7064ce1ddd2253788602cbcfc7656"},
+    "table_3_endpoints": {"path": "source/table-3-4-experimental-tielines.csv", "sha256": "8f69d4fd5b01e4b9c9abaa94eb0698e685b1ec5a9936468de15fdec4509458b"},
+    "table_3_standard_uncertainties": {"path": "source/table-3-standard-uncertainties.csv", "sha256": "124e65d33243fb5a06b3299aaf584553c516a70ba645e5f37caa1b8d409e3c87"}
+  },
+  "current_artifact": {
+    "eos_wheel_sha256": "3073c100e065252d922481f3fda0a173973f1f7da2d86ec380738285df65e227",
+    "eos_source_commit": "02104702e822e1f062bf829f0fe2280e801bbbc4",
+    "eos_source_tree": "4cdd0ca9fa80415bacbe03fdd431eb6ea429fcfe",
+    "equilibrium_wheel_sha256": "c93d2167397dc27626895ab56f05e12eb553aa6546ddef701bce052fe55cb90b",
+    "equilibrium_source_commit": "49d55482d0d92a24a7fe01f61a040f6db9ae4d26",
+    "equilibrium_source_tree": "7154636f13702ab69cae50591b7875aeaffdc31a"
+  },
+  "row_data": {"path": "results/data/khudaida-2026-figure-2-held2.csv", "rows": 8, "sha256": "876a5a48977b8c8cf83c06f0826c72b3bc63dde977b73ceab09c6b89b5a020c3"},
+  "accepted_endpoint_metrics": {
+    "accepted_rows": 8,
+    "formula_aad": 0.011054929534698908,
+    "formula_max_abs_error": 0.037639540678349126,
+    "formula_rmse": 0.016794493466801334,
+    "uncertainty_scaled_rmse": 22.989801274638108,
+    "policy": "DESCRIPTIVE_ONLY_NO_APPROVED_CUTOFF"
+  },
+  "performance": {
+    "measurement": "warm sequential public tp_flash calls; model constructed once",
+    "row_count": 8,
+    "maximum_wall_seconds": 29.561982211016584,
+    "target_seconds": 30.0,
+    "approved_ceiling_seconds": 35.0,
+    "total_wall_seconds": 136.51976789406035,
+    "within_target_count": 8,
+    "within_approved_ceiling_count": 8,
+    "mechanism_classifications": {"NON_EDGE": 8},
+    "missing_performance_diagnostics": 0,
+    "work_totals": {"optimizer_iterations": 25679, "optimizer_solves": 1449, "provider_evaluations": 72760, "step5_starts_consumed": 870, "step8_repeated_problem_count": 84},
+    "decision": "PASS"
+  },
+  "historical_source_point_4": {
+    "source_point_id": 4,
+    "former_alias": "retired_tie_line5",
+    "explicit_feed": [0.7005034356224062, 0.03286847384962303, 0.21275572005079824, 0.026936185238586256, 0.026936185238586256],
+    "feed_identity_correction": "The retired tie-line-5 label maps exactly to current digitized Figure 2 feed point 4; current point 5 is a different composition.",
+    "outcome": "physical_equilibrium_accepted",
+    "globality_certificate": "not_guaranteed",
+    "attempts": 16,
+    "total_free_energy_over_rt": -8.156553792022187,
+    "phase_fractions": [0.5928510002832944, 0.4071489997167056],
+    "phase_mole_fractions": [[0.9065542260634235, 0.0018825051990625948, 0.0011236250487507426, 0.04521982184438155, 0.04521982184438155], [0.40047220060250505, 0.07798724491872415, 0.5209139110357017, 0.00031332172153449787, 0.00031332172153449787]],
+    "phase_volumes_m3": [1.039703886477581e-05, 2.4232848281618588e-05],
+    "kkt_stationarity_max_abs": 8.868439403886202e-11,
+    "material_balance_max_abs": 1.1102230246251565e-16,
+    "pressure_stationarity_max_relative": 2.6766356313601135e-11,
+    "frozen_output_continuity": {"free_energy_abs": 1.7763568394002505e-15, "phase_composition_max_abs": 8.407591439718587e-08, "phase_fraction_max_abs": 5.759353460810246e-08, "phase_volume_max_abs": 1.0477066093763764e-12, "status": "PASS"},
+    "independent_checks": {"material_balance_max_abs": 1.1102230246251565e-16, "phase_charge_max_abs": 0.0, "phase_distance_max_abs": 0.519790285986951, "phase_fraction_sum_abs": 0.0, "phase_normalization_max_abs": 1.1102230246251565e-16, "pressure_max_relative": 2.6766356313601135e-11, "topology_status": "distinct_two_phase", "status": "PASS"},
+    "historical_eos_wheel_sha256": "87ce8aef9a2266a4776de909b3cae296111433cd59db7b8561644a5b1bace799",
+    "historical_equilibrium_wheel_sha256": "556690d778d62562fd25d89ccce390419deed9d909f99d8e165abc0d104ae11b"
+  },
+  "published_comparison": {"native_grand_aad": 0.011054929534698908, "published_grand_aad": 0.0161, "grand_aad_difference": -0.0050450704653010915, "policy": "DESCRIPTIVE_ONLY_NO_APPROVED_CUTOFF"},
+  "failures": [],
+  "setup_timing": {
+    "artifact_verification_seconds": 0.0669154180213809,
+    "import_seconds": 0.2657612790062558,
+    "model_construction_seconds": 0.0004374890122562647,
+    "parameter_construction_seconds": 0.004938609985401854,
+    "source_verification_seconds": 0.0012802649871446192,
+    "total_pre_flash_seconds": 0.33933734099264257
+  },
+  "claim_limits": [
+    "The historical positive wheels were rebuilt from exact source commits for this diagnosis but are not active-channel artifacts.",
+    "The old tie-line-5 label was an indexing alias; its composition maps to current digitized feed point 4.",
+    "Finite HELD2 search is not a continuous globality proof.",
+    "Experimental endpoints are comparisons and never solver seeds.",
+    "Figure 2 feed points 1-8 map to experimental Table 3 tie-lines 8-1; Figures 3-7 retain identity pairing.",
+    "No predictive model-error cutoff is approved.",
+    "Data is materialized and hash-checked before execution; packages do not fetch it."
+  ]
+}

@@ -1,0 +1,7 @@
+<!-- source: docs/papers/md/Bülow, Ascani, Held - 2021 - ePC-SAFT advanced – Part II Application to Salt Solubility in Ionic and.md lines 324-328 -->
+
+| IL-ion | $m_{i}^{\text {seg }}$ | $\sigma_{i} / \AA$ | $u_{i} / k_{B} / \mathrm{K}$ | Ref. |
+| :--- | :--- | :--- | :--- | :--- |
+| $\left[\mathrm{C}_{2} \mathrm{mim}\right]^{+}$ | 1.4872 | 3.5926 | 206.4900 | $[31]$ |
+| $\left[\mathrm{C}_{4} \mathrm{mim}\right]^{+}$ | 2.4805 | 3.6371 | 218.1441 | $[31]$ |
+| $[\mathrm{TfO}]^{-}$ | 3.7432 | 3.8771 | 509.3113 | $[34]$ |

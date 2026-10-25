@@ -1,0 +1,1 @@
+The opt-in solvent-mass term is $\Delta A^r/(RT)=2\theta n_{Li}n_{Mg}/W+\psi n_{Li}n_{Mg}n_{Cl}/W^2$, with $W=M_w n_w$, θ=-0.2205 kg/mol and ψ=0.024 kg²/mol². At 298.15 K and 100000 Pa, the native five-coordinate Li fit passes the owner-amended calibration limits and unchanged transfer and trace guards.

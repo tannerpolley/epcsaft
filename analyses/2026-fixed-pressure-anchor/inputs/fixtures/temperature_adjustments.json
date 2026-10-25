@@ -1,0 +1,21 @@
+{
+  "schema": "mea-absorption-column.epcsaft-temperature-adjustments.v1",
+  "parameter_document_sha256": "66837ab1c9625f28cf143a8adfea5855db70d3e070d44258d7e6f5f3e133c63b",
+  "source": {
+    "repository": "MEA-Thermodynamics",
+    "commit": "65fdd6f4ed739d8ac39f9efdda7450d90d14df7a",
+    "parameter_summary_sha256": "6662479cd011ad1e2712d1c860d6331009dc1ea45142f6b25ef8278d59bcb710",
+    "retained_settings_sha256": "e92f3627b8af6191fcd65a2694c2d9647686558632d2e02f6f122f8aed174f65"
+  },
+  "relationships": [
+    {
+      "identity": "pair/carbon-dioxide/water/k_ij",
+      "form": "linear_anchor",
+      "anchor_temperature_k": 313.15,
+      "anchor_value": 0.0,
+      "slope_per_k": 0.0003016,
+      "unit": "dimensionless",
+      "source": "Pabsch et al. (2020), Table 6, DOI 10.1021/acs.jced.0c00704"
+    }
+  ]
+}

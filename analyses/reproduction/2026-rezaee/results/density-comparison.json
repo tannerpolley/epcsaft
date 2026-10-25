@@ -1,0 +1,834 @@
+[
+  {
+    "source": {
+      "source": "Rezaee2026_SI_TableS5",
+      "citation_key": "Rezaee2026",
+      "table_label": "S5",
+      "reported_material": "DES",
+      "T_K": "272.04",
+      "density_kg_m3": "932.2",
+      "temperature_uncertainty_K": "0.01",
+      "density_uncertainty_kg_m3": "0.1",
+      "notes": "Transcribed from 2026 supporting information Table S5."
+    },
+    "admitted": true,
+    "status": "available",
+    "cause": "",
+    "x": [
+      1.0
+    ],
+    "mass_fraction_defects": [
+      0.0
+    ],
+    "mean_mass_kg_mol": 0.20748,
+    "P_Pa": 101325.0,
+    "numerical_limits": [
+      1e-08,
+      1e-12
+    ],
+    "observed_kg_m3": 932.2,
+    "density_kg_m3": 923.2617506988646,
+    "rho_mol_m3": 4449.883124633047,
+    "branch": 0,
+    "stable_roots": 1,
+    "pressure_Pa": 101324.99999852908,
+    "pressure_relative_defect": 1.4516832180788697e-11,
+    "pressure_slope": 598338.8530550145,
+    "mass_density_defect": 0.0,
+    "convergence": "converged: residual 1.4103128387343844e-13 against DENSITY_ROOT_RESIDUAL 9.9999999999999998e-13 after 1 iterations, contraction absent, floor 1.5298843171377939e-15, amplification 16.821640646435736",
+    "minus_measured_kg_m3": -8.938249301135443,
+    "relative_error_percent": -0.9588338662449569,
+    "action_cause": "",
+    "action_status": 0,
+    "density_T_kg_m3_K": -0.8115301757353965,
+    "action_rho_mol_m3": 4449.883124633047,
+    "local_uncertainty_kg_m3": 0.1003287502294976
+  },
+  {
+    "source": {
+      "source": "Rezaee2026_SI_TableS5",
+      "citation_key": "Rezaee2026",
+      "table_label": "S5",
+      "reported_material": "DES",
+      "T_K": "280.37",
+      "density_kg_m3": "926.7",
+      "temperature_uncertainty_K": "0.01",
+      "density_uncertainty_kg_m3": "0.1",
+      "notes": "Transcribed from 2026 supporting information Table S5."
+    },
+    "admitted": true,
+    "status": "available",
+    "cause": "",
+    "x": [
+      1.0
+    ],
+    "mass_fraction_defects": [
+      0.0
+    ],
+    "mean_mass_kg_mol": 0.20748,
+    "P_Pa": 101325.0,
+    "numerical_limits": [
+      1e-08,
+      1e-12
+    ],
+    "observed_kg_m3": 926.7,
+    "density_kg_m3": 916.6433738946856,
+    "rho_mol_m3": 4417.984258216145,
+    "branch": 0,
+    "stable_roots": 1,
+    "pressure_Pa": 101325.00000195063,
+    "pressure_relative_defect": 1.9251267247000214e-11,
+    "pressure_slope": 595036.8508633834,
+    "mass_density_defect": 0.0,
+    "convergence": "converged: residual 1.8343139507326356e-13 against DENSITY_ROOT_RESIDUAL 9.9999999999999998e-13 after 1 iterations, contraction absent, floor 1.5116494195071177e-15, amplification 17.30796579337979",
+    "minus_measured_kg_m3": -10.056626105314422,
+    "relative_error_percent": -1.0852083851639605,
+    "action_cause": "",
+    "action_status": 0,
+    "density_T_kg_m3_K": -0.7781422935240001,
+    "action_rho_mol_m3": 4417.984258216145,
+    "local_uncertainty_kg_m3": 0.1003022958007297
+  },
+  {
+    "source": {
+      "source": "Rezaee2026_SI_TableS5",
+      "citation_key": "Rezaee2026",
+      "table_label": "S5",
+      "reported_material": "DES",
+      "T_K": "288.70",
+      "density_kg_m3": "921.3",
+      "temperature_uncertainty_K": "0.01",
+      "density_uncertainty_kg_m3": "0.1",
+      "notes": "Transcribed from 2026 supporting information Table S5."
+    },
+    "admitted": true,
+    "status": "available",
+    "cause": "",
+    "x": [
+      1.0
+    ],
+    "mass_fraction_defects": [
+      0.0
+    ],
+    "mean_mass_kg_mol": 0.20748,
+    "P_Pa": 101325.0,
+    "numerical_limits": [
+      1e-08,
+      1e-12
+    ],
+    "observed_kg_m3": 921.3,
+    "density_kg_m3": 910.2882743028528,
+    "rho_mol_m3": 4387.354319948201,
+    "branch": 0,
+    "stable_roots": 1,
+    "pressure_Pa": 101324.99999698273,
+    "pressure_relative_defect": 2.977806889958856e-11,
+    "pressure_slope": 590776.5395849879,
+    "mass_density_defect": 0.0,
+    "convergence": "converged: residual 2.8733265766689442e-13 against DENSITY_ROOT_RESIDUAL 9.9999999999999998e-13 after 1 iterations, contraction absent, floor 1.4942436737118437e-15, amplification 17.826268248142128",
+    "minus_measured_kg_m3": -11.011725697147199,
+    "relative_error_percent": -1.1952377832570527,
+    "action_cause": "",
+    "action_status": 0,
+    "density_T_kg_m3_K": -0.7482256510415384,
+    "action_rho_mol_m3": 4387.354319948201,
+    "local_uncertainty_kg_m3": 0.10027953012697882
+  },
+  {
+    "source": {
+      "source": "Rezaee2026_SI_TableS5",
+      "citation_key": "Rezaee2026",
+      "table_label": "S5",
+      "reported_material": "DES",
+      "T_K": "297.04",
+      "density_kg_m3": "916.0",
+      "temperature_uncertainty_K": "0.01",
+      "density_uncertainty_kg_m3": "0.1",
+      "notes": "Transcribed from 2026 supporting information Table S5."
+    },
+    "admitted": true,
+    "status": "available",
+    "cause": "",
+    "x": [
+      1.0
+    ],
+    "mass_fraction_defects": [
+      0.0
+    ],
+    "mean_mass_kg_mol": 0.20748,
+    "P_Pa": 101325.0,
+    "numerical_limits": [
+      1e-08,
+      1e-12
+    ],
+    "observed_kg_m3": 916.0,
+    "density_kg_m3": 904.162467150112,
+    "rho_mol_m3": 4357.8295120016965,
+    "branch": 0,
+    "stable_roots": 1,
+    "pressure_Pa": 101324.99999954477,
+    "pressure_relative_defect": 4.492739513750621e-12,
+    "pressure_slope": 585708.952470852,
+    "mass_density_defect": 0.0,
+    "convergence": "converged: residual 4.2505929331859704e-14 against DENSITY_ROOT_RESIDUAL 9.9999999999999998e-13 after 1 iterations, contraction absent, floor 1.477562428287541e-15, amplification 18.375429324488621",
+    "minus_measured_kg_m3": -11.83753284988802,
+    "relative_error_percent": -1.292307079682098,
+    "action_cause": "",
+    "action_status": 0,
+    "density_T_kg_m3_K": -0.7212544922057499,
+    "action_rho_mol_m3": 4357.8295120016965,
+    "local_uncertainty_kg_m3": 0.10025976662775901
+  },
+  {
+    "source": {
+      "source": "Rezaee2026_SI_TableS5",
+      "citation_key": "Rezaee2026",
+      "table_label": "S5",
+      "reported_material": "DES",
+      "T_K": "305.37",
+      "density_kg_m3": "910.7",
+      "temperature_uncertainty_K": "0.01",
+      "density_uncertainty_kg_m3": "0.1",
+      "notes": "Transcribed from 2026 supporting information Table S5."
+    },
+    "admitted": true,
+    "status": "available",
+    "cause": "",
+    "x": [
+      1.0
+    ],
+    "mass_fraction_defects": [
+      0.0
+    ],
+    "mean_mass_kg_mol": 0.20748,
+    "P_Pa": 101325.0,
+    "numerical_limits": [
+      1e-08,
+      1e-12
+    ],
+    "observed_kg_m3": 910.7,
+    "density_kg_m3": 898.2575304498151,
+    "rho_mol_m3": 4329.369242576707,
+    "branch": 0,
+    "stable_roots": 1,
+    "pressure_Pa": 101324.99999942862,
+    "pressure_relative_defect": 5.639044786676095e-12,
+    "pressure_slope": 579976.9439119572,
+    "mass_density_defect": 0.0,
+    "convergence": "converged: residual 7.2988490251724158e-14 against DENSITY_ROOT_RESIDUAL 9.9999999999999998e-13 after 1 iterations, contraction absent, floor 1.4615736084607809e-15, amplification 18.952846811289316",
+    "minus_measured_kg_m3": -12.44246955018491,
+    "relative_error_percent": -1.3662533820341438,
+    "action_cause": "",
+    "action_status": 0,
+    "density_T_kg_m3_K": -0.6968991631586926,
+    "action_rho_mol_m3": 4329.369242576707,
+    "local_uncertainty_kg_m3": 0.1002425400933213
+  },
+  {
+    "source": {
+      "source": "Rezaee2026_SI_TableS5",
+      "citation_key": "Rezaee2026",
+      "table_label": "S5",
+      "reported_material": "DES",
+      "T_K": "322.04",
+      "density_kg_m3": "900.1",
+      "temperature_uncertainty_K": "0.01",
+      "density_uncertainty_kg_m3": "0.1",
+      "notes": "Transcribed from 2026 supporting information Table S5."
+    },
+    "admitted": true,
+    "status": "available",
+    "cause": "",
+    "x": [
+      1.0
+    ],
+    "mass_fraction_defects": [
+      0.0
+    ],
+    "mean_mass_kg_mol": 0.20748,
+    "P_Pa": 101325.0,
+    "numerical_limits": [
+      1e-08,
+      1e-12
+    ],
+    "observed_kg_m3": 900.1,
+    "density_kg_m3": 887.0031540963274,
+    "rho_mol_m3": 4275.126055987697,
+    "branch": 0,
+    "stable_roots": 1,
+    "pressure_Pa": 101324.99999581288,
+    "pressure_relative_defect": 4.1323722221875414e-11,
+    "pressure_slope": 566913.4188504474,
+    "mass_density_defect": 0.0,
+    "convergence": "converged: residual 3.5003944187650404e-13 against DENSITY_ROOT_RESIDUAL 9.9999999999999998e-13 after 1 iterations, contraction absent, floor 1.4313561335805692e-15, amplification 20.191853704102531",
+    "minus_measured_kg_m3": -13.096845903672602,
+    "relative_error_percent": -1.4550434289159697,
+    "action_cause": "",
+    "action_status": 0,
+    "density_T_kg_m3_K": -0.6546915893258757,
+    "action_rho_mol_m3": 4275.126055987697,
+    "local_uncertainty_kg_m3": 0.10021408138437135
+  },
+  {
+    "source": {
+      "source": "Rezaee2026_SI_TableS5",
+      "citation_key": "Rezaee2026",
+      "table_label": "S5",
+      "reported_material": "DES",
+      "T_K": "330.37",
+      "density_kg_m3": "894.7",
+      "temperature_uncertainty_K": "0.01",
+      "density_uncertainty_kg_m3": "0.1",
+      "notes": "Transcribed from 2026 supporting information Table S5."
+    },
+    "admitted": true,
+    "status": "available",
+    "cause": "",
+    "x": [
+      1.0
+    ],
+    "mass_fraction_defects": [
+      0.0
+    ],
+    "mean_mass_kg_mol": 0.20748,
+    "P_Pa": 101325.0,
+    "numerical_limits": [
+      1e-08,
+      1e-12
+    ],
+    "observed_kg_m3": 894.7,
+    "density_kg_m3": 881.6269958083442,
+    "rho_mol_m3": 4249.214361906421,
+    "branch": 0,
+    "stable_roots": 1,
+    "pressure_Pa": 101324.99999753288,
+    "pressure_relative_defect": 2.4348523197659233e-11,
+    "pressure_slope": 559759.2360154983,
+    "mass_density_defect": 0.0,
+    "convergence": "converged: residual 1.6321319296075387e-13 against DENSITY_ROOT_RESIDUAL 9.9999999999999998e-13 after 1 iterations, contraction absent, floor 1.4170455984520601e-15, amplification 20.851733270695274",
+    "minus_measured_kg_m3": -13.073004191655855,
+    "relative_error_percent": -1.4611606339170469,
+    "action_cause": "",
+    "action_status": 0,
+    "density_T_kg_m3_K": -0.6363833402576832,
+    "action_rho_mol_m3": 4249.214361906421,
+    "local_uncertainty_kg_m3": 0.10020228727716625
+  },
+  {
+    "source": {
+      "source": "Rezaee2026_SI_TableS6",
+      "citation_key": "Rezaee2026",
+      "table_label": "S6",
+      "reported_material": "10wtpct_TOPO_in_DES",
+      "T_K": "293.15",
+      "density_kg_m3": "908.3",
+      "temperature_uncertainty_K": "0.01",
+      "density_uncertainty_kg_m3": "0.1",
+      "notes": "Transcribed from 2026 supporting information Table S6."
+    },
+    "admitted": true,
+    "status": "available",
+    "cause": "",
+    "x": [
+      0.9437295693221032,
+      0.05627043067789678
+    ],
+    "mass_fraction_defects": [
+      0.0,
+      1.3877787807814457e-17
+    ],
+    "mean_mass_kg_mol": 0.2175611233810555,
+    "P_Pa": 101325.0,
+    "numerical_limits": [
+      1e-08,
+      1e-12
+    ],
+    "observed_kg_m3": 908.3,
+    "density_kg_m3": 904.8350323381605,
+    "rho_mol_m3": 4158.992278934659,
+    "branch": 0,
+    "stable_roots": 1,
+    "pressure_Pa": 101324.99999619705,
+    "pressure_relative_defect": 3.753219957047804e-11,
+    "pressure_slope": 609892.1333418145,
+    "mass_density_defect": 0.0,
+    "convergence": "converged: residual 3.4650581015593929e-13 against DENSITY_ROOT_RESIDUAL 9.9999999999999998e-13 after 1 iterations, contraction absent, floor 2.1220466930331213e-15, amplification 16.621077175107359",
+    "minus_measured_kg_m3": -3.4649676618394096,
+    "relative_error_percent": -0.38147832894852574,
+    "action_cause": "",
+    "action_status": 0,
+    "density_T_kg_m3_K": -0.7351567071849175,
+    "action_rho_mol_m3": 4158.992278934669,
+    "local_uncertainty_kg_m3": 0.10026986356035346
+  },
+  {
+    "source": {
+      "source": "Rezaee2026_SI_TableS6",
+      "citation_key": "Rezaee2026",
+      "table_label": "S6",
+      "reported_material": "10wtpct_TOPO_in_DES",
+      "T_K": "298.15",
+      "density_kg_m3": "905.0",
+      "temperature_uncertainty_K": "0.01",
+      "density_uncertainty_kg_m3": "0.1",
+      "notes": "Transcribed from 2026 supporting information Table S6."
+    },
+    "admitted": true,
+    "status": "available",
+    "cause": "",
+    "x": [
+      0.9437295693221032,
+      0.05627043067789678
+    ],
+    "mass_fraction_defects": [
+      0.0,
+      1.3877787807814457e-17
+    ],
+    "mean_mass_kg_mol": 0.2175611233810555,
+    "P_Pa": 101325.0,
+    "numerical_limits": [
+      1e-08,
+      1e-12
+    ],
+    "observed_kg_m3": 905.0,
+    "density_kg_m3": 901.1999734159789,
+    "rho_mol_m3": 4142.284059811269,
+    "branch": 0,
+    "stable_roots": 1,
+    "pressure_Pa": 101325.00000351972,
+    "pressure_relative_defect": 3.473688003907682e-11,
+    "pressure_slope": 607081.768761282,
+    "mass_density_defect": 0.0,
+    "convergence": "converged: residual 3.3552154110605414e-13 against DENSITY_ROOT_RESIDUAL 9.9999999999999998e-13 after 1 iterations, contraction absent, floor 2.1071891005667559e-15, amplification 16.914598192647908",
+    "minus_measured_kg_m3": -3.8000265840211114,
+    "relative_error_percent": -0.41989244022332395,
+    "action_cause": "",
+    "action_status": 0,
+    "density_T_kg_m3_K": -0.7190333306227846,
+    "action_rho_mol_m3": 4142.284059811259,
+    "local_uncertainty_kg_m3": 0.10025817120342187
+  },
+  {
+    "source": {
+      "source": "Rezaee2026_SI_TableS6",
+      "citation_key": "Rezaee2026",
+      "table_label": "S6",
+      "reported_material": "10wtpct_TOPO_in_DES",
+      "T_K": "303.15",
+      "density_kg_m3": "901.5",
+      "temperature_uncertainty_K": "0.01",
+      "density_uncertainty_kg_m3": "0.1",
+      "notes": "Transcribed from 2026 supporting information Table S6."
+    },
+    "admitted": true,
+    "status": "available",
+    "cause": "",
+    "x": [
+      0.9437295693221032,
+      0.05627043067789678
+    ],
+    "mass_fraction_defects": [
+      0.0,
+      1.3877787807814457e-17
+    ],
+    "mean_mass_kg_mol": 0.2175611233810555,
+    "P_Pa": 101325.0,
+    "numerical_limits": [
+      1e-08,
+      1e-12
+    ],
+    "observed_kg_m3": 901.5,
+    "density_kg_m3": 897.6431041164811,
+    "rho_mol_m3": 4125.935232207231,
+    "branch": 0,
+    "stable_roots": 1,
+    "pressure_Pa": 101324.99999993997,
+    "pressure_relative_defect": 5.924150059399835e-13,
+    "pressure_slope": 603998.9794953782,
+    "mass_density_defect": 0.0,
+    "convergence": "converged: residual 2.1422100204837591e-14 against DENSITY_ROOT_RESIDUAL 9.9999999999999998e-13 after 1 iterations, contraction absent, floor 2.0927573210864597e-15, amplification 17.217811903454386",
+    "minus_measured_kg_m3": -3.8568958835188596,
+    "relative_error_percent": -0.4278309354984855,
+    "action_cause": "",
+    "action_status": 0,
+    "density_T_kg_m3_K": -0.7038672589040768,
+    "action_rho_mol_m3": 4125.935232207231,
+    "local_uncertainty_kg_m3": 0.10024740850423873
+  },
+  {
+    "source": {
+      "source": "Rezaee2026_SI_TableS6",
+      "citation_key": "Rezaee2026",
+      "table_label": "S6",
+      "reported_material": "10wtpct_TOPO_in_DES",
+      "T_K": "308.15",
+      "density_kg_m3": "898.0",
+      "temperature_uncertainty_K": "0.01",
+      "density_uncertainty_kg_m3": "0.1",
+      "notes": "Transcribed from 2026 supporting information Table S6."
+    },
+    "admitted": true,
+    "status": "available",
+    "cause": "",
+    "x": [
+      0.9437295693221032,
+      0.05627043067789678
+    ],
+    "mass_fraction_defects": [
+      0.0,
+      1.3877787807814457e-17
+    ],
+    "mean_mass_kg_mol": 0.2175611233810555,
+    "P_Pa": 101325.0,
+    "numerical_limits": [
+      1e-08,
+      1e-12
+    ],
+    "observed_kg_m3": 898.0,
+    "density_kg_m3": 894.1598334572213,
+    "rho_mol_m3": 4109.924694087518,
+    "branch": 0,
+    "stable_roots": 1,
+    "pressure_Pa": 101325.00000001694,
+    "pressure_relative_defect": 1.6719958750854857e-13,
+    "pressure_slope": 600670.6783007969,
+    "mass_density_defect": 0.0,
+    "convergence": "converged: residual 4.0327116646032835e-14 against DENSITY_ROOT_RESIDUAL 9.9999999999999998e-13 after 1 iterations, contraction absent, floor 2.0787231895728829e-15, amplification 17.530479253052096",
+    "minus_measured_kg_m3": -3.840166542778661,
+    "relative_error_percent": -0.4276354724697895,
+    "action_cause": "",
+    "action_status": 0,
+    "density_T_kg_m3_K": -0.6895819080991493,
+    "action_rho_mol_m3": 4109.924694087518,
+    "local_uncertainty_kg_m3": 0.10023747962113656
+  },
+  {
+    "source": {
+      "source": "Rezaee2026_SI_TableS6",
+      "citation_key": "Rezaee2026",
+      "table_label": "S6",
+      "reported_material": "10wtpct_TOPO_in_DES",
+      "T_K": "313.15",
+      "density_kg_m3": "894.5",
+      "temperature_uncertainty_K": "0.01",
+      "density_uncertainty_kg_m3": "0.1",
+      "notes": "Transcribed from 2026 supporting information Table S6."
+    },
+    "admitted": true,
+    "status": "available",
+    "cause": "",
+    "x": [
+      0.9437295693221032,
+      0.05627043067789678
+    ],
+    "mass_fraction_defects": [
+      0.0,
+      1.3877787807814457e-17
+    ],
+    "mean_mass_kg_mol": 0.2175611233810555,
+    "P_Pa": 101325.0,
+    "numerical_limits": [
+      1e-08,
+      1e-12
+    ],
+    "observed_kg_m3": 894.5,
+    "density_kg_m3": 890.7459302117101,
+    "rho_mol_m3": 4094.2329970027786,
+    "branch": 0,
+    "stable_roots": 1,
+    "pressure_Pa": 101325.00000000358,
+    "pressure_relative_defect": 3.530509218307998e-14,
+    "pressure_slope": 597121.0734138314,
+    "mass_density_defect": 0.0,
+    "convergence": "converged: residual 2.7880475705899244e-14 against DENSITY_ROOT_RESIDUAL 9.9999999999999998e-13 after 1 iterations, contraction absent, floor 2.065061052154904e-15, amplification 17.852406072120047",
+    "minus_measured_kg_m3": -3.7540697882899394,
+    "relative_error_percent": -0.41968359846729086,
+    "action_cause": "",
+    "action_status": 0,
+    "density_T_kg_m3_K": -0.6761097048275675,
+    "action_rho_mol_m3": 4094.2329970027786,
+    "local_uncertainty_kg_m3": 0.10022830155847301
+  },
+  {
+    "source": {
+      "source": "Rezaee2026_SI_TableS6",
+      "citation_key": "Rezaee2026",
+      "table_label": "S6",
+      "reported_material": "10wtpct_TOPO_in_DES",
+      "T_K": "318.15",
+      "density_kg_m3": "891.5",
+      "temperature_uncertainty_K": "0.01",
+      "density_uncertainty_kg_m3": "0.1",
+      "notes": "Transcribed from 2026 supporting information Table S6."
+    },
+    "admitted": true,
+    "status": "available",
+    "cause": "",
+    "x": [
+      0.9437295693221032,
+      0.05627043067789678
+    ],
+    "mass_fraction_defects": [
+      0.0,
+      1.3877787807814457e-17
+    ],
+    "mean_mass_kg_mol": 0.2175611233810555,
+    "P_Pa": 101325.0,
+    "numerical_limits": [
+      1e-08,
+      1e-12
+    ],
+    "observed_kg_m3": 891.5,
+    "density_kg_m3": 887.3974814320059,
+    "rho_mol_m3": 4078.8421554421775,
+    "branch": 0,
+    "stable_roots": 1,
+    "pressure_Pa": 101324.99999692803,
+    "pressure_relative_defect": 3.0317970356463775e-11,
+    "pressure_slope": 593371.9939108944,
+    "mass_density_defect": 0.0,
+    "convergence": "converged: residual 2.7334558228009342e-13 against DENSITY_ROOT_RESIDUAL 9.9999999999999998e-13 after 1 iterations, contraction absent, floor 2.0517475144477456e-15, amplification 18.183436625132675",
+    "minus_measured_kg_m3": -4.102518567994139,
+    "relative_error_percent": -0.46018155557981943,
+    "action_cause": "",
+    "action_status": 0,
+    "density_T_kg_m3_K": -0.6633907035478444,
+    "action_rho_mol_m3": 4078.8421554421775,
+    "local_uncertainty_kg_m3": 0.10021980204807517
+  },
+  {
+    "source": {
+      "source": "Rezaee2026_SI_TableS6",
+      "citation_key": "Rezaee2026",
+      "table_label": "S6",
+      "reported_material": "10wtpct_TOPO_in_DES",
+      "T_K": "323.15",
+      "density_kg_m3": "887.7",
+      "temperature_uncertainty_K": "0.01",
+      "density_uncertainty_kg_m3": "0.1",
+      "notes": "Transcribed from 2026 supporting information Table S6."
+    },
+    "admitted": true,
+    "status": "available",
+    "cause": "",
+    "x": [
+      0.9437295693221032,
+      0.05627043067789678
+    ],
+    "mass_fraction_defects": [
+      0.0,
+      1.3877787807814457e-17
+    ],
+    "mean_mass_kg_mol": 0.2175611233810555,
+    "P_Pa": 101325.0,
+    "numerical_limits": [
+      1e-08,
+      1e-12
+    ],
+    "observed_kg_m3": 887.7,
+    "density_kg_m3": 884.1108572263431,
+    "rho_mol_m3": 4063.735484936959,
+    "branch": 0,
+    "stable_roots": 1,
+    "pressure_Pa": 101325.00000293655,
+    "pressure_relative_defect": 2.898148387942001e-11,
+    "pressure_slope": 589443.1679215379,
+    "mass_density_defect": 0.0,
+    "convergence": "converged: residual 2.4410855281598032e-13 against DENSITY_ROOT_RESIDUAL 9.9999999999999998e-13 after 1 iterations, contraction absent, floor 2.0387612125407997e-15, amplification 18.52344833314249",
+    "minus_measured_kg_m3": -3.5891427736569312,
+    "relative_error_percent": -0.4043193391525257,
+    "action_cause": "",
+    "action_status": 0,
+    "density_T_kg_m3_K": -0.651371457231662,
+    "action_rho_mol_m3": 4063.735484936959,
+    "local_uncertainty_kg_m3": 0.1002119178417897
+  },
+  {
+    "source": {
+      "source": "Rezaee2026_SI_TableS6",
+      "citation_key": "Rezaee2026",
+      "table_label": "S6",
+      "reported_material": "10wtpct_TOPO_in_DES",
+      "T_K": "328.15",
+      "density_kg_m3": "883.9",
+      "temperature_uncertainty_K": "0.01",
+      "density_uncertainty_kg_m3": "0.1",
+      "notes": "Transcribed from 2026 supporting information Table S6."
+    },
+    "admitted": true,
+    "status": "available",
+    "cause": "",
+    "x": [
+      0.9437295693221032,
+      0.05627043067789678
+    ],
+    "mass_fraction_defects": [
+      0.0,
+      1.3877787807814457e-17
+    ],
+    "mean_mass_kg_mol": 0.2175611233810555,
+    "P_Pa": 101325.0,
+    "numerical_limits": [
+      1e-08,
+      1e-12
+    ],
+    "observed_kg_m3": 883.9,
+    "density_kg_m3": 880.8826806627031,
+    "rho_mol_m3": 4048.897463724935,
+    "branch": 0,
+    "stable_roots": 1,
+    "pressure_Pa": 101324.9999981622,
+    "pressure_relative_defect": 1.8137713553301182e-11,
+    "pressure_slope": 585352.4617794255,
+    "mass_density_defect": 0.0,
+    "convergence": "converged: residual 1.3255542496981576e-13 against DENSITY_ROOT_RESIDUAL 9.9999999999999998e-13 after 1 iterations, contraction absent, floor 2.0260826054741416e-15, amplification 18.872347430579797",
+    "minus_measured_kg_m3": -3.01731933729684,
+    "relative_error_percent": -0.3413643327635274,
+    "action_cause": "",
+    "action_status": 0,
+    "density_T_kg_m3_K": -0.640004088636998,
+    "action_rho_mol_m3": 4048.897463724942,
+    "local_uncertainty_kg_m3": 0.10020459332459371
+  },
+  {
+    "source": {
+      "source": "Rezaee2026_SI_TableS6",
+      "citation_key": "Rezaee2026",
+      "table_label": "S6",
+      "reported_material": "10wtpct_TOPO_in_DES",
+      "T_K": "333.15",
+      "density_kg_m3": "881.2",
+      "temperature_uncertainty_K": "0.01",
+      "density_uncertainty_kg_m3": "0.1",
+      "notes": "Transcribed from 2026 supporting information Table S6."
+    },
+    "admitted": true,
+    "status": "available",
+    "cause": "",
+    "x": [
+      0.9437295693221032,
+      0.05627043067789678
+    ],
+    "mass_fraction_defects": [
+      0.0,
+      1.3877787807814457e-17
+    ],
+    "mean_mass_kg_mol": 0.2175611233810555,
+    "P_Pa": 101325.0,
+    "numerical_limits": [
+      1e-08,
+      1e-12
+    ],
+    "observed_kg_m3": 881.2,
+    "density_kg_m3": 877.7098019011773,
+    "rho_mol_m3": 4034.3136138522323,
+    "branch": 0,
+    "stable_roots": 1,
+    "pressure_Pa": 101324.99999629712,
+    "pressure_relative_defect": 3.65445451677715e-11,
+    "pressure_slope": 581116.0865949616,
+    "mass_density_defect": 0.0,
+    "convergence": "converged: residual 3.0430345743237552e-13 against DENSITY_ROOT_RESIDUAL 9.9999999999999998e-13 after 1 iterations, contraction absent, floor 2.0136937879673546e-15, amplification 19.230065370911571",
+    "minus_measured_kg_m3": -3.4901980988227024,
+    "relative_error_percent": -0.39607332033848586,
+    "action_cause": "",
+    "action_status": 0,
+    "density_T_kg_m3_K": -0.6292455216078133,
+    "action_rho_mol_m3": 4034.313613852243,
+    "local_uncertainty_kg_m3": 0.10019777937981635
+  },
+  {
+    "source": {
+      "source": "Rezaee2026_SI_TableS6",
+      "citation_key": "Rezaee2026",
+      "table_label": "S6",
+      "reported_material": "10wtpct_TOPO_in_DES",
+      "T_K": "338.15",
+      "density_kg_m3": "876.7",
+      "temperature_uncertainty_K": "0.01",
+      "density_uncertainty_kg_m3": "0.1",
+      "notes": "Transcribed from 2026 supporting information Table S6."
+    },
+    "admitted": true,
+    "status": "available",
+    "cause": "",
+    "x": [
+      0.9437295693221032,
+      0.05627043067789678
+    ],
+    "mass_fraction_defects": [
+      0.0,
+      1.3877787807814457e-17
+    ],
+    "mean_mass_kg_mol": 0.2175611233810555,
+    "P_Pa": 101325.0,
+    "numerical_limits": [
+      1e-08,
+      1e-12
+    ],
+    "observed_kg_m3": 876.7,
+    "density_kg_m3": 874.5892758368373,
+    "rho_mol_m3": 4019.9703984107746,
+    "branch": 0,
+    "stable_roots": 1,
+    "pressure_Pa": 101324.99999619342,
+    "pressure_relative_defect": 3.756794875187097e-11,
+    "pressure_slope": 576748.7774887887,
+    "mass_density_defect": 0.0,
+    "convergence": "converged: residual 3.4324453002110289e-13 against DENSITY_ROOT_RESIDUAL 9.9999999999999998e-13 after 1 iterations, contraction absent, floor 2.0015783220622958e-15, amplification 19.596555837173575",
+    "minus_measured_kg_m3": -2.1107241631627858,
+    "relative_error_percent": -0.24075786051817039,
+    "action_cause": "",
+    "action_status": 0,
+    "density_T_kg_m3_K": -0.6190568409449883,
+    "action_rho_mol_m3": 4019.9703984107864,
+    "local_uncertainty_kg_m3": 0.10019143245423773
+  },
+  {
+    "source": {
+      "source": "Rezaee2026_SI_TableS6",
+      "citation_key": "Rezaee2026",
+      "table_label": "S6",
+      "reported_material": "10wtpct_TOPO_in_DES",
+      "T_K": "343.15",
+      "density_kg_m3": "873.9",
+      "temperature_uncertainty_K": "0.01",
+      "density_uncertainty_kg_m3": "0.1",
+      "notes": "Transcribed from 2026 supporting information Table S6."
+    },
+    "admitted": true,
+    "status": "available",
+    "cause": "",
+    "x": [
+      0.9437295693221032,
+      0.05627043067789678
+    ],
+    "mass_fraction_defects": [
+      0.0,
+      1.3877787807814457e-17
+    ],
+    "mean_mass_kg_mol": 0.2175611233810555,
+    "P_Pa": 101325.0,
+    "numerical_limits": [
+      1e-08,
+      1e-12
+    ],
+    "observed_kg_m3": 873.9,
+    "density_kg_m3": 871.5183426742631,
+    "rho_mol_m3": 4005.855132250857,
+    "branch": 0,
+    "stable_roots": 1,
+    "pressure_Pa": 101324.99999858227,
+    "pressure_relative_defect": 1.3991918734745923e-11,
+    "pressure_slope": 572263.9497516889,
+    "mass_density_defect": 0.0,
+    "convergence": "converged: residual 1.4356918431879251e-13 against DENSITY_ROOT_RESIDUAL 9.9999999999999998e-13 after 1 iterations, contraction absent, floor 1.9897210862631218e-15, amplification 19.971792244486046",
+    "minus_measured_kg_m3": -2.38165732573691,
+    "relative_error_percent": -0.27253202033835633,
+    "action_cause": "",
+    "action_status": 0,
+    "density_T_kg_m3_K": -0.6094027562648723,
+    "action_rho_mol_m3": 4005.855132250857,
+    "local_uncertainty_kg_m3": 0.10018551378285348
+  }
+]

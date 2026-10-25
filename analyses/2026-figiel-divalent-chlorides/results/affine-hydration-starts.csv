@@ -1,0 +1,4 @@
+ion,unit,old_fresh,new_fresh,old_seeded,retained_fit,fresh_difference,seeded_difference,energy_tolerance
+Li,J/mol,-2.1711457520723343e-08,-2.1711457520723343e-08,-3.091408871114254e-07,-3.091408871114254e-07,0.0,0.0,1e-06
+Na,J/mol,0.0,0.0,0.0,0.0,0.0,0.0,1e-06
+K,J/mol,5.820766091346741e-11,5.820766091346741e-11,0.0,0.0,0.0,0.0,1e-06

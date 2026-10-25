@@ -1,0 +1,42 @@
+{
+  "source": "Goldberg and Nuttall (1978), doi:10.1063/1.555569",
+  "attachment": "IJ9ZIG4H/UVGIXEPB",
+  "pdf_sha256": "e70b5b2c98fa600e993e95eb124793391214e7540e91719a346604b484e40747",
+  "visual_check": "Complete selected gamma and Phi columns verified against rendered PDF pages 33/36, printed pages 294/297; OCR not accepted as numerical authority. Source order gamma then Phi explicitly remapped to phi then gamma.",
+  "basis": "mol/kg water, fully dissociated MCl2, nominal 100000 Pa, 298.15 K",
+  "basis_sha256": "7e32db55f77fe437bc8f918685b6287899e658810ebb575a10e31fcc61e63bf7",
+  "uncertainty": "Evaluated, correlated columns; discrepancy scales are not experimental uncertainties. No reserved source opened.",
+  "saturation_rule": "Include evaluated saturated-liquid row; exclude all molalities above it; density convergence does not establish stability.",
+  "exclusions": [
+    {
+      "ion": "Sr",
+      "molality": 3.75,
+      "source": "Table 23",
+      "reason": "Above 3.518 evaluated saturation boundary"
+    },
+    {
+      "ion": "Sr",
+      "molality": 4,
+      "source": "Table 23",
+      "reason": "Above 3.518 evaluated saturation boundary"
+    },
+    {
+      "ion": "Sr",
+      "molality": 4.038,
+      "source": "Table 23",
+      "reason": "Above 3.518 evaluated saturation boundary"
+    },
+    {
+      "ion": "Ba",
+      "molality": 1.8,
+      "source": "El Guendouzi 2001 inventory only; source unopened",
+      "reason": "Above 1.785 evaluated boundary; phase status unresolved"
+    },
+    {
+      "ion": "Ba",
+      "molality": 2,
+      "source": "El Guendouzi 2001 inventory only; source unopened",
+      "reason": "Above 1.785 evaluated boundary; phase status unresolved"
+    }
+  ]
+}

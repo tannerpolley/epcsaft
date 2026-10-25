@@ -1,0 +1,82 @@
+{
+  "checkpoint": "1a8fdec88b0448b3be5e1d851e8c9e7413ffb9cf",
+  "wheel_sha256": "8a38e39c1d7df1daef9e9ad186142d3ee16c0963adacad6935baf7521b1fc6ee",
+  "groups": {
+    "R1-F2": {
+      "comparisons": 25,
+      "passed": 25
+    },
+    "R1-F3": {
+      "comparisons": 8,
+      "passed": 8
+    },
+    "affine-recovery": {
+      "comparisons": 10,
+      "passed": 10
+    }
+  },
+  "coupled_inputs": {
+    "parameters": "properties_support::aqueous_electrolyte with explicit Na lengths",
+    "target_q_angstrom": 3.2,
+    "start_q_angstrom": 3.0,
+    "origin_angstrom": 3.0,
+    "scale_angstrom": 0.2,
+    "packing_and_DH_coefficient": 0.88,
+    "bounds_angstrom": [
+      2.4,
+      4.4
+    ],
+    "manufactured_Born_angstrom": 3.5,
+    "temperature_K": 298.15,
+    "pressure_Pa": 100000,
+    "molality_mol_kg": [
+      0.1,
+      1,
+      4.5
+    ],
+    "hold_energy_tolerance_J_mol": 1e-06,
+    "hold_diameter_tolerance_angstrom": 1e-10
+  },
+  "signed_inputs": {
+    "parameters": "properties_support::neutral_binary",
+    "temperature_K": 200,
+    "pressure_Pa": 100000,
+    "composition": [
+      0.4,
+      0.6
+    ],
+    "branch": "liquid",
+    "coefficient": -0.88,
+    "origin": 0.1,
+    "scale": 0.2,
+    "k_ij": -0.088,
+    "Difference_scale": 1,
+    "FD_steps_optimizer_units": [
+      0.001,
+      0.0005,
+      0.00025
+    ]
+  },
+  "identity_inputs": {
+    "parameters": "properties_support::associating_binary with tied sigma and reciprocal k",
+    "temperature_K": 300,
+    "density_mol_m3": 5000,
+    "composition": [
+      0.4,
+      0.6
+    ],
+    "sigma_origin_angstrom": 2.5,
+    "sigma_scale_angstrom": 0.1,
+    "optimizer": [
+      0.3,
+      -0.02
+    ]
+  },
+  "evidence_type": "numerical verification",
+  "limitations": [
+    "No full affine-column qualification; revision-1 point-reader basis requires design amendment.",
+    "No stage-1 preservation, check-all or Khudaida replay yet.",
+    "No Mg/Ca fit or physical validation."
+  ],
+  "environment_restored_wheel_sha256": "e28d258df06eac39711c59a79f9ce2b69fc8ac7565637bfba0dbef21863d8dc7"
+}

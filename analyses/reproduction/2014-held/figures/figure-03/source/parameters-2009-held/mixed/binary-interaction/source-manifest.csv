@@ -1,0 +1,6 @@
+parameter,component_i,component_j,value,source,note
+k_ij,Li+,Ac-,1.0,Held2009 auxiliary parameter bundle,Retained from moved 2009_Held reference dataset
+k_ij,Na+,Ac-,1.0,Held2009 auxiliary parameter bundle,Retained from moved 2009_Held reference dataset
+k_ij,K+,Ac-,1.0,Held2009 auxiliary parameter bundle,Retained from moved 2009_Held reference dataset
+l_ij,all,all,0,Held2009 auxiliary parameter bundle,Zero-filled because no l_ij values are published for this auxiliary bundle
+k_hb_ij,all,all,0,Held2009 auxiliary parameter bundle,Zero-filled because no k_hb_ij values are published for this auxiliary bundle

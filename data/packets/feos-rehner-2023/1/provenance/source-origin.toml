@@ -1,0 +1,32 @@
+provenance_kind = "source-record-provenance-v1"
+schema_version = 1
+transformations = ["pure dependencies as feos-esper-2023", "k_ij -> pair k_ij; an induced-association row fits eps^AiBj alone, so k_ij = 0 (Sec. 3)", "fitted cross kappa: kappa_Engine ((sigma_i + sigma_j)/2)^3 = kappa_FeOs (sigma_i sigma_j)^(3/2) (Eq. 17, constant sigma); fitted energy kept", "k_ij-only pairs of two self-associating components: wolbach-sandler rules (Eqs. 17-18); other site-bearing pairs: no_cross_association (Eq. 17 strength zero)"]
+
+[[records]]
+retained_path = "parameters/parameters.json"
+sha256 = "034476de9da3640685728b3656f5a6663bd71b699960094b4fbdc5355b7f5eb4"
+origin_repository = "feos-org/feos"
+origin_commit = "af84e3f9da2fac2d102d449cd07cbbb48237617b"
+origin_tree = "1e7fb4770d9055b96d010e0b3f3f2d0241269508"
+origin_path = "parameters/pcsaft/rehner2023_binary.json"
+origin_sha256 = "8b7d008b2bdf7ec49542eb443e36078fbe46e2737775126589c1718dfa13c335"
+recipe = "data/tools/import_feos.py"
+
+[[records]]
+retained_path = "sources/record-accounting.csv"
+sha256 = "5c36da22fdf3684d2d6a20f02d1d80e8ffde5e3920246b5c124c27e376a3dd15"
+origin_repository = "feos-org/feos"
+origin_commit = "af84e3f9da2fac2d102d449cd07cbbb48237617b"
+origin_tree = "1e7fb4770d9055b96d010e0b3f3f2d0241269508"
+origin_path = "parameters/pcsaft/rehner2023_binary.json"
+origin_sha256 = "8b7d008b2bdf7ec49542eb443e36078fbe46e2737775126589c1718dfa13c335"
+recipe = "data/tools/import_feos.py"
+
+[[records]]
+retained_path = "parameters/LICENSE-NOTICE.md"
+sha256 = "d79b5ca197a7d05918fd01bf0037ab9e8e962bcd4b7394c9a02a544ca2745598"
+origin_repository = "tannerpolley/ePC-SAFT"
+origin_commit = "120993ace43d12c388e3609b9e1b04e978055336"
+origin_tree = "148a1286473708c847a3c7d645c1db4246008e5e"
+origin_path = "data/packets/feos-rehner-2023/1/packet.toml"
+recipe = "Extract the recorded Esper CC BY-NC use basis, Rehner CC BY attribution and full FeOs MIT notice into an adjacent notice; no numerical changes."

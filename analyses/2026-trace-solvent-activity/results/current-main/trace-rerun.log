@@ -1,0 +1,11 @@
+packet3 LiCl resolved rows checked
+packet3 NaCl resolved rows checked
+packet3 MgCl2 resolved rows checked
+packet3 CaCl2 resolved rows checked
+packet4 LiCl resolved rows checked
+packet4 NaCl resolved rows checked
+packet4 MgCl2 resolved rows checked
+packet4 CaCl2 resolved rows checked
+maximum scalar change 9.474869059333813e-07
+maximum pressure-corrected identity error 3.5214035969273336e-09
+trace [{'molality_mol_kg': 1e-08, 'osmotic_coefficient': 0.9999619839316984, 'precision': 'reported', 'debye_limit': 0.9999606345027382, 'gamma_pm_m': 0.9998819218418389}, {'molality_mol_kg': 1e-09, 'osmotic_coefficient': '', 'precision': 'Stop.converged_to_floor', 'debye_limit': 0.9999875515367428, 'gamma_pm_m': 0.9999626564440321}, {'molality_mol_kg': 1e-10, 'osmotic_coefficient': '', 'precision': 'Stop.converged_to_floor', 'debye_limit': 0.9999960634502738, 'gamma_pm_m': 0.9999881905344846}, {'molality_mol_kg': 1e-12, 'osmotic_coefficient': '', 'precision': 'Stop.converged_to_floor', 'debye_limit': 0.9999996063450274, 'gamma_pm_m': 0.9999988190372263}]

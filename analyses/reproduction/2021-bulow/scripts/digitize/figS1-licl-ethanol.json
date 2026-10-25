@@ -1,0 +1,76 @@
+{
+ "axis": {
+  "x1_pixel": [
+   157.5,
+   406.5
+  ],
+  "x1_value": 0,
+  "x2_pixel": [
+   455.5,
+   406.5
+  ],
+  "x2_value": 0.1,
+  "y1_pixel": [
+   157.5,
+   406.5
+  ],
+  "y1_value": 0.0,
+  "y2_pixel": [
+   157.5,
+   84.0
+  ],
+  "y2_value": 1.0
+ },
+ "roi": [
+  160,
+  26,
+  692,
+  404
+ ],
+ "series": [
+  {
+   "name": "advanced",
+   "mode": "curve",
+   "bgr_lower": [
+    0,
+    120,
+    0
+   ],
+   "bgr_upper": [
+    60,
+    190,
+    80
+   ]
+  },
+  {
+   "name": "advanced-bjerrum",
+   "mode": "curve",
+   "bgr_lower": [
+    0,
+    80,
+    200
+   ],
+   "bgr_upper": [
+    60,
+    180,
+    255
+   ]
+  },
+  {
+   "name": "experiment",
+   "mode": "points",
+   "morph_kernel": 9,
+   "min_area": 60,
+   "bgr_lower": [
+    0,
+    0,
+    0
+   ],
+   "bgr_upper": [
+    70,
+    70,
+    70
+   ]
+  }
+ ]
+}

@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-223-build-tpd-stability-test-and-phase-35ebff8f/analyses/2026-tpd-phase-discovery/scripts/feos_compare.py", line 137, in <module>
+    main()
+    ~~~~^^
+  File "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-223-build-tpd-stability-test-and-phase-35ebff8f/analyses/2026-tpd-phase-discovery/scripts/feos_compare.py", line 77, in main
+    feed = State(eos, temperature=300*si.KELVIN, pressure=1e5*si.PASCAL,
+                 moles=np.array([.5, .5])*si.MOL, density_initialization='liquid')
+TypeError: State.__new__() got an unexpected keyword argument 'moles'

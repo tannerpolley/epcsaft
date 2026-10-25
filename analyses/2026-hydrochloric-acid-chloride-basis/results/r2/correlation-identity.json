@@ -1,0 +1,10 @@
+{
+  "source": "analyses/2026-hydrochloric-acid-chloride-basis/scripts/correlation.cpp",
+  "source_sha256": "5d7dd36ff047ca7b3ff433b570c3e9c9b5e575b46be5a7de5cd4507ae47917ad",
+  "input_sha256": "d3697a0a3c75ff1b6c8aeac84954a411cce21b989043a5985f7d693a1cc0f436",
+  "executable_sha256": "c129ee02345e9667764f67aca8f73a2e5e3fe239573b4aea802850dadf88ba63",
+  "output": "correlation.csv",
+  "output_sha256": "f2abf7561816a73fa259dc0889f09a9cf2508d03901e7c5ba7b310c26c0a450e",
+  "operation": "Native scalar C_ab/sqrt(C_aa C_bb) readout; no new fit or matrix factorization.",
+  "input_path": "fit-values.csv"
+}

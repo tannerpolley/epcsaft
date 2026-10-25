@@ -1,0 +1,7 @@
+original_id,variant_id,quantity,signed_difference,unit
+C3-sigma-1-common-liquid,C3-diameter-at-original-density,hard_chain,0.0,1
+C3-sigma-1-common-liquid,C3-diameter-at-original-density,dispersion,0.0,1
+C3-sigma-1-common-liquid,C3-diameter-at-original-density,association,0.0,1
+C3-sigma-1-common-liquid,C3-diameter-at-original-density,debye_huckel,-0.0008002976989382217,1
+C3-sigma-1-common-liquid,C3-diameter-at-original-density,ar,-0.0008002976989391897,1
+C3-sigma-1-common-liquid,C3-diameter-at-original-density,Z,-0.0004883626793962259,1

@@ -1,0 +1,7 @@
+species,molar_mass_g_per_mol,source_url,source_locator,retrieved_on
+CO,28.0101,https://webbook.nist.gov/cgi/cbook.cgi?ID=C630080&Mask=1,Species identification; Molecular weight row (g/mol),2026-10-21
+H2O,18.0153,https://webbook.nist.gov/cgi/cbook.cgi?ID=C7732185&Mask=1,Species identification; Molecular weight row (g/mol),2026-10-21
+CO2,44.0095,https://webbook.nist.gov/cgi/cbook.cgi?ID=C124389&Mask=1,Species identification; Molecular weight row (g/mol),2026-10-21
+H2,2.01588,https://webbook.nist.gov/cgi/cbook.cgi?ID=C1333740&Mask=1,Species identification; Molecular weight row (g/mol),2026-10-21
+N2O4,92.0110,https://webbook.nist.gov/cgi/cbook.cgi?ID=C10544726&Mask=1,Species identification; Molecular weight row (g/mol),2026-10-21
+NO2,46.0055,https://webbook.nist.gov/cgi/cbook.cgi?ID=C10102440&Mask=1,Species identification; Molecular weight row (g/mol),2026-10-21

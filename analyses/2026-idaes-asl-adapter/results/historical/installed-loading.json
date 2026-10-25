@@ -1,0 +1,14 @@
+{
+  "cwd": "/tmp",
+  "density_mol_m3": 60,
+  "gradient_error_inf": 0.0,
+  "hessian_error_inf": 0.0,
+  "library": "/home/tnnrpolley21/.codex/worktrees/7993/ePC-SAFT-greenfield/.venv/lib/python3.13/site-packages/epcsaft/libepcsaft_asl.so",
+  "library_sha256": "f4b30d49ed1ab94b23131bda6c696682ce50aad7b87fb3ff85e2a1e1849194b3",
+  "parameter_file_sha256": "5b72b92f1b47162e5fffee8641a83fc5354d15eeec2ac51658cb051c727bd099",
+  "pressure_pa": 196987.4905537097,
+  "source_commit": "5046d4bb689c6209e93853a4c36b9e82e4d149d2",
+  "status": "passed",
+  "temperature_k": 400,
+  "value_error_pa": 0.0
+}

@@ -1,0 +1,427 @@
+---
+title: "Exact-state reuse in bounded parameter fitting"
+format: html
+execute:
+  enabled: false
+---
+
+At the frozen Original Born MEA parameter point, sharing the central state and
+its first parameter actions preserves all 160 predicted quantities and
+residuals, all 800 physical Jacobian entries and all 800 weighted optimizer
+Jacobian entries exactly. The dimensionless weighted objective is
+40.20153733056146 on both wheels. This is numerical verification of a bounded
+calculation, not physical validation of the MEA model or a completed fit.
+
+## Question, method and inputs
+
+The [owning fitting-cost issue](https://github.com/tannerpolley/ePC-SAFT/issues/129)
+asks whether repeated central solves and action preparation can be removed
+while keeping physical declarations, observations, residual transformations,
+weights, parameter coordinates and numerical tolerances unchanged.
+The [bound-set issue](https://github.com/tannerpolley/ePC-SAFT/issues/193)
+separately asks whether the held coordinates must be rebuilt when the accepted
+weighted gradient changes their membership, including inward release.
+
+[ALG-FIT](../../engine/docs/science/algorithms.md#alg-fit) and the
+[fitting formulation](../../engine/docs/regression/science/pure-saturation-regression.md)
+own the mathematics. The weighted objective is one half the sum of squared
+weighted residuals. The optimizer gradient is the weighted Jacobian transpose
+times the weighted residual vector. The physical state is resolved by the
+existing equilibrium owner; fitting groups only exactly equal declarations.
+Every projection, residual transformation and weight stays with its own row.
+
+The preceding extraction read the independent MEA model-D checkout at
+`downstream/.worktrees/MEA-Thermodynamics-121-model-d`, its frozen setup anchors,
+`model-d/0-0-S1-40-80C-multistart.json:old-rule.fitted`, and the state packet
+with SHA-256
+`86f60041b28ec4493729b04c0238f44e86fba4becf33d6ddf47d86b7efb82448`.
+The complete parameter record, physical declarations, target definitions,
+five physical coordinates, bounds and scales are retained in
+[mea-initial.json](inputs/mea-initial.json). Numerical provenance is retained
+in [initial-summary.json](results/initial-summary.json).
+There are 84 physical states and 160 scalar targets. The single initial
+objective uses one allowed iteration and a solver-time limit of one microsecond
+to prevent a new fitting trajectory; that limit does not cap the initial
+objective work. It is not a convergence experiment.
+
+The recorded commands request one OpenMP and BLAS thread, scheduling priority
+10 and the shared numerical lock; [execution.json](results/execution.json)
+retains those commands. Effective BLAS thread counts were not independently
+measured. The baseline wheel SHA-256 is
+`b55665901b881836f90af010c22bd16a51a687a4e83242ab6d7d5d10118e582a`.
+The measured candidate wheel is
+`4235074a5d264a4a30fa1023bc19b6f82040d1c9a957e0dd712cf3d6cf4e4f74`,
+source base `11ee6fbed89b541b01aad90459a941b85f3ef285`, diff SHA-256
+`fb37d192d796b3242edab02d62cc7dfef70df18fd00d9e25faf92e325514a0f5`.
+The original baseline output was recovered completely from the saved thread
+after the computer restart removed temporary files. The candidate was built
+and installed in the sole Engine environment before calculation.
+
+## Initial objective and action agreement
+
+| Quantity | Baseline | Measured candidate |
+|---|---:|---:|
+| Weighted objective, dimensionless | 40.20153733056146 | 40.20153733056146 |
+| Initial evaluation CPU time, s | 47.989234593 | 24.353442776 |
+| Initial evaluation wall time, s | 92.358522553 | 24.518292574 |
+| Trial failures | 0 | 0 |
+| Maximum absolute prediction difference | Reference | 0 |
+| Maximum absolute physical Jacobian difference | Reference | 0 |
+| Maximum absolute optimizer Jacobian difference | Reference | 0 |
+
+The exact numerical rows are retained once in
+[baseline-initial.csv](results/baseline-initial.csv) and
+[candidate-initial.csv](results/candidate-initial.csv). Columns retain row
+order and physical versus optimizer-coordinate derivatives. The candidate
+trace records 84 prediction groups, 84 differentiation groups and 84 first-action
+batches. Its 132 equilibrium solve calls include preparation and cold fallback;
+they are not 132 distinct physical input states. Inclusive span durations
+overlap and must not be added to estimate exclusive cost.
+
+CPU time is about 1.97 times lower for this one initial evaluation. Baseline
+wall time was much larger than CPU time, so the wall-time ratio cannot be
+attributed entirely to the code change. There are no repeats from which to
+estimate timing variability and no complete multistart measurement. A table
+is sufficient for these two scalar timings; plotting them would not estimate
+a timing distribution or clarify the exact equality comparison.
+
+The six baseline probe states are retained in
+[baseline-state-profile.csv](results/baseline-state-profile.csv). Their three
+paired speciation states have zero absolute difference between shared and
+separate actions. The three pressure controls were timed but this probe did
+not compare their derivatives; the complete initial Jacobian comparison above
+does compare those consumed rows between wheels.
+
+## Bound-set verification and unresolved case
+
+The measured candidate's coupled manufactured bound-start case reaches cost
+0.0020816903804324652, compared with 0.002081690380433803 from the scalar fit
+with dispersion energy fixed at its upper bound. The fitted interaction
+parameter is -0.027772139946327108 versus -0.027772140767741173 in the reduced
+fit. Its maximum projected gradient is 7.2560e-10, below the unchanged 1e-6
+criterion, and feasibility passes. Exact rows and comparison tolerances are
+in [native-4235074a.csv](results/native-4235074a.csv).
+
+The first release check stopped before fitting. Row-specific diagnosis found
+coincident phases at the cold 180 K bubble seed, with the same behavior at
+190 K and in the 180 K vapor composition row. The interior manufactured
+reference has distinct phases. Its measured pressure, compositions and
+packing fractions provide explicit starting guesses that give available
+predictions and actions at the unchanged initial parameters. The corrected
+check retains its +0.1 interaction coefficient start, bounds, observations
+and tolerances; it recovers dispersion energy 150.00000000002808 K against
+150 K and cost 1.7234876947455287e-24 against zero.
+
+Restoring only the old callback's round-ending predicate leaves constrained
+cost 0.0031494214595652998 against the same reduced reference
+0.002081690380433803, failing the unchanged numerical criterion under the
+same twelve-step work limit. The corrected predicate passes. This establishes
+the stale-set previous-failure check; the separate release check also passes.
+Neither result attributes MEA's
+historical plateau to that defect. The final comparisons are retained in
+[bound-case-comparisons.csv](results/bound-case-comparisons.csv).
+
+## Corrected wheel and changing parameter points
+
+The corrected wheel SHA-256 is
+`28181e72e429c6e87fc6361082af1a7b21c8747e76bda65a1c30abb4a97402f2`,
+source base `11ee6fbed89b541b01aad90459a941b85f3ef285`, diff SHA-256
+`92183bab8c3c1efdd54b63ef0efb01523ef746101139423141a9cb0ad38401cd`.
+[replay.py](scripts/replay.py) consumes only the retained physical inputs
+and the installed wheel, without loading application source or its caches.
+
+The full retained-input replay again matches all baseline predictions,
+residuals and both Jacobians bit for bit. The weighted objective stays
+40.20153733056146. Initial evaluation takes 23.490700805 s wall time and
+23.488207343 s CPU time in this one run. Exact corrected rows are in
+[corrected-initial.csv](results/corrected-initial.csv), with provenance in
+[initial-summary.json](results/initial-summary.json). The earlier candidate's
+single-run timing and its reviewed limits remain separate measurements.
+
+A bounded three-step fit of six retained states and nine scalar targets
+changes the parameter point and reduces weighted cost from
+0.7812681266679207 to 0.05467058394365587. It records three successful
+residual-to-Jacobian promotions. This prefix is not a converged calibration.
+Fresh scalar predictions and actions at its final physical point agree with
+the grouped fitting results to the following absolute differences:
+
+| Quantity | Maximum absolute difference | Unit |
+|---|---:|---|
+| CO₂ partial pressure | 5.32018873400375e-13 | Pa |
+| Liquid species/pool mole fraction | 3.8163916471489756e-17 | 1 |
+| Pressure derivative by a dimensionless interaction coefficient | 2.3234747459355276e-12 | Pa |
+| Mole-fraction derivative by a dimensionless interaction coefficient | 1.3552527156068805e-16 | 1 |
+| Pressure derivative by the reciprocal-temperature slope | 0 | Pa/K |
+| Mole-fraction derivative by the reciprocal-temperature slope | 1.6331854014246978e-20 | 1/K |
+
+[short-fit.csv](results/short-fit.csv) retains grouped and fresh scalar values
+and actions. [short-comparison.csv](results/short-comparison.csv) retains each
+quantity and parameter's maximum difference; [short-fit.json](results/short-fit.json)
+retains the physical point, achieved costs, stopping cause and work counts.
+The observed agreement supports invalidation at the changed parameter point
+and successful promotion for this prefix. It does not test every changed
+physical declaration.
+
+## Failed promotion preserves valid residual results
+
+A separate native numerical probe uses the declared methane/ethane bubble
+states at 170 and 180 K, feed amounts 0.5 mol each, a pressure guess of
+100000 Pa, artificial observed pressure 1000000 Pa, difference scale 1 Pa and
+weights 1 and 0.25. The first-component dispersion energy is 148 K, with
+affine origin 148 K, finite coordinate scale 1e308 K and unchanged physical
+bounds 140–170 K. These artificial observations test numerical
+representability; they are not experimental data.
+
+The initial residual-only evaluation predicts pressures 1259949.2294408893
+and 1701207.9280178961 Pa, with finite weighted cost 95248370732.84993.
+Exact physical pressure derivatives remain finite at -42933.861874661874 and
+-53187.822635583216 Pa/K. Multiplication by the finite but extreme coordinate
+scale makes the first optimizer Jacobian entry nonfinite. The evaluator
+returns the typed cause `optimizer Jacobian not finite` at row zero for a
+Jacobian request. A later residual-only request at the same point retains
+every prediction, residual, weighted residual and cost exactly unchanged.
+
+At changed physical energy 149 K, the pressures are 1217790.9384003202 and
+1648910.7999990298 Pa. Fresh scalar owners differ by 4.1909515857696533e-9 and
+4.6566128730773926e-10 Pa, within the unchanged 1e-10 relative comparison.
+Compile and central-solve counts are each 2, 0, 0 and 2 across the initial
+residual call, failed promotion, retained residual call and changed-point call.
+Those counts measure saved work; they are not numerical correctness criteria.
+
+[residual-promotion-values.csv](results/residual-promotion-values.csv) owns
+the exact rows. [residual-promotion-diagnostic.json](results/residual-promotion-diagnostic.json)
+retains the cause, source and archive hashes and limits. The
+[native probe source](scripts/residual-promotion-probe.cpp) and
+[compile/run command](scripts/run-residual-promotion-probe.py) retain the
+calculation. This is native code verification against the unchanged final
+owner and its native archive, with the installed wheel identity recorded.
+It is distinct from the installed-wheel MEA replay and qualifies this
+representability failure only. The uncomputed optimizer-Jacobian entry in
+the failure row table is blank, not a zero derivative.
+
+The source review found no demonstrated calculation defect in state identity,
+model lifetime, observable projection or accepted-gradient membership updates.
+Independent delivered review supports the corrected source and these bounded
+numerical results. The corrected tree uses Properties 4223, `regression` 1300
+and total 18556 lines, equal to the hard ceilings explicitly approved by the
+owner on 2026-09-29 in the [budget amendment](../../docs/scientific/code-budgets.md).
+Consolidating the weighted-gradient calculation and state membership removes
+ten readable runtime lines. All scientific requirements remain unchanged.
+The source-only affected check passes with soft-ceiling warnings; it performs
+no wheel build or numerical replay. Corrected native fitting checks
+pass in 22.11 s and the native observation checks pass in 1.56 s; the
+complete installed-wheel gate passes: 107 Python checks, six native groups,
+packet validation, typing, source checks, analysis layout and architecture.
+The installed wheel remains `28181e72` with all 14 RECORD hashes verified.
+[verification.json](results/verification.json) records the bounded gate commands,
+counts, wheel identity and log hashes.
+
+The bounded Engine calculation is supported for the retained inputs; merge
+approval and the explicit application handoff remain pending. Each application
+must qualify its own fits or process calculations on the supplied immutable
+wheel. A changed runtime requires a new wheel identity and applicable verification.
+The retained distinct feeds, loadings and pressure guesses satisfy the bounded
+changed-input comparison. Exhaustive combinations of physical declarations
+remain outside the measured domain. F05 density-root
+reuse and the other original #129 levers are separate remaining deliveries.
+The first complete gate found one stale recorded native variance factor from
+an older wheel. At the five-observation, two-coordinate manufactured recovery,
+current native and public calculations both return dimensionless variance
+factor 3.8844526205205044e-27 and final cost 5.826678930780756e-27. The variance
+factor equals the weighted residual sum of squares divided by three remaining
+degrees of freedom. Updating only the 28 `r4/` native fitting rows and their
+case-specific provenance resolves the comparison at its unchanged relative
+tolerance; every runtime calculation and assertion remains unchanged. The
+[reference rows](../../engine/tests/oracle/native-rows.tsv) and
+[recording provenance](../../engine/tests/oracle/native-rows.json) retain the
+current operands separately from unchanged older cases. This near-zero
+manufactured residual is numerical verification, not an experimental variance
+estimate or physical validation.
+
+## Initial preparation after admission
+
+On the same frozen 84-state, 160-target point, consuming the admitted model and
+compiled problems removes 84 repeated compilations. The total compile count
+falls from 216 to 132; the 132 solve calls and all numerical rows remain
+unchanged. The weighted objective remains 40.20153733056146, with no trial
+failures. Three interleaved baseline/candidate pairs measure the change under
+shared-host contention, using process user plus system time as the primary
+measure and wall time as secondary evidence.
+This reduces initialization work; it does not establish a per-iteration or
+full-calibration speedup.
+
+This slice reads only the frozen Engine inputs, the Engine-owned Khudaida
+parameter packet and source feeds, and Engine checks. It does not read or run
+an application checkout. The implementation base is `5c65bcb4`; its runtime
+source is identical to `8c670d3a` and the qualified `28181e72` wheel. The
+candidate wheel SHA-256 is
+`659b2606737be0c66b4bc764aee3adda2b4e983b8196659b8a824955a5fd47c0`.
+[performance.py](scripts/performance.py) and [replay.py](scripts/replay.py)
+retain the calculation; the before/after summaries identify the wheel and
+input hashes. Each heavy command uses the shared `/tmp/t3-heavy-check.lock`,
+scheduling priority 10, one OpenMP and BLAS thread, two permitted build jobs
+and a bounded timeout. The lock serializes the heavy steps; requested thread
+settings do not prove that every unrelated host process was idle.
+
+### Measured costs and selected change
+
+The regular trace subtracts each child span from its parent to report exclusive
+cost. Inclusive durations overlap and are not summed. The separate
+[pinned-Hessian and packing probe](scripts/pinned-hessian-packing-profile.cpp)
+forwards every call to the immutable wheel's original implementation and adds
+its native trace scopes. Its complete output rows match the uninstrumented
+wheel exactly. The probe depends on the inspected wheel's C++ ABI and unchanged
+trace layout; its results apply to that wheel and source snapshot. The
+interposed scopes add timing overhead, so their durations bound the removable
+subset conservatively.
+
+| Remaining lever at the frozen fit point | Measured cost | Share | Meaning of the bound |
+|---|---:|---:|---|
+| F05 validation preparation | Median 2.987 s | 12.3% | A second compile of each of the 84 same-model problems is removable |
+| Pinned constraint Hessians | 1.854 s in 228 calls | 7.7% | Entire measured bucket; exact third derivatives remain required |
+| Optimizer fixed cost | At most 0.690 s | At most 2.9% | Remaining exclusive driver time also includes other untraced work; not an isolated MUMPS or initialization measurement |
+| F15 repeated packing coefficient | At most 0.003852 s | Below 0.02% | All 7,773 coefficient calls, including required calls, bound the repeated subset |
+| F15 charge-vector copy | No such operation in this source | 0 | `species_z()` is absent; charge access uses the parameter vector directly |
+
+The first row comes from three regular repeats; the instrumented rows are one
+additional profiling run. [before-fit-profile.csv](results/before-fit-profile.csv)
+and [native-before-fit-profile.csv](results/native-before-fit-profile.csv)
+own the values. The 36% pinned-Hessian share from the earlier issue does not
+apply to this input set and wheel. F05 density-observation root batches are
+not exercised: every frozen target is a partial pressure or mole fraction, and
+the Khudaida workload contains no density regression observations.
+
+The change retains admission's immutable model and compiled groups through
+the first evaluation. It consumes them only if every active physical value
+matches the bounded affine map exactly. Otherwise it rebuilds at the actual
+optimizer point and clears the discarded centers. A same-point cold retry may
+reuse the same compiled problem. The solved-state, derivative, failed-trial
+and successful-cache owners remain unchanged. Two single-use objective helpers
+are folded into their caller with the same row-ordered sum, one final factor
+of one half, and the same first-overflow causes. Regression is 1,298 lines and
+the total is 18,554, each two lines below its hard ceiling; Properties and
+Bindings are unchanged. No budget amendment is needed.
+
+[ALG-FIT](../../engine/docs/science/algorithms.md#alg-fit) records the ownership
+and invalidation rule. The fitting equations, reference transfer, derivative
+actions, Ipopt driver, numerical policies, bounds, observations and weights
+are explicitly revalidated rather than changed.
+
+### Preliminary blocks and numerical agreement
+
+| Repeat | Fit before wall / CPU, s | Fit after wall / CPU, s | Khudaida before wall / CPU, s | Khudaida after wall / CPU, s |
+|---|---:|---:|---:|---:|
+| 1 | 24.195 / 24.109 | 21.918 / 21.881 | 0.359 / 0.356 | 0.360 / 0.358 |
+| 2 | 24.490 / 24.477 | 22.114 / 22.032 | 0.332 / 0.332 | 0.350 / 0.349 |
+| 3 | 23.883 / 23.871 | 21.883 / 21.819 | 0.322 / 0.321 | 0.329 / 0.328 |
+
+The full-precision rows are retained once in the before/after
+[fit timing](results/before-fit-timing.csv) and
+[candidate fit timing](results/after-fit-timing.csv), and the before/after
+[Khudaida timing](results/before-equilibrium-timing.csv) and
+[candidate Khudaida timing](results/after-equilibrium-timing.csv).
+These blocks preceded the owner's contention warning and are preliminary.
+They were serial and single-threaded, without alternating wheel installs or
+recording load. They establish numerical repeatability and identify repeated
+compilation, but are not the delivery speedup evidence. The interleaved pairs
+below supersede their timing comparison.
+
+All fit repeats and both wheels use the same exact numerical table,
+[corrected-initial.csv](results/corrected-initial.csv): 160 predictions, 160
+residuals, 160 weighted residuals, 800 physical Jacobian entries and 800 optimizer
+Jacobian entries. No rounding tolerance is needed. The summaries link that
+single owner by its SHA-256 rather than duplicating identical rows.
+
+The Engine-only equilibrium workload is the eight Khudaida feeds at 293.15 K
+and 100000 Pa, using the canonical two-liquid declarations and previous-state
+starts. It additionally requests first and second temperature actions of all
+five species' mole fractions in each phase, with a 1 K temperature direction
+and zero pressure/feed/parameter directions. All eight states meet their
+unchanged row criterion and all 160 action entries are available. Their
+amounts, compositions, densities, packing fractions, residuals, coordinates,
+multipliers, sensitivities and temperature actions are identical between
+wheels and repeats. [before-equilibrium-values.csv](results/before-equilibrium-values.csv)
+owns the arrays; summaries retain the parameter, feed and declaration hashes.
+The maximum phase normalization error is 2.22e-16, the maximum phase charge
+error is zero and the maximum raw row residual is 5.57e-14. These are numerical
+verification on a declared local branch, not physical validation or a
+phase-discovery certificate.
+
+The preliminary equilibrium median is 0.332 s before and 0.350 s after,
+within the observed 0.322–0.360 s range. Its source path is unchanged; no
+equilibrium speedup is claimed. The remaining exclusive driver bound for this workload
+is 0.038 s (12.1%), while all packing-coefficient calls total 3.66e-5 s.
+There are no pinned phases in this workload.
+
+### Interleaved measurements under contention
+
+Each workload alternates baseline and candidate in three A/B pairs, with a
+fresh process and verified immutable wheel for each run. The measured scope
+includes the same traced native fit or equilibrium/action work on both wheels;
+imports, input construction, wheel installation and CSV writing are excluded.
+CPU time is process user plus system time. The load average is sampled at the
+beginning and end of that scope, with its 1, 5 and 15 minute values retained.
+
+| Pair | Fit baseline CPU, s | Fit candidate CPU, s | Fit baseline / candidate wall, s | Khudaida baseline / candidate CPU, s | Khudaida baseline / candidate wall, s |
+|---|---:|---:|---:|---:|---:|
+| 1 | 24.398 | 21.766 | 24.573 / 22.132 | 0.343 / 0.336 | 0.343 / 0.336 |
+| 2 | 30.687 | 21.532 | 34.311 / 21.559 | 0.372 / 0.376 | 0.374 / 0.386 |
+| 3 | 29.253 | 28.090 | 35.824 / 36.595 | 0.369 / 0.344 | 0.369 / 0.347 |
+
+[paired-fit-timing.csv](results/paired-fit-timing.csv) and
+[paired-equilibrium-timing.csv](results/paired-equilibrium-timing.csv) own the
+full-precision times, separate user/system times, wheel hashes and load values.
+[paired-performance-summary.json](results/paired-performance-summary.json)
+records the statistic and command scopes. Three repeats do not estimate a
+full-campaign distribution.
+
+The fit's paired CPU reductions are 10.8%, 29.8% and 4.0%. The median of the
+three within-pair CPU ratios is 1.121, an observed 10.8% reduction. The ratio of
+separate sample medians would mix unequal contention and is not used. One-minute
+load ranges from 3.55 to 15.50 on the two-CPU host. The owner reports concurrent
+external fitting and Lithium work, including jobs outside the shared lock.
+The unusually expensive second baseline and the highly contended third pair
+remain in the record. Contention can affect CPU cost through shared caches and
+processor frequency as well as wall time; the full observed spread cannot be
+assigned to the code change. Removing 84 repeated compilations is the structural
+result. The paired measurements support lower initial CPU cost on these inputs,
+with a variable effect under this host load. No wall-time speedup is claimed.
+
+The equilibrium paired CPU changes range from 1.3% slower to 6.7% faster, with
+one-minute loads of 9.15–10.43. Its runtime path is unchanged, and no equilibrium
+speedup is claimed. Every paired fit and equilibrium run matches the same
+retained binary64 numerical rows exactly. Compilation counts remain 216 to 132
+for every fit pair, with 132 solves on both wheels.
+
+### Affine-rounding case
+
+A separate initial evaluation uses six retained states and nine targets,
+changing only the first coordinate's affine origin to 1e6. Binary64 arithmetic
+resolves the first interaction coefficient to -0.06655083317309618 instead
+of the input -0.06655083320547248. The immutable baseline uses the resolved
+point, giving weighted cost 0.7812681271116075. The candidate returns exactly
+the same predictions, residuals, weighted residuals, both Jacobians and physical
+point. This probes rebuilding when admission's parameter point differs from
+the actual affine point; it is not a new physical model or a calibration.
+[before-affine.csv](results/before-affine.csv) owns the rows, with the exact
+point and termination in [before-affine.json](results/before-affine.json) and
+[candidate affine summary](results/after-affine-summary.json). Its profile
+retains the same compilation count rather than bypassing the required rebuild.
+
+The candidate passes `bash tools/check-all.sh` (107 Python checks and its
+required fast native groups), the native `equilibrium`, `boundary` and
+`regression_fit` programs, and `bash tools/run-slice.sh khudaida`. The source
+gate and budgets also pass. A fresh Codex GPT-6.1 Sol high reviewer, applying
+`cse:review` to commit `7b02aa8a` against `5c65bcb4`, returns **Supported** for
+both capability and result, with no required defect identified. It inspected
+the retained numerical evidence, verified logs and rendered content without
+heavy replays. The numerical and contention limits above remain binding;
+graphical browser layout was not checked.
+[preparation-review.json](results/preparation-review.json) retains the verdict
+and task identity. [preparation-verification.json](results/preparation-verification.json) records
+the commands and log hashes. Public scalar
+prediction preparation, density-root action-batch reuse, the pinned-Hessian
+path optimization, optimizer fixed-cost alternatives and redundant packing
+remain open; this slice does not close the performance issue.
+
+This notebook has not been promoted for manuscript use.

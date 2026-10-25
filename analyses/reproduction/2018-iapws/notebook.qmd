@@ -1,0 +1,101 @@
+---
+title: "Calcium-complex temperature laws: Engine and PHREEQC"
+format:
+  html:
+    embed-resources: true
+execute:
+  echo: false
+  cache: false
+  daemon: false
+---
+
+```{python}
+import csv
+import json
+from pathlib import Path
+import matplotlib.pyplot as plt
+from IPython.display import Markdown, display
+rows = list(csv.DictReader(Path('results/calcium-comparison.csv').open()))
+identity = json.loads(Path('results/run-identity.json').read_text())
+unavailable = list(csv.DictReader(Path('results/unavailable.csv').open()))
+temperatures = sorted({float(r['T_K']) for r in rows})
+maximum = max(float(r['absolute_difference']) for r in rows)
+tolerance = float(rows[0]['tolerance'])
+passed = sum(r['outcome'] == 'pass' for r in rows)
+def table(records, columns):
+    display(Markdown('| ' + ' | '.join(columns) + ' |\n|' + '|'.join(['---'] * len(columns)) + '|\n' + '\n'.join('| ' + ' | '.join(str(r[c]) for c in columns) + ' |' for r in records)))
+```
+
+The Engine reproduces both calcium-complex analytical temperature laws at all
+`{python} str(passed)` of `{python} str(len(rows))` retained comparisons. The
+maximum absolute difference in $\log_{10}K$ is `{python} f'{maximum:.3g}'`,
+within the fixed `{python} str(tolerance)` tolerance. This is **numerical
+verification against the PHREEQC source model**, with the same source
+coefficients and printed association directions. It is not physical validation
+of calcium/carbonate speciation or liquid stability at these temperatures.
+
+The declared interval is `{python} str(min(temperatures))` to
+`{python} str(max(temperatures))` K. The activity convention is aqueous molality
+with pure-water activity. Native `ReactionLogPolynomial` evaluates the exact
+logarithm-base/reference-temperature mapping; pinned native PHREEQC evaluates
+its original WATEQ4F records independently. Python only reads retained results.
+The tolerance assesses arithmetic equivalence, not uncertainty in the source laws.
+
+```{python}
+table(rows, ['reaction_id', 'T_K', 'engine_log10_K', 'phreeqc_log10_K', 'absolute_difference', 'tolerance', 'outcome'])
+fig, ax = plt.subplots(figsize=(7, 3.5))
+for name in sorted({r['reaction_id'] for r in rows}):
+    selected = [r for r in rows if r['reaction_id'] == name]
+    ax.scatter([float(r['T_K']) for r in selected], [float(r['signed_difference']) / float(r['tolerance']) for r in selected], label=name.replace('_', ' '))
+ax.axhline(1, color='grey', linestyle=':')
+ax.axhline(-1, color='grey', linestyle=':')
+ax.set(xlabel='Temperature / K', ylabel='Signed log K difference / tolerance', ylim=(-1.1, 1.1))
+ax.legend()
+fig.tight_layout()
+plt.show()
+```
+
+Points are the discrete retained evaluations; the dotted bounds mark the fixed
+comparison tolerance. No continuous prediction or experimental uncertainty is
+inferred from the point spacing.
+
+The nominal source records at the reference temperature are a separate
+source-consistency diagnostic; they are not substituted for the analytical laws.
+
+```{python}
+nominal = []
+for name, value in identity['calcium_298K_nominal_log10_K'].items():
+    r = next(r for r in rows if r['reaction_id'] == name and float(r['T_K']) == min(temperatures))
+    difference = float(r['engine_log10_K']) - float(value)
+    nominal.append(dict(reaction=name, nominal_log10_K=value, analytical_log10_K=r['engine_log10_K'], difference=difference, tolerance=identity['nominal_record_diagnostic_tolerance']))
+table(nominal, ['reaction', 'nominal_log10_K', 'analytical_log10_K', 'difference', 'tolerance'])
+```
+
+PHREEQC was requested at `{python} str(identity['requested_pressure_atm'])` atm;
+its actual pressure values are
+`{python} str(identity['actual_reference_pressures_atm'])` atm. At the hottest
+points it raises pressure to its saturation estimate. The pinned WATEQ4F records
+supply no reaction-volume correction. A separate native pressure probe retained
+under the task build directory returned identical printed law values. The
+high-temperature results verify the temperature expressions only.
+
+IAPWS TGD9-18 Table 2 remains **source values only**, with its original
+concentration basis and unspecified table pressure/uncertainty. Full carbonate
+speciation is unavailable for the following separate reasons. The carbonate-only
+EOS comparison was excluded by the lead's reduced-scope readiness review.
+
+```{python}
+table(unavailable, ['quantity', 'cause', 'owner'])
+```
+
+The source coefficients and exact database lines are retained in
+`inputs/cases/carbonate-complexation/source/phreeqc-v3.9.0-carbonate-reactions.csv`.
+Raw independent reference input/output is in `results/phreeqc-*`; the complete
+execution identity is in `results/run-identity.json`. PHREEQC source commit
+`{python} identity['phreeqc_source_commit']` builds an executable that prints a
+3.8.9 banner despite the upstream v3.9.0 tag; both identities are preserved.
+The Engine library hash is `{python} identity['native_library_sha256']`.
+
+This notebook has not passed independent delivered review or been promoted for
+manuscript use. The readiness review accepts only these calcium laws and the
+explicitly unavailable parts; it does not establish numerical acceptance.

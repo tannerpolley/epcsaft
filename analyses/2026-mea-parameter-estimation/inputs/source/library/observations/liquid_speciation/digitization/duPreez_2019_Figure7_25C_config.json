@@ -1,0 +1,18 @@
+{
+  "axis": {
+    "x1_pixel": [5, 179], "x2_pixel": [316, 179],
+    "x1_value": 0.0, "x2_value": 0.6, "x_scale": "linear",
+    "y1_pixel": [5, 179], "y2_pixel": [5, 4],
+    "y1_value": 0.0, "y2_value": 0.4, "y_scale": "linear"
+  },
+  "roi": [5, 100, 317, 180],
+  "series": [
+    {"name": "MEACOO-", "mode": "points", "gray_threshold": 80, "dark_on_light": true, "morph_kernel": 4, "min_area": 8}
+  ],
+  "source": {
+    "citation": "du Preez et al. 2019", "doi": "10.1021/acs.iecr.8b04437",
+    "pdf_attachment_key": "7F9JCXHE", "pdf_page": 7, "figure": "Figure 7c",
+    "temperature_K": 298.15, "initial_MEA_M_approx": 0.33,
+    "measurement": "ATR-FTIR carbamate concentration; other plotted species were balance-derived"
+  }
+}

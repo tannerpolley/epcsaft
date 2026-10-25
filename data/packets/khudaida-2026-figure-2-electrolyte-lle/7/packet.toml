@@ -1,0 +1,58 @@
+schema_version = 2
+packet_id = "khudaida-2026-figure-2-electrolyte-lle"
+packet_version = "7"
+title = "khudaida-2026-figure-2-electrolyte-lle canonical Parameters packet"
+description = "Wolbach-Sandler successor to immutable khudaida-2026-figure-2-electrolyte-lle/6: every unlike-pair association rule edge names wolbach-sandler, restoring the cited Eq. 3 size factor. No other value changes."
+license_or_use_basis = "User-provided numeric parameter transcription retained for scientific verification, plus project-authored normalization and provenance metadata. Redistribution is limited to numeric facts and project-authored metadata; no publisher figure, full text, or campaign result is included."
+tolerance_rationale = "The successor changes only the cited cross-association volume rule and asserts no new numerical acceptance tolerance. Any validation tolerance or uncertainty must be declared by the consuming campaign."
+
+[[sources]]
+source_id = "khudaida-et-al-2026"
+citation = "Khudaida, S. H.; Rahayu, S. D.; Figiel, P.; Held, C.; Tiwikrama, A. H. Upgrading the Extraction of Ethanol and Isobutanol from an Aqueous Solution in the Presence of Sodium Chloride with Molecular Interaction Studies. Journal of Chemical & Engineering Data 2026, 71, 708-717."
+doi = "10.1021/acs.jced.5c00780"
+use_basis = "Tables 2, 5, 6, and 7 numeric parameter inputs for the 293.15 K, 0.1 MPa, 5 wt% NaCl electrolyte-LLE case."
+
+[[sources]]
+source_id = "figiel-yu-held-2025"
+citation = "Figiel, P.; Yu, G.; Held, C. Predicting Thermodynamic Properties of Ions in Single Solvents and in Mixed Solvents Using a Modified Born Term within the ePC-SAFT Framework. Industrial & Engineering Chemistry Research 2025, 64, 9406-9418."
+doi = "10.1021/acs.iecr.5c00475"
+use_basis = "Corrected Born SSM+DS solvation convention referenced by the Khudaida parameterization."
+
+[[sources]]
+source_id = "held-et-al-2014"
+citation = "Held, C.; Reschke, T.; Mohammad, S.; Luza, A.; Sadowski, G. ePC-SAFT revised. Chemical Engineering Research and Design 2014, 92, 2884-2897."
+doi = "10.1016/j.cherd.2014.05.017"
+use_basis = "Spherical-ion structural convention referenced by the Khudaida parameterization."
+
+[[sources]]
+source_id = "gross-sadowski-2002"
+citation = "Gross, J.; Sadowski, G. Application of the Perturbed-Chain SAFT Equation of State to Associating Systems. Industrial & Engineering Chemistry Research 2002, 41, 5510-5515."
+doi = "10.1021/ie010954d"
+use_basis = "Cross-association combining rules evaluated once at 293.15 K with no binary correction parameter."
+
+[[sources]]
+source_id = "validation-campaign"
+citation = "ePC-SAFT/ePC-SAFT-validation, Khudaida campaign at commit dc1841fc8c7b837d92b7fed9d976a22ba6d5b2e6."
+use_basis = "Migration provenance for the reviewed parameter bundle only; the Khudaida reproduction analysis owns its observations and generated evidence."
+
+[[domains]]
+domain_id = "khudaida-293-15-k-0-1-mpa"
+description = "Water + ethanol + isobutanol + sodium cation + chloride anion HELD2 parameter inputs at 293.15 K, 0.1 MPa, and nominal 5 wt% NaCl."
+
+[[files]]
+path = "parameters/parameters.json"
+role = "parameters"
+media_type = "application/json"
+sha256 = "8babed899e7347e58c403c7aff24a7fdd6d60411af3b4d81eb6aa90c2431dfa4"
+source_refs = ["khudaida-et-al-2026", "figiel-yu-held-2025", "held-et-al-2014", "gross-sadowski-2002", "validation-campaign"]
+domain_refs = ["khudaida-293-15-k-0-1-mpa"]
+units_basis = "Every fixed specification and continuous coefficient declares its unit in the canonical Parameters document; dimensionless values use the explicit dimensionless unit."
+
+[[files]]
+path = "provenance/source-origin.toml"
+role = "provenance"
+media_type = "application/toml"
+sha256 = "cd12c9af98c214c5d68355823bf47662e27c4585ddce6cf5c29f592f29c50c8e"
+source_refs = ["khudaida-et-al-2026", "figiel-yu-held-2025", "held-et-al-2014", "gross-sadowski-2002", "validation-campaign"]
+domain_refs = ["khudaida-293-15-k-0-1-mpa"]
+units_basis = "Predecessor packet identity, transformation text and SHA-256 hashes are non-numeric provenance."

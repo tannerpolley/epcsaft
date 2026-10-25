@@ -1,0 +1,289 @@
+{
+  "source_commit": "81cd85825fcf37ead7fc44f5c8084e5156036ab9",
+  "wheel_sha256": "835d9bc27b243acb6d2288f4911828be973f07dc0d20766f397538065a9368b0",
+  "reference_wheel_sha256": "e28d258df06eac39711c59a79f9ce2b69fc8ac7565637bfba0dbef21863d8dc7",
+  "input_sha256": "30e9ee4b832eb1e569c980a621a922bf559feaf8112d7f347519b4f5f985c797",
+  "failures": [],
+  "raw_outputs": [
+    {
+      "path": "density-closure-final-khudaida-corrected-2.json.gz",
+      "sha256": "41c6bb87898a00495000fcb5a9ef27745295c69fd810bbd188c6a83c51a50035",
+      "raw_sha256": "3bea28fceb16676cb70d6e88a6f3b4b0cc704a5a52be24c12c9563bf668c798b"
+    },
+    {
+      "path": "density-closure-final-Engine-corrected.json.gz",
+      "sha256": "42606dc156af2d767ea1baeadd668cc1de9dffe28ba9e91a1adfe3418c76267d",
+      "raw_sha256": "7dc9024d494aad8196565d0ea4e470927b7f8f51a81dd6ae72e768d411a305e3"
+    },
+    {
+      "path": "density-closure-final-Engine-timing-corrected-2.json.gz",
+      "sha256": "7703660ed717f82a986be98d1ff7592c6244d32779c763347705bc94e6e6b3a8",
+      "raw_sha256": "8fdd6ef2fa045d13d12820f2630b717e901608b7b0f893f7643fefe5b99a8520"
+    },
+    {
+      "path": "density-closure-final-Engine-timing-corrected-3.json.gz",
+      "sha256": "ffbbe3cdbcb9b0368cc7f221e2cadf5a4c813fadbbfb7f4f61c0e1c5e74d12f6",
+      "raw_sha256": "4d3d8d60c25e4d921d3b0b2dcd337cd0ba72ddfc8bf16224be8e01c4aac816f6"
+    },
+    {
+      "path": "density-closure-final-traces-corrected.json.gz",
+      "sha256": "3318df9756d70df17b87fdcfe7b99fb72ebeddd35373b51d4165b50f33650357",
+      "raw_sha256": "05c9e3ec33da25193c53bec9b2c2403f5f133606f6c295920740962935661412"
+    },
+    {
+      "path": "density-closure-final-khudaida-corrected-1.json.gz",
+      "sha256": "41c6bb87898a00495000fcb5a9ef27745295c69fd810bbd188c6a83c51a50035",
+      "raw_sha256": "3bea28fceb16676cb70d6e88a6f3b4b0cc704a5a52be24c12c9563bf668c798b"
+    },
+    {
+      "path": "density-closure-final-khudaida-corrected-3.json.gz",
+      "sha256": "41c6bb87898a00495000fcb5a9ef27745295c69fd810bbd188c6a83c51a50035",
+      "raw_sha256": "3bea28fceb16676cb70d6e88a6f3b4b0cc704a5a52be24c12c9563bf668c798b"
+    },
+    {
+      "path": "density-closure-final-Engine-timing-corrected-1.json.gz",
+      "sha256": "f5d7f2d6b9dc5d7701c677c63ae73e64fb5b1e9987994c72863327143447a1c0",
+      "raw_sha256": "31c57012276db23ff7117f3de55ba4fb21e64565346a6ec09128f251edaa5318"
+    }
+  ],
+  "limits": [
+    "Numerical verification on specified liquid roots; no physical validation or global stability claim.",
+    "Original comparator calculations and common-state inputs are retained. New differences use their original returned values.",
+    "Only the final measured return per request/selection is checked."
+  ],
+  "byte_identical_output_aliases": {
+    "density-closure-final-reference-and-mapping.csv": {
+      "retained_path": "density-closure-reference-and-mapping.csv",
+      "sha256": "ec99cc0d14d91fdff44e62df5f251256cb81998a362128531d89bc7ad8311050",
+      "meaning": "Independently replayed on the final identified wheel; bytes equal the separately identified earlier output."
+    },
+    "density-closure-final-traces-corrected.json.gz": {
+      "retained_path": "density-closure-traces-corrected.json.gz",
+      "sha256": "3318df9756d70df17b87fdcfe7b99fb72ebeddd35373b51d4165b50f33650357",
+      "meaning": "Independently replayed on the final identified wheel; bytes equal the separately identified earlier output."
+    },
+    "density-closure-final-khudaida-corrected-1.json.gz": {
+      "retained_path": "density-closure-khudaida-corrected-1.json.gz",
+      "sha256": "41c6bb87898a00495000fcb5a9ef27745295c69fd810bbd188c6a83c51a50035",
+      "meaning": "Independently replayed on the final identified wheel; bytes equal the separately identified earlier output."
+    },
+    "density-closure-final-khudaida-corrected-2.json.gz": {
+      "retained_path": "density-closure-khudaida-corrected-1.json.gz",
+      "sha256": "41c6bb87898a00495000fcb5a9ef27745295c69fd810bbd188c6a83c51a50035",
+      "meaning": "Independently replayed on the final identified wheel; bytes equal the separately identified earlier output."
+    },
+    "density-closure-final-khudaida-corrected-3.json.gz": {
+      "retained_path": "density-closure-khudaida-corrected-1.json.gz",
+      "sha256": "41c6bb87898a00495000fcb5a9ef27745295c69fd810bbd188c6a83c51a50035",
+      "meaning": "Independently replayed on the final identified wheel; bytes equal the separately identified earlier output."
+    },
+    "density-closure-final-E5-3.log.gz": {
+      "retained_path": "density-closure-equilibrium-ladder-probe.log.gz",
+      "sha256": "4c209c2b81b59478e9a53449c7df06bb3ead87b97af1423905078032a1091c3e",
+      "meaning": "Final canonical E5-3 independently executed on the final wheel; output bytes equal the retained resolved-node probe."
+    }
+  },
+  "qualification_logs": [
+    {
+      "path": "density-closure-final-check-all.log.gz",
+      "sha256": "d60ea65ef89fa945331b07c1700c816e5384a7b9673b3beaaf39e991e3f7973d"
+    },
+    {
+      "path": "density-closure-final-khudaida-slice.log.gz",
+      "sha256": "66168367e06fdfbf9e6d7748406ed5e6da278e4d2203c0ef4c79307c6277b23a"
+    },
+    {
+      "path": "density-closure-final-properties-P2.log.gz",
+      "sha256": "8fb77851e2d87f8da4591a25326955184eaccd04ad769b50ba9058354e819a24"
+    },
+    {
+      "path": "density-closure-equilibrium-ladder-probe.log.gz",
+      "sha256": "4c209c2b81b59478e9a53449c7df06bb3ead87b97af1423905078032a1091c3e",
+      "independent_replay_alias": "density-closure-final-E5-3.log.gz"
+    }
+  ],
+  "native_rows": {
+    "rows": 478,
+    "recorded_at_revision": "81cd85825fcf37ead7fc44f5c8084e5156036ab9",
+    "build_fingerprint": "3918686e884f7ace4a3afdd56df8fd4a12ed20d093a027f439c0d245ca4881cd",
+    "wheel_sha256": "835d9bc27b243acb6d2288f4911828be973f07dc0d20766f397538065a9368b0",
+    "commands": [
+      {
+        "command": "properties_checks P3",
+        "exit": 0
+      },
+      {
+        "command": "properties_checks P4",
+        "exit": 0
+      },
+      {
+        "command": "equilibrium_checks S2",
+        "exit": 0
+      },
+      {
+        "command": "equilibrium_checks E5-1",
+        "exit": 0
+      },
+      {
+        "command": "equilibrium_checks E5-3",
+        "exit": 0
+      },
+      {
+        "command": "equilibrium_checks E5-5",
+        "exit": 0
+      },
+      {
+        "command": "equilibrium_checks E5-7",
+        "exit": 0
+      },
+      {
+        "command": "equilibrium_checks E5-8",
+        "exit": 0
+      },
+      {
+        "command": "equilibrium_checks E5-10",
+        "exit": 0
+      },
+      {
+        "command": "regression_checks R2-J2",
+        "exit": 0
+      },
+      {
+        "command": "regression_checks D86",
+        "exit": 0
+      },
+      {
+        "command": "surface_example",
+        "exit": 0
+      }
+    ],
+    "failed_native_comparisons": [],
+    "value": "the native check's unrounded model operand; its own reference and criterion stay with the native owner",
+    "claim_limit": "identical explicit inputs through one build; transport agreement, not model validity",
+    "previous_rows": {
+      "recorded_at_revision": "3987652446e0fb0e4e240d52c74b9c71b87a08e8",
+      "wheel_sha256": "286d37c40f46d932f74ab8f5afc0c2a780a5d70bb419b96e7a44270765b57535",
+      "sha256": "8047c85c47ddb1460e16fb1a6d3e6d39f98dccbb8f4c0737fe03c19ccf429460"
+    },
+    "refresh_dispositions": {
+      "density_explained": 252,
+      "preexisting_staleness": 1,
+      "unchanged_values": 225,
+      "preexisting_row": "r4/recovery/prediction/0",
+      "preexisting_cause": "pre-existing staleness from the cold-report -> accepted-warm publication change (333595888b45892d07292d4198d51768f13e83e6, 4-increment difference)",
+      "evidence": "analyses/2026-competitor-cross-check/results/density-closure-native-value-causal-comparison.csv"
+    }
+  },
+  "gates": {
+    "check_all": "116 passed, 1 deselected; six fast native programs and all other fast checks pass",
+    "check_all_wall_s": 30.64,
+    "khudaida_slice": "Passed",
+    "khudaida_slice_wall_s": 6.14,
+    "properties_p2": "Passed including the sole new dense-pressure value check",
+    "recorder_selectors": 12,
+    "failed_native_comparisons": 0,
+    "timed_fields": 480,
+    "delivered_review": "Pending independent review"
+  },
+  "wheel_basis": "Wheel built from committed 7b5c55cd runtime; 81cd8582 adds only the P2 test. Canonical setup reuses the unchanged wheel and rebuilds native checks (87.39 s).",
+  "runtime_budgets": {
+    "properties": 4792,
+    "properties_hard": 4800,
+    "properties_net_change": 4,
+    "core": 917,
+    "core_net_change": 0,
+    "density_gross_runtime_additions": 31,
+    "approved_gross": 32,
+    "total": 22054,
+    "main_equilibrium_additions": 6,
+    "analysis_lines": 1167,
+    "analysis_allowance": 1170
+  },
+  "recorded_native_values_sha256": "1f2f34269d0c8f8f15fd970cd8646588b318b4cc19981167513f51fa4c89c4b5",
+  "previous_native_metadata": {
+    "rows": 478,
+    "recorded_at_revision": "3987652446e0fb0e4e240d52c74b9c71b87a08e8",
+    "build_fingerprint": "b249274f421cf689760cfea4dd6bba53bf6ba33e05bca056aa054298274fa9e5",
+    "wheel_sha256": "286d37c40f46d932f74ab8f5afc0c2a780a5d70bb419b96e7a44270765b57535",
+    "commands": [
+      {
+        "command": "properties_checks P3",
+        "exit": 0
+      },
+      {
+        "command": "properties_checks P4",
+        "exit": 0
+      },
+      {
+        "command": "equilibrium_checks S2",
+        "exit": 0
+      },
+      {
+        "command": "equilibrium_checks E5-1",
+        "exit": 0
+      },
+      {
+        "command": "equilibrium_checks E5-3",
+        "exit": 0
+      },
+      {
+        "command": "equilibrium_checks E5-5",
+        "exit": 0
+      },
+      {
+        "command": "equilibrium_checks E5-7",
+        "exit": 0
+      },
+      {
+        "command": "equilibrium_checks E5-8",
+        "exit": 0
+      },
+      {
+        "command": "equilibrium_checks E5-10",
+        "exit": 0
+      },
+      {
+        "command": "regression_checks R2-J2",
+        "exit": 0
+      },
+      {
+        "command": "regression_checks D86",
+        "exit": 0
+      },
+      {
+        "command": "surface_example",
+        "exit": 0
+      }
+    ],
+    "failed_native_comparisons": [],
+    "value": "the native check's unrounded model operand; its own reference and criterion stay with the native owner",
+    "claim_limit": "identical explicit inputs through one build; transport agreement, not model validity"
+  },
+  "causal_tables": [
+    "density-closure-native-value-causal-comparison.csv",
+    "density-closure-matched-density-publications.csv",
+    "density-closure-E5-3-reference-criteria.csv"
+  ],
+  "restoration": "Reference wheel e28d258d...d8dc7 restored and all 14 RECORD hashes verified before lease release.",
+  "change_accounting": {
+    "base": "9c31cb9a",
+    "executable_gross_additions": 1198,
+    "density_runtime_gross_additions": 31,
+    "analysis_gross_physical_lines": 1167,
+    "native_test_source_additions": 23,
+    "native_test_source_removals": 6,
+    "native_data_and_metadata_additions": 270,
+    "native_data_and_metadata_removals": 257,
+    "persistent_numerical_checks_added": 1
+  },
+  "presentation": {
+    "source_affected": "Passed in source-only mode",
+    "analysis_layout": "Clean (83 leaves)",
+    "prose": "Passed, 24 plugin-wide rules",
+    "notebook_html": "build/companion/analyses/2026-competitor-cross-check/notebook.html",
+    "algorithm_html": "build/companion/engine/docs/science/algorithms.html",
+    "execution": "Disabled; rendering reads retained outputs",
+    "visual_inspection": "HTML text and browser DOM inspected. Automated bitmap inspection remains unavailable: Chrome captures are blank; background T3 preview disconnects/timeouts. No visual-pass claim.",
+    "temporary_preview": "Own background tab closed and local server stopped; reference restoration and 14 RECORD hashes verified."
+  }
+}

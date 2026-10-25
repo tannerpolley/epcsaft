@@ -1,0 +1,24 @@
+source,disposition,limit
+Table 1,Coefficient comparison passed in independent review,All published dispersion coefficient constants checked; no thermodynamic observation rows in this table
+Table 2,All published parameters used; aggregate pressure and volume AAD not reproduced,Original measured rows and their weighting absent; volume may include supercritical data
+Table 3,Comparison blocked by missing source inputs,Ideal-gas heat-capacity correlations and coefficients from Daubert et al. (1989) are absent from the paper and were not found in the Zotero corpus or live library; original 28 measured heat-capacity rows and their pressure conditions are absent; the printed average is weighted by point count
+Table 4,Published binary interaction parameters retained; aggregate K AAD not reproduced,Original paired liquid and vapor experimental compositions absent
+Appendix B coefficient table,Native comparison blocked by missing molar-mass correlation representation,"The Engine correlation declarations use temperature as the independent variable and do not represent sigma(M), m(M)/M or epsilon(M)/k; Appendix B coefficients retained; printed Table 2 n-alkane parameters used directly; source catalog: engine/docs/research/gross-sadowski-2001-catalog-review.md"
+Figure 1,Aggregate-error plots inspected; absolute-property comparisons unavailable,Error plots do not provide original property rows; no reconstructed observations from Engine predictions
+Figure 2,Aggregate-error plots inspected; absolute-property comparisons unavailable,Error plots do not provide original property rows; no reconstructed observations from Engine predictions
+Figure 3,Sparse model and experimental figure comparisons retained,Manual digitization; thresholds and numerical exclusions apply
+Figure 4,Comparison blocked by missing isotherm declarations,Individual subcritical and supercritical isotherm temperatures are not labelled in the figure or enumerated in the text; only a maximum of 450 K is stated; measured T/P/density rows are absent
+Figure 5,Native comparison blocked by missing molar-mass correlation representation,"The Engine correlation declarations use temperature as the independent variable and do not represent sigma(M), m(M)/M or epsilon(M)/k; Appendix B coefficients retained; printed Table 2 n-alkane parameters used directly; source catalog: engine/docs/research/gross-sadowski-2001-catalog-review.md"
+Figure 6,Comparison blocked by missing temperature conversion inputs,The x axis is T/Tcrit-exp; experimental critical-temperature values for benzene/isobutane/propylene are not supplied in this paper or its parameter table; reconstructing T from model critical temperatures would change the declared comparison
+Figure 7,Sparse model and experimental figure comparisons retained,Manual digitization; thresholds and numerical exclusions apply
+Figure 8,Sparse model and experimental figure comparisons retained,Manual digitization; thresholds and numerical exclusions apply
+Figure 9,Sparse model and experimental figure comparisons retained,Manual digitization; thresholds and numerical exclusions apply
+Figure 10,Sparse model and experimental figure comparisons retained,Manual digitization; thresholds and numerical exclusions apply
+Figure 11,Sparse ternary flashes and endpoint comparisons retained,Printed 48 bar retained; pressure-only probe at 34.5 bar reduces largest composition difference to within tolerance; unresolved source inconsistency and possible caption error inferred; Mehra-Thodos observations not recovered; endpoint pairing and mass-fraction probes do not resolve it
+Figure 12,Sparse model and experimental figure comparisons retained,Manual digitization; thresholds and numerical exclusions apply
+Figure 13,Sparse model and experimental figure comparisons retained,Manual digitization; thresholds and numerical exclusions apply
+Figure 14,Sparse ternary flashes and endpoint comparisons retained,Manual tie-line pairing; inferred mole-fraction basis
+Figure 15,Sparse model and experimental figure comparisons retained,Manual digitization; thresholds and numerical exclusions apply
+Figure 16,Comparison blocked by missing pressure declaration,Temperature 25 C and k_ij 0.017 are stated; mixture and pure-reference pressure is not specified in the caption or accompanying discussion; excess enthalpy needs all three liquid states at common T/P; no ambient pressure assumption adopted
+Figure 17,Polymer comparison not reproduced,Pseudocomponent distribution is not a numerical input in the source packet; no source-resolved polymer reconstruction
+Figure 18,Polymer comparison not reproduced,Pseudocomponent distribution is not a numerical input in the source packet; no source-resolved polymer reconstruction

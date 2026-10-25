@@ -1,0 +1,5986 @@
+{
+ "schema": "epcsaft.parameters",
+ "schema_version": 1,
+ "document_id": "feos-gross-sadowski-2001",
+ "document_version": 1,
+ "purpose": "external-document",
+ "sources": [
+  {
+   "source_id": "gross-sadowski-2001",
+   "citation": "Gross, J.; Sadowski, G. Ind. Eng. Chem. Res. 2001, 40, 1244-1260.",
+   "use_basis": "Table 2 pure-component parameters (cited, not copied)."
+  },
+  {
+   "source_id": "feos-distribution",
+   "citation": "FeOs contributors, feos-org/feos commit af84e3f9da2fac2d102d449cd07cbbb48237617b, parameters/pcsaft/gross2001.json",
+   "use_basis": "Copied numerical distribution under the FeOs MIT licence, notice retained verbatim: Copyright (c) 2021-2026 feos-org and Contributors.  https://github.com/feos-org/feos\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. The Apache-2.0 alternative at the same commit is not combined with it."
+  }
+ ],
+ "domains": [
+  {
+   "domain_id": "feos-gross-sadowski-2001",
+   "kind": "source-parametrization"
+  }
+ ],
+ "components": [
+  {
+   "component_id": "methane",
+   "identifier": {
+    "cas": "74-82-8",
+    "name": "methane",
+    "iupac_name": "methane",
+    "smiles": "C",
+    "inchi": "InChI=1/CH4/h1H4",
+    "formula": "CH4"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.016043,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[0].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[0].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/methane/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 1.0,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[0].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/methane/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.7039,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[0].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/methane/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 150.03,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[0].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "ethane",
+   "identifier": {
+    "cas": "74-84-0",
+    "name": "ethane",
+    "iupac_name": "ethane",
+    "smiles": "CC",
+    "inchi": "InChI=1/C2H6/c1-2/h1-2H3",
+    "formula": "C2H6"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.03007,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[1].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[1].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/ethane/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 1.6069,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[1].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/ethane/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.5206,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[1].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/ethane/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 191.42,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[1].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "propane",
+   "identifier": {
+    "cas": "74-98-6",
+    "name": "propane",
+    "iupac_name": "propane",
+    "smiles": "CCC",
+    "inchi": "InChI=1/C3H8/c1-3-2/h3H2,1-2H3",
+    "formula": "C3H8"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.044096,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[2].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[2].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/propane/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 2.002,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[2].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/propane/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.6184,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[2].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/propane/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 208.11,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[2].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "butane",
+   "identifier": {
+    "cas": "106-97-8",
+    "name": "butane",
+    "iupac_name": "butane",
+    "smiles": "CCCC",
+    "inchi": "InChI=1/C4H10/c1-3-4-2/h3-4H2,1-2H3",
+    "formula": "C4H10"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.058123,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[3].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[3].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/butane/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 2.3316,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[3].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/butane/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.7086,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[3].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/butane/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 222.88,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[3].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "pentane",
+   "identifier": {
+    "cas": "109-66-0",
+    "name": "pentane",
+    "iupac_name": "pentane",
+    "smiles": "CCCCC",
+    "inchi": "InChI=1/C5H12/c1-3-5-4-2/h3-5H2,1-2H3",
+    "formula": "C5H12"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.072146,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[4].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[4].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/pentane/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 2.6896,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[4].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/pentane/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.7729,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[4].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/pentane/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 231.2,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[4].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "hexane",
+   "identifier": {
+    "cas": "110-54-3",
+    "name": "hexane",
+    "iupac_name": "hexane",
+    "smiles": "CCCCCC",
+    "inchi": "InChI=1/C6H14/c1-3-5-6-4-2/h3-6H2,1-2H3",
+    "formula": "C6H14"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.086177,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[5].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[5].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/hexane/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 3.0576,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[5].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/hexane/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.7983,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[5].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/hexane/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 236.77,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[5].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "heptane",
+   "identifier": {
+    "cas": "142-82-5",
+    "name": "heptane",
+    "iupac_name": "heptane",
+    "smiles": "CCCCCCC",
+    "inchi": "InChI=1/C7H16/c1-3-5-7-6-4-2/h3-7H2,1-2H3",
+    "formula": "C7H16"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.100203,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[6].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[6].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/heptane/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 3.4831,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[6].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/heptane/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.8049,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[6].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/heptane/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 238.4,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[6].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "octane",
+   "identifier": {
+    "cas": "111-65-9",
+    "name": "octane",
+    "iupac_name": "octane",
+    "smiles": "CCCCCCCC",
+    "inchi": "InChI=1/C8H18/c1-3-5-7-8-6-4-2/h3-8H2,1-2H3",
+    "formula": "C8H18"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.114231,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[7].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[7].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/octane/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 3.8176,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[7].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/octane/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.8373,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[7].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/octane/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 242.78,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[7].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "nonane",
+   "identifier": {
+    "cas": "111-84-2",
+    "name": "nonane",
+    "iupac_name": "nonane",
+    "smiles": "CCCCCCCCC",
+    "inchi": "InChI=1/C9H20/c1-3-5-7-9-8-6-4-2/h3-9H2,1-2H3",
+    "formula": "C9H20"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.12825,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[8].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[8].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/nonane/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 4.2079,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[8].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/nonane/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.8448,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[8].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/nonane/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 244.51,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[8].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "decane",
+   "identifier": {
+    "cas": "124-18-5",
+    "name": "decane",
+    "iupac_name": "decane",
+    "smiles": "CCCCCCCCCC",
+    "inchi": "InChI=1/C10H22/c1-3-5-7-9-10-8-6-4-2/h3-10H2,1-2H3",
+    "formula": "C10H22"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.142285,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[9].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[9].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/decane/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 4.6627,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[9].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/decane/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.8384,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[9].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/decane/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 243.87,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[9].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "undecane",
+   "identifier": {
+    "cas": "1120-21-4",
+    "name": "undecane",
+    "iupac_name": "undecane",
+    "smiles": "CCCCCCCCCCC",
+    "inchi": "InChI=1/C11H24/c1-3-5-7-9-11-10-8-6-4-2/h3-11H2,1-2H3",
+    "formula": "C11H24"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.156312,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[10].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[10].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/undecane/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 4.9082,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[10].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/undecane/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.8893,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[10].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/undecane/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 248.82,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[10].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "dodecane",
+   "identifier": {
+    "cas": "112-40-3",
+    "name": "dodecane",
+    "iupac_name": "dodecane",
+    "smiles": "CCCCCCCCCCCC",
+    "inchi": "InChI=1/C12H26/c1-3-5-7-9-11-12-10-8-6-4-2/h3-12H2,1-2H3",
+    "formula": "C12H26"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.170338,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[11].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[11].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/dodecane/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 5.306,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[11].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/dodecane/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.8959,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[11].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/dodecane/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 249.21,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[11].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "tridecane",
+   "identifier": {
+    "cas": "629-50-5",
+    "name": "tridecane",
+    "iupac_name": "tridecane",
+    "smiles": "CCCCCCCCCCCCC",
+    "inchi": "InChI=1/C13H28/c1-3-5-7-9-11-13-12-10-8-6-4-2/h3-13H2,1-2H3",
+    "formula": "C13H28"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.184365,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[12].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[12].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/tridecane/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 5.6877,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[12].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/tridecane/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.9143,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[12].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/tridecane/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 249.78,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[12].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "tetradecane",
+   "identifier": {
+    "cas": "629-59-4",
+    "name": "tetradecane",
+    "iupac_name": "tetradecane",
+    "smiles": "CCCCCCCCCCCCCC",
+    "inchi": "InChI=1/C14H30/c1-3-5-7-9-11-13-14-12-10-8-6-4-2/h3-14H2,1-2H3",
+    "formula": "C14H30"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.198392,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[13].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[13].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/tetradecane/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 5.9002,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[13].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/tetradecane/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.9396,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[13].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/tetradecane/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 254.21,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[13].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "pentadecane",
+   "identifier": {
+    "cas": "629-62-9",
+    "name": "pentadecane",
+    "iupac_name": "pentadecane",
+    "smiles": "CCCCCCCCCCCCCCC",
+    "inchi": "InChI=1/C15H32/c1-3-5-7-9-11-13-15-14-12-10-8-6-4-2/h3-15H2,1-2H3",
+    "formula": "C15H32"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.212419,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[14].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[14].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/pentadecane/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 6.2855,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[14].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/pentadecane/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.9531,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[14].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/pentadecane/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 254.14,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[14].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "hexadecane",
+   "identifier": {
+    "cas": "544-76-3",
+    "name": "hexadecane",
+    "iupac_name": "hexadecane",
+    "smiles": "CCCCCCCCCCCCCCCC",
+    "inchi": "InChI=1/C16H34/c1-3-5-7-9-11-13-15-16-14-12-10-8-6-4-2/h3-16H2,1-2H3",
+    "formula": "C16H34"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.226446,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[15].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[15].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/hexadecane/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 6.6485,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[15].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/hexadecane/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.9552,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[15].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/hexadecane/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 254.7,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[15].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "heptadecane",
+   "identifier": {
+    "cas": "629-78-7",
+    "name": "heptadecane",
+    "iupac_name": "heptadecane",
+    "smiles": "CCCCCCCCCCCCCCCCC",
+    "inchi": "InChI=1/C17H36/c1-3-5-7-9-11-13-15-17-16-14-12-10-8-6-4-2/h3-17H2,1-2H3",
+    "formula": "C17H36"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.240473,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[16].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[16].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/heptadecane/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 6.9809,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[16].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/heptadecane/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.9675,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[16].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/heptadecane/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 255.65,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[16].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "octadecane",
+   "identifier": {
+    "cas": "593-45-3",
+    "name": "octadecane",
+    "iupac_name": "octadecane",
+    "smiles": "CCCCCCCCCCCCCCCCCC",
+    "inchi": "InChI=1/C18H38/c1-3-5-7-9-11-13-15-17-18-16-14-12-10-8-6-4-2/h3-18H2,1-2H3",
+    "formula": "C18H38"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.2545,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[17].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[17].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/octadecane/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 7.3271,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[17].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/octadecane/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.9668,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[17].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/octadecane/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 256.2,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[17].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "nonadecane",
+   "identifier": {
+    "cas": "629-92-5",
+    "name": "nonadecane",
+    "iupac_name": "nonadecane",
+    "smiles": "CCCCCCCCCCCCCCCCCCC",
+    "inchi": "InChI=1/C19H40/c1-3-5-7-9-11-13-15-17-19-18-16-14-12-10-8-6-4-2/h3-19H2,1-2H3",
+    "formula": "C19H40"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.268527,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[18].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[18].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/nonadecane/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 7.7175,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[18].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/nonadecane/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.9721,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[18].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/nonadecane/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 256.0,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[18].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "eicosane",
+   "identifier": {
+    "cas": "112-95-8",
+    "name": "eicosane",
+    "iupac_name": "icosane",
+    "smiles": "CCCCCCCCCCCCCCCCCCCC",
+    "inchi": "InChI=1/C20H42/c1-3-5-7-9-11-13-15-17-19-20-18-16-14-12-10-8-6-4-2/h3-20H2,1-2H3",
+    "formula": "C20H42"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.282553,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[19].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[19].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/eicosane/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 7.9849,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[19].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/eicosane/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.9869,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[19].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/eicosane/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 257.75,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[19].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "isobutane",
+   "identifier": {
+    "cas": "75-28-5",
+    "name": "isobutane",
+    "iupac_name": "2-methylpropane",
+    "smiles": "CC(C)C",
+    "inchi": "InChI=1/C4H10/c1-4(2)3/h4H,1-3H3",
+    "formula": "C4H10"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.058123,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[20].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[20].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/isobutane/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 2.2616,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[20].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/isobutane/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.7574,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[20].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/isobutane/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 216.53,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[20].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "isopentane",
+   "identifier": {
+    "cas": "78-78-4",
+    "name": "isopentane",
+    "iupac_name": "2-methylbutane",
+    "smiles": "CCC(C)C",
+    "inchi": "InChI=1/C5H12/c1-4-5(2)3/h5H,4H2,1-3H3",
+    "formula": "C5H12"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.07215,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[21].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[21].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/isopentane/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 2.562,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[21].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/isopentane/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.8296,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[21].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/isopentane/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 230.75,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[21].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "neopentane",
+   "identifier": {
+    "cas": "463-82-1",
+    "name": "neopentane",
+    "iupac_name": "2,2-dimethylpropane",
+    "smiles": "CC(C)(C)C",
+    "inchi": "InChI=1/C5H12/c1-5(2,3)4/h1-4H3",
+    "formula": "C5H12"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.07215,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[22].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[22].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/neopentane/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 2.3543,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[22].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/neopentane/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.955,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[22].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/neopentane/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 225.69,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[22].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "2-methylpentane",
+   "identifier": {
+    "cas": "107-83-5",
+    "name": "2-methylpentane",
+    "iupac_name": "2-methylpentane",
+    "smiles": "CCCC(C)C",
+    "inchi": "InChI=1/C6H14/c1-4-5-6(2)3/h6H,4-5H2,1-3H3",
+    "formula": "C6H14"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.086177,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[23].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[23].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/2-methylpentane/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 2.9317,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[23].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/2-methylpentane/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.8535,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[23].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/2-methylpentane/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 235.58,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[23].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "2,2-dimethylbutane",
+   "identifier": {
+    "cas": "75-83-2",
+    "name": "2,2-dimethylbutane",
+    "iupac_name": "2,2-dimethylbutane",
+    "smiles": "CCC(C)(C)C",
+    "inchi": "InChI=1/C6H14/c1-5-6(2,3)4/h5H2,1-4H3",
+    "formula": "C6H14"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.086177,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[24].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[24].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/2,2-dimethylbutane/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 2.6008,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[24].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/2,2-dimethylbutane/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 4.0042,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[24].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/2,2-dimethylbutane/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 243.51,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[24].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "2,3-dimethylbutane",
+   "identifier": {
+    "cas": "79-29-8",
+    "name": "2,3-dimethylbutane",
+    "iupac_name": "2,3-dimethylbutane",
+    "smiles": "CC(C)C(C)C",
+    "inchi": "InChI=1/C6H14/c1-5(2)6(3)4/h5-6H,1-4H3",
+    "formula": "C6H14"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.086177,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[25].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[25].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/2,3-dimethylbutane/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 2.6853,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[25].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/2,3-dimethylbutane/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.9545,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[25].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/2,3-dimethylbutane/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 246.07,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[25].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "3-methylpentane",
+   "identifier": {
+    "cas": "96-14-0",
+    "name": "3-methylpentane",
+    "iupac_name": "3-methylpentane",
+    "smiles": "CCC(C)CC",
+    "inchi": "InChI=1/C6H14/c1-4-6(3)5-2/h6H,4-5H2,1-3H3",
+    "formula": "C6H14"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.086177,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[26].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[26].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/3-methylpentane/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 2.8852,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[26].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/3-methylpentane/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.8605,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[26].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/3-methylpentane/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 240.48,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[26].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "2-methylhexane",
+   "identifier": {
+    "cas": "591-76-4",
+    "name": "2-methylhexane",
+    "iupac_name": "2-methylhexane",
+    "smiles": "CCCCC(C)C",
+    "inchi": "InChI=1/C7H16/c1-4-5-6-7(2)3/h7H,4-6H2,1-3H3",
+    "formula": "C7H16"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.100204,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[27].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[27].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/2-methylhexane/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 3.3478,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[27].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/2-methylhexane/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.8612,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[27].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/2-methylhexane/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 237.42,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[27].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "cyclopentane",
+   "identifier": {
+    "cas": "287-92-3",
+    "name": "cyclopentane",
+    "iupac_name": "cyclopentane",
+    "smiles": "C1CCCC1",
+    "inchi": "InChI=1/C5H10/c1-2-4-5-3-1/h1-5H2",
+    "formula": "C5H10"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.07013,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[28].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[28].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/cyclopentane/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 2.3655,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[28].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/cyclopentane/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.7114,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[28].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/cyclopentane/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 265.83,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[28].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "cyclohexane",
+   "identifier": {
+    "cas": "110-82-7",
+    "name": "cyclohexane",
+    "iupac_name": "cyclohexane",
+    "smiles": "C1CCCCC1",
+    "inchi": "InChI=1/C6H12/c1-2-4-6-5-3-1/h1-6H2",
+    "formula": "C6H12"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.084147,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[29].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[29].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/cyclohexane/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 2.5303,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[29].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/cyclohexane/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.8499,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[29].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/cyclohexane/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 278.11,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[29].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "methylcyclopentane",
+   "identifier": {
+    "cas": "96-37-7",
+    "name": "methylcyclopentane",
+    "iupac_name": "methylcyclopentane",
+    "smiles": "CC1CCCC1",
+    "inchi": "InChI=1/C6H12/c1-6-4-2-3-5-6/h6H,2-5H2,1H3",
+    "formula": "C6H12"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.084156,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[30].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[30].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/methylcyclopentane/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 2.613,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[30].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/methylcyclopentane/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.8253,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[30].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/methylcyclopentane/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 265.12,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[30].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "methylcyclohexane",
+   "identifier": {
+    "cas": "108-87-2",
+    "name": "methylcyclohexane",
+    "iupac_name": "methylcyclohexane",
+    "smiles": "CC1CCCCC1",
+    "inchi": "InChI=1/C7H14/c1-7-5-3-2-4-6-7/h7H,2-6H2,1H3",
+    "formula": "C7H14"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.098182,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[31].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[31].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/methylcyclohexane/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 2.6637,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[31].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/methylcyclohexane/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.9993,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[31].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/methylcyclohexane/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 282.33,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[31].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "ethylcyclopentane",
+   "identifier": {
+    "cas": "1640-89-7",
+    "name": "ethylcyclopentane",
+    "iupac_name": "ethylcyclopentane",
+    "smiles": "CCC1CCCC1",
+    "inchi": "InChI=1/C7H14/c1-2-7-5-3-4-6-7/h7H,2-6H2,1H3",
+    "formula": "C7H14"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.098182,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[32].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[32].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/ethylcyclopentane/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 2.9062,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[32].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/ethylcyclopentane/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.8873,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[32].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/ethylcyclopentane/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 270.5,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[32].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "ethylcyclohexane",
+   "identifier": {
+    "cas": "1678-91-7",
+    "name": "ethylcyclohexane",
+    "iupac_name": "ethylcyclohexane",
+    "smiles": "CCC1CCCCC1",
+    "inchi": "InChI=1/C8H16/c1-2-8-6-4-3-5-7-8/h8H,2-7H2,1H3",
+    "formula": "C8H16"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.112215,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[33].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[33].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/ethylcyclohexane/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 2.8256,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[33].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/ethylcyclohexane/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 4.1039,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[33].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/ethylcyclohexane/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 294.04,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[33].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "ethylene",
+   "identifier": {
+    "cas": "74-85-1",
+    "name": "ethylene",
+    "iupac_name": "ethene",
+    "smiles": "C=C",
+    "inchi": "InChI=1/C2H4/c1-2/h1-2H2",
+    "formula": "C2H4"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.02805,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[34].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[34].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/ethylene/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 1.593,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[34].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/ethylene/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.445,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[34].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/ethylene/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 176.47,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[34].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "propylene",
+   "identifier": {
+    "cas": "115-07-1",
+    "name": "propylene",
+    "iupac_name": "prop-1-ene",
+    "smiles": "CC=C",
+    "inchi": "InChI=1/C3H6/c1-3-2/h3H,1H2,2H3",
+    "formula": "C3H6"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.042081,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[35].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[35].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/propylene/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 1.9597,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[35].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/propylene/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.5356,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[35].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/propylene/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 207.19,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[35].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "1-butene",
+   "identifier": {
+    "cas": "106-98-9",
+    "name": "1-butene",
+    "iupac_name": "but-1-ene",
+    "smiles": "CCC=C",
+    "inchi": "InChI=1/C4H8/c1-3-4-2/h3H,1,4H2,2H3",
+    "formula": "C4H8"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.056107,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[36].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[36].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/1-butene/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 2.2864,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[36].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/1-butene/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.6431,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[36].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/1-butene/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 222.0,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[36].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "1-pentene",
+   "identifier": {
+    "cas": "109-67-1",
+    "name": "1-pentene",
+    "iupac_name": "pent-1-ene",
+    "smiles": "CCCC=C",
+    "inchi": "InChI=1/C5H10/c1-3-5-4-2/h3H,1,4-5H2,2H3",
+    "formula": "C5H10"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.070134,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[37].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[37].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/1-pentene/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 2.6006,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[37].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/1-pentene/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.7399,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[37].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/1-pentene/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 231.99,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[37].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "1-hexene",
+   "identifier": {
+    "cas": "592-41-6",
+    "name": "1-hexene",
+    "iupac_name": "hex-1-ene",
+    "smiles": "CCCCC=C",
+    "inchi": "InChI=1/C6H12/c1-3-5-6-4-2/h3H,1,4-6H2,2H3",
+    "formula": "C6H12"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.084616,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[38].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[38].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/1-hexene/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 2.9853,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[38].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/1-hexene/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.7753,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[38].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/1-hexene/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 236.81,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[38].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "1-octene",
+   "identifier": {
+    "cas": "111-66-0",
+    "name": "1-octene",
+    "iupac_name": "oct-1-ene",
+    "smiles": "CCCCCCC=C",
+    "inchi": "InChI=1/C8H16/c1-3-5-7-8-6-4-2/h3H,1,4-8H2,2H3",
+    "formula": "C8H16"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.112215,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[39].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[39].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/1-octene/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 3.7424,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[39].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/1-octene/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.8133,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[39].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/1-octene/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 243.02,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[39].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "cyclopentene",
+   "identifier": {
+    "cas": "142-29-0",
+    "name": "cyclopentene",
+    "iupac_name": "cyclopentene",
+    "smiles": "C1CC=CC1",
+    "inchi": "InChI=1/C5H8/c1-2-4-5-3-1/h1-2H,3-5H2",
+    "formula": "C5H8"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.068114,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[40].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[40].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/cyclopentene/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 2.2934,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[40].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/cyclopentene/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.6668,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[40].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/cyclopentene/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 267.76,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[40].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "benzene",
+   "identifier": {
+    "cas": "71-43-2",
+    "name": "benzene",
+    "iupac_name": "benzene",
+    "smiles": "c1ccccc1",
+    "inchi": "InChI=1/C6H6/c1-2-4-6-5-3-1/h1-6H",
+    "formula": "C6H6"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.078114,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[41].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[41].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/benzene/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 2.4653,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[41].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/benzene/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.6478,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[41].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/benzene/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 287.35,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[41].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "toluene",
+   "identifier": {
+    "cas": "108-88-3",
+    "name": "toluene",
+    "iupac_name": "methylbenzene",
+    "smiles": "Cc1ccccc1",
+    "inchi": "InChI=1/C7H8/c1-7-5-3-2-4-6-7/h2-6H,1H3",
+    "formula": "C7H8"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.092141,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[42].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[42].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/toluene/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 2.8149,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[42].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/toluene/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.7169,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[42].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/toluene/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 285.69,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[42].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "ethylbenzene",
+   "identifier": {
+    "cas": "100-41-4",
+    "name": "ethylbenzene",
+    "iupac_name": "ethylbenzene",
+    "smiles": "CCc1ccccc1",
+    "inchi": "InChI=1/C8H10/c1-2-8-6-4-3-5-7-8/h3-7H,2H2,1H3",
+    "formula": "C8H10"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.106167,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[43].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[43].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/ethylbenzene/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 3.0799,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[43].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/ethylbenzene/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.7974,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[43].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/ethylbenzene/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 287.35,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[43].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "m-xylene",
+   "identifier": {
+    "cas": "108-38-3",
+    "name": "m-xylene",
+    "iupac_name": "1,3-xylene",
+    "smiles": "CC1=CC(=CC=C1)C",
+    "inchi": "InChI=1S/C8H10/c1-7-4-3-5-8(2)6-7/h3-6H,1-2H3",
+    "formula": "C8H10"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.106167,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[44].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[44].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/m-xylene/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 3.1861,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[44].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/m-xylene/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.7563,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[44].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/m-xylene/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 283.98,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[44].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "o-xylene",
+   "identifier": {
+    "cas": "95-47-6",
+    "name": "o-xylene",
+    "iupac_name": "1,2-xylene",
+    "smiles": "CC1=CC=CC=C1C",
+    "inchi": "InChI=1S/C8H10/c1-7-5-3-4-6-8(7)2/h3-6H,1-2H3",
+    "formula": "C8H10"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.106167,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[45].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[45].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/o-xylene/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 3.1362,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[45].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/o-xylene/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.76,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[45].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/o-xylene/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 291.05,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[45].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "p-xylene",
+   "identifier": {
+    "cas": "106-42-3",
+    "name": "p-xylene",
+    "iupac_name": "1,4-xylene",
+    "smiles": "CC1=CC=C(C=C1)C",
+    "inchi": "InChI=1S/C8H10/c1-7-3-5-8(2)6-4-7/h3-6H,1-2H3",
+    "formula": "C8H10"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.106167,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[46].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[46].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/p-xylene/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 3.1723,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[46].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/p-xylene/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.7781,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[46].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/p-xylene/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 283.77,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[46].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "n-propylbenzene",
+   "identifier": {
+    "cas": "103-65-1",
+    "name": "n-propylbenzene",
+    "iupac_name": "propylbenzene",
+    "smiles": "CCCc1ccccc1",
+    "inchi": "InChI=1/C9H12/c1-2-6-9-7-4-3-5-8-9/h3-5,7-8H,2,6H2,1H3",
+    "formula": "C9H12"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.120194,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[47].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[47].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/n-propylbenzene/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 3.3438,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[47].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/n-propylbenzene/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.8438,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[47].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/n-propylbenzene/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 288.13,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[47].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "tetralin",
+   "identifier": {
+    "cas": "119-64-2",
+    "name": "tetralin",
+    "iupac_name": "1,2,3,4-tetrahydronaphthalene",
+    "smiles": "C1CCc2ccccc2C1",
+    "inchi": "InChI=1/C10H12/c1-2-6-10-8-4-3-7-9(10)5-1/h1-2,5-6H,3-4,7-8H2",
+    "formula": "C10H12"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.132205,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[48].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[48].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/tetralin/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 3.3131,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[48].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/tetralin/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.875,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[48].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/tetralin/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 325.07,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[48].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "n-butylbenzene",
+   "identifier": {
+    "cas": "104-51-8",
+    "name": "n-butylbenzene",
+    "iupac_name": "butylbenzene",
+    "smiles": "CCCCc1ccccc1",
+    "inchi": "InChI=1/C10H14/c1-2-3-7-10-8-5-4-6-9-10/h4-6,8-9H,2-3,7H2,1H3",
+    "formula": "C10H14"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.134221,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[49].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[49].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/n-butylbenzene/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 3.7662,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[49].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/n-butylbenzene/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.8727,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[49].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/n-butylbenzene/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 283.07,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[49].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "biphenyl",
+   "identifier": {
+    "cas": "92-52-4",
+    "name": "biphenyl",
+    "iupac_name": "phenylbenzene",
+    "smiles": "c1ccc(cc1)c2ccccc2",
+    "inchi": "InChI=1/C12H10/c1-3-7-11(8-4-1)12-9-5-2-6-10-12/h1-10H",
+    "formula": "C12H10"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.154211,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[50].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[50].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/biphenyl/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 3.8877,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[50].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/biphenyl/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.8151,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[50].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/biphenyl/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 327.42,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[50].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "carbon monoxide",
+   "identifier": {
+    "cas": "630-08-0",
+    "name": "carbon monoxide",
+    "iupac_name": "carbon monoxide",
+    "smiles": "[C-]#[O+]",
+    "inchi": "InChI=1/CO/c1-2",
+    "formula": "CO"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.02801,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[51].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[51].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/carbon monoxide/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 1.3097,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[51].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/carbon monoxide/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.2507,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[51].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/carbon monoxide/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 92.15,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[51].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "nitrogen",
+   "identifier": {
+    "cas": "7727-37-9",
+    "name": "nitrogen",
+    "iupac_name": "molecular nitrogen",
+    "smiles": "N#N",
+    "inchi": "InChI=1/N2/c1-2",
+    "formula": "N2"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.02801,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[52].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[52].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/nitrogen/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 1.2053,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[52].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/nitrogen/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.313,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[52].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/nitrogen/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 90.96,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[52].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "argon",
+   "identifier": {
+    "cas": "7440-37-1",
+    "name": "argon",
+    "iupac_name": "argon",
+    "smiles": "[Ar]",
+    "inchi": "InChI=1/Ar",
+    "formula": "Ar"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.039948,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[53].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[53].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/argon/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 0.9285,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[53].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/argon/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.4784,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[53].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/argon/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 122.23,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[53].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "carbon dioxide",
+   "identifier": {
+    "cas": "124-38-9",
+    "name": "carbon dioxide",
+    "iupac_name": "carbon dioxide",
+    "smiles": "O=C=O",
+    "inchi": "InChI=1/CO2/c2-1-3",
+    "formula": "CO2"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.04401,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[54].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[54].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/carbon dioxide/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 2.0729,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[54].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/carbon dioxide/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 2.7852,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[54].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/carbon dioxide/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 169.21,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[54].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "sulfur dioxide",
+   "identifier": {
+    "cas": "7446-09-5",
+    "name": "sulfur dioxide",
+    "iupac_name": "sulfur dioxide",
+    "smiles": "O=[S]=O",
+    "inchi": "InChI=1/O2S/c1-3-2",
+    "formula": "O2S"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.064065,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[55].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[55].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/sulfur dioxide/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 2.8611,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[55].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/sulfur dioxide/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 2.6826,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[55].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/sulfur dioxide/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 205.35,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[55].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "chlorine",
+   "identifier": {
+    "cas": "7782-50-5",
+    "name": "chlorine",
+    "iupac_name": "molecular chlorine",
+    "smiles": "ClCl",
+    "inchi": "InChI=1/Cl2/c1-2",
+    "formula": "Cl2"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.070905,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[56].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[56].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/chlorine/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 1.5514,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[56].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/chlorine/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.3672,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[56].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/chlorine/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 265.67,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[56].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "carbon disulfide",
+   "identifier": {
+    "cas": "75-15-0",
+    "name": "carbon disulfide",
+    "iupac_name": "methanedithione",
+    "smiles": "S=C=S",
+    "inchi": "InChI=1/CS2/c2-1-3",
+    "formula": "CS2"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.076143,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[57].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[57].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/carbon disulfide/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 1.6919,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[57].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/carbon disulfide/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.6172,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[57].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/carbon disulfide/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 334.82,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[57].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "methyl chloride",
+   "identifier": {
+    "cas": "74-87-3",
+    "name": "methyl chloride",
+    "iupac_name": "chloromethane",
+    "smiles": "Ccl",
+    "inchi": "InChI=1S/CH3Cl/c1-2/h1H3",
+    "formula": "CH3Cl"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.050488,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[58].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[58].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/methyl chloride/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 1.9297,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[58].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/methyl chloride/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.2293,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[58].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/methyl chloride/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 240.56,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[58].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "chloroethane",
+   "identifier": {
+    "cas": "75-00-3",
+    "name": "chloroethane",
+    "iupac_name": "chloroethane",
+    "smiles": "CCCl",
+    "inchi": "InChI=1/C2H5Cl/c1-2-3/h2H2,1H3",
+    "formula": "C2H5Cl"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.064514,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[59].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[59].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/chloroethane/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 2.2638,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[59].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/chloroethane/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.416,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[59].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/chloroethane/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 245.43,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[59].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "2-chloropropane",
+   "identifier": {
+    "cas": "75-29-6",
+    "name": "2-chloropropane",
+    "iupac_name": "2-chloropropane",
+    "smiles": "CC(C)Cl",
+    "inchi": "InChI=1/C3H7Cl/c1-3(2)4/h3H,1-2H3",
+    "formula": "C3H7Cl"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.078541,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[60].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[60].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/2-chloropropane/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 2.4151,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[60].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/2-chloropropane/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.6184,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[60].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/2-chloropropane/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 251.47,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[60].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "1-chlorobutane",
+   "identifier": {
+    "cas": "109-69-3",
+    "name": "1-chlorobutane",
+    "iupac_name": "1-chlorobutane",
+    "smiles": "CCCCCl",
+    "inchi": "InChI=1/C4H9Cl/c1-2-3-4-5/h2-4H2,1H3",
+    "formula": "C4H9Cl"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.092568,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[61].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[61].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/1-chlorobutane/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 2.8585,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[61].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/1-chlorobutane/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.6424,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[61].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/1-chlorobutane/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 258.66,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[61].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "chlorobenzene",
+   "identifier": {
+    "cas": "108-90-7",
+    "name": "chlorobenzene",
+    "iupac_name": "chlorobenzene",
+    "smiles": "Clc1ccccc1",
+    "inchi": "InChI=1/C6H5Cl/c7-6-4-2-1-3-5-6/h1-5H",
+    "formula": "C6H5Cl"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.112558,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[62].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[62].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/chlorobenzene/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 2.6485,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[62].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/chlorobenzene/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.7533,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[62].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/chlorobenzene/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 315.04,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[62].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "bromobenzene",
+   "identifier": {
+    "cas": "108-86-1",
+    "name": "bromobenzene",
+    "iupac_name": "bromobenzene",
+    "smiles": "Brc1ccccc1",
+    "inchi": "InChI=1/C6H5Br/c7-6-4-2-1-3-5-6/h1-5H",
+    "formula": "C6H5Br"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.15701,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[63].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[63].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/bromobenzene/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 2.6456,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[63].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/bromobenzene/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.836,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[63].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/bromobenzene/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 334.37,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[63].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "dimethyl ether",
+   "identifier": {
+    "cas": "115-10-6",
+    "name": "dimethyl ether",
+    "iupac_name": "methoxymethane",
+    "smiles": "COC",
+    "inchi": "InChI=1/C2H6O/c1-3-2/h1-2H3",
+    "formula": "C2H6O"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.046069,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[64].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[64].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/dimethyl ether/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 2.3071,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[64].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/dimethyl ether/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.2528,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[64].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/dimethyl ether/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 211.06,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[64].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "diethyl ether",
+   "identifier": {
+    "cas": "60-29-7",
+    "name": "diethyl ether",
+    "iupac_name": "ethoxyethane",
+    "smiles": "CCOCC",
+    "inchi": "InChI=1/C4H10O/c1-3-5-4-2/h3-4H2,1-2H3",
+    "formula": "C4H10O"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.074123,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[65].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[65].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/diethyl ether/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 2.9686,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[65].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/diethyl ether/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.5147,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[65].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/diethyl ether/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 220.09,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[65].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "methyl n-propyl ether",
+   "identifier": {
+    "cas": "557-17-5",
+    "name": "methyl n-propyl ether",
+    "iupac_name": "1-methoxypropane",
+    "smiles": "CCCOC",
+    "inchi": "InChI=1/C4H10O/c1-3-4-5-2/h3-4H2,1-2H3",
+    "formula": "C4H10O"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.074123,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[66].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[66].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/methyl n-propyl ether/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 3.0087,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[66].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/methyl n-propyl ether/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.4569,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[66].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/methyl n-propyl ether/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 222.73,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[66].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "methyl methanoate",
+   "identifier": {
+    "cas": "107-31-3",
+    "name": "methyl methanoate",
+    "iupac_name": "methyl formate",
+    "smiles": "COC=O",
+    "inchi": "InChI=1/C2H4O2/c1-4-2-3/h2H,1H3",
+    "formula": "C2H4O2"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.060053,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[67].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[67].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/methyl methanoate/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 2.6784,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[67].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/methyl methanoate/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.0875,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[67].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/methyl methanoate/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 242.63,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[67].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "ethyl methanoate",
+   "identifier": {
+    "cas": "109-94-4",
+    "name": "ethyl methanoate",
+    "iupac_name": "ethyl formate",
+    "smiles": "CCOC=O",
+    "inchi": "InChI=1/C3H6O2/c1-2-5-3-4/h3H,2H2,1H3",
+    "formula": "C3H6O2"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.074079,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[68].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[68].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/ethyl methanoate/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 2.8876,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[68].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/ethyl methanoate/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.3109,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[68].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/ethyl methanoate/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 246.47,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[68].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "propyl methanoate",
+   "identifier": {
+    "cas": "110-74-7",
+    "name": "propyl methanoate",
+    "iupac_name": "propyl formate",
+    "smiles": "CCCOC=O",
+    "inchi": "InChI=1/C4H8O2/c1-2-3-6-4-5/h4H,2-3H2,1H3",
+    "formula": "C4H8O2"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.088106,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[69].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[69].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/propyl methanoate/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 3.2088,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[69].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/propyl methanoate/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.4168,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[69].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/propyl methanoate/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 246.46,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[69].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "ethyl ethanoate",
+   "identifier": {
+    "cas": "141-78-6",
+    "name": "ethyl ethanoate",
+    "iupac_name": "ethyl acetate",
+    "smiles": "CCOC(C)=O",
+    "inchi": "InChI=1/C4H8O2/c1-3-6-4(2)5/h3H2,1-2H3",
+    "formula": "C4H8O2"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.088106,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[70].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[70].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/ethyl ethanoate/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 3.5375,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[70].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/ethyl ethanoate/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.3079,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[70].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/ethyl ethanoate/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 230.8,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[70].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "propyl ethanoate",
+   "identifier": {
+    "cas": "109-60-4",
+    "name": "propyl ethanoate",
+    "iupac_name": "propyl acetate",
+    "smiles": "CCCOC(C)=O",
+    "inchi": "InChI=1/C5H10O2/c1-3-4-7-5(2)6/h3-4H2,1-2H3",
+    "formula": "C5H10O2"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.102133,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[71].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[71].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/propyl ethanoate/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 3.7861,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[71].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/propyl ethanoate/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.4227,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[71].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/propyl ethanoate/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 235.76,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[71].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "n-butyl ethanoate",
+   "identifier": {
+    "cas": "123-86-4",
+    "name": "n-butyl ethanoate",
+    "iupac_name": "butyl acetate",
+    "smiles": "CCCCOC(C)=O",
+    "inchi": "InChI=1/C6H12O2/c1-3-4-5-8-6(2)7/h3-5H2,1-2H3",
+    "formula": "C6H12O2"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.11616,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[72].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[72].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/n-butyl ethanoate/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 3.9808,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[72].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/n-butyl ethanoate/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.5427,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[72].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/n-butyl ethanoate/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 242.52,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[72].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "isopropyl ethanoate",
+   "identifier": {
+    "cas": "108-21-4",
+    "name": "isopropyl ethanoate",
+    "iupac_name": "isopropyl acetate",
+    "smiles": "CC(C)OC(C)=O",
+    "inchi": "InChI=1/C5H10O2/c1-4(2)7-5(3)6/h4H,1-3H3",
+    "formula": "C5H10O2"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.102133,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[73].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[73].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/isopropyl ethanoate/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 3.6084,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[73].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/isopropyl ethanoate/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.4818,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[73].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/isopropyl ethanoate/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 231.91,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[73].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "methyl propanoate",
+   "identifier": {
+    "cas": "554-12-1",
+    "name": "methyl propanoate",
+    "iupac_name": "methyl propanoate",
+    "smiles": "CCC(=O)OC",
+    "inchi": "InChI=1/C4H8O2/c1-3-4(5)6-2/h3H2,1-2H3",
+    "formula": "C4H8O2"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.088106,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[74].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[74].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/methyl propanoate/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 3.4793,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[74].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/methyl propanoate/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.3142,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[74].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/methyl propanoate/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 234.96,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[74].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "ethyl propanoate",
+   "identifier": {
+    "cas": "105-37-3",
+    "name": "ethyl propanoate",
+    "iupac_name": "ethyl propanoate",
+    "smiles": "CCOC(=O)CC",
+    "inchi": "InChI=1/C5H10O2/c1-3-5(6)7-4-2/h3-4H2,1-2H3",
+    "formula": "C5H10O2"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.102133,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[75].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[75].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/ethyl propanoate/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 3.8371,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[75].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/ethyl propanoate/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.4031,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[75].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/ethyl propanoate/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 232.78,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[75].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "propyl propanoate",
+   "identifier": {
+    "cas": "106-36-5",
+    "name": "propyl propanoate",
+    "iupac_name": "propyl propanoate",
+    "smiles": "CCCOC(=O)CC",
+    "inchi": "InChI=1/C6H12O2/c1-3-5-8-6(7)4-2/h3-5H2,1-2H3",
+    "formula": "C6H12O2"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.11616,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[76].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[76].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/propyl propanoate/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 4.1155,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[76].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/propyl propanoate/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.4875,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[76].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/propyl propanoate/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 235.6,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[76].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  },
+  {
+   "component_id": "methyl butanoate",
+   "identifier": {
+    "cas": "623-42-7",
+    "name": "methyl butanoate",
+    "iupac_name": "methyl butanoate",
+    "smiles": "CCCC(=O)OC",
+    "inchi": "InChI=1/C5H10O2/c1-3-4-5(6)7-2/h3-4H2,1-2H3",
+    "formula": "C5H10O2"
+   },
+   "fixed": {
+    "molar_mass": {
+     "value": {
+      "magnitude": 0.102133,
+      "unit": "kg / mol"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[77].molarweight",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    "charge_number": {
+     "value": {
+      "magnitude": 0.0,
+      "unit": "elementary-charge"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[77].identifier",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   },
+   "coefficients": [
+    {
+     "identity": "component/methyl butanoate/segment_count",
+     "family": "segment_count",
+     "value": {
+      "magnitude": 3.6758,
+      "unit": "dimensionless"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[77].m",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/methyl butanoate/segment_diameter",
+     "family": "segment_diameter",
+     "value": {
+      "magnitude": 3.4437,
+      "unit": "angstrom"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[77].sigma",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    },
+    {
+     "identity": "component/methyl butanoate/dispersion_energy_over_k",
+     "family": "dispersion_energy_over_k",
+     "value": {
+      "magnitude": 240.62,
+      "unit": "kelvin"
+     },
+     "provenance": {
+      "source_id": "feos-gross-sadowski-2001",
+      "locator": "parameters/pcsaft/gross2001.json[77].epsilon_k",
+      "domain_id": "feos-gross-sadowski-2001"
+     }
+    }
+   ]
+  }
+ ],
+ "pairs": [],
+ "model_families": [
+  {
+   "family_id": "model/base",
+   "kind": "base",
+   "choice": "pc-saft"
+  },
+  {
+   "family_id": "model/association",
+   "kind": "association",
+   "choice": "none"
+  },
+  {
+   "family_id": "model/electrolyte",
+   "kind": "electrolyte",
+   "choice": "none"
+  },
+  {
+   "family_id": "model/permittivity",
+   "kind": "permittivity",
+   "choice": "none"
+  }
+ ],
+ "model_coefficients": [],
+ "correlations": [],
+ "topology": {
+  "presets": [],
+  "sites": [],
+  "edges": [],
+  "no_cross_association": []
+ }
+}

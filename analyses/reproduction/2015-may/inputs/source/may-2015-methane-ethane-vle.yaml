@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "dataset_id": "may-2015-methane-ethane-vle",
+  "format_note": "This file uses the JSON-compatible subset of YAML 1.2 for stdlib-only validation.",
+  "citation": {
+    "authors": [
+      "Eric F. May",
+      "Jerry Y. Guo",
+      "Jordan H. Oakley",
+      "Thomas J. Hughes",
+      "Brendan F. Graham",
+      "Kenneth N. Marsh",
+      "Stanley H. Huang"
+    ],
+    "title": "Reference Quality Vapor-Liquid Equilibrium Data for the Binary Systems Methane + Ethane, + Propane, + Butane, and + 2-Methylpropane, at Temperatures from (203 to 273) K and Pressures to 9 MPa",
+    "journal": "Journal of Chemical & Engineering Data",
+    "year": 2015,
+    "volume": 60,
+    "issue": 12,
+    "pages": "3606-3620",
+    "doi": "10.1021/acs.jced.5b00610",
+    "table_locator": "Table 5, page 3612 (PDF page 7)"
+  },
+  "sources": {
+    "nist_thermoml_json": {
+      "url": "https://trc.nist.gov/ThermoML/10.1021/acs.jced.5b00610.json",
+      "retrieved_on": "2026-07-17",
+      "sha256": "77630e90db70bb6aabfdfa520f61f14cee5076ece0265754140a25f771659662",
+      "role": "Official NIST/TRC machine-readable cross-check for citation, component identity, 17 source rows, pressure, and vapor composition."
+    },
+    "nist_thermoml_xml": {
+      "url": "https://trc.nist.gov/ThermoML/10.1021/acs.jced.5b00610.xml",
+      "retrieved_on": "2026-07-17",
+      "sha256": "311e35b53e27bc050e17c4146a466e087c24c7a15624c29ababc4b7897d7871a",
+      "role": "Official NIST/TRC ThermoML serialization cross-check."
+    },
+    "publisher_article_pdf": {
+      "url": "https://pubs.acs.org/doi/pdf/10.1021/acs.jced.5b00610",
+      "retrieved_on": "2026-07-17",
+      "sha256": "53fd1bdd55dc6807ec76cf88626438d8dfceb3ec09149d4405ea36cfbe6b842a",
+      "role": "Controlling numerical and uncertainty source: ACS version-of-record Table 5 and footnote a."
+    }
+  },
+  "source_audit": {
+    "visual_comparison": "Table 5 headings and all rows were read from the ACS version of record. The first isochoric row (243.58 K, 3949 kPa, x1=0.3099, y2=0.3336) and the last isothermal row (243.60 K, 3675 kPa, x1=0.2812, y2=0.3490) were visually checked against PDF page 7 and matched the NIST record after the documented transformations.",
+    "row_scope": "All 5 isochoric and 12 isothermal methane (1) + ethane (2) coexistence measurements in Table 5; no row was selected or omitted.",
+    "uncertainty_meaning": {
+      "u_composition": "Type A standard uncertainty associated with sampling and detector calibration.",
+      "uc_composition": "Combined standard uncertainty formed by combining u in quadrature with propagated contributions from temperature and pressure uncertainty.",
+      "temperature": "Standard uncertainty of 0.15 K.",
+      "pressure": "Standard uncertainty of 20 kPa."
+    },
+    "use_basis": "Compact factual extraction retained for scientific validation and reproducibility; the article PDF and broad paper archive are not retained in this repository."
+  },
+  "fields": {
+    "row_id": "Repository-assigned stable identifier in source table order.",
+    "pathway": "Table 5 section label: Isochoric Path or Isothermal Path.",
+    "T_K": "Table 5 T/K, retained at source decimal precision.",
+    "P_Pa": "Table 5 p/kPa multiplied exactly by 1000 Pa/kPa.",
+    "x_methane": "Table 5 liquid methane mole fraction x1.",
+    "x_ethane": "Exact binary complement 1 - x1.",
+    "u_x_methane": "Table 5 u(x1); unchanged under binary complementation.",
+    "uc_x_methane": "Table 5 uc(x1); unchanged under binary complementation.",
+    "y_methane": "Exact binary complement 1 - y2.",
+    "y_ethane": "Table 5 vapor ethane mole fraction y2.",
+    "u_y_methane": "Table 5 u(y2); unchanged under binary complementation.",
+    "uc_y_methane": "Table 5 uc(y2); unchanged under binary complementation.",
+    "temperature_standard_uncertainty_K": "Table 5 footnote standard uncertainty, repeated per row.",
+    "pressure_standard_uncertainty_Pa": "Table 5 footnote standard uncertainty converted exactly from 20 kPa to Pa and repeated per row.",
+    "x_comparison_allowance": "Three times uc_x_methane, frozen before model output.",
+    "y_comparison_allowance": "Three times uc_y_methane, frozen before model output."
+  },
+  "transformations": [
+    "P_Pa = 1000 * source p/kPa.",
+    "x_ethane = 1 - source x1.",
+    "y_methane = 1 - source y2.",
+    "Binary-complement composition uncertainties equal the reported source uncertainties because multiplication by -1 leaves standard uncertainty magnitude unchanged.",
+    "Row-level composition comparison allowances equal 3 * source combined standard uncertainty uc."
+  ],
+  "omitted_fields": [
+    "No Table 5 coexistence row or reported uncertainty field was omitted.",
+    "EOS comparison values and model deviations elsewhere in the article were excluded because this packet precedes all model output."
+  ],
+  "tolerance_contract": {
+    "payload": {
+      "contract_version": 1,
+      "combined_standard_uncertainty_multiplier": 3.0,
+      "model_accuracy_floor": null,
+      "x_methane_rule": "abs(model_x_methane - source_x_methane) <= x_comparison_allowance",
+      "y_methane_rule": "abs(model_y_methane - source_y_methane) <= y_comparison_allowance",
+      "temperature_pressure_treatment": "Temperature and pressure are fixed campaign inputs. Their standard uncertainties are retained but are not added again because uc(x1) and uc(y2) already include their propagated contributions in quadrature.",
+      "interpretation": "A conservative engineering comparison allowance of three combined standard uncertainties; not a claimed confidence interval because the source does not report a distribution or effective degrees of freedom for uc."
+    },
+    "sha256": "ad744526678355be6ca47cf27ab9ff7ae66b7661c27e36ffe259c5b6295f1016"
+  },
+  "retained_files": {
+    "csv": {
+      "path": "analyses/reproduction/2015-may/inputs/source/may-2015-methane-ethane-vle.csv",
+      "sha256": "5cd1e74925a3c6504f5106dcf911f2cae2d6e99a5133fccc20454d8991bdbc7f"
+    }
+  }
+}

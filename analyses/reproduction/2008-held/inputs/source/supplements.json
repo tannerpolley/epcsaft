@@ -1,0 +1,281 @@
+{
+  "mass_source": "https://ciaaw.org/abridged-atomic-weights.htm",
+  "mass_locator": "Abridged Standard Atomic Weights 2024, central element rows; retrieved 2026-10-22",
+  "element_masses_g_mol": {
+    "H": 1.008,
+    "Li": 6.94,
+    "C": 12.011,
+    "N": 14.007,
+    "O": 15.999,
+    "F": 18.998,
+    "Na": 22.99,
+    "Mg": 24.305,
+    "P": 30.974,
+    "S": 32.06,
+    "Cl": 35.45,
+    "K": 39.098,
+    "Ca": 40.078,
+    "Cr": 51.996,
+    "Fe": 55.845,
+    "Co": 58.933,
+    "Cu": 63.546,
+    "Br": 79.904,
+    "Rb": 85.468,
+    "Sr": 87.62,
+    "I": 126.9,
+    "Cs": 132.91,
+    "Ba": 137.33
+  },
+  "masses": {
+    "ammonium-cation": {
+      "formula": "NH4",
+      "element_counts": {
+        "N": 1,
+        "H": 4
+      },
+      "molar_mass_kg_mol": 0.018039000000000003
+    },
+    "barium-cation": {
+      "formula": "Ba",
+      "element_counts": {
+        "Ba": 1
+      },
+      "molar_mass_kg_mol": 0.13733
+    },
+    "bromate-anion": {
+      "formula": "BrO3",
+      "element_counts": {
+        "Br": 1,
+        "O": 3
+      },
+      "molar_mass_kg_mol": 0.127901
+    },
+    "bromide-anion": {
+      "formula": "Br",
+      "element_counts": {
+        "Br": 1
+      },
+      "molar_mass_kg_mol": 0.079904
+    },
+    "calcium-cation": {
+      "formula": "Ca",
+      "element_counts": {
+        "Ca": 1
+      },
+      "molar_mass_kg_mol": 0.040078
+    },
+    "cesium-cation": {
+      "formula": "Cs",
+      "element_counts": {
+        "Cs": 1
+      },
+      "molar_mass_kg_mol": 0.13291
+    },
+    "chlorate-anion": {
+      "formula": "ClO3",
+      "element_counts": {
+        "Cl": 1,
+        "O": 3
+      },
+      "molar_mass_kg_mol": 0.08344700000000001
+    },
+    "chloride-anion": {
+      "formula": "Cl",
+      "element_counts": {
+        "Cl": 1
+      },
+      "molar_mass_kg_mol": 0.03545
+    },
+    "choline-cation": {
+      "formula": "C5H14NO",
+      "element_counts": {
+        "C": 5,
+        "H": 14,
+        "N": 1,
+        "O": 1
+      },
+      "molar_mass_kg_mol": 0.10417299999999999
+    },
+    "chromium-iii-cation": {
+      "formula": "Cr",
+      "element_counts": {
+        "Cr": 1
+      },
+      "molar_mass_kg_mol": 0.051996
+    },
+    "cobalt-cation": {
+      "formula": "Co",
+      "element_counts": {
+        "Co": 1
+      },
+      "molar_mass_kg_mol": 0.058933
+    },
+    "copper-cation": {
+      "formula": "Cu",
+      "element_counts": {
+        "Cu": 1
+      },
+      "molar_mass_kg_mol": 0.063546
+    },
+    "dihydrogen-phosphate-anion": {
+      "formula": "H2PO4",
+      "element_counts": {
+        "H": 2,
+        "P": 1,
+        "O": 4
+      },
+      "molar_mass_kg_mol": 0.096986
+    },
+    "fluoride-anion": {
+      "formula": "F",
+      "element_counts": {
+        "F": 1
+      },
+      "molar_mass_kg_mol": 0.018998
+    },
+    "hydrogen-phosphate-anion": {
+      "formula": "HPO4",
+      "element_counts": {
+        "H": 1,
+        "P": 1,
+        "O": 4
+      },
+      "molar_mass_kg_mol": 0.09597800000000001
+    },
+    "hydronium-cation": {
+      "formula": "H",
+      "element_counts": {
+        "H": 1
+      },
+      "molar_mass_kg_mol": 0.001008
+    },
+    "hydroxide-anion": {
+      "formula": "OH",
+      "element_counts": {
+        "O": 1,
+        "H": 1
+      },
+      "molar_mass_kg_mol": 0.017007
+    },
+    "iodide-anion": {
+      "formula": "I",
+      "element_counts": {
+        "I": 1
+      },
+      "molar_mass_kg_mol": 0.1269
+    },
+    "iron-cation": {
+      "formula": "Fe",
+      "element_counts": {
+        "Fe": 1
+      },
+      "molar_mass_kg_mol": 0.055845
+    },
+    "lithium-cation": {
+      "formula": "Li",
+      "element_counts": {
+        "Li": 1
+      },
+      "molar_mass_kg_mol": 0.00694
+    },
+    "magnesium-cation": {
+      "formula": "Mg",
+      "element_counts": {
+        "Mg": 1
+      },
+      "molar_mass_kg_mol": 0.024305
+    },
+    "nitrate-anion": {
+      "formula": "NO3",
+      "element_counts": {
+        "N": 1,
+        "O": 3
+      },
+      "molar_mass_kg_mol": 0.062004
+    },
+    "perchlorate-anion": {
+      "formula": "ClO4",
+      "element_counts": {
+        "Cl": 1,
+        "O": 4
+      },
+      "molar_mass_kg_mol": 0.09944599999999999
+    },
+    "potassium-cation": {
+      "formula": "K",
+      "element_counts": {
+        "K": 1
+      },
+      "molar_mass_kg_mol": 0.039098
+    },
+    "rubidium-cation": {
+      "formula": "Rb",
+      "element_counts": {
+        "Rb": 1
+      },
+      "molar_mass_kg_mol": 0.085468
+    },
+    "sodium-cation": {
+      "formula": "Na",
+      "element_counts": {
+        "Na": 1
+      },
+      "molar_mass_kg_mol": 0.02299
+    },
+    "strontium-cation": {
+      "formula": "Sr",
+      "element_counts": {
+        "Sr": 1
+      },
+      "molar_mass_kg_mol": 0.08762
+    },
+    "sulfate-anion": {
+      "formula": "SO4",
+      "element_counts": {
+        "S": 1,
+        "O": 4
+      },
+      "molar_mass_kg_mol": 0.09605600000000002
+    },
+    "thiocyanate-anion": {
+      "formula": "SCN",
+      "element_counts": {
+        "S": 1,
+        "C": 1,
+        "N": 1
+      },
+      "molar_mass_kg_mol": 0.058078000000000005
+    },
+    "water": {
+      "formula": "H2O",
+      "element_counts": {
+        "H": 2,
+        "O": 1
+      },
+      "molar_mass_kg_mol": 0.01801528
+    }
+  },
+  "mass_transformation": "Sum elemental central masses times elemental counts, divide by 1000. Water keeps packet mass. No electron-mass correction for neutral formula salts.",
+  "acid_basis": "Effective H+ formula unit, H=1.0080 g/mol; no water consumption; packet identifier retained; no acid reference observations recovered.",
+  "dielectric_source": "Ascani and Held 2021, DOI 10.1002/zaac.202100032, Table 5, p.1309, water row",
+  "dielectric_transformation": "epsilon_r=-105.2 ln(T/K)+677.480, evaluated once in source preparation; runtime reads these constants",
+  "dielectric_constants": {
+    "293.15": 79.87199865724449,
+    "298.15": 78.09282552212915,
+    "303.15": 76.34324253913371,
+    "313.15": 72.9290210962065,
+    "323.15": 69.62213244822328,
+    "333.15": 66.41603333630098
+  },
+  "fixed_pressure_Pa": 100000,
+  "pressure_basis": "Comparison assumption for fixed-pressure figures, not a printed condition",
+  "native_interval_samples": [
+    0,
+    0.25,
+    0.5,
+    0.75,
+    1
+  ],
+  "frozen_target_commit": "8728f361c4984d47f93c79d52de99f5c5c802a18",
+  "packet_sha256": "8f0313b6ebecb891873866a2181b32f8aeb44a49860487f34aeab8aecfa596f9"
+}

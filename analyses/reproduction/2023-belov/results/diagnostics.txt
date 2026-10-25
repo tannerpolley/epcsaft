@@ -1,0 +1,26 @@
+success 1 message converged: residual 1.7749620761773291e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 13 iterations, contraction absent, floor absent, amplification 0
+solver SUCCESS iterations 13 evaluations 22
+kind phase index equation raw classified
+0 0 0 chemical_potential_stationarity 0 0
+0 0 1 chemical_potential_stationarity 0 0
+0 0 2 chemical_potential_stationarity 0 0
+0 0 3 chemical_potential_stationarity 0 0
+0 0 4 chemical_potential_stationarity -3.5527136788005009e-15 -1.7749620761773291e-15
+0 0 5 chemical_potential_stationarity 0 0
+0 0 6 chemical_potential_stationarity -7.1054273576010019e-15 -3.1646760528849521e-25
+0 0 7 chemical_potential_stationarity -3.5527136788005009e-15 -2.727367485942373e-18
+1 0 0 pressure_equality -1.4769452537694223e-16 -2.2148638862376498e-16
+2 0 0 material_balance 0 0
+2 0 1 material_balance 0 0
+4 0 0 phase_normalization -1.1102230246251565e-16 -1.1102230246251565e-16
+T_K P_Pa rho_mol_m3 phase_amount_mol dP_drho
+2000 99999.999999999971 6.0136177521362999 1.4996249052461019 16628.925236306481
+species mole_fraction
+O 3.980954343861221e-17
+O2 3.500248336925932e-27
+O3 1.2256764369668164e-47
+C 1.166707505878232e-05
+C2 0.33315491581031148
+CO 0.6663214986065813
+CO2 2.9699997484917014e-11
+C2O 0.00051191847834845469

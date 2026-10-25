@@ -1,0 +1,10 @@
+case,quantity,kind,value,binary64
+case-1/accepted-state-seed-transport,discovery_g,float,-0.562181945529195,bfe1fd64fdce62ae
+case-1/accepted-state-seed-transport,redeclared_g,float,-0.5621819455291964,bfe1fd64fdce62bb
+case-1/accepted-state-seed-transport,redeclared_residual,float,5.661534132541781e-15,3cf97f4df077592d
+case-1/accepted-state-seed-transport,composition_guesses/0/0,float,0.4425559753585534,3fdc52d64c341e9e
+case-1/accepted-state-seed-transport,composition_guesses/0/1,float,0.5574440246414466,3fe1d694d9e5f0b1
+case-1/accepted-state-seed-transport,composition_guesses/1/0,float,0.9943748683039,3fefd1eb3e6a8bbc
+case-1/accepted-state-seed-transport,composition_guesses/1/1,float,0.00562513169610006,3f770a60caba2232
+case-1/accepted-state-seed-transport,packing_guesses/0,float,0.4321773867146375,3fdba8cb5780a5b1
+case-1/accepted-state-seed-transport,packing_guesses/1,float,0.4566165565885207,3fdd3934a6570773

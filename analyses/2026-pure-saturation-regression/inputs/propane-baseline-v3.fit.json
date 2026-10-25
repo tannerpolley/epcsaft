@@ -1,0 +1,94 @@
+{
+  "schema_version": 2,
+  "parameters": {
+    "path": "data/gross-2001-propane/3/parameters/parameters.json",
+    "sha256": "sha256:6dc4d60f10ef4364c01cbccf9821447ff9c4c815cc8e94284b853d1cdee71ccb"
+  },
+  "model": {
+    "kind": "pure"
+  },
+  "active": {
+    "identities": [
+      "component/propane/dispersion_energy_over_k",
+      "component/propane/segment_count",
+      "component/propane/segment_diameter"
+    ],
+    "coordinates": {
+      "component/propane/dispersion_energy_over_k": {
+        "bounds": [150.0, 260.0],
+        "origin": 221.0,
+        "scale": 10.0,
+        "unit": "kelvin"
+      },
+      "component/propane/segment_count": {
+        "bounds": [1.5, 2.5],
+        "origin": 1.9489,
+        "scale": 0.1,
+        "unit": "dimensionless"
+      },
+      "component/propane/segment_diameter": {
+        "bounds": [3.0, 4.2],
+        "origin": 3.7209,
+        "scale": 0.1,
+        "unit": "angstrom"
+      }
+    },
+    "ties": []
+  },
+  "observations": [
+    {
+      "family": "pure_saturation",
+      "source": {
+        "kind": "table",
+        "path": "source/propane-baseline.csv",
+        "sha256": "sha256:b81e7bcd9bc298464b738b5fb7cd3d1ad11e10896813348eb8f32c07807f7dc5",
+        "citation": "Glos, Kleinrahm, and Wagner, Journal of Chemical Thermodynamics 36 (2004) 1037-1059, DOI 10.1016/j.jct.2004.07.017, Table 2.",
+        "domain": {
+          "temperature_k": [210.0, 330.0]
+        }
+      },
+      "targets": [
+        "saturation_pressure",
+        "saturated_liquid_mass_density"
+      ],
+      "residuals": {
+        "saturation_pressure": "log_ratio",
+        "saturated_liquid_mass_density": "log_ratio"
+      },
+      "units": {
+        "saturation_pressure": "pascal",
+        "saturated_liquid_mass_density": "kilogram / meter**3"
+      },
+      "basis": {
+        "saturation_pressure": "absolute",
+        "saturated_liquid_mass_density": "mass"
+      },
+      "reference_convention": {
+        "saturation_pressure": "absolute",
+        "saturated_liquid_mass_density": "saturated_liquid"
+      },
+      "transformation": {
+        "saturation_pressure": {
+          "input": "identity",
+          "output": "identity"
+        },
+        "saturated_liquid_mass_density": {
+          "input": "identity",
+          "output": "identity"
+        }
+      },
+      "multiplier": 1.0
+    }
+  ],
+  "solver": {
+    "multistart": {
+      "starts": [
+        {"identity": "origin", "values": [221.0, 1.9489, 3.7209]},
+        {"identity": "confirmation-1", "values": [191.0, 2.1489, 3.5209]},
+        {"identity": "confirmation-2", "values": [241.0, 1.7489, 3.9209]},
+        {"identity": "confirmation-3", "values": [231.0, 2.0489, 3.6209]}
+      ],
+      "affine_bound_margin": 1e-7
+    }
+  }
+}

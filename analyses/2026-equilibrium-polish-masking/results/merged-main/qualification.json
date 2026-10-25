@@ -1,0 +1,33 @@
+{
+  "reference_source": "origin/main bb4d403f merged; baseline wheel main 1218dc78 (default paths unchanged by #274)",
+  "runtime_snapshot": "eb222c35cf4911083476c89fce5a8b1c07c76e15",
+  "wheels": {
+    "baseline": {
+      "path": "build/issue-272-floor/baseline-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "sha256": "dad141bae630ce8eef63106ba2ae3714d994a5c1543928b455f4ba8ecf464adf",
+      "states_path": "analyses/2026-equilibrium-polish-masking/results/merged-main/baseline-states.csv",
+      "states_sha256": "35dc50d3579191c6e46376e3c1b53e0b179273e3fa53ecbac80436707587c0dc",
+      "inputs_path": "analyses/2026-equilibrium-polish-masking/results/resumed/inputs.json",
+      "inputs_sha256": "577bd90565f348a5652cab8d4492a2cc646c4412e4121559a56ceed07a4dd06a"
+    },
+    "candidate": {
+      "path": "build/issue-272-floor/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "sha256": "79545f79660af3287f719d7be5ea0ded6c8b271c0985b862888bf58f9260d4e0",
+      "states_path": "analyses/2026-equilibrium-polish-masking/results/merged-main/candidate-states.csv",
+      "states_sha256": "f52aeb6bbefe17ce231a4a0a582090c3eae26a942332f9457a33abf3c4055ad5",
+      "inputs_path": "analyses/2026-equilibrium-polish-masking/results/resumed/inputs.json",
+      "inputs_sha256": "577bd90565f348a5652cab8d4492a2cc646c4412e4121559a56ceed07a4dd06a"
+    }
+  },
+  "forward_bound": "error <= 2 kappa (eta + eta_J) + eps; eta_J = |R dJ z*| / (|R J C| |C^-1 z*| + |R J z*|), dJ the deviation of the phase-row composition entries from their identical-species value 1/2",
+  "volume_closure": "|P(v)-P| <= 2^-100 |dP/dv| v, first-order |dv/v| <= 2^-100",
+  "preservation_limit": 1e-11,
+  "timing_pairs": 7,
+  "threads": 1,
+  "claim_limit": "Numerical verification on the declared local cases and manufactured references. No experimental validation, general state-error bound, global stability certificate, delivered review or investigator promotion.",
+  "commands": [
+    "tools/heavy <equilibrium_checks build> E5-8 | reactive-caloric-I-sys | reactive-caloric-I-fix (shortcut-off, candidate and probe builds from build/issue-272-floor/*.patch)",
+    "PYTHONPATH=<unpacked wheel> tools/heavy .venv/bin/python build/issue-272-floor/qualify.py <baseline|candidate> <wheel>; ... qualify.py compare",
+    "tools/heavy tools/time-key-solves <main-1218dc78 wheel> <candidate wheel> --pairs 7"
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "ca_initial_start": {
+    "sigma_angstrom": 2.9,
+    "k_water": 0.5,
+    "k_chloride": -0.5,
+    "molality": 4.25,
+    "raw_osmotic": -0.016994402012156313,
+    "status": "Available"
+  },
+  "numerical_fix_attempt": "28 declared Ceres starts per salt followed by native minimax from each distinct usable minimum; native sigma-column, hydration and pressure checks.",
+  "conclusion": "The accepted finite search returns stationary bounded points outside the row criterion. Examine retained bands and active bounds; this is not a global impossibility proof.",
+  "coordinate_or_tolerance_change": false,
+  "packet_written": false
+}

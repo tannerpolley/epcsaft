@@ -1,0 +1,92 @@
+{
+  "source": {
+    "doi": "10.1016/j.fluid.2019.03.010",
+    "zotero_parent": "WNXMNLKL",
+    "markdown_attachment": "NZ3BVTVG",
+    "pdf_attachment": "RCKKSGHI",
+    "markdown_sha256": "c20677cd20c5ebb31bf579fe6e34389857a10411222e3f68b24f810814ff8fcf"
+  },
+  "relative_permittivity": {
+    "water": 80,
+    "ionic_liquid": 11,
+    "locator": "Section 2.3 Eq. (7), Section 3.2; companion lines 128-132,210",
+    "evidence_label": "numerical verification of source equation"
+  },
+  "lle": {
+    "pressure_pa": 100000,
+    "temperature_k": [
+      298.15,
+      318.15,
+      338.15,
+      358.15
+    ],
+    "components": [
+      "H2O",
+      "C4mim+",
+      "NTf2-"
+    ],
+    "parameter_locators": [
+      "Table 2",
+      "Table 3"
+    ],
+    "pair_variants": [
+      "zero prediction",
+      "Table 6 correlation"
+    ],
+    "electrolyte_terms": [
+      "Debye-Huckel"
+    ],
+    "born_enabled": false,
+    "reference": "Figure 3 prediction and Figure 5 correlation",
+    "source_model_tolerance": "two source-image pixels after calibrated extraction; freeze numeric tolerance before producer runs",
+    "experimental_evidence_label": "physical comparison with measured data; no parameter adoption",
+    "scope": "excluded: uncalibrated figure targets and unresolved plotted composition basis; Figure 5 has four model variants"
+  },
+  "equation7_checks": {
+    "species_compositions": [
+      [
+        1,
+        0,
+        0
+      ],
+      [
+        0.9,
+        0.05,
+        0.05
+      ],
+      [
+        0.5,
+        0.25,
+        0.25
+      ],
+      [
+        0,
+        0.5,
+        0.5
+      ]
+    ],
+    "expected_relative_permittivity": [
+      80,
+      73.1,
+      45.5,
+      11
+    ],
+    "absolute_tolerance": 1e-12,
+    "expected_origin": "Independent arithmetic evaluation of Eq. (7), not Engine output",
+    "temperature_k": 298.15,
+    "molar_density_mol_m3": 1000,
+    "composition_basis": "three explicit EOS species; Section 2.2 after Eq. (5), Eq. (8); plotted molecular-IL basis excluded",
+    "available_case_indices": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "unavailable_case_indices": {}
+  },
+  "excluded_until_resolved": [
+    "Figure 2 state and derivative basis not specified in retained curve CSV; do not infer density or temperature",
+    "Table 5 aggregate errors require original experimental rows and weights",
+    "Figure 6/7 family correlations require checking molecular-weight definition in Table 6"
+  ]
+}

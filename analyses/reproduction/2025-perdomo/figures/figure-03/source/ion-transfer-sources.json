@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "temperature_K": 298.15,
+  "retained_dataset": {
+    "path": "ion-transfer-regression-targets.csv",
+    "sha256": "c10580064150a4c504635c8fe923b5e30c0f5a17edf51a1d1af20588fdd49ffe",
+    "license_or_use_basis": "Two cited scalar transfer values and two cited Figiel water targets retained for reproducible scholarly validation with attribution; no source paper bytes are redistributed.",
+    "domain": "single-ion water-to-1-butanol transfer at 298.15 K",
+    "units": "kilojoule per mole",
+    "tolerance_rationale": "Source transforms are checked to 1e-12 kJ/mol; this is an identity check, not a scientific acceptance cutoff."
+  },
+  "water_reference": {
+    "source": "Figiel, Yu, and Held (2025), retained Table S5 regression target ledger",
+    "path": "../../../../2025-figiel/inputs/source/figiel-2025-regression-target-ledger.csv",
+    "sha256": "c2b51e171d37d2d2c9d9cab1c0f4391fc72f2ff278acdbe01834155cdecd534b",
+    "license_or_use_basis": "Repository-retained cited scalar regression targets reused with attribution for a bounded validation transform.",
+    "process": "x-process single-ion solvation Gibbs energy"
+  },
+  "transfer_sources": [
+    {
+      "ion": "Li+",
+      "citation": "Gritzner and Auinger (2009), Acta Chimica Slovenica 56, 86-94",
+      "url": "https://acta-arhiv.chem-soc.si/56/56-1-86.pdf",
+      "source_bytes_retained": false,
+      "source_content_hash": null,
+      "license_or_use_basis": "Cited scalar extracted for scholarly validation; source PDF is linked but not redistributed.",
+      "locator": "Table 1, 1-Butanol row",
+      "reported_value": 9.6,
+      "reported_unit": "kJ/mol",
+      "scale_decision": "The table reports molar transfer Gibbs energies but does not make the concentration-scale convention explicit; treating it as the c-process value is a declared working assumption.",
+      "pressure_convention": "Standard-state transfer quantity; source pressure is not a model-input pressure for this regression."
+    },
+    {
+      "ion": "Cl-",
+      "citation": "Sakamoto and Okazaki (1987), Bulletin of the Faculty of Education, Shimane University 21, 81-86",
+      "url": "https://ir.lib.shimane-u.ac.jp/2790/files/6280",
+      "source_bytes_retained": false,
+      "source_content_hash": null,
+      "license_or_use_basis": "Cited scalar extracted for scholarly validation; source PDF is linked but not redistributed.",
+      "locator": "reported water-to-1-butanol transfer value",
+      "reported_value": 7.0,
+      "reported_unit": "kcal/mol",
+      "scale_decision": "The potentiometric source reports concentrations in mol/dm3; the value is treated as a c-process transfer Gibbs energy.",
+      "pressure_convention": "Standard-state transfer quantity; source pressure is not a model-input pressure for this regression."
+    }
+  ],
+  "standard_state_conversion": {
+    "equation": "DeltaG_tr_x = DeltaG_tr_c + RT ln[(rho_butanol/M_butanol)/(rho_water/M_water)]",
+    "gas_constant_J_per_mol_K": 8.31446261815324,
+    "water_density_kg_per_m3": 997.047,
+    "water_molar_mass_kg_per_mol": 0.01801528,
+    "butanol_density_kg_per_m3": 805.7,
+    "butanol_molar_mass_kg_per_mol": 0.0741216,
+    "butanol_density_source": "NIST-hosted measured density compilation at 298.15 K",
+    "butanol_density_url": "https://tsapps.nist.gov/publication/get_pdf.cfm?pub_id=903455",
+    "butanol_density_source_bytes_retained": false,
+    "butanol_density_source_content_hash": null,
+    "butanol_density_use_basis": "One cited measured density used only in the declared standard-state conversion; source PDF is not redistributed.",
+    "correction_kJ_per_mol": -4.0346838929800715
+  },
+  "claim_boundary": "Each ion has one transformed in-sample target and one fitted coordinate. The fit supplies local rank evidence only; it has no held-out, practical-identifiability, uncertainty, predictive, or authority claim."
+}

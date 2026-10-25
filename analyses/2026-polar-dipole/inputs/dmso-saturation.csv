@@ -1,0 +1,45 @@
+component_id,T_K,p_sat_Pa,rho_liq_mol_m3,role,reference_eos,u_p_sat_rel,u_rho_liq_rel
+dimethyl-sulfoxide,293.15,55.1033,,calibration,"Fulem, Ruzicka and Ruzicka, Fluid Phase Equilib. 303 (2011) 205, static; ThermoML doi:10.1016/j.fluid.2011.02.002",0.0212,
+dimethyl-sulfoxide,295.65,66.32,,validation,"Fulem, Ruzicka and Ruzicka, Fluid Phase Equilib. 303 (2011) 205, static; ThermoML doi:10.1016/j.fluid.2011.02.002",0.0204,
+dimethyl-sulfoxide,298.15,79.65,,calibration,"Fulem, Ruzicka and Ruzicka, Fluid Phase Equilib. 303 (2011) 205, static; ThermoML doi:10.1016/j.fluid.2011.02.002",0.0196,
+dimethyl-sulfoxide,300.65,95.1733,,validation,"Fulem, Ruzicka and Ruzicka, Fluid Phase Equilib. 303 (2011) 205, static; ThermoML doi:10.1016/j.fluid.2011.02.002",0.0189,
+dimethyl-sulfoxide,303.16,113.3833,,calibration,"Fulem, Ruzicka and Ruzicka, Fluid Phase Equilib. 303 (2011) 205, static; ThermoML doi:10.1016/j.fluid.2011.02.002",0.0184,
+dimethyl-sulfoxide,305.66,134.59,,validation,"Fulem, Ruzicka and Ruzicka, Fluid Phase Equilib. 303 (2011) 205, static; ThermoML doi:10.1016/j.fluid.2011.02.002",0.0155,
+dimethyl-sulfoxide,308.16,159.2233,,calibration,"Fulem, Ruzicka and Ruzicka, Fluid Phase Equilib. 303 (2011) 205, static; ThermoML doi:10.1016/j.fluid.2011.02.002",0.0143,
+dimethyl-sulfoxide,353.1,2000.0,,validation,"de Pablo et al., J. Chem. Thermodyn. 2018, static; ThermoML doi:10.1016/j.jct.2018.04.014",0.1,
+dimethyl-sulfoxide,363.1,3200.0,,calibration,"de Pablo et al., J. Chem. Thermodyn. 2018, static; ThermoML doi:10.1016/j.jct.2018.04.014",0.0937,
+dimethyl-sulfoxide,373.1,5000.0,,validation,"de Pablo et al., J. Chem. Thermodyn. 2018, static; ThermoML doi:10.1016/j.jct.2018.04.014",0.1,
+dimethyl-sulfoxide,383.1,7600.0,,calibration,"de Pablo et al., J. Chem. Thermodyn. 2018, static; ThermoML doi:10.1016/j.jct.2018.04.014",0.0921,
+dimethyl-sulfoxide,393.1,11200.0,,validation,"de Pablo et al., J. Chem. Thermodyn. 2018, static; ThermoML doi:10.1016/j.jct.2018.04.014",0.0893,
+dimethyl-sulfoxide,401.95,15280.0,,calibration,"Zhang et al., J. Chem. Eng. Data 2013, ebulliometric; ThermoML doi:10.1021/je400531a",0.0654,
+dimethyl-sulfoxide,403.1,16000.0,,validation,"de Pablo et al., J. Chem. Thermodyn. 2018, static; ThermoML doi:10.1016/j.jct.2018.04.014",0.0875,
+dimethyl-sulfoxide,405.11,17110.0,,calibration,"Zhang et al., J. Chem. Eng. Data 2013, ebulliometric; ThermoML doi:10.1021/je400531a",0.0584,
+dimethyl-sulfoxide,408.75,19420.0,,validation,"Zhang et al., J. Chem. Eng. Data 2013, ebulliometric; ThermoML doi:10.1021/je400531a",0.0515,
+dimethyl-sulfoxide,411.45,21320.0,,calibration,"Zhang et al., J. Chem. Eng. Data 2013, ebulliometric; ThermoML doi:10.1021/je400531a",0.0469,
+dimethyl-sulfoxide,413.1,22700.0,,validation,"de Pablo et al., J. Chem. Thermodyn. 2018, static; ThermoML doi:10.1016/j.jct.2018.04.014",0.0881,
+dimethyl-sulfoxide,414.6,23720.0,,calibration,"Zhang et al., J. Chem. Eng. Data 2013, ebulliometric; ThermoML doi:10.1021/je400531a",0.0422,
+dimethyl-sulfoxide,419.36,27760.0,,validation,"Zhang et al., J. Chem. Eng. Data 2013, ebulliometric; ThermoML doi:10.1021/je400531a",0.036,
+dimethyl-sulfoxide,421.15,29410.0,,calibration,"Zhang et al., J. Chem. Eng. Data 2013, ebulliometric; ThermoML doi:10.1021/je400531a",0.034,
+dimethyl-sulfoxide,423.1,31600.0,,validation,"de Pablo et al., J. Chem. Thermodyn. 2018, static; ThermoML doi:10.1016/j.jct.2018.04.014",0.0886,
+dimethyl-sulfoxide,424.1,32350.0,,calibration,"Zhang et al., J. Chem. Eng. Data 2013, ebulliometric; ThermoML doi:10.1021/je400531a",0.0312,
+dimethyl-sulfoxide,430.45,39430.0,,validation,"Zhang et al., J. Chem. Eng. Data 2013, ebulliometric; ThermoML doi:10.1021/je400531a",0.0256,
+dimethyl-sulfoxide,433.1,43200.0,,calibration,"de Pablo et al., J. Chem. Thermodyn. 2018, static; ThermoML doi:10.1016/j.jct.2018.04.014",0.1042,
+dimethyl-sulfoxide,433.59,43430.0,,validation,"Zhang et al., J. Chem. Eng. Data 2013, ebulliometric; ThermoML doi:10.1021/je400531a",0.0233,
+dimethyl-sulfoxide,436.75,47750.0,,calibration,"Zhang et al., J. Chem. Eng. Data 2013, ebulliometric; ThermoML doi:10.1021/je400531a",0.0212,
+dimethyl-sulfoxide,439.92,52420.0,,validation,"Zhang et al., J. Chem. Eng. Data 2013, ebulliometric; ThermoML doi:10.1021/je400531a",0.0193,
+dimethyl-sulfoxide,442.85,57050.0,,calibration,"Zhang et al., J. Chem. Eng. Data 2013, ebulliometric; ThermoML doi:10.1021/je400531a",0.0177,
+dimethyl-sulfoxide,447.83,65750.0,,validation,"Zhang et al., J. Chem. Eng. Data 2013, ebulliometric; ThermoML doi:10.1021/je400531a",0.0155,
+dimethyl-sulfoxide,455.74,81720.0,,calibration,"Zhang et al., J. Chem. Eng. Data 2013, ebulliometric; ThermoML doi:10.1021/je400531a",0.0125,
+dimethyl-sulfoxide,463.43,101300.0,,validation,"Zhang et al., J. Chem. Eng. Data 2013, ebulliometric; ThermoML doi:10.1021/je400531a",0.0513,
+dimethyl-sulfoxide,463.45,101030.0,,calibration,"Zhang et al., J. Chem. Eng. Data 2013, ebulliometric; ThermoML doi:10.1021/je400531a",0.0109,
+dimethyl-sulfoxide,293.15,,14084.21861000896,calibration,"Paknejad, Mohammadkhani and Zarei, J. Chem. Eng. Data 64 (2019) 5174, vibrating tube; ThermoML doi:10.1021/acs.jced.9b00396; P = 100 kPa",,0.000818
+dimethyl-sulfoxide,298.15,,14020.222705746834,validation,"Paknejad, Mohammadkhani and Zarei, J. Chem. Eng. Data 64 (2019) 5174, vibrating tube; ThermoML doi:10.1021/acs.jced.9b00396; P = 100 kPa",,0.000822
+dimethyl-sulfoxide,313.15,,13826.955074875208,calibration,"Paknejad, Mohammadkhani and Zarei, J. Chem. Eng. Data 64 (2019) 5174, vibrating tube; ThermoML doi:10.1021/acs.jced.9b00396; P = 100 kPa",,0.000833
+dimethyl-sulfoxide,333.15,,13569.691539741458,validation,"Paknejad, Mohammadkhani and Zarei, J. Chem. Eng. Data 64 (2019) 5174, vibrating tube; ThermoML doi:10.1021/acs.jced.9b00396; P = 100 kPa",,0.000849
+dimethyl-sulfoxide,353.15,,13311.148086522464,calibration,"Paknejad, Mohammadkhani and Zarei, J. Chem. Eng. Data 64 (2019) 5174, vibrating tube; ThermoML doi:10.1021/acs.jced.9b00396; P = 500 kPa",,0.000962
+dimethyl-sulfoxide,373.15,,13055.164469473955,validation,"Paknejad, Mohammadkhani and Zarei, J. Chem. Eng. Data 64 (2019) 5174, vibrating tube; ThermoML doi:10.1021/acs.jced.9b00396; P = 500 kPa",,0.00098
+dimethyl-sulfoxide,393.15,,12786.381671573019,calibration,"Paknejad, Mohammadkhani and Zarei, J. Chem. Eng. Data 64 (2019) 5174, vibrating tube; ThermoML doi:10.1021/acs.jced.9b00396; P = 500 kPa",,0.001001
+dimethyl-sulfoxide,413.15,,12530.39805452451,validation,"Paknejad, Mohammadkhani and Zarei, J. Chem. Eng. Data 64 (2019) 5174, vibrating tube; ThermoML doi:10.1021/acs.jced.9b00396; P = 500 kPa",,0.001021
+dimethyl-sulfoxide,433.15,,12261.615256623576,calibration,"Paknejad, Mohammadkhani and Zarei, J. Chem. Eng. Data 64 (2019) 5174, vibrating tube; ThermoML doi:10.1021/acs.jced.9b00396; P = 500 kPa",,0.001044
+dimethyl-sulfoxide,453.15,,11980.033277870216,validation,"Paknejad, Mohammadkhani and Zarei, J. Chem. Eng. Data 64 (2019) 5174, vibrating tube; ThermoML doi:10.1021/acs.jced.9b00396; P = 500 kPa",,0.001068
+dimethyl-sulfoxide,473.15,,11698.451299116858,calibration,"Paknejad, Mohammadkhani and Zarei, J. Chem. Eng. Data 64 (2019) 5174, vibrating tube; ThermoML doi:10.1021/acs.jced.9b00396; P = 500 kPa",,0.001094

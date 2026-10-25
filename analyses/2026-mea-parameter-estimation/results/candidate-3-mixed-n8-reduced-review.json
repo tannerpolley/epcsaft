@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "campaign_id": "2026-mea-parameter-estimation",
+  "workflow": "CSE Review",
+  "review_result": "Block",
+  "review_scope": "candidate-3 reduced-space mixed N=8 final max-iteration evidence",
+  "issue_80_result": "Block",
+  "implementation_findings": [
+    "the declared-temperature endpoint constraints are shared by reduced_space and simultaneous_sparse_full_space and eliminated blind infeasible endpoint trials",
+    "the exact affine endpoint Jacobians and row-consistent target-independent continuation starts are retained",
+    "maximum_iterations_exceeded is correctly nonusable and preserves the final parameter vector, residual/Jacobian evidence, and all eight local owner certificates",
+    "the defensive std::domain_error trial boundary remains narrow and unexpected exception categories remain loud"
+  ],
+  "numerical_findings": {
+    "solver_status": "maximum_iterations_exceeded",
+    "iterations": 80,
+    "usable": false,
+    "recomputed_objective": 305.6141824110117,
+    "final_physical": [0.8559838864249132, 1.5, 1.5, -221.63165825642616],
+    "retained_owner_certificates": 8,
+    "accepted_owner_certificates": 8,
+    "maximum_balance_inf_norm": 1.5600991635708605e-16,
+    "maximum_pressure_relative_inf_norm": 1.1847467301960515e-10,
+    "maximum_reaction_affinity_inf_norm": 3.126388037344441e-13,
+    "maximum_local_kkt_stationarity_inf_norm": 5.684341886080802e-14,
+    "minimum_amount_mol": 1.6643657799039747e-12,
+    "minimum_bound_margin": 0.49459365248674864,
+    "hot_endpoint_margin": 8.397949002869609e-12,
+    "provider_domain_rejection_trials": 1,
+    "ionic_diameters_at_lower_bounds": true,
+    "full_ipopt_multipliers_retained": false
+  },
+  "independent_kkt_assessment": {
+    "feasible_tangent": [-0.6497993774881353, 0.0, 0.0, -1.0],
+    "objective_directional_derivative": -0.0023610437775534,
+    "conclusion": "the retained endpoint is not KKT-stationary, but further candidate-3 iterations are not authorized because pressure error supplies 99.966 percent of the objective, two Hilliard rows supply 293.653 objective units, both ionic diameters are already at the unsupported 1.5 angstrom floor, and the hot k(T) endpoint is active"
+  },
+  "candidate_disposition": "rejected_unfinished_diagnostic_not_promoted",
+  "conditional_actions": {
+    "complete_123_state_210_target_candidate_3_fit": "not_started",
+    "candidate_3_bundle": "not_produced",
+    "xu_validation": "untouched",
+    "jakobsen_validation": "untouched",
+    "mea_thermodynamics": "untouched"
+  },
+  "blocking_findings": [
+    "candidate 3 did not converge under the frozen 80-iteration N=8 contract",
+    "candidate 3 is not a best physically usable full-range nine-species bundle",
+    "the reduced-space diagnostic method cannot satisfy the Issue #80 simultaneous sparse full-space promotion gate",
+    "no complete fit, candidate bundle, or validated pressure/speciation domain exists"
+  ],
+  "authorized_next_action": "advance once to frozen nested candidate 4; do not retry candidate 3"
+}

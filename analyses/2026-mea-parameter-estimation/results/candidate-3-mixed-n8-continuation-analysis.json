@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "identity": "candidate-3-mixed-n8-parameter-continuation",
+  "attempted": true,
+  "stopped_by": "solver",
+  "outcome": "numerical_convergence_failure",
+  "wall_time_seconds": 814.98,
+  "claim_strength": "boundary_at_state",
+  "diagnostic": "Ipopt returned maximum_iterations_exceeded at the frozen 80-iteration ceiling; the fit is nonusable and classified as optimizer_failure.",
+  "git_commit": "66c9b380f20643037275a37fb48d9a9190cb11d7",
+  "wheel_sha256": "sha256:7a3b7625b67e10cf6a71fe04894fd8f6515a417931e6771f464c8866da6d85b8",
+  "input": {
+    "path": "validation/campaigns/2026-mea-parameter-estimation/inputs/candidate-3-mixed-n8-continuation-input.json",
+    "sha256": "sha256:2458f111e1dfb68523013691f7b62e131f1259fe72a39658f16cab7bd2a7845d",
+    "state_count": 8,
+    "target_count": 12,
+    "maximum_iterations": 80,
+    "optimizer_tolerance": 1e-08,
+    "measured_targets_used_for_starts": false
+  },
+  "result": {
+    "path": "validation/campaigns/2026-mea-parameter-estimation/results/candidate-3-mixed-n8-continuation-result.json",
+    "sha256": "sha256:4684968a1c87e6b668d8f789e61e7bfa9915d3bc6fcccc2c934cfd2ae9b8f6d6",
+    "evaluation_strategy": "simultaneous_sparse_full_space",
+    "solver_status": "maximum_iterations_exceeded",
+    "iterations": 80,
+    "usable": false,
+    "trial_failure_code": "optimizer_failure",
+    "final_physical": [
+      0.9189973086793375,
+      4.270313867424307,
+      3.0365357186756805,
+      -0.5193286611947026
+    ],
+    "accepted_starts": 0,
+    "rejected_row_trials": 1,
+    "failed_row_trials": 11
+  },
+  "retained_owner_diagnostic": {
+    "batch_identity": "vle_obs_0119",
+    "local_variable_count": 16,
+    "local_lower_bound_count": 16,
+    "local_upper_bound_count": 16,
+    "failure_reason": "reactive_finite_phase_certificate_failed",
+    "certificate_components": "not_adjudicated_nonfinite",
+    "certificate_component_values": {
+      "balance_inf_norm": null,
+      "pressure_relative_inf_norm": null,
+      "reaction_affinity_inf_norm": null,
+      "transfer_chemical_potential_inf_norm": null,
+      "kkt_stationarity_inf_norm": null,
+      "phase_distinctness": null,
+      "minimum_amount_mol": null,
+      "minimum_bound_margin": null,
+      "reduced_hessian_min_eigenvalue": null,
+      "reduced_hessian_scale": null,
+      "reduced_hessian_threshold": null
+    }
+  },
+  "complete_fit": "not_started_n8_did_not_converge_and_certify",
+  "candidate_bundle": "not_produced",
+  "xu_jakobsen": "not_run_candidate_not_frozen",
+  "next_probe": "No further candidate-3 optimization is authorized by this continuation request."
+}

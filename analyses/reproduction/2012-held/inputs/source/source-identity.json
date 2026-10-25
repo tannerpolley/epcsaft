@@ -1,0 +1,20 @@
+{
+  "zotero_key": "D6PNJV3L",
+  "pdf_attachment_key": "4KXXHSPQ",
+  "markdown_attachment_key": "8TI2PAFV",
+  "doi": "10.1016/j.ces.2011.09.040",
+  "pdf_path": "/home/tnnrpolley21/Zotero/storage/4KXXHSPQ/Held et al. - 2012 - Measuring and modeling alcoholsalt systems.pdf",
+  "pdf_sha256": "5ba922d219a96a2232a49d4d490a6d023c441149d2d428fb767695e96d3a67b4",
+  "markdown_path": "/home/tnnrpolley21/.local/share/zotero-companion/corpus/wiki/evidence/D6PNJV3L/Held, Prinz, Wallmeyer, Sadowski - 2012 - Measuring and modeling alcohol-salt systems.md",
+  "markdown_sha256": "7cf4e064fa48f9b60941be11e7bbb2ddd76ab1a15e2e9e0f71732f2e8b2fe6ba",
+  "markdown_hash_verified_by_companion": true,
+  "table_checks": "Tables 1-8 visually verified against rendered PDF pp. 330-334 and 336; decimal strings preserved; no figure-derived values",
+  "notes": [
+    "Section 2.3 prose reverses table solvent order; captions govern: Table 2 ethanol; Table 3 methanol.",
+    "Table 2 NaBr 0.228 mol/kg is not Table 1 density 0.2192 mol/kg.",
+    "MIAC values are derived via correlation/integration of osmotic coefficients; they are not ePC-SAFT model values.",
+    "Table 7 ethanol LiI phi: PDF has NP=5 and m_max=1.25; Markdown OCR merges them as 51.25. CSV follows PDF. Table 2 reaches 1.500, so identical comparison cohort is unresolved.",
+    "Table 1 does not supply the full density cohorts counted by Table 7. Partial-row error statistics cannot verify its reported density aggregates.",
+    "Figure digitization is not performed in this research handoff; the design specifies permitted manual sampling and exclusions for Build."
+  ]
+}

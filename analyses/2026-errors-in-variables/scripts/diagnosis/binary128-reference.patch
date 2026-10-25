@@ -1,0 +1,17 @@
+--- binary128_support.hpp
++++ binary128_support_probe.hpp
+@@ -103,12 +103,12 @@
+     // EqIDs: mean_ionic_activity_coefficient, molality_activity_conversion,
+     // practical_osmotic_coefficient. Verification values for the same symmetric
+     // water/Na/Cl fixture, at fixed salt molality, without a reaction solve.
+-    std::array<Wide,2> activity_values(double molality, double anchor) {
++    std::array<Wide,2> activity_values(double molality, double anchor, double reference_molality=policy::REFERENCE_MOLALITY_FOUR.value) {
+         const Wide T=c.problem.temperature.value,P=c.problem.pressure.value;
+         const Wide mass=c.parameters.molar_mass_kg_per_mol[0],s=2*mass*Wide(molality);
+         const Wide epsilon=c.parameters.dispersion_energy_over_k[0];
+         const auto finite=state(fluid,T,P,epsilon,s/(2*(1+s)),Wide(anchor),false);
+-        const Wide mr=policy::REFERENCE_MOLALITY_FOUR.value,yr=mass*mr/(1+2*mass*mr);
++        const Wide mr=Wide(reference_molality),yr=mass*mr/(1+2*mass*mr);
+         auto terminal_tape=record(double(yr)),pure_tape=record(0);
+         const auto terminal=state(terminal_tape,T,P,epsilon,yr,Wide(anchor),false);
+         const auto pure=state(pure_tape,T,P,epsilon,Wide(0),Wide(anchor),false);

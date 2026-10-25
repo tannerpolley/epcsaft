@@ -1,0 +1,10 @@
+{
+  "source_base": "3f5ee19f",
+  "temperature_K": 298.15,
+  "pressure_Pa": 100000.0,
+  "A_ln": 1.1809649178535253,
+  "pure_water_density_mol_m3": 55342.16981976008,
+  "probe_source_sha256": "130e264e61dc15ec7652c318a873b67d6c21c5a924e005fd2fdd69f9247ece41",
+  "native_archive_sha256": "8a37edd84a95b37ffe91d4f5f7d79eb5ae9568eb8df40ca24cf57138f62828ac",
+  "meaning": "Disposable diagnosis probe, not the Engine fix or qualification. The finite maximum gradient floor includes unconsumed coordinates and is not an osmotic error bound."
+}

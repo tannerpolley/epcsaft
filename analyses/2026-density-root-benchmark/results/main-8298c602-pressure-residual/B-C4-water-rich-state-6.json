@@ -1,0 +1,544 @@
+{
+  "case": "B-C4-water-rich",
+  "state": {
+    "index": 6,
+    "T_K": 298.15,
+    "P_Pa": 101301.96064516129,
+    "x": [
+      0.9993566483864802,
+      0.0006433516135197929
+    ],
+    "branch": "liquid",
+    "oracle_rho_mol_m3": 51031.59539054086,
+    "oracle_branch": "liquid",
+    "oracle_stable_root_count": 2
+  },
+  "scans": [
+    {
+      "intervals": 16384,
+      "roots": [
+        {
+          "molar_density": 45.4158940826296,
+          "packing_fraction": 0.00040967147897421745,
+          "pressure": 101301.96064516145,
+          "pressure_density_derivative": 2021.0510447776187,
+          "lower": 45.415894082629336,
+          "upper": 45.4158940826296,
+          "residual": 1.6007106751203537e-10,
+          "mechanical_sign": 1,
+          "linked": false,
+          "declared": true,
+          "cause": "",
+          "stop": "bracket_tolerance",
+          "endpoints": [
+            {
+              "molar_density": 45.415894082629336,
+              "packing_fraction": 0.00040967147897421507,
+              "pressure": 101301.96064516091,
+              "pressure_density_derivative": 2021.051044777621,
+              "lower": 45.415894082629336,
+              "upper": 45.415894082629336,
+              "residual": -3.7834979593753815e-10,
+              "mechanical_sign": 1,
+              "linked": false,
+              "declared": true,
+              "cause": "",
+              "stop": ""
+            },
+            {
+              "molar_density": 45.4158940826296,
+              "packing_fraction": 0.00040967147897421745,
+              "pressure": 101301.96064516145,
+              "pressure_density_derivative": 2021.0510447776187,
+              "lower": 45.4158940826296,
+              "upper": 45.4158940826296,
+              "residual": 1.6007106751203537e-10,
+              "mechanical_sign": 1,
+              "linked": true,
+              "declared": true,
+              "cause": "",
+              "stop": ""
+            }
+          ],
+          "endpoint_stop": "resolved_crossings",
+          "bracket_log_width": 5.7731597280507974e-15,
+          "nested_relative_difference": 3.3306690738754696e-15
+        },
+        {
+          "molar_density": 2046.725739390129,
+          "packing_fraction": 0.018462372648329117,
+          "pressure": 101301.96064516158,
+          "pressure_density_derivative": -1096.846312586141,
+          "lower": 2046.725739390129,
+          "upper": 2046.725739390141,
+          "residual": 2.9103830456733704e-10,
+          "mechanical_sign": -1,
+          "linked": false,
+          "declared": true,
+          "cause": "",
+          "stop": "bracket_tolerance",
+          "endpoints": [
+            {
+              "molar_density": 2046.725739390129,
+              "packing_fraction": 0.018462372648329117,
+              "pressure": 101301.96064516158,
+              "pressure_density_derivative": -1096.846312586141,
+              "lower": 2046.725739390129,
+              "upper": 2046.725739390129,
+              "residual": 2.9103830456733704e-10,
+              "mechanical_sign": -1,
+              "linked": false,
+              "declared": true,
+              "cause": "",
+              "stop": ""
+            },
+            {
+              "molar_density": 2046.725739390141,
+              "packing_fraction": 0.018462372648329225,
+              "pressure": 101301.96064514919,
+              "pressure_density_derivative": -1096.8463125861504,
+              "lower": 2046.725739390141,
+              "upper": 2046.725739390141,
+              "residual": -1.210719347000122e-08,
+              "mechanical_sign": -1,
+              "linked": true,
+              "declared": true,
+              "cause": "",
+              "stop": ""
+            }
+          ],
+          "endpoint_stop": "resolved_crossings",
+          "bracket_log_width": 5.7731597280507974e-15,
+          "nested_relative_difference": 2.220446049250313e-15
+        },
+        {
+          "molar_density": 51031.59539054086,
+          "packing_fraction": 0.4603275919223356,
+          "pressure": 101301.96064537576,
+          "pressure_density_derivative": 79920.78391640984,
+          "lower": 51031.59539054056,
+          "upper": 51031.59539054086,
+          "residual": 2.1446612663567066e-07,
+          "mechanical_sign": 1,
+          "linked": false,
+          "declared": true,
+          "cause": "",
+          "stop": "bracket_tolerance",
+          "endpoints": [
+            {
+              "molar_density": 51031.59539054056,
+              "packing_fraction": 0.4603275919223329,
+              "pressure": 101301.96062486793,
+              "pressure_density_derivative": 79920.78391640664,
+              "lower": 51031.59539054056,
+              "upper": 51031.59539054056,
+              "residual": -2.0293358829803765e-05,
+              "mechanical_sign": 1,
+              "linked": false,
+              "declared": true,
+              "cause": "",
+              "stop": ""
+            },
+            {
+              "molar_density": 51031.59539054086,
+              "packing_fraction": 0.4603275919223356,
+              "pressure": 101301.96064537576,
+              "pressure_density_derivative": 79920.78391640984,
+              "lower": 51031.59539054086,
+              "upper": 51031.59539054086,
+              "residual": 2.1446612663567066e-07,
+              "mechanical_sign": 1,
+              "linked": true,
+              "declared": true,
+              "cause": "",
+              "stop": ""
+            }
+          ],
+          "endpoint_stop": "resolved_crossings",
+          "bracket_log_width": 5.7731597280507974e-15,
+          "nested_relative_difference": 6.661338147750939e-16
+        }
+      ],
+      "spinodals": [
+        {
+          "molar_density": 936.634682951428,
+          "packing_fraction": 0.008448859668492553,
+          "pressure": 739897.6729976233,
+          "pressure_density_derivative": 2.752195171320957e-13,
+          "lower": 936.634682951428,
+          "upper": 936.6346829514333,
+          "residual": 1.1102230246251565e-16,
+          "mechanical_sign": 0,
+          "linked": false,
+          "declared": true,
+          "cause": "",
+          "stop": "bracket_tolerance",
+          "endpoints": [
+            {
+              "molar_density": 936.634682951428,
+              "packing_fraction": 0.008448859668492553,
+              "pressure": 739897.6729976233,
+              "pressure_density_derivative": 2.752195171320957e-13,
+              "lower": 936.634682951428,
+              "upper": 936.634682951428,
+              "residual": 638595.712352462,
+              "mechanical_sign": 1,
+              "linked": false,
+              "declared": true,
+              "cause": "",
+              "stop": ""
+            },
+            {
+              "molar_density": 936.6346829514333,
+              "packing_fraction": 0.0084488596684926,
+              "pressure": 739897.6729976225,
+              "pressure_density_derivative": -5.504390342641914e-12,
+              "lower": 936.6346829514333,
+              "upper": 936.6346829514333,
+              "residual": 638595.7123524612,
+              "mechanical_sign": -1,
+              "linked": true,
+              "declared": true,
+              "cause": "",
+              "stop": ""
+            }
+          ],
+          "endpoint_stop": "no_sampled_crossing",
+          "bracket_log_width": 5.7731597280507974e-15,
+          "nested_relative_difference": 1.887379141862766e-15
+        },
+        {
+          "molar_density": 40401.46472249481,
+          "packing_fraction": 0.3644391052937473,
+          "pressure": -340783736.45635384,
+          "pressure_density_derivative": 1.2880273401782078e-10,
+          "lower": 40401.46472249458,
+          "upper": 40401.46472249481,
+          "residual": 5.195843755245732e-14,
+          "mechanical_sign": 0,
+          "linked": false,
+          "declared": true,
+          "cause": "",
+          "stop": "bracket_tolerance",
+          "endpoints": [
+            {
+              "molar_density": 40401.46472249458,
+              "packing_fraction": 0.3644391052937452,
+              "pressure": -340783736.45635414,
+              "pressure_density_derivative": -7.023602077211083e-10,
+              "lower": 40401.46472249458,
+              "upper": 40401.46472249458,
+              "residual": -340885038.4169993,
+              "mechanical_sign": -1,
+              "linked": false,
+              "declared": true,
+              "cause": "",
+              "stop": ""
+            },
+            {
+              "molar_density": 40401.46472249481,
+              "packing_fraction": 0.3644391052937473,
+              "pressure": -340783736.45635384,
+              "pressure_density_derivative": 1.2880273401782078e-10,
+              "lower": 40401.46472249481,
+              "upper": 40401.46472249481,
+              "residual": -340885038.416999,
+              "mechanical_sign": 1,
+              "linked": true,
+              "declared": true,
+              "cause": "",
+              "stop": ""
+            }
+          ],
+          "endpoint_stop": "no_sampled_crossing",
+          "bracket_log_width": 5.7731597280507974e-15,
+          "nested_relative_difference": 2.886579864025407e-15
+        }
+      ],
+      "unavailable_samples": [],
+      "lower": 4.086475055253766e-07,
+      "upper": 82089.15000459817,
+      "density_tolerance": 8.208915000468025e-10,
+      "log_tolerance": 1e-14,
+      "max_evaluations": 49152,
+      "max_seconds": 120,
+      "stop": "resolved_crossings",
+      "evaluations": 16575,
+      "sample_count": 16385,
+      "unresolved": [],
+      "selected_rho_mol_m3": 51031.59539054086
+    },
+    {
+      "intervals": 32768,
+      "roots": [
+        {
+          "molar_density": 45.41589408262945,
+          "packing_fraction": 0.0004096714789742161,
+          "pressure": 101301.96064516113,
+          "pressure_density_derivative": 2021.0510447776198,
+          "lower": 45.41589408262945,
+          "upper": 45.41589408262971,
+          "residual": -1.6007106751203537e-10,
+          "mechanical_sign": 1,
+          "linked": false,
+          "declared": true,
+          "cause": "",
+          "stop": "bracket_tolerance",
+          "endpoints": [
+            {
+              "molar_density": 45.41589408262945,
+              "packing_fraction": 0.0004096714789742161,
+              "pressure": 101301.96064516113,
+              "pressure_density_derivative": 2021.0510447776198,
+              "lower": 45.41589408262945,
+              "upper": 45.41589408262945,
+              "residual": -1.6007106751203537e-10,
+              "mechanical_sign": 1,
+              "linked": false,
+              "declared": true,
+              "cause": "",
+              "stop": ""
+            },
+            {
+              "molar_density": 45.41589408262971,
+              "packing_fraction": 0.0004096714789742185,
+              "pressure": 101301.96064516169,
+              "pressure_density_derivative": 2021.0510447776178,
+              "lower": 45.41589408262971,
+              "upper": 45.41589408262971,
+              "residual": 3.92901711165905e-10,
+              "mechanical_sign": 1,
+              "linked": true,
+              "declared": true,
+              "cause": "",
+              "stop": ""
+            }
+          ],
+          "endpoint_stop": "resolved_crossings",
+          "bracket_log_width": 5.7731597280507974e-15
+        },
+        {
+          "molar_density": 2046.7257393901245,
+          "packing_fraction": 0.01846237264832908,
+          "pressure": 101301.96064516722,
+          "pressure_density_derivative": -1096.8463125861372,
+          "lower": 2046.7257393901245,
+          "upper": 2046.7257393901364,
+          "residual": 5.922629497945309e-09,
+          "mechanical_sign": -1,
+          "linked": false,
+          "declared": true,
+          "cause": "",
+          "stop": "bracket_tolerance",
+          "endpoints": [
+            {
+              "molar_density": 2046.7257393901245,
+              "packing_fraction": 0.01846237264832908,
+              "pressure": 101301.96064516722,
+              "pressure_density_derivative": -1096.8463125861372,
+              "lower": 2046.7257393901245,
+              "upper": 2046.7257393901245,
+              "residual": 5.922629497945309e-09,
+              "mechanical_sign": -1,
+              "linked": false,
+              "declared": true,
+              "cause": "",
+              "stop": ""
+            },
+            {
+              "molar_density": 2046.7257393901364,
+              "packing_fraction": 0.018462372648329183,
+              "pressure": 101301.96064515256,
+              "pressure_density_derivative": -1096.8463125861465,
+              "lower": 2046.7257393901364,
+              "upper": 2046.7257393901364,
+              "residual": -8.731149137020111e-09,
+              "mechanical_sign": -1,
+              "linked": true,
+              "declared": true,
+              "cause": "",
+              "stop": ""
+            }
+          ],
+          "endpoint_stop": "resolved_crossings",
+          "bracket_log_width": 5.7731597280507974e-15
+        },
+        {
+          "molar_density": 51031.5953905409,
+          "packing_fraction": 0.4603275919223359,
+          "pressure": 101301.96065195919,
+          "pressure_density_derivative": 79920.78391641073,
+          "lower": 51031.5953905406,
+          "upper": 51031.5953905409,
+          "residual": 6.797898095101118e-06,
+          "mechanical_sign": 1,
+          "linked": false,
+          "declared": true,
+          "cause": "",
+          "stop": "bracket_tolerance",
+          "endpoints": [
+            {
+              "molar_density": 51031.5953905406,
+              "packing_fraction": 0.4603275919223332,
+              "pressure": 101301.96062791615,
+              "pressure_density_derivative": 79920.78391640706,
+              "lower": 51031.5953905406,
+              "upper": 51031.5953905406,
+              "residual": -1.7245140043087304e-05,
+              "mechanical_sign": 1,
+              "linked": false,
+              "declared": true,
+              "cause": "",
+              "stop": ""
+            },
+            {
+              "molar_density": 51031.5953905409,
+              "packing_fraction": 0.4603275919223359,
+              "pressure": 101301.96065195919,
+              "pressure_density_derivative": 79920.78391641073,
+              "lower": 51031.5953905409,
+              "upper": 51031.5953905409,
+              "residual": 6.797898095101118e-06,
+              "mechanical_sign": 1,
+              "linked": true,
+              "declared": true,
+              "cause": "",
+              "stop": ""
+            }
+          ],
+          "endpoint_stop": "resolved_crossings",
+          "bracket_log_width": 5.7731597280507974e-15
+        }
+      ],
+      "spinodals": [
+        {
+          "molar_density": 936.6346829514298,
+          "packing_fraction": 0.008448859668492568,
+          "pressure": 739897.6729976228,
+          "pressure_density_derivative": -1.1008780685283828e-12,
+          "lower": 936.6346829514243,
+          "upper": 936.6346829514298,
+          "residual": -4.440892098500626e-16,
+          "mechanical_sign": 0,
+          "linked": false,
+          "declared": true,
+          "cause": "",
+          "stop": "bracket_tolerance",
+          "endpoints": [
+            {
+              "molar_density": 936.6346829514243,
+              "packing_fraction": 0.00844885966849252,
+              "pressure": 739897.6729976228,
+              "pressure_density_derivative": 3.577853722717244e-12,
+              "lower": 936.6346829514243,
+              "upper": 936.6346829514243,
+              "residual": 638595.7123524614,
+              "mechanical_sign": 1,
+              "linked": false,
+              "declared": true,
+              "cause": "",
+              "stop": ""
+            },
+            {
+              "molar_density": 936.6346829514298,
+              "packing_fraction": 0.008448859668492568,
+              "pressure": 739897.6729976228,
+              "pressure_density_derivative": -1.1008780685283828e-12,
+              "lower": 936.6346829514298,
+              "upper": 936.6346829514298,
+              "residual": 638595.7123524614,
+              "mechanical_sign": -1,
+              "linked": true,
+              "declared": true,
+              "cause": "",
+              "stop": ""
+            }
+          ],
+          "endpoint_stop": "no_sampled_crossing",
+          "bracket_log_width": 5.7731597280507974e-15
+        },
+        {
+          "molar_density": 40401.4647224947,
+          "packing_fraction": 0.36443910529374623,
+          "pressure": -340783736.45635414,
+          "pressure_density_derivative": -3.115484933935323e-10,
+          "lower": 40401.4647224947,
+          "upper": 40401.46472249493,
+          "residual": -1.2567724638756772e-13,
+          "mechanical_sign": 0,
+          "linked": false,
+          "declared": true,
+          "cause": "",
+          "stop": "bracket_tolerance",
+          "endpoints": [
+            {
+              "molar_density": 40401.4647224947,
+              "packing_fraction": 0.36443910529374623,
+              "pressure": -340783736.45635414,
+              "pressure_density_derivative": -3.115484933935323e-10,
+              "lower": 40401.4647224947,
+              "upper": 40401.4647224947,
+              "residual": -340885038.4169993,
+              "mechanical_sign": -1,
+              "linked": false,
+              "declared": true,
+              "cause": "",
+              "stop": ""
+            },
+            {
+              "molar_density": 40401.46472249493,
+              "packing_fraction": 0.36443910529374834,
+              "pressure": -340783736.45635414,
+              "pressure_density_derivative": 5.094313262115092e-10,
+              "lower": 40401.46472249493,
+              "upper": 40401.46472249493,
+              "residual": -340885038.4169993,
+              "mechanical_sign": 1,
+              "linked": true,
+              "declared": true,
+              "cause": "",
+              "stop": ""
+            }
+          ],
+          "endpoint_stop": "no_sampled_crossing",
+          "bracket_log_width": 5.7731597280507974e-15
+        }
+      ],
+      "unavailable_samples": [],
+      "lower": 4.086475055253766e-07,
+      "upper": 82089.15000459817,
+      "density_tolerance": 8.208915000468025e-10,
+      "log_tolerance": 1e-14,
+      "max_evaluations": 98304,
+      "max_seconds": 120,
+      "stop": "resolved_crossings",
+      "evaluations": 32954,
+      "sample_count": 32769,
+      "unresolved": [],
+      "selected_rho_mol_m3": 51031.5953905409
+    }
+  ],
+  "returns": [
+    {
+      "mode": "pressure",
+      "rho_mol_m3": 51031.59539054083,
+      "pressure_Pa": 101301.96064557417,
+      "slope_Pa_m3_mol": 79920.78391640987,
+      "density_branch": "Liquid",
+      "stable_root_count": 2
+    },
+    {
+      "mode": "returned-density",
+      "rho_mol_m3": 51031.59539054083,
+      "pressure_Pa": 101301.96064557417,
+      "slope_Pa_m3_mol": 79920.78391640987
+    },
+    {
+      "mode": "frozen-density",
+      "rho_mol_m3": 51031.59539054086,
+      "pressure_Pa": 101301.96064550203,
+      "slope_Pa_m3_mol": 79920.78391640984
+    }
+  ],
+  "failures": []
+}

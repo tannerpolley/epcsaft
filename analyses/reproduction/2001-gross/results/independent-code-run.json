@@ -1,0 +1,49 @@
+{
+  "comparator": "teqp",
+  "version": "0.23.2",
+  "environment": "/home/tnnrpolley21/.cache/epcsaft-comparators/222/feos",
+  "python_executable": "/home/tnnrpolley21/.cache/epcsaft-comparators/222/feos/bin/python",
+  "relative_tolerance": 1e-10,
+  "density_relative_step_tolerance": 1e-14,
+  "native_maximum_iterations": 20,
+  "binary_atol": 1e-10,
+  "binary_reltol": 1e-12,
+  "binary_axtol": 1e-10,
+  "binary_relxtol": 1e-12,
+  "phase_pressure_relative_closure_threshold": 1e-07,
+  "start_density_factor": 0.999,
+  "wall_seconds": 4.958414712004014,
+  "git_base": "a03132aae4fd92a87b6f4b494a0b25a9fd30d408",
+  "basis": "Independent-code numerical verification at final retained T,P (pure), T,x (binary), and P,x (isobar); Engine densities are displaced initial guesses only.",
+  "summary": {
+    "liquid_density": {
+      "rows": 106,
+      "maximum_relative_difference": 1.9761969838327786e-13,
+      "all_within_tolerance": true
+    },
+    "bubble_pressure": {
+      "rows": 85,
+      "maximum_relative_difference": 3.530509218307998e-13,
+      "all_within_tolerance": true
+    },
+    "bubble_temperature": {
+      "rows": 9,
+      "maximum_relative_difference": 4.440892098500626e-16,
+      "all_within_tolerance": true
+    }
+  },
+  "uncompared_rows": 0,
+  "input_sha256": {
+    "results/pure-saturation.csv": "77f192c921f20a80e6b74bc178693134305ec2c6dfe2a2b8e25d3296405b3189",
+    "results/figure-comparisons.csv": "a7d1778b80459c952baf9e85929c58036ea5e4bb5ce8a0575e0d0e9ced553834",
+    "inputs/parameters/pure/any-solvent.csv": "6dc04cdf8b07cfbbca1c961ffd10e34fc9e1109d4930f8d75c6fa2c0582f847d",
+    "inputs/digitized/calibration.json": "3e79bf71edf119131b0bc28dc704d65798d63d9f1bb97a04cb23170337686527"
+  },
+  "code_sha256": {
+    "scripts/independent_code.py": "64864da801624aa98ace6d181b7e9201844238d5efc961d236f70f271abfa820",
+    "scripts/teqp_density.cpp": "d195f636db984aac9cd0d8a5b01eb5dfdeefedef8158f2c52afbde00483e8543"
+  },
+  "teqp_extension_sha256": "06907ae43684ee23b416a77553ab2351ee82bb7ad649ff649f204ffec097a6ee",
+  "pure_pressure_limit": "Relative pressure closure is diagnostic only for liquid density: cancellation at low pressure can exceed the existing closure threshold even when the density step and cross-code density difference pass.",
+  "method_source": "https://teqp.readthedocs.io/en/latest/algorithms/VLE.html"
+}

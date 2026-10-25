@@ -1,0 +1,10 @@
+component_id,name,cas,formula,aliases
+water,water,7732-18-5,H2O,
+methanol,methanol,67-56-1,CH4O,
+ethanol,ethanol,64-17-5,C2H6O,
+lithium-cation,lithium cation,,Li+,
+sodium-cation,sodium cation,,Na+,
+potassium-cation,potassium cation,,K+,
+chloride-anion,chloride anion,,Cl-,
+bromide-anion,bromide anion,,Br-,
+iodide-anion,iodide anion,,I-,

@@ -1,0 +1,25 @@
+{
+  "wheel_sha256": "28181e72e429c6e87fc6361082af1a7b21c8747e76bda65a1c30abb4a97402f2",
+  "input_sha256": "013f57c6390a821599942f33f22445e37904e50ee85f272ac153fd5073fe39ba",
+  "mode": "short",
+  "states": 6,
+  "targets": 9,
+  "wall_s": 5.548327964999999,
+  "cpu_s": 5.541026812,
+  "initial_cost": 0.7812681266679207,
+  "final_cost": 0.05467058394365587,
+  "physical": [
+    0.020994145011136667,
+    0.0030424783757869167,
+    -0.5,
+    -1.0,
+    -999.9999999999999
+  ],
+  "status": "limit_reached",
+  "message": "iteration limit reached",
+  "residual_evaluations": 3,
+  "jacobian_evaluations": 4,
+  "trial_failures": 0,
+  "iterations": 4,
+  "residual_to_jacobian_promotions": 3
+}

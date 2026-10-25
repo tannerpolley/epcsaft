@@ -1,0 +1,103 @@
+{
+  "selected": 0,
+  "parameters": {
+    "sigma_angstrom": 2.717877321339645,
+    "packing_angstrom": 2.3917320427788877,
+    "DH_angstrom": 2.3917320427788877,
+    "k_water": -0.9999999999913539,
+    "k_chloride": 0.9999999999813515,
+    "born_angstrom": 3.1586096100163013
+  },
+  "hydration_target_J_mol": -1812100.0,
+  "stored_hydration_J_mol": -1812100.0000000456,
+  "bracket_endpoint_energies_J_mol": [
+    -5476209.669100831,
+    -784853.9629261552
+  ],
+  "holds": [
+    {
+      "energy_error": -4.563480615615845e-08,
+      "correction": 8.491761826894868e-14,
+      "uncertainty": 8.491761826894868e-14,
+      "derivative": 537400.9196963719,
+      "parameter_derivative": [
+        -83238.34961717026,
+        16433.0363329375,
+        9.63406576961681e-09,
+        82540.95308870684,
+        1.428426180796192e-09,
+        537400.9196963719
+      ],
+      "cause": "converged"
+    }
+  ],
+  "minimax": {
+    "availability": "available",
+    "solver_status": "SUCCESS",
+    "feasible": true,
+    "stationary": true,
+    "t": 0.06407599490634441,
+    "target_maximum": 0.06407599490611852,
+    "primal": 0.0,
+    "stationarity": 7.002176616310862e-13,
+    "dual_sign": 0.0,
+    "complementarity": 1.2225953774489365e-11,
+    "active_lower": [
+      1
+    ],
+    "active_upper": [
+      2
+    ],
+    "lower_distances": [
+      0.3178773213396453,
+      8.646083848873332e-12,
+      1.9999999999813514,
+      3.2037997453172204
+    ],
+    "upper_distances": [
+      1.6821226786603551,
+      1.999999999991354,
+      1.8648527166931217e-11,
+      null
+    ],
+    "hold_multipliers": [
+      1.7075424506648436e-09
+    ],
+    "hold_causes": [
+      "available"
+    ],
+    "full_stationarity": [
+      -7.945172277596078e-16,
+      7.556472113928009e-15,
+      1.4026974026748462e-14,
+      -1.0842021724855044e-19
+    ]
+  },
+  "sigma_map": [
+    1.0,
+    0.0,
+    0.0,
+    0.88,
+    0.0,
+    0.0,
+    0.88,
+    0.0,
+    0.0
+  ],
+  "maximum_gamma_decade": 0.06407599490611852,
+  "maximum_osmotic_decade": 0.03957717574481996,
+  "maximum_pressure_error_Pa": 4.2943720472976565e-05,
+  "stage1_preservation": {
+    "rows": 948,
+    "maximum_change": 0.0,
+    "enforced_groups": 45,
+    "passed": true
+  },
+  "failed_sigma_columns": 0,
+  "accepted": false,
+  "claim_limits": [
+    "Binary aqueous fit to evaluated reference data at 298.15 K and 1 bar.",
+    "Finite declared multistart search; no global optimum, parameter uncertainty or physical validation.",
+    "Density is unqualified."
+  ]
+}

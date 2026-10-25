@@ -1,0 +1,262 @@
+{
+  "categories": {
+    "documents": {
+      "additions": 58,
+      "binary_files": 0,
+      "files": 3,
+      "removals": 0
+    },
+    "executable": {
+      "additions": 375,
+      "binary_files": 0,
+      "files": 12,
+      "removals": 8
+    },
+    "generated": {
+      "additions": 0,
+      "binary_files": 0,
+      "files": 0,
+      "removals": 0
+    },
+    "other": {
+      "additions": 5421,
+      "binary_files": 0,
+      "files": 10,
+      "removals": 0
+    },
+    "tests": {
+      "additions": 22,
+      "binary_files": 0,
+      "files": 2,
+      "removals": 0
+    }
+  },
+  "files": [
+    {
+      "additions": 20,
+      "binary": false,
+      "category": "other",
+      "path": "analyses/2026-equilibrium-polish-masking/results/amendment-2/baseline-build.log",
+      "removals": 0,
+      "untracked": true
+    },
+    {
+      "additions": 766,
+      "binary": false,
+      "category": "other",
+      "path": "analyses/2026-equilibrium-polish-masking/results/amendment-2/baseline-inputs.json",
+      "removals": 0,
+      "untracked": true
+    },
+    {
+      "additions": 38,
+      "binary": false,
+      "category": "other",
+      "path": "analyses/2026-equilibrium-polish-masking/results/amendment-2/baseline-qualification.log",
+      "removals": 0,
+      "untracked": true
+    },
+    {
+      "additions": 1144,
+      "binary": false,
+      "category": "other",
+      "path": "analyses/2026-equilibrium-polish-masking/results/amendment-2/baseline-states.csv",
+      "removals": 0,
+      "untracked": true
+    },
+    {
+      "additions": 63,
+      "binary": false,
+      "category": "other",
+      "path": "analyses/2026-equilibrium-polish-masking/results/amendment-2/baseline-trace.csv",
+      "removals": 0,
+      "untracked": true
+    },
+    {
+      "additions": 4,
+      "binary": false,
+      "category": "other",
+      "path": "analyses/2026-equilibrium-polish-masking/results/amendment-2/baseline-wheel.json",
+      "removals": 0,
+      "untracked": true
+    },
+    {
+      "additions": 10,
+      "binary": false,
+      "category": "documents",
+      "path": "analyses/2026-equilibrium-polish-masking/results/amendment-2/budgets.txt",
+      "removals": 0,
+      "untracked": true
+    },
+    {
+      "additions": 14,
+      "binary": false,
+      "category": "documents",
+      "path": "analyses/2026-equilibrium-polish-masking/results/amendment-2/build-diagnosis.md",
+      "removals": 0,
+      "untracked": true
+    },
+    {
+      "additions": 3231,
+      "binary": false,
+      "category": "other",
+      "path": "analyses/2026-equilibrium-polish-masking/results/amendment-2/candidate-build-diagnostic.log",
+      "removals": 0,
+      "untracked": true
+    },
+    {
+      "additions": 137,
+      "binary": false,
+      "category": "other",
+      "path": "analyses/2026-equilibrium-polish-masking/results/amendment-2/candidate-qualification.log",
+      "removals": 0,
+      "untracked": true
+    },
+    {
+      "additions": 0,
+      "binary": false,
+      "category": "other",
+      "path": "analyses/2026-equilibrium-polish-masking/results/amendment-2/change-accounting.json",
+      "removals": 0,
+      "untracked": true
+    },
+    {
+      "additions": 18,
+      "binary": false,
+      "category": "other",
+      "path": "analyses/2026-equilibrium-polish-masking/results/amendment-2/small-phase-input.json",
+      "removals": 0,
+      "untracked": true
+    },
+    {
+      "additions": 60,
+      "binary": false,
+      "category": "executable",
+      "path": "analyses/2026-equilibrium-polish-masking/scripts/compare_polish.py",
+      "removals": 0,
+      "untracked": true
+    },
+    {
+      "additions": 7,
+      "binary": false,
+      "category": "executable",
+      "path": "analyses/2026-equilibrium-polish-masking/scripts/delivery-evidence.sh",
+      "removals": 0,
+      "untracked": true
+    },
+    {
+      "additions": 24,
+      "binary": false,
+      "category": "executable",
+      "path": "analyses/2026-equilibrium-polish-masking/scripts/gates.sh",
+      "removals": 0,
+      "untracked": true
+    },
+    {
+      "additions": 24,
+      "binary": false,
+      "category": "executable",
+      "path": "analyses/2026-equilibrium-polish-masking/scripts/locked-run.sh",
+      "removals": 0,
+      "untracked": true
+    },
+    {
+      "additions": 20,
+      "binary": false,
+      "category": "executable",
+      "path": "analyses/2026-equilibrium-polish-masking/scripts/plot_timing.py",
+      "removals": 0,
+      "untracked": true
+    },
+    {
+      "additions": 110,
+      "binary": false,
+      "category": "executable",
+      "path": "analyses/2026-equilibrium-polish-masking/scripts/qualify_polish.py",
+      "removals": 0,
+      "untracked": true
+    },
+    {
+      "additions": 15,
+      "binary": false,
+      "category": "executable",
+      "path": "analyses/2026-equilibrium-polish-masking/scripts/time-pairs.sh",
+      "removals": 0,
+      "untracked": true
+    },
+    {
+      "additions": 26,
+      "binary": false,
+      "category": "executable",
+      "path": "analyses/2026-equilibrium-polish-masking/scripts/time_polish.py",
+      "removals": 0,
+      "untracked": true
+    },
+    {
+      "additions": 31,
+      "binary": false,
+      "category": "executable",
+      "path": "analyses/2026-equilibrium-polish-masking/scripts/unloaded_input.py",
+      "removals": 0,
+      "untracked": true
+    },
+    {
+      "additions": 34,
+      "binary": false,
+      "category": "documents",
+      "path": "engine/docs/science/algorithms.md",
+      "removals": 0,
+      "untracked": false
+    },
+    {
+      "additions": 5,
+      "binary": false,
+      "category": "executable",
+      "path": "engine/native/core/numerical_policy.hpp",
+      "removals": 5,
+      "untracked": false
+    },
+    {
+      "additions": 49,
+      "binary": false,
+      "category": "executable",
+      "path": "engine/native/equilibrium/gibbs_minimizer.cpp",
+      "removals": 3,
+      "untracked": false
+    },
+    {
+      "additions": 4,
+      "binary": false,
+      "category": "executable",
+      "path": "engine/native/equilibrium/problem.hpp",
+      "removals": 0,
+      "untracked": false
+    },
+    {
+      "additions": 6,
+      "binary": false,
+      "category": "tests",
+      "path": "engine/tests/equilibrium/test_trace_reliability.py",
+      "removals": 0,
+      "untracked": false
+    },
+    {
+      "additions": 16,
+      "binary": false,
+      "category": "tests",
+      "path": "engine/tests/native/specification_checks.cpp",
+      "removals": 0,
+      "untracked": false
+    }
+  ],
+  "merge_base": "6300f17b1b8ee686d72bbef5b7364c2163e97bf9",
+  "repository": "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/issue-272-polish-floor",
+  "requested_base": "6300f17b",
+  "scope": "merge base through HEAD, index, working tree, and untracked files",
+  "totals": {
+    "additions": 5876,
+    "binary_files": 0,
+    "files": 27,
+    "removals": 8
+  }
+}

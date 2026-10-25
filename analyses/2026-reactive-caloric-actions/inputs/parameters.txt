@@ -1,0 +1,67 @@
+Literal parameter declarations from engine/tests/native/properties_support.hpp at 5a595e92.
+Native checks execute that owner, not this retained input snapshot.
+
+inline epcsaft::Parameters parameters(std::size_t components) {
+    epcsaft::Parameters p;
+    p.segment_count.resize(components);
+    p.sigma_constant.resize(components);
+    p.dispersion_energy_over_k.resize(components);
+    p.molar_mass_kg_per_mol.resize(components);
+    p.charge_number.assign(components, 0);
+    p.packing_diameter_angstrom.assign(components, 0.0);
+    p.debye_huckel_diameter_angstrom.assign(components, 0.0);
+    p.born_diameter_angstrom.assign(components, 0.0);
+    p.solvation_factor.assign(components, 1.0);
+    p.relative_permittivity.assign(components, 0.0);
+    p.permittivity_reference_temperature_k.assign(components, 298.15);
+    p.ion_suppression_coefficient.assign(components, 0.0);
+    p.dielectric_volume_m3_per_mol.assign(components, 0.0);
+    p.dielectric_temperature_k.assign(components, 0.0);
+    p.dipole_scaling_debye2.assign(components, 0.0);
+    p.polarizability_scaling_angstrom3.assign(components, 0.0);
+    p.correlation_integral_parameter.assign(components, 0.0);
+    p.k_ij.assign(components * components, 0.0);
+    p.k_ij_reciprocal_temperature_slope.assign(components * components, 0.0);
+    p.k_ij_reference_temperature_k.assign(components * components, 0.0);
+    p.l_ij.assign(components * components, 0.0);
+    return p;
+}
+
+inline epcsaft::Parameters ethane() {
+    auto p = parameters(1);
+    p.segment_count[0] = 1.6069;
+    p.sigma_constant[0] = 3.5206;
+    p.dispersion_energy_over_k[0] = 191.42;
+    p.molar_mass_kg_per_mol[0] = 0.03007;
+    return p;
+}
+
+inline epcsaft::Parameters aqueous_electrolyte() {
+    auto p = parameters(3);
+    p.segment_count = {1.2047, 1.0, 1.0};
+    p.sigma_constant = {2.7927, 2.8232, 2.756};
+    p.sigma_term_component = {0, 0};
+    p.sigma_term_amplitude = {10.11, -1.417};
+    p.sigma_term_exponent = {-0.01775, -0.01146};
+    p.dispersion_energy_over_k = {353.95, 230.0, 170.0};
+    p.molar_mass_kg_per_mol = {0.0180153, 0.02298977, 0.0354527};
+    p.charge_number = {0, 1, -1};
+    p.packing_diameter_angstrom = {0.0, 2.484416, 2.42528};
+    p.debye_huckel_diameter_angstrom = {0.0, 2.484416, 2.42528};
+    p.born_diameter_angstrom = {0.0, 3.445, 4.1};
+    p.solvation_factor = {1.5, 1.0, 1.0};
+    p.relative_permittivity = {78.09, 0.0, 0.0};
+    p.ion_suppression_coefficient = {0.0, 7.01, 7.01};
+    p.electrolyte_form = epcsaft::ElectrolyteForm::DebyeHuckelBorn;
+    p.ionic_dispersion = epcsaft::IonicDispersion::ExcludeSameSign;
+    p.permittivity_form = epcsaft::PermittivityForm::IonSuppression;
+    p.ionic_region_relative_permittivity = 8.0;
+    p.site_component = {0, 0};
+    p.site_multiplicity = {1, 1};
+    p.association_active = {0, 1, 1, 0};
+    p.association_energy_over_k = {0.0, 2425.7, 2425.7, 0.0};
+    p.association_volume = {0.0, 0.04509, 0.04509, 0.0};
+    p.k_ij[1] = p.k_ij[3] = -0.3;
+    p.k_ij[5] = p.k_ij[7] = 0.8;
+    return p;
+}

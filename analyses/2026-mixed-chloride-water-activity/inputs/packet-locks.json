@@ -1,0 +1,29 @@
+{
+  "repository": "tannerpolley/ePC-SAFT",
+  "packets": [
+    {
+      "packet_id": "held-2014-strategy2",
+      "packet_version": "1",
+      "packet_path": "data/packets/held-2014-strategy2/1",
+      "packet_fingerprint": "ed48d4398ada6597ad530ccde64c2672842870aa75fa2f243be27c245250232e",
+      "materialization": "byte-for-byte",
+      "materialization_destination": "inputs/held-2014-strategy2/1"
+    },
+    {
+      "packet_id": "figiel-2025-chloride-activity-refit",
+      "packet_version": "2",
+      "packet_path": "data/packets/figiel-2025-chloride-activity-refit/2",
+      "packet_fingerprint": "d79865152abaf527b4602c13b20e3e2c46db8eb0b3f2b294b138b8bdde65a865",
+      "materialization": "byte-for-byte",
+      "materialization_destination": "inputs/figiel-2025-chloride-activity-refit/2"
+    },
+    {
+      "packet_id": "mixed-chloride-water-observations",
+      "packet_version": "1",
+      "packet_path": "data/packets/mixed-chloride-water-observations/1",
+      "packet_fingerprint": "2234735befdff30e54b82250b1b2a8d69daaca95af98abb65a1490c9dafd3679",
+      "materialization": "byte-for-byte",
+      "materialization_destination": "inputs/mixed-chloride-water-observations/1"
+    }
+  ]
+}

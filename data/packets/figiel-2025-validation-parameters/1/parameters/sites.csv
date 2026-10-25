@@ -1,0 +1,7 @@
+record_id,component_id,site_id,site_class,multiplicity,source_id,locator,domain_id
+water-site-a,water,a,a,1,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+water-site-b,water,b,b,1,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+methanol-site-a,methanol,a,a,1,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+methanol-site-b,methanol,b,b,1,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+ethanol-site-a,ethanol,a,a,1,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+ethanol-site-b,ethanol,b,b,1,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar

@@ -1,0 +1,30 @@
+{
+  "case1-shell-only-1-0-parameters.json": {
+    "source": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT-greenfield/downstream/.worktrees/MEA-Thermodynamics-121-model-d/analyses/mea_parameter_bundle/model-d/born-form-diagnosis/engine-handoff/case1-shell-only-1-0-parameters.json",
+    "sha256": "094958b95869716fe736a669e276a838c4f078d25e31400dde6164e070354cdf"
+  },
+  "case1-shell-only-1-0-request.json": {
+    "source": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT-greenfield/downstream/.worktrees/MEA-Thermodynamics-121-model-d/analyses/mea_parameter_bundle/model-d/born-form-diagnosis/engine-handoff/case1-shell-only-1-0-request.json",
+    "sha256": "b5a0386410a3b72f82f4652b981192d3bcfab73b9f1e78f36b4d19e48b30f9e7"
+  },
+  "case1-shell-only-1-0-anchor.json": {
+    "source": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT-greenfield/downstream/.worktrees/MEA-Thermodynamics-121-model-d/analyses/mea_parameter_bundle/results/runs/calibration-misfit/cache/states/e9bb45ae3daedb8980ec97d3d77370f8e6e9fc80b2eca9eea4cf6c08ae1e34e0.json",
+    "sha256": "2404e243ecc649bdeb6ac2f3e93ce20e541de1a1edd7b9763a8af2b70dcb53e7"
+  },
+  "case2-eps-ion-2-parameters.json": {
+    "source": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT-greenfield/downstream/.worktrees/MEA-Thermodynamics-121-model-d/analyses/mea_parameter_bundle/model-d/born-form-diagnosis/engine-handoff/case2-eps-ion-2-parameters.json",
+    "sha256": "dcfc2325c3a13e93253591fccb17baf059adfb882de2ba10a61e756c2aecc45e"
+  },
+  "case2-eps-ion-2-request.json": {
+    "source": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT-greenfield/downstream/.worktrees/MEA-Thermodynamics-121-model-d/analyses/mea_parameter_bundle/model-d/born-form-diagnosis/engine-handoff/case2-eps-ion-2-request.json",
+    "sha256": "c400ada57bffafbd11a3a627eb7c0680a22c10be36fab5a95cb0061bf171d09f"
+  },
+  "case2-eps-ion-2-anchor.json": {
+    "source": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT-greenfield/downstream/.worktrees/MEA-Thermodynamics-121-model-d/analyses/mea_parameter_bundle/results/runs/calibration-misfit/cache/states/939ed0417f568f0cdac5a45095839043b87e4b5051e7009e5bd48620d4423ba9.json",
+    "sha256": "e6f01d5cf8cba0243eaccc5aee597356af14e31f81aad982d3bc08b28bdf5f6b"
+  },
+  "export_cases.py": {
+    "source": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT-greenfield/downstream/.worktrees/MEA-Thermodynamics-121-model-d/analyses/mea_parameter_bundle/model-d/born-form-diagnosis/engine-handoff/export_cases.py",
+    "sha256": "69a1ca2c704da3c64581626573045ccd0e4326a7469603ce336be4988263b15a"
+  }
+}

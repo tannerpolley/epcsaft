@@ -1,0 +1,12 @@
+{
+  "original_sha256": {
+    "permittivity.csv": "08efffdac2ac06a86853ab1066aeacdd658b808e477f28a389216e30b6b108cd",
+    "permittivity.json": "ad1064309f344c9b1e66050cb7b02eb6ca66b4bd1862dbbc7814aa35decf164c",
+    "permittivity-costs.csv": "54552c634365f6c59a114c2aac46c50396b9844f49899a293d384334113de74a",
+    "permittivity-0b297e6f.log": "b9f1e78dd97b3e91076c9eade9968ff89e164bb071399e9b3cf71f7d7c1ccbf7"
+  },
+  "cause": "The public solve_equilibrium trace scope encloses discovery admission; it is not a declaration driver invocation.",
+  "source": "engine/native/equilibrium/gibbs_minimizer.cpp:1042 and discover_phases admission before phase_discovery_declaration",
+  "correction": "Retain the wrapper scope while requiring zero driver finalizations, declaration scopes, trial solves, roots, iterations, evaluations and Hessian calls.",
+  "limits": "No numerical criterion, input, start, or native implementation changed."
+}

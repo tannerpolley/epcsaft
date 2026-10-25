@@ -1,0 +1,2129 @@
+{
+  "cases": {
+    "nacl-ion-suppression-workbook-5": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+        "declaration": "2799ba68706413cb8b692bde3c181378af7503b8d120874ed7787002f4e1adb8",
+        "model_selection": "3c75a464861f17082afab499e521b80c9ca77032d9e06c5d2dfb8981bed1ac49"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-ion-suppression-workbook-6": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+        "declaration": "b3a4d3a148747337bdbcd410054d98766626e851804e2af780bd4bd32cf62567",
+        "model_selection": "3c75a464861f17082afab499e521b80c9ca77032d9e06c5d2dfb8981bed1ac49"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-ion-suppression-workbook-7": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+        "declaration": "241b69740bef9276f268bf27c0a413ab1a2af290f9c4801119b0deff658209b5",
+        "model_selection": "3c75a464861f17082afab499e521b80c9ca77032d9e06c5d2dfb8981bed1ac49"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-ion-suppression-workbook-8": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+        "declaration": "7f7f263e4dcb637d6299cb4727f9948d62883d3206c3b8c50bdfb63bca1594e6",
+        "model_selection": "3c75a464861f17082afab499e521b80c9ca77032d9e06c5d2dfb8981bed1ac49"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-ion-suppression-workbook-9": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+        "declaration": "ebcd470684277af48e624b015123aff5c07635d825fc64b64390b0835a3bc913",
+        "model_selection": "3c75a464861f17082afab499e521b80c9ca77032d9e06c5d2dfb8981bed1ac49"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-ion-suppression-workbook-10": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+        "declaration": "7279a679b4f614bbdddb8a3997c5b139e78e4b0773a210a2e48ea1a40d1fb986",
+        "model_selection": "3c75a464861f17082afab499e521b80c9ca77032d9e06c5d2dfb8981bed1ac49"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-ion-suppression-workbook-11": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+        "declaration": "091d68a6441e3183e93670c1cf77f2001819c0ab74df75b90fe408b7d162551c",
+        "model_selection": "3c75a464861f17082afab499e521b80c9ca77032d9e06c5d2dfb8981bed1ac49"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-ion-suppression-workbook-12": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+        "declaration": "a01bcce71f7fe588b1234206a94ea965c234aa72d01eace1c49342a738a85be8",
+        "model_selection": "3c75a464861f17082afab499e521b80c9ca77032d9e06c5d2dfb8981bed1ac49"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-ion-suppression-workbook-13": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+        "declaration": "159228acc649203718049b7b1a0fe465e877cadc6cd67458324d9316a3473f53",
+        "model_selection": "3c75a464861f17082afab499e521b80c9ca77032d9e06c5d2dfb8981bed1ac49"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-ion-suppression-workbook-14": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+        "declaration": "405acc9940c1af6318efec11a716682027d83dec12807d2021c4366bdf5e0a41",
+        "model_selection": "3c75a464861f17082afab499e521b80c9ca77032d9e06c5d2dfb8981bed1ac49"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-ion-suppression-workbook-15": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+        "declaration": "ca3fd388a77f0a131a05d1156bbb452d1783f0c940c478d280ff49d93c0611e5",
+        "model_selection": "3c75a464861f17082afab499e521b80c9ca77032d9e06c5d2dfb8981bed1ac49"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-ion-suppression-workbook-16": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+        "declaration": "ed20a795e8546b659ddcc76671ba2f5ee460259459e7085e477fb330f64a0f05",
+        "model_selection": "3c75a464861f17082afab499e521b80c9ca77032d9e06c5d2dfb8981bed1ac49"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-ion-suppression-workbook-17": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+        "declaration": "2e7082a2a5e2558cd4c915096377a17d981ace4b1acb7ea0d2f7455f5b0eb149",
+        "model_selection": "3c75a464861f17082afab499e521b80c9ca77032d9e06c5d2dfb8981bed1ac49"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-ion-suppression-workbook-18": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+        "declaration": "eb2345f50e953c97aa4c4dda509dc4e7ed85d06c46b2ae186dccb351852e8125",
+        "model_selection": "3c75a464861f17082afab499e521b80c9ca77032d9e06c5d2dfb8981bed1ac49"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-ion-suppression-workbook-19": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+        "declaration": "ef4ff0694aeeeb729e53faec41637d6ae86bcc7b9b8181e3c00f87722b7c9779",
+        "model_selection": "3c75a464861f17082afab499e521b80c9ca77032d9e06c5d2dfb8981bed1ac49"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-ion-suppression-workbook-20": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+        "declaration": "d7c5d0070b936d56340233a464ebe024a12633591e52d444c6fef36ef1e11f61",
+        "model_selection": "3c75a464861f17082afab499e521b80c9ca77032d9e06c5d2dfb8981bed1ac49"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-ion-suppression-workbook-21": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+        "declaration": "358d367ed674fb9cd128a269042a2e5a3d8e92cf8cabc109861601a6ad14dcb5",
+        "model_selection": "3c75a464861f17082afab499e521b80c9ca77032d9e06c5d2dfb8981bed1ac49"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-ion-suppression-workbook-22": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+        "declaration": "56d0b79c1d9b6291f532ae830a3cebb9ff2ef6860ae7eb16bda2f6eb6e97689b",
+        "model_selection": "3c75a464861f17082afab499e521b80c9ca77032d9e06c5d2dfb8981bed1ac49"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-ion-suppression-workbook-23": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+        "declaration": "2fde06d5d7a16f996418ddd9886d76bcc8b4f98a6dbd203a2c220508292e6c00",
+        "model_selection": "3c75a464861f17082afab499e521b80c9ca77032d9e06c5d2dfb8981bed1ac49"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-ion-suppression-workbook-24": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+        "declaration": "c3ff25b5a7f209738b8251aa1d0f6396af926d29be7a1fdefb641f94bda237f9",
+        "model_selection": "3c75a464861f17082afab499e521b80c9ca77032d9e06c5d2dfb8981bed1ac49"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-ion-suppression-workbook-25": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+        "declaration": "3e5141fcea98718aea29b89dba9797cde48d0ededfb69251e09cfbc77fed11d5",
+        "model_selection": "3c75a464861f17082afab499e521b80c9ca77032d9e06c5d2dfb8981bed1ac49"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-ion-suppression-workbook-26": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+        "declaration": "e87a6ade4ea82490af87a98d8be8f6ccf1d9142ea713d85aaf4fde760bc3d96f",
+        "model_selection": "3c75a464861f17082afab499e521b80c9ca77032d9e06c5d2dfb8981bed1ac49"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-ion-suppression-workbook-27": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+        "declaration": "7851665770923984ac78bfb4d777d1718433fdbaf280ac444783af7b41279bf4",
+        "model_selection": "3c75a464861f17082afab499e521b80c9ca77032d9e06c5d2dfb8981bed1ac49"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-ion-suppression-workbook-28": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+        "declaration": "f8fcf9c4558c8381691007ca23f10ebb823458abb8d43aa346890761c7bcaf44",
+        "model_selection": "3c75a464861f17082afab499e521b80c9ca77032d9e06c5d2dfb8981bed1ac49"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-ion-suppression-table3": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+        "declaration": "7a9186cd3a6a55a5df94925a436e34d6b3c6d5d45ad5237f188d17f5e7e612fa",
+        "model_selection": "3c75a464861f17082afab499e521b80c9ca77032d9e06c5d2dfb8981bed1ac49"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-ion-suppression-fig1a-298k-0005-0.99": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+        "declaration": "e77e0ed88a2b31578f4ec15d9913629167f1de769657297639ada17a9986b224",
+        "model_selection": "3c75a464861f17082afab499e521b80c9ca77032d9e06c5d2dfb8981bed1ac49"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-ion-suppression-fig1a-298k-0005-1.0": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+        "declaration": "330878cf45f2be0f552c1aaddacc35a03547ed5c9e851640f878d22fb51d9aba",
+        "model_selection": "3c75a464861f17082afab499e521b80c9ca77032d9e06c5d2dfb8981bed1ac49"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-ion-suppression-fig1a-298k-0005-1.01": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+        "declaration": "8baabbe0b9bffdabcb0cab66ff80ca4e34e121dcc1e7d994523d79cf1dd8876a",
+        "model_selection": "3c75a464861f17082afab499e521b80c9ca77032d9e06c5d2dfb8981bed1ac49"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-ion-suppression-fig1a-298k-1033-0.99": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+        "declaration": "552d1e381a1bea340bb7d79801c8d361ac76aa4ea3768ba63d8e64d7c6e56cd5",
+        "model_selection": "3c75a464861f17082afab499e521b80c9ca77032d9e06c5d2dfb8981bed1ac49"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-ion-suppression-fig1a-298k-1033-1.0": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+        "declaration": "62ef28eb96dc7a98a3d93f22ffad17e55ea4c0c9c1cab6662227d70cb2a98960",
+        "model_selection": "3c75a464861f17082afab499e521b80c9ca77032d9e06c5d2dfb8981bed1ac49"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-ion-suppression-fig1a-298k-1033-1.01": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+        "declaration": "177d6b6903fa30ebdb3be5a93515b26eb0810988d4e882bac9b313164a41d58b",
+        "model_selection": "3c75a464861f17082afab499e521b80c9ca77032d9e06c5d2dfb8981bed1ac49"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-ion-suppression-fig1a-298k-2173-0.99": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+        "declaration": "206bf65370695c367dff520398feb1ea764af60a2e479cf24274aaa66824747c",
+        "model_selection": "3c75a464861f17082afab499e521b80c9ca77032d9e06c5d2dfb8981bed1ac49"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-ion-suppression-fig1a-298k-2173-1.0": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+        "declaration": "7e4ea1d8a6d236754f3f1b3ba8af382ebce32c77c54e0c0ca9b25de80c350009",
+        "model_selection": "3c75a464861f17082afab499e521b80c9ca77032d9e06c5d2dfb8981bed1ac49"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-ion-suppression-fig1a-298k-2173-1.01": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+        "declaration": "d8ade5d8406cb7dee2fd9126634e0e6f97837e4f7dc41933967965beea527359",
+        "model_selection": "3c75a464861f17082afab499e521b80c9ca77032d9e06c5d2dfb8981bed1ac49"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-ion-suppression-fig1a-298k-3506-0.99": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+        "declaration": "8f0d9dffbf5e7490ef753815bde57c3c288136ea5c9418218c3201546334655b",
+        "model_selection": "3c75a464861f17082afab499e521b80c9ca77032d9e06c5d2dfb8981bed1ac49"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-ion-suppression-fig1a-298k-3506-1.0": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+        "declaration": "63acbf11d36c1b58973b98c8c4a280acdd0d277f65ce196f3c97b73057559db4",
+        "model_selection": "3c75a464861f17082afab499e521b80c9ca77032d9e06c5d2dfb8981bed1ac49"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-ion-suppression-fig1a-298k-3506-1.01": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+        "declaration": "fcdb5c0005df6d8df07ed49be59033a1999ca78ae301d0f996218c095619feb4",
+        "model_selection": "3c75a464861f17082afab499e521b80c9ca77032d9e06c5d2dfb8981bed1ac49"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-ion-suppression-fig1a-298k-4798-0.99": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+        "declaration": "dd029cd575d42bb31a99c5d9428807880456ece34923c1dc42bb9b3c261dac4f",
+        "model_selection": "3c75a464861f17082afab499e521b80c9ca77032d9e06c5d2dfb8981bed1ac49"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-ion-suppression-fig1a-298k-4798-1.0": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+        "declaration": "d7426eaa1f3ef6af64a92ab4cc4476f0f2245a6c6f9c6d640acd21e220b092da",
+        "model_selection": "3c75a464861f17082afab499e521b80c9ca77032d9e06c5d2dfb8981bed1ac49"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-ion-suppression-fig1a-298k-4798-1.01": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+        "declaration": "6cbeb1be1a14330ac918bf21f35123e68b21605685d83e73ddddb58a32f00431",
+        "model_selection": "3c75a464861f17082afab499e521b80c9ca77032d9e06c5d2dfb8981bed1ac49"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-ion-suppression-fig1a-298k-5600-0.99": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+        "declaration": "199e82f1067a1a48aad8738a1a73ccdbe65794cedc105ddc64d56d7fa2020d67",
+        "model_selection": "3c75a464861f17082afab499e521b80c9ca77032d9e06c5d2dfb8981bed1ac49"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-ion-suppression-fig1a-298k-5600-1.0": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+        "declaration": "d028dbc45bfbffe97918902be8d23184bb1542c58b1733885167285df7db6e3a",
+        "model_selection": "3c75a464861f17082afab499e521b80c9ca77032d9e06c5d2dfb8981bed1ac49"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-ion-suppression-fig1a-298k-5600-1.01": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+        "declaration": "58d2ff383b7d78052f5619b6df680a93684461386cae55519c6dc656ae68b776",
+        "model_selection": "3c75a464861f17082afab499e521b80c9ca77032d9e06c5d2dfb8981bed1ac49"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-ion-suppression-table3-nacl-5600-0.99": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+        "declaration": "574721126202371616ffb5a6c90e127a991f8cae2d091671d8f80f67a5c8cf2c",
+        "model_selection": "3c75a464861f17082afab499e521b80c9ca77032d9e06c5d2dfb8981bed1ac49"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-ion-suppression-table3-nacl-5600-1.0": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+        "declaration": "6380489b0b60e6c04be42bebf86b28f35eca14fdaa5ff8961dcd3f035937b77c",
+        "model_selection": "3c75a464861f17082afab499e521b80c9ca77032d9e06c5d2dfb8981bed1ac49"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-ion-suppression-table3-nacl-5600-1.01": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+        "declaration": "697ca2e76ab24e8001afaa06794260ad30fd2705671b6b01ac7a66aafbc3ca87",
+        "model_selection": "3c75a464861f17082afab499e521b80c9ca77032d9e06c5d2dfb8981bed1ac49"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-ion-suppression-fig1a-298k-6000-0.99": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+        "declaration": "0c06951f10cb8d8763d2a33f6d5d9634a6920f5ecad50133c881279b4ed545f8",
+        "model_selection": "3c75a464861f17082afab499e521b80c9ca77032d9e06c5d2dfb8981bed1ac49"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-ion-suppression-fig1a-298k-6000-1.0": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+        "declaration": "e2fb0f45e98be8568d13e752387edc84766795056f83720a5337c9e4ec621da6",
+        "model_selection": "3c75a464861f17082afab499e521b80c9ca77032d9e06c5d2dfb8981bed1ac49"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-ion-suppression-fig1a-298k-6000-1.01": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+        "declaration": "f0368383800ca4fae08518fd063c694f1c6f66ee9f9bb17115f3c38b358722fc",
+        "model_selection": "3c75a464861f17082afab499e521b80c9ca77032d9e06c5d2dfb8981bed1ac49"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-ion-suppression-table3-state-liquid": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+        "declaration": "7bef57edaad5c658baccc8844794ca6a2e9e92537755b0218275ed5f899b62d1",
+        "model_selection": "3c75a464861f17082afab499e521b80c9ca77032d9e06c5d2dfb8981bed1ac49"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-ion-suppression-table3-state-vapor": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+        "declaration": "d7be1b879dd7d85fce0570d459fd74e236185906cef3bde26129f88b568b6d01",
+        "model_selection": "3c75a464861f17082afab499e521b80c9ca77032d9e06c5d2dfb8981bed1ac49"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-ion-suppression-charged-vapor-pending-771": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+        "declaration": "6627c3673e42e77894625284fc8b2a73abc2cc3194407626f01058b21c816c2d",
+        "model_selection": "3c75a464861f17082afab499e521b80c9ca77032d9e06c5d2dfb8981bed1ac49"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-density-temperature-workbook-5": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+        "declaration": "0a095469ccd561712de4a0c4221234de8b7fd81364fa57ef8a5801e130f4d576",
+        "model_selection": "21dd017feca099a38462ec70741007b827078f9e88fd4966ba63d98a77169c4c"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-density-temperature-workbook-6": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+        "declaration": "96c1e3c46a97d0e9d65e176b00a28ee48951d5f7316e7875f02726b19bec6ba7",
+        "model_selection": "21dd017feca099a38462ec70741007b827078f9e88fd4966ba63d98a77169c4c"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-density-temperature-workbook-7": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+        "declaration": "2e9524a9165c2ffd4b5e884c8bc52b14dbb1b77b91cee800c00bb79364f8d17f",
+        "model_selection": "21dd017feca099a38462ec70741007b827078f9e88fd4966ba63d98a77169c4c"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-density-temperature-workbook-8": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+        "declaration": "e8d4b0a10974cf199e9f9cd209bf8f16f75a76394e94957be5f1a3000e02302d",
+        "model_selection": "21dd017feca099a38462ec70741007b827078f9e88fd4966ba63d98a77169c4c"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-density-temperature-workbook-9": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+        "declaration": "d9c54e183d88d56a2d5fa7b960df4ab3cd1d41e264d15b4e4c131ead66244016",
+        "model_selection": "21dd017feca099a38462ec70741007b827078f9e88fd4966ba63d98a77169c4c"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-density-temperature-workbook-10": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+        "declaration": "d9ffdb5ebe736d491957c42de64eb3aa543614d2dcdd308ba67932bbc39577fe",
+        "model_selection": "21dd017feca099a38462ec70741007b827078f9e88fd4966ba63d98a77169c4c"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-density-temperature-workbook-11": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+        "declaration": "327ab38c3e87fed13a2248234326d207c50888abfe363320d5d4f42e8bd4ee02",
+        "model_selection": "21dd017feca099a38462ec70741007b827078f9e88fd4966ba63d98a77169c4c"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-density-temperature-workbook-12": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+        "declaration": "4188cea4d8194f00e889725dc0c4c7fc769ec735d93f9e21fb7a506b66c0bfac",
+        "model_selection": "21dd017feca099a38462ec70741007b827078f9e88fd4966ba63d98a77169c4c"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-density-temperature-workbook-13": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+        "declaration": "520c8aa3d2462b930d912529e5d5865cb56b3f837cb1d6f6d74f98687f09fc0f",
+        "model_selection": "21dd017feca099a38462ec70741007b827078f9e88fd4966ba63d98a77169c4c"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-density-temperature-workbook-14": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+        "declaration": "f4f534a0d230a7da68ed703fbaed7835577c6b4a10bba5d4f8423cf46539f892",
+        "model_selection": "21dd017feca099a38462ec70741007b827078f9e88fd4966ba63d98a77169c4c"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-density-temperature-workbook-15": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+        "declaration": "c129831fc08e248de3a7de8a57bdbeef74d3760144583edf5a0bfa225ffe7ef7",
+        "model_selection": "21dd017feca099a38462ec70741007b827078f9e88fd4966ba63d98a77169c4c"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-density-temperature-workbook-16": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+        "declaration": "de2baa804ed84eeff00f06db03dba072e5f15bdffa7650cc919e5edec6eca524",
+        "model_selection": "21dd017feca099a38462ec70741007b827078f9e88fd4966ba63d98a77169c4c"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-density-temperature-workbook-17": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+        "declaration": "38ab37351922b876d7097d4da619c4af02966f10298f1e21b7114976dfcfd735",
+        "model_selection": "21dd017feca099a38462ec70741007b827078f9e88fd4966ba63d98a77169c4c"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-density-temperature-workbook-18": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+        "declaration": "95cec6d3e9dce85d8627900d6d49f68f3927b441bd1f1e24b04ee7eb09549dc0",
+        "model_selection": "21dd017feca099a38462ec70741007b827078f9e88fd4966ba63d98a77169c4c"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-density-temperature-workbook-19": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+        "declaration": "dfb423759be91f827881ad510796fe39b8b2e3bb16e45295e1e711cb78b37938",
+        "model_selection": "21dd017feca099a38462ec70741007b827078f9e88fd4966ba63d98a77169c4c"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-density-temperature-workbook-20": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+        "declaration": "19a3c1f7d23479dfb3554b070647deb5203803602cdff20e1d096c16dbbba422",
+        "model_selection": "21dd017feca099a38462ec70741007b827078f9e88fd4966ba63d98a77169c4c"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-density-temperature-workbook-21": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+        "declaration": "8e88f978d62fcd3b71b43cf08c8afb303ff296a6fe318f2d1d346134d1a11092",
+        "model_selection": "21dd017feca099a38462ec70741007b827078f9e88fd4966ba63d98a77169c4c"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-density-temperature-workbook-22": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+        "declaration": "ec8865ffae2200a4f35e252975a0f7755b110745d49147f921bb4ef8566c1b1b",
+        "model_selection": "21dd017feca099a38462ec70741007b827078f9e88fd4966ba63d98a77169c4c"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-density-temperature-workbook-23": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+        "declaration": "43151c632ef7590c17e1f5faf819ec2d6bb4522d1113ef083ce6cdedcebcde8a",
+        "model_selection": "21dd017feca099a38462ec70741007b827078f9e88fd4966ba63d98a77169c4c"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-density-temperature-workbook-24": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+        "declaration": "be6bf59e31c122009c6224662a0bcb75e5faf17d4ac43cf0879f2891b8216bd9",
+        "model_selection": "21dd017feca099a38462ec70741007b827078f9e88fd4966ba63d98a77169c4c"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-density-temperature-workbook-25": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+        "declaration": "13979c39b12428b7ac0ba78fe6da61a7b33302cac415eed3a3abd56433632ef7",
+        "model_selection": "21dd017feca099a38462ec70741007b827078f9e88fd4966ba63d98a77169c4c"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-density-temperature-workbook-26": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+        "declaration": "22a274ac94ad94241a192d7b15ccef8691122d27750c2480b548f8acb45c1166",
+        "model_selection": "21dd017feca099a38462ec70741007b827078f9e88fd4966ba63d98a77169c4c"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-density-temperature-workbook-27": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+        "declaration": "b545208cee4e0dd9ba63038e64a99148ba1473e232595d9467843a6cf7f583e6",
+        "model_selection": "21dd017feca099a38462ec70741007b827078f9e88fd4966ba63d98a77169c4c"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-density-temperature-workbook-28": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+        "declaration": "8cc00ba3b4da2b01347e8423b990d4a864a89cd9ee1444177e3ad04f269e43aa",
+        "model_selection": "21dd017feca099a38462ec70741007b827078f9e88fd4966ba63d98a77169c4c"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-density-temperature-table3": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+        "declaration": "7ec45681fa50c15f6cb0893e3c4d02f9573c45a5f93adba424b76d1ec3cb1cbe",
+        "model_selection": "21dd017feca099a38462ec70741007b827078f9e88fd4966ba63d98a77169c4c"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-density-temperature-fig1a-298k-0005-0.99": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+        "declaration": "ec781930ba423ec2181bf40f530b205def917762d0b86f9945c8137eb56b5666",
+        "model_selection": "21dd017feca099a38462ec70741007b827078f9e88fd4966ba63d98a77169c4c"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-density-temperature-fig1a-298k-0005-1.0": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+        "declaration": "6c1f3b1773dcba445879a46b6a0a4db4035ad95e9dc25434d86695c1b833ebe9",
+        "model_selection": "21dd017feca099a38462ec70741007b827078f9e88fd4966ba63d98a77169c4c"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-density-temperature-fig1a-298k-0005-1.01": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+        "declaration": "856c39e34ef0eaba2c28a775414f7c92fe1d0e2b34436fb4d9b8da04baf6b555",
+        "model_selection": "21dd017feca099a38462ec70741007b827078f9e88fd4966ba63d98a77169c4c"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-density-temperature-fig1a-298k-1033-0.99": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+        "declaration": "33ddd442bf0334208f1eff69692103600929e0f5fde9cca988c60bb63265e0b5",
+        "model_selection": "21dd017feca099a38462ec70741007b827078f9e88fd4966ba63d98a77169c4c"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-density-temperature-fig1a-298k-1033-1.0": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+        "declaration": "6084f3b374b93ce83fda44dc58b6bfe7be4854bc8ffb07770814f01fb8bc0b94",
+        "model_selection": "21dd017feca099a38462ec70741007b827078f9e88fd4966ba63d98a77169c4c"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-density-temperature-fig1a-298k-1033-1.01": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+        "declaration": "93ed5b4d2970f06f2984d8dd3b3c13a8a67712d14d3f4415700e274792c9631b",
+        "model_selection": "21dd017feca099a38462ec70741007b827078f9e88fd4966ba63d98a77169c4c"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-density-temperature-fig1a-298k-2173-0.99": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+        "declaration": "f086acb5b1cb3bcdb0b2f5f300b8d25adbe0d389077d02365ce82eaec99793fe",
+        "model_selection": "21dd017feca099a38462ec70741007b827078f9e88fd4966ba63d98a77169c4c"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-density-temperature-fig1a-298k-2173-1.0": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+        "declaration": "e611236dd71edc05767aa063bd39ed2d512436f8393991d56ba5f513c2d9ea26",
+        "model_selection": "21dd017feca099a38462ec70741007b827078f9e88fd4966ba63d98a77169c4c"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-density-temperature-fig1a-298k-2173-1.01": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+        "declaration": "113266cc16b0a6760899c11a168e76ce47c76bcb268b761e801e27204aff72fa",
+        "model_selection": "21dd017feca099a38462ec70741007b827078f9e88fd4966ba63d98a77169c4c"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-density-temperature-fig1a-298k-3506-0.99": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+        "declaration": "c4b130fb53ff525fae5e15e8d81caed0d0e1dab3733233b167d8031749274c55",
+        "model_selection": "21dd017feca099a38462ec70741007b827078f9e88fd4966ba63d98a77169c4c"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-density-temperature-fig1a-298k-3506-1.0": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+        "declaration": "703c3c6d99198973235c4562ff7915fe2fcd379159c2392441c1ffa3b67d0dae",
+        "model_selection": "21dd017feca099a38462ec70741007b827078f9e88fd4966ba63d98a77169c4c"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-density-temperature-fig1a-298k-3506-1.01": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+        "declaration": "e4d598979c39ec8a44bb9b4ee885446283f1c4102fbe8a9bc216328bb37fd7bf",
+        "model_selection": "21dd017feca099a38462ec70741007b827078f9e88fd4966ba63d98a77169c4c"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-density-temperature-fig1a-298k-4798-0.99": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+        "declaration": "9baa8ae7b3bc965bfd23b9570c71ef90ead5fef77ee066f22fe7d1f45f100251",
+        "model_selection": "21dd017feca099a38462ec70741007b827078f9e88fd4966ba63d98a77169c4c"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-density-temperature-fig1a-298k-4798-1.0": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+        "declaration": "2edabcf5f2e1d135c0fe5a3e4c6a9542bf02c75ed622532c7219aeca3201d0a6",
+        "model_selection": "21dd017feca099a38462ec70741007b827078f9e88fd4966ba63d98a77169c4c"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-density-temperature-fig1a-298k-4798-1.01": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+        "declaration": "61b8df9f0a94f7d35a25b2f2b571a495ed530737a7b652699433c5ff382deca1",
+        "model_selection": "21dd017feca099a38462ec70741007b827078f9e88fd4966ba63d98a77169c4c"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-density-temperature-fig1a-298k-5600-0.99": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+        "declaration": "32ba9b87aa54774006bd8d1d525b4073322f148d710345783c61af90b6d81d3d",
+        "model_selection": "21dd017feca099a38462ec70741007b827078f9e88fd4966ba63d98a77169c4c"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-density-temperature-fig1a-298k-5600-1.0": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+        "declaration": "afe3bf88c376f5777397d00abfe54908f478307f5fd0095b8e2631e9d518bbe5",
+        "model_selection": "21dd017feca099a38462ec70741007b827078f9e88fd4966ba63d98a77169c4c"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-density-temperature-fig1a-298k-5600-1.01": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+        "declaration": "a5a8c2c6958a5137fab2d469aaa71537e5e5c070bb3b15cc782f6a3c779af4d5",
+        "model_selection": "21dd017feca099a38462ec70741007b827078f9e88fd4966ba63d98a77169c4c"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-density-temperature-table3-nacl-5600-0.99": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+        "declaration": "b84e2df4832b3a11c9da86b9a091cbf814e8a82096756cb9d6595bac29a3fd64",
+        "model_selection": "21dd017feca099a38462ec70741007b827078f9e88fd4966ba63d98a77169c4c"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-density-temperature-table3-nacl-5600-1.0": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+        "declaration": "8f44e58794854fc34cf20060c0ac54e3319b790c440886dfe412471a9c369340",
+        "model_selection": "21dd017feca099a38462ec70741007b827078f9e88fd4966ba63d98a77169c4c"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-density-temperature-table3-nacl-5600-1.01": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+        "declaration": "f6bde6968bce6f42eaaeaabede4a3202bb391820730065e6064f2622824ef8c8",
+        "model_selection": "21dd017feca099a38462ec70741007b827078f9e88fd4966ba63d98a77169c4c"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-density-temperature-fig1a-298k-6000-0.99": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+        "declaration": "8c890ddb9bc34448e7b5cd11e108e92e76e8cca4f684d4db0f8e758792935aac",
+        "model_selection": "21dd017feca099a38462ec70741007b827078f9e88fd4966ba63d98a77169c4c"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-density-temperature-fig1a-298k-6000-1.0": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+        "declaration": "94f7f3b33d5adbb9256174f52aad66156191403922763e13062cf14e669da590",
+        "model_selection": "21dd017feca099a38462ec70741007b827078f9e88fd4966ba63d98a77169c4c"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-density-temperature-fig1a-298k-6000-1.01": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+        "declaration": "e647c42e49eca00252505752cef5104b639eba4ca65d85cf3519a4421bd306e1",
+        "model_selection": "21dd017feca099a38462ec70741007b827078f9e88fd4966ba63d98a77169c4c"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-density-temperature-table3-state-liquid": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+        "declaration": "674de67bdf6ebfa0ca8a4197839ce6c1f6c660cc29349071003380c815f7cd78",
+        "model_selection": "21dd017feca099a38462ec70741007b827078f9e88fd4966ba63d98a77169c4c"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-density-temperature-table3-state-vapor": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+        "declaration": "2e388985926e140b9861bf9b53e3a9a3e6f376333346a43fbcd6b2da2c6dcad2",
+        "model_selection": "21dd017feca099a38462ec70741007b827078f9e88fd4966ba63d98a77169c4c"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "nacl-density-temperature-charged-vapor-pending-771": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+        "declaration": "15a202bc769d461a75b67e2eb8aef821d208f866e404a47206990652dc76bf96",
+        "model_selection": "21dd017feca099a38462ec70741007b827078f9e88fd4966ba63d98a77169c4c"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "figure3-01": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/reproduction/2025-perdomo/inputs/current/licl-conditional.json": "6f205a55a9e3d19c6107f1f4e4adc802d2b7dc5822a0d16f58e23acd9fea070e",
+        "analyses/reproduction/2025-perdomo/inputs/current/diagnostic-start.json": "6dcdb151c354e0dd05f4f502b9cd19eaf4fe536ddf4d837cb40d79c9ba1790b0",
+        "declaration": "d6f158f4406af8e20812eeae9ab8db038894cfe3d9c772c97407fe3b7554b391",
+        "model_selection": "5ea05300b500c1150735f9b0ed23efeb3cd631cf6c8649450b1c9bca9bf97201"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "figure3-02": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/reproduction/2025-perdomo/inputs/current/licl-conditional.json": "6f205a55a9e3d19c6107f1f4e4adc802d2b7dc5822a0d16f58e23acd9fea070e",
+        "analyses/reproduction/2025-perdomo/inputs/current/diagnostic-start.json": "6dcdb151c354e0dd05f4f502b9cd19eaf4fe536ddf4d837cb40d79c9ba1790b0",
+        "declaration": "6cb2e73d8849411278ec3f9cfbba7d88c93f3b71e15c73ff6893e874922026a0",
+        "model_selection": "5ea05300b500c1150735f9b0ed23efeb3cd631cf6c8649450b1c9bca9bf97201"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "figure3-03": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/reproduction/2025-perdomo/inputs/current/licl-conditional.json": "6f205a55a9e3d19c6107f1f4e4adc802d2b7dc5822a0d16f58e23acd9fea070e",
+        "analyses/reproduction/2025-perdomo/inputs/current/diagnostic-start.json": "6dcdb151c354e0dd05f4f502b9cd19eaf4fe536ddf4d837cb40d79c9ba1790b0",
+        "declaration": "2cabdc11b7a7720feb1c46c6935113746b47a3d4918caafc0a2127aa7963337c",
+        "model_selection": "5ea05300b500c1150735f9b0ed23efeb3cd631cf6c8649450b1c9bca9bf97201"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "figure3-04": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/reproduction/2025-perdomo/inputs/current/licl-conditional.json": "6f205a55a9e3d19c6107f1f4e4adc802d2b7dc5822a0d16f58e23acd9fea070e",
+        "analyses/reproduction/2025-perdomo/inputs/current/diagnostic-start.json": "6dcdb151c354e0dd05f4f502b9cd19eaf4fe536ddf4d837cb40d79c9ba1790b0",
+        "declaration": "4aa9763ef5be98f79764f5111a4324ac38cbfefa75e5993d428c5cbafecc5ec4",
+        "model_selection": "5ea05300b500c1150735f9b0ed23efeb3cd631cf6c8649450b1c9bca9bf97201"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "figure3-05": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/reproduction/2025-perdomo/inputs/current/licl-conditional.json": "6f205a55a9e3d19c6107f1f4e4adc802d2b7dc5822a0d16f58e23acd9fea070e",
+        "analyses/reproduction/2025-perdomo/inputs/current/diagnostic-start.json": "6dcdb151c354e0dd05f4f502b9cd19eaf4fe536ddf4d837cb40d79c9ba1790b0",
+        "declaration": "f690f29417b797220a518067758226ce54d6257cff4abbda17455de91293d05c",
+        "model_selection": "5ea05300b500c1150735f9b0ed23efeb3cd631cf6c8649450b1c9bca9bf97201"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "figure3-06": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/reproduction/2025-perdomo/inputs/current/licl-conditional.json": "6f205a55a9e3d19c6107f1f4e4adc802d2b7dc5822a0d16f58e23acd9fea070e",
+        "analyses/reproduction/2025-perdomo/inputs/current/diagnostic-start.json": "6dcdb151c354e0dd05f4f502b9cd19eaf4fe536ddf4d837cb40d79c9ba1790b0",
+        "declaration": "a627dededeea206a8e2ee21f6707369befd6cb5c8d85d3f3c5dc9cc3147d1bb1",
+        "model_selection": "5ea05300b500c1150735f9b0ed23efeb3cd631cf6c8649450b1c9bca9bf97201"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "figure3-07": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/reproduction/2025-perdomo/inputs/current/licl-conditional.json": "6f205a55a9e3d19c6107f1f4e4adc802d2b7dc5822a0d16f58e23acd9fea070e",
+        "analyses/reproduction/2025-perdomo/inputs/current/diagnostic-start.json": "6dcdb151c354e0dd05f4f502b9cd19eaf4fe536ddf4d837cb40d79c9ba1790b0",
+        "declaration": "ff16ad56d34f6bf4667f1481b35635bace905d1bb280cae19ff98efd4b5879d7",
+        "model_selection": "5ea05300b500c1150735f9b0ed23efeb3cd631cf6c8649450b1c9bca9bf97201"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "figure3-08": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/reproduction/2025-perdomo/inputs/current/licl-conditional.json": "6f205a55a9e3d19c6107f1f4e4adc802d2b7dc5822a0d16f58e23acd9fea070e",
+        "analyses/reproduction/2025-perdomo/inputs/current/diagnostic-start.json": "6dcdb151c354e0dd05f4f502b9cd19eaf4fe536ddf4d837cb40d79c9ba1790b0",
+        "declaration": "55c58138f0b4972338225f4a59f14485cc379a03bdde9bb1b10b17b0fe3c2bae",
+        "model_selection": "5ea05300b500c1150735f9b0ed23efeb3cd631cf6c8649450b1c9bca9bf97201"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "figure3-09": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/reproduction/2025-perdomo/inputs/current/licl-conditional.json": "6f205a55a9e3d19c6107f1f4e4adc802d2b7dc5822a0d16f58e23acd9fea070e",
+        "analyses/reproduction/2025-perdomo/inputs/current/diagnostic-start.json": "6dcdb151c354e0dd05f4f502b9cd19eaf4fe536ddf4d837cb40d79c9ba1790b0",
+        "declaration": "25a30bc37196924437680997de46e35fa7019a318798987ab68d287155e6edd1",
+        "model_selection": "5ea05300b500c1150735f9b0ed23efeb3cd631cf6c8649450b1c9bca9bf97201"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "figure3-10": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/reproduction/2025-perdomo/inputs/current/licl-conditional.json": "6f205a55a9e3d19c6107f1f4e4adc802d2b7dc5822a0d16f58e23acd9fea070e",
+        "analyses/reproduction/2025-perdomo/inputs/current/diagnostic-start.json": "6dcdb151c354e0dd05f4f502b9cd19eaf4fe536ddf4d837cb40d79c9ba1790b0",
+        "declaration": "0c1ae3f6f457714515d1978b51cda790441871a5f592c7c9d919ce5b15ea5005",
+        "model_selection": "5ea05300b500c1150735f9b0ed23efeb3cd631cf6c8649450b1c9bca9bf97201"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "figure3-11": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/reproduction/2025-perdomo/inputs/current/licl-conditional.json": "6f205a55a9e3d19c6107f1f4e4adc802d2b7dc5822a0d16f58e23acd9fea070e",
+        "analyses/reproduction/2025-perdomo/inputs/current/diagnostic-start.json": "6dcdb151c354e0dd05f4f502b9cd19eaf4fe536ddf4d837cb40d79c9ba1790b0",
+        "declaration": "06ff1bf195d573b677af4c1b774edb8d901f300fb52fef1ed6f6939a1618f81c",
+        "model_selection": "5ea05300b500c1150735f9b0ed23efeb3cd631cf6c8649450b1c9bca9bf97201"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "figure3-12": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/reproduction/2025-perdomo/inputs/current/licl-conditional.json": "6f205a55a9e3d19c6107f1f4e4adc802d2b7dc5822a0d16f58e23acd9fea070e",
+        "analyses/reproduction/2025-perdomo/inputs/current/diagnostic-start.json": "6dcdb151c354e0dd05f4f502b9cd19eaf4fe536ddf4d837cb40d79c9ba1790b0",
+        "declaration": "888e7e3d73d098af2ca9b159034ecf9e76275d5762451d4419c8ed46bede2190",
+        "model_selection": "5ea05300b500c1150735f9b0ed23efeb3cd631cf6c8649450b1c9bca9bf97201"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "figure3-13": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/reproduction/2025-perdomo/inputs/current/licl-conditional.json": "6f205a55a9e3d19c6107f1f4e4adc802d2b7dc5822a0d16f58e23acd9fea070e",
+        "analyses/reproduction/2025-perdomo/inputs/current/diagnostic-start.json": "6dcdb151c354e0dd05f4f502b9cd19eaf4fe536ddf4d837cb40d79c9ba1790b0",
+        "declaration": "c90aa2d4b47ee346d359c441e5def5915a0b47ff3f0bc50eba392b9e14dd1269",
+        "model_selection": "5ea05300b500c1150735f9b0ed23efeb3cd631cf6c8649450b1c9bca9bf97201"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "figure3-14": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/reproduction/2025-perdomo/inputs/current/licl-conditional.json": "6f205a55a9e3d19c6107f1f4e4adc802d2b7dc5822a0d16f58e23acd9fea070e",
+        "analyses/reproduction/2025-perdomo/inputs/current/diagnostic-start.json": "6dcdb151c354e0dd05f4f502b9cd19eaf4fe536ddf4d837cb40d79c9ba1790b0",
+        "declaration": "7840751e4471140f916cba59fcd237e42f9addb6f7cdf03b17f7dba14cfb89d7",
+        "model_selection": "5ea05300b500c1150735f9b0ed23efeb3cd631cf6c8649450b1c9bca9bf97201"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "figure3-15": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/reproduction/2025-perdomo/inputs/current/licl-conditional.json": "6f205a55a9e3d19c6107f1f4e4adc802d2b7dc5822a0d16f58e23acd9fea070e",
+        "analyses/reproduction/2025-perdomo/inputs/current/diagnostic-start.json": "6dcdb151c354e0dd05f4f502b9cd19eaf4fe536ddf4d837cb40d79c9ba1790b0",
+        "declaration": "b4fd6a5ae7a622e9972d3260318ff59948e3e711374272e4017568bcbdd5da95",
+        "model_selection": "5ea05300b500c1150735f9b0ed23efeb3cd631cf6c8649450b1c9bca9bf97201"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "figure3-16": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/reproduction/2025-perdomo/inputs/current/licl-conditional.json": "6f205a55a9e3d19c6107f1f4e4adc802d2b7dc5822a0d16f58e23acd9fea070e",
+        "analyses/reproduction/2025-perdomo/inputs/current/diagnostic-start.json": "6dcdb151c354e0dd05f4f502b9cd19eaf4fe536ddf4d837cb40d79c9ba1790b0",
+        "declaration": "b148638f7d4eae0809221cd76b07f369a61d8f6d4c4e2ef3e85869f5ba74e414",
+        "model_selection": "5ea05300b500c1150735f9b0ed23efeb3cd631cf6c8649450b1c9bca9bf97201"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "figure3-17": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/reproduction/2025-perdomo/inputs/current/licl-conditional.json": "6f205a55a9e3d19c6107f1f4e4adc802d2b7dc5822a0d16f58e23acd9fea070e",
+        "analyses/reproduction/2025-perdomo/inputs/current/diagnostic-start.json": "6dcdb151c354e0dd05f4f502b9cd19eaf4fe536ddf4d837cb40d79c9ba1790b0",
+        "declaration": "547a48abe34273c9eab4c7bc1e7046d6887813c11300a8c713586e783064b60a",
+        "model_selection": "5ea05300b500c1150735f9b0ed23efeb3cd631cf6c8649450b1c9bca9bf97201"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "figure3-18": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/reproduction/2025-perdomo/inputs/current/licl-conditional.json": "6f205a55a9e3d19c6107f1f4e4adc802d2b7dc5822a0d16f58e23acd9fea070e",
+        "analyses/reproduction/2025-perdomo/inputs/current/diagnostic-start.json": "6dcdb151c354e0dd05f4f502b9cd19eaf4fe536ddf4d837cb40d79c9ba1790b0",
+        "declaration": "e07521cd02a7bfdb8d31f54a0d8b7e962e4bc5d8b52f44b21ee9e2993b4a1b60",
+        "model_selection": "5ea05300b500c1150735f9b0ed23efeb3cd631cf6c8649450b1c9bca9bf97201"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "figure3-19": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/reproduction/2025-perdomo/inputs/current/licl-conditional.json": "6f205a55a9e3d19c6107f1f4e4adc802d2b7dc5822a0d16f58e23acd9fea070e",
+        "analyses/reproduction/2025-perdomo/inputs/current/diagnostic-start.json": "6dcdb151c354e0dd05f4f502b9cd19eaf4fe536ddf4d837cb40d79c9ba1790b0",
+        "declaration": "1fd1d68deda085594c2148fd3113a8ca74dab54e33654ad8ba4a1c7e241ff132",
+        "model_selection": "5ea05300b500c1150735f9b0ed23efeb3cd631cf6c8649450b1c9bca9bf97201"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "figure3-20": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/reproduction/2025-perdomo/inputs/current/licl-conditional.json": "6f205a55a9e3d19c6107f1f4e4adc802d2b7dc5822a0d16f58e23acd9fea070e",
+        "analyses/reproduction/2025-perdomo/inputs/current/diagnostic-start.json": "6dcdb151c354e0dd05f4f502b9cd19eaf4fe536ddf4d837cb40d79c9ba1790b0",
+        "declaration": "b7adf2d47c2bfb946503287cbd4e69d6c025d1165a6e9f58efa2e45cf4a80325",
+        "model_selection": "5ea05300b500c1150735f9b0ed23efeb3cd631cf6c8649450b1c9bca9bf97201"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "figure3-21": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/reproduction/2025-perdomo/inputs/current/licl-conditional.json": "6f205a55a9e3d19c6107f1f4e4adc802d2b7dc5822a0d16f58e23acd9fea070e",
+        "analyses/reproduction/2025-perdomo/inputs/current/diagnostic-start.json": "6dcdb151c354e0dd05f4f502b9cd19eaf4fe536ddf4d837cb40d79c9ba1790b0",
+        "declaration": "0fbb3f48ee12c4178436f2cf7a670ddafd600df31929f659b92cc630331b092d",
+        "model_selection": "5ea05300b500c1150735f9b0ed23efeb3cd631cf6c8649450b1c9bca9bf97201"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "figure3-22": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/reproduction/2025-perdomo/inputs/current/licl-conditional.json": "6f205a55a9e3d19c6107f1f4e4adc802d2b7dc5822a0d16f58e23acd9fea070e",
+        "analyses/reproduction/2025-perdomo/inputs/current/diagnostic-start.json": "6dcdb151c354e0dd05f4f502b9cd19eaf4fe536ddf4d837cb40d79c9ba1790b0",
+        "declaration": "44a80498247d112471296f6d5119e3af6d3971abfae6c73163ad33fc6295b4a6",
+        "model_selection": "5ea05300b500c1150735f9b0ed23efeb3cd631cf6c8649450b1c9bca9bf97201"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "figure3-23": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/reproduction/2025-perdomo/inputs/current/licl-conditional.json": "6f205a55a9e3d19c6107f1f4e4adc802d2b7dc5822a0d16f58e23acd9fea070e",
+        "analyses/reproduction/2025-perdomo/inputs/current/diagnostic-start.json": "6dcdb151c354e0dd05f4f502b9cd19eaf4fe536ddf4d837cb40d79c9ba1790b0",
+        "declaration": "829477c7350c06bf42669a0b0aae6d2712e302e8e0a33147d8f9389995a46c8f",
+        "model_selection": "5ea05300b500c1150735f9b0ed23efeb3cd631cf6c8649450b1c9bca9bf97201"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "figure3-24": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/reproduction/2025-perdomo/inputs/current/licl-conditional.json": "6f205a55a9e3d19c6107f1f4e4adc802d2b7dc5822a0d16f58e23acd9fea070e",
+        "analyses/reproduction/2025-perdomo/inputs/current/diagnostic-start.json": "6dcdb151c354e0dd05f4f502b9cd19eaf4fe536ddf4d837cb40d79c9ba1790b0",
+        "declaration": "4c4b56f48f32ff697b8208ef2cd928d9d56d7a0a3c74d1f48e95fc3e8b539662",
+        "model_selection": "5ea05300b500c1150735f9b0ed23efeb3cd631cf6c8649450b1c9bca9bf97201"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "figure3-25": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/reproduction/2025-perdomo/inputs/current/licl-conditional.json": "6f205a55a9e3d19c6107f1f4e4adc802d2b7dc5822a0d16f58e23acd9fea070e",
+        "analyses/reproduction/2025-perdomo/inputs/current/diagnostic-start.json": "6dcdb151c354e0dd05f4f502b9cd19eaf4fe536ddf4d837cb40d79c9ba1790b0",
+        "declaration": "a398a4364d57b4fa26c447bfb5897ffc708ea5a9faa04ba093621938ad93da41",
+        "model_selection": "5ea05300b500c1150735f9b0ed23efeb3cd631cf6c8649450b1c9bca9bf97201"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "figure3-26": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/reproduction/2025-perdomo/inputs/current/licl-conditional.json": "6f205a55a9e3d19c6107f1f4e4adc802d2b7dc5822a0d16f58e23acd9fea070e",
+        "analyses/reproduction/2025-perdomo/inputs/current/diagnostic-start.json": "6dcdb151c354e0dd05f4f502b9cd19eaf4fe536ddf4d837cb40d79c9ba1790b0",
+        "declaration": "655dc5441148c61f2056310b4d54875736f88fdad3e759b7a2ce781f73647a95",
+        "model_selection": "5ea05300b500c1150735f9b0ed23efeb3cd631cf6c8649450b1c9bca9bf97201"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "figure3-27": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/reproduction/2025-perdomo/inputs/current/licl-conditional.json": "6f205a55a9e3d19c6107f1f4e4adc802d2b7dc5822a0d16f58e23acd9fea070e",
+        "analyses/reproduction/2025-perdomo/inputs/current/diagnostic-start.json": "6dcdb151c354e0dd05f4f502b9cd19eaf4fe536ddf4d837cb40d79c9ba1790b0",
+        "declaration": "e3c42cab1de4608a2248fcdec9d52a7acafb933c8594dbcc3ec841b3389b066f",
+        "model_selection": "5ea05300b500c1150735f9b0ed23efeb3cd631cf6c8649450b1c9bca9bf97201"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "figure3-28": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/reproduction/2025-perdomo/inputs/current/licl-conditional.json": "6f205a55a9e3d19c6107f1f4e4adc802d2b7dc5822a0d16f58e23acd9fea070e",
+        "analyses/reproduction/2025-perdomo/inputs/current/diagnostic-start.json": "6dcdb151c354e0dd05f4f502b9cd19eaf4fe536ddf4d837cb40d79c9ba1790b0",
+        "declaration": "7dc8d9103e1a28945d8838d138db5c3499ad7d4fb6d3edfdf7693d951c68e862",
+        "model_selection": "5ea05300b500c1150735f9b0ed23efeb3cd631cf6c8649450b1c9bca9bf97201"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "figure3-29": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/reproduction/2025-perdomo/inputs/current/licl-conditional.json": "6f205a55a9e3d19c6107f1f4e4adc802d2b7dc5822a0d16f58e23acd9fea070e",
+        "analyses/reproduction/2025-perdomo/inputs/current/diagnostic-start.json": "6dcdb151c354e0dd05f4f502b9cd19eaf4fe536ddf4d837cb40d79c9ba1790b0",
+        "declaration": "ecc7fe615194d4fec4ec769a6e464dae815be7ec742ae8ffa7396227b5e092f6",
+        "model_selection": "5ea05300b500c1150735f9b0ed23efeb3cd631cf6c8649450b1c9bca9bf97201"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "figure3-30": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/reproduction/2025-perdomo/inputs/current/licl-conditional.json": "6f205a55a9e3d19c6107f1f4e4adc802d2b7dc5822a0d16f58e23acd9fea070e",
+        "analyses/reproduction/2025-perdomo/inputs/current/diagnostic-start.json": "6dcdb151c354e0dd05f4f502b9cd19eaf4fe536ddf4d837cb40d79c9ba1790b0",
+        "declaration": "782e72bab25c848c59bd8914a2317e1ba9a9f4a3eb622b6fa24f53ab6ec7080c",
+        "model_selection": "5ea05300b500c1150735f9b0ed23efeb3cd631cf6c8649450b1c9bca9bf97201"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "figure3-31": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/reproduction/2025-perdomo/inputs/current/licl-conditional.json": "6f205a55a9e3d19c6107f1f4e4adc802d2b7dc5822a0d16f58e23acd9fea070e",
+        "analyses/reproduction/2025-perdomo/inputs/current/diagnostic-start.json": "6dcdb151c354e0dd05f4f502b9cd19eaf4fe536ddf4d837cb40d79c9ba1790b0",
+        "declaration": "0c934f5cef63c140ea9eb87beca7242bdbbcdc0a9d666c1b0e0838787b31c1d4",
+        "model_selection": "5ea05300b500c1150735f9b0ed23efeb3cd631cf6c8649450b1c9bca9bf97201"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "figure3-32": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/reproduction/2025-perdomo/inputs/current/licl-conditional.json": "6f205a55a9e3d19c6107f1f4e4adc802d2b7dc5822a0d16f58e23acd9fea070e",
+        "analyses/reproduction/2025-perdomo/inputs/current/diagnostic-start.json": "6dcdb151c354e0dd05f4f502b9cd19eaf4fe536ddf4d837cb40d79c9ba1790b0",
+        "declaration": "c044c8a71f1d77ea7eca84bc9230abe147e3fb3f9433045f1a4bbb00e780a84e",
+        "model_selection": "5ea05300b500c1150735f9b0ed23efeb3cd631cf6c8649450b1c9bca9bf97201"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "figure3-33": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/reproduction/2025-perdomo/inputs/current/licl-conditional.json": "6f205a55a9e3d19c6107f1f4e4adc802d2b7dc5822a0d16f58e23acd9fea070e",
+        "analyses/reproduction/2025-perdomo/inputs/current/diagnostic-start.json": "6dcdb151c354e0dd05f4f502b9cd19eaf4fe536ddf4d837cb40d79c9ba1790b0",
+        "declaration": "c2383b7722e98fde559c05066676b9079d361e110729db2b466c3c2b4f6c6e11",
+        "model_selection": "5ea05300b500c1150735f9b0ed23efeb3cd631cf6c8649450b1c9bca9bf97201"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "table5-licl-4.58molal-101300": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/reproduction/2025-perdomo/inputs/current/licl-conditional.json": "6f205a55a9e3d19c6107f1f4e4adc802d2b7dc5822a0d16f58e23acd9fea070e",
+        "analyses/reproduction/2025-perdomo/inputs/current/diagnostic-start.json": "6dcdb151c354e0dd05f4f502b9cd19eaf4fe536ddf4d837cb40d79c9ba1790b0",
+        "declaration": "78183a9f542abb60826d09f0a2e137e20baf2eba1b2cd8a2082777cc1df820ec",
+        "model_selection": "5ea05300b500c1150735f9b0ed23efeb3cd631cf6c8649450b1c9bca9bf97201"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "table5-licl-4.58molal-101320": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/reproduction/2025-perdomo/inputs/current/licl-conditional.json": "6f205a55a9e3d19c6107f1f4e4adc802d2b7dc5822a0d16f58e23acd9fea070e",
+        "analyses/reproduction/2025-perdomo/inputs/current/diagnostic-start.json": "6dcdb151c354e0dd05f4f502b9cd19eaf4fe536ddf4d837cb40d79c9ba1790b0",
+        "declaration": "7a00908b387bc855f6aed5893cf2a3bab295b9ebb875ffc82827845f0babfc3f",
+        "model_selection": "5ea05300b500c1150735f9b0ed23efeb3cd631cf6c8649450b1c9bca9bf97201"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "table5-licl-4.58molal-state-aqueous": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/reproduction/2025-perdomo/inputs/current/licl-conditional.json": "6f205a55a9e3d19c6107f1f4e4adc802d2b7dc5822a0d16f58e23acd9fea070e",
+        "declaration": "6e70b86f8d2650b040c9bfba80a90334369f0df9913e22b0b910b13796c47a7d",
+        "model_selection": "5ea05300b500c1150735f9b0ed23efeb3cd631cf6c8649450b1c9bca9bf97201"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "table5-licl-4.58molal-state-organic": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/reproduction/2025-perdomo/inputs/current/licl-conditional.json": "6f205a55a9e3d19c6107f1f4e4adc802d2b7dc5822a0d16f58e23acd9fea070e",
+        "declaration": "e7d19e0a1e599a4f5ffb660a5b8b5b4026518a3692439d3a5e1124239778a070",
+        "model_selection": "5ea05300b500c1150735f9b0ed23efeb3cd631cf6c8649450b1c9bca9bf97201"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "table5-licl-4.95molal-101300": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/reproduction/2025-perdomo/inputs/current/licl-conditional.json": "6f205a55a9e3d19c6107f1f4e4adc802d2b7dc5822a0d16f58e23acd9fea070e",
+        "analyses/reproduction/2025-perdomo/inputs/current/diagnostic-start.json": "6dcdb151c354e0dd05f4f502b9cd19eaf4fe536ddf4d837cb40d79c9ba1790b0",
+        "declaration": "8fc64bbc9e45c0b30c6b6d49de1f1e4b4bece52a8fbb79bbb1790a56940b09dc",
+        "model_selection": "5ea05300b500c1150735f9b0ed23efeb3cd631cf6c8649450b1c9bca9bf97201"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "table5-licl-4.95molal-101320": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/reproduction/2025-perdomo/inputs/current/licl-conditional.json": "6f205a55a9e3d19c6107f1f4e4adc802d2b7dc5822a0d16f58e23acd9fea070e",
+        "analyses/reproduction/2025-perdomo/inputs/current/diagnostic-start.json": "6dcdb151c354e0dd05f4f502b9cd19eaf4fe536ddf4d837cb40d79c9ba1790b0",
+        "declaration": "ee582a0aae9c47fe4ef76cf3fd1fe8a16cc62064e4790449aca02189bb0bfae7",
+        "model_selection": "5ea05300b500c1150735f9b0ed23efeb3cd631cf6c8649450b1c9bca9bf97201"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "table5-licl-4.95molal-state-aqueous": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/reproduction/2025-perdomo/inputs/current/licl-conditional.json": "6f205a55a9e3d19c6107f1f4e4adc802d2b7dc5822a0d16f58e23acd9fea070e",
+        "declaration": "e7fd462846fa7a86f95c2f3658a0bc0d6008568a37625c7a663466bcec73d458",
+        "model_selection": "5ea05300b500c1150735f9b0ed23efeb3cd631cf6c8649450b1c9bca9bf97201"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "table5-licl-4.95molal-state-organic": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/reproduction/2025-perdomo/inputs/current/licl-conditional.json": "6f205a55a9e3d19c6107f1f4e4adc802d2b7dc5822a0d16f58e23acd9fea070e",
+        "declaration": "c4b199de4cfd3975230b2a961314e51144e242338d74d902747716efa6c99768",
+        "model_selection": "5ea05300b500c1150735f9b0ed23efeb3cd631cf6c8649450b1c9bca9bf97201"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "table5-licl-5.74molal-101300": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/reproduction/2025-perdomo/inputs/current/licl-conditional.json": "6f205a55a9e3d19c6107f1f4e4adc802d2b7dc5822a0d16f58e23acd9fea070e",
+        "analyses/reproduction/2025-perdomo/inputs/current/diagnostic-start.json": "6dcdb151c354e0dd05f4f502b9cd19eaf4fe536ddf4d837cb40d79c9ba1790b0",
+        "declaration": "cc5838341cb8bcda75ca283f62a4203a7222f25391145ffd008c0a154039bc8a",
+        "model_selection": "5ea05300b500c1150735f9b0ed23efeb3cd631cf6c8649450b1c9bca9bf97201"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "table5-licl-5.74molal-101320": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/reproduction/2025-perdomo/inputs/current/licl-conditional.json": "6f205a55a9e3d19c6107f1f4e4adc802d2b7dc5822a0d16f58e23acd9fea070e",
+        "analyses/reproduction/2025-perdomo/inputs/current/diagnostic-start.json": "6dcdb151c354e0dd05f4f502b9cd19eaf4fe536ddf4d837cb40d79c9ba1790b0",
+        "declaration": "d3abe27b4fe50ff06ede154e943ac7c64ae346fc52f4cb8ebfdfa7a72cca5794",
+        "model_selection": "5ea05300b500c1150735f9b0ed23efeb3cd631cf6c8649450b1c9bca9bf97201"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "table5-licl-5.74molal-state-aqueous": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/reproduction/2025-perdomo/inputs/current/licl-conditional.json": "6f205a55a9e3d19c6107f1f4e4adc802d2b7dc5822a0d16f58e23acd9fea070e",
+        "declaration": "1bc6833691e271c4b947e4f49a7d765fc41e969c7259f3cfed3c60250e301c41",
+        "model_selection": "5ea05300b500c1150735f9b0ed23efeb3cd631cf6c8649450b1c9bca9bf97201"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    },
+    "table5-licl-5.74molal-state-organic": {
+      "producer_sha256": "74b5152db2dba694d29cda2b134d52af83a1b646a868e9fb6decf69e02d6dc6e",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong-2/.venv/bin/python",
+      "inputs": {
+        "analyses/reproduction/2025-perdomo/inputs/current/criteria.json": "ac7d01d3f32f99180658c217be9caae69ba5fb4728d1de586a523a4948b307e9",
+        "analyses/reproduction/2025-perdomo/inputs/current/licl-conditional.json": "6f205a55a9e3d19c6107f1f4e4adc802d2b7dc5822a0d16f58e23acd9fea070e",
+        "declaration": "2a1377a09a7c70f093d22bb48594828c327da32a13f64b41f55aad15b8dad069",
+        "model_selection": "5ea05300b500c1150735f9b0ed23efeb3cd631cf6c8649450b1c9bca9bf97201"
+      },
+      "engine": [
+        "17e63bd2edea4adfaac1b567535d04e0843c4200",
+        true
+      ]
+    }
+  }
+}

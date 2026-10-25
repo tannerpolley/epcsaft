@@ -1,0 +1,2719 @@
+implementation,id,tier,selection,kind,rep,sample,elapsed_ns,transport_ns,work,julia_compile_enabled,julia_opt_level,phase_work,warm
+Engine,C1-300,T2,complete-block,warm,1,0,7610279,,,,,,
+Engine,C1-300,T2,complete-block,warm,1,1,8214953,,,,,,
+Engine,C1-300,T2,complete-block,warm,1,2,7143490,,,,,,
+Engine,C1-300,T2,complete-block,warm,1,3,8596804,,,,,,
+Engine,C1-300,T2,complete-block,warm,1,4,7160482,,,,,,
+Engine,C1-300,T2,complete-block,warm,1,5,9092316,,,,,,
+Engine,C1-300,T2,complete-block,warm,1,6,6633381,,,,,,
+Engine,C1-300,T2,complete-block,warm,1,7,8915908,,,,,,
+Engine,C1-300,T2,complete-block,warm,1,8,7011194,,,,,,
+Engine,C1-300,T2,complete-block,warm,1,9,8595983,,,,,,
+Engine,C1-300,T2,complete-block,warm,1,10,6017134,,,,,,
+Engine,C1-300,T2,complete-block,warm,1,11,7181681,,,,,,
+Engine,C1-300,T2,complete-block,warm,1,12,7754677,,,,,,
+Engine,C1-300,T2,complete-block,warm,1,13,7237555,,,,,,
+Engine,C1-300,T2,complete-block,warm,1,14,9123955,,,,,,
+Engine,C1-300,T2,complete-block,warm,1,15,9291577,,,,,,
+Engine,C1-300,T2,complete-block,warm,1,16,9026874,,,,,,
+Engine,C1-300,T2,complete-block,warm,1,17,12420287,,,,,,
+Engine,C1-300,T2,complete-block,warm,1,18,9095362,,,,,,
+Engine,C1-300,T2,complete-block,warm,1,19,9755810,,,,,,
+Engine,C1-300,T2,complete-block,warm,1,20,8924433,,,,,,
+Engine,C1-300,T2,complete-block,warm,1,21,11112695,,,,,,
+Engine,C1-300,T2,complete-block,warm,1,22,9876365,,,,,,
+Engine,C1-300,T2,complete-block,warm,1,23,9068020,,,,,,
+Engine,C1-300,T2,complete-block,warm,1,24,9080864,,,,,,
+Engine,C1-300,T2,complete-block,model,1,0,3193341,,,,,,
+Engine,C1-300,T2,complete-block,first-call,1,0,16094002,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,1,0,28464036,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,1,1,28422309,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,1,2,28310831,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,1,3,28726495,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,1,4,28847680,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,1,5,29397703,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,1,6,28993281,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,1,7,28622041,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,1,8,23310619,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,1,9,26264454,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,1,10,20328621,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,1,11,21714990,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,1,12,20667771,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,1,13,20372983,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,1,14,20496053,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,1,15,21644699,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,1,16,25514178,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,1,17,22399083,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,1,18,20645249,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,1,19,21716042,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,1,20,21259553,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,1,21,21604274,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,1,22,21855682,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,1,23,20406115,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,1,24,21990152,,,,,,
+Engine,C2-0.5,T2,complete-block,model,1,0,503967,,,,,,
+Engine,C2-0.5,T2,complete-block,first-call,1,0,98184057,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,1,0,21111397,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,1,1,19822248,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,1,2,19049981,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,1,3,21258611,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,1,4,23251629,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,1,5,36065038,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,1,6,26986778,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,1,7,25510952,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,1,8,25727736,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,1,9,28031712,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,1,10,32583791,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,1,11,36871358,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,1,12,33800145,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,1,13,45015010,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,1,14,98905582,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,1,15,29399958,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,1,16,53127693,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,1,17,26436414,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,1,18,28011275,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,1,19,27249597,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,1,20,26382093,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,1,21,28093237,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,1,22,27137670,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,1,23,25624985,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,1,24,22516281,,,,,,
+Engine,C4-298.15,T2,complete-block,model,1,0,470034,,,,,,
+Engine,C4-298.15,T2,complete-block,first-call,1,0,28077276,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,1,0,29082027,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,1,1,39292543,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,1,2,52657358,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,1,3,24484893,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,1,4,23954487,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,1,5,51044047,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,1,6,30227017,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,1,7,29388447,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,1,8,27081114,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,1,9,24392292,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,1,10,26131828,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,1,11,29221767,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,1,12,71800665,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,1,13,35436449,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,1,14,24948787,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,1,15,28053383,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,1,16,25432256,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,1,17,26433369,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,1,18,28010714,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,1,19,23774001,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,1,20,29810122,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,1,21,27508619,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,1,22,28857369,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,1,23,29818116,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,1,24,24765597,,,,,,
+Engine,C4-323.15,T2,complete-block,model,1,0,264312,,,,,,
+Engine,C4-323.15,T2,complete-block,first-call,1,0,30791136,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,1,0,1605938,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,1,1,2430201,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,1,2,2522142,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,1,3,2685447,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,1,4,2646484,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,1,5,2678864,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,1,6,2630223,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,1,7,2703750,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,1,8,2631907,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,1,9,2772438,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,1,10,2609746,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,1,11,2665469,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,1,12,2600529,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,1,13,2675868,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,1,14,2623051,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,1,15,2650641,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,1,16,2624372,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,1,17,2682030,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,1,18,2297054,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,1,19,2260766,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,1,20,2030357,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,1,21,2477319,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,1,22,2588396,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,1,23,2583016,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,1,24,2614605,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,1,0,9768314,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,1,1,8707831,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,1,2,8997229,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,1,3,9564916,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,1,4,9450553,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,1,5,9314910,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,1,6,9543726,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,1,7,9455933,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,1,8,9438099,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,1,9,10762955,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,1,10,7738427,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,1,11,9605180,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,1,12,9447938,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,1,13,9521525,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,1,14,9519952,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,1,15,9886444,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,1,16,9709324,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,1,17,9614679,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,1,18,8155313,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,1,19,7934572,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,1,20,7189185,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,1,21,8909547,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,1,22,7687172,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,1,23,8515423,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,1,24,5925835,,,,,,
+Engine,C3-sigma-1,T2,complete-block,model,1,0,10219614,,,,,,
+Engine,C3-sigma-1,T2,complete-block,first-call,1,0,2201216,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,1,0,2704803,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,1,1,1999460,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,1,2,2392521,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,1,3,2284230,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,1,4,2651163,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,1,5,1690615,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,1,6,1723015,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,1,7,2225571,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,1,8,2635333,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,1,9,2716554,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,1,10,2338822,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,1,11,2676480,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,1,12,1879457,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,1,13,1669967,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,1,14,1945199,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,1,15,2723036,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,1,16,2655540,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,1,17,2161772,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,1,18,1739376,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,1,19,1794558,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,1,20,1717786,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,1,21,1664748,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,1,22,2000812,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,1,23,2731382,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,1,24,3098455,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,1,0,6396100,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,1,1,8065806,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,1,2,6323114,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,1,3,7902643,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,1,4,8954189,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,1,5,8542674,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,1,6,8435715,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,1,7,9099410,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,1,8,9093729,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,1,9,8567691,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,1,10,7517477,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,1,11,7661494,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,1,12,8177174,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,1,13,7901611,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,1,14,7368179,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,1,15,7955280,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,1,16,6797547,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,1,17,6339604,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,1,18,7707360,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,1,19,6655973,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,1,20,8905228,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,1,21,6386212,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,1,22,7082898,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,1,23,7479055,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,1,24,6800813,,,,,,
+Engine,C3-0.88sigma-1,T2,complete-block,model,1,0,6519239,,,,,,
+Engine,C3-0.88sigma-1,T2,complete-block,first-call,1,0,2529477,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,1,0,14560530,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,1,1,14750864,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,1,2,14368132,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,1,3,15098090,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,1,4,17452189,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,1,5,15414449,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,1,6,15401796,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,1,7,17181496,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,1,8,16514535,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,1,9,16600024,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,1,10,19181998,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,1,11,19699872,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,1,12,19706013,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,1,13,18905414,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,1,14,18979392,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,1,15,18933145,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,1,16,19296712,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,1,17,18367352,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,1,18,18261175,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,1,19,18160227,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,1,20,18297583,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,1,21,18315115,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,1,22,18173061,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,1,23,18784639,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,1,24,18947673,,,,,,
+Engine,C1-gradient,T3,complete-block,model,1,0,1150120,,,,,,
+Engine,C1-gradient,T3,complete-block,first-call,1,0,13565820,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,1,0,54627947,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,1,1,55505880,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,1,2,41902400,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,1,3,50098931,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,1,4,51284576,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,1,5,49975040,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,1,6,50626552,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,1,7,46721055,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,1,8,51448000,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,1,9,55888102,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,1,10,59947414,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,1,11,52320073,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,1,12,51351641,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,1,13,82598477,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,1,14,68878861,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,1,15,64962665,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,1,16,68815444,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,1,17,72419410,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,1,18,65113045,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,1,19,68220256,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,1,20,58853419,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,1,21,55482007,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,1,22,60964607,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,1,23,64486089,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,1,24,70416392,,,,,,
+Engine,C2-gradient,T3,complete-block,model,1,0,403029,,,,,,
+Engine,C2-gradient,T3,complete-block,first-call,1,0,50176494,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,1,0,26610,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,1,1,27781,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,1,2,27522,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,1,3,28133,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,1,4,27882,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,1,5,28463,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,1,6,27842,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,1,7,27311,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,1,8,27260,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,1,9,27251,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,1,10,27782,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,1,11,27341,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,1,12,26960,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,1,13,26830,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,1,14,27071,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,1,15,26369,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,1,16,27110,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,1,17,40335,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,1,18,28122,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,1,19,27881,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,1,20,78205,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,1,21,192047,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,1,22,27701,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,1,23,24266,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,1,24,23393,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,model,1,0,660379,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,first-call,1,0,124782,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,1,0,80360,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,1,1,81051,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,1,2,80720,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,1,3,91761,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,1,4,82394,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,1,5,86140,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,1,6,80841,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,1,7,80319,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,1,8,79868,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,1,9,188661,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,1,10,82884,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,1,11,79638,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,1,12,80400,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,1,13,88154,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,1,14,81301,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,1,15,78827,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,1,16,81431,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,1,17,79007,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,1,18,78856,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,1,19,89396,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,1,20,82374,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,1,21,187939,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,1,22,81762,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,1,23,80781,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,1,24,90979,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,model,1,0,557627,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,first-call,1,0,208608,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,1,0,148647,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,1,1,263390,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,1,2,148686,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,1,3,145461,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,1,4,144780,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,1,5,143627,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,1,6,143918,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,1,7,154859,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,1,8,243674,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,1,9,150370,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,1,10,146262,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,1,11,143507,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,1,12,143166,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,1,13,154448,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,1,14,144549,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,1,15,242772,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,1,16,147123,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,1,17,144699,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,1,18,144269,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,1,19,154267,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,1,20,145551,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,1,21,142886,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,1,22,257079,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,1,23,152594,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,1,24,146803,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,model,1,0,941332,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,first-call,1,0,267377,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,1,0,144238,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,1,1,143306,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,1,2,143157,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,1,3,270263,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,1,4,147424,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,1,5,146804,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,1,6,147103,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,1,7,143637,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,1,8,143637,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,1,9,144139,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,1,10,288106,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,1,11,148076,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,1,12,143227,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,1,13,148136,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,1,14,146763,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,1,15,144700,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,1,16,155349,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,1,17,250266,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,1,18,797894,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,1,19,154047,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,1,20,262559,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,1,21,152033,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,1,22,146392,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,1,23,161270,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,1,24,161580,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,model,1,0,1295571,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,first-call,1,0,276925,,,,,,
+Engine,Engine-import,import,complete-block,import,1,0,64893482,,,,,,
+FeOs,C1-300,T2,cold,model,1,0,19754324,0,saturation,,,,
+FeOs,C1-300,T2,cold,first-call,1,0,10709746,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,1,0,53790,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,1,1,50324,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,1,2,49813,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,1,3,47208,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,1,4,47609,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,1,5,59090,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,1,6,49392,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,1,7,47679,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,1,8,45875,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,1,9,46686,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,1,10,51455,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,1,11,47488,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,1,12,46216,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,1,13,52027,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,1,14,46827,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,1,15,610997,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,1,16,70982,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,1,17,48631,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,1,18,45986,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,1,19,46957,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,1,20,47478,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,1,21,45094,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,1,22,45525,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,1,23,45355,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,1,24,44853,0,saturation,,,,
+FeOs,C2-0.5,T2,cold,model,1,0,4370041,0,bubble,,,,
+FeOs,C2-0.5,T2,cold,first-call,1,0,4281836,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,1,0,788056,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,1,1,3828232,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,1,2,935361,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,1,3,759703,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,1,4,784620,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,1,5,2907700,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,1,6,2162563,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,1,7,807542,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,1,8,794298,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,1,9,3939880,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,1,10,834983,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,1,11,769482,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,1,12,786363,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,1,13,3894706,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,1,14,802473,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,1,15,3895428,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,1,16,807302,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,1,17,762799,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,1,18,2093636,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,1,19,785632,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,1,20,2947534,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,1,21,4520991,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,1,22,816709,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,1,23,884957,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,1,24,780663,0,bubble,,,,
+FeOs,C4-298.15,T2,cold,model,1,0,166399,0,lle,,,,
+FeOs,C4-298.15,T2,cold,first-call,1,0,74571775,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,1,0,34869647,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,1,1,50626944,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,1,2,74417859,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,1,3,67840120,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,1,4,61630958,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,1,5,63473506,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,1,6,66686494,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,1,7,55667251,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,1,8,38974464,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,1,9,34671899,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,1,10,30183438,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,1,11,24542943,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,1,12,27513190,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,1,13,26364362,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,1,14,27387186,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,1,15,27855477,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,1,16,23928761,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,1,17,25515413,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,1,18,23555136,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,1,19,34955637,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,1,20,33466747,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,1,21,30387078,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,1,22,24172505,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,1,23,24145674,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,1,24,27395040,0,lle,,,,
+FeOs,C4-323.15,T2,cold,first-call,1,0,9504694,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,1,0,11819441,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,1,1,11182736,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,1,2,13020786,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,1,3,10472555,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,1,4,9864203,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,1,5,11207102,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,1,6,12245694,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,1,7,9757845,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,1,8,13232189,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,1,9,11848335,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,1,10,12654505,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,1,11,10610562,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,1,12,10972545,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,1,13,13403328,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,1,14,11509214,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,1,15,9417422,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,1,16,9977444,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,1,17,12512290,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,1,18,10216899,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,1,19,8232207,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,1,20,9595533,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,1,21,10122865,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,1,22,12514374,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,1,23,11406643,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,1,24,9823106,0,lle,,,,
+FeOs,C3-0.88sigma-1,T2,cold,model,1,0,1211905,0,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,cold,first-call,1,0,383363324,376114517,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,1,0,420923,113371,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,1,1,362304,88585,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,1,2,468141,113852,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,1,3,450909,127557,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,1,4,338730,85318,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,1,5,379466,109574,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,1,6,422596,111998,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,1,7,422286,102541,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,1,8,498648,98453,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,1,9,420723,91781,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,1,10,399904,102441,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,1,11,412467,99355,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,1,12,393422,96289,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,1,13,314175,83946,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,1,14,334412,85480,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,1,15,294819,74128,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,1,16,280862,71684,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,1,17,279921,72255,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,1,18,301190,70852,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,1,19,290921,85980,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,1,20,281283,67436,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,1,21,295750,76562,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,1,22,288968,74148,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,1,23,281344,73336,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,1,24,459425,103824,activity+Julia contraction/transport,,,,
+FeOs,C1-gradient,T3,cold,first-call,1,0,3350714,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,1,0,12132,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,1,1,10569,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,1,2,9979,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,1,3,10058,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,1,4,9568,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,1,5,9939,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,1,6,9668,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,1,7,9507,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,1,8,9497,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,1,9,9648,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,1,10,9568,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,1,11,9518,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,1,12,9738,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,1,13,9548,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,1,14,17602,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,1,15,10419,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,1,16,9778,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,1,17,9738,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,1,18,9588,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,1,19,9518,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,1,20,10008,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,1,21,9848,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,1,22,9558,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,1,23,9447,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,1,24,10369,0,gradient,,,,
+FeOs,C2-gradient,T3,cold,first-call,1,0,10690320,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,1,0,1229628,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,1,1,838079,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,1,2,868255,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,1,3,1020819,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,1,4,1720822,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,1,5,1518245,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,1,6,1263461,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,1,7,1278599,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,1,8,1134972,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,1,9,1482728,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,1,10,879997,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,1,11,848098,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,1,12,1061586,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,1,13,908320,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,1,14,992958,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,1,15,836897,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,1,16,834724,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,1,17,816870,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,1,18,1123150,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,1,19,1277898,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,1,20,1508677,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,1,21,979242,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,1,22,1152133,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,1,23,1676339,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,1,24,1607922,0,gradient,,,,
+FeOs,C1-300-common-liquid,T1,cold,first-call,1,0,257158,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,1,0,95518,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,1,1,88886,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,1,2,89536,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,1,3,93063,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,1,4,89667,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,1,5,100247,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,1,6,96710,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,1,7,92533,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,1,8,82263,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,1,9,76502,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,1,10,68949,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,1,11,61063,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,1,12,58879,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,1,13,58148,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,1,14,57356,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,1,15,57658,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,1,16,56786,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,1,17,65952,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,1,18,57607,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,1,19,56124,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,1,20,56265,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,1,21,55403,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,1,22,56084,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,1,23,56535,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,1,24,62506,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,cold,first-call,1,0,104044,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,1,0,67696,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,1,1,75320,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,1,2,72956,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,1,3,68107,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,1,4,77313,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,1,5,71683,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,1,6,66444,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,1,7,172471,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,1,8,109413,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,1,9,86220,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,1,10,69018,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,1,11,65782,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,1,12,63538,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,1,13,63678,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,1,14,64861,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,1,15,71593,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,1,16,69579,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,1,17,65372,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,1,18,64279,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,1,19,80820,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,1,20,69900,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,1,21,68929,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,1,22,65261,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,1,23,77474,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,1,24,68798,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,cold,first-call,1,0,125864,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,1,0,77535,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,1,1,80320,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,1,2,72835,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,1,3,130082,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,1,4,90639,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,1,5,78095,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,1,6,75851,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,1,7,100186,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,1,8,90258,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,1,9,75590,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,1,10,74047,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,1,11,89126,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,1,12,82824,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,1,13,109063,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,1,14,110074,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,1,15,110255,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,1,16,107379,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,1,17,107059,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,1,18,110766,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,1,19,105647,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,1,20,119162,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,1,21,110125,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,1,22,106458,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,1,23,115555,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,1,24,128580,0,State+ar/Z/lnphi,,,,
+FeOs,FeOs-import,setup,cold,import,1,0,186470645,0,import,,,,
+Clapeyron,C1-300,model,C1,,1,0,60444462623,,,1,2,model construction,cold
+Clapeyron,C1-300,T2,C1,,1,0,142501144098,,,1,2,first case-output call,cold
+Clapeyron,C1-300,T2,C1,,1,1,30898,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,1,2,57117,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,1,3,57688,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,1,4,56655,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,1,5,65231,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,1,6,55203,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,1,7,52959,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,1,8,54812,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,1,9,53099,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,1,10,70081,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,1,11,36428,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,1,12,32401,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,1,13,44604,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,1,14,40595,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,1,15,32841,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,1,16,59802,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,1,17,62827,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,1,18,65141,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,1,19,62587,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,1,20,60452,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,1,21,64310,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,1,22,62847,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,1,23,65913,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,1,24,308815,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,1,25,61134,,,1,2,saturation,warm
+Clapeyron,C2-0.5,model,C2,,1,0,263291628,,,1,2,model construction,cold
+Clapeyron,C2-0.5,T2,C2,,1,0,126709412499,,,1,2,first case-output call,cold
+Clapeyron,C2-0.5,T2,C2,,1,1,280353,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,1,2,274422,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,1,3,285653,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,1,4,334974,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,1,5,301532,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,1,6,329354,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,1,7,349101,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,1,8,293276,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,1,9,296052,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,1,10,279271,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,1,11,277838,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,1,12,292656,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,1,13,308405,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,1,14,236070,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,1,15,239646,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,1,16,314717,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,1,17,222164,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,1,18,163825,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,1,19,155620,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,1,20,155109,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,1,21,173564,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,1,22,153416,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,1,23,151161,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,1,24,151813,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,1,25,149548,,,1,2,bubble,warm
+Clapeyron,C4-298.15,model,C4,,1,0,1205247,,,1,2,model construction,cold
+Clapeyron,C4-298.15,T2,C4,,1,0,72632723426,,,1,2,first case-output call,cold
+Clapeyron,C4-298.15,T2,C4,,1,1,1081066,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,1,2,1075185,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,1,3,982663,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,1,4,983904,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,1,5,1028468,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,1,6,923953,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,1,7,954490,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,1,8,985278,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,1,9,970099,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,1,10,993653,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,1,11,925857,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,1,12,959479,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,1,13,1016035,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,1,14,1094291,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,1,15,996247,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,1,16,1057271,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,1,17,1026363,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,1,18,991068,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,1,19,1002579,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,1,20,981851,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,1,21,946115,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,1,22,930365,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,1,23,950272,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,1,24,1004944,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,1,25,945042,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,1,0,1177496,,,1,2,first case-output call,cold
+Clapeyron,C4-323.15,T2,C4,,1,1,1218572,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,1,2,1286459,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,1,3,1204977,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,1,4,1198865,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,1,5,1183256,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,1,6,1150836,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,1,7,1093579,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,1,8,1138703,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,1,9,1116982,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,1,10,1291098,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,1,11,1186682,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,1,12,1163219,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,1,13,1123515,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,1,14,1173238,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,1,15,1131110,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,1,16,1129055,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,1,17,1131850,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,1,18,1131861,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,1,19,1138703,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,1,20,1153521,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,1,21,1117604,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,1,22,1120189,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,1,23,1149053,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,1,24,1181163,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,1,25,1240283,,,1,2,lle,warm
+Clapeyron,C3-sigma-1,model,sigma,,1,0,638589833,,,1,2,model construction,cold
+Clapeyron,C3-sigma-1,T2,sigma,,1,0,149946411574,,,1,2,first case-output call,cold
+Clapeyron,C3-sigma-1,T2,sigma,,1,1,90419,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,1,2,88174,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,1,3,91921,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,1,4,89077,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,1,5,84528,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,1,6,93234,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,1,7,84297,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,1,8,101460,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,1,9,77054,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,1,10,76332,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,1,11,67216,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,1,12,89487,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,1,13,88825,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,1,14,88134,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,1,15,85860,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,1,16,85450,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,1,17,78767,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,1,18,108883,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,1,19,86501,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,1,20,88425,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,1,21,89577,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,1,22,87113,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,1,23,79078,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,1,24,90129,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,1,25,92774,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,model,0.88sigma,,1,0,53459175,,,1,2,model construction,cold
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,1,0,48247750947,,,1,2,first case-output call,cold
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,1,1,61916,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,1,2,67867,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,1,3,74710,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,1,4,70501,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,1,5,89076,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,1,6,91420,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,1,7,75591,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,1,8,67846,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,1,9,64110,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,1,10,65011,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,1,11,67516,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,1,12,68247,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,1,13,66434,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,1,14,65061,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,1,15,61235,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,1,16,64961,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,1,17,78025,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,1,18,65503,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,1,19,63699,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,1,20,63088,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,1,21,65101,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,1,22,64861,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,1,23,61875,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,1,24,65943,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,1,25,63088,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C1-300-common-liquid,T1,C1,,1,0,1160425651,,,1,2,first case-output call,cold
+Clapeyron,C1-300-common-liquid,T1,C1,,1,1,4729,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,1,2,5290,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,1,3,4899,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,1,4,5751,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,1,5,6212,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,1,6,6453,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,1,7,9067,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,1,8,6883,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,1,9,5310,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,1,10,5641,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,1,11,5921,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,1,12,3747,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,1,13,3777,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,1,14,4018,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,1,15,3386,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,1,16,4499,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,1,17,3346,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,1,18,2966,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,1,19,2615,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,1,20,2836,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,1,21,3657,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,1,22,3126,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,1,23,3617,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,1,24,3256,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,1,25,3106,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,1,0,95128,,,1,2,first case-output call,cold
+Clapeyron,C2-0.5-common-liquid,T1,C2,,1,1,3997,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,1,2,5591,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,1,3,8676,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,1,4,7794,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,1,5,9027,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,1,6,4258,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,1,7,4218,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,1,8,4148,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,1,9,3326,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,1,10,3566,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,1,11,3626,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,1,12,4228,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,1,13,3256,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,1,14,3377,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,1,15,3386,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,1,16,3687,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,1,17,3717,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,1,18,3967,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,1,19,3657,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,1,20,4849,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,1,21,3437,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,1,22,4178,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,1,23,3336,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,1,24,3496,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,1,25,3526,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,1,0,79759,,,1,2,first case-output call,cold
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,1,1,8065,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,1,2,10550,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,1,3,8606,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,1,4,11151,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,1,5,9418,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,1,6,10230,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,1,7,5961,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,1,8,4739,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,1,9,4448,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,1,10,4449,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,1,11,4960,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,1,12,4519,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,1,13,4588,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,1,14,4759,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,1,15,5019,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,1,16,5179,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,1,17,4549,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,1,18,4318,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,1,19,4939,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,1,20,4228,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,1,21,4388,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,1,22,4749,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,1,23,4328,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,1,24,4579,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,1,25,4459,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,1,0,37731,,,1,2,first case-output call,cold
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,1,1,9488,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,1,2,15499,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,1,3,12875,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,1,4,13185,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,1,5,11030,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,1,6,15448,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,1,7,12594,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,1,8,13114,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,1,9,13015,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,1,10,13294,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,1,11,11782,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,1,12,10840,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,1,13,8726,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,1,14,9317,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,1,15,5630,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,1,16,6362,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,1,17,13836,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,1,18,7654,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,1,19,7243,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,1,20,11081,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,1,21,5470,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,1,22,5029,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,1,23,11942,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,1,24,10640,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,1,25,26139,,,1,2,fixed,warm
+Clapeyron,Julia-import,import,all,,1,0,1749281841,,,1,2,"JSON, LinearAlgebra, Clapeyron, ForwardDiff imports",cold
+Engine,C1-300,T2,complete-block,warm,2,0,8237761,,,,,,
+Engine,C1-300,T2,complete-block,warm,2,1,8539343,,,,,,
+Engine,C1-300,T2,complete-block,warm,2,2,8485343,,,,,,
+Engine,C1-300,T2,complete-block,warm,2,3,8889507,,,,,,
+Engine,C1-300,T2,complete-block,warm,2,4,8320084,,,,,,
+Engine,C1-300,T2,complete-block,warm,2,5,8517693,,,,,,
+Engine,C1-300,T2,complete-block,warm,2,6,8146010,,,,,,
+Engine,C1-300,T2,complete-block,warm,2,7,7813699,,,,,,
+Engine,C1-300,T2,complete-block,warm,2,8,8249152,,,,,,
+Engine,C1-300,T2,complete-block,warm,2,9,8355731,,,,,,
+Engine,C1-300,T2,complete-block,warm,2,10,8327839,,,,,,
+Engine,C1-300,T2,complete-block,warm,2,11,8215139,,,,,,
+Engine,C1-300,T2,complete-block,warm,2,12,8070308,,,,,,
+Engine,C1-300,T2,complete-block,warm,2,13,8261826,,,,,,
+Engine,C1-300,T2,complete-block,warm,2,14,8517031,,,,,,
+Engine,C1-300,T2,complete-block,warm,2,15,8615375,,,,,,
+Engine,C1-300,T2,complete-block,warm,2,16,8976780,,,,,,
+Engine,C1-300,T2,complete-block,warm,2,17,10324164,,,,,,
+Engine,C1-300,T2,complete-block,warm,2,18,9750082,,,,,,
+Engine,C1-300,T2,complete-block,warm,2,19,9545141,,,,,,
+Engine,C1-300,T2,complete-block,warm,2,20,9704778,,,,,,
+Engine,C1-300,T2,complete-block,warm,2,21,9547104,,,,,,
+Engine,C1-300,T2,complete-block,warm,2,22,8562887,,,,,,
+Engine,C1-300,T2,complete-block,warm,2,23,8248421,,,,,,
+Engine,C1-300,T2,complete-block,warm,2,24,8694874,,,,,,
+Engine,C1-300,T2,complete-block,model,2,0,1972620,,,,,,
+Engine,C1-300,T2,complete-block,first-call,2,0,18941924,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,2,0,27448756,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,2,1,26897437,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,2,2,28310193,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,2,3,27863490,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,2,4,27738517,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,2,5,27511513,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,2,6,27878347,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,2,7,28437080,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,2,8,27718439,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,2,9,28031844,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,2,10,28136118,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,2,11,25821149,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,2,12,27092270,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,2,13,27984425,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,2,14,26916423,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,2,15,20342787,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,2,16,21415568,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,2,17,24638111,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,2,18,23644708,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,2,19,18129437,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,2,20,19189235,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,2,21,20297062,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,2,22,22645153,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,2,23,23551815,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,2,24,20971911,,,,,,
+Engine,C2-0.5,T2,complete-block,model,2,0,340776,,,,,,
+Engine,C2-0.5,T2,complete-block,first-call,2,0,26863754,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,2,0,23219425,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,2,1,22282025,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,2,2,21316253,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,2,3,23711563,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,2,4,22402059,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,2,5,19087645,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,2,6,22940384,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,2,7,24565346,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,2,8,23799858,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,2,9,23581220,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,2,10,23304213,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,2,11,20576383,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,2,12,21026964,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,2,13,22847270,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,2,14,21329458,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,2,15,23881731,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,2,16,25079465,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,2,17,24637270,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,2,18,21488084,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,2,19,19517878,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,2,20,21002357,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,2,21,20421364,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,2,22,21849148,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,2,23,18753041,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,2,24,21999508,,,,,,
+Engine,C4-298.15,T2,complete-block,model,2,0,480286,,,,,,
+Engine,C4-298.15,T2,complete-block,first-call,2,0,24945144,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,2,0,23138293,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,2,1,21477213,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,2,2,21329608,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,2,3,21436568,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,2,4,20814558,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,2,5,21024720,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,2,6,22807667,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,2,7,23524444,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,2,8,25766437,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,2,9,27294548,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,2,10,27230038,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,2,11,21763678,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,2,12,21401252,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,2,13,20419891,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,2,14,20201043,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,2,15,19752376,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,2,16,19791729,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,2,17,20082772,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,2,18,20064859,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,2,19,22440912,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,2,20,24822005,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,2,21,18904634,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,2,22,20154075,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,2,23,19247123,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,2,24,23263337,,,,,,
+Engine,C4-323.15,T2,complete-block,model,2,0,378407,,,,,,
+Engine,C4-323.15,T2,complete-block,first-call,2,0,23935391,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,2,0,1679694,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,2,1,1822060,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,2,2,2529711,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,2,3,2041690,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,2,4,2504644,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,2,5,2343863,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,2,6,2139151,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,2,7,2485928,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,2,8,2423342,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,2,9,2319889,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,2,10,1727473,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,2,11,1570169,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,2,12,1897841,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,2,13,1578485,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,2,14,1572995,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,2,15,1537529,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,2,16,1564349,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,2,17,1803144,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,2,18,1836667,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,2,19,1573106,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,2,20,1753422,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,2,21,1878205,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,2,22,1720560,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,2,23,1767548,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,2,24,2082706,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,2,0,6747530,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,2,1,7585364,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,2,2,6772547,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,2,3,8050832,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,2,4,8863999,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,2,5,8408649,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,2,6,9416930,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,2,7,9677837,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,2,8,9455392,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,2,9,9174589,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,2,10,9774207,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,2,11,8540064,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,2,12,8559621,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,2,13,9323677,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,2,14,7932562,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,2,15,6317678,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,2,16,8148314,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,2,17,9214593,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,2,18,9016604,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,2,19,7687924,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,2,20,6377660,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,2,21,7739731,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,2,22,7700368,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,2,23,8258109,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,2,24,8151239,,,,,,
+Engine,C3-sigma-1,T2,complete-block,model,2,0,6904212,,,,,,
+Engine,C3-sigma-1,T2,complete-block,first-call,2,0,2601985,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,2,0,2719654,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,2,1,2540691,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,2,2,2629316,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,2,3,2091903,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,2,4,1655409,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,2,5,1921134,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,2,6,1717084,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,2,7,2542293,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,2,8,2708133,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,2,9,2638062,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,2,10,1800830,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,2,11,1639048,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,2,12,1868988,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,2,13,1662382,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,2,14,1661229,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,2,15,1768069,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,2,16,1996385,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,2,17,2609840,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,2,18,2628303,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,2,19,1980255,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,2,20,1862044,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,2,21,1759032,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,2,22,2031731,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,2,23,2741696,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,2,24,2603387,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,2,0,6892802,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,2,1,8424600,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,2,2,8488999,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,2,3,8997158,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,2,4,9832606,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,2,5,9843286,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,2,6,8465456,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,2,7,9212670,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,2,8,8986478,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,2,9,9185840,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,2,10,9508532,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,2,11,9258004,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,2,12,10862188,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,2,13,9207380,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,2,14,9012797,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,2,15,9235393,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,2,16,8974566,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,2,17,7728872,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,2,18,8653386,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,2,19,9156515,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,2,20,8715793,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,2,21,9088669,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,2,22,9263625,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,2,23,15684947,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,2,24,14794525,,,,,,
+Engine,C3-0.88sigma-1,T2,complete-block,model,2,0,7102993,,,,,,
+Engine,C3-0.88sigma-1,T2,complete-block,first-call,2,0,2827516,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,2,0,37313332,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,2,1,35511791,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,2,2,47229695,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,2,3,114719824,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,2,4,29480447,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,2,5,228567611,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,2,6,30807614,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,2,7,29534318,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,2,8,30954608,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,2,9,35126843,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,2,10,32206524,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,2,11,25197936,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,2,12,29002085,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,2,13,132834955,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,2,14,18730228,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,2,15,18900757,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,2,16,27172971,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,2,17,32143115,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,2,18,31646309,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,2,19,19972416,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,2,20,18589115,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,2,21,18910766,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,2,22,18762910,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,2,23,18513364,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,2,24,19753418,,,,,,
+Engine,C1-gradient,T3,complete-block,model,2,0,578850,,,,,,
+Engine,C1-gradient,T3,complete-block,first-call,2,0,29496157,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,2,0,96843139,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,2,1,98047136,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,2,2,130302250,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,2,3,135304594,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,2,4,72901346,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,2,5,192948441,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,2,6,59007141,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,2,7,61331077,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,2,8,57924772,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,2,9,49693333,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,2,10,58948472,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,2,11,60258717,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,2,12,53164480,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,2,13,58762245,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,2,14,48920841,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,2,15,46526734,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,2,16,61564813,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,2,17,53638494,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,2,18,53741266,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,2,19,52757760,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,2,20,50880007,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,2,21,53672287,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,2,22,55005174,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,2,23,55667800,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,2,24,54979095,,,,,,
+Engine,C2-gradient,T3,complete-block,model,2,0,547281,,,,,,
+Engine,C2-gradient,T3,complete-block,first-call,2,0,66061945,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,2,0,25237,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,2,1,24876,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,2,2,24345,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,2,3,26900,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,2,4,28262,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,2,5,26900,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,2,6,25007,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,2,7,25217,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,2,8,26509,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,2,9,27912,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,2,10,26048,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,2,11,27892,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,2,12,24466,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,2,13,24205,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,2,14,36608,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,2,15,25477,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,2,16,21941,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,2,17,21731,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,2,18,21300,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,2,19,23193,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,2,20,40666,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,2,21,27982,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,2,22,28454,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,2,23,25247,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,2,24,25417,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,model,2,0,493370,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,first-call,2,0,107080,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,2,0,78787,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,2,1,80451,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,2,2,80290,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,2,3,82774,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,2,4,77765,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,2,5,79058,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,2,6,78356,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,2,7,82464,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,2,8,78026,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,2,9,77515,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,2,10,77265,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,2,11,101439,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,2,12,81252,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,2,13,78346,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,2,14,79980,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,2,15,79999,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,2,16,78987,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,2,17,76153,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,2,18,79308,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,2,19,86973,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,2,20,75962,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,2,21,72796,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,2,22,75170,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,2,23,86802,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,2,24,74309,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,model,2,0,228978,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,first-call,2,0,139951,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,2,0,160940,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,2,1,148998,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,2,2,146623,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,2,3,131135,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,2,4,142385,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,2,5,145131,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,2,6,156152,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,2,7,141995,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,2,8,141685,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,2,9,141343,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,2,10,142816,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,2,11,144429,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,2,12,144199,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,2,13,157364,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,2,14,143348,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,2,15,130424,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,2,16,124883,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,2,17,122959,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,2,18,122419,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,2,19,119904,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,2,20,123039,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,2,21,161761,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,2,22,123831,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,2,23,121166,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,2,24,121287,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,model,2,0,844696,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,first-call,2,0,289911,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,2,0,122930,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,2,1,142255,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,2,2,140002,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,2,3,148387,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,2,4,143097,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,2,5,153727,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,2,6,143537,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,2,7,141855,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,2,8,143527,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,2,9,96200,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,2,10,144600,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,2,11,142335,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,2,12,154449,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,2,13,146303,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,2,14,139610,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,2,15,137827,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,2,16,141364,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,2,17,143708,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,2,18,141865,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,2,19,155119,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,2,20,140782,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,2,21,144780,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,2,22,141464,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,2,23,141234,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,2,24,151453,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,model,2,0,877898,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,first-call,2,0,216604,,,,,,
+Engine,Engine-import,import,complete-block,import,2,0,89284694,,,,,,
+FeOs,C1-300,T2,cold,model,2,0,4882661,0,saturation,,,,
+FeOs,C1-300,T2,cold,first-call,2,0,1167349,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,2,0,51867,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,2,1,55103,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,2,2,56335,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,2,3,49633,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,2,4,47348,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,2,5,48000,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,2,6,52668,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,2,7,52839,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,2,8,50014,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,2,9,51266,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,2,10,1084163,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,2,11,64039,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,2,12,56685,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,2,13,65482,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,2,14,57728,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,2,15,47809,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,2,16,45074,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,2,17,44523,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,2,18,50965,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,2,19,53059,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,2,20,47469,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,2,21,51616,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,2,22,50354,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,2,23,51556,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,2,24,49302,0,saturation,,,,
+FeOs,C2-0.5,T2,cold,model,2,0,1269288,0,bubble,,,,
+FeOs,C2-0.5,T2,cold,first-call,2,0,1515397,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,2,0,759688,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,2,1,775928,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,2,2,784715,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,2,3,769736,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,2,4,761111,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,2,5,2713593,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,2,6,869743,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,2,7,814009,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,2,8,803389,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,2,9,1378974,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,2,10,2561799,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,2,11,1511821,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,2,12,833555,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,2,13,969088,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,2,14,1795751,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,2,15,2278301,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,2,16,840969,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,2,17,1148262,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,2,18,1777968,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,2,19,1738593,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,2,20,1077741,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,2,21,1258628,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,2,22,1431711,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,2,23,1510840,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,2,24,1618470,0,bubble,,,,
+FeOs,C4-298.15,T2,cold,model,2,0,239046,0,lle,,,,
+FeOs,C4-298.15,T2,cold,first-call,2,0,48805006,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,2,0,40923519,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,2,1,58623585,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,2,2,45806480,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,2,3,48423924,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,2,4,52221020,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,2,5,43112764,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,2,6,39811464,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,2,7,40284897,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,2,8,34268161,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,2,9,45583795,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,2,10,46758246,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,2,11,43109207,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,2,12,56435403,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,2,13,71064249,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,2,14,69041074,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,2,15,68581085,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,2,16,71880161,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,2,17,39671283,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,2,18,37604477,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,2,19,28199919,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,2,20,27176318,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,2,21,23802664,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,2,22,25559451,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,2,23,23163691,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,2,24,33304623,0,lle,,,,
+FeOs,C4-323.15,T2,cold,first-call,2,0,11902068,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,2,0,8114080,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,2,1,10057546,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,2,2,9032824,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,2,3,9265399,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,2,4,10111156,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,2,5,9296676,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,2,6,11056881,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,2,7,9116390,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,2,8,9668540,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,2,9,10652316,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,2,10,7995649,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,2,11,11732873,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,2,12,13089444,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,2,13,12793622,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,2,14,8918140,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,2,15,8414350,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,2,16,9116391,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,2,17,11788826,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,2,18,9825183,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,2,19,8807364,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,2,20,8114651,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,2,21,9765542,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,2,22,8561134,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,2,23,8503317,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,2,24,9870277,0,lle,,,,
+FeOs,C3-0.88sigma-1,T2,cold,model,2,0,1679173,0,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,cold,first-call,2,0,408917712,407010614,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,2,0,446242,126155,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,2,1,453897,114454,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,2,2,471519,125324,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,2,3,445111,130283,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,2,4,437005,114684,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,2,5,429732,124041,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,2,6,428209,105447,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,2,7,420164,118932,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,2,8,450631,112400,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,2,9,431516,100337,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,2,10,467352,117319,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,2,11,394316,86431,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,2,12,304578,83256,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,2,13,306091,79297,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,2,14,351055,84187,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,2,15,302394,74318,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,2,16,344212,81462,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,2,17,306201,74780,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,2,18,289209,70993,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,2,19,277788,73507,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,2,20,287146,66584,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,2,21,274723,64790,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,2,22,350093,86522,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,2,23,304618,88505,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,2,24,319686,80410,activity+Julia contraction/transport,,,,
+FeOs,C1-gradient,T3,cold,first-call,2,0,384267,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,2,0,15890,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,2,1,14948,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,2,2,13455,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,2,3,14106,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,2,4,13736,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,2,5,14397,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,2,6,13675,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,2,7,13706,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,2,8,13446,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,2,9,13826,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,2,10,14707,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,2,11,14016,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,2,12,10399,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,2,13,9728,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,2,14,9858,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,2,15,9558,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,2,16,9578,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,2,17,9478,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,2,18,9758,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,2,19,9528,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,2,20,10430,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,2,21,10009,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,2,22,9828,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,2,23,9548,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,2,24,10189,0,gradient,,,,
+FeOs,C2-gradient,T3,cold,first-call,2,0,4685042,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,2,0,1782035,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,2,1,1231638,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,2,2,1049489,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,2,3,884430,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,2,4,915488,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,2,5,930887,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,2,6,933041,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,2,7,893918,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,2,8,1104711,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,2,9,1534273,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,2,10,1549090,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,2,11,970200,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,2,12,926960,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,2,13,1482006,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,2,14,1547288,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,2,15,1499849,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,2,16,1272013,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,2,17,978436,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,2,18,1451118,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,2,19,1489098,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,2,20,1222041,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,2,21,1222190,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,2,22,1200229,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,2,23,1729848,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,2,24,1138324,0,gradient,,,,
+FeOs,C1-300-common-liquid,T1,cold,first-call,2,0,265716,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,2,0,69510,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,2,1,66253,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,2,2,61665,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,2,3,61836,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,2,4,78657,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,2,5,75691,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,2,6,67546,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,2,7,62497,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,2,8,70371,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,2,9,61905,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,2,10,60974,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,2,11,60823,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,2,12,106318,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,2,13,118962,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,2,14,101439,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,2,15,111899,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,2,16,123430,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,2,17,100437,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,2,18,81632,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,2,19,81101,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,2,20,104946,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,2,21,92633,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,2,22,85860,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,2,23,103964,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,2,24,106128,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,cold,first-call,2,0,110155,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,2,0,127758,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,2,1,113582,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,2,2,94176,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,2,3,106970,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,2,4,100798,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,2,5,73447,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,2,6,70151,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,2,7,67777,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,2,8,67926,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,2,9,91070,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,2,10,83907,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,2,11,71363,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,2,12,68939,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,2,13,68709,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,2,14,89167,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,2,15,72004,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,2,16,76724,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,2,17,85390,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,2,18,71834,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,2,19,78937,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,2,20,74439,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,2,21,73908,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,2,22,69009,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,2,23,65221,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,2,24,64691,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,cold,first-call,2,0,104455,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,2,0,89908,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,2,1,79889,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,2,2,74879,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,2,3,74409,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,2,4,74148,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,2,5,74198,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,2,6,74028,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,2,7,84007,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,2,8,96690,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,2,9,80210,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,2,10,89868,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,2,11,93544,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,2,12,74399,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,2,13,103884,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,2,14,85089,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,2,15,75501,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,2,16,74850,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,2,17,73236,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,2,18,71343,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,2,19,74919,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,2,20,90810,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,2,21,80430,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,2,22,91460,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,2,23,81632,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,2,24,73868,0,State+ar/Z/lnphi,,,,
+FeOs,FeOs-import,setup,cold,import,2,0,117411588,0,import,,,,
+Clapeyron,C1-300,model,C1,,2,0,58354112932,,,1,2,model construction,cold
+Clapeyron,C1-300,T2,C1,,2,0,138849243901,,,1,2,first case-output call,cold
+Clapeyron,C1-300,T2,C1,,2,1,66023,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,2,2,67846,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,2,3,54212,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,2,4,55634,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,2,5,52148,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,2,6,55383,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,2,7,54792,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,2,8,57968,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,2,9,56075,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,2,10,53901,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,2,11,51106,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,2,12,64831,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,2,13,59070,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,2,14,51827,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,2,15,57207,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,2,16,57868,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,2,17,57999,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,2,18,58690,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,2,19,58639,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,2,20,56255,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,2,21,54522,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,2,22,59601,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,2,23,57848,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,2,24,56375,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,2,25,55233,,,1,2,saturation,warm
+Clapeyron,C2-0.5,model,C2,,2,0,299315853,,,1,2,model construction,cold
+Clapeyron,C2-0.5,T2,C2,,2,0,139630702191,,,1,2,first case-output call,cold
+Clapeyron,C2-0.5,T2,C2,,2,1,367306,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,2,2,330186,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,2,3,347008,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,2,4,343211,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,2,5,339554,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,2,6,315669,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,2,7,459298,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,2,8,302756,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,2,9,309258,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,2,10,338372,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,2,11,318134,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,2,12,327962,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,2,13,311542,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,2,14,371854,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,2,15,423911,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,2,16,304468,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,2,17,411999,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,2,18,315930,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,2,19,329215,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,2,20,320829,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,2,21,444450,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,2,22,302825,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,2,23,329796,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,2,24,292806,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,2,25,294440,,,1,2,bubble,warm
+Clapeyron,C4-298.15,model,C4,,2,0,1365720,,,1,2,model construction,cold
+Clapeyron,C4-298.15,T2,C4,,2,0,80386692756,,,1,2,first case-output call,cold
+Clapeyron,C4-298.15,T2,C4,,2,1,942830,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,2,2,958630,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,2,3,1084505,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,2,4,798181,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,2,5,882979,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,2,6,892667,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,2,7,124774816,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,2,8,841802,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,2,9,927402,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,2,10,1143355,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,2,11,1212294,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,2,12,890833,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,2,13,811776,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,2,14,802849,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,2,15,995179,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,2,16,1080397,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,2,17,751042,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,2,18,763376,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,2,19,741665,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,2,20,777322,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,2,21,1095346,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,2,22,1025124,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,2,23,774516,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,2,24,759979,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,2,25,772532,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,2,0,1581724,,,1,2,first case-output call,cold
+Clapeyron,C4-323.15,T2,C4,,2,1,898137,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,2,2,927942,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,2,3,1375849,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,2,4,1005808,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,2,5,921600,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,2,6,950454,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,2,7,1347977,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,2,8,1350161,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,2,9,1072974,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,2,10,926139,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,2,11,1136021,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,2,12,1361241,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,2,13,898438,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,2,14,901674,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,2,15,900121,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,2,16,1191053,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,2,17,1212324,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,2,18,916161,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,2,19,906994,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,2,20,1115773,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,2,21,1535376,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,2,22,1028700,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,2,23,973368,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,2,24,970903,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,2,25,1504940,,,1,2,lle,warm
+Clapeyron,C3-sigma-1,model,sigma,,2,0,619996073,,,1,2,model construction,cold
+Clapeyron,C3-sigma-1,T2,sigma,,2,0,198441457465,,,1,2,first case-output call,cold
+Clapeyron,C3-sigma-1,T2,sigma,,2,1,75491,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,2,2,82183,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,2,3,76112,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,2,4,82093,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,2,5,72175,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,2,6,68698,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,2,7,74369,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,2,8,69490,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,2,9,70561,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,2,10,69019,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,2,11,129852,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,2,12,130003,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,2,13,79940,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,2,14,72616,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,2,15,66494,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,2,16,71493,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,2,17,73978,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,2,18,80209,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,2,19,76072,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,2,20,69720,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,2,21,69400,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,2,22,68929,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,2,23,68077,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,2,24,70612,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,2,25,69710,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,model,0.88sigma,,2,0,102602710,,,1,2,model construction,cold
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,2,0,52525666881,,,1,2,first case-output call,cold
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,2,1,56716,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,2,2,59361,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,2,3,60413,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,2,4,80070,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,2,5,87333,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,2,6,67145,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,2,7,73037,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,2,8,76233,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,2,9,68679,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,2,10,70291,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,2,11,67506,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,2,12,72055,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,2,13,66685,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,2,14,71423,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,2,15,145962,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,2,16,81953,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,2,17,74369,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,2,18,73417,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,2,19,73738,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,2,20,69910,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,2,21,60723,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,2,22,66534,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,2,23,71754,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,2,24,68137,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,2,25,73196,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C1-300-common-liquid,T1,C1,,2,0,1010754243,,,1,2,first case-output call,cold
+Clapeyron,C1-300-common-liquid,T1,C1,,2,1,6342,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,2,2,9388,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,2,3,7995,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,2,4,7053,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,2,5,7284,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,2,6,7314,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,2,7,7213,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,2,8,7394,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,2,9,7414,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,2,10,7184,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,2,11,6762,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,2,12,7203,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,2,13,6562,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,2,14,6783,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,2,15,6332,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,2,16,6552,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,2,17,7234,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,2,18,7084,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,2,19,6251,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,2,20,7775,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,2,21,6983,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,2,22,7684,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,2,23,6652,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,2,24,7654,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,2,25,6652,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,2,0,58118,,,1,2,first case-output call,cold
+Clapeyron,C2-0.5-common-liquid,T1,C2,,2,1,5801,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,2,2,7775,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,2,3,6963,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,2,4,3917,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,2,5,3878,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,2,6,3817,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,2,7,3687,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,2,8,3877,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,2,9,3857,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,2,10,3677,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,2,11,3707,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,2,12,3687,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,2,13,3386,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,2,14,3316,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,2,15,3707,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,2,16,3346,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,2,17,3387,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,2,18,3116,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,2,19,4187,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,2,20,3476,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,2,21,5140,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,2,22,9017,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,2,23,6182,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,2,24,6592,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,2,25,6242,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,2,0,91420,,,1,2,first case-output call,cold
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,2,1,8225,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,2,2,12453,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,2,3,8596,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,2,4,8356,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,2,5,9809,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,2,6,8727,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,2,7,7865,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,2,8,8365,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,2,9,8115,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,2,10,8356,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,2,11,10800,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,2,12,8997,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,2,13,19316,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,2,14,10740,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,2,15,8446,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,2,16,8266,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,2,17,7664,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,2,18,7333,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,2,19,8476,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,2,20,7344,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,2,21,7244,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,2,22,7303,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,2,23,8105,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,2,24,7785,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,2,25,7494,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,2,0,108032,,,1,2,first case-output call,cold
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,2,1,6372,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,2,2,10139,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,2,3,8025,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,2,4,9638,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,2,5,8697,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,2,6,6692,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,2,7,6793,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,2,8,6893,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,2,9,6792,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,2,10,7373,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,2,11,8045,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,2,12,7534,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,2,13,7353,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,2,14,6823,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,2,15,7644,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,2,16,7053,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,2,17,6472,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,2,18,6973,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,2,19,7274,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,2,20,6281,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,2,21,6592,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,2,22,7174,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,2,23,6171,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,2,24,7814,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,2,25,7645,,,1,2,fixed,warm
+Clapeyron,Julia-import,import,all,,2,0,1675338123,,,1,2,"JSON, LinearAlgebra, Clapeyron, ForwardDiff imports",cold
+Engine,C1-300,T2,complete-block,warm,3,0,8213108,,,,,,
+Engine,C1-300,T2,complete-block,warm,3,1,7082246,,,,,,
+Engine,C1-300,T2,complete-block,warm,3,2,7185629,,,,,,
+Engine,C1-300,T2,complete-block,warm,3,3,8231802,,,,,,
+Engine,C1-300,T2,complete-block,warm,3,4,8131085,,,,,,
+Engine,C1-300,T2,complete-block,warm,3,5,9068946,,,,,,
+Engine,C1-300,T2,complete-block,warm,3,6,8733970,,,,,,
+Engine,C1-300,T2,complete-block,warm,3,7,8960323,,,,,,
+Engine,C1-300,T2,complete-block,warm,3,8,8555757,,,,,,
+Engine,C1-300,T2,complete-block,warm,3,9,8637861,,,,,,
+Engine,C1-300,T2,complete-block,warm,3,10,8774787,,,,,,
+Engine,C1-300,T2,complete-block,warm,3,11,8256008,,,,,,
+Engine,C1-300,T2,complete-block,warm,3,12,8825421,,,,,,
+Engine,C1-300,T2,complete-block,warm,3,13,9022890,,,,,,
+Engine,C1-300,T2,complete-block,warm,3,14,9245466,,,,,,
+Engine,C1-300,T2,complete-block,warm,3,15,9197997,,,,,,
+Engine,C1-300,T2,complete-block,warm,3,16,9434448,,,,,,
+Engine,C1-300,T2,complete-block,warm,3,17,8781168,,,,,,
+Engine,C1-300,T2,complete-block,warm,3,18,8375030,,,,,,
+Engine,C1-300,T2,complete-block,warm,3,19,8362136,,,,,,
+Engine,C1-300,T2,complete-block,warm,3,20,8761131,,,,,,
+Engine,C1-300,T2,complete-block,warm,3,21,9193749,,,,,,
+Engine,C1-300,T2,complete-block,warm,3,22,9007912,,,,,,
+Engine,C1-300,T2,complete-block,warm,3,23,9114300,,,,,,
+Engine,C1-300,T2,complete-block,warm,3,24,8400086,,,,,,
+Engine,C1-300,T2,complete-block,model,3,0,554225,,,,,,
+Engine,C1-300,T2,complete-block,first-call,3,0,7795899,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,3,0,20459767,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,3,1,20262680,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,3,2,21832862,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,3,3,21287173,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,3,4,20818107,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,3,5,22028026,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,3,6,21196022,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,3,7,21686148,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,3,8,21275932,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,3,9,20300841,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,3,10,21467630,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,3,11,20650254,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,3,12,20993154,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,3,13,24396389,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,3,14,26993910,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,3,15,21117787,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,3,16,20873711,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,3,17,18539712,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,3,18,23675093,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,3,19,23302647,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,3,20,21315336,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,3,21,20659210,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,3,22,20470829,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,3,23,23056327,,,,,,
+Engine,C2-0.5,T2,complete-block,warm,3,24,24046536,,,,,,
+Engine,C2-0.5,T2,complete-block,model,3,0,344503,,,,,,
+Engine,C2-0.5,T2,complete-block,first-call,3,0,26702366,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,3,0,19942442,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,3,1,19719566,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,3,2,22239902,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,3,3,20354240,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,3,4,21468963,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,3,5,26725389,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,3,6,26783627,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,3,7,25683804,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,3,8,26672310,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,3,9,26767347,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,3,10,20379368,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,3,11,20509911,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,3,12,19259116,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,3,13,20744059,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,3,14,20058949,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,3,15,20812637,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,3,16,19379410,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,3,17,20330006,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,3,18,19802200,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,3,19,19720828,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,3,20,20382924,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,3,21,21287534,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,3,22,21936596,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,3,23,25395105,,,,,,
+Engine,C4-298.15,T2,complete-block,warm,3,24,26152770,,,,,,
+Engine,C4-298.15,T2,complete-block,model,3,0,385270,,,,,,
+Engine,C4-298.15,T2,complete-block,first-call,3,0,27696753,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,3,0,20356235,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,3,1,20892496,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,3,2,21869441,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,3,3,20143447,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,3,4,20929505,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,3,5,23108544,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,3,6,21896491,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,3,7,22764181,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,3,8,22775573,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,3,9,19573904,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,3,10,22491081,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,3,11,22333036,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,3,12,21046023,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,3,13,22168699,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,3,14,26902740,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,3,15,26617117,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,3,16,28106127,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,3,17,26277222,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,3,18,24401930,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,3,19,26878014,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,3,20,26446468,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,3,21,26646772,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,3,22,26968002,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,3,23,26174690,,,,,,
+Engine,C4-323.15,T2,complete-block,warm,3,24,26362170,,,,,,
+Engine,C4-323.15,T2,complete-block,model,3,0,362858,,,,,,
+Engine,C4-323.15,T2,complete-block,first-call,3,0,26692487,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,3,0,2600326,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,3,1,2509326,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,3,2,2526168,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,3,3,2520657,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,3,4,2527169,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,3,5,2580639,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,3,6,2386156,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,3,7,2565812,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,3,8,2613400,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,3,9,2522170,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,3,10,2538811,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,3,11,2572223,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,3,12,2537659,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,3,13,2530295,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,3,14,2665227,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,3,15,2542257,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,3,16,2491994,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,3,17,2499348,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,3,18,2581922,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,3,19,2586620,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,3,20,2566914,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,3,21,2580158,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,3,22,2578435,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,3,23,2577023,,,,,,
+Engine,C3-sigma-1,T2,reused-reference,warm,3,24,2611227,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,3,0,9452913,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,3,1,9348909,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,3,2,9310127,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,3,3,9163762,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,3,4,9458874,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,3,5,9154747,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,3,6,9161920,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,3,7,9086970,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,3,8,9306900,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,3,9,9326046,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,3,10,9077742,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,3,11,9101947,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,3,12,8887527,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,3,13,9099753,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,3,14,8715025,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,3,15,9315726,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,3,16,9383533,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,3,17,9424340,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,3,18,9271174,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,3,19,8824760,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,3,20,8890964,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,3,21,9267527,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,3,22,9219477,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,3,23,9331146,,,,,,
+Engine,C3-sigma-1,T2,fresh-reference,warm,3,24,9385998,,,,,,
+Engine,C3-sigma-1,T2,complete-block,model,3,0,8047779,,,,,,
+Engine,C3-sigma-1,T2,complete-block,first-call,3,0,2758091,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,3,0,2766416,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,3,1,2716303,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,3,2,2904464,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,3,3,2894165,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,3,4,2788127,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,3,5,2703699,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,3,6,2670728,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,3,7,2746429,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,3,8,2496071,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,3,9,2821730,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,3,10,2785001,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,3,11,2761658,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,3,12,2673623,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,3,13,2694352,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,3,14,2825477,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,3,15,2776215,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,3,16,2760285,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,3,17,2816440,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,3,18,2792355,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,3,19,2700243,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,3,20,2371098,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,3,21,2682569,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,3,22,2734417,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,3,23,2710642,,,,,,
+Engine,C3-0.88sigma-1,T2,reused-reference,warm,3,24,2745016,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,3,0,8983737,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,3,1,8904569,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,3,2,9403460,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,3,3,8842052,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,3,4,9483129,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,3,5,9294307,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,3,6,9172479,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,3,7,9429189,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,3,8,9242029,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,3,9,9569019,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,3,10,9180324,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,3,11,9497155,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,3,12,9378755,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,3,13,9255204,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,3,14,9345953,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,3,15,9255825,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,3,16,9628641,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,3,17,10355879,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,3,18,9578558,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,3,19,9525558,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,3,20,9438236,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,3,21,9475285,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,3,22,9284989,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,3,23,9350441,,,,,,
+Engine,C3-0.88sigma-1,T2,fresh-reference,warm,3,24,9007681,,,,,,
+Engine,C3-0.88sigma-1,T2,complete-block,model,3,0,7887270,,,,,,
+Engine,C3-0.88sigma-1,T2,complete-block,first-call,3,0,2798015,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,3,0,19653442,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,3,1,19083187,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,3,2,19014298,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,3,3,19286937,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,3,4,18833360,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,3,5,14859990,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,3,6,17090065,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,3,7,16983786,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,3,8,18583354,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,3,9,19121719,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,3,10,18708668,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,3,11,19140584,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,3,12,18953996,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,3,13,19003599,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,3,14,19057419,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,3,15,18769271,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,3,16,13999013,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,3,17,14038306,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,3,18,14990644,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,3,19,13826230,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,3,20,14408728,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,3,21,14447219,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,3,22,13890650,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,3,23,15800357,,,,,,
+Engine,C1-gradient,T3,complete-block,warm,3,24,13850846,,,,,,
+Engine,C1-gradient,T3,complete-block,model,3,0,1590941,,,,,,
+Engine,C1-gradient,T3,complete-block,first-call,3,0,19290855,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,3,0,45811191,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,3,1,46346611,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,3,2,46099088,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,3,3,43415256,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,3,4,44422828,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,3,5,44483812,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,3,6,51954875,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,3,7,47519121,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,3,8,48019214,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,3,9,43887028,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,3,10,54823241,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,3,11,50699901,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,3,12,47122610,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,3,13,52380249,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,3,14,46606156,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,3,15,41692009,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,3,16,49295478,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,3,17,57452812,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,3,18,57054447,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,3,19,54721942,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,3,20,53957203,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,3,21,50120128,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,3,22,42455694,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,3,23,42343014,,,,,,
+Engine,C2-gradient,T3,complete-block,warm,3,24,39550690,,,,,,
+Engine,C2-gradient,T3,complete-block,model,3,0,404495,,,,,,
+Engine,C2-gradient,T3,complete-block,first-call,3,0,52266596,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,3,0,24145,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,3,1,25307,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,3,2,24435,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,3,3,25577,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,3,4,24796,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,3,5,23724,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,3,6,24456,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,3,7,26139,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,3,8,24266,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,3,9,24175,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,3,10,40165,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,3,11,26569,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,3,12,24817,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,3,13,26921,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,3,14,26469,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,3,15,28303,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,3,16,27231,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,3,17,28282,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,3,18,29064,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,3,19,27341,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,3,20,55333,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,3,21,29314,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,3,22,30066,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,3,23,28965,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,warm,3,24,28203,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,model,3,0,363469,,,,,,
+Engine,C1-300-common-liquid,T1,complete-block,first-call,3,0,97612,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,3,0,53540,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,3,1,55133,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,3,2,53931,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,3,3,45875,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,3,4,45665,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,3,5,45816,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,3,6,45205,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,3,7,45345,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,3,8,45465,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,3,9,44984,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,3,10,45144,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,3,11,45154,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,3,12,55293,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,3,13,47078,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,3,14,45555,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,3,15,55835,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,3,16,47438,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,3,17,62306,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,3,18,70692,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,3,19,55984,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,3,20,47138,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,3,21,45745,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,3,22,45304,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,3,23,45635,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,warm,3,24,45705,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,model,3,0,261498,,,,,,
+Engine,C2-0.5-common-liquid,T1,complete-block,first-call,3,0,149449,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,3,0,134301,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,3,1,121708,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,3,2,122649,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,3,3,118511,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,3,4,119253,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,3,5,120745,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,3,6,120085,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,3,7,117269,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,3,8,138258,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,3,9,123140,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,3,10,120114,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,3,11,119263,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,3,12,137958,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,3,13,148517,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,3,14,117359,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,3,15,117630,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,3,16,131005,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,3,17,120024,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,3,18,119403,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,3,19,120425,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,3,20,122308,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,3,21,118952,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,3,22,120555,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,3,23,134051,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,warm,3,24,168544,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,model,3,0,791137,,,,,,
+Engine,C3-sigma-1-common-liquid,T1,complete-block,first-call,3,0,195475,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,3,0,88265,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,3,1,100317,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,3,2,86121,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,3,3,84257,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,3,4,83706,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,3,5,83456,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,3,6,84788,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,3,7,83596,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,3,8,105186,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,3,9,94416,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,3,10,109515,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,3,11,86572,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,3,12,96029,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,3,13,85079,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,3,14,83195,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,3,15,83516,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,3,16,82895,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,3,17,83345,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,3,18,134681,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,3,19,150361,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,3,20,110496,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,3,21,84127,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,3,22,104615,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,3,23,107701,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,warm,3,24,96259,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,model,3,0,941187,,,,,,
+Engine,C3-0.88sigma-1-common-liquid,T1,complete-block,first-call,3,0,197710,,,,,,
+Engine,Engine-import,import,complete-block,import,3,0,41556095,,,,,,
+FeOs,C1-300,T2,cold,model,3,0,13523355,0,saturation,,,,
+FeOs,C1-300,T2,cold,first-call,3,0,7695812,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,3,0,49493,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,3,1,51516,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,3,2,52739,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,3,3,65232,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,3,4,50534,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,3,5,49613,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,3,6,52498,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,3,7,49593,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,3,8,50855,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,3,9,48951,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,3,10,47739,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,3,11,98584,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,3,12,128600,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,3,13,54152,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,3,14,41688,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,3,15,39814,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,3,16,40465,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,3,17,41147,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,3,18,47389,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,3,19,42550,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,3,20,42729,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,3,21,52989,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,3,22,43441,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,3,23,43341,0,saturation,,,,
+FeOs,C1-300,T2,warm,sample,3,24,45325,0,saturation,,,,
+FeOs,C2-0.5,T2,cold,model,3,0,657287,0,bubble,,,,
+FeOs,C2-0.5,T2,cold,first-call,3,0,7058862,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,3,0,1151240,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,3,1,1909155,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,3,2,823208,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,3,3,784835,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,3,4,736375,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,3,5,3106111,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,3,6,1322339,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,3,7,1619494,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,3,8,1514889,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,3,9,841862,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,3,10,769417,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,3,11,813489,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,3,12,1734208,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,3,13,1439017,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,3,14,1339461,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,3,15,2269568,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,3,16,1858811,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,3,17,1863630,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,3,18,1177980,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,3,19,1175495,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,3,20,1293366,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,3,21,1301430,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,3,22,887347,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,3,23,623134,0,bubble,,,,
+FeOs,C2-0.5,T2,warm,sample,3,24,1042647,0,bubble,,,,
+FeOs,C4-298.15,T2,cold,model,3,0,523878,0,lle,,,,
+FeOs,C4-298.15,T2,cold,first-call,3,0,48766600,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,3,0,64846990,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,3,1,59902636,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,3,2,48979227,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,3,3,45596360,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,3,4,33148434,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,3,5,49584307,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,3,6,42274075,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,3,7,38024230,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,3,8,38086896,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,3,9,45003142,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,3,10,52927780,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,3,11,45909855,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,3,12,52512876,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,3,13,55027983,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,3,14,54534351,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,3,15,56102830,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,3,16,53078112,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,3,17,44676352,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,3,18,34445917,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,3,19,27160050,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,3,20,22587081,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,3,21,24859174,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,3,22,21440259,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,3,23,24976933,0,lle,,,,
+FeOs,C4-298.15,T2,warm,sample,3,24,25301670,0,lle,,,,
+FeOs,C4-323.15,T2,cold,first-call,3,0,9931597,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,3,0,9100154,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,3,1,10547738,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,3,2,13188670,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,3,3,13919274,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,3,4,14115300,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,3,5,14207081,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,3,6,14068272,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,3,7,13164203,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,3,8,14040480,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,3,9,14025532,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,3,10,14079863,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,3,11,14014592,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,3,12,13399833,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,3,13,14173439,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,3,14,14087167,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,3,15,14009462,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,3,16,13998752,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,3,17,13270462,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,3,18,13931075,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,3,19,13995958,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,3,20,14104469,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,3,21,13789131,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,3,22,13127415,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,3,23,14015543,0,lle,,,,
+FeOs,C4-323.15,T2,warm,sample,3,24,13922940,0,lle,,,,
+FeOs,C3-0.88sigma-1,T2,cold,model,3,0,2298282,0,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,cold,first-call,3,0,459248453,455714853,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,3,0,458366,138830,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,3,1,477682,129261,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,3,2,422189,108413,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,3,3,384458,99216,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,3,4,313876,86702,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,3,5,339333,107912,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,3,6,311111,74850,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,3,7,300902,78837,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,3,8,283259,69339,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,3,9,336198,70011,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,3,10,311581,79439,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,3,11,295902,73648,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,3,12,320799,83436,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,3,13,388526,91541,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,3,14,337781,79068,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,3,15,298928,72966,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,3,16,295282,71273,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,3,17,300632,83125,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,3,18,311772,72977,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,3,19,286124,75621,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,3,20,300832,68317,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,3,21,330337,85910,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,3,22,294029,75862,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,3,23,283419,72545,activity+Julia contraction/transport,,,,
+FeOs,C3-0.88sigma-1,T2,warm,sample,3,24,382775,99877,activity+Julia contraction/transport,,,,
+FeOs,C1-gradient,T3,cold,first-call,3,0,4399826,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,3,0,27701,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,3,1,21800,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,3,2,17042,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,3,3,17893,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,3,4,16852,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,3,5,17292,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,3,6,16521,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,3,7,15929,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,3,8,15579,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,3,9,18445,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,3,10,17443,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,3,11,14718,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,3,12,13375,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,3,13,14066,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,3,14,12624,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,3,15,20227,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,3,16,13626,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,3,17,13175,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,3,18,12643,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,3,19,12383,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,3,20,14096,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,3,21,12313,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,3,22,12504,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,3,23,12423,0,gradient,,,,
+FeOs,C1-gradient,T3,warm,sample,3,24,14807,0,gradient,,,,
+FeOs,C2-gradient,T3,cold,first-call,3,0,3096663,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,3,0,839427,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,3,1,889692,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,3,2,830501,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,3,3,830401,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,3,4,1203959,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,3,5,1398362,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,3,6,1244714,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,3,7,1086709,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,3,8,1090216,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,3,9,1500633,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,3,10,919266,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,3,11,1122276,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,3,12,1023521,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,3,13,916812,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,3,14,987635,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,3,15,886806,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,3,16,939193,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,3,17,1174113,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,3,18,901513,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,3,19,1158273,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,3,20,1233063,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,3,21,1493809,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,3,22,1558801,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,3,23,1484282,0,gradient,,,,
+FeOs,C2-gradient,T3,warm,sample,3,24,1106216,0,gradient,,,,
+FeOs,C1-300-common-liquid,T1,cold,first-call,3,0,321190,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,3,0,111318,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,3,1,127648,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,3,2,82545,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,3,3,66243,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,3,4,62748,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,3,5,73738,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,3,6,65543,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,3,7,62006,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,3,8,60964,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,3,9,90399,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,3,10,70171,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,3,11,166651,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,3,12,77455,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,3,13,62276,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,3,14,74939,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,3,15,61434,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,3,16,60984,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,3,17,61184,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,3,18,58519,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,3,19,56936,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,3,20,56455,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,3,21,55754,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,3,22,57658,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,3,23,71945,0,State+ar/Z/lnphi,,,,
+FeOs,C1-300-common-liquid,T1,warm,sample,3,24,91321,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,cold,first-call,3,0,89788,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,3,0,64691,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,3,1,77544,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,3,2,69250,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,3,3,66945,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,3,4,80551,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,3,5,94336,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,3,6,114965,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,3,7,108432,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,3,8,77074,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,3,9,70061,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,3,10,74009,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,3,11,75932,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,3,12,65332,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,3,13,65201,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,3,14,66344,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,3,15,67135,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,3,16,97943,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,3,17,118812,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,3,18,105747,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,3,19,126106,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,3,20,99125,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,3,21,84699,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,3,22,72144,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,3,23,67586,0,State+ar/Z/lnphi,,,,
+FeOs,C2-0.5-common-liquid,T1,warm,sample,3,24,68288,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,cold,first-call,3,0,103052,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,3,0,72045,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,3,1,74328,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,3,2,74168,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,3,3,71513,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,3,4,101850,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,3,5,85229,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,3,6,74309,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,3,7,82294,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,3,8,72666,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,3,9,95999,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,3,10,75080,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,3,11,71834,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,3,12,140222,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,3,13,79639,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,3,14,69650,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,3,15,71584,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,3,16,78897,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,3,17,71393,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,3,18,70191,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,3,19,69440,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,3,20,70141,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,3,21,86161,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,3,22,74278,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,3,23,85219,0,State+ar/Z/lnphi,,,,
+FeOs,C3-0.88sigma-1-common-liquid,T1,warm,sample,3,24,89888,0,State+ar/Z/lnphi,,,,
+FeOs,FeOs-import,setup,cold,import,3,0,149105028,0,import,,,,
+Clapeyron,C1-300,model,C1,,3,0,55165366021,,,1,2,model construction,cold
+Clapeyron,C1-300,T2,C1,,3,0,166369018057,,,1,2,first case-output call,cold
+Clapeyron,C1-300,T2,C1,,3,1,91431,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,3,2,73557,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,3,3,70972,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,3,4,72345,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,3,5,71754,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,3,6,65222,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,3,7,66835,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,3,8,54221,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,3,9,49813,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,3,10,53610,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,3,11,34304,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,3,12,33202,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,3,13,31959,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,3,14,31448,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,3,15,52217,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,3,16,33423,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,3,17,32150,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,3,18,31800,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,3,19,31899,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,3,20,32019,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,3,21,31299,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,3,22,32180,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,3,23,32029,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,3,24,31479,,,1,2,saturation,warm
+Clapeyron,C1-300,T2,C1,,3,25,31659,,,1,2,saturation,warm
+Clapeyron,C2-0.5,model,C2,,3,0,421855833,,,1,2,model construction,cold
+Clapeyron,C2-0.5,T2,C2,,3,0,150472357740,,,1,2,first case-output call,cold
+Clapeyron,C2-0.5,T2,C2,,3,1,430554,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,3,2,370793,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,3,3,332922,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,3,4,343782,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,3,5,328875,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,3,6,343602,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,3,7,328854,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,3,8,329896,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,3,9,345956,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,3,10,331259,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,3,11,327972,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,3,12,344563,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,3,13,330598,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,3,14,341748,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,3,15,340005,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,3,16,405006,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,3,17,344363,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,3,18,351737,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,3,19,339535,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,3,20,354142,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,3,21,343120,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,3,22,338252,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,3,23,349172,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,3,24,255177,,,1,2,bubble,warm
+Clapeyron,C2-0.5,T2,C2,,3,25,231934,,,1,2,bubble,warm
+Clapeyron,C4-298.15,model,C4,,3,0,1611600,,,1,2,model construction,cold
+Clapeyron,C4-298.15,T2,C4,,3,0,77688842892,,,1,2,first case-output call,cold
+Clapeyron,C4-298.15,T2,C4,,3,1,821525,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,3,2,858755,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,3,3,995129,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,3,4,768826,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,3,5,881106,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,3,6,1082633,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,3,7,879043,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,3,8,882268,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,3,9,1125272,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,3,10,788272,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,3,11,1006470,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,3,12,769508,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,3,13,919588,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,3,14,752797,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,3,15,863253,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,3,16,802459,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,3,17,840841,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,3,18,775889,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,3,19,934015,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,3,20,1023442,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,3,21,1042748,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,3,22,985551,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,3,23,842023,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,3,24,802148,,,1,2,lle,warm
+Clapeyron,C4-298.15,T2,C4,,3,25,881918,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,3,0,843697,,,1,2,first case-output call,cold
+Clapeyron,C4-323.15,T2,C4,,3,1,738890,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,3,2,758737,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,3,3,1004667,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,3,4,1108741,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,3,5,1104543,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,3,6,1182239,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,3,7,1159546,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,3,8,1025866,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,3,9,1076341,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,3,10,963671,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,3,11,1223295,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,3,12,1122056,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,3,13,1032780,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,3,14,967768,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,3,15,913337,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,3,16,987144,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,3,17,1027640,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,3,18,872309,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,3,19,927894,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,3,20,989780,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,3,21,1190384,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,3,22,1242070,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,3,23,1083394,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,3,24,1013504,,,1,2,lle,warm
+Clapeyron,C4-323.15,T2,C4,,3,25,1027279,,,1,2,lle,warm
+Clapeyron,C3-sigma-1,model,sigma,,3,0,627020484,,,1,2,model construction,cold
+Clapeyron,C3-sigma-1,T2,sigma,,3,0,182066369493,,,1,2,first case-output call,cold
+Clapeyron,C3-sigma-1,T2,sigma,,3,1,76954,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,3,2,10831174,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,3,3,71423,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,3,4,46357,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,3,5,71844,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,3,6,89447,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,3,7,84017,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,3,8,79899,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,3,9,78266,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,3,10,81712,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,3,11,43030,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,3,12,38953,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,3,13,39543,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,3,14,39504,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,3,15,83346,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,3,16,44503,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,3,17,39333,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,3,18,39564,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,3,19,58820,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,3,20,40856,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,3,21,72606,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,3,22,73798,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,3,23,81903,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,3,24,70832,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-sigma-1,T2,sigma,,3,25,115445,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,model,0.88sigma,,3,0,54693388,,,1,2,model construction,cold
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,3,0,60075722820,,,1,2,first case-output call,cold
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,3,1,142597,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,3,2,117299,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,3,3,80350,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,3,4,542564,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,3,5,75381,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,3,6,70502,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,3,7,70662,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,3,8,68087,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,3,9,66063,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,3,10,66804,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,3,11,66424,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,3,12,68057,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,3,13,65402,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,3,14,66324,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,3,15,65723,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,3,16,72485,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,3,17,163446,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,3,18,113622,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,3,19,96580,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,3,20,85981,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,3,21,80070,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,3,22,70602,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,3,23,72315,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,3,24,71032,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C3-0.88sigma-1,T2,0.88sigma,,3,25,70692,,,1,2,"both helpers, repeated solution/reference solves",warm
+Clapeyron,C1-300-common-liquid,T1,C1,,3,0,1309252427,,,1,2,first case-output call,cold
+Clapeyron,C1-300-common-liquid,T1,C1,,3,1,7003,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,3,2,7113,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,3,3,5390,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,3,4,5800,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,3,5,5570,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,3,6,5871,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,3,7,5760,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,3,8,5991,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,3,9,5170,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,3,10,5811,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,3,11,5080,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,3,12,5761,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,3,13,4899,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,3,14,5991,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,3,15,5871,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,3,16,5079,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,3,17,5550,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,3,18,6542,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,3,19,6422,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,3,20,4678,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,3,21,3967,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,3,22,12995,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,3,23,22112,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,3,24,9397,,,1,2,fixed,warm
+Clapeyron,C1-300-common-liquid,T1,C1,,3,25,9057,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,3,0,70091,,,1,2,first case-output call,cold
+Clapeyron,C2-0.5-common-liquid,T1,C2,,3,1,8426,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,3,2,7394,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,3,3,8446,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,3,4,7414,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,3,5,6262,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,3,6,5981,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,3,7,7033,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,3,8,6832,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,3,9,5801,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,3,10,6091,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,3,11,5751,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,3,12,5671,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,3,13,6592,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,3,14,8255,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,3,15,8516,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,3,16,7194,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,3,17,8456,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,3,18,5650,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,3,19,5470,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,3,20,6612,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,3,21,6352,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,3,22,6271,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,3,23,7213,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,3,24,6332,,,1,2,fixed,warm
+Clapeyron,C2-0.5-common-liquid,T1,C2,,3,25,5761,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,3,0,79880,,,1,2,first case-output call,cold
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,3,1,8356,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,3,2,9928,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,3,3,9507,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,3,4,8106,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,3,5,8476,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,3,6,7514,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,3,7,7354,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,3,8,6733,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,3,9,7273,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,3,10,7705,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,3,11,8136,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,3,12,7514,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,3,13,8826,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,3,14,9848,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,3,15,7955,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,3,16,9568,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,3,17,8936,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,3,18,9117,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,3,19,11101,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,3,20,10330,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,3,21,8296,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,3,22,8335,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,3,23,8526,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,3,24,9077,,,1,2,fixed,warm
+Clapeyron,C3-sigma-1-common-liquid,T1,sigma,,3,25,9348,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,3,0,95739,,,1,2,first case-output call,cold
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,3,1,10500,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,3,2,17823,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,3,3,12032,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,3,4,12193,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,3,5,10560,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,3,6,10960,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,3,7,10460,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,3,8,11331,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,3,9,10760,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,3,10,11050,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,3,11,9117,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,3,12,10169,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,3,13,11141,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,3,14,9859,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,3,15,10931,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,3,16,9848,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,3,17,11562,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,3,18,8756,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,3,19,9378,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,3,20,10219,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,3,21,8516,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,3,22,9328,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,3,23,9959,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,3,24,10069,,,1,2,fixed,warm
+Clapeyron,C3-0.88sigma-1-common-liquid,T1,0.88sigma,,3,25,10259,,,1,2,fixed,warm
+Clapeyron,Julia-import,import,all,,3,0,1809055900,,,1,2,"JSON, LinearAlgebra, Clapeyron, ForwardDiff imports",cold

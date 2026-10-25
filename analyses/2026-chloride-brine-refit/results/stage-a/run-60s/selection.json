@@ -1,0 +1,398 @@
+{
+  "rule": {
+    "rule": "Qualification uses the lowest final training cost among converged starts of each form. Held-out buckets are also reported for every distinct converged optimum with cost <= 1.10 x that lowest cost.",
+    "distinct": "two converged starts are the same optimum when every physical coordinate agrees within 1e-3"
+  },
+  "forms": {
+    "H": {
+      "label": "H-optimum-1",
+      "starts": [
+        "grid-00",
+        "binary-optima",
+        "grid-04"
+      ],
+      "final_cost": 0.0102790182846399,
+      "physical": [
+        2.484736679327315,
+        2.1865682778080373,
+        11.451426590736535,
+        -8.487404725673416,
+        -13.704623759198695,
+        4.690007441303589,
+        4.127206548347158,
+        10.581961934264543,
+        -1.8574958319985577,
+        -6.287049811232913,
+        4.43010850722711,
+        3.8984954863598564,
+        8.337147747345192,
+        -2.421704708907143,
+        -6.966183684116028
+      ],
+      "qualified": false,
+      "held_out": [
+        {
+          "source": "robinson-bower-1966",
+          "I_bucket": "I<=3",
+          "RMS": 0.008021388810836746,
+          "maximum_absolute_error": 0.01744110771784002,
+          "bias": 0.0024742226850924223,
+          "native_failure_count": 0,
+          "passing_realizations": 1467,
+          "robust_passed": true
+        },
+        {
+          "source": "robinson-bower-1966",
+          "I_bucket": "I>3",
+          "RMS": 0.04592799012999997,
+          "maximum_absolute_error": 0.06309862486946738,
+          "bias": 0.04412386065789917,
+          "native_failure_count": 0,
+          "passing_realizations": 0,
+          "robust_passed": false
+        },
+        {
+          "source": "dinane-mounir-2003",
+          "I_bucket": "I<=3",
+          "RMS": 0.0008596911494163174,
+          "maximum_absolute_error": 0.0016602080642760253,
+          "bias": 0.0006925614302764283,
+          "native_failure_count": 0,
+          "passing_realizations": 1466,
+          "robust_passed": false
+        },
+        {
+          "source": "dinane-mounir-2003",
+          "I_bucket": "I>3",
+          "RMS": 0.0014090294455344125,
+          "maximum_absolute_error": 0.0024727832829657403,
+          "bias": 0.0008731666628808174,
+          "native_failure_count": 0,
+          "passing_realizations": 1,
+          "robust_passed": false
+        }
+      ],
+      "labels": [
+        "segment_diameter/sodium-cation",
+        "packing_diameter/sodium-cation",
+        "debye_huckel_diameter/sodium-cation",
+        "k_ij/sodium-cation+water",
+        "k_ij/chloride-anion+sodium-cation",
+        "segment_diameter/magnesium-cation",
+        "packing_diameter/magnesium-cation",
+        "debye_huckel_diameter/magnesium-cation",
+        "k_ij/magnesium-cation+water",
+        "k_ij/chloride-anion+magnesium-cation",
+        "segment_diameter/calcium-cation",
+        "packing_diameter/calcium-cation",
+        "debye_huckel_diameter/calcium-cation",
+        "k_ij/calcium-cation+water",
+        "k_ij/calcium-cation+chloride-anion"
+      ],
+      "start": "grid-00",
+      "optima": [
+        {
+          "label": "H-optimum-1",
+          "starts": [
+            "grid-00",
+            "binary-optima",
+            "grid-04"
+          ],
+          "final_cost": 0.0102790182846399,
+          "physical": [
+            2.484736679327315,
+            2.1865682778080373,
+            11.451426590736535,
+            -8.487404725673416,
+            -13.704623759198695,
+            4.690007441303589,
+            4.127206548347158,
+            10.581961934264543,
+            -1.8574958319985577,
+            -6.287049811232913,
+            4.43010850722711,
+            3.8984954863598564,
+            8.337147747345192,
+            -2.421704708907143,
+            -6.966183684116028
+          ],
+          "qualified": false,
+          "held_out": [
+            {
+              "source": "robinson-bower-1966",
+              "I_bucket": "I<=3",
+              "RMS": 0.008021388810836746,
+              "maximum_absolute_error": 0.01744110771784002,
+              "bias": 0.0024742226850924223,
+              "native_failure_count": 0,
+              "passing_realizations": 1467,
+              "robust_passed": true
+            },
+            {
+              "source": "robinson-bower-1966",
+              "I_bucket": "I>3",
+              "RMS": 0.04592799012999997,
+              "maximum_absolute_error": 0.06309862486946738,
+              "bias": 0.04412386065789917,
+              "native_failure_count": 0,
+              "passing_realizations": 0,
+              "robust_passed": false
+            },
+            {
+              "source": "dinane-mounir-2003",
+              "I_bucket": "I<=3",
+              "RMS": 0.0008596911494163174,
+              "maximum_absolute_error": 0.0016602080642760253,
+              "bias": 0.0006925614302764283,
+              "native_failure_count": 0,
+              "passing_realizations": 1466,
+              "robust_passed": false
+            },
+            {
+              "source": "dinane-mounir-2003",
+              "I_bucket": "I>3",
+              "RMS": 0.0014090294455344125,
+              "maximum_absolute_error": 0.0024727832829657403,
+              "bias": 0.0008731666628808174,
+              "native_failure_count": 0,
+              "passing_realizations": 1,
+              "robust_passed": false
+            }
+          ]
+        },
+        {
+          "label": "H-optimum-2",
+          "starts": [
+            "grid-12"
+          ],
+          "final_cost": 0.010554547384590312,
+          "physical": [
+            3.6819814783673874,
+            3.240143700963301,
+            11.922344702502732,
+            -2.8093684879690026,
+            -8.559809333534952,
+            4.619434552391253,
+            4.065102406104303,
+            10.621631482731175,
+            -2.0372875688053274,
+            -6.606181381687738,
+            4.43010977490939,
+            3.898496601920263,
+            8.337147667176488,
+            -2.421701292651674,
+            -6.966178538173145
+          ],
+          "qualified": false,
+          "held_out": [
+            {
+              "source": "robinson-bower-1966",
+              "I_bucket": "I<=3",
+              "RMS": 0.0062046628703777106,
+              "maximum_absolute_error": 0.014436571682238997,
+              "bias": -0.0005412553392716558,
+              "native_failure_count": 0,
+              "passing_realizations": 1467,
+              "robust_passed": true
+            },
+            {
+              "source": "robinson-bower-1966",
+              "I_bucket": "I>3",
+              "RMS": 0.03298021687243547,
+              "maximum_absolute_error": 0.04559493536186121,
+              "bias": 0.0317157812276439,
+              "native_failure_count": 0,
+              "passing_realizations": 0,
+              "robust_passed": false
+            },
+            {
+              "source": "dinane-mounir-2003",
+              "I_bucket": "I<=3",
+              "RMS": 0.000833385522889337,
+              "maximum_absolute_error": 0.0016376228145720262,
+              "bias": 0.0006588826871011477,
+              "native_failure_count": 0,
+              "passing_realizations": 1466,
+              "robust_passed": false
+            },
+            {
+              "source": "dinane-mounir-2003",
+              "I_bucket": "I>3",
+              "RMS": 0.0013781086284194105,
+              "maximum_absolute_error": 0.0023954560753708387,
+              "bias": 0.0007720291324153515,
+              "native_failure_count": 0,
+              "passing_realizations": 5,
+              "robust_passed": false
+            }
+          ]
+        }
+      ],
+      "verdict_differs_between_optima": false
+    },
+    "F": {
+      "label": "F-optimum-1",
+      "starts": [
+        "grid-02"
+      ],
+      "final_cost": 0.02370051476446309,
+      "physical": [
+        2.04,
+        1.7952000000000001,
+        2.04,
+        30.0,
+        -7.463832713310111,
+        -5.913729838805419,
+        2.774808096842538,
+        2.4418311252214338,
+        2.269399292569065,
+        30.0,
+        -1.8700774495952222,
+        1.0,
+        4.668145464384959,
+        4.107968008658764,
+        7.038875769640958,
+        2.0,
+        -1.7200104469592563,
+        -6.494093570703291
+      ],
+      "qualified": false,
+      "held_out": [
+        {
+          "source": "robinson-bower-1966",
+          "I_bucket": "I<=3",
+          "RMS": 0.017943227770318676,
+          "maximum_absolute_error": 0.02626559858585087,
+          "bias": -0.017382786146831385,
+          "native_failure_count": 0,
+          "passing_realizations": 0,
+          "robust_passed": false
+        },
+        {
+          "source": "robinson-bower-1966",
+          "I_bucket": "I>3",
+          "RMS": 0.05486254893324402,
+          "maximum_absolute_error": 0.10129937907323305,
+          "bias": -0.04791707901095035,
+          "native_failure_count": 0,
+          "passing_realizations": 0,
+          "robust_passed": false
+        },
+        {
+          "source": "dinane-mounir-2003",
+          "I_bucket": "I<=3",
+          "RMS": 0.0006654373304990841,
+          "maximum_absolute_error": 0.0012343356493662583,
+          "bias": 0.00040875447429545854,
+          "native_failure_count": 0,
+          "passing_realizations": 1467,
+          "robust_passed": true
+        },
+        {
+          "source": "dinane-mounir-2003",
+          "I_bucket": "I>3",
+          "RMS": 0.0018748360462274183,
+          "maximum_absolute_error": 0.0034719135695409076,
+          "bias": 0.0010551722863405184,
+          "native_failure_count": 0,
+          "passing_realizations": 0,
+          "robust_passed": false
+        }
+      ],
+      "labels": [
+        "segment_diameter/sodium-cation",
+        "packing_diameter/sodium-cation",
+        "debye_huckel_diameter/sodium-cation",
+        "born_diameter/sodium-cation",
+        "k_ij/sodium-cation+water",
+        "k_ij/chloride-anion+sodium-cation",
+        "segment_diameter/magnesium-cation",
+        "packing_diameter/magnesium-cation",
+        "debye_huckel_diameter/magnesium-cation",
+        "born_diameter/magnesium-cation",
+        "k_ij/magnesium-cation+water",
+        "k_ij/chloride-anion+magnesium-cation",
+        "segment_diameter/calcium-cation",
+        "packing_diameter/calcium-cation",
+        "debye_huckel_diameter/calcium-cation",
+        "born_diameter/calcium-cation",
+        "k_ij/calcium-cation+water",
+        "k_ij/calcium-cation+chloride-anion"
+      ],
+      "start": "grid-02",
+      "optima": [
+        {
+          "label": "F-optimum-1",
+          "starts": [
+            "grid-02"
+          ],
+          "final_cost": 0.02370051476446309,
+          "physical": [
+            2.04,
+            1.7952000000000001,
+            2.04,
+            30.0,
+            -7.463832713310111,
+            -5.913729838805419,
+            2.774808096842538,
+            2.4418311252214338,
+            2.269399292569065,
+            30.0,
+            -1.8700774495952222,
+            1.0,
+            4.668145464384959,
+            4.107968008658764,
+            7.038875769640958,
+            2.0,
+            -1.7200104469592563,
+            -6.494093570703291
+          ],
+          "qualified": false,
+          "held_out": [
+            {
+              "source": "robinson-bower-1966",
+              "I_bucket": "I<=3",
+              "RMS": 0.017943227770318676,
+              "maximum_absolute_error": 0.02626559858585087,
+              "bias": -0.017382786146831385,
+              "native_failure_count": 0,
+              "passing_realizations": 0,
+              "robust_passed": false
+            },
+            {
+              "source": "robinson-bower-1966",
+              "I_bucket": "I>3",
+              "RMS": 0.05486254893324402,
+              "maximum_absolute_error": 0.10129937907323305,
+              "bias": -0.04791707901095035,
+              "native_failure_count": 0,
+              "passing_realizations": 0,
+              "robust_passed": false
+            },
+            {
+              "source": "dinane-mounir-2003",
+              "I_bucket": "I<=3",
+              "RMS": 0.0006654373304990841,
+              "maximum_absolute_error": 0.0012343356493662583,
+              "bias": 0.00040875447429545854,
+              "native_failure_count": 0,
+              "passing_realizations": 1467,
+              "robust_passed": true
+            },
+            {
+              "source": "dinane-mounir-2003",
+              "I_bucket": "I>3",
+              "RMS": 0.0018748360462274183,
+              "maximum_absolute_error": 0.0034719135695409076,
+              "bias": 0.0010551722863405184,
+              "native_failure_count": 0,
+              "passing_realizations": 0,
+              "robust_passed": false
+            }
+          ]
+        }
+      ],
+      "verdict_differs_between_optima": false
+    }
+  }
+}

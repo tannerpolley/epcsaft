@@ -1,0 +1,53 @@
+identity,source_value,packet_value,unit,locator,basis,absolute_difference
+component/calcium-cation/debye_huckel_diameter,3.2648,3.2648,angstrom,"Section 2.1, p.2886 closest approach equals sigma",source equation,0.0
+component/calcium-cation/dispersion_energy_over_k,1060,1060,kelvin,"Table 2 strategy 2, p.2889 calcium-cation",printed,0.0
+component/calcium-cation/packing_diameter,2.873024,2.873024,angstrom,"Eq.(21), p.2890 d_ion=0.88 sigma_ion",source equation,0.0
+component/calcium-cation/segment_count,1,1,dimensionless,Section 2.1 spherical ions (one segment),spherical ion convention,0.0
+component/calcium-cation/segment_diameter,3.2648,3.2648,angstrom,"Table 2 strategy 2, p.2889 calcium-cation",printed,0.0
+component/chloride-anion/debye_huckel_diameter,2.756,2.756,angstrom,"Section 2.1, p.2886 closest approach equals sigma",source equation,0.0
+component/chloride-anion/dispersion_energy_over_k,170,170,kelvin,"Table 2 strategy 2, p.2889 chloride-anion",printed,0.0
+component/chloride-anion/packing_diameter,2.42528,2.42528,angstrom,"Eq.(21), p.2890 d_ion=0.88 sigma_ion",source equation,0.0
+component/chloride-anion/segment_count,1,1,dimensionless,Section 2.1 spherical ions (one segment),spherical ion convention,0.0
+component/chloride-anion/segment_diameter,2.756,2.756,angstrom,"Table 2 strategy 2, p.2889 chloride-anion",printed,0.0
+component/lithium-cation/debye_huckel_diameter,2.8449,2.8449,angstrom,"Section 2.1, p.2886 closest approach equals sigma",source equation,0.0
+component/lithium-cation/dispersion_energy_over_k,360,360,kelvin,"Table 2 strategy 2, p.2889 lithium-cation",printed,0.0
+component/lithium-cation/packing_diameter,2.503512,2.503512,angstrom,"Eq.(21), p.2890 d_ion=0.88 sigma_ion",source equation,0.0
+component/lithium-cation/segment_count,1,1,dimensionless,Section 2.1 spherical ions (one segment),spherical ion convention,0.0
+component/lithium-cation/segment_diameter,2.8449,2.8449,angstrom,"Table 2 strategy 2, p.2889 lithium-cation",printed,0.0
+component/magnesium-cation/debye_huckel_diameter,3.1327,3.1327,angstrom,"Section 2.1, p.2886 closest approach equals sigma",source equation,0.0
+component/magnesium-cation/dispersion_energy_over_k,1500,1500,kelvin,"Table 2 strategy 2, p.2889 magnesium-cation",printed,0.0
+component/magnesium-cation/packing_diameter,2.756776,2.756776,angstrom,"Eq.(21), p.2890 d_ion=0.88 sigma_ion",source equation,0.0
+component/magnesium-cation/segment_count,1,1,dimensionless,Section 2.1 spherical ions (one segment),spherical ion convention,0.0
+component/magnesium-cation/segment_diameter,3.1327,3.1327,angstrom,"Table 2 strategy 2, p.2889 magnesium-cation",printed,0.0
+component/potassium-cation/debye_huckel_diameter,3.3417,3.3417,angstrom,"Section 2.1, p.2886 closest approach equals sigma",source equation,0.0
+component/potassium-cation/dispersion_energy_over_k,200,200,kelvin,"Table 2 strategy 2, p.2889 potassium-cation",printed,0.0
+component/potassium-cation/packing_diameter,2.940696,2.940696,angstrom,"Eq.(21), p.2890 d_ion=0.88 sigma_ion",source equation,0.0
+component/potassium-cation/segment_count,1,1,dimensionless,Section 2.1 spherical ions (one segment),spherical ion convention,0.0
+component/potassium-cation/segment_diameter,3.3417,3.3417,angstrom,"Table 2 strategy 2, p.2889 potassium-cation",printed,0.0
+component/sodium-cation/debye_huckel_diameter,2.8232,2.8232,angstrom,"Section 2.1, p.2886 closest approach equals sigma",source equation,0.0
+component/sodium-cation/dispersion_energy_over_k,230,230,kelvin,"Table 2 strategy 2, p.2889 sodium-cation",printed,0.0
+component/sodium-cation/packing_diameter,2.484416,2.484416,angstrom,"Eq.(21), p.2890 d_ion=0.88 sigma_ion",source equation,0.0
+component/sodium-cation/segment_count,1,1,dimensionless,Section 2.1 spherical ions (one segment),spherical ion convention,0.0
+component/sodium-cation/segment_diameter,2.8232,2.8232,angstrom,"Table 2 strategy 2, p.2889 sodium-cation",printed,0.0
+component/water/dispersion_energy_over_k,353.95,353.95,kelvin,"Table 1, p.2888 water column",printed,0.0
+component/water/segment_count,1.2047,1.2047,dimensionless,"Table 1, p.2888 water column",printed,0.0
+association/water/a/water/b/energy_over_k,2425.7,2425.7,kelvin,"Table 1, water column",printed,0.0
+association/water/a/water/b/volume,0.0451,0.0451,dimensionless,"Table 1, water column",printed,0.0
+water/association_sites,2,2,dimensionless,"Table 1, N_i=2, water 2B",printed,0.0
+component/water/relative_permittivity/constant/constant,78.09,78.09,dimensionless,"Figiel 2025 Table 1, water 78.09; supplemental numeric value for Held 2014 salt-independent solvent dielectric, not printed in Held 2014",supplement,0.0
+component/water/segment_diameter/constant-plus-sum-of-exponentials/constant,2.7927,2.7927,angstrom,Table 1 footnote a,printed,0.0
+component/water/segment_diameter/constant-plus-sum-of-exponentials/term-0/amplitude,10.11,10.11,angstrom,Table 1 footnote a,printed,0.0
+component/water/segment_diameter/constant-plus-sum-of-exponentials/term-0/exponent_coefficient,-0.01775,-0.01775,1 / kelvin,Table 1 footnote a,printed,0.0
+component/water/segment_diameter/constant-plus-sum-of-exponentials/term-1/amplitude,-1.417,-1.417,angstrom,Table 1 footnote a,printed,0.0
+component/water/segment_diameter/constant-plus-sum-of-exponentials/term-1/exponent_coefficient,-0.01146,-0.01146,1 / kelvin,Table 1 footnote a,printed,0.0
+pair/lithium-cation/water/k_ij,-0.25,-0.25,dimensionless,"Table 2, water-ion column and footnotes a/b, p.2889",printed,0.0
+pair/chloride-anion/lithium-cation/k_ij,0.669,0.669,dimensionless,"Table 3 chloride row, p.2889",printed,0.0
+pair/sodium-cation/water/k_ij,0.00045485000000011766,0.00045485000000011766,dimensionless,"Table 2, water-ion column and footnotes a/b, p.2889",evaluated at 298.15 K,0.0
+pair/chloride-anion/sodium-cation/k_ij,0.317,0.317,dimensionless,"Table 3 chloride row, p.2889",printed,0.0
+pair/potassium-cation/water/k_ij,0.19972220000000007,0.19972220000000007,dimensionless,"Table 2, water-ion column and footnotes a/b, p.2889",evaluated at 298.15 K,0.0
+pair/chloride-anion/potassium-cation/k_ij,0.064,0.064,dimensionless,"Table 3 chloride row, p.2889",printed,0.0
+pair/magnesium-cation/water/k_ij,-0.25,-0.25,dimensionless,"Table 2, water-ion column and footnotes a/b, p.2889",printed,0.0
+pair/chloride-anion/magnesium-cation/k_ij,0.817,0.817,dimensionless,"Table 3 chloride row, p.2889",printed,0.0
+pair/calcium-cation/water/k_ij,0.0041,0.0041,dimensionless,"Table 2, water-ion column and footnotes a/b, p.2889",printed,0.0
+pair/calcium-cation/chloride-anion/k_ij,1.0,1.0,dimensionless,"Table 3 chloride row, p.2889",printed,0.0
+pair/chloride-anion/water/k_ij,-0.25,-0.25,dimensionless,"Table 2, water-ion column and footnotes a/b, p.2889",printed,0.0

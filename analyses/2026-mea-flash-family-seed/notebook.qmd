@@ -1,0 +1,179 @@
+---
+title: "Reacting MEA flash family before and after the true-species split start and amount step rule"
+date: 2026-10-09
+format:
+  html:
+    toc: true
+execute:
+  enabled: true
+  echo: false
+---
+
+## Named-release rerun (#680)
+
+This section reads only the retained named-release outputs. The evidence is
+**numerical verification** on the stated manufactured or shared-model inputs.
+It establishes no physical validation or global-stability certificate.
+Independent delivered review and owner promotion for manuscript use remain open.
+
+```{python}
+#| output: asis
+import csv as _csv
+import json as _json
+from pathlib import Path as _Path
+_rr = _Path("results/main-8298c602")
+_rp = _json.loads((_rr / "provenance.json").read_text())
+_rs = _json.loads((_rr / "summary.json").read_text())
+def _rt(headers, data):
+    print()
+    print("| " + " | ".join(headers) + " |")
+    print("| " + " | ".join("---" for _ in headers) + " |")
+    for row in data:
+        print("| " + " | ".join(str(x) for x in row) + " |")
+print("Release: `" + _rp["release"] + "`. Wheel SHA-256: `" + _rp["wheel_sha256"] + "`.")
+_rt(["Quantity", "Named release", "Previous retained run", "Criterion"], [
+    ["Converged / declared states", f"{_rs['converged']} / {_rs['total']}", f"{_rs['previous_converged']} / {_rs['total']}", f"success and requested row tolerance {_rs['row_tolerance']}"],
+    ["Common converged states", _rs['common'], "same declared inputs", "compare only common solutions"],
+    ["Largest relative state difference", _rs['max_state_difference'], "reference run", _rs['state_criterion']],
+    ["Lost indices", _rs['lost'], "previously converged", "reported without changing starts"],
+    ["Recovered indices", _rs['recovered'], "previously failed", "same declared row criterion"],
+    ["Largest converged residual", _rs['largest_converged_residual'], "not aggregated here", _rs['row_tolerance']],
+])
+print("\nFailed states (full messages are retained in family.jsonl):\n")
+_rt(["Index", "T / K", "P / Pa", "Loading / mol per mol MEA", "Cause"],
+    [[r['index'], r['T_K'], r['P_Pa'], r['loading_mol_per_mol'], r['new_message'].split(';')[0].split('Michelsen deficit')[0]] for r in _rs['failed']])
+```
+
+The complete requests, returned operands, causes and wheel identity stay in
+[the retained run](results/main-8298c602/). No start, physical input, method,
+option or criterion was adjusted to obtain agreement.
+
+## Earlier retained studies
+
+The remaining sections describe their original wheels and their original
+review boundaries; they are not numbers from the named release.
+
+The common states satisfy the frozen comparison of amounts, mole fractions and
+densities. The changed convergence inventory is a failure of preservation over
+the full declared family. The formerly unresolved state is recovered, while
+other states are lost. These observations do not identify a unique cause among
+the method changes between the two releases.
+
+```{python}
+import csv
+from pathlib import Path
+
+rows = list(csv.DictReader(Path("results/comparison.csv").open(newline="")))
+W = ("iterations", "evaluations", "hessian_calls")
+yes = lambda v: v == "True"
+before = [r for r in rows if yes(r["before_success"])]
+after = [r for r in rows if yes(r["after_success"])]
+common = [r for r in rows if yes(r["before_success"]) and yes(r["after_success"])]
+lost = [r for r in rows if yes(r["before_success"]) and not yes(r["after_success"])]
+new = [r for r in rows if yes(r["after_success"]) and not yes(r["before_success"])]
+failed = [r for r in rows if not yes(r["after_success"])]
+work = lambda r, side: "/".join(r[f"{side}_{k}"] for k in W)
+total = lambda side: "/".join(str(sum(int(r[f"{side}_{k}"]) for r in common)) for k in W)
+slower = [r for r in common if any(int(r[f"after_{k}"]) > int(r[f"before_{k}"]) for k in W)]
+worst_work = max(slower, key=lambda r: int(r["after_iterations"]))
+worst = max(common, key=lambda r: float(r["state_difference"]))
+key = rows[0]
+identical = sum(yes(r["after_equals_branch"]) for r in rows)
+temperatures = sorted({float(r["T"]) for r in rows})
+loadings = sorted({float(r["loading"]) for r in rows[1:]})
+pressures = [float(r["P"]) for r in rows]
+def e(v, d=1):
+    m, x = f"{v:.{d}e}".split("e")
+    return f"{m}e{int(x)}"
+fail = failed[0]
+```
+
+**Outcome.** On Engine main 6bbaaf1e, the reacting MEA flash family converges at
+`{python} len(after)` of `{python} len(rows)` points, against `{python} len(before)` on main 7fa511b6
+before PR #370. `{python} len(lost)` of the earlier converged points are lost and
+`{python} len(new)` are new. The `{python} len(common)` common states agree within
+`{python} e(float(worst["state_difference"]))` relative. The key flash needs
+`{python} work(key, "after")` iterations/evaluations/Hessian calls instead of `{python} work(key, "before")`.
+This is **numerical verification** of the solver on one declaration; it is not physical validation.
+
+## Question and declaration
+
+Does PR #370 (#350 slice 2 with #356: the true-species split start and the amount step rule on free phase
+amounts, [ALG-EQUILIBRIUM](../../engine/docs/science/algorithms.md)) recover family points that the K-factor
+start lost, without losing any it solved, changing their states, or slowing the key flash?
+
+The family is the case-7 reacting flash of [the declared baseline](../2026-tpd-phase-discovery/scripts/baseline.py)
+(MEA, water and CO₂ with their true species; one free liquid and one free vapor at fixed T and P) with loading,
+T and P varied: `{python} len(temperatures)` temperatures (`{python} ", ".join(f"{t:.2f}" for t in temperatures)` K)
+× `{python} len(loadings)` loadings (`{python} e(loadings[0], 0)` to `{python} f"{loadings[-1]:g}"` mol CO₂/mol MEA)
+× 3 pressures, plus the key flash (`{python} f"{float(key['T']):.2f}"` K, `{python} f"{float(key['P']):.1f}"` Pa,
+loading `{python} f"{float(key['loading']):.4f}"`), `{python} len(rows)` points in all
+([points](scripts/family-points.txt)). Pressures run from `{python} f"{min(pressures)/1e3:.2f}"` to
+`{python} f"{max(pressures)/1e3:.1f}"` kPa. The feed is 9.73 mol MEA and about 77 mol water with
+CO₂ = loading × MEA; the row tolerance is the Engine's equilibrium row residual bound. A point counts as converged
+when the Engine reports success with the requested tolerance met.
+
+## Runs
+
+| run | Engine | file |
+|---|---|---|
+| before | main 7fa511b6 (K-factor start), retained from #356 | [family-before-7fa511b6.jsonl](results/family-before-7fa511b6.jsonl) |
+| PR #370 branch | fix round of the #370 branch, retained from #356 | [family-pr370-branch.jsonl](results/family-pr370-branch.jsonl) |
+| after (rerun) | main 6bbaaf1e, editable install, 2026-10-09 | [family-main-6bbaaf1e.jsonl](results/family-main-6bbaaf1e.jsonl) |
+
+The rerun on current main reproduces the PR #370 branch run exactly at `{python} identical` of
+`{python} len(rows)` points (convergence outcome, work counts, amounts, mole fractions and densities all equal), so the
+numbers below hold for main as of this record. Current main cannot select the K-factor start any more: inside the
+split start's domain the true-species split replaces it, and `solve_equilibrium` exposes no start selector. The
+"before" column is therefore the retained 7fa511b6 run, not a rerun.
+
+## Results
+
+![Top: convergence of each family point by temperature, before (main 7fa511b6) and after (main 6bbaaf1e). Bottom: solver iterations at each point converged in both runs; points below the dashed line need fewer iterations after. Values are in results/comparison.csv.](figures/family.png){#fig-family}
+
+| quantity | before | after |
+|---|---|---|
+| converged points | `{python} len(before)` | `{python} len(after)` |
+| key flash work (iterations/evaluations/Hessian calls) | `{python} work(key, "before")` | `{python} work(key, "after")` |
+| work summed over the `{python} len(common)` common points | `{python} total("before")` | `{python} total("after")` |
+
+- **Recovery.** `{python} len(new)` points converge only after; `{python} len(lost)` converge only before. `{python} sum(float(r['T']) == temperatures[-1] for r in new)` of the
+  recovered points are at `{python} f"{temperatures[-1]:.2f}"` K (@fig-family).
+- **State agreement.** Over amounts, mole fractions and molar densities, the largest
+  relative difference |a − b| / max(|a|, |b|), with the near-zero floor of [the frozen metric](scripts/compare.py), at a common point is `{python} e(float(worst["state_difference"]))` at loading
+  `{python} f"{float(worst['loading']):g}"`, `{python} f"{float(worst['T']):.2f}"` K
+  (`{python} worst["worst_quantity"]`). Both runs therefore reach the same local state at every common point,
+  within the Engine's equivalence standard of one part in ten billion.
+- **Work.** Summed work falls on all three components. `{python} len(slower)` of the `{python} len(common)` common
+  points need more of at least one component; the largest is loading `{python} f"{float(worst_work['loading']):g}"`,
+  `{python} f"{float(worst_work['T']):.2f}"` K: `{python} work(worst_work, "before")` →
+  `{python} work(worst_work, "after")`.
+
+## Limits
+
+- Numerical verification on one declaration of one chemical system. It shows that the solver reaches the same
+  local states and more of them; it says nothing about agreement with measured MEA data.
+- The remaining failure, loading `{python} f"{float(fail['loading']):g}"`, `{python} f"{float(fail['T']):.2f}"` K,
+  `{python} f"{float(fail['P']):.1f}"` Pa, fails in both runs: "`{python} fail['before_message'].split(';')[0]`" before and
+  "`{python} fail['after_message'].split(';')[0]`" after. #358 (the ion-bearing low-density liquid that #356 found
+  at nearly empty liquid amounts) is not addressed.
+- The amount step rule has no upper bound on added iterations: `{python} len(slower)` common points need more of
+  some work component, the largest shown above.
+- Converged means a local equilibrium state meeting the row residual bound; global stability is not established
+  here.
+- Wall time is not part of this record. PR #370's paired timing gives relative changes only, on one shared host.
+
+## Reproduce
+
+```bash
+.venv/bin/python analyses/2026-mea-flash-family-seed/scripts/family.py current-main \
+    analyses/2026-mea-flash-family-seed/results/family-main-6bbaaf1e.jsonl
+python3 analyses/2026-mea-flash-family-seed/scripts/compare.py
+.venv/bin/python analyses/2026-mea-flash-family-seed/scripts/render.py
+```
+
+Issues: [#350](https://github.com/tannerpolley/ePC-SAFT/issues/350),
+[#356](https://github.com/tannerpolley/ePC-SAFT/issues/356),
+[#358](https://github.com/tannerpolley/ePC-SAFT/issues/358); PR
+[#370](https://github.com/tannerpolley/ePC-SAFT/pull/370). The raw #356 evidence is archived outside the
+repository as `build/archive/issue-356-slice2.tar.zst` in the main checkout.

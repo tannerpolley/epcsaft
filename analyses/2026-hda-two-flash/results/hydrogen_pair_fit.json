@@ -1,0 +1,146 @@
+{
+ "hydrogen/benzene": {
+  "pair": "hydrogen/benzene",
+  "k_hat": -0.052572378753890786,
+  "J_hat": 3.7627797682370123,
+  "J_zero": 9.719610194108155,
+  "channels": 12,
+  "training_rows": 12,
+  "attempts": [
+   {
+    "start": 0.0,
+    "status": "converged",
+    "message": "Function tolerance reached. |cost_change|/cost: 4.075679e-14 <= 1.000000e-12",
+    "usable": true,
+    "gradient_dJ_dk": 4.27648462707116e-05,
+    "k": -0.05257237181677607,
+    "final_cost": 22.576678609423073,
+    "iterations": 5,
+    "trial_failures": 0,
+    "active_bounds": []
+   },
+   {
+    "start": -0.1,
+    "status": "converged",
+    "message": "Function tolerance reached. |cost_change|/cost: 3.776691e-14 <= 1.000000e-12",
+    "usable": true,
+    "gradient_dJ_dk": 1.5515344825504464e-05,
+    "k": -0.052572378753890786,
+    "final_cost": 22.57667860942168,
+    "iterations": 5,
+    "trial_failures": 0,
+    "active_bounds": []
+   },
+   {
+    "start": 0.1,
+    "status": "converged",
+    "message": "Function tolerance reached. |cost_change|/cost: 3.461966e-14 <= 1.000000e-12",
+    "usable": true,
+    "gradient_dJ_dk": 8.41305082370051e-06,
+    "k": -0.0525723805619749,
+    "final_cost": 22.57667860942382,
+    "iterations": 6,
+    "trial_failures": 0,
+    "active_bounds": []
+   }
+  ],
+  "slope_fd": 0.003429714762415159,
+  "curvature": 3928.082588562809,
+  "curvature_floor": 1.505111907294805e-08,
+  "repeat_spread": 0.0,
+  "band_level": 4.139057745060714,
+  "band_low": -0.06642933046282315,
+  "band_high": -0.03909654022282074,
+  "holdout": {
+   "J_holdout_0": 7.94570563822823,
+   "J_holdout_hat": 0.1877316566112904,
+   "no_worse": true
+  },
+  "holdout_failed_rows": [],
+  "conditions": {
+   "interior": true,
+   "curvature_positive": true,
+   "both_crossings": true,
+   "band_width_ok": true,
+   "repeat_ok": true,
+   "fit_matches_audited_J": true,
+   "holdout_physical": true,
+   "holdout_no_worse": true
+  },
+  "decision": "adopt"
+ },
+ "hydrogen/methane": {
+  "pair": "hydrogen/methane",
+  "k_hat": -0.17608773751414422,
+  "J_hat": 57.06687103402786,
+  "J_zero": 789.0412944484284,
+  "channels": 78,
+  "training_rows": 39,
+  "attempts": [
+   {
+    "start": 0.0,
+    "status": "converged",
+    "message": "Function tolerance reached. |cost_change|/cost: 1.091096e-13 <= 1.000000e-12",
+    "usable": true,
+    "gradient_dJ_dk": 0.0005536135310757707,
+    "k": -0.1760877262077719,
+    "final_cost": 2225.6079703273094,
+    "iterations": 7,
+    "trial_failures": 0,
+    "active_bounds": []
+   },
+   {
+    "start": -0.1,
+    "status": "converged",
+    "message": "Function tolerance reached. |cost_change|/cost: 3.824964e-13 <= 1.000000e-12",
+    "usable": true,
+    "gradient_dJ_dk": 0.0009107591006257509,
+    "k": -0.17608770930133313,
+    "final_cost": 2225.6079703277715,
+    "iterations": 6,
+    "trial_failures": 0,
+    "active_bounds": []
+   },
+   {
+    "start": 0.1,
+    "status": "converged",
+    "message": "Function tolerance reached. |cost_change|/cost: 3.064875e-14 <= 1.000000e-12",
+    "usable": true,
+    "gradient_dJ_dk": 0.0003147684241562523,
+    "k": -0.17608773751414422,
+    "final_cost": 2225.6079703270716,
+    "iterations": 8,
+    "trial_failures": 0,
+    "active_bounds": []
+   }
+  ],
+  "slope_fd": 0.04022275047077528,
+  "curvature": 21125.04728945908,
+  "curvature_floor": 2.2826748413611147e-07,
+  "repeat_spread": 0.0,
+  "band_level": 62.77355813743065,
+  "band_low": -0.2003415420404216,
+  "band_high": -0.15397716810214782,
+  "holdout": {
+   "J_holdout_0": 3104.2201053219505,
+   "J_holdout_hat": 313.33551271172115,
+   "no_worse": true
+  },
+  "holdout_failed_rows": [],
+  "conditions": {
+   "interior": true,
+   "curvature_positive": true,
+   "both_crossings": true,
+   "band_width_ok": true,
+   "repeat_ok": true,
+   "fit_matches_audited_J": true,
+   "holdout_physical": true,
+   "holdout_no_worse": true
+  },
+  "decision": "adopt"
+ },
+ "installed": {
+  "core_sha256": "54f51f98206584f0eed0123c426c3cf4119fd94efd2477470360a6c24ffab908",
+  "rows_sha256": "fab15358e4fb7e1bd5f82cd4871e6aee341d853bf6123c25644289ec84443f01"
+ }
+}

@@ -1,0 +1,89 @@
+{
+  "main": "ec0bafa71b5022821f1774b2b9fffb06622be87c",
+  "branch_head": "cbef363598704af19ece9146ec5aae97cf11a16e",
+  "pristine_states_identical": true,
+  "states_compared": 15,
+  "changes": [],
+  "checks": [
+    {
+      "case": "caloric-action",
+      "baseline_passed": true,
+      "instrumented_passed": true,
+      "recorded_checks_identical": true
+    },
+    {
+      "case": "fit",
+      "baseline_passed": true,
+      "instrumented_passed": true,
+      "recorded_checks_identical": true
+    },
+    {
+      "case": "isomerization",
+      "baseline_passed": true,
+      "instrumented_passed": true,
+      "recorded_checks_identical": true
+    },
+    {
+      "case": "two-phase-action",
+      "baseline_passed": true,
+      "instrumented_passed": true,
+      "recorded_checks_identical": true
+    }
+  ],
+  "wheels": {
+    "main": {
+      "path": "build/issue-272/damped-stop/main-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "sha256": "f5b38aaadb19f2339c8215e7a321f373f03e2940dc1d1ce12cabc5e843ed48a2"
+    },
+    "instrumented": {
+      "path": "build/issue-272/damped-stop/instrumented-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "sha256": "44a42e3a648ffa944cdbb3d89c95413e7f62a565f2d814624d3eb7063e644adc"
+    }
+  },
+  "instrumented_source_sha256": "4cf07afb3a255a23d3f438525ad8a1b9dfe27604abdf8345e53cb174bd16616b",
+  "preservation_budgets": {
+    "observable_relative": 1e-11,
+    "trace_relative": 1e-11,
+    "phase_relative": 1e-11
+  },
+  "prototype_source_paths": {
+    "build/issue-272/damped-stop/instrument.py": "e982662ba225ea8009b65fc64a3179e54ff5cc755a08b957349209ab78fe5130",
+    "build/issue-272/damped-stop/trace.hpp": "be721d207ec3cf84d5101abfb25834b998dd0d805f6ddd1a6d0967b182c61371",
+    "build/issue-272/damped-stop/instrumented-gibbs_minimizer.cpp": "4cf07afb3a255a23d3f438525ad8a1b9dfe27604abdf8345e53cb174bd16616b",
+    "build/issue-272/damped-stop/run_cases.py": "8e0cdc84e4e23f886e942fc5c5625cb73eaac329528f00987d2529a86b52d634",
+    "build/issue-272/damped-stop/replay.sh": "ca818a4674f7aea7c523bb166ceee5a49cdd6115876fc7a542e660a6d2219df5",
+    "build/issue-272/damped-stop/reduce.py": "c069b32570d331ef6fcc9ecde8e03b85145170e834626e76bfd8eaecbf5d2b91",
+    "build/issue-272/damped-stop/compare_recording.py": "958e793339828f91079c52bbe168e4d596625fdb6c1ebefbe57fd432ba44122f",
+    "build/issue-272/damped-stop/retain.py": "019abcce984e1b4a582733eac0a3790011c0974e225469acbf11f144553bffd8"
+  },
+  "input_owners": {
+    "analyses/2026-equilibrium-polish-masking/scripts/qualify_polish.py": "40ef625f5759c71b2d1f787bf3616acd1c19986cd3946b6c0ff7736f14db428d",
+    "analyses/2026-equilibrium-polish-masking/scripts/unloaded_input.py": "220c223250c3aab3fd9c1faebdf5160b8fc6cb19df9e4e95fac3f3e0a7c2e5da",
+    "analyses/2026-equilibrium-polish-masking/results/amendment-2/small-phase-input.json": "f66f8888da94f56ad0d3fa00181d471cf0cf68271e44e51a682098f0d62dac9b",
+    "engine/tests/equilibrium/test_native_transport.py": "1381b835caf8b0399d03c6956be9b8d4cd4933f42006cc8b6437b5ff95c50962",
+    "engine/tests/equilibrium/test_trace_reliability.py": "92e9e1bdaf4c1a95dfbda94ce52fef48e149f48fd733b59a6662fff7344aad25",
+    "engine/tests/regression/test_fit.py": "aaca7dd01fce9ed09b43c64382f016abcdb1f53a965c1d90d6c1b4aed0b51461",
+    "analyses/2026-khudaida-idaes-settler/scripts/run_fixed_settler.py": "2dabb36cea32bd22feb71b041d0e6577ec38d8cd6f7a41db50c13313f84f3589"
+  },
+  "diagnosis": "No tested predicate separates the rejected ionic/Khudaida trials from required productive trials while meeting the ionic work limit.",
+  "evidence_kind": "numerical verification; local linear predictions and first-order rounding estimates; no physical validation",
+  "result_hashes": {
+    "checks.csv": "da796f95fc3f74c54f1e8f0b23bab6d5fa7ca0a986cf23de1def8ba77cd81cae",
+    "coordinates.csv": "75a100b7469291b846c836f499099228a9f633b4a99bd90fbec7c6845e3cf0de",
+    "diagnosis.md": "5ed539ae4511527c6144ba3bf3dd51f9fc42d0d64490b55d7aebdf72630142cd",
+    "predicates.csv": "1fd3beb56113c7cb6fa238d9419b67f495aec22b9b0e049b81babfe54d332a98",
+    "rows.csv": "deed1c8f6df961e530ef92cc9497cb7e87d1fdc6ed7b323a26f5d75ec6d900fb",
+    "states.csv": "3ae7aba1119b5f47374150da65c37299ae0a4de4e62511ec410f6c038d864f59",
+    "trials.csv": "a060240ec478f2fc861cea85b5fd137b7296696b008bd75703d8900c8af2c047",
+    "trials.md": "f7158f0f135140b63a401b1791c04d4e78b0b213bb88ea61eb04ac5872cf9a7d",
+    "work.csv": "f6cf53850c3eef7c39b074e4aac8bcb5c0c7d93cf844c901efb952ab6e862303"
+  },
+  "checks_executed": [
+    "pristine versus recording-only installed-wheel replay on 15 returned states",
+    "four unchanged protective comparison checks on both installed wheels",
+    "eight pre-evaluation predicates on all 220 recorded trials",
+    "extended-precision operand and predictor accumulation",
+    "tools/check-affected.sh HEAD with EPCSAFT_CHECK_SOURCE_ONLY=1",
+    "Quarto HTML render through cse render.sh with --no-execute"
+  ]
+}

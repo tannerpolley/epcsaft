@@ -1,0 +1,20 @@
+{
+  "schema": "epcsaft.fixed-pressure-anchor-fixtures.v1",
+  "downstream": {
+    "repository": "tannerpolley/MEA-Absorption-Column",
+    "commit": "700f6212fb20ab4b2b9045c1b9da9d23a5acb88a"
+  },
+  "engine": {
+    "repository": "tannerpolley/ePC-SAFT",
+    "commit": "9f4dc3eea1d0f9d22ec70f8e9e0aa2620c860468"
+  },
+  "files": {
+    "parameters.json": {"sha256": "66837ab1c9625f28cf143a8adfea5855db70d3e070d44258d7e6f5f3e133c63b", "source_path": "src/mea_absorption_column/data/epcsaft_datasets/MEA_CO2_H2O_retained_predictive/parameters.json"},
+    "temperature_adjustments.json": {"sha256": "502033bb303bd80aaddcbba817058e20572f675ed5dbc478de9e022c11fe6da8", "source_path": "src/mea_absorption_column/data/epcsaft_datasets/MEA_CO2_H2O_retained_predictive/temperature_adjustments.json"},
+    "speciation_table.csv": {"sha256": "36ae5bf625f076e5f31f8a3f26cccd40f9d3d33526190fac97e46e887507bdb4", "source_path": "analyses/nccc_validation/inputs/retained_reactive_case3c/speciation_table.csv"},
+    "film_states.csv": {"sha256": "2c6172cbd84d11b851168c8d5526c46f62e28ed9dd7d06e6de1bb24bc68d074a", "source_path": "analyses/nccc_validation/inputs/retained_reactive_case3c/film_states.csv"},
+    "aqueous_electrolyte.json": {"sha256": "27878d5e9ebc7fd4bc13dcc5a3e7e432502c74de960d1a3adf3c5ae38641a8ee", "source_path": "engine/tests/eos/_cases.py:AQUEOUS_ELECTROLYTE"},
+    "neutral_binary.json": {"sha256": "9b4abb521b2d9308a31ca568476a7d249402f1fe9822d14966ed5c4ed4edded5", "source_path": "engine/tests/eos/_cases.py:NEUTRAL_BINARY"},
+    "strongly_associating_binary.json": {"sha256": "94893d3c6ca19f4a9dfcb30634703fe8e2d24f273d7172ef7669c59e8ff76bf0", "source_path": "engine/tests/eos/_cases.py:STRONGLY_ASSOCIATING_BINARY"}
+  }
+}

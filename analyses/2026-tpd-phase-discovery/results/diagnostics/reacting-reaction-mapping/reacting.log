@@ -1,0 +1,11 @@
+Traceback (most recent call last):
+  File "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-223-build-tpd-stability-test-and-phase-35ebff8f/analyses/2026-tpd-phase-discovery/scripts/qualify.py", line 394, in <module>
+    main()
+    ~~~~^^
+  File "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-223-build-tpd-stability-test-and-phase-35ebff8f/analyses/2026-tpd-phase-discovery/scripts/qualify.py", line 383, in main
+    globals()[args.stage]()
+    ~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-223-build-tpd-stability-test-and-phase-35ebff8f/analyses/2026-tpd-phase-discovery/scripts/qualify.py", line 330, in reacting
+    reactions=[eq.Reaction('manufactured-water-salt', dict(zip(species, nu)), equilibrium_constant=k)])
+               ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: Reaction.__init__() takes 2 positional arguments but 3 positional arguments (and 1 keyword-only argument) were given

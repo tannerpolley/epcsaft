@@ -1,0 +1,34 @@
+{
+  "native_comparisons": {
+    "equilibrium": {
+      "changed_values": 0,
+      "model_values_sha256": "8ea1bfe848e03447a20dbc5f9fe139b588bd710da3516012867a11e5ce6b363f",
+      "before_unique_comparisons": 7197,
+      "after_unique_comparisons": 7197,
+      "before_emitted_rows": 7198,
+      "after_emitted_rows": 7198
+    },
+    "boundary": {
+      "changed_values": 0,
+      "model_values_sha256": "fde6002f15b8821228b95d1f64d9ae0ec25a20daadb7601e101fef2eb0304be9",
+      "before_unique_comparisons": 3813,
+      "after_unique_comparisons": 3813,
+      "before_emitted_rows": 3813,
+      "after_emitted_rows": 3813
+    }
+  },
+  "khudaida": "run-slice khudaida passed: fixed-settler candidate qualified against retained rows; no retained input or result changed",
+  "baseline_falsifier": "one numerical test failed at result.success with phase V corrected density left the anchored branch window; fixed wheel passed",
+  "full_gate": "bash tools/check-all.sh passed: 108 Python numerical checks, native fast programs, packets, typing, docs, analysis layout and architecture; installed wheel c0efa42bc1e1b83637e51d3b532f3f671de5687ef186c07621fd94a778655133",
+  "independent_review": {
+    "verdict": "Supported",
+    "required_corrections": 0,
+    "providerInstanceId": "codex",
+    "model": "gpt-6.1-sol",
+    "reasoningEffort": "high",
+    "reviewed_commit": "b98b430d283e77620478f97f28d7b5410580a5ee",
+    "base_commit": "bea7655d",
+    "task_id": "node:delegated-task:command%3Amcp%3A2611b8c5-51ce-4d45-9239-93bbe81838ac%3Adelegate-task%3Aissue-204-independent-sol-review-b98b430d",
+    "limits": "exercised declared states; no universal cold-start convergence, global stability, critical-point passage or physical validation; no manuscript promotion"
+  }
+}

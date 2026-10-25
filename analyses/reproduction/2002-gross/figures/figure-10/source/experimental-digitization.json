@@ -1,0 +1,314 @@
+{
+  "source_pdf": "/home/tnnrpolley21/Zotero/storage/UGT3UV2L/Gross and Sadowski - 2002 - Application of the Perturbed-Chain SAFT Equation of State to Associating Systems.pdf",
+  "pdf_sha256": "e4991a757cad356c2d0f6ec20972adb74458218b2583cd92b19b825ccf1d89bb",
+  "page_index": 4,
+  "pdf_image_xref": 79,
+  "resolution": "Native embedded monochrome raster",
+  "transformation": "CCITT extracted pixels inverted to match rendered PDF",
+  "axis": {
+    "x1_pixel": [
+      287,
+      1382
+    ],
+    "x2_pixel": [
+      1927,
+      1382
+    ],
+    "x1_value": 0,
+    "x2_value": 1,
+    "y1_pixel": [
+      287,
+      1382
+    ],
+    "y2_pixel": [
+      287,
+      28
+    ],
+    "y1_value": 25,
+    "y2_value": 150
+  },
+  "manual_selection": "Manual centers on preview crop [245,0,1940,760], resized by 0.8; converted back to native raster pixels.",
+  "coordinate_helper": "cse:digitize/scripts/digitize_xy_plot.py:AxisTransform",
+  "uncertainty": {
+    "x": 0.004,
+    "T_C": 0.6,
+    "meaning": "Bound for marker-center selection and axis calibration; not measurement uncertainty"
+  },
+  "roi": [
+    287,
+    28,
+    1927,
+    605
+  ],
+  "points": [
+    [
+      435.0,
+      392.5,
+      "Cho et al. 1984",
+      "experiment_paper",
+      "bubble"
+    ],
+    [
+      448.75,
+      405.0,
+      "Cho et al. 1984",
+      "experiment_paper",
+      "bubble"
+    ],
+    [
+      483.75,
+      433.75,
+      "Cho et al. 1984",
+      "experiment_paper",
+      "bubble"
+    ],
+    [
+      515.0,
+      456.25,
+      "Cho et al. 1984",
+      "experiment_paper",
+      "bubble"
+    ],
+    [
+      560.0,
+      487.5,
+      "Cho et al. 1984",
+      "experiment_paper",
+      "bubble"
+    ],
+    [
+      590.0,
+      501.25,
+      "Cho et al. 1984",
+      "experiment_paper",
+      "bubble"
+    ],
+    [
+      637.5,
+      525.0,
+      "Cho et al. 1984",
+      "experiment_paper",
+      "bubble"
+    ],
+    [
+      685.0,
+      542.5,
+      "Cho et al. 1984",
+      "experiment_paper",
+      "bubble"
+    ],
+    [
+      711.25,
+      553.75,
+      "Cho et al. 1984",
+      "experiment_paper",
+      "bubble"
+    ],
+    [
+      760.0,
+      565.0,
+      "Cho et al. 1984",
+      "experiment_paper",
+      "bubble"
+    ],
+    [
+      783.75,
+      571.25,
+      "Cho et al. 1984",
+      "experiment_paper",
+      "bubble"
+    ],
+    [
+      910.0,
+      602.5,
+      "Cho et al. 1984",
+      "experiment_paper",
+      "bubble"
+    ],
+    [
+      965.0,
+      608.75,
+      "Cho et al. 1984",
+      "experiment_paper",
+      "bubble"
+    ],
+    [
+      398.75,
+      180.0,
+      "Cho et al. 1984",
+      "experiment_paper",
+      "dew"
+    ],
+    [
+      506.25,
+      203.75,
+      "Cho et al. 1984",
+      "experiment_paper",
+      "dew"
+    ],
+    [
+      541.25,
+      210.0,
+      "Cho et al. 1984",
+      "experiment_paper",
+      "dew"
+    ],
+    [
+      626.25,
+      228.75,
+      "Cho et al. 1984",
+      "experiment_paper",
+      "dew"
+    ],
+    [
+      706.25,
+      247.5,
+      "Cho et al. 1984",
+      "experiment_paper",
+      "dew"
+    ],
+    [
+      760.0,
+      261.25,
+      "Cho et al. 1984",
+      "experiment_paper",
+      "dew"
+    ],
+    [
+      843.75,
+      281.25,
+      "Cho et al. 1984",
+      "experiment_paper",
+      "dew"
+    ],
+    [
+      897.5,
+      297.5,
+      "Cho et al. 1984",
+      "experiment_paper",
+      "dew"
+    ],
+    [
+      965.0,
+      312.5,
+      "Cho et al. 1984",
+      "experiment_paper",
+      "dew"
+    ],
+    [
+      1026.25,
+      335.0,
+      "Cho et al. 1984",
+      "experiment_paper",
+      "dew"
+    ],
+    [
+      1073.75,
+      350.0,
+      "Cho et al. 1984",
+      "experiment_paper",
+      "dew"
+    ],
+    [
+      1106.25,
+      356.25,
+      "Cho et al. 1984",
+      "experiment_paper",
+      "dew"
+    ],
+    [
+      1205.0,
+      390.0,
+      "Cho et al. 1984",
+      "experiment_paper",
+      "dew"
+    ],
+    [
+      1245.0,
+      406.25,
+      "Cho et al. 1984",
+      "experiment_paper",
+      "dew"
+    ],
+    [
+      1322.5,
+      435.0,
+      "Cho et al. 1984",
+      "experiment_paper",
+      "dew"
+    ],
+    [
+      1378.75,
+      455.0,
+      "Cho et al. 1984",
+      "experiment_paper",
+      "dew"
+    ],
+    [
+      1451.25,
+      488.75,
+      "Cho et al. 1984",
+      "experiment_paper",
+      "dew"
+    ],
+    [
+      1487.5,
+      506.25,
+      "Cho et al. 1984",
+      "experiment_paper",
+      "dew"
+    ],
+    [
+      1537.5,
+      532.5,
+      "Cho et al. 1984",
+      "experiment_paper",
+      "dew"
+    ],
+    [
+      1583.75,
+      556.25,
+      "Cho et al. 1984",
+      "experiment_paper",
+      "dew"
+    ],
+    [
+      1618.75,
+      572.5,
+      "Cho et al. 1984",
+      "experiment_paper",
+      "dew"
+    ],
+    [
+      1742.5,
+      606.25,
+      "Cho et al. 1984",
+      "experiment_paper",
+      "dew"
+    ],
+    [
+      1795.0,
+      600.0,
+      "Cho et al. 1984",
+      "experiment_paper",
+      "dew"
+    ],
+    [
+      1848.75,
+      592.5,
+      "Cho et al. 1984",
+      "experiment_paper",
+      "dew"
+    ],
+    [
+      1877.5,
+      583.75,
+      "Cho et al. 1984",
+      "experiment_paper",
+      "dew"
+    ]
+  ],
+  "qa": "review",
+  "independent_lane": "Selected isolated symbols checked against rendered PDF page; no independent second digitizer",
+  "limits": "Crowded or overlapping symbols omitted; bounded readable subset. Figure 8 squares are a published correlation, not independent experiments."
+}

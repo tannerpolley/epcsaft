@@ -1,0 +1,35 @@
+name: Reconcile issue roadmap
+
+# Hourly plus manual for the whole roadmap: agents apply the reconciler locally after each
+# change, and per-event runs of the whole roadmap queued bursts that cancelled pending runs and
+# reported spurious failures. A new, reopened or demilestoned issue gets its own run for that
+# issue alone, in its own concurrency group, so it need not wait for the hourly run.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 * * * *"
+  issues:
+    types: [opened, reopened, demilestoned]
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: issue-roadmap-${{ github.event.issue.number || 'all' }}
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reconcile derived issue status and milestones
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE: ${{ github.event.issue.number }}
+        run: >-
+          python3 tools/reconcile-issue-roadmap.py
+          --repo "$GITHUB_REPOSITORY"
+          ${ISSUE:+--issue "$ISSUE"}
+          --apply

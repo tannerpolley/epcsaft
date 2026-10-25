@@ -1,0 +1,11 @@
+ion,solvent,k_ij,l_ij
+NH4+,1-butanol,0.29,0.140
+Cl-,1-butanol,0.22,0.245
+Na+,benzene,0.35,0
+Cl-,benzene,0.35,0
+Br-,benzene,0.15,0
+I-,benzene,0.07,0
+SO42-,benzene,1.00,0
+Na+,toluene,0.35,0
+Cl-,toluene,0.35,0
+Br-,toluene,0.15,0

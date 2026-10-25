@@ -1,0 +1,487 @@
+{
+  "adapter_source_sha256": "a75024bd7a9ac731b88e640fafd02805f315af0455d4bb0c6d404b43b0a1df54",
+  "analysis_elapsed_s": 19.468075538999983,
+  "asl_library": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-720-26-analysis-producers-no-longer-run-on/.venv/lib/python3.13/site-packages/epcsaft/libepcsaft_asl.so",
+  "asl_library_identity": {
+    "exports": [
+      "funcadd_ASL"
+    ],
+    "needed": [
+      "libipopt-da040c79.so.1.9.9",
+      "libstdc++.so.6",
+      "libm.so.6",
+      "libgcc_s.so.1",
+      "libc.so.6",
+      "ld-linux-x86-64.so.2"
+    ],
+    "runpaths": [
+      "$ORIGIN/../epcsaft.libs"
+    ]
+  },
+  "asl_library_sha256": "f1de85b6ce99087312bf2252a9438036e2f2ab5b8d680e2b646ed33adac063d2",
+  "asl_version": "20231111",
+  "attempt_id": "20261021T215902-707979",
+  "attempt_limits": {
+    "cold_load_admission_tape_s": 60.0,
+    "derivative_domain_whole_nlp_s": 120.0,
+    "post_build_s": 600.0,
+    "solve_s": 30.0,
+    "warm_batch_s": 10.0
+  },
+  "build_mode": "Meson C++17 installed wheel",
+  "changed_cap_reference": {
+    "pressure": 150000.0,
+    "pressure_error_pa": 0.0,
+    "rho": 45.54628080767127
+  },
+  "claim_limits": [
+    "pure neutral PC-SAFT",
+    "propane packet",
+    "385-415 K and 5-110 mol/m3 sampled branch",
+    "not global phase stability or application qualification"
+  ],
+  "compiler": "c++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+  "conditioning_grid": {
+    "density_count": 9,
+    "derivative_state_count": 9,
+    "grid_state_count": 45,
+    "pressure_max_pa": 371318.8192355422,
+    "pressure_min_pa": 15986.770827719305,
+    "pressure_slope_over_rt_min": 0.9497740364260885,
+    "state_count": 54,
+    "temperatures_k": [
+      385.0,
+      392.5,
+      400.0,
+      407.5,
+      415.0
+    ]
+  },
+  "conditioning_state_count": 54,
+  "cost": {
+    "asl": {
+      "child_mode": "asl",
+      "child_startup_elapsed_s": 1.2163039300012315,
+      "child_total_elapsed_s": 1.5114157820007676,
+      "cold_elapsed_s": 0.0020316729987825966,
+      "cold_recording_count": 1,
+      "first_call_s": {
+        "0": 0.0002818590000970289,
+        "1": 5.2659999710158445e-05,
+        "2": 7.086000005074311e-05
+      },
+      "fresh_process": true,
+      "phase_count": 12,
+      "recording_reuse_passed": true,
+      "state_count": 9,
+      "states": [
+        [
+          390.0,
+          20.0
+        ],
+        [
+          390.0,
+          60.0
+        ],
+        [
+          390.0,
+          90.0
+        ],
+        [
+          400.0,
+          20.0
+        ],
+        [
+          400.0,
+          60.0
+        ],
+        [
+          400.0,
+          90.0
+        ],
+        [
+          410.0,
+          20.0
+        ],
+        [
+          410.0,
+          60.0
+        ],
+        [
+          410.0,
+          90.0
+        ]
+      ],
+      "warm": {
+        "0": {
+          "batch_count": 3,
+          "call_count": 100,
+          "median_s": 0.0007311669996852288,
+          "range_s": [
+            0.0007290680005098693,
+            0.0008101269995677285
+          ]
+        },
+        "1": {
+          "batch_count": 3,
+          "call_count": 100,
+          "median_s": 0.001606163999895216,
+          "range_s": [
+            0.001598534001459484,
+            0.0019255529987276532
+          ]
+        },
+        "2": {
+          "batch_count": 3,
+          "call_count": 100,
+          "median_s": 0.0032136579993675696,
+          "range_s": [
+            0.0028664300007221755,
+            0.0035083269995084265
+          ]
+        }
+      },
+      "warm_recording_deltas": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    "native": {
+      "child_mode": "native",
+      "child_startup_elapsed_s": 1.2178207439992548,
+      "child_total_elapsed_s": 1.5113278019998688,
+      "cold_elapsed_s": 0.000481428000057349,
+      "cold_recording_count": 1,
+      "first_call_s": {
+        "0": 0.00015567899936286267,
+        "1": 4.873000034422148e-05,
+        "2": 4.652899951906875e-05
+      },
+      "fresh_process": true,
+      "phase_count": 12,
+      "recording_reuse_passed": true,
+      "state_count": 9,
+      "states": [
+        [
+          390.0,
+          20.0
+        ],
+        [
+          390.0,
+          60.0
+        ],
+        [
+          390.0,
+          90.0
+        ],
+        [
+          400.0,
+          20.0
+        ],
+        [
+          400.0,
+          60.0
+        ],
+        [
+          400.0,
+          90.0
+        ],
+        [
+          410.0,
+          20.0
+        ],
+        [
+          410.0,
+          60.0
+        ],
+        [
+          410.0,
+          90.0
+        ]
+      ],
+      "warm": {
+        "0": {
+          "batch_count": 3,
+          "call_count": 100,
+          "median_s": 0.00029032900056336075,
+          "range_s": [
+            0.000280008998743142,
+            0.00030193899874575436
+          ]
+        },
+        "1": {
+          "batch_count": 3,
+          "call_count": 100,
+          "median_s": 0.000988767000308144,
+          "range_s": [
+            0.000984876000075019,
+            0.0010064859998237807
+          ]
+        },
+        "2": {
+          "batch_count": 3,
+          "call_count": 100,
+          "median_s": 0.0018042530009552138,
+          "range_s": [
+            0.0017856840004242258,
+            0.002070471999104484
+          ]
+        }
+      },
+      "warm_recording_deltas": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  "cppad_version": "20250000.3",
+  "derivative_check": {
+    "passed": true,
+    "requested": "second-order",
+    "result": "passed"
+  },
+  "derivatives": {
+    "derivative_ladders_passed": 72,
+    "gradient_max_scaled_error": 6.271841255608979e-06,
+    "hessian_max_scaled_error": 2.9346729078477685e-05,
+    "maximum_estimated_floor": 6.089446597856707e-06,
+    "transport_max_scaled_gradient_error": 0.0,
+    "transport_max_scaled_hessian_error": 0.0,
+    "transport_max_scaled_value_error": 0.0,
+    "transport_passed": true,
+    "unit_pressure_chain": {
+      "max_gradient_error": 2.220446049250313e-16,
+      "max_hessian_error": 2.3592239273284576e-16,
+      "max_value_error": 2.220446049250313e-16,
+      "passed": true,
+      "state_count": 9
+    }
+  },
+  "failure_probe": {
+    "cancellation_deadline_monotonic": 9316.522818455,
+    "cap": 200000.0,
+    "entry_observed": true,
+    "ipopt_process": {
+      "cmdline": "/home/tnnrpolley21/.local/share/micromamba/envs/ipopt-viz/bin/ipopt /home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-720-26-analysis-producers-no-longer-run-on/build/issue-720/idaes-explicit-mumps/solver/process-1/process-1 nl -AMPL nlp_scaling_method=none tol=1e-09 max_iter=200 linear_solver=mumps hessian_approximation=exact point_perturbation_radius=0 bound_relax_factor=0 constr_viol_tol=1e-08 dual_inf_tol=1e-07 compl_inf_tol=1e-07 acceptable_iter=0 print_level=5 output_file=/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-720-26-analysis-producers-no-longer-run-on/build/issue-720/idaes-explicit-mumps/solver/forced-post-entry-timeout/ipopt.log file_print_level=5",
+      "executable": "/home/tnnrpolley21/.local/share/micromamba/envs/ipopt-viz/bin/ipopt",
+      "pid": 712564,
+      "process_group": 712476
+    },
+    "numeric_iteration_zero_line": "0 -1.7500000e-01 4.85e-01 1.15e-01  -1.0 0.00e+00    -  0.00e+00 0.00e+00   0",
+    "outer_elapsed_s": 1.2690793510009826,
+    "parent_stderr_log": null,
+    "parent_stdout_log": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-720-26-analysis-producers-no-longer-run-on/build/issue-720/idaes-explicit-mumps/solver/forced-post-entry-timeout/parent.stdout.log",
+    "process_group": 712476,
+    "process_group_terminated": true,
+    "returncode": -15,
+    "signals": [
+      "SIGTERM"
+    ],
+    "solver_col": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-720-26-analysis-producers-no-longer-run-on/build/issue-720/idaes-explicit-mumps/solver/process-0/process-0.col",
+    "solver_nl": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-720-26-analysis-producers-no-longer-run-on/build/issue-720/idaes-explicit-mumps/solver/process-1/process-1.nl",
+    "solver_nl_sha256": "95bff8c644265bc6d298dbc90d79578efcf6fa438d52bee7f152742ee9cf874a",
+    "solver_row": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-720-26-analysis-producers-no-longer-run-on/build/issue-720/idaes-explicit-mumps/solver/process-0/process-0.row",
+    "start_Q": 0.0005,
+    "start_rho": 60.0,
+    "status": "failed",
+    "stderr_tail": "",
+    "stdout_tail": "Ipopt 3.14.19: nlp_scaling_method=none\ntol=1e-09\nmax_iter=200\nlinear_solver=mumps\nhessian_approximation=exact\npoint_perturbation_radius=0\nbound_relax_factor=0\nconstr_viol_tol=1e-08\ndual_inf_tol=1e-07\ncompl_inf_tol=1e-07\nacceptable_iter=0\nprint_level=5\noutput_file=/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-720-26-analysis-producers-no-longer-run-on/build/issue-720/idaes-explicit-mumps/solver/forced-post-entry-timeout/ipopt.log\nfile_print_level=5\n\n\n******************************************************************************\nThis program contains Ipopt, a library for large-scale nonlinear optimization.\n Ipopt is released as open source code under the Eclipse Public License (EPL).\n         For more information visit https://github.com/coin-or/Ipopt\n******************************************************************************\n\nThis is Ipopt version 3.14.19, running with linear solver MUMPS 5.8.2.\n\nNumber of nonzeros in equality constraint Jacobian...:        9\nNumber of nonzeros in inequality constraint Jacobian.:        0\nNumber of nonzeros in Lagrangian Hessian.............:        3\n\nTotal number of variables............................:        6\n                     variables with only lower bounds:        0\n                variables with lower and upper bounds:        6\n                     variables with only upper bounds:        0\nTotal number of equality constraints.................:        4\nTotal number of inequality constraints...............:        0\n        inequality constraints with only lower bounds:        0\n   inequality constraints with lower and upper bounds:        0\n        inequality constraints with only upper bounds:        0\n\niter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls\n   0 -1.7500000e-01 4.85e-01 1.15e-01  -1.0 0.00e+00    -  0.00e+00 0.00e+00   0\n",
+    "termination": "forced-post-entry-timeout",
+    "timed_out": true,
+    "timeout_scope": "forced-post-entry"
+  },
+  "idaes_version": "2.12.0",
+  "immutable_input_rejected": true,
+  "invalid_domain_rejected": true,
+  "ipopt": "/home/tnnrpolley21/.local/share/micromamba/envs/ipopt-viz/bin/ipopt",
+  "ipopt_preflight": {
+    "all_required_options_supported": true,
+    "asl_version": "20231111",
+    "required_options": [
+      "acceptable_iter",
+      "bound_relax_factor",
+      "compl_inf_tol",
+      "constr_viol_tol",
+      "derivative_test",
+      "derivative_test_perturbation",
+      "derivative_test_tol",
+      "dual_inf_tol",
+      "hessian_approximation",
+      "linear_solver",
+      "max_iter",
+      "nlp_scaling_method",
+      "point_perturbation_radius",
+      "tol"
+    ],
+    "sha256": "938c17f31b2cf9fe91cef527bef3c62f303a3012851ad8498f91cd7501d1c9d2",
+    "supported_options": {
+      "acceptable_iter": true,
+      "bound_relax_factor": true,
+      "compl_inf_tol": true,
+      "constr_viol_tol": true,
+      "derivative_test": true,
+      "derivative_test_perturbation": true,
+      "derivative_test_tol": true,
+      "dual_inf_tol": true,
+      "hessian_approximation": true,
+      "linear_solver": true,
+      "max_iter": true,
+      "nlp_scaling_method": true,
+      "point_perturbation_radius": true,
+      "tol": true
+    },
+    "version": "Ipopt 3.14.19 (Linux x86_64), ASL(20231111)"
+  },
+  "ipopt_sha256": "938c17f31b2cf9fe91cef527bef3c62f303a3012851ad8498f91cd7501d1c9d2",
+  "ipopt_version": "Ipopt 3.14.19 (Linux x86_64), ASL(20231111)",
+  "lifecycle": "accepted",
+  "materialization_sha256": "6fee9a5c31251d6e254f800fad7a650f64e5bb6dcc0b9973bc8958929a998f11",
+  "materialized_path": "analyses/2026-idaes-asl-adapter/inputs/data/gross-2001-propane/3",
+  "numerical_runtime_s": 3.7855165479995776,
+  "packet_fingerprint": "92634acb2bb24e3e83f938f4cf6239564940a1fdc88cba956ebcb0b7db041d5a",
+  "packet_path": "data/packets/gross-2001-propane/3",
+  "parameter_strings": [
+    "2.002",
+    "3.6184",
+    "208.11",
+    "0.044096"
+  ],
+  "platform": "Linux-7.0.0-38-generic-x86_64-with-glibc2.39",
+  "prepared_environment": {
+    "asl_library": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-720-26-analysis-producers-no-longer-run-on/.venv/lib/python3.13/site-packages/epcsaft/libepcsaft_asl.so",
+    "asl_library_sha256": "f1de85b6ce99087312bf2252a9438036e2f2ab5b8d680e2b646ed33adac063d2",
+    "build_configuration": null,
+    "build_configuration_sha256": null,
+    "direct_url": {
+      "archive_info": {},
+      "url": "file:///home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-720-26-analysis-producers-no-longer-run-on/build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-manylinux_2_39_x86_64.whl"
+    },
+    "epcsaft": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-720-26-analysis-producers-no-longer-run-on/.venv/lib/python3.13/site-packages/epcsaft/__init__.py",
+    "epcsaft_sha256": "27391292b6f6889e7df6fed6dda4e0d98cb15ab68f89b19ed25c0f9f7280644d",
+    "extension": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-720-26-analysis-producers-no-longer-run-on/.venv/lib/python3.13/site-packages/epcsaft/_core.cpython-313-x86_64-linux-gnu.so",
+    "extension_sha256": "f9be0f07ba28175203b303d555225d860a7d6c5ad8361c751fe974e4811678f8",
+    "interpreter": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-720-26-analysis-producers-no-longer-run-on/.venv/bin/python",
+    "lock_sha256": null,
+    "meson_build_dir": null,
+    "meson_configuration_sha256": null,
+    "native_library": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-720-26-analysis-producers-no-longer-run-on/.venv/lib/python3.13/site-packages/epcsaft/libepcsaft_native.so",
+    "native_library_sha256": "ec6bce1d02b322473467aa65a9b2b0edb9c2fc41add3a8a38518c8f342ab6d33",
+    "prepared_stage": "editable",
+    "python": "3.13.14 (main, Jun 23 2026, 15:18:27) [Clang 22.1.3 ]",
+    "source_diff_sha256": null,
+    "source_revision": null,
+    "source_root": null,
+    "version": "0.2.0.dev0",
+    "wheel": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-720-26-analysis-producers-no-longer-run-on/build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-manylinux_2_39_x86_64.whl",
+    "wheel_sha256": "ca80755f1c17c8d2995b3a3f723c5a06cd20d22775c44599037521d1cf9ecfd5"
+  },
+  "pressure_bracket": {
+    "high_pa": 325497.6438517665,
+    "low_pa": 33186.38488668625,
+    "span_pa": 292311.25896508025
+  },
+  "process_accepted": true,
+  "process_cases": 4,
+  "process_runtime_s": 8.159090201999788,
+  "pyomo_version": "6.10.1",
+  "python": "3.13.14 (main, Jun 23 2026, 15:18:27) [Clang 22.1.3 ]",
+  "reduced_reference": {
+    "F": 0.037124363217314424,
+    "P": 200000.0,
+    "Q": 0.0006092976548232762,
+    "density_error_bound": 6.57831685016828e-08,
+    "objective": -0.18562181608657213,
+    "pressure_error_pa": 0.0,
+    "rho": 60.92976548232762
+  },
+  "references": {
+    "all_passed": true,
+    "groups": {
+      "dispersion": {
+        "all_passed": true,
+        "maximum_abs_errors": {
+          "error": 1.734723475976807e-18,
+          "q1_error": 0.0,
+          "q2_error": 0.0
+        },
+        "row_count": 3
+      },
+      "second_virial": {
+        "all_passed": true,
+        "maximum_abs_errors": {
+          "error": 0.0,
+          "q1_error": 2.1991281708849675e-08,
+          "q2_error": 6.597345430375823e-08
+        },
+        "row_count": 4
+      }
+    },
+    "row_count": 7
+  },
+  "solver_options": {
+    "acceptable_iter": 0,
+    "bound_relax_factor": 0,
+    "compl_inf_tol": 1e-07,
+    "constr_viol_tol": 1e-08,
+    "derivative_test": "second-order",
+    "derivative_test_perturbation": 1e-06,
+    "derivative_test_tol": 0.0001,
+    "dual_inf_tol": 1e-07,
+    "file_print_level": 5,
+    "hessian_approximation": "exact",
+    "linear_solver": "mumps",
+    "max_iter": 200,
+    "nlp_scaling_method": "none",
+    "point_perturbation_radius": 0,
+    "print_level": 0,
+    "tol": 1e-09
+  },
+  "source_commit": "ca719012c31e8b41edcb98ae82a388117b58d343",
+  "source_dirty": true,
+  "stage": "completed",
+  "status": "bounded numerical prototype passed",
+  "wheel": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-720-26-analysis-producers-no-longer-run-on/build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-manylinux_2_39_x86_64.whl",
+  "wheel_sha256": "ca80755f1c17c8d2995b3a3f723c5a06cd20d22775c44599037521d1cf9ecfd5",
+  "whole_nlp": {
+    "cases": 216,
+    "changed_input_rejected": true,
+    "directions_per_case": 8,
+    "expected_step_rows": 1728,
+    "invalid_domain_rejected": true,
+    "matrix_cases": 27,
+    "maximum_estimated_floor": 1.032976815196207e-09,
+    "maximum_scaled_lagrangian_hessian_error": 1.032976815196207e-09,
+    "valid_after_failure": true
+  },
+  "whole_nlp_before_solves": true,
+  "whole_nlp_solver_files": {
+    "col": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-720-26-analysis-producers-no-longer-run-on/build/issue-720/idaes-explicit-mumps/solver/process-0/process-0.col",
+    "nl": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-720-26-analysis-producers-no-longer-run-on/build/issue-720/idaes-explicit-mumps/solver/process-0/process-0.nl",
+    "nl_sha256": "3db46adde3eb05e412155f405fd767618d8707ecb60f1a770f4dc79d05efde55",
+    "row": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-720-26-analysis-producers-no-longer-run-on/build/issue-720/idaes-explicit-mumps/solver/process-0/process-0.row"
+  },
+  "writer_options": {
+    "linear_presolve": false,
+    "scale_model": false,
+    "skip_trivial_constraints": false,
+    "symbolic_solver_labels": true
+  }
+}

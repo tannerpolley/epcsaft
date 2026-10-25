@@ -1,0 +1,18 @@
+{
+  "identity": {
+    "wheel": "/home/tnnrpolley21/.cache/epcsaft/wheels/2e922005366d9708710f6cc9e087efd26ee59597e79553fecad2260a7533efc5/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+    "wheel_sha256": "298a360e532f6f4c5e7ef70c5be45e8b9852310d1c388d6225c504714c3dc410",
+    "installed_files_checked": 11,
+    "mismatches": [],
+    "installed_core_sha256": "0f72ef9c8b52a277626e3a140dc872a093f6e51e7a77aca0affdcfdad17d7869"
+  },
+  "work": [],
+  "failure": "RuntimeError: epcsaft must be installed from a local wheel",
+  "numerical_operand_rows": 0,
+  "numerical_operands_sha256": "f5eb36978a35833f003badec578eb1ac5a9b452f4e509bfcd74bc85de87679ad",
+  "numerical_operands_identical": null,
+  "limits": [
+    "native trace measurements on the original installed wheel",
+    "zero visible trial spans is sufficient only when the ASL driver trace is visible"
+  ]
+}

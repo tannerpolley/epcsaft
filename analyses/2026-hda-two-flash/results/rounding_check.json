@@ -1,0 +1,40 @@
+{
+ "pressure_Pa": 105000.0,
+ "composition": [
+  0.5,
+  0.5
+ ],
+ "k_ij": -0.003,
+ "boundary_temperatures": {
+  "bubble": {
+   "gross_K": 367.43107107297914,
+   "yu_K": 367.4237316055169,
+   "abs_K": 0.007339467462259108
+  },
+  "dew": {
+   "gross_K": 373.506969787163,
+   "yu_K": 373.51017832347475,
+   "abs_K": 0.0032085363117744237
+  }
+ },
+ "limits": {
+  "rel_rho": 0.0001,
+  "rel_h": 0.0001,
+  "abs_ln_phi": 0.0001,
+  "abs_T_K": 0.01
+ },
+ "max_rel_rho": 8.690985260844728e-05,
+ "max_rel_h": 2.4154512470223317e-05,
+ "max_abs_ln_phi": 0.0004829903259535584,
+ "accepted_ln_phi_band": [
+  0.000475,
+  0.000485
+ ],
+ "density_enthalpy_boundaries_within_limits": true,
+ "ln_phi_in_accepted_band": true,
+ "decision": "Owner adoption 2026-09-26: the full-precision Gross pure set with k_ij = -0.003; the liquid ln(phi_i) deviation from Yu's printed set is accepted and recorded; no refit.",
+ "engine": [
+  "49aac619621b8e9fbbfce9937c742c003ee8e326",
+  true
+ ]
+}

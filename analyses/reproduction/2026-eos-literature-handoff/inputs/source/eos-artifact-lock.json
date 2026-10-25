@@ -1,0 +1,14 @@
+{
+  "eos_commit": "86161c963cc7714a45af0eccc550c36cc3038808",
+  "eos_repository": "ePC-SAFT/ePC-SAFT-eos",
+  "schema_version": 1,
+  "sdist": {
+    "filename": "epcsaft-0.2.0.dev0.tar.gz",
+    "sha256": "d79686fef56ac44d5727280e2e548ea81b6b5a56399e4f25096d635547b2d4d4"
+  },
+  "version": "0.2.0.dev0",
+  "wheel": {
+    "filename": "epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+    "sha256": "a6783eb3c3ae082dadb20140f580aafe8e484028f3e6cffebb7fab3e954a5087"
+  }
+}

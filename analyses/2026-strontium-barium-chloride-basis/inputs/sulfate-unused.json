@@ -1,0 +1,1360 @@
+[
+  {
+    "cell": "dataset1-row1",
+    "temperature_K": 273.15,
+    "m_LiCl": 0.5552,
+    "m_MgSO4": 0,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row2",
+    "temperature_K": 273.15,
+    "m_LiCl": 0.4434,
+    "m_MgSO4": 0.1887,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row3",
+    "temperature_K": 273.15,
+    "m_LiCl": 0.3512,
+    "m_MgSO4": 0.3518,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row4",
+    "temperature_K": 273.15,
+    "m_LiCl": 0,
+    "m_MgSO4": 1.0257,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row5",
+    "temperature_K": 273.15,
+    "m_LiCl": 1.0093,
+    "m_MgSO4": 0,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row6",
+    "temperature_K": 273.15,
+    "m_LiCl": 0.7926,
+    "m_MgSO4": 0.3374,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row7",
+    "temperature_K": 273.15,
+    "m_LiCl": 0.6202,
+    "m_MgSO4": 0.6214,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row8",
+    "temperature_K": 273.15,
+    "m_LiCl": 0,
+    "m_MgSO4": 1.6894,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row9",
+    "temperature_K": 273.15,
+    "m_LiCl": 1.2908,
+    "m_MgSO4": 0,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row10",
+    "temperature_K": 273.15,
+    "m_LiCl": 1.0038,
+    "m_MgSO4": 0.4272,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row11",
+    "temperature_K": 273.15,
+    "m_LiCl": 0.78,
+    "m_MgSO4": 0.7814,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row12",
+    "temperature_K": 273.15,
+    "m_LiCl": 0,
+    "m_MgSO4": 2.0188,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row13",
+    "temperature_K": 273.15,
+    "m_LiCl": 1.7426,
+    "m_MgSO4": 0,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row14",
+    "temperature_K": 273.15,
+    "m_LiCl": 1.3336,
+    "m_MgSO4": 0.5676,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row15",
+    "temperature_K": 273.15,
+    "m_LiCl": 1.0187,
+    "m_MgSO4": 1.0206,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row16",
+    "temperature_K": 273.15,
+    "m_LiCl": 0,
+    "m_MgSO4": 2.4615,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row17",
+    "temperature_K": 273.15,
+    "m_LiCl": 1.9893,
+    "m_MgSO4": 0,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row18",
+    "temperature_K": 273.15,
+    "m_LiCl": 1.5072,
+    "m_MgSO4": 0.6414,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row19",
+    "temperature_K": 273.15,
+    "m_LiCl": 1.1414,
+    "m_MgSO4": 1.1435,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row20",
+    "temperature_K": 273.15,
+    "m_LiCl": 0,
+    "m_MgSO4": 2.6743,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row21",
+    "temperature_K": 273.15,
+    "m_LiCl": 2.6859,
+    "m_MgSO4": 0,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row22",
+    "temperature_K": 273.15,
+    "m_LiCl": 1.9837,
+    "m_MgSO4": 0.8443,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row23",
+    "temperature_K": 273.15,
+    "m_LiCl": 1.4729,
+    "m_MgSO4": 1.4756,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row24",
+    "temperature_K": 273.15,
+    "m_LiCl": 3.5148,
+    "m_MgSO4": 0,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row25",
+    "temperature_K": 273.15,
+    "m_LiCl": 2.5335,
+    "m_MgSO4": 1.0782,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row26",
+    "temperature_K": 273.15,
+    "m_LiCl": 4.0922,
+    "m_MgSO4": 0,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row27",
+    "temperature_K": 273.15,
+    "m_LiCl": 2.9015,
+    "m_MgSO4": 1.2348,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row28",
+    "temperature_K": 298.15,
+    "m_LiCl": 0.6186,
+    "m_MgSO4": 0,
+    "reason": "endpoint"
+  },
+  {
+    "cell": "dataset1-row33",
+    "temperature_K": 298.15,
+    "m_LiCl": 0,
+    "m_MgSO4": 1.1149,
+    "reason": "endpoint"
+  },
+  {
+    "cell": "dataset1-row34",
+    "temperature_K": 298.15,
+    "m_LiCl": 1.1137,
+    "m_MgSO4": 0,
+    "reason": "endpoint"
+  },
+  {
+    "cell": "dataset1-row39",
+    "temperature_K": 298.15,
+    "m_LiCl": 0,
+    "m_MgSO4": 1.819,
+    "reason": "endpoint"
+  },
+  {
+    "cell": "dataset1-row40",
+    "temperature_K": 298.15,
+    "m_LiCl": 1.7949,
+    "m_MgSO4": 0,
+    "reason": "endpoint"
+  },
+  {
+    "cell": "dataset1-row44",
+    "temperature_K": 298.15,
+    "m_LiCl": 0,
+    "m_MgSO4": 2.5412,
+    "reason": "endpoint"
+  },
+  {
+    "cell": "dataset1-row45",
+    "temperature_K": 298.15,
+    "m_LiCl": 2.3119,
+    "m_MgSO4": 0,
+    "reason": "endpoint"
+  },
+  {
+    "cell": "dataset1-row49",
+    "temperature_K": 298.15,
+    "m_LiCl": 0.5711,
+    "m_MgSO4": 2.2745,
+    "reason": "MgSO4 cap"
+  },
+  {
+    "cell": "dataset1-row50",
+    "temperature_K": 298.15,
+    "m_LiCl": 0,
+    "m_MgSO4": 2.9876,
+    "reason": "endpoint"
+  },
+  {
+    "cell": "dataset1-row51",
+    "temperature_K": 298.15,
+    "m_LiCl": 2.8446,
+    "m_MgSO4": 0,
+    "reason": "endpoint"
+  },
+  {
+    "cell": "dataset1-row55",
+    "temperature_K": 298.15,
+    "m_LiCl": 0.663,
+    "m_MgSO4": 2.6406,
+    "reason": "MgSO4 cap"
+  },
+  {
+    "cell": "dataset1-row57",
+    "temperature_K": 298.15,
+    "m_LiCl": 3.0552,
+    "m_MgSO4": 0,
+    "reason": "endpoint"
+  },
+  {
+    "cell": "dataset1-row59",
+    "temperature_K": 298.15,
+    "m_LiCl": 1.667,
+    "m_MgSO4": 1.6704,
+    "reason": "ionic-strength cap"
+  },
+  {
+    "cell": "dataset1-row60",
+    "temperature_K": 298.15,
+    "m_LiCl": 3.3732,
+    "m_MgSO4": 0,
+    "reason": "endpoint"
+  },
+  {
+    "cell": "dataset1-row62",
+    "temperature_K": 298.15,
+    "m_LiCl": 1.8048,
+    "m_MgSO4": 1.8084,
+    "reason": "ionic-strength cap"
+  },
+  {
+    "cell": "dataset1-row63",
+    "temperature_K": 298.15,
+    "m_LiCl": 3.8664,
+    "m_MgSO4": 0,
+    "reason": "endpoint"
+  },
+  {
+    "cell": "dataset1-row64",
+    "temperature_K": 298.15,
+    "m_LiCl": 2.0212,
+    "m_MgSO4": 2.0252,
+    "reason": "MgSO4 cap"
+  },
+  {
+    "cell": "dataset1-row65",
+    "temperature_K": 298.15,
+    "m_LiCl": 4.5071,
+    "m_MgSO4": 0,
+    "reason": "endpoint"
+  },
+  {
+    "cell": "dataset1-row66",
+    "temperature_K": 298.15,
+    "m_LiCl": 2.2988,
+    "m_MgSO4": 2.3034,
+    "reason": "MgSO4 cap"
+  },
+  {
+    "cell": "dataset1-row67",
+    "temperature_K": 298.15,
+    "m_LiCl": 5.7476,
+    "m_MgSO4": 0,
+    "reason": "endpoint"
+  },
+  {
+    "cell": "dataset1-row69",
+    "temperature_K": 323.15,
+    "m_LiCl": 0.5787,
+    "m_MgSO4": 0,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row70",
+    "temperature_K": 323.15,
+    "m_LiCl": 0.4989,
+    "m_MgSO4": 0.1246,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row71",
+    "temperature_K": 323.15,
+    "m_LiCl": 0.3686,
+    "m_MgSO4": 0.3693,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row72",
+    "temperature_K": 323.15,
+    "m_LiCl": 0.1825,
+    "m_MgSO4": 0.7267,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row73",
+    "temperature_K": 323.15,
+    "m_LiCl": 0,
+    "m_MgSO4": 1.0933,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row74",
+    "temperature_K": 323.15,
+    "m_LiCl": 1.0498,
+    "m_MgSO4": 0,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row75",
+    "temperature_K": 323.15,
+    "m_LiCl": 0.9059,
+    "m_MgSO4": 0.2263,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row76",
+    "temperature_K": 323.15,
+    "m_LiCl": 0.6529,
+    "m_MgSO4": 0.6541,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row77",
+    "temperature_K": 323.15,
+    "m_LiCl": 0.3139,
+    "m_MgSO4": 1.2498,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row78",
+    "temperature_K": 323.15,
+    "m_LiCl": 0,
+    "m_MgSO4": 1.8096,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row79",
+    "temperature_K": 323.15,
+    "m_LiCl": 1.2409,
+    "m_MgSO4": 0,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row80",
+    "temperature_K": 323.15,
+    "m_LiCl": 1.0677,
+    "m_MgSO4": 0.2668,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row81",
+    "temperature_K": 323.15,
+    "m_LiCl": 0.7635,
+    "m_MgSO4": 0.7649,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row82",
+    "temperature_K": 323.15,
+    "m_LiCl": 0.3618,
+    "m_MgSO4": 1.4406,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row83",
+    "temperature_K": 323.15,
+    "m_LiCl": 0,
+    "m_MgSO4": 2.053,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row84",
+    "temperature_K": 323.15,
+    "m_LiCl": 2.0529,
+    "m_MgSO4": 0,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row85",
+    "temperature_K": 323.15,
+    "m_LiCl": 1.7398,
+    "m_MgSO4": 0.4347,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row86",
+    "temperature_K": 323.15,
+    "m_LiCl": 1.206,
+    "m_MgSO4": 1.2083,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row87",
+    "temperature_K": 323.15,
+    "m_LiCl": 0.5408,
+    "m_MgSO4": 2.1537,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row88",
+    "temperature_K": 323.15,
+    "m_LiCl": 0,
+    "m_MgSO4": 2.903,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row89",
+    "temperature_K": 323.15,
+    "m_LiCl": 2.6112,
+    "m_MgSO4": 0,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row90",
+    "temperature_K": 323.15,
+    "m_LiCl": 2.1911,
+    "m_MgSO4": 0.5474,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row91",
+    "temperature_K": 323.15,
+    "m_LiCl": 1.4846,
+    "m_MgSO4": 1.4874,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row92",
+    "temperature_K": 323.15,
+    "m_LiCl": 0.645,
+    "m_MgSO4": 2.5686,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row93",
+    "temperature_K": 323.15,
+    "m_LiCl": 0,
+    "m_MgSO4": 3.3699,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row94",
+    "temperature_K": 323.15,
+    "m_LiCl": 3.4499,
+    "m_MgSO4": 0,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row95",
+    "temperature_K": 323.15,
+    "m_LiCl": 2.8571,
+    "m_MgSO4": 0.7138,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row96",
+    "temperature_K": 323.15,
+    "m_LiCl": 1.8809,
+    "m_MgSO4": 1.8844,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row97",
+    "temperature_K": 323.15,
+    "m_LiCl": 0.7887,
+    "m_MgSO4": 3.1407,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row98",
+    "temperature_K": 323.15,
+    "m_LiCl": 0,
+    "m_MgSO4": 4.0057,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row99",
+    "temperature_K": 323.15,
+    "m_LiCl": 3.6858,
+    "m_MgSO4": 0,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row100",
+    "temperature_K": 323.15,
+    "m_LiCl": 3.0426,
+    "m_MgSO4": 0.7602,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row101",
+    "temperature_K": 323.15,
+    "m_LiCl": 1.9891,
+    "m_MgSO4": 1.9927,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row102",
+    "temperature_K": 323.15,
+    "m_LiCl": 0.8241,
+    "m_MgSO4": 3.2815,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row103",
+    "temperature_K": 323.15,
+    "m_LiCl": 4.7233,
+    "m_MgSO4": 0,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row104",
+    "temperature_K": 323.15,
+    "m_LiCl": 3.8679,
+    "m_MgSO4": 0.9664,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row105",
+    "temperature_K": 323.15,
+    "m_LiCl": 2.4528,
+    "m_MgSO4": 2.4573,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row106",
+    "temperature_K": 323.15,
+    "m_LiCl": 4.8662,
+    "m_MgSO4": 0,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row107",
+    "temperature_K": 323.15,
+    "m_LiCl": 4.4098,
+    "m_MgSO4": 0.4911,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row108",
+    "temperature_K": 323.15,
+    "m_LiCl": 4.1905,
+    "m_MgSO4": 0.7476,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row109",
+    "temperature_K": 323.15,
+    "m_LiCl": 3.9698,
+    "m_MgSO4": 0.9918,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row110",
+    "temperature_K": 323.15,
+    "m_LiCl": 5.4467,
+    "m_MgSO4": 0,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row111",
+    "temperature_K": 323.15,
+    "m_LiCl": 4.9206,
+    "m_MgSO4": 0.5486,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row112",
+    "temperature_K": 323.15,
+    "m_LiCl": 5.79,
+    "m_MgSO4": 0,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row113",
+    "temperature_K": 323.15,
+    "m_LiCl": 5.5257,
+    "m_MgSO4": 0.291,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row114",
+    "temperature_K": 323.15,
+    "m_LiCl": 6.7613,
+    "m_MgSO4": 0,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row115",
+    "temperature_K": 323.15,
+    "m_LiCl": 6.6959,
+    "m_MgSO4": 0.0789,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row116",
+    "temperature_K": 348.15,
+    "m_LiCl": 0.3556,
+    "m_MgSO4": 0,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row117",
+    "temperature_K": 348.15,
+    "m_LiCl": 0.3158,
+    "m_MgSO4": 0.0789,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row118",
+    "temperature_K": 348.15,
+    "m_LiCl": 0.2349,
+    "m_MgSO4": 0.2353,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row119",
+    "temperature_K": 348.15,
+    "m_LiCl": 0.1181,
+    "m_MgSO4": 0.4703,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row120",
+    "temperature_K": 348.15,
+    "m_LiCl": 0,
+    "m_MgSO4": 0.7264,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row121",
+    "temperature_K": 348.15,
+    "m_LiCl": 0.9653,
+    "m_MgSO4": 0,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row122",
+    "temperature_K": 348.15,
+    "m_LiCl": 0.8399,
+    "m_MgSO4": 0.2098,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row123",
+    "temperature_K": 348.15,
+    "m_LiCl": 0.6173,
+    "m_MgSO4": 0.6185,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row124",
+    "temperature_K": 348.15,
+    "m_LiCl": 0.3052,
+    "m_MgSO4": 1.2154,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row125",
+    "temperature_K": 348.15,
+    "m_LiCl": 0,
+    "m_MgSO4": 1.808,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row126",
+    "temperature_K": 348.15,
+    "m_LiCl": 1.5002,
+    "m_MgSO4": 0,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row127",
+    "temperature_K": 348.15,
+    "m_LiCl": 1.2938,
+    "m_MgSO4": 0.3232,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row128",
+    "temperature_K": 348.15,
+    "m_LiCl": 0.9338,
+    "m_MgSO4": 0.9355,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row129",
+    "temperature_K": 348.15,
+    "m_LiCl": 0.4434,
+    "m_MgSO4": 1.7656,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row130",
+    "temperature_K": 348.15,
+    "m_LiCl": 0,
+    "m_MgSO4": 2.5033,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row131",
+    "temperature_K": 348.15,
+    "m_LiCl": 1.9036,
+    "m_MgSO4": 0,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row132",
+    "temperature_K": 348.15,
+    "m_LiCl": 1.6329,
+    "m_MgSO4": 0.408,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row133",
+    "temperature_K": 348.15,
+    "m_LiCl": 1.1565,
+    "m_MgSO4": 1.1586,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row134",
+    "temperature_K": 348.15,
+    "m_LiCl": 0.5341,
+    "m_MgSO4": 2.127,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row135",
+    "temperature_K": 348.15,
+    "m_LiCl": 0,
+    "m_MgSO4": 2.9041,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row136",
+    "temperature_K": 348.15,
+    "m_LiCl": 2.4268,
+    "m_MgSO4": 0,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row137",
+    "temperature_K": 348.15,
+    "m_LiCl": 2.0635,
+    "m_MgSO4": 0.5156,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row138",
+    "temperature_K": 348.15,
+    "m_LiCl": 1.4108,
+    "m_MgSO4": 1.4134,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row139",
+    "temperature_K": 348.15,
+    "m_LiCl": 0,
+    "m_MgSO4": 3.3833,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row140",
+    "temperature_K": 348.15,
+    "m_LiCl": 2.7073,
+    "m_MgSO4": 0,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row141",
+    "temperature_K": 348.15,
+    "m_LiCl": 2.2908,
+    "m_MgSO4": 0.5723,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row142",
+    "temperature_K": 348.15,
+    "m_LiCl": 1.5737,
+    "m_MgSO4": 1.5766,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row143",
+    "temperature_K": 348.15,
+    "m_LiCl": 0.6931,
+    "m_MgSO4": 2.7599,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row144",
+    "temperature_K": 348.15,
+    "m_LiCl": 0,
+    "m_MgSO4": 3.6563,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row145",
+    "temperature_K": 348.15,
+    "m_LiCl": 3.2095,
+    "m_MgSO4": 0,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row146",
+    "temperature_K": 348.15,
+    "m_LiCl": 2.695,
+    "m_MgSO4": 0.6733,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row147",
+    "temperature_K": 348.15,
+    "m_LiCl": 1.8208,
+    "m_MgSO4": 1.8241,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row148",
+    "temperature_K": 348.15,
+    "m_LiCl": 0.7829,
+    "m_MgSO4": 3.1177,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row149",
+    "temperature_K": 348.15,
+    "m_LiCl": 0,
+    "m_MgSO4": 4.0572,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row150",
+    "temperature_K": 348.15,
+    "m_LiCl": 3.8706,
+    "m_MgSO4": 0,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row151",
+    "temperature_K": 348.15,
+    "m_LiCl": 3.2204,
+    "m_MgSO4": 0.8046,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row152",
+    "temperature_K": 348.15,
+    "m_LiCl": 2.1341,
+    "m_MgSO4": 2.138,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row153",
+    "temperature_K": 348.15,
+    "m_LiCl": 0.8943,
+    "m_MgSO4": 3.5611,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row154",
+    "temperature_K": 348.15,
+    "m_LiCl": 0,
+    "m_MgSO4": 4.5552,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row155",
+    "temperature_K": 348.15,
+    "m_LiCl": 2.4035,
+    "m_MgSO4": 2.4079,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row156",
+    "temperature_K": 348.15,
+    "m_LiCl": 0.9888,
+    "m_MgSO4": 3.9375,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row157",
+    "temperature_K": 348.15,
+    "m_LiCl": 1.0982,
+    "m_MgSO4": 4.3732,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row158",
+    "temperature_K": 348.15,
+    "m_LiCl": 4.77,
+    "m_MgSO4": 0.851,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row159",
+    "temperature_K": 348.15,
+    "m_LiCl": 6.2063,
+    "m_MgSO4": 0,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row160",
+    "temperature_K": 348.15,
+    "m_LiCl": 5.9507,
+    "m_MgSO4": 0.3134,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row161",
+    "temperature_K": 348.15,
+    "m_LiCl": 6.7188,
+    "m_MgSO4": 0,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row162",
+    "temperature_K": 348.15,
+    "m_LiCl": 6.6751,
+    "m_MgSO4": 0.0787,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row163",
+    "temperature_K": 348.15,
+    "m_LiCl": 7.3327,
+    "m_MgSO4": 0,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row164",
+    "temperature_K": 348.15,
+    "m_LiCl": 7.1539,
+    "m_MgSO4": 0.2225,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row165",
+    "temperature_K": 373.15,
+    "m_LiCl": 1.051,
+    "m_MgSO4": 0,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row166",
+    "temperature_K": 373.15,
+    "m_LiCl": 0.6852,
+    "m_MgSO4": 0.6864,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row167",
+    "temperature_K": 373.15,
+    "m_LiCl": 0,
+    "m_MgSO4": 2.1092,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row168",
+    "temperature_K": 373.15,
+    "m_LiCl": 1.5866,
+    "m_MgSO4": 0,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row169",
+    "temperature_K": 373.15,
+    "m_LiCl": 1.3866,
+    "m_MgSO4": 0.3464,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row170",
+    "temperature_K": 373.15,
+    "m_LiCl": 1.0145,
+    "m_MgSO4": 1.0164,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row171",
+    "temperature_K": 373.15,
+    "m_LiCl": 0,
+    "m_MgSO4": 2.7872,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row172",
+    "temperature_K": 373.15,
+    "m_LiCl": 2.521,
+    "m_MgSO4": 0,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row173",
+    "temperature_K": 373.15,
+    "m_LiCl": 2.1694,
+    "m_MgSO4": 0.542,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row174",
+    "temperature_K": 373.15,
+    "m_LiCl": 1.535,
+    "m_MgSO4": 1.5378,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row175",
+    "temperature_K": 373.15,
+    "m_LiCl": 0.7006,
+    "m_MgSO4": 2.79,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row176",
+    "temperature_K": 373.15,
+    "m_LiCl": 0,
+    "m_MgSO4": 3.7601,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row177",
+    "temperature_K": 373.15,
+    "m_LiCl": 2.5905,
+    "m_MgSO4": 0,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row178",
+    "temperature_K": 373.15,
+    "m_LiCl": 2.2262,
+    "m_MgSO4": 0.5562,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row179",
+    "temperature_K": 373.15,
+    "m_LiCl": 1.5677,
+    "m_MgSO4": 1.5706,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row180",
+    "temperature_K": 373.15,
+    "m_LiCl": 0.7148,
+    "m_MgSO4": 2.8469,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row181",
+    "temperature_K": 373.15,
+    "m_LiCl": 0,
+    "m_MgSO4": 3.822,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row182",
+    "temperature_K": 373.15,
+    "m_LiCl": 3.5359,
+    "m_MgSO4": 0,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row183",
+    "temperature_K": 373.15,
+    "m_LiCl": 3.0058,
+    "m_MgSO4": 0.751,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row184",
+    "temperature_K": 373.15,
+    "m_LiCl": 2.0541,
+    "m_MgSO4": 2.0579,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row185",
+    "temperature_K": 373.15,
+    "m_LiCl": 0.8925,
+    "m_MgSO4": 3.5544,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row186",
+    "temperature_K": 373.15,
+    "m_LiCl": 0,
+    "m_MgSO4": 4.6129,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row187",
+    "temperature_K": 373.15,
+    "m_LiCl": 3.9625,
+    "m_MgSO4": 0,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row188",
+    "temperature_K": 373.15,
+    "m_LiCl": 3.3381,
+    "m_MgSO4": 0.834,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row189",
+    "temperature_K": 373.15,
+    "m_LiCl": 2.2651,
+    "m_MgSO4": 2.2693,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row190",
+    "temperature_K": 373.15,
+    "m_LiCl": 0.9733,
+    "m_MgSO4": 3.8763,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row191",
+    "temperature_K": 373.15,
+    "m_LiCl": 0,
+    "m_MgSO4": 4.9796,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row192",
+    "temperature_K": 373.15,
+    "m_LiCl": 4.8185,
+    "m_MgSO4": 0,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row193",
+    "temperature_K": 373.15,
+    "m_LiCl": 4.0535,
+    "m_MgSO4": 1.0128,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row194",
+    "temperature_K": 373.15,
+    "m_LiCl": 2.685,
+    "m_MgSO4": 2.6899,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row195",
+    "temperature_K": 373.15,
+    "m_LiCl": 1.1213,
+    "m_MgSO4": 4.4655,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row196",
+    "temperature_K": 373.15,
+    "m_LiCl": 0,
+    "m_MgSO4": 5.6512,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row197",
+    "temperature_K": 373.15,
+    "m_LiCl": 5.1677,
+    "m_MgSO4": 0,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row198",
+    "temperature_K": 373.15,
+    "m_LiCl": 4.3047,
+    "m_MgSO4": 1.0755,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row199",
+    "temperature_K": 373.15,
+    "m_LiCl": 2.8567,
+    "m_MgSO4": 2.8619,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row200",
+    "temperature_K": 373.15,
+    "m_LiCl": 5.2992,
+    "m_MgSO4": 0,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row201",
+    "temperature_K": 373.15,
+    "m_LiCl": 4.4696,
+    "m_MgSO4": 1.1167,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row202",
+    "temperature_K": 373.15,
+    "m_LiCl": 1.2159,
+    "m_MgSO4": 4.8426,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row203",
+    "temperature_K": 373.15,
+    "m_LiCl": 5.9644,
+    "m_MgSO4": 0,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row204",
+    "temperature_K": 373.15,
+    "m_LiCl": 5.8429,
+    "m_MgSO4": 0.1818,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row205",
+    "temperature_K": 373.15,
+    "m_LiCl": 5.7564,
+    "m_MgSO4": 0.3032,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row206",
+    "temperature_K": 373.15,
+    "m_LiCl": 6.3912,
+    "m_MgSO4": 0,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row207",
+    "temperature_K": 373.15,
+    "m_LiCl": 6.2482,
+    "m_MgSO4": 0.1944,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row208",
+    "temperature_K": 373.15,
+    "m_LiCl": 7.0004,
+    "m_MgSO4": 0,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "dataset1-row209",
+    "temperature_K": 373.15,
+    "m_LiCl": 6.8958,
+    "m_MgSO4": 0.2145,
+    "reason": "other temperature"
+  },
+  {
+    "cell": "2003-Na2SO4-m1.5",
+    "temperature_K": 298.15,
+    "m_LiCl": 0,
+    "m_MgSO4": 0,
+    "reason": "declared binary concentration cap"
+  },
+  {
+    "cell": "2003-Na2SO4-m2",
+    "temperature_K": 298.15,
+    "m_LiCl": 0,
+    "m_MgSO4": 0,
+    "reason": "declared binary concentration cap"
+  },
+  {
+    "cell": "2003-Na2SO4-m2.5",
+    "temperature_K": 298.15,
+    "m_LiCl": 0,
+    "m_MgSO4": 0,
+    "reason": "declared binary concentration cap"
+  },
+  {
+    "cell": "2003-Na2SO4-m3",
+    "temperature_K": 298.15,
+    "m_LiCl": 0,
+    "m_MgSO4": 0,
+    "reason": "declared binary concentration cap"
+  },
+  {
+    "cell": "2003-MgSO4-m2.5",
+    "temperature_K": 298.15,
+    "m_LiCl": 0,
+    "m_MgSO4": 2.5,
+    "reason": "declared binary concentration cap"
+  },
+  {
+    "cell": "2003-MgSO4-m3",
+    "temperature_K": 298.15,
+    "m_LiCl": 0,
+    "m_MgSO4": 3,
+    "reason": "declared binary concentration cap"
+  }
+]

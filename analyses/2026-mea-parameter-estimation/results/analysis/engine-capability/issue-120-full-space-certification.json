@@ -1,0 +1,68 @@
+{
+  "active_coordinate": "reaction:R1:correlation:b_k",
+  "base_commit": "0def56adc38e133f5fcd1ad031649f41529a8888",
+  "candidate_domain_qualification": "candidate_extrapolation",
+  "evaluation_strategy": "simultaneous_sparse_full_space",
+  "issue": 120,
+  "results": [
+    {
+      "branch_class": "finite_incipient_local_branch",
+      "branch_fingerprint": "sha256:c677c3e64036b8c781ff964fed67f80397a79a5c6130d746e0d6e9d266048050",
+      "complementarity_inf_norm": 1.0000000000000003e-13,
+      "continuation_identity": "finite-incipient-boundary",
+      "continuation_problem_fingerprint": "sha256:bc50eee030bf52edfa1c212251b2543a811e42c77532306275ccf5bf7af5ded3",
+      "dual_sign_violation_inf_norm": 0.0,
+      "final_b_k": -99.96688896087204,
+      "finite_difference_step_k": 2.0,
+      "max_scaled_derivative_error": 5.072661474894678e-06,
+      "pressure_relative_inf_norm": 1.8740284209399644e-13,
+      "primal_feasibility_inf_norm": 1.021760454023024e-11,
+      "reaction_affinity_inf_norm": 1.4210854715202004e-14,
+      "stationarity_inf_norm": 1.3529132153663664e-11,
+      "temperature_k": 313.15
+    },
+    {
+      "branch_class": "finite_incipient_local_branch",
+      "branch_fingerprint": "sha256:2babfedf636ac6fb410fd5f328002b464c777b573f5129c35f18c9be54c4aee8",
+      "complementarity_inf_norm": 9.090909090909395e-13,
+      "continuation_identity": "finite-incipient-boundary",
+      "continuation_problem_fingerprint": "sha256:14c07d47383809942e8b5e6163201466709f97ee4c9c2b418454bb2479ce37fd",
+      "dual_sign_violation_inf_norm": 0.0,
+      "final_b_k": -101.05290336703804,
+      "finite_difference_step_k": 2.0,
+      "max_scaled_derivative_error": 3.2810656730189753e-06,
+      "pressure_relative_inf_norm": 4.1484404005356655e-14,
+      "primal_feasibility_inf_norm": 1.6130741187225794e-10,
+      "reaction_affinity_inf_norm": 1.1368683772161603e-13,
+      "stationarity_inf_norm": 1.0145702316173988e-13,
+      "temperature_k": 353.15
+    },
+    {
+      "branch_class": "finite_incipient_local_branch",
+      "branch_fingerprint": "sha256:f75a69fcddd65ed804f82a6dd2b19d8863a8d706ae753bf6666ed16cb60ad082",
+      "complementarity_inf_norm": 1.0000000000000005e-13,
+      "continuation_identity": "finite-incipient-boundary",
+      "continuation_problem_fingerprint": "sha256:79cb90351cbfb83050037272a2af3a10160326cb32fc0bb843250f696a02c236",
+      "dual_sign_violation_inf_norm": 0.0,
+      "final_b_k": -99.65580836317238,
+      "finite_difference_step_k": 10.0,
+      "max_scaled_derivative_error": 4.1085451579063847e-05,
+      "pressure_relative_inf_norm": 4.059672679269451e-14,
+      "primal_feasibility_inf_norm": 5.044853423896711e-12,
+      "reaction_affinity_inf_norm": 1.1368683772161603e-13,
+      "stationarity_inf_norm": 3.234989678239919e-16,
+      "temperature_k": 393.15
+    }
+  ],
+  "tests": {
+    "derivative_and_full_space_certificate": "engine/tests/regression/numerical/test_full_space.py::test_solved_pressure_reaction_coordinate_certifies_full_space_path",
+    "typed_non_evaluable_trial": "engine/tests/regression/numerical/test_full_space.py::test_full_space_retains_a_typed_non_evaluable_reaction_trial"
+  },
+  "typed_non_evaluable_trial": {
+    "accounted_non_evaluable_trials": 1,
+    "evaluation_strategy": "simultaneous_sparse_full_space",
+    "non_evaluable_count": 1,
+    "trial_failure_code": "branch_loss"
+  },
+  "wheel_sha256": "7d48c2359e25359bf897c67a972e67e60ccf586a47bf6e6c0e0b2649383be80f"
+}

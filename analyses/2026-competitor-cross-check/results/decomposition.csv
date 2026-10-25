@@ -1,0 +1,7 @@
+id,implementation,change,delta_gamma,percentage_points,delta_ln_gamma,delta_phi
+C3-diagnosis-original,Engine,Held packet,0.0,0.0,0.0,0.0
+C3-diagnosis-diameter,Engine,screening diameter,-0.023046352029665762,-3.6067368655262557,-0.03673387131078707,-0.013721831118290728
+C3-diagnosis-constants,Engine,electrostatic constants,-1.5970110651686298e-06,-0.00024993103793531646,-2.5928301815171107e-06,-5.53899832000937e-07
+C3-diagnosis-interaction,Engine,water-Cl interaction,-0.03319320386208513,-5.1947115925421015,-0.055397447627810556,-0.027430489684875825
+C3-diagnosis-finite,FeOs,matched finite reference,3.683098270812479e-11,5.764021262712627e-09,6.320322043307344e-11,-9.455720650919375e-10
+C3-diagnosis-interaction,FeOs,zero-ion reference,-6.88202603127408e-07,-0.00010770319295894031,-1.1809787533697145e-06,0.0

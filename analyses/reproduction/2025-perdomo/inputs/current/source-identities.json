@@ -1,0 +1,142 @@
+{
+  "files": [
+    {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong/data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json",
+      "sha256": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d"
+    },
+    {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong/data/packets/figiel-2025-reference-electrolytes/4/provenance/source-origin.toml",
+      "sha256": "af9e086bbc23a1607e6ef239e887234725d421dd002265397b40add898df790b"
+    },
+    {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong/data/packets/figiel-2025-reference-electrolytes/4/packet.toml",
+      "sha256": "040b5f0c00d2a2c67ad4144fa528e298435b91c94a61ec2de8c55bb8b0ca22ef"
+    },
+    {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong/data/packets/ascani-2022-case-study-2-electrolyte-lle/3/parameters/parameters.json",
+      "sha256": "382b2e634bccf3312fa0fb164e1d2449192a13d0396f0fe46ef674ff56d34b94"
+    },
+    {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong/data/packets/ascani-2022-case-study-2-electrolyte-lle/3/provenance/source-origin.toml",
+      "sha256": "bc71b537ed681fb73bb2908341a91f01597fe2c1dbef4afe34ec8f4643af0b7c"
+    },
+    {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong/data/packets/ascani-2022-case-study-2-electrolyte-lle/3/packet.toml",
+      "sha256": "e3983ab8461d41ebfe13e7005febf3f95bc80b2628479cf5a54af241147fd86c"
+    },
+    {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong/data/packets/dielectric-response-records/1/parameters/dielectric-records.csv",
+      "sha256": "799138464224807d833b9c6c563a4d4e1526285eccb3d716a075cc7515b18616"
+    },
+    {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong/data/packets/dielectric-response-records/1/provenance/source-origin.toml",
+      "sha256": "c511b315bc448f84a9ed9930686c56d002800c8cb83fde2dd26a9d2e1fe385bd"
+    },
+    {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong/data/packets/dielectric-response-records/1/packet.toml",
+      "sha256": "9db327fd60434a074aec137f15dba9de2cbf3e2e01059006582f76b42789bf0b"
+    },
+    {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong/analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json",
+      "sha256": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19"
+    },
+    {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong/data/packet-locks.json",
+      "sha256": "00f0c27fe693486364ceb132a8a62959bcef669a789b54b34d166cf2bd7ba95d"
+    },
+    {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong/analyses/reproduction/2025-perdomo/inputs/parameters/bundle/perdomo-2025-figure-03-licl-water-butanol/1/association.csv",
+      "sha256": "74b78bc38864e2f24da933901697400a2900f56244eed0e0d746ab81b9428842"
+    },
+    {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong/analyses/reproduction/2025-perdomo/inputs/parameters/bundle/perdomo-2025-figure-03-licl-water-butanol/1/bundle.toml",
+      "sha256": "0281e76c2fc00b9313a5a6ed379974b67621743ad49feefee4cdf3be5f6ca2a8"
+    },
+    {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong/analyses/reproduction/2025-perdomo/inputs/parameters/bundle/perdomo-2025-figure-03-licl-water-butanol/1/components.csv",
+      "sha256": "fdb4c94a2d10fe62a6c15a3bf81f0ba888ea9bd9567aff371ff6824ac8e7c1c7"
+    },
+    {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong/analyses/reproduction/2025-perdomo/inputs/parameters/bundle/perdomo-2025-figure-03-licl-water-butanol/1/correlations.toml",
+      "sha256": "55d722e066cbb9528e9686b7dd49df1ee601d12f6196cfae1c0e6f0bb886d447"
+    },
+    {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong/analyses/reproduction/2025-perdomo/inputs/parameters/bundle/perdomo-2025-figure-03-licl-water-butanol/1/model.csv",
+      "sha256": "cb232ff6796f41f492f649724c34b0315473f7e44657e7138d36000c038c0892"
+    },
+    {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong/analyses/reproduction/2025-perdomo/inputs/parameters/bundle/perdomo-2025-figure-03-licl-water-butanol/1/pair.csv",
+      "sha256": "85a8a9d628bc06192afb69f4c32b53c54a19716f3097592d0bce279b0f0644dd"
+    },
+    {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong/analyses/reproduction/2025-perdomo/inputs/parameters/bundle/perdomo-2025-figure-03-licl-water-butanol/1/single.csv",
+      "sha256": "5bf482de88e19aa933b7bc520e343b4943064b2680069b22c66771af1894d529"
+    },
+    {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-729-live-reproduction-perdomo-2025-strong/analyses/reproduction/2025-perdomo/inputs/parameters/bundle/perdomo-2025-figure-03-licl-water-butanol/1/sites.csv",
+      "sha256": "1bf57fd5fdaa5e8264ec748f4bc24df0a5976ebac66120768fcf44b100c30d9d"
+    },
+    {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-729/design.md",
+      "sha256": "a0ecb988da0d89b68e294d085562b5cdf9ebcc4bde41dcf7aa017b8980aabb3f"
+    },
+    {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-729/readiness-r1.md",
+      "sha256": "3fcdadaad7efa86d32756223509a0e582d560e1bedde8edd55539087bc9db8e3"
+    },
+    {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-729/figure-1a-29815-source.csv",
+      "sha256": "ec152632b35c8025429fb6a7f681626af9b84cac0be9ba1f60da9fed4049b0a2"
+    },
+    {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-729/figure-3-source.csv",
+      "sha256": "bd0e11f48a7cc960e374850168381cbc2e8a1a592cebb8d3009ca55d00cdaa6e"
+    },
+    {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-729/tables-3-5-source.csv",
+      "sha256": "6ab725a5b9b4fc24aab6ad0e294e634d2c355749b2fc996d83c03a19fc10b36f"
+    },
+    {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-729/model-parameters-source.csv",
+      "sha256": "f39fa88de5a3e10eec3e7ba048c93e74f476254cd7d6acd017b1e87d9888b081"
+    },
+    {
+      "path": "/home/tnnrpolley21/Zotero/storage/DN72TSS2/SUPPORTING INFORMATION Calculation of multiphase equilibria containing mixed solvents and mixed electrolytes - General formulation and Case studies.pdf",
+      "sha256": "33f43e99557130757d0893d78772cbd59c05da69ff2e85377de242c04b8af4d0"
+    },
+    {
+      "path": "/home/tnnrpolley21/Zotero/storage/WE6I8RN3/Figiel et al. - 2025 - Predicting Thermodynamic Properties of Ions in Single Solvents and in Mixed Solvents Using a Modifie.pdf",
+      "sha256": "a3c940895c530f72f47f22f8c0f4796b5ad37918a4edd274f85497c6dd81ad1f"
+    },
+    {
+      "path": "/home/tnnrpolley21/Zotero/storage/6A726Y7H/Ascani and Held - 2021 - Prediction of salting-out in liquid-liquid two-phase systems with ePC-SAFT Effect of the Born term.pdf",
+      "sha256": "9ab259a8dfb27a052fcf49782e6ab75132140d94c5f8f695215a2703f1d010ab"
+    },
+    {
+      "path": "/home/tnnrpolley21/Zotero/storage/Q64ISRHA/Nann et al. - 2013 - Liquid\u2013Liquid Equilibria of 1-ButanolWaterIL Systems.pdf",
+      "sha256": "aeb3562f76ac9b3a8ee11779696933aead55a5bd0e6e6bb67bd82f38bf691313"
+    },
+    {
+      "path": "/home/tnnrpolley21/Zotero/storage/QS7QHR5L/ie6c01415.pdf",
+      "sha256": "969cd85d05a0f79add87f36d14c6abdffbc620284edbcf3aa89ab4603b5a54b8"
+    },
+    {
+      "path": "/home/tnnrpolley21/Zotero/storage/GVEMXCZD/Perdomo et al. - 2025 - Phase stability criteria and fluid-phase equilibria in strong-electrolyte systems.pdf",
+      "sha256": "8be02605fc0e839c368362a80837ae2d4f029f97ba7ba6dc60b486548a790111"
+    },
+    {
+      "path": "/home/tnnrpolley21/Zotero/storage/3HLEYVC2/Schreckenberg et al. - 2014 - Modelling of the thermodynamic and solvation properties of electrolyte solutions with the statistica.pdf",
+      "sha256": "fd8e64ce2a6abde9ec21fe2d534e1e73a0653ed166be61d4cc81941bc3443728"
+    },
+    {
+      "path": "/home/tnnrpolley21/Zotero/storage/2SYPEMPZ/Zenodo_file_reviewed_NoExp (1).xlsx",
+      "sha256": "c659847256044fb783c3fe090454103e109cd13cb5696bb715910428f9935834"
+    }
+  ],
+  "packet_fingerprints": {
+    "figiel-2025-reference-electrolytes/4": "690fe5a1bc1f74c04dfb308b8f9a6e9ae7744662c442f03f3422fe0ecd5d3ca8",
+    "ascani-2022-case-study-2-electrolyte-lle/3": "d444b517c6c341eaebdcfaeb43a24b1eae0a39326c16273adbb9deab169243d8",
+    "dielectric-response-records/1": "4100b757771565b00c37ff116c4aa1da7b8dac5e71f5e509697e7ddce0735630"
+  },
+  "design_sha256": "5f7099634d62fc326628c4328bde560efb050cbc30dd767e786e5310a1795864"
+}

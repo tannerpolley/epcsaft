@@ -1,0 +1,7 @@
+{
+  "case": 1,
+  "extent": 0.3,
+  "value": 0,
+  "success": false,
+  "exception": "boundary seed has no density root: density domain is empty"
+}

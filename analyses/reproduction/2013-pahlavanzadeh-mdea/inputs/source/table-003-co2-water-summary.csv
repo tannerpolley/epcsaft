@@ -1,0 +1,5 @@
+source,points,temperature_range_K,total_pressure_range_MPa,co2_mole_fraction_range,reported_error_percent,water_association_scheme,source_table,source_pdf_page,source_printed_page,source_row,zotero_parent_key,pdf_attachment_key,verification,water_2B_reported_error_percent
+Dalmolin_et_al_2006,49,288-323,0.092-0.48,0.00038-0.00365,8.35,4(2:2),3,4,217,1,DUAIHQ7Y,YAUNIZGX,PDF image and text layer checked,98.7
+Valtz_et_al_2004,47,278-318,0.465-7.96,0.0018-0.028,19.80,4(2:2),3,4,217,2,DUAIHQ7Y,YAUNIZGX,PDF image and text layer checked,103
+Chapoy_et_al_2004,27,274-351,0.19-9.33,0.00262-0.025,19.19,4(2:2),3,4,217,3,DUAIHQ7Y,YAUNIZGX,PDF image and text layer checked,121
+total,123,,, ,15.10,4(2:2),3,4,217,4,DUAIHQ7Y,YAUNIZGX,PDF image and text layer checked,105

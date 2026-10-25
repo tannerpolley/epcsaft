@@ -1,0 +1,20 @@
+{
+  "parameter_source": "data/packets/held-cameretti-sadowski-2008/3/parameters/parameters.json",
+  "parameter_sha256": "79259c245dd748121d557ccd5c931306005a0ae01e21f6d9173a6a8de6db892d",
+  "selection": [
+    "water"
+  ],
+  "release_url": "https://iapws.org/technical-guidance/release/IAPWS-95.download",
+  "release_locators": [
+    "Table 3, p. 11",
+    "Table 6, p. 15",
+    "Tables 7 and 8, p. 15"
+  ],
+  "mass_kg_per_mol": 0.018015268,
+  "reference_class": "evaluated reference, not measurements",
+  "reference_implementation": "chemicals 1.5.2",
+  "packet_fingerprint": "23dd06664f38338230d5ec5c553f1ebfabdc02a3831f8d53de12cf73012a1720",
+  "materialization": "byte-for-byte",
+  "zotero_key": "Y3FU9CXJ",
+  "citation_key": "internationalassociationforthepropertiesofwaterandsteamRevisedReleaseIAPWS2018"
+}

@@ -1,0 +1,454 @@
+{
+  "identity": {
+    "wheel": "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-223-build-tpd-stability-test-and-phase-35ebff8f/build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+    "wheel_sha256": "298a360e532f6f4c5e7ef70c5be45e8b9852310d1c388d6225c504714c3dc410",
+    "direct_url": {
+      "url": "file:///home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-223-build-tpd-stability-test-and-phase-35ebff8f/build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "archive_info": {}
+    },
+    "engine_import": "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-223-build-tpd-stability-test-and-phase-35ebff8f/.venv/lib/python3.13/site-packages/epcsaft/__init__.py",
+    "source_head": "443d828908f4ad5127ab14384f97635dca30bd30",
+    "thread_environment": {
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1"
+    },
+    "dependencies": {
+      "epcsaft": "0.2.0.dev0",
+      "numpy": "2.5.1",
+      "scipy": "1.18.0",
+      "pyomo": "6.10.1",
+      "idaes-pse": "2.12.0"
+    },
+    "physical_inputs": {
+      "analyses/2026-khudaida-idaes-settler/inputs/data/khudaida-2026-figure-2-electrolyte-lle/7/parameters/parameters.json": "8babed899e7347e58c403c7aff24a7fdd6d60411af3b4d81eb6aa90c2431dfa4",
+      "data/packets/mea-co2-h2o-nine-species-estimation/3/parameters/parameters.json": "2ea3b41485a98d2cf49add620b87bb05fc5a275cdd132c1cdbb0cfc5f07f2ca4",
+      "data/packets/gross-2001-methane-ethane/3/parameters/parameters.json": "109cfe8e80c4fcefadcbb4975ebe7436d371710ed9d20f2c7bd6d30d9c581bf2",
+      "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d"
+    },
+    "script_sha256": "7fe38d612177bf3bcc31fa538482360a70a000abdcce125fa0d300d2f073235e",
+    "source_mtimes": {
+      "engine/native/equilibrium/gibbs_minimizer.cpp": 1790903527934235179,
+      "engine/native/equilibrium/request_compile.cpp": 1790903527933918467
+    }
+  },
+  "inputs": {
+    "case-1/two-liquid": {
+      "components": [
+        "water",
+        "isobutanol"
+      ],
+      "T": 293.15,
+      "P": 100000.0,
+      "feed": {
+        "water": 0.6,
+        "isobutanol": 0.4
+      },
+      "row_tolerance": 1e-10,
+      "phases": [
+        {
+          "name": "Lw",
+          "kind": "liquid",
+          "support": null,
+          "amount": {
+            "kind": "Free",
+            "value": null
+          },
+          "composition_guess": [
+            0.999,
+            0.001
+          ],
+          "packing_guess": null
+        },
+        {
+          "name": "Lo",
+          "kind": "liquid",
+          "support": null,
+          "amount": {
+            "kind": "Free",
+            "value": null
+          },
+          "composition_guess": [
+            0.3,
+            0.7
+          ],
+          "packing_guess": null
+        }
+      ]
+    },
+    "case-3/VLLE": {
+      "components": [
+        "water",
+        "ethanol",
+        "isobutanol"
+      ],
+      "T": 364.2,
+      "P": 100000.0,
+      "feed": {
+        "water": 0.8,
+        "ethanol": 0.02,
+        "isobutanol": 0.18
+      },
+      "row_tolerance": 1e-10,
+      "phases": [
+        {
+          "name": "Lw",
+          "kind": "liquid",
+          "support": null,
+          "amount": {
+            "kind": "Free",
+            "value": null
+          },
+          "composition_guess": [
+            0.98,
+            0.01,
+            0.01
+          ],
+          "packing_guess": null
+        },
+        {
+          "name": "Lo",
+          "kind": "liquid",
+          "support": null,
+          "amount": {
+            "kind": "Free",
+            "value": null
+          },
+          "composition_guess": [
+            0.5,
+            0.03,
+            0.47
+          ],
+          "packing_guess": null
+        },
+        {
+          "name": "V",
+          "kind": "vapor",
+          "support": null,
+          "amount": {
+            "kind": "Free",
+            "value": null
+          },
+          "composition_guess": [
+            0.713829,
+            0.039282,
+            0.246889
+          ],
+          "packing_guess": null
+        }
+      ]
+    },
+    "case-6/figure-2-point-7": {
+      "components": [
+        "water",
+        "ethanol",
+        "isobutanol",
+        "sodium-cation",
+        "chloride-anion"
+      ],
+      "T": 293.15,
+      "P": 100000.0,
+      "feed": {
+        "water": 0.646925133827633,
+        "ethanol": 0.07045345803743744,
+        "isobutanol": 0.22564721508764596,
+        "sodium-cation": 0.028487096523641797,
+        "chloride-anion": 0.028487096523641797
+      },
+      "row_tolerance": 1e-10,
+      "phases": [
+        {
+          "name": "phase-0",
+          "kind": "liquid",
+          "support": [
+            "water",
+            "ethanol",
+            "isobutanol",
+            "sodium-cation",
+            "chloride-anion"
+          ],
+          "amount": {
+            "kind": "Free",
+            "value": null
+          },
+          "composition_guess": [
+            0.8,
+            0.05,
+            0.05,
+            0.05,
+            0.05
+          ],
+          "packing_guess": null
+        },
+        {
+          "name": "phase-1",
+          "kind": "liquid",
+          "support": [
+            "water",
+            "ethanol",
+            "isobutanol",
+            "sodium-cation",
+            "chloride-anion"
+          ],
+          "amount": {
+            "kind": "Free",
+            "value": null
+          },
+          "composition_guess": [
+            0.2,
+            0.1,
+            0.6998,
+            0.0001,
+            0.0001
+          ],
+          "packing_guess": null
+        }
+      ]
+    },
+    "case-7/reactions": {
+      "species": [
+        "carbon-dioxide",
+        "monoethanolamine",
+        "water",
+        "protonated-monoethanolamine",
+        "carbamate-anion",
+        "bicarbonate-anion",
+        "carbonate-anion",
+        "hydronium-cation",
+        "hydroxide-anion"
+      ],
+      "stoichiometry": [
+        {
+          "water": -2.0,
+          "hydronium-cation": 1.0,
+          "hydroxide-anion": 1.0
+        },
+        {
+          "carbon-dioxide": -1.0,
+          "water": -2.0,
+          "bicarbonate-anion": 1.0,
+          "hydronium-cation": 1.0
+        },
+        {
+          "water": -1.0,
+          "bicarbonate-anion": -1.0,
+          "carbonate-anion": 1.0,
+          "hydronium-cation": 1.0
+        },
+        {
+          "monoethanolamine": 1.0,
+          "water": -1.0,
+          "carbamate-anion": -1.0,
+          "bicarbonate-anion": 1.0
+        },
+        {
+          "protonated-monoethanolamine": -1.0,
+          "water": -1.0,
+          "monoethanolamine": 1.0,
+          "hydronium-cation": 1.0
+        }
+      ],
+      "ln_k": [
+        -605.348,
+        -587.8,
+        -948.2312,
+        -25.1014,
+        -298.6415
+      ],
+      "T_ref": 318.15,
+      "T_min": 250.0,
+      "T_max": 450.0,
+      "standard_state": "eos-helmholtz-coordinate-basis"
+    },
+    "case-7/bubble": {
+      "components": [
+        "carbon-dioxide",
+        "monoethanolamine",
+        "water",
+        "protonated-monoethanolamine",
+        "carbamate-anion",
+        "bicarbonate-anion",
+        "carbonate-anion",
+        "hydronium-cation",
+        "hydroxide-anion"
+      ],
+      "T": 318.15,
+      "P": {
+        "kind": "Free",
+        "value": 7398.16
+      },
+      "feed": {
+        "carbon-dioxide": 2.4865902751371616,
+        "monoethanolamine": 9.7292821,
+        "water": 76.9751925
+      },
+      "row_tolerance": 1e-10,
+      "phases": [
+        {
+          "name": "L",
+          "kind": "liquid",
+          "support": null,
+          "amount": {
+            "kind": "Free",
+            "value": null
+          },
+          "composition_guess": [],
+          "packing_guess": null
+        },
+        {
+          "name": "V",
+          "kind": "vapor",
+          "support": [
+            "carbon-dioxide",
+            "monoethanolamine",
+            "water"
+          ],
+          "amount": {
+            "kind": "Pinned",
+            "value": 0.0
+          },
+          "composition_guess": [],
+          "packing_guess": null
+        }
+      ]
+    },
+    "case-7/flash-5918.5286-Pa": {
+      "components": [
+        "carbon-dioxide",
+        "monoethanolamine",
+        "water",
+        "protonated-monoethanolamine",
+        "carbamate-anion",
+        "bicarbonate-anion",
+        "carbonate-anion",
+        "hydronium-cation",
+        "hydroxide-anion"
+      ],
+      "T": 318.15,
+      "P": 5918.5286,
+      "feed": {
+        "carbon-dioxide": 2.4865902751371616,
+        "monoethanolamine": 9.7292821,
+        "water": 76.9751925
+      },
+      "row_tolerance": 1e-10,
+      "phases": [
+        {
+          "name": "L",
+          "kind": "liquid",
+          "support": null,
+          "amount": {
+            "kind": "Free",
+            "value": null
+          },
+          "composition_guess": [],
+          "packing_guess": null
+        },
+        {
+          "name": "V",
+          "kind": "vapor",
+          "support": [
+            "carbon-dioxide",
+            "monoethanolamine",
+            "water"
+          ],
+          "amount": {
+            "kind": "Free",
+            "value": null
+          },
+          "composition_guess": [],
+          "packing_guess": null
+        }
+      ]
+    },
+    "case-7/liquid-8877.7929-Pa": {
+      "components": [
+        "carbon-dioxide",
+        "monoethanolamine",
+        "water",
+        "protonated-monoethanolamine",
+        "carbamate-anion",
+        "bicarbonate-anion",
+        "carbonate-anion",
+        "hydronium-cation",
+        "hydroxide-anion"
+      ],
+      "T": 318.15,
+      "P": 8877.7929,
+      "feed": {
+        "carbon-dioxide": 2.4865902751371616,
+        "monoethanolamine": 9.7292821,
+        "water": 76.9751925
+      },
+      "row_tolerance": 1e-10,
+      "phases": [
+        {
+          "name": "L",
+          "kind": "liquid",
+          "support": null,
+          "amount": {
+            "kind": "Free",
+            "value": null
+          },
+          "composition_guess": [],
+          "packing_guess": null
+        }
+      ]
+    }
+  },
+  "costs": [
+    {
+      "case": "case-1/two-liquid",
+      "seconds": 0.034076880001521204,
+      "iterations": 26,
+      "evaluations": 70,
+      "hessian_calls": 27
+    },
+    {
+      "case": "case-3/VLLE",
+      "seconds": 0.05682084700310952,
+      "iterations": 19,
+      "evaluations": 51,
+      "hessian_calls": 20
+    },
+    {
+      "case": "case-6/figure-2-point-7",
+      "seconds": 0.08376127299925429,
+      "iterations": 16,
+      "evaluations": 49,
+      "hessian_calls": 17
+    },
+    {
+      "case": "case-7/bubble",
+      "seconds": 0.20207210099761141,
+      "iterations": 3,
+      "evaluations": 9,
+      "hessian_calls": 4
+    },
+    {
+      "case": "case-7/flash-5918.5286-Pa",
+      "seconds": 0.15900589400189347,
+      "iterations": 43,
+      "evaluations": 57,
+      "hessian_calls": 44
+    },
+    {
+      "case": "case-7/liquid-8877.7929-Pa",
+      "seconds": 0.04292152699781582,
+      "iterations": 13,
+      "evaluations": 18,
+      "hessian_calls": 14
+    }
+  ],
+  "failure": null,
+  "comparison": {
+    "identical": true,
+    "rows_before": 1841,
+    "rows_after": 1841,
+    "operands_csv": "results/before/declared.csv",
+    "operands_sha256": "de664203b7739231a7f759e7709df170ae31d292f799e1b8c02d993fc2e3c36b"
+  },
+  "limits": [
+    "declared topology numerical replay; no physical validation",
+    "ASL internal driver work counts are not exposed by the current installed interface"
+  ]
+}

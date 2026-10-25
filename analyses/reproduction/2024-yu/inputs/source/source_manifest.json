@@ -1,0 +1,31 @@
+{
+  "source": {
+    "article": {
+      "citation": "Yu et al., Chemical Engineering Science 286 (2024) 119682, Highly efficient lithium extraction from magnesium-rich brines with ionic liquid-based collaborative extractants: Thermodynamics and molecular insights.",
+      "doi": "10.1016/j.ces.2023.119682",
+      "zotero_parent_key": "SLMXCPZM",
+      "path": "/home/tnnrpolley21/Zotero/storage/2MFZLY5G/Yu et al. - 2024 - Highly efficient lithium extraction from magnesium-rich brines with ionic liquid-based collaborative.pdf",
+      "sha256": "a2d78535130208b29756e565efe3e619f330e6418717870c347cab36800bf649",
+      "locators": ["Table 1", "Table 2", "Table 3", "Equations 4-19", "Figure 6", "Section 4.3.2", "Section 4.4.1"]
+    },
+    "article_mathpix_companion": {
+      "path": "/home/tnnrpolley21/Zotero/storage/32S8CVI4/Yu - 2024 - Highly efficient lithium extraction from magnesium-rich brines with ionic.md",
+      "sha256": "5cc24afdb41f1f7bd21bed5e63c34da1899bcd11257455b8580fcec1c35116fb",
+      "source_role": "article transcription"
+    },
+    "supporting_information": {
+      "citation": "Supporting Information for Yu et al., Chemical Engineering Science 286 (2024) 119682.",
+      "zotero_attachment_key": "S25H49SS",
+      "path": "/home/tnnrpolley21/Zotero/storage/S25H49SS/Supporting Information - Highly efficient lithium extraction from magnesium-rich brines with ionic liquid-based collaborative extractants Thermodynamics and molecular insights.pdf",
+      "sha256": "18283cd9624c0614b064c279e42c606136e64b58ad78f7bfb058c294cab8b2b7",
+      "source_role": "supporting-information tables and figures",
+      "locators": ["Tables S1-S10", "Figures S1-S5"]
+    }
+  },
+  "transcription_policy": {
+    "row_basis": "Printed table values are retained at printed precision; no graph digitization is used when a table is present.",
+    "units": "Percentages and molar concentrations retain the paper units in column names; temperature is kelvin and pressure is pascal where present.",
+    "phase_boundary": "A neutral [HOEMIM][Tf2N] pseudo-component is not relabeled as split HOEMIM+ and Tf2N- species.",
+    "evidence_labels": ["verified", "inference", "unknown", "supported_refusal"]
+  }
+}

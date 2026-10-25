@@ -1,0 +1,46 @@
+{
+  "files": [
+    {
+      "path": "asl-trace.csv.gz",
+      "compressed_sha256": "029e4cd5f4b2a2ad884d68bcd43d002b7790c1927f5a928a9b333b10ddf12abf",
+      "decompressed_csv_sha256": "313fdffdd7966c17ac7a9a6149b45a421cfa744c4fa9dbbca8f94ed192eac123",
+      "compressed_bytes": 1785325,
+      "decompressed_csv_bytes": 13183546,
+      "retained_csv_gzip": "../after-0b297e6f/asl-trace.csv.gz",
+      "retained_compressed_sha256": "0b4f3ab9fb10902698938674157a6072a02eed326fc592ae53eac39b0dd183aa",
+      "comparison": "Complete decompressed CSV bytes identical to retained 0b297e6f capture; compressed-container identities differ."
+    },
+    {
+      "path": "continuation-trace.csv.gz",
+      "compressed_sha256": "5b063310ac714b66d3ac0b6144635a4321055a5ed978b8d7116cfb5acea29c80",
+      "decompressed_csv_sha256": "549313e5ef2ae608ec35e22168521cc64ba947158ec553a0b1e353288cb281b4",
+      "compressed_bytes": 498079,
+      "decompressed_csv_bytes": 2854398,
+      "retained_csv_gzip": "../after-0b297e6f/continuation-trace.csv.gz",
+      "retained_compressed_sha256": "d800c3ef2035f24afcb255fc87d7eaa3fc510c690f9eaa69792f8012643bf138",
+      "comparison": "Complete decompressed CSV bytes identical to retained 0b297e6f capture; compressed-container identities differ."
+    },
+    {
+      "path": "declared-trace.csv.gz",
+      "compressed_sha256": "884bb3f22e31f98de563323f4a4de5e7677d495f218eb24b6f5042bd9ad3357d",
+      "decompressed_csv_sha256": "acf3f619031e33bafb066b0f7923db9dcab78a001d3409643845b6ab42020e80",
+      "compressed_bytes": 2504113,
+      "decompressed_csv_bytes": 14931481,
+      "retained_csv_gzip": "../after-0b297e6f/declared-trace.csv.gz",
+      "retained_compressed_sha256": "4aa96652c5974dbb826e4855589deeab4f1878d570d3998914ef3e5c947fa57a",
+      "comparison": "Complete decompressed CSV bytes identical to retained 0b297e6f capture; compressed-container identities differ."
+    },
+    {
+      "path": "fitting-trace.csv.gz",
+      "compressed_sha256": "c7cfb65f915722da97946a913064a19ad9809f17283a61cdffebbff20b5a26d2",
+      "decompressed_csv_sha256": "b51b366bbb60ffc7fae853401bf6e341d694e030a3d2ce61c5a75012beb12531",
+      "compressed_bytes": 27628290,
+      "decompressed_csv_bytes": 159899482,
+      "retained_csv_gzip": "../after-0b297e6f/fitting-trace.csv.gz",
+      "retained_compressed_sha256": "30a3fe5226696171cf295b10aa88a6aef838994ca9aec8a2a06070769ab22797",
+      "comparison": "Complete decompressed CSV bytes identical to retained 0b297e6f capture; compressed-container identities differ."
+    }
+  ],
+  "method": "Current calculation wrote full gzip CSV directly. Complete streaming decompressed hashes match the existing 0b297e6f traces; those full CSV bytes are retained once. Current container hashes and byte counts remain recorded; original-wheel trace_comparison entries remain None.",
+  "limits": "No original-wheel public trace was captured; trace_comparison remains None."
+}

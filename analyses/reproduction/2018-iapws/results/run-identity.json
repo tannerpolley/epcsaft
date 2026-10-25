@@ -1,0 +1,28 @@
+{
+  "engine_source_commit": "ce81fcec7f15d3893c1dfbac8aa0d2a2524021cb",
+  "engine_tree_clean": true,
+  "native_library": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-789-live-literature-reproductions-the/build/engine-meson/shared/libepcsaft_native.so",
+  "native_library_sha256": "e04fc501410514922ce1f56135fff4139eedb3d0c5c7caffe486ff43697ca05f",
+  "driver_sha256": "0b35a482329167cd7b11cdcb2bda1d69201f6f6992af2d0f88652c8fb4be3888",
+  "source_input_sha256": "874a5c405538d50abaa4063afe0e268a822c8b5b96a9548ea18124d1919529f9",
+  "phreeqc_source_commit": "b0b3be767158ccc3322d2c816625cf470045e67e",
+  "phreeqc_executable": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-789-live-literature-reproductions-the/build/issue-789/2018-iapws/phreeqc-build/phreeqc",
+  "phreeqc_executable_sha256": "3de42ad4d2a33b0f547c2fd8565fe100255e13feccc76c03d3e4183ca08fb29c",
+  "database_sha256": "93547b0343d9f151e73fb48e7927aa9e9c777399fedcb8c7497d00371af4d0ae",
+  "requested_pressure_atm": 1,
+  "actual_reference_pressures_atm": [
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    2.29024018754,
+    4.699958124979
+  ],
+  "pressure_correction": "zero reaction volumes in pinned WATEQ4F; PHREEQC raises hot solution pressure; no liquid-state qualification",
+  "calcium_298K_nominal_log10_K": {
+    "calcium_bicarbonate": "1.106",
+    "calcium_carbonate": "3.224"
+  },
+  "nominal_record_diagnostic_tolerance": 0.0005,
+  "source_archive_sha256": "47f1d4187ea302cb504c772409ea469aa7df1e2d338bec186c3a99d75998fbaa"
+}

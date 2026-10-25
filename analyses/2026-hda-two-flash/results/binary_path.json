@@ -1,0 +1,61 @@
+{
+ "pressure_Pa": 105000.0,
+ "composition": [
+  0.5,
+  0.5
+ ],
+ "k_ij": -0.003,
+ "crossings": {
+  "bubble": {
+   "success": true,
+   "T_K": 367.43107107297914,
+   "retained_T_K": 367.43107107297914,
+   "abs_T_change_K": 0.0,
+   "x": [
+    0.5,
+    0.5
+   ],
+   "y": [
+    0.7022873230867518,
+    0.2977126769132482
+   ],
+   "rho_liquid": 9278.638620937973,
+   "rho_vapor": 35.38220146550911,
+   "roots": [
+    2,
+    2
+   ],
+   "fugacity_residual": 3.6463887465032485e-15
+  },
+  "dew": {
+   "success": true,
+   "T_K": 373.506969787163,
+   "retained_T_K": 373.50696978716286,
+   "abs_T_change_K": 1.1368683772161603e-13,
+   "x": [
+    0.3078065360593257,
+    0.6921934639406743
+   ],
+   "y": [
+    0.5,
+    0.5
+   ],
+   "rho_liquid": 8918.728366932015,
+   "rho_vapor": 34.83207482174246,
+   "roots": [
+    2,
+    2
+   ],
+   "fugacity_residual": 1.1296519275560968e-14
+  }
+ },
+ "rows": 66,
+ "unavailable": [],
+ "rows_without_two_stable_roots": [],
+ "max_abs_dh_dT_fd_minus_cp": 5.718496254303318e-08,
+ "engine": [
+  "49aac619621b8e9fbbfce9937c742c003ee8e326",
+  true
+ ],
+ "pass": true
+}

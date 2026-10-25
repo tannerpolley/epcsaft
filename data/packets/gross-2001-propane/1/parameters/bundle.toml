@@ -1,0 +1,18 @@
+schema_version = 1
+bundle_id = "gross-2001-propane"
+bundle_version = 1
+purpose = "installed-catalog"
+files = ["components.csv", "single.csv", "model.csv"]
+
+[[sources]]
+source_id = "gross-sadowski-2001"
+citation = "Gross, J.; Sadowski, G. PC-SAFT: An Equation of State Based on a Perturbation Theory for Chain Molecules. Industrial & Engineering Chemistry Research 2001, 40, 1244-1260."
+doi = "10.1021/ie0003887"
+use_basis = "source-backed installed parameter catalog"
+
+[[domains]]
+domain_id = "propane-fit-range"
+kind = "fit-range"
+temperature_min = 85
+temperature_max = 523
+temperature_unit = "kelvin"

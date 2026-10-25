@@ -1,0 +1,6 @@
+component,paper_label,MW_kg_per_mol,m,sigma_A,u_over_k_K,e_assoc_over_k_K,kappa_assoc,association_scheme,charge,dielc_29815,d_born_A,f_solv,source_table,source_note
+H2O,water,0.01801528,1.2047,"2.7927 + 10.11*exp(-0.01775*T) - 1.417*exp(-0.01146*T)",353.95,2425.7,0.04509,2B,0,78.09,0,1.5,Table 5,"water sigma is the source temperature-dependent expression"
+Ethanol,ethanol,0.046068,2.3827,3.1771,198.24,2653.4,0.03238,2B,0,24.88,0,1.6,Table 5,""
+Butanol,isobutanol,0.0741216,2.8440,3.5561,257.13,2514.3,0.00391,2B,0,17.20,0,1.5,Table 5,"runtime component name is Butanol for source isobutanol"
+Na+,Na+,0.02298,1,2.8232,230.00,0,0,,1,8.0,3.445,1.0,Table 5,"ion dielectric is from Table 6 NaCl ions row"
+Cl-,Cl-,0.03545,1,2.7560,170.00,0,0,,-1,8.0,4.100,1.0,Table 5,"ion dielectric is from Table 6 NaCl ions row"

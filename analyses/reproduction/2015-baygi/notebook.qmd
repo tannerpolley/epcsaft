@@ -1,0 +1,204 @@
+---
+title: "Baygi 2015: pure MEA saturation with the published tuples"
+format:
+  html:
+    toc: true
+    embed-resources: true
+jupyter: python3
+execute:
+  enabled: true
+  echo: false
+  warning: false
+---
+
+```{python}
+import json
+from pathlib import Path
+import pandas as pd
+import matplotlib.pyplot as plt
+from IPython.display import display, HTML
+leaf = Path.cwd()
+root = leaf.parents[2]
+meta = json.loads((leaf / "results/current-pure-saturation.json").read_text())
+rows = pd.read_csv(leaf / "results/current-pure-saturation.csv")
+source = leaf / "inputs/source"
+table1 = pd.read_csv(source / "baygi-table-1.csv")
+table2 = pd.read_csv(source / "baygi-table-2.csv")
+tol = meta["tolerances"]
+historical = pd.read_csv(root / "analyses/2026-mea-association-diameter/results/mea-saturation.csv")
+historical = historical[historical.T_K.between(rows.temperature_K.min(), rows.temperature_K.max())]
+pressure_effect = 100 * (1 - historical.p_sigma3_pa / historical.p_d3_pa)
+density_effect = 100 * (historical.rho_sigma3_mol_l / historical.rho_d3_mol_l - 1)
+density_mass_effect = (historical.rho_sigma3_mol_l - historical.rho_d3_mol_l) * 1000 * meta["molar_mass_kg_mol"]
+def show(frame):
+    display(HTML(frame.to_html(index=False, float_format=lambda v: f"{v:.6g}")))
+```
+
+The unmodified MEA tuples return `{python} meta['verified_states']` verified native saturation states out of `{python} meta['states']` declarations over `{python} f"{rows.temperature_K.min():.2f}"`–`{python} f"{rows.temperature_K.max():.2f}"` K.
+The density–temperature comparison reproduces all sampled states at the stated figure resolution.
+The pressure–density comparison misses the warmest part of the 3B curve; its cause remains undetermined.
+These are numerical verifications against the paper's model curves and empirical correlation curves, with no direct physical validation against raw measurements.
+
+## Question, source and model
+
+How closely do the published tuples reproduce Figures 2–3 when evaluated with the Engine's sigma-cubed association strength?
+[Fakouri Baygi and Pahlavanzadeh (2015)](https://doi.org/10.1016/j.cherd.2014.07.017), Section 3.1, Table 2 and Figures 2–3, supplies the parameter and comparison values.
+The source locators, units and drawing coordinates are retained in `inputs/source/`.
+The following table displays the original MEA rows, including author-reported average absolute deviations (AAD).
+Those deviations are aggregate model-versus-correlation statistics, not point measurements.
+
+```{python}
+show(table2[table2.source_row.str.startswith("MEA ")][["source_row", "quantity", "value", "unit", "page", "table"]])
+```
+
+The residual Helmholtz model comprises hard-chain, dispersion and association contributions.
+Explicit donor–acceptor self-association uses the multiplicities in the retained parameter declarations below, with no same-role bond.
+There are no ions, reactions, polar contribution or permittivity dependence.
+Each temperature is independently declared through `Pure.saturation` and solved once by `solve_equilibrium`; all thermodynamic calculations and iterations run natively.
+Mass densities use the inherited comparison molar mass `{python} meta['molar_mass_kg_mol']` kg/mol; Table 2 does not print that mass conversion.
+
+```{python}
+show(pd.DataFrame([{"scheme": scheme, "donor multiplicity": m["topology"]["sites"][0]["multiplicity"],
+    "acceptor multiplicity": m["topology"]["sites"][1]["multiplicity"]} for scheme, m in meta["parameter_mappings"].items()]))
+```
+
+Baygi Eq. 4 uses $d_{ij}^3$ in the association strength, whereas the Engine uses $\sigma_{ij}^3$.
+The original association volume is passed unchanged; no Python rescaling, approximate temperature law, converted application tuple or parameter fit enters this calculation.
+The fixed liquid-plus-incipient-vapor declaration supplies no global stability certificate.
+
+## Fixed tolerances and numerical verification
+
+Figure 2 permits simultaneous coordinate allowances of ±`{python} tol['density_kg_m3']` kg/m³ and ±`{python} tol['figure2_pressure_kPa']` kPa.
+Figure 3 permits ±`{python} tol['density_kg_m3']` kg/m³ and ±`{python} tol['figure3_temperature_K']` K.
+These preselected limits round upward from two PDF points per coordinate, covering line width, quantization and calibration; they describe plotting resolution rather than experimental uncertainty.
+The comparison intersects the allowed intervals along each whole polyline segment, preserving path order and separate paths.
+It neither compares only stored vertices nor treats a segment's bounding-box corners as curve points.
+
+The requested dimensionless native row tolerance is `{python} tol['row']`.
+Positive pressure and distinct positive phase densities are required together with the native success and requested-tolerance checks.
+The largest achieved residual is `{python} f"{rows.residual.max():.3e}"`.
+All returned residual rows, phase amounts, compositions, solver messages and convergence records are retained in the JSON.
+The reported attainable floors are diagnostics; every retained state actually meets the requested tolerance.
+
+```{python}
+summary = []
+for scheme, part in rows.groupby("scheme", sort=False):
+    for figure in (2, 3):
+        count = int((part[f"figure{figure}"] == "reproduced").sum())
+        summary.append({"scheme": scheme, "quantity": "pressure–density" if figure == 2 else "density–temperature",
+            "figure": figure, "reproduced states": count, "sampled states": len(part),
+            "outcome": "reproduced" if count == len(part) else "not reproduced; cause undetermined"})
+show(pd.DataFrame(summary))
+show(rows.groupby("scheme", sort=False).agg(temperature_min_K=("temperature_K", "min"),
+    temperature_max_K=("temperature_K", "max"), pressure_min_Pa=("pressure_Pa", "min"),
+    pressure_max_Pa=("pressure_Pa", "max"), density_min_kg_m3=("rhoL_kg_m3", "min"),
+    density_max_kg_m3=("rhoL_kg_m3", "max")).reset_index())
+```
+
+## Comparison at printed-figure resolution
+
+The source polylines are continuous drawing curves, and the native predictions are discrete markers.
+The gray reference is the source's DIPPR empirical correlation curve, not raw experimental data.
+Near-zero Figure 2 pressures have uncertainty exceeding the pressure itself, so apparent agreement cannot support a sub-percent pressure claim.
+
+```{python}
+fig, axes = plt.subplots(1, 2, figsize=(12, 5), layout="constrained")
+colors = {"2B": "#0072B2", "3B": "#D55E00", "4C": "#009E73"}
+for number, ax in zip((2, 3), axes):
+    drawing = pd.read_csv(source / f"baygi-figure-0{number}.csv")
+    labelled = set()
+    for (series, path), part in drawing.groupby(["series", "path_index"], sort=False):
+        label = f"Source {series}" if series not in labelled else None
+        color = "#666666" if series == "DIPPR" else colors[series.removeprefix("MEA-")]
+        style = "-" if series == "DIPPR" else {"2B": "-", "3B": "--", "4C": ":"}[series.removeprefix("MEA-")]
+        ax.plot(part.x, part.y, color=color, linestyle=style, label=label, linewidth=1.4)
+        labelled.add(series)
+    for scheme, part in rows.groupby("scheme", sort=False):
+        ax.plot(part.rhoL_kg_m3, part.pressure_Pa / 1000 if number == 2 else part.temperature_K,
+                linestyle="none", marker={"2B": "x", "3B": "+", "4C": "1"}[scheme], color=colors[scheme], label=f"Native {scheme}, σ³")
+    ax.set(xlabel="Saturated liquid density / kg m⁻³", ylabel="Pressure / kPa" if number == 2 else "Temperature / K")
+    ax.grid(alpha=.2)
+    ax.legend(fontsize=8)
+axes[0].set_title("Figure 2: warm 3B pressure–density mismatch")
+axes[1].set_title("Figure 3: density agrees at drawing resolution")
+fig.savefig(leaf / "figures/pure-saturation-comparison.png", dpi=160)
+plt.show()
+```
+
+Signed readouts in the CSV compare Figure 2 pressure at native density (kPa) and Figure 3 density at native temperature (kg/m³).
+They are linear reads of the drawing, distinct from the simultaneous-coordinate pass test.
+The simultaneous density and pressure allowances can admit both historical association conventions on this steep curve. A reproduced drawing does not establish fixed-temperature pressure agreement or identify which association convention generated the source drawing.
+The DIPPR columns also apply the same fixed coordinate allowances; a difference from the correlation curve does not by itself identify its cause or establish physical invalidity.
+Missing readouts mark coordinates beyond the stored path; no endpoint extrapolation is performed.
+These readouts do not reconstruct the author's observation or fitting grid.
+
+```{python}
+misses = rows[rows.figure2 != "reproduced"]
+show(misses[["scheme", "temperature_K", "pressure_Pa", "rhoL_kg_m3", "figure2_source_readout",
+    "figure2_signed_deviation", "residual", "figure2_cause"]])
+show(rows[["scheme", "temperature_K", "dippr_figure2", "dippr_figure2_reference", "dippr_figure2_signed_deviation",
+    "dippr_figure3", "dippr_figure3_reference", "dippr_figure3_signed_deviation"]])
+```
+
+Some separation from DIPPR is already present between the paper's model curves and its plotted reference. The current model-to-source discrepancy and the source-model-to-reference discrepancy are distinct. These comparisons do not diagnose the underlying causes.
+
+## Expected non-reproduction and bounded diagnosis
+
+Historical 2B paired-convention evidence in `analyses/2026-mea-association-diameter/results/mea-saturation.csv` predicts that over the present temperature interval sigma-cubed pressures are `{python} f"{pressure_effect.min():.2f}"`–`{python} f"{pressure_effect.max():.2f}"`% lower than d-cubed pressures, while liquid densities are `{python} f"{density_effect.min():.4f}"`–`{python} f"{density_effect.max():.4f}"`% higher (`{python} f"{density_mass_effect.min():.3f}"`–`{python} f"{density_mass_effect.max():.3f}"` kg/m³).
+These are retained historical expectations for diagnosis, not current paired runs or acceptance bounds.
+The 3B and 4C mismatch causes remain undetermined unless a paired native calculation isolates them.
+Agreement at coarse figure resolution does not remove the documented difference in association equations.
+
+The retained input check confirmed that all original tuples match the inherited table, with explicit source multiplicities.
+All native convergence checks pass at the neighboring warm states that miss Figure 2.
+The following optional comparison with the old sigma-cubed replay excludes a large change in these physical values between versions; it cannot exclude a shared formulation error.
+No old feasibility cutoff is used to qualify a current state.
+
+```{python}
+show(pd.DataFrame([{"scheme": r["scheme"], **r["maximum_relative_change_from_historical_sigma3"]}
+    for r in meta["historical_sigma3_comparison"]]).rename(columns={
+        "pressure_Pa": "maximum relative pressure change", "rhoL_mol_m3": "maximum relative liquid-density change"}))
+```
+
+An exact native d-cubed declaration is unavailable and outside this issue's scope.
+The separate capability falsifier holds the original 2B tuple and density fixed, and requires
+$$
+\frac{\Delta_{d^3}}{\Delta_{\sigma^3}}=
+\left[1-0.12\exp\left(-3\frac{\epsilon/k_B}{T}\right)\right]^3
+$$
+within relative tolerance `{python} meta['exact_d3_falsifier']['ratio_relative_tolerance']` at `{python} ', '.join(str(t) for t in meta['exact_d3_falsifier']['temperature_K'])` K, with molar density `{python} meta['exact_d3_falsifier']['molar_density_mol_m3']` mol/m³ held fixed. Exact temperature derivatives must be native if exposed.
+The retained design and readiness review give the same-input density and reference ratios.
+A paired native saturation comparison would then test the effect for each scheme without changing the figure tolerances.
+No Engine code is changed here, and no numerical workaround is proposed.
+
+## Aggregate statistics and physical limits
+
+The fixed Table 2 printed-precision allowance is ±`{python} tol['table2_percentage_point']` percentage point.
+Exact replay of every reported pressure and density aggregate remains undetermined because the author sampling grid is unknown and the density-correlation grouping is unresolved.
+The PDF's Eq. 10 prints the exponent of $B$ as $[1+(1-T/C)]^D$; the historical producer instead uses $1+(1-T/C)^D$.
+Neither expression is silently selected for a new analytic reference calculation.
+Table 1's pressure-column temperature range is not promoted into a separate density validity range.
+
+```{python}
+show(pd.DataFrame(meta["table2"]))
+show(table1[["source_row", "quantity", "value", "output_unit", "page", "table"]])
+```
+
+The source correlation's reported deviations from observations are not uncertainty distributions or solver tolerances.
+No parameter uncertainty or raw measurement uncertainty is supplied.
+The coordinates retain extraction QA “review”: alignment with the independent raster was checked, but no second numerical extraction was performed.
+The calibrated overlay is retained as `inputs/source/baygi-figures-02-03-overlay.png`.
+
+## Provenance and use
+
+The accepted readiness review inspected main commit `69f61380`; its retained path is `build/issue-725/readiness-r1.md` in the main checkout.
+This notebook follows that reviewed design's bounded sigma-cubed comparison and both readiness findings.
+The actual loaded Engine identity is `{python} meta['engine_provenance'][0]`, with Engine source clean at calculation time: `{python} meta['engine_provenance'][1]`.
+The run used this worktree's interpreter, `{python} meta['interpreter']`, and took `{python} f"{meta['wall_seconds']:.6f}"` seconds for the native collection loop.
+Source hashes, exact declarations and all native diagnostics are in `results/current-pure-saturation.json`; physical values and individual comparison outcomes are in `results/current-pure-saturation.csv`.
+
+The earlier `results/baygi-pure-saturation.csv` remains historical, with its wheel/input hashes in `results/baygi-pure-saturation-summary.json`.
+Its retired feasibility bound and probes explain those records only.
+The source-linked Table 1/2 CSVs replace the old numbered extraction copies; other source figures and tables remain historical material outside this pure-MEA scope.
+Independent delivered review (`build/issue-725/delivered-r1.md` in the main checkout) returned Supported for this bounded comparison; the notebook has no investigator promotion for manuscript use.
+Site registration requires the parent's edit of `analyses/_quarto.yml`, which is outside this implementor's permitted paths.

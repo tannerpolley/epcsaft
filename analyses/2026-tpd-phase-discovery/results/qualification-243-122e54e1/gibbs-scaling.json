@@ -1,0 +1,81 @@
+{
+  "identity": {
+    "wheel": "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-243-design-d1-two-liquid-feed-scale-st-a47da443/build/wheels/candidate-122e54e1/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+    "wheel_sha256": "aa7b7d24dd8bd7985b6964b522c80006d1233cf692678b9ee014bb952cf3b4f7",
+    "script_sha256": "5946d67115b010e84f2b84a71546971c10b374093da8c6e6b60717e8a7d461fa",
+    "baseline_script_sha256": "b01ec8b8f7bf83d71f0f668ca87983ef4ea6457281fb4b573ffb3da68a86efe6",
+    "source_mtimes": {
+      "engine/native/equilibrium/gibbs_minimizer.cpp": 1791599057205205763,
+      "engine/native/equilibrium/request_compile.cpp": 1791594018162748826
+    },
+    "thread_environment": {
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": null
+    }
+  },
+  "inputs": {
+    "case-1/100-mol": {
+      "components": [
+        "water",
+        "isobutanol"
+      ],
+      "T": 293.15,
+      "P": 100000.0,
+      "feed": {
+        "water": 60.0,
+        "isobutanol": 40.0
+      },
+      "row_tolerance": 1e-10,
+      "phases": "Discover(default trial families and budgets)",
+      "parameters": {
+        "path": "analyses/2026-khudaida-idaes-settler/inputs/data/khudaida-2026-figure-2-electrolyte-lle/7/parameters/parameters.json",
+        "sha256": "8babed899e7347e58c403c7aff24a7fdd6d60411af3b4d81eb6aa90c2431dfa4"
+      },
+      "one_mol_reference": {
+        "csv": "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-243-design-d1-two-liquid-feed-scale-st-a47da443/analyses/2026-tpd-phase-discovery/results/qualification-8470b49a/neutral.csv",
+        "sha256": "8fb022ede486e0627835b7cdb190e5b7cf88c0f3d515f92d8e3bc27c705dce27",
+        "metadata_sha256": "c132708afd319df880e29031471a9a158e544e93978f52bcc06681ccdc9b4a86"
+      },
+      "purpose": "Extensive addition-error weighting and feed scaling; numerical verification, not an application prediction",
+      "scope_limit": "Discovery only; the 100-mol cold declaration and returned-declaration reuse keep the split since #243 (engine/tests/equilibrium/test_feed_scale.py)."
+    }
+  },
+  "costs": {
+    "csv": "gibbs-scaling-costs.csv",
+    "sha256": "1556067ccb891c224ed2739379156aa8aa25e5c734f2cff28e011473458d5fc5",
+    "samples": 3,
+    "first_report_work": "sample 0 native work references the identical reported CSV operands",
+    "count_aliases": "iterations/evaluations/Hessian counts alias native work where that map is present"
+  },
+  "failure": null,
+  "failures": [],
+  "unresolved": [
+    {
+      "case": "case-1/100-mol/round-0",
+      "trial": 0,
+      "seed": "positive-neutral-base",
+      "evidence": "indeterminate",
+      "message": "converged: residual 2.582870687006847e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 7 iterations, contraction absent, floor 5.3085775354355985e-11, amplification 0"
+    },
+    {
+      "case": "case-1/100-mol/round-0",
+      "trial": 2,
+      "seed": "near-pure-1",
+      "evidence": "indeterminate",
+      "message": "converged: residual 2.5184165156265542e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 11 iterations, contraction absent, floor 5.3085775354357911e-11, amplification 0"
+    },
+    {
+      "case": "case-1/100-mol/round-1",
+      "trial": 1,
+      "seed": "near-pure-0",
+      "evidence": "indeterminate",
+      "message": "converged: residual 3.7607046692766381e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 11 iterations, contraction absent, floor 1.5191395616672857e-10, amplification 0"
+    }
+  ],
+  "limits": [
+    "numerical verification of the supplied model and finite trial set",
+    "estimated uncertainty is not a rigorous bound",
+    "Refused discovery compiles before admission, including generic-point Jacobian/EOS work inside its private trace; outer zero evaluations denote no observed driver callbacks, not no EOS work.",
+    "no physical validation or global stability certificate"
+  ]
+}

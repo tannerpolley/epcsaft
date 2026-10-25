@@ -1,0 +1,84 @@
+A-propane-vapor
+A-propane-liquid
+A-propane-supercritical
+A-methane-ethane-vapor
+A-C2-liquid
+B-propane-critical-liquid
+B-propane-critical-vapor
+B-propane-above-critical
+B-propane-metastable-liquid
+B-propane-metastable-vapor
+B-propane-1-Pa
+B-propane-100-MPa
+B-water-liquid
+B-water-vapor
+B-C4-water-rich
+B-C3-1-mol-kg
+B-C3-3-mol-kg
+B-C3-6-mol-kg
+B-C5-liquid
+B-C5-vapor
+B-MEA-liquid
+B-propane-absent-vapor
+C1-saturation
+C2-bubble
+methane-ethane-bubble
+case-6/figure-2-point-7/cold
+case-6/figure-2-point-7/accepted
+case-7/flash-5918.5286-Pa/cold
+case-7/flash-5918.5286-Pa/accepted
+khudaida/sequential-8
+mea-nominally-unloaded/353.15-K
+methane-ethane-flash
+phase-stability
+C2-pressure-actions
+C3-pressure-actions
+pure-saturation-objective-gradient
+pure-saturation-fit
+| Case | Primary mode | N/process | Correct | Primary median µs | p10–p90 µs | Raw P / fixed µs | EOS evaluations/call |
+|---|---|---:|:---:|---:|---:|---:|---:|
+| A-propane-vapor | changing pressure | 32 | True | 4.200 | 3.555–4.875 | 12.315 / 8.390 | 9.38 |
+| A-propane-liquid | changing pressure | 32 | True | 4.435 | 3.940–7.095 | 14.075 / 9.580 | 11.00 |
+| A-propane-supercritical | changing pressure | 32 | True | 21.224 | 19.840–22.825 | 29.010 / 7.595 | 70.78 |
+| A-methane-ethane-vapor | changing pressure | 32 | True | 8.669 | 7.545–10.215 | 17.825 / 9.020 | 17.84 |
+| A-C2-liquid | changing pressure | 32 | True | 13.844 | 0.475–17.730 | 34.200 / 20.870 | 10.00 |
+| B-propane-critical-liquid | changing pressure | 32 | True | 6.790 | 5.700–12.715 | 15.005 / 7.980 | 14.00 |
+| B-propane-critical-vapor | changing pressure | 32 | True | 8.700 | 6.995–11.310 | 16.440 / 7.625 | 15.88 |
+| B-propane-above-critical | changing pressure | 32 | True | 22.309 | 21.525–26.215 | 30.130 / 7.630 | 74.00 |
+| B-propane-metastable-liquid | changing pressure | 32 | True | 6.465 | 5.350–8.230 | 14.325 / 7.715 | 13.00 |
+| B-propane-metastable-vapor | changing pressure | 32 | True | 8.346 | 4.810–17.685 | 17.050 / 8.715 | 16.97 |
+| B-propane-1-Pa | changing pressure | 32 | True | 2.990 | 2.470–4.015 | 11.320 / 8.175 | 7.25 |
+| B-propane-100-MPa | changing pressure | 32 | True | 6.460 | 4.816–7.215 | 14.310 / 7.775 | 14.97 |
+| B-water-liquid | changing pressure | 32 | True | 14.105 | 11.395–17.045 | 32.790 / 17.990 | 10.00 |
+| B-water-vapor | changing pressure | 32 | True | 10.130 | 8.995–12.395 | 26.355 / 16.220 | 8.00 |
+| B-C4-water-rich | changing pressure | 32 | True | 23.355 | 22.291–30.330 | 55.540 / 31.860 | 10.00 |
+| B-C3-1-mol-kg | changing pressure | 32 | True | 16.420 | 14.470–22.920 | 43.430 / 27.040 | 10.00 |
+| B-C3-3-mol-kg | changing pressure | 32 | True | 14.836 | 10.001–19.269 | 42.930 / 27.925 | 10.00 |
+| B-C3-6-mol-kg | changing pressure | 32 | True | 15.100 | 5.830–37.790 | 43.239 / 27.520 | 10.00 |
+| B-C5-liquid | changing pressure | 32 | True | 4.439 | 3.980–5.600 | 15.360 / 11.055 | 9.00 |
+| B-C5-vapor | changing pressure | 32 | True | 4.510 | -2.590–14.260 | 16.380 / 11.990 | 8.22 |
+| B-MEA-liquid | changing pressure | 32 | True | 47.989 | 37.910–74.820 | 146.159 / 96.650 | 10.00 |
+| B-propane-absent-vapor | changing pressure | 32 | True | 8.325 | 6.220–13.405 | 16.530 / 8.720 | 14.00 |
+| C1-saturation | changing temperature | 32 | True | 227.344 | 219.480–341.208 | — | 40.00 |
+| C2-bubble | changing temperature | 32 | True | 820.752 | 794.922–1035.486 | — | 97.16 |
+| methane-ethane-bubble | changing temperature | 32 | True | 410.978 | 395.144–440.168 | — | 148.97 |
+| case-6/figure-2-point-7/cold | repeated identical input (rewards caching) | 1 | True | 8658.739 | 8539.595–9009.097 | — | 78.00 |
+| case-6/figure-2-point-7/accepted | repeated identical input (rewards caching) | 1 | True | 6821.855 | 6788.288–7010.143 | — | 55.00 |
+| case-7/flash-5918.5286-Pa/cold | repeated identical input (rewards caching) | 1 | True | 21368.463 | 21322.454–22297.371 | — | 158.00 |
+| case-7/flash-5918.5286-Pa/accepted | repeated identical input (rewards caching) | 1 | True | 16152.321 | 15134.261–16410.720 | — | 76.00 |
+| khudaida/sequential-8 | repeated identical input (rewards caching) | 1 | True | 46594.081 | 46338.370–50954.633 | — | 524.00 |
+| mea-nominally-unloaded/353.15-K | repeated identical input (rewards caching) | 1 | True | 11770.038 | 11383.495–12334.060 | — | 55.00 |
+| methane-ethane-flash | changing temperature | 32 | True | 402.248 | 388.718–451.494 | — | 77.12 |
+| phase-stability | repeated identical input (rewards caching) | 1 | False | 1329.425 | 1255.129–1351.553 | — | 619.00 |
+| C2-pressure-actions | changing temperature | 32 | True | 90.799 | 86.480–107.700 | — | 17.97 |
+| C3-pressure-actions | changing temperature | 32 | True | 133.739 | 127.419–163.039 | — | 20.00 |
+| pure-saturation-objective-gradient | repeated identical input (rewards caching) | 2 | True | 1213.970 | 1196.680–1238.706 | — | 122.00 |
+| pure-saturation-fit | repeated identical input (rewards caching) | 1 | True | 8708.098 | 8538.339–9596.136 | — | 1011.00 |
+
+Traceback (most recent call last):
+  File "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-750-720-part-b-diagnose-the-changed-results/analyses/2026-density-root-benchmark/scripts/run.py", line 364, in <module>
+    main()
+    ~~~~^^
+  File "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-750-720-part-b-diagnose-the-changed-results/analyses/2026-density-root-benchmark/scripts/run.py", line 352, in main
+    raise RuntimeError(f"correctness failures: {failures}")
+RuntimeError: correctness failures: ['phase-stability']

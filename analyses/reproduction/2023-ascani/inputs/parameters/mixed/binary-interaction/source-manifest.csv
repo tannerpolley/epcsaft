@@ -1,0 +1,14 @@
+parameter,component_i,component_j,value,source,provenance_status
+l_ij,*,*,0,default zero for unpublished values,unresolved_default_zero
+k_hb_ij,*,*,0,default zero for unpublished values,unresolved_default_zero
+k_ij,H2O,Acetic acid,-0.1247,Ascani2023 Table2,source_backed
+k_ij,H2O,1-Pentanol,0.00016*T-0.0461,Ascani2023 Table2,source_backed
+k_ij,H2O,Pentyl Acetate,-0.0228,Ascani2023 Table2,source_backed
+k_ij,H2O,1-Hexanol,0.000404*T-0.1103476,Ascani2023 Table2,source_backed
+k_ij,H2O,Hexyl Acetate,0.0015*T-0.457225,Ascani2023 Table2,source_backed
+k_ij,Acetic acid,1-Pentanol,-0.1,Ascani2023 Table2,source_backed
+k_ij,Acetic acid,1-Hexanol,-0.033,Ascani2023 Table2,source_backed
+k_ij,Acetic acid,Pentyl Acetate,-0.1,Ascani2023 Table2,source_backed
+k_ij,Acetic acid,Hexyl Acetate,-0.0004*T+0.03926,Ascani2023 Table2,source_backed
+k_ij,1-Pentanol,Pentyl Acetate,-0.0095,Ascani2023 Table2,source_backed
+k_ij,1-Hexanol,Hexyl Acetate,-0.0042,Ascani2023 Table2,source_backed

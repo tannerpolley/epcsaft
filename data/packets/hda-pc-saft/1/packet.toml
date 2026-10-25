@@ -1,0 +1,79 @@
+schema_version = 2
+packet_id = "hda-pc-saft"
+packet_version = "1"
+title = "HDA-system PC-SAFT source records and benzene/toluene infinite-dilution activity coefficients"
+description = "Source-confirmed nonassociating PC-SAFT pure records (H2 from Ghosh et al. 2003; CH4, C6H6, C7H8 from Gross and Sadowski 2001) and pair records (H2/toluene, benzene/toluene, CH4/benzene, CH4/toluene) for toluene hydrodealkylation, plus the Yu et al. 2026 Table S5 benzene(1)+toluene(2) infinite-dilution activity coefficients. The H2/benzene and H2/CH4 k_ij are the #73 fits; parameters/parameters.json assembles the four-component document. The benzene/toluene pair (Yu k_ij with the full-precision Gross pure set) was adopted by the owner on 2026-09-26, with the #73 rounding check's 4.8e-4 liquid ln(phi_i) deviation accepted and recorded."
+license_or_use_basis = "Factual numeric values transcribed with locators from the cited articles and supporting information for noncommercial scientific use; no full paper or supporting document is included."
+tolerance_rationale = "Values are retained as printed without a model-acceptance tolerance; the Table S5 values carry no source uncertainty. Consuming fits and flash checks own their tolerances."
+
+[[sources]]
+source_id = "ghosh-chapman-french-2003"
+citation = "Ghosh, A.; Chapman, W. G.; French, R. N. Fluid Phase Equilibria 2003, 209, 229-243."
+doi = "10.1016/S0378-3812(03)00147-X"
+use_basis = "Hydrogen PC-SAFT pure parameters, Table 1."
+
+[[sources]]
+source_id = "saajanlehto-2014"
+citation = "Saajanlehto, M.; Uusi-Kyyny, P.; Alopaeus, V. Fluid Phase Equilibria 2014, 382, 150-157."
+doi = "10.1016/j.fluid.2014.08.035"
+use_basis = "H2/toluene PC-SAFT k_ij, Table 6."
+
+[[sources]]
+source_id = "yu-2026"
+citation = "Yu, G. et al. AIChE Journal 2026, 72(2), e70114, with Supporting Information aic70114-sup-0001-supinfo.docx."
+doi = "10.1002/aic.70114"
+use_basis = "Benzene/toluene k_ij (Table 2) and Supporting Information Table S5 infinite-dilution activity coefficients, which the note attributes to DECHEMA Chemistry Data Series Volume IX."
+
+[[sources]]
+source_id = "epcsaft-issue-73-fit"
+citation = "ePC-SAFT issue #73 hydrogen-pair k_ij estimation, analyses/2026-hda-two-flash."
+use_basis = "Project-fitted H2/benzene and H2/CH4 k_ij under the issue's frozen engineering discrepancy scales."
+
+[[sources]]
+source_id = "gross-sadowski-2001"
+citation = "Gross, J.; Sadowski, G. Ind. Eng. Chem. Res. 2001, 40, 1244-1260, via packet gross-sadowski-2001/3."
+doi = "10.1021/ie0003887"
+use_basis = "Methane, benzene, toluene pure records and CH4/benzene, CH4/toluene k_ij."
+
+[[domains]]
+domain_id = "benzene-toluene-gamma-inf-printed"
+kind = "source-observation"
+temperature_min = 213.15
+temperature_max = 576.15
+temperature_unit = "kelvin"
+description = "Yu et al. 2026 Table S5 benzene(1)+toluene(2), printed -60 to 303 degC, benzene infinitely dilute in toluene."
+
+[[domains]]
+domain_id = "hda-pc-saft-record-domains"
+kind = "source-fit-ranges"
+temperature_min = 97.0
+temperature_max = 594.0
+temperature_unit = "kelvin"
+description = "Union of the per-record fit ranges stated in sources/hda-pc-saft-records.toml; each record keeps its own domain."
+
+[[files]]
+path = "observations/benzene_toluene_gamma_inf.csv"
+role = "observations"
+media_type = "text/csv"
+sha256 = "31964e71ac767430b750d5a78e530bb8377d55e35d9aa4de73976a72e9fdee9f"
+source_refs = ["yu-2026"]
+domain_refs = ["benzene-toluene-gamma-inf-printed"]
+units_basis = "ln_gamma1_inf is the dimensionless natural log of the benzene infinite-dilution activity coefficient as printed; T_C is degrees Celsius as printed; T_K = T_C + 273.15 kelvin; source_row is the printed order; flag is text."
+
+[[files]]
+path = "sources/hda-pc-saft-records.toml"
+role = "source"
+media_type = "application/toml"
+sha256 = "a58fbe37877673f03a71977c5f27c4dc7f94a68299c94d4033d1c8cc14a4411f"
+source_refs = ["ghosh-chapman-french-2003", "saajanlehto-2014", "yu-2026", "gross-sadowski-2001", "epcsaft-issue-73-fit"]
+domain_refs = ["hda-pc-saft-record-domains", "benzene-toluene-gamma-inf-printed"]
+units_basis = "Field names carry units: segment_count dimensionless, segment_diameter_angstrom, dispersion_energy_over_k_kelvin, molar_mass_kg_per_mol, k_ij dimensionless; document hashes and locators are non-numeric."
+
+[[files]]
+path = "parameters/parameters.json"
+role = "parameters"
+media_type = "application/json"
+sha256 = "c41ac486efe3f19ce455029796c6abbf937d4d27c3c51018f83f966d4d8d6822"
+source_refs = ["ghosh-chapman-french-2003", "saajanlehto-2014", "yu-2026", "gross-sadowski-2001", "epcsaft-issue-73-fit"]
+domain_refs = ["hda-pc-saft-record-domains"]
+units_basis = "epcsaft.parameters schema v1: units are carried per value (kelvin, angstrom, dimensionless, kg / mol, elementary-charge)."

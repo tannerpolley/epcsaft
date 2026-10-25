@@ -1,0 +1,1806 @@
+{
+  "added_evidence": [
+    {
+      "disposition": "admitted: fixed-speciation solvent fugacity; no reaction constant or CO2 pressure enters; 25 states, 50 rows; #161 weights from Hilliard's stated uncertainties and Appendix D.4 measured temperature and MEA molality",
+      "model_comparison_eligible": true,
+      "observable": "water and MEA partial pressures over 30 wt% MEA at 313.15/333.15 K, loading 0.15-0.49, at NMR speciation measured at the same T and MEA strength",
+      "source": "Hilliard (2008) dissertation, Appendix D.4; Boettinger, Maiwald and Hasse (2008) doi:10.1016/j.fluid.2007.09.017"
+    },
+    {
+      "disposition": "holdout: fitted candidates scored without refitting; internal-standard scale cancels in the ratios; the tabulated loading breaks the carbon balance at high loading and is not used",
+      "model_comparison_eligible": true,
+      "observable": "carbamate and bicarbonate+carbonate per NMR amine total at the NMR loading, second speciation source for the same Hilliard states",
+      "source": "Hilliard (2008) dissertation, Appendix F.2 (printed p. 933), 13C NMR speciation of 7 m MEA at 40 and 60 C"
+    },
+    {
+      "disposition": "#161 1(d) stopped by owner decision (2026-09-29) and superseded by MEA-Thermodynamics #121; chloride.py fits are retained as diagnostics only, with no ranking claim",
+      "model_comparison_eligible": false,
+      "observable": "vapor pressure over aqueous MEAH+Cl-, 298.15-333.15 K",
+      "source": "Lee and Lee (1998) doi:10.1021/je970263h, frozen in MEA-Thermodynamics PR #122"
+    },
+    {
+      "disposition": "ionic strength at most 0.08 mol/kg; the Born forms differ too little there to rank",
+      "model_comparison_eligible": false,
+      "observable": "EMF of MEA/MEAH+Cl- buffers, 273-323 K",
+      "source": "Bates and Pinching (1951) doi:10.6028/jres.046.039"
+    },
+    {
+      "disposition": "no ions; permittivity tests the shared bulk-permittivity input, not the Born form",
+      "model_comparison_eligible": false,
+      "observable": "static permittivity of unloaded MEA-water, 298.15 K",
+      "source": "Agieienko and Buchner (2024) doi:10.1039/d3cp05027k"
+    }
+  ],
+  "calibrated_ranking": {
+    "cases": [
+      {
+        "carbamate_bias_per_loading": {
+          "original-born": 0.0,
+          "ssm": 0.0,
+          "ssm-plus-ds": 0.0
+        },
+        "case": "refit nominal state, loading bias none, carbamate x0.95",
+        "chi_square": {
+          "original-born": 9.4855,
+          "ssm": 10.8461,
+          "ssm-plus-ds": 9.1129
+        },
+        "decides": false,
+        "difference_at_observed_scatter": 1.7993,
+        "effective_difference": 0.3726,
+        "k_ion_mea": {
+          "original-born": 0.2718,
+          "ssm": -1.2873,
+          "ssm-plus-ds": 0.1399
+        },
+        "k_ion_water": {
+          "original-born": 0.1018,
+          "ssm": -1.7354,
+          "ssm-plus-ds": -0.0917
+        },
+        "max_gradient_inf_norm": 0.10236,
+        "max_multi_start_chi_square_spread": 6.39e-06,
+        "original_born_minus_ssm_plus_ds": 0.3726,
+        "reduced_chi_square": {
+          "original-born": 0.2156,
+          "ssm": 0.2465,
+          "ssm-plus-ds": 0.2071
+        }
+      },
+      {
+        "carbamate_bias_per_loading": {
+          "original-born": 0.0,
+          "ssm": 0.0,
+          "ssm-plus-ds": 0.0
+        },
+        "case": "refit nominal state, loading bias none, carbamate x1.0",
+        "chi_square": {
+          "original-born": 10.3878,
+          "ssm": 12.165,
+          "ssm-plus-ds": 10.0668
+        },
+        "decides": false,
+        "difference_at_observed_scatter": 1.4032,
+        "effective_difference": 0.321,
+        "k_ion_mea": {
+          "original-born": 0.2846,
+          "ssm": -1.2358,
+          "ssm-plus-ds": 0.1549
+        },
+        "k_ion_water": {
+          "original-born": 0.0801,
+          "ssm": -1.7155,
+          "ssm-plus-ds": -0.1101
+        },
+        "max_gradient_inf_norm": 0.22407,
+        "max_multi_start_chi_square_spread": 2.94e-06,
+        "original_born_minus_ssm_plus_ds": 0.321,
+        "reduced_chi_square": {
+          "original-born": 0.2361,
+          "ssm": 0.2765,
+          "ssm-plus-ds": 0.2288
+        }
+      },
+      {
+        "carbamate_bias_per_loading": {
+          "original-born": 0.0,
+          "ssm": 0.0,
+          "ssm-plus-ds": 0.0
+        },
+        "case": "refit nominal state, loading bias none, carbamate x1.05",
+        "chi_square": {
+          "original-born": 17.5443,
+          "ssm": 19.5997,
+          "ssm-plus-ds": 17.2457
+        },
+        "decides": false,
+        "difference_at_observed_scatter": 0.762,
+        "effective_difference": 0.2987,
+        "k_ion_mea": {
+          "original-born": 0.2951,
+          "ssm": -1.1903,
+          "ssm-plus-ds": 0.1671
+        },
+        "k_ion_water": {
+          "original-born": 0.0528,
+          "ssm": -1.7041,
+          "ssm-plus-ds": -0.1346
+        },
+        "max_gradient_inf_norm": 0.09959,
+        "max_multi_start_chi_square_spread": 2.13e-06,
+        "original_born_minus_ssm_plus_ds": 0.2987,
+        "reduced_chi_square": {
+          "original-born": 0.3987,
+          "ssm": 0.4454,
+          "ssm-plus-ds": 0.3919
+        }
+      },
+      {
+        "carbamate_bias_per_loading": {
+          "original-born": 0.0,
+          "ssm": 0.0,
+          "ssm-plus-ds": 0.0
+        },
+        "case": "refit measured state, loading bias none, carbamate x0.95",
+        "chi_square": {
+          "original-born": 13.8359,
+          "ssm": 13.3781,
+          "ssm-plus-ds": 13.2633
+        },
+        "decides": true,
+        "difference_at_observed_scatter": 1.8996,
+        "effective_difference": 0.5726,
+        "k_ion_mea": {
+          "original-born": 0.3383,
+          "ssm": -1.2182,
+          "ssm-plus-ds": 0.2099
+        },
+        "k_ion_water": {
+          "original-born": 0.1712,
+          "ssm": -1.6708,
+          "ssm-plus-ds": -0.0208
+        },
+        "max_gradient_inf_norm": 0.13521,
+        "max_multi_start_chi_square_spread": 1.85e-05,
+        "original_born_minus_ssm_plus_ds": 0.5726,
+        "reduced_chi_square": {
+          "original-born": 0.3145,
+          "ssm": 0.304,
+          "ssm-plus-ds": 0.3014
+        }
+      },
+      {
+        "carbamate_bias_per_loading": {
+          "original-born": 0.0,
+          "ssm": 0.0,
+          "ssm-plus-ds": 0.0
+        },
+        "case": "refit measured state, loading bias none, carbamate x1.0",
+        "chi_square": {
+          "original-born": 15.5125,
+          "ssm": 15.1665,
+          "ssm-plus-ds": 14.953
+        },
+        "decides": true,
+        "difference_at_observed_scatter": 1.6463,
+        "effective_difference": 0.5595,
+        "k_ion_mea": {
+          "original-born": 0.3475,
+          "ssm": -1.1723,
+          "ssm-plus-ds": 0.2207
+        },
+        "k_ion_water": {
+          "original-born": 0.1463,
+          "ssm": -1.6554,
+          "ssm-plus-ds": -0.0429
+        },
+        "max_gradient_inf_norm": 0.16164,
+        "max_multi_start_chi_square_spread": 2.6e-06,
+        "original_born_minus_ssm_plus_ds": 0.5595,
+        "reduced_chi_square": {
+          "original-born": 0.3526,
+          "ssm": 0.3447,
+          "ssm-plus-ds": 0.3398
+        }
+      },
+      {
+        "carbamate_bias_per_loading": {
+          "original-born": 0.0,
+          "ssm": 0.0,
+          "ssm-plus-ds": 0.0
+        },
+        "case": "refit measured state, loading bias none, carbamate x1.05",
+        "chi_square": {
+          "original-born": 23.7597,
+          "ssm": 23.2923,
+          "ssm-plus-ds": 23.1713
+        },
+        "decides": true,
+        "difference_at_observed_scatter": 1.1172,
+        "effective_difference": 0.5884,
+        "k_ion_mea": {
+          "original-born": 0.3551,
+          "ssm": -1.1313,
+          "ssm-plus-ds": 0.2294
+        },
+        "k_ion_water": {
+          "original-born": 0.1164,
+          "ssm": -1.6477,
+          "ssm-plus-ds": -0.0703
+        },
+        "max_gradient_inf_norm": 0.093,
+        "max_multi_start_chi_square_spread": 1.85e-06,
+        "original_born_minus_ssm_plus_ds": 0.5884,
+        "reduced_chi_square": {
+          "original-born": 0.54,
+          "ssm": 0.5294,
+          "ssm-plus-ds": 0.5266
+        }
+      },
+      {
+        "carbamate_bias_per_loading": {
+          "original-born": 0.0022,
+          "ssm": -0.0754,
+          "ssm-plus-ds": -0.0157
+        },
+        "case": "refit measured state, loading bias fitted, carbamate x0.95",
+        "chi_square": {
+          "original-born": 13.8358,
+          "ssm": 13.3278,
+          "ssm-plus-ds": 13.2605
+        },
+        "decides": true,
+        "difference_at_observed_scatter": 1.8656,
+        "effective_difference": 0.5753,
+        "k_ion_mea": {
+          "original-born": 0.3383,
+          "ssm": -1.2254,
+          "ssm-plus-ds": 0.2097
+        },
+        "k_ion_water": {
+          "original-born": 0.1711,
+          "ssm": -1.6729,
+          "ssm-plus-ds": -0.0201
+        },
+        "max_gradient_inf_norm": 0.24959,
+        "max_multi_start_chi_square_spread": 3.25e-06,
+        "original_born_minus_ssm_plus_ds": 0.5753,
+        "reduced_chi_square": {
+          "original-born": 0.3218,
+          "ssm": 0.3099,
+          "ssm-plus-ds": 0.3084
+        }
+      },
+      {
+        "carbamate_bias_per_loading": {
+          "original-born": -0.2147,
+          "ssm": -0.2928,
+          "ssm-plus-ds": -0.2314
+        },
+        "case": "refit measured state, loading bias fitted, carbamate x1.0",
+        "chi_square": {
+          "original-born": 14.5264,
+          "ssm": 13.8391,
+          "ssm-plus-ds": 13.873
+        },
+        "decides": true,
+        "difference_at_observed_scatter": 2.0252,
+        "effective_difference": 0.6534,
+        "k_ion_mea": {
+          "original-born": 0.35,
+          "ssm": -1.1971,
+          "ssm-plus-ds": 0.2222
+        },
+        "k_ion_water": {
+          "original-born": 0.161,
+          "ssm": -1.6603,
+          "ssm-plus-ds": -0.0283
+        },
+        "max_gradient_inf_norm": 0.2395,
+        "max_multi_start_chi_square_spread": 6.13e-05,
+        "original_born_minus_ssm_plus_ds": 0.6534,
+        "reduced_chi_square": {
+          "original-born": 0.3378,
+          "ssm": 0.3218,
+          "ssm-plus-ds": 0.3226
+        }
+      },
+      {
+        "carbamate_bias_per_loading": {
+          "original-born": -0.4237,
+          "ssm": -0.5013,
+          "ssm-plus-ds": -0.439
+        },
+        "case": "refit measured state, loading bias fitted, carbamate x1.05",
+        "chi_square": {
+          "original-born": 15.3757,
+          "ssm": 14.3701,
+          "ssm-plus-ds": 14.6157
+        },
+        "decides": true,
+        "difference_at_observed_scatter": 2.236,
+        "effective_difference": 0.76,
+        "k_ion_mea": {
+          "original-born": 0.3608,
+          "ssm": -1.1701,
+          "ssm-plus-ds": 0.2333
+        },
+        "k_ion_water": {
+          "original-born": 0.1492,
+          "ssm": -1.6499,
+          "ssm-plus-ds": -0.0385
+        },
+        "max_gradient_inf_norm": 0.05107,
+        "max_multi_start_chi_square_spread": 6.44e-06,
+        "original_born_minus_ssm_plus_ds": 0.76,
+        "reduced_chi_square": {
+          "original-born": 0.3576,
+          "ssm": 0.3342,
+          "ssm-plus-ds": 0.3399
+        }
+      },
+      {
+        "carbamate_bias_per_loading": {
+          "original-born": 0.0,
+          "ssm": 0.0,
+          "ssm-plus-ds": 0.0
+        },
+        "case": "refit measured-no-carbamate-sigma state, loading bias none, carbamate x1.0",
+        "chi_square": {
+          "original-born": 111.3433,
+          "ssm": 98.7248,
+          "ssm-plus-ds": 106.8413
+        },
+        "decides": false,
+        "difference_at_observed_scatter": 1.8541,
+        "effective_difference": 1.8541,
+        "k_ion_mea": {
+          "original-born": 0.3703,
+          "ssm": -1.1289,
+          "ssm-plus-ds": 0.248
+        },
+        "k_ion_water": {
+          "original-born": 0.1592,
+          "ssm": -1.6241,
+          "ssm-plus-ds": -0.0263
+        },
+        "max_gradient_inf_norm": 0.19899,
+        "max_multi_start_chi_square_spread": 9.49e-05,
+        "original_born_minus_ssm_plus_ds": 4.5021,
+        "reduced_chi_square": {
+          "original-born": 2.5305,
+          "ssm": 2.2437,
+          "ssm-plus-ds": 2.4282
+        }
+      },
+      {
+        "case": "Appendix F holdout, frozen fit from carbamate x0.95",
+        "chi_square": {
+          "original-born": 24.7209,
+          "ssm": 26.9783,
+          "ssm-plus-ds": 23.9269
+        },
+        "decides": true,
+        "difference_at_observed_scatter": 1.6593,
+        "effective_difference": 0.794,
+        "original_born_minus_ssm_plus_ds": 0.794,
+        "reduced_chi_square": {
+          "original-born": 0.4944,
+          "ssm": 0.5396,
+          "ssm-plus-ds": 0.4785
+        }
+      },
+      {
+        "case": "Appendix F holdout, neutral offsets re-profiled, fit from carbamate x0.95",
+        "chi_square": {
+          "original-born": 19.5546,
+          "ssm": 16.7516,
+          "ssm-plus-ds": 18.5064
+        },
+        "decides": false,
+        "difference_at_observed_scatter": 2.6055,
+        "effective_difference": 1.0482,
+        "original_born_minus_ssm_plus_ds": 1.0482,
+        "reduced_chi_square": {
+          "original-born": 0.4251,
+          "ssm": 0.3642,
+          "ssm-plus-ds": 0.4023
+        }
+      },
+      {
+        "case": "Appendix F holdout, frozen fit from carbamate x1.0",
+        "chi_square": {
+          "original-born": 14.9018,
+          "ssm": 14.3686,
+          "ssm-plus-ds": 14.0723
+        },
+        "decides": true,
+        "difference_at_observed_scatter": 2.9474,
+        "effective_difference": 0.8295,
+        "original_born_minus_ssm_plus_ds": 0.8295,
+        "reduced_chi_square": {
+          "original-born": 0.298,
+          "ssm": 0.2874,
+          "ssm-plus-ds": 0.2814
+        }
+      },
+      {
+        "case": "Appendix F holdout, neutral offsets re-profiled, fit from carbamate x1.0",
+        "chi_square": {
+          "original-born": 14.676,
+          "ssm": 12.4511,
+          "ssm-plus-ds": 13.9644
+        },
+        "decides": false,
+        "difference_at_observed_scatter": 2.3442,
+        "effective_difference": 0.7116,
+        "original_born_minus_ssm_plus_ds": 0.7116,
+        "reduced_chi_square": {
+          "original-born": 0.319,
+          "ssm": 0.2707,
+          "ssm-plus-ds": 0.3036
+        }
+      },
+      {
+        "case": "Appendix F holdout, frozen fit from carbamate x1.05",
+        "chi_square": {
+          "original-born": 20.0017,
+          "ssm": 14.5887,
+          "ssm-plus-ds": 18.6598
+        },
+        "decides": true,
+        "difference_at_observed_scatter": 3.5958,
+        "effective_difference": 1.3419,
+        "original_born_minus_ssm_plus_ds": 1.3419,
+        "reduced_chi_square": {
+          "original-born": 0.4,
+          "ssm": 0.2918,
+          "ssm-plus-ds": 0.3732
+        }
+      },
+      {
+        "case": "Appendix F holdout, neutral offsets re-profiled, fit from carbamate x1.05",
+        "chi_square": {
+          "original-born": 16.9842,
+          "ssm": 12.6851,
+          "ssm-plus-ds": 16.1004
+        },
+        "decides": false,
+        "difference_at_observed_scatter": 2.5249,
+        "effective_difference": 0.8837,
+        "original_born_minus_ssm_plus_ds": 0.8837,
+        "reduced_chi_square": {
+          "original-born": 0.3692,
+          "ssm": 0.2758,
+          "ssm-plus-ds": 0.35
+        }
+      }
+    ],
+    "decisive": false,
+    "favoured_form_in_every_deciding_case": "ssm-plus-ds",
+    "rule": "decisive when every deciding case favours the same form by an effective chi-square difference >= 10.0",
+    "smallest_effective_difference": 0.5595,
+    "stated_uncertainties": [
+      {
+        "locator": "Hilliard (2008) dissertation, Zotero DNQUPRMT, PDF LB7LUETY, section 2.3.4, printed p. 29 (PDF p. 86), citing Goff (2005)",
+        "quantity": "vapor-phase concentration (FT-IR)",
+        "used_in_ln_sigma": 0.02,
+        "value": "+-2.0 % relative, expanded (coverage factor not stated; used as standard)"
+      },
+      {
+        "locator": "Hilliard (2008) dissertation, Zotero DNQUPRMT, PDF LB7LUETY, section 2.3.4, printed p. 28 (PDF p. 85); full scale per species not stated, superseded by the 2.0 % concentration uncertainty",
+        "quantity": "FT-IR analyzer accuracy",
+        "used_in_ln_sigma": null,
+        "value": "+-3.0 % of full scale"
+      },
+      {
+        "locator": "Hilliard (2008) dissertation, Zotero DNQUPRMT, PDF LB7LUETY, section 2.3.4, printed p. 27 (PDF p. 84); reactor gas at atmospheric pressure",
+        "quantity": "reactor pressure",
+        "used_in_ln_sigma": 0.00632,
+        "value": "+-0.08 % of 0-8 bar full scale"
+      },
+      {
+        "locator": "Hilliard (2008) dissertation, Zotero DNQUPRMT, PDF LB7LUETY, section 2.3.4, printed pp. 27-28 (PDF pp. 84-85)",
+        "quantity": "reactor temperature",
+        "used_in_ln_sigma": "model d ln f/dT x 0.1 K",
+        "value": "controlled within +-0.1 C (thermometer +-0.01 C)"
+      },
+      {
+        "locator": "Hilliard (2008) dissertation, Zotero DNQUPRMT, PDF LB7LUETY, section 2.3.4, printed p. 29 (PDF p. 86)",
+        "quantity": "CO2 loading",
+        "used_in_ln_sigma": "model d ln f/d loading x 0.02 loading",
+        "value": "+-2.0 % relative standard"
+      },
+      {
+        "locator": "Hilliard (2008) dissertation, Zotero DNQUPRMT, PDF LB7LUETY, section 2.4, printed pp. 34-37 (PDF pp. 91-94)",
+        "quantity": "apparatus check: pure water and MEA vapor pressure",
+        "used_in_ln_sigma": null,
+        "value": "AARD 4.40 % (water, vs Kell 1984) and 7.31 % (MEA, vs DIPPR); low-temperature vapor-pressure analysis uncertainty +-2.0 %"
+      },
+      {
+        "locator": "Hilliard (2008) dissertation, Zotero DNQUPRMT, PDF LB7LUETY, Table 13.4-2, printed p. 440 (PDF p. 497)",
+        "quantity": "Hilliard's own regression weight for P_MEA",
+        "used_in_ln_sigma": null,
+        "value": "sigma 2.0 % (DRS default)"
+      },
+      {
+        "locator": "Hilliard (2008) dissertation, Zotero DNQUPRMT, PDF LB7LUETY, section 3.11, printed pp. 62-63 (PDF pp. 119-120)",
+        "quantity": "NMR amine total against the dioxane internal standard (context only)",
+        "used_in_ln_sigma": null,
+        "value": "+-3.0 % (1-5 wt% dioxane) to +-5.0 % (<1 wt%) relative; no per-species carbamate uncertainty is stated, and Hilliard's own regression uses sigma_x 1.0 % (Table 13.4-2, p. 440)"
+      },
+      {
+        "locator": "#163 assumption",
+        "quantity": "carbamate speciation (project assumption, not Hilliard)",
+        "used_in_ln_sigma": "model half-spread at carbamate x(1 +- 0.05); dominates MEA rows above loading 0.35",
+        "value": "+-5% relative, as the #163 carbamate scales"
+      }
+    ]
+  },
+  "claim": "On packet v5 at measured speciation, refits weighted by Hilliard's stated measurement uncertainties plus the project's +-5 % carbamate assumption give SSM+DS a lower chi-square than original Born in every case: three uniform carbamate scales, measured and nominal states, with and without a loading-linear carbamate bias, and on the Hilliard Appendix F NMR holdout without refitting. The difference is 0.3-1.3 chi-square units, below the decisive threshold of 10 even when the weights are shrunk to the observed scatter, so the order is consistent but not decisive. SSM stays rejected on physical grounds: implausible ion-solvent unlike energies and negative packet-coordinate aqueous osmotic coefficients at k_ij=0. No packet coordinates are changed. Packet v5 here states original Born (c_shell = c_dielectric = 0). The MEA-Thermodynamics application does not: its selected record omits both coefficients and its shared_evaluation.py fills (1, 1), so the application evaluates SSM+DS (MEA-Thermodynamics PR #125, check N1). The MEA Born-form decision belongs to MEA-Thermodynamics #121 decision 21.",
+  "coordinate_decisions": [
+    {
+      "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+      "component_id": "protonated-monoethanolamine",
+      "coordinate": "charge_number",
+      "decision": "retain fixed species structure",
+      "provenance": {
+        "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+        "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=MEAH+:family=charge_number:status=provisional-historical-evaluation",
+        "source_id": "mea-retained-phase-two-artifact"
+      },
+      "qualification": "candidate_extrapolation",
+      "role": "formal charge used by electrostatic terms",
+      "species": "MEAH+",
+      "status": "established",
+      "unit": "elementary-charge",
+      "value": 1
+    },
+    {
+      "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+      "component_id": "protonated-monoethanolamine",
+      "coordinate": "segment_diameter",
+      "decision": "retain as provisional; not identified by the solvent-fugacity comparison; do not fit to reactive pressure",
+      "provenance": {
+        "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+        "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=MEAH+:family=segment_diameter:status=provisional-historical-evaluation",
+        "source_id": "mea-retained-phase-two-artifact"
+      },
+      "qualification": "candidate_extrapolation",
+      "role": "PC-SAFT segment sigma used by the molecular reference term",
+      "species": "MEAH+",
+      "status": "provisional",
+      "unit": "angstrom",
+      "value": 3.48508556586
+    },
+    {
+      "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+      "component_id": "protonated-monoethanolamine",
+      "coordinate": "packing_diameter",
+      "decision": "retain as provisional; not identified by the solvent-fugacity comparison; do not fit to reactive pressure",
+      "provenance": {
+        "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+        "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=MEAH+:family=segment_diameter:status=provisional-historical-evaluation:derived-packing_diameter=0.88-sigma:fixed-ssm-diameter-convention",
+        "source_id": "mea-retained-phase-two-artifact"
+      },
+      "qualification": "candidate_extrapolation",
+      "role": "hard-sphere packing diameter; 0.88 times segment sigma",
+      "species": "MEAH+",
+      "status": "provisional",
+      "unit": "angstrom",
+      "value": 3.0668752979568
+    },
+    {
+      "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+      "component_id": "protonated-monoethanolamine",
+      "coordinate": "debye_huckel_diameter",
+      "decision": "retain as provisional; not identified by the solvent-fugacity comparison; do not fit to reactive pressure",
+      "provenance": {
+        "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+        "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=MEAH+:family=segment_diameter:status=provisional-historical-evaluation:derived-debye_huckel_diameter=0.88-sigma:fixed-ssm-diameter-convention",
+        "source_id": "mea-retained-phase-two-artifact"
+      },
+      "qualification": "candidate_extrapolation",
+      "role": "closest-approach diameter used by the Debye-Huckel term",
+      "species": "MEAH+",
+      "status": "provisional",
+      "unit": "angstrom",
+      "value": 3.0668752979568
+    },
+    {
+      "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+      "component_id": "protonated-monoethanolamine",
+      "coordinate": "born_diameter",
+      "decision": "retain as provisional; not identified by the solvent-fugacity comparison; do not fit to reactive pressure",
+      "provenance": {
+        "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+        "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=MEAH+:family=born_diameter:status=provisional-historical-evaluation",
+        "source_id": "mea-retained-phase-two-artifact"
+      },
+      "qualification": "candidate_extrapolation",
+      "role": "radial length used by the Born charging term",
+      "species": "MEAH+",
+      "status": "provisional",
+      "unit": "angstrom",
+      "value": 3.53322927146
+    },
+    {
+      "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+      "component_id": "protonated-monoethanolamine",
+      "coordinate": "dispersion_energy_over_k",
+      "decision": "retain as provisional; not identified by the solvent-fugacity comparison; do not fit to reactive pressure",
+      "provenance": {
+        "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+        "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=MEAH+:family=dispersion_energy_over_k:status=provisional-historical-evaluation",
+        "source_id": "mea-retained-phase-two-artifact"
+      },
+      "qualification": "candidate_extrapolation",
+      "role": "PC-SAFT dispersion energy divided by Boltzmann constant",
+      "species": "MEAH+",
+      "status": "provisional",
+      "unit": "kelvin",
+      "value": 232.687201645
+    },
+    {
+      "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+      "component_id": "carbamate-anion",
+      "coordinate": "charge_number",
+      "decision": "retain fixed species structure",
+      "provenance": {
+        "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+        "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=MEACOO-:family=charge_number:status=provisional-historical-evaluation",
+        "source_id": "mea-retained-phase-two-artifact"
+      },
+      "qualification": "candidate_extrapolation",
+      "role": "formal charge used by electrostatic terms",
+      "species": "MEACOO-",
+      "status": "established",
+      "unit": "elementary-charge",
+      "value": -1
+    },
+    {
+      "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+      "component_id": "carbamate-anion",
+      "coordinate": "segment_diameter",
+      "decision": "retain as provisional; not identified by the solvent-fugacity comparison; do not fit to reactive pressure",
+      "provenance": {
+        "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+        "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=MEACOO-:family=segment_diameter:status=provisional-historical-evaluation",
+        "source_id": "mea-retained-phase-two-artifact"
+      },
+      "qualification": "candidate_extrapolation",
+      "role": "PC-SAFT segment sigma used by the molecular reference term",
+      "species": "MEACOO-",
+      "status": "provisional",
+      "unit": "angstrom",
+      "value": 3.53543525721
+    },
+    {
+      "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+      "component_id": "carbamate-anion",
+      "coordinate": "packing_diameter",
+      "decision": "retain as provisional; not identified by the solvent-fugacity comparison; do not fit to reactive pressure",
+      "provenance": {
+        "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+        "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=MEACOO-:family=segment_diameter:status=provisional-historical-evaluation:derived-packing_diameter=0.88-sigma:fixed-ssm-diameter-convention",
+        "source_id": "mea-retained-phase-two-artifact"
+      },
+      "qualification": "candidate_extrapolation",
+      "role": "hard-sphere packing diameter; 0.88 times segment sigma",
+      "species": "MEACOO-",
+      "status": "provisional",
+      "unit": "angstrom",
+      "value": 3.1111830263448
+    },
+    {
+      "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+      "component_id": "carbamate-anion",
+      "coordinate": "debye_huckel_diameter",
+      "decision": "retain as provisional; not identified by the solvent-fugacity comparison; do not fit to reactive pressure",
+      "provenance": {
+        "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+        "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=MEACOO-:family=segment_diameter:status=provisional-historical-evaluation:derived-debye_huckel_diameter=0.88-sigma:fixed-ssm-diameter-convention",
+        "source_id": "mea-retained-phase-two-artifact"
+      },
+      "qualification": "candidate_extrapolation",
+      "role": "closest-approach diameter used by the Debye-Huckel term",
+      "species": "MEACOO-",
+      "status": "provisional",
+      "unit": "angstrom",
+      "value": 3.1111830263448
+    },
+    {
+      "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+      "component_id": "carbamate-anion",
+      "coordinate": "born_diameter",
+      "decision": "retain as provisional; not identified by the solvent-fugacity comparison; do not fit to reactive pressure",
+      "provenance": {
+        "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+        "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=MEACOO-:family=born_diameter:status=provisional-historical-evaluation",
+        "source_id": "mea-retained-phase-two-artifact"
+      },
+      "qualification": "candidate_extrapolation",
+      "role": "radial length used by the Born charging term",
+      "species": "MEACOO-",
+      "status": "provisional",
+      "unit": "angstrom",
+      "value": 3.54107030822
+    },
+    {
+      "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+      "component_id": "carbamate-anion",
+      "coordinate": "dispersion_energy_over_k",
+      "decision": "retain as provisional; not identified by the solvent-fugacity comparison; do not fit to reactive pressure",
+      "provenance": {
+        "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+        "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=MEACOO-:family=dispersion_energy_over_k:status=provisional-historical-evaluation",
+        "source_id": "mea-retained-phase-two-artifact"
+      },
+      "qualification": "candidate_extrapolation",
+      "role": "PC-SAFT dispersion energy divided by Boltzmann constant",
+      "species": "MEACOO-",
+      "status": "provisional",
+      "unit": "kelvin",
+      "value": 453.265244384
+    },
+    {
+      "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+      "component_id": "bicarbonate-anion",
+      "coordinate": "charge_number",
+      "decision": "retain fixed species structure",
+      "provenance": {
+        "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+        "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=HCO3-:family=charge_number:status=transferred-diagnostic",
+        "source_id": "mea-retained-phase-two-artifact"
+      },
+      "qualification": "candidate_extrapolation",
+      "role": "formal charge used by electrostatic terms",
+      "species": "HCO3-",
+      "status": "established",
+      "unit": "elementary-charge",
+      "value": -1
+    },
+    {
+      "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+      "component_id": "bicarbonate-anion",
+      "coordinate": "segment_diameter",
+      "decision": "retain as provisional; not identified by the solvent-fugacity comparison; do not fit to reactive pressure",
+      "provenance": {
+        "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+        "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=HCO3-:family=segment_diameter:status=transferred-diagnostic",
+        "source_id": "mea-retained-phase-two-artifact"
+      },
+      "qualification": "candidate_extrapolation",
+      "role": "PC-SAFT segment sigma used by the molecular reference term",
+      "species": "HCO3-",
+      "status": "provisional",
+      "unit": "angstrom",
+      "value": 2.9296
+    },
+    {
+      "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+      "component_id": "bicarbonate-anion",
+      "coordinate": "packing_diameter",
+      "decision": "retain as provisional; not identified by the solvent-fugacity comparison; do not fit to reactive pressure",
+      "provenance": {
+        "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+        "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=HCO3-:family=segment_diameter:status=transferred-diagnostic:derived-packing_diameter=0.88-sigma:fixed-ssm-diameter-convention",
+        "source_id": "mea-retained-phase-two-artifact"
+      },
+      "qualification": "candidate_extrapolation",
+      "role": "hard-sphere packing diameter; 0.88 times segment sigma",
+      "species": "HCO3-",
+      "status": "provisional",
+      "unit": "angstrom",
+      "value": 2.5780480000000003
+    },
+    {
+      "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+      "component_id": "bicarbonate-anion",
+      "coordinate": "debye_huckel_diameter",
+      "decision": "retain as provisional; not identified by the solvent-fugacity comparison; do not fit to reactive pressure",
+      "provenance": {
+        "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+        "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=HCO3-:family=segment_diameter:status=transferred-diagnostic:derived-debye_huckel_diameter=0.88-sigma:fixed-ssm-diameter-convention",
+        "source_id": "mea-retained-phase-two-artifact"
+      },
+      "qualification": "candidate_extrapolation",
+      "role": "closest-approach diameter used by the Debye-Huckel term",
+      "species": "HCO3-",
+      "status": "provisional",
+      "unit": "angstrom",
+      "value": 2.5780480000000003
+    },
+    {
+      "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+      "component_id": "bicarbonate-anion",
+      "coordinate": "born_diameter",
+      "decision": "retain as provisional; not identified by the solvent-fugacity comparison; do not fit to reactive pressure",
+      "provenance": {
+        "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+        "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=HCO3-:family=born_diameter:status=transferred-diagnostic",
+        "source_id": "mea-retained-phase-two-artifact"
+      },
+      "qualification": "candidate_extrapolation",
+      "role": "radial length used by the Born charging term",
+      "species": "HCO3-",
+      "status": "provisional",
+      "unit": "angstrom",
+      "value": 3.0
+    },
+    {
+      "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+      "component_id": "bicarbonate-anion",
+      "coordinate": "dispersion_energy_over_k",
+      "decision": "retain as provisional; not identified by the solvent-fugacity comparison; do not fit to reactive pressure",
+      "provenance": {
+        "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+        "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=HCO3-:family=dispersion_energy_over_k:status=transferred-diagnostic",
+        "source_id": "mea-retained-phase-two-artifact"
+      },
+      "qualification": "candidate_extrapolation",
+      "role": "PC-SAFT dispersion energy divided by Boltzmann constant",
+      "species": "HCO3-",
+      "status": "provisional",
+      "unit": "kelvin",
+      "value": 70.0
+    },
+    {
+      "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+      "component_id": "carbonate-anion",
+      "coordinate": "charge_number",
+      "decision": "retain fixed species structure",
+      "provenance": {
+        "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+        "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=CO3^2-:family=charge_number:status=transferred-diagnostic",
+        "source_id": "mea-retained-phase-two-artifact"
+      },
+      "qualification": "candidate_extrapolation",
+      "role": "formal charge used by electrostatic terms",
+      "species": "CO3^2-",
+      "status": "established",
+      "unit": "elementary-charge",
+      "value": -2
+    },
+    {
+      "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+      "component_id": "carbonate-anion",
+      "coordinate": "segment_diameter",
+      "decision": "retain as provisional; not identified by the solvent-fugacity comparison; do not fit to reactive pressure",
+      "provenance": {
+        "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+        "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=CO3^2-:family=segment_diameter:status=transferred-diagnostic",
+        "source_id": "mea-retained-phase-two-artifact"
+      },
+      "qualification": "candidate_extrapolation",
+      "role": "PC-SAFT segment sigma used by the molecular reference term",
+      "species": "CO3^2-",
+      "status": "provisional",
+      "unit": "angstrom",
+      "value": 2.4422
+    },
+    {
+      "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+      "component_id": "carbonate-anion",
+      "coordinate": "packing_diameter",
+      "decision": "retain as provisional; not identified by the solvent-fugacity comparison; do not fit to reactive pressure",
+      "provenance": {
+        "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+        "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=CO3^2-:family=segment_diameter:status=transferred-diagnostic:derived-packing_diameter=0.88-sigma:fixed-ssm-diameter-convention",
+        "source_id": "mea-retained-phase-two-artifact"
+      },
+      "qualification": "candidate_extrapolation",
+      "role": "hard-sphere packing diameter; 0.88 times segment sigma",
+      "species": "CO3^2-",
+      "status": "provisional",
+      "unit": "angstrom",
+      "value": 2.149136
+    },
+    {
+      "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+      "component_id": "carbonate-anion",
+      "coordinate": "debye_huckel_diameter",
+      "decision": "retain as provisional; not identified by the solvent-fugacity comparison; do not fit to reactive pressure",
+      "provenance": {
+        "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+        "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=CO3^2-:family=segment_diameter:status=transferred-diagnostic:derived-debye_huckel_diameter=0.88-sigma:fixed-ssm-diameter-convention",
+        "source_id": "mea-retained-phase-two-artifact"
+      },
+      "qualification": "candidate_extrapolation",
+      "role": "closest-approach diameter used by the Debye-Huckel term",
+      "species": "CO3^2-",
+      "status": "provisional",
+      "unit": "angstrom",
+      "value": 2.149136
+    },
+    {
+      "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+      "component_id": "carbonate-anion",
+      "coordinate": "born_diameter",
+      "decision": "retain as provisional; not identified by the solvent-fugacity comparison; do not fit to reactive pressure",
+      "provenance": {
+        "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+        "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=CO3^2-:family=born_diameter:status=transferred-diagnostic",
+        "source_id": "mea-retained-phase-two-artifact"
+      },
+      "qualification": "candidate_extrapolation",
+      "role": "radial length used by the Born charging term",
+      "species": "CO3^2-",
+      "status": "provisional",
+      "unit": "angstrom",
+      "value": 3.0
+    },
+    {
+      "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+      "component_id": "carbonate-anion",
+      "coordinate": "dispersion_energy_over_k",
+      "decision": "retain as provisional; not identified by the solvent-fugacity comparison; do not fit to reactive pressure",
+      "provenance": {
+        "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+        "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=CO3^2-:family=dispersion_energy_over_k:status=transferred-diagnostic",
+        "source_id": "mea-retained-phase-two-artifact"
+      },
+      "qualification": "candidate_extrapolation",
+      "role": "PC-SAFT dispersion energy divided by Boltzmann constant",
+      "species": "CO3^2-",
+      "status": "provisional",
+      "unit": "kelvin",
+      "value": 249.26
+    },
+    {
+      "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+      "component_id": "hydronium-cation",
+      "coordinate": "charge_number",
+      "decision": "retain fixed species structure",
+      "provenance": {
+        "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+        "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=H3O+:family=charge_number:status=transferred-diagnostic",
+        "source_id": "mea-retained-phase-two-artifact"
+      },
+      "qualification": "candidate_extrapolation",
+      "role": "formal charge used by electrostatic terms",
+      "species": "H3O+",
+      "status": "established",
+      "unit": "elementary-charge",
+      "value": 1
+    },
+    {
+      "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+      "component_id": "hydronium-cation",
+      "coordinate": "segment_diameter",
+      "decision": "retain as provisional; not identified by the solvent-fugacity comparison; do not fit to reactive pressure",
+      "provenance": {
+        "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+        "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=H3O+:family=segment_diameter:status=transferred-diagnostic",
+        "source_id": "mea-retained-phase-two-artifact"
+      },
+      "qualification": "candidate_extrapolation",
+      "role": "PC-SAFT segment sigma used by the molecular reference term",
+      "species": "H3O+",
+      "status": "provisional",
+      "unit": "angstrom",
+      "value": 3.4654
+    },
+    {
+      "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+      "component_id": "hydronium-cation",
+      "coordinate": "packing_diameter",
+      "decision": "retain as provisional; not identified by the solvent-fugacity comparison; do not fit to reactive pressure",
+      "provenance": {
+        "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+        "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=H3O+:family=segment_diameter:status=transferred-diagnostic:derived-packing_diameter=0.88-sigma:fixed-ssm-diameter-convention",
+        "source_id": "mea-retained-phase-two-artifact"
+      },
+      "qualification": "candidate_extrapolation",
+      "role": "hard-sphere packing diameter; 0.88 times segment sigma",
+      "species": "H3O+",
+      "status": "provisional",
+      "unit": "angstrom",
+      "value": 3.049552
+    },
+    {
+      "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+      "component_id": "hydronium-cation",
+      "coordinate": "debye_huckel_diameter",
+      "decision": "retain as provisional; not identified by the solvent-fugacity comparison; do not fit to reactive pressure",
+      "provenance": {
+        "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+        "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=H3O+:family=segment_diameter:status=transferred-diagnostic:derived-debye_huckel_diameter=0.88-sigma:fixed-ssm-diameter-convention",
+        "source_id": "mea-retained-phase-two-artifact"
+      },
+      "qualification": "candidate_extrapolation",
+      "role": "closest-approach diameter used by the Debye-Huckel term",
+      "species": "H3O+",
+      "status": "provisional",
+      "unit": "angstrom",
+      "value": 3.049552
+    },
+    {
+      "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+      "component_id": "hydronium-cation",
+      "coordinate": "born_diameter",
+      "decision": "retain as provisional; not identified by the solvent-fugacity comparison; do not fit to reactive pressure",
+      "provenance": {
+        "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+        "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=H3O+:family=born_diameter:status=transferred-diagnostic",
+        "source_id": "mea-retained-phase-two-artifact"
+      },
+      "qualification": "candidate_extrapolation",
+      "role": "radial length used by the Born charging term",
+      "species": "H3O+",
+      "status": "provisional",
+      "unit": "angstrom",
+      "value": 1.218
+    },
+    {
+      "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+      "component_id": "hydronium-cation",
+      "coordinate": "dispersion_energy_over_k",
+      "decision": "retain as provisional; not identified by the solvent-fugacity comparison; do not fit to reactive pressure",
+      "provenance": {
+        "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+        "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=H3O+:family=dispersion_energy_over_k:status=transferred-diagnostic",
+        "source_id": "mea-retained-phase-two-artifact"
+      },
+      "qualification": "candidate_extrapolation",
+      "role": "PC-SAFT dispersion energy divided by Boltzmann constant",
+      "species": "H3O+",
+      "status": "provisional",
+      "unit": "kelvin",
+      "value": 500.0
+    },
+    {
+      "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+      "component_id": "hydroxide-anion",
+      "coordinate": "charge_number",
+      "decision": "retain fixed species structure",
+      "provenance": {
+        "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+        "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=OH-:family=charge_number:status=transferred-diagnostic",
+        "source_id": "mea-retained-phase-two-artifact"
+      },
+      "qualification": "candidate_extrapolation",
+      "role": "formal charge used by electrostatic terms",
+      "species": "OH-",
+      "status": "established",
+      "unit": "elementary-charge",
+      "value": -1
+    },
+    {
+      "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+      "component_id": "hydroxide-anion",
+      "coordinate": "segment_diameter",
+      "decision": "retain as provisional; not identified by the solvent-fugacity comparison; do not fit to reactive pressure",
+      "provenance": {
+        "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+        "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=OH-:family=segment_diameter:status=transferred-diagnostic",
+        "source_id": "mea-retained-phase-two-artifact"
+      },
+      "qualification": "candidate_extrapolation",
+      "role": "PC-SAFT segment sigma used by the molecular reference term",
+      "species": "OH-",
+      "status": "provisional",
+      "unit": "angstrom",
+      "value": 2.0177
+    },
+    {
+      "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+      "component_id": "hydroxide-anion",
+      "coordinate": "packing_diameter",
+      "decision": "retain as provisional; not identified by the solvent-fugacity comparison; do not fit to reactive pressure",
+      "provenance": {
+        "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+        "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=OH-:family=segment_diameter:status=transferred-diagnostic:derived-packing_diameter=0.88-sigma:fixed-ssm-diameter-convention",
+        "source_id": "mea-retained-phase-two-artifact"
+      },
+      "qualification": "candidate_extrapolation",
+      "role": "hard-sphere packing diameter; 0.88 times segment sigma",
+      "species": "OH-",
+      "status": "provisional",
+      "unit": "angstrom",
+      "value": 1.775576
+    },
+    {
+      "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+      "component_id": "hydroxide-anion",
+      "coordinate": "debye_huckel_diameter",
+      "decision": "retain as provisional; not identified by the solvent-fugacity comparison; do not fit to reactive pressure",
+      "provenance": {
+        "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+        "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=OH-:family=segment_diameter:status=transferred-diagnostic:derived-debye_huckel_diameter=0.88-sigma:fixed-ssm-diameter-convention",
+        "source_id": "mea-retained-phase-two-artifact"
+      },
+      "qualification": "candidate_extrapolation",
+      "role": "closest-approach diameter used by the Debye-Huckel term",
+      "species": "OH-",
+      "status": "provisional",
+      "unit": "angstrom",
+      "value": 1.775576
+    },
+    {
+      "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+      "component_id": "hydroxide-anion",
+      "coordinate": "born_diameter",
+      "decision": "retain as provisional; not identified by the solvent-fugacity comparison; do not fit to reactive pressure",
+      "provenance": {
+        "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+        "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=OH-:family=born_diameter:status=transferred-diagnostic",
+        "source_id": "mea-retained-phase-two-artifact"
+      },
+      "qualification": "candidate_extrapolation",
+      "role": "radial length used by the Born charging term",
+      "species": "OH-",
+      "status": "provisional",
+      "unit": "angstrom",
+      "value": 3.08107689400404
+    },
+    {
+      "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+      "component_id": "hydroxide-anion",
+      "coordinate": "dispersion_energy_over_k",
+      "decision": "retain as provisional; not identified by the solvent-fugacity comparison; do not fit to reactive pressure",
+      "provenance": {
+        "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+        "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=OH-:family=dispersion_energy_over_k:status=transferred-diagnostic",
+        "source_id": "mea-retained-phase-two-artifact"
+      },
+      "qualification": "candidate_extrapolation",
+      "role": "PC-SAFT dispersion energy divided by Boltzmann constant",
+      "species": "OH-",
+      "status": "provisional",
+      "unit": "kelvin",
+      "value": 650.0
+    }
+  ],
+  "decision": "packet_v5_ssm_rejected_on_physical_coordinates_original_born_vs_ssm_plus_ds_not_decisive_original_born_retained",
+  "diagnosed_cause_of_remaining_negative": "With the two ion-solvent k_ij fitted, the admissible Born forms differ in these partial pressures by less than their measurement and speciation uncertainty. At Hilliard's stated uncertainties the reduced chi-square is 0.30-0.54: water rows carry 2.2 % against about 0.8 % observed scatter, and MEA rows at high loading are dominated by speciation and loading uncertainty. The fitted k_ij absorb the unfitted Born-form slope difference. Partial pressures at matched speciation do not separate the forms while k_ij are free, also without the carbamate term in the weights; data that fix the ion-solvent interaction independently can. Density cannot help: it is Born-blind in this model.",
+  "domain": "30 wt% MEA, 313.15 and 333.15 K, 6.6-22 kPa, CO2 loading 0.15-0.49 mol/mol",
+  "evidence_admission": {
+    "direct_meah_salt_activity_or_osmotic": "diagnostic_only (Lee and Lee 1998; superseded by MEA-Thermodynamics #121)",
+    "reactive_pressure": "forbidden_for_ionic_identification",
+    "solvent_fugacity_at_measured_speciation": "admitted",
+    "static_permittivity": "cannot discriminate: shared bulk-permittivity input",
+    "volumetric": "cannot discriminate: Born-blind"
+  },
+  "evidence_inventory": [
+    {
+      "access_status": "metadata_accessible",
+      "database_or_repository": "ScienceDirect primary metadata",
+      "exclusion_reason": "permittivity tests the shared bulk-permittivity input, not the Born form; Table 1 static values rise with loading (71 to 93 at 293 K), opposite to any ionic decrement, and come from 0.9-2.45 GHz fits",
+      "extraction_decision": "fulltext_review_pending",
+      "model_comparison_eligible": false,
+      "notes": "Microwave Cole-Cole results cannot be treated as a thermodynamic static dielectric constant without method and limiting-frequency verification.",
+      "observable": "CO2-loaded 30 wt percent MEA dielectric dispersion",
+      "parameter_family": "Born_solvation_and_dielectric",
+      "primary_source_status": "metadata_verified",
+      "query_or_source": "Hajj 2024; Dielectric dispersion of 30% aqueous MEA loaded with CO2 at microwave frequencies; DOI 10.1016/j.molliq.2024.124819",
+      "search_id": "SEARCH-P2-001",
+      "searched_at": "2026-07-14",
+      "si_status": "not_identified",
+      "target_path": "data/reference/MEA/observations/dielectric/MEA_H2O_dielectric.csv"
+    },
+    {
+      "access_status": "lead_only",
+      "database_or_repository": "repo-local literature digest",
+      "exclusion_reason": "permittivity tests the shared bulk-permittivity input, not the Born form",
+      "extraction_decision": "lead_identity_resolution_pending",
+      "model_comparison_eligible": false,
+      "notes": "Resolve exact primary citation composition range temperature range and static-frequency definition.",
+      "observable": "MEA-water relative permittivity",
+      "parameter_family": "Born_solvation_and_dielectric",
+      "primary_source_status": "lead_identity_unresolved",
+      "query_or_source": "Hsieh dielectric MEA water literature lead",
+      "search_id": "SEARCH-P2-002",
+      "searched_at": "2026-07-14",
+      "si_status": "unknown",
+      "target_path": "data/reference/MEA/observations/dielectric/MEA_H2O_dielectric.csv"
+    },
+    {
+      "access_status": "lead_only",
+      "database_or_repository": "repo-local literature digest",
+      "exclusion_reason": "permittivity tests the shared bulk-permittivity input, not the Born form",
+      "extraction_decision": "lead_identity_resolution_pending",
+      "model_comparison_eligible": false,
+      "notes": "Resolve exact primary citation and whether values are measured or estimated.",
+      "observable": "MEA-water relative permittivity",
+      "parameter_family": "Born_solvation_and_dielectric",
+      "primary_source_status": "lead_identity_unresolved",
+      "query_or_source": "Floriano dielectric MEA water literature lead",
+      "search_id": "SEARCH-P2-003",
+      "searched_at": "2026-07-14",
+      "si_status": "unknown",
+      "target_path": "data/reference/MEA/observations/dielectric/MEA_H2O_dielectric.csv"
+    },
+    {
+      "access_status": "lead_only",
+      "database_or_repository": "repo-local literature digest",
+      "exclusion_reason": "permittivity tests the shared bulk-permittivity input, not the Born form",
+      "extraction_decision": "lead_identity_resolution_pending",
+      "model_comparison_eligible": false,
+      "notes": "Resolve exact primary citation and frequency basis before any Born-term use.",
+      "observable": "MEA-water relative permittivity",
+      "parameter_family": "Born_solvation_and_dielectric",
+      "primary_source_status": "lead_identity_unresolved",
+      "query_or_source": "Nascimento dielectric MEA water literature lead",
+      "search_id": "SEARCH-P2-004",
+      "searched_at": "2026-07-14",
+      "si_status": "unknown",
+      "target_path": "data/reference/MEA/observations/dielectric/MEA_H2O_dielectric.csv"
+    },
+    {
+      "access_status": "no_direct_source_found",
+      "database_or_repository": "cross-database web search",
+      "exclusion_reason": "no MEAH+ salt activity or osmotic data found; repeated 2026-09-24",
+      "extraction_decision": "negative_search_no_extraction",
+      "model_comparison_eligible": false,
+      "notes": "No defensible direct MEAH+/MEACOO- activity dataset was identified; unrelated counterions remain analog evidence only.",
+      "observable": "direct MEAH+ and MEACOO- activity or osmotic data",
+      "parameter_family": "ion_interaction_parameters",
+      "primary_source_status": "negative_search",
+      "query_or_source": "Direct ionic activity search; ethanolammonium carbamate osmotic and mean ionic activity",
+      "search_id": "SEARCH-P3-002",
+      "searched_at": "2026-07-14",
+      "si_status": "not_applicable",
+      "target_path": "data/reference/MEA/observations/ionic_activity/direct_ionic_activity.csv"
+    },
+    {
+      "access_status": "full_text_accessible",
+      "database_or_repository": "TU Delft repository open primary article",
+      "exclusion_reason": "density is Born-blind here: the runtime permittivity has no density dependence, so the Born term adds no pressure",
+      "extraction_decision": "extracted_and_independently_verified",
+      "model_comparison_eligible": false,
+      "notes": "Extracted 84 direct density rows from Table 2; exact MEAH+ cation with acetate or hexanoate counterion remains analog evidence.",
+      "observable": "aqueous ethanolammonium carboxylate density",
+      "parameter_family": "MEAH_MEACOO_segment_parameters",
+      "primary_source_status": "full_text_verified",
+      "query_or_source": "Augusto 2022; DOI 10.1021/acs.jced.1c00687",
+      "search_id": "SEARCH-P5-001",
+      "searched_at": "2026-07-23",
+      "si_status": "not_applicable",
+      "target_path": "data/reference/MEA/observations/ionic_analog_volumetrics/ethanolammonium_carboxylate_density.csv"
+    },
+    {
+      "access_status": "full_text_accessible",
+      "database_or_repository": "Europe PMC open primary article",
+      "exclusion_reason": "density is Born-blind here: the runtime permittivity has no density dependence, so the Born term adds no pressure",
+      "extraction_decision": "extracted_and_independently_verified",
+      "model_comparison_eligible": false,
+      "notes": "Extracted 44 direct density rows from Table 3; the 44 excess molar volumes are retained separately as reported-derived diagnostic evidence.",
+      "observable": "aqueous ethanolammonium carboxylate density and excess molar volume",
+      "parameter_family": "MEAH_MEACOO_segment_parameters",
+      "primary_source_status": "full_text_verified",
+      "query_or_source": "Dhage 2026; DOI 10.1021/acsomega.5c13309",
+      "search_id": "SEARCH-P5-002",
+      "searched_at": "2026-07-23",
+      "si_status": "not_applicable",
+      "target_path": "data/reference/MEA/observations/ionic_analog_volumetrics/ethanolammonium_carboxylate_density.csv"
+    },
+    {
+      "access_status": "metadata_accessible_closed_fulltext",
+      "database_or_repository": "Crossref OpenAlex Unpaywall and ScienceDirect",
+      "exclusion_reason": "density is Born-blind here: the runtime permittivity has no density dependence, so the Born term adds no pressure",
+      "extraction_decision": "blocked_no_lawful_numeric_extraction",
+      "model_comparison_eligible": false,
+      "notes": "The primary numeric tables were not openly accessible; no values were inferred from snippets or secondary sources.",
+      "observable": "aqueous ethanolammonium carboxylate density and apparent molar volume",
+      "parameter_family": "MEAH_MEACOO_segment_parameters",
+      "primary_source_status": "metadata_verified",
+      "query_or_source": "Amirchand 2022; DOI 10.1016/j.molliq.2022.118845",
+      "search_id": "SEARCH-P5-003",
+      "searched_at": "2026-07-23",
+      "si_status": "not_identified",
+      "target_path": "data/reference/MEA/observations/ionic_analog_volumetrics/ethanolammonium_carboxylate_density.csv"
+    },
+    {
+      "access_status": "no_direct_source_found",
+      "database_or_repository": "Crossref publisher repositories and web search",
+      "exclusion_reason": "density is Born-blind here: the runtime permittivity has no density dependence, so the Born term adds no pressure",
+      "extraction_decision": "negative_search_no_extraction",
+      "model_comparison_eligible": false,
+      "notes": "Exact salt isolation is documented by Shamshina 2021 DOI 10.1016/j.gce.2021.07.001 but no numeric volumetric measurement was located.",
+      "observable": "exact ethanolammonium carbamate density and partial molar volume",
+      "parameter_family": "MEAH_MEACOO_segment_parameters",
+      "primary_source_status": "negative_search",
+      "query_or_source": "2-hydroxyethylammonium (2-hydroxyethyl)carbamate density molar volume crystal density",
+      "search_id": "SEARCH-P5-004",
+      "searched_at": "2026-07-23",
+      "si_status": "not_applicable",
+      "target_path": "data/reference/MEA/observations/ionic_analog_volumetrics/direct_meah_meacoo_density.csv"
+    },
+    {
+      "access_status": "abstract_accessible",
+      "database_or_repository": "Publisher identity and primary abstract",
+      "exclusion_reason": "density is Born-blind here: the runtime permittivity has no density dependence, so the Born term adds no pressure",
+      "extraction_decision": "boundary_only_no_extraction",
+      "model_comparison_eligible": false,
+      "notes": "Electroneutral salt volume is measurable; unique single-ion partition requires an extra-thermodynamic assumption.",
+      "observable": "ionic partial molar volume measurement boundary",
+      "parameter_family": "MEAH_MEACOO_segment_parameters",
+      "primary_source_status": "primary_identity_verified",
+      "query_or_source": "Marcus 2006; Ionic volumes in solution; DOI 10.1016/j.bpc.2006.04.013",
+      "search_id": "SEARCH-P5-005",
+      "searched_at": "2026-07-23",
+      "si_status": "not_applicable",
+      "target_path": "data/reference/MEA/observations/ionic_analog_volumetrics/volumetric_source_manifest.csv"
+    },
+    {
+      "access_status": "full_text_accessible",
+      "database_or_repository": "OSTI primary manuscripts",
+      "exclusion_reason": "density is Born-blind here: the runtime permittivity has no density dependence, so the Born term adds no pressure",
+      "extraction_decision": "context_only_no_regression_target",
+      "model_comparison_eligible": false,
+      "notes": "The 2011 paper reports 2.8 A^3 per absorbed CO2 for MEA. The later report separately reports approximately 3.5 A^3 and modeled 4-6 A^3 local contraction; the claims must not be conflated.",
+      "observable": "bulk carbamation volume change",
+      "parameter_family": "MEAH_MEACOO_segment_parameters",
+      "primary_source_status": "full_text_verified",
+      "query_or_source": "Maiti 2011; DOI 10.1016/j.cplett.2011.04.080 and LLNL-JRNL-643475",
+      "search_id": "SEARCH-P5-006",
+      "searched_at": "2026-07-23",
+      "si_status": "not_applicable",
+      "target_path": "data/reference/MEA/observations/ionic_analog_volumetrics/volumetric_source_manifest.csv"
+    }
+  ],
+  "falsification_conditions": [
+    "A holdout at matched speciation separates original Born from SSM+DS by an effective chi-square difference of at least 10.",
+    "MEAH+ salt activity or osmotic data with a qualified counterion rank the forms.",
+    "A refit of the ionic coordinates lets SSM reproduce the flat water partial pressure with physical k_ij."
+  ],
+  "fitted_candidate_coordinates": {
+    "fits": [
+      {
+        "carbamate_scale": 0.95,
+        "chi_square": 7.406839845419084,
+        "k_ion_mea": 0.27356399017588967,
+        "k_ion_mea_se": 0.035310803448535905,
+        "k_ion_water": 0.10342316551867319,
+        "k_ion_water_se": 0.02709983515785779,
+        "model": "original-born",
+        "multi_start_chi_square_spread": 8.981129155927192e-07,
+        "multi_start_gradient_inf_norm": 0.05975445028379056,
+        "multi_start_k_ion_mea_spread": 0.00014235371298360056,
+        "multi_start_k_ion_water_spread": 9.962132096189014e-05,
+        "multi_start_offset_spread": 2.5420774322215678e-05,
+        "multi_start_status_1": 4.0,
+        "multi_start_status_2": 3.0,
+        "multi_start_status_3": 3.0,
+        "offset_monoethanolamine_313.15": 0.24757552274044567,
+        "offset_monoethanolamine_333.15": 0.5968355510598808,
+        "offset_water_313.15": -0.0683792606964537,
+        "offset_water_333.15": 0.00611784143328468,
+        "optimizer_gradient_inf_norm": 0.03275927190278338,
+        "optimizer_status": 3.0,
+        "parameters": 6.0,
+        "reduced_chi_square": 0.16833726921407008,
+        "rows": 50.0
+      },
+      {
+        "carbamate_scale": 0.95,
+        "chi_square": 5.257612612595493,
+        "k_ion_mea": -1.2783542618261439,
+        "k_ion_mea_se": 0.03825151046297639,
+        "k_ion_water": -1.7285028107399052,
+        "k_ion_water_se": 0.03008747837302843,
+        "model": "ssm",
+        "multi_start_chi_square_spread": 1.0676326667180547e-06,
+        "multi_start_gradient_inf_norm": 0.03892479763271339,
+        "multi_start_k_ion_mea_spread": 0.00010019164623153998,
+        "multi_start_k_ion_water_spread": 8.258440377617582e-05,
+        "multi_start_offset_spread": 1.4494135382736584e-05,
+        "multi_start_status_1": 3.0,
+        "multi_start_status_2": 3.0,
+        "multi_start_status_3": 3.0,
+        "offset_monoethanolamine_313.15": 0.09806968219979198,
+        "offset_monoethanolamine_333.15": 0.42561330738341774,
+        "offset_water_313.15": -0.05048032249057536,
+        "offset_water_333.15": 0.03715886203487774,
+        "optimizer_gradient_inf_norm": 0.004782466261236795,
+        "optimizer_status": 3.0,
+        "parameters": 6.0,
+        "reduced_chi_square": 0.11949119574080667,
+        "rows": 50.0
+      },
+      {
+        "carbamate_scale": 0.95,
+        "chi_square": 6.548050538177431,
+        "k_ion_mea": 0.14187944574651726,
+        "k_ion_mea_se": 0.0346106756036937,
+        "k_ion_water": -0.08976361934945605,
+        "k_ion_water_se": 0.026517560277197056,
+        "model": "ssm-plus-ds",
+        "multi_start_chi_square_spread": 7.479209749305937e-07,
+        "multi_start_gradient_inf_norm": 0.051140458405498634,
+        "multi_start_k_ion_mea_spread": 5.643272515401532e-05,
+        "multi_start_k_ion_water_spread": 4.935924529420044e-05,
+        "multi_start_offset_spread": 5.771868652182377e-05,
+        "multi_start_status_1": 3.0,
+        "multi_start_status_2": 3.0,
+        "multi_start_status_3": 3.0,
+        "offset_monoethanolamine_313.15": 0.2286019123109755,
+        "offset_monoethanolamine_333.15": 0.5720300895677745,
+        "offset_water_313.15": -0.06673495330360077,
+        "offset_water_333.15": 0.008895104839111984,
+        "optimizer_gradient_inf_norm": 0.030939952285624628,
+        "optimizer_status": 3.0,
+        "parameters": 6.0,
+        "reduced_chi_square": 0.14881933041312345,
+        "rows": 50.0
+      },
+      {
+        "carbamate_scale": 1.0,
+        "chi_square": 8.658049524451643,
+        "k_ion_mea": 0.2905352862423075,
+        "k_ion_mea_se": 0.034188578667173855,
+        "k_ion_water": 0.0779534483172058,
+        "k_ion_water_se": 0.026775558076293258,
+        "model": "original-born",
+        "multi_start_chi_square_spread": 1.5451027165269693e-05,
+        "multi_start_gradient_inf_norm": 0.0677065891739268,
+        "multi_start_k_ion_mea_spread": 0.00031984712064569987,
+        "multi_start_k_ion_water_spread": 0.00026734429191499487,
+        "multi_start_offset_spread": 7.196159517353085e-05,
+        "multi_start_status_1": 3.0,
+        "multi_start_status_2": 3.0,
+        "multi_start_status_3": 3.0,
+        "offset_monoethanolamine_313.15": 0.3036774849208257,
+        "offset_monoethanolamine_333.15": 0.646227505716552,
+        "offset_water_313.15": -0.07510152465762737,
+        "offset_water_333.15": -0.00044508725890379417,
+        "optimizer_gradient_inf_norm": 0.0677065891739268,
+        "optimizer_status": 3.0,
+        "parameters": 6.0,
+        "reduced_chi_square": 0.19677385282844642,
+        "rows": 50.0
+      },
+      {
+        "carbamate_scale": 1.0,
+        "chi_square": 6.402896312905368,
+        "k_ion_mea": -1.2232390622407148,
+        "k_ion_mea_se": 0.03716888206396319,
+        "k_ion_water": -1.712633373800248,
+        "k_ion_water_se": 0.029985369032576516,
+        "model": "ssm",
+        "multi_start_chi_square_spread": 1.0424744258941132e-06,
+        "multi_start_gradient_inf_norm": 0.006617425040502667,
+        "multi_start_k_ion_mea_spread": 4.354963087727093e-05,
+        "multi_start_k_ion_water_spread": 3.199289313071674e-05,
+        "multi_start_offset_spread": 1.0654986440261638e-05,
+        "multi_start_status_1": 2.0,
+        "multi_start_status_2": 2.0,
+        "multi_start_status_3": 3.0,
+        "offset_monoethanolamine_313.15": 0.13224265539885258,
+        "offset_monoethanolamine_333.15": 0.45684560283997994,
+        "offset_water_313.15": -0.053960842188442625,
+        "offset_water_333.15": 0.034143168983782626,
+        "optimizer_gradient_inf_norm": 0.006617425040502667,
+        "optimizer_status": 2.0,
+        "parameters": 6.0,
+        "reduced_chi_square": 0.1455203707478493,
+        "rows": 50.0
+      },
+      {
+        "carbamate_scale": 1.0,
+        "chi_square": 7.799265001266834,
+        "k_ion_mea": 0.1603196310192308,
+        "k_ion_mea_se": 0.03365132330158574,
+        "k_ion_water": -0.11226932614122057,
+        "k_ion_water_se": 0.02636262447887704,
+        "model": "ssm-plus-ds",
+        "multi_start_chi_square_spread": 4.174628481123932e-06,
+        "multi_start_gradient_inf_norm": 0.10581902062979864,
+        "multi_start_k_ion_mea_spread": 0.0001943125994184891,
+        "multi_start_k_ion_water_spread": 0.00016586626876344268,
+        "multi_start_offset_spread": 4.2694830534928396e-05,
+        "multi_start_status_1": 3.0,
+        "multi_start_status_2": 3.0,
+        "multi_start_status_3": 3.0,
+        "offset_monoethanolamine_313.15": 0.280945311888681,
+        "offset_monoethanolamine_333.15": 0.6182832354561866,
+        "offset_water_313.15": -0.073087633712744,
+        "offset_water_333.15": 0.002687393002396262,
+        "optimizer_gradient_inf_norm": 0.016181892427262312,
+        "optimizer_status": 3.0,
+        "parameters": 6.0,
+        "reduced_chi_square": 0.17725602275606442,
+        "rows": 50.0
+      },
+      {
+        "carbamate_scale": 1.05,
+        "chi_square": 15.767374281399764,
+        "k_ion_mea": 0.30541573434595054,
+        "k_ion_mea_se": 0.04175863225300604,
+        "k_ion_water": 0.04342934721002782,
+        "k_ion_water_se": 0.03338605283238727,
+        "model": "original-born",
+        "multi_start_chi_square_spread": 1.21663988768006e-05,
+        "multi_start_gradient_inf_norm": 0.15280653023511803,
+        "multi_start_k_ion_mea_spread": 0.0001732113573769678,
+        "multi_start_k_ion_water_spread": 0.00016414099307424795,
+        "multi_start_offset_spread": 9.867020248954805e-05,
+        "multi_start_status_1": 2.0,
+        "multi_start_status_2": 4.0,
+        "multi_start_status_3": 3.0,
+        "offset_monoethanolamine_313.15": 0.3856951731345417,
+        "offset_monoethanolamine_333.15": 0.7221121908199237,
+        "offset_water_313.15": -0.08376372984825474,
+        "offset_water_333.15": -0.008975198232101071,
+        "optimizer_gradient_inf_norm": 0.02762141364781101,
+        "optimizer_status": 3.0,
+        "parameters": 6.0,
+        "reduced_chi_square": 0.3583494154863583,
+        "rows": 50.0
+      },
+      {
+        "carbamate_scale": 1.05,
+        "chi_square": 11.125014628975524,
+        "k_ion_mea": -1.1730010996258349,
+        "k_ion_mea_se": 0.04334961909315137,
+        "k_ion_water": -1.709870628950291,
+        "k_ion_water_se": 0.035936998435010435,
+        "model": "ssm",
+        "multi_start_chi_square_spread": 6.916176129578844e-07,
+        "multi_start_gradient_inf_norm": 0.013688818859353802,
+        "multi_start_k_ion_mea_spread": 4.158674975096588e-05,
+        "multi_start_k_ion_water_spread": 3.4762933506016225e-05,
+        "multi_start_offset_spread": 1.3884362926708249e-05,
+        "multi_start_status_1": 2.0,
+        "multi_start_status_2": 3.0,
+        "multi_start_status_3": 3.0,
+        "offset_monoethanolamine_313.15": 0.1943386314892163,
+        "offset_monoethanolamine_333.15": 0.5186101386665507,
+        "offset_water_313.15": -0.05951555467522538,
+        "offset_water_333.15": 0.029076503509455755,
+        "optimizer_gradient_inf_norm": 0.013688818859353802,
+        "optimizer_status": 3.0,
+        "parameters": 6.0,
+        "reduced_chi_square": 0.25284124156762555,
+        "rows": 50.0
+      },
+      {
+        "carbamate_scale": 1.05,
+        "chi_square": 14.431255219586031,
+        "k_ion_mea": 0.176030466439038,
+        "k_ion_mea_se": 0.04119828459976774,
+        "k_ion_water": -0.14450743626209028,
+        "k_ion_water_se": 0.03300314206840463,
+        "model": "ssm-plus-ds",
+        "multi_start_chi_square_spread": 1.2786279235399434e-06,
+        "multi_start_gradient_inf_norm": 0.0879278603876763,
+        "multi_start_k_ion_mea_spread": 8.7215545035213e-05,
+        "multi_start_k_ion_water_spread": 8.369610943026462e-05,
+        "multi_start_offset_spread": 0.00013381352814934022,
+        "multi_start_status_1": 3.0,
+        "multi_start_status_2": 3.0,
+        "multi_start_status_3": 3.0,
+        "offset_monoethanolamine_313.15": 0.3592041128887725,
+        "offset_monoethanolamine_333.15": 0.6913284788995249,
+        "offset_water_313.15": -0.08141341680986573,
+        "offset_water_333.15": -0.005516238904660853,
+        "optimizer_gradient_inf_norm": 0.0879278603876763,
+        "optimizer_status": 3.0,
+        "parameters": 6.0,
+        "reduced_chi_square": 0.3279830731724098,
+        "rows": 50.0
+      }
+    ],
+    "scope": "one shared k_ij for MEAH+ and MEACOO- with water and with MEA, per Born form; candidates only, not promoted"
+  },
+  "forbidden_comparison": "reactive pressure alone",
+  "independent_eligible_observation_count": 2,
+  "installed_wheel_check": {
+    "verification": "epcsaft 0.2.0.dev0 installed from ./build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl; 14 RECORD hashes match\nmodule origins: epcsaft=epcsaft/__init__.py, epcsaft.equilibrium=epcsaft/equilibrium/__init__.py",
+    "wheel": "build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+    "wheel_sha256": "b55665901b881836f90af010c22bd16a51a687a4e83242ab6d7d5d10118e582a"
+  },
+  "issue": 117,
+  "model_decisions": [
+    {
+      "configuration": {
+        "c_dielectric": 0.0,
+        "c_shell": 0.0
+      },
+      "disposition": "packet v5 baseline in this repository; 0.3-1.3 chi-square above SSM+DS in every calibrated case, not decisively worse",
+      "metric": {
+        "chi_square_by_carbamate_scale": {
+          "0.95": 7.41,
+          "1.0": 8.66,
+          "1.05": 15.77
+        },
+        "fitted_parameters": 6,
+        "k_ion_mea_range": [
+          0.274,
+          0.305
+        ],
+        "k_ion_water_range": [
+          0.043,
+          0.103
+        ],
+        "rows": 50,
+        "unfitted_water_slope_313K_range": [
+          -0.084,
+          -0.069
+        ]
+      },
+      "model": "original-born",
+      "status": "candidate"
+    },
+    {
+      "configuration": {
+        "c_dielectric": 0.0,
+        "c_shell": 1.0
+      },
+      "disposition": "rejected on physical grounds despite the lowest chi-square: fitted ion-solvent k_ij values are implausible, and packet-coordinate aqueous osmotic coefficients at k_ij=0 are negative at 1 mol/kg and above; see the retained diagnostics",
+      "metric": {
+        "chi_square_by_carbamate_scale": {
+          "0.95": 5.26,
+          "1.0": 6.4,
+          "1.05": 11.13
+        },
+        "fitted_parameters": 6,
+        "k_ion_mea_range": [
+          -1.278,
+          -1.173
+        ],
+        "k_ion_water_range": [
+          -1.729,
+          -1.71
+        ],
+        "rows": 50,
+        "unfitted_water_slope_313K_range": [
+          0.821,
+          0.886
+        ]
+      },
+      "model": "ssm",
+      "status": "rejected"
+    },
+    {
+      "configuration": {
+        "c_dielectric": 1.0,
+        "c_shell": 1.0
+      },
+      "disposition": "admissible alternative; lower chi-square than original Born in every calibrated case by 0.3-1.3, not decisive",
+      "metric": {
+        "chi_square_by_carbamate_scale": {
+          "0.95": 6.55,
+          "1.0": 7.8,
+          "1.05": 14.43
+        },
+        "fitted_parameters": 6,
+        "k_ion_mea_range": [
+          0.142,
+          0.176
+        ],
+        "k_ion_water_range": [
+          -0.145,
+          -0.09
+        ],
+        "rows": 50,
+        "unfitted_water_slope_313K_range": [
+          0.019,
+          0.029
+        ]
+      },
+      "model": "ssm-plus-ds",
+      "status": "candidate"
+    }
+  ],
+  "needed_to_separate_original_born_from_ssm_plus_ds": [
+    "MEA-Thermodynamics #121 decision 21: both forms fitted on the full MEA calibration data with the exact-derivative fitter, 40-80 C pass rule.",
+    "MEAH+ salt osmotic or activity data that fix the ion-solvent k_ij independently of the Born form.",
+    "Solvent partial pressures and NMR speciation measured on the same samples, with reported uncertainty."
+  ],
+  "osmotic_coefficient_check": {
+    "basis": "aqueous 1:1 MEAH+/MEACOO- at 298.15 K with packet ion-solvent k_ij=0",
+    "source": "born-sensitivity.csv",
+    "values": [
+      {
+        "coefficient": 0.9376844845159157,
+        "model": "original-born",
+        "molality_mol_kg": 0.1
+      },
+      {
+        "coefficient": 0.9708028097704133,
+        "model": "original-born",
+        "molality_mol_kg": 0.5
+      },
+      {
+        "coefficient": 1.0427519037191726,
+        "model": "original-born",
+        "molality_mol_kg": 1.0
+      },
+      {
+        "coefficient": 1.1836561594078108,
+        "model": "original-born",
+        "molality_mol_kg": 2.0
+      },
+      {
+        "coefficient": 1.4094708941690182,
+        "model": "original-born",
+        "molality_mol_kg": 4.0
+      },
+      {
+        "coefficient": 0.8130347261569454,
+        "model": "ssm",
+        "molality_mol_kg": 0.1
+      },
+      {
+        "coefficient": 0.35933224089819743,
+        "model": "ssm",
+        "molality_mol_kg": 0.5
+      },
+      {
+        "coefficient": -0.15167101438587346,
+        "model": "ssm",
+        "molality_mol_kg": 1.0
+      },
+      {
+        "coefficient": -1.0969431170660748,
+        "model": "ssm",
+        "molality_mol_kg": 2.0
+      },
+      {
+        "coefficient": -2.7606593905613757,
+        "model": "ssm",
+        "molality_mol_kg": 4.0
+      },
+      {
+        "coefficient": 0.9235122290148472,
+        "model": "ssm-plus-ds",
+        "molality_mol_kg": 0.1
+      },
+      {
+        "coefficient": 0.9012806763329765,
+        "model": "ssm-plus-ds",
+        "molality_mol_kg": 0.5
+      },
+      {
+        "coefficient": 0.9069500618637749,
+        "model": "ssm-plus-ds",
+        "molality_mol_kg": 1.0
+      },
+      {
+        "coefficient": 0.9243597430510034,
+        "model": "ssm-plus-ds",
+        "molality_mol_kg": 2.0
+      },
+      {
+        "coefficient": 0.9353411995196871,
+        "model": "ssm-plus-ds",
+        "molality_mol_kg": 4.0
+      }
+    ]
+  },
+  "ranking_issue": 161,
+  "rediagnosis_issue": 145,
+  "runtime_model_configuration": {
+    "born_form": "original-born",
+    "bulk_permittivity": "solvent-only",
+    "c_dielectric": 0.0,
+    "c_shell": 0.0,
+    "matches_selection": true,
+    "parameter_document": "data/packets/mea-co2-h2o-nine-species-estimation/5/parameters/parameters.json"
+  },
+  "schema_version": 3,
+  "source_authority": {
+    "born_model_semantics": "engine/docs/science/full-eos.md section 7",
+    "comparison_outputs_sha256": {
+      "born-sensitivity.csv": "c2633e9b591bda414e9f2d9d7fa4e61cb4cd7b27e30eb4bf29a576500811c221",
+      "coordinate-sensitivity.csv": "2e20f870c3942f7dcc932b7ae1b8ac3b8e50634bdd1d5c4cebf50da79502dc9e",
+      "solvent-fugacity-holdout.csv": "5951a3dcbaf14ceea657b1cb2be8a6eae2cb290a7d3b3fdc72fc1fd105ef539d",
+      "solvent-fugacity-refit-calibrated.csv": "357958c64df0f545a797df0169837fdf77a678799ffcf5c9754b06858b28b76d",
+      "solvent-fugacity-refit-v4.csv": "34c6fe934214e05e22accfb9834f097a9d4f07358444056168e39a00c416d4a5",
+      "solvent-fugacity-refit.csv": "925a6b22a4841e456f1311bf862a0eef476cc3eb531bf19addad3412b348c41f",
+      "solvent-fugacity-trends.csv": "d04b34881df9620c6b169471f2bc4d94c6ddaaf3c1e6582eaf32128356fac69f",
+      "solvent-fugacity-weights.csv": "721967f1802a987750613fd3b44354ecd1c58f17914f4ffd418cd670ce790f0d",
+      "solvent-fugacity.csv": "d625f3861afd63489b973fa9ab100e1e015dea449f005ffb5db0c917bc5aeaad"
+    },
+    "hilliard_transcriptions_sha256": {
+      "analyses/2026-mea-parameter-estimation/inputs/source/library/observations/liquid_speciation/Hilliard_2008_AppendixF_7m_MEA_NMR_speciation.csv": "278c9ed10216074ab1b4c69336c58b9e29fd56d372fe1463426d277e794edf82",
+      "analyses/2026-mea-parameter-estimation/inputs/source/library/observations/vapor_liquid_equilibrium/Hilliard_2008_AppendixD4_7m_MEA.csv": "bb680d0059ba14a1a29bd58f9c443dbd93e534d9088b797666a02ffd0ec9f153"
+    },
+    "parameter_document_sha256": "1ba95275f9e23264250e891aee3d6284d801f73205dad255101e6561b29aee5f",
+    "relevant_evidence_sha256": "342b4e6474086184496dfb0661464911e59a55636c26f2105aef167b1dff1247",
+    "search_log": "analyses/2026-mea-parameter-estimation/inputs/source/library/manifests/source_search_log.csv",
+    "search_log_sha256": "9f07e9837f54a688e92b2514180a78f4ae7e143de44bbb340df75bf4be9c93a9"
+  }
+}

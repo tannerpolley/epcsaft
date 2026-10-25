@@ -1,0 +1,8 @@
+{
+  "chemicals_version": "1.5.2",
+  "checks": 59,
+  "cp_oracle_J_kg_K": 4602.224490293389,
+  "cp_oracle_tolerance_J_kg_K": 2.103567840094911e-05,
+  "cp_oracle_relative_tolerance": 4.570763213597192e-09,
+  "ideal_cp_maximum_error_J_mol_K": 4.835957462034912e-06
+}

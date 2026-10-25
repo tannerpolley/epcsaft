@@ -1,0 +1,22 @@
+{
+  "temperature_K": 298.15,
+  "pressure_Pa": 100000,
+  "pressure_sensitivity_Pa": 101325,
+  "density_kg_m3": 0.005,
+  "activity": 0.0005,
+  "table7": 0.005,
+  "table8_ARD_percentage_point": 0.05,
+  "reading_pixels": 2,
+  "refinement_fraction": 0.1,
+  "packing_sigma_factor": 0.88,
+  "source_instrument_bound_kg_m3": 0.0015,
+  "source_study_osmotic_repeatability_percent": 2,
+  "shared_density_kg_m3": 788.0580935539466,
+  "shared_molar_density_mol_m3": 17080.285695349678,
+  "shared_historical_commit": "21e9065e81987347ccd5fea761ac8962d17e0161",
+  "shared_historical_run": "8620e1b7-aa6b-4408-b06e-b37771773e2c",
+  "shared_historical_core_sha256": "0954372a1b5a726bf95c4592f0db781bcbb89061d00f1457a6fe01da88527498",
+  "shared_parameter_sha256": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+  "shared_mass_sha256": "28cdf3c8dc0c278fab37e34f88b3362ffc64565acdba9f4129ea8d72c7d8b011",
+  "mass_uncertainty_note": "Atomic-weight uncertainties and possible isotopic fractionation are input limitations; NH4 formula mass is N plus four H, without a propagated probability distribution."
+}

@@ -1,0 +1,3 @@
+component_i,component_j,temperature_range_K,k_ij,source_locator,role,zotero_parent_key,pdf_attachment_key,verification
+MDEA,water,350-459,0,Table 3; PDF p.4; printed p.7623; MDEA + water row,paper-input,CBRPAXQG,3G4FGGY4,PDF image checked against text layer and Markdown; values retained as printed
+MDEA,methane,298-403,0.1591-38.948/T,Table 3; PDF p.4; printed p.7623; MDEA + methane row,paper-input,CBRPAXQG,3G4FGGY4,PDF image checked against text layer and Markdown; values retained as printed

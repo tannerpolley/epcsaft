@@ -1,0 +1,304 @@
+---
+title: "Ascani 2023: simultaneous chemical and liquid–liquid equilibrium of two esterifications"
+date: 2026-10-09
+format:
+  html:
+    toc: true
+execute:
+  enabled: true
+  echo: false
+---
+
+```{python}
+import csv
+import json
+import math
+from pathlib import Path
+
+results, inputs = Path("results"), Path("inputs")
+def rows(path):
+    with path.open(newline="") as stream:
+        return list(csv.DictReader(stream))
+def e(v, d=1):
+    m, x = f"{v:.{d}e}".split("e")
+    return f"{m}e{int(x)}".replace("-", "−", v < 0)
+def u(v, d):
+    return f"{v:.{d}f}".replace("-", "−")
+def s(v, d):
+    return f"{v:+.{d}f}".replace("-", "−")
+
+X = ("x_acetic_acid", "x_1_pentanol", "x_pentyl_acetate", "x_water")
+prov = json.loads((results / "provenance.json").read_text())
+T1, T2 = prov["temperatures_k"]["1"], prov["temperatures_k"]["2"]
+K1, K2 = prov["k_a"]["1"], prov["k_a"]["2"]
+P_bar = prov["pressure_pa"] / 1e5
+timing = {r["step"]: float(r["wall_s"]) for r in rows(results / "timing.csv")}
+
+doc = json.loads((inputs / "parameters/system-1-printed.json").read_text())
+edge = {(e_["endpoint_a"]["component_id"], e_["endpoint_b"]["component_id"], e_["endpoint_a"]["site_id"]): e_
+        for e_ in doc["topology"]["edges"]}
+kappa_wa = edge[("acetic-acid", "water", "a")]["volume"]["value"]["magnitude"]
+kij1 = {(p["component_id_a"], p["component_id_b"]): p["coefficients"][0]["value"]["magnitude"] for p in doc["pairs"]}
+doc2 = json.loads((inputs / "parameters/system-2-printed.json").read_text())
+kij2 = {(p["component_id_a"], p["component_id_b"]): p["coefficients"][0]["value"]["magnitude"] for p in doc2["pairs"]}
+sig = doc["correlations"][0]
+water_sigma = lambda T: sig["constant"]["value"]["magnitude"] + sum(
+    t["amplitude"]["value"]["magnitude"] * math.exp(t["exponent_coefficient"]["value"]["magnitude"] * T) for t in sig["terms"])
+
+ka = rows(results / "ka-at-experimental-points.csv")
+hom = rows(results / "homogeneous-ce.csv")
+ties = rows(results / "reactive-tie-lines.csv")
+feeds = rows(results / "acid-alcohol-feeds.csv")
+disc = rows(results / "discovery-cases.csv")
+exp_hom = {r["point"]: r for r in rows(inputs / "data/senina-2022-table-2-homogeneous-ce.csv")}
+exp_ties = {r["tie_line"]: r for r in rows(inputs / "data/senina-2022-table-3-reactive-tie-lines.csv")}
+
+solved = hom + ties + feeds
+def worst(key):
+    return max(abs(float(r[key])) for r in solved if r.get(key))
+iters = [int(r["iterations"]) for r in solved if r["success"] == "True"]
+
+def by(data, rule):
+    return [r for r in data if r["rule"] == rule]
+ka_p = {r["point"]: r for r in by(ka, "printed")}
+ka_w = {r["point"]: r for r in by(ka, "wolbach-sandler")}
+inside = [p for p, r in ka_p.items() if float(r["K_a_band_min"]) <= K1 <= float(r["K_a_band_max"])]
+inside_w = [p for p, r in ka_w.items() if float(r["K_a_band_min"]) <= K1 <= float(r["K_a_band_max"])]
+nearest = min(ka_p.values(), key=lambda r: abs(math.log(float(r["K_a"]) / K1)))
+ka_vals = [float(r["K_a"]) for r in ka_p.values()]
+geo = math.exp(sum(map(math.log, ka_vals)) / len(ka_vals))
+
+def hom_stats(rule):
+    d = [float(r["extent_minus_experiment"]) for r in by(hom, rule)]
+    return 100 * math.sqrt(sum(v * v for v in d) / len(d)), max(map(abs, d)), [r["point"] for r in by(hom, rule) if abs(float(r["extent_minus_experiment"])) > 0.01]
+sig_hp, max_hp, over_hp = hom_stats("printed")
+sig_hw, max_hw, over_hw = hom_stats("wolbach-sandler")
+split_points = [r["point"] for r in by(hom, "printed") if r["phases"] == "2"]
+one_liquid = [r for r in by(hom, "printed") if r["phases"] == "1"]
+one_liquid_states = [r for r in solved if r["phases"] == "1"]
+native_check = max(abs(float(r["reaction_residual_max"])) for r in one_liquid_states)
+assert native_check <= prov["tolerances"]["single_liquid_ln_ka"], native_check
+seed_conv = sum(int(r["two_liquid_seeds_converged"]) for r in hom if r.get("two_liquid_seeds_converged"))
+
+def tie_stats(rule, *phases):  # Senina Section 4.2: both phases together divide by 2Nn
+    d = [float(t[f"{ph}_{k}"]) - float(exp_ties[t["tie_line"]][f"{ph}_{k}"]) for ph in phases for t in by(ties, rule) for k in X]
+    return 100 * math.sqrt(sum(v * v for v in d) / len(d))
+def comp_bias(rule, phase, k):
+    t = by(ties, rule)
+    return sum(float(r[f"{phase}_{k}"]) - float(exp_ties[r["tie_line"]][f"{phase}_{k}"]) for r in t) / len(t)
+acid_ratio = [float(t["aq_x_acetic_acid"]) / float(exp_ties[t["tie_line"]]["aq_x_acetic_acid"]) for t in by(ties, "printed")]
+
+def split_range(system):
+    z = [float(r["z_acid"]) for r in feeds if r["system"] == system and r["phases"] == "2"]
+    return min(z), max(z)
+declared = [r for r in feeds if r["route"] != "discovery"]
+def max_minor(system):
+    return max(min(float(r["phase1_amount"]), float(r["phase2_amount"])) for r in feeds if r["system"] == system and r["phases"] == "2")
+```
+
+Not independently reviewed; not promoted for manuscript use.
+
+## Result
+
+With the published parameters (Tables 1, 2 and 4), the Engine solves Ascani's chemical and liquid–liquid
+equilibrium for both esterification systems in one native solve per feed. Every one of the
+`{python} len(solved)` retained solves converged and passed the independent residual checks stated before the run.
+
+- **Equilibrium constant, exploratory consistency with the reported value.** Ascani obtained
+  $K_a$ = `{python} f"{K1:.2f}"` from one unnamed Senina point. Evaluated by the Engine's own reaction row at
+  the measured compositions, the `{python} len(ka_vals)` Senina homogeneous points give $K_a$ from `{python} u(min(ka_vals), 1)` to
+  `{python} u(max(ka_vals), 1)`. Only point `{python} nearest["point"]` lies close: `{python} u(float(nearest["K_a"]), 2)`
+  (`{python} s(100 * (float(nearest["K_a"]) / K1 - 1), 1)`%). Its rounding band, with each printed mole fraction
+  moved by 0.0005, is `{python} u(float(nearest["K_a_band_min"]), 1)`–`{python} u(float(nearest["K_a_band_max"]), 1)`,
+  which contains the paper's value. The bands containing it are those of point(s) `{python} ", ".join(inside)`
+  (printed rule) and `{python} ", ".join(inside_w)` (Wolbach–Sandler). This test was chosen after the values had been seen, so it
+  shows consistency with the reported $K_a$, not a verification of the parameter mapping. The mapping evidence is
+  the direct check of the declared parameters against Tables 1–2 (below). The test cannot single out Ascani's
+  source point or decide between the two cross-association rules.
+- **Homogeneous chemical equilibrium against experiment (physical comparison, literature parameters).**
+  Each Senina point, taken as a feed and reacted along its stoichiometric line, lands on the model's
+  chemical-equilibrium surface. Senina's σ formula gives `{python} u(sig_hp, 2)`%, with largest deviation
+  `{python} u(max_hp, 4)` mole fraction. Points `{python} ", ".join(over_hp)` exceed the stated 0.01 reading of
+  "quantitatively correct". Points `{python} ", ".join(split_points)`, measured as one liquid, are predicted to
+  split into two.
+- **Reactive tie-lines against experiment (physical comparison).** For the nine Senina tie-lines, fed at
+  their midpoints, Senina's combined σ over both liquids (Section 4.2, denominator 2Nn) is
+  `{python} u(tie_stats("printed", "aq", "org"), 2)`% (Wolbach–Sandler: `{python} u(tie_stats("wolbach-sandler", "aq", "org"), 2)`%),
+  against 1.1% for Senina's own NRTL correlation of the same tie-lines. Per liquid, σ =
+  `{python} u(tie_stats("printed", "aq"), 1)`% in the water-rich liquid and `{python} u(tie_stats("printed", "org"), 1)`% in
+  the organic liquid. The model puts on average `{python} u(comp_bias("printed", "aq", "x_acetic_acid"), 3)`
+  more mole fraction of acetic acid into the water-rich liquid: `{python} u(min(acid_ratio), 1)` to
+  `{python} u(max(acid_ratio), 1)` times the measured value. This agrees with Ascani's statement that the
+  deviations come with acetic acid, and with its "qualitative agreement".
+- **System 2, prediction only.** For acid + 1-hexanol feeds without products, the chemically equilibrated
+  mixture splits into two liquids for acid feed fractions `{python} u(split_range("2")[0], 2)`–`{python} u(split_range("2")[1], 2)`.
+  System 1 splits only for `{python} u(split_range("1")[0], 2)`–`{python} u(split_range("1")[1], 2)` on the same
+  0.05 grid. This matches Ascani's statement that system 2 has the much broader miscibility gap on the
+  chemical-equilibrium surface. No numerical system-2 data were available to compare against.
+
+![System 1 at its Table 4 temperature and pressure, printed cross-association rule. (a) Senina's transformed variables; measured points (open circles) and tie-lines (dashed) against Engine solves (squares, solid tie-lines). The Engine points at the measured one-liquid compositions are the reacted feeds; open squares are the two liquids predicted at points 13 and 15. Because Σν = 0, α₁ and α₂ are conserved along the reaction direction, so a reacted feed always projects onto its
+measured point; coinciding points in (a) do not show that the reaction extent is right (the extent comparison is
+in the Table 2 section). (b) Acetic acid in the water-rich liquid, Engine against Senina Table 3.](figures/system-1-reacting-lle.png)
+
+## Reaction basis and conventions
+
+The reaction is acid + alcohol ⇌ ester + water (Eqs. 18–19), with ν = (−1, −1, +1, +1). Ascani's
+$K_a$ (Eq. 10) is the activity product $\prod_i (x_i \gamma_i)^{\nu_i}$ in one reference liquid, with
+γ<sub>i</sub> from PC-SAFT fugacity coefficients. The reference state is each pure liquid at the system
+temperature and pressure: γ<sub>i</sub> = φ<sub>i</sub>(x)/φ<sub>i</sub>(pure liquid). $K_a$ is one number per
+system at `{python} T1` K (`{python} f"{K1:.2f}"`) and `{python} T2` K (`{python} f"{K2:.2f}"`), at
+`{python} P_bar` bar. Ascani gives no temperature function, so none is used.
+
+In the Engine, $K_a$ is declared as a constant `ReactionLogPolynomial` (ln K = ln $K_a$) on the
+`RawMoleFractionInfiniteDilution` source basis, with a `NeutralReference` that puts every species on
+`PureLiquid`. Because Σν = 0, the mole-fraction and molality bases coincide. The Engine converts this target
+to its density basis natively. Every $K_a$ value in this record comes from one native evaluation
+(`CompiledSystem.evaluate`) of the compiled single-liquid declaration at a point built from the composition and
+the liquid packing fraction at T and p. Its chemical rows are ln(x<sub>i</sub>/v) + μ<sub>i</sub><sup>r</sup>/RT plus
+the standard term, minus the balance multipliers. Because the balance basis annihilates ν and Σν = 0, Σν<sub>i</sub>
+row<sub>i</sub> = ln $K_a$(x) − ln K exactly, under the Engine's PureLiquid reference.
+
+Parameter mapping (`scripts/parameters.py`):
+
+- Water σ uses the Table 1 footnote correlation, evaluated by the Engine at the state:
+  `{python} u(water_sigma(T1), 4)` Å at `{python} T1` K.
+- $k_{ij}(T)$ follows Eq. A8, declared at each system temperature. Examples: water–1-pentanol
+  `{python} u(kij1[("1-pentanol", "water")], 5)`, water–hexyl acetate `{python} u(kij2[("hexyl-acetate", "water")], 5)`.
+  Pairs absent from Table 2 have $k_{ij}$ = 0.
+- Cross association (Eq. A6) uses the arithmetic-mean energy between every pair of two-site components.
+  The esters carry two sites with zero self energy (Table 1), so they associate only through these cross edges.
+- Eq. A7 prints the size bracket squared. The primary run declares that rule as explicit edges, with water σ
+  frozen at the system temperature; for example, κ(water–acid) = `{python} u(kappa_wa, 5)`. The variant uses
+  the Engine's Wolbach–Sandler rule, where the bracket is cubed (Gross 2002), evaluated at the state.
+  The two rules differ by at most `{python} u(max(abs(float(ka_p[p]["K_a"]) / float(ka_w[p]["K_a"]) - 1) for p in ka_p) * 100, 1)`%
+  in $K_a$ and by `{python} u(abs(sig_hp - sig_hw), 3)` percentage points in the homogeneous σ.
+- The catalyst is omitted, as in Ascani.
+
+## Numerical checks
+
+Tolerances were stated in the README before the reacting runs; the single-liquid $K_a$ recovery check was added in revision. The Engine row residual target was `{python} e(prov['tolerances']['row'], 0)`.
+Across all solves, the independent checks reached:
+
+- reaction residual from the native reaction row: `{python} e(worst("reaction_residual_max"))`; at the
+  `{python} len(one_liquid_states)` converged single-liquid states it is `{python} e(native_check)`, inside the
+  `{python} e(prov['tolerances']['single_liquid_ln_ka'], 0)` check that the row evaluation recovers ln `{python} f"{K1:.2f}"`
+- cross-phase log-fugacity difference: `{python} e(worst("ln_fugacity_difference_max"))`
+- relative pressure at the returned densities: `{python} e(worst("pressure_rel_max"))`
+- relative component balance: `{python} e(worst("mass_balance_rel_max"))`
+
+All are within the stated `{python} e(prov['tolerances']['independent_check'], 0)`. Iteration counts ranged from `{python} min(iters)` to `{python} max(iters)`.
+
+For each of the `{python} len(one_liquid)` one-liquid homogeneous answers, a declared two-liquid solve was
+seeded from each of the nine experimental tie-lines. None of the nine declared two-liquid starts found a
+converged distinct second liquid at any of these points (`{python} seed_conv` converged starts in total). Given the discovery defects of Engine issue #390, a finite set of
+starts does not rule out a split at these points.
+
+## Equilibrium constant at the experimental points
+
+```{python}
+#| output: asis
+print("| point | $x_\\mathrm{acid}$ | $x_\\mathrm{alcohol}$ | $x_\\mathrm{ester}$ | $x_\\mathrm{water}$ | $K_a$ printed | band | $K_a$ Wolbach–Sandler |")
+print("|---:|---:|---:|---:|---:|---:|:---:|---:|")
+for p, r in ka_p.items():
+    print(f"| {p} | " + " | ".join(r[k] for k in X) + f" | {float(r['K_a']):.1f} | {float(r['K_a_band_min']):.1f}–{float(r['K_a_band_max']):.1f} | {float(ka_w[p]['K_a']):.1f} |")
+```
+
+Each value is the native reaction-row evaluation at the printed composition; the band moves each printed mole
+fraction by 0.0005 in Python and evaluates natively. This spread is the model's composition dependence of $K_a$ at measured equilibrium states: a perfect activity
+model would return one constant. The geometric mean is `{python} u(geo, 1)`. Dilute points carry wide bands,
+because a 0.0005 rounding of a 0.002 mole fraction moves $K_a$ by about 25%.
+
+## Homogeneous chemical equilibrium (Senina Table 2)
+
+```{python}
+#| output: asis
+print("| point | experiment $x_\\mathrm{ester}$ | Engine $x_\\mathrm{ester}$ (overall) | extent difference | Engine liquids |")
+print("|---:|---:|---:|---:|---:|")
+for r in by(hom, "printed"):
+    xe = float(exp_hom[r["point"]]["x_pentyl_acetate"])
+    d = float(r["extent_minus_experiment"])
+    print(f"| {r['point']} | {xe:.3f} | {xe + d:.4f} | {d:+.4f} | {r['phases']} |".replace("-", "−"))
+```
+
+Since Σν = 0 and the feed is the measured composition, each component's deviation equals the reaction extent
+difference, with sign ν<sub>i</sub>. The table therefore lists one number per point. Senina's tie-line σ formula, applied over all
+components and points, gives σ = `{python} u(sig_hp, 2)`% (Wolbach–Sandler: `{python} u(sig_hw, 2)`%). The data's
+u(x) is 0.002. The largest deviations, points `{python} ", ".join(over_hp)`, are ester-rich and alcohol-rich
+mixtures with little water.
+
+## Reactive tie-lines (Senina Table 3)
+
+```{python}
+#| output: asis
+print("| tie-line | liquid | acid exp / Engine | alcohol exp / Engine | ester exp / Engine | water exp / Engine |")
+print("|---:|:---|---:|---:|---:|---:|")
+for t in by(ties, "printed"):
+    for ph, label in (("aq", "water-rich"), ("org", "organic")):
+        print(f"| {t['tie_line']} | {label} | " + " | ".join(
+            f"{float(exp_ties[t['tie_line']][f'{ph}_{k}']):.3f} / {float(t[f'{ph}_{k}']):.3f}" for k in X) + " |")
+```
+
+Feed basis: Senina reports no overall feeds. Each Engine feed is the equimolar mixture of the two measured
+liquids, which the reaction moves along its stoichiometric line. With one reaction at fixed T and p, the
+reactive tie-lines form a one-parameter family, so the chosen feed selects which model tie-line is compared.
+Mean deviations (Engine − experiment), printed rule:
+
+- water-rich liquid: acid `{python} s(comp_bias("printed", "aq", "x_acetic_acid"), 3)`, water `{python} s(comp_bias("printed", "aq", "x_water"), 3)`
+- organic liquid: alcohol `{python} s(comp_bias("printed", "org", "x_1_pentanol"), 3)`,
+  ester `{python} s(comp_bias("printed", "org", "x_pentyl_acetate"), 3)`, water `{python} s(comp_bias("printed", "org", "x_water"), 3)`
+
+Wolbach–Sandler gives σ = `{python} u(tie_stats("wolbach-sandler", "aq"), 1)`% and
+`{python} u(tie_stats("wolbach-sandler", "org"), 1)`%. The bias therefore does not come from the volume
+rule. Ascani attributes it to the acetic acid description, whose dimerization and cross association
+PC-SAFT does not capture; this run does not test that cause.
+
+## System 2 and the gap comparison
+
+The acid + alcohol feed sweep (`results/acid-alcohol-feeds.csv`) uses the printed rule in both systems at
+their Table 4 conditions. Split-range edges are resolved only to the 0.05 grid. The largest minor-phase
+amount is `{python} u(max_minor("1"), 3)` mol per mol of feed in system 1 and `{python} u(max_minor("2"), 3)` in
+system 2. Ascani's Figure 8 shows system 2 only as a three-dimensional rendering, and Schmitt's equilibrium
+compositions (Ascani ref. 97, a 2006 thesis) are not in the library. The IECR paper by Schmitt and Hasse
+(2006) reports its equilibrium experiments only as NRTL-based K values in a figure and a K(T) fit, not as
+compositions. System 2 is therefore a model prediction with no
+experimental comparison.
+
+## Engine findings
+
+Phase discovery disagrees with a declared two-liquid solve at four feeds near the gap edges
+(`results/discovery-cases.csv`). Both defects are Engine issue #390.
+
+```{python}
+#| output: asis
+print("| system | acid feed fraction | discovery | two-liquid minus one-liquid Gibbs objective | minor liquid amount |")
+print("|---:|---:|:---|---:|---:|")
+for r in disc:
+    found = f"{r['discovery_phases']} liquid" if r["discovery_success"] == "True" else "failed: " + r["discovery_message"]
+    print(f"| {r['system']} | {r['z_acid']} | {found} | {e(float(r['two_liquid_minus_one_liquid']))} | {float(r['minor_phase_amount']):.4f} |")
+```
+
+The declared two-liquid states pass the same residual checks, and each has the lower Gibbs objective.
+In system 2, discovery fails outright; in the sweep, the one affected grid feed
+(`{python} ", ".join(r["z_acid"] for r in declared)`) is solved with declared liquids and labelled in its
+`route` column. In system 1 at 0.66, discovery returns one liquid although a two-liquid state with
+`{python} u(float(disc[0]["minor_phase_amount"]), 4)` mol of minor liquid lies lower: a small but finite second
+liquid missed near the binodal. These are reported, not fixed: no Engine source was changed.
+
+## Not reproduced and limits
+
+- **No published model values.** Ascani publishes model results only as three-dimensional renderings
+  (Figures 8–9) and gives no deviation metric. The only numerical model value is $K_a$, and its comparison is an exploratory
+  consistency check, not verification; everything else is Engine against experiment.
+- **Figures 2–3 (hypothetical A + B ⇌ C).** Not reproduced: the paper states neither temperature nor
+  pressure. Figure 1 is the ideal-solution case, and Figures 4–7 are schematics of the algorithm.
+- **Unresolved conventions.** Eq. A7's printed exponent (2, against Wolbach–Sandler's 3) remains unresolved
+  by the data, but it moves no reported quantity materially. Ascani's $K_a$ source point is unnamed.
+- **Senina data.** These are three-decimal mole fractions with u(x) = 0.002. Dilute components dominate the
+  $K_a$ scatter.
+- **Run time.** The retained run took `{python} u(timing["total"], 1)` s of wall-clock time (one process). The
+  homogeneous step took `{python} u(timing["homogeneous chemical equilibrium"], 1)` s, mostly in the seeded
+  two-liquid checks.
+
+Engine provenance: commit `{python} prov["engine"][0][:12]`, `engine/` clean = `{python} prov["engine"][1]`,
+started `{python} prov["started"]`. Retained values: `results/*.csv`; data: `inputs/data/`; parameters:
+`inputs/parameters/system-*.json`.

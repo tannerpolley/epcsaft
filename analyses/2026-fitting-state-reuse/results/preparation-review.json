@@ -1,0 +1,14 @@
+{
+  "reviewed_commit": "7b02aa8abb50e1bcc38e7f0dcb7f13ea57a504b2",
+  "base": "5c65bcb4db7757a27320819e29b4c486dccd4c4e",
+  "providerInstanceId": "codex",
+  "model": "gpt-6.1-sol",
+  "reasoningEffort": "high",
+  "skill": "cse:review",
+  "taskId": "node:delegated-task:command%3Amcp%3A1bdd8eab-f80c-4aa1-9e80-75ade5ed5070%3Adelegate-task%3A350c59cd-3174-4483-8441-692a55705383",
+  "childThreadId": "thread:delegated-task:command%3Amcp%3A1bdd8eab-f80c-4aa1-9e80-75ade5ed5070%3Adelegate-task%3A350c59cd-3174-4483-8441-692a55705383",
+  "capability_verdict": "Supported",
+  "result_verdict": "Supported",
+  "required_findings": [],
+  "summary": "The review establishes that initial preparation reuse preserves the retained fitting quantities and exact parameter Jacobians, while removing 84 repeated compilations. It rebuilds at an affine mismatch and preserves same-point cold fallback and failed-trial handling.\n\nSupport is limited to the frozen initial point and eight declared Khudaida states with their temperature actions. The CPU reduction is an observed result under unequal host contention. Physical validation, a completed calibration, global phase stability, full-fit speedup, and qualification of density action-batch or public scalar preparation remain unestablished.\n\nBoth capability and result verdicts remain **Supported**, with no required defect identified. The review is bound to `7b02aa8a` against `5c65bcb4`; numerical checks were assessed from retained evidence and verified logs, without heavy replays. Rendered content was checked directly; graphical browser layout remains unverified."
+}

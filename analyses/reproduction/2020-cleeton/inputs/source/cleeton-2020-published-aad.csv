@@ -1,0 +1,6 @@
+observable,value_percent,source_locator,interpretation
+co2_partial_pressure,57.18,Abstract and Figure 16,reported competitive Dicko subset AAD
+h2s_partial_pressure,79.32,Abstract and Figure 16,reported competitive Dicko subset AAD
+co2_total_database,65.47,Figure 9,reported broad Rho database AAD
+co2_low_mdea,20.26,Figure 7,Kuranov 0.189 mass-fraction subset AAD
+h2s_low_mdea,18.61,Figure 12,Kuranov 0.189 mass-fraction subset AAD

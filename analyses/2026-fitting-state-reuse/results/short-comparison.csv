@@ -1,0 +1,13 @@
+quantity,unit,parameter,max_absolute_difference
+PartialPressure,Pa,value,5.32018873400375e-13
+PartialPressure,Pa,pair/carbamate-anion/water/k_ij,2.3234747459355276e-12
+PartialPressure,Pa,pair/protonated-monoethanolamine/water/k_ij,1.659117287999834e-12
+PartialPressure,Pa,pair/bicarbonate-anion/water/k_ij,2.5673907444456745e-15
+PartialPressure,Pa,pair/carbamate-anion/protonated-monoethanolamine/k_ij,3.97015753605956e-13
+PartialPressure,Pa/K,pair/protonated-monoethanolamine/water/k_ij/reciprocal_temperature_slope,0.0
+PhaseMoleFraction,1,value,3.8163916471489756e-17
+PhaseMoleFraction,1,pair/carbamate-anion/water/k_ij,1.3552527156068805e-16
+PhaseMoleFraction,1,pair/protonated-monoethanolamine/water/k_ij,7.470152968425126e-17
+PhaseMoleFraction,1,pair/bicarbonate-anion/water/k_ij,2.1277467635028025e-17
+PhaseMoleFraction,1,pair/carbamate-anion/protonated-monoethanolamine/k_ij,7.406456090791602e-18
+PhaseMoleFraction,1/K,pair/protonated-monoethanolamine/water/k_ij/reciprocal_temperature_slope,1.6331854014246978e-20

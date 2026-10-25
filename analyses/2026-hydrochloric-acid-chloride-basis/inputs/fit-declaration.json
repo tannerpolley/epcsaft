@@ -1,0 +1,173 @@
+{
+  "base_commit": "37f54f8d5",
+  "base_packet": "figiel-2025-chloride-mixture-refit/2",
+  "design_sha256": "8273999eec8503aa9f17269a0e42d916aba3cebe17a9eeaa67aac1c990db9fa4",
+  "temperature_K": 298.15,
+  "pressure_Pa": 100000,
+  "maximum_iterations": 300,
+  "maximum_seconds": 90,
+  "starts": [
+    [
+      2.274,
+      2.274,
+      2.274,
+      0,
+      0.7
+    ],
+    [
+      4,
+      4,
+      4,
+      -3,
+      -5
+    ],
+    [
+      8,
+      8,
+      8,
+      0,
+      -5
+    ],
+    [
+      2.274,
+      16,
+      2,
+      -3,
+      0.7
+    ],
+    [
+      4,
+      16,
+      1.5,
+      0,
+      0.7
+    ],
+    [
+      8,
+      4,
+      12,
+      -3,
+      -5
+    ],
+    [
+      2.274,
+      4,
+      0,
+      0.7
+    ],
+    [
+      4,
+      16,
+      -3,
+      -5
+    ],
+    [
+      8,
+      8,
+      -3,
+      0.7
+    ],
+    [
+      2.274,
+      4,
+      0
+    ],
+    [
+      4,
+      16,
+      -3
+    ],
+    [
+      4,
+      8
+    ]
+  ],
+  "allocation": [
+    6,
+    3,
+    2,
+    1
+  ],
+  "bounds": [
+    [
+      0.5,
+      30
+    ],
+    [
+      0.5,
+      30
+    ],
+    [
+      0.5,
+      30
+    ],
+    [
+      -50,
+      1
+    ],
+    [
+      -50,
+      1
+    ]
+  ],
+  "identification": {
+    "rank_ratio_strict": 1e-14,
+    "bound_distance_strict": 1e-06,
+    "max_correlation": 0.99,
+    "max_resolution": 0.001,
+    "cost_floor": 1e-10,
+    "cost_fraction": 0.0001,
+    "max_endpoint_distance": 0.001
+  },
+  "weights": "Four equal-total-weight groups: phi/gamma each at m<=3 or 3<m<=7; phi difference scale .01; gamma log ratio with ln(1.02) discrepancy scale",
+  "evidence": "Hamer-Wu evaluated reference training; mixtures reserved; 2020 adjusted water reference-dependent; all accuracy targets model discrepancy",
+  "coverage": "No measurement-backed claim at I=15 mol/kg or MgCl2=4.7 mol/kg",
+  "input_hashes": {
+    "candidate.json": "bdf8038c1b16b2a68f11a51623fd23af739a851059d5d42855077a822531f2ad",
+    "el-guendouzi2001-hcl.csv": "6f918fedfbf353474f23daff27dfbcaa2111dee7cf408ed7dde541c52ab2e34c",
+    "hamer-wu-hcl.csv": "04371336304c9ddc5625c314adcaee453bcce72c859be651999f831ef62233c2",
+    "jiang1996-hcl-li.csv": "7906e1604cd646f2907122d4a0050ac60edcee949e04f3dee0f38db7051aa934",
+    "khoo1977-hcl-ca.csv": "19dbb71c6a3e860150b0487f1f8d77d007373805bf2ccacc9cd3ce4c5e2ad938",
+    "khoo1977-hcl-mg.csv": "07966ab4640a68d558ea20d5f5ed86dd4b4a2a635d54db80f684cff19cdc3dd2",
+    "messnaoui2020-hcl.csv": "997d571aa6a39eb424da686d2eb27fc864061a633f5ad3aaf28a7313776cc659",
+    "roy1980-hcl-mg.csv": "f2468d1399d26b71a245707077899067a566edc0864d5d15d513790be2836f18",
+    "source-identities.json": "18aa21af199d49715386e62fc6640d69d8853f8fffb4a7a6f3e58d3bdbe6b06e"
+  },
+  "native_library": {
+    "path": "build/engine-meson/shared/libepcsaft_native.so",
+    "sha256": "21b1cdf6c5fe45500a1e9f9d8a9bb594d40f810e74815442b80649970dd949dc"
+  },
+  "native_source_sha256": {
+    "engine/native/properties/helmholtz_model.hpp": "bf6ba5c5edce7cbd5af7663ab06f30c76f7448a0899deb4c919e4967c5b64396",
+    "engine/native/properties/infinite_dilution_reference.cpp": "141b86db3c5566f324a67a98e35143ef3124ad4863f88965932e1a1baadf9daf",
+    "engine/native/regression/fit.cpp": "fcf9c6615350626e238567d821b5272f2bba65231dd0bd04725f46d9d9046483"
+  },
+  "source_counts": {
+    "Hamer-Wu-training": 30,
+    "Hamer-Wu-report-only": 9,
+    "Messnaoui-water": 14,
+    "El-Guendouzi-water": 14,
+    "Roy-mixtures": 47,
+    "Khoo-Mg-mixtures": 25,
+    "Jiang-Li-mixtures": 36,
+    "Khoo-Ca-mixtures": 25
+  },
+  "accuracy_targets": {
+    "binary_phi_RMS_max": [
+      0.01,
+      0.03
+    ],
+    "binary_gamma_AARD_max_percent": [
+      2,
+      5
+    ],
+    "adjusted_aw_RMS_max": [
+      0.003,
+      0.006
+    ],
+    "mixture_gamma_AARD_max_percent": [
+      5,
+      10
+    ]
+  }
+}

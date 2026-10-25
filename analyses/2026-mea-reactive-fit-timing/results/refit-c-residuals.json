@@ -1,0 +1,70 @@
+{
+ "wheel_sha256": "684b213ac8065fbe35950ca8998a33a5c05264fad5b174560110f112d60ef8ba",
+ "mea_commit": "e522dc4a9f7a59567ab94f21541d37a3e692a9ab",
+ "record_sha256": "868a501831b87e95dedf18ce40e9e7ac949f7c6a4aaf137f717cc493ecfcb7be",
+ "state_packet_sha256": "86f60041b28ec4493729b04c0238f44e86fba4becf33d6ddf47d86b7efb82448",
+ "omp_num_threads": "1",
+ "status": "converged",
+ "termination_message": "Function tolerance reached. |cost_change|/cost: 2.292767e-13 <= 1.000000e-12",
+ "residuals": 180,
+ "states": 104,
+ "initial_cost": 123.96367170906969,
+ "final_cost": 121.35928095161994,
+ "scipy_cost": 121.3594069212039,
+ "scipy_residuals": 180,
+ "iterations": 6,
+ "iteration_seconds": [
+  1.7881393432617188e-05,
+  47.08362603187561,
+  50.79938101768494,
+  48.00675296783447,
+  47.328535079956055,
+  46.752159118652344
+ ],
+ "iteration_costs": [
+  123.96367170906956,
+  123.74910553629611,
+  121.35975636969025,
+  121.35928174221957,
+  121.35928095286963,
+  121.35928095161988
+ ],
+ "residual_evaluations": 6,
+ "jacobian_evaluations": 6,
+ "trial_failures": [],
+ "parameters": [
+  "pair/carbamate-anion/water/k_ij",
+  "pair/protonated-monoethanolamine/water/k_ij",
+  "pair/bicarbonate-anion/water/k_ij",
+  "pair/carbamate-anion/protonated-monoethanolamine/k_ij",
+  "pair/protonated-monoethanolamine/water/k_ij/reciprocal_temperature_slope"
+ ],
+ "start": [
+  0.07479905253186196,
+  -0.23291996583604,
+  0.2956636466641338,
+  -0.29999997749818363,
+  -155.60622556830128
+ ],
+ "fitted": [
+  0.10691185823802359,
+  -0.24168149082018203,
+  0.3,
+  -0.29999997749818363,
+  -141.01867551298562
+ ],
+ "scipy_fitted": [
+  0.10690573365572742,
+  -0.24144185955143257,
+  0.29999999872028654,
+  -0.29999999999996835,
+  -140.4728251818213
+ ],
+ "active_bounds": [
+  2,
+  3
+ ],
+ "covariance_status": "active_bound",
+ "setup_s": 28.400856653999654,
+ "fit_s": 298.41247873799875
+}

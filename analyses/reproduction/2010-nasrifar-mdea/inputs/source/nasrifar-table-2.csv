@@ -1,0 +1,6 @@
+component,association_scheme,temperature_range_K,m,sigma_A,epsilon_over_k_K,association_energy_over_k_K,association_volume,AAD_psat_percent,source_locator,role,zotero_parent_key,pdf_attachment_key,verification,AAD_saturated_liquid_quantity_percent,saturated_liquid_AAD_quantity
+MDEA,3B,340-620,7.2069,2.8264,219.94,3187.2,0.0135,2.28,Table 2; PDF p.4; printed p.7623; MDEA row,paper-input,CBRPAXQG,3G4FGGY4,PDF image checked against text layer and Markdown; values retained as printed,0.65,density
+water,2B,273-647,1.0656,3.0007,366.51,2500.7,0.034868,1.88,Table 2; PDF p.4; printed p.7623; water row,paper-input,CBRPAXQG,3G4FGGY4,PDF image checked against text layer and Markdown; values retained as printed,6.83,volume
+CO2,none,216-304,2.0729,2.7852,169.21,,,2.78,Table 2; PDF p.4; printed p.7623; CO2 row,paper-input,CBRPAXQG,3G4FGGY4,PDF image checked against text layer and Markdown; values retained as printed,2.73,volume
+H2S,none,187-362,1.6686,3.0349,229.00,,,0.39,Table 2; PDF p.4; printed p.7623; H2S row,paper-input,CBRPAXQG,3G4FGGY4,PDF image checked against text layer and Markdown; values retained as printed,0.59,density
+methane,none,97-300,1.0000,3.7039,150.03,,,0.36,Table 2; PDF p.4; printed p.7623; methane row,paper-input,CBRPAXQG,3G4FGGY4,PDF image checked against text layer and Markdown; values retained as printed,0.67,volume

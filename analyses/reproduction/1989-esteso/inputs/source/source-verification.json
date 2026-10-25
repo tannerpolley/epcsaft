@@ -1,0 +1,109 @@
+{
+  "main_commit": "fb2e2a8a583356647a6e81de46410e5b07d5e142",
+  "paper": {
+    "zotero_key": "ZU5SKCH5",
+    "attachment_key": "NPM7L783",
+    "doi": "10.1007/BF00652989",
+    "pdf_sha256": "c4d219d899340c750f5f4231199ecdf3cd1d9c876419ac2b6968aa14b13232bd"
+  },
+  "checks": {
+    "table_I_unique_numeric_composition_molality_pairs": 123,
+    "legacy_rows_matching_new_table_I": 92,
+    "table_I_counts": {
+      "20": 28,
+      "40": 25,
+      "60": 24,
+      "70": 17,
+      "80": 15,
+      "90": 14
+    }
+  },
+  "tables": {
+    "esteso-1989-reference-coefficients.csv": {
+      "rows": 6,
+      "sha256": "f81774a2e21e0df47627fffa38f74cecf84339520b464ccff15632e0963895e5"
+    },
+    "esteso-1989-table-I.csv": {
+      "rows": 123,
+      "sha256": "345c2a5b5c9b84ca369ea28afcf86dbbc3db4d8e41b9ebe1329c6ece5d81e066"
+    },
+    "esteso-1989-table-II.csv": {
+      "rows": 6,
+      "sha256": "a0bd8e62e708e3d806237156a115957a375b6dda875234ecba54eda94beadeac"
+    },
+    "esteso-1989-table-III.csv": {
+      "rows": 8,
+      "sha256": "b83bc44c7adf87cc29cc95ce9075765573ad914f389d67c03cb782e5cedab0e7"
+    },
+    "esteso-1989-table-IV.csv": {
+      "rows": 10,
+      "sha256": "80f4efe2c4b6ea38d964f9d8e735ef863876de6e995be2ca51318b1571f9990a"
+    },
+    "esteso-1989-table-V.csv": {
+      "rows": 8,
+      "sha256": "cb04fdfc72b43645d737ed0b193f42140078591c330172bb2b5a6bc04623bff4"
+    }
+  },
+  "visual_samples": [
+    {
+      "locator": "Table I, p.281, 60 wt%, m=0.5000",
+      "values": {
+        "delta_E_mV": "-66.8",
+        "gamma_pm_m": "0.415"
+      }
+    },
+    {
+      "locator": "Table I, p.281, 90 wt%, m=0.01005",
+      "values": {
+        "delta_E_mV": "0.0",
+        "gamma_pm_m": "0.609"
+      }
+    },
+    {
+      "locator": "Table II, p.282, 60 wt%",
+      "values": {
+        "relative_permittivity": "43.4",
+        "density_g_cm3": "0.88699",
+        "A": "1.168",
+        "B": "0.4164",
+        "A_phi": "0.8962"
+      }
+    },
+    {
+      "locator": "Table III, p.283, 70 wt%, upper m=0.5",
+      "values": {
+        "c": "0.130",
+        "a_angstrom": "3.3",
+        "gamma_pm_reference": "0.5037",
+        "sigma_mV": "0.34"
+      }
+    },
+    {
+      "locator": "Table IV, p.284, 80 wt%",
+      "values": {
+        "gamma_pm_reference": "0.4115",
+        "beta_0": "21.90",
+        "beta_1": "-27.95",
+        "C_phi": "-60.80",
+        "sigma_mV": "0.31"
+      }
+    },
+    {
+      "locator": "Table V, p.286, 90 wt%, upper m=0.04",
+      "values": {
+        "K_A": "45.9",
+        "K_A_uncertainty": "0.6",
+        "gamma_pm_reference": "0.6096",
+        "b_prime": "9.876",
+        "sigma_mV": "0.25"
+      }
+    }
+  ],
+  "limitations": [
+    "Visual samples plus PDF text inspection, not an independent second transcription of every value.",
+    "Section 3.4 p.285 gives reference gamma 0.565 at 60 wt%; Table I reference row p.281 prints 0.566; both retained.",
+    "Source observations are not Engine results."
+  ],
+  "final_main_readback": "759c95d80c25557c176d21ca895ba5e3b288dc3b",
+  "readback_notes": "PR 773 merged during investigation; no changes to Engine native/Python source or selected Figiel packet from the initially inspected main commit."
+}

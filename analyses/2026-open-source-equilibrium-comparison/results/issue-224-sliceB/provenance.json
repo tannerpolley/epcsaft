@@ -1,0 +1,99 @@
+{
+  "issue": "https://github.com/tannerpolley/ePC-SAFT/issues/224",
+  "slice": "B: critical-equation candidates and phase envelopes",
+  "base_commit": "1fa7ec18",
+  "wheel_sha256": "be54d59d93a3ed0dd6be530d33448bf9c3908614b0be92c0dea7df00e44e4fbd",
+  "main_wheel_sha256": "7181e0a0123f9e574bc2d316fe8f4f6d89a85667168b1f4df4ad133fd5227151",
+  "references": {
+    "FeOs": {
+      "version": "0.10.1",
+      "calls": [
+        "State.critical_point(tol=1e-12, max_iter=200)",
+        "PhaseEquilibrium.bubble_point/dew_point(tol_inner=tol_outer=1e-11, max_iter_inner=max_iter_outer=1000, tp_init=Engine P, incipient composition seed=Engine)"
+      ],
+      "note": "the 130 K bubble point does not reach tol 1e-12, so E2 uses 1e-11 for every point; Engine P and composition only seed the branch"
+    },
+    "teqp": {
+      "version": "0.23.2",
+      "calls": [
+        "solve_pure_critical(375, 5000)",
+        "trace_critical_arclength_binary from the methane critical point"
+      ],
+      "trace_options": {
+        "polish": true,
+        "polish_exception_on_fail": true,
+        "verbosity": 0,
+        "init_dt": 10.0,
+        "max_dt": 1000.0
+      },
+      "pressure": "rho R T + get_pr(T, rhovec), R from get_R"
+    },
+    "environment": "pinned pip environment build/issue-224/ref-probe/env (untracked); Engine R = 8.31446261815324 J/(mol K), as teqp get_R"
+  },
+  "inputs": {
+    "packets": [
+      "gross-2001-propane/3",
+      "gross-2001-methane-ethane/3 (k_ij = 0)"
+    ],
+    "declarations": "reference/reference-inputs.json",
+    "S5": "teqp has no fixed-composition binary critical solve: the Engine cell is solved at teqp's own locus compositions nearest 0.5 and 0.27"
+  },
+  "criteria": {
+    "C1": 1e-08,
+    "C2": 1e-09,
+    "C3": 1e-08,
+    "C3_first_action": 1e-06,
+    "C4": 1e-05,
+    "Jacobian": 1e-06,
+    "Hessian": 1e-05,
+    "E1": 1e-08,
+    "E2": 1e-07,
+    "E3": 1e-08,
+    "row": 1e-11
+  },
+  "commands": [
+    "tools/heavy bash tools/check-all.sh",
+    "tools/heavy bash tools/check-affected.sh origin/main",
+    "<prepared-build>/equilibrium_checks critical-envelope; caloric-specification",
+    "<prepared-build>/properties_checks native.properties.e5-ladder",
+    "critical_comparison <results>/reference <reference python>; caloric_comparison <results> <log> retain",
+    "tools/heavy tools/time-key-solves <main-wheel> <candidate-wheel> --pairs 3"
+  ],
+  "comparison_compile": "slice A route: prepared boundary_checks compile/link commands with the analysis source substituted and engine/tests/native on the include path; driver at O0 against the O3 native archive of this tree",
+  "qualification_log_sha256": "2e8fdbd4bad6c1bf35af6508c140779ad78a6926d118c2eebe54d71f40837555",
+  "key_solves": {
+    "result": "work identical: ionic LLE 16/47/17 cold, 7/11/8 accepted; MEA flash 43/57/44 cold, 17/22/18 accepted; Khudaida 66/93/74; unloaded MEA 13/19/14; state differences 0",
+    "summary_sha256": "e72f650d1f65f668928d475c27e586d3fa843952f16ca9df6960daac558594b8"
+  },
+  "limits": [
+    "Numerical verification and implementation agreement only; no physical validation.",
+    "Critical results are critical-equation candidates, not stability certificates; first actions only.",
+    "Neutral nonreactive vapor-liquid envelopes; no liquid-liquid, reactive, charged, three-phase or disconnected envelopes.",
+    "Hermite seeds show no consistent fourth-order convergence; their successive differences are retained without an order claim.",
+    "Independent delivered review and manuscript promotion pending."
+  ],
+  "retained_csv_sha256": {
+    "key-solves-fix-round/work.csv": "b112f4a6a5f99bb020661b6c831abfc1216e810b4992f7745b30bb916142aa2e",
+    "key-solves/work.csv": "e9d8dbc72c2e9841f87df633b6f3bee08fe50f2ee095ce9c8b3d00b34de631a2",
+    "native-comparisons.csv": "0c34418a8398ffe43424f1cecdf08c41cb14033d0d4c47e4e5fc59ad08b06b32",
+    "qualification.csv": "ee3e596a09d1231639af9178533f969b67729a16d560c2ca9404ffcf5c5427e7",
+    "reference/comparisons.csv": "99d25ead4ee690076badf0de86a27b62be8990b1727e70f5281a715089aec27b",
+    "reference/critical-binary.csv": "16f935393981c8f955a68279bba90ea960ec7af2d4cc9a8483ca7a291f8ff14d",
+    "reference/critical-pure.csv": "b169c57b22c7b29d621b8ee0719b9af2f6cd7531a0c13fb13b8b0ccea070ce0c",
+    "reference/envelope-points.csv": "afcbcf549c54ae335e70cb6ec6ff45a4af260cf600d50c167b7c3a1bfc48c5da"
+  },
+  "fix_round": {
+    "base_commit": "50aac8ac",
+    "change": "critical-cell isobaric heat capacities refused only on a one-species support; C3 adds residual and total cp against HelmholtzModel::state; ladder rows retain exact and reference values at the best step and the coordinate scale; Hermite rows drop the conditional estimate",
+    "wheel_sha256": "d345fd418f53d15389761a9a971779ec9f97e8a5a8dde13daa52909158f8d014",
+    "qualification_log_sha256": "47c57ce352f2637c54f7436ab1d22f16ba036543dbff44707fa0d2f126ea5792",
+    "retained_row_check": "8415 earlier rows: model, reference, error, criterion and verdict unchanged; 4 rows added (C3 cp), 8419 total",
+    "key_solves": {
+      "directory": "key-solves-fix-round",
+      "pairs": 1,
+      "result": "work identical: ionic LLE 16/47/17 cold, 7/11/8 accepted; MEA flash 43/57/44 cold, 17/22/18 accepted; Khudaida 66/93/74; unloaded MEA 13/19/14; state differences 0; one shared-host pair supports no wall-time claim",
+      "summary_sha256": "468e3087c017f08e03e0185b7586db05b06f5d05e35d5a66a13a67c696806593"
+    }
+  },
+  "key_solve_provenance_note": "Per-pair, start and state rows of both key-solve runs are retained untracked under build/issue-224/key-solves-provenance/; summary.json and work.csv stay here."
+}

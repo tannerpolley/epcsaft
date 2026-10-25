@@ -1,0 +1,11 @@
+figure_id,series,source_role,system,P_bar,T_C,T_K,x_1_propanol,y_1_propanol,source_kind,source_reference,source_x_px,source_y_px,uncertainty_T_C,uncertainty_composition,pixel_basis
+figure-03,pressure_series_high,bubble_curve,1-propanol/ethylbenzene,1.013,136.5,409.65,0.00000,,calibrated_curve_trace,Gross2002 Figure3 solid PC-SAFT curve center,76.000,24.000,0.6,0.012,historical_retained_crop
+figure-03,pressure_series_high,bubble_curve,1-propanol/ethylbenzene,1.013,97.9778830963665,371.1278830963665,0.72000,,calibrated_curve_trace,Gross 2002 Figure 3 solid PC-SAFT curve; rechecked native PDF raster,1462,693,0.6,0.012,native_pdf_raster
+figure-03,pressure_series_high,bubble_curve,1-propanol/ethylbenzene,1.013,97.2,370.35,1.00000,,calibrated_curve_trace,Gross2002 Figure3 solid PC-SAFT curve center,791.000,298.000,0.6,0.012,historical_retained_crop
+figure-03,pressure_series_high,dew_curve,1-propanol/ethylbenzene,1.013,136.5,409.65,,0.00000,calibrated_curve_trace,Gross2002 Figure3 solid PC-SAFT curve center,76.000,24.000,0.6,0.012,historical_retained_crop
+figure-03,pressure_series_high,dew_curve,1-propanol/ethylbenzene,1.013,97.2,370.35,,1.00000,calibrated_curve_trace,Gross2002 Figure3 solid PC-SAFT curve center,791.000,298.000,0.6,0.012,historical_retained_crop
+figure-03,pressure_series_low,bubble_curve,1-propanol/ethylbenzene,0.400,104.5,377.65,0.00000,,calibrated_curve_trace,Gross2002 Figure3 solid PC-SAFT curve center,76.000,247.000,0.6,0.012,historical_retained_crop
+figure-03,pressure_series_low,bubble_curve,1-propanol/ethylbenzene,0.400,74.15481832543443,347.30481832543444,0.72000,,calibrated_curve_trace,Gross 2002 Figure 3 solid PC-SAFT curve; rechecked native PDF raster,1462,1070,0.6,0.012,native_pdf_raster
+figure-03,pressure_series_low,bubble_curve,1-propanol/ethylbenzene,0.400,74.5,347.65,1.00000,,calibrated_curve_trace,Gross2002 Figure3 solid PC-SAFT curve center,791.000,456.000,0.6,0.012,historical_retained_crop
+figure-03,pressure_series_low,dew_curve,1-propanol/ethylbenzene,0.400,104.5,377.65,,0.00000,calibrated_curve_trace,Gross2002 Figure3 solid PC-SAFT curve center,76.000,247.000,0.6,0.012,historical_retained_crop
+figure-03,pressure_series_low,dew_curve,1-propanol/ethylbenzene,0.400,74.5,347.65,,1.00000,calibrated_curve_trace,Gross2002 Figure3 solid PC-SAFT curve center,791.000,456.000,0.6,0.012,historical_retained_crop

@@ -1,0 +1,31 @@
+{
+  "base": "29fc98dd503527a4c2aef8b4a91017d76c0abdee",
+  "engine_runtime_changed": false,
+  "tolerances_changed": false,
+  "unchanged_runs": [
+    {
+      "producer": "held",
+      "command": [
+        ".venv/bin/python",
+        "-B",
+        "analyses/2026-held-2014-chlorides/scripts/run.py"
+      ],
+      "exit": 1
+    }
+  ],
+  "qualification_base": "8ffd627f0f7e4e68fdf9db634773ff00e058d85e",
+  "producer_head": "388ed38b12d618e711c64a3c05c7f88653f84d6a",
+  "final_runs": [
+    {
+      "producer": "held",
+      "command": [
+        ".venv/bin/python",
+        "-B",
+        "analyses/2026-held-2014-chlorides/scripts/run.py"
+      ],
+      "exit": 0,
+      "seconds": 0.3642881279993162,
+      "producer_sha256": "afe9e4ce82472da5a903d9f16a00a5b8f16ac6007e6d7b2ab8c4855660e1fb71"
+    }
+  ]
+}

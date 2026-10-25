@@ -1,0 +1,15 @@
+{
+  "source": "/tmp/223-redeclaration-probe.json",
+  "source_sha256": "754b285044a94b1f352e1f83bbd6435ad29f3471396a8506a4631ce427891456",
+  "evidence": "lead disposable accepted-state transport probe",
+  "wheel_sha256": "411c8eff6af29de60974a34e5aa17d2537f019dc3f42f132b84160fcf5e8fbad",
+  "conditions": {
+    "temperature_K": 293.15,
+    "pressure_Pa": 100000.0,
+    "feed_mol": {
+      "water": 0.6,
+      "isobutanol": 0.4
+    }
+  },
+  "limit": "Diagnostic transport of the accepted discovery state; not qualification of the corrected native returned declaration."
+}

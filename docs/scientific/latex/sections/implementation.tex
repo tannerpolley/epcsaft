@@ -1,0 +1,62 @@
+\section{Implementation, practical use and testing practice}
+\label{sec:implementation}
+% P:implementation-01
+Every iterative calculation runs natively in C++: association and density closure, equilibrium solves, phase searches, continuation and parameter fitting.
+The Python interface declares inputs and reads results; it supplies no callback to a native iteration and performs no thermodynamic arithmetic.
+A caller constructs a model once from a parameter record.
+Construction validates the species, site topology and model selection, admits the records of Section~\ref{sec:references}, and prepares state-independent quantities; support and thermal intervals select reusable recordings of the shared energy equations.
+A state request then gives temperature, composition and exactly one of density or pressure; a pressure request resolves the declared density branch once and reuses that state for every property and derivative asked of it.
+An equilibrium request is a declaration of phases, supports, pinned amounts, free intensive variables, feed and reactions, compiled once into the rows of Section~\ref{sec:equilibrium}.
+Figure~\ref{fig:workflow} shows how these requests share one calculation.
+
+% P:implementation-02
+Listing~\ref{lst:example} declares a methane/ethane mixture with the parameters of Gross and Sadowski~\citep{Gross2001}, solves a bubble point at 200~K and requests the exact first-order response of the bubble pressure to temperature.
+The same request with feed or parameter directions, or with phase compositions as observables, returns the other columns of $\mathbf{y}_\theta$ for that state.
+
+\noindent\begin{minipage}{\linewidth}
+\begin{lstlisting}[caption={A bubble point and its exact temperature derivative.},label={lst:example}]
+import epcsaft
+from epcsaft import equilibrium as eq
+
+record = "data/packets/gross-2001-methane-ethane/3/parameters/parameters.json"
+mix = epcsaft.Mixture(epcsaft.Parameters.from_json(record, components=["methane", "ethane"]))
+feed = eq.MoleFractions({"methane": 0.3, "ethane": 0.7})
+problem = eq.bubble_point(liquid=eq.Phase("L", kind="liquid"), T=200.0, feed=feed)
+bubble = eq.solve_equilibrium(mix, problem)          # pressure is free
+print(bubble.pressure, bubble.phase_mole_fractions(1))   # Pa; incipient vapor
+
+dT = eq.SolvedStateActionDirection(1.0, 0.0, [0.0, 0.0], [ ])  # unit temperature direction
+P = eq.SolvedStateObservable(eq.SolvedStateObservableKind.Pressure)
+batch = eq.solved_state_actions(eq.compile_problem(mix, problem), bubble,
+                                eq.SolvedStateActionRequest([P], [dT]))
+print(batch.results[0].action, batch.results[0].status)       # Pa/K
+\end{lstlisting}
+\end{minipage}
+
+% P:implementation-03
+Equation-oriented process models reach the same calculation through a compiled library that implements external functions of the AMPL Solver Library.
+A model written in Pyomo~\citep{hartPyomoModelingSolving2011}, for example within the IDAES process modeling framework~\citep{leeIDAESProcessModeling2021}, calls these functions and receives values with exact first and second derivatives.
+The functions verified here return the pressure of a neutral fluid with its gradient and Hessian, and the phase compositions and amounts of a declared fixed-temperature, fixed-pressure, nonreactive two-liquid electrolyte split with their first and second feed derivatives.
+It solves each call with the same native driver and adds no phase search.
+
+% P:implementation-04
+The native code depends on CppAD~20250000.3~\citep{bellCppADPackageAlgorithmic2025} for algorithmic differentiation, Ipopt~3.11.9~\citep{Wachter2006} with the MUMPS sparse linear solver~\citep{amestoyFullyAsynchronousMultifrontal2001,amestoyPerformanceScalabilityBlock2019} for equilibrium and minimax problems, Ceres~2.2~\citep{agarwalCeresSolver2023} for least squares, Eigen~3.4~\citep{guennebaudEigenV32010} for dense linear algebra, and HiGHS~1.15.1~\citep{huangfuParallelizingDualRevised2018} for the conserved-inventory linear programs.
+The Python interface is built with nanobind~2.12.0~\citep{jakobNanobindTinyEfficient2022}.
+
+
+\subsection{Testing and verification practice}
+% P:implementation-05
+Checks follow the dependency of a request: contribution equations, implicit closures, equilibrium balances and phase identity, derivative actions, then observation composition and process transport.
+This helps distinguish an accurate property evaluation from a wrong root or an inaccurate physical model.
+
+
+% P:implementation-06
+The comparisons include 704 branch-specific density requests, 36 pressure-specified caloric actions and 3\,167 electrolyte observation columns, with reference values, identities, independent codes and refinement chosen by quantity.
+Table~\ref{tab:verification} states representative numerical bounds.
+Counts describe checked requests or scalar comparisons, not independent experiments.
+
+
+% P:implementation-07
+Practical use starts with a parameter record and specification, followed by inspection of achieved residuals, unavailable causes and source domains.
+For external functions, the process model owns its balances, constraints and optimization, while the package owns the supplied properties or declared equilibrium and their derivatives.
+An external flash may therefore assemble its own equilibrium equations from the package's properties, as illustrated in Section~\ref{sec:applications}.

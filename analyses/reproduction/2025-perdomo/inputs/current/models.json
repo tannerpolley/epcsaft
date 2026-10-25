@@ -1,0 +1,27 @@
+{
+  "nacl-ion-suppression": {
+    "path": "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json",
+    "components": [
+      "water",
+      "sodium-cation",
+      "chloride-anion"
+    ]
+  },
+  "nacl-density-temperature": {
+    "path": "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json",
+    "components": [
+      "water",
+      "sodium-cation",
+      "chloride-anion"
+    ]
+  },
+  "licl-conditional": {
+    "path": "analyses/reproduction/2025-perdomo/inputs/current/licl-conditional.json",
+    "components": [
+      "water",
+      "1-butanol",
+      "lithium-cation",
+      "chloride-anion"
+    ]
+  }
+}

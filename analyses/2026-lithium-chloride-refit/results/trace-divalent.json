@@ -1,0 +1,19 @@
+{
+  "evaluated_at_utc": "2026-10-19T20:40:22.146693+00:00",
+  "selected_start": "grid-13",
+  "engine_commit": "afee797ed2a1d4165e638112e03298a2fc790619",
+  "engine_module": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-640-refit-li-and-k-jointly-with-the-8/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so",
+  "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-640-refit-li-and-k-jointly-with-the-8/.venv/bin/python",
+  "temperature_K": 298.15,
+  "pressure_Pa": 100000.0,
+  "base_packet": "figiel-2025-chloride-mixture-refit/1",
+  "meaning": "Post-fit report-only supplement, design \u00a75 and readiness r1 C6; no limits or scores",
+  "ionic_strength_basis": "Background salt only; total ionic strength also includes trace LiCl",
+  "inputs_sha256": {
+    "analyses/2026-lithium-chloride-refit/inputs/fit-declaration.json": "7a51ef0526a89635daece010d95f0f13cf20e1542fb0e1b20cfe4147bbe170ca",
+    "analyses/2026-lithium-chloride-refit/results/fit.json": "7c7f956419a7ddef36903c0131c3960f512fc720f060f623da2ae1187f976f5b",
+    "analyses/2026-lithium-chloride-refit/results/evaluation.json": "5613ca9c0a897361993f77179ead9aff3c0719594c44037ede310e538e9153fd",
+    "analyses/2026-lithium-chloride-refit/results/trace-divalent-song.csv": "96019da620cc5fd59df18c3f33eef1f1c1f57d7c765b576d68a485c5767835b8",
+    "data/packets/figiel-2025-chloride-mixture-refit/1/parameters/parameters.json": "1c27b1b14b17f59c931444574c41ffb71f4977e423ca7960bd0263b6afc1cc33"
+  }
+}

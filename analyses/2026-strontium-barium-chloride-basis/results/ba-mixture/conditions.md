@@ -1,0 +1,1 @@
+Conditions: **298.15 K**, **100000 Pa**; **36 Goldberg–Nuttall Table 26 training states plus 48 Robinson–Bower mixtures; 120 scalar observations**. The complete declared grid is shown below; fitting and evaluated-binary scoring were not reached.

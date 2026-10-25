@@ -1,0 +1,7 @@
+stage,start,selected,comparable,J_min,delta_J,rank_ratio,max_correlation,max_resolution,max_endpoint_distance,passes,reason
+5,1,0,0,inf,inf,0,0,0,0,0,incomplete_start
+5,2,0,0,inf,inf,0,0,0,0,0,incomplete_start
+5,3,0,0,inf,inf,0,0,0,0,0,incomplete_start
+5,4,0,0,inf,inf,0,0,0,0,0,incomplete_start
+5,5,0,0,inf,inf,0,0,0,0,0,incomplete_start
+5,6,0,0,inf,inf,0,0,0,0,0,incomplete_start

@@ -1,0 +1,1 @@
+Conditions: **298.15 K**, **100000 Pa**; **39 Goldberg–Nuttall Table 23 training states**. Per-start limits: **1500 iterations**, **450 s**; shared allowance: **4500 iterations**, **1350 s**. Returned/converged starts: **3/3**; total iterations: **15**.

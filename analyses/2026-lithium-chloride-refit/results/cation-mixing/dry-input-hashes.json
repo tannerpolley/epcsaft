@@ -1,0 +1,8 @@
+{
+  "data/packets/figiel-2025-chloride-mixture-refit/2/parameters/parameters.json": "7e32db55f77fe437bc8f918685b6287899e658810ebb575a10e31fcc61e63bf7",
+  "/home/tnnrpolley21/Workspaces/Engineering/Lithium_Extraction/analyses/prototypes/d2ehdtpa_buphen_ms2_prototype/inputs/reactive_parameters.json": "c42b423e833bac7a31d03b4dc2736780aff2a5284a4021ec8f4a79fa1fc8d6d8",
+  "/home/tnnrpolley21/Workspaces/Engineering/Lithium_Extraction/analyses/prototypes/d2ehdtpa_buphen_ms2_prototype/inputs/reaction_basis.json": "4b198084a480cadfb2e226fd10fd209a134010afce45cddfeedfea7d7c5ca69a",
+  "/home/tnnrpolley21/Workspaces/Engineering/Lithium_Extraction/analyses/prototypes/d2ehdtpa_buphen_ms2_prototype/scripts/reaction_coordinates.py": "cbdf3de37b269ee88471e939f101e2813c966875a30a3ef49ba001d33b7152aa",
+  "/home/tnnrpolley21/Workspaces/Engineering/Lithium_Extraction/analyses/prototypes/d2ehdtpa_buphen_ms2_prototype/scripts/conditional_figiel_packet.py": "c52b65b3fbd26e15ea6a8918852995fdd121b54f421d0864c4017c421e581aa3",
+  "/home/tnnrpolley21/Workspaces/Engineering/Lithium_Extraction/analyses/prototypes/d2ehdtpa_buphen_ms2_prototype/scripts/chloride_refit_comparison.py": "b3784eef6b4f4c538b8115b1ddcf3e39331538d549d3d630f476ac8425482431"
+}

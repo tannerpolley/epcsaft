@@ -1,0 +1,75 @@
+{
+  "source_files": {
+    "issue223-gibbs-scaling-diagnosis.py": {
+      "original_path": "/tmp/issue223-gibbs-scaling-diagnosis.py",
+      "sha256": "e4ede6ea931324194d10bda7757da0e3dbe76a436fc3889d31e33868f7d3b7c9",
+      "bytes": 5292,
+      "mtime_ns": 1790936448772409241
+    },
+    "issue223-gibbs-scaling-diagnosis.json": {
+      "original_path": "/tmp/issue223-gibbs-scaling-diagnosis.json",
+      "sha256": "8b7be72854702a152c7dccbdb0b70871f7536d804f898d49f3ede4853401d00b",
+      "bytes": 5578,
+      "mtime_ns": 1790936573523028910
+    },
+    "issue223-gibbs-scaling-diagnosis.log": {
+      "original_path": "/tmp/issue223-gibbs-scaling-diagnosis.log",
+      "sha256": "105af51600ad2f859bd81051af8aab9f2ccf418e5ab9b9e0c6a3ccd965d50fbf",
+      "bytes": 4511,
+      "mtime_ns": 1790936449127493082
+    }
+  },
+  "retained_source": "scripts/diagnostics/gibbs-scaling-ordinal5/issue223-gibbs-scaling-diagnosis.py",
+  "retained_log": "issue223-gibbs-scaling-diagnosis.log",
+  "numerical_rows": "operands.csv",
+  "numerical_rows_sha256": "db1015f29d1c66f92f9cab2f939c2f0fef63df852a03a49d150fbc4c2fb913fe",
+  "numerical_operand_count": 133,
+  "annotations": {
+    "cold_declared/success": false,
+    "cold_declared/message": "phases_coincide: phase distance between Lw and Lo is too small: 0.000000",
+    "cold_declared/solver_status": "SUCCESS",
+    "cold_declared/requested_tolerance_met": true,
+    "cold_declared/coordinates": [],
+    "cold_declared/amounts": [],
+    "cold_declared/mole_fractions": [],
+    "cold_declared/molar_densities": [],
+    "cold_declared/multipliers": [],
+    "cold_declared/convergence/stop": "Stop.converged",
+    "cold_events/0/name": "start_rule",
+    "cold_events/1/name": "free_phases",
+    "cold_events/2/name": "feed_total",
+    "cold_events/3/name": "branch_density",
+    "cold_events/4/name": "branch_density",
+    "cold_events/5/name": "phase_distance",
+    "discovery/success": true,
+    "discovery/message": "converged: residual 7.9725537049336409e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 20 iterations, contraction absent, floor 1.5191395616672873e-10, amplification 0",
+    "discovery/solver_status": "SUCCESS",
+    "discovery/requested_tolerance_met": true,
+    "discovery/convergence/stop": "Stop.converged",
+    "returned_declared/success": false,
+    "returned_declared/message": "phases_coincide: phase distance between L1 and L2 is too small: 0.000000",
+    "returned_declared/solver_status": "SUCCESS",
+    "returned_declared/requested_tolerance_met": true,
+    "returned_declared/coordinates": [],
+    "returned_declared/amounts": [],
+    "returned_declared/mole_fractions": [],
+    "returned_declared/molar_densities": [],
+    "returned_declared/multipliers": [],
+    "returned_declared/convergence/stop": "Stop.converged",
+    "discovery_scaling/meets_prescribed_criteria": true,
+    "limits/0": "Public numerical calls completed before recorder indexed cleared returned-state arrays.",
+    "limits/1": "No margin operands survived that recorder stop.",
+    "limits/2": "No rerun used to reconstruct this JSON."
+  },
+  "wheel_sha256": "8470b49a9283528b83dbbdab46dc62dee0fc70e5e2149f8f218b823dd85812cb",
+  "original_case": "results/qualification-8470b49a/gibbs-scaling.json",
+  "units": "T K, P Pa, extensive G/RT mol, amounts mol, molar densities mol/m3; normalized/scaled residuals dimensionless; gradients/coordinates retain native chart.",
+  "interpretation": "The default 100-mol discovery found the scaled two-liquid split. Both original cold declaration and public returned-declaration reuse reached a coincident stationary point and were correctly rejected. Discovery success does not establish successful caller reuse.",
+  "limits": [
+    "Offline retention only; no Engine imports, numerical calls, source edits or original temporary-file writes.",
+    "The probe recorder indexed cleared returned-state arrays and stopped after printed public results. The recovered JSON identifies this loss; no margin/work/round operands are invented.",
+    "Native addition margin remains unavailable from ordinal5; ROOT ordinal6 owns its capture.",
+    "No physical nonexistence, invalid-input label, changed workflow, broad driver fix, tolerance or start is inferred.",
+    "Only supplied models and exact 100-mol conditions are numerically checked; no physical validation or global certificate."
+  ]
+}

@@ -1,0 +1,28 @@
+% F1: request flow through the one native calculation (schematic, no data).
+\begin{tikzpicture}[
+  font=\footnotesize,
+  box/.style={cse node, text width=30mm, minimum height=13mm},
+  wide/.style={cse node, text width=37mm, minimum height=19mm, fill=cseSky!10},
+  search/.style={cse node, text width=34mm, minimum height=11mm, dashed},
+  flow/.style={cse arrow},
+  node distance=6mm and 7mm]
+  \node[box] (record) {Parameter record\\contributions, $\epsilon_r$ relation};
+  \node[box, below=of record] (thermal) {Thermal records,\\reactions, $K(T)$};
+  \node[wide, right=of $(record.east)!0.5!(thermal.east)$] (energy) {Helmholtz energy, Eq.~(\ref{eq:residual})\\recorded once, derivatives of any order;\\association and density closures};
+  \node[box, right=12mm of energy, yshift=17mm] (state) {State properties\\$P$, $\mu_i$, $h$, $c_p$ and actions};
+  \node[box, right=12mm of energy] (equil) {Declared equilibrium\\$\mathbf{F}(\mathbf{y},\boldsymbol\theta)=\mathbf{0}$\\Newton attempt, then Ipopt};
+  \node[box, below=of equil] (actions) {Solved-state actions\\$\mathbf{F}_\mathbf{y}\,\mathbf{y}_\theta=-\mathbf{F}_\theta$};
+  \node[search, below=10mm of energy, xshift=-8mm] (search) {Explicit phase search:\\tangent plane, discovery;\\on explicit request only};
+  \node[box, right=of state, yshift=-6mm] (fit) {Parameter estimation\\least squares, minimax};
+  \node[box, right=of actions, yshift=6mm] (process) {Process models\\Pyomo/IDAES via ASL};
+  \draw[flow] (record.east) -- (energy.west |- record.east);
+  \draw[flow] (thermal.east) -- (energy.west |- thermal.east);
+  \draw[flow] (energy.east) -- ++(4.5mm,0) |- (state.west);
+  \draw[flow] (energy.east) -- (equil.west);
+  \draw[flow] (equil.south) -- (actions.north);
+  \draw[flow] (state.east) -- (fit.west |- state.east);
+  \draw[flow] (actions.east) -- (process.west |- actions.east);
+  \draw[flow] (actions.north east) -- (fit.south west);
+  \draw[flow, dashed] (search.east) -- (search.east -| {$(energy.east)+(8.5mm,0)$}) |- ([yshift=-4mm]equil.west);
+  \path ([yshift=-3mm]current bounding box.south) node[inner sep=0] {};
+\end{tikzpicture}

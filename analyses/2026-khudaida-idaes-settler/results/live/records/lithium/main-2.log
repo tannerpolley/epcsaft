@@ -1,0 +1,15 @@
+start 2026-10-12T17:58:41-06:00 load 12.41 14.09 11.22
+stage1: accepted in 1.9 s
+stage2: accepted in 3.9 s
+stage3: accepted in 5.6 s
+stage4: accepted in 7.4 s
+stage5: accepted in 9.5 s
+opt1: accepted in 8.1 s
+opt2: accepted in 22.5 s
+opt3: accepted in 27.1 s
+design1: accepted in 1.9 s
+design2: accepted in 3.8 s
+design3: accepted in 16.2 s
+design4: accepted in 20.0 s
+derivatives: accepted in 39.0 s
+end 2026-10-12T18:01:30-06:00 load 7.51 11.25 10.61

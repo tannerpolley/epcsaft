@@ -1,0 +1,1 @@
+The joint Li⁺/Na⁺/Mg²⁺ refit improves the LiCl binary compromise but fails the old chloride qualification, both held-out Li–Mg buckets, divalent-transfer preservation and the high-ionic-strength Li–Na reference residual. No new parameter packet was created. Stage A and stage B results are retained separately below.

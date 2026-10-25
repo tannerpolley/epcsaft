@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# Ninja, one at a time per checkout: imports of the editable install, native tests and
+# wheels share build/engine-meson/shared, and two ninjas in one tree corrupt its logs.
+# tools/build-engine.sh sets NINJA to this file; Meson and meson-python both run $NINJA.
+root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
+# ccache hashes paths under the checkout (the .venv's binding headers) relative to the build
+# directory, so a new worktree reuses another checkout's objects.
+export CCACHE_BASEDIR="$root"
+# Build output goes to stderr, so an import-time rebuild cannot write into a script's stdout.
+# Queries keep stdout: the editable loader's dry run (-n), and Meson's --version and -t compdb.
+case " $* " in *" -n "* | *" -t "* | *" --version "*) ;; *) exec >&2 ;; esac
+# A ninja started under the lock (Meson's regenerate step runs $NINJA --version) is already
+# serialized by its parent; locking again would wait on the parent forever.
+[[ -n "${EPCSAFT_NINJA_LOCKED:-}" ]] && exec ninja "$@"
+export EPCSAFT_NINJA_LOCKED=1
+exec flock "$root/build/engine-meson/ninja.lock" ninja "$@"

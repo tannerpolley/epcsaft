@@ -1,0 +1,362 @@
+---
+title: "Head-to-head comparisons with FeOs and Clapeyron, 2026-10-08"
+format: html
+execute:
+  enabled: true
+  echo: false
+---
+
+## Named-release rerun (#680)
+
+This is **numerical verification** against independent implementations of the
+same equations and the package's central differences. It supplies no physical
+validation. Independent delivered review and owner promotion remain open.
+
+```{python}
+#| output: asis
+import csv as _csv
+import json as _json
+from pathlib import Path as _Path
+_rr = _Path('results/main-8298c602')
+_rp = _json.loads((_rr / 'provenance.json').read_text())
+_rs = _json.loads((_rr / 'summary.json').read_text())
+def _rt(headers, rows):
+    print()
+    print('| ' + ' | '.join(headers) + ' |')
+    print('| ' + ' | '.join('---' for _ in headers) + ' |')
+    for row in rows:
+        print('| ' + ' | '.join(str(v) for v in row) + ' |')
+print('Release: `' + _rp['release'] + '`. Wheel SHA-256: `' + _rp['wheel_sha256'] + '`.')
+_rt(['Case', 'Rows', 'Clapeyron relative difference', 'Previous Clapeyron', 'Central-difference discrepancy', 'Previous central difference', 'FeOs relative difference', 'Previous FeOs'],
+    [[r['case'], r['comparisons'], r['new_clapeyron_max'], r['previous_clapeyron_max'], r['new_fd_max'], r['previous_fd_max'], r['new_feos_max'], r['previous_feos_max']] for r in _rs['rows']])
+print('\n' + _rs['criterion'])
+print('\nDeclared equilibrium row tolerance: ' + str(_rs['row_tolerance']))
+```
+
+[Every compared derivative](results/main-8298c602/h2h-sensitivities.csv) and
+[the previous/new operands](results/main-8298c602/comparison.csv) are retained.
+The bubble case uses ethanol/butane and the liquid-liquid case uses water and
+pentanol, with the unchanged temperature and parameter directions in the
+study's declarations. Finite differences only check exact native actions.
+All actions are available; the finite-difference discrepancies remain larger
+than the independent implicit-derivative differences. This does not establish
+an uncertainty bound on either method. No additional difference step or
+comparison tolerance is introduced. FeOs has no liquid-liquid derivative row
+in the declared comparator, so that entry remains unavailable by design.
+
+## Earlier retained comparisons
+
+The remaining sections describe their recorded wheels and include topics
+outside the present rerun scope. Their timing values are historical and do
+not fill the cost placeholders.
+
+```{python}
+import csv, gzip, json, math, re, statistics, sys
+from datetime import datetime
+from pathlib import Path
+sys.path.insert(0, 'scripts')
+import head_to_head as h2h  # thresholds only; importing it runs nothing
+
+R = Path('results'); CC = Path('../2026-competitor-cross-check')
+def rows(name):
+    with (R / name).open(newline='') as s:
+        return list(csv.DictReader(s))
+def raw(name): return json.loads(gzip.open(R / 'h2h-raw' / name, 'rt').read())
+def num(x): return None if x in ('', None) else float(x)
+def e(x, d=2):
+    if x == 0: return '0'
+    if 1e-2 <= abs(x) < 1e3: return f'{x:.{d}g}'
+    return re.sub(r'e([+-])0*(\d)', r'e\1\2', f'{x:.{d - 1}e}')
+def pc(x, n=1): return f'{100 * x:.{n}f}%'
+def fx(x, n=3): return f'{x:.{n}f}'
+def span(v, fmt): return fmt(min(v)) if fmt(min(v)) == fmt(max(v)) else f'{fmt(min(v))}–{fmt(max(v))}'
+def table(header, body):
+    print('| ' + ' | '.join(header) + ' |'); print('|' + '|'.join('---' for _ in header) + '|')
+    for r in body: print('| ' + ' | '.join(map(str, r)) + ' |')
+
+engine, feos, clap = raw('engine-h2h.json.gz'), raw('feos-h2h.json.gz'), raw('clapeyron-h2h.json.gz')
+cases = json.loads((CC / 'inputs/cases.json').read_text())
+wheel = engine['provenance'][1]
+julia = clap['julia']
+```
+
+Four comparisons strengthen the solver capability matrix of the [competitor cross-check](../2026-competitor-cross-check/README.md). Each is **numerical verification on declared inputs**: equal models must give equal numbers, and a mismatch is reported with its evidence. None is physical validation. Python declares inputs and reads results. The Engine (C++), FeOs (Rust) and Clapeyron (Julia) do every EOS, equilibrium and derivative evaluation; central differences appear only as checks on exact derivatives. The comparator environments, parameter cases, constants and timing protocol are the cross-check's ([reproduction](../2026-competitor-cross-check/README.md#reproduction), [cases](../2026-competitor-cross-check/inputs/cases.json)); this analysis reuses them unchanged.
+
+Engine wheel SHA-256 `{python} wheel` (main 026b3031); FeOs 0.10.1; Julia `{python} julia['version']` with Clapeyron `{python} julia['clapeyron']` (compile enabled `{python} julia['compile_enabled']`, optimization level `{python} julia['opt_level']`). Engine timing ran on CPU 0 and Julia on CPU 1, one thread each, on a loaded host.
+
+## Fresh Engine timings on main
+
+```{python}
+S = rows('h2h-engine-timing-summary.csv'); ST = rows('h2h-engine-timing-statistics.csv')
+label = {'C1-300': 'C1 saturation 300 K', 'C2-0.5': 'C2 bubble x=0.5', 'C4-298.15': 'C4 LLE 298.15 K', 'C4-323.15': 'C4 LLE 323.15 K',
+         ('C3-0.88sigma-1', 'reused-reference'): 'C3 0.88σ, reused reference', ('C3-0.88sigma-1', 'fresh-reference'): 'C3 0.88σ, fresh reference',
+         'C1-gradient': 'C1 value + gradient', 'C2-gradient': 'C2 value + gradient', 'C1-300-common-liquid': 'C1 fixed state aʳ/Z/ln φ',
+         'C2-0.5-common-liquid': 'C2 fixed state', 'C3-0.88sigma-1-common-liquid': 'C3 0.88σ fixed state'}
+def name(r): return label.get((r['id'], r['engine_selection']), label.get(r['id']))
+solve = [r for r in S if 'common-liquid' not in r['id']]
+equilibrium = [r for r in S if r['id'] in ('C1-300', 'C2-0.5', 'C4-298.15', 'C4-323.15')]
+below = [1 - num(r['engine_main_026b3031_ms']) / num(r['engine_original_ms']) for r in solve]
+vs835 = [num(r['engine_main_026b3031_ms']) / num(r['engine_835d9bc2_ms']) - 1 for r in solve]
+def worst(rs, col): return max(rs, key=lambda r: num(r[col]))
+wd, wr = worst(solve, 'process_max_deviation_over_median'), worst(solve, 'process_range_over_median')
+ed, er = worst(equilibrium, 'process_max_deviation_over_median'), worst(equilibrium, 'process_range_over_median')
+loads = sorted({float(s['load_start']) for s in ST})
+protocol = rows('h2h-engine-timing-statistics.csv')[0]
+```
+
+The cross-check timing protocol (`{python} protocol['samples']` samples per process, three processes, niceness `{python} protocol['niceness']`, CPU 0) on the main-current wheel gives the table below. Engine time is the median of the three process medians; the competitor columns are the cross-check's retained 2026-10-03 measurements, not rerun. One-minute load at process start was `{python} span(loads, lambda x: f'{x:.1f}')`.
+
+```{python}
+#| output: asis
+def ms(x): return '—' if x in ('', None) else f'{float(x):.4g}'
+def ratio(x): return '—' if x in ('', None) else f'{float(x):.3g}' if float(x) < 1e3 else f'{float(x):.0f}'
+table(['Block (ms)', 'Engine 026b3031', 'process medians', 'original', 'corrected 835d9bc2', 'FeOs', 'Clapeyron', 'Engine/FeOs', 'Engine/Clapeyron'],
+      [[name(r), ms(r['engine_main_026b3031_ms']), r['process_medians_ms'], ms(r['engine_original_ms']), ms(r['engine_835d9bc2_ms']),
+        ms(r['feos_ms']), ms(r['clapeyron_ms']), ratio(r['engine_over_feos']), ratio(r['engine_over_clapeyron'])] for r in S])
+```
+
+Solve and gradient blocks are `{python} span(below, lambda x: pc(x, 0))` below the original campaign. Against the corrected 835d9bc2 replay they range from `{python} pc(-min(vs835), 0)` faster to `{python} pc(max(vs835), 0)` slower.
+
+Process-median scatter is measured two ways, each divided by the median of the three process medians: the largest deviation from that median, and the range (largest minus smallest). Over the solve and gradient blocks these reach `{python} pc(num(wd['process_max_deviation_over_median']))` and `{python} pc(num(wr['process_range_over_median']))` (`{python} name(wr)`, `{python} wr['process_medians_ms']` ms). The C1–C4 equilibrium blocks alone reach `{python} pc(num(ed['process_max_deviation_over_median']))` and `{python} pc(num(er['process_range_over_median']))` (`{python} name(er)`). On this loaded host, therefore, **no slowdown or speedup relative to 835d9bc2 is resolved**.
+
+```{python}
+V = rows('h2h-engine-timed-values.csv')
+rated = [r for r in V if r['engine_target']]
+passed = sum(r['engine_within_target'] == 'True' for r in rated)
+def most(pred, col, absolute=True):
+    v = [abs(num(r[col])) for r in V if pred(r) and num(r[col]) is not None]
+    return max(v)
+q = lambda *names: (lambda r: r['quantity'] in names)
+fixed = lambda *names: (lambda r: r['quantity'] in names and 'common-liquid' in r['id'])
+lnphi_row = max((r for r in V if fixed('lnphi')(r)), key=lambda r: abs(num(r['main_minus_Engine'])))
+crit = {}
+for r in rated: crit.setdefault((r['quantity'], r['engine_metric']), set()).add(float(r['engine_target']))
+def criteria(qty): return ', '.join(f"{'/'.join(e(t, 1) for t in sorted(ts))} {m.replace('_', ' ')}" for (qq, m), ts in sorted(crit.items()) if qq == qty)
+grad_targets = sorted(float(r['engine_target']) for r in rated if r['quantity'] == 'gradient')
+cmax = {k: max((r for r in V if q('P', 'rho')(r) and num(r['main_minus_Clapeyron_relative']) is not None), key=lambda r: abs(num(r['main_minus_Clapeyron_relative'])))[k] for k in ('id', 'phase', 'quantity', 'main_minus_Clapeyron_relative')}
+```
+
+All 14 timed selections retain their last returned values: `{python} len(V)` rows over three processes. `{python} len(rated)` of them have a quantity-specific criterion retained with the 835d9bc2 Engine values, and `{python} passed` meet it. The criteria are: P `{python} criteria('P')`; density `{python} criteria('rho')`; composition `{python} criteria('x')`; phase fraction `{python} criteria('beta')`; C3 γ `{python} criteria('gamma')` and Φ `{python} criteria('phi')`; fixed-state aʳ `{python} criteria('ar')`, Z `{python} criteria('Z')` and ln φ `{python} criteria('lnphi')`; gradients a per-coordinate absolute criterion from `{python} e(grad_targets[0])` to `{python} e(grad_targets[-1])`.
+
+The largest changes from 835d9bc2 are `{python} e(most(q('P', 'rho'), 'main_minus_Engine_relative'))` relative in P and density, `{python} e(most(q('x', 'beta'), 'main_minus_Engine'))` absolute in composition and phase fraction, `{python} e(max(abs(math.log(num(r['engine_main']) / num(r['Engine_retained']))) if r['quantity'] == 'gamma' else abs(num(r['main_minus_Engine'])) for r in V if q('gamma', 'phi')(r)))` in ln γ and Φ, and `{python} e(most(q('gradient'), 'main_minus_Engine_relative'))` relative in the three C1 and three C2 pressure gradients. At the fixed states, Z changes by at most `{python} e(most(fixed('Z'), 'main_minus_Engine'))`, aʳ by `{python} e(most(fixed('ar'), 'main_minus_Engine'), 1)`, and ln φ by `{python} e(abs(num(lnphi_row['main_minus_Engine'])))` absolute (`{python} lnphi_row['id']`, `{python} pc(abs(num(lnphi_row['main_minus_Engine'])) / num(lnphi_row['engine_target']), 0)` of its criterion). The other `{python} len(V) - len(rated)` rows (fixed-state input densities and compositions, and the C1 pure-component composition and phase fraction) have no criterion and are listed without one.
+
+Against the retained comparator returns, solved P and density stay within `{python} e(most(q('P', 'rho'), 'main_minus_FeOs_relative'))` relative of FeOs and `{python} e(abs(num(cmax['main_minus_Clapeyron_relative'])))` of Clapeyron (`{python} cmax['id']` `{python} cmax['phase']` density), and the gradients within `{python} e(most(q('gradient'), 'main_minus_FeOs_relative'))` relative of FeOs. The fixed-state comparator ln φ misses of the original campaign (FeOs `{python} e(most(fixed('lnphi'), 'main_minus_FeOs'))`, Clapeyron `{python} e(most(fixed('lnphi'), 'main_minus_Clapeyron'))` absolute, both C3) are unchanged.
+
+## Electrolyte LLE against Clapeyron
+
+```{python}
+spec = engine['clapeyron_khudaida']; ids = [c['id'] for c in spec['components']]
+eps_water = next(c['relative_permittivity'] for c in spec['components'] if c['id'] == 'water')
+C = [r for r in rows('h2h-khudaida-convergence.csv') if r['engine_success']]
+L = rows('h2h-khudaida-lle.csv'); TC = rows('h2h-khudaida-term-checks.csv')
+tags = ('clapeyron_default_init', 'clapeyron_engine_guesses')
+def valid(v, t): return [r for r in C if r['variant'] == v and r[f'{t}_status'] == 'two-phase']
+def count(v, t, status): return sum(r[f'{t}_status'] == status for r in C if r['variant'] == v)
+def lle_max(v, kind):
+    out = []
+    for r in L:
+        if r['variant'] != v: continue
+        for t in tags:
+            d = num(r[f'{t}_minus_engine'])
+            if d is None: continue
+            if kind == 'x' and r['quantity'] in ids: out.append(abs(d))
+            if kind == 'rho' and r['quantity'] == 'molar_density_mol_m3': out.append(abs(d) / num(r['engine']))
+            if kind == 'beta' and r['quantity'] == 'phase_fraction_beta': out.append(abs(d) / num(r['engine']))
+    return max(out)
+def resid(v, k): return max(num(r[f'{t}_{k}']) for t in tags for r in valid(v, t))
+def clap_ms(v): return [num(r[f'{t}_median_ms']) for t in tags for r in valid(v, t)]
+def engine_ms(v): return [num(r['engine_median_ms']) for r in C if r['variant'] == v]
+invalid = [r for r in C if r['clapeyron_default_init_status'].startswith('invalid')]
+inv_rho = sorted({float(x) for r in invalid for x in r['clapeyron_default_init_rho'].split('/')})
+inv_p = [num(r['clapeyron_default_init_pressure_relative']) for r in invalid]
+const = [r for r in C if r['variant'] == 'constant-permittivity']
+hard = sorted(const, key=lambda r: -int(r['engine_iterations']))[:2]; easy = [int(r['engine_iterations']) for r in const if r not in hard]
+def engine_resid(v): return max(num(r['engine_max_residual']) for r in C if r['variant'] == v)
+def tc(check, **kw): return [r for r in TC if r['check'].startswith(check) and all(r[k] == v for k, v in kw.items())]
+def tcmax(check, col='a_minus_b', **kw): return max(abs(num(r[col])) for r in tc(check, **kw))
+```
+
+**Question.** Does Clapeyron's electroneutral Michelsen flash (`tp_flash2` with `MichelsenTPFlash(equilibrium=:lle)` on an `ESElectrolyteModel`) reproduce the Engine's two-liquid states for the eight Khudaida Figure 2 feeds (water, ethanol, isobutanol, Na⁺, Cl⁻; `{python} f"{spec['T']:.2f}"` K, `{python} f"{spec['P'] / 1e3:.0f}"` kPa)? At what cost?
+
+**Matched model.** Clapeyron `{python} julia['clapeyron']` offers DH with a direct Born term (`DHBorn`) and a fixed set of permittivity models. Its built-in ion and permittivity models inspected here do not include two packet-v7 forms; a user-written model could add them, which was not attempted:
+
+- **The corrected Figiel SSM+DS Born term** (solvation shell $D_i=d_i^{Born}(1+c_{shell}(f_{mix}-1)/|z_i|)$ with $\epsilon_{r,ion}=8$). The Engine therefore uses $c_{shell}=c_{dielectric}=0$, which gives the direct form $W_{Born}=\sum_i x_iz_i^2(1-\epsilon_r^{-1})/d_i^{Born}$, the same as Clapeyron's `Born`.
+- **The DH diameter 0.88σ alongside Born.** The built-in `DHBorn` screens at the neutral-model σ, so the Engine's DH diameter is set to σ for both ions.
+
+Everything else is shared: packet parameters and $k_{ij}$, the same-sign ion-dispersion exclusion, the hard-sphere ion diameter 0.88σ (Clapeyron's $\epsilon_{ii}=0$ ions), the temperature-dependent water σ, and Wolbach–Sandler cross-association with the size factor at $T$. Two permittivity forms are run:
+
+1. **Constant**, $\epsilon_r=$ `{python} eps_water`. Engine: `solvent-only` with every solvent at that value. Clapeyron: shipped `ConstRSP`.
+2. **The packet's salt-free, ion-suppressed form**, $\epsilon_r=\epsilon_{sf}/(1+c\sum_{ion}x_i)$ with $c=$ `{python} spec['ion_fraction_suppression']` and the mass-weighted salt-free $\epsilon_{sf}$. Clapeyron ships no such model; a user subtype of its `RSPModel` interface (`scripts/h2h_clapeyron_server.jl`) returns this scalar relation, and Clapeyron differentiates and solves with it.
+
+**Helmholtz terms at the Engine's states.** At the Engine's two solved phases of point 1 the terms agree. Hard chain, dispersion and association agree to `{python} e(max(abs(num(r['relative'])) for q_ in ('hard_chain', 'dispersion', 'association') for r in tc('Helmholtz term', quantity=q_)), 1)` relative and permittivity to `{python} e(tcmax('Helmholtz term', 'relative', quantity='bulk_relative_permittivity'))`. Born differs by `{python} e(tcmax('Helmholtz term', 'relative', quantity='born'), 3)` relative in both phases, exactly the ratio of the two codes' electrostatic constants $(e_C/e_E)^2(\epsilon_{0,E}/\epsilon_{0,C})$ (Born section below). DH differs by `{python} e(abs(num(tc('Helmholtz term', quantity='debye_huckel', phase='water-rich')[0]['relative'])), 3)` (water-rich) and `{python} e(abs(num(tc('Helmholtz term', quantity='debye_huckel', phase='organic')[0]['relative'])), 3)` (organic) relative. That is more than the constant ratio: the remainder includes Clapeyron's DH rational approximation, the source difference characterized in the cross-check; the two parts were not separated here. At compositions perturbed by 0.05 mol of each solvent, permittivity, DH and Born keep the same relative differences (DH `{python} span([abs(num(r['relative'])) for r in tc('perturbed', quantity='dh')], lambda x: e(x, 3))`).
+
+```{python}
+#| output: asis
+def status_text(v):
+    out = []
+    for t, who in zip(tags, ('default initialization', 'Engine guesses')):
+        n2 = count(v, t, 'two-phase'); n0 = count(v, t, 'invalid: no valid equilibrium returned')
+        out.append(f'{who}: {n2}/8 valid two-phase' + (f', {n0}/8 no valid equilibrium' if n0 else ''))
+    return '; '.join(out)
+table(['Permittivity', 'Clapeyron returns', 'Max \\|Δx\\| (valid)', 'Max relative Δρ / Δβ', 'Clapeyron residuals, valid returns', 'Warm median per solve (ms)'],
+      [[{'constant-permittivity': 'Constant (`ConstRSP`)', 'matched': 'Packet salt-free, ion-suppressed (user RSP)'}[v], status_text(v), e(lle_max(v, 'x')),
+        f"{e(lle_max(v, 'rho'))} / {e(lle_max(v, 'beta'))}",
+        f"μ/RT ≤{e(max(resid(v, 'neutral_mu_over_RT'), resid(v, 'salt_mu_over_RT')))}, P ≤{e(resid(v, 'pressure_relative'))}, charge ≤{e(resid(v, 'phase_charge'))}",
+        f"Clapeyron {span(clap_ms(v), lambda x: f'{x:.1f}')}; Engine {span(engine_ms(v), lambda x: f'{x:.1f}')}"] for v in ('constant-permittivity', 'matched')])
+```
+
+Each cost is the median of 10 samples after 3 warmups in one process per code, not the three-process timing protocol. A Clapeyron return counts as an equilibrium only with a finite phase fraction and a relative pressure error at most `{python} e(h2h.VALID_PRESSURE, 1)`; it is then two-phase only if its compositions differ by more than `{python} e(h2h.SEPARATION, 1)`.
+
+**Result, constant permittivity.** Clapeyron finds the split on all eight feeds from both starts, and its states agree with the Engine's to its stopping level (`K_tol` on ln K, with its own volume closure). The Engine's classified row residuals are at most `{python} e(engine_resid('constant-permittivity'))`, so **the two solvers find the same states**. Warm cost is `{python} f"{min(engine_ms('constant-permittivity')) / max(clap_ms('constant-permittivity')):.0f}"`–`{python} f"{max(engine_ms('constant-permittivity')) / min(clap_ms('constant-permittivity')):.0f}"` times higher for the Engine. It needs `{python} span(easy, str)` iterations on six feeds but `{python} hard[0]['engine_iterations']`/`{python} hard[0]['engine_evaluations']` and `{python} hard[1]['engine_iterations']`/`{python} hard[1]['engine_evaluations']` iterations/evaluations on points `{python} hard[0]['point']` and `{python} hard[1]['point']`, its slowest solves in this study.
+
+**Result, composition-dependent permittivity.** From its default initialization Clapeyron returns **no valid equilibrium** on any of the `{python} len(invalid)` feeds. Both returned phases equal the feed, the phase fraction is NaN, both densities are `{python} ' and '.join(f'{x:g}' for x in inv_rho)` mol/m³ and the relative pressure error is `{python} span(inv_p, lambda x: f'{x:.4f}')` on every feed. These returns are kept, with their diagnostics, as invalid rows of the [convergence table](results/h2h-khudaida-convergence.csv). From the Engine's two declared phase guesses Clapeyron returns eight valid two-phase states, up to `{python} e(lle_max('matched', 'x'))` in mole fraction from the Engine's. At the Engine's point-1 states, Clapeyron's neutral chemical potentials differ between the phases by up to `{python} f"{max(abs(num(r['a'])) for r in tc('Clapeyron mu/RT difference between phases at the Engine') if r['component'] in ids[:3]):.3f}"` in μ/RT. Comparing Clapeyron's automatic chemical potentials term by term with Engine central differences puts that difference in the DH solvent derivatives: up to `{python} f"{tcmax('term mu', quantity='debye_huckel'):.3f}"` there, against at most `{python} e(max(tcmax('term mu', quantity=t_) for t_ in ('hard_chain', 'dispersion', 'association')))` for hard chain, dispersion and association, and `{python} e(tcmax('term mu', quantity='born'))` absolute for Born (the constant ratio on values near `{python} f"{max(abs(num(r['b'])) for r in tc('term mu', quantity='born')):.0f}"`).
+
+**Cause, reproduced.** `debye_length(V,T,z,ϵ_r,Z)` (`src/models/Electrolytes/electrolytes.jl:149`) computes κ from both the permittivity and the ionic sum $I=\sum_i z_iZ_i^2$, inside `Solvers.strong_zero(I)`. For dual-number inputs, the partials method of `strong_zero` (`src/modules/solvers/ad.jl:381`) sets a partial derivative of κ to zero wherever the corresponding partial of $I$ is zero, without checking whether κ depends on that variable through $\epsilon_r$. Along solvent amounts $\partial I/\partial n_s=0$, but $\kappa\propto\epsilon_r^{-1/2}$ depends on them through $\epsilon_r(x)$; that chain is lost. `a_dh` still differentiates its explicit permittivity prefactor, so the DH solvent derivative is wrong rather than zero. At the Engine's water-rich state of point 1:
+
+```{python}
+#| output: asis
+dh = [r for r in rows('h2h-khudaida-convergence.csv') if r['variant'] == 'matched' and r['diagnostic'].startswith('Clapeyron DH mu/RT at Engine phase water-rich')]
+eng_dh = {r['component']: num(r['b']) for r in tc('term mu', quantity='debye_huckel', phase='water-rich')}
+table(['DH μ_i/RT (constant V, T)'] + ids,
+      [['Clapeyron automatic'] + [f"{num(r['automatic']):.6f}" for r in dh],
+       ['Clapeyron central difference'] + [f"{num(r['central_difference']):.6f}" for r in dh],
+       ['Engine central difference of its DH value'] + [f'{eng_dh[i]:.6f}' for i in ids]])
+```
+
+The ion entries agree because $\partial I/\partial n_{ion}\neq0$. Clapeyron's permittivity gradient itself is correct: automatic and central difference agree to `{python} e(tcmax('Clapeyron permittivity gradient', 'relative'))` relative. With constant permittivity the permittivity partials are zero, so the defect cannot act. The user permittivity model returns the declared scalar relation, and its gradient is the one checked here.
+
+**Scope of the defect.** Measured: the DH `debye_length` path with this user permittivity model, at the Khudaida states. The condition is a partial derivative along which the ionic-sum partial is zero while the permittivity partial is not. By source inspection only, not measured: the shipped composition-dependent permittivity models (`LinMixRSP`, `Schreckenberg`, `MM1`) combined with DH or `DHBorn` meet the same condition, and `MSA` also calls `debye_length` (`src/models/Electrolytes/Ion/MSA.jl:81`); none of these was run. No library source was changed.
+
+```{python}
+exact_eq = tc('Engine mu/RT equality between phases, exact')
+cd_eq = tc('Engine mu/RT equality between phases, central difference')
+lnphi_cd = tc('Engine lnphi')
+dilute = [r for r in lnphi_cd if r['phase'] == 'organic' and r['component'] in ids[3:]]
+ion_x = min(x for x in engine['khudaida']['matched'][0]['x'][1][3:])
+step = 1e-6  # the probe's central-difference step in mol (scripts/h2h-probes/probe_engine_mu_terms.py)
+def eqmax(rs, salt): return max(abs(num(r['a_minus_b'])) for r in rs if (r['component'].startswith('NaCl')) == salt)
+```
+
+**What the Engine's states satisfy, point 1.** With its exact log-fugacity coefficients, the Engine's two phases have equal chemical potentials to `{python} e(eqmax(exact_eq, False))` (neutral components) and `{python} e(eqmax(exact_eq, True))` (NaCl, cation plus anion). Central differences of its own Helmholtz terms reproduce those exact coefficients to `{python} e(max(abs(num(r['a_minus_b'])) for r in lnphi_cd if r not in dilute))` for every component except the dilute organic-phase ions, `{python} e(max(abs(num(r['a_minus_b'])) for r in dilute))`, where the step is `{python} pc(step / ion_x, 2)` of the ion amount. With the central-difference chemical potentials, the phase equality holds to `{python} e(eqmax(cd_eq, False))` (neutral) and `{python} e(eqmax(cd_eq, True))` (NaCl), the size of that differencing error. The Engine's DH central difference equals Clapeyron's central difference in the table above. Only point 1 was checked this way; the other seven points rest on the Engine's row residuals (≤`{python} e(engine_resid('matched'))`). This variant therefore does not test the Engine's solver against an independent reference. [Term checks](results/h2h-khudaida-term-checks.csv) retain every row of this paragraph and the Helmholtz comparison above.
+
+```{python}
+packet_shift = max(abs(num(r['engine_packet_v7']) - num(r['engine'])) for r in L if r['variant'] == 'matched' and r['quantity'] in ids)
+settler = {}
+for r in csv.DictReader(open('../2026-khudaida-idaes-settler/results/fixed-feed/stage-results.csv')):
+    settler[(int(r['point_id']), int(r['engine_phase_ordinal']))] = [float(r[k]) for k in ('x_water', 'x_ethanol', 'x_isobutanol', 'x_sodium_cation', 'x_chloride_anion')]
+settler_diff = max(abs(a - b) for p in engine['khudaida']['packet'] for k, x in enumerate(p['x']) for a, b in zip(x, settler[(p['point'], k)]))
+```
+
+Packet v7 (Engine only) moves the compositions by up to `{python} f'{packet_shift:.3f}'` from the matched variant, the effect of the solvation-shell Born term and the 0.88σ DH diameter. These states reproduce the retained [fixed-feed settler rows](../2026-khudaida-idaes-settler/results/fixed-feed/stage-results.csv) to `{python} e(settler_diff)` in mole fraction.
+
+## Exact solved-state sensitivities
+
+```{python}
+SE = rows('h2h-sensitivities.csv'); CO = rows('h2h-sensitivity-costs.csv')
+c2 = cases['models']['C2']['components'][0]
+steps = {r['direction']: num(r['fd_step']) for r in SE}
+def smax(case, col, pred=lambda r: True): return max(abs(num(r[col])) for r in SE if r['case'] == case and num(r[col]) is not None and pred(r))
+worst_fd = max(SE, key=lambda r: abs(num(r['engine_exact_vs_fd_relative'])))
+```
+
+Each code differentiates its solved state:
+
+- **Engine:** `solved_state_first_actions` on the compiled problem, with active-parameter coordinates.
+- **Clapeyron `{python} julia['clapeyron']`:** implicit differentiation (derivatives of the solved equilibrium conditions by the implicit-function theorem) through `bubble_pressure` and `tp_flash2`, with T or a parameter entered as a ForwardDiff dual. Parameters are promoted with `promote_model`, then `set_k!` for $k_{ij}$ or the nonzero ethanol association entries.
+- **FeOs:** `bubble_point_pressure_derivatives` (its native automatic differentiation), which gives only parameter gradients of pressure for C2. The FeOs 0.10.1 Python interface exposes eight `Property.*_derivatives` functions (vapor, bubble and dew pressure, boiling temperature, enthalpy of vaporization, liquid and equilibrium-liquid density, residual heat capacity); none is an LLE derivative, so C4 has no FeOs entry.
+
+The central-difference check is an Engine re-solve at each displaced input, declared in Python and evaluated natively, with steps of `{python} e(steps['T'], 1)` K in T, `{python} e(steps['k_ij'], 1)` in $k_{ij}$, and `{python} e(steps['association_energy_over_k'] / c2['epsilon_ab'], 1)` relative in the association energy and volume.
+
+```{python}
+#| output: asis
+obs = {'P_Pa': 'P / Pa', 'y_first': 'y_EtOH', 'x_water_rich': 'x_w water-rich', 'x_water_poor': 'x_w water-poor', 'beta_water_rich': 'β water-rich'}
+dirs = {'T': 'T / K', 'k_ij': 'k_ij', 'association_energy_over_k': 'ε^AB/k / K', 'association_volume': 'κ^AB'}
+def rl(x): return '—' if x in ('', None) else e(float(x))
+table(['Case', 'Observable', 'Direction', 'Engine exact', 'Engine exact / central difference − 1', 'Clapeyron / Engine − 1', 'FeOs / Engine − 1'],
+      [[r['case'].split('-')[0], obs[r['observable']], dirs[r['direction']], f"{num(r['engine_exact']):.9g}", rl(r['engine_exact_vs_fd_relative']),
+        rl(r['clapeyron_vs_engine_relative']), rl(r['feos_vs_engine_relative'])] for r in SE])
+```
+
+The central-difference column is the measured discrepancy between each exact derivative and its central difference, not an error bound on either. Its largest entry, `{python} e(abs(num(worst_fd['engine_exact_vs_fd_relative'])))`, is the `{python} obs[worst_fd['observable']]` fraction along `{python} dirs[worst_fd['direction']]`, a sensitivity small next to the unit-scale value. The exact derivatives of the three codes agree far more closely than the central differences resolve: Clapeyron within `{python} e(smax('C2-0.5', 'clapeyron_vs_engine_relative'))` (C2) and `{python} e(smax('C4-298.15', 'clapeyron_vs_engine_relative'))` (C4), FeOs within `{python} e(smax('C2-0.5', 'feos_vs_engine_relative'))`. Clapeyron's C4 remainder has one sign per observable and the size of its retained C4 association-closure remainder in the [cross-check](../2026-competitor-cross-check/notebook.qmd).
+
+```{python}
+#| output: asis
+def cost(case, impl, work): return next(num(r['median_ms']) for r in CO if (r['case'], r['implementation'], r['work']) == (case, impl, work))
+def ift(case): return [num(r['median_ms']) for r in CO if r['case'] == case and r['work'].startswith('solve + IFT derivative')]
+def g4(x): return f'{x:.5g}'
+table(['Cost, warm median (ms)', 'C2 (4 directions)', 'C4 (2 directions)'],
+      [['Engine solve + all actions'] + [g4(cost(c, 'Engine', 'solve_plus_actions')) for c in ('C2-0.5', 'C4-298.15')],
+       ['Engine actions on the solved state'] + [g4(cost(c, 'Engine', 'actions_on_solved_state')) for c in ('C2-0.5', 'C4-298.15')],
+       ['Engine central differences, all directions'] + [g4(cost(c, 'Engine', 'central_fd_all_directions')) for c in ('C2-0.5', 'C4-298.15')],
+       ['Clapeyron primal solve'] + [f"{cost(c, 'Clapeyron', 'primal solve only'):.3f}" for c in ('C2-0.5', 'C4-298.15')],
+       ['Clapeyron solve + implicit derivative, one direction (range over directions)'] + [span(ift(c), lambda x: f'{x:.3f}') for c in ('C2-0.5', 'C4-298.15')],
+       ['Clapeyron solve + joint implicit Jacobian (k_ij, T)'] + [f"{cost(c, 'Clapeyron', 'solve + joint IFT Jacobian, k_ij and T'):.3f}" for c in ('C2-0.5', 'C4-298.15')],
+       ['FeOs three parameter gradients of P (incl. bubble solve)', f"{next(num(r['median_ms']) for r in CO if r['implementation'] == 'FeOs'):.3f}", '—']])
+```
+
+```{python}
+act = {c: cost(c, 'Engine', 'actions_on_solved_state') for c in ('C2-0.5', 'C4-298.15')}
+fdc = {c: cost(c, 'Engine', 'central_fd_all_directions') for c in act}
+fd_samples = next(r['samples'] for r in CO if r['work'] == 'central_fd_all_directions')
+compile_s = [num(r['first_ms']) / 1e3 for r in CO if r['implementation'] == 'Clapeyron' and r['work'] != 'primal solve only' and num(r['first_ms']) > 1e3]
+```
+
+Each entry is the median of 10 samples after 3 warmups in one process per code; the Engine central differences use `{python} fd_samples` samples without warmup. The Engine's exact actions cost about 1/`{python} f"{fdc['C2-0.5'] / act['C2-0.5']:.0f}"` (C2) and 1/`{python} f"{fdc['C4-298.15'] / act['C4-298.15']:.0f}"` (C4) of its own central differences, and `{python} f"{act['C2-0.5'] / statistics.median(ift('C2-0.5')):.2g}"` and `{python} f"{act['C4-298.15'] / statistics.median(ift('C4-298.15')):.2g}"` times one Clapeyron derivative including its solve. Its equilibrium solve dominates. Clapeyron's first call per derivative compiled for `{python} span(compile_s, lambda x: f'{x:.0f}')` s.
+
+## Born term and concentration-dependent permittivity
+
+```{python}
+B = rows('h2h-born-permittivity.csv'); states = engine['born_states']
+water = next(c for c in engine['born_comparators']['components'] if c['id'] == 'water')
+direct = [r for r in B if r['born'] == 'direct-hs-diameter']
+feos_ratio, clap_ratio = num(direct[0]['feos_constant_ratio']), num(direct[0]['clapeyron_constant_ratio'])
+def after(col, form): return max(abs(num(r[col])) for r in direct if r['form'] == form and r[col])
+eps0_engine = cases['constants']['Engine']['epsilon0']
+```
+
+**Question.** At fixed states, do the codes give the same relative permittivity and Born contribution for the forms they share?
+
+**States.** NaCl–water, `{python} f"{states[0]['T']:.2f}"` K, `{python} '/'.join(f"{s['m']:g}" for s in states)` mol/kg (salt-free basis). Densities are fixed at the Engine liquid root at 1 bar under the Figiel ion-fraction model: `{python} ', '.join(f"{s['rho']:.2f}" for s in states)` mol/m³. Parameters are the Figiel water/NaCl selections of the [dielectric-alternatives analysis](../2026-dielectric-alternatives/README.md). Born is direct, $a^{Born}=-\frac{e^2}{4\pi\epsilon_0k_BT}\sum_ix_iz_i^2(1-\epsilon_r^{-1})/d_i$, at $d_i=0.88\sigma_i$, the ionic hard-sphere diameter that FeOs's advanced Born term uses. Shared permittivity forms:
+
+- **Mole-fraction mixing**, $\epsilon_r=\sum_kx_k\epsilon_k$ with water `{python} water['relative_permittivity']` and ions 8. Engine `component-permittivity-mixing`: Ascani's mass-weighted solvent rule reduces to this for one solvent. FeOs advanced `ExperimentalData`; Clapeyron `LinMixRSP`.
+- **Schreckenberg density form**, $1+\rho x_{solv}d_V(d_T/T-1)$ with $d_V=$ `{python} f"{water['dielectric_volume_m3_per_mol'] * 1e3:.4f}"` L/mol and $d_T=$ `{python} f"{water['dielectric_temperature']:g}"` K. Engine `solvent-density-temperature`; Clapeyron `Schreckenberg`.
+- **Rueben dipolar perturbation.** Engine `dipolar-perturbation`; FeOs `PerturbationTheory`.
+
+```{python}
+#| output: asis
+names = {'mole-fraction-mixing': 'mole-fraction mixing', 'schreckenberg': 'Schreckenberg', 'perturbation': 'perturbation'}
+table(['Form', 'm (mol/kg)', 'Engine ε_r', 'Engine a^Born', 'FeOs a^Born rel. diff.', 'Clapeyron ε_r rel. diff.', 'Clapeyron a^Born rel. diff.'],
+      [[names[r['form']], f"{num(r['m']):g}", f"{num(r['engine_permittivity']):.8g}", f"{num(r['engine_a_born']):.8g}",
+        e(num(r['feos_a_born_relative']), 8) if r['feos_a_born_relative'] else '—', rl(r['clapeyron_permittivity_relative']) if r['clapeyron_permittivity_relative'] else '—',
+        e(num(r['clapeyron_a_born_relative']), 8) if r['clapeyron_a_born_relative'] else '—'] for r in direct if r['form'] in names])
+```
+
+FeOs uses $\epsilon_0=$ `{python} f'{eps0_engine / feos_ratio:.6g}'` F/m; the Engine uses CODATA `{python} f'{eps0_engine:.11g}'` F/m. The ratio `{python} f'{feos_ratio:.8f}'` accounts for the whole FeOs mixing-form difference (remainder ≤`{python} e(after('feos_a_born_relative_after_ratio', 'mole-fraction-mixing'))`). In the perturbation form a remainder of up to `{python} e(after('feos_a_born_relative_after_ratio', 'perturbation'))` is left; it is inferred to come from FeOs's rounded Debye-squared factor against the Engine's SI conversion and was not separately isolated. Clapeyron's constant ratio `{python} f'{clap_ratio:.10f}'` accounts for its Born difference (remainder ≤`{python} e(max(after('clapeyron_a_born_relative_after_ratio', f) for f in ('mole-fraction-mixing', 'schreckenberg')))`), and its permittivity agrees to `{python} e(max(abs(num(r['clapeyron_permittivity_relative'])) for r in direct if r['clapeyron_permittivity_relative']))`. FeOs exposes no permittivity accessor, so only its Born term is compared.
+
+```{python}
+source = [r for r in B if r['form'] == 'ion-fraction-suppression' and r['born'] == 'ssm-ds']
+```
+
+**Not matched.** Neither competitor's built-in models inspected here offer the Figiel ion-fraction-suppressed permittivity ($\epsilon_r$ `{python} '/'.join(f"{num(r['engine_permittivity']):.3f}" for r in source)`) or the corrected SSM+DS Born term, which the Engine gives as `{python} '/'.join(f"{num(r['engine_a_born']):.4g}" for r in source)` at the same states. The FeOs advanced Born term inspected here fixes its diameter at 0.88σ. By source inspection, not measured, Clapeyron's composition-dependent permittivities with DH or `DHBorn` take the `debye_length` path of the defect above. The Born values here are fixed-state values: that defect touches only DH composition derivatives, not Born values or $\epsilon_r$.
+
+## Cost of this study, and limits
+
+```{python}
+stamp = {r['event']: datetime.fromisoformat(r['utc'].replace('Z', '+00:00')) for r in rows('h2h-session-times.csv')}
+def minutes(a, b): return (stamp[b] - stamp[a]).total_seconds() / 60
+```
+
+Measured task times: Engine timing processes `{python} f"{(stamp['c1-end'] - stamp['c1-start']).total_seconds():.0f}"` s; Engine side of the other three comparisons `{python} f"{engine['wall_s']:.1f}"` s (electrolyte LLE `{python} f"{engine['khudaida_wall_s']:.1f}"` s, sensitivities `{python} f"{engine['sensitivities_wall_s']:.1f}"` s, Born `{python} f"{engine['born_wall_s']:.3f}"` s); FeOs Born `{python} f"{feos['born_wall_s']:.3f}"` s and C2 gradients `{python} f"{feos['C2_gradient']['wall_s']:.2f}"` s; Clapeyron electrolyte LLE `{python} f"{clap['khudaida_task_wall_s']:.0f}"` s, sensitivities `{python} f"{clap['sensitivities_task_wall_s']:.0f}"` s (almost all first-call compilation) and Born `{python} f"{clap['born_task_wall_s']:.1f}"` s, each including compilation.
+
+One long-lived Julia process ran every Clapeyron task. The first ran `{python} f"{minutes('julia-tasks-start', 'julia-process1.log last write'):.0f}"` minutes from its first task and was stopped by the agent shell's 30-minute background limit before the constant-permittivity flash; a second, resuming from the saved output, ran `{python} f"{minutes('julia2-start', 'julia.log last write'):.1f}"` minutes. Both ran under a 6 GB memory cap. The recorded stamps span `{python} f"{minutes('c1-start', 'julia.log last write'):.0f}"` minutes from the first Engine timing process to the end of the second Julia process ([stamps](results/h2h-session-times.csv)); agent time outside them was not recorded.
+
+Limits:
+
+- These are numerical verification on the declared inputs only.
+- The electrolyte agreement covers one model variant (constant permittivity, direct Born, DH at σ) at eight feeds. The source Born term and packet permittivity are not tested against any competitor.
+- Speed numbers are one-host, unpaired warm medians of exposed calls, not equal algorithms. The Engine figures include its general Gibbs-minimization driver. The LLE and sensitivity costs come from one process per code, not the three-process timing protocol.
+- The Clapeyron defect is reproduced for `debye_length` with the user permittivity model at these states; its reach to shipped permittivity models is source-based. It has not been reported upstream, and later Clapeyron versions were not checked.
+- Central differences here only verify exact derivatives: Engine re-solves against its solved-state sensitivities, Engine Helmholtz terms against its log-fugacity coefficients, and Clapeyron's DH and permittivity central differences against its automatic derivatives. Every evaluation runs natively.
+- These results have not been independently reviewed or promoted for manuscript use.
+
+Rows: [Engine timing summary](results/h2h-engine-timing-summary.csv), [statistics](results/h2h-engine-timing-statistics.csv), [returned values](results/h2h-engine-timed-values.csv), [Khudaida phases](results/h2h-khudaida-lle.csv), [convergence and DH check](results/h2h-khudaida-convergence.csv), [term checks](results/h2h-khudaida-term-checks.csv), [sensitivities](results/h2h-sensitivities.csv), [sensitivity costs](results/h2h-sensitivity-costs.csv), [Born and permittivity](results/h2h-born-permittivity.csv). Raw native outputs are in `results/h2h-raw/` and `results/h2h-engine-raw/`; the point-1 term probes are in `results/h2h-probes/`, with their declarations in `scripts/h2h-probes/`.

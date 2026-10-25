@@ -1,0 +1,22 @@
+{
+  "case": 1,
+  "value": 0,
+  "success": false,
+  "solver_status": "INVALID_NUMBER_DETECTED",
+  "message": "elapsed work budget exhausted; elapsed work budget exhausted",
+  "iterations": 9,
+  "evaluations": 16,
+  "generic_jacobian_rank": 20,
+  "generic_nullity": 0,
+  "reduced_hessian_minimum": null,
+  "criterion_met": null,
+  "wall_s": 0.367649549,
+  "convergence": {
+    "residual": 185.47568909850332,
+    "floor": 2.9681627007164443e-10,
+    "amplification": null,
+    "contraction": null,
+    "stop": "Stop.budget_exhausted"
+  },
+  "state_file": null
+}

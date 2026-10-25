@@ -1,0 +1,64 @@
+schema_version = 2
+packet_id = "ascani-2022-case-study-2-electrolyte-lle"
+packet_version = "3"
+title = "ascani-2022-case-study-2-electrolyte-lle canonical Parameters packet"
+description = "Canonical JSON successor to the immutable accepted ascani-2022-case-study-2-electrolyte-lle parameter packet."
+license_or_use_basis = "Source-traceable numeric parameter transcription and project-authored packet metadata retained for scientific verification under the source-specific use bases listed below; no full paper content is included."
+tolerance_rationale = "The strict schema translation preserves accepted coefficient values and asserts no new numerical acceptance tolerance. Any validation tolerance or uncertainty must be declared by the consuming campaign."
+
+[[sources]]
+source_id = "ascani-et-al-2022"
+citation = "Ascani, M.; Sadowski, G.; Held, C. Calculation of Multiphase Equilibria Containing Mixed Solvents and Mixed Electrolytes: General Formulation and Case Studies. Journal of Chemical & Engineering Data 2022, 67, 1972-1984."
+doi = "10.1021/acs.jced.1c00866"
+use_basis = "Case Study 2 and Supporting Information Tables S1-S4 and Eqs. S4-S7 at 298.15 K and 1 bar"
+
+[[sources]]
+source_id = "ascani-held-2021"
+citation = "Ascani, M.; Held, C. Prediction of salting-out in liquid-liquid two-phase systems with ePC-SAFT: Effect of the Born term and of a concentration-dependent dielectric constant. Zeitschrift fuer anorganische und allgemeine Chemie 2021, 647, 1305-1314."
+doi = "10.1002/zaac.202100032"
+use_basis = "Eq. 10 altered Born term, Eq. 13 combined dielectric rule, and Table 5 solvent and ionic relative-permittivity records"
+
+[[sources]]
+source_id = "nann-held-sadowski-2013"
+citation = "Nann, A.; Held, C.; Sadowski, G. Liquid-Liquid Equilibria of 1-Butanol/Water/IL Systems. Industrial & Engineering Chemistry Research 2013, 52, 18472-18481."
+doi = "10.1021/ie403246e"
+use_basis = "Table 2 pure 1-butanol and water records and Wolbach-Sandler cross-association combining equations inherited by Ascani Table S1 and S3"
+
+[[sources]]
+source_id = "nist-srd-69-water"
+citation = "NIST Chemistry WebBook, SRD 69, Water"
+use_basis = "Water molecular weight used by the salt-free-solvent mass-fraction dielectric rule"
+
+[[sources]]
+source_id = "nist-srd-69-1-butanol"
+citation = "NIST Chemistry WebBook, SRD 69, 1-Butanol"
+use_basis = "1-Butanol molecular weight used by the salt-free-solvent mass-fraction dielectric rule"
+
+[[domains]]
+domain_id = "ascani-case-study-2-298-15-k-1-bar"
+kind = "reported-conditions"
+temperature_min = 298.15
+temperature_max = 298.15
+temperature_unit = "kelvin"
+pressure_min = 1
+pressure_max = 1
+pressure_unit = "bar"
+description = "Source-defined reported-conditions domain ascani-case-study-2-298-15-k-1-bar (temperature 298.15–298.15 kelvin; pressure 1–1 bar); see the cited sources and canonical Parameters document."
+
+[[files]]
+path = "parameters/parameters.json"
+role = "parameters"
+media_type = "application/json"
+sha256 = "382b2e634bccf3312fa0fb164e1d2449192a13d0396f0fe46ef674ff56d34b94"
+source_refs = ["ascani-et-al-2022", "ascani-held-2021", "nann-held-sadowski-2013", "nist-srd-69-water", "nist-srd-69-1-butanol"]
+domain_refs = ["ascani-case-study-2-298-15-k-1-bar"]
+units_basis = "Every fixed specification and continuous coefficient declares its unit in the canonical Parameters document; dimensionless values use the explicit dimensionless unit."
+
+[[files]]
+path = "provenance/source-origin.toml"
+role = "provenance"
+media_type = "application/toml"
+sha256 = "bc71b537ed681fb73bb2908341a91f01597fe2c1dbef4afe34ec8f4643af0b7c"
+source_refs = ["ascani-et-al-2022", "ascani-held-2021", "nann-held-sadowski-2013", "nist-srd-69-water", "nist-srd-69-1-butanol"]
+domain_refs = ["ascani-case-study-2-298-15-k-1-bar"]
+units_basis = "Origin repository, immutable source packet, paths, and hash metadata are non-numeric identifiers."

@@ -1,0 +1,37 @@
+case,variant,iterations,evaluations,hessians,polish_jacobians,max_relative_physical_change,max_quantity,max_index,row_tolerance,success,requested_tolerance_met,stop
+case-6/figure-2-point-7,main,16,53,17,3,0,,0,1e-10,True,True,none
+case-6/figure-2-point-7,current,16,47,17,2,8.164654207025866e-15,mole_fractions,1,1e-10,True,True,current_correction_stop at 1
+case-6/figure-2-point-7,previous,16,50,17,2,0,,0,1e-10,True,True,previous_accepted_stop at 2
+case-7/flash-5918.5286-Pa,main,43,57,44,3,0,,0,1e-10,True,True,none
+case-7/flash-5918.5286-Pa,current,43,57,44,3,0,,0,1e-10,True,True,none
+case-7/flash-5918.5286-Pa,previous,43,57,44,3,0,,0,1e-10,True,True,none
+khudaida-sequence/point-1,main,11,16,12,3,0,,0,1e-10,True,True,none
+khudaida-sequence/point-1,current,11,14,12,2,2.518286826799802e-14,mole_fractions,8,1e-10,True,True,current_correction_stop at 1
+khudaida-sequence/point-1,previous,11,15,12,2,1.1631134511897424e-14,mole_fractions,2,1e-10,True,True,previous_accepted_stop at 2
+khudaida-sequence/point-2,main,10,17,11,3,0,,0,1e-10,True,True,none
+khudaida-sequence/point-2,current,10,13,11,2,1.671376221483788e-13,mole_fractions,8,1e-10,True,True,current_correction_stop at 1
+khudaida-sequence/point-2,previous,10,14,11,2,8.319573602475803e-14,mole_fractions,8,1e-10,True,True,previous_accepted_stop at 2
+khudaida-sequence/point-3,main,7,13,8,3,0,,0,1e-10,True,True,none
+khudaida-sequence/point-3,current,7,11,8,2,4.978551304394145e-14,mole_fractions,8,1e-10,True,True,current_correction_stop at 1
+khudaida-sequence/point-3,previous,7,12,8,2,8.005080694475236e-14,mole_fractions,8,1e-10,True,True,previous_accepted_stop at 2
+khudaida-sequence/point-4,main,8,16,9,3,0,,0,1e-10,True,True,none
+khudaida-sequence/point-4,current,8,12,9,2,4.065908570256758e-14,mole_fractions,8,1e-10,True,True,current_correction_stop at 1
+khudaida-sequence/point-4,previous,8,14,9,2,1.5780641737553513e-14,mole_fractions,1,1e-10,True,True,previous_accepted_stop at 2
+khudaida-sequence/point-5,main,8,17,9,3,0,,0,1e-10,True,True,none
+khudaida-sequence/point-5,current,8,12,9,2,1.2083431194013549e-13,mole_fractions,8,1e-10,True,True,current_correction_stop at 1
+khudaida-sequence/point-5,previous,8,15,9,2,8.150458436959277e-14,mole_fractions,8,1e-10,True,True,none
+khudaida-sequence/point-6,main,8,15,9,3,0,,0,1e-10,True,True,none
+khudaida-sequence/point-6,current,8,11,9,2,7.116291667285616e-14,mole_fractions,8,1e-10,True,True,current_correction_stop at 1
+khudaida-sequence/point-6,previous,8,12,9,2,2.1320286139202256e-14,mole_fractions,1,1e-10,True,True,previous_accepted_stop at 2
+khudaida-sequence/point-7,main,7,12,8,3,0,,0,1e-10,True,True,none
+khudaida-sequence/point-7,current,7,10,8,2,7.550626718759292e-14,mole_fractions,8,1e-10,True,True,current_correction_stop at 1
+khudaida-sequence/point-7,previous,7,12,8,2,3.0260145246936095e-14,mole_fractions,8,1e-10,True,True,previous_accepted_stop at 2
+khudaida-sequence/point-8,main,7,13,8,2,0,,0,1e-10,True,True,none
+khudaida-sequence/point-8,current,7,10,8,2,7.895770965188846e-14,mole_fractions,8,1e-10,True,True,current_correction_stop at 1
+khudaida-sequence/point-8,previous,7,13,8,2,2.9508086030313264e-14,mole_fractions,8,1e-10,True,True,none
+masking,main,6,11,7,3,0,,0,1e-10,True,True,none
+masking,current,6,11,7,3,0,,0,1e-10,True,True,none
+masking,previous,6,11,7,3,0,,0,1e-10,True,True,none
+mea-nominally-unloaded,main,14,20,15,4,0,,0,1e-10,True,True,none
+mea-nominally-unloaded,current,14,20,15,4,0,,0,1e-10,True,True,none
+mea-nominally-unloaded,previous,14,20,15,4,0,,0,1e-10,True,True,none

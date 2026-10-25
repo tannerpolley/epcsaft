@@ -1,0 +1,7 @@
+analysis	reason
+2026-mea-reactive-fit-timing	frozen MEA e522dc4 application loader; portable fitting inputs covered by fitting-state-reuse
+2026-mea-recovered-state-actions	frozen MEA application loader and request mapping, outside this checkout
+2026-reacting-mixed-actions	frozen MEA and absorber application loaders, outside this checkout
+2026-reactive-liquid-cold-start	frozen e522dc4 and 4f2d12e9 application clones, outside this checkout
+reproduction/2015-uyan/scripts/species-reference	frozen species-reference wheel snapshot; solves at import
+2026-head-to-head-comparisons/scripts/h2h-probes	point-1 term probes evaluate Engine states at import (main 026b3031 wheel); outputs retained in results/h2h-probes

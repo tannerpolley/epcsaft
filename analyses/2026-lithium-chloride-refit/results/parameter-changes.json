@@ -1,0 +1,132 @@
+[
+  {
+    "optimum": "optimum-1",
+    "before": {
+      "identity": "component/lithium-cation/born_diameter",
+      "field": "born_diameter",
+      "index": [
+        1
+      ],
+      "magnitude": 2.845386882935731,
+      "unit": "angstrom"
+    },
+    "after": {
+      "identity": "component/lithium-cation/born_diameter",
+      "field": "born_diameter",
+      "index": [
+        1
+      ],
+      "magnitude": 1.38,
+      "unit": "angstrom"
+    }
+  },
+  {
+    "optimum": "optimum-1",
+    "before": {
+      "identity": "component/lithium-cation/debye_huckel_diameter",
+      "field": "debye_huckel_diameter",
+      "index": [
+        1
+      ],
+      "magnitude": 2.503512,
+      "unit": "angstrom"
+    },
+    "after": {
+      "identity": "component/lithium-cation/debye_huckel_diameter",
+      "field": "debye_huckel_diameter",
+      "index": [
+        1
+      ],
+      "magnitude": 17.175527288040648,
+      "unit": "angstrom"
+    }
+  },
+  {
+    "optimum": "optimum-1",
+    "before": {
+      "identity": "component/lithium-cation/packing_diameter",
+      "field": "packing_diameter",
+      "index": [
+        1
+      ],
+      "magnitude": 2.503512,
+      "unit": "angstrom"
+    },
+    "after": {
+      "identity": "component/lithium-cation/packing_diameter",
+      "field": "packing_diameter",
+      "index": [
+        1
+      ],
+      "magnitude": 3.221045257889387,
+      "unit": "angstrom"
+    }
+  },
+  {
+    "optimum": "optimum-1",
+    "before": {
+      "identity": "component/lithium-cation/segment_diameter",
+      "field": "sigma_constant",
+      "index": [
+        1
+      ],
+      "magnitude": 2.8449,
+      "unit": "angstrom"
+    },
+    "after": {
+      "identity": "component/lithium-cation/segment_diameter",
+      "field": "sigma_constant",
+      "index": [
+        1
+      ],
+      "magnitude": 3.6602787021470307,
+      "unit": "angstrom"
+    }
+  },
+  {
+    "optimum": "optimum-1",
+    "before": {
+      "identity": "pair/chloride-anion/lithium-cation/k_ij",
+      "field": "k_ij",
+      "index": [
+        5,
+        1
+      ],
+      "magnitude": 0.7034856484526162,
+      "unit": "dimensionless"
+    },
+    "after": {
+      "identity": "pair/chloride-anion/lithium-cation/k_ij",
+      "field": "k_ij",
+      "index": [
+        5,
+        1
+      ],
+      "magnitude": -9.205355462886327,
+      "unit": "dimensionless"
+    }
+  },
+  {
+    "optimum": "optimum-1",
+    "before": {
+      "identity": "pair/lithium-cation/water/k_ij",
+      "field": "k_ij",
+      "index": [
+        1,
+        0
+      ],
+      "magnitude": -0.6599959436133305,
+      "unit": "dimensionless"
+    },
+    "after": {
+      "identity": "pair/lithium-cation/water/k_ij",
+      "field": "k_ij",
+      "index": [
+        1,
+        0
+      ],
+      "magnitude": -3.111333957340356,
+      "unit": "dimensionless"
+    }
+  }
+]

@@ -1,0 +1,169 @@
+{
+  "source_commit": "1eca175e5b281e667f8fff28ca79d681b2cf7934",
+  "runtime_correction_commit": "99f601395d64725516e328f413ed0a5dacfc719e",
+  "review_baseline": "47b64b72187b091b81f1ae72f886626b9686088c",
+  "integration_base": "40cdcfe40305755b6961446f1cbeb75fd5492d82",
+  "wheel_sha256": "dafe05d6c7522690456d0e5c5a1568367d303754b396c00111d63436e89dfec9",
+  "retained_wheel": "build/current-calorics/qualified-1eca/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+  "preparation": {
+    "build_dir": "build/engine-meson/cpython-313-linux-x86_64-x86_64-f6db693e21e289603ae71c78242a17b102f1e324061021d5dca361f47a0bfef7",
+    "build_fingerprint": "80c1c5e6f421056c028e98034202ad3ad98b35749426e2b6d540ec0e9d98156b",
+    "schema_version": 1,
+    "wheel": "build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+    "wheel_sha256": "dafe05d6c7522690456d0e5c5a1568367d303754b396c00111d63436e89dfec9"
+  },
+  "controls": {
+    "OMP_NUM_THREADS": 1,
+    "OPENBLAS_NUM_THREADS": 1,
+    "MKL_NUM_THREADS": 1,
+    "EPCSAFT_BUILD_JOBS": 2,
+    "serial_execution": true
+  },
+  "operations": [
+    {
+      "name": "architecture",
+      "command": "timeout 120 .venv/bin/python tools/check-engine-architecture.py --build-dir /home/tnnrpolley21/.codex/worktrees/epc-delivery-225/ePC-SAFT/build/engine-meson/cpython-313-linux-x86_64-x86_64-f6db693e21e289603ae71c78242a17b102f1e324061021d5dca361f47a0bfef7 --wheel build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "log": "build/current-calorics/lower-causes-retry1/architecture.log",
+      "sha256": "2cd313b0933bf0d657a1de23d69299abc83ae16450aa1248b41c24755d5b699d",
+      "cost": "elapsed_seconds=0.74 max_rss_kb=50716 exit_status=0"
+    },
+    {
+      "name": "check-affected",
+      "command": "timeout 900 bash tools/check-affected.sh 40cdcfe40305755b6961446f1cbeb75fd5492d82",
+      "log": "build/current-calorics/lower-causes-retry1/check-affected.log",
+      "sha256": "332176afb56bdd8f0395339375a78cd89c94542e98a7c49fce31639dda7ffce6",
+      "cost": "elapsed_seconds=197.77 max_rss_kb=561036 exit_status=0"
+    },
+    {
+      "name": "check-all",
+      "command": "timeout 600 bash tools/check-all.sh",
+      "log": "build/current-calorics/lower-causes-retry1/check-all.log",
+      "sha256": "0d9ca1d5c1ff71863096ae3b53dde77d86b57e4a2d43b852d0f75bd8bd5fe71a",
+      "cost": "elapsed_seconds=27.54 max_rss_kb=94280 exit_status=0"
+    },
+    {
+      "name": "installed-verify",
+      "command": "timeout 60 .venv/bin/python tools/verify-installed-wheel.py --wheel build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "log": "build/current-calorics/lower-causes-retry1/installed-verify.log",
+      "sha256": "2f6f984f2bd501fcf38997936a1942e8c91fc7b2e3a6d9aeff55585ca0d63325",
+      "cost": "elapsed_seconds=0.19 max_rss_kb=47884 exit_status=0"
+    },
+    {
+      "name": "prepare",
+      "command": "env EPCSAFT_PREPARE_NATIVE_BUILD=1 timeout 900 bash tools/ensure-engine-wheel.sh",
+      "log": "build/current-calorics/lower-causes-retry1/prepare.log",
+      "sha256": "04f094a91c2d1b772e31ff9831de3e6af7f73b59445ef2d4065973ef697f5ef4",
+      "cost": "elapsed_seconds=137.02 max_rss_kb=1267700 exit_status=0"
+    },
+    {
+      "name": "reference-caloric-identities",
+      "command": "timeout 120 /home/tnnrpolley21/.codex/worktrees/epc-delivery-225/ePC-SAFT/build/engine-meson/cpython-313-linux-x86_64-x86_64-f6db693e21e289603ae71c78242a17b102f1e324061021d5dca361f47a0bfef7/equilibrium_checks reference-caloric-identities",
+      "log": "build/current-calorics/lower-causes-retry1/reference-caloric-identities.log",
+      "sha256": "f0ed5b6d949f824f2851a96a4d4db9dccd45d2782bf24b200fd14e86b17745ad",
+      "cost": "elapsed_seconds=0.56 max_rss_kb=17880 exit_status=0"
+    }
+  ],
+  "rows": {
+    "path": "analyses/2026-reactive-caloric-actions/results/lower-reference-causes.csv",
+    "sha256": "bbe84a8aff59538af884f4241dd66dc0069b35b0cc2a6d53b2abf5ff948be003",
+    "records": 98,
+    "satisfied": 88,
+    "observations": 10,
+    "failed": 0
+  },
+  "numerical_witness": [
+    "reference-calorics/dependencies/lower-column/available-theta",
+    "reference-calorics/dependencies/lower-column/refused-mixed-change"
+  ],
+  "gates": {
+    "check_all": "115 Python tests and six fast native groups passed.",
+    "check_affected": "Same plus required boundary, regression_fit and equilibrium groups passed against integration base.",
+    "identified_installed_wheel": "14 RECORD hashes matched corrected wheel; architecture passed."
+  },
+  "runtime_lines": {
+    "current_by_layer": {
+      "core": 917,
+      "contributions": 1547,
+      "properties": 4767,
+      "equilibrium": 7515,
+      "regression": 2398,
+      "surface": 532,
+      "bindings": 1946,
+      "python": 2729
+    },
+    "current_total": 22351,
+    "ceilings_changed": false,
+    "diff_against_integration_base": {
+      "bindings": {
+        "added": 13,
+        "removed": 4,
+        "net": 9
+      },
+      "contributions": {
+        "added": 3,
+        "removed": 3,
+        "net": 0
+      },
+      "equilibrium": {
+        "added": 683,
+        "removed": 366,
+        "net": 317
+      },
+      "properties": {
+        "added": 160,
+        "removed": 181,
+        "net": -21
+      },
+      "python": {
+        "added": 3,
+        "removed": 1,
+        "net": 2
+      }
+    }
+  },
+  "failed_preparation": {
+    "source_commit": "99f601395d64725516e328f413ed0a5dacfc719e",
+    "log": "build/current-calorics/lower-causes/prepare.log",
+    "sha256": "76f2df5ab1dbf4633baed141beaef70bc8900dcbcc111fb78fd2eeb33ea10720",
+    "cost": "Command exited with non-zero status 2\nelapsed_seconds=294.27 max_rss_kb=1374660 exit_status=2",
+    "cause": "Verification used nonexistent calorics.derivatives instead of declared calorics.gibbs. Three reads corrected in two lines; runtime unchanged.",
+    "cleanup": "phase_status=2 install_status=0 verify_status=0 direct_url_status=0",
+    "numerical_rows": 0
+  },
+  "cleanup": {
+    "status": "phase_status=0 install_status=0 verify_status=0 direct_url_status=0",
+    "restored_wheel_sha256": "e28d258df06eac39711c59a79f9ce2b69fc8ac7565637bfba0dbef21863d8dc7",
+    "record_hashes_verified": 14,
+    "original_direct_url_byte_identical": true
+  },
+  "prior_evidence": {
+    "analyses/2026-reactive-caloric-actions/results/current-source-comparisons.csv": {
+      "sha256": "cb13f8fbaa60faae9e35a3743a9f61d9a89d18ada6a6c493167dc22330a79a25",
+      "preserved_from": "47b64b72187b091b81f1ae72f886626b9686088c"
+    },
+    "analyses/2026-reactive-caloric-actions/results/current-source-provenance.json": {
+      "sha256": "34333c3f4e99cc762011974525914dbfa5e68d6165ae04d59b98c62a3f1ad2a6",
+      "preserved_from": "47b64b72187b091b81f1ae72f886626b9686088c"
+    },
+    "analyses/2026-reactive-caloric-actions/results/comparisons.csv": {
+      "sha256": "a82c8cce7a091b2a0fcbaf3d40bae222cba2185a1bb3291bdc415bbf8b2e0c63",
+      "preserved_from": "47b64b72187b091b81f1ae72f886626b9686088c"
+    },
+    "analyses/2026-reactive-caloric-actions/results/diagnosis.csv": {
+      "sha256": "fa8aa9b3f1e60ad6b73ffbd13f805e5e05e8e1e9cdfa561e8b4fa15292a70a9d",
+      "preserved_from": "47b64b72187b091b81f1ae72f886626b9686088c"
+    }
+  },
+  "limits": [
+    "Numeric cause-preservation check uses the existing manufactured steep dielectric-slope case, not physical validation or an adopted parameterization.",
+    "No attempt to repair that intentionally rejected mixed column or broaden its available domain is claimed.",
+    "Earlier admitted-case replay retains its original 2e6/4d source identity; this correction changes diagnostic ownership, not equations or criteria.",
+    "Independent runtime review re-evaluation pending. No free-intensive or apparent-Cp fitting implementation."
+  ],
+  "presentation": {
+    "notebook_html": "build/companion/analyses/2026-reactive-caloric-actions/notebook.html",
+    "context_html": "build/companion/docs/scientific/CONTEXT.html",
+    "method": "Existing Quarto render wrapper with --no-execute; retained scalar table, no additional scientific calculation.",
+    "prose_check": "24 plugin-wide rules passed; existing context table is not accepted by the scoped-rule parser."
+  }
+}

@@ -1,0 +1,77 @@
+{
+  "identity": {
+    "wheel": "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-223-build-tpd-stability-test-and-phase-35ebff8f/build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+    "wheel_sha256": "8470b49a9283528b83dbbdab46dc62dee0fc70e5e2149f8f218b823dd85812cb",
+    "executed_script_sha256": "f3d7e28bf0f72de8f31ff90f8e1e76509adc806d0b9c0920d7f67c09b147d1e7",
+    "baseline_script_sha256": "640a35eb50295dc97469ad32a7eb2836b5b9b5262c2a7d3d4b7293594a1c6d9f",
+    "qualifier_script_sha256": "3c5a6ddc8d4de9475a915f6e50a1da8e2fb2f06c57a716bcf9010b234876f8cc",
+    "source_mtimes": {
+      "engine/native/equilibrium/gibbs_minimizer.cpp": 1790935477428563179,
+      "engine/native/equilibrium/request_compile.cpp": 1790915612053935625
+    },
+    "thread_environment": {
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1"
+    }
+  },
+  "feos_version": "0.10.1",
+  "feos_import": null,
+  "reference_reuse": {
+    "metadata": "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-223-build-tpd-stability-test-and-phase-35ebff8f/analyses/2026-tpd-phase-discovery/results/qualification-76b13fd3/feos.json",
+    "metadata_sha256": "bd47fd25c105dc359f288ce81b2065280491ddb24d796f68514b437efa92d541",
+    "operands_csv": "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-223-build-tpd-stability-test-and-phase-35ebff8f/analyses/2026-tpd-phase-discovery/results/qualification-76b13fd3/feos.csv",
+    "operands_sha256": "52c5b9733c49c3e164822c6a09d6e78a8ae6b60cfa87228fd3fe2e00d7db7d73",
+    "method": "Unchanged independently refined FeOs 0.10.1 reference reused; no FeOs calls or copied reference rows"
+  },
+  "sources": {
+    "parameters": {
+      "url": "https://raw.githubusercontent.com/feos-org/feos/f1fd55d8/crates/feos/tests/pcsaft/test_parameters.json",
+      "sha256": "bd09af1cb49e4b525f4c589d66b10579ac13600634b889f551de9d533f843580"
+    },
+    "stability_source": {
+      "url": "https://raw.githubusercontent.com/feos-org/feos/v0.10.1/crates/feos-core/src/phase_equilibria/stability_analysis.rs",
+      "sha256": "dc32cb8a9514772b6d84eac264f5a836812beff434ff46d4ed93c4f1bdf2c506"
+    },
+    "version": "0.10.1",
+    "comparison": {
+      "T_K": 300.0,
+      "P_Pa": 100000.0,
+      "feed_mol": [
+        0.5,
+        0.5
+      ],
+      "components": [
+        "water_np",
+        "hexane"
+      ],
+      "k_ij": 0.0,
+      "refinements": [
+        {
+          "tol": 1e-10,
+          "max_iter": 1000
+        },
+        {
+          "tol": 1e-12,
+          "max_iter": 1000
+        }
+      ],
+      "composition_change_max_abs": 1e-08,
+      "density_change_max_relative": 1e-07,
+      "composition_comparison_max_abs": 1e-07,
+      "density_comparison_max_relative": 1e-06
+    }
+  },
+  "failure": null,
+  "costs": {
+    "csv": "feos-costs.csv",
+    "sha256": "a7517d8647357c95e12e100d9a02ca47b0a138c4cc067a5133374ac9a94b9a1e",
+    "samples": 9,
+    "first_report_work": "sample 0 native work references the identical reported CSV operands",
+    "count_aliases": "iterations/evaluations/Hessian counts alias native work where that map is present"
+  },
+  "limits": [
+    "independent implementation comparison, not physical validation",
+    "FeOs negative-TPD stopping relaxation is retained in achieved residuals",
+    "reused FeOs iteration output remains with the identified original reference; fresh reference output belongs in its run log"
+  ]
+}

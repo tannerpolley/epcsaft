@@ -1,0 +1,6 @@
+source_key,role,doi,zotero_parent,zotero_attachment,pdf_sha256,locators
+cameretti_2005,original article (Ind. Eng. Chem. Res. 44 3355-3362),10.1021/ie0488142,CNAR9DGU,X32LB2D4,2fc7c1ce1674c38a0bf9c9997a2d56d2ef3f319a6ec640901d82d199135897c0,"Table 1 water p.3358; Eqs. 13-20 and Section 3 conventions; original Table 2 p.3359; Tables 3-5 and Figures 1-4"
+cameretti_2005_correction,Additions and Corrections (Ind. Eng. Chem. Res. 44 8944),10.1021/ie051055i,VZWJHRBS,RPMVXCZ2,6df6f626bf91740d8e8b77559eb71fb0b66b90769cecbd85c553fab254489a9f,"corrected Eq. 13; corrected Table 2 (ion a_j and u_j); corrected Tables 4 and 5"
+floriano_nascimento_2004,water permittivity cited by Cameretti Section 3 (Braz. J. Phys. 34 38),10.1590/S0103-97332004000100006,,,357f015f13c34657ed39f316be4f1d793d35f00fc375e5586347279b8529a0be,"Eq. 3 and Table I p.40 (273/298/323/348 K); SciELO PDF"
+wagner_pruss_1993,water saturation reference (J. Phys. Chem. Ref. Data 22 783),10.1063/1.555926,,,,"Eqs. 2.5 and 2.6 (IAPWS auxiliary saturation equations)"
+hamer_wu_1972,298.15 K mean ionic activity coefficients,10.1063/1.3253108,,,,"data/packets/hamer-wu-1972-aqueous-alkali-halides/1"

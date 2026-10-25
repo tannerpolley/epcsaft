@@ -1,0 +1,10 @@
+stage,start,status,usable,cost,iterations,residual_evaluations,jacobian_evaluations,covariance,rank,message
+5,1,converged,1,0.1029954721721449,32,33,23,active_bound,5,"Parameter tolerance reached. Relative step_norm: 7.006694e-11 <= 1.000000e-10."
+5,2,converged,1,0.041670547435154137,168,170,145,active_bound,5,"Parameter tolerance reached. Relative step_norm: 2.763349e-12 <= 1.000000e-10."
+5,3,converged,1,0.041670547436322106,189,191,170,active_bound,5,"Parameter tolerance reached. Relative step_norm: 6.065896e-11 <= 1.000000e-10."
+5,4,converged,1,0.10299547217768135,61,63,44,active_bound,5,"Parameter tolerance reached. Relative step_norm: 9.191923e-11 <= 1.000000e-10."
+5,5,converged,1,0.062747155105959504,175,177,141,active_bound,5,"Parameter tolerance reached. Relative step_norm: 4.151484e-11 <= 1.000000e-10."
+5,6,converged,1,0.062747155109176528,174,176,146,active_bound,5,"Function tolerance reached. |cost_change|/cost: 7.575072e-13 <= 1.000000e-12"
+4,7,converged,1,0.064294442276743691,486,488,383,available,4,"Parameter tolerance reached. Relative step_norm: 4.130685e-12 <= 1.000000e-10."
+4,8,converged,1,0.064294442278744604,74,76,59,available,4,"Parameter tolerance reached. Relative step_norm: 9.176653e-12 <= 1.000000e-10."
+4,9,limit_reached,1,3434.5513802138621,1500,1500,977,not_converged,4,"Maximum number of iterations reached. Number of iterations: 1499."

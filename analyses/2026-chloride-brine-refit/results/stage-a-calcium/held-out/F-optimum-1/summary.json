@@ -1,0 +1,46 @@
+{
+  "specification_commit": "f594304279ed61e5d8c0e13f094815a9dfc48b1e",
+  "engine_commit": "be61a7c66b31245100d298a060a3938d63b6b674",
+  "specification_sha256": "ee7a1a2df6c84f725be3427cbfe7df6cd06253b4ce4e527a165f9b25da9f539a",
+  "script_sha256": "25f12a40288f2637061bbc4b62c91c4473a2aa017592399a1350b483a68b0cfd",
+  "native_binaries": {
+    "build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so": "c3c8332b3685d135488f0800b0fec1e0936ae3a9f5cd526e1ce82f39242d6784",
+    "build/engine-meson/shared/libepcsaft_native.so": "03d309db5a04eebb3701ad405581c4f20160971bab4a51abc7a75921c6bb1457"
+  },
+  "conditions": {
+    "T_K": 298.15,
+    "P_Pa": 100000.0,
+    "component_order": [
+      "water",
+      "sodium-cation",
+      "magnesium-cation",
+      "calcium-cation",
+      "chloride-anion"
+    ]
+  },
+  "realizations": 1467,
+  "unique_native_states": 10890,
+  "native_failure_count": 0,
+  "repeated_states": 778,
+  "repeat_aw_max": 0.0,
+  "repeat_Phi_max": 0.0,
+  "maximum_pressure_error_Pa": 1.0910385753959417e-05,
+  "minimum_pressure_density_derivative": 72021.49208959404,
+  "maximum_charge_residual": 2.7755575615628914e-17,
+  "Robinson_maximum_reconstruction_sensitivity": 0.00011820474678178623,
+  "Robinson_reconstruction_passed": true,
+  "transfer_passed": false,
+  "transfer_rows": 8802,
+  "failed_transfer_rows": 1,
+  "declarations_qualified": {
+    "Held": false,
+    "Figiel": false
+  },
+  "ms2": {
+    "water_kg_per_L": 0.905,
+    "major_ion_I_mol_kg": 6.705732240533697,
+    "charge_imbalance_mol_kg": 0.09223510753868205,
+    "chloride_approximation_I_mol_kg": 6.584385125170315,
+    "extrapolation": "Composition to simultaneous Na/Ca/Mg feed; I lies inside the measured ranges."
+  }
+}

@@ -1,0 +1,102 @@
+\section{Introduction}
+\label{sec:introduction}
+% P:introduction-01
+In an aqueous electrolyte that splits into two liquids or exchanges solvent with a vapor, phase splitting, ion partitioning and chemical speciation determine the observables that a parameter fit compares with data and that a process model constrains.
+A mean ionic activity coefficient, a phase composition, a bubble pressure or the pH of a liquid is then a property of a solved equilibrium, not of a state at given composition.
+Least-squares estimation needs the derivatives of such observables with respect to the parameters, and an equation-oriented process model needs their derivatives with respect to temperature, pressure and feed, including the response of every solved phase and species.
+The accuracy of these derivatives governs the Jacobian-based diagnostics and the convergence of equation-oriented models~\citep{Allan2024}.
+
+% P:introduction-02
+The perturbed-chain statistical associating fluid theory (PC-SAFT) of Gross and Sadowski~\citep{Gross2001,Gross2002} describes the residual Helmholtz energy of chain molecules with hard-chain, dispersion and association contributions.
+Electrolyte PC-SAFT (ePC-SAFT) adds a Debye--H\"uckel term for ion--ion interactions~\citep{Cameretti2005,Held2008,Held2014}, and later versions add a Born term for ion solvation and a composition-dependent relative permittivity~\citep{Bulow2019,Bulow2020,Bulow2021,Figiel2025}.
+These equations are taken here from their sources; none of them is new.
+
+% P:introduction-03
+Several open-source packages implement PC-SAFT with exact Helmholtz-energy derivatives.
+teqp evaluates the Helmholtz energy of an equation of state and obtains its derivatives by automatic differentiation~\citep{bellImplementingEquationState2022}.
+FeOs derives the properties of its models from one Helmholtz-energy implementation through generalized dual numbers and provides parameter estimation and classical density functional theory~\citep{rehnerFeOsOpenSourceFramework2023}.
+Clapeyron.jl organizes a large family of equations of state around a shared set of property and equilibrium methods with automatic differentiation~\citep{walkerClapeyronjlExtensibleOpenSource2022}.
+CoolProp evaluates multiparameter reference equations of state for pure and pseudo-pure fluids and tabulates check values for independent implementers~\citep{bellPurePseudopureFluid2014}; where such a reference equation exists it is the more accurate source of pure-fluid properties, and this package does not replace it.
+ThermoPack provides cubic and PC-SAFT equations of state in one thermodynamic framework, whose recommended citation reviews the established methods such frameworks rest on~\citep{wilhelmsenThermodynamicModelingEquations2017}.
+At the versions surveyed, Clapeyron.jl differentiates solved nonreactive equilibria implicitly, FeOs differentiates bubble pressures with respect to parameters, and Clapeyron.jl solves electroneutral liquid--liquid equilibria with ions in both liquids (Table~\ref{tab:software}).
+
+% P:introduction-04
+The equilibrium methods are also established.
+Constrained Gibbs-energy minimization over phases and species is a general formulation of phase and chemical equilibrium~\citep{Pereira2012,Tsanas2019,Coatleven2022}, and interior-point solution of such problems has been reported~\citep{Belov2023}.
+Simultaneous ePC-SAFT reaction and phase equilibrium has been published for acid dissociation in liquid--liquid systems~\citep{Ascani2022pH} and for esterification~\citep{Ascani2023}, and Tsanas et al.\ solved reactive phase equilibria with ions in several liquids using an electrolyte nonrandom two-liquid model~\citep{Tsanas2022}.
+Tangent-plane analysis tests the stability of a candidate phase set~\citep{Michelsen1982}, and differentiation of the optimality conditions of a nonlinear program gives the sensitivity of its solution~\citep{pirnayOptimalSensitivityBased2012}.
+
+% P:introduction-05
+This work presents the ePC-SAFT package, distinguished here from the published ePC-SAFT equations it evaluates.
+Its contribution is the demonstrated combination of these elements in one native calculation (Fig.~\ref{fig:workflow}).
+A parameter record selects one electrolyte Helmholtz energy, and a single Gibbs-energy-minimization driver solves neutral, charged and reacting phase-equilibrium specifications for it on one set of residual equations.
+Differentiation of those equations gives exact derivatives of the solved state, which serve as Jacobian columns of parameter estimation and as first and second derivatives of an equation-oriented process model.
+No equivalent combination was identified in the sources surveyed at the versions named in Table~\ref{tab:software}; this is a survey finding with unknown entries, not a statement about every implementation.
+The combination holds within the tested phase supports, the sets of species allowed in each phase, and within the reference conventions and derivative orders stated in Sections~\ref{sec:equilibrium} and~\ref{sec:derivatives}.
+No overall speed advantage is claimed; Section~\ref{sec:performance} defines the operation-specific computational-cost comparison.
+The measured-data comparisons of Section~\ref{sec:physical} state the resulting physical accuracy and its failures.
+
+\begin{figure}[pos=H]
+\centering
+\input{figures/tikz/workflow}
+\caption{One native calculation serves every request.
+A parameter record and declared thermal and reaction data define the Helmholtz energy of Eq.~\eqref{eq:residual} (Section~\ref{sec:model}), evaluated with its algorithmic derivatives on the selected support and thermal interval.
+State properties, the rows of a declared equilibrium (Section~\ref{sec:equilibrium}) and the directional derivatives, called actions, of its solved state (Section~\ref{sec:derivatives}) are derivatives of that energy; parameter fits (Section~\ref{sec:estimation}) and process models consume them.
+An explicit phase search uses the same driver but is never run inside a declared solve.
+ASL, AMPL Solver Library.}
+\label{fig:workflow}
+\end{figure}
+
+
+
+% P:introduction-06
+Each comparison in this work answers one of four questions, and every figure panel is labelled with its class.
+Numerical verification asks whether the code solves the stated equations; it compares results with independent codes, analytic identities and step refinement (Section~\ref{sec:verification}).
+Published-model reproduction re-evaluates a published formulation and its parameters.
+Comparison with calculated source values tests numerical translation; comparison with measured data or evaluated correlations instead assesses that published model while retaining its original fitting overlap and source limitations.
+Calibration reports how well fitted parameters represent the data used to fit them, and prediction reports the error of fixed parameters on data outside the fit (Sections~\ref{sec:estimation} and~\ref{sec:physical}).
+Inherited literature parameters may have been fitted to some of the data shown, so a prediction with such parameters is labelled with that overlap.
+No comparison here is called physical validation, which would additionally require independent measurements with uncertainties, judged against a defined use.
+
+
+% P:introduction-07
+The examples span pure-fluid saturation, neutral and associating mixtures, electrolytes, solvent transfer and reacting phase splits.
+The propane fit connects calibration to withheld-temperature prediction; mixed salts expose failed transfer from fitted binaries.
+Sections~\ref{sec:model}--\ref{sec:estimation} introduce equations and algorithms, Section~\ref{sec:implementation} their use, and Sections~\ref{sec:physical} and~\ref{sec:verification} physical and numerical accuracy.
+Cost, engineering use and limitations follow in Sections~\ref{sec:performance}--\ref{sec:conclusions}.
+
+
+\begin{table}[pos=htbp]
+\centering
+\caption{Equilibrium and derivative capabilities of five PC-SAFT implementations, from their source code and documentation.
+G, one general formulation shared with other specifications; S, a dedicated routine; P, partial or restricted scope; U, assembled by the user from lower-level outputs; X, excluded by the source or documentation; ?, not shown in the sources checked, which is unknown rather than absent.
+The codes describe how a capability is provided, not its accuracy or cost.
+An asterisk marks a class in which a comparison in Section~\ref{sec:verification} computes the same case with that code and this package.
+Versions: FeOs~0.9.5 source, with 0.10.1 for the derivative, pressure--enthalpy and pressure--entropy flash and fitting classes; Clapeyron.jl development source following release~0.6.20, with the 0.6.29 documentation for implicit derivatives and the generalized flash; teqp~0.23.2; ThermoPack development source.
+Supporting Information Section~\ref{sec:si-sources} gives the source of each cell.
+\textsuperscript{a}Ions confined to the aqueous liquid or at trace amounts in the organic liquid.
+\textsuperscript{b}Internal-energy--volume specifications and pressure--enthalpy or pressure--entropy specifications with charged species are not available.
+\textsuperscript{c}Phase envelopes are verified for neutral vapor--liquid systems.
+\textsuperscript{d}Derivative orders depend on the case and the input direction (Section~\ref{sec:derivatives}).
+\textsuperscript{e}No physical comparison is reported in this work.}
+\label{tab:software}
+\small
+\begin{tabularx}{\linewidth}{@{}Xccccc@{}}
+\toprule
+Problem class & This work & Clapeyron.jl & FeOs & teqp & ThermoPack \\
+\midrule
+Phase envelopes and critical points & G\textsuperscript{c} & S & S* & S* & S \\
+Tangent-plane stability analysis & G & S & S* & ? & S \\
+Neutral liquid--liquid and three-phase equilibrium & G & S* & S* & S & P \\
+Electrolyte activity and osmotic coefficients & S & S* & U* & ? & X \\
+Born solvation and composition-dependent permittivity & S & S* & S* & ? & X \\
+Electrolyte vapor--liquid equilibrium with speciation & G\textsuperscript{e} & X & ? & ? & X \\
+Electrolyte liquid--liquid equilibrium, ions in both liquids & G & S* & ? & ? & X \\
+Simultaneous reaction and phase equilibrium & G & X & ? & ? & ? \\
+Reactive electrolyte liquid--liquid equilibrium & G\textsuperscript{a} & X & ? & ? & X \\
+Caloric properties and pressure--enthalpy flash & G\textsuperscript{b} & G & S* & G & S \\
+Exact derivatives of equilibrium results & G\textsuperscript{d} & P* & P* & P & P \\
+Electrolyte and reactive parameter estimation & S & P & ? & ? & ? \\
+\bottomrule
+\end{tabularx}
+\end{table}

@@ -1,0 +1,15 @@
+item,paper,packets_1_2_3,packet4,disposition,locator
+29 ion sigma and u/k rows,Table 2 printed values,all match,unchanged,no transcription difference,Held2008 Table2 pp.89-90; results/ion-parameters.csv
+DH diameter,a_i = sigma_i,v1 implicit; v2/v3 0.88 sigma_i,sigma_i,corrected printed-equation mismatch,Held2008 p.88 after Eq.2 and Eq.3
+Packing diameter,0.88 sigma_i confirmed retrospectively,v1 implicit; v2/v3 explicit,0.88 sigma_i,matches packing convention,Held2014 Eq.21 and following sentence citing Held2008
+Ion-ion dispersion all signs,zero; includes same ion,v1/v2 all unlike pairs kij1; v3 opposite1 and same-sign exclusion,unchanged,matches; Mg-Cl/Ca-Cl are no exception,Held2008 p.88 after Eq.6 and p.89 Section3
+Water-ion dispersion,geometric mean; no binary adjustment,kij0,unchanged,matches; no salt-specific kij,Held2008 Eq.6 and following paragraph
+Water segment count,1.204659,1.204659,unchanged,matches,Held2008 Table1
+Water dispersion energy K,353.9449,353.9449,unchanged,matches,Held2008 Table1
+Water association,2B; energy2425.6714K; volume0.0450989,one donor one acceptor and identical coefficients,unchanged,matches,Held2008 Table1 and Section2
+Water sigma(T) angstrom,2.7927+10.11exp(-0.01775T)-1.417exp(-0.01146T),identical correlation,unchanged,matches,Held2008 Table1 Eq.7
+Relative permittivity,concentration independent; no numeric value printed in Held2008,78.09 constant from Figiel2025,unchanged,numeric source supplement; exact Held executable value unverified,Held2008 Section2; Cameretti2005 Section3 Floriano-Nascimento temperature correlation; packet Figiel source
+DH Helmholtz and screening,Eqs.2-4 finite-size ion-specific sum,Engine canonical debye_huckel_helmholtz and screening,same equation; corrected length,algebraically identical after SI units and dimensionless a/(kBT),engine/docs/equations.md and Held2008 Eqs.2-4
+Born term,absent from Eq.1,off,off,matches,Held2008 Eq.1
+Mean ionic coefficient,stoichiometric geometric mean phi_i/phi_i_infinity,Engine native weighted log fugacity differences,unchanged,matches Eq.8-9; reference convergence retained,Held2008 Eqs.8-9
+Molal conversion,divide by 1+nu M_water m with M kg/mol,Engine native formula-unit solvent mass basis,unchanged,matches Eq.10; water explicitly treated in all three short-range contributions,Held2008 Eq.10 and Section3

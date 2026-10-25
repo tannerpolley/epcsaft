@@ -1,0 +1,18 @@
+{
+  "original_paths": {
+    "gibbs-scaling.json": "results/qualification-8470b49a/gibbs-scaling.json",
+    "gibbs-scaling.csv": "results/qualification-8470b49a/gibbs-scaling.csv",
+    "gibbs-scaling-costs.csv": "results/qualification-8470b49a/gibbs-scaling-costs.csv",
+    "gibbs-scaling-8470b49a.log": "results/gibbs-scaling-8470b49a.log"
+  },
+  "original_sha256": {
+    "gibbs-scaling.json": "2d24e25867696aa59741d85c1617ae93e431e5257c8292d83d5520875ab0400e",
+    "gibbs-scaling.csv": "aad682892de54c3b2c2a606f7b7bb83e9f79816bd52c4d35de5d824143f0aa5c",
+    "gibbs-scaling-costs.csv": "2f092f255c2d17e8602a6e3b85f5cd44da92825af35a483646b87569caaedcbc",
+    "gibbs-scaling-8470b49a.log": "3a7edce6360ecf1b9d24dfbe1fde1982094de0e4444f49aa561b7940061419af"
+  },
+  "executed_source": "../../../scripts/diagnostics/100-mol-cold/qualify.py",
+  "executed_source_sha256": "3c5a6ddc8d4de9475a915f6e50a1da8e2fb2f06c57a716bcf9010b234876f8cc",
+  "method": "Original failed cold study moved unchanged after diagnosis; no inputs, numerical rows, costs or JSON provenance edited.",
+  "scope": "Separate declared-conditioning limitation; the accepted extensive-margin falsifier now uses default discovery only."
+}

@@ -1,0 +1,71 @@
+{
+  "implementation_base": "5a595e9276942ee9532e6a0489ae3b13e6f552e0",
+  "branch": "issue-225-slice1",
+  "issue": "https://github.com/tannerpolley/ePC-SAFT/issues/225",
+  "issue_body_sha256": "d7a283323f8eeb3e15173c9f3e73b14baad875dc2de42e496b9ce22af9418cf7",
+  "source_sha256": {
+    "engine/native/properties/helmholtz_model.cpp": "9a05565f1b26e5ee8293ebdcb4e793964242f8302f23c2d49b15d7084294eeae",
+    "engine/native/properties/helmholtz_model.hpp": "18590c8938817bc46362335f0dee4f2020bbe7098dc4e7d4f163904318245021",
+    "engine/native/properties/infinite_dilution_reference.cpp": "c3e4254ef3c00cd45c11b50693437eea138fbc093c7acedc72165551aee06f7b",
+    "engine/native/properties/helmholtz_tape.hpp": "25559ac388821bbe3f3564e2fddcd73747dfa386afa90278fd9d184674857432",
+    "engine/tests/native/properties_checks.cpp": "3821d7d9ef3a5c2113e253a6b0f7becf90088819b89b2a5111b408387359263f",
+    "engine/tests/native/properties_support.hpp": "9f0a43142abc512c2557b6c02d5a52131ed3c85bb12a85a3209ab0fbdbd37d45"
+  },
+  "wheel_sha256": "84539fc50f1c90a7acb09d695492e3d85974a5980fe8ecccb20fdaa8722dda3e",
+  "wheel": "build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+  "preparation": {
+    "build_dir": "build/engine-meson/cpython-313-linux-x86_64-x86_64-f6db693e21e289603ae71c78242a17b102f1e324061021d5dca361f47a0bfef7",
+    "build_fingerprint": "5223d4c405b6d2c09339a7f776c99e5c580034bd74daf2f3ec09bae04da7fe2b",
+    "schema_version": 1,
+    "wheel": "build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+    "wheel_sha256": "84539fc50f1c90a7acb09d695492e3d85974a5980fe8ecccb20fdaa8722dda3e"
+  },
+  "checks": {
+    "build_and_install": "passed",
+    "F8": "48 identities and 13 analytic system-P zeros passed",
+    "F9": "204 resolved finite-terminal comparisons passed",
+    "ReferenceLimits": "68 consecutive changes, 34 doubled-terminal comparisons and 8 completed Cp/Cv changes passed",
+    "check_all": "passed",
+    "check_affected_HEAD": "passed"
+  },
+  "resources": {
+    "build_lock": "/tmp/t3-engine-build.lock",
+    "compile_jobs": 2,
+    "OMP_NUM_THREADS": 1,
+    "OPENBLAS_NUM_THREADS": 1,
+    "MESON_TESTTHREADS": 2
+  },
+  "runtime_budget": {
+    "properties_base": 4274,
+    "properties_final": 4509,
+    "properties_hard_ceiling": 4600,
+    "gross_added": 237,
+    "removed": 2,
+    "net": 235,
+    "aggregate_final": 20368
+  },
+  "commands": [
+    "flock /tmp/t3-engine-build.lock timeout 300 nice -n 10 env OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 EPCSAFT_BUILD_JOBS=2 EPCSAFT_PREPARE_NATIVE_BUILD=1 bash .codex/environments/setup.sh",
+    "timeout 180 nice -n 10 env OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 EPCSAFT_COMPARE_JSON=1 <identified-build>/properties_checks F8",
+    "timeout 180 nice -n 10 env OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 EPCSAFT_COMPARE_JSON=1 <identified-build>/properties_checks F9",
+    "timeout 180 nice -n 10 env OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 EPCSAFT_COMPARE_JSON=1 <identified-build>/properties_checks ReferenceLimits",
+    "flock /tmp/t3-engine-build.lock timeout 180 nice -n 10 env OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 EPCSAFT_BUILD_JOBS=2 MESON_TESTTHREADS=2 bash tools/check-all.sh",
+    "flock /tmp/t3-engine-build.lock timeout 300 nice -n 10 env OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 EPCSAFT_BUILD_JOBS=2 MESON_TESTTHREADS=2 bash tools/check-affected.sh HEAD"
+  ],
+  "limits": [
+    "Finite terminal numerical verification, no physical validation or universal infinite-dilution error bound.",
+    "Only Properties runtime and required doctrine/evidence changed.",
+    "Completed quotient calculations are independent verification, not runtime Equilibrium caloric delivery."
+  ],
+  "review": {
+    "verdict": "Supported",
+    "required_corrections": [],
+    "model": "gpt-6.1-sol",
+    "reasoning_effort": "xhigh",
+    "service_tier": "default",
+    "inspected_commit": "b02d855ea750aa3a4a8d0ce5d46fd26133bbd06f",
+    "base_commit": "5a595e9276942ee9532e6a0489ae3b13e6f552e0",
+    "report": "results/review.md",
+    "task_request": "5c7e9e40-ce2c-4bda-8749-f2201ef53432"
+  }
+}

@@ -1,0 +1,76 @@
+{
+  "execution_id": "dea19ba6202a4997b5a5611b90cb15db",
+  "utc": "2026-10-22T06:12:05.115825+00:00",
+  "engine_provenance": [
+    "759c95d80c25557c176d21ca895ba5e3b288dc3b",
+    true
+  ],
+  "interpreter": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-732-live-reproduction-glos-2004-propane/.venv/bin/python",
+  "engine_module": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-732-live-reproduction-glos-2004-propane/engine/src/epcsaft/__init__.py",
+  "native_module": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-732-live-reproduction-glos-2004-propane/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so",
+  "native_sha256": "0954372a1b5a726bf95c4592f0db781bcbb89061d00f1457a6fe01da88527498",
+  "commit": "759c95d80c25557c176d21ca895ba5e3b288dc3b",
+  "runner_sha256": "f4590cf1713c1a489d3a138a601de872f4a40d074d103ddca645e98a35862ed3",
+  "inputs": {
+    "analyses/reproduction/2004-glos/inputs/source/glos-2004-propane-saturation-source.csv": "ed5eb703ccd3e6bb4c4cfa82ecd58c58f9da0c93ab07a204dee94d8b0ae8d081",
+    "analyses/reproduction/2004-glos/inputs/source/glos-2004-propane-saturation.csv": "ccd1cfa15ec44432b06cbf22316d168c61b282631c9b1e1591e497b8d48b5676",
+    "analyses/reproduction/2004-glos/inputs/source/glos-2004-propane-saturation.yaml": "cf96071edd57eecf1c1bd1ab0fb3fa2c9f7f105bba1b018435357770e03b1971",
+    "analyses/reproduction/2004-glos/inputs/source/glos-2004-propane-source-locators.csv": "b1fb7dd90e4abb6b4fabc2f47720c2229999b016e6a16cc4504819838fb38ffc",
+    "analyses/reproduction/2004-glos/inputs/source/nist-srd69-propane-reference-eos.csv": "4a05958854ed5fed28ce4f2b3dc1e98d2d5f833c3eb2f1290ce6428492f0051c",
+    "analyses/reproduction/2004-glos/inputs/source/nist-srd69-propane-reference-eos.yaml": "c49a67f930dbd81d69c223b025beab378650eb920236ef50476d64046196c2d3"
+  },
+  "parameter_path": "data/packets/gross-2001-propane/3/parameters/parameters.json",
+  "parameter_sha256": "6dc4d60f10ef4364c01cbccf9821447ff9c4c815cc8e94284b853d1cdee71ccb",
+  "nist_packet_files": {
+    "data/packets/nist-srd69-pure-saturation-properties/1/observations/ethane-saturation.csv": "b01333e827933c0a7148672c8ae3eef78393320c0d18f2c4d5a0fc40d9bef6b2",
+    "data/packets/nist-srd69-pure-saturation-properties/1/observations/methane-saturation.csv": "dec64d5a6cac414a4a92393a0d728fa27c02135c6a159d0d1881d7b6dde6d26c",
+    "data/packets/nist-srd69-pure-saturation-properties/1/observations/propane-reference-saturation.csv": "4a05958854ed5fed28ce4f2b3dc1e98d2d5f833c3eb2f1290ce6428492f0051c",
+    "data/packets/nist-srd69-pure-saturation-properties/1/packet.toml": "4248c74ac1989ad918044b9eb2a16756babf4351f37650d06ba76dbdcf7cceeb",
+    "data/packets/nist-srd69-pure-saturation-properties/1/provenance/source-origin.toml": "b9bb5a2f655b0d1f50be75ec87a6176710a68e408b4ec2fc5ec15f8e917fe5db",
+    "data/packets/nist-srd69-pure-saturation-properties/1/sources/propane-reference-source.yaml": "e4d93b64c67b0b78bce73a64d72259d1089c0cab416c011ec49919ca68494d44"
+  },
+  "parameters": [
+    {
+      "parameter": "dispersion_energy_over_k",
+      "magnitude": 208.11,
+      "unit": "kelvin"
+    },
+    {
+      "parameter": "segment_count",
+      "magnitude": 2.002,
+      "unit": "dimensionless"
+    },
+    {
+      "parameter": "segment_diameter",
+      "magnitude": 3.6184,
+      "unit": "angstrom"
+    },
+    {
+      "parameter": "molar_mass",
+      "magnitude": 0.044096,
+      "unit": "kilogram / mole"
+    }
+  ],
+  "parameter_domain": {
+    "domain_id": "propane-fit-range",
+    "kind": "fit-range",
+    "temperature_min": {
+      "magnitude": 85,
+      "unit": "kelvin"
+    },
+    "temperature_max": {
+      "magnitude": 523,
+      "unit": "kelvin"
+    }
+  },
+  "model": {
+    "association": "none",
+    "base": "pc-saft",
+    "electrolyte": "none",
+    "permittivity": "none"
+  },
+  "baseline_tolerance": 1e-10,
+  "refined_tolerance": 1e-11,
+  "refinement_relative_limit": 1e-07,
+  "wall_seconds": 0.04044185399834532
+}

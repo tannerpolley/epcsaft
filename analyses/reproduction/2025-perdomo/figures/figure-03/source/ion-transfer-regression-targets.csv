@@ -1,0 +1,3 @@
+target_id,ion,water_solvation_kj_per_mol,water_to_butanol_transfer_c_kj_per_mol,c_to_x_correction_kj_per_mol,butanol_solvation_x_kj_per_mol,transfer_source,transfer_locator,scale_decision
+licl-butanol-li-solvation,Li+,-486.2,9.6,-4.0346838929800715,-480.63468389298004,Gritzner-Auinger-2009,Table 1 1-Butanol row,molarity-to-mole-fraction conversion treated as a declared working assumption
+licl-butanol-cl-solvation,Cl-,-314.9,29.288,-4.0346838929800715,-289.64668389298004,Sakamoto-Okazaki-1987,reported 7.0 kcal/mol converted using 4.184 kJ/kcal,molarity-to-mole-fraction conversion from the reported mol/dm3 standard state

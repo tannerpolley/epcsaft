@@ -1,0 +1,16 @@
+{
+  "parameter_owner": "data/packets/khudaida-2026-figure-2-electrolyte-lle/7",
+  "figure2_current_calculation_owner": "analyses/2026-khudaida-idaes-settler",
+  "feed_owner": "each figures/figure-0N/source/feed-compositions.csv",
+  "figure2_pairing_owner": "figure-02-feed-to-table-3-tie-lines.csv",
+  "figure2_comparison_limit_owner": "current settler qualification: grand formula-coordinate AAD <= 0.0161",
+  "figures3_to7": "excluded pending source-defined temperature/salt-domain rules and comparison-limit decisions; all source identities retained",
+  "topology": "explicit two liquids, no new discovery claim",
+  "execution": "Ready r3 executed for Figure 2; independent delivered review pending",
+  "scope": "Figure 2 only; unchanged packet /7 and exact reversed Table 3 pairing",
+  "feed_conversion": "native FeedKind::Amounts -> auxiliary one-liquid native solve -> returned normalized mole_fractions declared as one-mole species Amounts; no Python normalization",
+  "projection": "native validate(observation, model, &compiled) then project_prediction(model, observation, prediction), using the same admitted solved result for every PhaseAmountRatio; never predict, which reruns equilibrium",
+  "projection_admission": "success, has_state, requested_tolerance_met true, topology_event None; preserve convergence/cause; validate denominator positivity, native Available value and retained state identity",
+  "projection_reuse_check": "zero added solve_equilibrium trace spans during projection; unchanged coordinates, amounts, compositions and densities for all ratios of each retained auxiliary/actual state",
+  "grand_formula_aad_limit": 0.0161
+}

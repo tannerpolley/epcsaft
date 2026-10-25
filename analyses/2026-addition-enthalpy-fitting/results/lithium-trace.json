@@ -1,0 +1,196 @@
+{
+  "provenance": {
+    "current_source_commit": "33cf51400a0286b0dbfb19085315519c0b061109",
+    "current_source_tree": "c30fcadb277482c99117ea0ead70e69b968d3fd8",
+    "current_wheel_sha256": "e28d258df06eac39711c59a79f9ce2b69fc8ac7565637bfba0dbef21863d8dc7",
+    "historical_wheel_sha256": "ddf63226de7767c220d189488648ca6659d7786bead4e9f7d296f6462c70cf1e",
+    "historical_engine_merge": "f5e68795",
+    "historical_application_commit": "d57933aa7b1b737aae97011017d8f3cc9f6b9069",
+    "declaration_sha256": "355b82b1d3d35e4a7a94bb4f53273793148727ac070c3276082ee4076112a9ad",
+    "scientific_question": "Preservation of the literal historical scalar EOS-concentration-target trace Li cases; reconstructed paired evidence, not original action vectors or modern chemistry adoption.",
+    "next_current_wheel": "/home/tnnrpolley21/.codex/worktrees/epc-delivery-231/ePC-SAFT/build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+    "points_mol_l": [
+      "6e-6",
+      "4e-6",
+      "3e-6",
+      "2e-6",
+      "1.5e-6",
+      "1e-6",
+      "3e-7",
+      "1e-7",
+      "1e-8",
+      "3e-10"
+    ],
+    "native_paths": {
+      "frozen_asl": {
+        "points": 10,
+        "options": [
+          0.25,
+          0.25,
+          4,
+          1
+        ],
+        "actions": "18 phase fractions \u00d7 {T first, Li first, Li-Li second}"
+      },
+      "original_fine": {
+        "points": 9,
+        "options": [
+          0.25,
+          0.001,
+          200,
+          8
+        ]
+      }
+    },
+    "criteria": "Original 1e-10 central request, no topology event, full rank, positive curvature, requested actions available; no added paired-action comparison tolerance.",
+    "native_only": "Python declares inputs and retains native readout; native Engine solves anchors, both continuation paths, compiled thermodynamics and all actions."
+  },
+  "inputs": {
+    "analyses/2026-addition-enthalpy-fitting/inputs/lithium-trace/record.netstrings": "355b82b1d3d35e4a7a94bb4f53273793148727ac070c3276082ee4076112a9ad",
+    "analyses/2026-addition-enthalpy-fitting/inputs/lithium-trace/probe.py": "b29c0bf6aa6df901faea1471c73ffab1ee8c88b32c07c373c85067c1b234591a",
+    "analyses/2026-addition-enthalpy-fitting/inputs/lithium-trace/campaign_probe.py": "42288d41fbd722dbae6a2d8899a209c81de7f165c32fff488a13c9d23a834af0"
+  },
+  "criteria": {
+    "central_row_tolerance": 1e-10,
+    "central_requirements": "native success and requested tolerance met, no topology event, full rank and positive computed reduced curvature",
+    "actions": "All requested fraction actions Available; no paired action agreement margin",
+    "paired_endpoint_equality": "All 19 endpoint records on each wheel are exactly equal as a reconstructed paired-readout observation"
+  },
+  "field_meaning": {
+    "species_order": [
+      "water",
+      "diluent",
+      "lithium-cation",
+      "sodium-cation",
+      "hydrogen-cation",
+      "chloride-anion",
+      "free-carrier",
+      "sodium-carrier",
+      "lithium-carrier"
+    ],
+    "phase_order": [
+      "aqueous",
+      "organic"
+    ],
+    "action_observable_unit": "1 (phase mole fraction)",
+    "action_units": "K^-1 for T; mol^-1 and mol^-2 for the native charge-paired inlet-Li amount directions on fixed 1 L aqueous basis",
+    "curvature": "Native reduced Hessian minimum in its existing coordinate scaling; positivity only, no dimensional energy interpretation"
+  },
+  "native_outcome": {
+    "current": {
+      "stage": "complete",
+      "all_frozen_endpoints_strict": true,
+      "all_original_fine_endpoints_strict": true,
+      "all_540_actions_available": true,
+      "disposition": "original selected strict endpoints, fine targets and action availability criteria satisfied"
+    },
+    "historical": {
+      "stage": "complete",
+      "all_frozen_endpoints_strict": true,
+      "all_original_fine_endpoints_strict": true,
+      "all_540_actions_available": true,
+      "disposition": "original selected strict endpoints, fine targets and action availability criteria satisfied"
+    }
+  },
+  "counts": {
+    "action_rows": 1080,
+    "endpoint_rows": 38,
+    "frozen_endpoints_per_wheel": 10,
+    "fine_targets_per_wheel": 9,
+    "actions_per_wheel": 540
+  },
+  "retained_tables": {
+    "analyses/2026-addition-enthalpy-fitting/results/lithium-trace-actions.csv": "2ecb9d7f655fffadb8f8ea1f9d99335e993515815fffc378ecbb6967ad2e47b9",
+    "analyses/2026-addition-enthalpy-fitting/results/lithium-trace-endpoints.csv": "251bbafbc6ecfa0960a141593f730f35c6a3cc0e68245ac415fea1d16a88add0"
+  },
+  "raw_artifacts": {
+    "build/issue-231/lithium-trace/run_campaign.sh": {
+      "sha256": "598fd50291acb2df15e5af0c2b4e4baa680d5f631d6998f88f396f88e532b4eb",
+      "source_path": "run_campaign.sh",
+      "source_sha256": "598fd50291acb2df15e5af0c2b4e4baa680d5f631d6998f88f396f88e532b4eb"
+    },
+    "build/issue-231/lithium-trace/campaign-provenance.json": {
+      "sha256": "d2cc7c7326060ab7f2ef5d8cc154f8529aec280e63a83005369bb572450e1511",
+      "source_path": "campaign-provenance.json",
+      "source_sha256": "d2cc7c7326060ab7f2ef5d8cc154f8529aec280e63a83005369bb572450e1511"
+    },
+    "build/issue-231/lithium-trace/campaign-live.log": {
+      "sha256": "d7277fb7cba2472f1353a69d0fd33b561e4ace58fcbe7c3efee33a98528a5139",
+      "source_path": "campaign-live.log",
+      "source_sha256": "d7277fb7cba2472f1353a69d0fd33b561e4ace58fcbe7c3efee33a98528a5139"
+    },
+    "build/issue-231/lithium-trace/campaign/historical.exit": {
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "source_path": "campaign/historical.exit",
+      "source_sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    "build/issue-231/lithium-trace/campaign/fraction-actions.raw.diff": {
+      "sha256": "eddb6971565e7079e2ce880adc9d18ee450ab5ee3743ae39dae7940743f32bcf",
+      "source_path": "campaign/fraction-actions.raw.diff",
+      "source_sha256": "eddb6971565e7079e2ce880adc9d18ee450ab5ee3743ae39dae7940743f32bcf"
+    },
+    "build/issue-231/lithium-trace/campaign/current-artifact.txt": {
+      "sha256": "a80776b742f1bc2a5a8557a12a21ebd156e4c335592c15b0169c72dedaf03a87",
+      "source_path": "campaign/current-artifact.txt",
+      "source_sha256": "a80776b742f1bc2a5a8557a12a21ebd156e4c335592c15b0169c72dedaf03a87"
+    },
+    "build/issue-231/lithium-trace/campaign/run.exit": {
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "source_path": "campaign/run.exit",
+      "source_sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    "build/issue-231/lithium-trace/campaign/current.exit": {
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "source_path": "campaign/current.exit",
+      "source_sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    "build/issue-231/lithium-trace/campaign/historical/fraction-actions.csv.gz": {
+      "sha256": "60e06ff11e92cf48ebd1db477fd452794d044a67cd386b57626c0c099120dfa4",
+      "source_path": "campaign/historical/fraction-actions.csv",
+      "source_sha256": "0b98bbae184697666345a2af56dcdde08bb1c98906c06c1ff786925ca24e6ab7"
+    },
+    "build/issue-231/lithium-trace/campaign/historical/installed.json": {
+      "sha256": "34704295e3d8a8ecf1158dddfe249367d11fb5ecc65c6d61a4c7301b050ccfb4",
+      "source_path": "campaign/historical/installed.json",
+      "source_sha256": "34704295e3d8a8ecf1158dddfe249367d11fb5ecc65c6d61a4c7301b050ccfb4"
+    },
+    "build/issue-231/lithium-trace/campaign/historical/result.json.gz": {
+      "sha256": "9a19221e9ca6642ee814bb11d170959b5c910a4a91ce2404c3358e4190fbdbfa",
+      "source_path": "campaign/historical/result.json",
+      "source_sha256": "2e04174e78e083254f2eada7aef6cc7630ca7158bfca4bb6e0881b1d9cd864fa"
+    },
+    "build/issue-231/lithium-trace/campaign/current/fraction-actions.csv.gz": {
+      "sha256": "a4f295f908bc6a96dbd3c8a50a9b946ff29576550d9df59616aff226158b85cc",
+      "source_path": "campaign/current/fraction-actions.csv",
+      "source_sha256": "a2194af052a9f361882d7bc899f1d374db135bb9a30b183b76813aa2b6e1942e"
+    },
+    "build/issue-231/lithium-trace/campaign/current/installed.json": {
+      "sha256": "cc22f2b4a15f5a6e42976a8a158277a4156894f5f90eff933a4340eecc41e262",
+      "source_path": "campaign/current/installed.json",
+      "source_sha256": "cc22f2b4a15f5a6e42976a8a158277a4156894f5f90eff933a4340eecc41e262"
+    },
+    "build/issue-231/lithium-trace/campaign/current/result.json.gz": {
+      "sha256": "b7f23dea6847c1059601fc5a8928ef138f1960139dc45c5f714757670d82d698",
+      "source_path": "campaign/current/result.json",
+      "source_sha256": "36dabb1af3967e97f23afaad8bd9c17e5dc7100f2a53c6262dbf29ec7cb2db42"
+    },
+    "build/issue-231/lithium-trace/campaign-restored/installed.json": {
+      "sha256": "7970c6142a5e45c4eaeba147a2a6d5d1650e204fe6fcb3d5a137300e47365cc6",
+      "source_path": "campaign-restored/installed.json",
+      "source_sha256": "7970c6142a5e45c4eaeba147a2a6d5d1650e204fe6fcb3d5a137300e47365cc6"
+    }
+  },
+  "claim_limits": [
+    "Reconstructed paired outputs; original action vectors were not retained.",
+    "Literal historical scalar EOS-concentration K with no source references.",
+    "No modern chemistry adoption, physical validation, fitting or process optimization.",
+    "No action comparison margin is introduced.",
+    "Positive local computed curvature is not a global stability proof.",
+    "This replay does not qualify modern application chemistry, #234, or design5 optimization."
+  ],
+  "source_hash_manifest": {
+    "path": "build/issue-231/lithium-trace/source-file-hashes.json",
+    "meaning": "Original manager artifact identities; source/producer entries are retained once in inputs/lithium-trace",
+    "sha256": "e38e150659b1265de9b4af83e04b03b49c1a2f533e9405da9c8e86f3fdf87701"
+  }
+}

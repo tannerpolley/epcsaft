@@ -1,0 +1,23 @@
+{
+  "wheel_sha256": "sha256:405e79b7ea100e9bafaced88acfa6b1a7b7819d91d3a4bb176c651417f2331bd",
+  "fit_result_sha256": "sha256:05a02a0647b5cece7411fa9255d270df294bcd70ec8898754ef5117c1981d77c",
+  "observation_snapshot_sha256": "sha256:3eeeff1c5973b9c1f32d0e54ccde5672f9dc9063a25c9559bd3a4dfdb4c144ce",
+  "row_count": 58,
+  "evaluated_count": 55,
+  "outside_parameter_domain_count": 3,
+  "sources": [
+    "Hilliard2008",
+    "Jou1995"
+  ],
+  "temperatures_c": [
+    40.0,
+    60.0,
+    80.0
+  ],
+  "failures": 0,
+  "median_absolute_log10_error": 1.024120489773164,
+  "maximum_absolute_log10_error": 1.2109325730568812,
+  "maximum_balance_inf_norm": 6.807962019319201e-15,
+  "maximum_reaction_affinity_inf_norm": 3.126388037344441e-13,
+  "maximum_pressure_relative_residual": 1.9503598823615333e-10
+}

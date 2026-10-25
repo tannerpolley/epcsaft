@@ -1,0 +1,1065 @@
+{
+  "schema": "epcsaft.parameters",
+  "schema_version": 1,
+  "document_id": "held-2014-chloride-mixture-refit",
+  "document_version": 1,
+  "purpose": "external-document",
+  "sources": [
+    {
+      "source_id": "held-2014",
+      "citation": "Held, C.; Reschke, T.; Mohammad, S.; Luza, A.; Sadowski, G. ePC-SAFT revised. Chemical Engineering Research and Design 2014, 92, 2884-2897.",
+      "doi": "10.1016/j.cherd.2014.05.017",
+      "use_basis": "Tables 1-3 strategy 2 and Eqs. (1), (15)-(22); Zotero 3DIW87Q5/TD5T732H; PDF SHA-256 dea9aa05e2ee8eb1c675873fa9d8737943312484874d844f01b45613da261acf."
+    },
+    {
+      "source_id": "figiel-yu-held-2025",
+      "citation": "Figiel, P.; Yu, G.; Held, C. Predicting Thermodynamic Properties of Ions in Single Solvents and in Mixed Solvents Using a Modified Born Term within the ePC-SAFT Framework. Industrial & Engineering Chemistry Research 2025, 64, 9406-9418.",
+      "doi": "10.1021/acs.iecr.5c00475",
+      "use_basis": "numeric water relative permittivity 78.09 used to instantiate the Held 2008 concentration-independent solvent dielectric; main PDF SHA-256 a3c940895c530f72f47f22f8c0f4796b5ad37918a4edd274f85497c6dd81ad1f"
+    },
+    {
+      "source_id": "nist-srd-69-water",
+      "citation": "NIST Chemistry WebBook, SRD 69, Water, CAS 7732-18-5.",
+      "use_basis": "water identity and molecular weight"
+    },
+    {
+      "source_id": "issue-575-stage-a-joint-fit",
+      "citation": "ePC-SAFT issue 575 stage-A native joint fit, 2026-10-16",
+      "use_basis": "Unqualified stage-A candidate: Na+, Mg2+ and Ca2+ refit jointly on Hamer-Wu NaCl, Goldberg-Nuttall MgCl2/CaCl2 (<= 3.3 mol/kg), Rard-Miller 1987 NaCl-MgCl2 and Saad-Padova-Marcus 1980 NaCl-KCl-CaCl2 mixture osmotic coefficients at 298.15 K on held-2014-strategy2/2; water, Cl-, K+, Li+ and every u_i unchanged. Held-out water properties under the frozen #556 limits, Dinane-Mounir judged by source agreement (owner amendment 2026-10-16: per realization, the larger of the frozen limit and the Rard-Miller/Dinane-Mounir disagreement) (RMS/max, robust over 1,467 realizations): robinson-bower-1966 I<=3 0.0105/0.0189 fail (0/1,467 realizations pass; failing: 1467 realizations); robinson-bower-1966 I>3 0.0097/0.0183 pass; dinane-mounir-2003 I<=3 0.0008/0.0016 fail (1,466/1,467 realizations pass; failing: r1408); dinane-mounir-2003 I>3 0.0014/0.0024 pass. 298.15 K only; no K+/Li+ mixture, temperature or physical-validation claim."
+    }
+  ],
+  "domains": [
+    {
+      "domain_id": "held-2014-chlorides-298-15-k-1-bar",
+      "kind": "reported-conditions",
+      "temperature_min": {
+        "magnitude": 298.15,
+        "unit": "kelvin"
+      },
+      "temperature_max": {
+        "magnitude": 298.15,
+        "unit": "kelvin"
+      },
+      "pressure_min": {
+        "magnitude": 1,
+        "unit": "bar"
+      },
+      "pressure_max": {
+        "magnitude": 1,
+        "unit": "bar"
+      }
+    },
+    {
+      "domain_id": "nist-water-identity",
+      "kind": "unknown"
+    },
+    {
+      "domain_id": "issue-575-chloride-brine-298-15-k",
+      "kind": "reported-conditions",
+      "temperature_min": {
+        "magnitude": 298.15,
+        "unit": "kelvin"
+      },
+      "temperature_max": {
+        "magnitude": 298.15,
+        "unit": "kelvin"
+      },
+      "pressure_min": {
+        "magnitude": 1,
+        "unit": "bar"
+      },
+      "pressure_max": {
+        "magnitude": 1,
+        "unit": "bar"
+      }
+    }
+  ],
+  "components": [
+    {
+      "component_id": "calcium-cation",
+      "aliases": [
+        "Ca2+"
+      ],
+      "fixed": {
+        "charge_number": {
+          "value": {
+            "magnitude": 2,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "held-2014",
+            "locator": "Table 2, ion charge label",
+            "domain_id": "held-2014-chlorides-298-15-k-1-bar"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/calcium-cation/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 8.476198980896964,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "issue-575-stage-a-joint-fit",
+            "locator": "stage-A joint fit, start grid-08 (analyses/2026-chloride-brine-refit)",
+            "domain_id": "issue-575-chloride-brine-298-15-k"
+          }
+        },
+        {
+          "identity": "component/calcium-cation/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 1060,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "held-2014",
+            "locator": "Table 2 strategy 2, p.2889 calcium-cation",
+            "domain_id": "held-2014-chlorides-298-15-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/calcium-cation/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 4.001217742295591,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "issue-575-stage-a-joint-fit",
+            "locator": "stage-A joint fit, start grid-08 (analyses/2026-chloride-brine-refit)",
+            "domain_id": "issue-575-chloride-brine-298-15-k"
+          }
+        },
+        {
+          "identity": "component/calcium-cation/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 1,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "held-2014",
+            "locator": "Section 2.1 spherical ions (one segment)",
+            "domain_id": "held-2014-chlorides-298-15-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/calcium-cation/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 4.546838343517717,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "issue-575-stage-a-joint-fit",
+            "locator": "stage-A joint fit, start grid-08 (analyses/2026-chloride-brine-refit)",
+            "domain_id": "issue-575-chloride-brine-298-15-k"
+          }
+        }
+      ],
+      "name": "calcium cation",
+      "formula": "Ca2+"
+    },
+    {
+      "component_id": "chloride-anion",
+      "aliases": [
+        "Cl-"
+      ],
+      "fixed": {
+        "charge_number": {
+          "value": {
+            "magnitude": -1,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "held-2014",
+            "locator": "Table 2, ion charge label",
+            "domain_id": "held-2014-chlorides-298-15-k-1-bar"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/chloride-anion/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 2.42528,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-2014",
+            "locator": "Eq.(21), p.2890 d_ion = 0.88 sigma_ion; closest approach inferred from the Figs. 1-2 reproduction (analyses/reproduction/2014-held), text Section 2.1 p.2886 says sigma",
+            "domain_id": "held-2014-chlorides-298-15-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/chloride-anion/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 170,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "held-2014",
+            "locator": "Table 2 strategy 2, p.2889 chloride-anion",
+            "domain_id": "held-2014-chlorides-298-15-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/chloride-anion/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 2.42528,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-2014",
+            "locator": "Eq.(21), p.2890 d_ion=0.88 sigma_ion",
+            "domain_id": "held-2014-chlorides-298-15-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/chloride-anion/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 1,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "held-2014",
+            "locator": "Section 2.1 spherical ions (one segment)",
+            "domain_id": "held-2014-chlorides-298-15-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/chloride-anion/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 2.756,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-2014",
+            "locator": "Table 2 strategy 2, p.2889 chloride-anion",
+            "domain_id": "held-2014-chlorides-298-15-k-1-bar"
+          }
+        }
+      ],
+      "name": "chloride anion",
+      "formula": "Cl-"
+    },
+    {
+      "component_id": "lithium-cation",
+      "aliases": [
+        "Li+"
+      ],
+      "fixed": {
+        "charge_number": {
+          "value": {
+            "magnitude": 1,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "held-2014",
+            "locator": "Table 2, ion charge label",
+            "domain_id": "held-2014-chlorides-298-15-k-1-bar"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/lithium-cation/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 2.503512,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-2014",
+            "locator": "Eq.(21), p.2890 d_ion = 0.88 sigma_ion; closest approach inferred from the Figs. 1-2 reproduction (analyses/reproduction/2014-held), text Section 2.1 p.2886 says sigma",
+            "domain_id": "held-2014-chlorides-298-15-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/lithium-cation/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 360,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "held-2014",
+            "locator": "Table 2 strategy 2, p.2889 lithium-cation",
+            "domain_id": "held-2014-chlorides-298-15-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/lithium-cation/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 2.503512,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-2014",
+            "locator": "Eq.(21), p.2890 d_ion=0.88 sigma_ion",
+            "domain_id": "held-2014-chlorides-298-15-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/lithium-cation/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 1,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "held-2014",
+            "locator": "Section 2.1 spherical ions (one segment)",
+            "domain_id": "held-2014-chlorides-298-15-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/lithium-cation/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 2.8449,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-2014",
+            "locator": "Table 2 strategy 2, p.2889 lithium-cation",
+            "domain_id": "held-2014-chlorides-298-15-k-1-bar"
+          }
+        }
+      ],
+      "name": "lithium cation",
+      "formula": "Li+"
+    },
+    {
+      "component_id": "magnesium-cation",
+      "aliases": [
+        "Mg2+"
+      ],
+      "fixed": {
+        "charge_number": {
+          "value": {
+            "magnitude": 2,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "held-2014",
+            "locator": "Table 2, ion charge label",
+            "domain_id": "held-2014-chlorides-298-15-k-1-bar"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/magnesium-cation/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 10.582938146650266,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "issue-575-stage-a-joint-fit",
+            "locator": "stage-A joint fit, start grid-08 (analyses/2026-chloride-brine-refit)",
+            "domain_id": "issue-575-chloride-brine-298-15-k"
+          }
+        },
+        {
+          "identity": "component/magnesium-cation/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 1500,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "held-2014",
+            "locator": "Table 2 strategy 2, p.2889 magnesium-cation",
+            "domain_id": "held-2014-chlorides-298-15-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/magnesium-cation/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 4.046135999868868,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "issue-575-stage-a-joint-fit",
+            "locator": "stage-A joint fit, start grid-08 (analyses/2026-chloride-brine-refit)",
+            "domain_id": "issue-575-chloride-brine-298-15-k"
+          }
+        },
+        {
+          "identity": "component/magnesium-cation/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 1,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "held-2014",
+            "locator": "Section 2.1 spherical ions (one segment)",
+            "domain_id": "held-2014-chlorides-298-15-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/magnesium-cation/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 4.597881818032805,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "issue-575-stage-a-joint-fit",
+            "locator": "stage-A joint fit, start grid-08 (analyses/2026-chloride-brine-refit)",
+            "domain_id": "issue-575-chloride-brine-298-15-k"
+          }
+        }
+      ],
+      "name": "magnesium cation",
+      "formula": "Mg2+"
+    },
+    {
+      "component_id": "potassium-cation",
+      "aliases": [
+        "K+"
+      ],
+      "fixed": {
+        "charge_number": {
+          "value": {
+            "magnitude": 1,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "held-2014",
+            "locator": "Table 2, ion charge label",
+            "domain_id": "held-2014-chlorides-298-15-k-1-bar"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/potassium-cation/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 2.940696,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-2014",
+            "locator": "Eq.(21), p.2890 d_ion = 0.88 sigma_ion; closest approach inferred from the Figs. 1-2 reproduction (analyses/reproduction/2014-held), text Section 2.1 p.2886 says sigma",
+            "domain_id": "held-2014-chlorides-298-15-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/potassium-cation/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 200,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "held-2014",
+            "locator": "Table 2 strategy 2, p.2889 potassium-cation",
+            "domain_id": "held-2014-chlorides-298-15-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/potassium-cation/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 2.940696,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-2014",
+            "locator": "Eq.(21), p.2890 d_ion=0.88 sigma_ion",
+            "domain_id": "held-2014-chlorides-298-15-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/potassium-cation/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 1,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "held-2014",
+            "locator": "Section 2.1 spherical ions (one segment)",
+            "domain_id": "held-2014-chlorides-298-15-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/potassium-cation/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 3.3417,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-2014",
+            "locator": "Table 2 strategy 2, p.2889 potassium-cation",
+            "domain_id": "held-2014-chlorides-298-15-k-1-bar"
+          }
+        }
+      ],
+      "name": "potassium cation",
+      "formula": "K+"
+    },
+    {
+      "component_id": "sodium-cation",
+      "aliases": [
+        "Na+"
+      ],
+      "fixed": {
+        "charge_number": {
+          "value": {
+            "magnitude": 1,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "held-2014",
+            "locator": "Table 2, ion charge label",
+            "domain_id": "held-2014-chlorides-298-15-k-1-bar"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/sodium-cation/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 11.285273302277206,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "issue-575-stage-a-joint-fit",
+            "locator": "stage-A joint fit, start grid-08 (analyses/2026-chloride-brine-refit)",
+            "domain_id": "issue-575-chloride-brine-298-15-k"
+          }
+        },
+        {
+          "identity": "component/sodium-cation/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 230,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "held-2014",
+            "locator": "Table 2 strategy 2, p.2889 sodium-cation",
+            "domain_id": "held-2014-chlorides-298-15-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/sodium-cation/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 3.2234665713924926,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "issue-575-stage-a-joint-fit",
+            "locator": "stage-A joint fit, start grid-08 (analyses/2026-chloride-brine-refit)",
+            "domain_id": "issue-575-chloride-brine-298-15-k"
+          }
+        },
+        {
+          "identity": "component/sodium-cation/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 1,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "held-2014",
+            "locator": "Section 2.1 spherical ions (one segment)",
+            "domain_id": "held-2014-chlorides-298-15-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/sodium-cation/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 3.663030194764196,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "issue-575-stage-a-joint-fit",
+            "locator": "stage-A joint fit, start grid-08 (analyses/2026-chloride-brine-refit)",
+            "domain_id": "issue-575-chloride-brine-298-15-k"
+          }
+        }
+      ],
+      "name": "sodium cation",
+      "formula": "Na+"
+    },
+    {
+      "component_id": "water",
+      "aliases": [],
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 18.01528,
+            "unit": "gram / mole"
+          },
+          "provenance": {
+            "source_id": "nist-srd-69-water",
+            "locator": "Water record, molecular weight",
+            "domain_id": "nist-water-identity"
+          }
+        },
+        "charge_number": {
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "held-2014",
+            "locator": "Table 1, water model and footnote a",
+            "domain_id": "held-2014-chlorides-298-15-k-1-bar"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/water/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 353.95,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "held-2014",
+            "locator": "Table 1, water model and footnote a",
+            "domain_id": "held-2014-chlorides-298-15-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/water/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 1.2047,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "held-2014",
+            "locator": "Table 1, water model and footnote a",
+            "domain_id": "held-2014-chlorides-298-15-k-1-bar"
+          }
+        }
+      ],
+      "name": "water",
+      "cas": "7732-18-5",
+      "formula": "H2O"
+    }
+  ],
+  "pairs": [
+    {
+      "component_id_a": "lithium-cation",
+      "component_id_b": "water",
+      "coefficients": [
+        {
+          "identity": "pair/lithium-cation/water/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": -0.25,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "held-2014",
+            "locator": "Table 2, water-ion column and footnotes a/b, p.2889",
+            "domain_id": "held-2014-chlorides-298-15-k-1-bar"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "chloride-anion",
+      "component_id_b": "lithium-cation",
+      "coefficients": [
+        {
+          "identity": "pair/chloride-anion/lithium-cation/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0.669,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "held-2014",
+            "locator": "Table 3 chloride row, p.2889",
+            "domain_id": "held-2014-chlorides-298-15-k-1-bar"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "sodium-cation",
+      "component_id_b": "water",
+      "coefficients": [
+        {
+          "identity": "pair/sodium-cation/water/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": -2.8022620678732535,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "issue-575-stage-a-joint-fit",
+            "locator": "stage-A joint fit, start grid-08 (analyses/2026-chloride-brine-refit)",
+            "domain_id": "issue-575-chloride-brine-298-15-k"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "chloride-anion",
+      "component_id_b": "sodium-cation",
+      "coefficients": [
+        {
+          "identity": "pair/chloride-anion/sodium-cation/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": -8.447900354718284,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "issue-575-stage-a-joint-fit",
+            "locator": "stage-A joint fit, start grid-08 (analyses/2026-chloride-brine-refit)",
+            "domain_id": "issue-575-chloride-brine-298-15-k"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "potassium-cation",
+      "component_id_b": "water",
+      "coefficients": [
+        {
+          "identity": "pair/potassium-cation/water/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0.19972220000000007,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "held-2014",
+            "locator": "Table 2, water-ion column and footnotes a/b, p.2889",
+            "domain_id": "held-2014-chlorides-298-15-k-1-bar"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "chloride-anion",
+      "component_id_b": "potassium-cation",
+      "coefficients": [
+        {
+          "identity": "pair/chloride-anion/potassium-cation/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0.064,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "held-2014",
+            "locator": "Table 3 chloride row, p.2889",
+            "domain_id": "held-2014-chlorides-298-15-k-1-bar"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "magnesium-cation",
+      "component_id_b": "water",
+      "coefficients": [
+        {
+          "identity": "pair/magnesium-cation/water/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": -2.0933665309584546,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "issue-575-stage-a-joint-fit",
+            "locator": "stage-A joint fit, start grid-08 (analyses/2026-chloride-brine-refit)",
+            "domain_id": "issue-575-chloride-brine-298-15-k"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "chloride-anion",
+      "component_id_b": "magnesium-cation",
+      "coefficients": [
+        {
+          "identity": "pair/chloride-anion/magnesium-cation/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": -6.70285717371925,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "issue-575-stage-a-joint-fit",
+            "locator": "stage-A joint fit, start grid-08 (analyses/2026-chloride-brine-refit)",
+            "domain_id": "issue-575-chloride-brine-298-15-k"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "calcium-cation",
+      "component_id_b": "water",
+      "coefficients": [
+        {
+          "identity": "pair/calcium-cation/water/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": -2.161678597538848,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "issue-575-stage-a-joint-fit",
+            "locator": "stage-A joint fit, start grid-08 (analyses/2026-chloride-brine-refit)",
+            "domain_id": "issue-575-chloride-brine-298-15-k"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "calcium-cation",
+      "component_id_b": "chloride-anion",
+      "coefficients": [
+        {
+          "identity": "pair/calcium-cation/chloride-anion/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": -6.625729514430844,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "issue-575-stage-a-joint-fit",
+            "locator": "stage-A joint fit, start grid-08 (analyses/2026-chloride-brine-refit)",
+            "domain_id": "issue-575-chloride-brine-298-15-k"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "chloride-anion",
+      "component_id_b": "water",
+      "coefficients": [
+        {
+          "identity": "pair/chloride-anion/water/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": -0.25,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "held-2014",
+            "locator": "Table 2, water-ion column and footnotes a/b, p.2889",
+            "domain_id": "held-2014-chlorides-298-15-k-1-bar"
+          }
+        }
+      ]
+    }
+  ],
+  "model_families": [
+    {
+      "family_id": "model/association",
+      "kind": "association",
+      "choice": "general-site",
+      "provenance": {
+        "source_id": "held-2014",
+        "locator": "Eq.(1) and Section 2.3 strategy 2; association only water, no Born; salt-independent dielectric; same-sign dispersion excluded",
+        "domain_id": "held-2014-chlorides-298-15-k-1-bar"
+      }
+    },
+    {
+      "family_id": "model/base",
+      "kind": "base",
+      "choice": "pc-saft",
+      "provenance": {
+        "source_id": "held-2014",
+        "locator": "Eq.(1) and Section 2.3 strategy 2; association only water, no Born; salt-independent dielectric; same-sign dispersion excluded",
+        "domain_id": "held-2014-chlorides-298-15-k-1-bar"
+      }
+    },
+    {
+      "family_id": "model/electrolyte",
+      "kind": "electrolyte",
+      "choice": "fully-dissociated-debye-huckel",
+      "ionic_dispersion": "exclude-same-sign-ion-pairs",
+      "provenance": {
+        "source_id": "held-2014",
+        "locator": "Eq.(1) and Section 2.3 strategy 2; association only water, no Born; salt-independent dielectric; same-sign dispersion excluded",
+        "domain_id": "held-2014-chlorides-298-15-k-1-bar"
+      }
+    },
+    {
+      "family_id": "model/relative_permittivity",
+      "kind": "permittivity",
+      "choice": "solvent-only",
+      "provenance": {
+        "source_id": "held-2014",
+        "locator": "Eq.(1) and Section 2.3 strategy 2; association only water, no Born; salt-independent dielectric; same-sign dispersion excluded",
+        "domain_id": "held-2014-chlorides-298-15-k-1-bar"
+      }
+    }
+  ],
+  "model_coefficients": [],
+  "correlations": [
+    {
+      "correlation_id": "component/water/relative_permittivity/constant",
+      "component_id": "water",
+      "family": "relative_permittivity",
+      "form": "constant",
+      "independent_variables": [],
+      "constant": {
+        "identity": "component/water/relative_permittivity/constant/constant",
+        "value": {
+          "magnitude": 78.09,
+          "unit": "dimensionless"
+        }
+      },
+      "provenance": {
+        "source_id": "figiel-yu-held-2025",
+        "locator": "Figiel 2025 Table 1, water 78.09; supplemental numeric value for Held 2014 salt-independent solvent dielectric, not printed in Held 2014",
+        "domain_id": "held-2014-chlorides-298-15-k-1-bar"
+      }
+    },
+    {
+      "correlation_id": "component/water/segment_diameter/constant-plus-sum-of-exponentials",
+      "component_id": "water",
+      "family": "segment_diameter",
+      "form": "constant-plus-sum-of-exponentials",
+      "independent_variables": [
+        "temperature"
+      ],
+      "constant": {
+        "identity": "component/water/segment_diameter/constant-plus-sum-of-exponentials/constant",
+        "value": {
+          "magnitude": 2.7927,
+          "unit": "angstrom"
+        }
+      },
+      "provenance": {
+        "source_id": "held-2014",
+        "locator": "Table 1, water model and footnote a",
+        "domain_id": "held-2014-chlorides-298-15-k-1-bar"
+      },
+      "terms": [
+        {
+          "amplitude": {
+            "identity": "component/water/segment_diameter/constant-plus-sum-of-exponentials/term-0/amplitude",
+            "value": {
+              "magnitude": 10.11,
+              "unit": "angstrom"
+            }
+          },
+          "exponent_coefficient": {
+            "identity": "component/water/segment_diameter/constant-plus-sum-of-exponentials/term-0/exponent_coefficient",
+            "value": {
+              "magnitude": -0.01775,
+              "unit": "1 / kelvin"
+            }
+          }
+        },
+        {
+          "amplitude": {
+            "identity": "component/water/segment_diameter/constant-plus-sum-of-exponentials/term-1/amplitude",
+            "value": {
+              "magnitude": -1.417,
+              "unit": "angstrom"
+            }
+          },
+          "exponent_coefficient": {
+            "identity": "component/water/segment_diameter/constant-plus-sum-of-exponentials/term-1/exponent_coefficient",
+            "value": {
+              "magnitude": -0.01146,
+              "unit": "1 / kelvin"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "topology": {
+    "presets": [],
+    "sites": [
+      {
+        "component_id": "water",
+        "site_id": "a",
+        "site_role": "donor",
+        "multiplicity": 1,
+        "provenance": {
+          "source_id": "held-2014",
+          "locator": "Table 1, water model and footnote a",
+          "domain_id": "held-2014-chlorides-298-15-k-1-bar"
+        }
+      },
+      {
+        "component_id": "water",
+        "site_id": "b",
+        "site_role": "acceptor",
+        "multiplicity": 1,
+        "provenance": {
+          "source_id": "held-2014",
+          "locator": "Table 1, water model and footnote a",
+          "domain_id": "held-2014-chlorides-298-15-k-1-bar"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "endpoint_a": {
+          "component_id": "water",
+          "site_id": "a"
+        },
+        "endpoint_b": {
+          "component_id": "water",
+          "site_id": "b"
+        },
+        "energy_over_k": {
+          "identity": "association/water/a/water/b/energy_over_k",
+          "value": {
+            "magnitude": 2425.7,
+            "unit": "kelvin"
+          }
+        },
+        "volume": {
+          "identity": "association/water/a/water/b/volume",
+          "value": {
+            "magnitude": 0.0451,
+            "unit": "dimensionless"
+          }
+        },
+        "source": {
+          "kind": "explicit",
+          "provenance": [
+            {
+              "source_id": "held-2014",
+              "locator": "Table 1, water model and footnote a",
+              "domain_id": "held-2014-chlorides-298-15-k-1-bar"
+            },
+            {
+              "source_id": "held-2014",
+              "locator": "Table 1, water model and footnote a",
+              "domain_id": "held-2014-chlorides-298-15-k-1-bar"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

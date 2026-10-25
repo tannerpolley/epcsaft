@@ -1,0 +1,38 @@
+{
+  "identity": {
+    "wheel": "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-223-build-tpd-stability-test-and-phase-35ebff8f/build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+    "wheel_sha256": "8470b49a9283528b83dbbdab46dc62dee0fc70e5e2149f8f218b823dd85812cb",
+    "library_sha256": "12f4a434a00d824da6065dba579c0b07b88f300a646067167b92edb95fda2ba1",
+    "helper_sha256": "05d47f599647edb23854f17018f8de143b12833dde4f0159e40abd5b2ec17456",
+    "script_sha256": "08d280821d812d05b696a3358d4ee7dd0382706c4c37c667c92b06d12bb1c7ab",
+    "tls_offset": 40,
+    "headers": {
+      "engine/native/core/trace.hpp": "a8bf2cb1510538ef327159ad7df54a1427dd7a9ad57c2e2db41b30a19e3537c4",
+      "engine/native/core/convergence.hpp": "da0463ebc61d333a0380e42a62d551ebb0b30fd418fb0d4c747a6c05ba2c4515"
+    }
+  },
+  "failure": null,
+  "comparison": {
+    "identical": true,
+    "rows_before": 396,
+    "rows_after": 396,
+    "operands_csv": "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-223-build-tpd-stability-test-and-phase-35ebff8f/analyses/2026-tpd-phase-discovery/results/asl-native-before/work.csv",
+    "operands_sha256": "57a980de88744aebcbff83403ce5004a1f7a10d6f3fe99b93f2bb25e2b5006b6"
+  },
+  "numerical_operand_rows": 1478,
+  "numerical_operands_identical": true,
+  "numerical_operands_sha256": "f5eb36978a35833f003badec578eb1ac5a9b452f4e509bfcd74bc85de87679ad",
+  "totals": {
+    "driver_finalizations": 9,
+    "iterations": 66,
+    "evaluations": 130,
+    "hessian_calls": 75,
+    "tangent_plane_trials": 0
+  },
+  "limits": [
+    "trace-only numerical verification on the inspected Linux/glibc shared library",
+    "TLS offset and unchanged C++ Trace layout are specific to the identified build",
+    "no thermodynamic equations or ASL calculation inputs are changed"
+  ],
+  "method": "Independently extracted current wheel ASL ELF and matched installed SHA12f4a434a00d824da6065dba579c0b07b88f300a646067167b92edb95fda2ba1. DTPMOD64 pair0x6ebe50 carries offset0x28; Scope at0xa4500 resolves that slot, loads/tests Trace, calls steady_clock and appends records. Headers/helper unchanged from original443d8289 diagnostic. Linux/glibc build-specific evidence, not a portable callable."
+}

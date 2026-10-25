@@ -1,0 +1,19 @@
+packet4 LiCl 105 states
+packet4 NaCl 105 states
+packet4 MgCl2 121 states
+packet4 CaCl2 121 states
+packet4 SrCl2 122 states
+held2014 LiCl 105 states
+held2014 NaCl 105 states
+held2014 MgCl2 121 states
+held2014 CaCl2 121 states
+held2014_nearest_dielectric MgCl2 42 states
+held2014_nearest_dielectric CaCl2 42 states
+Traceback (most recent call last):
+  File "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-750-720-part-b-diagnose-the-changed-results/analyses/2026-held-2014-chlorides/scripts/run.py", line 225, in <module>
+    run(parser.parse_args().dh_088)
+    ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-750-720-part-b-diagnose-the-changed-results/analyses/2026-held-2014-chlorides/scripts/run.py", line 187, in run
+    assert actual == expected[row["salt"]], (actual, expected[row["salt"]])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: (('0.085605', 2.25, '0.045990', 1.5), ('0.085606', 2.25, '0.045990', 1.5))

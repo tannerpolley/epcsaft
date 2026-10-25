@@ -1,0 +1,190 @@
+{
+  "accepted_count": 8,
+  "claim_limits": [
+    "declared two-liquid local branch only",
+    "no phase-discovery/globality claim",
+    "fixed IDAES mapping is not a live equilibrium callback"
+  ],
+  "completed_point_ids": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8
+  ],
+  "engine_points": [
+    {
+      "message": "converged: residual 9.7953387241539031e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 11 iterations, contraction absent, floor 2.1960661192304055e-10, amplification 0",
+      "phase_count": 2,
+      "point_id": 1,
+      "requested_tolerance_met": true,
+      "solver_status": "SUCCESS",
+      "success": true
+    },
+    {
+      "message": "converged: residual 9.7609899154749417e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 10 iterations, contraction absent, floor 2.1903403184677562e-10, amplification 0",
+      "phase_count": 2,
+      "point_id": 2,
+      "requested_tolerance_met": true,
+      "solver_status": "SUCCESS",
+      "success": true
+    },
+    {
+      "message": "converged: residual 7.4975633264727233e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 7 iterations, contraction absent, floor 2.1844948964190189e-10, amplification 0",
+      "phase_count": 2,
+      "point_id": 3,
+      "requested_tolerance_met": true,
+      "solver_status": "SUCCESS",
+      "success": true
+    },
+    {
+      "message": "converged: residual 2.6530134511710031e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 8 iterations, contraction absent, floor 2.1787937618594793e-10, amplification 0",
+      "phase_count": 2,
+      "point_id": 4,
+      "requested_tolerance_met": true,
+      "solver_status": "SUCCESS",
+      "success": true
+    },
+    {
+      "message": "converged: residual 8.4036142042385561e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 8 iterations, contraction absent, floor 2.1731855075314951e-10, amplification 0",
+      "phase_count": 2,
+      "point_id": 5,
+      "requested_tolerance_met": true,
+      "solver_status": "SUCCESS",
+      "success": true
+    },
+    {
+      "message": "converged: residual 8.9232401345028687e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 8 iterations, contraction absent, floor 2.1605272696629862e-10, amplification 0",
+      "phase_count": 2,
+      "point_id": 6,
+      "requested_tolerance_met": true,
+      "solver_status": "SUCCESS",
+      "success": true
+    },
+    {
+      "message": "converged: residual 2.8638808632610446e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 7 iterations, contraction absent, floor 2.1459040012727001e-10, amplification 0",
+      "phase_count": 2,
+      "point_id": 7,
+      "requested_tolerance_met": true,
+      "solver_status": "SUCCESS",
+      "success": true
+    },
+    {
+      "message": "converged: residual 2.8107094509314696e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 7 iterations, contraction absent, floor 2.1305251403428754e-10, amplification 0",
+      "phase_count": 2,
+      "point_id": 8,
+      "requested_tolerance_met": true,
+      "solver_status": "SUCCESS",
+      "success": true
+    }
+  ],
+  "engine_residuals": {
+    "max_classified_abs": 9.795338724153903e-15,
+    "max_raw_abs": 5.573319583618286e-14,
+    "path": "engine-residuals.csv",
+    "row_count": 160,
+    "sha256": "e9a15992c8d3d628f67a1cb56f6636590a0732fca3526e0efb20161de99a90c3"
+  },
+  "failures": [],
+  "identity": {
+    "engine_wheel": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT-greenfield/.claude/worktrees/issue-155/build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+    "engine_wheel_sha256": "ad12b19fcd8b3b4a87c355490386ecc911485ac1efc4b7a3f547e2393f803e46",
+    "epcsaft_core_import": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT-greenfield/.claude/worktrees/issue-155/.venv/lib/python3.13/site-packages/epcsaft/_core.cpython-313-x86_64-linux-gnu.so",
+    "epcsaft_import": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT-greenfield/.claude/worktrees/issue-155/.venv/lib/python3.13/site-packages/epcsaft/__init__.py",
+    "epcsaft_version": "0.2.0.dev0",
+    "idaes_version": "2.12.0",
+    "inputs": {
+      "packet": {
+        "computed_fingerprint": "23eb6e97e126f827f453b7e748548f5a7123828acac5ff8877e0c60902a3b418",
+        "files": [
+          {
+            "path": "packet.toml",
+            "sha256": "6ff2684d816df92dc0c5a26b52dbce68d628e9961512fad479433edbfc92ee41"
+          },
+          {
+            "path": "parameters/parameters.json",
+            "sha256": "8babed899e7347e58c403c7aff24a7fdd6d60411af3b4d81eb6aa90c2431dfa4"
+          },
+          {
+            "path": "provenance/source-origin.toml",
+            "sha256": "cd12c9af98c214c5d68355823bf47662e27c4585ddce6cf5c29f592f29c50c8e"
+          }
+        ],
+        "materialization": "byte-for-byte",
+        "materialized_path": "analyses/2026-khudaida-idaes-settler/inputs/data/khudaida-2026-figure-2-electrolyte-lle/7",
+        "packet_fingerprint": "23eb6e97e126f827f453b7e748548f5a7123828acac5ff8877e0c60902a3b418",
+        "packet_id": "khudaida-2026-figure-2-electrolyte-lle",
+        "packet_path": "data/packets/khudaida-2026-figure-2-electrolyte-lle/7",
+        "packet_version": "7"
+      },
+      "source_files": {
+        "experimental_tie_lines": {
+          "path": "analyses/reproduction/2026-khudaida/inputs/source/table-3-4-experimental-tielines.csv",
+          "sha256": "8f69d4fd5b01e4b9c9abaa94eb0698e685b1ec5a9936468de15fdec4509458b1"
+        },
+        "experimental_uncertainties": {
+          "path": "analyses/reproduction/2026-khudaida/inputs/source/table-3-standard-uncertainties.csv",
+          "sha256": "124e65d33243fb5a06b3299aaf584553c516a70ba645e5f37caa1b8d409e3c87"
+        },
+        "feed_to_tie_lines": {
+          "path": "analyses/reproduction/2026-khudaida/inputs/source/figure-02-feed-to-table-3-tie-lines.csv",
+          "sha256": "00c5c669046dc933b8f5827eece16d1174866a038370ebf311a47aa3a091e706"
+        },
+        "paper_epcsaft_curve": {
+          "path": "analyses/reproduction/2026-khudaida/figures/figure-02/source/paper-epcsaft-points.csv",
+          "sha256": "d00008864de1c505dd54fe3d32612911f997f5c83402869cfc1e6d7739de321d"
+        },
+        "paper_table_9": {
+          "path": "analyses/reproduction/2026-khudaida/results/tables/table-009/source/table-009.csv",
+          "sha256": "defc0b23ac71bfd9fa0267354053711b13fa41e7ad7f991c65d3ef145b295ba8"
+        },
+        "source_feed": {
+          "path": "analyses/reproduction/2026-khudaida/figures/figure-02/source/source-points.csv",
+          "sha256": "21cf58a5373b2e2c337b6baf5a0423d0ab5d7cea9639bb727b061f5844ef78d7"
+        }
+      }
+    },
+    "pyomo_version": "6.10.1",
+    "solver": {
+      "executable": "/home/tnnrpolley21/.idaes/bin/ipopt",
+      "options": {
+        "constr_viol_tol": 1e-10,
+        "max_iter": 200,
+        "tol": 1e-09
+      },
+      "sha256": "8f8711b709b5f265ff7cb8b352c037bb999d88628384be8390f26530f08de94e",
+      "version": "Ipopt 3.13.2 (x86_64-pc-linux-gnu), ASL(20190605)"
+    },
+    "source_commit": "104ad18a316d639a02ea1d8b3367a9a7bb9e7f20",
+    "source_dirty": false,
+    "units": {
+      "composition": "mol/mol",
+      "density": "mol/m^3",
+      "flows": "mol/s",
+      "pressure": "Pa",
+      "temperature": "K"
+    }
+  },
+  "line_budget_physical_python_lines": 382,
+  "maxima": {
+    "engine_classified_residual_max_abs": 9.795338724153903e-15,
+    "engine_material_balance_max_abs": 2.220446049250313e-16,
+    "engine_phase_charge_max_abs": 0.0,
+    "engine_pressure_max_relative": 4.4170883484184743e-11,
+    "idaes_charge_residual_abs": 0.0,
+    "idaes_component_balance_max_abs": 3.608224830031759e-16,
+    "idaes_composition_max_abs": 1.1102230246251565e-16,
+    "idaes_phase_flow_closure_abs": 6.661338147750939e-16,
+    "idaes_phase_fraction_abs": 3.3306690738754696e-16
+  },
+  "minimum_engine_reduced_hessian_minimum": 8.43574960575386e-05,
+  "runtime_s": 0.3825476280035218,
+  "schema": "epcsaft.khudaida.idaes-settler.v1",
+  "status": "accepted",
+  "stopping_stage": "complete",
+  "typed_cause": null,
+  "unattempted_point_ids": []
+}

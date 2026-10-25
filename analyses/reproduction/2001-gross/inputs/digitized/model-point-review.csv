@@ -1,0 +1,54 @@
+source_csv_line,figure,component,temperature_c,old_pixel_x,old_pixel_y,pixel_x,pixel_y,qa,limit
+2,03,toluene,0,449,175,449.5,175,pass: solid PC-SAFT branch checked in source crop and overlay,Sparse raster trace; symbols can obscure local line; adjacent unobscured stroke selected where needed
+3,03,toluene,0,527,274,531.5,284,pass: solid PC-SAFT branch checked in source crop and overlay,Sparse raster trace; symbols can obscure local line; adjacent unobscured stroke selected where needed
+4,03,toluene,0,651,502,649.5,515,pass: solid PC-SAFT branch checked in source crop and overlay,Sparse raster trace; symbols can obscure local line; adjacent unobscured stroke selected where needed
+9,03,diethyl ether,0,449,325,450,325,pass: solid PC-SAFT branch checked in source crop and overlay,Sparse raster trace; symbols can obscure local line; adjacent unobscured stroke selected where needed
+10,03,diethyl ether,0,498,384,498,389,pass: solid PC-SAFT branch checked in source crop and overlay,Sparse raster trace; symbols can obscure local line; adjacent unobscured stroke selected where needed
+11,03,diethyl ether,0,537,452,536,452,pass: solid PC-SAFT branch checked in source crop and overlay,Sparse raster trace; symbols can obscure local line; adjacent unobscured stroke selected where needed
+16,03,propylene,0,350,375,365,385,pass: solid PC-SAFT branch checked in source crop and overlay,Sparse raster trace; symbols can obscure local line; adjacent unobscured stroke selected where needed
+17,03,propylene,0,437,450,437,452,pass: solid PC-SAFT branch checked in source crop and overlay,Sparse raster trace; symbols can obscure local line; adjacent unobscured stroke selected where needed
+18,03,propylene,0,527,600,523,593.5,pass: solid PC-SAFT branch checked in source crop and overlay,Sparse raster trace; symbols can obscure local line; adjacent unobscured stroke selected where needed
+23,03,methane,0,299,558,307,562,pass: solid PC-SAFT branch checked in source crop and overlay,Sparse raster trace; symbols can obscure local line; adjacent unobscured stroke selected where needed
+24,03,methane,0,326,577,328.5,577,pass: solid PC-SAFT branch checked in source crop and overlay,Sparse raster trace; symbols can obscure local line; adjacent unobscured stroke selected where needed
+25,03,methane,0,347,598,340,590,pass: solid PC-SAFT branch checked in source crop and overlay,Sparse raster trace; symbols can obscure local line; adjacent unobscured stroke selected where needed
+30,07,methane,21,253,423,253,423,pass: solid PC-SAFT branch checked in source crop and overlay,Sparse raster trace; symbols can obscure local line; adjacent unobscured stroke selected where needed
+31,07,methane,21,398,278,398,278,pass: solid PC-SAFT branch checked in source crop and overlay,Sparse raster trace; symbols can obscure local line; adjacent unobscured stroke selected where needed
+32,07,methane,21,541,128,541,128,pass: solid PC-SAFT branch checked in source crop and overlay,Sparse raster trace; symbols can obscure local line; adjacent unobscured stroke selected where needed
+36,07,methane,121,195,390,195,390,pass: solid PC-SAFT branch checked in source crop and overlay,Sparse raster trace; symbols can obscure local line; adjacent unobscured stroke selected where needed
+37,07,methane,121,264,325,264,325,pass: solid PC-SAFT branch checked in source crop and overlay,Sparse raster trace; symbols can obscure local line; adjacent unobscured stroke selected where needed
+38,07,methane,121,333,273,333,279.5,pass: solid PC-SAFT branch checked in source crop and overlay,Sparse raster trace; symbols can obscure local line; adjacent unobscured stroke selected where needed
+43,08,ethane,171,243,467,243,467,pass: solid PC-SAFT branch checked in source crop and overlay,Sparse raster trace; symbols can obscure local line; adjacent unobscured stroke selected where needed
+44,08,ethane,171,381,370,381,370,pass: solid PC-SAFT branch checked in source crop and overlay,Sparse raster trace; symbols can obscure local line; adjacent unobscured stroke selected where needed
+45,08,ethane,171,519,244,519,244,pass: solid PC-SAFT branch checked in source crop and overlay,Sparse raster trace; symbols can obscure local line; adjacent unobscured stroke selected where needed
+50,08,ethane,238,243,440,243,439,pass: solid PC-SAFT branch checked in source crop and overlay,Sparse raster trace; symbols can obscure local line; adjacent unobscured stroke selected where needed
+51,08,ethane,238,381,329,381,328,pass: solid PC-SAFT branch checked in source crop and overlay,Sparse raster trace; symbols can obscure local line; adjacent unobscured stroke selected where needed
+52,08,ethane,238,519,210,519,211,pass: solid PC-SAFT branch checked in source crop and overlay,Sparse raster trace; symbols can obscure local line; adjacent unobscured stroke selected where needed
+57,09,ethane,25,252,441,252,441,pass: solid PC-SAFT branch checked in source crop and overlay,Sparse raster trace; symbols can obscure local line; adjacent unobscured stroke selected where needed
+58,09,ethane,25,388,365,410,359,pass: solid PC-SAFT branch checked in source crop and overlay,Sparse raster trace; symbols can obscure local line; adjacent unobscured stroke selected where needed
+59,09,ethane,25,524,296,524,296,pass: solid PC-SAFT branch checked in source crop and overlay,Sparse raster trace; symbols can obscure local line; adjacent unobscured stroke selected where needed
+60,09,ethane,25,660,212,660,212,pass: solid PC-SAFT branch checked in source crop and overlay,Sparse raster trace; symbols can obscure local line; adjacent unobscured stroke selected where needed
+66,10,propane,71,248,490,248,490,pass: solid PC-SAFT branch checked in source crop and overlay,Sparse raster trace; symbols can obscure local line; adjacent unobscured stroke selected where needed
+67,10,propane,71,384,458,384,458,pass: solid PC-SAFT branch checked in source crop and overlay,Sparse raster trace; symbols can obscure local line; adjacent unobscured stroke selected where needed
+68,10,propane,71,522,429,522,429,pass: solid PC-SAFT branch checked in source crop and overlay,Sparse raster trace; symbols can obscure local line; adjacent unobscured stroke selected where needed
+73,10,propane,138,248,423,248,423,pass: solid PC-SAFT branch checked in source crop and overlay,Sparse raster trace; symbols can obscure local line; adjacent unobscured stroke selected where needed
+74,10,propane,138,384,343,384,343,pass: solid PC-SAFT branch checked in source crop and overlay,Sparse raster trace; symbols can obscure local line; adjacent unobscured stroke selected where needed
+75,10,propane,138,522,252,522,264,pass: solid PC-SAFT branch checked in source crop and overlay,Sparse raster trace; symbols can obscure local line; adjacent unobscured stroke selected where needed
+80,10,propane,204,179,354,179,368,pass: solid PC-SAFT branch checked in source crop and overlay,Sparse raster trace; symbols can obscure local line; adjacent unobscured stroke selected where needed
+81,10,propane,204,248,282,248,299,pass: solid PC-SAFT branch checked in source crop and overlay,Sparse raster trace; symbols can obscure local line; adjacent unobscured stroke selected where needed
+82,10,propane,204,315,233,315,233,pass: solid PC-SAFT branch checked in source crop and overlay,Sparse raster trace; symbols can obscure local line; adjacent unobscured stroke selected where needed
+87,12,CO2,4,250,513,250,513,pass: solid PC-SAFT branch checked in source crop and overlay,Sparse raster trace; symbols can obscure local line; adjacent unobscured stroke selected where needed
+88,12,CO2,4,387,480,387,486,pass: solid PC-SAFT branch checked in source crop and overlay,Sparse raster trace; symbols can obscure local line; adjacent unobscured stroke selected where needed
+89,12,CO2,4,523,459,523,459,pass: solid PC-SAFT branch checked in source crop and overlay,Sparse raster trace; symbols can obscure local line; adjacent unobscured stroke selected where needed
+94,12,CO2,238,250,426,250,426,pass: solid PC-SAFT branch checked in source crop and overlay,Sparse raster trace; symbols can obscure local line; adjacent unobscured stroke selected where needed
+95,12,CO2,238,387,300,387,300,pass: solid PC-SAFT branch checked in source crop and overlay,Sparse raster trace; symbols can obscure local line; adjacent unobscured stroke selected where needed
+96,12,CO2,238,523,164,523,164,pass: solid PC-SAFT branch checked in source crop and overlay,Sparse raster trace; symbols can obscure local line; adjacent unobscured stroke selected where needed
+101,13,CO2,71,243,405,243,405,pass: solid PC-SAFT branch checked in source crop and overlay,Sparse raster trace; symbols can obscure local line; adjacent unobscured stroke selected where needed
+102,13,CO2,71,383,277,383,277,pass: solid PC-SAFT branch checked in source crop and overlay,Sparse raster trace; symbols can obscure local line; adjacent unobscured stroke selected where needed
+103,13,CO2,71,522,153,522,153,pass: solid PC-SAFT branch checked in source crop and overlay,Sparse raster trace; symbols can obscure local line; adjacent unobscured stroke selected where needed
+108,13,CO2,250,151,340,151,340,pass: solid PC-SAFT branch checked in source crop and overlay,Sparse raster trace; symbols can obscure local line; adjacent unobscured stroke selected where needed
+109,13,CO2,250,201,270,201,266,pass: solid PC-SAFT branch checked in source crop and overlay,Sparse raster trace; symbols can obscure local line; adjacent unobscured stroke selected where needed
+110,13,CO2,250,249,213,249,213,pass: solid PC-SAFT branch checked in source crop and overlay,Sparse raster trace; symbols can obscure local line; adjacent unobscured stroke selected where needed
+115,15,hexane,0,243,239,243,239,pass: solid PC-SAFT branch checked in source crop and overlay,Sparse raster trace; symbols can obscure local line; adjacent unobscured stroke selected where needed
+116,15,hexane,0,380,302,380,302,pass: solid PC-SAFT branch checked in source crop and overlay,Sparse raster trace; symbols can obscure local line; adjacent unobscured stroke selected where needed
+117,15,hexane,0,518,343,518,343,pass: solid PC-SAFT branch checked in source crop and overlay,Sparse raster trace; symbols can obscure local line; adjacent unobscured stroke selected where needed
+118,15,hexane,0,656,363,656,362.5,pass: solid PC-SAFT branch checked in source crop and overlay,Sparse raster trace; symbols can obscure local line; adjacent unobscured stroke selected where needed

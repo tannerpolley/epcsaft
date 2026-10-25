@@ -1,0 +1,10 @@
+Native minimax: 1 distinct Ceres minima; 948 rows
+0 converged local constrained estimate; global feasibility and optimality unresolved SUCCESS 0.019369873997446423
+Traceback (most recent call last):
+  File "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-750-720-part-b-diagnose-the-changed-results/analyses/2026-figiel-divalent-chlorides/scripts/stage1_minimax.py", line 297, in <module>
+    else: main()
+          ~~~~^^
+  File "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-750-720-part-b-diagnose-the-changed-results/analyses/2026-figiel-divalent-chlorides/scripts/stage1_minimax.py", line 258, in main
+    inert_completion=evidence,seconds=time.perf_counter()-began,wheel_sha256=hashlib.sha256(next((F.REPO/'build/environment-wheel').glob('*.whl')).read_bytes()).hexdigest(),
+                                                                                            ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+StopIteration

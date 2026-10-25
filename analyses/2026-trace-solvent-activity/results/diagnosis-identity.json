@@ -1,0 +1,9 @@
+{
+  "wheel_sha256": "79ce38e0a447b1f9045fb9ea0c7a61b141d5c17b764ca9883b0947a1fc7813c9",
+  "input_sha256": "79259c245dd748121d557ccd5c931306005a0ae01e21f6d9173a6a8de6db892d",
+  "script_sha256": "a735f161a699865a957875266e77a7186c046cf9880767a790890a2d1c721c68",
+  "source_base": "3f5ee19f",
+  "temperature_K": 298.15,
+  "pressure_Pa": 100000.0,
+  "input_path": "analyses/2026-divalent-chloride-activity/inputs/held-2008/3/parameters/parameters.json"
+}

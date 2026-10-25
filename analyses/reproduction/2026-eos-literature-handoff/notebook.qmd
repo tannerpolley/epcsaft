@@ -1,0 +1,77 @@
+---
+title: "Selected EOS literature comparisons"
+format:
+  html:
+    embed-resources: true
+execute:
+  enabled: true
+  echo: false
+  warning: false
+jupyter: python3
+---
+
+The native Engine reproduces the selected Figiel model energies to printed precision, while the physical comparisons miss their printed values.
+These are isolated scalar comparisons with different units and reference conventions; tables expose the signed deviations and criteria more clearly than a shared plot.
+This notebook reads retained results only.
+It has not been independently reviewed or promoted for manuscript use.
+
+```{python}
+import csv, json
+from pathlib import Path
+from IPython.display import Markdown, display
+run = json.loads(Path('results/native-results.json').read_text())
+rows = list(csv.DictReader(Path('results/comparisons.csv').open()))
+quantities = run['quantities']
+density = quantities[2]
+refusal = json.loads(Path('results/density-input-refusal.json').read_text())
+def table(selected):
+    display(Markdown('| Case | Target | Calculated | Signed deviation | Criterion | Unit | Outcome |\n|---|---:|---:|---:|---:|---|---|\n' + '\n'.join('| ' + ' | '.join(str(r[k]) for k in ('case_id', 'source_value', 'computed_value', 'signed_error', 'absolute_tolerance', 'unit', 'outcome')) + ' |' for r in selected)))
+display(Markdown(f"{len(quantities)} distinct quantities give {len(rows)} comparisons; {sum(r['outcome'] == 'reproduced' for r in rows)} reproduce the printed value. Conditions: {density['temperature_K']} K and {density['pressure_Pa']} Pa. Native calculation wall time, including diagnostic recomputations: {run['wall_seconds']:.6f} s."))
+display(Markdown('### Physical comparisons'))
+table([r for r in rows if r['evidence_label'] == 'physical comparison'])
+display(Markdown('### Numerical verification against the printed model column'))
+table([r for r in rows if r['evidence_label'] == 'numerical verification'])
+display(Markdown('### Numerical evidence and bounded diagnosis'))
+display(Markdown(f"Returned reference molality: {quantities[0]['reference']['molality']} mol/kg. Maximum successive-limit change over all retained references: {max(r['reference']['convergence_error'] for r in quantities + run['diagnostics'] if 'reference' in r):.6g}. The reference admission criterion is {next(s['value'] for s in run['reference_policy'] if s['name'] == 'REFERENCE_CONVERGENCE_TOLERANCE')}."))
+previous = run['diagnostics'][0]
+display(Markdown(f"Esteso coefficient with the preceding association declaration: {previous['value']:.12g}; current minus preceding: {quantities[1]['value'] - previous['value']:.6g}. This does not explain the discrepancy."))
+closure = density['density_diagnostic_recomputation']
+display(Markdown(f"Initial density refusal: {refusal['status']}; initial molar masses: {refusal['molar_masses_kg_mol']} kg/mol. Restored removed-test declarations: {density['molar_masses_kg_mol']} kg/mol. Native normalized composition: {density['composition']}. Pressure residual: {closure['pressure'] - density['pressure_Pa']:.6g} Pa; positive pressure slope: {closure['pressure_density_derivative']:.9g} Pa m³/mol. Reduced residual: {density['convergence']['residual']:.6g}, criterion: {density['convergence']['criterion']['value']}; stop: {density['convergence']['stop']}."))
+display(Markdown('### Exact source operands and execution identity'))
+display(Markdown('| Comparison | Source locator | Evidence |\n|---|---|---|\n' + '\n'.join(f"| {r['case_id']} | {r['source']}: {r['locator']} | {r['evidence_label']} |" for r in rows)))
+display(Markdown(f"Execution run `{run['execution_identity']['run_id']}`; Engine commit `{run['execution_identity']['engine_provenance'][0]}`; Engine tree clean: `{run['execution_identity']['engine_provenance'][1]}`. Core SHA-256 `{run['execution_identity']['core_sha256']}`. Each quantity retains this execution identity, packet hash, physical declarations and returned settings. Comparison refresh preserves that identity."))
+```
+
+The reference uses the native square-root-of-molality Richardson limit from the terminal pair of the dilution ladder.
+The returned log fugacity is extrapolated, not the raw value at the reported finer rung.
+The convergence diagnostic compares successive extrapolated limits and is not a rigorous error bound.
+The native owner of both reference construction and formula composition is [`infinite_dilution_reference.cpp`](../../../engine/native/properties/infinite_dilution_reference.cpp).
+Solvation reference records are explicitly separate diagnostic recomputations; the prediction binding does not expose the consumed reference.
+Null density diagnostics on energy predictions mean unavailable evidence, not failed density closure.
+
+The density correction restores the mass declarations from the [removed test](https://github.com/tannerpolley/ePC-SAFT/blob/fc64e9cc2a4eab98041e7fd5b4d817419809246c/engine/tests/test_density.py#L186) in [a leaf-local input](inputs/source/density-molar-masses.csv).
+These masses are historical comparison declarations, not values attributed to Figiel's paper.
+The native formula conversion inserts equal ion amounts on the declared solvent-molality basis; native mass projection includes the complete solution.
+Pressure closure is qualified, but global phase stability is not established.
+All selected thermodynamic parameters remain those of the Figiel family, including the comparison with Held's measurement.
+The density discrepancy persists after correcting the missing input; its physical cause remains undetermined.
+The association diagnostic changes only the mixed-solvent declaration; it is inapplicable to the ethanol-only density case.
+The reference conventions, corrected Born expression and tabulated Born diameters remain fixed.
+The differences from the literature averages are already present, within the printed-model comparison criterion, between the modelled and literature-average columns of Figiel SI Table S5. The current calculation reproduces the paper's calibration residuals. Their physical origin is not isolated here; this result does not justify refitting or establish independent physical validation.
+
+The aqueous NaCl coefficient matches the [current retained Figiel chloride calculation](../../2026-figiel-divalent-chlorides/results/current-main/figiel-1to1-comparison.csv) at the same pressure. The [Haslam/Hamer–Wu comparison](../2020-haslam/notebook.qmd) assesses the adopted parameterization using [Figiel](https://doi.org/10.1021/acs.iecr.5c00475) supporting information section S2, Table S2, and checks the molality scale, stoichiometry and reference declaration. That source table concerns aqueous NaBr and supplies agreement context rather than a NaCl pointwise criterion. The supported interpretation is limited agreement with Hamer–Wu under the adopted Figiel parameters. Allocation of the remaining deviation among model terms, fitting and source selection remains undetermined.
+
+The current criteria in [the source selection](inputs/source/literature-targets.csv) are half the printed increment, not experimental uncertainty or a general model-adequacy limit.
+Historical test limits are separate fields and never determine current outcomes.
+Hamer–Wu Table 16 is evaluated activity data; Esteso Table I uses salt-free solvent mass composition and molality per mass of mixed solvent.
+Held Table 1 reports ambient pressure, represented here by the removed test's declared pressure approximation.
+Held's instrument specification is not a total measurement uncertainty.
+Pointwise uncertainty remains unknown for these selected activity coefficients and the Figiel literature averages.
+Figiel SI Table S5 averages are convention-dependent calibration targets for Born diameters; they are physical comparisons, not independent physical validation.
+The distinct modelled column supports numerical verification only.
+Exact source locators, DOI identifiers and the cross-checked source-owner rows are retained in [comparisons.csv](results/comparisons.csv) and [source-checks.json](results/source-checks.json).
+
+This leaf replaces the former positive-pressure replay with the selected source comparisons.
+The [historical packet locks](inputs/source/data-packet-locks.json), including the stale MEA fingerprint, remain historical inventory and never select live parameters.
+The broader paper studies, parameter-transcription checks and removed callback tests are outside this comparison scope.
+No phase-equilibrium, transport, reactive-speciation or general predictive-accuracy claim follows.

@@ -1,0 +1,78 @@
+{
+  "use_basis": "provisional: relaxed target",
+  "owner_relaxation_date": "2026-10-06",
+  "conditions": {
+    "temperature_K": 298.15,
+    "pressure_Pa": 100000.0,
+    "molality_min_mol_kg": 0.001,
+    "molality_max_mol_kg": 4.5,
+    "phase": "liquid",
+    "basis": "binary MgCl2/CaCl2, mol formula units/kg water, on unchanged aqueous LiCl/NaCl/KCl /1 basis"
+  },
+  "original_target_decade": 0.02,
+  "original_target_met": false,
+  "salts": {
+    "MgCl2": {
+      "errors": {
+        "gamma": {
+          "rows": 42,
+          "maximum_absolute_decade": 0.0640759949060527,
+          "mean_absolute_decade": 0.029472036740694693
+        },
+        "osmotic": {
+          "rows": 42,
+          "maximum_absolute_decade": 0.0395771757448094,
+          "mean_absolute_decade": 0.015782705876294358
+        }
+      },
+      "qualification_file": "stage2-MgCl2-qualification.json",
+      "ceres_completed": 28,
+      "ceres_usable": 28,
+      "minimax_completed": 1
+    },
+    "CaCl2": {
+      "errors": {
+        "gamma": {
+          "rows": 42,
+          "maximum_absolute_decade": 0.04834780429326764,
+          "mean_absolute_decade": 0.023114425509531803
+        },
+        "osmotic": {
+          "rows": 42,
+          "maximum_absolute_decade": 0.03344172640405905,
+          "mean_absolute_decade": 0.01328778411218799
+        }
+      },
+      "qualification_file": "stage2-CaCl2-qualification.json",
+      "ceres_completed": 28,
+      "ceres_usable": 27,
+      "minimax_completed": 1
+    }
+  },
+  "stage1_preservation": {
+    "rows": 948,
+    "maximum_change": 0.0,
+    "passed": true
+  },
+  "fit_comparison": {
+    "tolerance_decade": 1e-10,
+    "rule": "Stored-row error difference <= unchanged native minimax feasibility tolerance; physical guards and stationarity also required.",
+    "maximum_change_decade": 5.274990405416957e-11,
+    "passed": true
+  },
+  "wheel_sha256": "fdf3fbb51244eb4991f0743a6acd377dc0296d5909b77e896d050c6e36fdf57c",
+  "source_commit": "71c8a69c3feefd01c0b1aa77b00e9418180cca29",
+  "merged_origin_main": "ec0bafa71b5022821f1774b2b9fffb06622be87c",
+  "stage1_parameters_sha256": "cec1bfc9c833f7196c7bc11d51d21aa8bc224cc388b04f165712acc5c4473626",
+  "stage1_parameters_unchanged": true,
+  "evidence_type": "Numerical fitting to evaluated reference data and numerical verification; no physical validation.",
+  "limits": [
+    "Boundary optimum: both ion-water k_ij at the lower bound and both ion-chloride k_ij at the upper bound; parameters not identified.",
+    "No mixed-salt, ternary, temperature, density, caloric or alcohol qualification.",
+    "No global optimum, parameter covariance, confidence intervals or source-uncertainty estimate.",
+    "Original 0.02-decade every-row target not met; owner relaxed it on 2026-10-06.",
+    "Preservation at 1e-12 compares current-wheel predictions; dilute Phi absolute accuracy at 1e-12 is not established.",
+    "Delivered independent review, owner acceptance and downstream adoption remain outstanding."
+  ],
+  "engine_runtime_lines_added": 0
+}

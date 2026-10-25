@@ -1,0 +1,27 @@
+parameter,component_i,component_j,value,source,provenance_status
+l_ij,*,*,0,default zero for unpublished values,unresolved_default_zero
+k_hb_ij,*,*,0,default zero for unpublished values,unresolved_default_zero
+k_ij,methane,butane,0.022,Gross2001 Table4,source_backed
+k_ij,methane,pentane,0.024,Gross2001 Table4,source_backed
+k_ij,methane,hexane,0.021,Gross2001 Table4,source_backed
+k_ij,methane,heptane,0.016,Gross2001 Table4,source_backed
+k_ij,methane,decane,0.056,Gross2001 Table4,source_backed
+k_ij,methane,isobutane,0.028,Gross2001 Table4,source_backed
+k_ij,methane,cyclohexane,0.045,Gross2001 Table4,source_backed
+k_ij,methane,benzene,0.037,Gross2001 Table4,source_backed
+k_ij,methane,toluene,0.052,Gross2001 Table4,source_backed
+k_ij,methane,m-xylene,0.045,Gross2001 Table4,source_backed
+k_ij,methane,tetralin,0.075,Gross2001 Table4,source_backed
+k_ij,nitrogen,ethylene,0.075,Gross2001 Table4,source_backed
+k_ij,nitrogen,hexane,0.119,Gross2001 Table4,source_backed
+k_ij,ethylene,heptane,0.018,Gross2001 Table4,source_backed
+k_ij,ethylene,propylene,-0.001,Gross2001 Table4,source_backed
+k_ij,propane,butane,0.003,Gross2001 Table4,source_backed
+k_ij,propylene,isobutane,-0.006,Gross2001 Table4,source_backed
+k_ij,pentane,heptane,0.011,Gross2001 Table4,source_backed
+k_ij,CO2,methane,0.065,Gross2001 Table4,source_backed
+k_ij,CO2,propane,0.109,Gross2001 Table4,source_backed
+k_ij,CO2,butane,0.120,Gross2001 Table4,source_backed
+k_ij,CO2,pentane,0.143,Gross2001 Table4,source_backed
+k_ij,CO2,heptane,0.129,Gross2001 Table4,source_backed
+k_ij,CO2,methylcyclohexane,0.144,Gross2001 Table4,source_backed

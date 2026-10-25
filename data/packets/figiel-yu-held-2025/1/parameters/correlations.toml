@@ -1,0 +1,70 @@
+[[correlations]]
+record_id = "water-segment-diameter-correlation"
+component_id = "water"
+family = "segment_diameter"
+form = "constant-plus-sum-of-exponentials"
+constant = 2.7927
+output_unit = "angstrom"
+input_unit = "kelvin"
+coefficients = [
+  { amplitude = 10.11, exponent_coefficient = -0.01775 },
+  { amplitude = -1.417, exponent_coefficient = -0.01146 },
+]
+source_id = "figiel-yu-held-2025"
+locator = "Table 2 footnote b, water sigma(T) correlation"
+domain_id = "figiel-298-k-1-bar"
+
+[[correlations]]
+record_id = "methanol-segment-diameter"
+component_id = "methanol"
+family = "segment_diameter"
+form = "constant"
+constant = 3.2300
+output_unit = "angstrom"
+source_id = "figiel-yu-held-2025"
+locator = "Table 2, methanol column, sigma_i row"
+domain_id = "figiel-298-k-1-bar"
+
+[[correlations]]
+record_id = "ethanol-segment-diameter"
+component_id = "ethanol"
+family = "segment_diameter"
+form = "constant"
+constant = 3.1771
+output_unit = "angstrom"
+source_id = "figiel-yu-held-2025"
+locator = "Table 2, ethanol column, sigma_i row"
+domain_id = "figiel-298-k-1-bar"
+
+[[correlations]]
+record_id = "water-relative-permittivity"
+component_id = "water"
+family = "relative_permittivity"
+form = "constant"
+constant = 78.09
+output_unit = "dimensionless"
+source_id = "figiel-yu-held-2025"
+locator = "Table 1, water row, dielectric constant column"
+domain_id = "figiel-298-k-1-bar"
+
+[[correlations]]
+record_id = "methanol-relative-permittivity"
+component_id = "methanol"
+family = "relative_permittivity"
+form = "constant"
+constant = 33.05
+output_unit = "dimensionless"
+source_id = "figiel-yu-held-2025"
+locator = "Table 1, methanol row, dielectric constant column"
+domain_id = "figiel-298-k-1-bar"
+
+[[correlations]]
+record_id = "ethanol-relative-permittivity"
+component_id = "ethanol"
+family = "relative_permittivity"
+form = "constant"
+constant = 24.88
+output_unit = "dimensionless"
+source_id = "figiel-yu-held-2025"
+locator = "Table 1, ethanol row, dielectric constant column"
+domain_id = "figiel-298-k-1-bar"

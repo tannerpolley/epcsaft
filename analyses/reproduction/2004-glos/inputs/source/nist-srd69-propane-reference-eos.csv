@@ -1,0 +1,15 @@
+row_id,component_id,role,T_K,p_sat_Pa,rho_sat_liq_kg_m3,source_pressure_relative_uncertainty,source_liquid_density_relative_uncertainty
+nist-propane-sat-100-k,propane,reference_only,100.00000,0.025272318,718.14791,,0.0001
+nist-propane-sat-120-k,propane,reference_only,120.00000,2.9637555,697.79250,0.001,0.0001
+nist-propane-sat-140-k,propane,reference_only,140.00000,78.992466,677.58616,0.001,0.0001
+nist-propane-sat-160-k,propane,reference_only,160.00000,850.21946,657.27154,0.001,0.0001
+nist-propane-sat-180-k,propane,reference_only,180.00000,5067.8306,636.61907,0.001,0.0001
+nist-propane-sat-200-k,propane,reference_only,200.00000,20192.015,615.42056,0.0002,0.0001
+nist-propane-sat-220-k,propane,reference_only,220.00000,60574.404,593.44658,0.0002,0.0001
+nist-propane-sat-240-k,propane,reference_only,240.00000,147999.51,570.39372,0.0002,0.0001
+nist-propane-sat-260-k,propane,reference_only,260.00000,310683.49,545.83888,0.0002,0.0001
+nist-propane-sat-280-k,propane,reference_only,280.00000,581684.88,519.17461,0.0002,0.0001
+nist-propane-sat-300-k,propane,reference_only,300.00000,997681.16,489.44738,0.0002,0.0001
+nist-propane-sat-320-k,propane,reference_only,320.00000,1598854.6,454.93644,0.0002,0.0001
+nist-propane-sat-340-k,propane,reference_only,340.00000,2431048.2,411.77408,0.0002,0.0001
+nist-propane-sat-360-k,propane,reference_only,360.00000,3554538.7,345.58350,0.0002,

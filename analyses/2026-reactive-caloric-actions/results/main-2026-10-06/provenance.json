@@ -1,0 +1,174 @@
+{
+  "source_commit": "2428781bd8f5f9b24c3b5aa6017b74117fcee4fa",
+  "main_commit": "d7739584458aa43a265dc7cc8b6f0e1a097c1480",
+  "wip_commit": "27c8b239d95afefd1623fcd57c3383c684d26e43",
+  "qualified_checkpoint": "e4342588",
+  "merge_base": "960ad3c0",
+  "integration_commit": "8b15fa319735bf109c15077460aa61e0ad594174",
+  "preparation": {
+    "build_dir": "build/engine-meson/cpython-313-linux-x86_64-x86_64-f6db693e21e289603ae71c78242a17b102f1e324061021d5dca361f47a0bfef7",
+    "build_fingerprint": "584a9cbca4782315d785893de77096897d6bc9cc2076adead34b3f77972c200e",
+    "schema_version": 1,
+    "wheel": "build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+    "wheel_sha256": "fdf3fbb51244eb4991f0743a6acd377dc0296d5909b77e896d050c6e36fdf57c"
+  },
+  "main_preparation": {
+    "build_dir": "build/engine-meson/cpython-313-linux-x86_64-x86_64-f6db693e21e289603ae71c78242a17b102f1e324061021d5dca361f47a0bfef7",
+    "build_fingerprint": "bb15d73ef353e0c66f25862648b32c5510a25fc54b0faa874bea750cc8a872f3",
+    "schema_version": 1,
+    "wheel": "build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+    "wheel_sha256": "ae3d960f3b310d88c83468e361c390392a8b58b6e5dafbead662f42e0e7fd8d3"
+  },
+  "raw_root": "build/current-calorics/main-2026-10-06",
+  "commands": [
+    "tools/heavy env EPCSAFT_PREPARE_NATIVE_BUILD=1 bash .codex/environments/setup.sh",
+    "tools/heavy bash build/current-calorics/main-2026-10-06/execute.sh",
+    "tools/heavy bash -c 'cd build/current-calorics/main-2026-10-06/main-source && EPCSAFT_PREPARE_NATIVE_BUILD=1 bash .codex/environments/setup.sh'",
+    "tools/heavy tools/time-key-solves <main-wheel> <candidate-wheel> --out build/current-calorics/main-2026-10-06/timing-current",
+    "tools/heavy bash tools/check-all.sh",
+    "tools/heavy .venv/bin/python analyses/2026-khudaida-idaes-settler/scripts/run_fixed_settler.py --output-dir build/current-calorics/main-2026-10-06/khudaida",
+    "tools/heavy .venv/bin/python analyses/2026-khudaida-idaes-settler/scripts/qualify.py --results-dir build/current-calorics/main-2026-10-06/khudaida --output-dir build/current-calorics/main-2026-10-06/khudaida-qualification",
+    "tools/heavy bash tools/check-affected.sh origin/main"
+  ],
+  "physical_inputs": "Native Case/input/boundary_input owners at the source commit; full exact inputs, directions, steps, solved centers and diagnostics in raw EPCSAFT_COMPARE_JSON rows.",
+  "controls": {
+    "OMP_NUM_THREADS": 1,
+    "OPENBLAS_NUM_THREADS": 1,
+    "MKL_NUM_THREADS": 1
+  },
+  "integration_runtime_added": 0,
+  "integration_runtime_removed": 0,
+  "checks": {
+    "all_8_F6_selectors": "7934 satisfied, 0 failed",
+    "F1": "4840 satisfied, 0 failed",
+    "fresh_native_commands": "12/12 candidate and 12/12 exact main",
+    "check_all": "121 Python checks and 6 native groups passed",
+    "Khudaida": "8/8 points; 16 phase rows; 64 formula comparisons",
+    "check_affected": "Passed against origin/main, including 121 Python checks, six fast native groups, boundary, parameter fitting and equilibrium groups.",
+    "notebook_numbers": "0 unsourced numeric literals",
+    "notebook_html": "Rendered from retained data; no Engine calculation in presentation cells.",
+    "final_source_check": "Passed after staging; retained TSV empty fields use their scoped Git whitespace attribute."
+  },
+  "row_reconciliation": {
+    "fresh_candidate_rows": 580,
+    "fresh_main_rows": 478,
+    "shared_identities_changed_on_both_branches": 67,
+    "shared_identities_missing_independent_reference": 0,
+    "changed_from_qualified_caloric_record": 335,
+    "changed_from_fresh_main_record": 100,
+    "union_moved_entries": 371,
+    "failed_movement_comparisons": 0,
+    "missing_movement_references": 0
+  },
+  "log_sha256": {
+    "build/current-calorics/main-2026-10-06/F1-E-fix.log": "5f26dd3cbbc4502a4883f0c4dcd46ed71017507b1ed07beb8d2e469a6add51c6",
+    "build/current-calorics/main-2026-10-06/F1-E-sys.log": "59d98bf795a8721137a475858840a16164fe2e85a205059c69a7a8a7fed1b4bb",
+    "build/current-calorics/main-2026-10-06/F1-I-fix.log": "79bd26746e5234c2b7f260cc5669a3fb7d20ee94b4a05ecacd667e42805ec7a3",
+    "build/current-calorics/main-2026-10-06/F1-I-sys.log": "ba415073252a9c48df49adf669d342b8cd507caa5cdfa955ae2de7a656ebfd7b",
+    "build/current-calorics/main-2026-10-06/F1-U.log": "a0754eecd4b2bee18fbf7daa2e3250bd68aa8e5c1ad0abfba1ae6c372cbcc596",
+    "build/current-calorics/main-2026-10-06/F6-E-P-fix.log": "bf5b23e4e6fe07321d258bdb513d208c78aaa35dcabffe1bee6380c7a922cf48",
+    "build/current-calorics/main-2026-10-06/F6-E-P-sys.log": "f7538c75b1d2cbfc4224323b3323b1be8ba05320546d618d094b8e0c94d97da1",
+    "build/current-calorics/main-2026-10-06/F6-E-T-fix.log": "5da572ba769b039c15c06a0555608dde7d7d9a81679e69fd22e4b3f56c16c74c",
+    "build/current-calorics/main-2026-10-06/F6-E-T-sys.log": "525e905dee7a7d81aba78fc687498033f634b7bb49e1f8403bd68ec6be0847d6",
+    "build/current-calorics/main-2026-10-06/F6-N-P-fix.log": "3b017b0d1a7cbae2cda8befc19d68a7b373b131901791e0652cdc97ea2001fae",
+    "build/current-calorics/main-2026-10-06/F6-N-P-sys.log": "d60bbba15f6a503f918c837c0cbd8f0bca4d3f3d18295e2d4da670550a9de80b",
+    "build/current-calorics/main-2026-10-06/F6-N-T-fix.log": "82fc2c191bc32c9c0a5f50e515db18f9ce36f76f8ab20b090e65c4ed0f034458",
+    "build/current-calorics/main-2026-10-06/F6-N-T-sys.log": "b4d598773ebcc1390d59e47c099972520130cf9aa625488c5122c228c825906e",
+    "build/current-calorics/main-2026-10-06/F6-addition.log": "fcb43c8bffeab6d76812bbb6bd8915ab0be03ff2aa0d8ee36494226190335304",
+    "build/current-calorics/main-2026-10-06/check-affected-retry.log": "6ee87ed68a5bc5132c8ce01660443509b234a7046b806e16a913817bcb7b0ee9",
+    "build/current-calorics/main-2026-10-06/check-affected.log": "8d8edf502ac3a5c98e2bbe775df7d84231f3c75d89532c3a9dd891fd8d1a989d",
+    "build/current-calorics/main-2026-10-06/check-all.log": "106ba4d630462d11665f89b0e15af8df868151be50ca08d83ef05f84da9f79ee",
+    "build/current-calorics/main-2026-10-06/final-source-check-after-staging.log": "0ce2733612260ceaf876bc198970128b3440bbeb926ebe17fa7edce17800dfe4",
+    "build/current-calorics/main-2026-10-06/final-source-check.log": "0ce2733612260ceaf876bc198970128b3440bbeb926ebe17fa7edce17800dfe4",
+    "build/current-calorics/main-2026-10-06/fit-row-references-compile.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build/current-calorics/main-2026-10-06/fit-row-references.log": "8c386dd1a6c46b52455dfbdf9362df216427e1ff4904d07d6dae7c1df1c11652",
+    "build/current-calorics/main-2026-10-06/identities.log": "393671889a286629e397a0b846c415be1b8b5c2db99ac6bf9ff2a19e19526bb6",
+    "build/current-calorics/main-2026-10-06/khudaida-qualification.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build/current-calorics/main-2026-10-06/khudaida.log": "6c19a3fa7be096262c4d4124ee0e223e77f7e4b716636572bfdfad4a142b4b2b",
+    "build/current-calorics/main-2026-10-06/layout.log": "44e8f6f2b06b43180386cb0d557357c14c8e15a698e74e64893bb1f188d617b4",
+    "build/current-calorics/main-2026-10-06/main-prepare.log": "0a1423e1decfa9c0179ba7b4631ea2056e7224320be8bf9c6a26e6829ab203f8",
+    "build/current-calorics/main-2026-10-06/main-rows-and-timing.log": "3db3de958176548dcc482bb75f4a2afbcb6aa46110040245953c48bf79a57a11",
+    "build/current-calorics/main-2026-10-06/prediction-reference-compile.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build/current-calorics/main-2026-10-06/prediction-reference.log": "304b4c17b18896f0b2b1076cb243b358d467bf9361e25ffa6172daf568535814",
+    "build/current-calorics/main-2026-10-06/prepare-retry.log": "196fb457df8ffd030f67259a5cc8f6518dac3093cfc22cda98b0ddd76a6fd247",
+    "build/current-calorics/main-2026-10-06/prepare.log": "a910e3ed2a8e7d3a0057370f61c5798f7f0de7aef98c99e09e897ab1ca6be098",
+    "build/current-calorics/main-2026-10-06/presentation-dependencies.log": "84d230ddffc11dde7cb46e985df11aec172354e3344007670e0eeae40b923b78",
+    "build/current-calorics/main-2026-10-06/presentation-install.log": "0f9fb03823b50e06ac27b14cdcdd65568bd00a1a36878a43a661c08a3a48f68d",
+    "build/current-calorics/main-2026-10-06/properties.log": "570877321058be2a423e69ba3a0ad3740c8789d142f4f9a4c5d9610475499f59",
+    "build/current-calorics/main-2026-10-06/render.log": "7822c21b4ee8e594451cc0d0cf66991e2cf06fc49f7853d24359c46de0d64ab5",
+    "build/current-calorics/main-2026-10-06/staged-whitespace.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build/current-calorics/main-2026-10-06/surface-equilibrium-compile.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build/current-calorics/main-2026-10-06/surface-equilibrium.log": "7cd52d21d70cca74825b0285dc46ef74455ec8824c9ab5dad2ca972a56ef17ca",
+    "build/current-calorics/main-2026-10-06/surface-properties-compile.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build/current-calorics/main-2026-10-06/surface-properties.log": "119a505384c19ab5db84e4ae09197cb3a2691c5771a6662d461231201f3e6f8a",
+    "build/current-calorics/main-2026-10-06/surface-state-references-compile.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build/current-calorics/main-2026-10-06/surface-state-references.log": "69b483d3649a0ce2b76b864ec60a564a69484ed9a712ad34026aa0c8c097ac49",
+    "build/current-calorics/main-2026-10-06/timing.log": "2666fd4435a90665f9d0fc6e8e615d6a6a53c8c0ccb00fe83691109d5a6bec51"
+  },
+  "earlier_evidence_sha256": {
+    "analyses/2026-reactive-caloric-actions/results/main-integration/provenance.json": "3d2da02eed3163c4763e43d94714e3b77684b454327ef935f1d03637002077f5",
+    "analyses/2026-reactive-caloric-actions/results/current-source-comparisons.csv": "cb13f8fbaa60faae9e35a3743a9f61d9a89d18ada6a6c493167dc22330a79a25",
+    "analyses/2026-reactive-caloric-actions/results/lower-reference-causes.csv": "bbe84a8aff59538af884f4241dd66dc0069b35b0cc2a6d53b2abf5ff948be003",
+    "analyses/2026-reactive-caloric-actions/results/temperature-extraction/comparisons.tsv": "24fd37c358dfea4007cb8f47658a6121372f68b3f7bf65494a3a1f580475e49d"
+  },
+  "failures": [
+    {
+      "stage": "initial native compilation",
+      "cause": "Binary128 verification callers used contribution arguments retired by main.",
+      "log": "build/current-calorics/main-2026-10-06/prepare.log",
+      "correction_commit": "2428781bd8f5f9b24c3b5aa6017b74117fcee4fa",
+      "runtime_change": 0
+    },
+    {
+      "stage": "initial timing baseline",
+      "cause": "Canonical-checkout wheel was stale and lacked the current EquilibriumStart export.",
+      "log": "build/current-calorics/main-2026-10-06/timing.log",
+      "stale_wheel_sha256": "398bcf8b90185b68cc796b5db258a9bfa3e919b9fb74bbb29171e003a03b3cc7",
+      "replacement": "Exact archived main source, independent non-editable wheel and fresh native recording."
+    },
+    {
+      "stage": "first affected gate",
+      "cause": "Current replay generated byte-identical result tables and two reference sources; retained numeric/source owners reused without deleting earlier evidence.",
+      "log": "build/current-calorics/main-2026-10-06/check-affected.log"
+    },
+    {
+      "stage": "first notebook render",
+      "cause": "The worktree environment lacked Quarto notebook reader dependencies; installed in the local environment.",
+      "log": "build/current-calorics/main-2026-10-06/render.log",
+      "diagnostic": "quarto check jupyter identified missing yaml; nbformat and nbclient were also absent."
+    }
+  ],
+  "limits": [
+    "Numerical verification on declared manufactured branches only.",
+    "No physical calorimetry, reaction validation, parameter adoption or global stability.",
+    "Finite terminal dilution changes are not an infinite-dilution error bound.",
+    "Shared-host paired timing; identical work and state fields on the declared cases.",
+    "Slice 4 remains out of scope; independent delivered review and PR remain with the lead."
+  ],
+  "tables": {
+    "native-row-movements.tsv": "analyses/2026-reactive-caloric-actions/results/main-integration/native-row-movements.tsv",
+    "independent-references.tsv": "analyses/2026-reactive-caloric-actions/results/main-integration/independent-references.tsv",
+    "original-order.tsv": "analyses/2026-reactive-caloric-actions/results/main-integration/original-order.tsv",
+    "classification-summary.tsv": "analyses/2026-reactive-caloric-actions/results/main-integration/classification-summary.tsv",
+    "qualification.tsv": "analyses/2026-reactive-caloric-actions/results/main-2026-10-06/qualification.tsv",
+    "comparisons.tsv": "analyses/2026-reactive-caloric-actions/results/main-2026-10-06/comparisons.tsv",
+    "budgets.tsv": "analyses/2026-reactive-caloric-actions/results/main-2026-10-06/budgets.tsv",
+    "row-overlap.tsv": "analyses/2026-reactive-caloric-actions/results/main-2026-10-06/row-overlap.tsv"
+  },
+  "numeric_table_reuse": "The current replay regenerated four tables byte-for-byte. Their retained numeric owner remains main-integration; fresh raw logs and wheel identities establish current-source requalification.",
+  "reproduction_sources": {
+    "reproduction/surface-properties.cpp": "analyses/2026-reactive-caloric-actions/scripts/main-2026-10-06/surface-properties.cpp",
+    "reproduction/surface-equilibrium.cpp": "analyses/2026-reactive-caloric-actions/scripts/main-2026-10-06/surface-equilibrium.cpp"
+  },
+  "revalidated_table_sha256": {
+    "native-row-movements.tsv": "17530523d595364acdd0000b32df187bf8273c4afd57e4a303dc9203f912a20d",
+    "independent-references.tsv": "3c310da62b5407ec06b85ee44357f6fdfc4d4d190f67e750295692d29d365228",
+    "original-order.tsv": "9198871c850a9f6fa5df800f9492137a83c570d5d87bc436aa97e1474eea27de",
+    "classification-summary.tsv": "4ebd14ea67b1ed556165cfb353bda05c27ffb25b5ff227072afcf5b5866058f2",
+    "qualification.tsv": "99e07acbf29d411ebfcead625764500c334485e9a623651068d00e1d59630803",
+    "comparisons.tsv": "575d91963c6075ff1b94e7296ff46f07c3a3d6a7fe1faa6fe9b8b2267755cf44",
+    "budgets.tsv": "e43e73ec9477167adc40cc49c0b8f8f18fa6c726c02e8fb377652a844bd6b2d1",
+    "row-overlap.tsv": "ed6b66ccae6d0fc3c60e6a7289fc03518d96fc395de40ffd705faa9c3a998c9c"
+  },
+  "change_accounting": "build/current-calorics/main-2026-10-06/change-accounting.json"
+}

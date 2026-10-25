@@ -1,0 +1,159 @@
+{
+  "schema": "epcsaft.parameters",
+  "schema_version": 1,
+  "document_id": "gross-2001-propane",
+  "document_version": 3,
+  "purpose": "external-document",
+  "sources": [
+    {
+      "source_id": "gross-sadowski-2001",
+      "citation": "Gross, J.; Sadowski, G. PC-SAFT: An Equation of State Based on a Perturbation Theory for Chain Molecules. Industrial & Engineering Chemistry Research 2001, 40, 1244-1260.",
+      "doi": "10.1021/ie0003887",
+      "use_basis": "source-backed installed parameter catalog"
+    },
+    {
+      "source_id": "explicit-neutral-model",
+      "citation": "Project declaration of the neutral species already selected by gross-2001-propane/2 (electrolyte: none).",
+      "use_basis": "Exact structural input of the accepted neutral model, not a fitted coefficient or a new observation; predecessor coefficient values and reported conditions are unchanged."
+    }
+  ],
+  "domains": [
+    {
+      "domain_id": "propane-fit-range",
+      "kind": "fit-range",
+      "temperature_min": {
+        "magnitude": 85,
+        "unit": "kelvin"
+      },
+      "temperature_max": {
+        "magnitude": 523,
+        "unit": "kelvin"
+      }
+    }
+  ],
+  "components": [
+    {
+      "component_id": "propane",
+      "name": "propane",
+      "cas": "74-98-6",
+      "formula": "C3H8",
+      "aliases": [],
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 0.044096,
+            "unit": "kilogram / mole"
+          },
+          "provenance": {
+            "source_id": "gross-sadowski-2001",
+            "locator": "Table 2, propane row, M_i and T range columns",
+            "domain_id": "propane-fit-range"
+          }
+        },
+        "charge_number": {
+          "identity": "component/propane/charge_number",
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "explicit-neutral-model",
+            "locator": "Explicit zero charge for the same neutral species in the predecessor non-electrolyte parameterization; not a published fitted coordinate.",
+            "domain_id": "propane-fit-range"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/propane/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 208.11,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "gross-sadowski-2001",
+            "locator": "Table 2, propane row, u_i/k_B and T range columns",
+            "domain_id": "propane-fit-range"
+          }
+        },
+        {
+          "identity": "component/propane/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 2.002,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-sadowski-2001",
+            "locator": "Table 2, propane row, m_i^seg and T range columns",
+            "domain_id": "propane-fit-range"
+          }
+        },
+        {
+          "identity": "component/propane/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 3.6184,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "gross-sadowski-2001",
+            "locator": "Table 2, propane row, sigma_i and T range columns",
+            "domain_id": "propane-fit-range"
+          }
+        }
+      ]
+    }
+  ],
+  "pairs": [],
+  "model_families": [
+    {
+      "family_id": "model/association",
+      "kind": "association",
+      "choice": "none",
+      "provenance": {
+        "source_id": "gross-sadowski-2001",
+        "locator": "Accepted propane parameter set contains no association sites or association coefficients",
+        "domain_id": "propane-fit-range"
+      }
+    },
+    {
+      "family_id": "model/base",
+      "kind": "base",
+      "choice": "pc-saft",
+      "provenance": {
+        "source_id": "gross-sadowski-2001",
+        "locator": "Table 2, propane PC-SAFT parameter row",
+        "domain_id": "propane-fit-range"
+      }
+    },
+    {
+      "family_id": "model/electrolyte",
+      "kind": "electrolyte",
+      "choice": "none",
+      "provenance": {
+        "source_id": "gross-sadowski-2001",
+        "locator": "Neutral PC-SAFT formulation without charged components",
+        "domain_id": "propane-fit-range"
+      }
+    },
+    {
+      "family_id": "model/relative_permittivity",
+      "kind": "permittivity",
+      "choice": "none",
+      "provenance": {
+        "source_id": "gross-sadowski-2001",
+        "locator": "Neutral PC-SAFT formulation without electrolyte relative permittivity",
+        "domain_id": "propane-fit-range"
+      }
+    }
+  ],
+  "model_coefficients": [],
+  "correlations": [],
+  "topology": {
+    "presets": [],
+    "sites": [],
+    "edges": []
+  }
+}

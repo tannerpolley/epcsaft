@@ -1,0 +1,133 @@
+{
+  "case_id": "nist-janaf-n2o4-no2",
+  "delta_g_standard_j_per_mol": -30375.9201906513,
+  "k_c_mol_per_m3": 35849.60399613671,
+  "k_p": 1490.3509615073785,
+  "rows": [
+    {
+      "diagnostics": {
+        "balance_inf_norm": 3.552713678800501e-15,
+        "boundary_status": "strict_interior",
+        "callback_error": "",
+        "charge_inf_norm": 0.0,
+        "chemical_certification_level": "LOCAL_EQUILIBRIUM",
+        "complementarity_inf_norm": 0.0,
+        "failure_reason": "",
+        "globality_status": "not_guaranteed",
+        "kkt_stationarity_inf_norm": 9.943894596631253e-10,
+        "local_minimum_status": "passed",
+        "negative_curvature_recovery_attempts": 0,
+        "negative_curvature_recovery_selected_sign": 0,
+        "negative_curvature_recovery_status": "not_needed",
+        "numerical_status": "passed",
+        "packing_fraction": 0.0,
+        "physical_status": "passed",
+        "predictive_status": "not_adjudicated",
+        "pressure_relative_residual": 5.093170329928398e-15,
+        "provider_domain_status": "not_applicable",
+        "reaction_affinity_inf_norm": 1.1117610153552844e-09,
+        "reference_convergence_error": null,
+        "reference_derivative_availability": null,
+        "reference_representation_residual_inf_norm": null,
+        "solver_status": "solve_succeeded",
+        "structural_zero_species_indices": [],
+        "trace_status": "interior"
+      },
+      "expected_amounts_mol": [
+        0.00026828515325161284,
+        1.9994634296934968
+      ],
+      "maximum_amount_absolute_error_mol": 1.3369305662536135e-12,
+      "observed_amounts_mol": [
+        0.00026828515258494126,
+        1.9994634296948337
+      ],
+      "pressure_pa": 20000.0
+    },
+    {
+      "diagnostics": {
+        "balance_inf_norm": 2.220446049250313e-16,
+        "boundary_status": "strict_interior",
+        "callback_error": "",
+        "charge_inf_norm": 0.0,
+        "chemical_certification_level": "LOCAL_EQUILIBRIUM",
+        "complementarity_inf_norm": 0.0,
+        "failure_reason": "",
+        "globality_status": "not_guaranteed",
+        "kkt_stationarity_inf_norm": 2.6910740302810154e-10,
+        "local_minimum_status": "passed",
+        "negative_curvature_recovery_attempts": 0,
+        "negative_curvature_recovery_selected_sign": 0,
+        "negative_curvature_recovery_status": "not_needed",
+        "numerical_status": "passed",
+        "packing_fraction": 0.0,
+        "physical_status": "passed",
+        "predictive_status": "not_adjudicated",
+        "pressure_relative_residual": 4.074536263942718e-15,
+        "provider_domain_status": "not_applicable",
+        "reaction_affinity_inf_norm": 3.008712232096339e-10,
+        "reference_convergence_error": null,
+        "reference_derivative_availability": null,
+        "reference_representation_residual_inf_norm": null,
+        "solver_status": "solve_succeeded",
+        "structural_zero_species_indices": [],
+        "trace_status": "interior"
+      },
+      "expected_amounts_mol": [
+        0.0013392705057121423,
+        1.9973214589885757
+      ],
+      "maximum_amount_absolute_error_mol": 1.7985612998927536e-12,
+      "observed_amounts_mol": [
+        0.0013392705048129324,
+        1.9973214589903743
+      ],
+      "pressure_pa": 100000.0
+    },
+    {
+      "diagnostics": {
+        "balance_inf_norm": 1.3877787807814457e-17,
+        "boundary_status": "strict_interior",
+        "callback_error": "",
+        "charge_inf_norm": 0.0,
+        "chemical_certification_level": "LOCAL_EQUILIBRIUM",
+        "complementarity_inf_norm": 0.0,
+        "failure_reason": "",
+        "globality_status": "not_guaranteed",
+        "kkt_stationarity_inf_norm": 7.224332243538356e-11,
+        "local_minimum_status": "passed",
+        "negative_curvature_recovery_attempts": 0,
+        "negative_curvature_recovery_selected_sign": 0,
+        "negative_curvature_recovery_status": "not_needed",
+        "numerical_status": "passed",
+        "packing_fraction": 0.0,
+        "physical_status": "passed",
+        "predictive_status": "not_adjudicated",
+        "pressure_relative_residual": 4.074536263942718e-15,
+        "provider_domain_status": "not_applicable",
+        "reaction_affinity_inf_norm": 8.077053959365971e-11,
+        "reference_convergence_error": null,
+        "reference_derivative_availability": null,
+        "reference_representation_residual_inf_norm": null,
+        "solver_status": "solve_succeeded",
+        "structural_zero_species_indices": [],
+        "trace_status": "interior"
+      },
+      "expected_amounts_mol": [
+        0.006643042684673972,
+        1.986713914630652
+      ],
+      "maximum_amount_absolute_error_mol": 2.37565522809291e-12,
+      "observed_amounts_mol": [
+        0.0066430426834861046,
+        1.9867139146330277
+      ],
+      "pressure_pa": 500000.0
+    }
+  ],
+  "source_sha256": "e76cc6555af0e64e62b9a9e74e974785452fd01a34feda2ac441eb7911742c46",
+  "evidence_classification": "historical_non_admission",
+  "reproduction_status": "not_reproduced_by_current_installed_artifact",
+  "authority_boundary": "Historical source-bound result retained for context; it is not current installed-artifact acceptance evidence.",
+  "temperature_k": 500.0
+}

@@ -1,0 +1,83 @@
+{
+ "wheel": "epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+ "wheel_sha256": "48a639e78d00ef88a2f7e66ed1e3d89831ca0ad5267322330d44f48c34926060",
+ "criterion": 1e-06,
+ "steps": {
+  "T_K": [
+   0.2,
+   0.1
+  ],
+  "P_Pa": [
+   20000.0,
+   10000.0
+  ],
+  "CO2_mol": [
+   0.0002,
+   0.0001
+  ]
+ },
+ "inputs": {
+  "mea_checkout_commit": "04a932835ae32f3855390ef9d2acd64a2877f63b",
+  "absorber_checkout_commit": "4f2d12e9c0f3081a3336144e4bbe9dcc27c73b93",
+  "absorber_parameters_sha256": "868a501831b87e95dedf18ce40e9e7ac949f7c6a4aaf137f717cc493ecfcb7be"
+ },
+ "counts": {
+  "rows": 176,
+  "pass": 176,
+  "fail": 0
+ },
+ "worst_by_family": {
+  "D2[e_T, e_CO2]": {
+   "state": "vle_obs_0224",
+   "observable": "n_L",
+   "relative_error": 9.883272568280176e-08,
+   "resolution": 5.348783806232157e-11,
+   "richardson": 3.516547357916208e-06
+  },
+  "D2[e_T, e_T]": {
+   "state": "vle_obs_0224",
+   "observable": "n_L",
+   "relative_error": 8.641390995559643e-08,
+   "resolution": 6.567815500897354e-15,
+   "richardson": 4.710292265657114e-10
+  },
+  "D2[e_T, e_P]": {
+   "state": "absorber 3C node",
+   "observable": "ln a_L:carbonate-anion",
+   "relative_error": 2.860345630297992e-07,
+   "resolution": 2.5821772513677438e-17,
+   "richardson": 1.653902946987571e-14
+  },
+  "d(n_L h_L)/dP": {
+   "state": "absorber S2 node",
+   "observable": "n_L h_L",
+   "relative_error": 6.203634950911313e-09,
+   "resolution": 2.918144097312688e-12,
+   "richardson": 0.0014305655278886355
+  },
+  "d(n_L h_L)/dT": {
+   "state": "vle_obs_0224",
+   "observable": "n_L h_L",
+   "relative_error": 2.1128254273884017e-11,
+   "resolution": 1.6020300487677257e-05,
+   "richardson": 724.5942059221367
+  },
+  "d(n_L h_L)/dCO2": {
+   "state": "vle_obs_0224",
+   "observable": "n_L h_L",
+   "relative_error": 9.456161604308554e-10,
+   "resolution": 0.43827535895009834,
+   "richardson": -486306.04665221955
+  }
+ },
+ "seconds": {
+  "Bottinger2008_state_050": 2.5633967609901447,
+  "Bottinger2008_state_059": 2.6306593990011606,
+  "vle_obs_0131": 6.538100903999293,
+  "vle_obs_0224": 7.042388180008857,
+  "absorber 3C node": 2.419568190991413,
+  "absorber S2 node": 2.4266577410016907
+ },
+ "elapsed_s": 25.26247041800525,
+ "claim_limits": "Numerical verification on the listed states only; exploratory absorber record 868a5018 and MEA 04a9328 adopted parameters with its physical ideal-gas records. Not physical validation."
+}

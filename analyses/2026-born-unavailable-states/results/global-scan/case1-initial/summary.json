@@ -1,0 +1,17 @@
+{
+  "case": 1,
+  "target": 0.0,
+  "criterion": 1e-10,
+  "structural_ln_cutoff": -46.051701859880914,
+  "requested_log_spacing": 0.1,
+  "CPU_budget_s": 1500.0,
+  "CPU_s": 210.70004892199998,
+  "wall_s": 211.38036424599704,
+  "native_evaluations": 12934,
+  "attempt_count": 69,
+  "root_witness_count": 0,
+  "completed_passes": [],
+  "stopped": "author interrupted initial dense scan to cap each corrector and cover both full chart ranges",
+  "method": "fixed parameter; carbon row omitted only for chart correction; original 20 rows retained",
+  "limits": "finite seeded charts; failed corrections and intervals between samples do not exclude roots"
+}

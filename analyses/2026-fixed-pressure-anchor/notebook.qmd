@@ -1,0 +1,23 @@
+---
+title: "Fixed-pressure anchor retained results"
+format: html
+execute:
+  freeze: true
+---
+
+This notebook reads historical numerical verification on Engine commit
+`f55b217ceef9be78253885f90caf91a8f5f6c491`, wheel SHA-256
+`687481a96890443023ef52388fd5b45fa5ff001d45bd5e4b9bb65cf16337658e`.
+It reads the retained compact summary and calculation table without rerunning
+the model. These values do not qualify current anchored pressure requests.
+
+```{python}
+import json
+from pathlib import Path
+
+root = Path(".")
+summary = json.loads((root / "results/summary.json").read_text())
+rows = (root / "results/calls.csv").read_text().splitlines()
+print(summary["comparison_summary"])
+print(f"retained rows: {len(rows) - 1}")
+```

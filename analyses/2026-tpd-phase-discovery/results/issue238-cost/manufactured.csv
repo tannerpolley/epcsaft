@@ -1,0 +1,7 @@
+comparison_id,model,reference,unit,atol,judgment
+declared-starts/exchange/0/amount,0.0,0.0,mol,1e-09,Criterion satisfied
+declared-starts/exchange/0/composition,1.1102230246251565e-16,0.0,1,1e-09,Criterion satisfied
+declared-starts/exchange/1/amount,4.440892098500626e-16,0.0,mol,1e-09,Criterion satisfied
+declared-starts/exchange/1/composition,1.1102230246251565e-16,0.0,1,1e-09,Criterion satisfied
+declared-starts/ratio/2,1.9999999999999996,2.0,1,1e-08,Criterion satisfied
+declared-starts/ratio/4,0.49999999999999883,0.5,1,1e-08,Criterion satisfied

@@ -1,0 +1,17 @@
+{
+  "engine": [
+    "2ba426f1ede4a8c45d71fa38433b24f2734dc4f3",
+    true
+  ],
+  "native_library": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-789-live-literature-reproductions-the-3/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so",
+  "native_library_sha256": "2960be5d6b6780c4bc9700386fa2d17ed2113ca79a4dd37a242e3703e4a0d32b",
+  "source_sha256": {
+    "inputs/cases/n2o4-no2/source/source.json": "e76cc6555af0e64e62b9a9e74e974785452fd01a34feda2ac441eb7911742c46",
+    "inputs/cases/water-gas-shift/source/source.json": "3a34a4c4467d2cbe309f11faecabd414a07eac88d76e129ed417d2cd9e5c256a",
+    "inputs/source/analytic-amount-reference.csv": "0757d26f776072a3b2c830338497f26b22e1a179d81e2de60b761c17743d7f97",
+    "inputs/source/molar-masses.csv": "0053008c327a5de7864c6efc0060b8651500302ed924906177ea64d64ebd3c68",
+    "inputs/source/reaction-thermochemistry-reference.csv": "2dd14c0c0e2e8c30ce7ce2dcb9079dbdfcfc2a76eda5c905c28ed2da096a2479",
+    "inputs/source/shomate-coefficients.csv": "7092722ac16e055b4a36f04fe412c460bd21c5289b1afd72ef1b1e82adcfa04b",
+    "inputs/source/shomate-reported-properties.csv": "7f8c33e8803f235b376dc58e42ad9b540d307a80a59e8233ce96df08fdb2a3bf"
+  }
+}

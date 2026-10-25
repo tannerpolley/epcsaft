@@ -1,0 +1,47 @@
+---
+title: "Bülow 2019: declared permittivity-law checks"
+format:
+  html:
+    embed-resources: true
+execute:
+  echo: false
+  cache: false
+  daemon: false
+---
+
+```{python}
+import json
+from pathlib import Path
+import pandas as pd
+from IPython.display import display
+comparison = pd.read_csv('results/comparison.csv')
+identity = json.loads(Path('results/run-identity.json').read_text())
+display(comparison.groupby('outcome').size().rename('cases').to_frame())
+display(comparison)
+display(identity)
+```
+
+All declared scalar checks numerically verify Bülow, Ji and Held's Eq. (7),
+DOI 10.1016/j.fluid.2019.03.010, on the explicit water/cation/anion species
+basis described after Eq. (5) and in Eq. (8). The table gives every declared
+composition, evaluator temperature and molar density, native relative
+permittivity, independent reference, absolute error and tolerance. The water
+permittivity override and original source-file identities are retained in the
+run identity. Tables 2 and 3 supply the EOS coefficients; the zero interaction
+parameters select the unfitted declaration. The positive fixed density only
+selects an evaluator state and establishes no mechanical stability.
+
+The zero-water endpoint is now evaluated through the same native
+`State.bulk_relative_permittivity` readout after Engine #792. Its value,
+independent reference, absolute error and unchanged tolerance are computed
+from the retained comparison table above. This equation check supplies no
+experimental dielectric validation or liquid equilibrium
+result. Figures 3 and 5 still need calibrated model/symbol identity and
+molecular-versus-species axis mapping. Figure 2 lacks its state/derivative
+basis; Table 5 lacks the measurement population and weights. These unavailable
+comparisons are outside the accepted scope.
+
+The individual scalar cases are shown as a table without an interpolated
+curve. The arithmetic tolerance tests native evaluation and mapping; it is
+not experimental uncertainty. This notebook awaits independent delivered
+review and has not been promoted for manuscript use.

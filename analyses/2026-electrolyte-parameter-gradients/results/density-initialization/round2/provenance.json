@@ -1,0 +1,68 @@
+{
+  "base": "5fec07f8a501209c3300cfee465b5f603805998a",
+  "conditions": {
+    "temperature_K": 298.15,
+    "pressure_Pa": 100000,
+    "branch": "liquid",
+    "source_packet": "figiel-2025-reference-electrolytes/4",
+    "numerical_threads": 1
+  },
+  "criterion": {
+    "relative": 1e-10,
+    "absolute_floor": 1e-12,
+    "slope_derivative_relative_or_one": 1e-06,
+    "F2_median_paired_saving_minimum": 0.05,
+    "B4_allowed_negative_median": "within paired median absolute deviation"
+  },
+  "cold_comparator": "Same source and inputs, with previous-trial density offers omitted in fit.cpp; no solver or tolerance changes.",
+  "evidence_type": "numerical verification and performance measurement; no physical validation",
+  "limits": [
+    "The branch witness does not prove agreement with every bounded cold scan.",
+    "Same-point independent cold replays establish equivalence on the retained points.",
+    "Paired wall times include shared-host scheduling variability.",
+    "No global optimum, physical parameter adoption, delivered review or manuscript promotion is established."
+  ],
+  "source_sha256": {
+    "engine/native/regression/fit.cpp": "ebcb475bda48ce9acd68954ef408234c34ee6ead70be50cd6b02cacbdfed7818",
+    "engine/native/regression/observations.cpp": "c468ee20b18d0ed3b77e1027178e739ec089c6318ded9f731c31cc64d18c657d",
+    "engine/native/properties/density.cpp": "228a3b95574c7a27a36875320f178bec56fcb048e6aa7ac1995af9447e51bba6",
+    "engine/native/properties/infinite_dilution_reference.cpp": "2e177003c0efaf36956cf7fc61bb7a15184189e3d7eea3d7ec9b1e1ed608af4c",
+    "engine/tests/native/regression_checks.cpp": "bae02abb13c6f54005ca24cfe7f4eed6b196cd5d7ff2aa4c628dea4ebcad300b",
+    "analyses/2026-electrolyte-parameter-gradients/scripts/density_seed_pairs.py": "1a511f20be6b616a7e243b574e2bb77eddf51c52c9844528de70c49dd4aa8638",
+    "analyses/2026-electrolyte-parameter-gradients/scripts/declarations.py": "a22d73496bd91a95c30560510a93b814287503506cd572c4eb980135d58f5b7e",
+    "analyses/2026-electrolyte-parameter-gradients/scripts/minimax.py": "f588bb1824d509ccd2435b2c3fc6c75a9fb5860941b6734e5758983f9f5704f4",
+    "analyses/2026-electrolyte-parameter-gradients/scripts/run.py": "4f9d2fe84c9a924b0d05da97c2ed04107c78f66a802285db425bf83d894d7aff",
+    "analyses/2026-electrolyte-parameter-gradients/inputs/files.json": "cf22532a210d764e46312427fbae10c4177fe44f1ab79a3dc69f223380d68ea2"
+  },
+  "wheels": {
+    "A": {
+      "build_dir": "build/engine-meson/cpython-313-linux-x86_64-x86_64-f6db693e21e289603ae71c78242a17b102f1e324061021d5dca361f47a0bfef7",
+      "build_fingerprint": "7eb28c37b42b833d6f05f077be9b22f7c75590a4a5e588f665eb236814391023",
+      "schema_version": 1,
+      "wheel": "build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "wheel_sha256": "d3d6f0671556469d381bb3e5ded8bb3163271224e6b16a933c13e7838199714f"
+    },
+    "B": {
+      "build_dir": "build/engine-meson/cpython-313-linux-x86_64-x86_64-f6db693e21e289603ae71c78242a17b102f1e324061021d5dca361f47a0bfef7",
+      "build_fingerprint": "d69f8d9917ee5c16aea395afe6b77738813d0a0db0b69eb274edab0e87d18157",
+      "schema_version": 1,
+      "wheel": "build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "wheel_sha256": "5733215d33b0403b4a1371933813bccc68fa8ddc1d80ea60d4f27f95c1ceb966"
+    }
+  },
+  "variance_factor": {
+    "comparison_id": "r4/recovery/variance_factor",
+    "criterion": {
+      "type": "scalar",
+      "rule": "symmetric_close",
+      "atol": 6.6666666666666666e-21,
+      "rtol": 1e-12
+    },
+    "evidence_status": "valid",
+    "judgment": "Criterion satisfied",
+    "model": 3.4765369926558705e-27,
+    "reference": 3.4749350408803575e-27
+  },
+  "replay_scope": "same-point independent cold endpoint replay",
+  "upstream_during_measurement": "1218dc78: #243 landed after this calculation snapshot; not merged into this build round"
+}

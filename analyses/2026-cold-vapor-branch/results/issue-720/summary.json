@@ -1,0 +1,19 @@
+{
+  "input": "analyses/2026-reaction-constant-fitting/results/cold-start.json",
+  "reference_commit": "bea7655d",
+  "source_commit": "ca719012c31e8b41edcb98ae82a388117b58d343",
+  "wheel_sha256": "ca80755f1c17c8d2995b3a3f723c5a06cd20d22775c44599037521d1cf9ecfd5",
+  "cold_residual": 5.329070518200751e-15,
+  "cold_message": "converged: residual 5.3290705182007514e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 7 iterations, contraction absent, floor absent, amplification 0",
+  "equimolar_probe": {
+    "returncode": 2,
+    "message": "State unavailable: phases_coincide: phase distance between L and V is too small: 0.000000; trial preparation failed: temperature outside reaction correlation",
+    "state_available": false
+  },
+  "seed_densities": [
+    18517.46419799956,
+    1282.7455055831615
+  ],
+  "seed_source": "shared native initializer; dense diagnostic declares the former K=1 compositions",
+  "evidence_kind": "numerical verification; no physical validation"
+}

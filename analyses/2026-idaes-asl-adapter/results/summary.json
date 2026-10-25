@@ -1,0 +1,454 @@
+{
+  "adapter_source_sha256": "94167d665e9775d0e280c48adc296ea139b64acdbfbd6aef2bb73a62e82f84e5",
+  "analysis_elapsed_s": 18.675222132000272,
+  "asl_library": "/home/tnnrpolley21/.codex/worktrees/9dd4/ePC-SAFT-greenfield/.venv/lib/python3.13/site-packages/epcsaft/libepcsaft_asl.so",
+  "asl_library_identity": {
+    "exports": [
+      "funcadd_ASL"
+    ],
+    "needed": [
+      "libipopt.so.1",
+      "libm.so.6",
+      "libstdc++.so.6",
+      "libgcc_s.so.1",
+      "libc.so.6",
+      "ld-linux-x86-64.so.2"
+    ],
+    "runpaths": []
+  },
+  "asl_library_sha256": "7d17d91b560080496069e61d7d8a401e51c949b260bfc044c181718713d2ac8f",
+  "asl_version": "20231111",
+  "attempt_id": "20260922T213350-663765",
+  "attempt_limits": {
+    "cold_load_admission_tape_s": 60.0,
+    "derivative_domain_whole_nlp_s": 120.0,
+    "post_build_s": 600.0,
+    "solve_s": 30.0,
+    "warm_batch_s": 10.0
+  },
+  "build_mode": "Meson C++17 non-editable Engine wheel",
+  "changed_cap_reference": {
+    "pressure": 150000.0000581754,
+    "pressure_error_pa": 5.8175413869321346e-05,
+    "rho": 45.54628082551062
+  },
+  "claim_limits": [
+    "pure neutral PC-SAFT",
+    "propane packet",
+    "385-415 K and 5-110 mol/m3 sampled branch",
+    "not global phase stability or application qualification"
+  ],
+  "compiler": "c++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+  "conditioning_grid": {
+    "density_count": 9,
+    "derivative_state_count": 9,
+    "grid_state_count": 45,
+    "pressure_max_pa": 371318.8192355422,
+    "pressure_min_pa": 15986.770827719305,
+    "pressure_slope_over_rt_min": 0.9497740364260885,
+    "state_count": 54,
+    "temperatures_k": [
+      385.0,
+      392.5,
+      400.0,
+      407.5,
+      415.0
+    ]
+  },
+  "conditioning_state_count": 54,
+  "cost": {
+    "asl": {
+      "child_mode": "asl",
+      "child_startup_elapsed_s": 1.4373603209987778,
+      "child_total_elapsed_s": 1.8047605879983166,
+      "cold_elapsed_s": 0.0016202370006794808,
+      "cold_recording_count": 1,
+      "first_call_s": {
+        "0": 0.0005940600003668806,
+        "1": 5.551400136027951e-05,
+        "2": 9.259299986297265e-05
+      },
+      "fresh_process": true,
+      "phase_count": 12,
+      "recording_reuse_passed": true,
+      "state_count": 9,
+      "states": [
+        [
+          390.0,
+          20.0
+        ],
+        [
+          390.0,
+          60.0
+        ],
+        [
+          390.0,
+          90.0
+        ],
+        [
+          400.0,
+          20.0
+        ],
+        [
+          400.0,
+          60.0
+        ],
+        [
+          400.0,
+          90.0
+        ],
+        [
+          410.0,
+          20.0
+        ],
+        [
+          410.0,
+          60.0
+        ],
+        [
+          410.0,
+          90.0
+        ]
+      ],
+      "warm": {
+        "0": {
+          "batch_count": 3,
+          "call_count": 100,
+          "median_s": 0.0009317709991591983,
+          "range_s": [
+            0.0009126050008489983,
+            0.000938774001042475
+          ]
+        },
+        "1": {
+          "batch_count": 3,
+          "call_count": 100,
+          "median_s": 0.00199760299983609,
+          "range_s": [
+            0.0019787969995377352,
+            0.0020548089996736962
+          ]
+        },
+        "2": {
+          "batch_count": 3,
+          "call_count": 100,
+          "median_s": 0.00393450100091286,
+          "range_s": [
+            0.003916928999387892,
+            0.003936233999411343
+          ]
+        }
+      },
+      "warm_recording_deltas": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    "native": {
+      "child_mode": "native",
+      "child_startup_elapsed_s": 1.291812334999122,
+      "child_total_elapsed_s": 1.6829691789989738,
+      "cold_elapsed_s": 0.0004163880003034137,
+      "cold_recording_count": 1,
+      "first_call_s": {
+        "0": 9.8643999081105e-05,
+        "1": 4.9002001105691306e-05,
+        "2": 4.406300104164984e-05
+      },
+      "fresh_process": true,
+      "phase_count": 12,
+      "recording_reuse_passed": true,
+      "state_count": 9,
+      "states": [
+        [
+          390.0,
+          20.0
+        ],
+        [
+          390.0,
+          60.0
+        ],
+        [
+          390.0,
+          90.0
+        ],
+        [
+          400.0,
+          20.0
+        ],
+        [
+          400.0,
+          60.0
+        ],
+        [
+          400.0,
+          90.0
+        ],
+        [
+          410.0,
+          20.0
+        ],
+        [
+          410.0,
+          60.0
+        ],
+        [
+          410.0,
+          90.0
+        ]
+      ],
+      "warm": {
+        "0": {
+          "batch_count": 3,
+          "call_count": 100,
+          "median_s": 0.0004141240005992586,
+          "range_s": [
+            0.0003972529993916396,
+            0.0004259059987816727
+          ]
+        },
+        "1": {
+          "batch_count": 3,
+          "call_count": 100,
+          "median_s": 0.001771569999618805,
+          "range_s": [
+            0.001479193999330164,
+            0.0018312619995413115
+          ]
+        },
+        "2": {
+          "batch_count": 3,
+          "call_count": 100,
+          "median_s": 0.002698010999665712,
+          "range_s": [
+            0.0026815900000656256,
+            0.002787788998830365
+          ]
+        }
+      },
+      "warm_recording_deltas": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  "cppad_version": "20250000.3",
+  "derivative_check": {
+    "passed": true,
+    "requested": "second-order",
+    "result": "passed"
+  },
+  "derivatives": {
+    "derivative_ladders_passed": 72,
+    "gradient_max_scaled_error": 6.271841255608979e-06,
+    "hessian_max_scaled_error": 2.9346729078477685e-05,
+    "maximum_estimated_floor": 6.089446597856707e-06,
+    "transport_max_scaled_gradient_error": 0.0,
+    "transport_max_scaled_hessian_error": 0.0,
+    "transport_max_scaled_value_error": 0.0,
+    "transport_passed": true,
+    "unit_pressure_chain": {
+      "max_gradient_error": 2.220446049250313e-16,
+      "max_hessian_error": 3.608224830031759e-16,
+      "max_value_error": 2.220446049250313e-16,
+      "passed": true,
+      "state_count": 9
+    }
+  },
+  "failure_probe": {
+    "cancellation_deadline_monotonic": 10631.370268301,
+    "cap": 200000.0,
+    "entry_observed": true,
+    "ipopt_process": {
+      "cmdline": "/home/tnnrpolley21/.local/share/micromamba/envs/ipopt-viz/bin/ipopt /home/tnnrpolley21/.codex/worktrees/9dd4/ePC-SAFT-greenfield/build/idaes-neutral-latest/solver/process-1/process-1 nl -AMPL nlp_scaling_method=none tol=1e-09 max_iter=200 hessian_approximation=exact point_perturbation_radius=0 bound_relax_factor=0 constr_viol_tol=1e-08 dual_inf_tol=1e-07 compl_inf_tol=1e-07 acceptable_iter=0 print_level=5 output_file=/home/tnnrpolley21/.codex/worktrees/9dd4/ePC-SAFT-greenfield/build/idaes-neutral-latest/solver/forced-post-entry-timeout/ipopt.log file_print_level=5",
+      "executable": "/home/tnnrpolley21/.local/share/micromamba/envs/ipopt-viz/bin/ipopt",
+      "pid": 666699,
+      "process_group": 666443
+    },
+    "numeric_iteration_zero_line": "0 -1.7500000e-01 4.85e-01 1.15e-01  -1.0 0.00e+00    -  0.00e+00 0.00e+00   0",
+    "outer_elapsed_s": 1.5176110510001308,
+    "parent_stderr_log": null,
+    "parent_stdout_log": "/home/tnnrpolley21/.codex/worktrees/9dd4/ePC-SAFT-greenfield/build/idaes-neutral-latest/solver/forced-post-entry-timeout/parent.stdout.log",
+    "process_group": 666443,
+    "process_group_terminated": true,
+    "returncode": -15,
+    "signals": [
+      "SIGTERM"
+    ],
+    "solver_col": "/home/tnnrpolley21/.codex/worktrees/9dd4/ePC-SAFT-greenfield/build/idaes-neutral-latest/solver/process-0/process-0.col",
+    "solver_nl": "/home/tnnrpolley21/.codex/worktrees/9dd4/ePC-SAFT-greenfield/build/idaes-neutral-latest/solver/process-1/process-1.nl",
+    "solver_nl_sha256": "95bff8c644265bc6d298dbc90d79578efcf6fa438d52bee7f152742ee9cf874a",
+    "solver_row": "/home/tnnrpolley21/.codex/worktrees/9dd4/ePC-SAFT-greenfield/build/idaes-neutral-latest/solver/process-0/process-0.row",
+    "start_Q": 0.0005,
+    "start_rho": 60.0,
+    "status": "failed",
+    "stderr_tail": "",
+    "stdout_tail": "Ipopt 3.14.19: nlp_scaling_method=none\ntol=1e-09\nmax_iter=200\nhessian_approximation=exact\npoint_perturbation_radius=0\nbound_relax_factor=0\nconstr_viol_tol=1e-08\ndual_inf_tol=1e-07\ncompl_inf_tol=1e-07\nacceptable_iter=0\nprint_level=5\noutput_file=/home/tnnrpolley21/.codex/worktrees/9dd4/ePC-SAFT-greenfield/build/idaes-neutral-latest/solver/forced-post-entry-timeout/ipopt.log\nfile_print_level=5\n\n\n******************************************************************************\nThis program contains Ipopt, a library for large-scale nonlinear optimization.\n Ipopt is released as open source code under the Eclipse Public License (EPL).\n         For more information visit https://github.com/coin-or/Ipopt\n******************************************************************************\n\nThis is Ipopt version 3.14.19, running with linear solver MUMPS 5.8.2.\n\nNumber of nonzeros in equality constraint Jacobian...:        9\nNumber of nonzeros in inequality constraint Jacobian.:        0\nNumber of nonzeros in Lagrangian Hessian.............:        3\n\nTotal number of variables............................:        6\n                     variables with only lower bounds:        0\n                variables with lower and upper bounds:        6\n                     variables with only upper bounds:        0\nTotal number of equality constraints.................:        4\nTotal number of inequality constraints...............:        0\n        inequality constraints with only lower bounds:        0\n   inequality constraints with lower and upper bounds:        0\n        inequality constraints with only upper bounds:        0\n\niter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls\n   0 -1.7500000e-01 4.85e-01 1.15e-01  -1.0 0.00e+00    -  0.00e+00 0.00e+00   0\n   1 -7.3786728e-02 1.35e-02 2.71e-01  -1.7 2.11e-01    -  6.70e-01 1.00e+00h  1\n",
+    "termination": "forced-post-entry-timeout",
+    "timed_out": true,
+    "timeout_scope": "forced-post-entry"
+  },
+  "idaes_version": "2.12.0",
+  "immutable_input_rejected": true,
+  "invalid_domain_rejected": true,
+  "ipopt": "/home/tnnrpolley21/.local/share/micromamba/envs/ipopt-viz/bin/ipopt",
+  "ipopt_preflight": {
+    "all_required_options_supported": true,
+    "asl_version": "20231111",
+    "required_options": [
+      "acceptable_iter",
+      "bound_relax_factor",
+      "compl_inf_tol",
+      "constr_viol_tol",
+      "derivative_test",
+      "derivative_test_perturbation",
+      "derivative_test_tol",
+      "dual_inf_tol",
+      "hessian_approximation",
+      "max_iter",
+      "nlp_scaling_method",
+      "point_perturbation_radius",
+      "tol"
+    ],
+    "sha256": "938c17f31b2cf9fe91cef527bef3c62f303a3012851ad8498f91cd7501d1c9d2",
+    "supported_options": {
+      "acceptable_iter": true,
+      "bound_relax_factor": true,
+      "compl_inf_tol": true,
+      "constr_viol_tol": true,
+      "derivative_test": true,
+      "derivative_test_perturbation": true,
+      "derivative_test_tol": true,
+      "dual_inf_tol": true,
+      "hessian_approximation": true,
+      "max_iter": true,
+      "nlp_scaling_method": true,
+      "point_perturbation_radius": true,
+      "tol": true
+    },
+    "version": "Ipopt 3.14.19 (Linux x86_64), ASL(20231111)"
+  },
+  "ipopt_sha256": "938c17f31b2cf9fe91cef527bef3c62f303a3012851ad8498f91cd7501d1c9d2",
+  "ipopt_version": "Ipopt 3.14.19 (Linux x86_64), ASL(20231111)",
+  "lifecycle": "accepted",
+  "materialization_sha256": "875e762ec4f003c720c6d0c84829021ebe6d6eba713c460ae4a647ec0fb09674",
+  "materialized_path": "analyses/2026-idaes-asl-adapter/inputs/data/gross-2001-propane/2",
+  "numerical_runtime_s": 2.9045600229983393,
+  "packet_fingerprint": "4593b9dbd813004096c7e396fc65df6ae3f4c1c65933c36918a6d316111326e2",
+  "packet_path": "data/packets/gross-2001-propane/2",
+  "parameter_strings": [
+    "2.002",
+    "3.6184",
+    "208.11",
+    "0.044096"
+  ],
+  "platform": "Linux-7.0.0-31-generic-x86_64-with-glibc2.39",
+  "pressure_bracket": {
+    "high_pa": 325497.6438517665,
+    "low_pa": 33186.38488668625,
+    "span_pa": 292311.25896508025
+  },
+  "process_accepted": true,
+  "process_cases": 4,
+  "process_runtime_s": 8.12243352799851,
+  "pyomo_version": "6.10.1",
+  "python": "3.13.14 (main, Jun 23 2026, 15:18:27) [Clang 22.1.3 ]",
+  "reduced_reference": {
+    "F": 0.03712436323446659,
+    "P": 200000.000045596,
+    "Q": 0.0006092976549640298,
+    "density_error_bound": 6.57831685016828e-08,
+    "objective": -0.18562181617233298,
+    "pressure_error_pa": 4.559601075015962e-05,
+    "rho": 60.92976549640298
+  },
+  "references": {
+    "all_passed": true,
+    "groups": {
+      "dispersion": {
+        "all_passed": true,
+        "maximum_abs_errors": {
+          "error": 1.734723475976807e-18,
+          "q1_error": 0.0,
+          "q2_error": 0.0
+        },
+        "row_count": 3
+      },
+      "second_virial": {
+        "all_passed": true,
+        "maximum_abs_errors": {
+          "error": 0.0,
+          "q1_error": 2.1991281708849675e-08,
+          "q2_error": 6.597345430375823e-08
+        },
+        "row_count": 4
+      }
+    },
+    "row_count": 7
+  },
+  "solver_options": {
+    "acceptable_iter": 0,
+    "bound_relax_factor": 0,
+    "compl_inf_tol": 1e-07,
+    "constr_viol_tol": 1e-08,
+    "derivative_test": "second-order",
+    "derivative_test_perturbation": 1e-06,
+    "derivative_test_tol": 0.0001,
+    "dual_inf_tol": 1e-07,
+    "file_print_level": 5,
+    "hessian_approximation": "exact",
+    "max_iter": 200,
+    "nlp_scaling_method": "none",
+    "point_perturbation_radius": 0,
+    "print_level": 0,
+    "tol": 1e-09
+  },
+  "source_commit": "15f85156314f3024866267a50bacd7f7cca0544a",
+  "source_dirty": true,
+  "stage": "completed",
+  "status": "bounded numerical prototype passed",
+  "wheel": "/home/tnnrpolley21/.codex/worktrees/9dd4/ePC-SAFT-greenfield/build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+  "wheel_sha256": "66a09050483349c0c4ac9883a30f0bb3874548d423640f1534d1a5de1a5f00d5",
+  "whole_nlp": {
+    "cases": 216,
+    "changed_input_rejected": true,
+    "directions_per_case": 8,
+    "expected_step_rows": 1728,
+    "invalid_domain_rejected": true,
+    "matrix_cases": 27,
+    "maximum_estimated_floor": 1.0329772037742657e-09,
+    "maximum_scaled_lagrangian_hessian_error": 1.0329772037742657e-09,
+    "valid_after_failure": true
+  },
+  "whole_nlp_before_solves": true,
+  "whole_nlp_solver_files": {
+    "col": "/home/tnnrpolley21/.codex/worktrees/9dd4/ePC-SAFT-greenfield/build/idaes-neutral-latest/solver/process-0/process-0.col",
+    "nl": "/home/tnnrpolley21/.codex/worktrees/9dd4/ePC-SAFT-greenfield/build/idaes-neutral-latest/solver/process-0/process-0.nl",
+    "nl_sha256": "3db46adde3eb05e412155f405fd767618d8707ecb60f1a770f4dc79d05efde55",
+    "row": "/home/tnnrpolley21/.codex/worktrees/9dd4/ePC-SAFT-greenfield/build/idaes-neutral-latest/solver/process-0/process-0.row"
+  },
+  "writer_options": {
+    "linear_presolve": false,
+    "scale_model": false,
+    "skip_trivial_constraints": false,
+    "symbolic_solver_labels": true
+  }
+}

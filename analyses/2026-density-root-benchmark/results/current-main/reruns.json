@@ -1,0 +1,39 @@
+{
+  "base": "29fc98dd503527a4c2aef8b4a91017d76c0abdee",
+  "engine_runtime_changed": false,
+  "tolerances_changed": false,
+  "unchanged_runs": [
+    {
+      "producer": "density",
+      "command": [
+        ".venv/bin/python",
+        "-B",
+        "analyses/2026-density-root-benchmark/scripts/run.py",
+        "--python",
+        "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-750-720-part-b-diagnose-the-changed-results/.venv/bin/python",
+        "--label",
+        "issue-750-unchanged"
+      ],
+      "exit": 1
+    }
+  ],
+  "qualification_base": "8ffd627f0f7e4e68fdf9db634773ff00e058d85e",
+  "producer_head": "388ed38b12d618e711c64a3c05c7f88653f84d6a",
+  "final_runs": [
+    {
+      "producer": "density",
+      "command": [
+        ".venv/bin/python",
+        "-B",
+        "analyses/2026-density-root-benchmark/scripts/run.py",
+        "--python",
+        "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-750-720-part-b-diagnose-the-changed-results/.venv/bin/python",
+        "--label",
+        "issue-750-final"
+      ],
+      "exit": 0,
+      "seconds": 33.00426917299956,
+      "producer_sha256": "11d5c40910cd6ca2883d36450b32e7ab7bfef4bd9a3386591482d3c3d371642c"
+    }
+  ]
+}

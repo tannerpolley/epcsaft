@@ -1,0 +1,3 @@
+record_id,component_id_a,site_id_a,component_id_b,site_id_b,family,value,unit,source_id,locator,domain_id
+butanol-association-energy,1-butanol,a,1-butanol,b,association_energy_over_k,2544.56,kelvin,ascani-et-al-2022,Supporting Information Table S1,perdomo-regression-298-15-k-1-bar
+butanol-association-volume,1-butanol,a,1-butanol,b,association_volume,0.00669,,ascani-et-al-2022,Supporting Information Table S1,perdomo-regression-298-15-k-1-bar

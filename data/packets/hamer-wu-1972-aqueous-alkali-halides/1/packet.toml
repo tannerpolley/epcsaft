@@ -1,0 +1,41 @@
+schema_version = 2
+packet_id = "hamer-wu-1972-aqueous-alkali-halides"
+packet_version = "1"
+title = "Hamer and Wu aqueous alkali-halide activity coefficients"
+description = "Reusable critically evaluated molality-scale mean ionic activity coefficients for six aqueous uni-univalent electrolytes at 298.15 K."
+license_or_use_basis = "Critically evaluated factual tabular values and project-authored provenance retained for noncommercial scientific use; the packet contains no full paper or generated model result."
+tolerance_rationale = "The packet preserves reported source values without defining a model-acceptance tolerance; each consuming analysis owns its comparison metric and tolerance."
+
+[[sources]]
+source_id = "hamer-wu-1972"
+citation = "Walter J. Hamer and Yung-Chi Wu, Osmotic Coefficients and Mean Activity Coefficients of Uni-univalent Electrolytes in Water at 25 C, Journal of Physical and Chemical Reference Data 1 (1972)."
+doi = "10.1063/1.3253108"
+url = "https://srd.nist.gov/jpcrdreprint/1.3253108.pdf"
+retrieved_on = "2026-07-27"
+use_basis = "Official NIST-hosted reference-data source; manually transcribed values are retained with the source digest and transformation record."
+
+[[domains]]
+domain_id = "aqueous-alkali-halides-298.15-k"
+kind = "source-observation"
+temperature_min = 298.15
+temperature_max = 298.15
+temperature_unit = "kelvin"
+description = "LiCl, LiBr, NaCl, NaBr, KCl, and KBr in water from 0.001 through 6 mol/kg where source rows were retained."
+
+[[files]]
+path = "observations/hamer-wu-1972-aqueous-alkali-halides.csv"
+role = "observations"
+media_type = "text/csv"
+sha256 = "2f63e13f06a5b0f4e8bca2980b6a8d9d7fb0f839153c43e3a71952daf9796595"
+source_refs = ["hamer-wu-1972"]
+domain_refs = ["aqueous-alkali-halides-298.15-k"]
+units_basis = "molality_mol_kg is formula-unit molality in mol/kg and gamma_pm_m is the dimensionless molality-scale stoichiometric mean ionic activity coefficient."
+
+[[files]]
+path = "sources/hamer-wu-1972-aqueous-alkali-halides.yaml"
+role = "source"
+media_type = "application/yaml"
+sha256 = "7a1880502848c4d3ab5ad18f69bb9700136517a9d44ae9d5ab57d7b521160345"
+source_refs = ["hamer-wu-1972"]
+domain_refs = ["aqueous-alkali-halides-298.15-k"]
+units_basis = "Citation, source digest, table mapping, transformation, retained range, and use basis are non-numeric provenance fields."

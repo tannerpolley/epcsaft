@@ -1,0 +1,9 @@
+boundary_id,source_role,temperature_K,molality_mol_per_kg,pressure_Pa,source_locator,derivation,interpolation_lower_molality,interpolation_lower_pressure_Pa,interpolation_upper_molality,interpolation_upper_pressure_Pa,source_expected_phase_count
+fig1a-298k-0005,figure_curve_direct,298.15,0.005000000139214637,3213.5903,Zenodo workbook FIGURE 1A!M5:O5,direct_workbook_row,,,,,2
+fig1a-298k-1033,figure_curve_direct,298.15,1.0328334230464915,3104,Zenodo workbook FIGURE 1A!M9:O9,direct_workbook_row,,,,,2
+fig1a-298k-2173,figure_curve_direct,298.15,2.1731898216481418,2972,Zenodo workbook FIGURE 1A!M13:O13,direct_workbook_row,,,,,2
+fig1a-298k-3506,figure_curve_direct,298.15,3.5057880859235957,2807,Zenodo workbook FIGURE 1A!M18:O18,direct_workbook_row,,,,,2
+fig1a-298k-4798,figure_curve_direct,298.15,4.7975770640377862,2642,Zenodo workbook FIGURE 1A!M23:O23,direct_workbook_row,,,,,2
+fig1a-298k-5600,figure_curve_direct,298.15,5.5999999927948618,2541,Zenodo workbook FIGURE 1A!M27:O27,direct_workbook_row,,,,,2
+table3-nacl-5600,table-3_selected_case,298.15,5.6,2508,Perdomo 2025 Table 3 retained source sample table3-nacl-5.6molal,direct_table_value,,,,,2
+fig1a-298k-6000,figure_curve_interpolated_limit,298.15,6.0,2487.8791657508136,Zenodo workbook FIGURE 1A!M28:O29,linear_pressure_interpolation_at_declared_6.0_molal_limit,5.8420872107606634,2508,6.1010785617335426,2475,2

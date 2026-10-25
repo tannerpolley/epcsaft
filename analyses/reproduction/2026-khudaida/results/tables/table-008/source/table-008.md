@@ -1,0 +1,12 @@
+<!-- source: docs/papers/md/Khudaida et al. - 2026 - Upgrading the Extraction of Ethanol and Isobutanol from an Aqueous Solution in the Presence of Sodiu.md lines 273-280 -->
+
+Table 8. Binary Interaction Parameters (BIPs) ${ }^{a}$ of eNRTL for the System Water (1) + Ethanol (2) + Isobutanol (3) + $\mathbf{N a C l}$ (4) at $293.15-313.15 \mathrm{~K}$ and Atmospheric Pressure ( $P =0.1 \mathrm{MPa}$ )
+
+| component (ij) | $b_{\mathrm{ij}}(\mathrm{K})$ | $b_{\mathrm{ji}}(\mathrm{K})$ | $\alpha$ |
+| :--- | :--- | :--- | :--- |
+| 1-2 | -404.067 | 1823.31 | 0.2 |
+| 1-3 | 1271.07 | -150.629 | 0.2 |
+| 1-4 | -35,373.9 | -1471.08 | 0.2 |
+| 2-3 | -658.804 | 92.8789 | 0.2 |
+| 2-4 | 68,085.7 | 36,654.7 | 0.2 |
+| 3-4 | 2345.56 | 44,854 | 0.2 |

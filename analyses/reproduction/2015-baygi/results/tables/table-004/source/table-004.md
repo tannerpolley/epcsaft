@@ -1,0 +1,13 @@
+<!-- source: docs/papers/md/Baygi and Pahlavanzadeh - 2015 - Application of the PC-SAFT equation of state for modeling CO2 solub.md lines 211-219 -->
+
+Table 3 - AAD\% for MEA-H2O system in different association schemes.
+
+| Association schemes |  | AAD\% ${ }^{\text {a }}$ |  | $k_{i j}$ |
+| :--- | :--- | :--- | :--- | :--- |
+| MEA | $\mathrm{H}_{2} \mathrm{O}$ | $\mathrm{X}_{\text {MEA }}$ | УмеА |  |
+| 2B | 2B | 5.66 | 2.38 | -0.0420 |
+| 3B |  | 4.24 | 2.08 | -0.0146 |
+| 4C |  | 5.41 | 2.28 | -0.0362 |
+| 2B | 4C | 3.52 | 8.63 | -0.1305 |
+| 3B |  | 3.54 | 1.54 | -0.0520 |
+| 4C |  | 8.05 | 3.60 | -0.1245 |

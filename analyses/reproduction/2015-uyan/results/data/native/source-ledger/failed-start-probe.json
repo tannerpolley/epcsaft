@@ -1,0 +1,52 @@
+{
+  "wheel_sha256": "33ef17f578714f55c65223e6b3d8b28e09344ac65cb317dfe9007bcfffc8db94",
+  "previous_state_transport": "Native previous-result reuse rejects changed feeds; this probe instead declares the unchanged neighboring physical outputs as guesses.",
+  "meaning": "Fixed neighboring accepted physical state supplied to the native starts owner for four literal failed feeds. No Python continuation or restart selection; no changed production start list or tolerances.",
+  "attempts": [
+    {
+      "source_row": "ermatchkov-2006-t1-r09",
+      "native_selected": 0,
+      "cause": "converged: residual 2.4868995751603507e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 7 iterations, contraction absent, floor 1.9297689061182744e-10, amplification 0",
+      "maximum_original_row": 2.4868995751603507e-14,
+      "native_termination": "SUCCESS",
+      "iterations": 7,
+      "pressure_pa": 559684.8441010003,
+      "row_tolerance": 1e-10,
+      "seed_source_row": "ermatchkov-2006-t1-r08"
+    },
+    {
+      "source_row": "ermatchkov-2006-t1-r10",
+      "native_selected": 0,
+      "cause": "converged: residual 3.5527136788005009e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 9 iterations, contraction absent, floor 1.9063986843515121e-10, amplification 0",
+      "maximum_original_row": 3.552713678800501e-14,
+      "native_termination": "SUCCESS",
+      "iterations": 9,
+      "pressure_pa": 656113.9592383173,
+      "row_tolerance": 1e-10,
+      "seed_source_row": "ermatchkov-2006-t1-r08"
+    },
+    {
+      "source_row": "ermatchkov-2006-t1-r11",
+      "native_selected": 0,
+      "cause": "converged: residual 2.6645352591003757e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 10 iterations, contraction absent, floor 1.9213950148685706e-10, amplification 0",
+      "maximum_original_row": 2.6645352591003757e-14,
+      "native_termination": "SUCCESS",
+      "iterations": 10,
+      "pressure_pa": 848590.6846732134,
+      "row_tolerance": 1e-10,
+      "seed_source_row": "ermatchkov-2006-t1-r08"
+    },
+    {
+      "source_row": "ermatchkov-2006-t1-r12",
+      "native_selected": 0,
+      "cause": "converged: residual 1.3322676295501878e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 43 iterations, contraction absent, floor 1.9117913469622017e-10, amplification 0",
+      "maximum_original_row": 1.3322676295501878e-14,
+      "native_termination": "SUCCESS",
+      "iterations": 43,
+      "pressure_pa": 1187547.838078471,
+      "row_tolerance": 1e-10,
+      "seed_source_row": "ermatchkov-2006-t1-r08"
+    }
+  ],
+  "limit": "Numerical initialization probe, no root-existence or physical-validation conclusion from failure."
+}

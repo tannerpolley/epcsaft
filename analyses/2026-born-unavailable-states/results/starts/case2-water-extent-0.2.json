@@ -1,0 +1,22 @@
+{
+  "case": 2,
+  "value": 2,
+  "success": false,
+  "solver_status": "INVALID_NUMBER_DETECTED",
+  "message": "reference_unavailable: reaction R3 neutral reference terminal change exceeds tolerance",
+  "iterations": 0,
+  "evaluations": 0,
+  "reduced_hessian_minimum": null,
+  "criterion_met": null,
+  "wall_s": 0.3593348069989588,
+  "convergence": {
+    "residual": null,
+    "floor": null,
+    "amplification": null,
+    "contraction": null,
+    "stop": "Stop.left_domain"
+  },
+  "state_file": null,
+  "generic_jacobian_rank": 20,
+  "generic_nullity": 0
+}

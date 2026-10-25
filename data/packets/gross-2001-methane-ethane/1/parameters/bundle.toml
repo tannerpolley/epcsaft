@@ -1,0 +1,29 @@
+schema_version = 1
+bundle_id = "gross-2001-methane-ethane"
+bundle_version = 1
+purpose = "installed-catalog"
+files = ["components.csv", "single.csv", "pair.csv", "model.csv"]
+
+[[sources]]
+source_id = "gross-sadowski-2001"
+citation = "Gross, J.; Sadowski, G. PC-SAFT: An Equation of State Based on a Perturbation Theory for Chain Molecules. Industrial & Engineering Chemistry Research 2001, 40, 1244-1260."
+doi = "10.1021/ie0003887"
+use_basis = "source-backed installed parameter catalog"
+
+[[domains]]
+domain_id = "methane-fit-range"
+kind = "fit-range"
+temperature_min = 97
+temperature_max = 300
+temperature_unit = "kelvin"
+
+[[domains]]
+domain_id = "ethane-fit-range"
+kind = "fit-range"
+temperature_min = 90
+temperature_max = 305
+temperature_unit = "kelvin"
+
+[[domains]]
+domain_id = "gross-pair-unknown"
+kind = "unknown"

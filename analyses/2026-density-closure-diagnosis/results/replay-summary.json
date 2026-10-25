@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "analysis": "2026-density-closure-diagnosis",
+  "issue": 89,
+  "source_commit": "72b3c80b2cc27417599f9a9b369accf56bcd2e6d",
+  "provenance": {
+    "wheel": "build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+    "wheel_sha256": "79fca1a03770a9feeb0a2ff0c48f1bb9e45e29935309d14625b1149077adaec5",
+    "parameter_packet": "data/packets/gross-2001-methane-ethane/2/parameters/parameters.json",
+    "parameter_packet_sha256": "7dd1899712aacfbc3395d86349768b0d93dd5dfd75b2e0f0700640be618aa9c2",
+    "neutral_declaration": "analyses/2026-density-closure-diagnosis/inputs/parameters.json",
+    "neutral_declaration_sha256": "feb55fe933ce45d200554838e9542edc718f7220293d77ef2d533e26d4830e1e",
+    "installed_distribution": "0.2.0.dev0",
+    "installed_module": "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-239-build-native-density-root-spinodal-e1e1c9a6/.venv/lib/python3.13/site-packages/epcsaft/__init__.py",
+    "installed_wheel": "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-239-build-native-density-root-spinodal-e1e1c9a6/build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl"
+  },
+  "replay_script": "analyses/2026-density-closure-diagnosis/scripts/replay.py",
+  "replay_script_sha256": "6ead4e0d2dc4126e0b247da9ab6ecad91995d143cdbada5d06a0b44661e11e67",
+  "frozen_probe": {
+    "controls": [
+      "one_root",
+      "two_root",
+      "near_coalescence",
+      "out_of_domain"
+    ],
+    "grid_intervals": 256,
+    "grid_shifts": [
+      0.0,
+      0.25,
+      0.5,
+      0.75
+    ],
+    "reference_intervals": 16384,
+    "native_upper_fraction": 0.999,
+    "reference_upper_fraction": 0.999999,
+    "local_ladder_intervals": 64,
+    "wall_budget_seconds": 60.0
+  },
+  "criteria": {
+    "root_log_bracket_tolerance": 1e-14,
+    "verification_ladder_log_bracket_tolerance": 5e-16,
+    "ladder_error_denominator": "abs(expected_d_rho_dP), not max(1, abs(expected_d_rho_dP))",
+    "action_identity_rtol": 1e-12,
+    "ladder_fine_rtol": 5e-06,
+    "ladder_coarse_rtol": 2e-05,
+    "physical_prediction_qualification": "not established by this diagnosis"
+  },
+  "claim_limits": [
+    "The independent finite root ladder supports the retained controls only; it is not global completeness or phase discovery.",
+    "A failed cold numerical closure is preserved as a solver/domain result and is not evidence of physical nonexistence.",
+    "The four shifted 256-cell alignments measure declared-grid crossings separately from adaptive discoveries."
+  ],
+  "historical_reference_commit": "9c0deb53",
+  "historical_reference_sha256": {
+    "root-controls-before.csv": "a7d62e5f0750a9452a064acb0e730680377790c8ee86658a0b93f4b993a6e1ce",
+    "pressure-actions-before.csv": "58525822a903aa8379d7b9c0b2bb1e97787f10111b725232784900b5a427e0dc"
+  },
+  "outputs": [
+    "ladder-refinement.csv",
+    "before-after.csv",
+    "dilute-limit.csv",
+    "finite-domain.csv",
+    "root-controls.csv",
+    "scan-grids.csv",
+    "pressure-actions.csv",
+    "anchors.csv"
+  ],
+  "elapsed_seconds": 0.9880860850007593
+}

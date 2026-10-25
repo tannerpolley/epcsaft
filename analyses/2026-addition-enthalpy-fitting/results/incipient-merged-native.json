@@ -1,0 +1,45 @@
+{
+  "base": "19a0c825",
+  "wheel_sha256": "e8ad39e0c5d7da471a6d3ace6ff62d60518c57bc1c96fe5198d8bf18747ba8b5",
+  "logs": [
+    "build/issue269/merged/native-inventory-face.log",
+    "build/issue269/merged/native-neutral-electrostatics.log",
+    "build/issue269/merged/native-mea.log",
+    "build/issue269/merged/native-inventory-boundary.log"
+  ],
+  "rows": 349,
+  "failed": [],
+  "evidence": "Numerical verification of exact inventory faces and neutral electrostatic restrictions; no calorimetry validation, fit or parameter adoption",
+  "build_fingerprint": "cba98aa31cb74aab14d68c293ea79dd46d186fc89d04d1336a99df2eef29b383",
+  "native_binary_sha256": "ebbee7c9a42d841feb2bd3977885cda6ab862f57f27054091e2d48eaaff4aeff",
+  "log_sha256": {
+    "build/issue269/merged/native-inventory-face.log": "54fee5f04d11528ad4f9a8f55366d67f64a164ba84e3859b0f2da09ea4fd6c8e",
+    "build/issue269/merged/native-neutral-electrostatics.log": "b297cfaae167585296a83ff9b10e9be9e33c8d33b6ff687cb9580be0c0ea68aa",
+    "build/issue269/merged/native-mea.log": "ea271987d0bd93cb09a6834ab9d560b6dd5abc6224fd2e618789232b8d01cab7",
+    "build/issue269/merged/native-inventory-boundary.log": "f3d246f1ec10d17d71156cc7e882f478612813ee382a8579225c1433fb6a7ec3"
+  },
+  "artifacts": {},
+  "inputs": {
+    "ideal-calorics.json": "c94d504e68c6dc6e85d3d950cc51422499846729b1a06994b362040be991924a",
+    "reactions.json": "c1cb5c74b2d71ce56e9c0a5d86116f972adbb2d635a0e9ed944152f25bd5fc43",
+    "parameters.json": "7e9e3f02723700f8b6577681173249c0e7bd2c8c2a098f38a4e0a7e4611852d5"
+  },
+  "source_head": "5ae884f7bae05ce1b771572cf1fe74023fe4e38b",
+  "runtime_patch_sha256": "52f392357859ae4607a8d1206b5109a26f707c1a9077a8a751bc82a15f727a4a",
+  "native_test_patch_sha256": "51ec74ce4da1a0d000da2ad9a4b7e0c476c9f515c308be29b66074bede3d0ac2",
+  "probes": {
+    "candidate": {
+      "source_commit": "5ae884f7bae05ce1b771572cf1fe74023fe4e38b",
+      "wheel_sha256": "e8ad39e0c5d7da471a6d3ace6ff62d60518c57bc1c96fe5198d8bf18747ba8b5",
+      "module": "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/issue-269-zero-inventory-incipient/.venv/lib/python3.13/site-packages/epcsaft/__init__.py",
+      "inputs": {
+        "ideal-calorics.json": "c94d504e68c6dc6e85d3d950cc51422499846729b1a06994b362040be991924a",
+        "reactions.json": "c1cb5c74b2d71ce56e9c0a5d86116f972adbb2d635a0e9ed944152f25bd5fc43",
+        "parameters.json": "7e9e3f02723700f8b6577681173249c0e7bd2c8c2a098f38a4e0a7e4611852d5"
+      },
+      "failures": {},
+      "limits": "Numerical verification; no physical validation, global stability, or boundary caloric use."
+    }
+  },
+  "failures": {}
+}

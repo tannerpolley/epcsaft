@@ -1,0 +1,8 @@
+step,wall_s
+baseline,0.062
+sweep aq-literal (161 feeds),1.005
+sweep aq-constant-sigma (161 feeds),0.931
+sweep aq-cr1-cross (161 feeds),0.977
+sweep aq-organic-eps (161 feeds),0.959
+sweep both-organic-eps (161 feeds),1.387
+compare,0.007

@@ -1,0 +1,35 @@
+column,required,unit_or_domain,description
+record_id,yes,stable string,Canonical row identifier assigned by this generator.
+source_key,yes,source id,Stable literature source key.
+source,yes,text,Human-readable source label.
+source_file,yes,relative path,Machine-readable source file used to build this row.
+source_row_index,yes,1-based integer,"Row number within the source CSV, excluding the header."
+row_status,yes,reported|extracted|ambiguous|excluded,Source row status or extraction quality flag.
+temperature_C,yes,degC,Reported liquid temperature.
+temperature_K,yes,K,Reported liquid temperature converted from degC.
+pressure_bar,no,bar,Reported pressure when available.
+mea_mass_fraction,yes,mass fraction,MEA mass fraction for the aqueous MEA feed or solution.
+co2_loading_mol_per_mol_mea,yes,mol/mol,CO2 loading as mol CO2 per mol MEA.
+species,yes,species label,Canonical species label.
+source_species,yes,text,Species label or source column before canonical normalization.
+measurement_role,yes,direct_positive|direct_zero|aggregate_direct_positive|aggregate_direct_zero|ambiguous,How the value should be treated as measured or unresolved evidence.
+conversion_eligible,yes,true|false,Whether the reported basis has enough verified denominator information for normalized conversion.
+lifecycle_status,yes,canonical_eligible|validation_reserved|diagnostic_only|qa_pending,Row-level evidence lifecycle state.
+target_membership,yes,active_v1|transferability_candidate|diagnostic_only_basis_unverified,Current target or holdout membership without implying upstream admission.
+reported_value,yes,source basis,Numeric value exactly on the source-file basis.
+reported_basis,yes,mole_fraction|mol_per_kg_source_basis,Basis of reported_value.
+reported_unit,yes,unit text,Reported unit label.
+value_mole_fraction,no,mole fraction,Reported or directly standardized true-species mole fraction.
+value_mol_per_kg_source_basis,no,mol/kg,Reported mol/kg value when the source reports mol/kg.
+value_mol_per_kg_unloaded_solution,no,mol/kg,Computed mol per kg unloaded MEA-water feed.
+value_mol_per_kg_initial_water,no,mol/kg,Computed mol per kg initial water in the unloaded MEA-water feed.
+value_mol_per_kg_loaded_solution,no,mol/kg,"Computed mol per kg loaded liquid, using absorbed CO2 mass from the reported loading."
+feed_mea_mol_per_kg_unloaded_solution,yes,mol/kg,MEA feed moles per kg unloaded MEA-water solution.
+feed_co2_mol_per_kg_unloaded_solution,yes,mol/kg,Absorbed CO2 moles per kg unloaded MEA-water solution from loading.
+loaded_solution_mass_kg_per_kg_unloaded_solution,yes,kg/kg,Loaded liquid mass per kg unloaded MEA-water solution.
+conversion_total_moles_per_kg_unloaded_solution,no,mol/kg,Total true-species moles used to convert reported mole fractions.
+conversion_basis,yes,text,Rule used for unit conversion.
+source_table_or_figure,no,text,Traceability pointer to the source table or figure.
+source_line_start,no,line number,First local Markdown line used for traceability when available.
+source_line_end,no,line number,Last local Markdown line used for traceability when available.
+notes,no,text,Short provenance and conversion notes.

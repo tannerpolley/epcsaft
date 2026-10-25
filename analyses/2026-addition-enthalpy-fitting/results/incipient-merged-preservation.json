@@ -1,0 +1,179 @@
+{
+  "merge_commit": "5ae884f7bae05ce1b771572cf1fe74023fe4e38b",
+  "main_commit": "19a0c8258c3f5f6fca2258395eb54e07503b7efb",
+  "previous_record_commit": "22971065579251e8f48004694f9d5b014dba98fb",
+  "wheel_sha256": "e8ad39e0c5d7da471a6d3ace6ff62d60518c57bc1c96fe5198d8bf18747ba8b5",
+  "previous_wheel_sha256": "08f335ae3dee404fc86607d981820275d47bc287bcc90ba2e1dd5b579f8c1a96",
+  "native": {
+    "base": "19a0c825",
+    "wheel_sha256": "e8ad39e0c5d7da471a6d3ace6ff62d60518c57bc1c96fe5198d8bf18747ba8b5",
+    "logs": [
+      "build/issue269/merged/native-inventory-face.log",
+      "build/issue269/merged/native-neutral-electrostatics.log",
+      "build/issue269/merged/native-mea.log",
+      "build/issue269/merged/native-inventory-boundary.log"
+    ],
+    "rows": 349,
+    "failed": [],
+    "evidence": "Numerical verification of exact inventory faces and neutral electrostatic restrictions; no calorimetry validation, fit or parameter adoption",
+    "build_fingerprint": "cba98aa31cb74aab14d68c293ea79dd46d186fc89d04d1336a99df2eef29b383",
+    "native_binary_sha256": "ebbee7c9a42d841feb2bd3977885cda6ab862f57f27054091e2d48eaaff4aeff",
+    "log_sha256": {
+      "build/issue269/merged/native-inventory-face.log": "54fee5f04d11528ad4f9a8f55366d67f64a164ba84e3859b0f2da09ea4fd6c8e",
+      "build/issue269/merged/native-neutral-electrostatics.log": "b297cfaae167585296a83ff9b10e9be9e33c8d33b6ff687cb9580be0c0ea68aa",
+      "build/issue269/merged/native-mea.log": "ea271987d0bd93cb09a6834ab9d560b6dd5abc6224fd2e618789232b8d01cab7",
+      "build/issue269/merged/native-inventory-boundary.log": "f3d246f1ec10d17d71156cc7e882f478612813ee382a8579225c1433fb6a7ec3"
+    },
+    "artifacts": {},
+    "inputs": {
+      "ideal-calorics.json": "c94d504e68c6dc6e85d3d950cc51422499846729b1a06994b362040be991924a",
+      "reactions.json": "c1cb5c74b2d71ce56e9c0a5d86116f972adbb2d635a0e9ed944152f25bd5fc43",
+      "parameters.json": "7e9e3f02723700f8b6577681173249c0e7bd2c8c2a098f38a4e0a7e4611852d5"
+    },
+    "source_head": "5ae884f7bae05ce1b771572cf1fe74023fe4e38b",
+    "runtime_patch_sha256": "52f392357859ae4607a8d1206b5109a26f707c1a9077a8a751bc82a15f727a4a",
+    "native_test_patch_sha256": "51ec74ce4da1a0d000da2ad9a4b7e0c476c9f515c308be29b66074bede3d0ac2",
+    "probes": {
+      "candidate": {
+        "source_commit": "5ae884f7bae05ce1b771572cf1fe74023fe4e38b",
+        "wheel_sha256": "e8ad39e0c5d7da471a6d3ace6ff62d60518c57bc1c96fe5198d8bf18747ba8b5",
+        "module": "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/issue-269-zero-inventory-incipient/.venv/lib/python3.13/site-packages/epcsaft/__init__.py",
+        "inputs": {
+          "ideal-calorics.json": "c94d504e68c6dc6e85d3d950cc51422499846729b1a06994b362040be991924a",
+          "reactions.json": "c1cb5c74b2d71ce56e9c0a5d86116f972adbb2d635a0e9ed944152f25bd5fc43",
+          "parameters.json": "7e9e3f02723700f8b6577681173249c0e7bd2c8c2a098f38a4e0a7e4611852d5"
+        },
+        "failures": {},
+        "limits": "Numerical verification; no physical validation, global stability, or boundary caloric use."
+      }
+    },
+    "failures": {}
+  },
+  "changed_values": 2623,
+  "changed_values_table": "incipient-merged-changes.csv",
+  "provisional_wheel_sha256": "e8ad39e0c5d7da471a6d3ace6ff62d60518c57bc1c96fe5198d8bf18747ba8b5",
+  "ordinary_work": {
+    "source_commit": "5ae884f7bae05ce1b771572cf1fe74023fe4e38b",
+    "wheel_sha256": "e8ad39e0c5d7da471a6d3ace6ff62d60518c57bc1c96fe5198d8bf18747ba8b5",
+    "input_files": {
+      "analyses/2026-khudaida-idaes-settler/inputs/data/khudaida-2026-figure-2-electrolyte-lle/7/parameters/parameters.json": "8babed899e7347e58c403c7aff24a7fdd6d60411af3b4d81eb6aa90c2431dfa4",
+      "data/packets/mea-co2-h2o-nine-species-estimation/3/parameters/parameters.json": "2ea3b41485a98d2cf49add620b87bb05fc5a275cdd132c1cdbb0cfc5f07f2ca4",
+      "analyses/2026-khudaida-idaes-settler/scripts/run_fixed_settler.py": "2dabb36cea32bd22feb71b041d0e6577ec38d8cd6f7a41db50c13313f84f3589",
+      "engine/tests/equilibrium/test_trace_reliability.py": "01d51690d604086f8e672b5d8d903fdc9023c77e84bf4213ecdb7e5e3d27f236"
+    },
+    "thread_environment": {
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1"
+    },
+    "nice": 10,
+    "evaluation_meaning": "Engine evaluations counts Ipopt objective callbacks plus exact polish evaluations; no independent objective-count instrument added.",
+    "limits": "Best of three on a shared host; wall time does not isolate sub-percent overhead."
+  },
+  "limits": "Numerical verification and model predictions only; no physical validation, boundary caloric use, parameter adoption, uniqueness or global stability. Merged evidence awaits the accountable lead review; no investigator promotion.",
+  "gates": {
+    "check_all": "Passed: 121 Python checks, one deselected; six native fast groups; packets, equation index, budgets, project map, Ruff, mypy, analysis layout and architecture.",
+    "khudaida": "Passed canonical tools/run-slice.sh khudaida; temporary calculation directories were under build/issue269/merged and removed by the canonical command.",
+    "check_affected": "Passed against current main 19a0c825, including native boundary, equilibrium and parameter-fitting groups."
+  },
+  "gate_logs_sha256": {
+    "check-all.log": "dc5b28357b28e621995f54c9c3d01a40c777801bad28f8b3f81383cf655640b6",
+    "khudaida.log": "662eedff455cf737fda4dab3cc7fc1220307997e29919878bb874df9428aa23b",
+    "check-affected.log": "f4f73e207b071937a57c913cabe2aa94086f8817d9b5fdc61d2efe68ddb887bc",
+    "gates-lease.log": "0b16b980559240246b6a60cfda936aac2076f023732089cdb123f5ab366d5922"
+  },
+  "work_counts": {
+    "current_main": {
+      "ionic_LLE": [
+        16,
+        53,
+        17
+      ],
+      "MEA_flash": [
+        43,
+        57,
+        44
+      ]
+    },
+    "merged": {
+      "ionic_LLE": [
+        16,
+        53,
+        17
+      ],
+      "MEA_flash": [
+        43,
+        57,
+        44
+      ]
+    },
+    "meaning": "iterations/evaluations/Hessian calls; all three samples per case equal current main; no worse."
+  },
+  "task_budget_against_main": {
+    "base": "19a0c8258c3f5f6fca2258395eb54e07503b7efb",
+    "runtime_added": 20,
+    "runtime_removed": 4,
+    "runtime_net": 16,
+    "runtime_layer": "Equilibrium",
+    "test_added": 156,
+    "test_removed": 2,
+    "analysis_reader_added": 73,
+    "analysis_reader_removed": 4,
+    "gross_executable": 249,
+    "approved_ceilings": {
+      "runtime_gross": 80,
+      "runtime_net": 60,
+      "test_gross": 220,
+      "reader_gross": 80,
+      "gross_executable": 380
+    },
+    "equilibrium_lines": 7516,
+    "equilibrium_hard": 8800,
+    "aggregate_lines": 22501,
+    "aggregate_hard": 24000,
+    "limits": "Inherited soft-ceiling overruns remain; the task adds only bounded face-domain admission and accurate refusal."
+  },
+  "prior_delivered_review": "Supported without findings at 22971065 against 8f5f5685, as supplied by the accountable lead and current issue body; no new review claimed.",
+  "lease": {
+    "environment_lock": "/tmp/epc-shared-env.lock",
+    "lock_wait_seconds": 3600,
+    "heavy_timeout": "30m",
+    "heavy_max": "8G",
+    "threads": 1,
+    "build_jobs_requested": 2,
+    "admission": "Wait for at least 4 GB available memory outside environment lock; agent-heavy --wait 0 inside it.",
+    "reference_wheel_sha256": "e28d258df06eac39711c59a79f9ce2b69fc8ac7565637bfba0dbef21863d8dc7",
+    "restoration": "Exit trap reinstalls and verifies reference wheel before releasing lock; only restoration lowers reserve to zero, with max 2G and one thread."
+  },
+  "retained_result_sha256": {
+    "incipient-merged-changes.csv": "155e2b1011f915423f988e8be12d5954704e0876f2aed8019e971e7bdfa7e850",
+    "incipient-merged-cost.csv": "b3af9bf8feaa8cb3c7220527f900c34d960d934f43047ac3dadaa86740007738",
+    "incipient-merged-cp-states.csv": "6fd4921f537e0fe9f8d8253300ecdb93648f39e583dd77128d19b0f641dce7dd",
+    "incipient-merged-cp.csv": "c1e18bf3810cb21d5dae706c2daf1324b1eb7718bccf146c538b45b26aaec1ce",
+    "incipient-merged-native.csv": "32bb1711db9babc89df602a89aa75cf813731b925d9524ceb8eec97b6131d1e5",
+    "incipient-merged-native.json": "83356d0afa1d064fa7f645876cdbf806fea7dc0d1687c9f333308511630325d1",
+    "incipient-merged-provisional.csv": "bbe73e00a6ab15042474abf43913757268ffb0f06501c6fd8882c42b1e673dda",
+    "incipient-merged-states.csv": "eaca9b47e1ea6340c8ee1ac1a0ffa3320aa1f12c8e24d845004cedf5772a260a",
+    "incipient-merged-wheel.csv": "4b97fca615dd4a6d5ef132f86198ca61402bdc27f085ab48e739138881a2292c",
+    "incipient-merged-wheel.json": "ef58461b3142a8863b9b6c1f8e01c082147b908b696ff532b5a425d56ccbc102"
+  },
+  "presentation": {
+    "source": "analyses/2026-addition-enthalpy-fitting/notebook.qmd",
+    "source_sha256": "64ef8c1de73dc1b838260cf4ccd65fef3b6b9b97b765fb43cf8ba1a442c2db51",
+    "html": "build/companion/analyses/2026-addition-enthalpy-fitting/notebook.html",
+    "html_sha256": "0c339dff6c36b59af6671830842ed08d1bb0c96cddc51a0093973be7bedbec7a",
+    "values_checked": [
+      "6289.083617367117",
+      "998660.895739912",
+      "6290.010865358271",
+      "6289.180352855943",
+      "6289.084589650336",
+      "6289.08362709033",
+      "e8ad39e0c5d7da471a6d3ace6ff62d60518c57bc1c96fe5198d8bf18747ba8b5",
+      "16/53/17",
+      "43/57/44"
+    ],
+    "log": "build/issue269/merged/render-lease.log",
+    "log_sha256": "cb5214f94777c332cbd86b80873979c25459ab129de98bc3a81e5aa3df3d21c3",
+    "check_affected_HEAD": "Passed for the final record changes, including clean analysis layout."
+  }
+}

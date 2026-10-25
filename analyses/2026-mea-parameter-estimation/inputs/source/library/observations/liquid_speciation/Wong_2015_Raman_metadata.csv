@@ -1,0 +1,8 @@
+source_key,metadata_key,metadata_value,source_table_or_figure,source_line_start,source_line_end,status,notes
+Wong2015,solution_temperature,303.15 K,Fig. 8 caption,432,435,extracted,Temperature for reported 30 wt percent MEA speciation figure.
+Wong2015,mea_solution_strength,30 wt percent MEA,Fig. 8 caption,432,435,extracted,Composition for reported speciation figure.
+Wong2015,species_reported,MEA; MEACOO-; CO2(aq); HCO3-; MEAH+; CO3^2-,Fig. 8 narrative,430,437,extracted,Numeric Fig. 8 species-vs-loading rows are digitized in Wong_2015_Raman_speciation.csv; overlap-sensitive rows are marked ambiguous.
+Wong2015,pressure_range_validation,1 to 60 bar,Conclusion,441,441,staged,Pressure range noted as validation context; do not treat as tabular extracted data.
+Wong2015,digitized_row_count,71 rows; 66 extracted and 5 ambiguous,Fig. 8,428,435,extracted,Digitized from local Markdown Mathpix crop using calibrated linear loading axis and log10 concentration axis.
+Wong2015,digitization_qa_overlay,data/reference/MEA/observations/liquid_speciation/Wong_2015_Raman_speciation_qa_overlay.png,Fig. 8,428,435,extracted,QA overlay rings selected marker centers; crossed larger rings identify ambiguous overlap-sensitive rows.
+Wong2015,digitization_metadata,data/reference/MEA/observations/liquid_speciation/Wong_2015_Raman_speciation_digitization_metadata.json,Fig. 8,428,435,extracted,"JSON records axis calibration, source crop URL, pixel centers, row-status counts, species counts, and extraction limitations."

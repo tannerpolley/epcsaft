@@ -1,0 +1,44 @@
+{
+  "sources": {
+    "/home/tnnrpolley21/Workspaces/Engineering/Amine-Thermodynamics/.worktrees/170-a2-part-1-requalify-84ca269d-shared/analyses/mea_parameter_bundle/results/joint-recalibration-170/amendment-2/route2b/larger-dV/continuation-fit-spec.json": "0d27e84495e836a96e76bab8c6174fccc53c7a3eeb9a7a0a96c71863b0a076c8",
+    "/home/tnnrpolley21/Workspaces/Engineering/Amine-Thermodynamics/.worktrees/170-a2-part-1-requalify-84ca269d-shared/analyses/mea_parameter_bundle/results/joint-recalibration-170/amendment-2/route2b/larger-dV/start-parameters.json": "aee26a2dc1149854ff0840d4bd5bfac58ec423aac1cfec7b870b1ccbbbc2d202"
+  },
+  "packet_sha256": "0901d11f800a5d1645229ddc38d99fa84ff3e649ff119656d6a83ff64e542240",
+  "compressed_sha256": "c0cc5235ac63078cd3a653abf66bd85fa70ebb445d48cb509f151fe5f61b3b08",
+  "rows": 1,
+  "observation": "Hilliard2008_Cp_353.15_0.358",
+  "coordinates": [
+    "pair/carbamate-anion/water/k_ij",
+    "pair/protonated-monoethanolamine/water/k_ij",
+    "pair/bicarbonate-anion/water/k_ij",
+    "pair/carbamate-anion/protonated-monoethanolamine/k_ij",
+    "pair/protonated-monoethanolamine/water/k_ij/reciprocal_temperature_slope",
+    "component/protonated-monoethanolamine/segment_diameter",
+    "component/carbamate-anion/segment_diameter",
+    "component/protonated-monoethanolamine/born_diameter",
+    "component/carbamate-anion/born_diameter",
+    "reaction:R5:correlation:a_k",
+    "reaction:R2:enthalpy_shift",
+    "reaction:R5:enthalpy_shift",
+    "pair/carbon-dioxide/water/k_ij",
+    "pair/carbon-dioxide/water/k_ij/reciprocal_temperature_slope",
+    "component/protonated-monoethanolamine/dispersion_energy_over_k",
+    "component/carbamate-anion/dispersion_energy_over_k"
+  ],
+  "physical_columns": 20,
+  "frozen": {
+    "engine_tree": "07f2b379ae5ba93b2c2384e67d76823fae73e227",
+    "base": "56216880de538223ca1e7ae189e700c977cafeec",
+    "host": "tnnrpolley21-MS-7C95",
+    "serial_cpu_seconds": 1.9789931799999998,
+    "serial_wall_seconds": 1.9794414640055038,
+    "work": {
+      "reference_computations": 3,
+      "reference_columns": 280,
+      "density_solves": 35,
+      "equilibrium_iterations": 13
+    },
+    "measurement": "non-diagnostic native trace; process CPU and wall around evaluate_observations; decoding and trace reduction excluded; median of nine B arms interleaved with main, load 3.8-6.0",
+    "evidence": "build/issue-595/falsifier2-run4-9pairs.json"
+  }
+}

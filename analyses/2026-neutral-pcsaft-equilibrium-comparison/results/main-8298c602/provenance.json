@@ -1,0 +1,148 @@
+{
+  "case": {
+    "component": "propane",
+    "temperature_K": 300.0,
+    "m": 2.002,
+    "sigma_Angstrom": 3.6184,
+    "epsilon_over_k_K": 208.11,
+    "association": false,
+    "polarity": false,
+    "electrolyte": false
+  },
+  "commands": [
+    [
+      "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/build/issue-680-release-PRNBCX/venv/bin/python",
+      "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/analyses/2026-neutral-pcsaft-equilibrium-comparison/scripts/collect_results.py",
+      "engine"
+    ],
+    [
+      "/home/tnnrpolley21/.cache/epcsaft-comparators/222/feos/bin/python",
+      "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/analyses/2026-neutral-pcsaft-equilibrium-comparison/scripts/collect_results.py",
+      "python"
+    ],
+    [
+      "/home/tnnrpolley21/.cache/epcsaft-comparators/222/feos/bin/python",
+      "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/analyses/2026-neutral-pcsaft-equilibrium-comparison/scripts/collect_results.py",
+      "teqp"
+    ]
+  ],
+  "records": [
+    {
+      "implementation": "ePC-SAFT",
+      "solver": "Engine saturation + solve_equilibrium (max_abs_residual=4.441e-15)",
+      "temperature_K": 300.0,
+      "pressure_Pa": 998660.8957399072,
+      "rho_liquid_mol_m3": 11100.251233209618,
+      "rho_vapor_mol_m3": 482.5121268150313,
+      "phase_pressure_rel_error": null,
+      "source": {
+        "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the",
+        "commit": "d0fa7a2ae179d3967e19290e82a8622dcfa36941",
+        "dirty": true
+      }
+    },
+    {
+      "implementation": "FeOs",
+      "solver": "PhaseEquilibrium.pure",
+      "temperature_K": 300.0,
+      "pressure_Pa": 998660.8955481574,
+      "rho_liquid_mol_m3": 11100.251234176576,
+      "rho_vapor_mol_m3": 482.51212670173845,
+      "phase_pressure_rel_error": 1.8849599121514428e-13,
+      "source": {
+        "path": "/home/tnnrpolley21/Workspaces/Engineering/Forks-Clones/feos",
+        "commit": "a508463cb4a41a15411cb90e9b4146c44b47d688",
+        "dirty": true
+      }
+    },
+    {
+      "implementation": "ThermoPack",
+      "solver": "pcsaft.get_pure_fluid_saturation_curve",
+      "temperature_K": 300.0,
+      "pressure_Pa": 998660.895732584,
+      "rho_liquid_mol_m3": 11100.251233209041,
+      "rho_vapor_mol_m3": 482.51212681063595,
+      "phase_pressure_rel_error": null,
+      "source": {
+        "path": "/home/tnnrpolley21/Workspaces/Engineering/Forks-Clones/thermopack",
+        "commit": "d68c794c7342bfc6938eb424a1fbb88b7780b738",
+        "dirty": false
+      }
+    },
+    {
+      "implementation": "teqp",
+      "solver": "PCSAFTEOS.pure_VLE_T",
+      "temperature_K": 300.0,
+      "pressure_Pa": 998660.8957398997,
+      "rho_liquid_mol_m3": 11100.25123320962,
+      "rho_vapor_mol_m3": 482.5121268150332,
+      "phase_pressure_rel_error": 1.0258285234228744e-14,
+      "source": {
+        "path": "/home/tnnrpolley21/Workspaces/Engineering/Forks-Clones/teqp",
+        "commit": "5f62a6f515d517e39c3fb035c11a03524ffa3ad6",
+        "dirty": false
+      }
+    },
+    {
+      "implementation": "Clapeyron",
+      "solver": "saturation_pressure(PCSAFT)",
+      "temperature_K": 300.0,
+      "pressure_Pa": 998660.8946430682,
+      "rho_liquid_mol_m3": 11100.251233071715,
+      "rho_vapor_mol_m3": 482.51212615670687,
+      "phase_pressure_rel_error": null,
+      "source": {
+        "path": "/home/tnnrpolley21/Workspaces/Engineering/Forks-Clones/Clapeyron.jl",
+        "commit": "6b8a694749bc5a7e427c20d9f1dfc6002d1e1194",
+        "dirty": true
+      }
+    }
+  ],
+  "release": "main-8298c6029ebb8b467929badc4a223c580ec591ab",
+  "wheel": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/build/issue-680-release-PRNBCX/epcsaft-0.2.0.dev0-cp313-cp313-manylinux_2_39_x86_64.whl",
+  "wheel_sha256": "8897a0caab9f2508ed642f42c8b5226957fbe7035ed7bfdad71e4166798785b3",
+  "engine_provenance": [
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/build/issue-680-release-PRNBCX/epcsaft-0.2.0.dev0-cp313-cp313-manylinux_2_39_x86_64.whl",
+    "8897a0caab9f2508ed642f42c8b5226957fbe7035ed7bfdad71e4166798785b3"
+  ],
+  "interpreter": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/build/issue-680-release-PRNBCX/venv/bin/python",
+  "engine_import": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/build/issue-680-release-PRNBCX/venv/lib/python3.13/site-packages/epcsaft/__init__.py",
+  "evidence_label": "numerical verification",
+  "review": "Independent delivered review and owner promotion pending",
+  "comparators": {
+    "FeOs": {
+      "version": "0.10.1",
+      "interpreter": "/home/tnnrpolley21/.cache/epcsaft-comparators/222/feos/bin/python"
+    },
+    "teqp": {
+      "version": "0.23.2",
+      "interpreter": "/home/tnnrpolley21/.cache/epcsaft-comparators/222/feos/bin/python"
+    },
+    "ThermoPack": {
+      "module": "/home/tnnrpolley21/Workspaces/Engineering/Forks-Clones/thermopack/addon/pycThermopack/thermopack",
+      "native_library_sha256": "99381c08b10888f96bbfcf378351cba76bd8bebc3880428bc42545aed4c31e2c"
+    },
+    "Clapeyron": {
+      "version": "0.6.29",
+      "project": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/analyses/2026-competitor-cross-check/inputs",
+      "depot": "/home/tnnrpolley21/.cache/epcsaft-comparators/222/depot",
+      "process_pid": 3025810,
+      "single_process": true
+    }
+  },
+  "source_note": "The collector records the declared fork checkouts under records/source, including its FeOs parameter-table input. Actual comparator implementations came from the existing environments above; those fork commits do not identify the loaded FeOs or Clapeyron code.",
+  "producer_sha256": {
+    "analyses/2026-neutral-pcsaft-equilibrium-comparison/scripts/collect_results.py": "da2bfd5aa8727a4d570cebe901d00aed499105abd056259768b34dcd676d61a3",
+    "analyses/2026-neutral-pcsaft-equilibrium-comparison/scripts/collect_clapeyron.jl": "c8c8a3b6f2498d96ca93260cfbba4e36017b21cb2ae6f9e179464ab6ecb1dda6",
+    "analyses/2026-neutral-pcsaft-equilibrium-comparison/scripts/saturation-task.jl": "150ca6fda96f0c7874344ef413574884fcd2b11eefca1dba83dc8ab8f62b3720",
+    "analyses/2026-neutral-pcsaft-equilibrium-comparison/scripts/listing1.py": "c64426e4d67485ae12412b280d1a1eef9bacf9d3f92af67e227e5d49631dd505",
+    "analyses/2026-neutral-pcsaft-equilibrium-comparison/scripts/render_figure.py": "53ef6bad8c5fbfa2ebd1a956243b5280cfafc4d367b389ff4ef858f971b26aa3"
+  },
+  "environment": {
+    "EPCSAFT_HSL_LIBRARY": null,
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1"
+  },
+  "listing_executed_source_sha256": "c64426e4d67485ae12412b280d1a1eef9bacf9d3f92af67e227e5d49631dd505"
+}

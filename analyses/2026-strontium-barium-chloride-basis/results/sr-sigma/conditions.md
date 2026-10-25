@@ -1,0 +1,1 @@
+Conditions: **298.15 K**, **100000 Pa**; **39 Goldberg–Nuttall Table 23 training states plus 49 Clegg mixtures; 127 scalar observations**. The complete declared grid is shown below; fitting and evaluated-binary scoring were not reached.

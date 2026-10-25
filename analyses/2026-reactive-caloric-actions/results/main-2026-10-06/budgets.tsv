@@ -1,0 +1,10 @@
+layer	added	removed	net	current	soft	hard
+core	0	0	0	972	1000	1100
+contributions	3	3	0	1544	1700	1900
+properties	166	184	-18	4764	5000	5300
+equilibrium	673	389	284	7841	8000	8800
+regression	10	14	-4	2431	1000	2478
+surface	0	0	0	532	550	650
+bindings	13	4	9	1993	650	2100
+python	3	1	2	2796	1600	2850
+total	868	595	273	22873	19500	25000

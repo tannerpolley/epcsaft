@@ -1,0 +1,67 @@
+{
+  "reference_commit": "f4075c0f56774c301ba21e5601aa351360c3a08f",
+  "reference_sha256": {
+    "comparison.csv": "40ea3caed8b8ce824cc45eefd1f0116c7bbf6f7df8e151e63ca232868909701b",
+    "summary.json": "fc7370c8d8421247a0ca723784eb6ba45c839556a2a46822c8ffa709b20d77b5",
+    "refit.csv": "989d6c867c80e5f1f66238d807fe2634706285375954e1b1c6cb655ef28ab8a2"
+  },
+  "old_extension_sha256": "bbf7dbe5f3e5f49ca67f645f1e5bbd22e77e7bbdacd15fc1b7d6115980839671",
+  "new_extension_sha256": "0f72ef9c8b52a277626e3a140dc872a093f6e51e7a77aca0affdcfdad17d7869",
+  "new_wheel_sha256": "298a360e532f6f4c5e7ef70c5be45e8b9852310d1c388d6225c504714c3dc410",
+  "literal_inputs_unchanged": true,
+  "conditions": {
+    "temperature_K": 298.15,
+    "pressure_Pa": 100000.0,
+    "calibration_max_molality_mol_kg": 2,
+    "calibration_rows_per_form": 21,
+    "holdout_rows_per_form": 8,
+    "comparison_rows": 318
+  },
+  "comparison_rules": {
+    "gamma_permittivity_and_dimensionless_residual": "absolute 1e-7",
+    "density": "relative 1e-7",
+    "objective_increase": "1e-8 * max(1, old relative SSE)",
+    "parameters": "secondary to objective/predictions",
+    "energy": "no prescribed comparison tolerance; kJ/mol deltas reported"
+  },
+  "baseline_misses": {},
+  "after_misses": {
+    "miac": 62,
+    "relative_permittivity": 31,
+    "normalized_gamma_residuals": 65
+  },
+  "diagnosis": [
+    "At identical coordinates the former reference/activity calls and native observation calls have identical relative SSE on this wheel; no residual or standard-state change was found.",
+    "The retained former coordinates have nonzero exact half-SSE gradients (F -5.9191e-6, D +2.5179e-6, P -4.2487e-6), confirmed by central differences at steps 1e-4, 1e-5 and 1e-6. Native fits improve the same-wheel objective by moving k.",
+    "The historical extension differs from the current extension. Same-input, same-coordinate differences against retained gamma are below 1e-7. The 1.7e-10 to 1.9e-10 D/P SSE shifts exceed the optimizer improvements; both remain below the permitted objective increase.",
+    "Native solvation uses the Engine gas constant; the previous script used rounded R=8.314462618. The old-coordinate change is at most 7.25e-9 kJ/mol.",
+    "Historical branch labels recorded the requested liquid branch; 14 density rows actually return the unique-root Unspecified branch on the current wheel. Requested liquid labels remain and separate native branch/root-count columns retain this diagnostic.",
+    "Native conditional covariance is unit variance; multiply its physical variance by variance_factor=SSE/20. Exact tied derivatives replace forward differences in propagated MARD uncertainty. Central differences remain verification only."
+  ],
+  "claim_changes": [
+    "Strict old-optimum prediction equivalence is not achieved for the listed gamma/permittivity rows; tolerances are unchanged and failures are retained.",
+    "No calibration/holdout ranking, availability, bound activity or physical conclusion changes: D1 has the lowest refitted holdout MARD, fixed F0 remains better on high-molality MIAC, and D/P are not established physical replacements.",
+    "The before/after tables retain every old prediction, fitted parameter, conditional uncertainty and summary metric. Small numerical changes and corrected exact-derivative uncertainty must be used when batch 15 refreshes shared prose."
+  ],
+  "evidence_kind": "numerical conversion verification and conditional parameter estimation; no new physical validation or parameter adoption",
+  "failures": [],
+  "review": {
+    "verdict": "Supported for corrected native conversion and retained evidence",
+    "reviewer_model": "gpt-6.1-sol",
+    "reasoning_effort": "high",
+    "task_id": "e46afdab-d1b3-4693-9159-bdd5e8f3e298",
+    "limits": [
+      "Strict prediction equivalence remains unachieved; owner disposition required.",
+      "Review preceded full verification; the locked check-all run subsequently passed.",
+      "Failure-preservation paths inspected statically; successful numerical replay has no failures."
+    ]
+  },
+  "verification": {
+    "analysis": "318 available property rows; 87 exact-derivative central-difference checks passed; unchanged fitted numbers after failure-preservation correction",
+    "check_affected_HEAD": "passed",
+    "check_all": "passed under flock /tmp/t3-engine-build.lock; 113 Python tests passed,1 deselected; 6 native groups passed; typing,lint,layout,architecture passed",
+    "prior_check_all_attempts": "Two 1800-second native-preparation timeouts before the lead imposed the shared build lock; neither reached tests.",
+    "engine_source_changes": false,
+    "comparison_acceptance": "Strict new-optimum prediction equivalence remains unachieved; owner disposition required."
+  }
+}

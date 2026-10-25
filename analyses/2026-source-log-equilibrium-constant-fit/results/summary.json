@@ -1,0 +1,23 @@
+{
+  "base": "95ba231e",
+  "wheel_sha256": "79ce38e0a447b1f9045fb9ea0c7a61b141d5c17b764ca9883b0947a1fc7813c9",
+  "comparisons": 39,
+  "all_passed": true,
+  "rejections": {
+    "affinity target": "reaction coordinate reaction_a: affinity target",
+    "dependent reaction": "reaction coordinate reaction_a: dependent reaction set",
+    "supplied standard Gibbs": "reaction coordinate reaction_a: supplied standard Gibbs values",
+    "K fixed by thermochemistry": "reaction coordinate reaction_a: K fixed by thermochemistry"
+  },
+  "recovery": {
+    "status": "converged",
+    "termination": "convergence",
+    "iterations": 6,
+    "residual_evaluations": 5,
+    "jacobian_evaluations": 6,
+    "trial_failures": 0,
+    "final_cost": 1.5977348223734068e-24,
+    "covariance": "available"
+  },
+  "verified_covariance_rank": 2
+}

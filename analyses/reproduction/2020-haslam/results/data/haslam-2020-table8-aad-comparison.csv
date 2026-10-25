@@ -1,0 +1,19 @@
+salt,observable,source_points,evaluated_points,unevaluated_points,epcsaft_aad_percent,haslam_printed_points,haslam_printed_aad_percent,haslam_status,selection_note
+LiCl,osmotic_coefficient,23,23,0,1.5016909978731707,23,1.87,not recomputed: model absent from the Engine,row selection unresolved
+LiBr,osmotic_coefficient,23,23,0,1.9626465371920636,23,0.53,not recomputed: model absent from the Engine,row selection unresolved
+LiI,osmotic_coefficient,23,0,23,,23,2.07,not recomputed: model absent from the Engine,row selection unresolved
+NaCl,osmotic_coefficient,23,23,0,2.0388179402343183,40,0.63,not recomputed: model absent from the Engine,row selection unresolved
+NaBr,osmotic_coefficient,23,23,0,2.981291837808833,23,0.95,not recomputed: model absent from the Engine,row selection unresolved
+NaI,osmotic_coefficient,23,23,0,1.4458571490635919,23,0.88,not recomputed: model absent from the Engine,row selection unresolved
+KCl,osmotic_coefficient,23,23,0,1.5438607422406705,37,0.88,not recomputed: model absent from the Engine,row selection unresolved
+KBr,osmotic_coefficient,23,23,0,1.208988420377659,24,0.67,not recomputed: model absent from the Engine,row selection unresolved
+KI,osmotic_coefficient,23,23,0,1.0878286281391696,23,0.35,not recomputed: model absent from the Engine,row selection unresolved
+LiCl,gamma_pm_m,23,23,0,4.177748858332258,23,5.79,not recomputed: model absent from the Engine,"same reference and count; exact row identity inferred in old ledger, not independently established"
+LiBr,gamma_pm_m,23,23,0,5.082629681472244,23,2.48,not recomputed: model absent from the Engine,"same reference and count; exact row identity inferred in old ledger, not independently established"
+LiI,gamma_pm_m,23,0,23,,23,3.33,not recomputed: model absent from the Engine,"same reference and count; exact row identity inferred in old ledger, not independently established"
+NaCl,gamma_pm_m,23,23,0,4.8457840143702695,12,4.05,not recomputed: model absent from the Engine,row selection unresolved
+NaBr,gamma_pm_m,23,23,0,7.168677982044671,23,3.17,not recomputed: model absent from the Engine,"same reference and count; exact row identity inferred in old ledger, not independently established"
+NaI,gamma_pm_m,23,23,0,3.6075517648522073,23,2.63,not recomputed: model absent from the Engine,"same reference and count; exact row identity inferred in old ledger, not independently established"
+KCl,gamma_pm_m,23,23,0,4.1414380356294505,23,1.27,not recomputed: model absent from the Engine,"same reference and count; exact row identity inferred in old ledger, not independently established"
+KBr,gamma_pm_m,23,23,0,2.9374770977003153,21,1.08,not recomputed: model absent from the Engine,row selection unresolved
+KI,gamma_pm_m,23,23,0,2.8888568444890335,23,0.55,not recomputed: model absent from the Engine,"same reference and count; exact row identity inferred in old ledger, not independently established"

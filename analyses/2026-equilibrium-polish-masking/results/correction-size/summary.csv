@@ -1,0 +1,16 @@
+case,variant,iterations,evaluations,hessians,polish_jacobians,max_relative_physical_change,solved,expected
+masking,main,6,11,7,3,0,1,1
+case-6/figure-2-point-7,main,16,53,17,3,0,1,1
+case-7/flash-5918.5286-Pa,main,43,57,44,3,0,1,1
+khudaida-sequence,main,66,119,74,23,0,8,8
+mea-nominally-unloaded,main,14,20,15,4,0,1,1
+masking,current,6,11,7,3,0,1,1
+case-6/figure-2-point-7,current,16,47,17,2,8.164654207025866e-15,1,1
+case-7/flash-5918.5286-Pa,current,43,57,44,3,0,1,1
+khudaida-sequence,current,66,93,74,16,1.671376221483788e-13,8,8
+mea-nominally-unloaded,current,14,20,15,4,0,1,1
+masking,previous,6,11,7,3,0,1,1
+case-6/figure-2-point-7,previous,16,50,17,2,0,1,1
+case-7/flash-5918.5286-Pa,previous,43,57,44,3,0,1,1
+khudaida-sequence,previous,66,107,74,16,8.319573602475803e-14,8,8
+mea-nominally-unloaded,previous,14,20,15,4,0,1,1

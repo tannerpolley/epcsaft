@@ -1,0 +1,14 @@
+parameter,component_i,component_j,value,source,provenance_status
+k_ij,*,*,0,default zero for unpublished values,unresolved_default_zero
+k_ij,Cl-,Li+,0.669,2024_Hubach k_ij.csv,source_backed
+k_ij,Cl-,TBP,-0.01,2024_Hubach k_ij.csv,source_backed
+k_ij,Cl-,[emim][tcb],-0.035,2024_Hubach k_ij.csv,source_backed
+k_ij,H2O,TBP,-0.0475,2024_Hubach k_ij.csv,source_backed
+k_ij,H2O,[emim][tcb],-0.0175,2024_Hubach k_ij.csv,source_backed
+k_ij,Li+,TBP,-0.01,2024_Hubach k_ij.csv,source_backed
+k_ij,Li+,[emim][tcb],-0.035,2024_Hubach k_ij.csv,source_backed
+l_ij,*,*,0,default zero for unpublished values,unresolved_default_zero
+k_hb_ij,*,*,0,default zero for unpublished values,unresolved_default_zero
+k_hb_ij,H2O,Li+,1.0,2024_Hubach k_hb_ij.csv,source_backed
+k_hb_ij,Li+,TBP,-0.68,2024_Hubach k_hb_ij.csv,source_backed
+k_hb_ij,Li+,[emim][tcb],1.0,2024_Hubach k_hb_ij.csv,source_backed

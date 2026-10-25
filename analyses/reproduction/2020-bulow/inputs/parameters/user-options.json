@@ -1,0 +1,11 @@
+{
+  "elec_model": {
+    "differential_mode": "autodiff",
+    "born_model": {
+      "enabled": true,
+      "born_diameter_rule": "sigma_reduced",
+      "solvation_shell_model": false,
+      "dielectric_saturation": false
+    }
+  }
+}

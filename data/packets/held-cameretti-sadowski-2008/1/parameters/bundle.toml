@@ -1,0 +1,36 @@
+schema_version = 1
+bundle_id = "held-cameretti-sadowski-2008"
+bundle_version = 1
+purpose = "installed-catalog"
+files = ["components.csv", "single.csv", "pair.csv", "sites.csv", "association.csv", "model.csv", "correlations.toml"]
+
+[[sources]]
+source_id = "held-cameretti-sadowski-2008"
+citation = "Held, C.; Cameretti, L. F.; Sadowski, G. Modeling Aqueous Electrolyte Solutions. Part 1. Fully Dissociated Electrolytes. Fluid Phase Equilibria 2008, 270, 87-96."
+doi = "10.1016/j.fluid.2008.06.010"
+use_basis = "Eqs. (1)-(7), Table 1 water model, all 29 Table 2 ion rows, one-segment ion convention, water-only constant dielectric rule, and excluded ion-ion dispersion; inspected PDF SHA-256 20855b3de708fd529b29c7c4d8f6d0a1270802b610408606db1488b32d9c97e8"
+
+[[sources]]
+source_id = "figiel-yu-held-2025"
+citation = "Figiel, P.; Yu, G.; Held, C. Predicting Thermodynamic Properties of Ions in Single Solvents and in Mixed Solvents Using a Modified Born Term within the ePC-SAFT Framework. Industrial & Engineering Chemistry Research 2025, 64, 9406-9418."
+doi = "10.1021/acs.iecr.5c00475"
+use_basis = "numeric water relative permittivity 78.09 used to instantiate the Held 2008 concentration-independent solvent dielectric; main PDF SHA-256 a3c940895c530f72f47f22f8c0f4796b5ad37918a4edd274f85497c6dd81ad1f"
+
+[[sources]]
+source_id = "nist-srd-69-water"
+citation = "NIST Chemistry WebBook, SRD 69, Water, CAS 7732-18-5."
+use_basis = "water identity and molecular weight"
+
+[[domains]]
+domain_id = "held-aqueous-electrolyte-298-15-k-1-bar"
+kind = "reported-conditions"
+temperature_min = 298.15
+temperature_max = 298.15
+temperature_unit = "kelvin"
+pressure_min = 1
+pressure_max = 1
+pressure_unit = "bar"
+
+[[domains]]
+domain_id = "nist-water-identity"
+kind = "unknown"

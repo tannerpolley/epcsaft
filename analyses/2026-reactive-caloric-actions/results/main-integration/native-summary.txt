@@ -1,0 +1,42 @@
+native.equilibrium.reactive-caloric-E-fix pass=944 fail=0 observations=167 max_error_over_target=0.0017658133442781281 maximum_id=reference-calorics/F4/frozen-TsT/6/E-fix
+native.equilibrium.reactive-caloric-E-sys pass=951 fail=0 observations=154 max_error_over_target=0.00050026170930874336 maximum_id=F1/E-sys/A2/T+P+T+epsilon/ideal-cv_G/rung-0
+native.equilibrium.reactive-caloric-F6-E-P-fix pass=923 fail=0 observations=924 max_error_over_target=0.0037941072491349398 maximum_id=F6/E-bubble-P-fix/A2/T+feed+epsilon+coefficient/total-cp/rung-0
+native.equilibrium.reactive-caloric-F6-E-P-sys pass=923 fail=0 observations=902 max_error_over_target=0.25867186778615475 maximum_id=F6/E-bubble-P-sys/A2/T+feed+T+epsilon/ideal-cv_G/rung-0
+native.equilibrium.reactive-caloric-F6-E-T-fix pass=924 fail=0 observations=1123 max_error_over_target=0.0022204460443199323 maximum_id=F6/E-bubble-T-fix/A2/water-feed+water-feed/n_i-0/rung-0
+native.equilibrium.reactive-caloric-F6-E-T-sys pass=924 fail=0 observations=1138 max_error_over_target=0.89422085135121365 maximum_id=F6/E-bubble-T-sys/A2/P+feed+P+epsilon/ideal-cv_G/rung-1
+native.equilibrium.reactive-caloric-F6-N-P-fix pass=1060 fail=0 observations=1608 max_error_over_target=0.0022652543363645191 maximum_id=F6/N-bubble-P-fix/A2/water-feed+epsilon/total-cp/rung-0
+native.equilibrium.reactive-caloric-F6-N-P-sys pass=1060 fail=0 observations=1626 max_error_over_target=0.0022974349626016708 maximum_id=F6/N-bubble-P-sys/A2/T+feed+epsilon+coefficient/total-cv_G/rung-0
+native.equilibrium.reactive-caloric-F6-N-T-fix pass=1060 fail=0 observations=1412 max_error_over_target=0.0038725530801597538 maximum_id=F6/N-bubble-T-fix/A1/epsilon+coefficient/P_EOS/rung-0
+native.equilibrium.reactive-caloric-F6-N-T-sys pass=1060 fail=0 observations=1372 max_error_over_target=0.051183839352289054 maximum_id=F6/N-bubble-T-sys/A1/water-feed/P_EOS/rung-0
+native.equilibrium.reactive-caloric-I-fix pass=1408 fail=0 observations=28 max_error_over_target=0.046301983521753645 maximum_id=F1/I-fix/A2/P+reaction-a/ln_a-0/rung-0
+native.equilibrium.reactive-caloric-I-sys pass=1405 fail=0 observations=28 max_error_over_target=0.04027619004265906 maximum_id=reference-calorics/F4/frozen-TsT/6/I-sys
+native.equilibrium.reactive-caloric-U pass=780 fail=0 observations=141 max_error_over_target=0.00011687730110106955 maximum_id=F3/U/P4/18/total-cp
+native.properties.born-parameter pass=24 fail=0 observations=0 max_error_over_target=0.0001828530557179278 maximum_id=born-parameter/2/0.000000/2.000000/0
+native.properties.c2 pass=6 fail=0 observations=0 max_error_over_target=9.4030812941690438e-05 maximum_id=c2-scaling
+native.properties.electrolyte-coordinates pass=8 fail=0 observations=0 max_error_over_target=0.43756552479676242 maximum_id=electrolyte-coordinate/3/A3
+native.properties.f1 pass=6 fail=0 observations=5 max_error_over_target=0.67722072831652569 maximum_id=temperature-ladder/delta-0.1
+native.properties.issue10 pass=4 fail=0 observations=0 max_error_over_target=8.569677293393833e-05 maximum_id=issue10-hessian/1
+native.properties.issue26 pass=124 fail=0 observations=0 max_error_over_target=0 maximum_id=
+native.properties.issue26e pass=15 fail=0 observations=0 max_error_over_target=0 maximum_id=
+native.properties.m2 pass=210 fail=0 observations=4 max_error_over_target=0.2134958876354176 maximum_id=hessian-symmetry/3/4-8
+native.properties.m3 pass=5 fail=0 observations=0 max_error_over_target=6.1249595316081407e-05 maximum_id=gradient/1
+native.properties.m4 pass=176 fail=0 observations=0 max_error_over_target=0.00075495165674510645 maximum_id=nine-hessian/4-8
+native.properties.m5 pass=700 fail=0 observations=0 max_error_over_target=0.13329946670816301 maximum_id=hessian/3/6-8
+native.properties.m6 pass=2 fail=0 observations=0 max_error_over_target=0 maximum_id=
+native.properties.m7 pass=3 fail=0 observations=0 max_error_over_target=0.0055511151231257827 maximum_id=packing-coefficient
+native.properties.m8 pass=18 fail=0 observations=2 max_error_over_target=0.010727089829742908 maximum_id=associating-pressure
+native.properties.m9 pass=62 fail=0 observations=0 max_error_over_target=0 maximum_id=
+native.properties.p1 pass=47 fail=0 observations=6 max_error_over_target=0.59982494504673411 maximum_id=dilute-limit/residual_enthalpy
+native.properties.p2 pass=80 fail=0 observations=0 max_error_over_target=0.24518283429171206 maximum_id=loop-vapor/308.955478
+native.properties.p3 pass=218 fail=0 observations=0 max_error_over_target=0.032499277343352638 maximum_id=p3-form-derivative/polynomial/0.01/ds
+native.properties.p4 pass=329 fail=0 observations=0 max_error_over_target=0.045542710834804982 maximum_id=pressure/action/9/3
+native.properties.reference-f8 pass=78 fail=0 observations=0 max_error_over_target=0.19583638298983064 maximum_id=F8/5000000/211
+native.properties.reference-f9 pass=264 fail=0 observations=36 max_error_over_target=0.57380896166163131 maximum_id=F9/partial/200000/2/12/301
+native.properties.reference-limits pass=143 fail=0 observations=6 max_error_over_target=0.65380195848785405 maximum_id=F9/lower-limit/1/100/0
+native.properties.residual-cv-temperature-extraction pass=1 fail=0 observations=0 max_error_over_target=0.0025188184871183239 maximum_id=residual-cv/temperature-extraction/A1
+native.regression.reactive-caloric-F6-addition pass=6 fail=0 observations=0 max_error_over_target=0.0057151847713414958 maximum_id=F6/free-T-addition/sys/column-0/rung-0
+original_order_pass=1 selected_rows=2
+#222 density count=209
+#225 scaling count=36
+both count=126
+changed_vs_branch=335 changed_vs_main=100 unchanged_in_both=209 failed=0 missing_reference=0

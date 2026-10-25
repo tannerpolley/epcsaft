@@ -1,0 +1,48 @@
+{
+  "measurement": "Three interleaved A/B pairs per workload; process user+system CPU is primary, perf_counter wall secondary; setup/imports/wheel installation excluded; same trace enabled in both wheels.",
+  "statistics": {
+    "fit": {
+      "paired_cpu_ratios": [
+        1.1208999454066493,
+        1.4251983738849625,
+        1.0414069657794331
+      ],
+      "median_paired_cpu_ratio": 1.1208999454066493,
+      "paired_cpu_reductions": [
+        0.107859712101947,
+        0.2983432914857389,
+        0.03976059997682313
+      ],
+      "median_paired_cpu_reduction": 0.107859712101947,
+      "load_1m_range": [
+        3.5546875,
+        15.5048828125
+      ]
+    },
+    "equilibrium": {
+      "paired_cpu_ratios": [
+        1.0203986811890744,
+        0.9874582828476072,
+        1.0716585589826737
+      ],
+      "median_paired_cpu_ratio": 1.0203986811890744,
+      "paired_cpu_reductions": [
+        0.01999089332936388,
+        -0.012701009622629655,
+        0.06686696838468698
+      ],
+      "median_paired_cpu_reduction": 0.01999089332936388,
+      "load_1m_range": [
+        9.15283203125,
+        10.43310546875
+      ]
+    }
+  },
+  "contention": "Known concurrent external fits and Lithium work, including work outside shared lock. Host load differs across runs, affecting wall and potentially CPU cost through cache/frequency interference. Observed CPU ratios are bounded observations, not isolated universal rates; no wall-time speedup claimed.",
+  "numerical_comparison": "All six runs per workload match the immutable reference rows exactly. See paired-fit-summary.json and paired-equilibrium-summary.json.",
+  "timing_commands": {
+    "fit": "performance.py paired fit <pair 1..3> <28181e72 wheel> <659b2606 wheel>, one lock acquisition per pair, timeout 300 s",
+    "equilibrium": "performance.py paired equilibrium <pair 1..3> <28181e72 wheel> <659b2606 wheel>, three short pairs in one timeout 120 s lock step"
+  },
+  "retention": "Per-pair outputs concatenated in order into one timing/profile/summary file per workload; original numerical tables reused by hash."
+}

@@ -1,0 +1,67 @@
+{
+  "engine_provenance": [
+    "9541d9f7e57984c175df81b8ca91d5a827a90278",
+    true
+  ],
+  "criterion": 1e-10,
+  "rows_file": "row-differences.csv",
+  "native_restart": "native-restart.json",
+  "producers": {
+    "probe.py": {
+      "points": 69,
+      "maximum_row_difference": 1.8579567040433176e-07,
+      "minimum_row_difference": 1.8579441984911682e-07,
+      "maximum_current_noncarbon_row": 0.004739559742072048,
+      "differences_above_criterion": 69
+    },
+    "verify_global_scan.py": {
+      "points": 1233,
+      "maximum_row_difference": 1.857956135609129e-07,
+      "minimum_row_difference": 1.8579436300569796e-07,
+      "maximum_current_noncarbon_row": 1.85894805326825e-07,
+      "differences_above_criterion": 1233
+    }
+  },
+  "historical_inputs": {
+    "results/global-scan/case1/attempts.csv": "f4aa3244210db74d42cf8b6d7ec3d695501eab6f39794e8feb422483240d2e98",
+    "results/global-scan/case1/coordinates.csv": "71725a077aedbb375a23fce4226d847bd2edc9069f6c43a206d0863cdc8d64ab",
+    "results/global-scan/case1/rows.csv": "c0c950e3a1acd3192a94d4a4010502cb2c9fe0f49f940ccb7322b617d713fcab",
+    "results/global-scan/case1-completion/attempts.csv": "e49836dece4801152d61a7745ec7c2e183e86ac3ff9c976c33f79eeb18096307",
+    "results/global-scan/case1-completion/coordinates.csv": "fe1522c726b832c6a7e889f4a3e89d413b27123ffc53a8c6373505d3d846f92a",
+    "results/global-scan/case1-completion/rows.csv": "23b0c9c19cf55bfd6eeb921180356fb43a5136199ae105f34e72708b7c934bee",
+    "results/global-scan/case1-initial/attempts.csv": "b8a61cfffb42ead6c5b5dbe565b822643866d903b40f547138b78be3a3d6d6dd",
+    "results/global-scan/case1-initial/coordinates.csv": "df48d9e6663bfa28b1ceb9e0f6a07cc66c06b7e772a5b6203cd3ac0657ec9e79",
+    "results/global-scan/case1-initial/rows.csv": "735cca36c4c56b7e615ee929f4453798286ccaed9de6c7eb932dc223920b97a6",
+    "results/global-scan/case2/attempts.csv": "379e6502b913ea1324343b77ea14d997f7f5ffb8d88d8649da27fdb0a2687b73",
+    "results/global-scan/case2/coordinates.csv": "99237bd7a706daef7723128a7cccf4a43ba1c0ed90bddc97486c14c1d895535d",
+    "results/global-scan/case2/rows.csv": "e67b2fa13495e095749ad6c3ea5c49a0241f45efe7230707c66050710cf65cba",
+    "results/global-scan/case2-completion-bicarbonate-refined/attempts.csv": "65cbe532ad15fe289caf496e32cad3726db564a9761c34a559589d538aa26232",
+    "results/global-scan/case2-completion-bicarbonate-refined/coordinates.csv": "ef022ad2b8fe8bc4ba2cd57bb292c5d701562a24792aacbfbb3aefb51e699f78",
+    "results/global-scan/case2-completion-bicarbonate-refined/rows.csv": "a5f16e665c934ffc201338e4648a170e791abc93ce75b4f7821dd4d69b213d0b",
+    "results/global-scan/case2-completion-hydronium-refined/attempts.csv": "8c1c4f2e9590f028c85a9a3166fe896f3facc8fa4589bdeec50648cf4c701ccc",
+    "results/global-scan/case2-completion-hydronium-refined/coordinates.csv": "b010b05b9023c61dd916faa31adbd8d0286c8e0966faae7d97fbb1fa08dc5a14",
+    "results/global-scan/case2-completion-hydronium-refined/rows.csv": "a9d4d872c00b724241c6fd58c1d20c466c019aa6ae344f44e3be57386bfac0e1",
+    "results/global-scan/case2-pilot/attempts.csv": "ce43dd46a0b364ee7879ea6f2a7eaec29ddd083c9e5dcfe37a823692678d5136",
+    "results/global-scan/case2-pilot/coordinates.csv": "0e8cfee0e863ae921aa4345686efc6e39d9f5d967a0c30bc92423b8c63c8439a",
+    "results/global-scan/case2-pilot/rows.csv": "293fa31e7e2e1ba3febc27dca78ec26c24f7bc16e081240658e298e1d85a19e5",
+    "results/retired-charts.tar.gz": "c2900cebb9b72ec29be90ffded62328f01156a117992bbde46b736101517af2e"
+  },
+  "base_commit": "9541d9f7e57984c175df81b8ca91d5a827a90278",
+  "outcome": "historical fixed-coordinate replays; no accepted native held-composition, carbon-omitted correction",
+  "selection": {
+    "probe.py": "Default archived coordinate members with convergence and point-diagnostics, excluding newton/",
+    "verify_global_scan.py": "Criterion-meeting rows in case1/case2 and their completion folders; pilot excluded"
+  },
+  "metric": "Maximum absolute difference of the 20 native row values and the stored residual vector; dimensionless",
+  "probe_retained_row_comparison_limit": 2e-10,
+  "one_time_inspection_command": "inspection-command.txt",
+  "historical_wheel_comparison": "../wheel-comparison.json (026b3031 before #385, e9b1aed5 after #385); reused from #750, not rerun",
+  "rerun_commands": [
+    "nice -n 10 env -u EPCSAFT_HSL_LIBRARY EPCSAFT_BUILD_JOBS=6 .venv/bin/python analyses/2026-born-unavailable-states/scripts/probe.py --output-dir build/issue-762/probe",
+    "nice -n 10 env -u EPCSAFT_HSL_LIBRARY EPCSAFT_BUILD_JOBS=6 .venv/bin/python analyses/2026-born-unavailable-states/scripts/verify_global_scan.py --output-dir build/issue-762/global-scan"
+  ],
+  "rerun_exit_codes": {
+    "probe.py": 1,
+    "verify_global_scan.py": 1
+  }
+}

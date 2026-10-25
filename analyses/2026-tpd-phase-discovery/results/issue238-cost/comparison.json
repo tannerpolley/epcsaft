@@ -1,0 +1,22 @@
+{
+  "source_commit": "daa98f1f230cdcf0b6a55b182538c05415bca54a",
+  "all_states_binary64_equal": true,
+  "state_rows_compared": 1176,
+  "state_table": "main-states.csv",
+  "state_table_sha256": "e03a2aa3723ed5b9e016e696cec3047baf70e62445c9e107c00f6d7cfb1c8a55",
+  "limits": "Two frozen default solves only; shared-host best-of-three. Differences above10% are flagged host-load variation, not algorithmic speedup; evaluations include polish. Identical branch state table retained once as main-states.csv.",
+  "case-6/figure-2-point-7": {
+    "work_equal": true,
+    "main_best_seconds": 0.10420852799961722,
+    "branch_best_seconds": 0.06551206199947046,
+    "best_seconds_change_fraction": -0.37133684491051344,
+    "over_ten_percent": true
+  },
+  "case-7/flash-5918.5286-Pa": {
+    "work_equal": true,
+    "main_best_seconds": 0.1597537350003222,
+    "branch_best_seconds": 0.11247923500013712,
+    "best_seconds_change_fraction": -0.29592109380159237,
+    "over_ten_percent": true
+  }
+}

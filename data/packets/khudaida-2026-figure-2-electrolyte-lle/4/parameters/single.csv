@@ -1,0 +1,31 @@
+record_id,component_id,family,value,unit,source_id,locator,domain_id
+water-molar-mass,water,molar_mass,18.01528,gram / mole,khudaida-et-al-2026,"Table 2, water MW row",khudaida-293-15-k-0-1-mpa
+water-segment-count,water,segment_count,1.2047,,khudaida-et-al-2026,"Table 5, water m_i^seg row",khudaida-293-15-k-0-1-mpa
+water-dispersion-energy,water,dispersion_energy_over_k,353.95,kelvin,khudaida-et-al-2026,"Table 5, water u_i/k_B row",khudaida-293-15-k-0-1-mpa
+water-charge,water,charge_number,0,,khudaida-et-al-2026,"Table 5 identifies water as a solvent and separately lists Na+ and Cl-",khudaida-293-15-k-0-1-mpa
+water-solvation-factor,water,solvation_factor,1.5,,khudaida-et-al-2026,"Table 5, water f_k row",khudaida-293-15-k-0-1-mpa
+ethanol-molar-mass,ethanol,molar_mass,46.068,gram / mole,khudaida-et-al-2026,"Table 2, ethanol MW row",khudaida-293-15-k-0-1-mpa
+ethanol-segment-count,ethanol,segment_count,2.3827,,khudaida-et-al-2026,"Table 5, ethanol m_i^seg row",khudaida-293-15-k-0-1-mpa
+ethanol-dispersion-energy,ethanol,dispersion_energy_over_k,198.24,kelvin,khudaida-et-al-2026,"Table 5, ethanol u_i/k_B row",khudaida-293-15-k-0-1-mpa
+ethanol-charge,ethanol,charge_number,0,,khudaida-et-al-2026,"Table 5 identifies ethanol as a solvent and separately lists Na+ and Cl-",khudaida-293-15-k-0-1-mpa
+ethanol-solvation-factor,ethanol,solvation_factor,1.6,,khudaida-et-al-2026,"Table 5, ethanol f_k row",khudaida-293-15-k-0-1-mpa
+isobutanol-molar-mass,isobutanol,molar_mass,74.1216,gram / mole,khudaida-et-al-2026,"Table 2, isobutanol MW row",khudaida-293-15-k-0-1-mpa
+isobutanol-segment-count,isobutanol,segment_count,2.8440,,khudaida-et-al-2026,"Table 5, isobutanol m_i^seg row",khudaida-293-15-k-0-1-mpa
+isobutanol-segment-diameter,isobutanol,segment_diameter,3.5561,angstrom,khudaida-et-al-2026,"Table 5, isobutanol sigma_i row",khudaida-293-15-k-0-1-mpa
+isobutanol-dispersion-energy,isobutanol,dispersion_energy_over_k,257.13,kelvin,khudaida-et-al-2026,"Table 5, isobutanol u_i/k_B row",khudaida-293-15-k-0-1-mpa
+isobutanol-charge,isobutanol,charge_number,0,,khudaida-et-al-2026,"Table 5 identifies isobutanol as a solvent and separately lists Na+ and Cl-",khudaida-293-15-k-0-1-mpa
+isobutanol-solvation-factor,isobutanol,solvation_factor,1.5,,khudaida-et-al-2026,"Table 5, isobutanol f_k row",khudaida-293-15-k-0-1-mpa
+sodium-molar-mass,sodium-cation,molar_mass,22.98,gram / mole,khudaida-et-al-2026,"Table 2 NaCl identity split into explicit runtime ions by the retained compact source packet; the rendered table publishes only salt MW",khudaida-293-15-k-0-1-mpa
+sodium-segment-count,sodium-cation,segment_count,1,,held-et-al-2014,"Khudaida cited ref 30, spherical-ion structural convention; the rendered Khudaida Table 5 cell is blank",khudaida-293-15-k-0-1-mpa
+sodium-segment-diameter,sodium-cation,segment_diameter,2.8232,angstrom,khudaida-et-al-2026,"Table 5, Na+ sigma_i row",khudaida-293-15-k-0-1-mpa
+sodium-dispersion-energy,sodium-cation,dispersion_energy_over_k,230.00,kelvin,khudaida-et-al-2026,"Table 5, Na+ u_i/k_B row",khudaida-293-15-k-0-1-mpa
+sodium-charge,sodium-cation,charge_number,+1,,khudaida-et-al-2026,"Table 5 Na+ species identity",khudaida-293-15-k-0-1-mpa
+sodium-born-diameter,sodium-cation,born_diameter,3.445,angstrom,khudaida-et-al-2026,"Table 5, Na+ d_i^Born row",khudaida-293-15-k-0-1-mpa
+sodium-solvation-factor,sodium-cation,solvation_factor,1,,figiel-yu-held-2025,"Khudaida cited ref 21 corrected Born SSM+DS convention: f_k=1 for ions; the rendered Khudaida Table 5 cell is blank",khudaida-293-15-k-0-1-mpa
+chloride-molar-mass,chloride-anion,molar_mass,35.45,gram / mole,khudaida-et-al-2026,"Table 2 NaCl identity split into explicit runtime ions by the retained compact source packet; the rendered table publishes only salt MW",khudaida-293-15-k-0-1-mpa
+chloride-segment-count,chloride-anion,segment_count,1,,held-et-al-2014,"Khudaida cited ref 30, spherical-ion structural convention; the rendered Khudaida Table 5 cell is blank",khudaida-293-15-k-0-1-mpa
+chloride-segment-diameter,chloride-anion,segment_diameter,2.7560,angstrom,khudaida-et-al-2026,"Table 5, Cl- sigma_i row",khudaida-293-15-k-0-1-mpa
+chloride-dispersion-energy,chloride-anion,dispersion_energy_over_k,170.00,kelvin,khudaida-et-al-2026,"Table 5, Cl- u_i/k_B row",khudaida-293-15-k-0-1-mpa
+chloride-charge,chloride-anion,charge_number,-1,,khudaida-et-al-2026,"Table 5 Cl- species identity",khudaida-293-15-k-0-1-mpa
+chloride-born-diameter,chloride-anion,born_diameter,4.100,angstrom,khudaida-et-al-2026,"Table 5, Cl- d_i^Born row",khudaida-293-15-k-0-1-mpa
+chloride-solvation-factor,chloride-anion,solvation_factor,1,,figiel-yu-held-2025,"Khudaida cited ref 21 corrected Born SSM+DS convention: f_k=1 for ions; the rendered Khudaida Table 5 cell is blank",khudaida-293-15-k-0-1-mpa

@@ -1,0 +1,4 @@
+{
+    global: funcadd_ASL;
+    local: *;
+};

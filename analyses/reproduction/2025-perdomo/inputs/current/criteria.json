@@ -1,0 +1,23 @@
+{
+  "row": 1e-10,
+  "refined_row": 1e-11,
+  "normalization": 1e-10,
+  "charge": 1e-12,
+  "balance": 1e-09,
+  "pressure_relative": 1e-07,
+  "chemical_potential": 1e-07,
+  "endpoint": 1e-08,
+  "objective_per_feed": 1e-09,
+  "workbook_half_unit_Pa": 0.005,
+  "table3_half_unit_Pa": 0.05,
+  "workbook_refinement_Pa": 0.0005,
+  "table3_refinement_Pa": 0.005,
+  "temperature_K": 298.15,
+  "licl_label": "Conditional LiCl diagnostic: explicit zero assumptions for the three Li-containing diameter corrections; historical inputs retained; comparison between different models.",
+  "reporting_masses_kg_per_mol": [
+    0.01801528,
+    0.0741216,
+    0.00694,
+    0.03545
+  ]
+}

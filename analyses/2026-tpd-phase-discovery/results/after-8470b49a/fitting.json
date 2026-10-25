@@ -1,0 +1,118 @@
+{
+  "identity": {
+    "wheel": "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-223-build-tpd-stability-test-and-phase-35ebff8f/build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+    "wheel_sha256": "8470b49a9283528b83dbbdab46dc62dee0fc70e5e2149f8f218b823dd85812cb",
+    "direct_url": {
+      "url": "file:///home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-223-build-tpd-stability-test-and-phase-35ebff8f/build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "archive_info": {}
+    },
+    "engine_import": "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-223-build-tpd-stability-test-and-phase-35ebff8f/.venv/lib/python3.13/site-packages/epcsaft/__init__.py",
+    "source_head": "798cb53550229f2cd12016b8b57378fb315773da",
+    "thread_environment": {
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1"
+    },
+    "dependencies": {
+      "epcsaft": "0.2.0.dev0",
+      "numpy": "2.5.1",
+      "scipy": "1.18.0",
+      "pyomo": "6.10.1",
+      "idaes-pse": "2.12.0"
+    },
+    "physical_inputs": {
+      "analyses/2026-khudaida-idaes-settler/inputs/data/khudaida-2026-figure-2-electrolyte-lle/7/parameters/parameters.json": "8babed899e7347e58c403c7aff24a7fdd6d60411af3b4d81eb6aa90c2431dfa4",
+      "data/packets/mea-co2-h2o-nine-species-estimation/3/parameters/parameters.json": "2ea3b41485a98d2cf49add620b87bb05fc5a275cdd132c1cdbb0cfc5f07f2ca4",
+      "data/packets/gross-2001-methane-ethane/3/parameters/parameters.json": "109cfe8e80c4fcefadcbb4975ebe7436d371710ed9d20f2c7bd6d30d9c581bf2",
+      "data/packets/figiel-2025-reference-electrolytes/4/parameters/parameters.json": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d"
+    },
+    "script_sha256": "640a35eb50295dc97469ad32a7eb2836b5b9b5262c2a7d3d4b7293594a1c6d9f",
+    "source_mtimes": {
+      "engine/native/equilibrium/gibbs_minimizer.cpp": 1790935477428563179,
+      "engine/native/equilibrium/request_compile.cpp": 1790915612053935625
+    }
+  },
+  "inputs": {
+    "fitting/219-held-NaCl": {
+      "source": "engine/tests/regression/test_fit.py::test_native_held_electrolyte_recovery_checks_and_columns",
+      "truth": [
+        -1.25,
+        4.5,
+        3.005
+      ],
+      "observations": [
+        {
+          "row": 0,
+          "kind": "MeanIonicActivityCoefficient",
+          "molality": 0.1,
+          "observed": 0.7766789048028957
+        },
+        {
+          "row": 1,
+          "kind": "OsmoticCoefficient",
+          "molality": 0.1,
+          "observed": 0.932933034428474
+        },
+        {
+          "row": 2,
+          "kind": "MeanIonicActivityCoefficient",
+          "molality": 1.0,
+          "observed": 0.6830122141284055
+        },
+        {
+          "row": 3,
+          "kind": "OsmoticCoefficient",
+          "molality": 1.0,
+          "observed": 0.957367061430581
+        },
+        {
+          "row": 4,
+          "kind": "MeanIonicActivityCoefficient",
+          "molality": 4.5,
+          "observed": 0.7991638627768353
+        },
+        {
+          "row": 5,
+          "kind": "OsmoticCoefficient",
+          "molality": 4.5,
+          "observed": 1.0953819883901788
+        }
+      ],
+      "weights": [
+        471.5292425290347,
+        471.5292425290347,
+        471.5292425290347,
+        471.5292425290347,
+        471.5292425290347,
+        471.5292425290347
+      ],
+      "controls": {
+        "function_tolerance": 1e-15,
+        "gradient_tolerance": 1e-14,
+        "parameter_tolerance": 1e-14
+      }
+    }
+  },
+  "costs": [
+    {
+      "case": "fitting/219-held-NaCl",
+      "seconds": 1.2349446290027117
+    }
+  ],
+  "failure": null,
+  "comparison": {
+    "identical": true,
+    "rows_before": 217,
+    "rows_after": 217,
+    "operands_csv": "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-223-build-tpd-stability-test-and-phase-35ebff8f/analyses/2026-tpd-phase-discovery/results/before/fitting.csv",
+    "operands_sha256": "1b75687d994251e118a4878e00e3fa1385c4b521a8e115e9145c6ebd52d1b0dd"
+  },
+  "trace_comparison": null,
+  "trace_counts": {
+    "tangent_plane_trials": 0,
+    "driver_finalizations": 0,
+    "hessian_calls": 0
+  },
+  "limits": [
+    "declared topology numerical replay; no physical validation"
+  ]
+}

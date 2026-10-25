@@ -1,0 +1,51 @@
+{
+  "base": "d47d0475",
+  "wheel_sha256": "093638fa8c8e1987792e0facaeb5c00d121c6965c69a3298754ee146f8610318",
+  "source_class": "evaluated IAPWS-95 reference, numerical demonstration only",
+  "fits": {
+    "with_cp": {
+      "status": "converged",
+      "termination": "Function tolerance reached. |cost_change|/cost: 3.532490e-13 <= 1.000000e-12",
+      "usable": true,
+      "trial_failures": 0,
+      "cost": 0.0002657952567836419,
+      "iterations": 20,
+      "jacobian_evaluations": 15,
+      "wall_seconds": 5.42203414100004,
+      "wall_seconds_per_jacobian": 0.361468942733336,
+      "covariance": "available",
+      "rank": 5,
+      "singular_values": [
+        1.6684179054765464,
+        0.22118875758245074,
+        0.08934984479655653,
+        0.028493790193048797,
+        0.004906364444440422
+      ],
+      "active_bounds": [],
+      "final_full_jacobian_seconds": 0.28150582299986127
+    },
+    "without_cp": {
+      "status": "converged",
+      "termination": "Function tolerance reached. |cost_change|/cost: 8.884310e-13 <= 1.000000e-12",
+      "usable": true,
+      "trial_failures": 0,
+      "cost": 1.0662861689588382e-05,
+      "iterations": 43,
+      "jacobian_evaluations": 44,
+      "wall_seconds": 5.127584474999821,
+      "wall_seconds_per_jacobian": 0.11653601079545049,
+      "covariance": "available",
+      "rank": 5,
+      "singular_values": [
+        1.4408586159084251,
+        0.22543426291364538,
+        0.047610712411080766,
+        0.0033689959260995834,
+        0.0004620080987640561
+      ],
+      "active_bounds": [],
+      "final_full_jacobian_seconds": 0.1283351379997839
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "engine": [
+    "02d53be1c80512b8dd9a2e0f54a0f1a0e48db9fc",
+    true
+  ],
+  "native_library": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-789-live-literature-reproductions-the-4/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so",
+  "native_library_sha256": "bd27e11eb164394549e31714682bd8624eceb8bae0915c0ea53b4213da75b1ac",
+  "packet": "data/packets/figiel-yu-held-2025/4/parameters/parameters.json",
+  "packet_sha256": "36cf241f3a9bd353cf775ae943ddc98e70817d5b004cac3bc001a9c5604d752d",
+  "source_sha256": {
+    "figures/figure-09/source/water-ethanol-nabr.csv": "8f05e41c4a0df3f78998035f040b380d21a6df4ddf4579ed5596ca2844711ae5",
+    "figures/figure-09/source/water-ethanol-nacl.csv": "b7bedcee246ae9fd28418471f48fc92f06efc0194352812d54ab690db618c604",
+    "figures/figure-09/source/water-methanol-nabr.csv": "e03835c37d9867f51223ae3122d00675dadccf85e3babac52cd1a3380d1c37de",
+    "figures/figure-09/source/water-methanol-nacl.csv": "2ede668fdadff7214af4b7ab297824d284200ea8bc5a9ef4e95ae10f3a1ce8d4",
+    "inputs/source/figiel-2025-parameter-provenance.csv": "932e8baa90fcefbaa8c3a8730cdeadd83a4c01f0a3b109f4e4cd0319aee9312b",
+    "inputs/source/figiel-2025-regression-target-ledger.csv": "4d6ce439f732d44c6cee08d9d800cef6f844eb297a30ebf935daa1c65403c5e7",
+    "inputs/source/figiel-2025-regression-target-ledger.yaml": "5b8646ed86a38f0eb85f3da45acbe60dae814552386b290e0e463db5c51ff21e",
+    "inputs/source/live-reproduction.json": "4c50746e46e01e0a68a0f3e8345f4f845e4b2bee900d4236a8bda9258df9e726",
+    "inputs/docs/legacy-derived-gates.json": "b0739abba8d4dfb2f38a2d44182b2152c74d060ca0896e895e5194bf4edf601d"
+  }
+}

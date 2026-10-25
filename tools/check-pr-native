@@ -1,0 +1,152 @@
+#!/usr/bin/env python3
+"""Prepare and check one frozen PR head in the main checkout's instrumented tree, removed again after the run."""
+import argparse
+import contextlib
+import fcntl
+import hashlib
+import json
+import os
+from pathlib import Path
+import re
+import shutil
+import subprocess
+
+
+def output(*command, **kwargs):
+    return subprocess.check_output(command, text=True, **kwargs).strip()
+
+
+def digest(paths):
+    result = hashlib.sha256()
+    for path in sorted(set(map(str, paths))):
+        result.update(Path(path).read_bytes() if Path(path).is_file() else b"<missing>")
+    return result.hexdigest()
+
+
+def run(*command, **kwargs):
+    subprocess.run(command, check=True, **kwargs)
+
+
+@contextlib.contextmanager
+def head_tree(root, repo):
+    """Hold the head's lock for the run; on exit keep only its results and pass records (owner, 2026-10-22)."""
+    with (root / 'lock').open('w') as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            subprocess.run(['git', 'worktree', 'remove', '--force', str(root / 'source')], cwd=repo, capture_output=True)
+            for name in ('meson', 'venv'):
+                shutil.rmtree(root / name, ignore_errors=True)
+            for name in ('python', 'prepared.json', 'external-headers.json', 'dependencies.txt'):
+                (root / name).unlink(missing_ok=True)
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--pr', type=int, required=True)
+    parser.add_argument('--head', required=True)
+    parser.add_argument('--base', required=True)
+    parser.add_argument('--checks', choices=['lint', 'sanitizers', 'lint,sanitizers'], default='lint,sanitizers')
+    parser.add_argument('--full', action='store_true', help='request a full clang-tidy sweep')
+    args = parser.parse_args()
+    repo = Path(__file__).resolve().parent.parent
+    head, base = [output('git', 'rev-parse', '--verify', value + '^{commit}', cwd=repo) for value in (args.head, args.base)]
+    if args.head != head or args.base != base or args.pr <= 0:
+        parser.error('use full head/base commit IDs and a positive PR number (a local candidate number is allowed)')
+    run('git', 'merge-base', '--is-ancestor', base, head, cwd=repo)
+    canonical = Path(output('git', 'worktree', 'list', '--porcelain', cwd=repo).splitlines()[0].removeprefix('worktree '))
+    root = canonical / 'build/pr-gates' / f'pr-{args.pr}' / head
+    root.mkdir(parents=True, exist_ok=True)
+    with head_tree(root, repo):
+        source, build, venv = root / 'source', root / 'meson', root / 'venv'
+        if not source.exists():
+            run('git', 'worktree', 'add', '--detach', str(source), head, cwd=repo)
+        if output('git', 'rev-parse', 'HEAD', cwd=source) != head or output('git', 'status', '--porcelain', '--untracked-files=all', cwd=source):
+            raise RuntimeError(f'frozen source changed: {source}')
+        env = dict(os.environ, UV_PROJECT_ENVIRONMENT=str(venv), PATH=f'{venv}/bin:' + os.environ['PATH'])
+        run('uv', 'sync', '--python', '3.13', '--all-packages', '--no-install-workspace', '--locked', cwd=source, env=env)
+        python = venv / 'bin/python'
+        (root / 'python').write_text(str(python) + '\n')
+        jobs = int(os.environ.get('EPCSAFT_BUILD_JOBS', min(os.cpu_count(), max(1, int(re.search(r'MemAvailable:\s+(\d+)', Path('/proc/meminfo').read_text())[1]) // (2560 * 1024)))))
+        if jobs < 1:
+            parser.error('EPCSAFT_BUILD_JOBS must be positive')
+        flags = ['--buildtype=debug', '-Db_ndebug=false', '-Db_lundef=false', '-Db_sanitize=address,undefined',
+                 '-Db_lto=false', '-Dstrip=false', '-Dcpp_args=-idirafter' + output('gcc', '-print-file-name=include')]
+        env.update(EPCSAFT_BUILD_JOBS=str(jobs), CCACHE_COMPILERCHECK='content', CC='ccache clang-18', CXX='ccache clang++-18', CCACHE_BASEDIR=str(source), CCACHE_NOHASHDIR='1')
+        external_file = root / 'external-headers.json'
+        external = json.loads(external_file.read_text()) if external_file.exists() else []
+        binaries = [Path(shutil.which(name, path=env['PATH'])).resolve() for name in
+                    ('clang-18', 'clang++-18', 'clang-tidy-18', 'run-clang-tidy-18', 'gcc', 'ld', 'ninja', 'cmake', 'ccache')]
+        binaries += [Path(output('clang++-18', '-print-file-name=' + name)) for name in
+                     ('libclang_rt.asan-x86_64.so', 'libclang_rt.ubsan_standalone-x86_64.so')]
+        def identity():
+            return dict(head=head, flags=flags, tools=digest(binaries + [python.resolve()]),
+                        external=digest(external), lock=digest([source / 'uv.lock']),
+                        environment=output('uv', 'pip', 'freeze', '--python', str(python)),
+                        ambient={key: env.get(key, '') for key in ('CPPFLAGS', 'CFLAGS', 'CXXFLAGS', 'LDFLAGS')})
+        prepared_file = root / 'prepared.json'
+        current = identity()
+        prepared = json.loads(prepared_file.read_text()) if prepared_file.exists() else None
+        if prepared != current or not (build / 'build.ninja').exists():
+            shutil.rmtree(build, ignore_errors=True)
+            for passed in root.glob('passed-*.json'):
+                passed.unlink()
+            run('meson', 'setup', str(build), str(source / 'engine'), '--prefix', str(venv), *flags, env=env)
+        checks = dict(current, base=base, checks=args.checks, full=args.full)
+        pass_file = root / ('passed-' + hashlib.sha256(json.dumps(checks, sort_keys=True).encode()).hexdigest() + '.json')
+        suffix = output(str(python), '-c', 'import sysconfig; print(sysconfig.get_config_var("EXT_SUFFIX"))')
+        package = Path(output(str(python), '-c', 'import sysconfig; print(sysconfig.get_path("platlib"))')) / 'epcsaft'
+        images = [build / ('_core' + suffix)] + [build / name for name in ('libepcsaft_native.so', 'libepcsaft_asl.so', 'compile_commands.json', 'meson-info/intro-buildoptions.json', 'meson-info/intro-compilers.json', '.ninja_deps', 'equilibrium_checks', 'regression_checks')]
+        linked = all((package / library.name).is_symlink() and (package / library.name).resolve() == library
+                     for library in images[:3])
+        def image_identity():
+            files = images + list(package.rglob('*.py'))
+            return hashlib.sha256(json.dumps({str(p.relative_to(root)): digest([p]) for p in files}, sort_keys=True).encode()).hexdigest()
+        built = image_identity()
+        if prepared == current and linked and pass_file.exists() and json.loads(pass_file.read_text()) == dict(checks, build_sha256=built):
+            print(f'reused passing checks: {pass_file}', flush=True)
+            return
+        print(f'preparing checks in {root} with {jobs} compile jobs', flush=True)
+        commands = json.loads((build / 'compile_commands.json').read_text())
+        objects = [entry['output'] for entry in commands if re.search(r'engine/(native|tests/native)/.*\.cpp$', entry['file'])]
+        run('ninja', '-C', str(build), '-j', str(jobs), *objects, '_core' + suffix,
+            'libepcsaft_asl.so', 'equilibrium_checks', 'regression_checks', env=env)
+        deps = output('ninja', '-C', str(build), '-t', 'deps', *objects, env=env)
+        if len(re.findall(r' \(VALID\)$', deps, re.M)) != len(objects):
+            raise RuntimeError('not every native/test object has a current dependency record')
+        deps = output('ninja', '-C', str(build), '-t', 'deps', env=env)
+        (root / 'dependencies.txt').write_text(deps)
+        external = [str(path) for path in {(build / line.strip()).resolve() for line in deps.splitlines() if line.startswith('    ')}]
+        external_file.write_text(json.dumps(sorted(external)))
+        current = identity()
+        prepared_file.write_text(json.dumps(current, indent=2))
+        run('meson', 'install', '-C', str(build), '--no-rebuild', env=env)
+        for library in [build / ('_core' + suffix), build / 'libepcsaft_native.so', build / 'libepcsaft_asl.so']:
+            (package / library.name).unlink(missing_ok=True)
+            (package / library.name).symlink_to(library)
+
+        env.update(EPCSAFT_SOURCE_ROOT=str(source), EPCSAFT_BUILD_DIR=str(build), MALLOC_PERTURB_='0', OMP_NUM_THREADS='1', OPENBLAS_NUM_THREADS='1', MKL_NUM_THREADS='1')
+        checks.update(current)
+        pass_file = root / ('passed-' + hashlib.sha256(json.dumps(checks, sort_keys=True).encode()).hexdigest() + '.json')
+        results = root / 'results' / pass_file.stem
+        results.mkdir(parents=True, exist_ok=True)
+        env['EPCSAFT_GATE_RESULTS'] = str(results)
+        built = image_identity()
+        for check in args.checks.split(','):
+            passed_check = results / f'{check}.passed'
+            if passed_check.exists() and passed_check.read_text() == built:
+                continue
+            passed_check.unlink(missing_ok=True)
+            command = ['bash', str(source / 'engine/tools' / f'check-native{"-sanitizers" if check == "sanitizers" else ""}.sh'), '--prepared', str(root)]
+            if check == 'lint' and not args.full:
+                command += ['--changed', base]
+            with (results / f'{check}.log').open('w') as log:
+                run(*command, env=env, stdout=log, stderr=subprocess.STDOUT)
+            passed_check.write_text(built)
+        pass_file.write_text(json.dumps(dict(checks, build_sha256=built), indent=2))
+        print(f'passing checks: {pass_file}', flush=True)
+
+
+if __name__ == '__main__':
+    main()

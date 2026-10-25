@@ -1,0 +1,142 @@
+{
+  "wheel_sha256": "3da83fae632df817a1f7b9d9f92b183dedc92ad42ef58db2a2b9091782092e3f",
+  "source_sha256": "f58033b8f757ad42d03c940c6ab4f4c582a2fb0b5fb32c69b3a50fecbea53f40",
+  "paper_ard_percent": 5.05,
+  "objective": "OF3 (Eq. 33): sum (phi/phi_obs - 1)^2, native Ceres Levenberg-Marquardt, exact Jacobian",
+  "coordinate": "water-MDEAH+ k_ij per isotherm, bounds [-1, 1], declared starts 0.0 and 0.5",
+  "held": "l_hb Table 7 (Eq. 35); MDEAH+ m 3.675, sigma 3.5630, u/k 228.71; packing 0.88 sigma; Debye-Hueckel diameter sigma; water permittivity; MDEAH+-Cl- k_ij 0; water-Cl- k_ij -0.25",
+  "u_phi": 0.005,
+  "fit_controls": {
+    "function_tolerance": 1e-10,
+    "parameter_tolerance": 1e-10,
+    "gradient_tolerance": 1e-10,
+    "maximum_iterations": 100,
+    "shared_iterations": 100,
+    "shared_seconds": 120.0
+  },
+  "lanes": {
+    "S0": {
+      "ionic_dispersion": "exclude-same-sign-ion-pairs",
+      "isotherms": {
+        "273": {
+          "l_hb_table_7": 0.34508950000000005,
+          "k_ij": 0.3495328331783972,
+          "other_start_k_ij": 0.34953283225171045,
+          "start_difference": 9.266867273538537e-10,
+          "u_phi_allowance": 0.001960753971442139,
+          "status": "converged",
+          "message": "Function tolerance reached. |cost_change|/cost: 3.297973e-12 <= 1.000000e-10",
+          "iterations": 4,
+          "residual_evaluations": 4,
+          "relative_sse": 0.0058117400976455645,
+          "covariance": {
+            "status": "available",
+            "rank": 1,
+            "singular_values": [
+              7.691779499519042
+            ],
+            "active_bounds": [],
+            "physical": [
+              0.016902321118180182
+            ]
+          }
+        },
+        "313": {
+          "l_hb_table_7": 0.3878895,
+          "k_ij": 0.32592593101085465,
+          "other_start_k_ij": 0.32592592979507423,
+          "start_difference": 1.2157804207824086e-09,
+          "u_phi_allowance": 0.002201767832570232,
+          "status": "converged",
+          "message": "Function tolerance reached. |cost_change|/cost: 9.477414e-14 <= 1.000000e-10",
+          "iterations": 4,
+          "residual_evaluations": 4,
+          "relative_sse": 0.0008900205043320235,
+          "covariance": {
+            "status": "available",
+            "rank": 1,
+            "singular_values": [
+              4.263623236823937
+            ],
+            "active_bounds": [],
+            "physical": [
+              0.05501009045648958
+            ]
+          }
+        }
+      },
+      "ard_percent": 2.3715456606576755,
+      "printed_parameter_ard_percent": 129.36265417884542,
+      "k_ij_303_k": 0.33182765655274027,
+      "k_ij_303_k_allowance": 0.0021415143672882087,
+      "F1": {
+        "ard_limit_percent": 6.05,
+        "interior": true,
+        "starts_agree": true,
+        "passes": true
+      }
+    },
+    "S1": {
+      "ionic_dispersion": "all-ion-pairs",
+      "isotherms": {
+        "273": {
+          "l_hb_table_7": 0.34508950000000005,
+          "k_ij": 0.028174816934558356,
+          "other_start_k_ij": 0.02817481440738042,
+          "start_difference": 2.5271779356683677e-09,
+          "u_phi_allowance": 0.0021221515872298117,
+          "status": "converged",
+          "message": "Function tolerance reached. |cost_change|/cost: 4.708661e-12 <= 1.000000e-10",
+          "iterations": 3,
+          "residual_evaluations": 3,
+          "relative_sse": 0.0050709965378154375,
+          "covariance": {
+            "status": "available",
+            "rank": 1,
+            "singular_values": [
+              7.107415807813918
+            ],
+            "active_bounds": [],
+            "physical": [
+              0.019795959300054643
+            ]
+          }
+        },
+        "313": {
+          "l_hb_table_7": 0.3878895,
+          "k_ij": 0.014357981599571605,
+          "other_start_k_ij": 0.014357992170130862,
+          "start_difference": 1.057055925776651e-08,
+          "u_phi_allowance": 0.0024116564432045437,
+          "status": "converged",
+          "message": "Function tolerance reached. |cost_change|/cost: 6.021071e-12 <= 1.000000e-10",
+          "iterations": 3,
+          "residual_evaluations": 3,
+          "relative_sse": 0.0006163007057724128,
+          "covariance": {
+            "status": "available",
+            "rank": 1,
+            "singular_values": [
+              3.893352368919963
+            ],
+            "active_bounds": [],
+            "physical": [
+              0.06597092554926795
+            ]
+          }
+        }
+      },
+      "ard_percent": 2.157299583831517,
+      "printed_parameter_ard_percent": 46.66747022611323,
+      "k_ij_303_k": 0.017812190433318293,
+      "k_ij_303_k_allowance": 0.0023392802292108604,
+      "F1": {
+        "ard_limit_percent": 6.05,
+        "interior": true,
+        "starts_agree": true,
+        "passes": true
+      }
+    }
+  },
+  "limits": "Calibration to ten Tables 8-9 osmotic coefficients at 1 bar, 273 and 313 K, molality <= 1.14 mol/kg. Two isotherms determine one k_ij level each; no k_ij(T) form beyond linear and no parameter adoption follows."
+}

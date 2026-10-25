@@ -1,0 +1,409 @@
+{
+  "source_pdf_sha256": "29165d43cf374760cc17a730d92e15ed77a9e969af1f3355a1ca39a275f7110f",
+  "dpi": 600,
+  "coordinate_half_width_px": 3,
+  "minimum_series_separation_px": 6,
+  "method": "Manual point centers; no automatic curve tracing. Second manual picks on enlarged crops.",
+  "panels": {
+    "6a": {
+      "crop": [
+        2709,
+        333,
+        4542,
+        1542
+      ],
+      "x": [
+        246,
+        1707,
+        0,
+        1
+      ],
+      "y": [
+        1002,
+        54,
+        340,
+        520
+      ],
+      "pressure_Pa": 40000,
+      "source_page": 5,
+      "image": "figure-6a.png",
+      "y_scale": "linear",
+      "series": {
+        "dew": {
+          "picks": [
+            [
+              749,
+              337
+            ],
+            [
+              1045,
+              280
+            ],
+            [
+              1343,
+              238
+            ]
+          ],
+          "evidence": "numerical verification",
+          "second_pick": [
+            750,
+            336
+          ]
+        },
+        "bubble": {
+          "picks": [
+            [
+              852,
+              865
+            ],
+            [
+              1143,
+              791
+            ],
+            [
+              1316,
+              739
+            ]
+          ],
+          "evidence": "numerical verification",
+          "second_pick": [
+            851,
+            865
+          ]
+        },
+        "measured": {
+          "picks": [
+            [
+              745,
+              902
+            ],
+            [
+              1061,
+              843
+            ],
+            [
+              1410,
+              713
+            ]
+          ],
+          "evidence": "physical comparison",
+          "second_pick": [
+            745,
+            901
+          ]
+        }
+      },
+      "crop_sha256": "9425eb95a925d2e68bf62a94259a42cd69d964183747b43094957fe065ea1e31"
+    },
+    "6b": {
+      "crop": [
+        2709,
+        1625,
+        4542,
+        2792
+      ],
+      "x": [
+        230,
+        1700,
+        0,
+        1
+      ],
+      "y": [
+        993,
+        51,
+        350,
+        510
+      ],
+      "pressure_Pa": 53300,
+      "source_page": 5,
+      "image": "figure-6b.png",
+      "y_scale": "linear",
+      "series": {
+        "dew": {
+          "picks": [
+            [
+              746,
+              266
+            ],
+            [
+              1100,
+              190
+            ],
+            [
+              1396,
+              145
+            ]
+          ],
+          "evidence": "numerical verification",
+          "second_pick": [
+            746,
+            267
+          ]
+        },
+        "bubble": {
+          "picks": [
+            [
+              841,
+              851
+            ],
+            [
+              1131,
+              770
+            ],
+            [
+              1409,
+              660
+            ]
+          ],
+          "evidence": "numerical verification",
+          "second_pick": [
+            842,
+            850
+          ]
+        },
+        "measured": {
+          "picks": [
+            [
+              747,
+              900
+            ],
+            [
+              1088,
+              822
+            ],
+            [
+              1328,
+              778
+            ]
+          ],
+          "evidence": "physical comparison",
+          "second_pick": [
+            748,
+            899
+          ]
+        }
+      },
+      "crop_sha256": "cc5e3939bf59fd7268b95074c32fe67041e593beb0a62d7903179521ff86d49d"
+    },
+    "6c": {
+      "crop": [
+        2709,
+        2896,
+        4542,
+        4126
+      ],
+      "x": [
+        248,
+        1707,
+        0,
+        1
+      ],
+      "y": [
+        1013,
+        68,
+        350,
+        510
+      ],
+      "pressure_Pa": 67700,
+      "source_page": 5,
+      "image": "figure-6c.png",
+      "y_scale": "linear",
+      "series": {
+        "dew": {
+          "picks": [
+            [
+              755,
+              252
+            ],
+            [
+              1077,
+              178
+            ],
+            [
+              1373,
+              129
+            ]
+          ],
+          "evidence": "numerical verification",
+          "second_pick": [
+            754,
+            252
+          ]
+        },
+        "bubble": {
+          "picks": [
+            [
+              818,
+              838
+            ],
+            [
+              1139,
+              755
+            ],
+            [
+              1414,
+              637
+            ]
+          ],
+          "evidence": "numerical verification",
+          "second_pick": [
+            818,
+            837
+          ]
+        },
+        "measured": {
+          "picks": [
+            [
+              769,
+              881
+            ],
+            [
+              920,
+              846
+            ],
+            [
+              1116,
+              787
+            ]
+          ],
+          "evidence": "physical comparison",
+          "second_pick": [
+            769,
+            882
+          ]
+        }
+      },
+      "crop_sha256": "605e39e3f59245875156152f2380d9f5c18b7c5bd24e02378bc8f16af478c195"
+    },
+    "15": {
+      "crop": [
+        600,
+        300,
+        2150,
+        1650
+      ],
+      "x": [
+        354,
+        1475,
+        0,
+        1.2
+      ],
+      "y": [
+        84,
+        1232,
+        1,
+        -11
+      ],
+      "y_scale": "log10",
+      "source_page": 9,
+      "image": "figure-15-crop.png",
+      "temperature_K": 373.15,
+      "mdea_mass_fraction": 0.2,
+      "series": {
+        "water": {
+          "picks": [
+            [
+              728,
+              182
+            ],
+            [
+              1101,
+              183
+            ]
+          ],
+          "second_pick": [
+            729,
+            182
+          ],
+          "evidence": "numerical verification"
+        },
+        "carbonate": {
+          "picks": [
+            [
+              728,
+              613
+            ],
+            [
+              1101,
+              636
+            ]
+          ],
+          "second_pick": [
+            729,
+            614
+          ],
+          "evidence": "numerical verification"
+        },
+        "hydroxide": {
+          "picks": [
+            [
+              728,
+              803
+            ],
+            [
+              1101,
+              848
+            ]
+          ],
+          "second_pick": [
+            727,
+            804
+          ],
+          "evidence": "numerical verification"
+        },
+        "hydronium": {
+          "picks": [
+            [
+              728,
+              1064
+            ],
+            [
+              1101,
+              1020
+            ]
+          ],
+          "second_pick": [
+            729,
+            1064
+          ],
+          "evidence": "numerical verification"
+        },
+        "CO2": {
+          "picks": [
+            [
+              728,
+              458
+            ],
+            [
+              1101,
+              391
+            ]
+          ],
+          "second_pick": [
+            729,
+            459
+          ],
+          "evidence": "numerical verification"
+        },
+        "MDEA": {
+          "picks": [
+            [
+              635,
+              333
+            ],
+            [
+              1101,
+              363
+            ]
+          ],
+          "second_pick": [
+            636,
+            333
+          ],
+          "evidence": "numerical verification"
+        }
+      },
+      "crop_sha256": "d5d7702db7e47eaa1a893ec71e69bf95f0cf889fd843245eb7e2c791f7536679"
+    }
+  }
+}

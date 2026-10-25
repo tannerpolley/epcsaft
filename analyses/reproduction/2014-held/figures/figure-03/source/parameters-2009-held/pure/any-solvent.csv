@@ -1,0 +1,9 @@
+component,m,s,e,e_assoc,vol_a,assoc_scheme,z,dielc,d_born,f_solv,MW,source
+H2O,1.204659,2.7927,353.9449,2425.6714,0.0450989,2B,0,78.09,0,1.5,0.01801528,Held2009 auxiliary parameter bundle
+Li+,1.0,1.8177,2697.2795,0,0,,1.0,8.0,0,1,0.00694,Held2009 auxiliary parameter bundle
+Na+,1.0,2.4122,646.0504,0,0,,1.0,8.0,0,1,0.02298,Held2009 auxiliary parameter bundle
+K+,1.0,2.9698,271.0518,0,0,,1.0,8.0,0,1,0.0391,Held2009 auxiliary parameter bundle
+Ac-,1.0,4.3000,300.0000,0,0,,-1.0,8.0,0,1,0.059044,Held2009 auxiliary parameter bundle
+LiAc_ip,2.0,3.0588,172.4560,0.0,0.0,,0.0,8.0,0.0,1.0,0.065984,Held2009 auxiliary parameter bundle
+NaAc_ip,2.0,3.3561,211.8280,0.0,0.0,,0.0,8.0,0.0,1.0,0.082024,Held2009 auxiliary parameter bundle
+KAc_ip,2.0,3.6349,227.9470,0.0,0.0,,0.0,8.0,0.0,1.0,0.098144,Held2009 auxiliary parameter bundle

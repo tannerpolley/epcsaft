@@ -1,0 +1,5 @@
+source,doi,source_table,source_pdf_page,temperature_K,pressure_kpa,initial_mea_mol_per_L,mea_mass_fraction,absorption_time_min,co2_absorption_efficiency_percent,co2_loading_mol_per_mol_mea,physical_absorption_percent,regression_eligible,notes
+Barzagli et al. 2009,10.1039/B814670E,Table 1,2,293.15,101.325,0.167,0.0101,60,72.1,0.818,6.1,false,"Open-flow absorption endpoint, not a closed equilibrium VLE datum."
+Barzagli et al. 2009,10.1039/B814670E,Table 1,2,293.15,101.325,0.334,0.0202,120,66.8,0.798,9.0,false,"Open-flow absorption endpoint, not a closed equilibrium VLE datum."
+Barzagli et al. 2009,10.1039/B814670E,Table 1,2,293.15,101.325,0.5,0.0303,180,63.9,0.751,6.5,false,"Open-flow absorption endpoint, not a closed equilibrium VLE datum."
+Barzagli et al. 2009,10.1039/B814670E,Table 1,2,293.15,101.325,0.667,0.0404,240,63.3,0.733,7.8,false,"Open-flow absorption endpoint, not a closed equilibrium VLE datum."

@@ -1,0 +1,28 @@
+schema_version = 1
+bundle_id = "perdomo-2025-figure-03-licl-butanol-regression-input"
+bundle_version = 1
+purpose = "user-provided"
+files = ["components.csv", "single.csv", "pair.csv", "sites.csv", "association.csv", "model.csv", "correlations.toml"]
+
+[[sources]]
+source_id = "ascani-et-al-2022"
+citation = "Ascani, M.; Sadowski, G.; Held, C. Journal of Chemical & Engineering Data 2022, 67, 1972-1984."
+doi = "10.1021/acs.jced.1c00866"
+use_basis = "1-butanol pure parameters and electrolyte model settings"
+
+[[sources]]
+source_id = "figiel-yu-held-2025"
+citation = "Figiel, P.; Yu, G.; Held, C. Industrial & Engineering Chemistry Research 2025, 64, 9406-9418."
+doi = "10.1021/acs.iecr.5c00475"
+use_basis = "Li+ and Cl- pure parameters and ion-ion interaction"
+
+[[domains]]
+domain_id = "perdomo-regression-298-15-k-1-bar"
+kind = "reported-conditions"
+temperature_min = 298.15
+temperature_max = 298.15
+temperature_unit = "kelvin"
+pressure_min = 1
+pressure_max = 1
+pressure_unit = "bar"
+ion_mole_fraction_max = 0.38

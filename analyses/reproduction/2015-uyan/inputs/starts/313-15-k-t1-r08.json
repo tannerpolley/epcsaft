@@ -1,0 +1,51 @@
+{
+  "source_row": "ermatchkov-2006-t1-r08",
+  "temperature_k": 313.15,
+  "pressure_pa": 348300.6631231822,
+  "component_ids": [
+    "water",
+    "mdea",
+    "co2",
+    "h-cation",
+    "oh-anion",
+    "hco3-anion",
+    "carbonate-anion",
+    "mdeah-cation"
+  ],
+  "mole_fractions": [
+    0.950220087439068,
+    0.018828774177960868,
+    0.0024309176092534713,
+    2.9356027938570914e-09,
+    3.4141264787997863e-09,
+    0.014227567219188098,
+    2.1693169029525813e-05,
+    0.014270954035770833,
+    0.020677650544209312,
+    1.0651053244834633e-05,
+    0.979311698402546,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "packing_fractions": [
+    0.44601488175470944,
+    0.001771749327132956
+  ],
+  "molar_densities_mol_m3": [
+    47798.86195655124,
+    135.8883261557126
+  ],
+  "maximum_original_row": 4.3520742565306136e-14,
+  "row_tolerance": 1e-10,
+  "wheel_sha256": "33ef17f578714f55c65223e6b3d8b28e09344ac65cb317dfe9007bcfffc8db94",
+  "meaning": "Owner-approved fixed composition and packing guesses for four source feeds. Pressure-start ordering, equations, feeds, work limits and criteria remain unchanged; these are native physical outputs at the stated source row.",
+  "target_source_rows": [
+    "ermatchkov-2006-t1-r09",
+    "ermatchkov-2006-t1-r10",
+    "ermatchkov-2006-t1-r11",
+    "ermatchkov-2006-t1-r12"
+  ]
+}

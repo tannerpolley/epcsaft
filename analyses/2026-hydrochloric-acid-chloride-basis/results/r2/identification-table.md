@@ -1,0 +1,11 @@
+| stage | start | selected | comparable | rank_ratio | max_correlation | max_resolution | max_endpoint_distance | passes | reason |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 5 | 1 | 0 | 0 | 2.18378998e-06 | unavailable | unavailable | 1 | 0 | near_bound |
+| 5 | 2 | 1 | 1 | 3.6280745e-05 | unavailable | unavailable | 0 | 0 | near_bound |
+| 5 | 3 | 0 | 1 | 3.62808211e-05 | unavailable | unavailable | 4.45939768e-07 | 0 | near_bound |
+| 5 | 4 | 0 | 0 | 2.18329324e-06 | unavailable | unavailable | 1 | 0 | near_bound |
+| 5 | 5 | 0 | 0 | 2.28243564e-07 | unavailable | unavailable | 1 | 0 | near_bound |
+| 5 | 6 | 0 | 0 | 2.28241927e-07 | unavailable | unavailable | 1 | 0 | near_bound |
+| 4 | 7 | 1 | 1 | 5.72834733e-05 | 0.999309217 | 0.00353342191 | 0 | 0 | correlation |
+| 4 | 8 | 0 | 1 | 5.72832256e-05 | 0.999309224 | 0.00353343985 | 2.74188817e-08 | 0 | correlation |
+| 4 | 9 | 0 | 0 | 0.000121407841 | unavailable | unavailable | 0.358024029 | 0 | incomplete_start |

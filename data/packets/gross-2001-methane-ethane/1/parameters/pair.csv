@@ -1,0 +1,2 @@
+record_id,component_id_a,component_id_b,family,value,unit,source_id,locator,domain_id
+methane-ethane-kij,methane,ethane,k_ij,0,,gross-sadowski-2001,"p. 1254, paragraph beginning ""Results for a ternary system of CO2-methane-ethane"", statement ""one can safely assume a kij equal to 0""",gross-pair-unknown

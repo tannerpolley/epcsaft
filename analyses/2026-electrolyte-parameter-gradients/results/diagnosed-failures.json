@@ -1,0 +1,35 @@
+{
+  "resolved_cases": [
+    {
+      "case": "F1 transfer-energy invariant column",
+      "observed": {
+        "case": "F1",
+        "quantity": "row-312/column-12",
+        "exact": -1.3584455929667826e-14,
+        "reference": -0.0002843341665089854,
+        "error": 0.0002843341664954009,
+        "tolerance": 0.0002478957029608353,
+        "passed": false
+      },
+      "cause": "Unequal terminated EOS pressure logarithms amplified root residuals in the invariant transfer difference.",
+      "correction": "Use the prescribed-pressure Z in pressure-closed fugacity; retain EOS pressure as the root diagnostic."
+    },
+    {
+      "case": "F2 NaCl Phi at 0.001 mol/kg",
+      "maximum_decade_error": 2.00612277e-10,
+      "tolerance_decade": 1e-10,
+      "cause": "Binary64 cancellation in the dilute solvent chemical-potential difference, amplified by 1/s; association residual refinement and stopping changes did not remove it.",
+      "correction": "Contract the extensive Helmholtz Euler identity in extended precision at prescribed pressure; keep exact CppAD parameter columns."
+    },
+    {
+      "case": "Same-build native comparison rows",
+      "old_floor_residual": 8.881784197001252e-16,
+      "current_floor_residual": 4.440892098500626e-16,
+      "old_variance_factor": 3.8844526205205044e-27,
+      "current_variance_factor": 3.434255412445062e-27,
+      "cause": "Retained rows identify a previous wheel; the current Python-free binaries and installed wheel agree exactly.",
+      "correction": "Refresh native-rows.tsv with its existing recorder; preserve native scientific references and comparison tolerances."
+    }
+  ],
+  "disposition": "F1-F6 requalified without tolerance changes; native scientific comparisons preserved. Final wheel identity and numbers are in summary.json."
+}

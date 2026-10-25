@@ -1,0 +1,21 @@
+{
+  "engine": [
+    "9bfc702f5383b92e0688d39e461f3b74edf0c2f1",
+    true
+  ],
+  "native_library": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-789-live-literature-reproductions-the-4/build/engine-meson/shared/libepcsaft_native.so",
+  "mass_source_rows": [
+    "CO",
+    "CO2"
+  ],
+  "binaries_sha256": {
+    "libepcsaft_native.so": "00d3ab7dad01aef879046a7446acc6a9408c849172589898d6351b50de36491b",
+    "equilibrium": "94d829fe91f9158c37381d6e3e86e51b0f86deb6ccf517359d3bc99e797b01d4"
+  },
+  "source_sha256": {
+    "analyses/reproduction/2023-belov/inputs/cases/test-01/source/reference-limits.md": "391450446bf24207355201ae85a74e3edd28ef12ffbb276d4ad66dca2582af5d",
+    "analyses/reproduction/2023-belov/inputs/cases/test-01/source/source.json": "985bd1b1bb3f5e47df5b600ae87065954913b5a2747815e1ead89eefc0fc12b5",
+    "analyses/reproduction/2023-belov/inputs/cases/test-01/source/test1.dat": "8d48f0581f8e181e988b5991e48e772f8a72b0885ebe500a0fff4233da41ecaf",
+    "analyses/reproduction/1998-chase/inputs/source/molar-masses.csv": "0053008c327a5de7864c6efc0060b8651500302ed924906177ea64d64ebd3c68"
+  }
+}

@@ -1,0 +1,76 @@
+{
+  "sources": [
+    {
+      "source": "Hamer-Wu",
+      "zotero_parent": "28NPJ5H6",
+      "pdf_child": "5RS9QAMK",
+      "pdf_sha256": "a20e0029c929b4e1df2cc8cd7aba10ecbbada3dd0f35689a102d16d18fc34ca6",
+      "doi": "10.1063/1.3253108",
+      "locator": "Table 4 p.1060",
+      "evidence": "evaluated phi and gamma"
+    },
+    {
+      "source": "Roy",
+      "zotero_parent": "ZNPGG9NZ",
+      "pdf_child": "3J9XG9FK",
+      "pdf_sha256": "30b8ec3066dff4fcdd9a0bee7a1c27ff3d44e98d39112131e0afe42a41f9c991",
+      "doi": "10.1007/BF00646403",
+      "locator": "Table I pp.912-913; 25 C column only",
+      "evidence": "measured corrected cell potential; derived HCl gamma"
+    },
+    {
+      "source": "Khoo-Mg",
+      "zotero_parent": "TV9WY3XS",
+      "pdf_child": "L8JALWM6",
+      "pdf_sha256": "a398ada9e07b20ff495275b97d206ac1a90430f1b7cc3063555d48ef94a16d0d",
+      "doi": "10.1007/BF00648074",
+      "locator": "Table I p.857",
+      "evidence": "measured cell potential; derived HCl gamma"
+    },
+    {
+      "source": "Khoo-Ca",
+      "zotero_parent": "TU7MV7GW",
+      "pdf_child": "VCZLMLPV",
+      "pdf_sha256": "5dfa6ed0a621e4e1f36c682a0432947ebd92033918ba86f4fb133bd9980ca835",
+      "doi": "10.1007/BF00645882",
+      "locator": "Table I pp.654-655; exclude y=1 without measured E",
+      "evidence": "measured cell potential; derived HCl gamma"
+    },
+    {
+      "source": "Jiang-Li",
+      "zotero_parent": "S6HP367G",
+      "pdf_child": "HV6HJBFA",
+      "pdf_sha256": "53c4d623222f676ddbe5e0187e6bed20a436b90011f1c83a43163c5f1af9b15b",
+      "doi": "10.1021/je950182q",
+      "locator": "Table 2 p.114",
+      "evidence": "measured cell potential; derived HCl gamma"
+    },
+    {
+      "source": "Messnaoui",
+      "zotero_parent": "CPQDM8Y9",
+      "pdf_child": "D9RXUZXU",
+      "pdf_sha256": "ed150fcfe806ea9a448bff47dfb419aafd5644e15d8489764d2b146dc1c1031b",
+      "doi": "10.1021/acs.jced.0c00107",
+      "locator": "Table 2 pp.3539-3540",
+      "evidence": "measured water activity; adjusted values reference-dependent"
+    }
+  ],
+  "el_guendouzi2001": {
+    "parent": "VVDVF2JS",
+    "doi": "10.1006/jcht.2000.0815",
+    "locator": "Table 2 p.1063",
+    "url": "https://www.researchgate.net/publication/261178464_Water_activities_osmotic_and_activity_coefficients_in_aqueous_chloride_solutions_at_T_29815_K_by_the_hygrometric_method",
+    "evidence": "Author-posted table; water activity observed and gamma calculated; report-only"
+  },
+  "conventions": {
+    "temperature_K": 298.15,
+    "liquid_pressure_Pa": 100000,
+    "pressure_comparison_Pa": 101325,
+    "hydrogen_gas": "Source cell potentials corrected to one atmosphere hydrogen; not an assertion of identical liquid pressure",
+    "source_decimal_values": "Preserved in source-specific CSV; Roy 25 C OCR checked visually against the PDF",
+    "cell_coefficients": "Use directly reported derived HCl gamma; never refit electrode standard potentials",
+    "uncertainty": "Absent row-specific uncertainties remain absent. Discrepancy weights are not inverse experimental variances.",
+    "water_correction": "Messnaoui: K_adjusted = 0.0105 + 0.998 K_measured, from Hamer-Wu; adjusted gamma is calculated. The printed Table 2 inequality for relative uncertainty is inverted; Table 3 footnote assigns about 0.0005 above aw=0.95 and 0.002 below. Molality standard uncertainty 0.01 mol/kg; temperature 0.02 K.",
+    "roy_uncertainty": "Reported +/-0.06 mV; maximum +/-0.0006 in log10 gamma."
+  }
+}

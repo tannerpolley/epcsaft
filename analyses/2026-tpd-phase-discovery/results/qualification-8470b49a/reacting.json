@@ -1,0 +1,150 @@
+{
+  "identity": {
+    "wheel": "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-223-build-tpd-stability-test-and-phase-35ebff8f/build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+    "wheel_sha256": "8470b49a9283528b83dbbdab46dc62dee0fc70e5e2149f8f218b823dd85812cb",
+    "script_sha256": "3c5a6ddc8d4de9475a915f6e50a1da8e2fb2f06c57a716bcf9010b234876f8cc",
+    "baseline_script_sha256": "640a35eb50295dc97469ad32a7eb2836b5b9b5262c2a7d3d4b7293594a1c6d9f",
+    "source_mtimes": {
+      "engine/native/equilibrium/gibbs_minimizer.cpp": 1790935477428563179,
+      "engine/native/equilibrium/request_compile.cpp": 1790915612053935625
+    },
+    "thread_environment": {
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1"
+    }
+  },
+  "inputs": {
+    "reacting/reference": {
+      "path": "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json",
+      "sha256": "59b4238a3f6708248b67537ccfd1649d26254025e3d703a7d8c3e19375a57f19",
+      "construction": "equilibrium_checks.cpp manufactured charged reference; one Liquid x* state, frozen g",
+      "reference_wheel_sha256": "6e4b4e294439b26351e21c8b16041288959b3f794d3f30e0175118943e698192",
+      "operands_csv": "/home/tnnrpolley21/.t3/worktrees/ePC-SAFT/t3code-223-build-tpd-stability-test-and-phase-35ebff8f/analyses/2026-tpd-phase-discovery/results/diagnostics/reacting-reaction-mapping/reacting.csv",
+      "operands_sha256": "287dd38cef97b6f0919756692f4369dd1631721b4483d83d77a5485dee09d58a",
+      "method": "Continue with the exact already-frozen g/K operands after the constructor mapping correction; no second reference-state evaluation"
+    },
+    "reacting/fixed-TP": {
+      "components": [
+        "water",
+        "sodium-cation",
+        "chloride-anion"
+      ],
+      "T": 298.15,
+      "P": 100000.0,
+      "feed": {
+        "water": 0.0,
+        "sodium-cation": 1.0,
+        "chloride-anion": 1.0
+      },
+      "row_tolerance": 1e-10,
+      "phases": [
+        {
+          "name": "L",
+          "kind": "liquid",
+          "support": null,
+          "amount": {
+            "kind": "Free",
+            "value": null
+          },
+          "composition_guess": [
+            0.98,
+            0.01,
+            0.01
+          ],
+          "packing_guess": null
+        }
+      ],
+      "reaction_operands_csv_case": "reacting/fixed-TP/inputs",
+      "standard_operands_csv_case": "reacting/reference"
+    },
+    "reacting/pinned-free-pressure": {
+      "components": [
+        "water",
+        "sodium-cation",
+        "chloride-anion"
+      ],
+      "T": 298.15,
+      "P": {
+        "kind": "Free",
+        "value": 100000.0
+      },
+      "feed": {
+        "water": 0.0,
+        "sodium-cation": 1.0,
+        "chloride-anion": 1.0
+      },
+      "row_tolerance": 1e-10,
+      "phases": [
+        {
+          "name": "L",
+          "kind": "liquid",
+          "support": null,
+          "amount": {
+            "kind": "Pinned",
+            "value": 0.5050505050505051
+          },
+          "composition_guess": [
+            0.98,
+            0.01,
+            0.01
+          ],
+          "packing_guess": null
+        }
+      ],
+      "reaction_operands_csv_case": "reacting/pinned-free-pressure/inputs",
+      "standard_operands_csv_case": "reacting/reference"
+    }
+  },
+  "costs": {
+    "csv": "reacting-costs.csv",
+    "sha256": "3de46c07ce54d2d3c1e14ab1b5000e30b80ce860781e18552a306a6496306270",
+    "samples": 21,
+    "first_report_work": "sample 0 native work references the identical reported CSV operands",
+    "count_aliases": "iterations/evaluations/Hessian counts alias native work where that map is present"
+  },
+  "failure": null,
+  "failures": [],
+  "unresolved": [
+    {
+      "case": "reacting/fixed-TP/declared-test",
+      "trial": 1,
+      "seed": "near-pure-0",
+      "evidence": "indeterminate",
+      "message": "converged: residual 5.0701976571754684e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 8 iterations, contraction absent, floor 7.638335574634072e-11, amplification 0"
+    },
+    {
+      "case": "reacting/fixed-TP/returned-test",
+      "trial": 1,
+      "seed": "near-pure-0",
+      "evidence": "indeterminate",
+      "message": "converged: residual 5.7219529171488138e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 8 iterations, contraction absent, floor 7.638335574634072e-11, amplification 0"
+    },
+    {
+      "case": "reacting/pinned-free-pressure/declared-test",
+      "trial": 0,
+      "seed": "positive-neutral-base",
+      "evidence": "indeterminate",
+      "message": "converged: residual 2.6846715689136415e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 11 iterations, contraction absent, floor 7.638335574634147e-11, amplification 0"
+    },
+    {
+      "case": "reacting/pinned-free-pressure/declared-test",
+      "trial": 1,
+      "seed": "near-pure-0",
+      "evidence": "indeterminate",
+      "message": "converged: residual 2.0366536794862286e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 8 iterations, contraction absent, floor 7.6383355746341431e-11, amplification 0"
+    }
+  ],
+  "limits": [
+    "numerical verification of the supplied model and finite trial set",
+    "estimated uncertainty is not a rigorous bound",
+    "Refused discovery compiles before admission, including generic-point Jacobian/EOS work inside its private trace; outer zero evaluations denote no observed driver callbacks, not no EOS work.",
+    "no physical validation or global stability certificate"
+  ],
+  "numerical_rows_path": "../qualification-0b297e6f/reacting.csv",
+  "retention": {
+    "original_json_sha256": "20c64887879ad72e6c9e665e314f628cbabddeba78745277e1a96be30e7d01c2",
+    "original_cost_csv_sha256": "33ebee4fd2b02f83f9a68be0e3357d0acc549c1aeb61e7620100108133fa424a",
+    "numerical_rows_sha256": "0e720388eff2aae45e10edf5a12692a83287613f11b3e3a48f6ecd9ec3cd2110",
+    "comparison": "Byte-identical current-wheel numerical CSV linked to its existing 0b297e6f owner; sample-zero work references rebased without changing any observed operand."
+  }
+}

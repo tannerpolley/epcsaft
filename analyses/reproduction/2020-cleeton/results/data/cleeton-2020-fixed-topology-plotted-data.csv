@@ -1,0 +1,5 @@
+case_id,temperature_k,mdea_mass_fraction,co2_loading_mol_per_mol_mdea,h2s_loading_mol_per_mol_mdea,source_subset,source_locator,grepe_status,solver_status,failure
+dicko-fixed-h2s-0p1-co2-0p1,323,0.5,0.1,0.1,Dicko et al. 2010,Figure 16 / Table 3,not-evaluable,ParameterError,"invalid-value (family=k_ij, reason=same-sign-ionic-dispersion-rule)"
+dicko-fixed-h2s-0p3-co2-0p3,323,0.5,0.3,0.3,Dicko et al. 2010,Figure 16 / Table 3,not-evaluable,ParameterError,"invalid-value (family=k_ij, reason=same-sign-ionic-dispersion-rule)"
+dicko-fixed-h2s-0p5-co2-0p5,323,0.5,0.5,0.5,Dicko et al. 2010,Figure 16 / Table 3,not-evaluable,ParameterError,"invalid-value (family=k_ij, reason=same-sign-ionic-dispersion-rule)"
+dicko-fixed-h2s-0p8-co2-0p8,323,0.5,0.8,0.8,Dicko et al. 2010,Figure 16 / Table 3,not-evaluable,ParameterError,"invalid-value (family=k_ij, reason=same-sign-ionic-dispersion-rule)"

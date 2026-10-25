@@ -1,0 +1,24 @@
+# Keys cited by engine/docs/**; the project bibliography is generated from
+# these against the canonical Zotero Better BibTeX export. One key per line.
+Ascani2022
+AscaniHeld2021
+Bulow2019
+Bulow2021
+Chapman1990
+Figiel2025
+Figiel2026Correction
+Gross2001
+Gross2002
+Gross2006
+HamerWu1972
+Held2008
+Ji2012
+Michelsen1982
+MitsosBarton2007
+Perdomo2025
+Pereira2012
+Rueben2024
+Tsanas2019
+Tsanas2022
+Yang2024
+Zuber2014

@@ -1,0 +1,4 @@
+temperature_K,target_pressure_Pa,reference_density_mol_m3,fine_step_Pa,log_bracket_tolerance,fine_relative_error,max_density_bracket_width_mol_m3,max_absolute_pressure_residual_Pa,fine_relative_limit,diagnosis
+200,217800.69494692178,17541.25129083695,0.21780069494692178,1e-14,5.472720527532893e-6,9.822542779147625e-11,6.374029908329248e-7,5e-6,root bracket width amplified by subtracting nearby liquid densities
+200,217800.69494692178,17541.25129083695,0.21780069494692178,2e-15,2.494151169374348e-6,2.546585164964199e-11,3.3053220249712467e-7,5e-6,same native bisection with tighter verification bracket
+200,217800.69494692178,17541.25129083695,0.21780069494692178,5e-16,2.1790211324201891e-7,7.275957614183426e-12,5.663605406880379e-8,5e-6,same native bisection with tighter verification bracket

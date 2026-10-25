@@ -1,0 +1,2454 @@
+{
+ "wheel_sha256": "298a360e532f6f4c5e7ef70c5be45e8b9852310d1c388d6225c504714c3dc410",
+ "gv2006_table2_aad": {
+  "acetone": [
+   [
+    0.55,
+    1.61
+   ],
+   [
+    1.31,
+    2.94
+   ]
+  ],
+  "dimethyl-ether": [
+   [
+    0.24,
+    0.25
+   ],
+   [
+    0.53,
+    0.8
+   ]
+  ],
+  "diethyl-ether": [
+   [
+    0.66,
+    0.68
+   ],
+   [
+    1.01,
+    1.04
+   ]
+  ],
+  "dimethyl-sulfoxide": [
+   [
+    0.46,
+    1.45
+   ],
+   [
+    0.33,
+    0.58
+   ]
+  ]
+ },
+ "fits": {
+  "acetone/nonpolar/refit": {
+   "coordinates": {
+    "segment_count": {
+     "origin": 2.7447,
+     "scale": 0.5,
+     "bounds": [
+      1.0,
+      6.0
+     ]
+    },
+    "segment_diameter": {
+     "origin": 3.2742,
+     "scale": 0.2,
+     "bounds": [
+      2.5,
+      4.5
+     ]
+    },
+    "dispersion_energy_over_k": {
+     "origin": 232.99,
+     "scale": 20.0,
+     "bounds": [
+      100.0,
+      450.0
+     ]
+    }
+   },
+   "optimizer_starts": [
+    [
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.5824750000000009
+    ],
+    [
+     0.0,
+     0.0,
+     1.1649500000000017
+    ]
+   ],
+   "starts": [
+    {
+     "eps_factor": 1.0,
+     "status": "initial_evaluation_failed",
+     "message": "boundary seed has no coexisting density roots",
+     "usable": false,
+     "final_cost": null,
+     "sse": null,
+     "fitted": null,
+     "trial_failures": 1,
+     "failures": [
+      {
+       "observation": 22,
+       "status": "CentralSolveUnavailable",
+       "message": "boundary seed has no coexisting density roots"
+      }
+     ],
+     "covariance_status": "not_evaluated",
+     "rank": 0,
+     "singular_values": [],
+     "active_bounds": [],
+     "physical_covariance": [],
+     "variance_factor": null,
+     "projected_gradient_norm": 0.0
+    },
+    {
+     "eps_factor": 1.05,
+     "status": "converged",
+     "message": "Function tolerance reached. |cost_change|/cost: 5.093250e-13 <= 1.000000e-12",
+     "usable": true,
+     "final_cost": 0.004395347977179499,
+     "sse": 0.008790695954358997,
+     "fitted": [
+      2.727386916195363,
+      3.2819292249351464,
+      255.7727697001365
+     ],
+     "trial_failures": 0,
+     "failures": [],
+     "covariance_status": "available",
+     "rank": 3,
+     "singular_values": [
+      6.9724964059918815,
+      0.7475008046736031,
+      0.2262194733534797
+     ],
+     "active_bounds": [],
+     "physical_covariance": [
+      1.1888745205724098,
+      -0.43067848059163405,
+      -70.98141123345107,
+      -0.43067848059163405,
+      0.23517208131206035,
+      24.521231578196435,
+      -70.98141123345107,
+      24.521231578196435,
+      4286.460225503711
+     ],
+     "variance_factor": 0.00041860456925519034,
+     "projected_gradient_norm": 6.310865274805622e-08
+    },
+    {
+     "eps_factor": 1.1,
+     "status": "converged",
+     "message": "Function tolerance reached. |cost_change|/cost: 4.061181e-13 <= 1.000000e-12",
+     "usable": true,
+     "final_cost": 0.00439534797717878,
+     "sse": 0.00879069595435756,
+     "fitted": [
+      2.7273867770146056,
+      3.281929269053109,
+      255.77277826814753
+     ],
+     "trial_failures": 0,
+     "failures": [],
+     "covariance_status": "available",
+     "rank": 3,
+     "singular_values": [
+      6.972496593017265,
+      0.7475007895788129,
+      0.22621946506299523
+     ],
+     "active_bounds": [],
+     "physical_covariance": [
+      1.1888744558684667,
+      -0.43067848404230524,
+      -70.98141404149683,
+      -0.43067848404230524,
+      0.23517209478144904,
+      24.52123412553865,
+      -70.98141404149685,
+      24.52123412553865,
+      4286.460795708498
+     ],
+     "variance_factor": 0.0004186045692551219,
+     "projected_gradient_norm": 4.26148496490697e-08
+    }
+   ],
+   "selected_eps_factor": 1.1,
+   "status": "converged",
+   "usable": true,
+   "fitted": {
+    "segment_count": 2.7273867770146056,
+    "segment_diameter": 3.281929269053109,
+    "dispersion_energy_over_k": 255.77277826814753
+   },
+   "final_cost": 0.00439534797717878,
+   "sse": 0.00879069595435756,
+   "trial_failures": 0,
+   "covariance_status": "available",
+   "rank": 3,
+   "singular_values": [
+    6.972496593017265,
+    0.7475007895788129,
+    0.22621946506299523
+   ],
+   "condition_number": 30.821824245210895,
+   "correlation": [
+    [
+     1.0,
+     -0.8145022416961064,
+     -0.9943223944686032
+    ],
+    [
+     -0.8145022416961064,
+     1.0,
+     0.7723248382363728
+    ],
+    [
+     -0.9943223944686034,
+     0.7723248382363728,
+     1.0
+    ]
+   ],
+   "active_bounds": [],
+   "physical_covariance": [
+    1.1888744558684667,
+    -0.43067848404230524,
+    -70.98141404149683,
+    -0.43067848404230524,
+    0.23517209478144904,
+    24.52123412553865,
+    -70.98141404149685,
+    24.52123412553865,
+    4286.460795708498
+   ],
+   "variance_factor": 0.0004186045692551219,
+   "covariance_assumption": "unit-variance weighted residuals, independent errors and a regular local linearization at an interior point; multiply by variance_factor for an unknown common variance; no claim under bounds, rank deficiency or model discrepancy"
+  },
+  "acetone/polar/refit": {
+   "coordinates": {
+    "segment_count": {
+     "origin": 2.7447,
+     "scale": 0.5,
+     "bounds": [
+      1.0,
+      6.0
+     ]
+    },
+    "segment_diameter": {
+     "origin": 3.2742,
+     "scale": 0.2,
+     "bounds": [
+      2.5,
+      4.5
+     ]
+    },
+    "dispersion_energy_over_k": {
+     "origin": 232.99,
+     "scale": 20.0,
+     "bounds": [
+      100.0,
+      450.0
+     ]
+    }
+   },
+   "optimizer_starts": [
+    [
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.5824750000000009
+    ],
+    [
+     0.0,
+     0.0,
+     1.1649500000000017
+    ]
+   ],
+   "starts": [
+    {
+     "eps_factor": 1.0,
+     "status": "converged",
+     "message": "Function tolerance reached. |cost_change|/cost: 2.328464e-13 <= 1.000000e-12",
+     "usable": true,
+     "final_cost": 0.001955645310179666,
+     "sse": 0.003911290620359332,
+     "fitted": [
+      2.792438696931513,
+      3.2482210842453405,
+      230.95955584898815
+     ],
+     "trial_failures": 0,
+     "failures": [],
+     "covariance_status": "available",
+     "rank": 3,
+     "singular_values": [
+      5.124731083521478,
+      0.8974533936567268,
+      0.2890923031145059
+     ],
+     "active_bounds": [],
+     "physical_covariance": [
+      0.8391971060815218,
+      -0.31164454532594466,
+      -40.23819788364976,
+      -0.31164454532594466,
+      0.19739982574190298,
+      16.18636300997093,
+      -40.23819788364976,
+      16.18636300997093,
+      1981.3076166996366
+     ],
+     "variance_factor": 0.00018625193430282534,
+     "projected_gradient_norm": 9.952025870063608e-10
+    },
+    {
+     "eps_factor": 1.05,
+     "status": "converged",
+     "message": "Function tolerance reached. |cost_change|/cost: 4.692409e-13 <= 1.000000e-12",
+     "usable": true,
+     "final_cost": 0.0019556453101798625,
+     "sse": 0.003911290620359725,
+     "fitted": [
+      2.7924386879091476,
+      3.2482210890653933,
+      230.95955632277287
+     ],
+     "trial_failures": 0,
+     "failures": [],
+     "covariance_status": "available",
+     "rank": 3,
+     "singular_values": [
+      5.1247310877464285,
+      0.8974533926666393,
+      0.28909230262656527
+     ],
+     "active_bounds": [],
+     "physical_covariance": [
+      0.8391971021505223,
+      -0.3116445453614413,
+      -40.2381979464921,
+      -0.3116445453614413,
+      0.19739982656985988,
+      16.186363106772657,
+      -40.2381979464921,
+      16.186363106772653,
+      1981.3076319368495
+     ],
+     "variance_factor": 0.00018625193430284404,
+     "projected_gradient_norm": 1.082914023731174e-08
+    },
+    {
+     "eps_factor": 1.1,
+     "status": "converged",
+     "message": "Function tolerance reached. |cost_change|/cost: 9.180800e-14 <= 1.000000e-12",
+     "usable": true,
+     "final_cost": 0.0019556453101788546,
+     "sse": 0.003911290620357709,
+     "fitted": [
+      2.7924386968751076,
+      3.248221084461669,
+      230.95955585587757
+     ],
+     "trial_failures": 0,
+     "failures": [],
+     "covariance_status": "available",
+     "rank": 3,
+     "singular_values": [
+      5.124731083874547,
+      0.8974533935770728,
+      0.28909230309254025
+     ],
+     "active_bounds": [],
+     "physical_covariance": [
+      0.8391971061416489,
+      -0.31164454536845243,
+      -40.238197889372074,
+      -0.3116445453684524,
+      0.19739982577450388,
+      16.18636301249263,
+      -40.238197889372074,
+      16.186363012492635,
+      1981.3076170908016
+     ],
+     "variance_factor": 0.00018625193430274806,
+     "projected_gradient_norm": 1.9070982293367678e-10
+    }
+   ],
+   "selected_eps_factor": 1.1,
+   "status": "converged",
+   "usable": true,
+   "fitted": {
+    "segment_count": 2.7924386968751076,
+    "segment_diameter": 3.248221084461669,
+    "dispersion_energy_over_k": 230.95955585587757
+   },
+   "final_cost": 0.0019556453101788546,
+   "sse": 0.003911290620357709,
+   "trial_failures": 0,
+   "covariance_status": "available",
+   "rank": 3,
+   "singular_values": [
+    5.124731083874547,
+    0.8974533935770728,
+    0.28909230309254025
+   ],
+   "condition_number": 17.726971728590396,
+   "correlation": [
+    [
+     1.0,
+     -0.7656920865138451,
+     -0.9868032672922626
+    ],
+    [
+     -0.7656920865138449,
+     1.0,
+     0.8184646732002514
+    ],
+    [
+     -0.9868032672922626,
+     0.8184646732002516,
+     1.0
+    ]
+   ],
+   "active_bounds": [],
+   "physical_covariance": [
+    0.8391971061416489,
+    -0.31164454536845243,
+    -40.238197889372074,
+    -0.3116445453684524,
+    0.19739982577450388,
+    16.18636301249263,
+    -40.238197889372074,
+    16.186363012492635,
+    1981.3076170908016
+   ],
+   "variance_factor": 0.00018625193430274806,
+   "covariance_assumption": "unit-variance weighted residuals, independent errors and a regular local linearization at an interior point; multiply by variance_factor for an unknown common variance; no claim under bounds, rank deficiency or model discrepancy"
+  },
+  "dimethyl-ether/polar/refit": {
+   "coordinates": {
+    "segment_count": {
+     "origin": 2.2634,
+     "scale": 0.5,
+     "bounds": [
+      1.0,
+      6.0
+     ]
+    },
+    "segment_diameter": {
+     "origin": 3.2723,
+     "scale": 0.2,
+     "bounds": [
+      2.5,
+      4.5
+     ]
+    },
+    "dispersion_energy_over_k": {
+     "origin": 210.29,
+     "scale": 20.0,
+     "bounds": [
+      100.0,
+      450.0
+     ]
+    }
+   },
+   "optimizer_starts": [
+    [
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.5257249999999999
+    ],
+    [
+     0.0,
+     0.0,
+     1.0514500000000013
+    ]
+   ],
+   "starts": [
+    {
+     "eps_factor": 1.0,
+     "status": "converged",
+     "message": "Function tolerance reached. |cost_change|/cost: 4.466286e-13 <= 1.000000e-12",
+     "usable": true,
+     "final_cost": 9.949819113179389e-05,
+     "sse": 0.00019899638226358778,
+     "fitted": [
+      2.2561705904989116,
+      3.2642468832522695,
+      210.9440902548775
+     ],
+     "trial_failures": 0,
+     "failures": [],
+     "covariance_status": "available",
+     "rank": 3,
+     "singular_values": [
+      5.265810008107601,
+      0.8214363707097435,
+      0.13269711599886724
+     ],
+     "active_bounds": [],
+     "physical_covariance": [
+      3.200951059856513,
+      -1.631351244806004,
+      -170.14055408134232,
+      -1.631351244806004,
+      0.9095356470001393,
+      85.6445193759293,
+      -170.14055408134232,
+      85.64451937592933,
+      9106.622727990094
+     ],
+     "variance_factor": 9.47601820302799e-06,
+     "projected_gradient_norm": 3.707814610898197e-11
+    },
+    {
+     "eps_factor": 1.05,
+     "status": "converged",
+     "message": "Function tolerance reached. |cost_change|/cost: 1.381157e-13 <= 1.000000e-12",
+     "usable": true,
+     "final_cost": 9.949819113183544e-05,
+     "sse": 0.0001989963822636709,
+     "fitted": [
+      2.2561705952103983,
+      3.264246880959109,
+      210.94408999886164
+     ],
+     "trial_failures": 0,
+     "failures": [],
+     "covariance_status": "available",
+     "rank": 3,
+     "singular_values": [
+      5.2658100035049475,
+      0.8214363714358276,
+      0.13269711623080568
+     ],
+     "active_bounds": [],
+     "physical_covariance": [
+      3.2009510643941623,
+      -1.6313512426983974,
+      -170.1405537036027,
+      -1.6313512426983974,
+      0.9095356435492848,
+      85.64451895101679,
+      -170.1405537036027,
+      85.64451895101678,
+      9106.622674805067
+     ],
+     "variance_factor": 9.476018203031947e-06,
+     "projected_gradient_norm": 1.7263253118682265e-09
+    },
+    {
+     "eps_factor": 1.1,
+     "status": "initial_evaluation_failed",
+     "message": "boundary seed has no coexisting density roots",
+     "usable": false,
+     "final_cost": null,
+     "sse": null,
+     "fitted": null,
+     "trial_failures": 1,
+     "failures": [
+      {
+       "observation": 22,
+       "status": "CentralSolveUnavailable",
+       "message": "boundary seed has no coexisting density roots"
+      }
+     ],
+     "covariance_status": "not_evaluated",
+     "rank": 0,
+     "singular_values": [],
+     "active_bounds": [],
+     "physical_covariance": [],
+     "variance_factor": null,
+     "projected_gradient_norm": 0.0
+    }
+   ],
+   "selected_eps_factor": 1.0,
+   "status": "converged",
+   "usable": true,
+   "fitted": {
+    "segment_count": 2.2561705904989116,
+    "segment_diameter": 3.2642468832522695,
+    "dispersion_energy_over_k": 210.9440902548775
+   },
+   "final_cost": 9.949819113179389e-05,
+   "sse": 0.00019899638226358778,
+   "trial_failures": 0,
+   "covariance_status": "available",
+   "rank": 3,
+   "singular_values": [
+    5.265810008107601,
+    0.8214363707097435,
+    0.13269711599886724
+   ],
+   "condition_number": 39.682927307572776,
+   "correlation": [
+    [
+     1.0,
+     -0.9560885103980618,
+     -0.9965283383797083
+    ],
+    [
+     -0.9560885103980618,
+     1.0,
+     0.9410464087440574
+    ],
+    [
+     -0.9965283383797083,
+     0.9410464087440578,
+     1.0
+    ]
+   ],
+   "active_bounds": [],
+   "physical_covariance": [
+    3.200951059856513,
+    -1.631351244806004,
+    -170.14055408134232,
+    -1.631351244806004,
+    0.9095356470001393,
+    85.6445193759293,
+    -170.14055408134232,
+    85.64451937592933,
+    9106.622727990094
+   ],
+   "variance_factor": 9.47601820302799e-06,
+   "covariance_assumption": "unit-variance weighted residuals, independent errors and a regular local linearization at an interior point; multiply by variance_factor for an unknown common variance; no claim under bounds, rank deficiency or model discrepancy"
+  },
+  "dimethyl-ether/nonpolar/refit": {
+   "coordinates": {
+    "segment_count": {
+     "origin": 2.3071,
+     "scale": 0.5,
+     "bounds": [
+      1.0,
+      6.0
+     ]
+    },
+    "segment_diameter": {
+     "origin": 3.2528,
+     "scale": 0.2,
+     "bounds": [
+      2.5,
+      4.5
+     ]
+    },
+    "dispersion_energy_over_k": {
+     "origin": 211.06,
+     "scale": 20.0,
+     "bounds": [
+      100.0,
+      450.0
+     ]
+    }
+   },
+   "optimizer_starts": [
+    [
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.5276499999999998
+    ],
+    [
+     0.0,
+     0.0,
+     1.0553000000000012
+    ]
+   ],
+   "starts": [
+    {
+     "eps_factor": 1.0,
+     "status": "converged",
+     "message": "Function tolerance reached. |cost_change|/cost: 1.177163e-13 <= 1.000000e-12",
+     "usable": true,
+     "final_cost": 0.0002127578654475796,
+     "sse": 0.0004255157308951592,
+     "fitted": [
+      2.299408145898566,
+      3.2432684710283346,
+      211.8379268460867
+     ],
+     "trial_failures": 0,
+     "failures": [],
+     "covariance_status": "available",
+     "rank": 3,
+     "singular_values": [
+      5.549186192283208,
+      0.795895150136344,
+      0.13221385408772776
+     ],
+     "active_bounds": [],
+     "physical_covariance": [
+      3.283319670154834,
+      -1.6317032156245785,
+      -174.93742666227288,
+      -1.6317032156245785,
+      0.8879628735649545,
+      85.49571031598668,
+      -174.93742666227286,
+      85.49571031598666,
+      9394.149543774149
+     ],
+     "variance_factor": 2.026265385215044e-05,
+     "projected_gradient_norm": 1.5251502144542073e-10
+    },
+    {
+     "eps_factor": 1.05,
+     "status": "converged",
+     "message": "Function tolerance reached. |cost_change|/cost: 2.601479e-13 <= 1.000000e-12",
+     "usable": true,
+     "final_cost": 0.0002127578654476119,
+     "sse": 0.0004255157308952238,
+     "fitted": [
+      2.299408157486553,
+      3.2432684656093613,
+      211.83792621094528
+     ],
+     "trial_failures": 0,
+     "failures": [],
+     "covariance_status": "available",
+     "rank": 3,
+     "singular_values": [
+      5.549186178907701,
+      0.7958951520271406,
+      0.13221385468489782
+     ],
+     "active_bounds": [],
+     "physical_covariance": [
+      3.283319679525448,
+      -1.6317032097389998,
+      -174.9374256035466,
+      -1.6317032097389994,
+      0.8879628651053676,
+      85.49570923761138,
+      -174.93742560354656,
+      85.49570923761136,
+      9394.149403731417
+     ],
+     "variance_factor": 2.0262653852153515e-05,
+     "projected_gradient_norm": 5.0348854252479924e-09
+    },
+    {
+     "eps_factor": 1.1,
+     "status": "initial_evaluation_failed",
+     "message": "boundary seed has no coexisting density roots",
+     "usable": false,
+     "final_cost": null,
+     "sse": null,
+     "fitted": null,
+     "trial_failures": 1,
+     "failures": [
+      {
+       "observation": 22,
+       "status": "CentralSolveUnavailable",
+       "message": "boundary seed has no coexisting density roots"
+      }
+     ],
+     "covariance_status": "not_evaluated",
+     "rank": 0,
+     "singular_values": [],
+     "active_bounds": [],
+     "physical_covariance": [],
+     "variance_factor": null,
+     "projected_gradient_norm": 0.0
+    }
+   ],
+   "selected_eps_factor": 1.0,
+   "status": "converged",
+   "usable": true,
+   "fitted": {
+    "segment_count": 2.299408145898566,
+    "segment_diameter": 3.2432684710283346,
+    "dispersion_energy_over_k": 211.8379268460867
+   },
+   "final_cost": 0.0002127578654475796,
+   "sse": 0.0004255157308951592,
+   "trial_failures": 0,
+   "covariance_status": "available",
+   "rank": 3,
+   "singular_values": [
+    5.549186192283208,
+    0.795895150136344,
+    0.13221385408772776
+   ],
+   "condition_number": 41.97129136407415,
+   "correlation": [
+    [
+     1.0,
+     -0.9556242923808941,
+     -0.9960873272490415
+    ],
+    [
+     -0.9556242923808941,
+     1.0,
+     0.9360912510023603
+    ],
+    [
+     -0.9960873272490413,
+     0.93609125100236,
+     1.0
+    ]
+   ],
+   "active_bounds": [],
+   "physical_covariance": [
+    3.283319670154834,
+    -1.6317032156245785,
+    -174.93742666227288,
+    -1.6317032156245785,
+    0.8879628735649545,
+    85.49571031598668,
+    -174.93742666227286,
+    85.49571031598666,
+    9394.149543774149
+   ],
+   "variance_factor": 2.026265385215044e-05,
+   "covariance_assumption": "unit-variance weighted residuals, independent errors and a regular local linearization at an interior point; multiply by variance_factor for an unknown common variance; no claim under bounds, rank deficiency or model discrepancy"
+  },
+  "diethyl-ether/polar/refit": {
+   "coordinates": {
+    "segment_count": {
+     "origin": 2.9726,
+     "scale": 0.5,
+     "bounds": [
+      1.0,
+      6.0
+     ]
+    },
+    "segment_diameter": {
+     "origin": 3.5127,
+     "scale": 0.2,
+     "bounds": [
+      2.5,
+      4.5
+     ]
+    },
+    "dispersion_energy_over_k": {
+     "origin": 219.53,
+     "scale": 20.0,
+     "bounds": [
+      100.0,
+      450.0
+     ]
+    }
+   },
+   "optimizer_starts": [
+    [
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.5488250000000008
+    ],
+    [
+     0.0,
+     0.0,
+     1.0976500000000016
+    ]
+   ],
+   "starts": [
+    {
+     "eps_factor": 1.0,
+     "status": "converged",
+     "message": "Function tolerance reached. |cost_change|/cost: 1.188906e-13 <= 1.000000e-12",
+     "usable": true,
+     "final_cost": 0.00015594052922692373,
+     "sse": 0.00031188105845384747,
+     "fitted": [
+      2.9634743787627165,
+      3.509502910941282,
+      219.9263021446481
+     ],
+     "trial_failures": 0,
+     "failures": [],
+     "covariance_status": "available",
+     "rank": 3,
+     "singular_values": [
+      4.30712075897463,
+      0.7565784167440249,
+      0.10890513187460665
+     ],
+     "active_bounds": [],
+     "physical_covariance": [
+      6.692074337873837,
+      -2.8849317934571377,
+      -262.87944151699,
+      -2.8849317934571377,
+      1.3331649169834359,
+      111.75070622592612,
+      -262.87944151699,
+      111.75070622592612,
+      10407.273253607784
+     ],
+     "variance_factor": 1.4851478973992737e-05,
+     "projected_gradient_norm": 4.161773009547787e-11
+    },
+    {
+     "eps_factor": 1.05,
+     "status": "converged",
+     "message": "Function tolerance reached. |cost_change|/cost: 1.564349e-13 <= 1.000000e-12",
+     "usable": true,
+     "final_cost": 0.00015594052922700199,
+     "sse": 0.00031188105845400397,
+     "fitted": [
+      2.963474396781309,
+      3.5095029035066734,
+      219.92630141926242
+     ],
+     "trial_failures": 0,
+     "failures": [],
+     "covariance_status": "available",
+     "rank": 3,
+     "singular_values": [
+      4.307120752009776,
+      0.7565784187226262,
+      0.1089051324367968
+     ],
+     "active_bounds": [],
+     "physical_covariance": [
+      6.692074351861342,
+      -2.8849317773651175,
+      -262.8794391914291,
+      -2.884931777365118,
+      1.333164900077064,
+      111.750704366787,
+      -262.87943919142907,
+      111.75070436678698,
+      10407.273048506702
+     ],
+     "variance_factor": 1.4851478974000189e-05,
+     "projected_gradient_norm": 4.443986328234173e-09
+    },
+    {
+     "eps_factor": 1.1,
+     "status": "initial_evaluation_failed",
+     "message": "boundary seed has no coexisting density roots",
+     "usable": false,
+     "final_cost": null,
+     "sse": null,
+     "fitted": null,
+     "trial_failures": 1,
+     "failures": [
+      {
+       "observation": 22,
+       "status": "CentralSolveUnavailable",
+       "message": "boundary seed has no coexisting density roots"
+      }
+     ],
+     "covariance_status": "not_evaluated",
+     "rank": 0,
+     "singular_values": [],
+     "active_bounds": [],
+     "physical_covariance": [],
+     "variance_factor": null,
+     "projected_gradient_norm": 0.0
+    }
+   ],
+   "selected_eps_factor": 1.0,
+   "status": "converged",
+   "usable": true,
+   "fitted": {
+    "segment_count": 2.9634743787627165,
+    "segment_diameter": 3.509502910941282,
+    "dispersion_energy_over_k": 219.9263021446481
+   },
+   "final_cost": 0.00015594052922692373,
+   "sse": 0.00031188105845384747,
+   "trial_failures": 0,
+   "covariance_status": "available",
+   "rank": 3,
+   "singular_values": [
+    4.30712075897463,
+    0.7565784167440249,
+    0.10890513187460665
+   ],
+   "condition_number": 39.54929106494126,
+   "correlation": [
+    [
+     1.0,
+     -0.9658578933025593,
+     -0.9961110695913912
+    ],
+    [
+     -0.9658578933025593,
+     1.0,
+     0.9487239394597123
+    ],
+    [
+     -0.9961110695913912,
+     0.9487239394597123,
+     1.0
+    ]
+   ],
+   "active_bounds": [],
+   "physical_covariance": [
+    6.692074337873837,
+    -2.8849317934571377,
+    -262.87944151699,
+    -2.8849317934571377,
+    1.3331649169834359,
+    111.75070622592612,
+    -262.87944151699,
+    111.75070622592612,
+    10407.273253607784
+   ],
+   "variance_factor": 1.4851478973992737e-05,
+   "covariance_assumption": "unit-variance weighted residuals, independent errors and a regular local linearization at an interior point; multiply by variance_factor for an unknown common variance; no claim under bounds, rank deficiency or model discrepancy"
+  },
+  "diethyl-ether/nonpolar/refit": {
+   "coordinates": {
+    "segment_count": {
+     "origin": 2.9686,
+     "scale": 0.5,
+     "bounds": [
+      1.0,
+      6.0
+     ]
+    },
+    "segment_diameter": {
+     "origin": 3.5147,
+     "scale": 0.2,
+     "bounds": [
+      2.5,
+      4.5
+     ]
+    },
+    "dispersion_energy_over_k": {
+     "origin": 220.09,
+     "scale": 20.0,
+     "bounds": [
+      100.0,
+      450.0
+     ]
+    }
+   },
+   "optimizer_starts": [
+    [
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.5502250000000004
+    ],
+    [
+     0.0,
+     0.0,
+     1.1004500000000008
+    ]
+   ],
+   "starts": [
+    {
+     "eps_factor": 1.0,
+     "status": "converged",
+     "message": "Function tolerance reached. |cost_change|/cost: 1.683515e-13 <= 1.000000e-12",
+     "usable": true,
+     "final_cost": 0.0001717899572495261,
+     "sse": 0.0003435799144990522,
+     "fitted": [
+      2.973549758854933,
+      3.5054259944600963,
+      219.97643595467898
+     ],
+     "trial_failures": 0,
+     "failures": [],
+     "covariance_status": "available",
+     "rank": 3,
+     "singular_values": [
+      4.338404333804173,
+      0.7536379019754137,
+      0.10924776331673154
+     ],
+     "active_bounds": [],
+     "physical_covariance": [
+      6.6730987292570925,
+      -2.864967150343804,
+      -262.01789122769196,
+      -2.8649671503438046,
+      1.3192557605115072,
+      110.85791660048278,
+      -262.01789122769196,
+      110.85791660048278,
+      10370.663891168024
+     ],
+     "variance_factor": 1.636094830947868e-05,
+     "projected_gradient_norm": 3.184166638692254e-09
+    },
+    {
+     "eps_factor": 1.05,
+     "status": "converged",
+     "message": "Function tolerance reached. |cost_change|/cost: 4.449402e-14 <= 1.000000e-12",
+     "usable": true,
+     "final_cost": 0.00017178995724947702,
+     "sse": 0.00034357991449895405,
+     "fitted": [
+      2.9735498073201043,
+      3.505425974268278,
+      219.9764340190403
+     ],
+     "trial_failures": 0,
+     "failures": [],
+     "covariance_status": "available",
+     "rank": 3,
+     "singular_values": [
+      4.338404314623562,
+      0.7536379073476331,
+      0.10924776482617406
+     ],
+     "active_bounds": [],
+     "physical_covariance": [
+      6.673098767095369,
+      -2.864967107409485,
+      -262.0178850404557,
+      -2.8649671074094853,
+      1.3192557155061237,
+      110.85791165553802,
+      -262.0178850404558,
+      110.85791165553802,
+      10370.663344704544
+     ],
+     "variance_factor": 1.6360948309474003e-05,
+     "projected_gradient_norm": 4.904565353673618e-09
+    },
+    {
+     "eps_factor": 1.1,
+     "status": "initial_evaluation_failed",
+     "message": "boundary seed has no coexisting density roots",
+     "usable": false,
+     "final_cost": null,
+     "sse": null,
+     "fitted": null,
+     "trial_failures": 1,
+     "failures": [
+      {
+       "observation": 22,
+       "status": "CentralSolveUnavailable",
+       "message": "boundary seed has no coexisting density roots"
+      }
+     ],
+     "covariance_status": "not_evaluated",
+     "rank": 0,
+     "singular_values": [],
+     "active_bounds": [],
+     "physical_covariance": [],
+     "variance_factor": null,
+     "projected_gradient_norm": 0.0
+    }
+   ],
+   "selected_eps_factor": 1.05,
+   "status": "converged",
+   "usable": true,
+   "fitted": {
+    "segment_count": 2.9735498073201043,
+    "segment_diameter": 3.505425974268278,
+    "dispersion_energy_over_k": 219.9764340190403
+   },
+   "final_cost": 0.00017178995724947702,
+   "sse": 0.00034357991449895405,
+   "trial_failures": 0,
+   "covariance_status": "available",
+   "rank": 3,
+   "singular_values": [
+    4.338404314623562,
+    0.7536379073476331,
+    0.10924776482617406
+   ],
+   "condition_number": 39.711607111838575,
+   "correlation": [
+    [
+     1.0,
+     -0.9655869144852847,
+     -0.9960104436247826
+    ],
+    [
+     -0.9655869144852848,
+     1.0,
+     0.9477612161777322
+    ],
+    [
+     -0.9960104436247829,
+     0.9477612161777322,
+     1.0
+    ]
+   ],
+   "active_bounds": [],
+   "physical_covariance": [
+    6.673098767095369,
+    -2.864967107409485,
+    -262.0178850404557,
+    -2.8649671074094853,
+    1.3192557155061237,
+    110.85791165553802,
+    -262.0178850404558,
+    110.85791165553802,
+    10370.663344704544
+   ],
+   "variance_factor": 1.6360948309474003e-05,
+   "covariance_assumption": "unit-variance weighted residuals, independent errors and a regular local linearization at an interior point; multiply by variance_factor for an unknown common variance; no claim under bounds, rank deficiency or model discrepancy"
+  },
+  "dimethyl-sulfoxide/nonpolar/refit": {
+   "coordinates": {
+    "segment_count": {
+     "origin": 3.0243,
+     "scale": 0.5,
+     "bounds": [
+      1.0,
+      6.0
+     ]
+    },
+    "segment_diameter": {
+     "origin": 3.2427,
+     "scale": 0.2,
+     "bounds": [
+      2.5,
+      4.5
+     ]
+    },
+    "dispersion_energy_over_k": {
+     "origin": 309.36,
+     "scale": 20.0,
+     "bounds": [
+      100.0,
+      450.0
+     ]
+    }
+   },
+   "optimizer_starts": [
+    [
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.7734000000000009
+    ],
+    [
+     0.0,
+     0.0,
+     1.5468000000000017
+    ]
+   ],
+   "starts": [
+    {
+     "eps_factor": 1.0,
+     "status": "converged",
+     "message": "Function tolerance reached. |cost_change|/cost: 2.310995e-14 <= 1.000000e-12",
+     "usable": true,
+     "final_cost": 0.0014355973461676248,
+     "sse": 0.0028711946923352496,
+     "fitted": [
+      2.811867666496234,
+      3.324162426560119,
+      364.5171187471159
+     ],
+     "trial_failures": 0,
+     "failures": [],
+     "covariance_status": "available",
+     "rank": 3,
+     "singular_values": [
+      8.243631564309458,
+      0.4784082910169143,
+      0.13152777424600914
+     ],
+     "active_bounds": [],
+     "physical_covariance": [
+      2.430011781863793,
+      -0.7944086646053147,
+      -200.64910559834487,
+      -0.7944086646053147,
+      0.4305083465842753,
+      61.92698389918566,
+      -200.64910559834487,
+      61.92698389918566,
+      16682.447961660382
+     ],
+     "variance_factor": 0.00014355973461676247,
+     "projected_gradient_norm": 2.753057337656628e-09
+    },
+    {
+     "eps_factor": 1.05,
+     "status": "converged",
+     "message": "Function tolerance reached. |cost_change|/cost: 2.433342e-13 <= 1.000000e-12",
+     "usable": true,
+     "final_cost": 0.001435597346167856,
+     "sse": 0.002871194692335712,
+     "fitted": [
+      2.8118676662247943,
+      3.3241624266454872,
+      364.51711876966027
+     ],
+     "trial_failures": 0,
+     "failures": [],
+     "covariance_status": "available",
+     "rank": 3,
+     "singular_values": [
+      8.243631564873565,
+      0.47840829100077137,
+      0.13152777423633202
+     ],
+     "active_bounds": [],
+     "physical_covariance": [
+      2.430011781540593,
+      -0.7944086646033304,
+      -200.64910560674036,
+      -0.7944086646033304,
+      0.4305083466271101,
+      61.92698391009142,
+      -200.64910560674036,
+      61.92698391009142,
+      16682.447965268682
+     ],
+     "variance_factor": 0.0001435597346167856,
+     "projected_gradient_norm": 2.7202178287666356e-09
+    },
+    {
+     "eps_factor": 1.1,
+     "status": "converged",
+     "message": "Function tolerance reached. |cost_change|/cost: 2.256619e-13 <= 1.000000e-12",
+     "usable": true,
+     "final_cost": 0.001435597346168176,
+     "sse": 0.002871194692336352,
+     "fitted": [
+      2.811867670576655,
+      3.3241624252783324,
+      364.5171184081545
+     ],
+     "trial_failures": 0,
+     "failures": [],
+     "covariance_status": "available",
+     "rank": 3,
+     "singular_values": [
+      8.2436315558276,
+      0.47840829125940454,
+      0.13152777439149338
+     ],
+     "active_bounds": [],
+     "physical_covariance": [
+      2.4300117867222837,
+      -0.7944086646355071,
+      -200.64910547209672,
+      -0.7944086646355071,
+      0.43050834594074755,
+      61.92698373525881,
+      -200.64910547209672,
+      61.926983735258815,
+      16682.447907411573
+     ],
+     "variance_factor": 0.0001435597346168176,
+     "projected_gradient_norm": 3.263751491289213e-09
+    }
+   ],
+   "selected_eps_factor": 1.0,
+   "status": "converged",
+   "usable": true,
+   "fitted": {
+    "segment_count": 2.811867666496234,
+    "segment_diameter": 3.324162426560119,
+    "dispersion_energy_over_k": 364.5171187471159
+   },
+   "final_cost": 0.0014355973461676248,
+   "sse": 0.0028711946923352496,
+   "trial_failures": 0,
+   "covariance_status": "available",
+   "rank": 3,
+   "singular_values": [
+    8.243631564309458,
+    0.4784082910169143,
+    0.13152777424600914
+   ],
+   "condition_number": 62.675975561561586,
+   "correlation": [
+    [
+     1.0,
+     -0.7766922913085127,
+     -0.9965593063405214
+    ],
+    [
+     -0.7766922913085127,
+     1.0,
+     0.7307338928810777
+    ],
+    [
+     -0.9965593063405214,
+     0.7307338928810777,
+     1.0
+    ]
+   ],
+   "active_bounds": [],
+   "physical_covariance": [
+    2.430011781863793,
+    -0.7944086646053147,
+    -200.64910559834487,
+    -0.7944086646053147,
+    0.4305083465842753,
+    61.92698389918566,
+    -200.64910559834487,
+    61.92698389918566,
+    16682.447961660382
+   ],
+   "variance_factor": 0.00014355973461676247,
+   "covariance_assumption": "unit-variance weighted residuals, independent errors and a regular local linearization at an interior point; multiply by variance_factor for an unknown common variance; no claim under bounds, rank deficiency or model discrepancy"
+  },
+  "dimethyl-sulfoxide/polar/refit": {
+   "coordinates": {
+    "segment_count": {
+     "origin": 3.0243,
+     "scale": 0.5,
+     "bounds": [
+      1.0,
+      6.0
+     ]
+    },
+    "segment_diameter": {
+     "origin": 3.2427,
+     "scale": 0.2,
+     "bounds": [
+      2.5,
+      4.5
+     ]
+    },
+    "dispersion_energy_over_k": {
+     "origin": 309.36,
+     "scale": 20.0,
+     "bounds": [
+      100.0,
+      450.0
+     ]
+    }
+   },
+   "optimizer_starts": [
+    [
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.7734000000000009
+    ],
+    [
+     0.0,
+     0.0,
+     1.5468000000000017
+    ]
+   ],
+   "starts": [
+    {
+     "eps_factor": 1.0,
+     "status": "converged",
+     "message": "Function tolerance reached. |cost_change|/cost: 3.288423e-13 <= 1.000000e-12",
+     "usable": true,
+     "final_cost": 0.0004353724999460795,
+     "sse": 0.000870744999892159,
+     "fitted": [
+      3.018940190967778,
+      3.246361025502367,
+      310.15971797736205
+     ],
+     "trial_failures": 0,
+     "failures": [],
+     "covariance_status": "available",
+     "rank": 3,
+     "singular_values": [
+      5.043049196344184,
+      0.6212036667398477,
+      0.2015347285235511
+     ],
+     "active_bounds": [],
+     "physical_covariance": [
+      1.5366700756641973,
+      -0.5062360465926448,
+      -85.67080131046524,
+      -0.5062360465926448,
+      0.34233311103520875,
+      34.22420103962991,
+      -85.67080131046524,
+      34.224201039629904,
+      5018.554651769213
+     ],
+     "variance_factor": 4.353724999460795e-05,
+     "projected_gradient_norm": 7.175995492270104e-10
+    },
+    {
+     "eps_factor": 1.05,
+     "status": "converged",
+     "message": "Function tolerance reached. |cost_change|/cost: 1.292459e-13 <= 1.000000e-12",
+     "usable": true,
+     "final_cost": 0.0004353724999461436,
+     "sse": 0.0008707449998922873,
+     "fitted": [
+      3.01894018623094,
+      3.246361027263064,
+      310.1597182496671
+     ],
+     "trial_failures": 0,
+     "failures": [],
+     "covariance_status": "available",
+     "rank": 3,
+     "singular_values": [
+      5.043049197237532,
+      0.6212036667680976,
+      0.20153472838925043
+     ],
+     "active_bounds": [],
+     "physical_covariance": [
+      1.5366700709455063,
+      -0.5062360463817338,
+      -85.67080130312522,
+      -0.5062360463817338,
+      0.3423331116263446,
+      34.22420112630562,
+      -85.67080130312522,
+      34.22420112630562,
+      5018.554666433491
+     ],
+     "variance_factor": 4.3537249994614365e-05,
+     "projected_gradient_norm": 2.3291577000428276e-11
+    },
+    {
+     "eps_factor": 1.1,
+     "status": "converged",
+     "message": "Function tolerance reached. |cost_change|/cost: 7.881756e-14 <= 1.000000e-12",
+     "usable": true,
+     "final_cost": 0.0004353724999460393,
+     "sse": 0.0008707449998920787,
+     "fitted": [
+      3.0189401859300062,
+      3.246361027367831,
+      310.1597182667258
+     ],
+     "trial_failures": 0,
+     "failures": [],
+     "covariance_status": "available",
+     "rank": 3,
+     "singular_values": [
+      5.043049197278511,
+      0.6212036667725155,
+      0.20153472838128847
+     ],
+     "active_bounds": [],
+     "physical_covariance": [
+      1.5366700706372611,
+      -0.5062360463654193,
+      -85.67080130205349,
+      -0.5062360463654193,
+      0.3423331116622669,
+      34.2242011316919,
+      -85.67080130205352,
+      34.2242011316919,
+      5018.5546673306035
+     ],
+     "variance_factor": 4.353724999460393e-05,
+     "projected_gradient_norm": 7.111033289985969e-11
+    }
+   ],
+   "selected_eps_factor": 1.1,
+   "status": "converged",
+   "usable": true,
+   "fitted": {
+    "segment_count": 3.0189401859300062,
+    "segment_diameter": 3.246361027367831,
+    "dispersion_energy_over_k": 310.1597182667258
+   },
+   "final_cost": 0.0004353724999460393,
+   "sse": 0.0008707449998920787,
+   "trial_failures": 0,
+   "covariance_status": "available",
+   "rank": 3,
+   "singular_values": [
+    5.043049197278511,
+    0.6212036667725155,
+    0.20153472838128847
+   ],
+   "condition_number": 25.02322670531226,
+   "correlation": [
+    [
+     1.0,
+     -0.6979724738084103,
+     -0.975558198386289
+    ],
+    [
+     -0.6979724738084103,
+     1.0,
+     0.8256947743667732
+    ],
+    [
+     -0.9755581983862893,
+     0.8256947743667732,
+     1.0
+    ]
+   ],
+   "active_bounds": [],
+   "physical_covariance": [
+    1.5366700706372611,
+    -0.5062360463654193,
+    -85.67080130205349,
+    -0.5062360463654193,
+    0.3423331116622669,
+    34.2242011316919,
+    -85.67080130205352,
+    34.2242011316919,
+    5018.5546673306035
+   ],
+   "variance_factor": 4.353724999460393e-05,
+   "covariance_assumption": "unit-variance weighted residuals, independent errors and a regular local linearization at an interior point; multiply by variance_factor for an unknown common variance; no claim under bounds, rank deficiency or model discrepancy"
+  }
+ },
+ "pure_summary": [
+  {
+   "component_id": "acetone",
+   "model": "polar/published",
+   "segment_count": 2.7447,
+   "segment_diameter": 3.2742,
+   "dispersion_energy_over_k": 232.99,
+   "AAD_psat_all": 1.3114735694097581,
+   "AAD_rho_all": 0.9255671804366363,
+   "AAD_psat_validation": 1.04357330228289,
+   "AAD_rho_validation": 0.9679769404458111,
+   "AAD_psat_source_range": 0.6752704324746344,
+   "AAD_rho_source_range": 0.929079531709666,
+   "AAD_psat_stated_u": 0.5167205445536491,
+   "AAD_rho_stated_u": 0.9255671804366363,
+   "failures": 0
+  },
+  {
+   "component_id": "acetone",
+   "model": "nonpolar/refit",
+   "segment_count": 2.7273867770146056,
+   "segment_diameter": 3.281929269053109,
+   "dispersion_energy_over_k": 255.77277826814753,
+   "AAD_psat_all": 0.9314192005381009,
+   "AAD_rho_all": 2.236845496061551,
+   "AAD_psat_validation": 0.9362749363805425,
+   "AAD_rho_validation": 2.4323421996113685,
+   "AAD_psat_source_range": 0.8893183921076564,
+   "AAD_rho_source_range": 2.2397994812351865,
+   "AAD_psat_stated_u": 0.9190208834030603,
+   "AAD_rho_stated_u": 2.236845496061551,
+   "failures": 0
+  },
+  {
+   "component_id": "acetone",
+   "model": "polar/refit",
+   "segment_count": 2.7924386968751076,
+   "segment_diameter": 3.248221084461669,
+   "dispersion_energy_over_k": 230.95955585587757,
+   "AAD_psat_all": 1.3981024797940889,
+   "AAD_rho_all": 0.6118519454901398,
+   "AAD_psat_validation": 1.3047160306462404,
+   "AAD_rho_validation": 0.6694410896417166,
+   "AAD_psat_source_range": 1.363322048826226,
+   "AAD_rho_source_range": 0.6394607472694345,
+   "AAD_psat_stated_u": 1.1892574876101927,
+   "AAD_rho_stated_u": 0.6118519454901398,
+   "failures": 0
+  },
+  {
+   "component_id": "dimethyl-ether",
+   "model": "polar/published",
+   "segment_count": 2.2634,
+   "segment_diameter": 3.2723,
+   "dispersion_energy_over_k": 210.29,
+   "AAD_psat_all": 0.28136428263680346,
+   "AAD_rho_all": 1.2326648741143613,
+   "AAD_psat_validation": 0.2580985896012559,
+   "AAD_rho_validation": 1.1987682452018191,
+   "AAD_psat_source_range": 0.28136428263680346,
+   "AAD_rho_source_range": 1.2326648741143613,
+   "AAD_psat_stated_u": 0.18769445460566692,
+   "AAD_rho_stated_u": 1.2649335878465473,
+   "failures": 0
+  },
+  {
+   "component_id": "dimethyl-ether",
+   "model": "nonpolar/published",
+   "dispersion_energy_over_k": 211.06,
+   "segment_count": 2.3071,
+   "segment_diameter": 3.2528,
+   "AAD_psat_all": 0.3342515160013844,
+   "AAD_rho_all": 1.4086987994854263,
+   "AAD_psat_validation": 0.31384621694753684,
+   "AAD_rho_validation": 1.3537897436330937,
+   "AAD_psat_source_range": 0.3342515160013844,
+   "AAD_rho_source_range": 1.4086987994854263,
+   "AAD_psat_stated_u": 0.24297628816019046,
+   "AAD_rho_stated_u": 1.4692785298065572,
+   "failures": 0
+  },
+  {
+   "component_id": "dimethyl-ether",
+   "model": "polar/refit",
+   "segment_count": 2.2561705904989116,
+   "segment_diameter": 3.2642468832522695,
+   "dispersion_energy_over_k": 210.9440902548775,
+   "AAD_psat_all": 0.15066756567720987,
+   "AAD_rho_all": 0.3507009267206813,
+   "AAD_psat_validation": 0.14654330619078282,
+   "AAD_rho_validation": 0.3749697958524904,
+   "AAD_psat_source_range": 0.15066756567720987,
+   "AAD_rho_source_range": 0.3507009267206813,
+   "AAD_psat_stated_u": 0.16490961398892945,
+   "AAD_rho_stated_u": 0.3129115512216507,
+   "failures": 0
+  },
+  {
+   "component_id": "dimethyl-ether",
+   "model": "nonpolar/refit",
+   "dispersion_energy_over_k": 211.8379268460867,
+   "segment_count": 2.299408145898566,
+   "segment_diameter": 3.2432684710283346,
+   "AAD_psat_all": 0.13437840574695437,
+   "AAD_rho_all": 0.528435754149594,
+   "AAD_psat_validation": 0.1342090838305665,
+   "AAD_rho_validation": 0.5657664401648296,
+   "AAD_psat_source_range": 0.13437840574695437,
+   "AAD_rho_source_range": 0.528435754149594,
+   "AAD_psat_stated_u": 0.1574369364298489,
+   "AAD_rho_stated_u": 0.4668354313959053,
+   "failures": 0
+  },
+  {
+   "component_id": "diethyl-ether",
+   "model": "polar/published",
+   "segment_count": 2.9726,
+   "segment_diameter": 3.5127,
+   "dispersion_energy_over_k": 219.53,
+   "AAD_psat_all": 0.48052366315899375,
+   "AAD_rho_all": 0.6920117388318654,
+   "AAD_psat_validation": 0.4864962122470118,
+   "AAD_rho_validation": 0.7006097890294068,
+   "AAD_psat_source_range": 0.48052366315899375,
+   "AAD_rho_source_range": 0.6920117388318654,
+   "AAD_psat_stated_u": 0.48052366315899375,
+   "AAD_rho_stated_u": 0.6917252608831234,
+   "failures": 0
+  },
+  {
+   "component_id": "diethyl-ether",
+   "model": "nonpolar/published",
+   "dispersion_energy_over_k": 220.09,
+   "segment_count": 2.9686,
+   "segment_diameter": 3.5147,
+   "AAD_psat_all": 0.3924492970519033,
+   "AAD_rho_all": 0.7052860091730673,
+   "AAD_psat_validation": 0.3891741142327459,
+   "AAD_rho_validation": 0.7124068591907515,
+   "AAD_psat_source_range": 0.3924492970519033,
+   "AAD_rho_source_range": 0.7052860091730673,
+   "AAD_psat_stated_u": 0.3924492970519033,
+   "AAD_rho_stated_u": 0.6990928270971909,
+   "failures": 0
+  },
+  {
+   "component_id": "diethyl-ether",
+   "model": "polar/refit",
+   "segment_count": 2.9634743787627165,
+   "segment_diameter": 3.509502910941282,
+   "dispersion_energy_over_k": 219.9263021446481,
+   "AAD_psat_all": 0.3196401962906645,
+   "AAD_rho_all": 0.32740165120429127,
+   "AAD_psat_validation": 0.3231042629847784,
+   "AAD_rho_validation": 0.359232064761128,
+   "AAD_psat_source_range": 0.3196401962906645,
+   "AAD_rho_source_range": 0.32740165120429127,
+   "AAD_psat_stated_u": 0.3196401962906645,
+   "AAD_rho_stated_u": 0.277541490299055,
+   "failures": 0
+  },
+  {
+   "component_id": "diethyl-ether",
+   "model": "nonpolar/refit",
+   "dispersion_energy_over_k": 219.9764340190403,
+   "segment_count": 2.9735498073201043,
+   "segment_diameter": 3.505425974268278,
+   "AAD_psat_all": 0.3306985172835915,
+   "AAD_rho_all": 0.34732256272523526,
+   "AAD_psat_validation": 0.33452957128564204,
+   "AAD_rho_validation": 0.379917653382252,
+   "AAD_psat_source_range": 0.3306985172835915,
+   "AAD_rho_source_range": 0.34732256272523526,
+   "AAD_psat_stated_u": 0.3306985172835915,
+   "AAD_rho_stated_u": 0.2954021226789604,
+   "failures": 0
+  },
+  {
+   "component_id": "dimethyl-sulfoxide",
+   "model": "polar/published",
+   "segment_count": 3.0243,
+   "segment_diameter": 3.2427,
+   "dispersion_energy_over_k": 309.36,
+   "AAD_psat_all": 1.712384746374683,
+   "AAD_rho_all": 0.3909328779882946,
+   "AAD_psat_validation": 1.6822926626571186,
+   "AAD_rho_validation": 0.3559821485162651,
+   "AAD_psat_source_range": 1.712384746374683,
+   "AAD_rho_source_range": 0.3909328779882946,
+   "AAD_psat_stated_u": 1.712384746374683,
+   "AAD_rho_stated_u": 0.3909328779882946,
+   "failures": 0
+  },
+  {
+   "component_id": "dimethyl-sulfoxide",
+   "model": "nonpolar/refit",
+   "segment_count": 2.811867666496234,
+   "segment_diameter": 3.324162426560119,
+   "dispersion_energy_over_k": 364.5171187471159,
+   "AAD_psat_all": 0.8818982251837034,
+   "AAD_rho_all": 0.863166780763784,
+   "AAD_psat_validation": 0.8180359848495266,
+   "AAD_rho_validation": 0.7934122848826552,
+   "AAD_psat_source_range": 0.8818982251837034,
+   "AAD_rho_source_range": 0.863166780763784,
+   "AAD_psat_stated_u": 0.8818982251837034,
+   "AAD_rho_stated_u": 0.863166780763784,
+   "failures": 0
+  },
+  {
+   "component_id": "dimethyl-sulfoxide",
+   "model": "polar/refit",
+   "segment_count": 3.0189401859300062,
+   "segment_diameter": 3.246361027367831,
+   "dispersion_energy_over_k": 310.1597182667258,
+   "AAD_psat_all": 0.4997522306783718,
+   "AAD_rho_all": 0.41086836424211587,
+   "AAD_psat_validation": 0.4419060591517823,
+   "AAD_rho_validation": 0.3864413100802411,
+   "AAD_psat_source_range": 0.4997522306783718,
+   "AAD_rho_source_range": 0.41086836424211587,
+   "AAD_psat_stated_u": 0.4997522306783718,
+   "AAD_rho_stated_u": 0.41086836424211587,
+   "failures": 0
+  }
+ ],
+ "reproduction": [
+  {
+   "component_id": "acetone",
+   "observable": "psat",
+   "gv_pcp": 0.55,
+   "gv_pc": 1.61,
+   "ours_pcp": 1.3114735694097581,
+   "ours_pc_own": 0.9314192005381009,
+   "gv_gap": -1.06,
+   "our_gap": 0.3800543688716572,
+   "reference_bound": null,
+   "gap_resolved": null,
+   "gap_criterion": "fail"
+  },
+  {
+   "component_id": "acetone",
+   "observable": "rho_liq",
+   "gv_pcp": 1.31,
+   "gv_pc": 2.94,
+   "ours_pcp": 0.9255671804366363,
+   "ours_pc_own": 2.236845496061551,
+   "gv_gap": -1.63,
+   "our_gap": -1.3112783156249148,
+   "reference_bound": 0.47703251904796384,
+   "gap_resolved": true,
+   "gap_criterion": "pass"
+  },
+  {
+   "component_id": "acetone",
+   "observable": "psat, source range (secondary)",
+   "gv_pcp": 0.55,
+   "gv_pc": 1.61,
+   "ours_pcp": 0.6752704324746344,
+   "ours_pc_own": 0.8893183921076564,
+   "gv_gap": -1.06,
+   "our_gap": -0.21404795963302203,
+   "reference_bound": null,
+   "gap_resolved": null,
+   "gap_criterion": "fail"
+  },
+  {
+   "component_id": "acetone",
+   "observable": "rho_liq, source range (secondary)",
+   "gv_pcp": 1.31,
+   "gv_pc": 2.94,
+   "ours_pcp": 0.929079531709666,
+   "ours_pc_own": 2.2397994812351865,
+   "gv_gap": -1.63,
+   "our_gap": -1.3107199495255206,
+   "reference_bound": 0.5203991116886878,
+   "gap_resolved": true,
+   "gap_criterion": "pass"
+  },
+  {
+   "component_id": "acetone",
+   "observable": "psat, stated-uncertainty rows (secondary)",
+   "gv_pcp": 0.55,
+   "gv_pc": 1.61,
+   "ours_pcp": 0.5167205445536491,
+   "ours_pc_own": 0.9190208834030603,
+   "gv_gap": -1.06,
+   "our_gap": -0.4023003388494112,
+   "reference_bound": 0.7042134319165322,
+   "gap_resolved": false,
+   "gap_criterion": "fail"
+  },
+  {
+   "component_id": "acetone",
+   "observable": "rho_liq, stated-uncertainty rows (secondary)",
+   "gv_pcp": 1.31,
+   "gv_pc": 2.94,
+   "ours_pcp": 0.9255671804366363,
+   "ours_pc_own": 2.236845496061551,
+   "gv_gap": -1.63,
+   "our_gap": -1.3112783156249148,
+   "reference_bound": 0.47703251904796384,
+   "gap_resolved": true,
+   "gap_criterion": "pass"
+  },
+  {
+   "component_id": "dimethyl-ether",
+   "observable": "psat",
+   "gv_pcp": 0.24,
+   "gv_pc": 0.25,
+   "ours_pcp": 0.28136428263680346,
+   "ours_pc_own": 0.3342515160013844,
+   "gv_gap": -0.010000000000000009,
+   "our_gap": -0.052887233364580954,
+   "reference_bound": null,
+   "gap_resolved": null,
+   "gap_criterion": "pass"
+  },
+  {
+   "component_id": "dimethyl-ether",
+   "observable": "rho_liq",
+   "gv_pcp": 0.53,
+   "gv_pc": 0.8,
+   "ours_pcp": 1.2326648741143613,
+   "ours_pc_own": 1.4086987994854263,
+   "gv_gap": -0.27,
+   "our_gap": -0.176033925371065,
+   "reference_bound": null,
+   "gap_resolved": null,
+   "gap_criterion": "pass"
+  },
+  {
+   "component_id": "dimethyl-ether",
+   "observable": "psat, source range (secondary)",
+   "gv_pcp": 0.24,
+   "gv_pc": 0.25,
+   "ours_pcp": 0.28136428263680346,
+   "ours_pc_own": 0.3342515160013844,
+   "gv_gap": -0.010000000000000009,
+   "our_gap": -0.052887233364580954,
+   "reference_bound": null,
+   "gap_resolved": null,
+   "gap_criterion": "pass"
+  },
+  {
+   "component_id": "dimethyl-ether",
+   "observable": "rho_liq, source range (secondary)",
+   "gv_pcp": 0.53,
+   "gv_pc": 0.8,
+   "ours_pcp": 1.2326648741143613,
+   "ours_pc_own": 1.4086987994854263,
+   "gv_gap": -0.27,
+   "our_gap": -0.176033925371065,
+   "reference_bound": null,
+   "gap_resolved": null,
+   "gap_criterion": "pass"
+  },
+  {
+   "component_id": "dimethyl-ether",
+   "observable": "psat, stated-uncertainty rows (secondary)",
+   "gv_pcp": 0.24,
+   "gv_pc": 0.25,
+   "ours_pcp": 0.18769445460566692,
+   "ours_pc_own": 0.24297628816019046,
+   "gv_gap": -0.010000000000000009,
+   "our_gap": -0.05528183355452354,
+   "reference_bound": 0.05347043028240732,
+   "gap_resolved": true,
+   "gap_criterion": "pass"
+  },
+  {
+   "component_id": "dimethyl-ether",
+   "observable": "rho_liq, stated-uncertainty rows (secondary)",
+   "gv_pcp": 0.53,
+   "gv_pc": 0.8,
+   "ours_pcp": 1.2649335878465473,
+   "ours_pc_own": 1.4692785298065572,
+   "gv_gap": -0.27,
+   "our_gap": -0.20434494196000985,
+   "reference_bound": 0.0,
+   "gap_resolved": true,
+   "gap_criterion": "pass"
+  },
+  {
+   "component_id": "diethyl-ether",
+   "observable": "psat",
+   "gv_pcp": 0.66,
+   "gv_pc": 0.68,
+   "ours_pcp": 0.48052366315899375,
+   "ours_pc_own": 0.3924492970519033,
+   "gv_gap": -0.020000000000000018,
+   "our_gap": 0.08807436610709046,
+   "reference_bound": 0.14811869059203983,
+   "gap_resolved": false,
+   "gap_criterion": "fail"
+  },
+  {
+   "component_id": "diethyl-ether",
+   "observable": "rho_liq",
+   "gv_pcp": 1.01,
+   "gv_pc": 1.04,
+   "ours_pcp": 0.6920117388318654,
+   "ours_pc_own": 0.7052860091730673,
+   "gv_gap": -0.030000000000000027,
+   "our_gap": -0.013274270341201877,
+   "reference_bound": null,
+   "gap_resolved": null,
+   "gap_criterion": "fail"
+  },
+  {
+   "component_id": "diethyl-ether",
+   "observable": "psat, source range (secondary)",
+   "gv_pcp": 0.66,
+   "gv_pc": 0.68,
+   "ours_pcp": 0.48052366315899375,
+   "ours_pc_own": 0.3924492970519033,
+   "gv_gap": -0.020000000000000018,
+   "our_gap": 0.08807436610709046,
+   "reference_bound": 0.14811869059203983,
+   "gap_resolved": false,
+   "gap_criterion": "fail"
+  },
+  {
+   "component_id": "diethyl-ether",
+   "observable": "rho_liq, source range (secondary)",
+   "gv_pcp": 1.01,
+   "gv_pc": 1.04,
+   "ours_pcp": 0.6920117388318654,
+   "ours_pc_own": 0.7052860091730673,
+   "gv_gap": -0.030000000000000027,
+   "our_gap": -0.013274270341201877,
+   "reference_bound": null,
+   "gap_resolved": null,
+   "gap_criterion": "fail"
+  },
+  {
+   "component_id": "diethyl-ether",
+   "observable": "psat, stated-uncertainty rows (secondary)",
+   "gv_pcp": 0.66,
+   "gv_pc": 0.68,
+   "ours_pcp": 0.48052366315899375,
+   "ours_pc_own": 0.3924492970519033,
+   "gv_gap": -0.020000000000000018,
+   "our_gap": 0.08807436610709046,
+   "reference_bound": 0.14811869059203983,
+   "gap_resolved": false,
+   "gap_criterion": "fail"
+  },
+  {
+   "component_id": "diethyl-ether",
+   "observable": "rho_liq, stated-uncertainty rows (secondary)",
+   "gv_pcp": 1.01,
+   "gv_pc": 1.04,
+   "ours_pcp": 0.6917252608831234,
+   "ours_pc_own": 0.6990928270971909,
+   "gv_gap": -0.030000000000000027,
+   "our_gap": -0.0073675662140675335,
+   "reference_bound": 0.014074838360080045,
+   "gap_resolved": false,
+   "gap_criterion": "fail"
+  },
+  {
+   "component_id": "dimethyl-sulfoxide",
+   "observable": "psat",
+   "gv_pcp": 0.46,
+   "gv_pc": 1.45,
+   "ours_pcp": 1.712384746374683,
+   "ours_pc_own": 0.8818982251837034,
+   "gv_gap": -0.99,
+   "our_gap": 0.8304865211909797,
+   "reference_bound": 2.6836692593166553,
+   "gap_resolved": false,
+   "gap_criterion": "fail"
+  },
+  {
+   "component_id": "dimethyl-sulfoxide",
+   "observable": "rho_liq",
+   "gv_pcp": 0.33,
+   "gv_pc": 0.58,
+   "ours_pcp": 0.3909328779882946,
+   "ours_pc_own": 0.863166780763784,
+   "gv_gap": -0.24999999999999994,
+   "our_gap": -0.4722339027754893,
+   "reference_bound": 0.0002935603631195844,
+   "gap_resolved": true,
+   "gap_criterion": "pass"
+  },
+  {
+   "component_id": "dimethyl-sulfoxide",
+   "observable": "psat, source range (secondary)",
+   "gv_pcp": 0.46,
+   "gv_pc": 1.45,
+   "ours_pcp": 1.712384746374683,
+   "ours_pc_own": 0.8818982251837034,
+   "gv_gap": -0.99,
+   "our_gap": 0.8304865211909797,
+   "reference_bound": 2.6836692593166553,
+   "gap_resolved": false,
+   "gap_criterion": "fail"
+  },
+  {
+   "component_id": "dimethyl-sulfoxide",
+   "observable": "rho_liq, source range (secondary)",
+   "gv_pcp": 0.33,
+   "gv_pc": 0.58,
+   "ours_pcp": 0.3909328779882946,
+   "ours_pc_own": 0.863166780763784,
+   "gv_gap": -0.24999999999999994,
+   "our_gap": -0.4722339027754893,
+   "reference_bound": 0.0002935603631195844,
+   "gap_resolved": true,
+   "gap_criterion": "pass"
+  },
+  {
+   "component_id": "dimethyl-sulfoxide",
+   "observable": "psat, stated-uncertainty rows (secondary)",
+   "gv_pcp": 0.46,
+   "gv_pc": 1.45,
+   "ours_pcp": 1.712384746374683,
+   "ours_pc_own": 0.8818982251837034,
+   "gv_gap": -0.99,
+   "our_gap": 0.8304865211909797,
+   "reference_bound": 2.6836692593166553,
+   "gap_resolved": false,
+   "gap_criterion": "fail"
+  },
+  {
+   "component_id": "dimethyl-sulfoxide",
+   "observable": "rho_liq, stated-uncertainty rows (secondary)",
+   "gv_pcp": 0.33,
+   "gv_pc": 0.58,
+   "ours_pcp": 0.3909328779882946,
+   "ours_pc_own": 0.863166780763784,
+   "gv_gap": -0.24999999999999994,
+   "our_gap": -0.4722339027754893,
+   "reference_bound": 0.0002935603631195844,
+   "gap_resolved": true,
+   "gap_criterion": "pass"
+  }
+ ],
+ "binary_kij_fits": {
+  "polar/GV2006": {
+   "status": "converged",
+   "final_cost": 0.0008841108069352589,
+   "trial_failures": 0
+  },
+  "nonpolar/refit": {
+   "status": "converged",
+   "final_cost": 0.0021927987669117144,
+   "trial_failures": 0
+  }
+ },
+ "binary_summary": [
+  {
+   "model": "polar/GV2006",
+   "variant": "k_ij=0",
+   "k_ij": 0.0,
+   "role": "calibration",
+   "phase": "liquid",
+   "points": 5,
+   "failures": 0,
+   "AAD_P_percent": 13.119834566684068
+  },
+  {
+   "model": "polar/GV2006",
+   "variant": "k_ij=0",
+   "k_ij": 0.0,
+   "role": "calibration",
+   "phase": "vapor",
+   "points": 3,
+   "failures": 0,
+   "AAD_P_percent": 9.001802508735334
+  },
+  {
+   "model": "polar/GV2006",
+   "variant": "k_ij=0",
+   "k_ij": 0.0,
+   "role": "validation",
+   "phase": "liquid",
+   "points": 11,
+   "failures": 0,
+   "AAD_P_percent": 10.728587876532858
+  },
+  {
+   "model": "polar/GV2006",
+   "variant": "k_ij=0",
+   "k_ij": 0.0,
+   "role": "validation",
+   "phase": "vapor",
+   "points": 11,
+   "failures": 0,
+   "AAD_P_percent": 8.778087937197656
+  },
+  {
+   "model": "polar/GV2006",
+   "variant": "k_ij calibrated",
+   "k_ij": 0.03333866793213885,
+   "role": "calibration",
+   "phase": "liquid",
+   "points": 5,
+   "failures": 0,
+   "AAD_P_percent": 0.9341805117028645
+  },
+  {
+   "model": "polar/GV2006",
+   "variant": "k_ij calibrated",
+   "k_ij": 0.03333866793213885,
+   "role": "calibration",
+   "phase": "vapor",
+   "points": 3,
+   "failures": 0,
+   "AAD_P_percent": 1.9032690399808854
+  },
+  {
+   "model": "polar/GV2006",
+   "variant": "k_ij calibrated",
+   "k_ij": 0.03333866793213885,
+   "role": "validation",
+   "phase": "liquid",
+   "points": 11,
+   "failures": 0,
+   "AAD_P_percent": 1.2617426114819086
+  },
+  {
+   "model": "polar/GV2006",
+   "variant": "k_ij calibrated",
+   "k_ij": 0.03333866793213885,
+   "role": "validation",
+   "phase": "vapor",
+   "points": 11,
+   "failures": 0,
+   "AAD_P_percent": 0.502759407008422
+  },
+  {
+   "model": "nonpolar/refit",
+   "variant": "k_ij=0",
+   "k_ij": 0.0,
+   "role": "calibration",
+   "phase": "liquid",
+   "points": 5,
+   "failures": 0,
+   "AAD_P_percent": 22.374699781760466
+  },
+  {
+   "model": "nonpolar/refit",
+   "variant": "k_ij=0",
+   "k_ij": 0.0,
+   "role": "calibration",
+   "phase": "vapor",
+   "points": 3,
+   "failures": 0,
+   "AAD_P_percent": 16.655021691502007
+  },
+  {
+   "model": "nonpolar/refit",
+   "variant": "k_ij=0",
+   "k_ij": 0.0,
+   "role": "validation",
+   "phase": "liquid",
+   "points": 11,
+   "failures": 0,
+   "AAD_P_percent": 18.590784790226245
+  },
+  {
+   "model": "nonpolar/refit",
+   "variant": "k_ij=0",
+   "k_ij": 0.0,
+   "role": "validation",
+   "phase": "vapor",
+   "points": 11,
+   "failures": 0,
+   "AAD_P_percent": 16.326049580318347
+  },
+  {
+   "model": "nonpolar/refit",
+   "variant": "k_ij calibrated",
+   "k_ij": 0.059200033899127105,
+   "role": "calibration",
+   "phase": "liquid",
+   "points": 5,
+   "failures": 0,
+   "AAD_P_percent": 2.3553490592671844
+  },
+  {
+   "model": "nonpolar/refit",
+   "variant": "k_ij calibrated",
+   "k_ij": 0.059200033899127105,
+   "role": "calibration",
+   "phase": "vapor",
+   "points": 3,
+   "failures": 0,
+   "AAD_P_percent": 1.9109650664705675
+  },
+  {
+   "model": "nonpolar/refit",
+   "variant": "k_ij calibrated",
+   "k_ij": 0.059200033899127105,
+   "role": "validation",
+   "phase": "liquid",
+   "points": 11,
+   "failures": 0,
+   "AAD_P_percent": 2.0566573219877364
+  },
+  {
+   "model": "nonpolar/refit",
+   "variant": "k_ij calibrated",
+   "k_ij": 0.059200033899127105,
+   "role": "validation",
+   "phase": "vapor",
+   "points": 11,
+   "failures": 0,
+   "AAD_P_percent": 0.9229426540184953
+  }
+ ],
+ "binary_xy_summary": [
+  {
+   "model": "polar/GV2006",
+   "variant": "k_ij=0",
+   "k_ij": 0.0,
+   "role": "calibration",
+   "points": 8,
+   "failures": 0,
+   "mean_abs_dy": 0.03639083773735193,
+   "max_abs_dy": 0.07871822942597734,
+   "AAD_P_percent": 12.681469029970405
+  },
+  {
+   "model": "polar/GV2006",
+   "variant": "k_ij=0",
+   "k_ij": 0.0,
+   "role": "validation",
+   "points": 19,
+   "failures": 0,
+   "mean_abs_dy": 0.02831523918954785,
+   "max_abs_dy": 0.06034528529610411,
+   "AAD_P_percent": 9.839680304323323
+  },
+  {
+   "model": "polar/GV2006",
+   "variant": "k_ij calibrated",
+   "k_ij": 0.03333866793213885,
+   "role": "calibration",
+   "points": 8,
+   "failures": 0,
+   "mean_abs_dy": 0.00976426893140829,
+   "max_abs_dy": 0.028894754107159637,
+   "AAD_P_percent": 1.7994538550100456
+  },
+  {
+   "model": "polar/GV2006",
+   "variant": "k_ij calibrated",
+   "k_ij": 0.03333866793213885,
+   "role": "validation",
+   "points": 19,
+   "failures": 0,
+   "mean_abs_dy": 0.01018251032041392,
+   "max_abs_dy": 0.03077241231800215,
+   "AAD_P_percent": 1.6538064485757045
+  },
+  {
+   "model": "nonpolar/refit",
+   "variant": "k_ij=0",
+   "k_ij": 0.0,
+   "role": "calibration",
+   "points": 8,
+   "failures": 0,
+   "mean_abs_dy": 0.06928808645789089,
+   "max_abs_dy": 0.12734750083696975,
+   "AAD_P_percent": 20.928233175401523
+  },
+  {
+   "model": "nonpolar/refit",
+   "variant": "k_ij=0",
+   "k_ij": 0.0,
+   "role": "validation",
+   "points": 19,
+   "failures": 0,
+   "mean_abs_dy": 0.05520706449282322,
+   "max_abs_dy": 0.10908613641477782,
+   "AAD_P_percent": 16.99006636406253
+  },
+  {
+   "model": "nonpolar/refit",
+   "variant": "k_ij calibrated",
+   "k_ij": 0.059200033899127105,
+   "role": "calibration",
+   "points": 8,
+   "failures": 0,
+   "mean_abs_dy": 0.017083303159506465,
+   "max_abs_dy": 0.02674300558715348,
+   "AAD_P_percent": 3.3464164910764773
+  },
+  {
+   "model": "nonpolar/refit",
+   "variant": "k_ij calibrated",
+   "k_ij": 0.059200033899127105,
+   "role": "validation",
+   "points": 19,
+   "failures": 0,
+   "mean_abs_dy": 0.015938078022038196,
+   "max_abs_dy": 0.038246003288440494,
+   "AAD_P_percent": 2.850628211921032
+  },
+  {
+   "model": "Margules/Campbell1986",
+   "variant": "four-suffix eq 8 (Barker P-x fit) per isotherm",
+   "k_ij": null,
+   "role": "calibration",
+   "points": 8,
+   "failures": 0,
+   "mean_abs_dy": 0.008374999999999994,
+   "max_abs_dy": 0.029000000000000026,
+   "AAD_P_percent": 0.08964718109423786
+  },
+  {
+   "model": "Margules/Campbell1986",
+   "variant": "four-suffix eq 8 (Barker P-x fit) per isotherm",
+   "k_ij": null,
+   "role": "validation",
+   "points": 19,
+   "failures": 0,
+   "mean_abs_dy": 0.006789473684210533,
+   "max_abs_dy": 0.016000000000000014,
+   "AAD_P_percent": 0.19215529619821187
+  }
+ ],
+ "binary_wheel_sha256": "b55665901b881836f90af010c22bd16a51a687a4e83242ab6d7d5d10118e582a"
+}

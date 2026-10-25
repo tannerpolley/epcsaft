@@ -1,0 +1,5 @@
+{
+  "path": "../trial-failures.csv",
+  "sha256": "7ec65109084bd93dc2b3b65a588553e235a056c0f3a16d40f7a9175519e96b4b",
+  "meaning": "The fresh r2 execution emitted byte-identical trial-failure rows. Store the shared bytes once; no endpoint from r1 entered an r2 decision."
+}

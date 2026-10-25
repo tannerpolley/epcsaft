@@ -1,0 +1,33 @@
+{
+  "case_owner": "cases/water-self-ionization/source/source.json",
+  "source_owner": "water_self_ionization_iapws_r11_07_2019.json",
+  "current_parameter_owner": "data/packets/held-cameretti-sadowski-2008/4",
+  "comparison": "one-state numerical solution verification with imposed IAPWS constant; independent source product unavailable pending #793",
+  "historical_amounts": "different parameter fingerprint; not an independent current-model target",
+  "excluded": [
+    "general temperature-density correlation",
+    "physical speciation validation",
+    "common pH"
+  ],
+  "execution": "revised design r2; no producer before Ready",
+  "source_mass_mapping": {
+    "component": "water",
+    "field": "fixed.molar_mass.value",
+    "source_owner": "cases/water-self-ionization/source/source.json#/solvent_molar_mass_kg_per_mol",
+    "value": 0.018015268,
+    "unit": "kilogram / mole",
+    "scope": "analysis-local selected declaration; all EOS coefficients and family choices unchanged"
+  },
+  "unavailable": {
+    "source_activity_product": "Engine #793: native solved-basis activities and ln Q readout missing"
+  },
+  "numerical_limits": {
+    "reaction_raw": 1e-12,
+    "oxygen_balance_mol": 1e-10,
+    "hydrogen_balance_mol": 1e-10,
+    "charge_mol": 1e-12,
+    "normalization": 1e-12,
+    "pressure_relative": 1e-08,
+    "reference_terminal_change": 5e-05
+  }
+}

@@ -1,0 +1,7 @@
+salt,provisional_pixel_x,provisional_pixel_y,nearest_separated_line_x,nearest_separated_line_y,distance_pixel,qa,cause
+NaI,699.0,130.0,693,124,8.48528137423857,review,Source-only recheck; retain final separated ink instead of provisional anchor. Proximity to a filled symbol can prevent independent line identification.
+NaI,759.0,164.0,759,164,0.0,pass,Source-only recheck; retain final separated ink instead of provisional anchor. Proximity to a filled symbol can prevent independent line identification.
+NaBr,699.0,120.0,699,120,0.0,pass,Source-only recheck; retain final separated ink instead of provisional anchor. Proximity to a filled symbol can prevent independent line identification.
+NaBr,757.0,151.0,765,152,8.06225774829855,review,Source-only recheck; retain final separated ink instead of provisional anchor. Proximity to a filled symbol can prevent independent line identification.
+NaCl,699.0,110.0,694,116,7.810249675906654,review,Source-only recheck; retain final separated ink instead of provisional anchor. Proximity to a filled symbol can prevent independent line identification.
+NaCl,759.0,138.0,760,138,1.0,pass,Source-only recheck; retain final separated ink instead of provisional anchor. Proximity to a filled symbol can prevent independent line identification.

@@ -1,0 +1,10 @@
+provenance_kind = "source-record-provenance-v1"
+schema_version = 1
+
+[[records]]
+retained_path = "parameters/dielectric-records.csv"
+sha256 = "799138464224807d833b9c6c563a4d4e1526285eccb3d716a075cc7515b18616"
+origin_repository = "none"
+origin_commit = "0000000000000000000000000000000000000000"
+origin_tree = "0000000000000000000000000000000000000000"
+origin_path = "Fluid Phase Equilibria 583 (2024) 114103, Table 6; J. Chem. Eng. Data (2024) doi:10.1021/acs.jced.4c00347, Table 1 and Section 2.3; feos-org/feos commit 5f2a88fc26f350bf8a86aec3a5f831004ffc8f9a (tree ddcc72c9dacf52eba447759c47ea1a130c4933c5) crates/feos/src/epcsaft/parameters.rs, file SHA-256 79eed848463538c1bd9a84a5e355ac019c35b620cdab55576e7bedbc355b77bf"

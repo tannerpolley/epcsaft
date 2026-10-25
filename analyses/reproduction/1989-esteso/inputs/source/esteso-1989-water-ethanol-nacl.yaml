@@ -1,0 +1,21 @@
+schema_version: 1
+dataset_id: esteso-1989-water-ethanol-nacl
+title: Activity coefficients for NaCl in ethanol-water mixtures at 25 degrees C
+authors: [M. A. Esteso, O. M. Gonzalez-Diaz, F. F. Hernandez-Luis, L. Fernandez-Merida]
+journal: Journal of Solution Chemistry
+year: 1989
+volume: 18
+pages: 277-288
+table: I
+conditions:
+  temperature_K: 298.15
+  solvent_composition: ethanol mass percent in the salt-free water-ethanol solvent
+  quantity: molality-scale mean ionic activity coefficient of NaCl
+  quantity_symbol: gamma_pm_m
+  quantity_unit: dimensionless
+  concentration: formula-unit molality
+  concentration_unit: mol/kg of salt-free solvent
+transformation:
+  method: Exact transcription of the 20, 40, 60, and 80 mass-percent ethanol series retained from Table I; no figure digitization or interpolation.
+  retained_rows: 92
+use_basis: Direct experimental tabular data for predictive scientific validation.

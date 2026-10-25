@@ -1,0 +1,25 @@
+comparison_id,quantity,model,reference,atol,rtol,verdict
+born-parameter/1/0.000000/2.000000/0,Born radial work and first columns,-4.118987131138003,-4.118987131138003,0,1e-12,True
+born-parameter/1/0.000000/2.000000/1,Born radial work and first columns,-0.8623316647403361,-0.8623316647403361,0,1e-12,True
+born-parameter/1/0.000000/2.000000/2,Born radial work and first columns,0,0,1e-12,1e-12,True
+born-parameter/1/0.000000/8.000000/0,Born radial work and first columns,-4.118987131138003,-4.118987131138003,0,1e-12,True
+born-parameter/1/0.000000/8.000000/1,Born radial work and first columns,-1.5090804132955884,-1.5090804132955882,0,1e-12,True
+born-parameter/1/0.000000/8.000000/2,Born radial work and first columns,0,0,1e-12,1e-12,True
+born-parameter/1/1.000000/2.000000/0,Born radial work and first columns,-4.98131879587834,-4.981318795878339,0,1e-12,True
+born-parameter/1/1.000000/2.000000/1,Born radial work and first columns,-0.8623316647403361,-0.8623316647403361,0,1e-12,True
+born-parameter/1/1.000000/2.000000/2,Born radial work and first columns,-0.43116583237016803,-0.43116583237016803,0,1e-12,True
+born-parameter/1/1.000000/8.000000/0,Born radial work and first columns,-5.628067544433591,-5.628067544433591,0,1e-12,True
+born-parameter/1/1.000000/8.000000/1,Born radial work and first columns,-1.5090804132955884,-1.5090804132955882,0,1e-12,True
+born-parameter/1/1.000000/8.000000/2,Born radial work and first columns,-0.026947864523135502,-0.026947864523135502,0,1e-12,True
+born-parameter/2/0.000000/2.000000/0,Born radial work and first columns,-19.42933720659816,-19.429337206598163,0,1e-12,True
+born-parameter/2/0.000000/2.000000/1,Born radial work and first columns,-3.7607222023805837,-3.7607222023805833,0,1e-12,True
+born-parameter/2/0.000000/2.000000/2,Born radial work and first columns,0,0,1e-12,1e-12,True
+born-parameter/2/0.000000/8.000000/0,Born radial work and first columns,-19.42933720659816,-19.429337206598163,0,1e-12,True
+born-parameter/2/0.000000/8.000000/1,Born radial work and first columns,-6.581263854166021,-6.581263854166021,0,1e-12,True
+born-parameter/2/0.000000/8.000000/2,Born radial work and first columns,0,0,1e-12,1e-12,True
+born-parameter/2/1.000000/2.000000/0,Born radial work and first columns,-23.190059408978748,-23.190059408978748,0,1e-12,True
+born-parameter/2/1.000000/2.000000/1,Born radial work and first columns,-3.7607222023805837,-3.7607222023805833,0,1e-12,True
+born-parameter/2/1.000000/2.000000/2,Born radial work and first columns,-1.8803611011902919,-1.8803611011902917,0,1e-12,True
+born-parameter/2/1.000000/8.000000/0,Born radial work and first columns,-26.010601060764184,-26.010601060764184,0,1e-12,True
+born-parameter/2/1.000000/8.000000/1,Born radial work and first columns,-6.581263854166021,-6.581263854166021,0,1e-12,True
+born-parameter/2/1.000000/8.000000/2,Born radial work and first columns,-0.11752256882439324,-0.11752256882439323,0,1e-12,True

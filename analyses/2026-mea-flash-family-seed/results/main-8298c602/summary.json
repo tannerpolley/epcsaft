@@ -1,0 +1,78 @@
+{
+  "total": 73,
+  "converged": 69,
+  "previous_converged": 72,
+  "common": 68,
+  "lost": [
+    4,
+    9,
+    47,
+    54
+  ],
+  "recovered": [
+    66
+  ],
+  "failed": [
+    {
+      "index": 4,
+      "T_K": 318.15,
+      "P_Pa": 3607.956071980319,
+      "loading_mol_per_mol": 1e-05,
+      "previous_success": true,
+      "new_success": false,
+      "state_difference": null,
+      "worst_quantity": null,
+      "criterion": 1e-10,
+      "previous_message": "converged: residual 5.8586884350372177e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 54 iterations, contraction absent, floor 9.6965288785322426e-11, amplification 0",
+      "new_message": "phase L vanished; Michelsen deficit -inf; trial preparation failed: invalid composition",
+      "new_residual": 2.826909896430515e-14
+    },
+    {
+      "index": 9,
+      "T_K": 333.15,
+      "P_Pa": 16160.681534693578,
+      "loading_mol_per_mol": 1e-05,
+      "previous_success": true,
+      "new_success": false,
+      "state_difference": null,
+      "worst_quantity": null,
+      "criterion": 1e-10,
+      "previous_message": "converged: residual 1.3078920555855844e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 19 iterations, contraction absent, floor 1.5881686943731102e-10, amplification 0",
+      "new_message": "phase L vanished; Michelsen deficit -903607600312431191878069596708587405993519483434562997805062608330171454652131453256438209189012753975134162915888801685017079264271984297632115154629042135526534162193844492117726005188411688270984117692409865286241688407347938145414724968021194842412853715723464581292149870259507518695280738304.000000",
+      "new_residual": 3.42923861927843e-13
+    },
+    {
+      "index": 47,
+      "T_K": 313.15,
+      "P_Pa": 4212.695445119277,
+      "loading_mol_per_mol": 0.3,
+      "previous_success": true,
+      "new_success": false,
+      "state_difference": null,
+      "worst_quantity": null,
+      "criterion": 1e-10,
+      "previous_message": "converged: residual 1.3827652964024757e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 41 iterations, contraction absent, floor 1.6721522662436579e-10, amplification 0",
+      "new_message": "phase V vanished; Michelsen deficit -53039130.744478",
+      "new_residual": 2.2162581886582152e-07
+    },
+    {
+      "index": 54,
+      "T_K": 333.15,
+      "P_Pa": 17024.652381619053,
+      "loading_mol_per_mol": 0.3,
+      "previous_success": true,
+      "new_success": false,
+      "state_difference": null,
+      "worst_quantity": null,
+      "criterion": 1e-10,
+      "previous_message": "converged: residual 1.4334224071878832e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 26 iterations, contraction absent, floor 1.7204647897123622e-10, amplification 0",
+      "new_message": "phase V vanished; Michelsen deficit -0.057792",
+      "new_residual": 8.76689989771619e-08
+    }
+  ],
+  "max_state_difference": 5.029048765964972e-12,
+  "state_criterion": 1e-10,
+  "row_tolerance": 1e-10,
+  "largest_converged_residual": 6.115646359803007e-13,
+  "evidence_label": "numerical verification"
+}

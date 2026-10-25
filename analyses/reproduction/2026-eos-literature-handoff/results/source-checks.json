@@ -1,0 +1,35 @@
+[
+  {
+    "path": "data/packets/hamer-wu-1972-aqueous-alkali-halides/1/observations/hamer-wu-1972-aqueous-alkali-halides.csv",
+    "sha256": "2f63e13f06a5b0f4e8bca2980b6a8d9d7fb0f839153c43e3a71952daf9796595",
+    "selected_rows": [
+      {
+        "salt": "NaCl",
+        "molality_mol_kg": "1",
+        "gamma_pm_m": "0.657"
+      }
+    ]
+  },
+  {
+    "path": "analyses/reproduction/1989-esteso/inputs/source/esteso-1989-water-ethanol-nacl.csv",
+    "sha256": "9ee035f3f5fcdc3c86939a5735acc53cf68c24a83a0c520fd311739f43510962",
+    "selected_rows": [
+      {
+        "ethanol_mass_percent": "60",
+        "molality_mol_kg": "0.500000",
+        "gamma_pm_m": "0.415000"
+      }
+    ]
+  },
+  {
+    "path": "analyses/reproduction/2012-held/inputs/source/held-2012-ethanol-salt-density.csv",
+    "sha256": "3d8b00ef52897ab698d34648249cbf49f6118e266dfe53e34ffbbf01ede38e04",
+    "selected_rows": [
+      {
+        "salt": "NaBr",
+        "molality_mol_kg": "0.1422",
+        "density_kg_m3": "795.96"
+      }
+    ]
+  }
+]

@@ -1,0 +1,10 @@
+first actions 1 [np.float64(3.183824529957473e-05), np.float64(3.182484937437799e-07), np.float64(8.963037445800033e-10), np.float64(2.2776044579742326e-08)]
+first actions 2 [np.float64(5.634260371365123e-07), np.float64(5.408773657762672e-09), np.float64(7.948105244961266e-09)]
+common point comparisons 4500 maximum error 3.33574570376877e-13
+Traceback (most recent call last):
+  File "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-750-720-part-b-diagnose-the-changed-results/analyses/2026-born-unavailable-states/scripts/verify_parameter_continuation.py", line 116, in <module>
+    main()
+    ~~~~^^
+  File "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-750-720-part-b-diagnose-the-changed-results/analyses/2026-born-unavailable-states/scripts/verify_parameter_continuation.py", line 111, in main
+    wheel = next(Path("build/environment-wheel").glob("epcsaft-*.whl"))
+StopIteration

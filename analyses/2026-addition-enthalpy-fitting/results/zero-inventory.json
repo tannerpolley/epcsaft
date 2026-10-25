@@ -1,0 +1,160 @@
+{
+  "base": "a0adb1cd5ff5f4ee32b3608c78a02c756b06ebd9",
+  "wheel_sha256": "d93aeb54558ef00d8aede3d5b06e499fded147a503b17d6a6b038541d84c949a",
+  "logs": [
+    "build/issue-231/cold-face-inventory-face.log",
+    "build/issue-231/final-neutral-electrostatics.log",
+    "build/issue-231/cold-face-final-f3-f4.log"
+  ],
+  "rows": 189,
+  "failed": [],
+  "evidence": "Numerical verification of exact inventory faces and neutral electrostatic restrictions; no calorimetry validation, fit or parameter adoption",
+  "build_fingerprint": "a4f01bca90549aeb5deff305a795cfd633045e9f36a13dd9a379ebe04b6ca678",
+  "native_binary_sha256": "544d369756e21ba85aa2ee2b96712b15e41c3d788286869c071253e21c8658c0",
+  "log_sha256": {
+    "build/issue-231/cold-face-inventory-face.log": "d287b65fa750c8d62a80d6e891d6d46e756de341656bf096a830fcca039a5cf9",
+    "build/issue-231/final-neutral-electrostatics.log": "fe325958bc4ac0c05134c542b9a5e5cb39c84fc4d6f70bef1d8b308fa6e5a428",
+    "build/issue-231/cold-face-final-f3-f4.log": "61c8de25396a71180ccb4cfc343ffc78f9b955dba8b75fc2762062c303b18ed6"
+  },
+  "artifacts": {
+    "build/issue-231/affected-native.xml": "97fc34fbae2b6ad334080cf13a348062f2faa9b03261fc749c71bacc71ede089",
+    "build/issue-231/final-affected-slow-native.xml": "e7a7a570539c73a089f4330a2ce535794b741a9480bf3f7213920834213194e9",
+    "build/issue-231/final-corrected-affected.log": "f64ee8f1575faf3eb4a9b9689dd8187b54f1c1a9de953f34c9bde8ee80c39360",
+    "build/issue-231/final-corrected-affected-slow-native.xml": "0ddbc622aa65b749d6c8b78de61e31bb0a2ef1aca40f49d56228a8bf1bb1c11c",
+    "build/issue-231/final-all.log": "e1268d9d677554f5d6ad6c5a3902f0df5882fea003746914c8e7e4527ff04d23",
+    "build/issue-231/final-all-native.xml": "2c4f3c1161354262ed7da6f9f446cfb6237ff1855eb60c1ee88f947c6b93fcdb",
+    "build/issue-231/final-all-pytest.xml": "92e443244997053303c8421ebf4a8c40fe5317543a1ddaf2dc550a1dc6f47454",
+    "build/issue-231/f5-ionic-addition.log": "8655be8d35c384ced3f20c7076e1113c8b5f3abf933dfda932c718f1af4ee934",
+    "build/issue-231/f5-addition-enthalpy.log": "a55ff5ea6535a77b5529312945b57bd16c8a49fdbbf42b423c35fd424b274a20",
+    "build/issue-231/final-gates-preparation.json": "66c0b6bc361f5367d3c0b40bd123a457e6667eeb4e2bc8f70926380593075cfb",
+    "build/issue-231/khudaida-retained/stage/stage-results.csv": "fa39f166d6d2d671a59999dcff5e2a25deafbcd43ee08e43fbe227431aa61458",
+    "build/issue-231/khudaida-retained/stage/engine-residuals.csv": "e9a15992c8d3d628f67a1cb56f6636590a0732fca3526e0efb20161de99a90c3",
+    "build/issue-231/khudaida-retained/stage/summary.json": "1cf401f187955a21da004251751e91a70a37c16c2a25e7725ee4695375ccc108",
+    "build/issue-231/khudaida-retained/qualification/qualification-comparison.csv": "a6a8ee82d3f682d954b3589faf5babb2ac0f875b2a201e4e17a99cc5ea977d0b",
+    "build/issue-231/khudaida-retained/qualification/qualification.json": "d148f5a4cef267a332ac61b41bb72362ab63b5f9667c8626a8138a00a7c78aa0"
+  },
+  "baseline_preparation": {
+    "build_dir": "build/engine-meson/cpython-313-linux-x86_64-x86_64-f6db693e21e289603ae71c78242a17b102f1e324061021d5dca361f47a0bfef7",
+    "build_fingerprint": "27b952b9d24753b90fc023627b681b42910c441660614531ce3a00b5f95368dd",
+    "schema_version": 1,
+    "wheel": "build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+    "wheel_sha256": "398bcf8b90185b68cc796b5db258a9bfa3e919b9fb74bbb29171e003a03b3cc7"
+  },
+  "inputs": {
+    "ideal-calorics.json": "c94d504e68c6dc6e85d3d950cc51422499846729b1a06994b362040be991924a",
+    "reactions.json": "c1cb5c74b2d71ce56e9c0a5d86116f972adbb2d635a0e9ed944152f25bd5fc43",
+    "parameters.json": "7e9e3f02723700f8b6577681173249c0e7bd2c8c2a098f38a4e0a7e4611852d5"
+  },
+  "source_head": "a0adb1cd5ff5f4ee32b3608c78a02c756b06ebd9",
+  "runtime_patch_sha256": "e7ad1665a41ee3b718f5422ca728b55e9b178fc546601368f05163d93baa884e",
+  "native_test_patch_sha256": "1f8dc5188f81281c42b4b5b83ba36fbabcdaf0e45296253c6fc544867f6bb845",
+  "probes": {
+    "baseline": {
+      "inputs": {
+        "ideal-calorics.json": "c94d504e68c6dc6e85d3d950cc51422499846729b1a06994b362040be991924a",
+        "reactions.json": "c1cb5c74b2d71ce56e9c0a5d86116f972adbb2d635a0e9ed944152f25bd5fc43",
+        "parameters.json": "7e9e3f02723700f8b6577681173249c0e7bd2c8c2a098f38a4e0a7e4611852d5"
+      },
+      "module": "/home/tnnrpolley21/.codex/worktrees/epc-delivery-231/ePC-SAFT/.venv/lib/python3.13/site-packages/epcsaft/__init__.py",
+      "initial": {
+        "success": false,
+        "removed_species": [],
+        "rows": [
+          14.982388473576336,
+          4.263256414560601e-14,
+          -5.684341886080802e-14,
+          -1.0717926102188358e-08,
+          -0.5960691497892583,
+          2.9581988093673885,
+          -0.3365768804526965,
+          11.966574858838811,
+          1.0208964340563398e-08,
+          -1.6694884068207725e-12,
+          -3.0449625666839625e-13,
+          -1.3299976235982677e-13,
+          7.728918795409451e-13,
+          4.000562521122014e-13,
+          7.72937269744034e-13
+        ],
+        "message": "stalled: residual 1.1966663563277393e-07 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 28 iterations, contraction absent, floor 1.7641264140878111e-10, amplification 0"
+      },
+      "feed": {
+        "cause": "nonfinite density derivatives"
+      }
+    },
+    "candidate": {
+      "inputs": {
+        "ideal-calorics.json": "c94d504e68c6dc6e85d3d950cc51422499846729b1a06994b362040be991924a",
+        "reactions.json": "c1cb5c74b2d71ce56e9c0a5d86116f972adbb2d635a0e9ed944152f25bd5fc43",
+        "parameters.json": "7e9e3f02723700f8b6577681173249c0e7bd2c8c2a098f38a4e0a7e4611852d5"
+      },
+      "module": "/home/tnnrpolley21/.codex/worktrees/epc-delivery-231/ePC-SAFT/.venv/lib/python3.13/site-packages/epcsaft/__init__.py",
+      "initial": {
+        "success": true,
+        "removed_species": [
+          0,
+          4,
+          5,
+          6
+        ],
+        "rows": [
+          1.2789769243681803e-13,
+          5.684341886080802e-14,
+          4.263256414560601e-14,
+          2.842170943040401e-14,
+          0.0,
+          4.848213537880495e-14,
+          0.0,
+          1.2458930305580861e-17,
+          9.967144244464689e-17,
+          2.220446049250313e-16
+        ],
+        "message": "converged: residual 5.045085355955182e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 12 iterations, contraction absent, floor 1.7641264411153503e-10, amplification 0"
+      },
+      "feed": {
+        "molar_density": 723.5928742984386,
+        "pressure_density_derivative": 2196.5242889643346,
+        "born": 0.0,
+        "debye_huckel": 0.0,
+        "residual_enthalpy": -623.740071356366
+      }
+    }
+  },
+  "failures": {
+    "build/issue-231/zero-inventory-coordinate-order-failure.log": "terminate called after throwing an instance of 'std::invalid_argument'\n  what():  invalid reciprocal parameter coordinate",
+    "build/issue-231/zero-inventory-gradient-failure.log": "\n******************************************************************************\nThis program contains Ipopt, a library for large-scale nonlinear optimization.\n Ipopt is released as open source code under the Eclipse Public License (EPL).\n         For more information visit http://projects.coin-or.org/Ipopt\n******************************************************************************\n\n../../../engine/tests/native/regression_checks.cpp:3152: failed: gradients[0].value.size() == 7\nterminate called after throwing an instance of 'recording_support::Failure'\n  what():  ../../../engine/tests/native/regression_checks.cpp:3152: failed: gradients[0].value.size() == 7",
+    "build/issue-231/zero-inventory-support-projection-failure.log": "\n******************************************************************************\nThis program contains Ipopt, a library for large-scale nonlinear optimization.\n Ipopt is released as open source code under the Eclipse Public License (EPL).\n         For more information visit http://projects.coin-or.org/Ipopt\n******************************************************************************\n\nterminate called after throwing an instance of 'std::runtime_error'\n  what():  zero-inventory/0.110000/gradient: action_unavailable: initial:support_change: phase_property dependency: support_change",
+    "build/issue-231/cold-face-insertion-cause.log": "boundary_start error ionic_insertion: absent charged component property\nOriginal native diagnostic: build/issue-231/cold-face-diagnostic.log\nSHA256: 3334337dea783ff3bd5080b4a0045ba8149f1f4c9cce69952bc3b863da1fbaab",
+    "build/issue-231/cold-face-neutral-electrostatics.log": "EPCSAFT_CASE schema_version=1 test_id=native.regression.neutral-electrostatics execution=Running\nEPCSAFT_EXPECT_JSON {\"schema_version\":1,\"test_id\":\"native.regression.neutral-electrostatics\",\"expected_comparison_keys\":[\"neutral-electrostatics/*\"]}\n../../../engine/tests/native/regression_checks.cpp:2846: failed: agree(\"neutral-electrostatics/cold-seed/pressure\", \"P_seed\", \"Pa\", seed.pressure, selected_seed.pressure, 0, 0, seed_inputs, \"neutral-support cold pressure seed is unchanged\", \"issue-231\")\nEPCSAFT_CASE schema_version=1 test_id=native.regression.neutral-electrostatics execution=Failed outcome_reason=../../../engine/tests/native/regression_checks.cpp:2846: failed: agree(\"neutral-electrostatics/cold-seed/pressure\", \"P_seed\", \"Pa\", seed.pressure, selected_seed.pressure, 0, 0, seed_inputs, \"neutral-support cold pressure seed is unchanged\", \"issue-231\")"
+  },
+  "review_correction": {
+    "comparison_ids": [
+      "inventory-face/supplied-guess"
+    ],
+    "original_rows": 188,
+    "wheel_sha256": "e28d258df06eac39711c59a79f9ce2b69fc8ac7565637bfba0dbef21863d8dc7",
+    "build_fingerprint": "2f1e9568debfb757d0a7513f4fc848e3d282e51fa50e2dae22606c8146aaeb66",
+    "source_head": "e0730a651c77f4419eabbc9e96c6dd81c8063778",
+    "runtime_patch_sha256": "e25171c1332be5ed5487fa97a6e78dce0c4f4e0aa210683139f56f58fe1013d6",
+    "native_test_patch_sha256": "7898c6ab46a6ff835f670513ed6ea3321339b6c283a58ee5d618bc417114af0c",
+    "artifacts": {
+      "build/issue-231/guess-review-probe.py": "574f4430d2e39512a673135d28a0be45c9870a72cb6b82bf0b330383da9df6b8",
+      "build/issue-231/guess-review-baseline.log": "67d5306a38dd2d96a12cddbc2d773b9bd9f96a3c9d653074a01b2655e196d58e",
+      "build/issue-231/first-delivered-review.md": "1f8aaad65f3caa7f1916b0845ab76dd73ec2b2014b39ccaf3c865ac52f85f765",
+      "build/issue-231/guess-correction-preparation.log": "0972857778e3aac1036be891726deabae9c0c7103059f12735ab9ba7d1a81fae",
+      "build/issue-231/guess-correction-preparation.json": "1b99d23062aade32daa5c635fe0b76c378b40855cdf7153a9b9b5cebbb725ffc",
+      "build/issue-231/guess-correction-inventory-face.log": "d918a8ef1eb110aa82237e14be43f5dc25acbf4274dde05332a856764fcd0a5c",
+      "build/engine-meson/cpython-313-linux-x86_64-x86_64-f6db693e21e289603ae71c78242a17b102f1e324061021d5dca361f47a0bfef7/regression_checks": "902e11ebd8c48a0f071f0350705e27bef8f60ccf07bdb41f6a77d16ecf456284",
+      "build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl": "e28d258df06eac39711c59a79f9ce2b69fc8ac7565637bfba0dbef21863d8dc7",
+      "build/issue-231/guess-correction-affected.log": "f24144564ff02e85330f679df06a30f9f81abb28ef2bc553e26b2a96a1291ed7",
+      "build/issue-231/guess-correction-affected-slow-native.xml": "863cde24475e55fb3a28ead5839c83901fb7541bc4f530750283795240757459",
+      "build/issue-231/guess-correction-affected-pytest.xml": "9c48b971951a6d8e6b05eea479b082f386d24780c152dc7d03b25343450b7c1b",
+      "build/issue-231/guess-correction-all.log": "f63a243eae06bc507071731ef4d366216bc3c80817f0463e6b330817160c92f3",
+      "build/issue-231/guess-correction-all-native.xml": "d0b5aacab888b6066537d442f33d10b8bcd2cfdf15a249b19b074f1447a6b150",
+      "build/issue-231/guess-correction-all-pytest.xml": "3ef81b195eebb5cebd7367d2d84b1ed7d939f7816c51d38e008ed6177cd919f4",
+      "build/issue-231/guess-correction-final-preparation.json": "1b99d23062aade32daa5c635fe0b76c378b40855cdf7153a9b9b5cebbb725ffc"
+    },
+    "limit": "Only the appended supplied-guess comparison uses this corrected execution; the original 188 rows retain their d93 execution provenance",
+    "gates": "Affected against e0730 and full fast installed-wheel gate both passed on the corrected e28 wheel; independent correction review remains pending"
+  }
+}

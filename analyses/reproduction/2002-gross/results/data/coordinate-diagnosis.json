@@ -1,0 +1,9 @@
+{
+  "wall_seconds": 0.5793503219992999,
+  "workers": 32,
+  "selected_rows": 12,
+  "native_calls": 25,
+  "seeded_calls": 1,
+  "input_bounds": "Only selected coordinates; no tolerance widened",
+  "convention_findings": "No convention difference established"
+}

@@ -1,0 +1,6 @@
+reaction_id,equation,phase,source_locator
+R1,H2O <=> OH- + H+,liquid,lines 38-46
+R2,MDEAH+ <=> MDEA + H+,liquid,lines 47-54
+R3,CO2 + H2O <=> HCO3- + H+,liquid,lines 55-63
+R4,HCO3- <=> CO3^2- + H+,liquid,lines 64-72
+R5,H2S <=> HS- + H+,liquid,lines 73-80

@@ -1,0 +1,24 @@
+{
+  "available": true,
+  "partial": true,
+  "case": {
+    "index": 0,
+    "T_K": 300,
+    "P_Pa": 499330.4478698393,
+    "x": [
+      1
+    ],
+    "branch": "vapor",
+    "id": "A-propane-vapor"
+  },
+  "root_count": 3,
+  "spinodal_count": 2,
+  "stable_root_count": 2,
+  "max_relative_density_difference": 0.0,
+  "density_criterion": 1e-10,
+  "max_spinodal_bracket_log_width": 5.107025913275707e-15,
+  "log_tolerance": 1e-14,
+  "dependent_unavailable": "The full changing-state oracle and benchmark stop in pressure_floor at A-propane-vapor state 0. Assertion: floors and all(math.isfinite(f) and f >= 0 for f in floors). Trace event names are requested_order twice, with no gradient_floor.",
+  "replacement": "No replacement field is exposed by DensityDiagnostics or DensityDiagnosticPoint in the release. Native density-root and anchor convergence retain gradient_floor/rho as Convergence.floor, but that is a solver-dependent quantity, not the independent fixed-density floor this study declares.",
+  "evidence_label": "numerical verification"
+}

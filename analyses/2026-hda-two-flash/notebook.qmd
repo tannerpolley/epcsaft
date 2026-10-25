@@ -1,0 +1,740 @@
+---
+title: "HDA two-flash flowsheet with ePC-SAFT properties: split packages and acceptance campaign (#73 slice 3b)"
+format:
+  html:
+    embed-resources: true
+execute:
+  echo: false
+---
+
+Working notebook, not independently reviewed and not promoted for manuscript use. It reads the
+retained files in `results/campaign/` (copied byte for byte from the downstream campaign by
+`scripts/collect_campaign.py`) and the separately frozen hydrogen-pair files in `results/`.
+It runs no Engine, IDAES or Ipopt calculation. Every number below is computed from retained files.
+
+```{python}
+import ast
+import csv
+import gzip
+import json
+import math
+import re
+from pathlib import Path
+
+import matplotlib.pyplot as plt
+import numpy as np
+from IPython.display import Markdown
+
+R = Path("results/campaign")
+camp = json.loads((R / "campaign.json").read_text())
+prov = json.loads((R / "provenance.json").read_text())
+read = lambda name: list(csv.DictReader((R / name).open()))  # noqa: E731
+audit, streams, binary = read("audit.csv"), read("streams.csv"), read("binary_path.csv")
+transport, domains, near = read("property_transport.csv"), read("auxiliary_domains.csv"), read("near_active_rows.csv")
+measure = read("measure_reference.csv")
+binary_sens = read("binary_path_sensitivity.csv") if (R / "binary_path_sensitivity.csv").exists() else []
+opts, sims = camp["optimizations"], {s["factor"]: s for s in camp["simulations"]}
+WIDTHS = camp["factors_done"]
+EPS1, EPS2 = 0.01, 0.0005  # K, IDAES 2.12 SmoothVLE defaults scaled by the width factor
+PRED_RTOL = 1e-3  # design section 4: relative agreement of the four counted rows with the prediction
+A7 = {"relative": 1e-3, "floor": 1.0, "absolute": 1e-4}  # issue #73 smoothing-sensitivity thresholds
+start_label = lambda s: "/".join(str(v) for v in s)  # noqa: E731
+qualified = [o for o in opts if o.get("qualified")]
+fmt = lambda v, d=4: "–" if v is None else (f"{v:.{d}g}" if isinstance(v, float) else str(v))  # noqa: E731
+
+
+def md_table(header, rows):
+    out = ["| " + " | ".join(header) + " |", "|" + "---|" * len(header)]
+    out += ["| " + " | ".join(fmt(c) for c in r) + " |" for r in rows]
+    return Markdown("\n".join(out))
+
+
+def ipopt_file(f, k, kind):
+    return R / "ipopt" / f"{f:g}_start{k}_{kind}.ipopt"
+
+
+def logging_ok(path, iterations):
+    """3b design S2 falsifier: the output file exists, lists output_file and dual_inf_tol 1e-06 as used
+    options, and its iteration count equals the solver result's."""
+    if not path.exists():
+        return False
+    text = path.read_text()
+    n = re.search(r"Number of Iterations\.*: *(\d+)", text)
+    return bool(re.search(r"output_file = .*yes", text) and re.search(r"dual_inf_tol = 1e-06 .*yes", text)
+                and n and int(n[1]) == iterations)
+
+
+attempts = [(o, k) for f in WIDTHS for k, o in enumerate([o for o in opts if o["factor"] == f], 1)]
+log_checks = [logging_ok(ipopt_file(o["factor"], k, "optimization"), o["iterations"])
+              for o, k in attempts if "iterations" in o]
+opt_logs = [ipopt_file(o["factor"], k, "optimization") for o, k in attempts if "iterations" in o]
+slack_logs = sum("Slacks too small" in f.read_text() for f in opt_logs)
+```
+
+## Result
+
+```{python}
+#| output: asis
+per_width = {f: camp["qualified_starts"][str(f)] for f in WIDTHS}
+print(f"- **Qualified starts per width** (A6 needs at least two): "
+      + "; ".join(f"width {f:g}: {n} of 3" for f, n in per_width.items())
+      + f". A6 is {'met' if camp['A6_passed'] else '**not met**'} over the widths run.")
+q_obj = [o["objective_USD_per_yr"] for o in qualified]
+if q_obj:
+    print(f"- **Every qualified attempt reaches the same optimum**: {min(q_obj):.4f} to {max(q_obj):.4f} USD/yr, "
+          f"with {' or '.join(str(n) for n in sorted({o['kkt']['counted_active'] for o in qualified}))} counted active rows "
+          f"and the M4 local-minimum label.")
+failed = [o for o in opts if not o.get("qualified")]
+print(f"- **Failed attempts: {len(failed)}.** Each is listed with its exit and failed criteria below and diagnosed "
+      "in the diagnosis section.")
+print(f"- **Property transport (A12/S0)**: {sum(r['passed'] == 'True' for r in transport)} of {len(transport)} rows pass; "
+      f"the largest scaled difference is {max(float(r['scaled_diff']) for r in transport):.2g}.")
+q_starts = {(o["factor"], tuple(o["start"])) for o in qualified}
+a7_pairs = [x for x in camp["sensitivity"] if x["case"] == "simulation"
+            or {(WIDTHS[0], ast.literal_eval(x["case"][6:])), (x["factor"], ast.literal_eval(x["case"][6:]))} <= q_starts]
+a7_ok = camp["binary_path_sensitivity_passed"] and all(x["passed"] for x in a7_pairs)
+print(f"- **A7:** {sum(x['passed'] for x in a7_pairs)} of {len(a7_pairs)} comparisons between converged simulations or "
+      f"qualified attempts pass, and the binary path passes apart from the M3-excluded bubble crossings: "
+      f"{'met' if a7_ok else '**not met**'}. Comparisons involving an unqualified attempt are listed below but judge "
+      "no solution.")
+print("- **Outcome:** " + ("A6 holds at every width, and every qualified attempt meets the per-attempt criteria; the "
+                          "unqualified attempts are retained and diagnosed below. The delivered review decides #73 acceptance."
+                          if camp["A6_passed"] and len(WIDTHS) == 3 and a7_ok else
+                          "#73 acceptance is not met; slice 3b ends in its bounded-investigation state, with every failed "
+                          "attempt retained and diagnosed below."))
+```
+
+```{python}
+#| output: asis
+package = lambda r: ("benzene/toluene (F102)" if r["block"].startswith("fs.F102") else  # noqa: E731
+                     "vapor-only (recycle gas)" if r["point"] == "gas_dew" else "full")
+pairs = {}
+for r in (r for r in domains if r["reference"].startswith("pair ")):
+    pairs.setdefault(package(r), {}).setdefault(r["reference"][5:], set()).update({f"T {r['T_class']}", f"P {r['P_class']}"})
+print("The evidence is numerical verification of the formulation and its solutions on one Engine wheel, not physical "
+      "validation, and no global optimum or global phase-stability claim is made. Binary-pair evidence depends on the "
+      "package (classes of every audited bubble, dew, t_eq and dew-margin point against each pair's source temperature "
+      "T and pressure P ranges, `auxiliary_domains.csv`): "
+      + "; ".join(f"**{p}**: " + ", ".join(f"{pair} ({', '.join(sorted(c))})" for pair, c in sorted(v.items()))
+                  for p, v in pairs.items()) + ".")
+```
+
+## Environment and provenance
+
+```{python}
+#| output: asis
+d = prov["downstream"]
+print(f"- Engine wheel `{Path(d['wheel']).parent.name}` (non-editable), SHA-256 `{d['wheel_sha256']}`; "
+      f"`libepcsaft_asl.so` SHA-256 `{d['asl_library_sha256']}`.")
+print(f"- Downstream commit `{d['downstream_commit']}` (`idaes_examples/` clean: {d['downstream_source_clean']}); "
+      f"run kind `{d['run_kind']}`.")
+print(f"- Python {d['python']}, IDAES {d['idaes']}, Pyomo {d['pyomo']}, Ipopt {'.'.join(map(str, d['ipopt']))} "
+      f"with {d['linear_solver'].upper()}.")
+print("- Inputs: " + "; ".join(f"`{p['packet_path']}` fingerprint `{p['packet_fingerprint'][:12]}…`, downstream copy "
+                              f"identical: {p['downstream_copy_matches']}" for p in prov["packets"].values()) + ".")
+print(f"- Ipopt logging reached Ipopt (output file, user options `output_file` and `dual_inf_tol 1e-06`, "
+      f"matching iteration count) for {sum(log_checks)} of {len(log_checks)} optimizations.")
+```
+
+## Flowsheet, packages and translators
+
+The full four-component package (H₂ and CH₄ vapor-only, benzene and toluene in both phases)
+covers the feeds, M101, H101, R101 and F101. A vapor-only package without phase equilibrium
+carries the recycle gas through S101, C101 and P103. A benzene/toluene package carries F102,
+P101 and P102; without vapor-only species its SmoothVLE builds both the bubble (ε₁) and dew
+(ε₂) operations. The translators `to_gas`, `to_aromatics` and `to_full` copy T, P and the present
+phase's flow and composition; the absent phase is an exact zero flow at the equimolar
+benzene/toluene composition. F101 and F102 separate phases ideally with zero absent-phase flow.
+
+```{python}
+#| fig-cap: "Two-flash flowsheet at the first qualified width-1 optimum. Shaded regions are the property packages; diamonds are translators. Labels give T (K), P (kPa), total flow (mol/s) and vapor fraction of each stream, read at the receiving block."
+case = next((o for o in qualified if o["factor"] == 1.0), qualified[0] if qualified else None)
+pos = {"I101": (0, 3.4), "I102": (0, 0.6), "M101": (2, 2), "H101": (4.2, 2), "R101": (6.4, 2), "F101": (8.6, 2),
+       "to_gas": (9.9, 3.5), "S101": (11.6, 3.5), "P103": (13.6, 4.7), "C101": (8.6, 5.4), "to_full": (2, 5.4),
+       "to_aromatics": (9.9, 0.5), "F102": (11.6, 0.5), "P101": (13.6, 1.5), "P102": (13.6, -0.5)}
+fig, ax = plt.subplots(figsize=(13, 7))
+for (x0, y0, w, h), color, label in (((-0.6, -1.1, 10.1, 4.0), "tab:blue", "full package"),
+                                     ((7.9, 3.1, 6.4, 3.0), "tab:orange", "vapor-only package"),
+                                     ((10.7, -1.1, 3.6, 3.0), "tab:green", "benzene/toluene package")):
+    ax.add_patch(plt.Rectangle((x0, y0), w, h, color=color, alpha=0.1))
+    ax.text(x0 + 0.1, y0 + 0.1, label, fontsize=8, style="italic")
+for name, (x, y) in pos.items():
+    tr = name.startswith("to_")
+    ax.plot(x, y, "D" if tr else "s", ms=9 if tr else 18, color="0.3" if tr else "white", mec="black")
+    ax.text(x, y + 0.3, name, ha="center", fontsize=8, weight="bold")
+if case:
+    rows = [r for r in streams if float(r["factor"]) == case["factor"] and r["case"] == "start_" + "_".join(map(str, case["start"]))]
+    for r in rows:
+        (x0, y0), (x1, y1) = pos[r["from"]], pos[r["to"]]
+        ax.annotate("", (x1, y1), (x0, y0), arrowprops=dict(arrowstyle="->", color="0.4", shrinkA=11, shrinkB=11))
+        flat = abs(y1 - y0) < 0.1
+        dx, dy = {"s01": (-1.6, 0.2), "s02": (0.15, -0.4), "s06a": (-1.9, 0), "s07a": (-1.9, -0.45), "s10": (-1.1, 0.5),
+                  "s11": (-1.1, -0.6)}.get(r["stream"], (0 if flat else 0.12, -0.55 if flat else 0))
+        ax.text((x0 + x1) / 2 + dx, (y0 + y1) / 2 + dy, f"{r['stream']}: {float(r['T_K']):.1f} K, "
+                f"{float(r['P_Pa']) / 1e3:.1f} kPa\n{float(r['flow_mol_s']):.4f} mol/s, β = {float(r['vapor_fraction']):.4f}",
+                ha="center" if flat else "left", va="center", fontsize=6.5)
+ax.set_xlim(-0.8, 14.5); ax.set_ylim(-1.3, 6.3); ax.axis("off")
+plt.show()
+```
+
+## Property path and transport (A12, S0)
+
+Each IDAES property calls the Engine callback `epcsaft_pressure_property` with
+q = (T, P, w_H2, w_CH4, w_benzene, w_toluene) and string arguments (record, row, phase); every
+package passes the same four-component record, with zero weights for species outside the phase
+or package.
+
+| IDAES quantity | Callback row | Phase selector | Engine quantity |
+|---|---|---|---|
+| `dens_mol_phase` | 0 | liquid 0, vapor 1 | pressure-closed molar density, mol/m³ |
+| `enth_mol_phase` | 1 | liquid 0, vapor 1 | total molar enthalpy on the NASA9 formation basis at 1 bar, J/mol |
+| ln φᵢ in `log_fug_phase_comp_*` | 2 + i | liquid 0, vapor 1 | component ln φᵢ |
+
+```{python}
+#| output: asis
+by_state = {}
+for r in transport:
+    by_state.setdefault(r["state"], []).append(r)
+display(md_table(["State", "T (K)", "P (kPa)", "Rows", "Passed", "Max scaled difference", "Branches (stable roots)"],
+                 [[s, float(rs[0]["T_K"]), float(rs[0]["P_Pa"]) / 1e3, len(rs), sum(r["passed"] == "True" for r in rs),
+                   max(float(r["scaled_diff"]) for r in rs),
+                   ", ".join(sorted({f"{r['phase']} {r['branch']} ({r['stable_roots']})" for r in rs}))]
+                  for s, rs in by_state.items()]))
+```
+
+Each row's fixed scale and limit (A12's absolute plus relative tolerance on the scaled reference)
+are columns of `property_transport.csv`; the largest excess over a limit is
+`{python} f"{max(float(r['excess']) for r in transport):.2g}"`. The state `aromatics_F102` is the
+benzene/toluene package with zero H₂ and CH₄ weights in both phases.
+
+## Acceptance per attempt
+
+```{python}
+#| output: asis
+rows = []
+for o, k in attempts:
+    c = o.get("criteria", {})
+    sq = o["square"]
+    held = sq["gate"] + [f"initial {g}" for g in sq.get("initial_stops", [])]  # the initial square's stops also hold release
+    rows.append([f"{o['factor']:g}", start_label(o["start"]), "not released: " + ", ".join(held) if held else "released",
+                 o.get("exit") or o["termination"], o.get("iterations"), fmt(o.get("objective_USD_per_yr"), 9),
+                 c.get("A1_component_mol_s", {}).get("value"), c.get("A1_energy_W", {}).get("value"),
+                 max((c[q]["value"] for q in c if q.startswith("A2_")), default=None),
+                 o.get("kkt", {}).get("counted_active"), o.get("kkt", {}).get("singular_values", {}).get("ratio"),
+                 o.get("kkt", {}).get("label"), c.get("M7", {}).get("value"),
+                 ", ".join(q for q in c if not c[q]["passed"]) or ("all pass" if c else "–")])
+display(md_table(["Width", "Start (K/K/K/Pa)", "D8 square gate", "Ipopt exit", "Iter.", "Objective (USD/yr)",
+                  "A1 component (mol/s)", "A1 energy (W)", "Largest A2 term", "Counted rows", "σ_min/σ_max",
+                  "Label", "M7 min T−T_dew (K)", "Failed criteria"], rows))
+```
+
+```{python}
+#| output: asis
+lim = {k: v["limit"] for k, v in next(o for o in opts if "criteria" in o)["criteria"].items()}
+print(f"Limits applied per attempt (from the criteria records): A1 component {lim['A1_component_mol_s']:g} mol/s, "
+      f"atom {lim['A1_atom_mol_s']:g} mol/s, energy {lim['A1_energy_W']:g} W, pressure {lim['A1_pressure_Pa']:g} Pa; "
+      f"each A2 term (scaled primal feasibility, reduced and full stationarity, dual sign, complementarity) at most "
+      f"{lim['A2_stationarity']:g}, with Ipopt's exit \"{lim['M1_exit']}\" (M1); row rank with at most "
+      f"{lim['A4_rank'][0]} counted rows and σ_min ≥ {lim['A4_rank'][1]:g} σ_max over [J_eq; A_counted] (M2); every "
+      f"audited bubble, dew, t_eq and recycle-gas dew row accepted with its density roots (A8, A9); stream "
+      f"temperatures within {lim['A10_streams'][0]:g}–{lim['A10_streams'][1]:g} K (A10); phase_frac × flow_mol ≥ "
+      f"{lim['A11_M5']:g} mol/s (M5); and T − T_dew ≥ {lim['M7']:g} K for the recycle gas (M7).")
+```
+
+**F102 start temperature (decision 2).** After the D8 square solve at the fixed start, a declared
+F102 temperature (the third start coordinate) that lies outside the F102 outlet's [T_bub, T_dew]
+is moved to their midpoint and square-solved again before release. The other three start
+coordinates are unchanged, and each width remains a fresh run from its fixed start.
+
+```{python}
+#| output: asis
+display(md_table(["Width", "Start", "Declared F102 T (K)", "T_bub (K)", "T_dew (K)", "F102 T used (K)", "Moved"],
+                 [[f"{o['factor']:g}", start_label(o["start"]),
+                   *(f"{o['square']['F102_start_K'][q]:.2f}" for q in ("declared", "T_bub", "T_dew", "used")),
+                   o["square"]["F102_start_K"]["used"] != o["square"]["F102_start_K"]["declared"]]
+                  for o, k in attempts if "F102_start_K" in o["square"]]))
+```
+
+## Active set and rank against the prediction
+
+```{python}
+#| output: asis
+q_keys = {(o["factor"], start_label(o["start"])) for o in qualified}
+counted = [r for r in near if r["counted"] == "True" and (float(r["factor"]), r["start"]) in q_keys]
+outside = sorted({r["identity"] for r in counted if r["identity"] not in
+                  ("overhead loss", "benzene product", "H101 temperature bound", "F102 pressure bound")})
+print(f"Over the {len(qualified)} qualified attempts every counted row is one of the four named rows "
+      f"(overhead loss, benzene product, H101 temperature bound, F102 pressure bound)" +
+      (f"; counted rows outside them: {outside}." if outside else "; no other row is counted.") + "\n")
+pred = {}
+for r in (r for r in measure if r["termination"] == "convergenceCriteriaSatisfied"):
+    pred.setdefault((float(r["factor"]), r["start"]), {})[r["row"]] = (float(r["multiplier"]), json.loads(r["projection"]))
+rows = []
+for o in qualified:
+    mine = {r["identity"]: (float(r["multiplier"]), json.loads(r["projection"])) for r in near
+            if float(r["factor"]) == o["factor"] and r["start"] == start_label(o["start"]) and r["counted"] == "True"}
+    ref = pred.get((o["factor"], start_label(o["start"])), {})
+    sv = lambda rows_: (lambda s: s.min() / s.max())(np.linalg.svd(np.array([v[1] for v in rows_.values()]), compute_uv=False))  # noqa: E731
+    rel = max((abs(mine[n][0] - ref[n][0]) / abs(ref[n][0]) for n in mine if n in ref), default=None) if len(ref) == 4 else None
+    rows.append([f"{o['factor']:g}", start_label(o["start"]), len(mine), min(v[0] for v in mine.values()),
+                 sv(mine), sv(ref) if len(ref) == 4 else None, rel,
+                 abs(sv(mine) / sv(ref) - 1) if len(ref) == 4 else None, o["kkt"]["m4_premises"]["empty_cone_label"]])
+display(md_table(["Width", "Start", "Counted", "Smallest multiplier", "Projected σ ratio", "3b-measure σ ratio",
+                  "Max relative multiplier change", "Relative σ-ratio change", "M4 label"], rows))
+```
+
+The prediction (design section 4, readiness correction 4) is the four-row projection of the same
+attempt in 3b-measure (`measure_reference.csv`): each multiplier and the projected σ ratio within
+the relative tolerance `{python} f"{PRED_RTOL:g}"`. A dash marks an attempt whose 3b-measure
+counterpart did not converge. The rank test itself is on the full stack [J_eq; A_counted]
+(column "σ_min/σ_max" above).
+
+## Common optimum against 3b-measure and the ideal baseline
+
+```{python}
+#| output: asis
+ideal = camp["ideal_baseline"]["optimum"]
+ref_by = {(float(r["factor"]), r["start"]): r for r in measure if r["termination"] == "convergenceCriteriaSatisfied"}
+rows = []
+for o in qualified:
+    m = ref_by.get((o["factor"], start_label(o["start"])))
+    if not m:
+        continue
+    d_cost = abs(o["objective_USD_per_yr"] - float(m["objective_USD_per_yr"]))
+    d_duty = max(abs(v - float(m[f"duty_{u}_W"])) / max(A7["relative"] * abs(float(m[f"duty_{u}_W"])), A7["floor"])
+                 for u, v in o["duties_W"].items())
+    rows.append([f"{o['factor']:g}", start_label(o["start"]), f"{o['objective_USD_per_yr']:.4f}", d_cost,
+                 d_cost <= max(A7["relative"] * float(m["objective_USD_per_yr"]), A7["floor"]), d_duty,
+                 abs(o["purity"] - float(m["purity"])), abs(o["recovery"] - float(m["recovery"])),
+                 max(abs(v - float(m[f"vapor_fraction_{u}"])) for u, v in o["vapor_fraction"].items())])
+display(md_table(["Width", "Start", "Objective (USD/yr)", "Cost change vs 3b-measure (USD/yr)", "Within A7",
+                  "Largest duty change / A7 limit", "Purity change", "Recovery change", "Largest vapor-fraction change"], rows))
+if qualified:
+    o = qualified[0]
+    print(f"\nAgainst the ideal baseline optimum ({ideal['objective_USD_per_yr']:.2f} USD/yr at "
+          f"{', '.join(f'{v:.6g}' for v in ideal['decisions'])}), the ePC-SAFT optimum costs "
+          f"{o['objective_USD_per_yr'] - ideal['objective_USD_per_yr']:+.2f} USD/yr at decisions "
+          f"{', '.join(f'{v:.6g}' for v in o['decisions'])} (K, K, K, Pa); reactor outlet {o['reactor_outlet_T_K']:.2f} K "
+          f"against {ideal['reactor_outlet_T_K']:.2f} K.")
+```
+
+A7's thresholds apply (`A7` in the setup cell, as in the downstream `compare`): duties and cost
+within the relative change `{python} f"{A7['relative']:g}"` with floors of
+`{python} f"{A7['floor']:g}"` W and USD/yr; purity, recovery and vapor fraction within
+`{python} f"{A7['absolute']:g}"` absolute.
+
+## Smoothing sensitivity (A7) and the binary path (S1, M3)
+
+```{python}
+#| output: asis
+if camp["sensitivity"]:
+    display(md_table(["Width", "Case", "Passed", "Failed checks", "Objective change (USD/yr)", "Purity change", "Recovery change"],
+                     [[f"{s['factor']:g}", s["case"], s["passed"], ", ".join(s["failed"]),
+                       s.get("max_abs_change", {}).get("objective_USD_per_yr"), s.get("max_abs_change", {}).get("purity"),
+                       s.get("max_abs_change", {}).get("recovery")] for s in camp["sensitivity"]]))
+else:
+    print("Only width 1 completed, so no sensitivity comparison exists.")
+```
+
+```{python}
+#| fig-cap: "Equimolar benzene/toluene at 105 kPa solved by IDAES SmoothVLE/LogBubbleDew at three widths (lines join the 5 K grid). Lower panel: change of the vapor fraction against width 1 on the grid (lines) and at the crossings (circles: open, the bubble crossing that M3 excludes; filled, the dew crossing); the dashed line is A7's absolute limit."
+fig, (a, b) = plt.subplots(2, 1, figsize=(7, 6), sharex=True)
+grid = {f: [r for r in binary if float(r["factor"]) == f][:31] for f in WIDTHS}
+for f, rs in grid.items():
+    a.plot([float(r["T_K"]) for r in rs], [float(r["vapor_fraction"]) for r in rs], marker=".", label=f"width {f:g}")
+a.set_ylabel("vapor fraction β"); a.legend()
+for n, f in enumerate(WIDTHS[1:], 1):
+    rs = [r for r in binary_sens if float(r["factor"]) == f]
+    line, = b.semilogy([float(r["T_K"]) for r in rs[:31]], [max(float(r["vapor_fraction_change"]), 1e-16) for r in rs[:31]],
+                       marker=".", color=f"C{n}", label=f"width {f:g}")
+    for r in rs[31:]:  # the bubble (M3-excluded, open) and dew (filled) crossings
+        b.semilogy(float(r["T_K"]), float(r["vapor_fraction_change"]), "o", color=line.get_color(),
+                   mfc="none" if r["m3_excluded"] == "True" else line.get_color())
+b.axhline(A7["absolute"], ls="--", color="black"); b.legend(); b.set_xlabel("T (K)"); b.set_ylabel("|β − β(width 1)|")
+plt.show()
+```
+
+```{python}
+#| output: asis
+def t_eq(T, Tb, Td, f):
+    """IDAES 2.12 SmoothVLE nested expression (smooth_VLE.py:89-139)."""
+    e1, e2 = EPS1 * f, EPS2 * f
+    t1 = 0.5 * (T + Tb + math.sqrt((T - Tb) ** 2 + e1 ** 2))
+    return 0.5 * (t1 + Td - math.sqrt((t1 - Td) ** 2 + e2 ** 2))
+
+
+cross = {f: [r for r in binary if float(r["factor"]) == f][31:] for f in WIDTHS}
+nested = max(abs(float(r["T_eq_K"]) - t_eq(float(r["T_K"]), float(r["T_bubble_K"]), float(r["T_dew_K"]), f))
+             for f, rs in cross.items() for r in rs)
+ratio = {f: 2 * float(rs[0]["vapor_fraction"]) / (EPS1 * f) for f, rs in cross.items()}
+spread = (max(ratio.values()) - min(ratio.values())) / min(ratio.values())
+print(f"- **Nested t_eq (S1):** the IDAES t_eq at both crossings matches the nested SmoothVLE expression within "
+      f"{nested:.2g} K (limit 10⁻⁹ K).")
+print(f"- **First-order bubble relation:** 2β/ε₁ at the bubble crossing is "
+      + ", ".join(f"{v:.6g} K⁻¹ (width {f:g})" for f, v in ratio.items())
+      + f"; relative spread {spread:.2g} (limit 0.01).")
+excl = [r for r in binary_sens if r["m3_excluded"] == "True"]
+other = [r for r in binary_sens if r["m3_excluded"] != "True"]
+print(f"- **A7 on the binary path:** {sum(r['passed'] == 'True' for r in other)} of {len(other)} non-excluded comparisons pass; "
+      f"the M3-excluded bubble-crossing changes are " + ", ".join(f"{float(r['vapor_fraction_change']):.3g}" for r in excl) + ".")
+s1 = sims[WIDTHS[0]]["bubble_blocks"]
+print(f"- **Bubble operation:** state blocks with `temperature_bubble` or `_t1`: {s1} (the F102 outlet only).")
+f102 = [(r, o) for o, k in attempts for r in audit if o.get("qualified") and r["point"] == "bubble"
+        and float(r["factor"]) == o["factor"] and r["case"] == "start_" + "_".join(map(str, o["start"]))]
+if f102:
+    gaps = [float(r["T_K"]) - float(r["T_point_K"]) for r, _ in f102]
+    t1 = [0.5 * (float(r["T_K"]) + float(r["T_point_K"]) + math.sqrt(g ** 2 + (EPS1 * o["factor"]) ** 2)) - float(r["T_K"])
+          for (r, o), g in zip(f102, gaps)]
+    print(f"- **F102 at qualified optima:** T_F102 − T_bub = {min(gaps):.4f}–{max(gaps):.4f} K and _t1 − T = "
+          f"{min(t1):.3g}–{max(t1):.3g} K, so the bubble smoothing offset is far below A7's thresholds there.")
+```
+
+## Recycle-gas dew margin (M7) and translators
+
+```{python}
+#| output: asis
+kmap = {(o["factor"], "start_" + "_".join(map(str, o["start"]))): (o, k) for o, k in attempts}
+
+
+VIOL_TOL = float(next(a for a in sims[WIDTHS[0]]["command_line"] if a.startswith("constr_viol_tol=")).split("=")[1])
+
+
+def converged(r):
+    """A point that passes M1's primal test: Ipopt's final constraint violation of the scaled model, retained on every
+    audit row of that point (simulation, initial and midpoint square, endpoint), within constr_viol_tol."""
+    return float(r["primal_infeasibility"]) <= VIOL_TOL
+
+
+gd = [{**r, "converged": converged(r)} for r in audit if r["point"] == "gas_dew"]
+for r in gd:  # the amended M7 stop: a margin miss anywhere, a consistency miss only where M1's primal test passes
+    r["stop"] = (not r["margin_K"] or float(r["margin_K"]) < lim["M7"]) or (r["converged"] and r["m7_passed"] != "True")
+display(md_table(["Width", "Case", "Square point", "State", "T (K)", "P (kPa)", "T_dew (K)", "T − T_dew (K)",
+                  "T_dew − _teq(F101), abs (K)", "Primal infeasibility", "Passes M1 primal test", "M7 passed", "Stop"],
+                 [[r["factor"], r["case"].removesuffix("_square"), r.get("square") or "–", r["block"].split(".")[1],
+                   f"{float(r['T_K']):.6f}", f"{float(r['P_Pa']) / 1e3:.9f}",
+                   f"{float(r['T_point_K']):.6f}" if r["T_point_K"] else None, float(r["margin_K"]) if r["margin_K"] else None,
+                   float(r["teq_consistency_K"]) if r["teq_consistency_K"] else None, float(r["primal_infeasibility"]),
+                   r["converged"], r["m7_passed"], r["stop"]]
+                  for r in gd]))
+hidden = [(o["factor"], start_label(o["start"]), o["square"]["initial_stops"]) for o in opts if o["square"].get("initial_stops")]
+print(f"\n{len(gd)} recycle-gas dew rows ({sum(bool(r.get('square')) for r in gd)} at square points); "
+      f"{sum(r['stop'] for r in gd)} meet the amended stop rule. Initial square points with a stop: "
+      + (", ".join(f"width {f:g} start {st} ({', '.join(g)})" for f, st, g in hidden) if hidden else "none") + ".")
+tr = {n: max(max(s["balances"][n][q] for q in ("component_mol_s",)) for s in [*sims.values(), *[o for o in opts if "balances" in o]])
+      for n in ("to_gas", "to_aromatics", "to_full")}
+tre = {n: max(s["balances"][n]["energy_W"] for s in [*sims.values(), *[o for o in opts if "balances" in o]]) for n in tr}
+print("\nTranslator conservation over every solved point: largest per-component residual "
+      + ", ".join(f"{n} {tr[n]:.2g} mol/s" for n in tr) + "; largest energy residual "
+      + ", ".join(f"{n} {tre[n]:.2g} W" for n in tre) + f" (limits {lim['A1_component_mol_s']:g} mol/s and {lim['A1_energy_W']:g} W).")
+```
+
+**Amendment (#73, 2026-10-13).** The M7 consistency check presupposes converged F101 equilibrium
+rows, so its stop applies only at points that pass M1's primal test (Ipopt's final constraint
+violation of the scaled model within `constr_viol_tol`, retained on every audit row of the point);
+elsewhere a consistency miss is recorded as part of that attempt's failure. The margin
+check, T − T_dew ≥ `{python} f"{lim['M7']:g}"` K, still stops wherever it fails. This amends the
+design's stop rule; it is not compliance with its original wording. Every square point, including
+the initial square solve before a decision-2 retry, now keeps its audit and dew-margin rows.
+
+M7 solves the recycle gas's dew temperature natively (benzene/toluene liquid at pinned zero
+amount, P fixed, T free) at the `to_gas` outlet and at C101's outlet; a dew solve at F101's
+two-phase vapor must reproduce F101's _teq. The C101 outlet's small negative margin comes from
+C101 restoring the pressure that M101's smooth pressure minimum removes.
+
+## Energy convention and parameter evidence
+
+```{python}
+#| output: asis
+nasa = json.loads(Path("results/nasa9_reference_check.json").read_text())
+print(f"Stream enthalpies are Engine total enthalpies on the NASA9 formation basis at 1 bar, so the "
+      f"reactor writes no separate heat of reaction: Δ_rH(298.15 K) of toluene + H₂ → benzene + CH₄ is "
+      f"{nasa['delta_r_h_298_J_per_mol'] / 1e3:.4f} kJ/mol from the slice-3a check (`results/nasa9_reference_check.json`), "
+      f"against {nasa['delta_r_h_expected'] / 1e3:.3f} kJ/mol.\n")
+doc = json.loads(Path("../../data/packets/hda-pc-saft/1/parameters/parameters.json").read_text())
+display(md_table(["Pair", "k_ij", "Source"],
+                 [[f"{p['component_id_a']}/{p['component_id_b']}", c["value"]["magnitude"], c["provenance"]["locator"]]
+                  for p in doc["pairs"] for c in p["coefficients"]]))
+```
+
+The two fitted hydrogen pairs are the historical fit's values (README "Hydrogen-pair fit"). The
+figure below is that fit's retained figure, carried byte-identical from branch
+`issue-73-hda-two-flash` at `acf63fd2` and not rerun (slice 3 design D2); the native extension that
+produced it is identified by `core_sha256` in `results/hydrogen_pair_fit.json`.
+
+### Frozen hydrogen-pair calibration and withheld comparisons
+
+The pair fit is a separate result from the process campaign. Its selected
+values are [the original fit](results/hydrogen_pair_fit.json),
+[every source-row prediction](results/hydrogen_pair_rows.csv), and
+[the objective profile](results/hydrogen_pair_profile.csv), carried from
+`acf63fd2`. No fit or model evaluation was repeated for this summary.
+The historical native extension identity is displayed below; these values
+are not a replay on the process campaign's later Engine.
+
+For H₂/CH₄, ordinary Benham–Katz and Sagara rows train the binary interaction;
+ordinary Hong–Kobayashi rows are withheld. Pure endpoints, critical markers
+and dilute rows are stress cases excluded from both fitting and the held-out
+objective. For H₂/benzene, Park's low- and high-temperature isotherms train
+the interaction and the middle isotherm is withheld. Exact row membership
+and discrepancy scales are retained in
+[hydrogen_partitions.csv](inputs/hydrogen_partitions.csv); the
+[source packet](../../data/packets/hydrogen-binary-vle/2/provenance/source-origin.toml)
+owns the experimental locators. Ghosh's hydrogen pure parameters used
+hydrogen/decane data at higher temperatures, rather than these binary rows.
+
+```{python}
+#| output: asis
+fit_root = Path('results')
+pair_fit = json.loads((fit_root / 'hydrogen_pair_fit.json').read_text())
+pair_rows = list(csv.DictReader((fit_root / 'hydrogen_pair_rows.csv').open()))
+partition_summary = []
+for pair in sorted({r['pair'] for r in pair_rows}):
+    for partition in ('training', 'holdout', 'stress'):
+        selected = [r for r in pair_rows if r['pair'] == pair and r['partition'] == partition]
+        if not selected:
+            continue
+        values = []
+        for prefix in ('k0', 'khat'):
+            residuals = []
+            accepted = [r for r in selected if r[f'{prefix}_status'] == 'accepted']
+            for r in accepted:
+                if r['s_P']:
+                    residuals.append((float(r[f'{prefix}_P_Pa']) - float(r['P_obs_Pa'])) / float(r['s_P']))
+                if r['y_H2_obs'] and r['s_y']:
+                    residuals.append((float(r[f'{prefix}_y_H2']) - float(r['y_H2_obs'])) / float(r['s_y']))
+            values.extend([len(accepted), len(residuals), sum(v*v for v in residuals)/len(residuals) if residuals else None])
+        partition_summary.append([pair, partition, len(selected), *values])
+        if partition in ('training', 'holdout'):
+            expected = pair_fit[pair]
+            for value, reference in zip((values[2], values[5]),
+                    (expected['J_zero'], expected['J_hat']) if partition == 'training' else
+                    (expected['holdout']['J_holdout_0'], expected['holdout']['J_holdout_hat'])):
+                assert math.isclose(value, reference, rel_tol=1e-12)
+display(md_table(['Pair', 'Role', 'Rows', 'Accepted k=0', 'Channels k=0', 'J k=0',
+                  'Accepted fitted', 'Channels fitted', 'J fitted'], partition_summary))
+print("\n\n**Fitted coefficient and profile band.**\n")
+display(md_table(['Pair', 'Fitted k', 'Profile lower k', 'Profile upper k'],
+                 [[p, v['k_hat'], v['band_low'], v['band_high']] for p, v in pair_fit.items() if p != 'installed']))
+print("\n\n**Source domain of the rows.**\n")
+display(md_table(['Pair', 'Minimum T / K', 'Maximum T / K', 'Minimum P / MPa', 'Maximum P / MPa'],
+                 [[p, min(float(r['T_K']) for r in pair_rows if r['pair'] == p),
+                   max(float(r['T_K']) for r in pair_rows if r['pair'] == p),
+                   min(float(r['P_obs_Pa'])/1e6 for r in pair_rows if r['pair'] == p),
+                   max(float(r['P_obs_Pa'])/1e6 for r in pair_rows if r['pair'] == p)]
+                  for p in sorted({r['pair'] for r in pair_rows})]))
+print(f"Historical extension SHA-256: `{pair_fit['installed']['core_sha256']}`; original source-row SHA-256: "
+      f"`{pair_fit['installed']['rows_sha256']}`.")
+```
+
+$J$ is the mean squared discrepancy-scaled residual over observable channels:
+pressure and, where supplied, vapor hydrogen fraction. The fixed scales
+include source accuracy, input sensitivity and the declared composition
+floor; they are engineering discrepancy allowances, not Gaussian standard
+uncertainties. Stress rows have no retained discrepancy scales, so no stress
+objective is defined. Accepted stress predictions remain diagnostic;
+the remaining endpoints have no binary bubble specification and stay in
+the source-row count. Bubble calculations at critical-marker inputs are not
+critical-point solves. Stress rows do not define an adoption criterion. The
+profile interval is a fixed relative-objective band, not a statistical
+confidence interval.
+
+Both fitted interactions reduce the training and held-out objectives, but
+the H₂/CH₄ held-out discrepancy remains large. These are calibration and
+withheld binary predictions within the recorded source domains. Cryogenic
+H₂/CH₄ data and the warmer H₂/benzene data do not validate hot HDA process
+predictions. The process-campaign reviews do not accept this separate pair-fit
+summary; independent delivered review and investigator promotion remain open.
+
+![Historical hydrogen-pair fit (H₂/benzene and H₂/CH₄), carried from `acf63fd2`; not produced by this slice.](figures/hydrogen_pair_fit.png)
+
+## Runtime
+
+```{python}
+#| output: asis
+display(md_table(["Width", "Start", "Square solve (s)", "Optimization (s)", "Optimization iterations"],
+                 [[f"{o['factor']:g}", start_label(o["start"]), o["square"]["wall_s"], o.get("wall_s"), o.get("iterations")]
+                  for o, k in attempts]))
+print("\nWall times include the Engine callback evaluations and were measured on a machine shared with other jobs; "
+      "they are not a performance claim.")
+```
+
+## Auxiliary domains (A10)
+
+```{python}
+#| output: asis
+cls = {}
+for r in domains:
+    cls.setdefault(r["reference"], set()).add(r["T_class"])
+display(md_table(["Reference", "Temperature classes of audited rows"], [[k or "(refused root)", ", ".join(sorted(v))] for k, v in sorted(cls.items())]))
+print(f"\n{len(domains)} classified rows; unavailable roots: {sum(r['T_class'] == 'unavailable' for r in domains)}. "
+      "Extrapolation is reported, not a stop (A10).")
+```
+
+## Diagnoses
+
+```{python}
+#| output: asis
+for o, k in attempts:
+    if o.get("qualified"):
+        continue
+    hits = [r for r in audit if float(r["factor"]) == o["factor"] and r["case"] == "start_" + "_".join(map(str, o["start"]))
+            and r["block"].startswith("fs.F102") and r["point"] in ("bubble", "dew")]
+    T = float(hits[0]["T_K"]) if hits else None
+    tb = next((float(r["T_point_K"]) for r in hits if r["point"] == "bubble"), None)
+    td = next((float(r["T_point_K"]) for r in hits if r["point"] == "dew"), None)
+    kk = o.get("kkt", {})
+    print(f"- **Width {o['factor']:g}, start {start_label(o['start'])}:** {o.get('exit') or o['termination']} after "
+          f"{o.get('iterations')} iterations at {fmt(o.get('objective_USD_per_yr'), 9)} USD/yr; F102 T − T_dew = "
+          f"{fmt(T - td if T and td else None)} K, T − T_bub = {fmt(T - tb if T and tb else None)} K; scaled primal "
+          f"feasibility {fmt(kk.get('norms', {}).get('primal_feasibility'), 3)}, reduced gradient "
+          f"{[round(v, 3) for v in kk.get('reduced_gradient', [])]}, counted rows {kk.get('counted_active')}.")
+```
+
+```{python}
+#| output: asis
+for r in (r for r in gd if r["m7_passed"] != "True" and r["case"] in {c for _, c in kmap}):
+    print(f"- M7 at that endpoint ({r['block'].split('.')[1]}): T − T_dew = {float(r['margin_K']):.2g} K and "
+          f"|T_dew − _teq(F101)| = {float(r['teq_consistency_K']):.2g} K, at constraint violation "
+          f"{float(r['primal_infeasibility']):.2g} against {VIOL_TOL:g}: "
+          + ("a stop under the amended rule." if r["stop"] else "the point fails M1's primal test, so F101's equilibrium "
+             "rows are not yet satisfied and, under the amendment above, the miss is part of the attempt's failure, not a stop."))
+```
+
+**Decision 1: two degenerate rows.** The first S5 run, before this fix (results retained at Engine
+commit `327cb8a6`, downstream `078fa7d`), qualified two, one and no starts at widths 1, 0.1 and
+0.01. Three of its six failures stopped near the common optimum: two restoration failures and one
+acceptable-level exit, which Pyomo reported as converged although its fixed-scale A2 terms passed.
+Reproducing the acceptable-level attempt showed Ipopt's two largest equality multipliers, about
+fifty times the next, on the rows that define the `to_aromatics` inlet's overall H₂ and CH₄
+fractions. Each row is z_j (F_Liq + F_Vap) = y_j F_Vap with F_Vap fixed at zero by the F101 liquid
+port, so it pinned z_j to exactly zero against an active lower bound, where an interior-point
+barrier cannot settle. A probe that lowered those bounds to a small negative value removed Ipopt's
+"Slacks too small" events, and the width-1 stall and the width-0.1 acceptable-level exit then ended
+"Optimal Solution Found". Decision 1 instead fixes both fractions at zero and deactivates the two
+rows: no other active row contains them, and the degrees of freedom stay 0 (simulation) and 4
+(optimization). This run uses that fix.
+
+**Decision 2: F102 started inside its two-phase band.** On the decision-1 code, both superheated
+attempts at width 0.01 still ended with F102 far above its dew point. Above T_dew,
+_teq = smooth_min(_t1, T_dew, ε₂) has ∂_teq/∂T ≈ ε₂²/(4(T − T_dew)²), which vanishes as ε₂
+shrinks, so neither Newton steps nor restoration see that cooling F102 restores the two-phase split
+that the purity constraint needs (the old campaign's start-3 stop, `CAMPAIGN-STOP.md`, had the same
+endpoint). F102's bubble width ε₁ and the degenerate bounds did not change it. Two candidate fixes
+were probed with the full per-attempt acceptance at every width and start (diagnostic runs; outputs
+in `build/73-s3b/decision2/` of the main checkout, not merged): width continuation (each width
+warm-started from the previous width's solution) qualified all nine attempts; starting F102 at the
+midpoint of its band qualified eight of nine, failing only width 0.01 start 3 at Ipopt's iteration
+cap near the optimum. The second was adopted because each width stays an independent fresh run,
+which A7 compares; continuation would tie widths 0.1 and 0.01 to the width-1 optimum. This run uses
+both decisions.
+
+```{python}
+#| output: asis
+failed_now = [o for o in opts if not o.get("qualified")]
+superheated = [o for o in failed_now if o.get("termination") == "locallyInfeasible"]
+print(f"In this run {len(failed_now)} attempt(s) fail: {len(superheated)} superheated local infeasibility, "
+      f"{len(failed_now) - len(superheated)} other." + (" Each is listed with its exit above." if failed_now else ""))
+```
+
+**Ideal-package control (diagnostic, not acceptance).** The owner asked how many of the problems
+come from ePC-SAFT or the IDAES connector and how many from the flowsheet itself. The same flowsheet
+and campaign were run with the ideal property package (one package, no translators), the campaign's
+initializer, D8 square solves and the same independent KKT check, before decision 2. Both
+variants use the campaign's Ipopt options (`EPCSAFT_OPTIONS`, including `bound_relax_factor = 0`).
+"Default" keeps the ideal package's own bounds and placeholder flows; "port" applies the old
+one-package ePC-SAFT numerics (unit scaling, a small F101 placeholder flow, phase flows and
+fractions bounded slightly below zero). The campaign's own ideal baseline, with the ideal options, is in
+`ideal_baseline.json`. The control's script and Ipopt files stay in `build/73-s3b/ideal-control/` of
+the main checkout; its summary is `ideal_control.csv`.
+
+```{python}
+#| output: asis
+control = read("ideal_control.csv")
+display(md_table(["Variant", "Width", "Start", "Square solve", "Ipopt exit", "Iter.", "Cost (USD/yr)", "F102 T − T_dew (K)",
+                  "Counted rows", "Reduced stationarity", "Label"],
+                 [[r["variant"], r["width"], r["start"], r["square_exit"], r["exit"] or "not released", r["iterations"] or None,
+                   f"{float(r['objective_USD_per_yr']):.2f}" if r["objective_USD_per_yr"] else None,
+                   float(r["F102_T_minus_Tdew_K"]) if r["F102_T_minus_Tdew_K"] else None, r["counted_active"] or None,
+                   float(r["reduced_stationarity"]) if r["reduced_stationarity"] else None, r["label"] or None]
+                  for r in sorted(control, key=lambda r: (r["variant"], -float(r["width"]), r["start"]))]))
+own = json.loads((R / "ideal_baseline.json").read_text())
+print("\nWith the ideal package's own Ipopt options (the campaign's ideal baseline): "
+      + "; ".join(f"width {float(f):g}: " + ", ".join(f"{o['termination']} ({o['iterations']} it.)" for o in v["optimizations"])
+                  for f, v in own.items()) + ".")
+```
+
+```{python}
+#| output: asis
+regular = {v: sorted({r["counted_active"] for r in control if r["variant"] == v and r["exit"] == "Optimal Solution Found."})
+           for v in ("default", "port")}
+port_fail = [r for r in control if r["variant"] == "port" and r["exit"] and r["exit"] != "Optimal Solution Found."]
+default_sim = sorted({(r["width"], r["simulation_exit"]) for r in control if r["variant"] == "default"})
+squares = [o["start_square_solve"] for v in own.values() for o in v["optimizations"]]
+print(f"Reading (diagnostic): regular optima count {', '.join(regular['default'])} active rows with default bounds and "
+      f"{', '.join(regular['port'])} with the port variant, like the old one-package ePC-SAFT formulation. The superheated "
+      f"endpoints and the near-optimum restoration failures occur in the port variant ("
+      + "; ".join(f"width {float(r['width']):g} start {r['start']}: {r['exit']}, F102 T − T_dew {float(r['F102_T_minus_Tdew_K']):.3g} K"
+                  for r in port_fail)
+      + "). That variant changes scaling, placeholders and bounds together, so it does not isolate their individual "
+      "causes; it does show that these failure kinds occur without the Engine property callback. The default variant's "
+      "simulations ended " + "; ".join(f"width {float(w):g}: {e}" for w, e in default_sim)
+      + ", so its attempts at a width whose simulation hit the iteration cap started from an unconverged point. The "
+      f"separate ideal baseline, with the ideal package's own options, solves {squares.count('convergenceCriteriaSatisfied')} "
+      f"of {len(squares)} square points. The one port-specific problem found was the pair of degenerate `to_aromatics` rows "
+      "that the split created (decision 1). These are single diagnostic runs.")
+```
+
+```{python}
+#| output: asis
+for o, k in attempts:
+    if o.get("exit") == "Restoration Failed!":
+        lines = [l.split() for l in ipopt_file(o["factor"], k, "optimization").read_text().splitlines()
+                 if re.match(r"^\s*\d+r?\s", l)]
+        rg = [float(t[6]) for t in lines if len(t) > 6 and t[6] != "-"]
+        print(f"- Width {o['factor']:g}, start {start_label(o['start'])}: largest lg(rg) {max(rg):.1f} over "
+              f"{len(lines)} logged iterations.")
+```
+
+```{python}
+#| output: asis
+s2 = next((o for o in opts if o["factor"] == 1.0 and o["start"][0] == 550), None)
+print(f"**S2′ (width 1, start 1).** In this run the attempt ends \"{s2.get('exit')}\" after {s2.get('iterations')} "
+      f"iterations and is {'qualified' if s2.get('qualified') else 'not qualified'}. "
+      + ("The failure is not reproduced under split packages with decisions 1 and 2 (a limited claim: it needed the "
+         "earlier formulation, and the responsible row is not isolated). " if s2.get("qualified") else "")
+      + "In the first run it failed near the optimum; truncated solves (k = 1…30 at width 1, k = 1…42 at width "
+      "0.1) showed both widths superheating F102 only during early restoration iterations and staying inside "
+      "[T_bub, T_dew] from iteration 10 on, so the superheated-basin hypothesis was not supported.")
+```
+
+```{python}
+#| output: asis
+s3 = next((o for o in opts if o["factor"] == 0.01 and o["start"][0] == 600), None)
+if s3 is None:
+    print("**S3′ (width 0.01, start 3).** Width 0.01 did not complete, so P3a has no exit text to read.")
+else:
+    ex = s3.get("exit") or s3["termination"]
+    acceptable = ex.startswith("Solved To Acceptable")
+    print(f"**S3′ (width 0.01, start 3).** P3a reads the exit \"{ex}\" after {s3.get('iterations')} iterations"
+          f" (Pyomo termination `{s3['termination']}`). "
+          + ("The acceptable-level hypothesis is supported for this attempt; it fails M1." if acceptable else
+             "The old reported-optimal but non-stationary result is not reproduced as a false success, and the "
+             "acceptable-level hypothesis is not observed on this attempt; it fails M1. P3b applies only to an "
+             "\"Optimal Solution Found\" exit, so its multiplier check is not run here.")
+          + " Acceptable-level exits in this run: "
+          + (", ".join(f"width {o['factor']:g} start {start_label(o['start'])}" for o in opts
+                       if (o.get("exit") or "").startswith("Solved To Acceptable")) or "none") + ".")
+```
+
+## Limits
+
+- Numerical verification on one wheel and one IDAES/Ipopt build; not physical validation. At every
+  audited full-package and recycle-gas point, each pair with hydrogen or methane lies outside its
+  source temperature or pressure range; the F102 points carry only benzene and toluene and lie
+  within that pair's source temperatures, with its pressure range unstated (Result section,
+  `auxiliary_domains.csv`).
+- No global optimum and no global phase-stability claim; density roots come from a finite scan.
+- The aromatics package omits H₂/CH₄ liquid solubility, as the 2026-09-26 vapor-only decision
+  already did. The recycle-gas package is valid only while M7 holds.
+- Runtime per solve is in `campaign.json` (`wall_s`); it is machine-dependent and shared with
+  other jobs.

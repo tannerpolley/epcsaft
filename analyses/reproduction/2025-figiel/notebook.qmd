@@ -1,0 +1,70 @@
+---
+title: "Figiel 2025: Figure 9 interior mixed-solvent observations"
+format:
+  html:
+    embed-resources: true
+execute:
+  echo: false
+  cache: false
+  daemon: false
+---
+
+```{python}
+import json
+from pathlib import Path
+import pandas as pd
+import matplotlib.pyplot as plt
+from IPython.display import display
+comparison = pd.read_csv('results/figure-09-comparison.csv')
+valid = comparison[comparison.numerical_outcome == 'pass']
+display(comparison.groupby(['system', 'numerical_outcome']).size().rename('rows').to_frame())
+summary = valid.groupby('system').signed_error.agg(rows='size', rmse=lambda s: (s.pow(2).mean())**0.5, maximum_absolute_error=lambda s: s.abs().max())
+display(summary)
+fig, axes = plt.subplots(2, 2, figsize=(10, 8), constrained_layout=True)
+for ax, (system, group) in zip(axes.flat, valid.groupby('system')):
+    points = ax.scatter(group.source_coefficient, group.value, c=group.x_alcohol_salt_free, s=12)
+    limits = (min(group.source_coefficient.min(), group.value.min()), max(group.source_coefficient.max(), group.value.max()))
+    ax.plot(limits, limits, color='gray', linewidth=0.8)
+    ax.set(title=system, xlabel='Reported molality-scale coefficient', ylabel='Native molality-scale coefficient')
+    fig.colorbar(points, ax=ax, label='Salt-free alcohol mole fraction')
+plt.show()
+display(comparison)
+display(json.loads(Path('results/figure-09-run-identity.json').read_text()))
+```
+
+This is a source-limited physical comparison of the unchanged
+`figiel-yu-held-2025/4` model with reported Figure 9 coefficients in Figiel, Yu
+and Held (2025), DOI 10.1021/acs.iecr.5c00475. The retained table gives actual
+source alcohol mole fractions, formula molalities, temperature, pressure,
+original row identities, file hashes and source coefficients. Every row with
+positive molality and an interior alcohol mole fraction is included. Excluded
+endpoints retain their source identity and cause. No panel rounding, weight
+reinterpretation, interpolation or range-based omission is applied.
+
+The points show every numerically admitted comparison; the gray line is exact
+equality, not a fitted curve. Color identifies the actual salt-free alcohol
+mole fraction. Numerical coverage is reported separately. Each coefficient
+must be finite and positive, reference terminal change must meet its tabulated
+limit, and native pressure closure, density and mechanical slope must meet
+their tabulated criteria. A native composition declaration supplies the pressure
+check. Missing or refused values remain rows and cannot enter statistics as
+successful comparisons. Reference terminal change is a local convergence
+estimate, not measurement uncertainty.
+
+Signed errors, RMSE and maxima describe only numerically available source
+comparisons. The table's unknown measurement uncertainties and physical
+tolerances remain empty. No physical pass/fail conclusion follows. The retained
+source-file labels preserve the available lineage; primary provenance is not
+independently recovered here for rows without such labels. The separate
+observation ledger's missing-primary organic NaBr records belong to the
+single-solvent figures and do not count this selected population.
+
+`inputs/docs/legacy-derived-gates.json` remains unchanged and applies only to
+its historical result population, which used different composition mapping and
+selection. Those thresholds never judge these current rows. Figure 1 and
+Tables 1–5 remain source material. Figures 2–8 remain uncompleted under their
+recorded input/comparison limits; the recovered Figure 5 LiBr model-line
+extraction uncertainties remain available for a later comparison and are not
+measurement error bars. This run establishes no literal paper-curve parity,
+independent prediction, refit, application adoption or manuscript promotion.
+Independent delivered review remains open.

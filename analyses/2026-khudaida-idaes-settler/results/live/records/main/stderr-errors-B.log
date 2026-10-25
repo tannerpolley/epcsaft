@@ -1,0 +1,17 @@
+#452 call 0
+#452 call 1
+#452 call 2
+#452 call 3
+#452 call 4
+epcsaft_equilibrium diagnostic: control/observable dimension mismatch
+epcsaft_equilibrium failure: epcsaft_equilibrium:defining_equations_not_satisfied:phase[0].amount[0] controls=0.69999999999999996,0.29999999999999999,0.69999999999999996,0.29999999999999999
+#452 call 5
+epcsaft_equilibrium diagnostic: control/observable dimension mismatch
+epcsaft_equilibrium failure: epcsaft_equilibrium:defining_equations_not_satisfied:phase[0].amount[2] controls=0.69999999999999996,0.29999999999999999
+#452 call 6
+epcsaft_equilibrium diagnostic: invalid observable selector
+epcsaft_equilibrium failure: epcsaft_equilibrium:defining_equations_not_satisfied:request controls=0.69999999999999996,0.29999999999999999
+#452 call 7
+#452 call 8
+#452 call 9
+#452 call 10

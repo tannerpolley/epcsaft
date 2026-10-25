@@ -1,0 +1,98 @@
+{
+  "schema_version": 2,
+  "repository": "tannerpolley/ePC-SAFT",
+  "packet_root": "data/packets",
+  "packets": [
+    {
+      "packet_id": "ascani-2022-case-study-2-electrolyte-lle",
+      "packet_version": "2",
+      "packet_path": "data/packets/ascani-2022-case-study-2-electrolyte-lle/2",
+      "packet_fingerprint": "f6b3774774a68ab193de8c7d2c6eac928038d49bda16bee73c88b165d0ee32dd",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "crespo-2021-deea",
+      "packet_version": "2",
+      "packet_path": "data/packets/crespo-2021-deea/2",
+      "packet_fingerprint": "ba2848e954f77a96b3d965d90aea1155ad06f7456c05a84871dfd1081d6a4bc4",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "figiel-2025-aqueous-iodides",
+      "packet_version": "2",
+      "packet_path": "data/packets/figiel-2025-aqueous-iodides/2",
+      "packet_fingerprint": "40db4c770a04f29eb09674005ad32f8f7539d3599322d2cba60eca61063359ed",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "figiel-2025-reference-electrolytes",
+      "packet_version": "2",
+      "packet_path": "data/packets/figiel-2025-reference-electrolytes/2",
+      "packet_fingerprint": "bce1faecebd668fd2dd982a4713a13377e6e87b1e993cf4315c607e2ded25d03",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "figiel-2025-validation-parameters",
+      "packet_version": "2",
+      "packet_path": "data/packets/figiel-2025-validation-parameters/2",
+      "packet_fingerprint": "813c104f1b9f422475296663d927a8f10baf71ad806c4176abd4527b5950db63",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "figiel-yu-held-2025",
+      "packet_version": "2",
+      "packet_path": "data/packets/figiel-yu-held-2025/2",
+      "packet_fingerprint": "02a55e65f1a6a80c54668880d9f8a3c5c9b4ecd560b3cd80d7c12d5b45fd3520",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "gross-2001-methane-ethane",
+      "packet_version": "2",
+      "packet_path": "data/packets/gross-2001-methane-ethane/2",
+      "packet_fingerprint": "0007890df92c43ede99f978c0558ea420becd29131e6681dc2d4b51d8f87d207",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "gross-2001-propane",
+      "packet_version": "2",
+      "packet_path": "data/packets/gross-2001-propane/2",
+      "packet_fingerprint": "4593b9dbd813004096c7e396fc65df6ae3f4c1c65933c36918a6d316111326e2",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "gross-sadowski-2001",
+      "packet_version": "2",
+      "packet_path": "data/packets/gross-sadowski-2001/2",
+      "packet_fingerprint": "d26b819571172306039d87e085777c601e7c6cd992276774cbc226aa8fe61ea1",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "hamer-wu-1972-aqueous-alkali-halides",
+      "packet_version": "1",
+      "packet_path": "data/packets/hamer-wu-1972-aqueous-alkali-halides/1",
+      "packet_fingerprint": "41df247ea3c3de03df9f17daa69dc8f9c834d5de61a7270a986e2a89db9e4bdc",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "held-cameretti-sadowski-2008",
+      "packet_version": "2",
+      "packet_path": "data/packets/held-cameretti-sadowski-2008/2",
+      "packet_fingerprint": "abb954b1e76183947fc09ba1c86a5204479829f842a1b13f7a21933b24898d81",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "khudaida-2026-figure-2-electrolyte-lle",
+      "packet_version": "5",
+      "packet_path": "data/packets/khudaida-2026-figure-2-electrolyte-lle/5",
+      "packet_fingerprint": "52b7f5c6db76447e1262c70937e21e7c523f13ab965c6c483afe58ad2fc509a2",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "mea-co2-h2o-nine-species-estimation",
+      "packet_version": "1",
+      "packet_path": "data/packets/mea-co2-h2o-nine-species-estimation/1",
+      "packet_fingerprint": "d02c109c035c79ea27905eb115a9a107afa4d5299abb6f17492285142f0a7b32",
+      "materialization": "byte-for-byte"
+    }
+  ]
+}

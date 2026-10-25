@@ -1,0 +1,440 @@
+case,quantity,unit,baseline,candidate,error,allowed
+reaction-derivatives,reaction-a1/regular,bool,1,1,0,1e-10
+reaction-derivatives,reaction-a1/scalar/0/0/signal,bool,1,1,0,1e-10
+reaction-derivatives,reaction-a1/scalar/0/0/fine,native,0.9311844141216942,0.9311844141216942,0.0,9.311844141216943e-11
+reaction-derivatives,reaction-a1/scalar/0/0/coarse,native,0.9311844141216942,0.9311844141216942,0.0,9.311844141216943e-11
+reaction-derivatives,reaction-a1/scalar/1/0/signal,bool,1,1,0,1e-10
+reaction-derivatives,reaction-a1/scalar/1/0/fine,native,-0.024921049474021056,-0.024921049474021056,0.0,2.4921049474021055e-12
+reaction-derivatives,reaction-a1/scalar/1/0/coarse,native,-0.024921049474021056,-0.024921049474021056,0.0,2.4921049474021055e-12
+reaction-derivatives,reaction-a1/scalar/2/0/signal,bool,1,1,0,1e-10
+reaction-derivatives,reaction-a1/scalar/2/0/fine,native,-0.6622105786963777,-0.6622105786963777,0.0,6.622105786963777e-11
+reaction-derivatives,reaction-a1/scalar/2/0/coarse,native,-0.6622105786963777,-0.6622105786963777,0.0,6.622105786963777e-11
+reaction-derivatives,reaction-a1/joint/0/0/signal,bool,1,1,0,1e-10
+reaction-derivatives,reaction-a1/joint/0/0/fine,native,0.10303701917763647,0.10303701917763647,0.0,1.0303701917763648e-11
+reaction-derivatives,reaction-a1/joint/0/0/coarse,native,0.10303701917763647,0.10303701917763647,0.0,1.0303701917763648e-11
+reaction-derivatives,reaction-a1/joint/0/1/signal,bool,1,1,0,1e-10
+reaction-derivatives,reaction-a1/joint/0/1/fine,native,0.9311844141216942,0.9311844141216942,0.0,9.311844141216943e-11
+reaction-derivatives,reaction-a1/joint/0/1/coarse,native,0.9311844141216942,0.9311844141216942,0.0,9.311844141216943e-11
+reaction-derivatives,reaction-a1/joint/0/2/signal,bool,1,1,0,1e-10
+reaction-derivatives,reaction-a1/joint/0/2/fine,native,4.973839075943983,4.973839075943983,0.0,4.973839075943982e-10
+reaction-derivatives,reaction-a1/joint/0/2/coarse,native,4.973839075943983,4.973839075943983,0.0,4.973839075943982e-10
+reaction-derivatives,reaction-a1/joint/1/0/signal,bool,1,1,0,1e-10
+reaction-derivatives,reaction-a1/joint/1/0/fine,native,0.028413720945547838,0.028413720945547838,0.0,2.841372094554784e-12
+reaction-derivatives,reaction-a1/joint/1/0/coarse,native,0.028413720945547838,0.028413720945547838,0.0,2.841372094554784e-12
+reaction-derivatives,reaction-a1/joint/1/1/signal,bool,1,1,0,1e-10
+reaction-derivatives,reaction-a1/joint/1/1/fine,native,-0.024921049474021056,-0.024921049474021056,0.0,2.4921049474021055e-12
+reaction-derivatives,reaction-a1/joint/1/1/coarse,native,-0.024921049474021056,-0.024921049474021056,0.0,2.4921049474021055e-12
+reaction-derivatives,reaction-a1/joint/1/2/signal,bool,1,1,0,1e-10
+reaction-derivatives,reaction-a1/joint/1/2/fine,native,0.011146230514949182,0.011146230514949182,0.0,1.1146230514949182e-12
+reaction-derivatives,reaction-a1/joint/1/2/coarse,native,0.011146230514949182,0.011146230514949182,0.0,1.1146230514949182e-12
+reaction-derivatives,reaction-a1/joint/2/0/signal,bool,1,1,0,1e-10
+reaction-derivatives,reaction-a1/joint/2/0/fine,native,1.9206484714880458,1.9206484714880458,0.0,1.920648471488046e-10
+reaction-derivatives,reaction-a1/joint/2/0/coarse,native,1.9206484714880458,1.9206484714880458,0.0,1.920648471488046e-10
+reaction-derivatives,reaction-a1/joint/2/1/signal,bool,1,1,0,1e-10
+reaction-derivatives,reaction-a1/joint/2/1/fine,native,-0.6622105786963777,-0.6622105786963777,0.0,6.622105786963777e-11
+reaction-derivatives,reaction-a1/joint/2/1/coarse,native,-0.6622105786963777,-0.6622105786963777,0.0,6.622105786963777e-11
+reaction-derivatives,reaction-a1/joint/2/2/signal,bool,1,1,0,1e-10
+reaction-derivatives,reaction-a1/joint/2/2/fine,native,5.768900994637908,5.768900994637908,0.0,5.768900994637909e-10
+reaction-derivatives,reaction-a1/joint/2/2/coarse,native,5.768900994637908,5.768900994637908,0.0,5.768900994637909e-10
+reaction-derivatives,reaction-a1/order/0/0,1,0.10303701917763647,0.10303701917763647,0.0,1.0303701917763648e-11
+reaction-derivatives,reaction-a1/order/0/1,1,0.9311844141216942,0.9311844141216942,0.0,9.311844141216943e-11
+reaction-derivatives,reaction-a1/order/0/2,1,4.973839075943983,4.973839075943983,0.0,4.973839075943982e-10
+reaction-derivatives,reaction-a1/order/1/0,1,0.028413720945547838,0.028413720945547838,0.0,2.841372094554784e-12
+reaction-derivatives,reaction-a1/order/1/1,1,-0.024921049474021056,-0.024921049474021056,0.0,2.4921049474021055e-12
+reaction-derivatives,reaction-a1/order/1/2,1,0.011146230514949182,0.011146230514949182,0.0,1.1146230514949182e-12
+reaction-derivatives,reaction-a1/order/2/0,1,1.9206484714880458,1.9206484714880458,0.0,1.920648471488046e-10
+reaction-derivatives,reaction-a1/order/2/1,1,-0.6622105786963777,-0.6622105786963777,0.0,6.622105786963777e-11
+reaction-derivatives,reaction-a1/order/2/2,1,5.768900994637908,5.768900994637908,0.0,5.768900994637909e-10
+reaction-derivatives,reaction-a2/system/regular,bool,1,1,0,1e-10
+reaction-derivatives,reaction-a2/system/0/0/signal,bool,1,1,0,1e-10
+reaction-derivatives,reaction-a2/system/0/0/fine,native,0.5172548364877354,0.5172548364877354,0.0,5.1725483648773544e-11
+reaction-derivatives,reaction-a2/system/0/0/coarse,native,0.5172548364877354,0.5172548364877354,0.0,5.1725483648773544e-11
+reaction-derivatives,reaction-a2/system/0/1/signal,bool,1,1,0,1e-10
+reaction-derivatives,reaction-a2/system/0/1/fine,native,0.5172548364877354,0.5172548364877354,0.0,5.1725483648773544e-11
+reaction-derivatives,reaction-a2/system/0/1/coarse,native,0.5172548364877354,0.5172548364877354,0.0,5.1725483648773544e-11
+reaction-derivatives,reaction-a2/system_basis,1,0.0001081997396491059,0.0001081997396491059,0.0,1e-12
+reaction-derivatives,reaction-a2/fixed/regular,bool,1,1,0,1e-10
+reaction-derivatives,reaction-a2/fixed/0/0/signal,bool,1,1,0,1e-10
+reaction-derivatives,reaction-a2/fixed/0/0/fine,native,0.5172554300241466,0.5172554300241466,0.0,5.172554300241467e-11
+reaction-derivatives,reaction-a2/fixed/0/0/coarse,native,0.5172554300241466,0.5172554300241466,0.0,5.172554300241467e-11
+reaction-derivatives,reaction-a2/fixed/0/1/signal,bool,1,1,0,1e-10
+reaction-derivatives,reaction-a2/fixed/0/1/fine,native,0.5172554300241466,0.5172554300241466,0.0,5.172554300241467e-11
+reaction-derivatives,reaction-a2/fixed/0/1/coarse,native,0.5172554300241466,0.5172554300241466,0.0,5.172554300241467e-11
+reaction-derivatives,reaction-a2/fixed_basis,1,0.00010821072653989342,0.00010821072653989342,0.0,1e-12
+reaction-derivatives,reaction-a3/pinned_pressure,Pa,1596859.1113027725,1596859.1113027725,0.0,0.00015968591113027725
+reaction-derivatives,reaction-a3/pinned_x/0,1,0.5000000000000007,0.5000000000000007,0.0,5.0000000000000066e-11
+reaction-derivatives,reaction-a3/pinned_x/1,1,0.4999999999999993,0.4999999999999993,0.0,4.999999999999993e-11
+reaction-derivatives,reaction-a3/pinned_x/2,1,0.9563602429614722,0.9563602429614722,0.0,9.563602429614721e-11
+reaction-derivatives,reaction-a3/pinned_x/3,1,0.04363975703852779,0.04363975703852779,0.0,4.3639757038527796e-12
+reaction-derivatives,reaction-a3/regular,bool,1,1,0,1e-10
+reaction-derivatives,reaction-a3/free_pressure/0/0/signal,bool,1,1,0,1e-10
+reaction-derivatives,reaction-a3/free_pressure/0/0/fine,native,-0.589651597002363,-0.589651597002363,0.0,5.89651597002363e-11
+reaction-derivatives,reaction-a3/free_pressure/0/0/coarse,native,-0.589651597002363,-0.589651597002363,0.0,5.89651597002363e-11
+reaction-derivatives,reaction-a3/free_pressure/0/1/signal,bool,1,1,0,1e-10
+reaction-derivatives,reaction-a3/free_pressure/0/1/fine,native,-0.589651597002363,-0.589651597002363,0.0,5.89651597002363e-11
+reaction-derivatives,reaction-a3/free_pressure/0/1/coarse,native,-0.589651597002363,-0.589651597002363,0.0,5.89651597002363e-11
+reaction-derivatives,reaction-a3/free_pressure/0/2/signal,bool,1,1,0,1e-10
+reaction-derivatives,reaction-a3/free_pressure/0/2/fine,native,0.062125996318629736,0.062125996318629736,0.0,6.212599631862974e-12
+reaction-derivatives,reaction-a3/free_pressure/0/2/coarse,native,0.062125996318629736,0.062125996318629736,0.0,6.212599631862974e-12
+reaction-derivatives,reaction-a3/free_pressure/0/3/signal,bool,1,1,0,1e-10
+reaction-derivatives,reaction-a3/free_pressure/0/3/fine,native,-0.589651597002363,-0.589651597002363,0.0,5.89651597002363e-11
+reaction-derivatives,reaction-a3/free_pressure/0/3/coarse,native,-0.589651597002363,-0.589651597002363,0.0,5.89651597002363e-11
+reaction-derivatives,reaction-a3/free_pressure/1/0/signal,bool,1,1,0,1e-10
+reaction-derivatives,reaction-a3/free_pressure/1/0/fine,native,-0.624798911131185,-0.624798911131185,0.0,6.247989111311851e-11
+reaction-derivatives,reaction-a3/free_pressure/1/0/coarse,native,-0.624798911131185,-0.624798911131185,0.0,6.247989111311851e-11
+reaction-derivatives,reaction-a3/free_pressure/1/1/signal,bool,1,1,0,1e-10
+reaction-derivatives,reaction-a3/free_pressure/1/1/fine,native,-0.6247989111311849,-0.6247989111311849,0.0,6.24798911131185e-11
+reaction-derivatives,reaction-a3/free_pressure/1/1/coarse,native,-0.6247989111311849,-0.6247989111311849,0.0,6.24798911131185e-11
+reaction-derivatives,reaction-a3/free_pressure/1/2/signal,bool,1,1,0,1e-10
+reaction-derivatives,reaction-a3/free_pressure/1/2/fine,native,0.06582913545923001,0.06582913545923001,0.0,6.582913545923001e-12
+reaction-derivatives,reaction-a3/free_pressure/1/2/coarse,native,0.06582913545923001,0.06582913545923001,0.0,6.582913545923001e-12
+reaction-derivatives,reaction-a3/free_pressure/1/3/signal,bool,1,1,0,1e-10
+reaction-derivatives,reaction-a3/free_pressure/1/3/fine,native,-0.624798911131185,-0.624798911131185,0.0,6.247989111311851e-11
+reaction-derivatives,reaction-a3/free_pressure/1/3/coarse,native,-0.624798911131185,-0.624798911131185,0.0,6.247989111311851e-11
+reaction-derivatives,reaction-a3/basis/0/1,native,-5231.058473152522,-5231.058473152522,0.0,5.231058473152523e-07
+reaction-derivatives,reaction-a3/basis/0/2,native,99206.4632701664,99206.4632701664,0.0,9.92064632701664e-06
+reaction-derivatives,reaction-a3/basis/0/3,native,-169486294.5301417,-169486294.5301417,0.0,0.01694862945301417
+reaction-derivatives,reaction-a3/basis/1/1,native,-5300.976429910327,-5300.976429910327,0.0,5.300976429910327e-07
+reaction-derivatives,reaction-a3/basis/1/2,native,100532.4498261603,100532.4498261603,0.0,1.005324498261603e-05
+reaction-derivatives,reaction-a3/basis/1/3,native,-171751636.3290946,-171751636.3290946,0.0,0.01717516363290946
+reaction-derivatives,reaction-a4/pinned_temperature,K,179.99999999999997,179.99999999999997,0.0,1.8e-08
+reaction-derivatives,reaction-a4/pinned_pressure,Pa,1596859.1113027725,1596859.1113027725,0.0,0.00015968591113027725
+reaction-derivatives,reaction-a4/pinned_x/0,1,0.49999999999999956,0.49999999999999956,0.0,4.9999999999999957e-11
+reaction-derivatives,reaction-a4/pinned_x/1,1,0.5000000000000004,0.5000000000000004,0.0,5.000000000000005e-11
+reaction-derivatives,reaction-a4/pinned_x/2,1,0.9563602429614723,0.9563602429614723,0.0,9.563602429614723e-11
+reaction-derivatives,reaction-a4/pinned_x/3,1,0.04363975703852776,0.04363975703852776,0.0,4.363975703852776e-12
+reaction-derivatives,reaction-a4/pinned_packing/0,1,0.36774929248181465,0.36774929248181465,0.0,3.677492924818147e-11
+reaction-derivatives,reaction-a4/pinned_packing/1,1,0.020390681605308065,0.020390681605308065,0.0,2.0390681605308067e-12
+reaction-derivatives,reaction-a4/regular,bool,1,1,0,1e-10
+reaction-derivatives,reaction-a4/free_temperature/0/0/signal,bool,1,1,0,1e-10
+reaction-derivatives,reaction-a4/free_temperature/0/0/fine,native,0.06433084738285405,0.06433084738285405,0.0,6.433084738285405e-12
+reaction-derivatives,reaction-a4/free_temperature/0/0/coarse,native,0.06433084738285405,0.06433084738285405,0.0,6.433084738285405e-12
+reaction-derivatives,reaction-a4/free_temperature/0/1/signal,bool,1,1,0,1e-10
+reaction-derivatives,reaction-a4/free_temperature/0/1/fine,native,0.06433084738285405,0.06433084738285405,0.0,6.433084738285405e-12
+reaction-derivatives,reaction-a4/free_temperature/0/1/coarse,native,0.06433084738285405,0.06433084738285405,0.0,6.433084738285405e-12
+reaction-recovery,reaction-b1/converged,bool,1,1,0,1e-10
+reaction-recovery,reaction-b1/value/0,1,0.05000000000001263,0.05000000000001263,0.0,5.000000000001263e-12
+reaction-recovery,reaction-b1/value/1,1,0.10000000000025247,0.10000000000025247,0.0,1.0000000000025248e-11
+reaction-recovery,reaction-b1/cost,1,7.917531135867286e-26,7.917531135867286e-26,0.0,1e-12
+reaction-recovery,reaction-b1/covariance,bool,1,1,0,1e-10
+reaction-recovery,reaction-a3/pinned_pressure,Pa,1596859.1113027725,1596859.1113027725,0.0,0.00015968591113027725
+reaction-recovery,reaction-a3/pinned_x/0,1,0.5000000000000007,0.5000000000000007,0.0,5.0000000000000066e-11
+reaction-recovery,reaction-a3/pinned_x/1,1,0.4999999999999993,0.4999999999999993,0.0,4.999999999999993e-11
+reaction-recovery,reaction-a3/pinned_x/2,1,0.9563602429614722,0.9563602429614722,0.0,9.563602429614721e-11
+reaction-recovery,reaction-a3/pinned_x/3,1,0.04363975703852779,0.04363975703852779,0.0,4.3639757038527796e-12
+reaction-recovery,reaction-b2/converged,bool,1,1,0,1e-10
+reaction-recovery,reaction-b2/value/0,1,-5.1728886310370505,-5.1728886310370505,0.0,5.172888631037051e-10
+reaction-recovery,reaction-b2/value/1,K,299.9999999968797,299.9999999968797,0.0,2.999999999968797e-08
+reaction-recovery,reaction-b2/cost,1,3.18097132555871e-25,3.18097132555871e-25,0.0,1e-12
+reaction-recovery,reaction-b2/covariance,bool,1,1,0,1e-10
+reaction-recovery,reaction-b3/feed_0/regular,bool,1,1,0,1e-10
+reaction-recovery,reaction-b3/feed_1/regular,bool,1,1,0,1e-10
+reaction-recovery,reaction-b3/name_tying/converged,bool,1,1,0,1e-10
+reaction-recovery,reaction-b3/name_tying/value/0,1,0.19999999999993215,0.19999999999993215,0.0,1.9999999999993217e-11
+reaction-recovery,reaction-b3/name_tying/value/1,1,-0.0999999999999335,-0.0999999999999335,0.0,9.999999999993351e-12
+reaction-recovery,reaction-b3/name_tying/cost,1,8.053852771061946e-28,8.053852771061946e-28,0.0,1e-12
+reaction-recovery,reaction-b3/name_tying/covariance,bool,1,1,0,1e-10
+reaction-recovery,reaction-preparation/prediction,1,0.0001243993552832781,0.0001243993552832781,0.0,1e-12
+reaction-recovery,reaction-preparation/initial_cost,1,0,0,0,1e-12
+reaction-rejections,reaction-rejection/affinity target,bool,1,1,0,1e-10
+reaction-rejections,reaction-rejection/supplied standard Gibbs,bool,1,1,0,1e-10
+reaction-rejections,reaction-rejection/dependent reaction,bool,1,1,0,1e-10
+reaction-rejections,reaction-rejection/K fixed by thermochemistry,bool,1,1,0,1e-10
+reaction-rejections,reaction-rejection/tied declarations or starts disagree,bool,1,1,0,1e-10
+reaction-rejections,reaction-rejection/scalar K admits only A,bool,1,1,0,1e-10
+reaction-rejections,reaction-rejection/tied source bases disagree,bool,1,1,0,1e-10
+reaction-rejections,reaction-rejection/tied species references disagree: component 0 pure liquid vs pure gas,bool,1,1,0,1e-10
+reaction-rejections,reaction-rejection/matching-species-reference,bool,1,1,0,1e-10
+reaction-rejections,reaction-rejections/species-reference,1,1.9198947439933343e-05,1.9198947439933343e-05,0.0,1e-12
+ln-k,ln-k/200.000000/value,1,0.7972674459459179,0.7972674459459179,0.0,7.97267445945918e-11
+ln-k,ln-k/200.000000/column/0,native,0,0,0,1e-12
+ln-k,ln-k/200.000000/column/1,native,0.005,0.005,0.0,1e-12
+ln-k,ln-k/200.000000/column/2,native,1,1,0,1e-10
+ln-k,ln-k/200.000000/column/3,native,0,0,0,1e-12
+ln-k,ln-k/200.000000/column/4,native,-0.40546510810816444,-0.40546510810816444,0.0,4.0546510810816447e-11
+ln-k,ln-k/200.000000/column/5,native,200,200,0,2e-08
+ln-k,ln-k/250.000000/value,1,0.8788392216030226,0.8788392216030226,0.0,8.788392216030226e-11
+ln-k,ln-k/250.000000/column/0,native,0,0,0,1e-12
+ln-k,ln-k/250.000000/column/1,native,0.004,0.004,0.0,1e-12
+ln-k,ln-k/250.000000/column/2,native,1,1,0,1e-10
+ln-k,ln-k/250.000000/column/3,native,0,0,0,1e-12
+ln-k,ln-k/250.000000/column/4,native,-0.1823215567939546,-0.1823215567939546,0.0,1.823215567939546e-11
+ln-k,ln-k/250.000000/column/5,native,250,250,0,2.5000000000000002e-08
+ln-k,ln-k/300.000000/value,1,0.9666666666666668,0.9666666666666668,0.0,9.666666666666668e-11
+ln-k,ln-k/300.000000/column/0,native,0,0,0,1e-12
+ln-k,ln-k/300.000000/column/1,native,0.0033333333333333335,0.0033333333333333335,0.0,1e-12
+ln-k,ln-k/300.000000/column/2,native,1,1,0,1e-10
+ln-k,ln-k/300.000000/column/3,native,0,0,0,1e-12
+ln-k,ln-k/300.000000/column/4,native,0,0,0,1e-12
+ln-k,ln-k/300.000000/column/5,native,300,300,0,3.0000000000000004e-08
+ln-k,ln-k/350.000000/value,1,1.0556467684850577,1.0556467684850577,0.0,1.0556467684850577e-10
+ln-k,ln-k/350.000000/column/0,native,0,0,0,1e-12
+ln-k,ln-k/350.000000/column/1,native,0.002857142857142857,0.002857142857142857,0.0,1e-12
+ln-k,ln-k/350.000000/column/2,native,1,1,0,1e-10
+ln-k,ln-k/350.000000/column/3,native,0,0,0,1e-12
+ln-k,ln-k/350.000000/column/4,native,0.15415067982725836,0.15415067982725836,0.0,1.5415067982725835e-11
+ln-k,ln-k/350.000000/column/5,native,350,350,0,3.5e-08
+ln-k,ln-k/source,1,-18.420680743952367,-18.420680743952367,0.0,1.8420680743952367e-09
+ln-k,ln-k/scalar,1,0,0,0,1e-12
+ln-k,reaction-a3/pinned_pressure,Pa,1596859.1113027725,1596859.1113027725,0.0,0.00015968591113027725
+ln-k,reaction-a3/pinned_x/0,1,0.5000000000000007,0.5000000000000007,0.0,5.0000000000000066e-11
+ln-k,reaction-a3/pinned_x/1,1,0.4999999999999993,0.4999999999999993,0.0,4.999999999999993e-11
+ln-k,reaction-a3/pinned_x/2,1,0.9563602429614722,0.9563602429614722,0.0,9.563602429614721e-11
+ln-k,reaction-a3/pinned_x/3,1,0.04363975703852779,0.04363975703852779,0.0,4.3639757038527796e-12
+ln-k,ln-k/recovery/converged,bool,1,1,0,1e-10
+ln-k,ln-k/recovery/value/0,1,-5.172888631031902,-5.172888631031902,0.0,5.172888631031902e-10
+ln-k,ln-k/recovery/value/1,K,299.9999999959209,299.9999999959209,0.0,2.999999999959209e-08
+ln-k,ln-k/recovery/cost,1,1.5979053705393245e-24,1.5979053705393245e-24,0.0,1e-12
+ln-k,ln-k/recovery/covariance,bool,1,1,0,1e-10
+ln-k,ln-k/rejection/affinity target,bool,1,1,0,1e-10
+ln-k,ln-k/rejection/dependent reaction,bool,1,1,0,1e-10
+ln-k,ln-k/rejection/supplied standard Gibbs,bool,1,1,0,1e-10
+ln-k,ln-k/rejection/K fixed by thermochemistry,bool,1,1,0,1e-10
+affine-columns,affine-columns/map/0/0,angstrom per v,0.17600000000000002,0.17600000000000002,0.0,1.7600000000000003e-11
+affine-columns,affine-columns/map/0/1,angstrom per v,0.2,0.2,0.0,2.0000000000000002e-11
+affine-columns,affine-columns/map/0/2,angstrom per v,0.17600000000000002,0.17600000000000002,0.0,1.7600000000000003e-11
+affine-columns,affine-columns/0/0/refinement,per optimizer unit,3.718321946640421e-12,3.718321946640421e-12,0.0,1e-12
+affine-columns,affine-columns/0/0,per optimizer unit,0.007123937650874219,0.007123937650874219,0.0,1e-12
+affine-columns,affine-columns/residual-basis/0/0,per optimizer unit,0.007123937650874219,0.007123937650874219,0.0,1e-12
+affine-columns,affine-columns/0/1/refinement,per optimizer unit,9.487780931275818e-12,9.487780931275818e-12,0.0,1e-12
+affine-columns,affine-columns/0/1,per optimizer unit,0.06188561429312024,0.06188561429312024,0.0,6.188561429312025e-12
+affine-columns,affine-columns/residual-basis/0/1,per optimizer unit,0.06188561429312024,0.06188561429312024,0.0,6.188561429312025e-12
+affine-columns,affine-columns/0/2/refinement,per optimizer unit,3.0790185216271007e-12,3.0790185216271007e-12,0.0,1e-12
+affine-columns,affine-columns/0/2,per optimizer unit,0.2277849140018378,0.2277849140018378,0.0,2.2778491400183782e-11
+affine-columns,affine-columns/residual-basis/0/2,per optimizer unit,0.2277849140018378,0.2277849140018378,0.0,2.2778491400183782e-11
+affine-columns,affine-columns/0/3/refinement,per optimizer unit,9.21586880882804e-11,9.21586880882804e-11,0.0,1e-12
+affine-columns,affine-columns/0/3,per optimizer unit,0.003590570566821169,0.003590570566821169,0.0,1e-12
+affine-columns,affine-columns/residual-basis/0/3,per optimizer unit,0.003590570566821169,0.003590570566821169,0.0,1e-12
+affine-columns,affine-columns/0/4/refinement,per optimizer unit,3.203456018970504e-11,3.203456018970504e-11,0.0,1e-12
+affine-columns,affine-columns/0/4,per optimizer unit,0.02370334542546415,0.02370334542546415,0.0,2.370334542546415e-12
+affine-columns,affine-columns/residual-basis/0/4,per optimizer unit,0.02370334542546415,0.02370334542546415,0.0,2.370334542546415e-12
+affine-columns,affine-columns/0/5/refinement,per optimizer unit,1.7615538657385816e-12,1.7615538657385816e-12,0.0,1e-12
+affine-columns,affine-columns/0/5,per optimizer unit,0.04968570397162638,0.04968570397162638,0.0,4.968570397162638e-12
+affine-columns,affine-columns/residual-basis/0/5,per optimizer unit,0.04968570397162638,0.04968570397162638,0.0,4.968570397162638e-12
+affine-columns,affine-columns/map/1/0,angstrom per v,0.17600000000000002,0.17600000000000002,0.0,1.7600000000000003e-11
+affine-columns,affine-columns/map/1/1,angstrom per v,0.2,0.2,0.0,2.0000000000000002e-11
+affine-columns,affine-columns/map/1/2,angstrom per v,0.17600000000000002,0.17600000000000002,0.0,1.7600000000000003e-11
+affine-columns,affine-columns/root/0,J/mol,-5.820766091346741e-11,-5.820766091346741e-11,0.0,1e-08
+affine-columns,affine-columns/root/1,J/mol,0,0,0,1e-08
+affine-columns,affine-columns/root/2,J/mol,-5.820766091346741e-11,-5.820766091346741e-11,0.0,1e-08
+affine-columns,affine-columns/root/3,J/mol,-5.820766091346741e-11,-5.820766091346741e-11,0.0,1e-08
+affine-columns,affine-columns/root/4,J/mol,-5.820766091346741e-11,-5.820766091346741e-11,0.0,1e-08
+affine-columns,affine-columns/root/5,J/mol,-5.820766091346741e-11,-5.820766091346741e-11,0.0,1e-08
+affine-columns,affine-columns/root/6,J/mol,0,0,0,1e-08
+affine-columns,affine-columns/root/7,J/mol,-5.820766091346741e-11,-5.820766091346741e-11,0.0,1e-08
+affine-columns,affine-columns/1/0/refinement,per optimizer unit,2.3795780161132525e-12,2.3795780161132525e-12,0.0,1e-12
+affine-columns,affine-columns/1/0,per optimizer unit,0.0069774373179749705,0.0069774373179749705,0.0,1e-12
+affine-columns,affine-columns/residual-basis/1/0,per optimizer unit,0.0069774373179749705,0.0069774373179749705,0.0,1e-12
+affine-columns,affine-columns/root/8,J/mol,-5.820766091346741e-11,-5.820766091346741e-11,0.0,1e-08
+affine-columns,affine-columns/root/9,J/mol,0,0,0,1e-08
+affine-columns,affine-columns/root/10,J/mol,-5.820766091346741e-11,-5.820766091346741e-11,0.0,1e-08
+affine-columns,affine-columns/root/11,J/mol,-5.820766091346741e-11,-5.820766091346741e-11,0.0,1e-08
+affine-columns,affine-columns/root/12,J/mol,-5.820766091346741e-11,-5.820766091346741e-11,0.0,1e-08
+affine-columns,affine-columns/root/13,J/mol,-5.820766091346741e-11,-5.820766091346741e-11,0.0,1e-08
+affine-columns,affine-columns/root/14,J/mol,0,0,0,1e-08
+affine-columns,affine-columns/root/15,J/mol,-5.820766091346741e-11,-5.820766091346741e-11,0.0,1e-08
+affine-columns,affine-columns/1/1/refinement,per optimizer unit,1.9419651072401698e-12,1.9419651072401698e-12,0.0,1e-12
+affine-columns,affine-columns/1/1,per optimizer unit,0.06048863485437733,0.06048863485437733,0.0,6.0488634854377334e-12
+affine-columns,affine-columns/residual-basis/1/1,per optimizer unit,0.06048863485437733,0.06048863485437733,0.0,6.0488634854377334e-12
+affine-columns,affine-columns/root/16,J/mol,-5.820766091346741e-11,-5.820766091346741e-11,0.0,1e-08
+affine-columns,affine-columns/root/17,J/mol,0,0,0,1e-08
+affine-columns,affine-columns/root/18,J/mol,-5.820766091346741e-11,-5.820766091346741e-11,0.0,1e-08
+affine-columns,affine-columns/root/19,J/mol,-5.820766091346741e-11,-5.820766091346741e-11,0.0,1e-08
+affine-columns,affine-columns/root/20,J/mol,-5.820766091346741e-11,-5.820766091346741e-11,0.0,1e-08
+affine-columns,affine-columns/root/21,J/mol,-5.820766091346741e-11,-5.820766091346741e-11,0.0,1e-08
+affine-columns,affine-columns/root/22,J/mol,0,0,0,1e-08
+affine-columns,affine-columns/root/23,J/mol,-5.820766091346741e-11,-5.820766091346741e-11,0.0,1e-08
+affine-columns,affine-columns/1/2/refinement,per optimizer unit,3.552713678800501e-12,3.552713678800501e-12,0.0,1e-12
+affine-columns,affine-columns/1/2,per optimizer unit,0.22247934994914823,0.22247934994914823,0.0,2.2247934994914824e-11
+affine-columns,affine-columns/residual-basis/1/2,per optimizer unit,0.22247934994914823,0.22247934994914823,0.0,2.2247934994914824e-11
+affine-columns,affine-columns/root/24,J/mol,-5.820766091346741e-11,-5.820766091346741e-11,0.0,1e-08
+affine-columns,affine-columns/root/25,J/mol,0,0,0,1e-08
+affine-columns,affine-columns/root/26,J/mol,-5.820766091346741e-11,-5.820766091346741e-11,0.0,1e-08
+affine-columns,affine-columns/root/27,J/mol,-5.820766091346741e-11,-5.820766091346741e-11,0.0,1e-08
+affine-columns,affine-columns/root/28,J/mol,-5.820766091346741e-11,-5.820766091346741e-11,0.0,1e-08
+affine-columns,affine-columns/root/29,J/mol,-5.820766091346741e-11,-5.820766091346741e-11,0.0,1e-08
+affine-columns,affine-columns/root/30,J/mol,0,0,0,1e-08
+affine-columns,affine-columns/root/31,J/mol,-5.820766091346741e-11,-5.820766091346741e-11,0.0,1e-08
+affine-columns,affine-columns/1/3/refinement,per optimizer unit,1.9291374053764798e-10,1.9291374053764798e-10,0.0,1e-12
+affine-columns,affine-columns/1/3,per optimizer unit,0.003515018322757681,0.003515018322757681,0.0,1e-12
+affine-columns,affine-columns/residual-basis/1/3,per optimizer unit,0.003515018322757681,0.003515018322757681,0.0,1e-12
+affine-columns,affine-columns/root/32,J/mol,-5.820766091346741e-11,-5.820766091346741e-11,0.0,1e-08
+affine-columns,affine-columns/root/33,J/mol,0,0,0,1e-08
+affine-columns,affine-columns/root/34,J/mol,-5.820766091346741e-11,-5.820766091346741e-11,0.0,1e-08
+affine-columns,affine-columns/root/35,J/mol,-5.820766091346741e-11,-5.820766091346741e-11,0.0,1e-08
+affine-columns,affine-columns/root/36,J/mol,-5.820766091346741e-11,-5.820766091346741e-11,0.0,1e-08
+affine-columns,affine-columns/root/37,J/mol,-5.820766091346741e-11,-5.820766091346741e-11,0.0,1e-08
+affine-columns,affine-columns/root/38,J/mol,0,0,0,1e-08
+affine-columns,affine-columns/root/39,J/mol,-5.820766091346741e-11,-5.820766091346741e-11,0.0,1e-08
+affine-columns,affine-columns/1/4/refinement,per optimizer unit,3.736918182302892e-11,3.736918182302892e-11,0.0,1e-12
+affine-columns,affine-columns/1/4,per optimizer unit,0.023158853506997968,0.023158853506997968,0.0,2.3158853506997967e-12
+affine-columns,affine-columns/residual-basis/1/4,per optimizer unit,0.023158853506997968,0.023158853506997968,0.0,2.3158853506997967e-12
+affine-columns,affine-columns/root/40,J/mol,-5.820766091346741e-11,-5.820766091346741e-11,0.0,1e-08
+affine-columns,affine-columns/root/41,J/mol,0,0,0,1e-08
+affine-columns,affine-columns/root/42,J/mol,-5.820766091346741e-11,-5.820766091346741e-11,0.0,1e-08
+affine-columns,affine-columns/root/43,J/mol,-5.820766091346741e-11,-5.820766091346741e-11,0.0,1e-08
+affine-columns,affine-columns/root/44,J/mol,-5.820766091346741e-11,-5.820766091346741e-11,0.0,1e-08
+affine-columns,affine-columns/root/45,J/mol,-5.820766091346741e-11,-5.820766091346741e-11,0.0,1e-08
+affine-columns,affine-columns/root/46,J/mol,0,0,0,1e-08
+affine-columns,affine-columns/root/47,J/mol,-5.820766091346741e-11,-5.820766091346741e-11,0.0,1e-08
+affine-columns,affine-columns/1/5/refinement,per optimizer unit,5.7620574978045624e-12,5.7620574978045624e-12,0.0,1e-12
+affine-columns,affine-columns/1/5,per optimizer unit,0.04851111473865384,0.04851111473865384,0.0,4.8511114738653844e-12
+affine-columns,affine-columns/residual-basis/1/5,per optimizer unit,0.04851111473865384,0.04851111473865384,0.0,4.8511114738653844e-12
+affine-columns,affine-columns/root/48,J/mol,-5.820766091346741e-11,-5.820766091346741e-11,0.0,1e-08
+affine-columns,affine-columns/root/49,J/mol,0,0,0,1e-08
+affine-columns,affine-columns/root/50,J/mol,-5.820766091346741e-11,-5.820766091346741e-11,0.0,1e-08
+affine-columns,affine-columns/root/51,J/mol,-5.820766091346741e-11,-5.820766091346741e-11,0.0,1e-08
+affine-columns,affine-columns/root/52,J/mol,-5.820766091346741e-11,-5.820766091346741e-11,0.0,1e-08
+affine-columns,affine-columns/root/53,J/mol,-5.820766091346741e-11,-5.820766091346741e-11,0.0,1e-08
+affine-columns,affine-columns/root/54,J/mol,0,0,0,1e-08
+affine-columns,affine-columns/root/55,J/mol,-5.820766091346741e-11,-5.820766091346741e-11,0.0,1e-08
+affine-columns,affine-columns/Born/refinement,per optimizer unit,1.7763568394002505e-13,1.7763568394002505e-13,0.0,1e-12
+affine-columns,affine-columns/Born,per optimizer unit,0.009953567744910777,0.009953567744910777,0.0,1e-12
+affine-columns,affine-columns/held-energy,J/mol,0,0,0,1e-08
+affine-recovery,affine-recovery/sigma,angstrom,3.2000000000000055,3.2000000000000055,0.0,3.2000000000000055e-10
+affine-recovery,affine-recovery/9,angstrom,2.8160000000000047,2.8160000000000047,0.0,2.816000000000005e-10
+affine-recovery,affine-recovery/8,angstrom,2.8160000000000047,2.8160000000000047,0.0,2.816000000000005e-10
+affine-recovery,affine-recovery/stored-hydration,J/mol,-5.820766091346741e-11,-5.820766091346741e-11,0.0,1e-08
+affine-recovery,affine-recovery/decade/0,decade,6.171695785940993e-15,6.171695785940993e-15,0.0,1e-12
+affine-recovery,affine-recovery/decade/1,decade,0,0,0,1e-12
+affine-recovery,affine-recovery/decade/2,decade,1.23433915718819e-14,1.23433915718819e-14,0.0,1e-12
+affine-recovery,affine-recovery/decade/3,decade,0,0,0,1e-12
+affine-recovery,affine-recovery/decade/4,decade,-3.7705203942235165e-14,-3.7705203942235165e-14,0.0,1e-12
+affine-recovery,affine-recovery/decade/5,decade,3.278713386281164e-15,3.278713386281164e-15,0.0,1e-12
+ionic-addition,addition-ionic/value,J/mol,1.7540643314132467,1.7540643314132467,0.0,1e-08
+ionic-addition,addition-ionic/conserved-basis-value,J/mol,1.7540643320813993,1.7540643320813993,0.0,1e-08
+ionic-addition,addition-ionic/charge-gauge,J/mol,1.7540643322422511,1.7540643322422511,0.0,1e-08
+ionic-addition,addition-ionic/reference-signal,bool,1,1,0,1e-10
+ionic-addition,addition-ionic/column-refinement/0,bool,1,1,0,1e-10
+ionic-addition,addition-ionic/column/0,J/mol per native coefficient,-0.040775526978904963,-0.040775526978904963,0.0,1e-08
+ionic-addition,addition-ionic/column-refinement/1,bool,1,1,0,1e-10
+ionic-addition,addition-ionic/column/1,J/mol per native coefficient,0.002108408263503819,0.002108408263503819,0.0,1e-08
+reactive-cp,F7/recovery/rank,bool,1,1,0,1e-10
+reactive-cp,F7/recovery/epsilon,K,191.42000000000047,191.42000000000047,0.0,1.9142000000000047e-08
+reactive-cp,F7/recovery/b,K,199.9999999998586,199.9999999998586,0.0,1.9999999999985862e-08
+reactive-cp,F7/recovery/cost,1,5.654554968624213e-26,5.654554968624213e-26,0.0,1e-12
+reactive-cp,F7/chart/regular,bool,1,1,0,1e-10
+reactive-cp,F7/start/T-255/physical-0/rung-0,native,-0.5784796583502482,-0.5784796583502482,0.0,5.784796583502482e-11
+reactive-cp,F7/start/T-255/physical-1/rung-0,native,-0.018201853752738226,-0.018201853752738226,0.0,1.8201853752738225e-12
+reactive-cp,F7/start/T-255/physical-2/rung-0,native,-0.0026558088482101024,-0.0026558088482101024,0.0,1e-12
+reactive-cp,F7/start/T-255/physical-3/rung-0,native,0.8190800921341677,0.8190800921341677,0.0,8.190800921341677e-11
+reactive-cp,F7/start/T-255/physical-4/rung-0,native,2.3040599841283975,2.3040599841283975,0.0,2.3040599841283976e-10
+reactive-cp,F7/start/T-255/physical-5/rung-0,native,1070.2657916214757,1070.2657916214757,0.0,1.0702657916214757e-07
+reactive-cp,F7/start/T-255/physical-6/rung-0,native,-0.5966815121029864,-0.5966815121029864,0.0,5.966815121029864e-11
+reactive-cp,F7/start/T-255/optimizer-0/rung-0,native,-1.1933630242059727,-1.1933630242059727,0.0,1.1933630242059727e-10
+reactive-cp,F7/start/T-255/optimizer-1/rung-0,native,-0.026558088482101023,-0.026558088482101023,0.0,2.6558088482101022e-12
+reactive-cp,F7/start/T-255/optimizer-1/rung-1,native,-0.026558088482101023,-0.026558088482101023,0.0,2.6558088482101022e-12
+reactive-cp,F7/start/T-255/optimizer-1/rung-2,native,-0.026558088482101023,-0.026558088482101023,0.0,2.6558088482101022e-12
+reactive-cp,F7/grouped/H/0/0,J,-35337.92342638326,-35337.92342638326,0.0,3.5337923426383265e-06
+reactive-cp,F7/start/T-260/physical-0/rung-0,native,-0.7219104405403223,-0.7219104405403223,0.0,7.219104405403223e-11
+reactive-cp,F7/start/T-260/physical-1/rung-0,native,-0.024873587432278972,-0.024873587432278972,0.0,2.4873587432278975e-12
+reactive-cp,F7/start/T-260/physical-2/rung-0,native,-0.0029177373760602,-0.0029177373760602,0.0,1e-12
+reactive-cp,F7/start/T-260/physical-3/rung-0,native,0.7389415481750172,0.7389415481750172,0.0,7.389415481750173e-11
+reactive-cp,F7/start/T-260/physical-4/rung-0,native,2.3472110764448497,2.3472110764448497,0.0,2.34721107644485e-10
+reactive-cp,F7/start/T-260/physical-5/rung-0,native,1078.2971557812048,1078.2971557812048,0.0,1.0782971557812048e-07
+reactive-cp,F7/start/T-260/physical-6/rung-0,native,-0.7467840279726012,-0.7467840279726012,0.0,7.467840279726012e-11
+reactive-cp,F7/start/T-260/optimizer-0/rung-0,native,-1.4935680559452025,-1.4935680559452025,0.0,1.4935680559452024e-10
+reactive-cp,F7/start/T-260/optimizer-1/rung-0,native,-0.029177373760602,-0.029177373760602,0.0,2.9177373760602e-12
+reactive-cp,F7/start/T-260/optimizer-1/rung-1,native,-0.029177373760602,-0.029177373760602,0.0,2.9177373760602e-12
+reactive-cp,F7/start/T-260/optimizer-1/rung-2,native,-0.029177373760602,-0.029177373760602,0.0,2.9177373760602e-12
+reactive-cp,F7/grouped/H/0/1,J,-34229.195117325384,-34229.195117325384,0.0,3.4229195117325387e-06
+reactive-cp,F7/start/T-265/physical-0/rung-0,native,-0.9165414608421493,-0.9165414608421493,0.0,9.165414608421493e-11
+reactive-cp,F7/start/T-265/physical-1/rung-0,native,-0.03509277137531589,-0.03509277137531589,0.0,3.5092771375315893e-12
+reactive-cp,F7/start/T-265/physical-2/rung-0,native,-0.0032362539395373773,-0.0032362539395373773,0.0,1e-12
+reactive-cp,F7/start/T-265/physical-3/rung-0,native,0.6377456136311971,0.6377456136311971,0.0,6.37745613631197e-11
+reactive-cp,F7/start/T-265/physical-4/rung-0,native,2.385895230200027,2.385895230200027,0.0,2.3858952302000274e-10
+reactive-cp,F7/start/T-265/physical-5/rung-0,native,1079.1889763527581,1079.1889763527581,0.0,1.0791889763527582e-07
+reactive-cp,F7/start/T-265/physical-6/rung-0,native,-0.9516342322174651,-0.9516342322174651,0.0,9.516342322174651e-11
+reactive-cp,F7/start/T-265/optimizer-0/rung-0,native,-1.9032684644349303,-1.9032684644349303,0.0,1.9032684644349302e-10
+reactive-cp,F7/start/T-265/optimizer-1/rung-0,native,-0.03236253939537377,-0.03236253939537377,0.0,3.2362539395373773e-12
+reactive-cp,F7/start/T-265/optimizer-1/rung-1,native,-0.03236253939537377,-0.03236253939537377,0.0,3.2362539395373773e-12
+reactive-cp,F7/start/T-265/optimizer-1/rung-2,native,-0.03236253939537377,-0.03236253939537377,0.0,3.2362539395373773e-12
+reactive-cp,F7/grouped/H/0/2,J,-33081.331791257384,-33081.331791257384,0.0,3.3081331791257386e-06
+reactive-cp,F7/start/T-270/physical-0/rung-0,native,-1.192020562135158,-1.192020562135158,0.0,1.192020562135158e-10
+reactive-cp,F7/start/T-270/physical-1/rung-0,native,-0.051561944760165214,-0.051561944760165214,0.0,5.156194476016521e-12
+reactive-cp,F7/start/T-270/physical-2/rung-0,native,-0.0036465619541404893,-0.0036465619541404893,0.0,1e-12
+reactive-cp,F7/start/T-270/physical-3/rung-0,native,0.5043632080206693,0.5043632080206693,0.0,5.043632080206693e-11
+reactive-cp,F7/start/T-270/physical-4/rung-0,native,2.4194007794506645,2.4194007794506645,0.0,2.4194007794506647e-10
+reactive-cp,F7/start/T-270/physical-5/rung-0,native,1069.3376369915163,1069.3376369915163,0.0,1.0693376369915163e-07
+reactive-cp,F7/start/T-270/physical-6/rung-0,native,-1.2435825068953232,-1.2435825068953232,0.0,1.2435825068953234e-10
+reactive-cp,F7/start/T-270/optimizer-0/rung-0,native,-2.4871650137906465,-2.4871650137906465,0.0,2.487165013790647e-10
+reactive-cp,F7/start/T-270/optimizer-1/rung-0,native,-0.03646561954140489,-0.03646561954140489,0.0,3.646561954140489e-12
+reactive-cp,F7/start/T-270/optimizer-1/rung-1,native,-0.03646561954140489,-0.03646561954140489,0.0,3.646561954140489e-12
+reactive-cp,F7/start/T-270/optimizer-1/rung-2,native,-0.03646561954140489,-0.03646561954140489,0.0,3.646561954140489e-12
+reactive-cp,F7/grouped/H/0/3,J,-31886.22841033006,-31886.22841033006,0.0,3.188622841033006e-06
+reactive-cp,F7/start/T-275/physical-0/rung-0,native,-1.6047050127500164,-1.6047050127500164,0.0,1.6047050127500164e-10
+reactive-cp,F7/start/T-275/physical-1/rung-0,native,-0.07992889659158396,-0.07992889659158396,0.0,7.992889659158397e-12
+reactive-cp,F7/start/T-275/physical-2/rung-0,native,-0.004213323726056819,-0.004213323726056819,0.0,1e-12
+reactive-cp,F7/start/T-275/physical-3/rung-0,native,0.3183631429965377,0.3183631429965377,0.0,3.183631429965377e-11
+reactive-cp,F7/start/T-275/physical-4/rung-0,native,2.4465425087544057,2.4465425087544057,0.0,2.446542508754406e-10
+reactive-cp,F7/start/T-275/physical-5/rung-0,native,1042.201441531731,1042.201441531731,0.0,1.042201441531731e-07
+reactive-cp,F7/start/T-275/physical-6/rung-0,native,-1.6846339093416003,-1.6846339093416003,0.0,1.6846339093416005e-10
+reactive-cp,F7/start/T-275/optimizer-0/rung-0,native,-3.3692678186832006,-3.3692678186832006,0.0,3.369267818683201e-10
+reactive-cp,F7/start/T-275/optimizer-1/rung-0,native,-0.042133237260568196,-0.042133237260568196,0.0,4.2133237260568196e-12
+reactive-cp,F7/start/T-275/optimizer-1/rung-1,native,-0.042133237260568196,-0.042133237260568196,0.0,4.2133237260568196e-12
+reactive-cp,F7/start/T-275/optimizer-1/rung-2,native,-0.042133237260568196,-0.042133237260568196,0.0,4.2133237260568196e-12
+reactive-cp,F7/grouped/H/0/4,J,-30632.365392518033,-30632.365392518033,0.0,3.0632365392518032e-06
+reactive-cp,F7/solution/T-255/physical-0/rung-0,native,-0.7346920664328184,-0.7346920664328184,0.0,7.346920664328184e-11
+reactive-cp,F7/solution/T-255/physical-1/rung-0,native,-0.024137540955594308,-0.024137540955594308,0.0,2.413754095559431e-12
+reactive-cp,F7/solution/T-255/physical-2/rung-0,native,-0.0028339791450274466,-0.0028339791450274466,0.0,1e-12
+reactive-cp,F7/solution/T-255/physical-3/rung-0,native,0.8133646354260093,0.8133646354260093,0.0,8.133646354260094e-11
+reactive-cp,F7/solution/T-255/physical-4/rung-0,native,2.29242133632628,2.29242133632628,0.0,2.2924213363262803e-10
+reactive-cp,F7/solution/T-255/physical-5/rung-0,native,1052.270834039935,1052.270834039935,0.0,1.0522708340399349e-07
+reactive-cp,F7/solution/T-255/physical-6/rung-0,native,-0.7588296073884127,-0.7588296073884127,0.0,7.588296073884127e-11
+reactive-cp,F7/solution/T-255/optimizer-0/rung-0,native,-1.5176592147768253,-1.5176592147768253,0.0,1.5176592147768254e-10
+reactive-cp,F7/solution/T-255/optimizer-1/rung-0,native,-0.028339791450274467,-0.028339791450274467,0.0,2.833979145027447e-12
+reactive-cp,F7/solution/T-255/optimizer-1/rung-1,native,-0.028339791450274467,-0.028339791450274467,0.0,2.833979145027447e-12
+reactive-cp,F7/solution/T-255/optimizer-1/rung-2,native,-0.028339791450274467,-0.028339791450274467,0.0,2.833979145027447e-12
+reactive-cp,F7/grouped/H/1/0,J,-34204.722189467524,-34204.722189467524,0.0,3.4204722189467524e-06
+reactive-cp,F7/solution/T-260/physical-0/rung-0,native,-0.9368773578335413,-0.9368773578335413,0.0,9.368773578335413e-11
+reactive-cp,F7/solution/T-260/physical-1/rung-0,native,-0.03423352081043342,-0.03423352081043342,0.0,3.423352081043342e-12
+reactive-cp,F7/solution/T-260/physical-2/rung-0,native,-0.0031633900918402484,-0.0031633900918402484,0.0,1e-12
+reactive-cp,F7/solution/T-260/physical-3/rung-0,native,0.713454319249872,0.713454319249872,0.0,7.134543192498721e-11
+reactive-cp,F7/solution/T-260/physical-4/rung-0,native,2.33733504881379,2.33733504881379,0.0,2.3373350488137897e-10
+reactive-cp,F7/solution/T-260/physical-5/rung-0,native,1054.6589309661892,1054.6589309661892,0.0,1.0546589309661893e-07
+reactive-cp,F7/solution/T-260/physical-6/rung-0,native,-0.9711108786439747,-0.9711108786439747,0.0,9.711108786439747e-11
+reactive-cp,F7/solution/T-260/optimizer-0/rung-0,native,-1.9422217572879494,-1.9422217572879494,0.0,1.9422217572879495e-10
+reactive-cp,F7/solution/T-260/optimizer-1/rung-0,native,-0.031633900918402486,-0.031633900918402486,0.0,3.1633900918402485e-12
+reactive-cp,F7/solution/T-260/optimizer-1/rung-1,native,-0.031633900918402486,-0.031633900918402486,0.0,3.1633900918402485e-12
+reactive-cp,F7/solution/T-260/optimizer-1/rung-2,native,-0.031633900918402486,-0.031633900918402486,0.0,3.1633900918402485e-12
+reactive-cp,F7/grouped/H/1/1,J,-33063.42915437145,-33063.42915437145,0.0,3.306342915437145e-06
+reactive-cp,F7/solution/T-265/physical-0/rung-0,native,-1.224971822611453,-1.224971822611453,0.0,1.224971822611453e-10
+reactive-cp,F7/solution/T-265/physical-1/rung-0,native,-0.050625140909126,-0.050625140909126,0.0,5.062514090912601e-12
+reactive-cp,F7/solution/T-265/physical-2/rung-0,native,-0.003588497865329952,-0.003588497865329952,0.0,1e-12
+reactive-cp,F7/solution/T-265/physical-3/rung-0,native,0.5805483858837801,0.5805483858837801,0.0,5.805483858837801e-11
+reactive-cp,F7/solution/T-265/physical-4/rung-0,native,2.3775881965110925,2.3775881965110925,0.0,2.3775881965110926e-10
+reactive-cp,F7/solution/T-265/physical-5/rung-0,native,1046.2893209814401,1046.2893209814401,0.0,1.0462893209814402e-07
+reactive-cp,F7/solution/T-265/physical-6/rung-0,native,-1.275596963520579,-1.275596963520579,0.0,1.2755969635205792e-10
+reactive-cp,F7/solution/T-265/optimizer-0/rung-0,native,-2.551193927041158,-2.551193927041158,0.0,2.5511939270411584e-10
+reactive-cp,F7/solution/T-265/optimizer-1/rung-0,native,-0.035884978653299524,-0.035884978653299524,0.0,3.5884978653299524e-12
+reactive-cp,F7/solution/T-265/optimizer-1/rung-1,native,-0.035884978653299524,-0.035884978653299524,0.0,3.5884978653299524e-12
+reactive-cp,F7/solution/T-265/optimizer-1/rung-2,native,-0.035884978653299524,-0.035884978653299524,0.0,3.5884978653299524e-12
+reactive-cp,F7/grouped/H/1/2,J,-31874.015365627496,-31874.015365627496,0.0,3.18740153656275e-06
+reactive-cp,F7/solution/T-270/physical-0/rung-0,native,-1.660473446419977,-1.660473446419977,0.0,1.660473446419977e-10
+reactive-cp,F7/solution/T-270/physical-1/rung-0,native,-0.07913119364513434,-0.07913119364513434,0.0,7.913119364513434e-12
+reactive-cp,F7/solution/T-270/physical-2/rung-0,native,-0.004177827914043108,-0.004177827914043108,0.0,1e-12
+reactive-cp,F7/solution/T-270/physical-3/rung-0,native,0.3933775349093903,0.3933775349093903,0.0,3.9337753490939033e-11
+reactive-cp,F7/solution/T-270/physical-4/rung-0,native,2.4123225977618064,2.4123225977618064,0.0,2.4123225977618063e-10
+reactive-cp,F7/solution/T-270/physical-5/rung-0,native,1020.4716362178077,1020.4716362178077,0.0,1.0204716362178077e-07
+reactive-cp,F7/solution/T-270/physical-6/rung-0,native,-1.7396046400651115,-1.7396046400651115,0.0,1.7396046400651115e-10
+reactive-cp,F7/solution/T-270/optimizer-0/rung-0,native,-3.479209280130223,-3.479209280130223,0.0,3.479209280130223e-10
+reactive-cp,F7/solution/T-270/optimizer-1/rung-0,native,-0.04177827914043108,-0.04177827914043108,0.0,4.177827914043108e-12
+reactive-cp,F7/solution/T-270/optimizer-1/rung-1,native,-0.04177827914043108,-0.04177827914043108,0.0,4.177827914043108e-12
+reactive-cp,F7/solution/T-270/optimizer-1/rung-2,native,-0.04177827914043108,-0.04177827914043108,0.0,4.177827914043108e-12
+reactive-cp,F7/grouped/H/1/3,J,-30624.461284926703,-30624.461284926703,0.0,3.0624461284926705e-06
+reactive-cp,F7/solution/T-275/physical-0/rung-0,native,-2.3768156839631334,-2.3768156839631334,0.0,2.376815683963133e-10
+reactive-cp,F7/solution/T-275/physical-0/rung-1,native,-2.3768156839631334,-2.3768156839631334,0.0,2.376815683963133e-10
+reactive-cp,F7/solution/T-275/physical-1/rung-0,native,-0.1336469532525761,-0.1336469532525761,0.0,1.3364695325257612e-11
+reactive-cp,F7/solution/T-275/physical-2/rung-0,native,-0.005071474170217036,-0.005071474170217036,0.0,1e-12
+reactive-cp,F7/solution/T-275/physical-3/rung-0,native,0.10860035135478073,0.10860035135478073,0.0,1.0860035135478073e-11
+reactive-cp,F7/solution/T-275/physical-4/rung-0,native,2.440066874966488,2.440066874966488,0.0,2.4400668749664883e-10
+reactive-cp,F7/solution/T-275/physical-5/rung-0,native,963.7037534711336,963.7037534711336,0.0,9.637037534711337e-08
+reactive-cp,F7/solution/T-275/physical-6/rung-0,native,-2.5104626372157095,-2.5104626372157095,0.0,2.5104626372157094e-10
+reactive-cp,F7/solution/T-275/physical-6/rung-1,native,-2.5104626372157095,-2.5104626372157095,0.0,2.5104626372157094e-10
+reactive-cp,F7/solution/T-275/optimizer-0/rung-0,native,-5.020925274431419,-5.020925274431419,0.0,5.020925274431419e-10
+reactive-cp,F7/solution/T-275/optimizer-0/rung-1,native,-5.020925274431419,-5.020925274431419,0.0,5.020925274431419e-10
+reactive-cp,F7/solution/T-275/optimizer-1/rung-0,native,-0.05071474170217036,-0.05071474170217036,0.0,5.071474170217036e-12
+reactive-cp,F7/solution/T-275/optimizer-1/rung-1,native,-0.05071474170217036,-0.05071474170217036,0.0,5.071474170217036e-12
+reactive-cp,F7/solution/T-275/optimizer-1/rung-2,native,-0.05071474170217036,-0.05071474170217036,0.0,5.071474170217036e-12
+reactive-cp,F7/grouped/H/1/4,J,-29296.430660686554,-29296.430660686554,0.0,2.9296430660686554e-06
+reactive-cp,F7/nonpositive-log,bool,1,1,0,1e-10

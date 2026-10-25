@@ -1,0 +1,6 @@
+Component,Dielectric constant $/ \mathrm{C} \cdot \mathrm{Vm}^{-1}$,Ref.
+Water,$-105.2 \ln T+677.480$,[37]
+Methanol,$-0.192 T+90.09$,"This work, [38]"
+Ethanol,$-0.146 T+68.47$,"This work, [39]"
+$\left[\mathrm{C}_{4}\right.$ mima $][\mathrm{Tf} \mathrm{O}]$,13.2,[36]
+Salts,8,a)

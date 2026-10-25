@@ -1,0 +1,96 @@
+{
+  "schema_version": 1,
+  "analysis": "2026-initialization-diagnosis",
+  "issue": 90,
+  "source_commit": "f909bb21a93171c38465adba8777cd3b0bc6c53d",
+  "branch": "roadmap/application-preparation",
+  "wheel": "build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+  "wheel_sha256": "9f73aeb466c54eff80c89a8776c90d49cb9c9c2d130f0eb15bf0311c1f76e606",
+  "installed_distribution": "0.2.0.dev0",
+  "installed_location": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT-greenfield/.venv/lib/python3.13/site-packages",
+  "parameter_packet": "data/packets/gross-2001-methane-ethane/2/parameters/parameters.json",
+  "parameter_packet_sha256": "7dd1899712aacfbc3395d86349768b0d93dd5dfd75b2e0f0700640be618aa9c2",
+  "synthetic_reactive_fixture": "engine/tests/equilibrium/test_native_transport.py",
+  "synthetic_reactive_fixture_sha256": "28293ea052e6bb66cd2a0d4b693cb89bc2387cd783e419fc4e415231b8f28f2d",
+  "frozen_matrix": {
+    "cold_free_temperature_guesses_K": [
+      170.0,
+      179.0,
+      180.0,
+      181.0,
+      190.0
+    ],
+    "warm_fixed_temperature_seeds_K": [
+      179.0,
+      181.0
+    ],
+    "canonical_free_temperature_target_K": 180.0,
+    "canonical_free_temperature_pressure_Pa": 1596859.1113026983,
+    "row_tolerance": 1e-10,
+    "temperature_atol_K": 1e-06,
+    "pressure_rtol": 1e-08,
+    "continuation": {
+      "initial_step": 0.25,
+      "minimum_step": 0.25,
+      "max_steps": 4,
+      "max_retries_per_step": 1
+    },
+    "long_continuation": {
+      "initial_step": 0.25,
+      "minimum_step": 0.25,
+      "max_steps": 8,
+      "max_retries_per_step": 1
+    },
+    "reactive_state": {
+      "T_K": 298.15,
+      "P_Pa": 100000.0,
+      "reaction": "A+B=C; ln K=1500(1/T-1/298.15)"
+    },
+    "reactive_continuation": {
+      "initial_step": 0.5,
+      "minimum_step": 0.5,
+      "max_steps": 2,
+      "max_retries_per_step": 1
+    }
+  },
+  "acceptance": {
+    "accepted_state": "success=true, requested_tolerance_met=true, topology_event=None_, convergence residual <= 1e-10",
+    "typed_failure": "preserve topology event and finite residual/solver diagnostics; do not infer physical nonexistence",
+    "continuation": "reached_target with every retained state accepted, or preserve bounded branch_lost/step_too_small cause and accepted prefix"
+  },
+  "fixed_180_anchor": {
+    "phase_order": [
+      "L",
+      "V"
+    ],
+    "temperature_K": 180.0,
+    "pressure_Pa": 1596859.1113026983,
+    "amounts_mol": [
+      1.0,
+      0.0
+    ],
+    "molar_densities_mol_m3": [
+      19698.50029631284,
+      1288.455070529292
+    ],
+    "mole_fractions": [
+      0.5000000000000001,
+      0.49999999999999994,
+      0.9563602429614724,
+      0.043639757038527634
+    ],
+    "comparison_criteria": {
+      "pressure_relative": 1e-08,
+      "composition_absolute": 1e-08,
+      "amount_absolute_mol": 1e-08,
+      "density_log_window": 0.009950330853168083
+    }
+  },
+  "review_history": {
+    "initial": "Sol scientific review: diagnosis supported; design revised for branch identity, retry meaning and fallback contract.",
+    "correction_round_1": "Retains a fixed-180 anchor and phase-ordered x/rho/amount comparisons; removes the unsupported generic 12-invocation fallback and records q-step/retry semantics. Fresh execution review remains pending."
+  },
+  "run_utc": "2026-09-21T20:54:40.130554+00:00",
+  "case_count": 14,
+  "continuation_state_count": 15
+}

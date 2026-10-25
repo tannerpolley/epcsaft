@@ -1,0 +1,155 @@
+{
+  "event": "skip",
+  "pid": 2019794,
+  "id": 233,
+  "cold": 1,
+  "node": 38,
+  "rho": 2709.4906792105835,
+  "cause": "budget_exhausted",
+  "residual": 7.939504609311143e-11,
+  "iterations": 50,
+  "floor": "4.4408920985006262e-16",
+  "pivot": "102813046793.61371",
+  "contraction": "0.90567039718332554",
+  "T": 45,
+  "P": 0.0001,
+  "x": [
+    0.5,
+    0.5
+  ],
+  "parameters": {
+    "segment_count": [
+      2.3827,
+      2.3316
+    ],
+    "sigma_constant": [
+      3.1771,
+      3.7086
+    ],
+    "sigma_term_component": [],
+    "sigma_term_amplitude": [],
+    "sigma_term_exponent": [],
+    "dispersion_energy_over_k": [
+      198.24,
+      222.88
+    ],
+    "k_ij": [
+      0,
+      0.028,
+      0.028,
+      0
+    ],
+    "k_ij_reference_temperature_k": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "k_ij_reciprocal_temperature_slope": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "l_ij": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "packing_diameter_angstrom": [
+      0,
+      0
+    ],
+    "debye_huckel_diameter_angstrom": [
+      0,
+      0
+    ],
+    "born_diameter_angstrom": [
+      0,
+      0
+    ],
+    "site_component": [
+      0,
+      0
+    ],
+    "site_multiplicity": [
+      1,
+      1
+    ],
+    "association_active": [
+      0,
+      1,
+      1,
+      0
+    ],
+    "association_energy_over_k": [
+      0,
+      2653.4,
+      2653.4,
+      0
+    ],
+    "association_volume": [
+      0,
+      0.032384,
+      0.032384,
+      0
+    ],
+    "molar_mass_kg_per_mol": [
+      0.04606844,
+      0.0581222
+    ],
+    "permittivity_term_component": [],
+    "permittivity_term_coefficient": [],
+    "permittivity_term_power": [],
+    "permittivity_reference_temperature_k": [
+      0,
+      0
+    ],
+    "dielectric_volume_m3_per_mol": [
+      0,
+      0
+    ],
+    "dielectric_temperature_k": [
+      0,
+      0
+    ],
+    "dipole_scaling_debye2": [
+      0,
+      0
+    ],
+    "polarizability_scaling_angstrom3": [
+      0,
+      0
+    ],
+    "correlation_integral_parameter": [
+      0,
+      0
+    ],
+    "dipole_moment_debye": [],
+    "dipole_count": [],
+    "charge_number": [
+      0,
+      0
+    ],
+    "relative_permittivity": [
+      0,
+      0
+    ],
+    "ion_suppression_coefficient": [
+      0,
+      0
+    ],
+    "solvation_factor": [
+      0,
+      0
+    ],
+    "born_c_shell": 0,
+    "ionic_region_relative_permittivity": 0,
+    "electrolyte_form": 0,
+    "ionic_dispersion": 0,
+    "permittivity_form": 0,
+    "born_c_dielectric": 0
+  },
+  "workload": "search-stress"
+}

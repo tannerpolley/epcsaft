@@ -1,0 +1,19 @@
+parameter,component_i,component_j,value,source,provenance_status
+k_ij,*,*,0,default zero for unpublished values,unresolved_default_zero
+k_ij,Br-,H2O,-0.25,2020_Bulow k_ij.csv,source_backed
+k_ij,Br-,K+,-0.102,2020_Bulow k_ij.csv,source_backed
+k_ij,Br-,Li+,0.591,2020_Bulow k_ij.csv,source_backed
+k_ij,Br-,Na+,0.29,2020_Bulow k_ij.csv,source_backed
+k_ij,Cl-,H2O,-0.25,2020_Bulow k_ij.csv,source_backed
+k_ij,Cl-,K+,0.064,2020_Bulow k_ij.csv,source_backed
+k_ij,Cl-,Li+,0.669,2020_Bulow k_ij.csv,source_backed
+k_ij,Cl-,Na+,0.317,2020_Bulow k_ij.csv,source_backed
+k_ij,H2O,I-,-0.25,2020_Bulow k_ij.csv,source_backed
+k_ij,H2O,K+,0.1997,2020_Bulow k_ij.csv,source_backed
+k_ij,H2O,Li+,-0.25,2020_Bulow k_ij.csv,source_backed
+k_ij,H2O,Na+,0.0045,2020_Bulow k_ij.csv,source_backed
+k_ij,I-,K+,-0.312,2020_Bulow k_ij.csv,source_backed
+k_ij,I-,Li+,0.002,2020_Bulow k_ij.csv,source_backed
+k_ij,I-,Na+,0.018,2020_Bulow k_ij.csv,source_backed
+l_ij,*,*,0,default zero for unpublished values,unresolved_default_zero
+k_hb_ij,*,*,0,default zero for unpublished values,unresolved_default_zero

@@ -1,0 +1,33 @@
+{
+  "calibration_reproduction_max_abs": 3.8020873116551e-09,
+  "all_14_error_metrics_pass": true,
+  "equal_parameter_all_96_max_abs": 1.843070140949976e-11,
+  "equal_parameter_increment_max_abs": 8.509165594361434e-14,
+  "Li_column_max_abs_difference": 0.0,
+  "equal_parameter_guard_max_abs": 3.730349362740526e-14,
+  "endpoint_comparison_max_abs": 3.83076130816562e-08,
+  "native_termination": "Parameter tolerance reached. Relative step_norm: 1.247510e-11 <= 1.000000e-10.",
+  "reference_termination": "Function tolerance reached. |cost_change|/cost: 3.550314e-14 <= 1.000000e-12",
+  "native_iterations": 33,
+  "reference_iterations": 27,
+  "reproduction_scope": "Lead ruling 2026-10-19: 1e-8 covers prediction errors against Yao, Hamer-Wu and El Guendouzi observations. F2/F3/F4 retain the original physical guards.",
+  "575_failing_realizations": [
+    "r1408"
+  ],
+  "corpora": {
+    "compared_fields": {
+      "corpora": 4571593,
+      "replay-575": 27675078
+    },
+    "differences": []
+  },
+  "corpora_json": {
+    "numeric_fields": 467001,
+    "differences": []
+  },
+  "existing_packet_bytes": {
+    "files": 301,
+    "differences": []
+  },
+  "equal_parameter_error_metric_max_abs": 4.474198789239381e-14
+}

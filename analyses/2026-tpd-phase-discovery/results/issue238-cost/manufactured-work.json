@@ -1,0 +1,10 @@
+{
+  "comparison_id": "declared-starts/work",
+  "judgment": "Observation only",
+  "raw_rows": 5.773159728050814e-15,
+  "limited_raw_rows": 1.224413540303225,
+  "limited_iterations": 1,
+  "selected": 1,
+  "wheel_sha256": "4e00f1536cddea911baa5cf157892a8fc6def636aceeb6aa9b5d74ff1fa1540d",
+  "source_commit": "daa98f1f230cdcf0b6a55b182538c05415bca54a"
+}

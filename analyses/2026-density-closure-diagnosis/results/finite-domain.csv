@@ -1,0 +1,5 @@
+temperature_K,target_pressure_Pa,last_finite_mol_m3,first_unavailable_mol_m3,geometric_cap_mol_m3,evaluation_kind,cause,stop,replay_script,replay_script_sha256
+200.0,100000000.0,34182.87138701663,34182.87138701664,34182.87138701664,Hessian,geometric domain exit,finite_to_unavailable,analyses/2026-density-closure-diagnosis/scripts/replay.py,6ead4e0d2dc4126e0b247da9ab6ecad91995d143cdbada5d06a0b44661e11e67
+200.0,217800.69494692178,34182.87138701663,34182.87138701664,34182.87138701664,Hessian,geometric domain exit,finite_to_unavailable,analyses/2026-density-closure-diagnosis/scripts/replay.py,6ead4e0d2dc4126e0b247da9ab6ecad91995d143cdbada5d06a0b44661e11e67
+308.8,5147500.0,35440.746932275484,35440.74693227549,35440.74693227549,Hessian,geometric domain exit,finite_to_unavailable,analyses/2026-density-closure-diagnosis/scripts/replay.py,6ead4e0d2dc4126e0b247da9ab6ecad91995d143cdbada5d06a0b44661e11e67
+200.0,10000000000.0,34182.87138701663,34182.87138701664,34182.87138701664,Hessian,geometric domain exit,finite_to_unavailable,analyses/2026-density-closure-diagnosis/scripts/replay.py,6ead4e0d2dc4126e0b247da9ab6ecad91995d143cdbada5d06a0b44661e11e67

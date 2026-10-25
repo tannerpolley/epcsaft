@@ -1,0 +1,80 @@
+---
+title: "May methane/ethane coexistence with unfitted PC-SAFT"
+format:
+  html:
+    embed-resources: true
+execute:
+  echo: false
+  cache: false
+  daemon: false
+---
+
+```{python}
+import json
+import pandas as pd
+import matplotlib.pyplot as plt
+from pathlib import Path
+from IPython.display import display
+rows = pd.read_csv('results/comparison.csv')
+diagnostics = json.loads(Path('results/diagnostics.json').read_text())
+identity = json.loads(Path('results/run-identity.json').read_text())
+solved = rows[rows.numerical_pass]
+counts = rows[['x_outcome','y_outcome']].stack().value_counts()
+```
+
+The native declared-temperature/pressure calculation returns
+`{python} str(len(solved))` numerically closed two-phase states out of
+`{python} str(len(rows))` measured source rows. There are
+`{python} str(counts.get('pass', 0))` passing and
+`{python} str(counts.get('fail', 0))` failing composition comparisons;
+`{python} str(counts.get('unavailable', 0))` remain unavailable.
+This is a **physical comparison against measured compositions**, using the
+unfitted Gross–Sadowski packet and zero binary interaction. It is neither a fit
+nor a verification of the paper's model predictions.
+
+Table 5 of May et al. (2015), DOI `10.1021/acs.jced.5b00610`, supplies the
+liquid methane and vapor ethane measurements. The retained source owner
+complements the latter to vapor methane. The manufactured one-mole midpoint
+feeds are calculation declarations, not measured inventories. Both components
+are admitted to the declared liquid and vapor supports, without source endpoint
+seeds, discovery or caller equilibrium iteration.
+
+```{python}
+display(rows[['row_id','T_K','P_Pa','model_x_methane','x_methane','x_error','x_comparison_allowance','x_outcome','model_y_methane','y_methane','y_error','y_comparison_allowance','y_outcome']])
+fig, ax = plt.subplots(figsize=(6, 4))
+for phase, marker in [('x','o'), ('y','s')]:
+    ax.errorbar(solved[phase+'_methane'], solved['model_'+phase+'_methane'], xerr=solved[phase+'_comparison_allowance'], fmt=marker, label=phase+' methane')
+ax.plot([0,1],[0,1], color='grey', linestyle=':')
+ax.set(xlabel='Measured methane mole fraction', ylabel='Native methane mole fraction')
+ax.legend()
+fig.tight_layout()
+plt.show()
+display(pd.json_normalize(diagnostics))
+display(rows[~rows.numerical_pass][['row_id','T_K','P_Pa','cause']])
+```
+
+Points show discrete solved source states. Horizontal bars are the unchanged
+three-combined-standard-uncertainty engineering allowances, not confidence
+intervals. Temperature and pressure contributions are already included there.
+The dotted identity is a visual comparison, not a fitted relation. Missing
+states are absent from the plot and remain explicit in the table.
+
+The failed numerical row reports coalesced phases and no admitted physical
+state. Neighboring pressure rows at the same nominal temperature do produce
+distinct phases, but do not establish a one-phase model state at the failed
+row. Its physical discrepancy is **undetermined**. The retained native message
+also records the driver's unsuccessful lower-temperature recovery; no caller
+retry or new search was added. Diagnosing or changing that solve requires a
+separate scope decision, as required by the readiness review.
+
+The finite composition discrepancies remain under the unchanged model
+and limits; parameters are not fitted to remove them. Native pressure and
+isofugacity defects, balance on the declared one-mole feed, normalization,
+positive phase amounts and ordered densities are checked independently.
+The complete raw and classified residuals and mechanical slopes are retained.
+No global-stability or density-validation claim is made.
+
+Engine source identity: `{python} str(identity['engine'])`. Input and loaded
+library hashes are retained in `results/run-identity.json`. Prior result files
+remain historical. This computed notebook awaits independent delivered review
+and is not promoted for manuscript use.

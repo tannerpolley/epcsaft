@@ -1,0 +1,35 @@
+{
+  "outcome": "B",
+  "meaning": "Unavailable: Eq. (5) mass/mole basis, Eq. (7) radical placement and individual-ion phase reference are not decided in Lithium; Lithium #233 remains the application decision.",
+  "declaration_url": "https://github.com/tannerpolley/Lithium_Extraction/issues/237#issuecomment-6355298159",
+  "source_repository": "tannerpolley/Lithium_Extraction",
+  "source_commit": "351b2c8904408f63b6909152637d3674e7fa96e5",
+  "evidence": [
+    {
+      "path": "analyses/engine_benchmarks/yu_2024_epcsaft_benchmark/README.md",
+      "commit": "351b2c8904408f63b6909152637d3674e7fa96e5",
+      "sha256": "9fbaf01f8995adaef793d0f122a03dbadf0ce94718ae9baee43b2dd00153281c",
+      "locator": "Unresolved source conventions and association declarations"
+    }
+  ],
+  "unresolved": [
+    {
+      "label": "not decided in Lithium",
+      "choice": "Eq. (5): mass or mole weighting of w_ion"
+    },
+    {
+      "label": "not decided in Lithium",
+      "choice": "Eq. (7): (1-k_ij) inside or outside the square root"
+    },
+    {
+      "label": "not decided in Lithium",
+      "choice": "Phase-dependent individual-ion reference underlying the printed phi-phi equality"
+    }
+  ],
+  "application_issue": "https://github.com/tannerpolley/Lithium_Extraction/issues/233",
+  "excluded_substitutions": [
+    "Unpromoted IL-0 reconstruction assumptions",
+    "Yu 2025 conventions",
+    "Lithium fitted reaction coordinates"
+  ]
+}

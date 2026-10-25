@@ -1,0 +1,48 @@
+parameter,component_or_pair,value,units,source_locator,role
+m_seg,H2O,1.2046,dimensionless,Table 1 line 222,paper-input
+sigma,H2O,temperature-correlation,angstrom,Table 1 footnote line 223,paper-input
+u_over_k,H2O,353.94,K,Table 1 line 224,paper-input
+m_seg,MDEA,3.6750,dimensionless,Table 1 line 222,paper-input
+sigma,MDEA,3.5630,angstrom,Table 1 line 223,paper-input
+u_over_k,MDEA,228.71,K,Table 1 line 224,paper-input
+m_seg,CO2,2.0729,dimensionless,Table 1 line 222,paper-input
+sigma,CO2,2.7852,angstrom,Table 1 line 223,paper-input
+u_over_k,CO2,169.21,K,Table 1 line 224,paper-input
+m_seg,H2S,1.6686,dimensionless,Table 1 line 222,paper-input
+sigma,H2S,3.0349,angstrom,Table 1 line 223,paper-input
+u_over_k,H2S,229.00,K,Table 1 line 224,paper-input
+m_seg,sulfolane,2.7894,dimensionless,Table 1 line 222,paper-input
+sigma,sulfolane,3.7020,angstrom,Table 1 line 223,paper-input
+u_over_k,sulfolane,436.47,K,Table 1 line 224,paper-input
+k_ij,water-MDEA,-0.118; -7.59e-4; -1.32e-5; 1.25e-7,polynomial coefficients,Table 3 lines 286-303,paper-input
+k_ij,water-CO2,-2.11e-3; 4.53e-4; 0; 0,polynomial coefficients,Table 3 lines 286-303,paper-input
+k_ij,sulfolane-water,0.015,dimensionless,Table 3 lines 286-303,paper-input
+k_ij,sulfolane-CO2,0.055,dimensionless,Table 3 lines 286-303,paper-input
+k_ij,sulfolane-H2S,0,dimensionless,lines 276-280,paper-input
+association,CO2-water,induced,qualitative,lines 254-255,paper-input
+association,sulfolane-water,induced-2B,qualitative,lines 295-302,paper-input
+association,H2O,1:1; 2425.6; 0.045,sites; K; dimensionless,Table 1,paper-input
+association,MDEA,2:2; 2046.6; 0.1238,sites; K; dimensionless,Table 1,paper-input
+m_seg,H+,1,dimensionless,Table 2,paper-input
+sigma,H+,3.4654,angstrom,Table 2,paper-input
+u_over_k,H+,500.00,K,Table 2,paper-input
+m_seg,OH-,1,dimensionless,Table 2,paper-input
+sigma,OH-,2.0177,angstrom,Table 2,paper-input
+u_over_k,OH-,650.00,K,Table 2,paper-input
+m_seg,HCO3-,1,dimensionless,Table 2,paper-input
+sigma,HCO3-,2.9296,angstrom,Table 2,paper-input
+u_over_k,HCO3-,70.00,K,Table 2,paper-input
+m_seg,CO3--,1,dimensionless,Table 2,paper-input
+sigma,CO3--,2.4422,angstrom,Table 2,paper-input
+u_over_k,CO3--,249.26,K,Table 2,paper-input
+m_seg,MDEAH+,1,dimensionless,Table 2,paper-input
+sigma,MDEAH+,3.5630,angstrom,Table 2,paper-input
+u_over_k,MDEAH+,228.71,K,Table 2,paper-input
+k_ij,water-H+,0.25,dimensionless,Table 3,paper-input
+k_ij,water-OH-,-0.25,dimensionless,Table 3,paper-input
+k_ij,water-CO3--,-0.25,dimensionless,Table 3,paper-input
+reaction_lnK,K1-water,132.899; -13445.9; -22.4773,c1; c2; c3,SI Table S1,paper-input
+reaction_lnK,K2-CO2,231.465; -12092.1; -36.7816,c1; c2; c3,SI Table S1,paper-input
+reaction_lnK,K3-HCO3-,216.049; -12431.7; -35.4819,c1; c2; c3,SI Table S1,paper-input
+reaction_lnK,K5-MDEA,-83.491; -819.7; 10.9756,c1; c2; c3,SI Table S1,paper-input
+electrolyte,Born,original; solvent-only-permittivity,model choice,Eqs. 19-23,paper-input

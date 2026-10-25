@@ -1,0 +1,1024 @@
+{
+  "engine_provenance": [
+    "f3106bbe90c2067c6cac64c0e9683d2dfc44e5b8",
+    true
+  ],
+  "temperature_K": 298.15,
+  "pressure_Pa": 101000,
+  "packet_pressure_Pa": 100000,
+  "pressure_extrapolation_percent": 1,
+  "pressure_error_bound": null,
+  "printed_rounding_absolute_tolerance": 0.0005,
+  "reference_convergence_tolerance": 5e-05,
+  "effective_tolerances": [
+    {
+      "name": "EQUILIBRIUM_WARM_PUSH",
+      "value": 1e-06,
+      "source": "Ipopt 3.11.9 manual, Warm-Starting Capabilities via AMPL; #505"
+    },
+    {
+      "name": "EQUILIBRIUM_WARM_MU",
+      "value": 1e-06,
+      "source": "Ipopt 3.11.9 manual, monotone initial barrier for similar active sets; #505"
+    },
+    {
+      "name": "CLOSE_PACKING_FRACTION",
+      "value": 0.7404804896930609,
+      "source": "equal-sphere face-centred-cubic admission bound; eta >= value is a domain failure"
+    },
+    {
+      "name": "SITE_FRACTION_FLOOR",
+      "value": 0.0,
+      "source": "X_a is the unbonded fraction of site a, so 0 < X_a <= 1"
+    },
+    {
+      "name": "SITE_FRACTION_CEILING",
+      "value": 1.0,
+      "source": "X_a is the unbonded fraction of site a, so 0 < X_a <= 1"
+    },
+    {
+      "name": "ASSOCIATION_RESIDUAL",
+      "value": 2e-13,
+      "source": "Newton reaches it in 3-8 steps from a warm start"
+    },
+    {
+      "name": "ASSOCIATION_ACTION_RESIDUAL",
+      "value": 1e-10,
+      "source": "approved P4 normalized mass-action coefficient residual; exceeding it makes the action unavailable"
+    },
+    {
+      "name": "ASSOCIATION_MAX_ITERATIONS",
+      "value": 50.0,
+      "source": "budget; measured 3-8 Newton steps"
+    },
+    {
+      "name": "ASSOCIATION_BOUNDARY_FRACTION",
+      "value": 0.9,
+      "source": "fraction-to-boundary: a damped Newton step keeps X_a >= 0.1 X_a"
+    },
+    {
+      "name": "ASSOCIATION_JACOBIAN_CONDITION",
+      "value": 1e-13,
+      "source": "relative pivot floor in the dense solve"
+    },
+    {
+      "name": "ASSOCIATION_JACOBIAN_RANK",
+      "value": 2.220446049250313e-16,
+      "source": "FullPivLU relative rank base; multiply by the site count"
+    },
+    {
+      "name": "DENSITY_ROOT_RESIDUAL",
+      "value": 1e-12,
+      "source": "bracketed Newton on the reduced pressure residual; the tolerance is on the reduced residual; publish the bracket endpoint with smaller |P_calc-P_target|; relative pressure error is |r|/Z_target, with Z_target=P_target/(rho R T)"
+    },
+    {
+      "name": "DENSITY_MAX_ITERATIONS",
+      "value": 60.0,
+      "source": "budget for each root refinement, spinodal bisection and slope-minimum search"
+    },
+    {
+      "name": "DENSITY_BRACKET_INTERVALS",
+      "value": 40.0,
+      "source": "coarse log-density scan; slope zeros separate stable brackets before safeguarded Newton"
+    },
+    {
+      "name": "DENSITY_LOWER_FRACTION",
+      "value": 1e-08,
+      "source": "fraction of the ideal-gas density P/RT where the log scan starts; a root lies above it unless Z > 1e8"
+    },
+    {
+      "name": "DENSITY_UPPER_FRACTION",
+      "value": 0.999,
+      "source": "fraction of the model's close-packing molar density where the log scan stops"
+    },
+    {
+      "name": "DENSITY_BISECTION_FRACTION",
+      "value": 0.5,
+      "source": "bracket midpoint of the safeguarded Newton and the fold bisection"
+    },
+    {
+      "name": "DENSITY_ANCHOR_LOG_WINDOW",
+      "value": 0.009950330853168083,
+      "source": "approved P2 local density envelope log1p(0.01)"
+    },
+    {
+      "name": "DENSITY_ANCHOR_SCAN_INTERVALS",
+      "value": 5.0,
+      "source": "approved P2 centered local anchor uniqueness scan"
+    },
+    {
+      "name": "DENSITY_ANCHOR_REGULARITY",
+      "value": 9.950330853168083e-05,
+      "source": "admitted relative density error of an anchored root, one hundredth of DENSITY_ANCHOR_LOG_WINDOW"
+    },
+    {
+      "name": "DENSITY_SLOPE_SEPARATION",
+      "value": 1e-06,
+      "source": "relative density separation above which two samples' P_rho order is inspected; not a rounding bound"
+    },
+    {
+      "name": "DENSITY_STRUCTURE_ROUNDOFF",
+      "value": 3.5527136788005136e-15,
+      "source": "ALG-DENSITY local derivative assembly and comparison gamma_16"
+    },
+    {
+      "name": "COMPOSITION_SUM_TOLERANCE",
+      "value": 1e-12,
+      "source": "absolute defect of a unit sum or charge balance of O(1) terms, about 4500 ulp at 1"
+    },
+    {
+      "name": "REFERENCE_MOLALITY_ONE",
+      "value": 1e-06,
+      "source": "trace molality of the infinite-dilution ladder, mol/kg"
+    },
+    {
+      "name": "OSMOTIC_MOLALITY_FLOOR",
+      "value": 1e-08,
+      "source": "owner decision #214: common-pressure scalar cancellation reporting floor, mol/kg"
+    },
+    {
+      "name": "REFERENCE_MOLALITY_TWO",
+      "value": 1e-08,
+      "source": "trace molality of the infinite-dilution ladder, mol/kg"
+    },
+    {
+      "name": "REFERENCE_MOLALITY_THREE",
+      "value": 1e-10,
+      "source": "trace molality of the infinite-dilution ladder, mol/kg"
+    },
+    {
+      "name": "REFERENCE_MOLALITY_FOUR",
+      "value": 1e-12,
+      "source": "trace molality of the infinite-dilution ladder, mol/kg"
+    },
+    {
+      "name": "REFERENCE_CONVERGENCE_WITNESS",
+      "value": 1e-14,
+      "source": "finest trace molality of the infinite-dilution ladder, mol/kg"
+    },
+    {
+      "name": "REFERENCE_CONVERGENCE_TOLERANCE",
+      "value": 5e-05,
+      "source": "admitted change of the terminal-pair limit of ln(phi) and its scaled columns"
+    },
+    {
+      "name": "REFERENCE_HEAT_CAPACITY_TOLERANCE",
+      "value": 0.01,
+      "source": "terminal R T^2 d2C/dT2 change, J/(mol K); ~1e-4 of solution cp, ~40x below calorimetric uncertainty"
+    },
+    {
+      "name": "EQUILIBRIUM_COMPOSITION_BOX",
+      "value": 1e-08,
+      "source": "Pereira 2012 inner-problem composition bound; a regularising barrier, not a solution domain or accuracy bound"
+    },
+    {
+      "name": "EQUILIBRIUM_BOX_INVENTORY_FRACTION",
+      "value": 0.01,
+      "source": "largest fraction of a species' attainable inventory held by the composition box; not an accuracy bound"
+    },
+    {
+      "name": "EQUILIBRIUM_BOX_FLOOR",
+      "value": 1e-20,
+      "source": "dimensionless lower bound of the all-free optimizer log-composition box; not a solution domain or accuracy bound"
+    },
+    {
+      "name": "PHASE_DISAPPEARANCE_AMOUNT",
+      "value": 1e-08,
+      "source": "dimensionless n_phase/feed_total; provisional free-phase disappearance topology cutoff and interior guard of the split seed; not a stability result or accuracy bound"
+    },
+    {
+      "name": "EQUILIBRIUM_AMOUNT_STEP_RETENTION",
+      "value": 0.1,
+      "source": "dimensionless kappa_N: an optimizer trial point keeps at least kappa_N of each free phase amount's distance to its relaxed lower bound at the search base (ALG-EQUILIBRIUM); provisional numerical choice, not an amount floor, stability result or accuracy bound"
+    },
+    {
+      "name": "FIT_FUNCTION_TOLERANCE",
+      "value": 1e-12,
+      "source": "relative cost decrease below which the trust-region iteration stops"
+    },
+    {
+      "name": "FIT_GRADIENT_TOLERANCE",
+      "value": 1e-12,
+      "source": "infinity norm of the projected optimizer-coordinate gradient at which the fit stops"
+    },
+    {
+      "name": "FIT_PARAMETER_TOLERANCE",
+      "value": 1e-10,
+      "source": "relative optimizer-coordinate step below which the fit stops"
+    },
+    {
+      "name": "FIT_ACTIVE_BOUND_DISTANCE",
+      "value": 0.0001,
+      "source": "optimizer-coordinate distance to a bound below which the coordinate is on the bound"
+    },
+    {
+      "name": "LOG_RATIO_NEAR_UNITY",
+      "value": 0.5,
+      "source": "relative half-band around unity inside which ln(y / y_obs) is evaluated by log1p"
+    },
+    {
+      "name": "FIT_RANK_RECIPROCAL_CONDITION",
+      "value": 1e-14,
+      "source": "reciprocal condition number separating an identifiable direction from a null direction"
+    },
+    {
+      "name": "FIT_DENSITY_PARAMETER_FRACTION",
+      "value": 0.1,
+      "source": "abs(new-old)/max(1,abs(new),abs(old)); includes held diameters"
+    },
+    {
+      "name": "ADDITION_MATERIAL_BALANCE",
+      "value": 1e-12,
+      "source": "#210: component feed balance divided by max(1 mol, endpoint feed amounts); admission of two declared endpoints and of stability inventory conservation, independent of equilibrium stopping error"
+    },
+    {
+      "name": "EQUILIBRIUM_ROW_RESIDUAL",
+      "value": 1e-10,
+      "source": "dimensionless equilibrium-row infinity norm; two decades above the association residual entering the assembly floor"
+    },
+    {
+      "name": "EQUILIBRIUM_ACTION_BACKWARD_ERROR",
+      "value": 1e-10,
+      "source": "normwise backward error of each implicit Taylor solve; catches a stale Jacobian or jet mismatch"
+    },
+    {
+      "name": "EQUILIBRIUM_ACTION_FORWARD_ERROR",
+      "value": 1e-06,
+      "source": "first-order relative forward-error bound 2 cond_inf(J) eta of each Taylor coefficient; owner decision 2026-09-23 (#87)"
+    },
+    {
+      "name": "EQUILIBRIUM_INNER_TOLERANCE_FACTOR",
+      "value": 0.1,
+      "source": "provisional decade below the caller row criterion for the Ipopt tol, acceptable_tol, constr_viol_tol and the objective-normalized dual stop; the caller criterion classifies rows"
+    },
+    {
+      "name": "EQUILIBRIUM_POLISH_STEPS",
+      "value": 3.0,
+      "source": "raw-contracting Newton steps at positive compositions, more while raw rows exceed the caller criterion; return the lowest classified residual among the optimizer start and accepted steps"
+    },
+    {
+      "name": "EQUILIBRIUM_POLISH_CORRECTION",
+      "value": 1e-12,
+      "source": "#272 scaled undamped Newton correction and forward-error estimate; local termination, not a state-error certificate"
+    },
+    {
+      "name": "EQUILIBRIUM_TRACE_MOIETY_FRACTION",
+      "value": 1e-06,
+      "source": "largest moiety size, per mol of feed, whose balance row is judged relative to that size; not an accuracy bound"
+    },
+    {
+      "name": "EQUILIBRIUM_START_SPECIATION_STEP",
+      "value": 1e-06,
+      "source": "largest log-amount Newton step at which the ideal start speciation stops; a start, not an accuracy bound"
+    },
+    {
+      "name": "EQUILIBRIUM_START_PRESSURE_STEP",
+      "value": 0.001,
+      "source": "boundary start step; not an accuracy bound"
+    },
+    {
+      "name": "EQUILIBRIUM_START_PRESSURE_PASSES",
+      "value": 8.0,
+      "source": "boundary start passes; not an accuracy bound"
+    },
+    {
+      "name": "EQUILIBRIUM_MAX_ITERATIONS",
+      "value": 200.0,
+      "source": "budget; analytic equilibrium Jacobian with Ipopt"
+    },
+    {
+      "name": "TANGENT_PLANE_SUBSTITUTIONS",
+      "value": 5.0,
+      "source": "count; Michelsen 1982 eq. 19 steps before eqs. 25-27, as in FeOs stability_analysis"
+    },
+    {
+      "name": "EQUILIBRIUM_CALORIC_SEED_ITERATIONS",
+      "value": 20.0,
+      "source": "budget of the discardable PH/PS fixed-T seed; converged seeds took 4-14 (#579)"
+    },
+    {
+      "name": "COOLING_RATIO",
+      "value": 0.95,
+      "source": "T_(j+1)/T_j of #565 recovery sources and #610 PH/PS starts"
+    },
+    {
+      "name": "EQUILIBRIUM_RECOVERY_SOURCES",
+      "value": 8.0,
+      "source": "#565 lead-approved finite source schedule, ten retries per continuation step"
+    },
+    {
+      "name": "EQUILIBRIUM_RECOVERY_WORK",
+      "value": 512.0,
+      "source": "#565 lead-approved added iterations and continuation attempts; 4x evaluations, 2x Hessian callbacks"
+    },
+    {
+      "name": "PHASE_COINCIDENCE_DISTANCE",
+      "value": 1e-06,
+      "source": "phase amount columns become numerically dependent below this composition or log-packing distance"
+    },
+    {
+      "name": "PACKING_FRACTION_CEILING",
+      "value": 0.74,
+      "source": "fluid-coordinate ceiling below close packing"
+    },
+    {
+      "name": "PACKING_FRACTION_FLOOR",
+      "value": 1e-12,
+      "source": "fluid-coordinate floor of the log-packing chart"
+    },
+    {
+      "name": "SCREENING_SERIES_SWITCH",
+      "value": 0.2,
+      "source": "crossover of closed-form cancellation and the 24-term series truncation in chi and its derivatives"
+    },
+    {
+      "name": "FLOOR_MARGIN",
+      "value": 10.0,
+      "source": "provisional guessed decade of slack across first-order bound norm inequalities; predicate: residual <= FLOOR_MARGIN * floor; failure meaning: classified converged_to_floor; numerical adequacy/calibration remains open, not an accuracy bound"
+    },
+    {
+      "name": "STALL_WINDOW",
+      "value": 5.0,
+      "source": "provisional guessed window below Ipopt acceptable_iter default 15; predicate: residual history has STALL_WINDOW entries without contraction; failure meaning: classified stalled; numerical adequacy/calibration remains open, not an accuracy bound"
+    }
+  ],
+  "source_hashes": {
+    "hamer-wu-1972-table-values.csv": "9a672e7b2f5f31dbb282312efe0ea0916ea1113a37cd07353ed788efcb4b2f89",
+    "haslam-2020-table8.csv": "715e00790905fc417955ccb4b9a526bd1aa60af840bbe090697d692a48dc4d90",
+    "haslam-2020-parameters.csv": "cec59ee1c0b6c9807774e0486c6357ac43a8c60da2e0b39b459727744a18d173"
+  },
+  "salts": {
+    "LiCl": {
+      "packet": "figiel-2025-reference-electrolytes/4",
+      "component_ids": [
+        "water",
+        "lithium-cation",
+        "chloride-anion"
+      ],
+      "packet_sha256": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+      "resolved_document_sha256": "bc57422bda88131acf6bf5f43f03ffd8a65ed9136caa3e1bde8bfe00bc57532b",
+      "model_families": [
+        {
+          "family_id": "model/base",
+          "kind": "base",
+          "choice": "pc-saft",
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 2, water column, m_i^seg row",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "family_id": "model/association",
+          "kind": "association",
+          "choice": "general-site",
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 2 footnote a, 2B association scheme expanded as one A site",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "family_id": "model/electrolyte",
+          "kind": "electrolyte",
+          "choice": "born",
+          "ionic_dispersion": "exclude-same-sign-ion-pairs",
+          "c_shell": 1.0,
+          "c_dielectric": 1.0,
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 2 identifies water as solvent; Table 3 separately lists ions. Figiel, Yu & Held 2025, \u00a72 states that the dispersion energy between cation-cation pairs and anion-anion pairs is set to zero (u_ii = 0)",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "family_id": "model/relative_permittivity",
+          "kind": "permittivity",
+          "choice": "ion-fraction-suppression",
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Eq. 11, bulk relative-permittivity formulation",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        }
+      ],
+      "terminal_molality_mol_kg": 1e-14,
+      "convergence_error": 1.9412027540965937e-11,
+      "log_fugacity": [
+        -196.47080810449057,
+        -127.08683449507271
+      ],
+      "pure_solvent_log_fugacity": -3.4683722688133667,
+      "cause": "",
+      "effective_activity_solver_options": [
+        {
+          "name": "ASSOCIATION_RESIDUAL",
+          "value": 2e-13,
+          "unit": "1 (mass action)",
+          "default": 2e-13
+        },
+        {
+          "name": "DENSITY_ROOT_RESIDUAL",
+          "value": 1e-12,
+          "unit": "1 (reduced pressure)",
+          "default": 1e-12
+        },
+        {
+          "name": "EQUILIBRIUM_ROW_RESIDUAL",
+          "value": 1e-10,
+          "unit": "1 (classified rows)",
+          "default": 1e-10
+        }
+      ]
+    },
+    "LiBr": {
+      "packet": "figiel-2025-reference-electrolytes/4",
+      "component_ids": [
+        "water",
+        "lithium-cation",
+        "bromide-anion"
+      ],
+      "packet_sha256": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+      "resolved_document_sha256": "8a1c903d8bc16a5509dafe45c2ef92ffaf20c91b1272cba8e14288e50bdc66a6",
+      "model_families": [
+        {
+          "family_id": "model/base",
+          "kind": "base",
+          "choice": "pc-saft",
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 2, water column, m_i^seg row",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "family_id": "model/association",
+          "kind": "association",
+          "choice": "general-site",
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 2 footnote a, 2B association scheme expanded as one A site",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "family_id": "model/electrolyte",
+          "kind": "electrolyte",
+          "choice": "born",
+          "ionic_dispersion": "exclude-same-sign-ion-pairs",
+          "c_shell": 1.0,
+          "c_dielectric": 1.0,
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 2 identifies water as solvent; Table 3 separately lists ions. Figiel, Yu & Held 2025, \u00a72 states that the dispersion energy between cation-cation pairs and anion-anion pairs is set to zero (u_ii = 0)",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "family_id": "model/relative_permittivity",
+          "kind": "permittivity",
+          "choice": "ion-fraction-suppression",
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Eq. 11, bulk relative-permittivity formulation",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        }
+      ],
+      "terminal_molality_mol_kg": 1e-14,
+      "convergence_error": 1.9667822925839573e-11,
+      "log_fugacity": [
+        -196.47080810449057,
+        -117.27802073701059
+      ],
+      "pure_solvent_log_fugacity": -3.4683722688133667,
+      "cause": "",
+      "effective_activity_solver_options": [
+        {
+          "name": "ASSOCIATION_RESIDUAL",
+          "value": 2e-13,
+          "unit": "1 (mass action)",
+          "default": 2e-13
+        },
+        {
+          "name": "DENSITY_ROOT_RESIDUAL",
+          "value": 1e-12,
+          "unit": "1 (reduced pressure)",
+          "default": 1e-12
+        },
+        {
+          "name": "EQUILIBRIUM_ROW_RESIDUAL",
+          "value": 1e-10,
+          "unit": "1 (classified rows)",
+          "default": 1e-10
+        }
+      ]
+    },
+    "LiI": {
+      "cause": "No source-backed Li+/I- pair in selected Figiel packets",
+      "effective_activity_solver_options": null
+    },
+    "NaCl": {
+      "packet": "figiel-2025-reference-electrolytes/4",
+      "component_ids": [
+        "water",
+        "sodium-cation",
+        "chloride-anion"
+      ],
+      "packet_sha256": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+      "resolved_document_sha256": "f90fa48590438ac1139d9e60523d6d2f474b3108131c512e3cde28ea62fc8ef2",
+      "model_families": [
+        {
+          "family_id": "model/base",
+          "kind": "base",
+          "choice": "pc-saft",
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 2, water column, m_i^seg row",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "family_id": "model/association",
+          "kind": "association",
+          "choice": "general-site",
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 2 footnote a, 2B association scheme expanded as one A site",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "family_id": "model/electrolyte",
+          "kind": "electrolyte",
+          "choice": "born",
+          "ionic_dispersion": "exclude-same-sign-ion-pairs",
+          "c_shell": 1.0,
+          "c_dielectric": 1.0,
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 2 identifies water as solvent; Table 3 separately lists ions. Figiel, Yu & Held 2025, \u00a72 states that the dispersion energy between cation-cation pairs and anion-anion pairs is set to zero (u_ii = 0)",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "family_id": "model/relative_permittivity",
+          "kind": "permittivity",
+          "choice": "ion-fraction-suppression",
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Eq. 11, bulk relative-permittivity formulation",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        }
+      ],
+      "terminal_molality_mol_kg": 1e-14,
+      "convergence_error": 1.6996182239381596e-11,
+      "log_fugacity": [
+        -154.0779103469398,
+        -127.08683449507271
+      ],
+      "pure_solvent_log_fugacity": -3.4683722688133667,
+      "cause": "",
+      "effective_activity_solver_options": [
+        {
+          "name": "ASSOCIATION_RESIDUAL",
+          "value": 2e-13,
+          "unit": "1 (mass action)",
+          "default": 2e-13
+        },
+        {
+          "name": "DENSITY_ROOT_RESIDUAL",
+          "value": 1e-12,
+          "unit": "1 (reduced pressure)",
+          "default": 1e-12
+        },
+        {
+          "name": "EQUILIBRIUM_ROW_RESIDUAL",
+          "value": 1e-10,
+          "unit": "1 (classified rows)",
+          "default": 1e-10
+        }
+      ]
+    },
+    "NaBr": {
+      "packet": "figiel-2025-reference-electrolytes/4",
+      "component_ids": [
+        "water",
+        "sodium-cation",
+        "bromide-anion"
+      ],
+      "packet_sha256": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+      "resolved_document_sha256": "34b323fea102d3f5a3764b1b0ee3d25e6164defedbc4669133b81bbceae5f0de",
+      "model_families": [
+        {
+          "family_id": "model/base",
+          "kind": "base",
+          "choice": "pc-saft",
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 2, water column, m_i^seg row",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "family_id": "model/association",
+          "kind": "association",
+          "choice": "general-site",
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 2 footnote a, 2B association scheme expanded as one A site",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "family_id": "model/electrolyte",
+          "kind": "electrolyte",
+          "choice": "born",
+          "ionic_dispersion": "exclude-same-sign-ion-pairs",
+          "c_shell": 1.0,
+          "c_dielectric": 1.0,
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 2 identifies water as solvent; Table 3 separately lists ions. Figiel, Yu & Held 2025, \u00a72 states that the dispersion energy between cation-cation pairs and anion-anion pairs is set to zero (u_ii = 0)",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "family_id": "model/relative_permittivity",
+          "kind": "permittivity",
+          "choice": "ion-fraction-suppression",
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Eq. 11, bulk relative-permittivity formulation",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        }
+      ],
+      "terminal_molality_mol_kg": 1e-14,
+      "convergence_error": 1.757882728270488e-11,
+      "log_fugacity": [
+        -154.07791034693983,
+        -117.27802073701059
+      ],
+      "pure_solvent_log_fugacity": -3.4683722688133667,
+      "cause": "",
+      "effective_activity_solver_options": [
+        {
+          "name": "ASSOCIATION_RESIDUAL",
+          "value": 2e-13,
+          "unit": "1 (mass action)",
+          "default": 2e-13
+        },
+        {
+          "name": "DENSITY_ROOT_RESIDUAL",
+          "value": 1e-12,
+          "unit": "1 (reduced pressure)",
+          "default": 1e-12
+        },
+        {
+          "name": "EQUILIBRIUM_ROW_RESIDUAL",
+          "value": 1e-10,
+          "unit": "1 (classified rows)",
+          "default": 1e-10
+        }
+      ]
+    },
+    "NaI": {
+      "packet": "figiel-2025-aqueous-iodides/3",
+      "component_ids": [
+        "water",
+        "sodium-cation",
+        "iodide-anion"
+      ],
+      "packet_sha256": "6f9c349e57925668f9001843cd57543999033a80062f8fb43448e5a700002265",
+      "resolved_document_sha256": "798c5c4665d306f1f250c5463f2e0463c9ca4cd4cddca35cc0f28763f75a333a",
+      "model_families": [
+        {
+          "family_id": "model/base",
+          "kind": "base",
+          "choice": "pc-saft",
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 2, water column, m_i^seg row",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "family_id": "model/association",
+          "kind": "association",
+          "choice": "general-site",
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 2 footnote a, 2B association scheme expanded as one A site",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "family_id": "model/electrolyte",
+          "kind": "electrolyte",
+          "choice": "born",
+          "ionic_dispersion": "exclude-same-sign-ion-pairs",
+          "c_shell": 1.0,
+          "c_dielectric": 1.0,
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 2 identifies water as solvent; Table 3 separately lists ions. Figiel, Yu & Held 2025, \u00a72 states that the dispersion energy between cation-cation pairs and anion-anion pairs is set to zero (u_ii = 0)",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "family_id": "model/relative_permittivity",
+          "kind": "permittivity",
+          "choice": "ion-fraction-suppression",
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Eq. 11, bulk relative-permittivity formulation",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        }
+      ],
+      "terminal_molality_mol_kg": 1e-14,
+      "convergence_error": 1.9241497284383513e-11,
+      "log_fugacity": [
+        -154.0779103469397,
+        -102.2644652277283
+      ],
+      "pure_solvent_log_fugacity": -3.4683722688133667,
+      "cause": "",
+      "effective_activity_solver_options": [
+        {
+          "name": "ASSOCIATION_RESIDUAL",
+          "value": 2e-13,
+          "unit": "1 (mass action)",
+          "default": 2e-13
+        },
+        {
+          "name": "DENSITY_ROOT_RESIDUAL",
+          "value": 1e-12,
+          "unit": "1 (reduced pressure)",
+          "default": 1e-12
+        },
+        {
+          "name": "EQUILIBRIUM_ROW_RESIDUAL",
+          "value": 1e-10,
+          "unit": "1 (classified rows)",
+          "default": 1e-10
+        }
+      ]
+    },
+    "KCl": {
+      "packet": "figiel-2025-reference-electrolytes/4",
+      "component_ids": [
+        "water",
+        "potassium-cation",
+        "chloride-anion"
+      ],
+      "packet_sha256": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+      "resolved_document_sha256": "04bcf9d8b72639963363ae19ccb5d51e1aff072967d2a14050bfc10b0116546b",
+      "model_families": [
+        {
+          "family_id": "model/base",
+          "kind": "base",
+          "choice": "pc-saft",
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 2, water column, m_i^seg row",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "family_id": "model/association",
+          "kind": "association",
+          "choice": "general-site",
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 2 footnote a, 2B association scheme expanded as one A site",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "family_id": "model/electrolyte",
+          "kind": "electrolyte",
+          "choice": "born",
+          "ionic_dispersion": "exclude-same-sign-ion-pairs",
+          "c_shell": 1.0,
+          "c_dielectric": 1.0,
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 2 identifies water as solvent; Table 3 separately lists ions. Figiel, Yu & Held 2025, \u00a72 states that the dispersion energy between cation-cation pairs and anion-anion pairs is set to zero (u_ii = 0)",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "family_id": "model/relative_permittivity",
+          "kind": "permittivity",
+          "choice": "ion-fraction-suppression",
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Eq. 11, bulk relative-permittivity formulation",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        }
+      ],
+      "terminal_molality_mol_kg": 1e-14,
+      "convergence_error": 1.730882104311604e-11,
+      "log_fugacity": [
+        -124.61494003285323,
+        -127.08683449507238
+      ],
+      "pure_solvent_log_fugacity": -3.4683722688133667,
+      "cause": "",
+      "effective_activity_solver_options": [
+        {
+          "name": "ASSOCIATION_RESIDUAL",
+          "value": 2e-13,
+          "unit": "1 (mass action)",
+          "default": 2e-13
+        },
+        {
+          "name": "DENSITY_ROOT_RESIDUAL",
+          "value": 1e-12,
+          "unit": "1 (reduced pressure)",
+          "default": 1e-12
+        },
+        {
+          "name": "EQUILIBRIUM_ROW_RESIDUAL",
+          "value": 1e-10,
+          "unit": "1 (classified rows)",
+          "default": 1e-10
+        }
+      ]
+    },
+    "KBr": {
+      "packet": "figiel-2025-reference-electrolytes/4",
+      "component_ids": [
+        "water",
+        "potassium-cation",
+        "bromide-anion"
+      ],
+      "packet_sha256": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+      "resolved_document_sha256": "47e3bfee1e5ed9c3f00127fb965eeab9962564c998c4efe784979af761b02610",
+      "model_families": [
+        {
+          "family_id": "model/base",
+          "kind": "base",
+          "choice": "pc-saft",
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 2, water column, m_i^seg row",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "family_id": "model/association",
+          "kind": "association",
+          "choice": "general-site",
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 2 footnote a, 2B association scheme expanded as one A site",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "family_id": "model/electrolyte",
+          "kind": "electrolyte",
+          "choice": "born",
+          "ionic_dispersion": "exclude-same-sign-ion-pairs",
+          "c_shell": 1.0,
+          "c_dielectric": 1.0,
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 2 identifies water as solvent; Table 3 separately lists ions. Figiel, Yu & Held 2025, \u00a72 states that the dispersion energy between cation-cation pairs and anion-anion pairs is set to zero (u_ii = 0)",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "family_id": "model/relative_permittivity",
+          "kind": "permittivity",
+          "choice": "ion-fraction-suppression",
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Eq. 11, bulk relative-permittivity formulation",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        }
+      ],
+      "terminal_molality_mol_kg": 1e-14,
+      "convergence_error": 1.6854073692229576e-11,
+      "log_fugacity": [
+        -124.61494003285333,
+        -117.27802073701021
+      ],
+      "pure_solvent_log_fugacity": -3.4683722688133667,
+      "cause": "",
+      "effective_activity_solver_options": [
+        {
+          "name": "ASSOCIATION_RESIDUAL",
+          "value": 2e-13,
+          "unit": "1 (mass action)",
+          "default": 2e-13
+        },
+        {
+          "name": "DENSITY_ROOT_RESIDUAL",
+          "value": 1e-12,
+          "unit": "1 (reduced pressure)",
+          "default": 1e-12
+        },
+        {
+          "name": "EQUILIBRIUM_ROW_RESIDUAL",
+          "value": 1e-10,
+          "unit": "1 (classified rows)",
+          "default": 1e-10
+        }
+      ]
+    },
+    "KI": {
+      "packet": "figiel-2025-aqueous-iodides/3",
+      "component_ids": [
+        "water",
+        "potassium-cation",
+        "iodide-anion"
+      ],
+      "packet_sha256": "6f9c349e57925668f9001843cd57543999033a80062f8fb43448e5a700002265",
+      "resolved_document_sha256": "25015d801db46f6240bcb09a8120b00e9d74b578727b25fcbcad0e8872f6fb9d",
+      "model_families": [
+        {
+          "family_id": "model/base",
+          "kind": "base",
+          "choice": "pc-saft",
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 2, water column, m_i^seg row",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "family_id": "model/association",
+          "kind": "association",
+          "choice": "general-site",
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 2 footnote a, 2B association scheme expanded as one A site",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "family_id": "model/electrolyte",
+          "kind": "electrolyte",
+          "choice": "born",
+          "ionic_dispersion": "exclude-same-sign-ion-pairs",
+          "c_shell": 1.0,
+          "c_dielectric": 1.0,
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 2 identifies water as solvent; Table 3 separately lists ions. Figiel, Yu & Held 2025, \u00a72 states that the dispersion energy between cation-cation pairs and anion-anion pairs is set to zero (u_ii = 0)",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "family_id": "model/relative_permittivity",
+          "kind": "permittivity",
+          "choice": "ion-fraction-suppression",
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Eq. 11, bulk relative-permittivity formulation",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        }
+      ],
+      "terminal_molality_mol_kg": 1e-14,
+      "convergence_error": 1.7465140444983263e-11,
+      "log_fugacity": [
+        -124.61494003285378,
+        -102.26446522772869
+      ],
+      "pure_solvent_log_fugacity": -3.4683722688133667,
+      "cause": "",
+      "effective_activity_solver_options": [
+        {
+          "name": "ASSOCIATION_RESIDUAL",
+          "value": 2e-13,
+          "unit": "1 (mass action)",
+          "default": 2e-13
+        },
+        {
+          "name": "DENSITY_ROOT_RESIDUAL",
+          "value": 1e-12,
+          "unit": "1 (reduced pressure)",
+          "default": 1e-12
+        },
+        {
+          "name": "EQUILIBRIUM_ROW_RESIDUAL",
+          "value": 1e-10,
+          "unit": "1 (classified rows)",
+          "default": 1e-10
+        }
+      ]
+    }
+  },
+  "aad_definition": "100/n * sum(abs((model-reference)/reference)); complete grid only",
+  "per_point_density_residual_and_stop": "not exposed by bound activity result; no second density solve",
+  "haslam_model": "not recomputed: model absent from the Engine",
+  "run_wall_seconds": 0.04000151499712956
+}

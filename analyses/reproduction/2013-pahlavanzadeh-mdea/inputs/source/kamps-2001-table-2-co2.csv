@@ -1,0 +1,24 @@
+source_table,source_pdf_page,source_printed_page,source_column_block,source_row_within_block,gas,temperature_K,mdea_molality_mol_per_kg_water,gas_molality_mol_per_kg_water,ten_times_total_pressure_MPa,zotero_parent_key,pdf_attachment_key,verification,note
+2,2,697,left,1,CO2,313.11,7.994,6.363,2.280,5R8DLM23,WA2BMMU6,PDF image and text-layer values agree,10p/MPa as printed; p_Pa = printed value * 100000; no temperature correction applied
+2,2,697,left,2,CO2,313.18,7.994,6.815,3.759,5R8DLM23,WA2BMMU6,PDF image and text-layer values agree,10p/MPa as printed; p_Pa = printed value * 100000; no temperature correction applied
+2,2,697,left,3,CO2,313.13,7.994,7.387,6.50,5R8DLM23,WA2BMMU6,PDF image and text-layer values agree,10p/MPa as printed; p_Pa = printed value * 100000; no temperature correction applied
+2,2,697,left,4,CO2,313.14,7.994,7.748,11.47,5R8DLM23,WA2BMMU6,PDF image and text-layer values agree,10p/MPa as printed; p_Pa = printed value * 100000; no temperature correction applied
+2,2,697,left,5,CO2,313.14,7.994,7.887,14.56,5R8DLM23,WA2BMMU6,PDF image and text-layer values agree,10p/MPa as printed; p_Pa = printed value * 100000; no temperature correction applied
+2,2,697,left,6,CO2,313.15,7.994,8.471,30.82,5R8DLM23,WA2BMMU6,PDF image and text-layer values agree,10p/MPa as printed; p_Pa = printed value * 100000; no temperature correction applied
+2,2,697,left,7,CO2,313.15,7.994,8.947,60.15,5R8DLM23,WA2BMMU6,PDF image and text-layer values agree,10p/MPa as printed; p_Pa = printed value * 100000; no temperature correction applied
+2,2,697,left,8,CO2,313.13,7.994,9.227,75.65,5R8DLM23,WA2BMMU6,PDF image and text-layer values agree,10p/MPa as printed; p_Pa = printed value * 100000; no temperature correction applied
+2,2,697,left,9,CO2,353.17,7.994,2.518,2.931,5R8DLM23,WA2BMMU6,PDF image and text-layer values agree,10p/MPa as printed; p_Pa = printed value * 100000; no temperature correction applied
+2,2,697,left,10,CO2,353.17,7.994,3.188,4.216,5R8DLM23,WA2BMMU6,PDF image and text-layer values agree,10p/MPa as printed; p_Pa = printed value * 100000; no temperature correction applied
+2,2,697,left,11,CO2,353.17,7.994,4.426,7.86,5R8DLM23,WA2BMMU6,PDF image and text-layer values agree,10p/MPa as printed; p_Pa = printed value * 100000; no temperature correction applied
+2,2,697,left,12,CO2,353.16,7.994,5.494,13.43,5R8DLM23,WA2BMMU6,PDF image and text-layer values agree,10p/MPa as printed; p_Pa = printed value * 100000; no temperature correction applied
+2,2,697,right,1,CO2,353.17,7.994,6.183,19.99,5R8DLM23,WA2BMMU6,PDF image and text-layer values agree,10p/MPa as printed; p_Pa = printed value * 100000; no temperature correction applied
+2,2,697,right,2,CO2,353.18,7.994,6.616,26.14,5R8DLM23,WA2BMMU6,PDF image and text-layer values agree,10p/MPa as printed; p_Pa = printed value * 100000; no temperature correction applied
+2,2,697,right,3,CO2,353.15,7.994,7.153,39.20,5R8DLM23,WA2BMMU6,PDF image and text-layer values agree,10p/MPa as printed; p_Pa = printed value * 100000; no temperature correction applied
+2,2,697,right,4,CO2,353.16,7.994,7.554,54.03,5R8DLM23,WA2BMMU6,PDF image and text-layer values agree,10p/MPa as printed; p_Pa = printed value * 100000; no temperature correction applied
+2,2,697,right,5,CO2,393.11,7.994,1.007,6.85,5R8DLM23,WA2BMMU6,PDF image and text-layer values agree,10p/MPa as printed; p_Pa = printed value * 100000; no temperature correction applied
+2,2,697,right,6,CO2,393.17,7.994,1.617,11.10,5R8DLM23,WA2BMMU6,PDF image and text-layer values agree,10p/MPa as printed; p_Pa = printed value * 100000; no temperature correction applied
+2,2,697,right,7,CO2,393.12,7.994,2.588,21.00,5R8DLM23,WA2BMMU6,PDF image and text-layer values agree,10p/MPa as printed; p_Pa = printed value * 100000; no temperature correction applied
+2,2,697,right,8,CO2,393.16,7.994,3.308,31.37,5R8DLM23,WA2BMMU6,PDF image and text-layer values agree,10p/MPa as printed; p_Pa = printed value * 100000; no temperature correction applied
+2,2,697,right,9,CO2,393.12,7.994,3.823,40.46,5R8DLM23,WA2BMMU6,PDF image and text-layer values agree,10p/MPa as printed; p_Pa = printed value * 100000; no temperature correction applied
+2,2,697,right,10,CO2,393.11,7.994,4.440,53.10,5R8DLM23,WA2BMMU6,PDF image and text-layer values agree,10p/MPa as printed; p_Pa = printed value * 100000; no temperature correction applied
+2,2,697,right,11,CO2,393.12,7.994,4.761,61.17,5R8DLM23,WA2BMMU6,PDF image and text-layer values agree,10p/MPa as printed; p_Pa = printed value * 100000; no temperature correction applied

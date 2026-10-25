@@ -1,0 +1,447 @@
+{
+  "meaning": "Post-fit correction of descriptive metadata only; native observations selected sodium and the fit is unchanged. Original executable and declaration retained.",
+  "corrections": [
+    {
+      "index": 0,
+      "row": {
+        "source": "hamer-wu-1972",
+        "salt": "NaCl",
+        "m_NaCl": 0.001,
+        "m_divalent": 0.0,
+        "observed": 0.988,
+        "molalities": {
+          "li": 0.0,
+          "na": 0.001,
+          "mg": 0.0,
+          "ca": 0.0,
+          "k": 0.0
+        }
+      }
+    },
+    {
+      "index": 1,
+      "row": {
+        "source": "hamer-wu-1972",
+        "salt": "NaCl",
+        "m_NaCl": 0.002,
+        "m_divalent": 0.0,
+        "observed": 0.984,
+        "molalities": {
+          "li": 0.0,
+          "na": 0.002,
+          "mg": 0.0,
+          "ca": 0.0,
+          "k": 0.0
+        }
+      }
+    },
+    {
+      "index": 2,
+      "row": {
+        "source": "hamer-wu-1972",
+        "salt": "NaCl",
+        "m_NaCl": 0.005,
+        "m_divalent": 0.0,
+        "observed": 0.976,
+        "molalities": {
+          "li": 0.0,
+          "na": 0.005,
+          "mg": 0.0,
+          "ca": 0.0,
+          "k": 0.0
+        }
+      }
+    },
+    {
+      "index": 3,
+      "row": {
+        "source": "hamer-wu-1972",
+        "salt": "NaCl",
+        "m_NaCl": 0.01,
+        "m_divalent": 0.0,
+        "observed": 0.968,
+        "molalities": {
+          "li": 0.0,
+          "na": 0.01,
+          "mg": 0.0,
+          "ca": 0.0,
+          "k": 0.0
+        }
+      }
+    },
+    {
+      "index": 4,
+      "row": {
+        "source": "hamer-wu-1972",
+        "salt": "NaCl",
+        "m_NaCl": 0.02,
+        "m_divalent": 0.0,
+        "observed": 0.959,
+        "molalities": {
+          "li": 0.0,
+          "na": 0.02,
+          "mg": 0.0,
+          "ca": 0.0,
+          "k": 0.0
+        }
+      }
+    },
+    {
+      "index": 5,
+      "row": {
+        "source": "hamer-wu-1972",
+        "salt": "NaCl",
+        "m_NaCl": 0.05,
+        "m_divalent": 0.0,
+        "observed": 0.944,
+        "molalities": {
+          "li": 0.0,
+          "na": 0.05,
+          "mg": 0.0,
+          "ca": 0.0,
+          "k": 0.0
+        }
+      }
+    },
+    {
+      "index": 6,
+      "row": {
+        "source": "hamer-wu-1972",
+        "salt": "NaCl",
+        "m_NaCl": 0.1,
+        "m_divalent": 0.0,
+        "observed": 0.933,
+        "molalities": {
+          "li": 0.0,
+          "na": 0.1,
+          "mg": 0.0,
+          "ca": 0.0,
+          "k": 0.0
+        }
+      }
+    },
+    {
+      "index": 7,
+      "row": {
+        "source": "hamer-wu-1972",
+        "salt": "NaCl",
+        "m_NaCl": 0.2,
+        "m_divalent": 0.0,
+        "observed": 0.924,
+        "molalities": {
+          "li": 0.0,
+          "na": 0.2,
+          "mg": 0.0,
+          "ca": 0.0,
+          "k": 0.0
+        }
+      }
+    },
+    {
+      "index": 8,
+      "row": {
+        "source": "hamer-wu-1972",
+        "salt": "NaCl",
+        "m_NaCl": 0.3,
+        "m_divalent": 0.0,
+        "observed": 0.921,
+        "molalities": {
+          "li": 0.0,
+          "na": 0.3,
+          "mg": 0.0,
+          "ca": 0.0,
+          "k": 0.0
+        }
+      }
+    },
+    {
+      "index": 9,
+      "row": {
+        "source": "hamer-wu-1972",
+        "salt": "NaCl",
+        "m_NaCl": 0.4,
+        "m_divalent": 0.0,
+        "observed": 0.92,
+        "molalities": {
+          "li": 0.0,
+          "na": 0.4,
+          "mg": 0.0,
+          "ca": 0.0,
+          "k": 0.0
+        }
+      }
+    },
+    {
+      "index": 10,
+      "row": {
+        "source": "hamer-wu-1972",
+        "salt": "NaCl",
+        "m_NaCl": 0.5,
+        "m_divalent": 0.0,
+        "observed": 0.921,
+        "molalities": {
+          "li": 0.0,
+          "na": 0.5,
+          "mg": 0.0,
+          "ca": 0.0,
+          "k": 0.0
+        }
+      }
+    },
+    {
+      "index": 11,
+      "row": {
+        "source": "hamer-wu-1972",
+        "salt": "NaCl",
+        "m_NaCl": 0.6,
+        "m_divalent": 0.0,
+        "observed": 0.923,
+        "molalities": {
+          "li": 0.0,
+          "na": 0.6,
+          "mg": 0.0,
+          "ca": 0.0,
+          "k": 0.0
+        }
+      }
+    },
+    {
+      "index": 12,
+      "row": {
+        "source": "hamer-wu-1972",
+        "salt": "NaCl",
+        "m_NaCl": 0.7,
+        "m_divalent": 0.0,
+        "observed": 0.926,
+        "molalities": {
+          "li": 0.0,
+          "na": 0.7,
+          "mg": 0.0,
+          "ca": 0.0,
+          "k": 0.0
+        }
+      }
+    },
+    {
+      "index": 13,
+      "row": {
+        "source": "hamer-wu-1972",
+        "salt": "NaCl",
+        "m_NaCl": 0.8,
+        "m_divalent": 0.0,
+        "observed": 0.929,
+        "molalities": {
+          "li": 0.0,
+          "na": 0.8,
+          "mg": 0.0,
+          "ca": 0.0,
+          "k": 0.0
+        }
+      }
+    },
+    {
+      "index": 14,
+      "row": {
+        "source": "hamer-wu-1972",
+        "salt": "NaCl",
+        "m_NaCl": 0.9,
+        "m_divalent": 0.0,
+        "observed": 0.932,
+        "molalities": {
+          "li": 0.0,
+          "na": 0.9,
+          "mg": 0.0,
+          "ca": 0.0,
+          "k": 0.0
+        }
+      }
+    },
+    {
+      "index": 15,
+      "row": {
+        "source": "hamer-wu-1972",
+        "salt": "NaCl",
+        "m_NaCl": 1.0,
+        "m_divalent": 0.0,
+        "observed": 0.936,
+        "molalities": {
+          "li": 0.0,
+          "na": 1.0,
+          "mg": 0.0,
+          "ca": 0.0,
+          "k": 0.0
+        }
+      }
+    },
+    {
+      "index": 16,
+      "row": {
+        "source": "hamer-wu-1972",
+        "salt": "NaCl",
+        "m_NaCl": 1.2,
+        "m_divalent": 0.0,
+        "observed": 0.944,
+        "molalities": {
+          "li": 0.0,
+          "na": 1.2,
+          "mg": 0.0,
+          "ca": 0.0,
+          "k": 0.0
+        }
+      }
+    },
+    {
+      "index": 17,
+      "row": {
+        "source": "hamer-wu-1972",
+        "salt": "NaCl",
+        "m_NaCl": 1.4,
+        "m_divalent": 0.0,
+        "observed": 0.953,
+        "molalities": {
+          "li": 0.0,
+          "na": 1.4,
+          "mg": 0.0,
+          "ca": 0.0,
+          "k": 0.0
+        }
+      }
+    },
+    {
+      "index": 18,
+      "row": {
+        "source": "hamer-wu-1972",
+        "salt": "NaCl",
+        "m_NaCl": 1.6,
+        "m_divalent": 0.0,
+        "observed": 0.962,
+        "molalities": {
+          "li": 0.0,
+          "na": 1.6,
+          "mg": 0.0,
+          "ca": 0.0,
+          "k": 0.0
+        }
+      }
+    },
+    {
+      "index": 19,
+      "row": {
+        "source": "hamer-wu-1972",
+        "salt": "NaCl",
+        "m_NaCl": 1.8,
+        "m_divalent": 0.0,
+        "observed": 0.973,
+        "molalities": {
+          "li": 0.0,
+          "na": 1.8,
+          "mg": 0.0,
+          "ca": 0.0,
+          "k": 0.0
+        }
+      }
+    },
+    {
+      "index": 20,
+      "row": {
+        "source": "hamer-wu-1972",
+        "salt": "NaCl",
+        "m_NaCl": 2.0,
+        "m_divalent": 0.0,
+        "observed": 0.984,
+        "molalities": {
+          "li": 0.0,
+          "na": 2.0,
+          "mg": 0.0,
+          "ca": 0.0,
+          "k": 0.0
+        }
+      }
+    },
+    {
+      "index": 21,
+      "row": {
+        "source": "hamer-wu-1972",
+        "salt": "NaCl",
+        "m_NaCl": 2.5,
+        "m_divalent": 0.0,
+        "observed": 1.013,
+        "molalities": {
+          "li": 0.0,
+          "na": 2.5,
+          "mg": 0.0,
+          "ca": 0.0,
+          "k": 0.0
+        }
+      }
+    },
+    {
+      "index": 22,
+      "row": {
+        "source": "hamer-wu-1972",
+        "salt": "NaCl",
+        "m_NaCl": 3.0,
+        "m_divalent": 0.0,
+        "observed": 1.045,
+        "molalities": {
+          "li": 0.0,
+          "na": 3.0,
+          "mg": 0.0,
+          "ca": 0.0,
+          "k": 0.0
+        }
+      }
+    },
+    {
+      "index": 23,
+      "row": {
+        "source": "hamer-wu-1972",
+        "salt": "NaCl",
+        "m_NaCl": 3.5,
+        "m_divalent": 0.0,
+        "observed": 1.08,
+        "molalities": {
+          "li": 0.0,
+          "na": 3.5,
+          "mg": 0.0,
+          "ca": 0.0,
+          "k": 0.0
+        }
+      }
+    },
+    {
+      "index": 24,
+      "row": {
+        "source": "hamer-wu-1972",
+        "salt": "NaCl",
+        "m_NaCl": 4.0,
+        "m_divalent": 0.0,
+        "observed": 1.116,
+        "molalities": {
+          "li": 0.0,
+          "na": 4.0,
+          "mg": 0.0,
+          "ca": 0.0,
+          "k": 0.0
+        }
+      }
+    },
+    {
+      "index": 25,
+      "row": {
+        "source": "hamer-wu-1972",
+        "salt": "NaCl",
+        "m_NaCl": 4.5,
+        "m_divalent": 0.0,
+        "observed": 1.153,
+        "molalities": {
+          "li": 0.0,
+          "na": 4.5,
+          "mg": 0.0,
+          "ca": 0.0,
+          "k": 0.0
+        }
+      }
+    }
+  ]
+}

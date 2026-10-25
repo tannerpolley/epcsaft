@@ -1,0 +1,30 @@
+{
+  "engine_commit": "a8d3af17debcf5f9bdc059e16f93a511c53dbfb8",
+  "engine_tree_clean": true,
+  "script_sha256": {
+    "run.py": "8f4bce4707e425701f7cb25ff7b2693b4568db4007b1098c019ec3689c000c22",
+    "bulow2021_states.cpp": "c2aed0316e4cb7af489ffe1914a3f991125501e13bbd17ea4f71fdc84d39d50c"
+  },
+  "input_sha256": {
+    "inputs/digitized/fig4-curves.csv": "46586a556ade15f38b0709fbd92221d6ed9abd87275c356bdf41df6ed1798bf3",
+    "inputs/digitized/fig4-markers.csv": "3b31c4e220cc03d094b233a36baa428f8c9f87158b92f5c3fcd8a50581248d11",
+    "inputs/digitized/fig7-solubility.csv": "6086c29e293836dba0cf541ee00c53827cae0b62d48d39a92437ee0c05092ea1",
+    "inputs/digitized/fig8b-transfer-gibbs.csv": "4496e905a08a7685a192a2e24ca415ed0268815bd2e89e1ad304ad55384f827a",
+    "inputs/digitized/fig9-solubility-ionic-liquid.csv": "cfd9ed07f0061a5dc9dd3ec9dd4698bad92fb925cfa2f0d2f31bfd3e1b3430d8",
+    "inputs/parameters/components.csv": "a69211e6ab8f6eaf9e948d01e985158fa6a40c36da795b77621efe26f6d33965",
+    "inputs/parameters/pairs.csv": "0d7e91b2e00b121abb187db2ab37af497cf2eae852aa51b725b63bfa449b0f30",
+    "inputs/source/figures-manifest.csv": "7e199019c866b66014c2278a4e803168992c09549b80b4db87cd5492e5b1e983",
+    "inputs/source/source-manifest.csv": "701393294f0d201dbbd2e027dc612be33d3e962960e468c4686c273b26bb0d42"
+  },
+  "counter_ion_invariance_max_abs_kJ_mol": 1.6577850203702837e-12,
+  "solvent_activity_osmotic_minus_fugacity_ratio_max_abs": 4.04121180963557e-13,
+  "salt_mole_fraction_basis_fig7": "formula",
+  "fig9_born_identity_tolerance_abs": 1e-10,
+  "fig9_permittivity_tolerance_relative": 1e-12,
+  "fig9_born_identity_max_abs": 8.08242361927114e-14,
+  "fig9_born_identity_density_max_relative": 0.0,
+  "fig9_permittivity_mapping_max_relative": 2.220446049250313e-16,
+  "fig9_pressure_residual_max_relative": 3.424356691539288e-11,
+  "conditions": "298.15 K, 1e5 Pa, liquid branch",
+  "wall_seconds": 12.954515247001837
+}

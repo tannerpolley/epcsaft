@@ -1,0 +1,347 @@
+{
+  "schema_version": 1,
+  "dataset_id": "ascani-2022-case-study-2-held2-tracer-v1",
+  "format_note": "This file uses the JSON-compatible subset of YAML 1.2 for standard-library validation.",
+  "migration_binding": {
+    "decision": "D-024",
+    "gate_commit": "4527864ffcd37f5e9a524500dfd99d5a34c85672",
+    "gate_tree": "6a4f9711787c333c146566be8947df2c60f1fc68"
+  },
+  "d026_selection_binding": {
+    "decision": "D-026",
+    "gate_commit": "3a4ef0a0c6b98c43405d3cafc1ac4f5f87afa68d",
+    "gate_tree": "9307c3f79581b6e0479d4ac2468932b2a68e5f5b",
+    "selection": "ascani_case_study_2_source_complete_pending_distinct_provider_bundle"
+  },
+  "citation": {
+    "authors": ["Moreno Ascani", "Gabriele Sadowski", "Christoph Held"],
+    "title": "Calculation of Multiphase Equilibria Containing Mixed Solvents and Mixed Electrolytes: General Formulation and Case Studies",
+    "journal": "Journal of Chemical & Engineering Data",
+    "year": 2022,
+    "volume": 67,
+    "pages": "1972-1984",
+    "doi": "10.1021/acs.jced.1c00866",
+    "zotero_parent_item": "48XP953U",
+    "main_markdown_item": "4NSAXCX8",
+    "supporting_information_markdown_item": "QK83PCBV",
+    "peer_reviewed_status": "peer-reviewed journal article"
+  },
+  "primary_sources": {
+    "main_markdown": {
+      "sha256": "c0b73c10aa1ce9830e29f34aa3c1d1af4b889971959c3245a2deb7efdd979cd6",
+      "size_bytes": 81732,
+      "execution_locator": "not-retained-source-document",
+      "authority_pdf_sha256": "3c446bfa5274f8c4f0963f23c76a5cf7a87496db94dc29896369f4946b53e6e6",
+      "authority_pdf_size_bytes": 3270361,
+      "authority_pdf_execution_locator": "not-retained-source-document",
+      "authority": "peer-reviewed PDF; local Markdown is extraction-only",
+      "durable_locators": [
+        "lines 374-378: Case Study 2 scope, inherited model inputs, feed, and fully dissociated salt basis",
+        "lines 386-392: Table 4 system, 298.15 K, 1.00 bar, and experimental reference 83",
+        "line 395: paper-calculated phase compositions, two-phase result, and Gibbs values",
+        "lines 401-407: Table 5 logarithmic neutral and mean-ionic fugacity equalities on a bar basis",
+        "line 417: Figure 4 distinguishes experimental tie-lines from ePC-SAFT advanced predictions",
+        "lines 423-427: official SI locator for DOI 10.1021/acs.jced.1c00866",
+        "line 537: reference 83, Pedraza et al. 2004"
+      ]
+    },
+    "supporting_information_markdown": {
+      "sha256": "a6a61508cbaae805f2e360686785318953747a66c27d9102936e77be7f472c03",
+      "size_bytes": 9007,
+      "execution_locator": "not-retained-source-document",
+      "authority_pdf_sha256": "33f43e99557130757d0893d78772cbd59c05da69ff2e85377de242c04b8af4d0",
+      "authority_pdf_size_bytes": 182464,
+      "authority_pdf_execution_locator": "not-retained-source-document",
+      "authority": "official supporting-information PDF; local Markdown is extraction-only",
+      "durable_locators": [
+        "lines 42-55: combining rules, temperature-dependent k_ij, and water/1-butanol l_ij and k_hb_ij use",
+        "lines 59-69: Table S1 neutral-component parameters",
+        "lines 72-85: Table S2 ion parameters",
+        "lines 87-96: Table S3 water/organic interaction parameters",
+        "lines 99-104: Table S4 cation/chloride k_ij values",
+        "lines 107-119: SI parameter-source references S1-S11"
+      ]
+    }
+  },
+  "bound_parameter_sources": {
+    "ascani_held_2021": {
+      "citation": "M. Ascani and C. Held, Prediction of salting-out in liquid-liquid two-phase systems with ePC-SAFT: Effect of the Born term and of a concentration-dependent dielectric constant, Z. Anorg. Allg. Chem. 647 (2021) 1305-1314",
+      "doi": "10.1002/zaac.202100032",
+      "zotero_parent_item": "KLBK4XDV",
+      "pdf_item": "6A726Y7H",
+      "pdf_sha256": "9ab259a8dfb27a052fcf49782e6ab75132140d94c5f8f695215a2703f1d010ab",
+      "pdf_size_bytes": 1307612,
+      "pdf_execution_locator": "not-retained-source-document",
+      "permanent_lab_pdf_sha256": "b26bb94b84e676c15a5ff40f878f0e0d1488c6994990c3c3e7d968630f2fa464",
+      "permanent_lab_pdf_size_bytes": 1307624,
+      "permanent_lab_pdf_execution_locator": "not-retained-source-document",
+      "markdown_item": "6WHXVDBI",
+      "markdown_sha256": "948a50f7d447a5d3622b3bd401932d4dc84a3b715ae93dd0ffbb01fe64866c68",
+      "markdown_size_bytes": 51914,
+      "markdown_execution_locator": "not-retained-source-document",
+      "authority": "peer-reviewed PDF; local Markdown is extraction-only",
+      "durable_locators": [
+        "printed p. 1308 (PDF p. 4), Eq. 13: combined salt-free-solvent mass-fraction and ionic mole-fraction dielectric rule",
+        "printed p. 1308 (PDF p. 4), Model parameters and Table 1: all neutral solvents use 2B; 1-butanol pure and association parameters",
+        "printed p. 1309 (PDF p. 5), Table 2 footnote a: alkali-halide ion-ion dispersion is allowed only for cation-anion pairs",
+        "printed p. 1309 (PDF p. 5), Tables 3-4: cation/chloride and water/1-butanol interaction records",
+        "printed p. 1309 (PDF p. 5), Table 5: water and 1-butanol relative-permittivity correlations and alkali-halide value 8",
+        "extraction Markdown lines 102-118 and 127-170"
+      ]
+    },
+    "nann_held_sadowski_2013": {
+      "citation": "A. Nann, C. Held, and G. Sadowski, Liquid-Liquid Equilibria of 1-Butanol/Water/IL Systems, Ind. Eng. Chem. Res. 52 (2013) 18472-18481",
+      "doi": "10.1021/ie403246e",
+      "zotero_parent_item": "2TTK2I8W",
+      "pdf_item": "Q64ISRHA",
+      "pdf_sha256": "aeb3562f76ac9b3a8ee11779696933aead55a5bd0e6e6bb67bd82f38bf691313",
+      "pdf_size_bytes": 1592844,
+      "pdf_execution_locator": "not-retained-source-document",
+      "mathpix_sha256": "de0de1510c0520d4c900421ddab3edf84e613c798840617f5d07095e427d4426",
+      "mathpix_size_bytes": 59805,
+      "mathpix_execution_locator": "not-retained-source-document",
+      "authority": "peer-reviewed PDF; local Mathpix Markdown is extraction-only",
+      "durable_locators": [
+        "printed p. 18477 (PDF p. 6), Table 2 and footnote a: 1-butanol parameters and 2B scheme",
+        "printed p. 18477 (PDF p. 6), Table 3: original water/1-butanol k_ij, l_ij, and k_ij_hb expression",
+        "Mathpix lines 151-165 and 176-185"
+      ]
+    },
+    "held_et_al_2014": {
+      "citation": "C. Held, T. Reschke, S. Mohammad, A. Luza, and G. Sadowski, ePC-SAFT revised, Chem. Eng. Res. Des. 92 (2014) 2884-2897",
+      "doi": "10.1016/j.cherd.2014.05.017",
+      "zotero_parent_item": "3DIW87Q5",
+      "pdf_item": "TD5T732H",
+      "pdf_sha256": "dea9aa05e2ee8eb1c675873fa9d8737943312484874d844f01b45613da261acf",
+      "pdf_size_bytes": 1241003,
+      "pdf_execution_locator": "not-retained-source-document",
+      "markdown_item": "TZJJENHW",
+      "markdown_sha256": "b8b1e46bf870224de5de68b5989f9cb377d17445d87109a5462a94f1efaafbda",
+      "markdown_size_bytes": 88347,
+      "markdown_execution_locator": "not-retained-source-document",
+      "authority": "peer-reviewed PDF; local Markdown is extraction-only",
+      "durable_locators": [
+        "printed pp. 2889-2890, Tables 1-3: 1-butanol short-range records; Na+, K+, and Cl- pure-ion and cation/chloride values",
+        "printed p. 2890: epsilon_r,1-butanol=17.51 at 298.15 K and water/butanol mass-fraction mixing rule",
+        "extraction Markdown lines 223, 233, 253-293, 332-396"
+      ]
+    }
+  },
+  "use_basis": "Retain compact numerical facts, source identities, and transformations for installed-artifact scientific validation; do not redistribute the paper or supporting information.",
+  "retained_files": {
+    "tracer_csv": {
+      "path": "analyses/reproduction/2022-ascani/inputs/source/ascani-2022-case-study-2-tracer.csv",
+      "sha256": "388f62d02f995fc89fb099bb625a907713eebe70f19ea631688cc8e4169acecd",
+      "rows": 1
+    }
+  },
+  "tracer_contract": {
+    "case_id": "ascani2022-case-study-2",
+    "role": "bounded external HELD2 tracer selected by the D-026 source-completeness screen",
+    "temperature_K": "298.15",
+    "pressure_Pa": "100000",
+    "pressure_transformation": "Table 4 pressure 1.00 bar multiplied by exactly 100000 Pa/bar",
+    "formula_feed_mass_fraction_order": ["water", "1-butanol", "NaCl", "KCl"],
+    "formula_feed_mass_fractions": ["0.8094", "0.1728", "0.0054", "0.0124"],
+    "explicit_species_order": ["H2O", "1-butanol", "Na+", "K+", "Cl-"],
+    "explicit_feed_mole_fractions": ["0.9403742328474496", "0.04879524350242891", "0.0019339333595015447", "0.0034813284655591703", "0.005415261825060715"],
+    "formula_to_explicit_feed_transform": {
+      "basis": "one kilogram formula feed",
+      "molar_masses_kg_per_mol": {"water": "0.01801528", "1-butanol": "0.0741216", "NaCl": "0.05844277", "KCl": "0.0745513"},
+      "steps": "divide formula mass fractions by formula molar masses; replace each NaCl amount by one Na+ and one Cl- and each KCl amount by one K+ and one Cl-; normalize the five explicit amounts",
+      "classification": "table-derived from the direct paper feed and retained lab conversion arithmetic"
+    },
+    "paper_formula_phase_compositions": {
+      "component_order": ["H2O", "1-butanol", "NaCl", "KCl"],
+      "organic": ["0.4426", "0.5570", "0.0000415", "0.000420"],
+      "aqueous": ["0.9627", "0.0122", "0.0076", "0.0174"],
+      "classification": "direct paper-reported ePC-SAFT advanced calculation output, not direct experimental data",
+      "rounding_note": "The printed organic and aqueous formula values sum to 1.0000615 and 0.9999, respectively; retain them unchanged."
+    },
+    "formula_to_explicit_phase_transform": {
+      "steps": "replace each printed NaCl formula amount by equal Na+ and Cl- amounts and each KCl formula amount by equal K+ and Cl- amounts, then normalize the five explicit amounts",
+      "classification": "table-derived",
+      "organic": ["0.4423686412006520589731570389", "0.5567088412760126453864628799", "0.00004147830684551979314818350003", "0.0004197804548221280270418571087", "0.0004612587616676478201900406088"],
+      "aqueous": ["0.9393111523075421992389501415", "0.01190360035125378085666894331", "0.007415357595863011025465899112", "0.01697726607473899892672455849", "0.02439262367060200995219045761"]
+    },
+    "paper_table_5_log_fugacity": {
+      "basis": "natural logarithm of fugacity divided by 1 bar",
+      "values": {"water": "-3.521", "1-butanol": "-5.088", "KCl_mean_ionic_pair": "-206.733", "NaCl_mean_ionic_pair": "-224.891"},
+      "phase_equality": "Each printed value is identical in the organic and aqueous columns.",
+      "classification": "direct paper-reported ePC-SAFT advanced calculation output, not an independent experimental observable"
+    },
+    "reported_phase_count": 2
+  },
+  "source_classification": {
+    "feed_and_conditions": "direct",
+    "paper_formula_phase_compositions": "direct-paper-calculation-output",
+    "table_5_log_fugacity_equalities": "direct-paper-calculation-output",
+    "explicit_species_feed_and_phases": "table-derived",
+    "figure_4_experimental_tie_lines": "missing-primary-source-for-this-packet",
+    "uncertainty": "not reported for the paper-calculated Case Study 2 values",
+    "model_comparison_allowance": null,
+    "policy": "No numerical predictive acceptance threshold is created by this source-only packet."
+  },
+  "published_model_bundle_prerequisites": {
+    "status": "source_complete_for_ascani_epcsaft_advanced_not_implemented_not_run",
+    "bundle_identity": "A distinct future source-faithful Ascani ePC-SAFT-advanced bundle and fingerprint; the Figiel SSM+DS artifact is insufficient.",
+    "required_components": ["H2O", "1-butanol", "Na+", "K+", "Cl-"],
+    "required_source_inputs": [
+      "Ascani 2022 SI Table S1 H2O and 1-butanol neutral-component parameters plus the bound 2B association scheme",
+      "Ascani 2022 SI Table S2 Na+, K+, and Cl- ion parameters with sigma used as the Ascani altered-Born radius",
+      "Ascani 2022 SI Eq. S4 and Table S3 water/1-butanol k_ij(T), l_ij, and k_hb_ij",
+      "Ascani 2022 SI Table S4 Na+/Cl- and K+/Cl- k_ij",
+      "Ascani and Held 2021 Eq. 13 combined dielectric rule and Table 5 relative-permittivity correlations/ionic value",
+      "Ascani 2022 main-paper explicit ion-neutral k_ij zeros and the source-backed same-sign ion-dispersion nonapplicability"
+    ],
+    "ownership": "Provider owns the executable bundle, source binding, component order, charges, interaction records, and fingerprint. Validation and Equilibrium must not copy these constants into runtime code.",
+    "future_execution_path": "A new source-faithful Ascani ePC-SAFT-advanced Provider artifact plus the current general multiphase Perdomo HELD2 Equilibrium path; no archived Ascani compatibility route.",
+    "no_tuning": "No model input or HELD2 behavior may be tuned to force agreement with this tracer."
+  },
+  "d026_source_completeness_screen": {
+    "case_source_status": "SOURCE_COMPLETE_FOR_BOUNDED_ASCANI_EPCSAFT_ADVANCED_MODEL",
+    "selection_status": "SELECTED_D026_FALLBACK_PENDING_DISTINCT_PROVIDER_IMPLEMENTATION",
+    "hybrid_figiel_status": "NOT_SOURCE_COMPLETE_FOR_HYBRID_FIGIEL_SSM_DS_1_BUTANOL",
+    "source_backed_records": {
+      "pure_and_association": [
+        "SI Table S1 lines 59-69: water and 1-butanol m, sigma(T), dispersion energy, association energy, and association volume",
+        "Ascani and Held 2021 printed p. 1308, Table 1 and preceding paragraph: water and 1-butanol use a 2B scheme with one donor and one acceptor site; Nann et al. 2013 printed p. 18477, Table 2 footnote a independently prints the same 2B classification",
+        "SI Table S2 lines 72-85: Na+, K+, and Cl- m, sigma, and dispersion energy",
+        "main paper line 378: fully dissociated salts, ion relative permittivity 8, and the cited concentration-dependent dielectric treatment",
+        "Ascani and Held 2021 printed p. 1309, Table 2 footnote a: dispersion for the bound alkali-halide ions is allowed only between cation-anion pairs, so Na+-K+ k_ij is NOT_APPLICABLE rather than a missing zero"
+      ],
+      "k_ij": [
+        "SI Eq. S7 lines 47-52 and Table S3 lines 87-96: water/1-butanol k_ij(T) = -0.102 + 2.94e-4*(T/K - 298.15), hence -0.102 exactly at 298.15 K",
+        "main paper line 378: all ion-neutral k_ij values used in Case Study 2 are explicitly zero",
+        "SI Table S4 lines 99-104: Na+/Cl- k_ij=0.317 and K+/Cl- k_ij=0.064 at 298.15 K"
+      ],
+      "l_ij_and_k_ij_hb": [
+        "SI Eq. S4 and Table S3: sigma_ij=0.5*(sigma_i+sigma_j)*(1-l_ij), water/1-butanol l_ij=-0.0044, and k_ij_hb=0.026",
+        "SI line 55: l_ij is explicitly zero outside water/1-butanol for the Case Study 2 component pairs",
+        "Na+, K+, and Cl- have no association sites in the published model, so k_ij_hb is NOT_APPLICABLE for every ion-containing pair rather than an explicit zero"
+      ],
+      "dielectric_and_born": [
+        "Ascani and Held 2021 printed p. 1308, Eq. 13: epsilon_r=(sum over salt-free solvents epsilon_r,j*w_j^sol)*x_sol + sum over ions epsilon_r,j*x_j",
+        "Ascani and Held 2021 printed p. 1309, Table 5: epsilon_r,water=-105.2 ln(T/K)+677.480; epsilon_r,1-butanol=-0.1077(T/K)+49.723; alkali-halide ionic-region epsilon_r=8",
+        "At 298.15 K the printed correlations evaluate descriptively to epsilon_r,water=78.09282552212915 and epsilon_r,1-butanol=17.612245",
+        "Ascani and Held 2021 lines 91-99: the paper's altered-Born formulation uses the ion segment diameter sigma directly as the charged-sphere diameter and has no Figiel solvent-solvation-factor parameter"
+      ]
+    },
+    "unresolved_ascani_source_records": [],
+    "hybrid_figiel_ssm_ds_absent_records": [
+      "A primary paper/table reporting a Figiel SSM+DS solvent solvation factor f_k for 1-butanol at 298.15 K, including its fit observable and basis. The exact missing row is 1-butanol in Figiel 2025 Table 2; that table contains only water, methanol, and ethanol.",
+      "A primary paper/table reporting Figiel SSM+DS Na+-1-butanol, K+-1-butanol, and Cl--1-butanol k_ij values or explicit fitted zeros at 298.15 K. The exact missing cells would extend Figiel 2025 Table 5, whose solvent columns stop at water, methanol, and ethanol."
+    ],
+    "water_butanol_k_ij_source_conflict": {
+      "ascani_2022_authority": "Official SI Eq. S7 and Table S3: k_water,1-butanol(T) = -0.102 + 2.94e-4*(T/K - 298.15)",
+      "ascani_2021_confirmation": "Printed p. 1309, Table 4 labels -0.102 as k_ij,298.15K and 2.94e-4 K^-1 as k_ij,T",
+      "nann_2013_original": "Printed p. 18477, Table 3: k_water,1-butanol(T) = 2.94e-4*T/K - 0.102",
+      "case_value_policy": "For the Ascani 2022 checker, its own SI and the intervening Ascani 2021 paper govern: k_ij(298.15 K)=-0.102. The conflicting Nann expression is retained, not silently reconciled, and is not a second runtime choice."
+    },
+    "water_butanol_l_ij_sign_convention": {
+      "target_authority": "Ascani 2022 SI Eq. S4 uses sigma_ij=0.5*(sigma_i+sigma_j)*(1-l_ij) with l_ij=-0.0044",
+      "held_2014_confirmation": "Held et al. 2014 uses the same (1-l_ij) convention",
+      "nann_2013_discrepancy": "Nann et al. 2013 Eq. 2 prints (1+l_ij) with the same l_ij=-0.0044",
+      "policy": "Direct Ascani 2022 Eq. S4 governs the target. Nann's opposite printed sign convention is retained as a cross-paper discrepancy, not target ambiguity."
+    },
+    "provider_surface_gaps": [
+      "PROVIDER_NOT_YET_CAPABLE: expose a source-resulted Ascani/original-Born option with ion diameter=sigma and SSM/DS disabled; any internal identity factor is implementation detail, not a source solvation_factor.",
+      "PROVIDER_NOT_YET_CAPABLE: implement the Ascani Eq. 13 combined dielectric rule with exact derivatives and distinguish the salt ion-mixture permittivity 8 from Figiel's radial ionic-region permittivity.",
+      "PROVIDER_NOT_YET_CAPABLE: support water/1-butanol l_ij=-0.0044 in the cross-diameter rule and retain k_ij_hb=0.026 either as its own source family or as explicitly source-derived cross-association records.",
+      "PROVIDER_NOT_YET_CAPABLE: freeze k_ij=-0.102 at 298.15 K under a reported-condition domain for this bounded case, or add the published temperature law; keep ion-neutral zeros explicit and Na+-K+ absent/NOT_APPLICABLE."
+    ],
+    "provider_status": "PROVIDER_NOT_YET_CAPABLE",
+    "residual_source_need": "NONE_FOR_BOUNDED_298_15_K_ASCANI_MODEL",
+    "equilibrium_status": "READY_WAITING_PROVIDER_CASE at 8a7164869975c03291fcf3296b1228b4b4a0f5b4; no speculative Equilibrium change is requested.",
+    "model_output": "not_run"
+  },
+  "lab_archive_provenance": {
+    "archive_root": "analyses/reproduction/2022-ascani",
+    "authority": "checker data only; no runtime, algorithm, numerical, solver, or acceptance authority",
+    "source_and_model_input_hashes": {
+      "case2_paper_phase_compositions_csv": "eb139d8cdc90f3e21a612dc4125e481c2bb200d1f922b1167279de0296143344",
+      "paper_table5_fugacity_csv": "591892ef0c01a13060a16edbce08466b65ba31d2be27174815e423cc19650d88",
+      "pure_component_parameters_csv": "13928e22d419413076ac21586c230416bab7945f6676bef53d516fc915a81146",
+      "binary_interaction_source_manifest_csv": "d55c1fa59c961d8727808491ad89915968e5949ae6401efe76bbd00142166dde",
+      "k_ij_csv": "4d3e587faa598acbf058b6162d86b7ec541b376c1dac84169b96f39e57c2e690",
+      "l_ij_csv": "97a69ff9c60c77329775ed4f760bb3f3ea015929510f86f434e397210f616920",
+      "k_hb_ij_csv": "6f956c05e6fee9ec151c7e097dd98557a3d1a6a31a8f8adb07a7b0d45f3d513c"
+    },
+    "permitted_historical_output_hashes": {
+      "summary_json": "d1178d8d02b3f8d6f83929d7ca3818e58b965c52430d0d93ab92e545632891a1",
+      "phase_split_csv": "a3ab6456bceca8fd8fda2343cbc9e8e4efae5d5533a6df67a24f9347d9aac10f",
+      "stability_summary_csv": "2275895adfb1a80b5cb3b5fd13171667d1ca4b1fa4d751fc5eebac3de977795b"
+    },
+    "historical_witnesses": {
+      "archive_reported_status": "accepted_public_native_ipopt",
+      "strong_negative_witness_min_tpd": "-0.09607343786579076",
+      "strong_negative_witness_locator": "shared/results/stability_summary/stability_summary.csv: parent_phase=feed, seed_name=returned_org_phase",
+      "role": "historical hypothesis and external comparison support only; neither value is HELD2 proof"
+    },
+    "negative_space": [
+      "Do not reuse, port, restore, call, imitate, or derive implementation behavior from the archived electrolyte_lle or native liquid-root route.",
+      "Do not use archived seeds, controller, API, solver behavior, tolerances, or acceptance logic as authority.",
+      "Permitted archive use is limited to paper source feed, conditions, model inputs, paper-reported phase compositions, fugacity equalities, phase count, and retained outputs as provenance/comparison data.",
+      "The archived accepted label and negative witness cannot validate or determine the new algorithm."
+    ]
+  },
+  "supporting_numerical_literature": {
+    "citation": "G. V. Belov and N. M. Aristova, Calculation of Complex Chemical Equilibrium Using Optimization Package Ipopt (2023)",
+    "zotero_parent_item": "5HRFS379",
+    "attachment_item": "X8VYH7WX",
+    "mathpix_locator": "not-retained-source-document",
+    "sha256": "501d9bdb5dfd89cf5584e050cfcd9cc6580fac5395f809cb91d16d81d1bd1f38",
+    "size_bytes": 37215,
+    "line_ranges": {
+      "broad_concentration_scales_conditioning": "23-27",
+      "exact_derivatives_and_automatic_differentiation": "121-132",
+      "dimensionless_objective": "134-138",
+      "nonnegative_variables_phase_sums_material_balances": "141-187",
+      "inventory_normalization_and_review_checks": "301-307"
+    },
+    "classification": "general numerical-conditioning support only; not electrolyte-LLE or HELD2 evidence",
+    "negative_space": "Supplies no authoritative scaling formula, Ipopt settings or tolerances, multiplier unscaling, start policy, scientific-gate relaxation, or validation oracle."
+  },
+  "missing_upstream_provenance": [
+    {
+      "citation": "Pedraza, Ruiz, Saquete, and Gomis, Fluid Phase Equilibria 216 (2004) 27-31, Ascani reference 83",
+      "need": "original experimental water/1-butanol/NaCl/KCl LLE values, units, uncertainty, and composition basis before any direct experimental predictive campaign",
+      "effect": "Figure 4 experimental tie-lines are not numerical targets in this packet"
+    },
+    {
+      "citation": "Nann, Held, and Sadowski, Ind. Eng. Chem. Res. 52 (2013) 18472-18481, SI reference S6",
+      "need": "original parameter-estimation data and objective if inherited 1-butanol or water/1-butanol parameters are later recovered rather than replayed",
+      "effect": "SI-printed values remain reproduction inputs, not independently recovered parameters"
+    },
+    {
+      "citation": "Held et al., Chem. Eng. Res. Des. 92 (2014) 2884-2897, SI reference S10/S3",
+      "need": "original ion-parameter and cation/chloride interaction datasets and objectives if inherited parameters are later recovered rather than replayed",
+      "effect": "SI-printed values remain reproduction inputs, not independently recovered parameters"
+    }
+  ],
+  "future_installed_challenge": {
+    "status": "not_run_pending_new_migration_bound_provider_and_equilibrium_wheels",
+    "public_installed_api_only": true,
+    "algorithm_source": "current Perdomo HELD2",
+    "required_checks": [
+      "noncollapsed phase count and positive phase amounts",
+      "component material balance",
+      "electroneutrality in every electrolyte phase",
+      "specified-pressure closure",
+      "independent modified-potential equality or formulation-equivalent complementarity residual",
+      "descriptive comparison to the paper formula-basis phase compositions",
+      "descriptive comparison to the paper Table 5 log-fugacity equalities"
+    ],
+    "five_decision_layers": {"artifact_input": "not_run", "solver": "not_run", "numerical": "not_run", "physical": "not_run", "predictive": "not_run"},
+    "globality_certificate": "not_guaranteed",
+    "terminal_classifications": {
+      "PARAMETER_CONTRACT_INCOMPLETE": "the new installed Provider bundle or a required source-traced executable input is absent or mismatched",
+      "SOLVER_LIMIT": "the declared HELD2 search does not return a numerically accepted state; this is not automatically an algorithm defect",
+      "MODEL_TOPOLOGY_MISS": "a numerically and physically accepted model result lacks the paper-reported two-phase topology",
+      "PREDICTIVE_MISS": "a numerically and physically accepted result misses a separately approved predictive contract",
+      "PREDICTIVE_PASS": "a numerically and physically accepted result satisfies a separately approved predictive contract",
+      "NOT_EVALUATED": "a later decision cannot be adjudicated because an earlier layer failed or no quantitative predictive cutoff exists"
+    }
+  },
+  "claim_boundary": "This compact packet establishes source identity, a secondary tracer, model-bundle prerequisites, archive negative space, and future decision semantics only. It contains no installed model output, model acceptance threshold, parameter fit, predictive claim, HELD2 proof, promotion, result, release, or authority transfer."
+}

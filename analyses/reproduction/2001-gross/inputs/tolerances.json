@@ -1,0 +1,14 @@
+{
+  "equilibrium_maximum_absolute_row_residual": 1e-08,
+  "phase_pressure_relative_closure": 1e-07,
+  "figure_pressure_relative": 0.03,
+  "figure_pressure_absolute_bar": 1.0,
+  "figure_temperature_absolute_k": 0.3,
+  "figure_density_relative": 0.02,
+  "figure_density_absolute_kg_m3": 6.0,
+  "digitization_pixel_uncertainty": 3,
+  "table_aad_rounding_percentage_points": 0.005,
+  "rationale": "Figure thresholds account for coarse raster coordinates and line width; do not establish experimental accuracy. Aggregate AAD rounding applies only to identical original data rows, which are absent.",
+  "ternary_composition_absolute": 0.02,
+  "ternary_rationale": "Absolute mole-fraction threshold covers sparse raster endpoints and approximate tie-line pairing; no reported pointwise experimental uncertainty."
+}

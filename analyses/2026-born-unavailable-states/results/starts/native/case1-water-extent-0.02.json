@@ -1,0 +1,22 @@
+{
+  "case": 1,
+  "value": 0,
+  "success": false,
+  "solver_status": "LOCAL_INFEASIBILITY",
+  "message": "infeasible: residual 1.0000004104245022 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 143 iterations, contraction absent, floor 2.7985558692381079e-10, amplification 0",
+  "iterations": 143,
+  "evaluations": 190,
+  "generic_jacobian_rank": 20,
+  "generic_nullity": 0,
+  "reduced_hessian_minimum": null,
+  "criterion_met": false,
+  "wall_s": 7.222315393,
+  "convergence": {
+    "residual": 1.0000004104245022,
+    "floor": 2.798555869238108e-10,
+    "amplification": 0.0,
+    "contraction": null,
+    "stop": "Stop.infeasible"
+  },
+  "state_file": null
+}

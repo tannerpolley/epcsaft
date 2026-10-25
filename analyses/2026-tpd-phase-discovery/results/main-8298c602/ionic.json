@@ -1,0 +1,108 @@
+{
+  "identity": {
+    "wheel": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/build/issue-680-release-PRNBCX/epcsaft-0.2.0.dev0-cp313-cp313-manylinux_2_39_x86_64.whl",
+    "wheel_sha256": "8897a0caab9f2508ed642f42c8b5226957fbe7035ed7bfdad71e4166798785b3",
+    "script_sha256": "609c631bacfbd41d92d0f54248a5c0436037decbb01423d8c122d74f8c7be5a7",
+    "baseline_script_sha256": "aab4c8de340158479fd4d30bffc5793b3cf96c48a4edb0c113b5b4cebdc62a10",
+    "source_mtimes": {
+      "engine/native/equilibrium/gibbs_minimizer.cpp": 1792470955160154551,
+      "engine/native/equilibrium/request_compile.cpp": 1792470955164154534
+    },
+    "thread_environment": {
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1"
+    }
+  },
+  "inputs": {
+    "ionic/parameters": {
+      "analyses/2026-khudaida-idaes-settler/inputs/data/khudaida-2026-figure-2-electrolyte-lle/7/parameters/parameters.json": "8babed899e7347e58c403c7aff24a7fdd6d60411af3b4d81eb6aa90c2431dfa4",
+      "data/packets/mea-co2-h2o-nine-species-estimation/3/parameters/parameters.json": "2ea3b41485a98d2cf49add620b87bb05fc5a275cdd132c1cdbb0cfc5f07f2ca4"
+    },
+    "case-6/figure-2-point-7": {
+      "components": [
+        "water",
+        "ethanol",
+        "isobutanol",
+        "sodium-cation",
+        "chloride-anion"
+      ],
+      "T": 293.15,
+      "P": 100000.0,
+      "feed": {
+        "water": 0.646925133827633,
+        "ethanol": 0.07045345803743744,
+        "isobutanol": 0.22564721508764596,
+        "sodium-cation": 0.028487096523641797,
+        "chloride-anion": 0.028487096523641797
+      },
+      "row_tolerance": 1e-10,
+      "phases": [
+        {
+          "name": "phase-0",
+          "kind": "liquid",
+          "support": [
+            "water",
+            "ethanol",
+            "isobutanol",
+            "sodium-cation",
+            "chloride-anion"
+          ],
+          "amount": {
+            "kind": "Free",
+            "value": null
+          },
+          "composition_guess": [
+            0.8,
+            0.05,
+            0.05,
+            0.05,
+            0.05
+          ],
+          "packing_guess": null
+        },
+        {
+          "name": "phase-1",
+          "kind": "liquid",
+          "support": [
+            "water",
+            "ethanol",
+            "isobutanol",
+            "sodium-cation",
+            "chloride-anion"
+          ],
+          "amount": {
+            "kind": "Free",
+            "value": null
+          },
+          "composition_guess": [
+            0.2,
+            0.1,
+            0.6998,
+            0.0001,
+            0.0001
+          ],
+          "packing_guess": null
+        }
+      ]
+    }
+  },
+  "costs": {
+    "csv": "ionic-costs.csv",
+    "sha256": "19fa6f6e47bda007e2e86c2cac41068252b440d50d501039e97db254c41ce486",
+    "samples": 4,
+    "first_report_work": "sample 0 native work references the identical reported CSV operands",
+    "count_aliases": "iterations/evaluations/Hessian counts alias native work where that map is present"
+  },
+  "failure": "RuntimeError: case-6/figure-2-point-7: expected ParameterError, got NoneType",
+  "failures": [
+    "case-6/figure-2-point-7: expected ParameterError, got NoneType"
+  ],
+  "unresolved": [],
+  "limits": [
+    "numerical verification of the supplied model and finite trial set",
+    "estimated uncertainty is not a rigorous bound",
+    "Refused discovery compiles before admission, including generic-point Jacobian/EOS work inside its private trace; outer zero evaluations denote no observed driver callbacks, not no EOS work.",
+    "no physical validation or global stability certificate"
+  ],
+  "unavailable_native_work": []
+}

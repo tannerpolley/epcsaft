@@ -1,0 +1,3 @@
+row,set,group,abscissa,quantity,observed,batch,composition,reference_composition,components,ions,start,prediction,observation_status,message
+153,T,T KCl osmotic,4.0,osmotic,0.965,aqueous,1.0;0.0;0.0;0.0;0.0;0.0,,water;lithium-cation;sodium-cation;potassium-cation;chloride-anion;bromide-anion,potassium-cation;chloride-anion,9,-0.0015122149623931988,NonpositiveLogArgument,
+155,T,T KCl osmotic,4.5,osmotic,0.981,aqueous,1.0;0.0;0.0;0.0;0.0;0.0,,water;lithium-cation;sodium-cation;potassium-cation;chloride-anion;bromide-anion,potassium-cation;chloride-anion,13,-0.03787398511065056,NonpositiveLogArgument,

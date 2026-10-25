@@ -1,0 +1,754 @@
+[
+  {
+    "T_K": 293.15,
+    "plain_a_k_K": 2677.91,
+    "pre_applied_J_mol": 0.0,
+    "incremental_J_mol": [
+      0.0,
+      -0.0
+    ],
+    "total_J_mol": [
+      0.0,
+      -0.0
+    ],
+    "physical": [
+      0.13408074131722733,
+      -0.3795540800656849,
+      0.5,
+      -0.7072858902151943,
+      -112.56775058400221,
+      3.53322927146,
+      3.54107030822,
+      -6166.115646379685,
+      0.0,
+      0.0
+    ],
+    "laws": {
+      "R2": {
+        "a": 20.959245323180852,
+        "b": -11105.640030520277,
+        "c": -36.7816,
+        "d": 0.0,
+        "reference_temperature": 313.15,
+        "temperature_min": 293.15,
+        "temperature_max": 393.15,
+        "standard_state_id": "aqueous-molality-infinite-dilution-water-v1"
+      },
+      "R5": {
+        "a": 2.3424545466714632,
+        "b": -6166.115646379685,
+        "c": 0.0,
+        "d": -0.0009848156442735533,
+        "reference_temperature": 313.15,
+        "temperature_min": 293.15,
+        "temperature_max": 393.15,
+        "standard_state_id": "aqueous-molality-infinite-dilution-water-v1"
+      }
+    }
+  },
+  {
+    "T_K": 293.15,
+    "plain_a_k_K": 2677.91,
+    "pre_applied_J_mol": 0.0,
+    "incremental_J_mol": [
+      250.0,
+      -250.0
+    ],
+    "total_J_mol": [
+      250.0,
+      -250.0
+    ],
+    "physical": [
+      0.13408074131722733,
+      -0.3795540800656849,
+      0.5,
+      -0.7072858902151943,
+      -112.56775058400221,
+      3.53322927146,
+      3.54107030822,
+      -6166.115646379685,
+      250.0,
+      -250.0
+    ],
+    "laws": {
+      "R2": {
+        "a": 20.863227156932467,
+        "b": -11075.571941759596,
+        "c": -36.7816,
+        "d": 0.0,
+        "reference_temperature": 313.15,
+        "temperature_min": 293.15,
+        "temperature_max": 393.15,
+        "standard_state_id": "aqueous-molality-infinite-dilution-water-v1"
+      },
+      "R5": {
+        "a": 2.4384727129198476,
+        "b": -6196.1837351403665,
+        "c": 0.0,
+        "d": -0.0009848156442735533,
+        "reference_temperature": 313.15,
+        "temperature_min": 293.15,
+        "temperature_max": 393.15,
+        "standard_state_id": "aqueous-molality-infinite-dilution-water-v1"
+      }
+    }
+  },
+  {
+    "T_K": 293.15,
+    "plain_a_k_K": 2990.0,
+    "pre_applied_J_mol": 0.0,
+    "incremental_J_mol": [
+      0.0,
+      -0.0
+    ],
+    "total_J_mol": [
+      0.0,
+      -0.0
+    ],
+    "physical": [
+      0.13408074131722733,
+      -0.3795540800656849,
+      0.5,
+      -0.7072858902151943,
+      -112.56775058400221,
+      3.53322927146,
+      3.54107030822,
+      -6884.729428052197,
+      0.0,
+      0.0
+    ],
+    "laws": {
+      "R2": {
+        "a": 20.959245323180852,
+        "b": -11105.640030520277,
+        "c": -36.7816,
+        "d": 0.0,
+        "reference_temperature": 313.15,
+        "temperature_min": 293.15,
+        "temperature_max": 393.15,
+        "standard_state_id": "aqueous-molality-infinite-dilution-water-v1"
+      },
+      "R5": {
+        "a": 2.3424545466714632,
+        "b": -6884.729428052197,
+        "c": 0.0,
+        "d": -0.0009848156442735533,
+        "reference_temperature": 313.15,
+        "temperature_min": 293.15,
+        "temperature_max": 393.15,
+        "standard_state_id": "aqueous-molality-infinite-dilution-water-v1"
+      }
+    }
+  },
+  {
+    "T_K": 293.15,
+    "plain_a_k_K": 2990.0,
+    "pre_applied_J_mol": 0.0,
+    "incremental_J_mol": [
+      250.0,
+      -250.0
+    ],
+    "total_J_mol": [
+      250.0,
+      -250.0
+    ],
+    "physical": [
+      0.13408074131722733,
+      -0.3795540800656849,
+      0.5,
+      -0.7072858902151943,
+      -112.56775058400221,
+      3.53322927146,
+      3.54107030822,
+      -6884.729428052197,
+      250.0,
+      -250.0
+    ],
+    "laws": {
+      "R2": {
+        "a": 20.863227156932467,
+        "b": -11075.571941759596,
+        "c": -36.7816,
+        "d": 0.0,
+        "reference_temperature": 313.15,
+        "temperature_min": 293.15,
+        "temperature_max": 393.15,
+        "standard_state_id": "aqueous-molality-infinite-dilution-water-v1"
+      },
+      "R5": {
+        "a": 2.4384727129198476,
+        "b": -6914.797516812879,
+        "c": 0.0,
+        "d": -0.0009848156442735533,
+        "reference_temperature": 313.15,
+        "temperature_min": 293.15,
+        "temperature_max": 393.15,
+        "standard_state_id": "aqueous-molality-infinite-dilution-water-v1"
+      }
+    }
+  },
+  {
+    "T_K": 313.15,
+    "plain_a_k_K": 2677.91,
+    "pre_applied_J_mol": 0.0,
+    "incremental_J_mol": [
+      0.0,
+      -0.0
+    ],
+    "total_J_mol": [
+      0.0,
+      -0.0
+    ],
+    "physical": [
+      0.13408074131722733,
+      -0.3795540800656849,
+      0.5,
+      -0.7072858902151943,
+      -112.56775058400221,
+      3.53322927146,
+      3.54107030822,
+      -6166.115646379685,
+      0.0,
+      0.0
+    ],
+    "laws": {
+      "R2": {
+        "a": 20.959245323180852,
+        "b": -11105.640030520277,
+        "c": -36.7816,
+        "d": 0.0,
+        "reference_temperature": 313.15,
+        "temperature_min": 293.15,
+        "temperature_max": 393.15,
+        "standard_state_id": "aqueous-molality-infinite-dilution-water-v1"
+      },
+      "R5": {
+        "a": 2.3424545466714632,
+        "b": -6166.115646379685,
+        "c": 0.0,
+        "d": -0.0009848156442735533,
+        "reference_temperature": 313.15,
+        "temperature_min": 293.15,
+        "temperature_max": 393.15,
+        "standard_state_id": "aqueous-molality-infinite-dilution-water-v1"
+      }
+    }
+  },
+  {
+    "T_K": 313.15,
+    "plain_a_k_K": 2677.91,
+    "pre_applied_J_mol": 0.0,
+    "incremental_J_mol": [
+      250.0,
+      -250.0
+    ],
+    "total_J_mol": [
+      250.0,
+      -250.0
+    ],
+    "physical": [
+      0.13408074131722733,
+      -0.3795540800656849,
+      0.5,
+      -0.7072858902151943,
+      -112.56775058400221,
+      3.53322927146,
+      3.54107030822,
+      -6166.115646379685,
+      250.0,
+      -250.0
+    ],
+    "laws": {
+      "R2": {
+        "a": 20.863227156932467,
+        "b": -11075.571941759596,
+        "c": -36.7816,
+        "d": 0.0,
+        "reference_temperature": 313.15,
+        "temperature_min": 293.15,
+        "temperature_max": 393.15,
+        "standard_state_id": "aqueous-molality-infinite-dilution-water-v1"
+      },
+      "R5": {
+        "a": 2.4384727129198476,
+        "b": -6196.1837351403665,
+        "c": 0.0,
+        "d": -0.0009848156442735533,
+        "reference_temperature": 313.15,
+        "temperature_min": 293.15,
+        "temperature_max": 393.15,
+        "standard_state_id": "aqueous-molality-infinite-dilution-water-v1"
+      }
+    }
+  },
+  {
+    "T_K": 313.15,
+    "plain_a_k_K": 2990.0,
+    "pre_applied_J_mol": 0.0,
+    "incremental_J_mol": [
+      0.0,
+      -0.0
+    ],
+    "total_J_mol": [
+      0.0,
+      -0.0
+    ],
+    "physical": [
+      0.13408074131722733,
+      -0.3795540800656849,
+      0.5,
+      -0.7072858902151943,
+      -112.56775058400221,
+      3.53322927146,
+      3.54107030822,
+      -6884.729428052197,
+      0.0,
+      0.0
+    ],
+    "laws": {
+      "R2": {
+        "a": 20.959245323180852,
+        "b": -11105.640030520277,
+        "c": -36.7816,
+        "d": 0.0,
+        "reference_temperature": 313.15,
+        "temperature_min": 293.15,
+        "temperature_max": 393.15,
+        "standard_state_id": "aqueous-molality-infinite-dilution-water-v1"
+      },
+      "R5": {
+        "a": 2.3424545466714632,
+        "b": -6884.729428052197,
+        "c": 0.0,
+        "d": -0.0009848156442735533,
+        "reference_temperature": 313.15,
+        "temperature_min": 293.15,
+        "temperature_max": 393.15,
+        "standard_state_id": "aqueous-molality-infinite-dilution-water-v1"
+      }
+    }
+  },
+  {
+    "T_K": 313.15,
+    "plain_a_k_K": 2990.0,
+    "pre_applied_J_mol": 0.0,
+    "incremental_J_mol": [
+      250.0,
+      -250.0
+    ],
+    "total_J_mol": [
+      250.0,
+      -250.0
+    ],
+    "physical": [
+      0.13408074131722733,
+      -0.3795540800656849,
+      0.5,
+      -0.7072858902151943,
+      -112.56775058400221,
+      3.53322927146,
+      3.54107030822,
+      -6884.729428052197,
+      250.0,
+      -250.0
+    ],
+    "laws": {
+      "R2": {
+        "a": 20.863227156932467,
+        "b": -11075.571941759596,
+        "c": -36.7816,
+        "d": 0.0,
+        "reference_temperature": 313.15,
+        "temperature_min": 293.15,
+        "temperature_max": 393.15,
+        "standard_state_id": "aqueous-molality-infinite-dilution-water-v1"
+      },
+      "R5": {
+        "a": 2.4384727129198476,
+        "b": -6914.797516812879,
+        "c": 0.0,
+        "d": -0.0009848156442735533,
+        "reference_temperature": 313.15,
+        "temperature_min": 293.15,
+        "temperature_max": 393.15,
+        "standard_state_id": "aqueous-molality-infinite-dilution-water-v1"
+      }
+    }
+  },
+  {
+    "T_K": 353.15,
+    "plain_a_k_K": 2677.91,
+    "pre_applied_J_mol": 0.0,
+    "incremental_J_mol": [
+      0.0,
+      -0.0
+    ],
+    "total_J_mol": [
+      0.0,
+      -0.0
+    ],
+    "physical": [
+      0.13408074131722733,
+      -0.3795540800656849,
+      0.5,
+      -0.7072858902151943,
+      -112.56775058400221,
+      3.53322927146,
+      3.54107030822,
+      -6166.115646379685,
+      0.0,
+      0.0
+    ],
+    "laws": {
+      "R2": {
+        "a": 20.959245323180852,
+        "b": -11105.640030520277,
+        "c": -36.7816,
+        "d": 0.0,
+        "reference_temperature": 313.15,
+        "temperature_min": 293.15,
+        "temperature_max": 393.15,
+        "standard_state_id": "aqueous-molality-infinite-dilution-water-v1"
+      },
+      "R5": {
+        "a": 2.3424545466714632,
+        "b": -6166.115646379685,
+        "c": 0.0,
+        "d": -0.0009848156442735533,
+        "reference_temperature": 313.15,
+        "temperature_min": 293.15,
+        "temperature_max": 393.15,
+        "standard_state_id": "aqueous-molality-infinite-dilution-water-v1"
+      }
+    }
+  },
+  {
+    "T_K": 353.15,
+    "plain_a_k_K": 2677.91,
+    "pre_applied_J_mol": 0.0,
+    "incremental_J_mol": [
+      250.0,
+      -250.0
+    ],
+    "total_J_mol": [
+      250.0,
+      -250.0
+    ],
+    "physical": [
+      0.13408074131722733,
+      -0.3795540800656849,
+      0.5,
+      -0.7072858902151943,
+      -112.56775058400221,
+      3.53322927146,
+      3.54107030822,
+      -6166.115646379685,
+      250.0,
+      -250.0
+    ],
+    "laws": {
+      "R2": {
+        "a": 20.863227156932467,
+        "b": -11075.571941759596,
+        "c": -36.7816,
+        "d": 0.0,
+        "reference_temperature": 313.15,
+        "temperature_min": 293.15,
+        "temperature_max": 393.15,
+        "standard_state_id": "aqueous-molality-infinite-dilution-water-v1"
+      },
+      "R5": {
+        "a": 2.4384727129198476,
+        "b": -6196.1837351403665,
+        "c": 0.0,
+        "d": -0.0009848156442735533,
+        "reference_temperature": 313.15,
+        "temperature_min": 293.15,
+        "temperature_max": 393.15,
+        "standard_state_id": "aqueous-molality-infinite-dilution-water-v1"
+      }
+    }
+  },
+  {
+    "T_K": 353.15,
+    "plain_a_k_K": 2990.0,
+    "pre_applied_J_mol": 0.0,
+    "incremental_J_mol": [
+      0.0,
+      -0.0
+    ],
+    "total_J_mol": [
+      0.0,
+      -0.0
+    ],
+    "physical": [
+      0.13408074131722733,
+      -0.3795540800656849,
+      0.5,
+      -0.7072858902151943,
+      -112.56775058400221,
+      3.53322927146,
+      3.54107030822,
+      -6884.729428052197,
+      0.0,
+      0.0
+    ],
+    "laws": {
+      "R2": {
+        "a": 20.959245323180852,
+        "b": -11105.640030520277,
+        "c": -36.7816,
+        "d": 0.0,
+        "reference_temperature": 313.15,
+        "temperature_min": 293.15,
+        "temperature_max": 393.15,
+        "standard_state_id": "aqueous-molality-infinite-dilution-water-v1"
+      },
+      "R5": {
+        "a": 2.3424545466714632,
+        "b": -6884.729428052197,
+        "c": 0.0,
+        "d": -0.0009848156442735533,
+        "reference_temperature": 313.15,
+        "temperature_min": 293.15,
+        "temperature_max": 393.15,
+        "standard_state_id": "aqueous-molality-infinite-dilution-water-v1"
+      }
+    }
+  },
+  {
+    "T_K": 353.15,
+    "plain_a_k_K": 2990.0,
+    "pre_applied_J_mol": 0.0,
+    "incremental_J_mol": [
+      250.0,
+      -250.0
+    ],
+    "total_J_mol": [
+      250.0,
+      -250.0
+    ],
+    "physical": [
+      0.13408074131722733,
+      -0.3795540800656849,
+      0.5,
+      -0.7072858902151943,
+      -112.56775058400221,
+      3.53322927146,
+      3.54107030822,
+      -6884.729428052197,
+      250.0,
+      -250.0
+    ],
+    "laws": {
+      "R2": {
+        "a": 20.863227156932467,
+        "b": -11075.571941759596,
+        "c": -36.7816,
+        "d": 0.0,
+        "reference_temperature": 313.15,
+        "temperature_min": 293.15,
+        "temperature_max": 393.15,
+        "standard_state_id": "aqueous-molality-infinite-dilution-water-v1"
+      },
+      "R5": {
+        "a": 2.4384727129198476,
+        "b": -6914.797516812879,
+        "c": 0.0,
+        "d": -0.0009848156442735533,
+        "reference_temperature": 313.15,
+        "temperature_min": 293.15,
+        "temperature_max": 393.15,
+        "standard_state_id": "aqueous-molality-infinite-dilution-water-v1"
+      }
+    }
+  },
+  {
+    "T_K": 393.15,
+    "plain_a_k_K": 2677.91,
+    "pre_applied_J_mol": 0.0,
+    "incremental_J_mol": [
+      0.0,
+      -0.0
+    ],
+    "total_J_mol": [
+      0.0,
+      -0.0
+    ],
+    "physical": [
+      0.13408074131722733,
+      -0.3795540800656849,
+      0.5,
+      -0.7072858902151943,
+      -112.56775058400221,
+      3.53322927146,
+      3.54107030822,
+      -6166.115646379685,
+      0.0,
+      0.0
+    ],
+    "laws": {
+      "R2": {
+        "a": 20.959245323180852,
+        "b": -11105.640030520277,
+        "c": -36.7816,
+        "d": 0.0,
+        "reference_temperature": 313.15,
+        "temperature_min": 293.15,
+        "temperature_max": 393.15,
+        "standard_state_id": "aqueous-molality-infinite-dilution-water-v1"
+      },
+      "R5": {
+        "a": 2.3424545466714632,
+        "b": -6166.115646379685,
+        "c": 0.0,
+        "d": -0.0009848156442735533,
+        "reference_temperature": 313.15,
+        "temperature_min": 293.15,
+        "temperature_max": 393.15,
+        "standard_state_id": "aqueous-molality-infinite-dilution-water-v1"
+      }
+    }
+  },
+  {
+    "T_K": 393.15,
+    "plain_a_k_K": 2677.91,
+    "pre_applied_J_mol": 0.0,
+    "incremental_J_mol": [
+      250.0,
+      -250.0
+    ],
+    "total_J_mol": [
+      250.0,
+      -250.0
+    ],
+    "physical": [
+      0.13408074131722733,
+      -0.3795540800656849,
+      0.5,
+      -0.7072858902151943,
+      -112.56775058400221,
+      3.53322927146,
+      3.54107030822,
+      -6166.115646379685,
+      250.0,
+      -250.0
+    ],
+    "laws": {
+      "R2": {
+        "a": 20.863227156932467,
+        "b": -11075.571941759596,
+        "c": -36.7816,
+        "d": 0.0,
+        "reference_temperature": 313.15,
+        "temperature_min": 293.15,
+        "temperature_max": 393.15,
+        "standard_state_id": "aqueous-molality-infinite-dilution-water-v1"
+      },
+      "R5": {
+        "a": 2.4384727129198476,
+        "b": -6196.1837351403665,
+        "c": 0.0,
+        "d": -0.0009848156442735533,
+        "reference_temperature": 313.15,
+        "temperature_min": 293.15,
+        "temperature_max": 393.15,
+        "standard_state_id": "aqueous-molality-infinite-dilution-water-v1"
+      }
+    }
+  },
+  {
+    "T_K": 393.15,
+    "plain_a_k_K": 2990.0,
+    "pre_applied_J_mol": 0.0,
+    "incremental_J_mol": [
+      0.0,
+      -0.0
+    ],
+    "total_J_mol": [
+      0.0,
+      -0.0
+    ],
+    "physical": [
+      0.13408074131722733,
+      -0.3795540800656849,
+      0.5,
+      -0.7072858902151943,
+      -112.56775058400221,
+      3.53322927146,
+      3.54107030822,
+      -6884.729428052197,
+      0.0,
+      0.0
+    ],
+    "laws": {
+      "R2": {
+        "a": 20.959245323180852,
+        "b": -11105.640030520277,
+        "c": -36.7816,
+        "d": 0.0,
+        "reference_temperature": 313.15,
+        "temperature_min": 293.15,
+        "temperature_max": 393.15,
+        "standard_state_id": "aqueous-molality-infinite-dilution-water-v1"
+      },
+      "R5": {
+        "a": 2.3424545466714632,
+        "b": -6884.729428052197,
+        "c": 0.0,
+        "d": -0.0009848156442735533,
+        "reference_temperature": 313.15,
+        "temperature_min": 293.15,
+        "temperature_max": 393.15,
+        "standard_state_id": "aqueous-molality-infinite-dilution-water-v1"
+      }
+    }
+  },
+  {
+    "T_K": 393.15,
+    "plain_a_k_K": 2990.0,
+    "pre_applied_J_mol": 0.0,
+    "incremental_J_mol": [
+      250.0,
+      -250.0
+    ],
+    "total_J_mol": [
+      250.0,
+      -250.0
+    ],
+    "physical": [
+      0.13408074131722733,
+      -0.3795540800656849,
+      0.5,
+      -0.7072858902151943,
+      -112.56775058400221,
+      3.53322927146,
+      3.54107030822,
+      -6884.729428052197,
+      250.0,
+      -250.0
+    ],
+    "laws": {
+      "R2": {
+        "a": 20.863227156932467,
+        "b": -11075.571941759596,
+        "c": -36.7816,
+        "d": 0.0,
+        "reference_temperature": 313.15,
+        "temperature_min": 293.15,
+        "temperature_max": 393.15,
+        "standard_state_id": "aqueous-molality-infinite-dilution-water-v1"
+      },
+      "R5": {
+        "a": 2.4384727129198476,
+        "b": -6914.797516812879,
+        "c": 0.0,
+        "d": -0.0009848156442735533,
+        "reference_temperature": 313.15,
+        "temperature_min": 293.15,
+        "temperature_max": 393.15,
+        "standard_state_id": "aqueous-molality-infinite-dilution-water-v1"
+      }
+    }
+  }
+]

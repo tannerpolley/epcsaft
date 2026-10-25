@@ -1,0 +1,153 @@
+---
+title: "Second- and third-order solved-state derivative comparisons"
+format: html
+execute:
+  enabled: true
+  echo: false
+  error: false
+  daemon: false
+---
+
+```{python}
+import csv
+import json
+from pathlib import Path
+results = Path("results/main-8298c602-higher-order")
+summary = json.loads((results / "summary.json").read_text())
+with (results / "comparisons.csv").open(newline="") as stream:
+    comparisons = list(csv.DictReader(stream))
+maxima = summary["maxima"]
+factors = {}
+for row in comparisons:
+    inputs = json.loads(row["native_record"])["inputs"]
+    if inputs.get("term_scale", 0) > 0 and row["method"] == "centered-solve-ladder":
+        factors.setdefault(row["order"], float(row["allowance"]) / inputs["term_scale"])
+```
+
+The selected solved-state actions satisfy their native comparison criteria at
+second and third order on the named release. The pooled maxima of absolute
+discrepancy divided by the native allowance are
+`{python} format(maxima["pooled/A2"]["ratio"], ".9g")` at second order and
+`{python} format(maxima["pooled/A3"]["ratio"], ".9g")` at third order.
+The retained table contains `{python} len(comparisons)` action comparisons and
+`{python} summary["refinement_count"]` associated refinement records.
+These are numerical verification results on fixed, declared smooth branches.
+They provide no physical validation or global phase-stability certificate.
+Independent delivered review and investigator promotion for manuscript use
+remain pending.
+
+## Question, cases and numerical references
+
+The question is the largest discrepancy divided by the existing criterion for
+the three derivative cases named in row 17 of the [capability inventory](README.md).
+The source is the unchanged named-release
+[E5 native checks](../../engine/tests/native/equilibrium_e5_checks.cpp),
+specifically `neutral_case`, `electrolyte_case`, `qualify` and the selected
+analytic portion of `check_e5_reactive`. The source revision and native-tree
+identities are retained in [summary.json](results/main-8298c602-higher-order/summary.json).
+
+The neutral vapor–liquid ternary is at 180 K and 100 kPa, with an equimolar
+feed totaling 1 mol. Its three mixed directions combine temperature, pressure,
+feed, reciprocal binary interaction parameters and a segment number. The
+single-liquid water/Na+/Cl− case uses the aqueous fixture's declared temperature
+and 100 kPa, with feed (0.98, 0.01, 0.01) mol and electroneutral, normalized
+temperature/pressure/feed directions. Both its thermal-record and residual-only
+variants enter the maxima. Directions and parameter values are declared in the
+native source; no Python solver or derivative implementation is used.
+
+For these cases, a second-order action is compared with a Richardson-refined
+centered difference of first actions, and a third-order action with the same
+construction applied to second actions. Displaced states are solved afresh.
+Defining affine identities use their native zero references. For ordinary rows,
+the native allowance is $c_k=\alpha_k S_k$, with second-order factor
+`{python} format(factors["2"], ".2g")` and third-order factor
+`{python} format(factors["3"], ".2g")`. Here $S_k$ sums the magnitudes of the
+fixed-chart coordinate sub-actions. Structural rows retain their emitted affine-scale
+allowance. Every ladder row retains its three step sizes and reference values,
+numerical uncertainty, noise judgment and passing refinement companion in
+[comparisons.csv](results/main-8298c602-higher-order/comparisons.csv).
+The reference uncertainty must not exceed the allowance. Native third-order
+ionic heat-capacity rows also require a resolved nonzero reference signal.
+
+The manufactured isomerization has identical ethane parameters for A and B,
+one vapor at 350 K and 200 kPa, and $K=2$ at that temperature. Analytic
+temperature derivatives of $x_B=K/(1+K)$ and $n_B=Nx_B$ are checked for 1 and
+2 mol feed totals, with ordinary and reciprocal-rescaled directions. The
+fraction criterion is strict; the amount criterion is inclusive. The producer
+copies the native analytic reference and allowance and multiplies them by the
+emitted total for the amount row. It does not evaluate the reaction correlation
+or its derivatives.
+
+## Maxima and their winning comparisons
+
+For each row, $e=|a-r|$ and $R_k=e/c_k$, using the emitted action $a$,
+reference $r$ and allowance $c_k$. The ratios are dimensionless; they are not
+relative derivative errors. Action, reference and allowance units are retained
+per row. Scalar maxima and their identities are shown as a table because the
+question concerns a finite set of comparisons, with no continuous relation to
+plot.
+
+```{python}
+#| output: asis
+print("| Case | R2 maximum | R3 maximum | Rows per order |")
+print("|---|---:|---:|---:|")
+for case in ("e5-neutral", "e5-electrolyte", "e5-reactive", "pooled"):
+    second, third = maxima[case + "/A2"], maxima[case + "/A3"]
+    print(f"| {case} | {second['ratio']:.12g} | {third['ratio']:.12g} | {second['count']} |")
+print("\n| Group | Winning source comparison | Observable | Reference method |")
+print("|---|---|---|---|")
+for group, row in maxima.items():
+    print(f"| {group} | `{row['comparison_id']}` | `{row['observable']}` | {row['method']} |")
+```
+
+The neutral second-order maximum comes from a defining phase-pressure identity.
+The pooled second-order maximum comes from the analytic isomerization fraction
+comparison; the pooled third-order maximum comes from an electrolyte log-activity
+comparison. Every selected discrepancy is below its allowance. The complete
+native selectors passed, including their nonselected reactive assertions, so
+the analytic fraction records are supported by the native amount and stored-reference
+assertions as well as their printed verdicts.
+
+The finite differences reuse lower-order derivative machinery and may miss
+errors shared with the actions under test. Affine identities give narrower
+consistency evidence. The analytic manufactured relation supplies a separate
+functional reference for its specified case, rather than validation of a real
+reaction. Numerical refinement uncertainty is distinct from physical or
+parameter uncertainty. No arbitrary direction, branch appearance derivative,
+application parameter adoption, or general chemical-model claim follows.
+
+## Reproduction and implementation identity
+
+The producer accepts a separately prepared checkout of
+`{python} summary["release"]`. It verifies the source/build directories, compiles
+and lists `equilibrium_checks` once, resolves the linked native library, then
+captures each full selector under `nice -n 10`. It unsets `LD_LIBRARY_PATH`,
+`LD_PRELOAD` and `EPCSAFT_HSL_LIBRARY`. The build used
+`{python} summary["build_jobs"]` jobs, chosen from the full CPU count and free
+memory, capped at six. Source identity and both product hashes were unchanged
+after capture. The detached checkout is disposable after its output is retained.
+
+This is a frozen inventory at record commit
+`ca719012c31e8b41edcb98ae82a388117b58d343`, not a current-main rerun recipe.
+The original setup environment unset the three variables named above. A failed
+capture removed any preceding complete summary and retained its diagnostic and
+logs. All three selectors are attempted before checking their completion.
+The producer checks finite operands, complete comparison identities, refinement
+companions and the original inequalities before publishing maxima.
+
+```{python}
+#| output: asis
+print("| Native product | SHA-256 |")
+print("|---|---|")
+for path, digest in summary["products_sha256"].items():
+    print(f"| `{Path(path).name}` | `{digest}` |")
+```
+
+Compiler information, Meson options, absolute build/source paths, source tree
+identities, capture return codes and raw log hashes are retained in the summary.
+The [build/list output](results/main-8298c602-higher-order/build-list.log) and
+[dependency resolution](results/main-8298c602-higher-order/dependencies.log)
+establish attribution to that prepared source build. These checks do not
+independently qualify wheel input/output mapping. The earlier
+[unavailable record](results/main-8298c602/unavailable.json) remains historical;
+the retained operands here answer its missing numerical question.

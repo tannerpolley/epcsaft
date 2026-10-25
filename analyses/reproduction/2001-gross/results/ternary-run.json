@@ -1,0 +1,8 @@
+{
+  "wall_seconds": 0.14572366599895759,
+  "source_hashes": {
+    "11": "5710f6ef167aa3246b6cba84a3304b90fc87810cf05ee212ab73572b60e742f3",
+    "14": "a0651540d64d873910371c938c133dfe1b5a79be700538176da0acc22ecb6dfc"
+  },
+  "qa": "review: approximate manual endpoint pairing; no independent extraction"
+}

@@ -1,0 +1,4 @@
+case,budget,quantity,index,baseline,candidate,scale,difference
+mea-nominally-unloaded,observable-relative,molar_densities,0,42861.05866785056,42861.058668618854,42861.05866785056,1.7925303111758488e-11
+mea-nominally-unloaded,trace-relative,amount/0/carbonate-anion,6,6.12235486134e-08,6.122357201212512e-08,6.12235486134e-08,3.821850521611541e-07
+small-positive-phase,phase-relative,phase_amount,1,1.9999999907967985e-08,2.0000000033165225e-08,1.9999999907967985e-08,6.259862029612324e-09

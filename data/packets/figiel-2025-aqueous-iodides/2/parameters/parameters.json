@@ -1,0 +1,773 @@
+{
+  "schema": "epcsaft.parameters",
+  "schema_version": 1,
+  "document_id": "figiel-2025-aqueous-iodides",
+  "document_version": 2,
+  "purpose": "external-document",
+  "sources": [
+    {
+      "source_id": "figiel-yu-held-2025",
+      "citation": "Figiel, P.; Yu, G.; Held, C. Predicting Thermodynamic Properties of Ions in Single Solvents and in Mixed Solvents Using a Modified Born Term within the ePC-SAFT Framework. Industrial & Engineering Chemistry Research 2025, 64, 9406-9418.",
+      "doi": "10.1021/acs.iecr.5c00475",
+      "use_basis": "source-complete aqueous sodium-iodide and potassium-iodide reference states; Tables 3-5 verified against retained Markdown SHA-256 ce80533925a91bc59d8d0d8056113c40611ca26c2edf04aced76986d50bd4bae"
+    },
+    {
+      "source_id": "nist-srd-69-water",
+      "citation": "NIST Chemistry WebBook, SRD 69, Water, CAS 7732-18-5.",
+      "use_basis": "water identity and molecular weight"
+    }
+  ],
+  "domains": [
+    {
+      "domain_id": "figiel-298-k-1-bar",
+      "kind": "reported-conditions",
+      "temperature_min": {
+        "magnitude": 298.15,
+        "unit": "kelvin"
+      },
+      "temperature_max": {
+        "magnitude": 298.15,
+        "unit": "kelvin"
+      },
+      "pressure_min": {
+        "magnitude": 1,
+        "unit": "bar"
+      },
+      "pressure_max": {
+        "magnitude": 1,
+        "unit": "bar"
+      },
+      "ion_mole_fraction_max": {
+        "magnitude": 0.38,
+        "unit": "dimensionless"
+      }
+    },
+    {
+      "domain_id": "nist-water-identity",
+      "kind": "unknown"
+    }
+  ],
+  "components": [
+    {
+      "component_id": "iodide-anion",
+      "aliases": [],
+      "fixed": {
+        "charge_number": {
+          "value": {
+            "magnitude": -1,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3, I- ion label",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/iodide-anion/born_diameter",
+          "family": "born_diameter",
+          "value": {
+            "magnitude": 4.985,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3, I- row, d_i^Born column; fitted in this work",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/iodide-anion/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 3.227136,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3, I- row, sigma_i column; inherited from ref 17; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/iodide-anion/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 200.0,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3, I- row, u_i/k_B column; inherited from ref 17",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/iodide-anion/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 3.227136,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3, I- row, sigma_i column; inherited from ref 17; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/iodide-anion/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3 footnote a, segment number is 1 for all ions",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/iodide-anion/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 3.6672,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3, I- row, sigma_i column; inherited from ref 17",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/iodide-anion/solvation_factor",
+          "family": "solvation_factor",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "p. 9411, Model Parameters paragraph sets the solvation parameter to 1 for all ions",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        }
+      ],
+      "name": "iodide anion",
+      "formula": "I-"
+    },
+    {
+      "component_id": "potassium-cation",
+      "aliases": [],
+      "fixed": {
+        "charge_number": {
+          "value": {
+            "magnitude": 1,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3, K+ ion label",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/potassium-cation/born_diameter",
+          "family": "born_diameter",
+          "value": {
+            "magnitude": 4.15,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3, K+ row, d_i^Born column",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/potassium-cation/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 2.940696,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3, K+ row, sigma_i column; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/potassium-cation/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 200.0,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3, K+ row, u_i/k_B column",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/potassium-cation/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 2.940696,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3, K+ row, sigma_i column; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/potassium-cation/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3 footnote a, segment number is 1 for all ions",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/potassium-cation/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 3.3417,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3, K+ row, sigma_i column",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/potassium-cation/solvation_factor",
+          "family": "solvation_factor",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "p. 9411, Model Parameters paragraph sets the solvation parameter to 1 for all ions",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        }
+      ],
+      "name": "potassium cation",
+      "formula": "K+"
+    },
+    {
+      "component_id": "sodium-cation",
+      "aliases": [],
+      "fixed": {
+        "charge_number": {
+          "value": {
+            "magnitude": 1,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3, Na+ ion label",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/sodium-cation/born_diameter",
+          "family": "born_diameter",
+          "value": {
+            "magnitude": 3.445,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3, Na+ row, d_i^Born column",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/sodium-cation/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 2.484416,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3, Na+ row, sigma_i column; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/sodium-cation/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 230.0,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3, Na+ row, u_i/k_B column",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/sodium-cation/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 2.484416,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3, Na+ row, sigma_i column; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/sodium-cation/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3 footnote a, segment number is 1 for all ions",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/sodium-cation/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 2.8232,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3, Na+ row, sigma_i column",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/sodium-cation/solvation_factor",
+          "family": "solvation_factor",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "p. 9411, Model Parameters paragraph sets the solvation parameter to 1 for all ions",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        }
+      ],
+      "name": "sodium cation",
+      "formula": "Na+"
+    },
+    {
+      "component_id": "water",
+      "aliases": [],
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 18.0153,
+            "unit": "gram / mole"
+          },
+          "provenance": {
+            "source_id": "nist-srd-69-water",
+            "locator": "Water record, molecular weight",
+            "domain_id": "nist-water-identity"
+          }
+        },
+        "charge_number": {
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 2 identifies water as solvent; Table 3 separately lists ions",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/water/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 353.95,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 2, water column, u_i/k_B row",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/water/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 1.2047,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 2, water column, m_i^seg row",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/water/solvation_factor",
+          "family": "solvation_factor",
+          "value": {
+            "magnitude": 1.5,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 2, water column, f_k row",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        }
+      ],
+      "name": "water",
+      "cas": "7732-18-5",
+      "formula": "H2O"
+    }
+  ],
+  "pairs": [
+    {
+      "component_id_a": "iodide-anion",
+      "component_id_b": "potassium-cation",
+      "coefficients": [
+        {
+          "identity": "pair/iodide-anion/potassium-cation/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 4, I- row, K+ column; explicit fitted zero",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "iodide-anion",
+      "component_id_b": "sodium-cation",
+      "coefficients": [
+        {
+          "identity": "pair/iodide-anion/sodium-cation/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0.45,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 4, I- row, Na+ column; fitted in this work",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "iodide-anion",
+      "component_id_b": "water",
+      "coefficients": [
+        {
+          "identity": "pair/iodide-anion/water/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": -0.05,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 5, I- row, water column; fitted in this work",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "potassium-cation",
+      "component_id_b": "water",
+      "coefficients": [
+        {
+          "identity": "pair/potassium-cation/water/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": -0.1,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 5, K+ row, water column",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "sodium-cation",
+      "component_id_b": "water",
+      "coefficients": [
+        {
+          "identity": "pair/sodium-cation/water/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": -0.3,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 5, Na+ row, water column",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        }
+      ]
+    }
+  ],
+  "model_families": [
+    {
+      "family_id": "model/association",
+      "kind": "association",
+      "choice": "general-site",
+      "provenance": {
+        "source_id": "figiel-yu-held-2025",
+        "locator": "Table 2 footnote a, 2B association scheme expanded as one A site",
+        "domain_id": "figiel-298-k-1-bar"
+      }
+    },
+    {
+      "family_id": "model/base",
+      "kind": "base",
+      "choice": "pc-saft",
+      "provenance": {
+        "source_id": "figiel-yu-held-2025",
+        "locator": "Table 2, water column, m_i^seg row",
+        "domain_id": "figiel-298-k-1-bar"
+      }
+    },
+    {
+      "family_id": "model/electrolyte",
+      "kind": "electrolyte",
+      "choice": "born",
+      "c_shell": 1.0,
+      "c_dielectric": 1.0,
+      "provenance": {
+        "source_id": "figiel-yu-held-2025",
+        "locator": "Table 2 identifies water as solvent; Table 3 separately lists ions",
+        "domain_id": "figiel-298-k-1-bar"
+      }
+    },
+    {
+      "family_id": "model/relative_permittivity",
+      "kind": "permittivity",
+      "choice": "ion-fraction-suppression",
+      "provenance": {
+        "source_id": "figiel-yu-held-2025",
+        "locator": "Eq. 11, bulk relative-permittivity formulation",
+        "domain_id": "figiel-298-k-1-bar"
+      }
+    }
+  ],
+  "model_coefficients": [
+    {
+      "identity": "model/relative_permittivity/ion_fraction_suppression_coefficient",
+      "family": "ion_fraction_suppression_coefficient",
+      "value": {
+        "magnitude": 7.01,
+        "unit": "dimensionless"
+      },
+      "provenance": {
+        "source_id": "figiel-yu-held-2025",
+        "locator": "Eq. 11, denominator coefficient multiplying x_ion",
+        "domain_id": "figiel-298-k-1-bar"
+      }
+    },
+    {
+      "identity": "model/relative_permittivity/ionic_region_relative_permittivity",
+      "family": "ionic_region_relative_permittivity",
+      "value": {
+        "magnitude": 8.0,
+        "unit": "dimensionless"
+      },
+      "provenance": {
+        "source_id": "figiel-yu-held-2025",
+        "locator": "Table 1, salts (ions) row, dielectric constant column and following prose",
+        "domain_id": "figiel-298-k-1-bar"
+      }
+    }
+  ],
+  "correlations": [
+    {
+      "correlation_id": "component/water/relative_permittivity/constant",
+      "component_id": "water",
+      "family": "relative_permittivity",
+      "form": "constant",
+      "independent_variables": [],
+      "constant": {
+        "identity": "component/water/relative_permittivity/constant/constant",
+        "value": {
+          "magnitude": 78.09,
+          "unit": "dimensionless"
+        }
+      },
+      "provenance": {
+        "source_id": "figiel-yu-held-2025",
+        "locator": "Table 1, water row, dielectric constant column",
+        "domain_id": "figiel-298-k-1-bar"
+      }
+    },
+    {
+      "correlation_id": "component/water/segment_diameter/constant-plus-sum-of-exponentials",
+      "component_id": "water",
+      "family": "segment_diameter",
+      "form": "constant-plus-sum-of-exponentials",
+      "independent_variables": [
+        "temperature"
+      ],
+      "constant": {
+        "identity": "component/water/segment_diameter/constant-plus-sum-of-exponentials/constant",
+        "value": {
+          "magnitude": 2.7927,
+          "unit": "angstrom"
+        }
+      },
+      "provenance": {
+        "source_id": "figiel-yu-held-2025",
+        "locator": "Table 2 footnote b, water sigma(T) correlation",
+        "domain_id": "figiel-298-k-1-bar"
+      },
+      "terms": [
+        {
+          "amplitude": {
+            "identity": "component/water/segment_diameter/constant-plus-sum-of-exponentials/term-0/amplitude",
+            "value": {
+              "magnitude": 10.11,
+              "unit": "angstrom"
+            }
+          },
+          "exponent_coefficient": {
+            "identity": "component/water/segment_diameter/constant-plus-sum-of-exponentials/term-0/exponent_coefficient",
+            "value": {
+              "magnitude": -0.01775,
+              "unit": "1 / kelvin"
+            }
+          }
+        },
+        {
+          "amplitude": {
+            "identity": "component/water/segment_diameter/constant-plus-sum-of-exponentials/term-1/amplitude",
+            "value": {
+              "magnitude": -1.417,
+              "unit": "angstrom"
+            }
+          },
+          "exponent_coefficient": {
+            "identity": "component/water/segment_diameter/constant-plus-sum-of-exponentials/term-1/exponent_coefficient",
+            "value": {
+              "magnitude": -0.01146,
+              "unit": "1 / kelvin"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "topology": {
+    "presets": [],
+    "sites": [
+      {
+        "component_id": "water",
+        "site_id": "a",
+        "site_role": "donor",
+        "multiplicity": 1,
+        "provenance": {
+          "source_id": "figiel-yu-held-2025",
+          "locator": "Table 2 footnote a, 2B association scheme expanded as one A site",
+          "domain_id": "figiel-298-k-1-bar"
+        }
+      },
+      {
+        "component_id": "water",
+        "site_id": "b",
+        "site_role": "acceptor",
+        "multiplicity": 1,
+        "provenance": {
+          "source_id": "figiel-yu-held-2025",
+          "locator": "Table 2 footnote a, 2B association scheme expanded as one B site",
+          "domain_id": "figiel-298-k-1-bar"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "endpoint_a": {
+          "component_id": "water",
+          "site_id": "a"
+        },
+        "endpoint_b": {
+          "component_id": "water",
+          "site_id": "b"
+        },
+        "energy_over_k": {
+          "identity": "association/water/a/water/b/energy_over_k",
+          "value": {
+            "magnitude": 2425.7,
+            "unit": "kelvin"
+          }
+        },
+        "volume": {
+          "identity": "association/water/a/water/b/volume",
+          "value": {
+            "magnitude": 0.04509,
+            "unit": "dimensionless"
+          }
+        },
+        "source": {
+          "kind": "explicit",
+          "provenance": [
+            {
+              "source_id": "figiel-yu-held-2025",
+              "locator": "Table 2, water column, epsilon^AiBi/k_B row",
+              "domain_id": "figiel-298-k-1-bar"
+            },
+            {
+              "source_id": "figiel-yu-held-2025",
+              "locator": "Table 2, water column, kappa^AiBi row",
+              "domain_id": "figiel-298-k-1-bar"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

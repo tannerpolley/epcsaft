@@ -1,0 +1,16 @@
+case,success,requested_tolerance_met,row_tolerance,maximum_classified_residual
+masking,True,True,1e-10,6.058451752097367e-16
+case-6/figure-2-point-7,True,True,1e-10,1.3966037075745807e-14
+case-7/flash-5918.5286-Pa,True,True,1e-10,2.357306301632909e-14
+mea-nominally-unloaded,True,True,1e-10,2.5237156128154817e-14
+free-T,True,True,1e-10,5.329070518200751e-15
+free-P,True,True,1e-10,8.881784197001252e-16
+small-positive-phase,True,True,1e-10,8.881784197001252e-16
+khudaida/point-1,True,True,1e-10,7.885247672943979e-15
+khudaida/point-2,True,True,1e-10,2.5518636657681677e-14
+khudaida/point-3,True,True,1e-10,2.874578070457068e-14
+khudaida/point-4,True,True,1e-10,2.292678788400004e-14
+khudaida/point-5,True,True,1e-10,1.7091520624824686e-14
+khudaida/point-6,True,True,1e-10,1.5868024311581827e-14
+khudaida/point-7,True,True,1e-10,9.955466683121029e-15
+khudaida/point-8,True,True,1e-10,3.092854198100707e-14

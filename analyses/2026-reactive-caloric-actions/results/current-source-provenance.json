@@ -1,0 +1,416 @@
+{
+  "source_commit": "2e6fd939cb194fd7dc5bf776cc422802fc36368e",
+  "integration_base": "40cdcfe40305755b6961446f1cbeb75fd5492d82",
+  "retained_caloric_tip": "e8f959b1fcd6f2d944aa2d309e474751af60f20e",
+  "main_base": "62ed1b2b76bb5e08403e68709a573b13bed7c093",
+  "wheel_sha256": "4d7ddfa192380de06fcc8339d69bd2130ed7cbe67c2280983bde26df2d3027a6",
+  "preparation": {
+    "build_dir": "build/engine-meson/cpython-313-linux-x86_64-x86_64-f6db693e21e289603ae71c78242a17b102f1e324061021d5dca361f47a0bfef7",
+    "build_fingerprint": "a20b4688f1d9abff35cf68612f598ee7c5fae70af2913145d1b211e91297a51c",
+    "schema_version": 1,
+    "wheel": "build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+    "wheel_sha256": "4d7ddfa192380de06fcc8339d69bd2130ed7cbe67c2280983bde26df2d3027a6"
+  },
+  "controls": {
+    "OMP_NUM_THREADS": 1,
+    "OPENBLAS_NUM_THREADS": 1,
+    "MKL_NUM_THREADS": 1,
+    "EPCSAFT_BUILD_JOBS": 2,
+    "serial_execution": true
+  },
+  "operations": [
+    {
+      "phase": "phase1-retry1",
+      "name": "architecture",
+      "command": "timeout 120 .venv/bin/python tools/check-engine-architecture.py --build-dir /home/tnnrpolley21/.codex/worktrees/epc-delivery-225/ePC-SAFT/build/engine-meson/cpython-313-linux-x86_64-x86_64-f6db693e21e289603ae71c78242a17b102f1e324061021d5dca361f47a0bfef7 --wheel build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "log": "build/current-calorics/phase1-retry1/architecture.log",
+      "sha256": "2cd313b0933bf0d657a1de23d69299abc83ae16450aa1248b41c24755d5b699d",
+      "cost": "elapsed_seconds=0.79 max_rss_kb=50728 exit_status=0"
+    },
+    {
+      "phase": "phase1-retry1",
+      "name": "installed-verify",
+      "command": "timeout 60 .venv/bin/python tools/verify-installed-wheel.py --wheel build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "log": "build/current-calorics/phase1-retry1/installed-verify.log",
+      "sha256": "2f6f984f2bd501fcf38997936a1942e8c91fc7b2e3a6d9aeff55585ca0d63325",
+      "cost": "elapsed_seconds=0.19 max_rss_kb=47944 exit_status=0"
+    },
+    {
+      "phase": "phase1-retry1",
+      "name": "prepare",
+      "command": "env EPCSAFT_PREPARE_NATIVE_BUILD=1 timeout 900 bash tools/ensure-engine-wheel.sh",
+      "log": "build/current-calorics/phase1-retry1/prepare.log",
+      "sha256": "764f0fa0579f3dc60e38047dd8b3709753b557a25b96788e7dd3e772050cf13f",
+      "cost": "elapsed_seconds=135.74 max_rss_kb=1269952 exit_status=0"
+    },
+    {
+      "phase": "phase1-retry1",
+      "name": "properties-F8",
+      "command": "timeout 600 /home/tnnrpolley21/.codex/worktrees/epc-delivery-225/ePC-SAFT/build/engine-meson/cpython-313-linux-x86_64-x86_64-f6db693e21e289603ae71c78242a17b102f1e324061021d5dca361f47a0bfef7/properties_checks F8",
+      "log": "build/current-calorics/phase1-retry1/properties-F8.log",
+      "sha256": "6d1dde5dd66b22ffaa7f9c63bb69bd7a794d6234d6e22be62354076d6ac1b633",
+      "cost": "elapsed_seconds=0.09 max_rss_kb=10108 exit_status=0"
+    },
+    {
+      "phase": "phase1-retry1",
+      "name": "properties-F9",
+      "command": "timeout 600 /home/tnnrpolley21/.codex/worktrees/epc-delivery-225/ePC-SAFT/build/engine-meson/cpython-313-linux-x86_64-x86_64-f6db693e21e289603ae71c78242a17b102f1e324061021d5dca361f47a0bfef7/properties_checks F9",
+      "log": "build/current-calorics/phase1-retry1/properties-F9.log",
+      "sha256": "2a226cf9ab8f9a0c0f457c67359aab319cca35eb0965af3045dd52220b02f322",
+      "cost": "elapsed_seconds=5.09 max_rss_kb=10228 exit_status=0"
+    },
+    {
+      "phase": "phase1-retry1",
+      "name": "properties-P4",
+      "command": "timeout 600 /home/tnnrpolley21/.codex/worktrees/epc-delivery-225/ePC-SAFT/build/engine-meson/cpython-313-linux-x86_64-x86_64-f6db693e21e289603ae71c78242a17b102f1e324061021d5dca361f47a0bfef7/properties_checks P4",
+      "log": "build/current-calorics/phase1-retry1/properties-P4.log",
+      "sha256": "c48a59c3c3ba6acef72b3a4a816a4e98f170de9edd8a9d8e857ba7e5094b6b16",
+      "cost": "elapsed_seconds=1.06 max_rss_kb=13112 exit_status=0"
+    },
+    {
+      "phase": "phase1-retry1",
+      "name": "properties-ReferenceLimits",
+      "command": "timeout 600 /home/tnnrpolley21/.codex/worktrees/epc-delivery-225/ePC-SAFT/build/engine-meson/cpython-313-linux-x86_64-x86_64-f6db693e21e289603ae71c78242a17b102f1e324061021d5dca361f47a0bfef7/properties_checks ReferenceLimits",
+      "log": "build/current-calorics/phase1-retry1/properties-ReferenceLimits.log",
+      "sha256": "bcb47d535c9eba018929f27523324052b115e340fa0d67bfcaacb136a8305d53",
+      "cost": "elapsed_seconds=1.12 max_rss_kb=16416 exit_status=0"
+    },
+    {
+      "phase": "phase2a",
+      "name": "architecture",
+      "command": "timeout 120 .venv/bin/python tools/check-engine-architecture.py --build-dir /home/tnnrpolley21/.codex/worktrees/epc-delivery-225/ePC-SAFT/build/engine-meson/cpython-313-linux-x86_64-x86_64-f6db693e21e289603ae71c78242a17b102f1e324061021d5dca361f47a0bfef7 --wheel /home/tnnrpolley21/.codex/worktrees/epc-delivery-225/ePC-SAFT/build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "log": "build/current-calorics/phase2a/architecture.log",
+      "sha256": "2cd313b0933bf0d657a1de23d69299abc83ae16450aa1248b41c24755d5b699d",
+      "cost": "elapsed_seconds=0.71 max_rss_kb=51236 exit_status=0"
+    },
+    {
+      "phase": "phase2a",
+      "name": "install",
+      "command": "timeout 60 uv pip install --python .venv/bin/python --no-deps --reinstall /home/tnnrpolley21/.codex/worktrees/epc-delivery-225/ePC-SAFT/build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "log": "build/current-calorics/phase2a/install.log",
+      "sha256": "7b885032c8d0390d0a4435c749e7d4c67f1d6d1996947536370dbbcb0a0c653c",
+      "cost": "elapsed_seconds=0.05 max_rss_kb=39376 exit_status=0"
+    },
+    {
+      "phase": "phase2a",
+      "name": "installed-verify",
+      "command": "timeout 60 .venv/bin/python tools/verify-installed-wheel.py --wheel /home/tnnrpolley21/.codex/worktrees/epc-delivery-225/ePC-SAFT/build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "log": "build/current-calorics/phase2a/installed-verify.log",
+      "sha256": "2f6f984f2bd501fcf38997936a1942e8c91fc7b2e3a6d9aeff55585ca0d63325",
+      "cost": "elapsed_seconds=0.20 max_rss_kb=44848 exit_status=0"
+    },
+    {
+      "phase": "phase2a",
+      "name": "reactive-caloric-E-fix",
+      "command": "timeout 900 /home/tnnrpolley21/.codex/worktrees/epc-delivery-225/ePC-SAFT/build/engine-meson/cpython-313-linux-x86_64-x86_64-f6db693e21e289603ae71c78242a17b102f1e324061021d5dca361f47a0bfef7/equilibrium_checks reactive-caloric-E-fix",
+      "log": "build/current-calorics/phase2a/reactive-caloric-E-fix.log",
+      "sha256": "c0e8369668e2c15071644088bfb5da3d57a7ff96b8a0d5bbf8349978f8a23b76",
+      "cost": "elapsed_seconds=4.96 max_rss_kb=17452 exit_status=0"
+    },
+    {
+      "phase": "phase2a",
+      "name": "reactive-caloric-E-sys",
+      "command": "timeout 900 /home/tnnrpolley21/.codex/worktrees/epc-delivery-225/ePC-SAFT/build/engine-meson/cpython-313-linux-x86_64-x86_64-f6db693e21e289603ae71c78242a17b102f1e324061021d5dca361f47a0bfef7/equilibrium_checks reactive-caloric-E-sys",
+      "log": "build/current-calorics/phase2a/reactive-caloric-E-sys.log",
+      "sha256": "f92ce902f2994ea6e6937752de5a55c17cde15dc46d97df010a339dc12525d10",
+      "cost": "elapsed_seconds=6.76 max_rss_kb=16944 exit_status=0"
+    },
+    {
+      "phase": "phase2a",
+      "name": "reactive-caloric-I-fix",
+      "command": "timeout 900 /home/tnnrpolley21/.codex/worktrees/epc-delivery-225/ePC-SAFT/build/engine-meson/cpython-313-linux-x86_64-x86_64-f6db693e21e289603ae71c78242a17b102f1e324061021d5dca361f47a0bfef7/equilibrium_checks reactive-caloric-I-fix",
+      "log": "build/current-calorics/phase2a/reactive-caloric-I-fix.log",
+      "sha256": "2d620cb454e8e1e2d5f3f024d9ca3c7d0dfe783fc0a804bc52ea27f71b39ba48",
+      "cost": "elapsed_seconds=22.32 max_rss_kb=18104 exit_status=0"
+    },
+    {
+      "phase": "phase2a",
+      "name": "reactive-caloric-I-sys",
+      "command": "timeout 900 /home/tnnrpolley21/.codex/worktrees/epc-delivery-225/ePC-SAFT/build/engine-meson/cpython-313-linux-x86_64-x86_64-f6db693e21e289603ae71c78242a17b102f1e324061021d5dca361f47a0bfef7/equilibrium_checks reactive-caloric-I-sys",
+      "log": "build/current-calorics/phase2a/reactive-caloric-I-sys.log",
+      "sha256": "11ce6aa6534383dc73841bae013043e409b1777725f674d9e2f956773eb42f8a",
+      "cost": "elapsed_seconds=28.63 max_rss_kb=18200 exit_status=0"
+    },
+    {
+      "phase": "phase2a",
+      "name": "reactive-caloric-U",
+      "command": "timeout 900 /home/tnnrpolley21/.codex/worktrees/epc-delivery-225/ePC-SAFT/build/engine-meson/cpython-313-linux-x86_64-x86_64-f6db693e21e289603ae71c78242a17b102f1e324061021d5dca361f47a0bfef7/equilibrium_checks reactive-caloric-U",
+      "log": "build/current-calorics/phase2a/reactive-caloric-U.log",
+      "sha256": "6f56951f079a49d2bfb5cc897224973ba6fcb789d138b4488c763f9b50b77faa",
+      "cost": "elapsed_seconds=1.79 max_rss_kb=16764 exit_status=0"
+    },
+    {
+      "phase": "phase2a",
+      "name": "reference-caloric-identities",
+      "command": "timeout 900 /home/tnnrpolley21/.codex/worktrees/epc-delivery-225/ePC-SAFT/build/engine-meson/cpython-313-linux-x86_64-x86_64-f6db693e21e289603ae71c78242a17b102f1e324061021d5dca361f47a0bfef7/equilibrium_checks reference-caloric-identities",
+      "log": "build/current-calorics/phase2a/reference-caloric-identities.log",
+      "sha256": "8b5c384dd16c620048042cdaa1fcb444d423c9a8ec2234b4e5879a0cdd0036e7",
+      "cost": "elapsed_seconds=0.54 max_rss_kb=17640 exit_status=0"
+    },
+    {
+      "phase": "phase2b",
+      "name": "architecture",
+      "command": "timeout 120 .venv/bin/python tools/check-engine-architecture.py --build-dir /home/tnnrpolley21/.codex/worktrees/epc-delivery-225/ePC-SAFT/build/engine-meson/cpython-313-linux-x86_64-x86_64-f6db693e21e289603ae71c78242a17b102f1e324061021d5dca361f47a0bfef7 --wheel /home/tnnrpolley21/.codex/worktrees/epc-delivery-225/ePC-SAFT/build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "log": "build/current-calorics/phase2b/architecture.log",
+      "sha256": "2cd313b0933bf0d657a1de23d69299abc83ae16450aa1248b41c24755d5b699d",
+      "cost": "elapsed_seconds=0.71 max_rss_kb=51020 exit_status=0"
+    },
+    {
+      "phase": "phase2b",
+      "name": "check-affected",
+      "command": "timeout 900 bash tools/check-affected.sh 40cdcfe4",
+      "log": "build/current-calorics/phase2b/check-affected.log",
+      "sha256": "7608e3c82da868f5260511a3ac9e3d34dc2f8f1c967443b4a19695622d34f004",
+      "cost": "elapsed_seconds=199.64 max_rss_kb=560912 exit_status=0"
+    },
+    {
+      "phase": "phase2b",
+      "name": "check-all",
+      "command": "timeout 600 bash tools/check-all.sh",
+      "log": "build/current-calorics/phase2b/check-all.log",
+      "sha256": "5494fe5cb3dd8adc5360663d4b0927cfa0f0aaffce6d81b7575321f086fe66da",
+      "cost": "elapsed_seconds=28.26 max_rss_kb=94508 exit_status=0"
+    },
+    {
+      "phase": "phase2b",
+      "name": "install",
+      "command": "timeout 60 uv pip install --python .venv/bin/python --no-deps --reinstall /home/tnnrpolley21/.codex/worktrees/epc-delivery-225/ePC-SAFT/build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "log": "build/current-calorics/phase2b/install.log",
+      "sha256": "e755f451480d94c0715b00c9cb942e5c5f2eb2a3ce4708eacece01fe6755d75f",
+      "cost": "elapsed_seconds=0.05 max_rss_kb=39788 exit_status=0"
+    },
+    {
+      "phase": "phase2b",
+      "name": "installed-verify",
+      "command": "timeout 60 .venv/bin/python tools/verify-installed-wheel.py --wheel /home/tnnrpolley21/.codex/worktrees/epc-delivery-225/ePC-SAFT/build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "log": "build/current-calorics/phase2b/installed-verify.log",
+      "sha256": "2f6f984f2bd501fcf38997936a1942e8c91fc7b2e3a6d9aeff55585ca0d63325",
+      "cost": "elapsed_seconds=0.20 max_rss_kb=44700 exit_status=0"
+    },
+    {
+      "phase": "phase2b",
+      "name": "inventory-face",
+      "command": "timeout 600 /home/tnnrpolley21/.codex/worktrees/epc-delivery-225/ePC-SAFT/build/engine-meson/cpython-313-linux-x86_64-x86_64-f6db693e21e289603ae71c78242a17b102f1e324061021d5dca361f47a0bfef7/regression_checks inventory-face",
+      "log": "build/current-calorics/phase2b/inventory-face.log",
+      "sha256": "d918a8ef1eb110aa82237e14be43f5dc25acbf4274dde05332a856764fcd0a5c",
+      "cost": "elapsed_seconds=0.05 max_rss_kb=18536 exit_status=0"
+    },
+    {
+      "phase": "phase2b",
+      "name": "neutral-electrostatics",
+      "command": "timeout 600 /home/tnnrpolley21/.codex/worktrees/epc-delivery-225/ePC-SAFT/build/engine-meson/cpython-313-linux-x86_64-x86_64-f6db693e21e289603ae71c78242a17b102f1e324061021d5dca361f47a0bfef7/regression_checks neutral-electrostatics",
+      "log": "build/current-calorics/phase2b/neutral-electrostatics.log",
+      "sha256": "fe325958bc4ac0c05134c542b9a5e5cb39c84fc4d6f70bef1d8b308fa6e5a428",
+      "cost": "elapsed_seconds=0.02 max_rss_kb=14340 exit_status=0"
+    },
+    {
+      "phase": "phase2b",
+      "name": "zero-inventory-declaration",
+      "command": "timeout 600 .venv/bin/python analyses/2026-addition-enthalpy-fitting/scripts/zero_inventory.py --native-input build/current-calorics/phase2b/zero-inventory.netstrings --output build/current-calorics/phase2b/zero-inventory-declaration.json",
+      "log": "build/current-calorics/phase2b/zero-inventory-declaration.log",
+      "sha256": "1563dc0f7a095591e8b4909e78b5e3bdd9f9ba8ca3dc42f1ba61591d0ea68cdd",
+      "cost": "elapsed_seconds=0.17 max_rss_kb=39060 exit_status=0"
+    },
+    {
+      "phase": "phase2b",
+      "name": "zero-inventory",
+      "command": "timeout 600 /home/tnnrpolley21/.codex/worktrees/epc-delivery-225/ePC-SAFT/build/engine-meson/cpython-313-linux-x86_64-x86_64-f6db693e21e289603ae71c78242a17b102f1e324061021d5dca361f47a0bfef7/regression_checks --zero-inventory build/current-calorics/phase2b/zero-inventory.netstrings",
+      "log": "build/current-calorics/phase2b/zero-inventory.log",
+      "sha256": "9c575606d755aac3eb61852c0f41cf4825f725577de1e17cc96d8b0d6494673e",
+      "cost": "elapsed_seconds=79.37 max_rss_kb=19612 exit_status=0"
+    }
+  ],
+  "current_rows": {
+    "path": "analyses/2026-reactive-caloric-actions/results/current-source-comparisons.csv",
+    "sha256": "cb13f8fbaa60faae9e35a3743a9f61d9a89d18ada6a6c493167dc22330a79a25",
+    "records": 7066,
+    "failed_verdicts": 0
+  },
+  "native_summaries": {
+    "F8": {
+      "records": 78,
+      "criteria": 78,
+      "satisfied": 78,
+      "observations": 0
+    },
+    "F9": {
+      "records": 300,
+      "criteria": 264,
+      "satisfied": 264,
+      "observations": 36
+    },
+    "ReferenceLimits": {
+      "records": 149,
+      "criteria": 143,
+      "satisfied": 143,
+      "observations": 6
+    },
+    "P4": {
+      "records": 329,
+      "criteria": 329,
+      "satisfied": 329,
+      "observations": 0
+    },
+    "F1": {
+      "satisfied": 4840,
+      "maximum_native_error_over_target": 0.22521033497007423
+    },
+    "F3": {
+      "satisfied": 191,
+      "maximum_native_error_over_target": 0.0024378469133821924
+    },
+    "F4": {
+      "satisfied": 192,
+      "maximum_native_error_over_target": 0.014168414375380646
+    },
+    "F5": {
+      "satisfied": 265,
+      "maximum_native_error_over_target": 6.465286923437926e-05
+    },
+    "inventory-face": {
+      "records": 11,
+      "satisfied": 11,
+      "observations": 0
+    },
+    "neutral-electrostatics": {
+      "records": 43,
+      "satisfied": 41,
+      "observations": 2
+    },
+    "zero-inventory": {
+      "records": 135,
+      "satisfied": 135,
+      "observations": 0
+    }
+  },
+  "lower_reference_summaries": {
+    "F8": {
+      "criteria": 30,
+      "maximum_native_error_over_target": 0.0002475819511761561
+    },
+    "F9": {
+      "criteria": 60,
+      "maximum_native_error_over_target": 0.0003602992957029735
+    }
+  },
+  "caloric_figure": {
+    "path": "analyses/2026-reactive-caloric-actions/figures/current-caloric-errors.svg",
+    "original_and_current_plotted_native_pairs_exactly_equal": false,
+    "native_pairs": 4834
+  },
+  "preserved_prior_evidence": {
+    "comparisons.csv": {
+      "sha256": "a82c8cce7a091b2a0fcbaf3d40bae222cba2185a1bb3291bdc415bbf8b2e0c63",
+      "preserved_from": "e8f959b1"
+    },
+    "diagnosis.csv": {
+      "sha256": "fa8aa9b3f1e60ad6b73ffbd13f805e5e05e8e1e9cdfa561e8b4fa15292a70a9d",
+      "preserved_from": "e8f959b1"
+    },
+    "slice2-provenance.json": {
+      "sha256": "ffac55affc5c8fa76c331fe21fb4996fa50661e750f0ce851b9d783b6ce5dbcc",
+      "preserved_from": "e8f959b1"
+    },
+    "provenance.json": {
+      "sha256": "e00b3c4796c34a848e3ff476c330d5b2243e88b49f2ce7d5eed138668367b132",
+      "preserved_from": "e8f959b1"
+    }
+  },
+  "runtime_lines": {
+    "current_by_layer": {
+      "core": 917,
+      "contributions": 1547,
+      "properties": 4761,
+      "equilibrium": 7526,
+      "regression": 2398,
+      "surface": 532,
+      "bindings": 1946,
+      "python": 2729
+    },
+    "current_total": 22356,
+    "hard_ceilings_changed": false,
+    "diff_against_integration_base": {
+      "bindings": {
+        "added": 13,
+        "removed": 4,
+        "net": 9
+      },
+      "contributions": {
+        "added": 3,
+        "removed": 3,
+        "net": 0
+      },
+      "equilibrium": {
+        "added": 694,
+        "removed": 366,
+        "net": 328
+      },
+      "properties": {
+        "added": 126,
+        "removed": 153,
+        "net": -27
+      },
+      "python": {
+        "added": 3,
+        "removed": 1,
+        "net": 2
+      }
+    }
+  },
+  "initial_failure": {
+    "source_commit": "691cad409570899f88a47c4664404dd228ce8033",
+    "log": "build/current-calorics/prepare.log",
+    "sha256": "4a045d207fb336ed20547ae70ee543077f7730a64b6e012723a47963614745c3",
+    "cost": "Command exited with non-zero status 2\nelapsed_seconds=321.76 max_rss_kb=1374028 exit_status=2",
+    "cause": "Two verification consumer reads treated optional charged-slot chemical potentials as doubles.",
+    "correction_commit": "2e6fd939cb194fd7dc5bf776cc422802fc36368e",
+    "correction": "Use existing require_component_property for each consumed value; no runtime or metric change.",
+    "numerical_rows": 0,
+    "cleanup_status": "phase_status=2 install_status=0 verify_status=0 direct_url_status=0"
+  },
+  "cleanup": [
+    {
+      "phase": "phase1-retry1",
+      "status": "phase_status=0 install_status=0 verify_status=0 direct_url_status=0",
+      "restored_wheel_sha256": "e28d258df06eac39711c59a79f9ce2b69fc8ac7565637bfba0dbef21863d8dc7",
+      "record_hashes_verified": 14,
+      "original_direct_url_byte_identical": true
+    },
+    {
+      "phase": "phase2a",
+      "status": "phase_status=0 install_status=0 verify_status=0 direct_url_status=0",
+      "restored_wheel_sha256": "e28d258df06eac39711c59a79f9ce2b69fc8ac7565637bfba0dbef21863d8dc7",
+      "record_hashes_verified": 14,
+      "original_direct_url_byte_identical": true
+    },
+    {
+      "phase": "phase2b",
+      "status": "phase_status=0 install_status=0 verify_status=0 direct_url_status=0",
+      "restored_wheel_sha256": "e28d258df06eac39711c59a79f9ce2b69fc8ac7565637bfba0dbef21863d8dc7",
+      "record_hashes_verified": 14,
+      "original_direct_url_byte_identical": true
+    }
+  ],
+  "claim_limits": [
+    "Numerical verification on manufactured single-liquid E/I/U and the stated #231 inputs.",
+    "Frozen-composition per-phase molar cp/cvG; no apparent equilibrium Cp fitting qualification.",
+    "No physical calorimetry, reaction or parameter validation, global stability, or universal infinite-dilution error bound.",
+    "Measured operation costs have no matched before/after baseline or speed guarantee.",
+    "Independent runtime delivered review pending; free-intensive and apparent-Cp fitting slices remain unimplemented."
+  ],
+  "presentation": {
+    "figures": [
+      "analyses/2026-reactive-caloric-actions/figures/current-reference-errors.svg",
+      "analyses/2026-reactive-caloric-actions/figures/current-caloric-errors.svg"
+    ],
+    "visual_check": "Matplotlib raster previews inspected: categorical point comparisons and named criterion line; axes/legends/labels visible.",
+    "render_command": "timeout 60 bash /home/tnnrpolley21/Workspaces/Agentic-Coding/plugins/cse/cse-plugin/plugin/assets/visualize/project/quarto/render.sh analyses/2026-reactive-caloric-actions/notebook.qmd",
+    "rendered_views": [
+      "build/companion/analyses/2026-reactive-caloric-actions/notebook.html",
+      "build/companion/docs/scientific/CONTEXT.html",
+      "build/companion/index.html"
+    ],
+    "preparation": "python3 tools/render-notebook.py regenerated absent presentation-only includes; no Engine execution.",
+    "prose_check": "24 plugin-wide rules passed. Scoped context checker could not consume the existing CONTEXT terminology layout; no scoped-rule pass is claimed."
+  }
+}

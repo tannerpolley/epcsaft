@@ -1,0 +1,6 @@
+quantity,cause,owner
+Full water/carbonate temperature laws,Missing inverse-square and square-temperature source-law terms,#790
+Ideal molarity carbonate solutions,Missing mol/L activity basis and volume declaration,#791
+Sodium/calcium-complex EOS speciation,Source-complete complex-species parameters and common model adoption unavailable,input/adoption
+Common PHREEQC/Engine activity pH,Individual-ion proton/hydronium reference convention unspecified,definition
+IAPWS constants in a nonideal model,No unique source molarity-to-activity conversion,source convention

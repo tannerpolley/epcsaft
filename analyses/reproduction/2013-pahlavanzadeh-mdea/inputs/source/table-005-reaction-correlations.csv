@@ -1,0 +1,5 @@
+reaction,expression,A,B,C,temperature_range_C,source_reference,source_table,source_pdf_page,source_printed_page,source_row,zotero_parent_key,pdf_attachment_key,verification
+I,a_H3O_plus*a_OH_minus/a_H2O^2,132.899,-13445.9,22.4773,0-225,Edwards_et_al_1978,5,6,219,1,DUAIHQ7Y,YAUNIZGX,PDF image and text layer checked
+II,a_H3O_plus*a_HCO3_minus/(a_H2O^2*a_CO2),231.465,-12092.10,-36.7816,0-225,Edwards_et_al_1978,5,6,219,2,DUAIHQ7Y,YAUNIZGX,PDF image and text layer checked
+III,a_H3O_plus*a_CO3_2minus/(a_H2O*a_HCO3_minus),216.049,-12431.70,-35.4819,0-225,Edwards_et_al_1978,5,6,219,3,DUAIHQ7Y,YAUNIZGX,PDF image and text layer checked
+IV,a_H3O_plus*a_MDEA/(a_H2O*a_MDEAH_plus),-83.4914,-819.7,10.9756,0-95,Kamps_and_Maurer_1996,5,6,219,4,DUAIHQ7Y,YAUNIZGX,PDF image and text layer checked

@@ -1,0 +1,357 @@
+{
+  "source_commit": "95988731bd35af522b5d4e986b8697545ad5fd98",
+  "wheel": {
+    "wheel": "epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+    "sha256": "33ef17f578714f55c65223e6b3d8b28e09344ac65cb317dfe9007bcfffc8db94"
+  },
+  "temperature_K": 313.15,
+  "pressure": "free bubble pressure",
+  "feeds_mol": [
+    9.064057365207347,
+    9.553057365207348
+  ],
+  "accepted_states": 490,
+  "unchanged_native_csvs": 18,
+  "numeric_entries_compared": 144540,
+  "maximum_numeric_change": 0.0,
+  "maximum_accepted_original_row": 2.8421709430404007e-13,
+  "row_tolerance": 1e-10,
+  "historical_common_point_comparisons": 4500,
+  "maximum_historical_common_point_error": 3.33574570376877e-13,
+  "comparison_tolerance": 1e-07,
+  "root_availability_change": false,
+  "claim": "The finite accepted prefixes are unchanged; no target root or global nonexistence conclusion is established.",
+  "historical_evidence": "Original result files remain unchanged; prior native files retain their original identities.",
+  "limits": "Numerical verification, not physical validation. Endpoint failure diagnosis remains open. No independent review or investigator promotion of this replay.",
+  "commands": [
+    "bash tools/ensure-engine-wheel.sh",
+    "starts.py --case {1,2} --output-dir results/starts/issue-234",
+    "reproduce.py --case {1,2} --continuation --out results/native-parameter/issue-234/coarse",
+    "reproduce.py --case 1 --continuation --from-value .35 --step .01 --out results/native-parameter/issue-234/fine",
+    "reproduce.py --case 2 --continuation --from-value 2.25 --step .01 --out results/native-parameter/issue-234/fine",
+    "reproduce.py --case 1 --continuation --from-value .33 --step .001 --out results/native-parameter/issue-234/refined",
+    "reproduce.py --case 2 --continuation --from-value 2.04 --step .001 --out results/native-parameter/issue-234/refined",
+    "verify_parameter_continuation.py --out results/native-parameter/issue-234",
+    "present.py --results results/native-parameter --output-dir results/native-parameter/issue-234"
+  ],
+  "replay_sha256": {
+    "coarse/case1-states.csv": "5743e0734e7bd938b647a39c79ae4456423ae85519cb94a21ec41211a7b7e56e",
+    "coarse/case1-rows.csv": "80f5e1021dfcf5588978cdee8ada93f1504c1900bc24f12872940371ff4419a1",
+    "coarse/case1-coordinates.csv": "cdaee0accd82c827c373f75373f03da7253396456fd4db6492e0831400c33245",
+    "coarse/case1-terms.csv": "72186055b2e0d19673732a59ff8dbfe81fb7eac313ea54fae829898dab4ef4e2",
+    "coarse/case1-trace.csv": "6ca3799e3ff6657ffa44d0fddb9685be2daab17a50bddb413ef1915cf957941c",
+    "coarse/case2-states.csv": "cdae6a54ba84d4c6477cf04b96844e0f7d979f49f06ffa99c896c4a22465fca4",
+    "coarse/case2-rows.csv": "80cbc3aaf91339a4570d79b14f3263d7d1c7b29d4761698ba00999d7c620bb2f",
+    "coarse/case2-coordinates.csv": "49a8e7e1a054d81357a0cc57a43abf7ee55750b15dd0716bd9be2ae0d3c40fcd",
+    "coarse/case2-terms.csv": "ed37abc5d04ad11f671bf40df9da703da3b2cc63f0ac3d6ef808c04a561b6660",
+    "coarse/case2-trace.csv": "cb5346f3bf1499c60279aca01f1f4aacb70b62b71f88ab9c6f4689eece65a284",
+    "fine/case1-states.csv": "fe89216c3c679531156cd94f4034929b010df1d32713927c448a787fa7b22ffb",
+    "fine/case1-rows.csv": "d192a24341d99a91a19b330bf158cbb325792b6cd0d3d8eef09c3f6761191b88",
+    "fine/case1-coordinates.csv": "9e9cc3e5a530bc0af5a6e4b8af469d2be5dbc60e2d85fc8392a2a6a7290da467",
+    "fine/case1-terms.csv": "1a4936132f64213fb86c72db7a51c3ae32e57950760fed8c388fd3669f999a91",
+    "fine/case1-trace.csv": "c61ae4196bbf32d06e259b8d69d09add4bcb9683f4d5ca86e18f99b2f10fafc2",
+    "fine/case2-states.csv": "51f8e7ddc250398502e57c1ec746b3abce47ded4223836b05c8d5751cfa3d56b",
+    "fine/case2-rows.csv": "9ba6edbfb7e4ad9477d375d9c5ff5cc82f6415f966e2c1d1f60308841cb53345",
+    "fine/case2-coordinates.csv": "45cf6ada74292ddf3996f7c685eafcea04bc34d97b9ab05c86f8c65dbc9bf1ff",
+    "fine/case2-terms.csv": "f1e1176e0d77a2df03125ce222ed76c6df9b1c3f634f5b85e7b3852bc0f86f5e",
+    "fine/case2-trace.csv": "52e84139f066e195c3dd56e51584ca8b635fd6f97a6e0216a56edfc35286efc9",
+    "refined/case1-states.csv": "57df66f3a37010fe7500c3509dca45bdad677cb8b1da86981b5e8f402877cf3e",
+    "refined/case1-rows.csv": "86ba86d49595eecd5d5e56a3cd5e778aec9cffe46b9898250c5edfd6859fb11a",
+    "refined/case1-coordinates.csv": "af9749c5f4dfaac3cb32850489e45c0ea6e293dba4b70112f5126399ae29a3f6",
+    "refined/case1-terms.csv": "3e1d68ba28b54ba0d679d86c01428cb3300dc7f5070fb02dc6dcc343fcf77b7f",
+    "refined/case1-trace.csv": "9cfdf6d960049a2ac089ff8356cda624c4e184216310f51c4cbe5a98b503fef9",
+    "refined/case2-states.csv": "bb28d50da28ea5439031c1560c0e6d44bbd3fd289320456393a3c087da915818",
+    "refined/case2-rows.csv": "a30e6cc5f8ae1e97aa55db24ff578958a73f49e327e56887368d5504b841de1d",
+    "refined/case2-coordinates.csv": "d989959d6726d1aa7b49963ffcbae7b3c61660b0e0c5967c65fac545c482232a",
+    "refined/case2-terms.csv": "34c16d7b4828661c8f0133d89d4ec952cf9341b8595e03f08165d3c9660d7414",
+    "refined/case2-trace.csv": "210f6813d855be329bfd29fc3cf66d8c92e672957bd669a3187ddc12d4a81f94"
+  },
+  "native_comparison_reference": "results/native-parameter/{coarse,fine,refined}, retained from the previous native replay",
+  "encoding_differences": "Six terms tables encode zero vapor Born energy as +0 rather than -0; six trace tables have different span identifiers. All 144540 state/row/coordinate/term numerical values are unchanged.",
+  "changed_historical_sampling_claim": "Native adaptive paths retain longer finite prefixes than the Python fixed-step paths; exact before/after endpoints are in boundaries.csv.",
+  "identical_replay_tables_reused": [
+    {
+      "replay_file": "results/native-parameter/issue-234/coarse/case1-coordinates.csv",
+      "retained_file": "results/native-parameter/coarse/case1-coordinates.csv",
+      "sha256": "cdaee0accd82c827c373f75373f03da7253396456fd4db6492e0831400c33245"
+    },
+    {
+      "replay_file": "results/native-parameter/issue-234/coarse/case1-rows.csv",
+      "retained_file": "results/native-parameter/coarse/case1-rows.csv",
+      "sha256": "80f5e1021dfcf5588978cdee8ada93f1504c1900bc24f12872940371ff4419a1"
+    },
+    {
+      "replay_file": "results/native-parameter/issue-234/coarse/case1-states.csv",
+      "retained_file": "results/native-parameter/coarse/case1-states.csv",
+      "sha256": "5743e0734e7bd938b647a39c79ae4456423ae85519cb94a21ec41211a7b7e56e"
+    },
+    {
+      "replay_file": "results/native-parameter/issue-234/coarse/case2-coordinates.csv",
+      "retained_file": "results/native-parameter/coarse/case2-coordinates.csv",
+      "sha256": "49a8e7e1a054d81357a0cc57a43abf7ee55750b15dd0716bd9be2ae0d3c40fcd"
+    },
+    {
+      "replay_file": "results/native-parameter/issue-234/coarse/case2-rows.csv",
+      "retained_file": "results/native-parameter/coarse/case2-rows.csv",
+      "sha256": "80cbc3aaf91339a4570d79b14f3263d7d1c7b29d4761698ba00999d7c620bb2f"
+    },
+    {
+      "replay_file": "results/native-parameter/issue-234/coarse/case2-states.csv",
+      "retained_file": "results/native-parameter/coarse/case2-states.csv",
+      "sha256": "cdae6a54ba84d4c6477cf04b96844e0f7d979f49f06ffa99c896c4a22465fca4"
+    },
+    {
+      "replay_file": "results/native-parameter/issue-234/fine/case1-coordinates.csv",
+      "retained_file": "results/native-parameter/fine/case1-coordinates.csv",
+      "sha256": "9e9cc3e5a530bc0af5a6e4b8af469d2be5dbc60e2d85fc8392a2a6a7290da467"
+    },
+    {
+      "replay_file": "results/native-parameter/issue-234/fine/case1-rows.csv",
+      "retained_file": "results/native-parameter/fine/case1-rows.csv",
+      "sha256": "d192a24341d99a91a19b330bf158cbb325792b6cd0d3d8eef09c3f6761191b88"
+    },
+    {
+      "replay_file": "results/native-parameter/issue-234/fine/case1-states.csv",
+      "retained_file": "results/native-parameter/fine/case1-states.csv",
+      "sha256": "fe89216c3c679531156cd94f4034929b010df1d32713927c448a787fa7b22ffb"
+    },
+    {
+      "replay_file": "results/native-parameter/issue-234/fine/case2-coordinates.csv",
+      "retained_file": "results/native-parameter/fine/case2-coordinates.csv",
+      "sha256": "45cf6ada74292ddf3996f7c685eafcea04bc34d97b9ab05c86f8c65dbc9bf1ff"
+    },
+    {
+      "replay_file": "results/native-parameter/issue-234/fine/case2-rows.csv",
+      "retained_file": "results/native-parameter/fine/case2-rows.csv",
+      "sha256": "9ba6edbfb7e4ad9477d375d9c5ff5cc82f6415f966e2c1d1f60308841cb53345"
+    },
+    {
+      "replay_file": "results/native-parameter/issue-234/fine/case2-states.csv",
+      "retained_file": "results/native-parameter/fine/case2-states.csv",
+      "sha256": "51f8e7ddc250398502e57c1ec746b3abce47ded4223836b05c8d5751cfa3d56b"
+    },
+    {
+      "replay_file": "results/native-parameter/issue-234/parameter-action-diagnostics.csv",
+      "retained_file": "results/native-parameter/parameter-action-diagnostics.csv",
+      "sha256": "51076a42faadcbf4804cc4268e17e7dc1f3a6ea50d6427419c215183d2badf8b"
+    },
+    {
+      "replay_file": "results/native-parameter/issue-234/refined/case1-coordinates.csv",
+      "retained_file": "results/native-parameter/refined/case1-coordinates.csv",
+      "sha256": "af9749c5f4dfaac3cb32850489e45c0ea6e293dba4b70112f5126399ae29a3f6"
+    },
+    {
+      "replay_file": "results/native-parameter/issue-234/refined/case1-rows.csv",
+      "retained_file": "results/native-parameter/refined/case1-rows.csv",
+      "sha256": "86ba86d49595eecd5d5e56a3cd5e778aec9cffe46b9898250c5edfd6859fb11a"
+    },
+    {
+      "replay_file": "results/native-parameter/issue-234/refined/case1-states.csv",
+      "retained_file": "results/native-parameter/refined/case1-states.csv",
+      "sha256": "57df66f3a37010fe7500c3509dca45bdad677cb8b1da86981b5e8f402877cf3e"
+    },
+    {
+      "replay_file": "results/native-parameter/issue-234/refined/case2-coordinates.csv",
+      "retained_file": "results/native-parameter/refined/case2-coordinates.csv",
+      "sha256": "d989959d6726d1aa7b49963ffcbae7b3c61660b0e0c5967c65fac545c482232a"
+    },
+    {
+      "replay_file": "results/native-parameter/issue-234/refined/case2-rows.csv",
+      "retained_file": "results/native-parameter/refined/case2-rows.csv",
+      "sha256": "a30e6cc5f8ae1e97aa55db24ff578958a73f49e327e56887368d5504b841de1d"
+    },
+    {
+      "replay_file": "results/native-parameter/issue-234/refined/case2-states.csv",
+      "retained_file": "results/native-parameter/refined/case2-states.csv",
+      "sha256": "bb28d50da28ea5439031c1560c0e6d44bbd3fd289320456393a3c087da915818"
+    },
+    {
+      "replay_file": "results/starts/issue-234/case1-water-extent-0.005-iterations.csv",
+      "retained_file": "results/starts/native/case1-water-extent-0.005-iterations.csv",
+      "sha256": "66cafbd0055d58d712e9927595cab2b57c2705277593b26b1f68c817484cbedc"
+    },
+    {
+      "replay_file": "results/starts/issue-234/case1-water-extent-0.005-rows.csv",
+      "retained_file": "results/starts/native/case1-water-extent-0.005-rows.csv",
+      "sha256": "0a8da66425832a60f074fa86f81a5e2dc6a2cab352d53d54a337ab6a6b1e28e0"
+    },
+    {
+      "replay_file": "results/starts/issue-234/case1-water-extent-0.02-iterations.csv",
+      "retained_file": "results/starts/native/case1-water-extent-0.02-iterations.csv",
+      "sha256": "86da5f7a39d6284c98301d17a9488533091b8f3f3f057d13480c1702cfb13f3c"
+    },
+    {
+      "replay_file": "results/starts/issue-234/case1-water-extent-0.02-rows.csv",
+      "retained_file": "results/starts/native/case1-water-extent-0.02-rows.csv",
+      "sha256": "d3adbf829b2f40e30a7fbd6bb86adbf32d981b05e6549f5fb0dfe5779f0e44b0"
+    },
+    {
+      "replay_file": "results/starts/issue-234/case1-water-extent-0.05-iterations.csv",
+      "retained_file": "results/starts/native/case1-water-extent-0.05-iterations.csv",
+      "sha256": "7c0d073861a989cb7254f1ae0515d238e9882ff77cd4c93ec29c5e61d322495d"
+    },
+    {
+      "replay_file": "results/starts/issue-234/case1-water-extent-0.05-rows.csv",
+      "retained_file": "results/starts/native/case1-water-extent-0.05-rows.csv",
+      "sha256": "595f73d7c20816018b628367630fcaf1faf7037d739a33b72b1fd11d3a4a46c0"
+    },
+    {
+      "replay_file": "results/starts/issue-234/case1-water-extent-0.1-iterations.csv",
+      "retained_file": "results/starts/native/case1-water-extent-0.1-iterations.csv",
+      "sha256": "0caae81f8d5ea100d214ec14461cfb8aebc4b418eb16bf28739e941a7125e3ca"
+    },
+    {
+      "replay_file": "results/starts/issue-234/case1-water-extent-0.1-rows.csv",
+      "retained_file": "results/starts/native/case1-water-extent-0.1-rows.csv",
+      "sha256": "e71db1d119c0b1620806fc157c13b218f3325cb7e62347b0e60350712b468363"
+    },
+    {
+      "replay_file": "results/starts/issue-234/case1-water-extent-0.2-iterations.csv",
+      "retained_file": "results/starts/native/case1-water-extent-0.2-iterations.csv",
+      "sha256": "60a0da389c8e8b9de40c123fc2ae6a9accf00b2b13155e5d63ac6b41bcdc6e1a"
+    },
+    {
+      "replay_file": "results/starts/issue-234/case1-water-extent-0.2-rows.csv",
+      "retained_file": "results/starts/native/case1-water-extent-0.2-rows.csv",
+      "sha256": "97b5f38bc670d212844adaa0dfe96797399c13f2f6cb03f68035abb49b7bf684"
+    },
+    {
+      "replay_file": "results/starts/issue-234/case1-water-extent-0.3-iterations.csv",
+      "retained_file": "results/starts/native/case1-water-extent-0.3-iterations.csv",
+      "sha256": "427162a13638f261397ec1a756b48b5e744d18003b57c2ee5275919c87d1792e"
+    },
+    {
+      "replay_file": "results/starts/issue-234/case1-water-extent-0.3-rows.csv",
+      "retained_file": "results/starts/native/case1-water-extent-0.3-rows.csv",
+      "sha256": "0159b7c6ca5dae10939424525ad4026f7a41086b5e7dd5be2bfbe019b37d7e83"
+    },
+    {
+      "replay_file": "results/starts/issue-234/case2-water-extent-0.005-iterations.csv",
+      "retained_file": "results/starts/native/case2-water-extent-0.005-iterations.csv",
+      "sha256": "84cb5ea6853fe022f504a922753e4827a63df62769a65b0c8edfb0ee92c7488a"
+    },
+    {
+      "replay_file": "results/starts/issue-234/case2-water-extent-0.005-rows.csv",
+      "retained_file": "results/starts/native/case2-water-extent-0.005-rows.csv",
+      "sha256": "15413c796341f7657a4e950c7fdf3e3481a67322e204f4a5bca41f125cf4e171"
+    },
+    {
+      "replay_file": "results/starts/issue-234/case2-water-extent-0.02-iterations.csv",
+      "retained_file": "results/starts/native/case2-water-extent-0.02-iterations.csv",
+      "sha256": "14060673f1d1e660bf088cc47a3681032c90b2a0fd302254a8bc41b06feadefd"
+    },
+    {
+      "replay_file": "results/starts/issue-234/case2-water-extent-0.02-rows.csv",
+      "retained_file": "results/starts/native/case2-water-extent-0.02-rows.csv",
+      "sha256": "18967ad299f5fab3e676a71d9f51da68ad43cdc71549cba000f4866b2c320b80"
+    },
+    {
+      "replay_file": "results/starts/issue-234/case2-water-extent-0.05-iterations.csv",
+      "retained_file": "results/starts/native/case2-water-extent-0.05-iterations.csv",
+      "sha256": "568e4d7bc8534148a2a33b3468027837d67dbe5c378070c7de523cceaf877493"
+    },
+    {
+      "replay_file": "results/starts/issue-234/case2-water-extent-0.05-rows.csv",
+      "retained_file": "results/starts/native/case2-water-extent-0.05-rows.csv",
+      "sha256": "04254704557c862966393ddca0377b249294027576fba33acf19a3dd8b14682c"
+    },
+    {
+      "replay_file": "results/starts/issue-234/case2-water-extent-0.1-iterations.csv",
+      "retained_file": "results/starts/native/case2-water-extent-0.1-iterations.csv",
+      "sha256": "84aa89c9bf8932ab558ba92dadd34aef07ebb894c27b41686ca228605435a681"
+    },
+    {
+      "replay_file": "results/starts/issue-234/case2-water-extent-0.1-rows.csv",
+      "retained_file": "results/starts/native/case2-water-extent-0.1-rows.csv",
+      "sha256": "6acff834cc5f524dd179bcd6eca363e8e10aed9091b4a0ec9857277000d63e63"
+    },
+    {
+      "replay_file": "results/starts/issue-234/case2-water-extent-0.2-iterations.csv",
+      "retained_file": "results/starts/native/case2-water-extent-0.2-iterations.csv",
+      "sha256": "4088090dbdf6544acabf894891716cb183608c21f4d288d9654fdb0fa157aef2"
+    },
+    {
+      "replay_file": "results/starts/issue-234/case2-water-extent-0.2-rows.csv",
+      "retained_file": "results/starts/native/case2-water-extent-0.2-rows.csv",
+      "sha256": "96e165af3fa405a715db1c65a04d29ea13964656b5505ea52df3a69f6fcb0bbc"
+    },
+    {
+      "replay_file": "results/starts/issue-234/case2-water-extent-0.3-iterations.csv",
+      "retained_file": "results/starts/native/case2-water-extent-0.3-iterations.csv",
+      "sha256": "10afd3158dd0d9bd76064a4dfacf6c3c30571f7f1015d13168fafefe16557b73"
+    },
+    {
+      "replay_file": "results/starts/issue-234/case2-water-extent-0.3-rows.csv",
+      "retained_file": "results/starts/native/case2-water-extent-0.3-rows.csv",
+      "sha256": "914a538587420628fbac4509e2186c3e5c731c028d7624228fa572b21fae95ea"
+    },
+    {
+      "replay_file": "results/native-parameter/issue-234/coarse/case1-terms.csv",
+      "retained_file": "results/native-parameter/coarse/case1-terms.csv",
+      "replay_sha256": "72186055b2e0d19673732a59ff8dbfe81fb7eac313ea54fae829898dab4ef4e2",
+      "retained_sha256": "38e641ee6d6c8c6f1f7e983bede027ec7a7e6fb63f957480687c8e5c334f6dc1",
+      "maximum_numeric_change": 0.0
+    },
+    {
+      "replay_file": "results/native-parameter/issue-234/coarse/case2-terms.csv",
+      "retained_file": "results/native-parameter/coarse/case2-terms.csv",
+      "replay_sha256": "ed37abc5d04ad11f671bf40df9da703da3b2cc63f0ac3d6ef808c04a561b6660",
+      "retained_sha256": "6d30a7578e4372258601ab596b490438cd59823187db1cef78549fe826d308b4",
+      "maximum_numeric_change": 0.0
+    },
+    {
+      "replay_file": "results/native-parameter/issue-234/fine/case1-terms.csv",
+      "retained_file": "results/native-parameter/fine/case1-terms.csv",
+      "replay_sha256": "1a4936132f64213fb86c72db7a51c3ae32e57950760fed8c388fd3669f999a91",
+      "retained_sha256": "1b1a9845cf454e7245dace80d03fb4f0db8df7fd1acbd9a4d24541e1aefe9a2f",
+      "maximum_numeric_change": 0.0
+    },
+    {
+      "replay_file": "results/native-parameter/issue-234/fine/case2-terms.csv",
+      "retained_file": "results/native-parameter/fine/case2-terms.csv",
+      "replay_sha256": "f1e1176e0d77a2df03125ce222ed76c6df9b1c3f634f5b85e7b3852bc0f86f5e",
+      "retained_sha256": "d7e096f10157095ec4f00787cdcaee86bdd3cf01c7454c339a7890121c7ad917",
+      "maximum_numeric_change": 0.0
+    },
+    {
+      "replay_file": "results/native-parameter/issue-234/refined/case1-terms.csv",
+      "retained_file": "results/native-parameter/refined/case1-terms.csv",
+      "replay_sha256": "3e1d68ba28b54ba0d679d86c01428cb3300dc7f5070fb02dc6dcc343fcf77b7f",
+      "retained_sha256": "ec04c17ef6c556587ba42e659c284cb19bb3dddd92f9e75a4433963af66bc562",
+      "maximum_numeric_change": 0.0
+    },
+    {
+      "replay_file": "results/native-parameter/issue-234/refined/case2-terms.csv",
+      "retained_file": "results/native-parameter/refined/case2-terms.csv",
+      "replay_sha256": "34c16d7b4828661c8f0133d89d4ec952cf9341b8595e03f08165d3c9660d7414",
+      "retained_sha256": "628cd1ae66e14197e885a4bdc0d1518a2dcf38d024a641121aef9ec503f27b45",
+      "maximum_numeric_change": 0.0
+    }
+  ],
+  "gates": {
+    "check-all": {
+      "passed": true,
+      "python_cases": 121,
+      "python_deselected": 1,
+      "native_programs": 6
+    },
+    "check-affected_HEAD": {
+      "passed": true,
+      "mode": "analysis source checks; no build or numerical solve"
+    },
+    "analysis_layout": {
+      "passed": true,
+      "leaves": 82,
+      "remaining_scipy_locations": 2,
+      "remaining_review_only_locations": 1
+    }
+  },
+  "restored_reference_wheel_sha256": "e28d258df06eac39711c59a79f9ce2b69fc8ac7565637bfba0dbef21863d8dc7",
+  "display": {
+    "source": "notebook.qmd",
+    "html": "build/companion/analyses/2026-born-unavailable-states/notebook.html",
+    "figure": "results/native-parameter/issue-234/continuation.png",
+    "figure_sha256": "0d93bcf7321e8086c03742bce915dc370cfd1140460d23f274bad88a28386ead",
+    "scope": "Local selected notebook view; shared Quarto configuration unchanged."
+  }
+}

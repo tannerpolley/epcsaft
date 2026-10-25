@@ -1,0 +1,153 @@
+#!/usr/bin/env python3
+"""Retain and publish the clean canonical main wheel; see downstream/README.md."""
+import fcntl
+import hashlib
+import json
+import os
+from pathlib import Path
+import shutil
+import subprocess
+import tempfile
+from zipfile import ZipFile
+
+
+def command(*args, **kwargs):
+    return subprocess.check_output(args, **kwargs).decode().strip()
+
+
+def api(path, payload=None, missing=False):
+    args = ['gh', 'api', f'repos/tannerpolley/ePC-SAFT/{path}'.rstrip('/')]
+    if payload is not None:
+        args += ['--method', 'POST', '--input', '-']
+    result = subprocess.run(args, input=json.dumps(payload) if payload is not None else None,
+                            text=True, capture_output=True)
+    if missing and result.returncode and '(HTTP 404)' in result.stderr:
+        return None
+    if result.returncode:
+        raise SystemExit(result.stderr)
+    return json.loads(result.stdout)
+
+
+def sha(path):
+    with path.open('rb') as stream:
+        return hashlib.file_digest(stream, 'sha256').hexdigest()
+
+
+def conflict(local, remote):
+    raise SystemExit(f'wheel/release conflict: local={json.dumps(local, sort_keys=True)}; '
+                     f'retained/remote={json.dumps(remote, sort_keys=True)}')
+
+
+os.chdir(command('git', '-C', str(Path(__file__).resolve().parent), 'worktree', 'list', '--porcelain')
+         .splitlines()[0].removeprefix('worktree '))
+if command('git', 'branch', '--show-current') != 'main' or command('git', 'status', '--porcelain'):
+    raise SystemExit(f'the canonical main checkout must be clean: {Path.cwd()}')
+commit = command('git', 'rev-parse', 'HEAD')
+tag = f'main-{commit}'
+repo = 'tannerpolley/ePC-SAFT'
+if not api('')['private']:
+    raise SystemExit('main wheels require the private Engine repository')
+short = command('git', 'rev-parse', '--short=8', 'HEAD')
+folder = Path(f'build/wheels/main-{short}')
+folder.mkdir(parents=True, exist_ok=True)
+lock = (folder / 'refresh.lock').open('w')
+fcntl.flock(lock, fcntl.LOCK_EX)
+record_path = folder / 'release.json'
+wheels = list(folder.glob('epcsaft-*.whl'))
+if record_path.exists():
+    record = json.loads(record_path.read_text())
+    actual = dict(commit=commit, wheel=wheels[0].name if len(wheels) == 1 else None,
+                  sha256=sha(wheels[0]) if len(wheels) == 1 else None)
+    if any(record.get(key) != value for key, value in actual.items()):
+        conflict(actual, record)
+    wheel = wheels[0]
+else:
+    if wheels:
+        raise SystemExit(f'unrecorded retained wheel; inspect before reuse: {wheels}')
+    subprocess.run(['bash', '.codex/environments/setup.sh'], check=True)
+    evidence = os.environ.get('EPCSAFT_NUMERICAL_EVIDENCE', '').split()
+    if not evidence or any(not Path(path).exists() for path in evidence):
+        raise SystemExit('set EPCSAFT_NUMERICAL_EVIDENCE to existing numerical evidence paths')
+    if list(Path('build/wheels/main-current').glob('epcsaft-*.whl')):
+        previous = os.environ['EPCSAFT_PREVIOUS_PREPARED']
+        comparison = f'build/wheels/key-solves-{short}-{command("date", "+%Y%m%dT%H%M%S")}'
+        compared = subprocess.run(['tools/time-key-solves', previous, 'build/engine-meson/shared',
+                                   '--pairs', '1', '--out', comparison])
+        if compared.returncode and 'gate_failures' not in json.loads(Path(comparison + '/summary.json').read_text()):
+            raise SystemExit(compared.returncode)
+        evidence.append(comparison + '/summary.json')
+    identity = json.loads(command('.venv/bin/python', 'tools/engine_identity.py'))
+    if identity['source_revision'] != commit:
+        conflict(dict(commit=commit), identity)
+    with tempfile.TemporaryDirectory(prefix='.staging-', dir=folder) as staging:
+        built = Path(command('bash', 'tools/build-engine.sh', '--wheel', staging))
+        subprocess.run(['bash', 'tools/check-wheel-container.sh', str(built)], check=True)
+        wheel = folder / built.name
+        shutil.move(str(built), wheel)
+    with ZipFile(wheel) as archive:
+        metadata = next(name for name in archive.namelist() if name.endswith('.dist-info/WHEEL'))
+        tags = [line[5:] for line in archive.read(metadata).decode().splitlines() if line.startswith('Tag: ')]
+    record = dict(commit=commit, wheel=wheel.name, sha256=sha(wheel), tags=tags,
+                  prepared_identity=identity, numerical_evidence=evidence,
+                  toolchain=json.loads((Path(identity['meson_build_dir']) / 'meson-info/intro-compilers.json').read_text()))
+    record_path.write_text(json.dumps(record, indent=2, sort_keys=True) + '\n')
+checksum = folder / (wheel.name + '.sha256')
+expected_checksum = f'{record["sha256"]}  {wheel.name}\n'
+if checksum.exists() and checksum.read_text() != expected_checksum:
+    conflict(expected_checksum, checksum.read_text())
+checksum.write_text(expected_checksum)
+releases = json.loads(command('gh', 'api', '--paginate', '--slurp', f'repos/{repo}/releases'))
+matching = [release for page in releases for release in page if release['tag_name'] == tag]
+if len(matching) > 1:
+    conflict(record, matching)
+release = matching[0] if matching else None
+ref = api(f'git/ref/tags/{tag}', missing=True)
+while ref and ref['object']['type'] == 'tag':
+    ref = api(f'git/tags/{ref["object"]["sha"]}')
+if ref and (ref['object']['type'] != 'commit' or ref['object']['sha'] != commit):
+    conflict(dict(commit=commit), ref)
+if ref is None and release is not None and not release['draft']:
+    conflict(dict(commit=commit, tag=tag), dict(tag=tag, state='absent'))
+if release is None:
+    release = api('releases', dict(tag_name=tag, target_commitish=commit, name=tag,
+                  draft=True, prerelease=True, make_latest='false', body=f'Engine wheel for {commit}; retained forever.'))
+if release['target_commitish'] != commit or not release['prerelease']:
+    conflict(record, release)
+assets = {path.name: path for path in (wheel, checksum, record_path)}
+remote = {asset['name']: asset for asset in release['assets']}
+if remote.keys() - assets.keys():
+    conflict(list(assets), list(remote))
+# Resume missing draft assets only; incomplete, unequal or unreadable assets stop.
+for name, asset in remote.items():
+    data = subprocess.check_output(['gh', 'api', '-H', 'Accept: application/octet-stream',
+                                    f'repos/{repo}/releases/assets/{asset["id"]}'])
+    remote_sha = hashlib.sha256(data).hexdigest()
+    if asset['state'] != 'uploaded' or remote_sha != sha(assets[name]):
+        conflict(dict(name=name, sha256=sha(assets[name])), dict(name=name, sha256=remote_sha, state=asset['state']))
+for name in assets.keys() - remote.keys():
+    if not release['draft']:
+        conflict(list(assets), list(remote))
+    subprocess.run(['gh', 'release', 'upload', tag, str(assets[name]), '--repo', repo], check=True)
+    asset = next(item for item in api(f'releases/{release["id"]}')['assets'] if item['name'] == name)
+    data = subprocess.check_output(['gh', 'api', '-H', 'Accept: application/octet-stream', asset['url']])
+    if hashlib.sha256(data).hexdigest() != sha(assets[name]):
+        conflict(dict(name=name, sha256=sha(assets[name])), dict(name=name, sha256=hashlib.sha256(data).hexdigest()))
+if ref is None:
+    api('git/refs', dict(ref=f'refs/tags/{tag}', sha=commit))
+ref = api(f'commits/refs/tags/{tag}')
+if ref['sha'] != commit:
+    conflict(dict(commit=commit), ref)
+if release['draft']:
+    subprocess.run(['gh', 'release', 'edit', tag, '--repo', repo, '--draft=false',
+                    '--prerelease', '--latest=false'], check=True)
+published = api(f'releases/{release["id"]}')
+if published['draft'] or not published['prerelease']:
+    raise SystemExit(f'publication not confirmed: {published["html_url"]}')
+print(f'Published/reused private prerelease {tag}: {wheel.name} sha256 {record["sha256"]}')
+current = Path('build/wheels/main-current')
+if current.exists() and not any(sha(path) == record['sha256'] for path in current.glob('*.whl')):
+    shutil.move(str(current), folder / 'previous-main-current')
+current.mkdir(exist_ok=True)
+if not (current / wheel.name).exists():
+    shutil.copy2(wheel, current / wheel.name)
+(current / 'README').write_text(f'Wheel from main {commit}, sha256 {record["sha256"]}.\nRecord/evidence: {record_path}\n')

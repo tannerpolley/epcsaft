@@ -1,0 +1,1007 @@
+{
+  "status": "qualified",
+  "conditions": {
+    "temperature_K": 298.15,
+    "pressure_Pa": 100000.0,
+    "branch": "liquid",
+    "source_packet": "figiel-2025-reference-electrolytes/4"
+  },
+  "declarations": {
+    "targets": "LiCl/NaCl/KCl gamma and Phi at 0.1, 1, 4.5 mol/kg",
+    "guard": "NaCl aqueous relative permittivity at 0.1, 1 mol/kg; source max and mean 0.1",
+    "q_decade": 0.02,
+    "solver_tolerance": 1e-10,
+    "activity_distance": 1e-06,
+    "initial_margin": 0.1,
+    "hold_energy_tolerance_J_mol": 1e-06,
+    "hold_diameter_tolerance_angstrom": 1e-10,
+    "per_solve_iterations": 300,
+    "per_solve_seconds": 120,
+    "shared_iterations": 600,
+    "shared_seconds": 240,
+    "root_refinement_energy_J_mol": 1e-07,
+    "root_refinement_diameter_angstrom": 1e-11
+  },
+  "thread_environment": {
+    "OMP_NUM_THREADS": null,
+    "OPENBLAS_NUM_THREADS": null,
+    "EPCSAFT_BUILD_JOBS": "6",
+    "EPCSAFT_HSL_LIBRARY": null
+  },
+  "commands": [
+    "env -u EPCSAFT_HSL_LIBRARY EPCSAFT_BUILD_JOBS=6 nice -n 10 agent-heavy .venv/bin/python analyses/2026-electrolyte-parameter-gradients/scripts/minimax.py"
+  ],
+  "claim_limits": [
+    "synthetic rows verify solver integration, not physical validity",
+    "local stationarity does not establish global optimality or infeasibility",
+    "no #209 parameter adoption or physical validation"
+  ],
+  "inputs": {
+    "packet_sha256": "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d",
+    "water_data_sha256": "2f63e13f06a5b0f4e8bca2980b6a8d9d7fb0f839153c43e3a71952daf9796595",
+    "component_ids": [
+      "water",
+      "methanol",
+      "lithium-cation",
+      "sodium-cation",
+      "potassium-cation",
+      "chloride-anion"
+    ],
+    "coordinate_count": 7,
+    "target_rows": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17
+    ],
+    "epsilon_rows": [
+      18,
+      19
+    ],
+    "transfer_row": 23,
+    "aqueous_solvent_fraction_of_methanol": 0.0,
+    "transfer": {
+      "solvent_from": "water",
+      "solvent_to": "methanol",
+      "composition": {
+        "methanol": 1.0
+      },
+      "reference_composition": {
+        "water": 1.0
+      },
+      "positive_source_value_J_mol": 8777.262450319775,
+      "report_only_datum_ratio_to_source": 0.1
+    },
+    "observations": [
+      {
+        "row": 0,
+        "kind": "MeanIonicActivityCoefficient",
+        "observed": 0.7946253101727835,
+        "unit": "1",
+        "composition": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "reference_composition": [],
+        "molality_mol_kg": 0.1,
+        "ion_indices": [
+          2,
+          5
+        ],
+        "stoichiometry": [
+          1,
+          1
+        ]
+      },
+      {
+        "row": 1,
+        "kind": "MeanIonicActivityCoefficient",
+        "observed": 0.828076393438979,
+        "unit": "1",
+        "composition": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "reference_composition": [],
+        "molality_mol_kg": 1.0,
+        "ion_indices": [
+          2,
+          5
+        ],
+        "stoichiometry": [
+          1,
+          1
+        ]
+      },
+      {
+        "row": 2,
+        "kind": "MeanIonicActivityCoefficient",
+        "observed": 1.634868779049869,
+        "unit": "1",
+        "composition": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "reference_composition": [],
+        "molality_mol_kg": 4.5,
+        "ion_indices": [
+          2,
+          5
+        ],
+        "stoichiometry": [
+          1,
+          1
+        ]
+      },
+      {
+        "row": 3,
+        "kind": "OsmoticCoefficient",
+        "observed": 0.9441146529473543,
+        "unit": "1",
+        "composition": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "reference_composition": [],
+        "molality_mol_kg": 0.1,
+        "ion_indices": [
+          2,
+          5
+        ],
+        "stoichiometry": [
+          1,
+          1
+        ]
+      },
+      {
+        "row": 4,
+        "kind": "OsmoticCoefficient",
+        "observed": 1.0491414037605498,
+        "unit": "1",
+        "composition": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "reference_composition": [],
+        "molality_mol_kg": 1.0,
+        "ion_indices": [
+          2,
+          5
+        ],
+        "stoichiometry": [
+          1,
+          1
+        ]
+      },
+      {
+        "row": 5,
+        "kind": "OsmoticCoefficient",
+        "observed": 1.4273556270417278,
+        "unit": "1",
+        "composition": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "reference_composition": [],
+        "molality_mol_kg": 4.5,
+        "ion_indices": [
+          2,
+          5
+        ],
+        "stoichiometry": [
+          1,
+          1
+        ]
+      },
+      {
+        "row": 6,
+        "kind": "MeanIonicActivityCoefficient",
+        "observed": 0.7728738818760531,
+        "unit": "1",
+        "composition": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "reference_composition": [],
+        "molality_mol_kg": 0.1,
+        "ion_indices": [
+          3,
+          5
+        ],
+        "stoichiometry": [
+          1,
+          1
+        ]
+      },
+      {
+        "row": 7,
+        "kind": "MeanIonicActivityCoefficient",
+        "observed": 0.6991106526873955,
+        "unit": "1",
+        "composition": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "reference_composition": [],
+        "molality_mol_kg": 1.0,
+        "ion_indices": [
+          3,
+          5
+        ],
+        "stoichiometry": [
+          1,
+          1
+        ]
+      },
+      {
+        "row": 8,
+        "kind": "MeanIonicActivityCoefficient",
+        "observed": 0.8439831986697144,
+        "unit": "1",
+        "composition": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "reference_composition": [],
+        "molality_mol_kg": 4.5,
+        "ion_indices": [
+          3,
+          5
+        ],
+        "stoichiometry": [
+          1,
+          1
+        ]
+      },
+      {
+        "row": 9,
+        "kind": "OsmoticCoefficient",
+        "observed": 0.936012302236359,
+        "unit": "1",
+        "composition": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "reference_composition": [],
+        "molality_mol_kg": 0.1,
+        "ion_indices": [
+          3,
+          5
+        ],
+        "stoichiometry": [
+          1,
+          1
+        ]
+      },
+      {
+        "row": 10,
+        "kind": "OsmoticCoefficient",
+        "observed": 0.971007282779825,
+        "unit": "1",
+        "composition": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "reference_composition": [],
+        "molality_mol_kg": 1.0,
+        "ion_indices": [
+          3,
+          5
+        ],
+        "stoichiometry": [
+          1,
+          1
+        ]
+      },
+      {
+        "row": 11,
+        "kind": "OsmoticCoefficient",
+        "observed": 1.1151140210433408,
+        "unit": "1",
+        "composition": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "reference_composition": [],
+        "molality_mol_kg": 4.5,
+        "ion_indices": [
+          3,
+          5
+        ],
+        "stoichiometry": [
+          1,
+          1
+        ]
+      },
+      {
+        "row": 12,
+        "kind": "MeanIonicActivityCoefficient",
+        "observed": 0.7759009675961898,
+        "unit": "1",
+        "composition": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "reference_composition": [],
+        "molality_mol_kg": 0.1,
+        "ion_indices": [
+          4,
+          5
+        ],
+        "stoichiometry": [
+          1,
+          1
+        ]
+      },
+      {
+        "row": 13,
+        "kind": "MeanIonicActivityCoefficient",
+        "observed": 0.6460252812563742,
+        "unit": "1",
+        "composition": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "reference_composition": [],
+        "molality_mol_kg": 1.0,
+        "ion_indices": [
+          4,
+          5
+        ],
+        "stoichiometry": [
+          1,
+          1
+        ]
+      },
+      {
+        "row": 14,
+        "kind": "MeanIonicActivityCoefficient",
+        "observed": 0.5724633497949334,
+        "unit": "1",
+        "composition": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "reference_composition": [],
+        "molality_mol_kg": 4.5,
+        "ion_indices": [
+          4,
+          5
+        ],
+        "stoichiometry": [
+          1,
+          1
+        ]
+      },
+      {
+        "row": 15,
+        "kind": "OsmoticCoefficient",
+        "observed": 0.9320101607697624,
+        "unit": "1",
+        "composition": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "reference_composition": [],
+        "molality_mol_kg": 0.1,
+        "ion_indices": [
+          4,
+          5
+        ],
+        "stoichiometry": [
+          1,
+          1
+        ]
+      },
+      {
+        "row": 16,
+        "kind": "OsmoticCoefficient",
+        "observed": 0.9247158589083315,
+        "unit": "1",
+        "composition": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "reference_composition": [],
+        "molality_mol_kg": 1.0,
+        "ion_indices": [
+          4,
+          5
+        ],
+        "stoichiometry": [
+          1,
+          1
+        ]
+      },
+      {
+        "row": 17,
+        "kind": "OsmoticCoefficient",
+        "observed": 0.917563695566985,
+        "unit": "1",
+        "composition": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "reference_composition": [],
+        "molality_mol_kg": 4.5,
+        "ion_indices": [
+          4,
+          5
+        ],
+        "stoichiometry": [
+          1,
+          1
+        ]
+      },
+      {
+        "row": 18,
+        "kind": "BulkRelativePermittivity",
+        "observed": 76.07297208704826,
+        "unit": "1",
+        "composition": [
+          0.9964098754342179,
+          0.0,
+          0.0,
+          0.0017950622828910067,
+          0.0,
+          0.0017950622828910067
+        ],
+        "reference_composition": [],
+        "molality_mol_kg": 0.0,
+        "ion_indices": [
+          3,
+          5
+        ],
+        "stoichiometry": [
+          1,
+          1
+        ]
+      },
+      {
+        "row": 19,
+        "kind": "BulkRelativePermittivity",
+        "observed": 62.68388094017067,
+        "unit": "1",
+        "composition": [
+          0.9652224557846071,
+          0.0,
+          0.0,
+          0.017388772107696432,
+          0.0,
+          0.017388772107696432
+        ],
+        "reference_composition": [],
+        "molality_mol_kg": 0.0,
+        "ion_indices": [
+          3,
+          5
+        ],
+        "stoichiometry": [
+          1,
+          1
+        ]
+      },
+      {
+        "row": 20,
+        "kind": "SolvationGibbsEnergy",
+        "observed": -487020.0,
+        "unit": "J/mol",
+        "composition": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "reference_composition": [],
+        "molality_mol_kg": 0.0,
+        "ion_indices": [
+          2,
+          5
+        ],
+        "stoichiometry": [
+          1,
+          1
+        ]
+      },
+      {
+        "row": 21,
+        "kind": "SolvationGibbsEnergy",
+        "observed": -381930.0,
+        "unit": "J/mol",
+        "composition": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "reference_composition": [],
+        "molality_mol_kg": 0.0,
+        "ion_indices": [
+          3,
+          5
+        ],
+        "stoichiometry": [
+          1,
+          1
+        ]
+      },
+      {
+        "row": 22,
+        "kind": "SolvationGibbsEnergy",
+        "observed": -308890.0,
+        "unit": "J/mol",
+        "composition": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "reference_composition": [],
+        "molality_mol_kg": 0.0,
+        "ion_indices": [
+          4,
+          5
+        ],
+        "stoichiometry": [
+          1,
+          1
+        ]
+      },
+      {
+        "row": 23,
+        "kind": "TransferGibbsEnergy",
+        "observed": 877.7262450319777,
+        "unit": "J/mol",
+        "composition": [
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "reference_composition": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "molality_mol_kg": 0.0,
+        "ion_indices": [
+          3,
+          5
+        ],
+        "stoichiometry": [
+          1,
+          1
+        ]
+      }
+    ],
+    "physical_parameter_order": [
+      {
+        "family": "Kij",
+        "indices": [
+          2,
+          12
+        ],
+        "unit": "1"
+      },
+      {
+        "family": "Kij",
+        "indices": [
+          17,
+          32
+        ],
+        "unit": "1"
+      },
+      {
+        "family": "Kij",
+        "indices": [
+          3,
+          18
+        ],
+        "unit": "1"
+      },
+      {
+        "family": "Kij",
+        "indices": [
+          23,
+          33
+        ],
+        "unit": "1"
+      },
+      {
+        "family": "Kij",
+        "indices": [
+          4,
+          24
+        ],
+        "unit": "1"
+      },
+      {
+        "family": "Kij",
+        "indices": [
+          29,
+          34
+        ],
+        "unit": "1"
+      },
+      {
+        "family": "IonSuppressionCoefficient",
+        "indices": [
+          2
+        ],
+        "unit": "1"
+      },
+      {
+        "family": "IonSuppressionCoefficient",
+        "indices": [
+          3
+        ],
+        "unit": "1"
+      },
+      {
+        "family": "IonSuppressionCoefficient",
+        "indices": [
+          4
+        ],
+        "unit": "1"
+      },
+      {
+        "family": "IonSuppressionCoefficient",
+        "indices": [
+          5
+        ],
+        "unit": "1"
+      },
+      {
+        "family": "BornDiameter",
+        "indices": [
+          2
+        ],
+        "unit": "Angstrom"
+      },
+      {
+        "family": "BornDiameter",
+        "indices": [
+          3
+        ],
+        "unit": "Angstrom"
+      },
+      {
+        "family": "BornDiameter",
+        "indices": [
+          4
+        ],
+        "unit": "Angstrom"
+      }
+    ],
+    "optimizer_coordinates": [
+      {
+        "targets": [
+          {
+            "family": "Kij",
+            "indices": [
+              2,
+              12
+            ],
+            "coefficient": 1.0
+          }
+        ],
+        "origin": 0.0,
+        "scale": 1.0,
+        "lower": -1.0,
+        "upper": 1.0
+      },
+      {
+        "targets": [
+          {
+            "family": "Kij",
+            "indices": [
+              17,
+              32
+            ],
+            "coefficient": 1.0
+          }
+        ],
+        "origin": 0.0,
+        "scale": 1.0,
+        "lower": -1.0,
+        "upper": 1.0
+      },
+      {
+        "targets": [
+          {
+            "family": "Kij",
+            "indices": [
+              3,
+              18
+            ],
+            "coefficient": 1.0
+          }
+        ],
+        "origin": 0.0,
+        "scale": 1.0,
+        "lower": -1.0,
+        "upper": 1.0
+      },
+      {
+        "targets": [
+          {
+            "family": "Kij",
+            "indices": [
+              23,
+              33
+            ],
+            "coefficient": 1.0
+          }
+        ],
+        "origin": 0.0,
+        "scale": 1.0,
+        "lower": -1.0,
+        "upper": 1.0
+      },
+      {
+        "targets": [
+          {
+            "family": "Kij",
+            "indices": [
+              4,
+              24
+            ],
+            "coefficient": 1.0
+          }
+        ],
+        "origin": 0.0,
+        "scale": 1.0,
+        "lower": -1.0,
+        "upper": 1.0
+      },
+      {
+        "targets": [
+          {
+            "family": "Kij",
+            "indices": [
+              29,
+              34
+            ],
+            "coefficient": 1.0
+          }
+        ],
+        "origin": 0.0,
+        "scale": 1.0,
+        "lower": -1.0,
+        "upper": 1.0
+      },
+      {
+        "targets": [
+          {
+            "family": "IonSuppressionCoefficient",
+            "indices": [
+              2
+            ],
+            "coefficient": 1.0
+          },
+          {
+            "family": "IonSuppressionCoefficient",
+            "indices": [
+              3
+            ],
+            "coefficient": 1.0
+          },
+          {
+            "family": "IonSuppressionCoefficient",
+            "indices": [
+              4
+            ],
+            "coefficient": 1.0
+          },
+          {
+            "family": "IonSuppressionCoefficient",
+            "indices": [
+              5
+            ],
+            "coefficient": 1.0
+          }
+        ],
+        "origin": 0.0,
+        "scale": 1.0,
+        "lower": 3.0,
+        "upper": 9.0
+      }
+    ],
+    "hydration_targets_J_mol": [
+      -487020.0,
+      -381930.0,
+      -308890.0
+    ]
+  },
+  "B3": {
+    "points": [
+      "source",
+      "F2-manufactured-truth",
+      "B4-start-0-return",
+      "B4-start-1-return"
+    ],
+    "affine_scales": [
+      0.2,
+      0.4,
+      0.5,
+      0.25,
+      0.3,
+      0.6,
+      2.0
+    ],
+    "check_groups": [
+      "aqueous_permittivity",
+      "hydration_energy",
+      "transfer_energy",
+      "transfer_energy_log_report_only"
+    ],
+    "raw_rows_compared": 24,
+    "report_only_energy_log_ratio_failure_at_source": true,
+    "report_only_constraint_system_unchanged": true,
+    "zero_weight_enforced_rows": [
+      18,
+      19
+    ],
+    "onepoint_constraint_availability": "values_only"
+  },
+  "B4": {
+    "start_count": 2,
+    "elapsed_seconds": 1.0612182870008837,
+    "check_groups": [
+      "aqueous_permittivity",
+      "hydration_energy_report_only",
+      "transfer_energy_log_report_only"
+    ],
+    "solves": [
+      {
+        "status": "converged",
+        "termination": "SUCCESS",
+        "application_status": "Solve_Succeeded",
+        "availability": "available",
+        "iterations": 12,
+        "failures": 0,
+        "acceptance": "pass",
+        "active_lower": [
+          2
+        ],
+        "active_upper": [],
+        "hold_causes": [
+          "available",
+          "available",
+          "available"
+        ]
+      },
+      {
+        "status": "converged",
+        "termination": "SUCCESS",
+        "application_status": "Solve_Succeeded",
+        "availability": "available",
+        "iterations": 11,
+        "failures": 0,
+        "acceptance": "pass",
+        "active_lower": [
+          2
+        ],
+        "active_upper": [],
+        "hold_causes": [
+          "available",
+          "available",
+          "available"
+        ]
+      }
+    ]
+  },
+  "root_refinement": {
+    "constraint_shapes": [
+      [
+        45,
+        450
+      ],
+      [
+        45,
+        450
+      ]
+    ],
+    "maximum_original_root_error": 5.504297929490672e-13
+  },
+  "wheel_sha256": "4e331275a44ab795d0daa18f09455acfaeaa7681372d2fd07f8e809655008bfd",
+  "failures": [],
+  "seconds": 2.409126861999539
+}

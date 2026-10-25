@@ -1,0 +1,22 @@
+ion,charge_number,solvent,segment_diameter_angstrom,dispersion_energy_over_k_K,source_role,locator,zotero_key,pdf_attachment_key,markdown_attachment_key,doi
+Li+,1,water,1.82,2697.3,reported source parameter,Table 6; p. 333; Li+; water columns,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+Li+,1,methanol,3.60,1000.0,reported source parameter,Table 6; p. 333; Li+; methanol columns,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+Li+,1,ethanol,3.60,1000.0,reported source parameter,Table 6; p. 333; Li+; ethanol columns,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+Na+,1,water,2.41,646.1,reported source parameter,Table 6; p. 333; Na+; water columns,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+Na+,1,methanol,4.00,400.0,reported source parameter,Table 6; p. 333; Na+; methanol columns,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+Na+,1,ethanol,3.70,550.0,reported source parameter,Table 6; p. 333; Na+; ethanol columns,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+K+,1,water,2.97,271.1,reported source parameter,Table 6; p. 333; K+; water columns,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+K+,1,methanol,4.50,150.0,reported source parameter,Table 6; p. 333; K+; methanol columns,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+K+,1,ethanol,3.80,40.0,ternary MIAC fitted; not fitted to binary ethanol salts,Table 6; p. 333; K+; ethanol columns; footnote a,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+NH4+,1,water,3.48,176.4,reported source parameter,Table 6; p. 333; NH4+; water columns,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+NH4+,1,methanol,3.00,400.0,reported source parameter,Table 6; p. 333; NH4+; methanol columns,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+NH4+,1,ethanol,3.00,400.0,reported source parameter,Table 6; p. 333; NH4+; ethanol columns,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+Cl-,-1,water,3.06,47.3,reported source parameter,Table 6; p. 333; Cl-; water columns,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+Cl-,-1,methanol,3.70,50.0,reported source parameter,Table 6; p. 333; Cl-; methanol columns,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+Cl-,-1,ethanol,3.30,50.0,reported source parameter,Table 6; p. 333; Cl-; ethanol columns,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+Br-,-1,water,3.46,60.2,reported source parameter,Table 6; p. 333; Br-; water columns,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+Br-,-1,methanol,3.90,90.0,reported source parameter,Table 6; p. 333; Br-; methanol columns,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+Br-,-1,ethanol,3.70,60.0,reported source parameter,Table 6; p. 333; Br-; ethanol columns,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+I-,-1,water,3.93,80.4,reported source parameter,Table 6; p. 333; I-; water columns,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+I-,-1,methanol,4.10,140.0,reported source parameter,Table 6; p. 333; I-; methanol columns,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+I-,-1,ethanol,3.90,120.0,reported source parameter,Table 6; p. 333; I-; ethanol columns,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040

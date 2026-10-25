@@ -1,0 +1,144 @@
+
+******************************************************************************
+This program contains Ipopt, a library for large-scale nonlinear optimization.
+ Ipopt is released as open source code under the Eclipse Public License (EPL).
+         For more information visit http://projects.coin-or.org/Ipopt
+******************************************************************************
+
+{
+  "wheel_sha256": "8470b49a9283528b83dbbdab46dc62dee0fc70e5e2149f8f218b823dd85812cb",
+  "packet_sha256": "8babed899e7347e58c403c7aff24a7fdd6d60411af3b4d81eb6aa90c2431dfa4",
+  "discovery": {
+    "success": true,
+    "message": "converged: residual 7.9725537049336409e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 20 iterations, contraction absent, floor 1.5191395616672873e-10, amplification 0",
+    "solver_status": "SUCCESS",
+    "requested_tolerance_met": true,
+    "phase_count": 2,
+    "iterations": 20,
+    "evaluations": 33,
+    "hessian_calls": 21,
+    "objective": -56.21819455291931,
+    "reduced_hessian_minimum": 0.004589626508747832,
+    "coordinates": [
+      -0.8151883245489214,
+      -0.5843931849192907,
+      71.4681706889217,
+      -0.8389191576232843,
+      -0.005641012331175564,
+      -5.180510918525711,
+      28.531829311078287,
+      -0.7839112849469938,
+      -0.050421745920040346,
+      -1.329822244942933
+    ],
+    "residuals": [
+      8.777700788442644e-15,
+      1.7319479184152442e-14,
+      1.115539075378834e-14,
+      3.4486302702418925e-15,
+      1.021405182655144e-14,
+      1.8700162835606667e-15,
+      0.0,
+      -7.105427357601002e-17,
+      0.0,
+      0.0
+    ],
+    "classified_residuals": [
+      2.776269663655731e-15,
+      6.899994724035293e-15,
+      7.972553704933641e-15,
+      9.784224128669552e-16,
+      1.6393072856171926e-17,
+      5.335498541148991e-16,
+      0.0,
+      -7.105427357601002e-17,
+      0.0,
+      0.0
+    ],
+    "amounts": [
+      71.4681706889217,
+      28.531829311078287
+    ],
+    "mole_fractions": [
+      0.4425559753585514,
+      0.5574440246414487,
+      0.9943748683039,
+      0.005625131696100075
+    ],
+    "molar_densities": [
+      16912.29929663847,
+      54198.36004627637
+    ],
+    "multipliers": [
+      -0.050421745920040346,
+      -1.329822244942933
+    ],
+    "convergence": {
+      "stop": "Stop.converged",
+      "residual": 7.972553704933641e-15,
+      "floor": 1.5191395616672873e-10,
+      "iterations": 20,
+      "evaluations": 33
+    }
+  },
+  "discovery_scaling": {
+    "composition": 1.6653345369377348e-15,
+    "amount_mol": 2.4158453015843406e-13,
+    "density_relative": 2.1094237467877974e-15,
+    "gibbs_relative": 6.698679190032706e-15,
+    "inventory_mol": 7.105427357601002e-15
+  },
+  "margin": {
+    "initial_declaration_index": 0,
+    "weight_operand": "declarations/0/amounts/0",
+    "initial_amount_mol": 100.0,
+    "epsilon_components": {
+      "association_energy_estimate_over_rt": 5.3088290347162355e-11,
+      "euler_defect_over_rt": 1.7763568394002505e-15,
+      "summation_estimate_over_rt": 3.039921548129354e-14
+    },
+    "epsilon_over_rt": 5.312046591948305e-11,
+    "all_recorded_estimates": [
+      [
+        1,
+        5.312046591948305e-09
+      ]
+    ],
+    "selected_trial_index": 1,
+    "native_operand": "rounds/0/trials/1/quantities/addition_gibbs_estimate_over_rt_mol",
+    "actual_extensive_estimate_over_rt_mol": 5.312046591948305e-09,
+    "expected_extensive_estimate_over_rt_mol": 5.312046591948305e-09,
+    "weighted_relative_error": 0.0,
+    "old_unweighted_relative_error": 0.99
+  },
+  "discovery_work": {
+    "association_diagnostic_evaluations": 23.0,
+    "declaration_invocations": 3.0,
+    "driver_invocations": 17.0,
+    "energy_evaluations": 1592.0,
+    "evaluations": 302.0,
+    "finite_split_evaluations": 6.0,
+    "hessian_calls": 179.0,
+    "iterations": 162.0,
+    "reconstruction_evaluations": 28.0,
+    "root_calls": 25.0,
+    "root_evaluations": 1152.0,
+    "trial_driver_invocations": 14.0,
+    "trial_invocations": 14.0
+  },
+  "declaration_roles": [
+    "initial",
+    "initial",
+    "addition"
+  ],
+  "checks": {
+    "scaling": true,
+    "margin": true
+  },
+  "limits": [
+    "One original default 100-mol discovery call only; no declared or reuse calls.",
+    "Estimated energy uncertainty, not a rigorous bound or physical validation.",
+    "Prior 100-mol cold/reuse coalescence remains unchanged; this call does not qualify those paths.",
+    "Required-versus-scope classification of those extra paths remains with the reviewer."
+  ]
+}

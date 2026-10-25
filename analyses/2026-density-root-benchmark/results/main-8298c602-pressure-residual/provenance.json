@@ -1,0 +1,14 @@
+{
+  "release": "main-8298c6029ebb8b467929badc4a223c580ec591ab",
+  "actual_provenance": [
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/build/issue-680-release-PRNBCX/epcsaft-0.2.0.dev0-cp313-cp313-manylinux_2_39_x86_64.whl",
+    "8897a0caab9f2508ed642f42c8b5226957fbe7035ed7bfdad71e4166798785b3"
+  ],
+  "input_sha256": "ffe91e34e5d6aa72f1c75425ce247d56ab5fc64beff992dfc2addd5873a8e479",
+  "producer": "scripts/pressure_residual.py",
+  "native_owner": "ALG-DENSITY",
+  "workers": 32,
+  "producer_sha256": "eb9433e4e99912cae58c3ed49d3840858637241d3b5b438c21a60caeccf12335",
+  "frozen_oracle_sha256": "d5928884543c395ed59da28aa0abadc88cb550e6078b70e6c2e7637285b6f71f",
+  "reduction_note": "The producer summary reduction was corrected after calculation; native requests and retained native values are unchanged."
+}

@@ -1,0 +1,83 @@
+{
+  "source_base": "443d828908f4ad5127ab14384f97635dca30bd30",
+  "resumed_from": "798cb53550229f2cd12016b8b57378fb315773da",
+  "wheel_sha256": "8470b49a9283528b83dbbdab46dc62dee0fc70e5e2149f8f218b823dd85812cb",
+  "preparation": {
+    "build_dir": "build/engine-meson/cpython-313-linux-x86_64-x86_64-f6db693e21e289603ae71c78242a17b102f1e324061021d5dca361f47a0bfef7",
+    "build_fingerprint": "0110fba95ed2f519bb8d18afcfea9d5ad378293f8e1183f25ce3f07fef5271f8",
+    "schema_version": 1,
+    "wheel": "build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+    "wheel_sha256": "8470b49a9283528b83dbbdab46dc62dee0fc70e5e2149f8f218b823dd85812cb"
+  },
+  "checks": {
+    "build": {
+      "path": "/tmp/223-gibbs-build4.log",
+      "sha256": "453888de1a3bc8e20dc2bdaa41da33d06c2edb2705bcaf3f4003e1d49a6d355d",
+      "exit_code": 0
+    },
+    "check_all": {
+      "path": "/tmp/223-gibbs-check-all4.log",
+      "sha256": "8a94340495e1edc8104d1ad83b3d8f4ec2d22823f662f2a36358db62225ff90e",
+      "exit_code": 0
+    },
+    "check_affected": {
+      "path": "/tmp/223-gibbs-check-affected4.log",
+      "sha256": "dd46e702d444a22e8a2288ead1e6951417625aab67e3645c64da4648767e60a8",
+      "exit_code": 0
+    }
+  },
+  "python_tests": {
+    "passed": 113,
+    "deselected": 1
+  },
+  "fast_native_slices": {
+    "passed": 6,
+    "failed": 0
+  },
+  "affected_native_slices": {
+    "passed": 3,
+    "failed": 0
+  },
+  "concurrency": {
+    "compile_jobs": 2,
+    "compile_lock": "/tmp/t3-engine-build.lock",
+    "test_environment": {
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "MESON_TESTTHREADS": "1",
+      "MESON_NUM_PROCESSES": "1"
+    },
+    "limit": "At most two actual numerical processes; native test gates ran one at a time. Build refresh printed -j1, within the two-job cap."
+  },
+  "initial_failure": {
+    "check_affected_log_sha256": "9ca1661d6a0e1f6e6fecf23b30c882d02f99a742422949e8b37257c68aa87ba3",
+    "cause": "New density-dependent free-pressure native fixture used a generic composition initializer and converged to a dilute root rejected by declared Liquid branch admission. Known input compositions from support/material balances corrected only the fixture; native declared initialization and tolerances unchanged.",
+    "retained_diagnosis": "diagnostics/density-bubble"
+  },
+  "scope": "Corrected installed-wheel gates, the original 58 qualification operations and the 100 mol margin/scaling falsifier, all 4,374 baseline rows and 396 ASL work rows pass. Independent delivered review returned Supported at 0f9bbe59 for the stated cases and limits; the 100 mol declared-conditioning limitation is owned by #243.",
+  "initial_reacting_failure": {
+    "cause": "Discovery initial ideal-speciation seed lost required chloride support. Existing positive charge-neutral union base before unchanged speciation corrects explicit discovery only.",
+    "retained_diagnosis": "diagnostics/reacting-initialization-6e4b4e29"
+  },
+  "git_csv_retention": {
+    "rule": ".gitattributes: analyses/2026-tpd-phase-discovery/results/**/*.csv -text",
+    "verified_index_blobs": 58,
+    "meaning": "All staged retained CSVs are byte-identical to their working records under the existing scoped -text rule, including original line endings. No numerical operand or execution changes."
+  },
+  "dimensional_correction": {
+    "required_review": "../../../docs/scientific/reviews/issue-223-delivered-review.md",
+    "cause": "Extensive G/RT acceptance margin lacked phase-amount weights on molar energy estimates.",
+    "correction": "sum_p N_p epsilon_p; retain computed extensive margin on addition trial.",
+    "new_falsifier": "100 mol neutral case1 scaling with 1e-13 relative margin criterion; old unweighted sum must fail."
+  },
+  "delivered_review": {
+    "verdict": "Supported",
+    "required_defects": 0,
+    "reviewed_commit": "0f9bbe59b13bedc1b0884908ce7ba55be5194224",
+    "task": "77f29c43-6d91-4695-9fb2-4440a0655b40",
+    "ordinal": 3,
+    "reviewer": "Claude Opus 5.5, high effort",
+    "record": "../../../docs/scientific/reviews/issue-223-delivered-review.md",
+    "attribution_limit": "The reviewer did not independently inspect the 100 mol warm-start reuse diagnostic. That limit is attributed to the lead and notebook ordinal-5 diagnosis. The verdict is unchanged."
+  }
+}

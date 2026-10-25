@@ -1,0 +1,7 @@
+case,selected,endpoint_events,event_attempt,iterations,causes
+attempts,,0,,0,"[""unattempted""]"
+iterations,,0,,0,"[""unattempted""]"
+attempt_iterations,,0,,0,"[""attempt budget exhausted""]"
+seconds,,0,,0,"[""unattempted""]"
+attempt_seconds,,0,,0,"[""attempt budget exhausted""]"
+selected,1,1,1,6,"[""initialization: packing for phase V is outside the admitted range"", ""converged: residual 4.0963477282720431e-16 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 6 iterations, contraction absent, floor absent, amplification 0""]"

@@ -1,0 +1,54 @@
+{
+  "rows": 359,
+  "recorded_at_revision": "0bec2bdf42e31bf37e8d4679169c8174b580408f",
+  "engine_clean": false,
+  "commands": [
+    {
+      "command": "properties_checks P3",
+      "exit": 0
+    },
+    {
+      "command": "properties_checks P4",
+      "exit": 0
+    },
+    {
+      "command": "equilibrium_checks S2",
+      "exit": 0
+    },
+    {
+      "command": "equilibrium_checks E5-1",
+      "exit": 0
+    },
+    {
+      "command": "equilibrium_checks E5-3",
+      "exit": 0
+    },
+    {
+      "command": "equilibrium_checks E5-5",
+      "exit": 0
+    },
+    {
+      "command": "equilibrium_checks E5-7",
+      "exit": 0
+    },
+    {
+      "command": "equilibrium_checks E5-10",
+      "exit": 0
+    },
+    {
+      "command": "regression_checks R2-J2",
+      "exit": 0
+    },
+    {
+      "command": "regression_checks D86",
+      "exit": 0
+    },
+    {
+      "command": "surface_example",
+      "exit": 0
+    }
+  ],
+  "failed_native_comparisons": [],
+  "value": "the native check's unrounded model operand; its own reference and criterion stay with the native owner",
+  "claim_limit": "identical explicit inputs through one build; transport agreement, not model validity"
+}

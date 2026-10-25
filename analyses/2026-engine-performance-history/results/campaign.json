@@ -1,0 +1,400 @@
+{
+  "started": "2026-10-19T22:14:18.595126+00:00",
+  "ended": "2026-10-19T22:49:22.610527+00:00",
+  "host": {
+    "system": "Linux",
+    "node": "tnnrpolley21-MS-7C95",
+    "release": "7.0.0-38-generic",
+    "version": "#38~24.04.4-Ubuntu SMP PREEMPT_DYNAMIC Mon Sep 14 16:37:11 UTC 2",
+    "machine": "x86_64",
+    "processor": "x86_64"
+  },
+  "cpu_count": 32,
+  "cpu": 31,
+  "cpu_model": "AMD Ryzen 9 5900XT 16-Core Processor",
+  "thread_environment": {
+    "OPENBLAS_NUM_THREADS": "1",
+    "OMP_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1",
+    "BLIS_NUM_THREADS": "1",
+    "NUMEXPR_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1"
+  },
+  "environments": [
+    {
+      "version": "1218dc78",
+      "commit": "1218dc7840b4215f57af36221cd81eaa23121a6c",
+      "date": "2026-10-06T16:47:00-06:00",
+      "source": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/declarations/1218dc78",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/1218dc78/bin/python",
+      "wheel": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/wheels/main-1218dc78/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "wheel_sha256": "dad141bae630ce8eef63106ba2ae3714d994a5c1543928b455f4ba8ecf464adf"
+    },
+    {
+      "version": "026b3031",
+      "commit": "026b30311b959f1a5db4feef4c15e243f7044a5f",
+      "date": "2026-10-08T16:25:07-06:00",
+      "source": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/declarations/026b3031",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/026b3031/bin/python",
+      "wheel": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/wheels/main-026b3031/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "wheel_sha256": "94b55dfcf72f21b43010c7125d71f103f41fd56f7a6b6fe0774903eef71cc72a"
+    },
+    {
+      "version": "a36a20a5",
+      "commit": "a36a20a57d82074c60f0587e2328231d49dee41f",
+      "date": "2026-10-10T07:58:44-06:00",
+      "source": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/declarations/a36a20a5",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/a36a20a5/bin/python",
+      "wheel": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/wheels/main-a36a20a5/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "wheel_sha256": "37680393b7c63cf8371b2b80b10ed858f8fcedde09d09209952a23cfa9d164e2"
+    },
+    {
+      "version": "36485a88",
+      "commit": "36485a88d7867928e7033036dbddc18ea416e7ca",
+      "date": "2026-10-13T14:41:27-06:00",
+      "source": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/declarations/36485a88",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/36485a88/bin/python",
+      "wheel": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/wheels/main-36485a88/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "wheel_sha256": "da5a2b65668ab5647e51b917a659614bdcb4afbe7e5c3149aee2294b86a4c1bd"
+    },
+    {
+      "version": "177c2a87",
+      "commit": "177c2a87f3d2676cecbe9ebd504dbf0db94aa35d",
+      "date": "2026-10-15T05:17:06-06:00",
+      "source": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/declarations/177c2a87",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/177c2a87/bin/python",
+      "wheel": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/wheels/main-177c2a87/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "wheel_sha256": "205bf888cd1b4d49d797b7cfeb5f3fb6d711926a41cb123aebb19df986059bdd"
+    },
+    {
+      "version": "5ad73fb9",
+      "commit": "5ad73fb9ff2a7e21d44b4d2fb20924aaa643ab6e",
+      "date": "2026-10-15T06:39:46-06:00",
+      "source": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/declarations/5ad73fb9",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/5ad73fb9/bin/python",
+      "wheel": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/wheels/main-5ad73fb9/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "wheel_sha256": "46ea37b1cf0e561cd3e5f44c1f44925658341f6c5e5329fc1a5e29aeef8fd5ec"
+    },
+    {
+      "version": "ffda2bc0",
+      "commit": "ffda2bc0ca151341459df2c1e9a00195ffc16230",
+      "date": "2026-10-15T10:19:35-06:00",
+      "source": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/declarations/ffda2bc0",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/ffda2bc0/bin/python",
+      "wheel": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/wheels/main-ffda2bc0/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "wheel_sha256": "80db038dbf3eb41d7cfb0ca0f6536f34f8de3e3263791d7bc992e5dd1b8a5f58"
+    },
+    {
+      "version": "0bec2bdf",
+      "commit": "0bec2bdf42e31bf37e8d4679169c8174b580408f",
+      "date": "2026-10-15T13:13:40-06:00",
+      "source": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/declarations/0bec2bdf",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/0bec2bdf/bin/python",
+      "wheel": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/wheels/main-0bec2bdf/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "wheel_sha256": "a974c0e0c1d1049ffd144c003815a47f313820c5c3065aa395faa0a58e70a60d"
+    },
+    {
+      "version": "9853bb6d",
+      "commit": "9853bb6d4353e0d508f9a1350db4a72a026d194a",
+      "date": "2026-10-15T15:28:29-06:00",
+      "source": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/declarations/9853bb6d",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/9853bb6d/bin/python",
+      "wheel": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/wheels/main-9853bb6d/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "wheel_sha256": "ab166c303f4dce7ef55b5dc9bec023ed6f76dfbb5b3131c49dcea787d8edc0b0"
+    },
+    {
+      "version": "cf26a17b",
+      "commit": "cf26a17b2f15bb855f30d6d56485d647b893dae8",
+      "date": "2026-10-15T15:59:54-06:00",
+      "source": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/declarations/cf26a17b",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/cf26a17b/bin/python",
+      "wheel": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/wheels/main-cf26a17b/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "wheel_sha256": "32ce708a671c24dbb0112f53bc4a18021eaa1bd10a1f04e96b9ce8d3145da52f"
+    },
+    {
+      "version": "21e761c3",
+      "commit": "21e761c318c2ac5b555a245365c844d38a93e4cb",
+      "date": "2026-10-16T16:34:38-06:00",
+      "source": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/declarations/21e761c3",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/21e761c3/bin/python",
+      "wheel": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/wheels/main-21e761c3/epcsaft-0.2.0.dev0-cp313-cp313-manylinux_2_39_x86_64.whl",
+      "wheel_sha256": "d2f61e3a5961b859151fbe0487f4ab633405b11620d9dd64682656a68a110357"
+    },
+    {
+      "version": "cc63a135",
+      "commit": "cc63a1351f0c7668aa4b59c35707b6a3dddac695",
+      "date": "2026-10-17T05:34:11-06:00",
+      "source": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/declarations/cc63a135",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/cc63a135/bin/python",
+      "wheel": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/wheels/main-cc63a135/epcsaft-0.2.0.dev0-cp313-cp313-manylinux_2_39_x86_64.whl",
+      "wheel_sha256": "469f88b624783605783a47fc518cb9bf9a9c14dc3b6b0f384af6e3187c57ac15"
+    },
+    {
+      "version": "1cd3ab15",
+      "commit": "1cd3ab150d19bc25a82bed81e04b8cfaf1d068b2",
+      "date": "2026-10-19T15:47:55-06:00",
+      "source": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/declarations/1cd3ab15",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/1cd3ab15/bin/python",
+      "wheel": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/wheels/main-1cd3ab15/epcsaft-0.2.0.dev0-cp313-cp313-manylinux_2_39_x86_64.whl",
+      "wheel_sha256": "87cc5870e4d081ccf10d2da2bb141d6a69387e8be6ec785a8e5ed2c02ff9f48a"
+    },
+    {
+      "version": "1cd3ab15-ma57",
+      "commit": "1cd3ab150d19bc25a82bed81e04b8cfaf1d068b2",
+      "date": "2026-10-19T15:47:55-06:00",
+      "source": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/declarations/1cd3ab15",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/1cd3ab15/bin/python",
+      "wheel": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/wheels/main-1cd3ab15/epcsaft-0.2.0.dev0-cp313-cp313-manylinux_2_39_x86_64.whl",
+      "wheel_sha256": "87cc5870e4d081ccf10d2da2bb141d6a69387e8be6ec785a8e5ed2c02ff9f48a"
+    }
+  ],
+  "controls": {
+    "control": "1cd3ab15",
+    "control-ma57": "1cd3ab15-ma57"
+  },
+  "current": "1cd3ab15",
+  "hsl_library": "/home/tnnrpolley21/.cache/epcsaft-hsl/coinhsl-lib/libhsl.so",
+  "unavailable_wheels": [],
+  "identities": {
+    "1218dc78": {
+      "pid": 1284689,
+      "affinity": [
+        31
+      ],
+      "nice": 10,
+      "epcsaft": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/1218dc78/lib/python3.13/site-packages/epcsaft/__init__.py",
+      "extension": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/1218dc78/lib/python3.13/site-packages/epcsaft/_core.cpython-313-x86_64-linux-gnu.so",
+      "linear_solver": "not exposed by this wheel",
+      "loaded_libraries": {
+        "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/1218dc78/lib/python3.13/site-packages/epcsaft/_core.cpython-313-x86_64-linux-gnu.so": "efbbb6c6eef5f7814437afef112668d2cd0f9c51e318c66b31fad3c23e61ce1e"
+      },
+      "extension_sha256": "efbbb6c6eef5f7814437afef112668d2cd0f9c51e318c66b31fad3c23e61ce1e"
+    },
+    "026b3031": {
+      "pid": 1284694,
+      "affinity": [
+        31
+      ],
+      "nice": 10,
+      "epcsaft": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/026b3031/lib/python3.13/site-packages/epcsaft/__init__.py",
+      "extension": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/026b3031/lib/python3.13/site-packages/epcsaft/_core.cpython-313-x86_64-linux-gnu.so",
+      "linear_solver": "not exposed by this wheel",
+      "loaded_libraries": {
+        "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/026b3031/lib/python3.13/site-packages/epcsaft/_core.cpython-313-x86_64-linux-gnu.so": "6b9ae112a457eb82e3e9f1a6e4969d077f4a685bd8423a0875830a2c2d5ea9cd"
+      },
+      "extension_sha256": "6b9ae112a457eb82e3e9f1a6e4969d077f4a685bd8423a0875830a2c2d5ea9cd"
+    },
+    "a36a20a5": {
+      "pid": 1284695,
+      "affinity": [
+        31
+      ],
+      "nice": 10,
+      "epcsaft": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/a36a20a5/lib/python3.13/site-packages/epcsaft/__init__.py",
+      "extension": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/a36a20a5/lib/python3.13/site-packages/epcsaft/_core.cpython-313-x86_64-linux-gnu.so",
+      "linear_solver": "not exposed by this wheel",
+      "loaded_libraries": {
+        "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/a36a20a5/lib/python3.13/site-packages/epcsaft/_core.cpython-313-x86_64-linux-gnu.so": "921ed0b695fb4b3f5482d6b6c674f0aef85ffade6f60f810df6bceeae5f0c7c9"
+      },
+      "extension_sha256": "921ed0b695fb4b3f5482d6b6c674f0aef85ffade6f60f810df6bceeae5f0c7c9"
+    },
+    "36485a88": {
+      "pid": 1284696,
+      "affinity": [
+        31
+      ],
+      "nice": 10,
+      "epcsaft": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/36485a88/lib/python3.13/site-packages/epcsaft/__init__.py",
+      "extension": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/36485a88/lib/python3.13/site-packages/epcsaft/_core.cpython-313-x86_64-linux-gnu.so",
+      "linear_solver": "not exposed by this wheel",
+      "loaded_libraries": {
+        "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/36485a88/lib/python3.13/site-packages/epcsaft/_core.cpython-313-x86_64-linux-gnu.so": "e0cbd26f1b1bb28fa566b856c257d33f554aeecc98efba8afeb464419a78ede7"
+      },
+      "extension_sha256": "e0cbd26f1b1bb28fa566b856c257d33f554aeecc98efba8afeb464419a78ede7"
+    },
+    "177c2a87": {
+      "pid": 1284699,
+      "affinity": [
+        31
+      ],
+      "nice": 10,
+      "epcsaft": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/177c2a87/lib/python3.13/site-packages/epcsaft/__init__.py",
+      "extension": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/177c2a87/lib/python3.13/site-packages/epcsaft/_core.cpython-313-x86_64-linux-gnu.so",
+      "linear_solver": "not exposed by this wheel",
+      "loaded_libraries": {
+        "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/177c2a87/lib/python3.13/site-packages/epcsaft/_core.cpython-313-x86_64-linux-gnu.so": "446db78a5d028e339c2c3e0741e8661bd3d92fc22b1457053791b8d81215afdd",
+        "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/177c2a87/lib/python3.13/site-packages/epcsaft/libepcsaft_native.so": "5b8fee8a5fa6339e91ac9b374e3f8906d768bdd09ed5ce12fd462c1b57d1d264"
+      },
+      "extension_sha256": "446db78a5d028e339c2c3e0741e8661bd3d92fc22b1457053791b8d81215afdd"
+    },
+    "5ad73fb9": {
+      "pid": 1284719,
+      "affinity": [
+        31
+      ],
+      "nice": 10,
+      "epcsaft": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/5ad73fb9/lib/python3.13/site-packages/epcsaft/__init__.py",
+      "extension": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/5ad73fb9/lib/python3.13/site-packages/epcsaft/_core.cpython-313-x86_64-linux-gnu.so",
+      "linear_solver": "not exposed by this wheel",
+      "loaded_libraries": {
+        "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/5ad73fb9/lib/python3.13/site-packages/epcsaft/_core.cpython-313-x86_64-linux-gnu.so": "446db78a5d028e339c2c3e0741e8661bd3d92fc22b1457053791b8d81215afdd",
+        "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/5ad73fb9/lib/python3.13/site-packages/epcsaft/libepcsaft_native.so": "8ce1bb3b90e00a3bea18d715e6c7acf491aef1e12f09090f34a13eae25bd22e4"
+      },
+      "extension_sha256": "446db78a5d028e339c2c3e0741e8661bd3d92fc22b1457053791b8d81215afdd"
+    },
+    "ffda2bc0": {
+      "pid": 1284720,
+      "affinity": [
+        31
+      ],
+      "nice": 10,
+      "epcsaft": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/ffda2bc0/lib/python3.13/site-packages/epcsaft/__init__.py",
+      "extension": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/ffda2bc0/lib/python3.13/site-packages/epcsaft/_core.cpython-313-x86_64-linux-gnu.so",
+      "linear_solver": "not exposed by this wheel",
+      "loaded_libraries": {
+        "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/ffda2bc0/lib/python3.13/site-packages/epcsaft/_core.cpython-313-x86_64-linux-gnu.so": "126d12962f4e5a2bd1545051381658d9ae8de19ff34eebc607ee23f0fbb73c55",
+        "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/ffda2bc0/lib/python3.13/site-packages/epcsaft/libepcsaft_native.so": "6c0d84af18291766b8e0b3ed15c694f0c43e6cce3e441ad4eb0ba6c7af5005f8"
+      },
+      "extension_sha256": "126d12962f4e5a2bd1545051381658d9ae8de19ff34eebc607ee23f0fbb73c55"
+    },
+    "0bec2bdf": {
+      "pid": 1284721,
+      "affinity": [
+        31
+      ],
+      "nice": 10,
+      "epcsaft": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/0bec2bdf/lib/python3.13/site-packages/epcsaft/__init__.py",
+      "extension": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/0bec2bdf/lib/python3.13/site-packages/epcsaft/_core.cpython-313-x86_64-linux-gnu.so",
+      "linear_solver": "not exposed by this wheel",
+      "loaded_libraries": {
+        "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/0bec2bdf/lib/python3.13/site-packages/epcsaft/_core.cpython-313-x86_64-linux-gnu.so": "91698ef970b51a30708547f34abc539d9ef798d50bf871427f9f9c7124284e7b",
+        "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/0bec2bdf/lib/python3.13/site-packages/epcsaft/libepcsaft_native.so": "36121afebdafe30978d58b599b7510123673b884bbaa7a7014a1c67ca2f51f33"
+      },
+      "extension_sha256": "91698ef970b51a30708547f34abc539d9ef798d50bf871427f9f9c7124284e7b"
+    },
+    "9853bb6d": {
+      "pid": 1284723,
+      "affinity": [
+        31
+      ],
+      "nice": 10,
+      "epcsaft": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/9853bb6d/lib/python3.13/site-packages/epcsaft/__init__.py",
+      "extension": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/9853bb6d/lib/python3.13/site-packages/epcsaft/_core.cpython-313-x86_64-linux-gnu.so",
+      "linear_solver": "not exposed by this wheel",
+      "loaded_libraries": {
+        "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/9853bb6d/lib/python3.13/site-packages/epcsaft/_core.cpython-313-x86_64-linux-gnu.so": "91698ef970b51a30708547f34abc539d9ef798d50bf871427f9f9c7124284e7b",
+        "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/9853bb6d/lib/python3.13/site-packages/epcsaft/libepcsaft_native.so": "990599a98a31a1137f1498b3669b8cd6f80d9713029246c59491b84b8bce78d3"
+      },
+      "extension_sha256": "91698ef970b51a30708547f34abc539d9ef798d50bf871427f9f9c7124284e7b"
+    },
+    "cf26a17b": {
+      "pid": 1284724,
+      "affinity": [
+        31
+      ],
+      "nice": 10,
+      "epcsaft": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/cf26a17b/lib/python3.13/site-packages/epcsaft/__init__.py",
+      "extension": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/cf26a17b/lib/python3.13/site-packages/epcsaft/_core.cpython-313-x86_64-linux-gnu.so",
+      "linear_solver": "not exposed by this wheel",
+      "loaded_libraries": {
+        "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/cf26a17b/lib/python3.13/site-packages/epcsaft/_core.cpython-313-x86_64-linux-gnu.so": "91698ef970b51a30708547f34abc539d9ef798d50bf871427f9f9c7124284e7b",
+        "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/cf26a17b/lib/python3.13/site-packages/epcsaft/libepcsaft_native.so": "9e9f193e64a5423494f637ef5450977343e9d2caeeaef7b2e0f956af2f7ec169"
+      },
+      "extension_sha256": "91698ef970b51a30708547f34abc539d9ef798d50bf871427f9f9c7124284e7b"
+    },
+    "21e761c3": {
+      "pid": 1284725,
+      "affinity": [
+        31
+      ],
+      "nice": 10,
+      "epcsaft": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/21e761c3/lib/python3.13/site-packages/epcsaft/__init__.py",
+      "extension": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/21e761c3/lib/python3.13/site-packages/epcsaft/_core.cpython-313-x86_64-linux-gnu.so",
+      "linear_solver": "not exposed by this wheel",
+      "loaded_libraries": {
+        "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/21e761c3/lib/python3.13/site-packages/epcsaft/_core.cpython-313-x86_64-linux-gnu.so": "901990aec65a8095450fbdd925de01c5fb47cd2408ab35d9c2bd73d0fee76bac",
+        "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/21e761c3/lib/python3.13/site-packages/epcsaft/libepcsaft_native.so": "fc14edba7674048c4613828b3c85bb1bce72e0498e1134ace00e9c7c901d4bbf"
+      },
+      "extension_sha256": "901990aec65a8095450fbdd925de01c5fb47cd2408ab35d9c2bd73d0fee76bac"
+    },
+    "cc63a135": {
+      "pid": 1284726,
+      "affinity": [
+        31
+      ],
+      "nice": 10,
+      "epcsaft": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/cc63a135/lib/python3.13/site-packages/epcsaft/__init__.py",
+      "extension": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/cc63a135/lib/python3.13/site-packages/epcsaft/_core.cpython-313-x86_64-linux-gnu.so",
+      "linear_solver": "not exposed by this wheel",
+      "loaded_libraries": {
+        "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/cc63a135/lib/python3.13/site-packages/epcsaft/_core.cpython-313-x86_64-linux-gnu.so": "17547af867fe29f2a001ee9683229c72a9d547c381b2b40f29c9ce65c995103e",
+        "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/cc63a135/lib/python3.13/site-packages/epcsaft/libepcsaft_native.so": "14afc98666be95b0c79536bc37bd3cee1a63c76f18304d92510a6a0eb04c6793"
+      },
+      "extension_sha256": "17547af867fe29f2a001ee9683229c72a9d547c381b2b40f29c9ce65c995103e"
+    },
+    "1cd3ab15": {
+      "pid": 1284727,
+      "affinity": [
+        31
+      ],
+      "nice": 10,
+      "epcsaft": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/1cd3ab15/lib/python3.13/site-packages/epcsaft/__init__.py",
+      "extension": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/1cd3ab15/lib/python3.13/site-packages/epcsaft/_core.cpython-313-x86_64-linux-gnu.so",
+      "linear_solver": "mumps",
+      "loaded_libraries": {
+        "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/1cd3ab15/lib/python3.13/site-packages/epcsaft/_core.cpython-313-x86_64-linux-gnu.so": "cae9f45b201c8a479867bb54f8f97a3be0ba02eb5eb8ad080c463b8eb4a0d12c",
+        "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/1cd3ab15/lib/python3.13/site-packages/epcsaft/libepcsaft_native.so": "8e4b19397f3f174ec726681ff3e9399c1444c24897aee461523cfc33eb796f15"
+      },
+      "extension_sha256": "cae9f45b201c8a479867bb54f8f97a3be0ba02eb5eb8ad080c463b8eb4a0d12c"
+    },
+    "1cd3ab15-ma57": {
+      "pid": 1284728,
+      "affinity": [
+        31
+      ],
+      "nice": 10,
+      "epcsaft": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/1cd3ab15/lib/python3.13/site-packages/epcsaft/__init__.py",
+      "extension": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/1cd3ab15/lib/python3.13/site-packages/epcsaft/_core.cpython-313-x86_64-linux-gnu.so",
+      "linear_solver": "ma57",
+      "loaded_libraries": {
+        "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/1cd3ab15/lib/python3.13/site-packages/epcsaft/_core.cpython-313-x86_64-linux-gnu.so": "cae9f45b201c8a479867bb54f8f97a3be0ba02eb5eb8ad080c463b8eb4a0d12c",
+        "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/1cd3ab15/lib/python3.13/site-packages/epcsaft/libepcsaft_native.so": "8e4b19397f3f174ec726681ff3e9399c1444c24897aee461523cfc33eb796f15"
+      },
+      "extension_sha256": "cae9f45b201c8a479867bb54f8f97a3be0ba02eb5eb8ad080c463b8eb4a0d12c"
+    },
+    "control": {
+      "pid": 1284729,
+      "affinity": [
+        31
+      ],
+      "nice": 10,
+      "epcsaft": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/1cd3ab15/lib/python3.13/site-packages/epcsaft/__init__.py",
+      "extension": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/1cd3ab15/lib/python3.13/site-packages/epcsaft/_core.cpython-313-x86_64-linux-gnu.so",
+      "linear_solver": "mumps",
+      "loaded_libraries": {
+        "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/1cd3ab15/lib/python3.13/site-packages/epcsaft/_core.cpython-313-x86_64-linux-gnu.so": "cae9f45b201c8a479867bb54f8f97a3be0ba02eb5eb8ad080c463b8eb4a0d12c",
+        "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/1cd3ab15/lib/python3.13/site-packages/epcsaft/libepcsaft_native.so": "8e4b19397f3f174ec726681ff3e9399c1444c24897aee461523cfc33eb796f15"
+      },
+      "extension_sha256": "cae9f45b201c8a479867bb54f8f97a3be0ba02eb5eb8ad080c463b8eb4a0d12c"
+    },
+    "control-ma57": {
+      "pid": 1284730,
+      "affinity": [
+        31
+      ],
+      "nice": 10,
+      "epcsaft": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/1cd3ab15/lib/python3.13/site-packages/epcsaft/__init__.py",
+      "extension": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/1cd3ab15/lib/python3.13/site-packages/epcsaft/_core.cpython-313-x86_64-linux-gnu.so",
+      "linear_solver": "ma57",
+      "loaded_libraries": {
+        "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/1cd3ab15/lib/python3.13/site-packages/epcsaft/_core.cpython-313-x86_64-linux-gnu.so": "cae9f45b201c8a479867bb54f8f97a3be0ba02eb5eb8ad080c463b8eb4a0d12c",
+        "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-644-extend-the-engine-performance-history/build/issue-549/envs/1cd3ab15/lib/python3.13/site-packages/epcsaft/libepcsaft_native.so": "8e4b19397f3f174ec726681ff3e9399c1444c24897aee461523cfc33eb796f15"
+      },
+      "extension_sha256": "cae9f45b201c8a479867bb54f8f97a3be0ba02eb5eb8ad080c463b8eb4a0d12c"
+    }
+  },
+  "scheduled_blocks": 1458,
+  "repetitions": 3,
+  "full_fit": "omitted: serial F1 only",
+  "time_boundary": "native solve calls only; F1 uses the key-solve capture boundary; density per call over 32 changing pressures"
+}

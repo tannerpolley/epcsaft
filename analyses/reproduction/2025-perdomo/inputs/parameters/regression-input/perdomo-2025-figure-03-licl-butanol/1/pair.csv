@@ -1,0 +1,4 @@
+record_id,component_id_a,component_id_b,family,value,unit,source_id,locator,domain_id
+butanol-lithium-kij,1-butanol,lithium-cation,k_ij,0,,figiel-yu-held-2025,regression start only,perdomo-regression-298-15-k-1-bar
+butanol-chloride-kij,1-butanol,chloride-anion,k_ij,0,,figiel-yu-held-2025,regression start only,perdomo-regression-298-15-k-1-bar
+lithium-chloride-kij,lithium-cation,chloride-anion,k_ij,0.8,,figiel-yu-held-2025,Table 4 LiCl pair,perdomo-regression-298-15-k-1-bar

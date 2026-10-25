@@ -1,0 +1,5 @@
+figure_id,panel_id,series_id,series_label,source_type,category,x_name,x_value,x_units,y_name,y_value,y_units,source_file,display_order,notes
+figure-01,main,profile,Dielectric step profile,schematic,profile,radial_position,0.0,r_i,relative_permittivity,8.0,-,campaigns/2025-figiel/figures/figure-01/source/schematic-profile.json,0,Schematic source packet; no Provider computation is involved.
+figure-01,main,profile,Dielectric step profile,schematic,profile,radial_position,1.0,r_i,relative_permittivity,8.0,-,campaigns/2025-figiel/figures/figure-01/source/schematic-profile.json,1,Schematic source packet; no Provider computation is involved.
+figure-01,main,profile,Dielectric step profile,schematic,profile,radial_position,1.0,r_i,relative_permittivity,78.0,-,campaigns/2025-figiel/figures/figure-01/source/schematic-profile.json,2,Schematic source packet; no Provider computation is involved.
+figure-01,main,profile,Dielectric step profile,schematic,profile,radial_position,2.0,r_i,relative_permittivity,78.0,-,campaigns/2025-figiel/figures/figure-01/source/schematic-profile.json,3,Schematic source packet; no Provider computation is involved.

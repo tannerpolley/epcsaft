@@ -1,0 +1,2660 @@
+{
+  "schema": "epcsaft.parameters",
+  "schema_version": 1,
+  "document_id": "gross-vrabec-2006",
+  "document_version": 1,
+  "purpose": "external-document",
+  "sources": [
+    {
+      "source_id": "gross-vrabec-2006",
+      "citation": "Gross, J.; Vrabec, J. An Equation-of-State Contribution for Polar Components: Dipolar Molecules. AIChE Journal 2006, 52, 1194-1204.",
+      "doi": "10.1002/aic.10683",
+      "use_basis": "source-complete Table 2 PCP-SAFT parameter catalog"
+    },
+    {
+      "source_id": "explicit-neutral-model",
+      "citation": "Project declaration that every Table 2 species is neutral (electrolyte: none).",
+      "use_basis": "Structural input, not a fitted coefficient."
+    }
+  ],
+  "domains": [
+    {
+      "domain_id": "propanal-fit-range",
+      "kind": "fit-range",
+      "temperature_min": {
+        "magnitude": 193,
+        "unit": "kelvin"
+      },
+      "temperature_max": {
+        "magnitude": 503,
+        "unit": "kelvin"
+      }
+    },
+    {
+      "domain_id": "butanal-fit-range",
+      "kind": "fit-range",
+      "temperature_min": {
+        "magnitude": 248,
+        "unit": "kelvin"
+      },
+      "temperature_max": {
+        "magnitude": 535,
+        "unit": "kelvin"
+      }
+    },
+    {
+      "domain_id": "methyl-methanoate-fit-range",
+      "kind": "fit-range",
+      "temperature_min": {
+        "magnitude": 174,
+        "unit": "kelvin"
+      },
+      "temperature_max": {
+        "magnitude": 487,
+        "unit": "kelvin"
+      }
+    },
+    {
+      "domain_id": "ethyl-methanoate-fit-range",
+      "kind": "fit-range",
+      "temperature_min": {
+        "magnitude": 193,
+        "unit": "kelvin"
+      },
+      "temperature_max": {
+        "magnitude": 508,
+        "unit": "kelvin"
+      }
+    },
+    {
+      "domain_id": "n-propyl-methanoate-fit-range",
+      "kind": "fit-range",
+      "temperature_min": {
+        "magnitude": 270,
+        "unit": "kelvin"
+      },
+      "temperature_max": {
+        "magnitude": 538,
+        "unit": "kelvin"
+      }
+    },
+    {
+      "domain_id": "ethyl-ethanoate-fit-range",
+      "kind": "fit-range",
+      "temperature_min": {
+        "magnitude": 190,
+        "unit": "kelvin"
+      },
+      "temperature_max": {
+        "magnitude": 523,
+        "unit": "kelvin"
+      }
+    },
+    {
+      "domain_id": "n-propyl-ethanoate-fit-range",
+      "kind": "fit-range",
+      "temperature_min": {
+        "magnitude": 260,
+        "unit": "kelvin"
+      },
+      "temperature_max": {
+        "magnitude": 549,
+        "unit": "kelvin"
+      }
+    },
+    {
+      "domain_id": "n-butyl-ethanoate-fit-range",
+      "kind": "fit-range",
+      "temperature_min": {
+        "magnitude": 200,
+        "unit": "kelvin"
+      },
+      "temperature_max": {
+        "magnitude": 579,
+        "unit": "kelvin"
+      }
+    },
+    {
+      "domain_id": "methyl-propanoate-fit-range",
+      "kind": "fit-range",
+      "temperature_min": {
+        "magnitude": 186,
+        "unit": "kelvin"
+      },
+      "temperature_max": {
+        "magnitude": 530,
+        "unit": "kelvin"
+      }
+    },
+    {
+      "domain_id": "ethyl-propanoate-fit-range",
+      "kind": "fit-range",
+      "temperature_min": {
+        "magnitude": 240,
+        "unit": "kelvin"
+      },
+      "temperature_max": {
+        "magnitude": 546,
+        "unit": "kelvin"
+      }
+    },
+    {
+      "domain_id": "n-propyl-propanoate-fit-range",
+      "kind": "fit-range",
+      "temperature_min": {
+        "magnitude": 220,
+        "unit": "kelvin"
+      },
+      "temperature_max": {
+        "magnitude": 568,
+        "unit": "kelvin"
+      }
+    },
+    {
+      "domain_id": "methyl-butanoate-fit-range",
+      "kind": "fit-range",
+      "temperature_min": {
+        "magnitude": 240,
+        "unit": "kelvin"
+      },
+      "temperature_max": {
+        "magnitude": 554,
+        "unit": "kelvin"
+      }
+    },
+    {
+      "domain_id": "dimethyl-ether-fit-range",
+      "kind": "fit-range",
+      "temperature_min": {
+        "magnitude": 200,
+        "unit": "kelvin"
+      },
+      "temperature_max": {
+        "magnitude": 400,
+        "unit": "kelvin"
+      }
+    },
+    {
+      "domain_id": "methyl-ethyl-ether-fit-range",
+      "kind": "fit-range",
+      "temperature_min": {
+        "magnitude": 270,
+        "unit": "kelvin"
+      },
+      "temperature_max": {
+        "magnitude": 437,
+        "unit": "kelvin"
+      }
+    },
+    {
+      "domain_id": "methyl-n-propyl-ether-fit-range",
+      "kind": "fit-range",
+      "temperature_min": {
+        "magnitude": 220,
+        "unit": "kelvin"
+      },
+      "temperature_max": {
+        "magnitude": 476,
+        "unit": "kelvin"
+      }
+    },
+    {
+      "domain_id": "diethyl-ether-fit-range",
+      "kind": "fit-range",
+      "temperature_min": {
+        "magnitude": 220,
+        "unit": "kelvin"
+      },
+      "temperature_max": {
+        "magnitude": 466,
+        "unit": "kelvin"
+      }
+    },
+    {
+      "domain_id": "dimethyl-sulfoxide-fit-range",
+      "kind": "fit-range",
+      "temperature_min": {
+        "magnitude": 291,
+        "unit": "kelvin"
+      },
+      "temperature_max": {
+        "magnitude": 519,
+        "unit": "kelvin"
+      }
+    },
+    {
+      "domain_id": "hydrogen-chloride-fit-range",
+      "kind": "fit-range",
+      "temperature_min": {
+        "magnitude": 150,
+        "unit": "kelvin"
+      },
+      "temperature_max": {
+        "magnitude": 324,
+        "unit": "kelvin"
+      }
+    },
+    {
+      "domain_id": "methyl-chloride-fit-range",
+      "kind": "fit-range",
+      "temperature_min": {
+        "magnitude": 283,
+        "unit": "kelvin"
+      },
+      "temperature_max": {
+        "magnitude": 416,
+        "unit": "kelvin"
+      }
+    },
+    {
+      "domain_id": "chloroethane-fit-range",
+      "kind": "fit-range",
+      "temperature_min": {
+        "magnitude": 135,
+        "unit": "kelvin"
+      },
+      "temperature_max": {
+        "magnitude": 460,
+        "unit": "kelvin"
+      }
+    },
+    {
+      "domain_id": "gv2006-unstated-range",
+      "kind": "unknown"
+    },
+    {
+      "domain_id": "gv2006-formulation",
+      "kind": "unknown"
+    }
+  ],
+  "model_families": [
+    {
+      "family_id": "model/base",
+      "kind": "base",
+      "choice": "pc-saft",
+      "provenance": {
+        "source_id": "gross-vrabec-2006",
+        "locator": "PCP-SAFT = PC-SAFT (Gross2001) plus Eq. 7, p. 1199",
+        "domain_id": "gv2006-formulation"
+      }
+    },
+    {
+      "family_id": "model/association",
+      "kind": "association",
+      "choice": "none",
+      "provenance": {
+        "source_id": "gross-vrabec-2006",
+        "locator": "Table 2 species are non-associating",
+        "domain_id": "gv2006-formulation"
+      }
+    },
+    {
+      "family_id": "model/electrolyte",
+      "kind": "electrolyte",
+      "choice": "none",
+      "provenance": {
+        "source_id": "gross-vrabec-2006",
+        "locator": "No ionic species",
+        "domain_id": "gv2006-formulation"
+      }
+    },
+    {
+      "family_id": "model/relative_permittivity",
+      "kind": "permittivity",
+      "choice": "none",
+      "provenance": {
+        "source_id": "gross-vrabec-2006",
+        "locator": "No electrolyte permittivity",
+        "domain_id": "gv2006-formulation"
+      }
+    },
+    {
+      "family_id": "model/polar",
+      "kind": "polar",
+      "choice": "dipole-dipole",
+      "provenance": {
+        "source_id": "gross-vrabec-2006",
+        "locator": "Eqs. 7-16 and Table 1, pp. 1195-1196",
+        "domain_id": "gv2006-formulation"
+      }
+    }
+  ],
+  "model_coefficients": [],
+  "correlations": [],
+  "components": [
+    {
+      "component_id": "acetone",
+      "aliases": [],
+      "name": "Acetone",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 58.08,
+            "unit": "gram / mole"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Acetone row, M (g/mol) column",
+            "domain_id": "gv2006-unstated-range"
+          }
+        },
+        "charge_number": {
+          "identity": "component/acetone/charge_number",
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "explicit-neutral-model",
+            "locator": "Neutral molecule; explicit zero charge, not a fitted coordinate.",
+            "domain_id": "gv2006-unstated-range"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/acetone/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 2.7447,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Acetone row, m column",
+            "domain_id": "gv2006-unstated-range"
+          }
+        },
+        {
+          "identity": "component/acetone/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 3.2742,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Acetone row, sigma (Å) column",
+            "domain_id": "gv2006-unstated-range"
+          }
+        },
+        {
+          "identity": "component/acetone/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 232.99,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Acetone row, ε/k (K) column",
+            "domain_id": "gv2006-unstated-range"
+          }
+        },
+        {
+          "identity": "component/acetone/dipole_moment",
+          "family": "dipole_moment",
+          "value": {
+            "magnitude": 2.88,
+            "unit": "debye"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Acetone row, μ (D), literature value column",
+            "domain_id": "gv2006-unstated-range"
+          }
+        },
+        {
+          "identity": "component/acetone/dipole_count",
+          "family": "dipole_count",
+          "value": {
+            "magnitude": 1,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "p. 1197: n_mu,i equals unity for the low-molecular-weight substances of this study",
+            "domain_id": "gv2006-unstated-range"
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "butanone",
+      "aliases": [],
+      "name": "Butanone",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 72.107,
+            "unit": "gram / mole"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Butanone row, M (g/mol) column",
+            "domain_id": "gv2006-unstated-range"
+          }
+        },
+        "charge_number": {
+          "identity": "component/butanone/charge_number",
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "explicit-neutral-model",
+            "locator": "Neutral molecule; explicit zero charge, not a fitted coordinate.",
+            "domain_id": "gv2006-unstated-range"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/butanone/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 2.9835,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Butanone row, m column",
+            "domain_id": "gv2006-unstated-range"
+          }
+        },
+        {
+          "identity": "component/butanone/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 3.4239,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Butanone row, sigma (Å) column",
+            "domain_id": "gv2006-unstated-range"
+          }
+        },
+        {
+          "identity": "component/butanone/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 244.99,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Butanone row, ε/k (K) column",
+            "domain_id": "gv2006-unstated-range"
+          }
+        },
+        {
+          "identity": "component/butanone/dipole_moment",
+          "family": "dipole_moment",
+          "value": {
+            "magnitude": 2.78,
+            "unit": "debye"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Butanone row, μ (D), literature value column",
+            "domain_id": "gv2006-unstated-range"
+          }
+        },
+        {
+          "identity": "component/butanone/dipole_count",
+          "family": "dipole_count",
+          "value": {
+            "magnitude": 1,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "p. 1197: n_mu,i equals unity for the low-molecular-weight substances of this study",
+            "domain_id": "gv2006-unstated-range"
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "2-pentanone",
+      "aliases": [],
+      "name": "2-Pentanone",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 86.134,
+            "unit": "gram / mole"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), 2-Pentanone row, M (g/mol) column",
+            "domain_id": "gv2006-unstated-range"
+          }
+        },
+        "charge_number": {
+          "identity": "component/2-pentanone/charge_number",
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "explicit-neutral-model",
+            "locator": "Neutral molecule; explicit zero charge, not a fitted coordinate.",
+            "domain_id": "gv2006-unstated-range"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/2-pentanone/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 3.3537,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), 2-Pentanone row, m column",
+            "domain_id": "gv2006-unstated-range"
+          }
+        },
+        {
+          "identity": "component/2-pentanone/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 3.4942,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), 2-Pentanone row, sigma (Å) column",
+            "domain_id": "gv2006-unstated-range"
+          }
+        },
+        {
+          "identity": "component/2-pentanone/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 246.66,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), 2-Pentanone row, ε/k (K) column",
+            "domain_id": "gv2006-unstated-range"
+          }
+        },
+        {
+          "identity": "component/2-pentanone/dipole_moment",
+          "family": "dipole_moment",
+          "value": {
+            "magnitude": 2.7,
+            "unit": "debye"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), 2-Pentanone row, μ (D), literature value column",
+            "domain_id": "gv2006-unstated-range"
+          }
+        },
+        {
+          "identity": "component/2-pentanone/dipole_count",
+          "family": "dipole_count",
+          "value": {
+            "magnitude": 1,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "p. 1197: n_mu,i equals unity for the low-molecular-weight substances of this study",
+            "domain_id": "gv2006-unstated-range"
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "3-pentanone",
+      "aliases": [],
+      "name": "3-Pentanone",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 86.134,
+            "unit": "gram / mole"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), 3-Pentanone row, M (g/mol) column",
+            "domain_id": "gv2006-unstated-range"
+          }
+        },
+        "charge_number": {
+          "identity": "component/3-pentanone/charge_number",
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "explicit-neutral-model",
+            "locator": "Neutral molecule; explicit zero charge, not a fitted coordinate.",
+            "domain_id": "gv2006-unstated-range"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/3-pentanone/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 3.2786,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), 3-Pentanone row, m column",
+            "domain_id": "gv2006-unstated-range"
+          }
+        },
+        {
+          "identity": "component/3-pentanone/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 3.5159,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), 3-Pentanone row, sigma (Å) column",
+            "domain_id": "gv2006-unstated-range"
+          }
+        },
+        {
+          "identity": "component/3-pentanone/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 248.69,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), 3-Pentanone row, ε/k (K) column",
+            "domain_id": "gv2006-unstated-range"
+          }
+        },
+        {
+          "identity": "component/3-pentanone/dipole_moment",
+          "family": "dipole_moment",
+          "value": {
+            "magnitude": 2.82,
+            "unit": "debye"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), 3-Pentanone row, μ (D), literature value column",
+            "domain_id": "gv2006-unstated-range"
+          }
+        },
+        {
+          "identity": "component/3-pentanone/dipole_count",
+          "family": "dipole_count",
+          "value": {
+            "magnitude": 1,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "p. 1197: n_mu,i equals unity for the low-molecular-weight substances of this study",
+            "domain_id": "gv2006-unstated-range"
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "propanal",
+      "aliases": [],
+      "name": "Propanal",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 58.08,
+            "unit": "gram / mole"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Propanal row, M (g/mol) column",
+            "domain_id": "propanal-fit-range"
+          }
+        },
+        "charge_number": {
+          "identity": "component/propanal/charge_number",
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "explicit-neutral-model",
+            "locator": "Neutral molecule; explicit zero charge, not a fitted coordinate.",
+            "domain_id": "propanal-fit-range"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/propanal/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 2.6001,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Propanal row, m column",
+            "domain_id": "propanal-fit-range"
+          }
+        },
+        {
+          "identity": "component/propanal/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 3.2872,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Propanal row, sigma (Å) column",
+            "domain_id": "propanal-fit-range"
+          }
+        },
+        {
+          "identity": "component/propanal/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 235.21,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Propanal row, ε/k (K) column",
+            "domain_id": "propanal-fit-range"
+          }
+        },
+        {
+          "identity": "component/propanal/dipole_moment",
+          "family": "dipole_moment",
+          "value": {
+            "magnitude": 2.72,
+            "unit": "debye"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Propanal row, μ (D), literature value column",
+            "domain_id": "propanal-fit-range"
+          }
+        },
+        {
+          "identity": "component/propanal/dipole_count",
+          "family": "dipole_count",
+          "value": {
+            "magnitude": 1,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "p. 1197: n_mu,i equals unity for the low-molecular-weight substances of this study",
+            "domain_id": "propanal-fit-range"
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "butanal",
+      "aliases": [],
+      "name": "Butanal",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 72.107,
+            "unit": "gram / mole"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Butanal row, M (g/mol) column",
+            "domain_id": "butanal-fit-range"
+          }
+        },
+        "charge_number": {
+          "identity": "component/butanal/charge_number",
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "explicit-neutral-model",
+            "locator": "Neutral molecule; explicit zero charge, not a fitted coordinate.",
+            "domain_id": "butanal-fit-range"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/butanal/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 2.8825,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Butanal row, m column",
+            "domain_id": "butanal-fit-range"
+          }
+        },
+        {
+          "identity": "component/butanal/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 3.4698,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Butanal row, sigma (Å) column",
+            "domain_id": "butanal-fit-range"
+          }
+        },
+        {
+          "identity": "component/butanal/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 247.09,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Butanal row, ε/k (K) column",
+            "domain_id": "butanal-fit-range"
+          }
+        },
+        {
+          "identity": "component/butanal/dipole_moment",
+          "family": "dipole_moment",
+          "value": {
+            "magnitude": 2.72,
+            "unit": "debye"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Butanal row, μ (D), literature value column",
+            "domain_id": "butanal-fit-range"
+          }
+        },
+        {
+          "identity": "component/butanal/dipole_count",
+          "family": "dipole_count",
+          "value": {
+            "magnitude": 1,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "p. 1197: n_mu,i equals unity for the low-molecular-weight substances of this study",
+            "domain_id": "butanal-fit-range"
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "methyl-methanoate",
+      "aliases": [],
+      "name": "Methyl methanoate",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 60.053,
+            "unit": "gram / mole"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Methyl methanoate row, M (g/mol) column",
+            "domain_id": "methyl-methanoate-fit-range"
+          }
+        },
+        "charge_number": {
+          "identity": "component/methyl-methanoate/charge_number",
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "explicit-neutral-model",
+            "locator": "Neutral molecule; explicit zero charge, not a fitted coordinate.",
+            "domain_id": "methyl-methanoate-fit-range"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/methyl-methanoate/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 2.6225,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Methyl methanoate row, m column",
+            "domain_id": "methyl-methanoate-fit-range"
+          }
+        },
+        {
+          "identity": "component/methyl-methanoate/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 3.1095,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Methyl methanoate row, sigma (Å) column",
+            "domain_id": "methyl-methanoate-fit-range"
+          }
+        },
+        {
+          "identity": "component/methyl-methanoate/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 239.05,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Methyl methanoate row, ε/k (K) column",
+            "domain_id": "methyl-methanoate-fit-range"
+          }
+        },
+        {
+          "identity": "component/methyl-methanoate/dipole_moment",
+          "family": "dipole_moment",
+          "value": {
+            "magnitude": 1.77,
+            "unit": "debye"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Methyl methanoate row, μ (D), literature value column",
+            "domain_id": "methyl-methanoate-fit-range"
+          }
+        },
+        {
+          "identity": "component/methyl-methanoate/dipole_count",
+          "family": "dipole_count",
+          "value": {
+            "magnitude": 1,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "p. 1197: n_mu,i equals unity for the low-molecular-weight substances of this study",
+            "domain_id": "methyl-methanoate-fit-range"
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "ethyl-methanoate",
+      "aliases": [],
+      "name": "Ethyl methanoate",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 74.079,
+            "unit": "gram / mole"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Ethyl methanoate row, M (g/mol) column",
+            "domain_id": "ethyl-methanoate-fit-range"
+          }
+        },
+        "charge_number": {
+          "identity": "component/ethyl-methanoate/charge_number",
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "explicit-neutral-model",
+            "locator": "Neutral molecule; explicit zero charge, not a fitted coordinate.",
+            "domain_id": "ethyl-methanoate-fit-range"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/ethyl-methanoate/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 2.8338,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Ethyl methanoate row, m column",
+            "domain_id": "ethyl-methanoate-fit-range"
+          }
+        },
+        {
+          "identity": "component/ethyl-methanoate/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 3.3316,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Ethyl methanoate row, sigma (Å) column",
+            "domain_id": "ethyl-methanoate-fit-range"
+          }
+        },
+        {
+          "identity": "component/ethyl-methanoate/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 244.5,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Ethyl methanoate row, ε/k (K) column",
+            "domain_id": "ethyl-methanoate-fit-range"
+          }
+        },
+        {
+          "identity": "component/ethyl-methanoate/dipole_moment",
+          "family": "dipole_moment",
+          "value": {
+            "magnitude": 1.93,
+            "unit": "debye"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Ethyl methanoate row, μ (D), literature value column",
+            "domain_id": "ethyl-methanoate-fit-range"
+          }
+        },
+        {
+          "identity": "component/ethyl-methanoate/dipole_count",
+          "family": "dipole_count",
+          "value": {
+            "magnitude": 1,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "p. 1197: n_mu,i equals unity for the low-molecular-weight substances of this study",
+            "domain_id": "ethyl-methanoate-fit-range"
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "n-propyl-methanoate",
+      "aliases": [],
+      "name": "Propyl methanoate",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 88.106,
+            "unit": "gram / mole"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Propyl methanoate row, M (g/mol) column",
+            "domain_id": "n-propyl-methanoate-fit-range"
+          }
+        },
+        "charge_number": {
+          "identity": "component/n-propyl-methanoate/charge_number",
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "explicit-neutral-model",
+            "locator": "Neutral molecule; explicit zero charge, not a fitted coordinate.",
+            "domain_id": "n-propyl-methanoate-fit-range"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/n-propyl-methanoate/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 3.1723,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Propyl methanoate row, m column",
+            "domain_id": "n-propyl-methanoate-fit-range"
+          }
+        },
+        {
+          "identity": "component/n-propyl-methanoate/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 3.4296,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Propyl methanoate row, sigma (Å) column",
+            "domain_id": "n-propyl-methanoate-fit-range"
+          }
+        },
+        {
+          "identity": "component/n-propyl-methanoate/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 245.64,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Propyl methanoate row, ε/k (K) column",
+            "domain_id": "n-propyl-methanoate-fit-range"
+          }
+        },
+        {
+          "identity": "component/n-propyl-methanoate/dipole_moment",
+          "family": "dipole_moment",
+          "value": {
+            "magnitude": 1.89,
+            "unit": "debye"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Propyl methanoate row, μ (D), literature value column",
+            "domain_id": "n-propyl-methanoate-fit-range"
+          }
+        },
+        {
+          "identity": "component/n-propyl-methanoate/dipole_count",
+          "family": "dipole_count",
+          "value": {
+            "magnitude": 1,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "p. 1197: n_mu,i equals unity for the low-molecular-weight substances of this study",
+            "domain_id": "n-propyl-methanoate-fit-range"
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "ethyl-ethanoate",
+      "aliases": [],
+      "name": "Ethyl ethanoate",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 88.106,
+            "unit": "gram / mole"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Ethyl ethanoate row, M (g/mol) column",
+            "domain_id": "ethyl-ethanoate-fit-range"
+          }
+        },
+        "charge_number": {
+          "identity": "component/ethyl-ethanoate/charge_number",
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "explicit-neutral-model",
+            "locator": "Neutral molecule; explicit zero charge, not a fitted coordinate.",
+            "domain_id": "ethyl-ethanoate-fit-range"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/ethyl-ethanoate/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 3.506,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Ethyl ethanoate row, m column",
+            "domain_id": "ethyl-ethanoate-fit-range"
+          }
+        },
+        {
+          "identity": "component/ethyl-ethanoate/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 3.3177,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Ethyl ethanoate row, sigma (Å) column",
+            "domain_id": "ethyl-ethanoate-fit-range"
+          }
+        },
+        {
+          "identity": "component/ethyl-ethanoate/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 230.24,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Ethyl ethanoate row, ε/k (K) column",
+            "domain_id": "ethyl-ethanoate-fit-range"
+          }
+        },
+        {
+          "identity": "component/ethyl-ethanoate/dipole_moment",
+          "family": "dipole_moment",
+          "value": {
+            "magnitude": 1.78,
+            "unit": "debye"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Ethyl ethanoate row, μ (D), literature value column",
+            "domain_id": "ethyl-ethanoate-fit-range"
+          }
+        },
+        {
+          "identity": "component/ethyl-ethanoate/dipole_count",
+          "family": "dipole_count",
+          "value": {
+            "magnitude": 1,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "p. 1197: n_mu,i equals unity for the low-molecular-weight substances of this study",
+            "domain_id": "ethyl-ethanoate-fit-range"
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "n-propyl-ethanoate",
+      "aliases": [],
+      "name": "Propyl ethanoate",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 102.13,
+            "unit": "gram / mole"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Propyl ethanoate row, M (g/mol) column",
+            "domain_id": "n-propyl-ethanoate-fit-range"
+          }
+        },
+        "charge_number": {
+          "identity": "component/n-propyl-ethanoate/charge_number",
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "explicit-neutral-model",
+            "locator": "Neutral molecule; explicit zero charge, not a fitted coordinate.",
+            "domain_id": "n-propyl-ethanoate-fit-range"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/n-propyl-ethanoate/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 3.7658,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Propyl ethanoate row, m column",
+            "domain_id": "n-propyl-ethanoate-fit-range"
+          }
+        },
+        {
+          "identity": "component/n-propyl-ethanoate/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 3.4289,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Propyl ethanoate row, sigma (Å) column",
+            "domain_id": "n-propyl-ethanoate-fit-range"
+          }
+        },
+        {
+          "identity": "component/n-propyl-ethanoate/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 235.42,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Propyl ethanoate row, ε/k (K) column",
+            "domain_id": "n-propyl-ethanoate-fit-range"
+          }
+        },
+        {
+          "identity": "component/n-propyl-ethanoate/dipole_moment",
+          "family": "dipole_moment",
+          "value": {
+            "magnitude": 1.78,
+            "unit": "debye"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Propyl ethanoate row, μ (D), literature value column",
+            "domain_id": "n-propyl-ethanoate-fit-range"
+          }
+        },
+        {
+          "identity": "component/n-propyl-ethanoate/dipole_count",
+          "family": "dipole_count",
+          "value": {
+            "magnitude": 1,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "p. 1197: n_mu,i equals unity for the low-molecular-weight substances of this study",
+            "domain_id": "n-propyl-ethanoate-fit-range"
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "n-butyl-ethanoate",
+      "aliases": [],
+      "name": "n-Butyl ethanoate",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 116.16,
+            "unit": "gram / mole"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), n-Butyl ethanoate row, M (g/mol) column",
+            "domain_id": "n-butyl-ethanoate-fit-range"
+          }
+        },
+        "charge_number": {
+          "identity": "component/n-butyl-ethanoate/charge_number",
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "explicit-neutral-model",
+            "locator": "Neutral molecule; explicit zero charge, not a fitted coordinate.",
+            "domain_id": "n-butyl-ethanoate-fit-range"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/n-butyl-ethanoate/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 3.9629,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), n-Butyl ethanoate row, m column",
+            "domain_id": "n-butyl-ethanoate-fit-range"
+          }
+        },
+        {
+          "identity": "component/n-butyl-ethanoate/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 3.5482,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), n-Butyl ethanoate row, sigma (Å) column",
+            "domain_id": "n-butyl-ethanoate-fit-range"
+          }
+        },
+        {
+          "identity": "component/n-butyl-ethanoate/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 242.27,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), n-Butyl ethanoate row, ε/k (K) column",
+            "domain_id": "n-butyl-ethanoate-fit-range"
+          }
+        },
+        {
+          "identity": "component/n-butyl-ethanoate/dipole_moment",
+          "family": "dipole_moment",
+          "value": {
+            "magnitude": 1.87,
+            "unit": "debye"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), n-Butyl ethanoate row, μ (D), literature value column",
+            "domain_id": "n-butyl-ethanoate-fit-range"
+          }
+        },
+        {
+          "identity": "component/n-butyl-ethanoate/dipole_count",
+          "family": "dipole_count",
+          "value": {
+            "magnitude": 1,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "p. 1197: n_mu,i equals unity for the low-molecular-weight substances of this study",
+            "domain_id": "n-butyl-ethanoate-fit-range"
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "methyl-propanoate",
+      "aliases": [],
+      "name": "Methyl propanoate",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 88.106,
+            "unit": "gram / mole"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Methyl propanoate row, M (g/mol) column",
+            "domain_id": "methyl-propanoate-fit-range"
+          }
+        },
+        "charge_number": {
+          "identity": "component/methyl-propanoate/charge_number",
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "explicit-neutral-model",
+            "locator": "Neutral molecule; explicit zero charge, not a fitted coordinate.",
+            "domain_id": "methyl-propanoate-fit-range"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/methyl-propanoate/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 3.4442,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Methyl propanoate row, m column",
+            "domain_id": "methyl-propanoate-fit-range"
+          }
+        },
+        {
+          "identity": "component/methyl-propanoate/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 3.3255,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Methyl propanoate row, sigma (Å) column",
+            "domain_id": "methyl-propanoate-fit-range"
+          }
+        },
+        {
+          "identity": "component/methyl-propanoate/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 234.26,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Methyl propanoate row, ε/k (K) column",
+            "domain_id": "methyl-propanoate-fit-range"
+          }
+        },
+        {
+          "identity": "component/methyl-propanoate/dipole_moment",
+          "family": "dipole_moment",
+          "value": {
+            "magnitude": 1.85,
+            "unit": "debye"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Methyl propanoate row, μ (D), literature value column",
+            "domain_id": "methyl-propanoate-fit-range"
+          }
+        },
+        {
+          "identity": "component/methyl-propanoate/dipole_count",
+          "family": "dipole_count",
+          "value": {
+            "magnitude": 1,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "p. 1197: n_mu,i equals unity for the low-molecular-weight substances of this study",
+            "domain_id": "methyl-propanoate-fit-range"
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "ethyl-propanoate",
+      "aliases": [],
+      "name": "Ethyl propanoate",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 102.133,
+            "unit": "gram / mole"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Ethyl propanoate row, M (g/mol) column",
+            "domain_id": "ethyl-propanoate-fit-range"
+          }
+        },
+        "charge_number": {
+          "identity": "component/ethyl-propanoate/charge_number",
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "explicit-neutral-model",
+            "locator": "Neutral molecule; explicit zero charge, not a fitted coordinate.",
+            "domain_id": "ethyl-propanoate-fit-range"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/ethyl-propanoate/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 3.7954,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Ethyl propanoate row, m column",
+            "domain_id": "ethyl-propanoate-fit-range"
+          }
+        },
+        {
+          "identity": "component/ethyl-propanoate/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 3.4169,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Ethyl propanoate row, sigma (Å) column",
+            "domain_id": "ethyl-propanoate-fit-range"
+          }
+        },
+        {
+          "identity": "component/ethyl-propanoate/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 233.09,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Ethyl propanoate row, ε/k (K) column",
+            "domain_id": "ethyl-propanoate-fit-range"
+          }
+        },
+        {
+          "identity": "component/ethyl-propanoate/dipole_moment",
+          "family": "dipole_moment",
+          "value": {
+            "magnitude": 1.74,
+            "unit": "debye"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Ethyl propanoate row, μ (D), literature value column",
+            "domain_id": "ethyl-propanoate-fit-range"
+          }
+        },
+        {
+          "identity": "component/ethyl-propanoate/dipole_count",
+          "family": "dipole_count",
+          "value": {
+            "magnitude": 1,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "p. 1197: n_mu,i equals unity for the low-molecular-weight substances of this study",
+            "domain_id": "ethyl-propanoate-fit-range"
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "n-propyl-propanoate",
+      "aliases": [],
+      "name": "Propyl propanoate",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 116.16,
+            "unit": "gram / mole"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Propyl propanoate row, M (g/mol) column",
+            "domain_id": "n-propyl-propanoate-fit-range"
+          }
+        },
+        "charge_number": {
+          "identity": "component/n-propyl-propanoate/charge_number",
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "explicit-neutral-model",
+            "locator": "Neutral molecule; explicit zero charge, not a fitted coordinate.",
+            "domain_id": "n-propyl-propanoate-fit-range"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/n-propyl-propanoate/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 4.0993,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Propyl propanoate row, m column",
+            "domain_id": "n-propyl-propanoate-fit-range"
+          }
+        },
+        {
+          "identity": "component/n-propyl-propanoate/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 3.4921,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Propyl propanoate row, sigma (Å) column",
+            "domain_id": "n-propyl-propanoate-fit-range"
+          }
+        },
+        {
+          "identity": "component/n-propyl-propanoate/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 235.38,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Propyl propanoate row, ε/k (K) column",
+            "domain_id": "n-propyl-propanoate-fit-range"
+          }
+        },
+        {
+          "identity": "component/n-propyl-propanoate/dipole_moment",
+          "family": "dipole_moment",
+          "value": {
+            "magnitude": 1.8,
+            "unit": "debye"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Propyl propanoate row, μ (D), literature value column",
+            "domain_id": "n-propyl-propanoate-fit-range"
+          }
+        },
+        {
+          "identity": "component/n-propyl-propanoate/dipole_count",
+          "family": "dipole_count",
+          "value": {
+            "magnitude": 1,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "p. 1197: n_mu,i equals unity for the low-molecular-weight substances of this study",
+            "domain_id": "n-propyl-propanoate-fit-range"
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "methyl-butanoate",
+      "aliases": [],
+      "name": "Methyl butanoate",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 102.133,
+            "unit": "gram / mole"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Methyl butanoate row, M (g/mol) column",
+            "domain_id": "methyl-butanoate-fit-range"
+          }
+        },
+        "charge_number": {
+          "identity": "component/methyl-butanoate/charge_number",
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "explicit-neutral-model",
+            "locator": "Neutral molecule; explicit zero charge, not a fitted coordinate.",
+            "domain_id": "methyl-butanoate-fit-range"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/methyl-butanoate/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 3.642,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Methyl butanoate row, m column",
+            "domain_id": "methyl-butanoate-fit-range"
+          }
+        },
+        {
+          "identity": "component/methyl-butanoate/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 3.4535,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Methyl butanoate row, sigma (Å) column",
+            "domain_id": "methyl-butanoate-fit-range"
+          }
+        },
+        {
+          "identity": "component/methyl-butanoate/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 240.02,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Methyl butanoate row, ε/k (K) column",
+            "domain_id": "methyl-butanoate-fit-range"
+          }
+        },
+        {
+          "identity": "component/methyl-butanoate/dipole_moment",
+          "family": "dipole_moment",
+          "value": {
+            "magnitude": 2.03,
+            "unit": "debye"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Methyl butanoate row, μ (D), literature value column",
+            "domain_id": "methyl-butanoate-fit-range"
+          }
+        },
+        {
+          "identity": "component/methyl-butanoate/dipole_count",
+          "family": "dipole_count",
+          "value": {
+            "magnitude": 1,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "p. 1197: n_mu,i equals unity for the low-molecular-weight substances of this study",
+            "domain_id": "methyl-butanoate-fit-range"
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "dimethyl-ether",
+      "aliases": [],
+      "name": "Dimethyl ether",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 46.069,
+            "unit": "gram / mole"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Dimethyl ether row, M (g/mol) column",
+            "domain_id": "dimethyl-ether-fit-range"
+          }
+        },
+        "charge_number": {
+          "identity": "component/dimethyl-ether/charge_number",
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "explicit-neutral-model",
+            "locator": "Neutral molecule; explicit zero charge, not a fitted coordinate.",
+            "domain_id": "dimethyl-ether-fit-range"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/dimethyl-ether/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 2.2634,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Dimethyl ether row, m column",
+            "domain_id": "dimethyl-ether-fit-range"
+          }
+        },
+        {
+          "identity": "component/dimethyl-ether/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 3.2723,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Dimethyl ether row, sigma (Å) column",
+            "domain_id": "dimethyl-ether-fit-range"
+          }
+        },
+        {
+          "identity": "component/dimethyl-ether/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 210.29,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Dimethyl ether row, ε/k (K) column",
+            "domain_id": "dimethyl-ether-fit-range"
+          }
+        },
+        {
+          "identity": "component/dimethyl-ether/dipole_moment",
+          "family": "dipole_moment",
+          "value": {
+            "magnitude": 1.3,
+            "unit": "debye"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Dimethyl ether row, μ (D), literature value column",
+            "domain_id": "dimethyl-ether-fit-range"
+          }
+        },
+        {
+          "identity": "component/dimethyl-ether/dipole_count",
+          "family": "dipole_count",
+          "value": {
+            "magnitude": 1,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "p. 1197: n_mu,i equals unity for the low-molecular-weight substances of this study",
+            "domain_id": "dimethyl-ether-fit-range"
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "methyl-ethyl-ether",
+      "aliases": [],
+      "name": "Methyl ethyl ether",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 60.096,
+            "unit": "gram / mole"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Methyl ethyl ether row, M (g/mol) column",
+            "domain_id": "methyl-ethyl-ether-fit-range"
+          }
+        },
+        "charge_number": {
+          "identity": "component/methyl-ethyl-ether/charge_number",
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "explicit-neutral-model",
+            "locator": "Neutral molecule; explicit zero charge, not a fitted coordinate.",
+            "domain_id": "methyl-ethyl-ether-fit-range"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/methyl-ethyl-ether/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 2.6425,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Methyl ethyl ether row, m column",
+            "domain_id": "methyl-ethyl-ether-fit-range"
+          }
+        },
+        {
+          "identity": "component/methyl-ethyl-ether/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 3.3794,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Methyl ethyl ether row, sigma (Å) column",
+            "domain_id": "methyl-ethyl-ether-fit-range"
+          }
+        },
+        {
+          "identity": "component/methyl-ethyl-ether/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 215.79,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Methyl ethyl ether row, ε/k (K) column",
+            "domain_id": "methyl-ethyl-ether-fit-range"
+          }
+        },
+        {
+          "identity": "component/methyl-ethyl-ether/dipole_moment",
+          "family": "dipole_moment",
+          "value": {
+            "magnitude": 1.17,
+            "unit": "debye"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Methyl ethyl ether row, μ (D), literature value column",
+            "domain_id": "methyl-ethyl-ether-fit-range"
+          }
+        },
+        {
+          "identity": "component/methyl-ethyl-ether/dipole_count",
+          "family": "dipole_count",
+          "value": {
+            "magnitude": 1,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "p. 1197: n_mu,i equals unity for the low-molecular-weight substances of this study",
+            "domain_id": "methyl-ethyl-ether-fit-range"
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "methyl-n-propyl-ether",
+      "aliases": [],
+      "name": "Methyl n-propyl ether",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 74.123,
+            "unit": "gram / mole"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Methyl n-propyl ether row, M (g/mol) column",
+            "domain_id": "methyl-n-propyl-ether-fit-range"
+          }
+        },
+        "charge_number": {
+          "identity": "component/methyl-n-propyl-ether/charge_number",
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "explicit-neutral-model",
+            "locator": "Neutral molecule; explicit zero charge, not a fitted coordinate.",
+            "domain_id": "methyl-n-propyl-ether-fit-range"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/methyl-n-propyl-ether/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 3.0004,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Methyl n-propyl ether row, m column",
+            "domain_id": "methyl-n-propyl-ether-fit-range"
+          }
+        },
+        {
+          "identity": "component/methyl-n-propyl-ether/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 3.4602,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Methyl n-propyl ether row, sigma (Å) column",
+            "domain_id": "methyl-n-propyl-ether-fit-range"
+          }
+        },
+        {
+          "identity": "component/methyl-n-propyl-ether/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 222.67,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Methyl n-propyl ether row, ε/k (K) column",
+            "domain_id": "methyl-n-propyl-ether-fit-range"
+          }
+        },
+        {
+          "identity": "component/methyl-n-propyl-ether/dipole_moment",
+          "family": "dipole_moment",
+          "value": {
+            "magnitude": 1.107,
+            "unit": "debye"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Methyl n-propyl ether row, μ (D), literature value column",
+            "domain_id": "methyl-n-propyl-ether-fit-range"
+          }
+        },
+        {
+          "identity": "component/methyl-n-propyl-ether/dipole_count",
+          "family": "dipole_count",
+          "value": {
+            "magnitude": 1,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "p. 1197: n_mu,i equals unity for the low-molecular-weight substances of this study",
+            "domain_id": "methyl-n-propyl-ether-fit-range"
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "diethyl-ether",
+      "aliases": [],
+      "name": "Diethyl ether",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 74.123,
+            "unit": "gram / mole"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Diethyl ether row, M (g/mol) column",
+            "domain_id": "diethyl-ether-fit-range"
+          }
+        },
+        "charge_number": {
+          "identity": "component/diethyl-ether/charge_number",
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "explicit-neutral-model",
+            "locator": "Neutral molecule; explicit zero charge, not a fitted coordinate.",
+            "domain_id": "diethyl-ether-fit-range"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/diethyl-ether/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 2.9726,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Diethyl ether row, m column",
+            "domain_id": "diethyl-ether-fit-range"
+          }
+        },
+        {
+          "identity": "component/diethyl-ether/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 3.5127,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Diethyl ether row, sigma (Å) column",
+            "domain_id": "diethyl-ether-fit-range"
+          }
+        },
+        {
+          "identity": "component/diethyl-ether/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 219.53,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Diethyl ether row, ε/k (K) column",
+            "domain_id": "diethyl-ether-fit-range"
+          }
+        },
+        {
+          "identity": "component/diethyl-ether/dipole_moment",
+          "family": "dipole_moment",
+          "value": {
+            "magnitude": 1.15,
+            "unit": "debye"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Diethyl ether row, μ (D), literature value column",
+            "domain_id": "diethyl-ether-fit-range"
+          }
+        },
+        {
+          "identity": "component/diethyl-ether/dipole_count",
+          "family": "dipole_count",
+          "value": {
+            "magnitude": 1,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "p. 1197: n_mu,i equals unity for the low-molecular-weight substances of this study",
+            "domain_id": "diethyl-ether-fit-range"
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "dimethyl-sulfoxide",
+      "aliases": [],
+      "name": "DMSO",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 78.13,
+            "unit": "gram / mole"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), DMSO row, M (g/mol) column",
+            "domain_id": "dimethyl-sulfoxide-fit-range"
+          }
+        },
+        "charge_number": {
+          "identity": "component/dimethyl-sulfoxide/charge_number",
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "explicit-neutral-model",
+            "locator": "Neutral molecule; explicit zero charge, not a fitted coordinate.",
+            "domain_id": "dimethyl-sulfoxide-fit-range"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/dimethyl-sulfoxide/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 3.0243,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), DMSO row, m column",
+            "domain_id": "dimethyl-sulfoxide-fit-range"
+          }
+        },
+        {
+          "identity": "component/dimethyl-sulfoxide/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 3.2427,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), DMSO row, sigma (Å) column",
+            "domain_id": "dimethyl-sulfoxide-fit-range"
+          }
+        },
+        {
+          "identity": "component/dimethyl-sulfoxide/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 309.36,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), DMSO row, ε/k (K) column",
+            "domain_id": "dimethyl-sulfoxide-fit-range"
+          }
+        },
+        {
+          "identity": "component/dimethyl-sulfoxide/dipole_moment",
+          "family": "dipole_moment",
+          "value": {
+            "magnitude": 3.96,
+            "unit": "debye"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), DMSO row, μ (D), literature value column",
+            "domain_id": "dimethyl-sulfoxide-fit-range"
+          }
+        },
+        {
+          "identity": "component/dimethyl-sulfoxide/dipole_count",
+          "family": "dipole_count",
+          "value": {
+            "magnitude": 1,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "p. 1197: n_mu,i equals unity for the low-molecular-weight substances of this study",
+            "domain_id": "dimethyl-sulfoxide-fit-range"
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "hydrogen-chloride",
+      "aliases": [],
+      "name": "HCl",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 36.461,
+            "unit": "gram / mole"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), HCl row, M (g/mol) column",
+            "domain_id": "hydrogen-chloride-fit-range"
+          }
+        },
+        "charge_number": {
+          "identity": "component/hydrogen-chloride/charge_number",
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "explicit-neutral-model",
+            "locator": "Neutral molecule; explicit zero charge, not a fitted coordinate.",
+            "domain_id": "hydrogen-chloride-fit-range"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/hydrogen-chloride/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 1.5194,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), HCl row, m column",
+            "domain_id": "hydrogen-chloride-fit-range"
+          }
+        },
+        {
+          "identity": "component/hydrogen-chloride/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 2.9794,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), HCl row, sigma (Å) column",
+            "domain_id": "hydrogen-chloride-fit-range"
+          }
+        },
+        {
+          "identity": "component/hydrogen-chloride/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 203.32,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), HCl row, ε/k (K) column",
+            "domain_id": "hydrogen-chloride-fit-range"
+          }
+        },
+        {
+          "identity": "component/hydrogen-chloride/dipole_moment",
+          "family": "dipole_moment",
+          "value": {
+            "magnitude": 1.109,
+            "unit": "debye"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), HCl row, μ (D), literature value column",
+            "domain_id": "hydrogen-chloride-fit-range"
+          }
+        },
+        {
+          "identity": "component/hydrogen-chloride/dipole_count",
+          "family": "dipole_count",
+          "value": {
+            "magnitude": 1,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "p. 1197: n_mu,i equals unity for the low-molecular-weight substances of this study",
+            "domain_id": "hydrogen-chloride-fit-range"
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "methyl-chloride",
+      "aliases": [],
+      "name": "Chloro methane",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 50.488,
+            "unit": "gram / mole"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Chloro methane row, M (g/mol) column",
+            "domain_id": "methyl-chloride-fit-range"
+          }
+        },
+        "charge_number": {
+          "identity": "component/methyl-chloride/charge_number",
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "explicit-neutral-model",
+            "locator": "Neutral molecule; explicit zero charge, not a fitted coordinate.",
+            "domain_id": "methyl-chloride-fit-range"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/methyl-chloride/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 1.807,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Chloro methane row, m column",
+            "domain_id": "methyl-chloride-fit-range"
+          }
+        },
+        {
+          "identity": "component/methyl-chloride/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 3.3034,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Chloro methane row, sigma (Å) column",
+            "domain_id": "methyl-chloride-fit-range"
+          }
+        },
+        {
+          "identity": "component/methyl-chloride/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 229.97,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Chloro methane row, ε/k (K) column",
+            "domain_id": "methyl-chloride-fit-range"
+          }
+        },
+        {
+          "identity": "component/methyl-chloride/dipole_moment",
+          "family": "dipole_moment",
+          "value": {
+            "magnitude": 1.896,
+            "unit": "debye"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Chloro methane row, μ (D), literature value column",
+            "domain_id": "methyl-chloride-fit-range"
+          }
+        },
+        {
+          "identity": "component/methyl-chloride/dipole_count",
+          "family": "dipole_count",
+          "value": {
+            "magnitude": 1,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "p. 1197: n_mu,i equals unity for the low-molecular-weight substances of this study",
+            "domain_id": "methyl-chloride-fit-range"
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "chloroethane",
+      "aliases": [],
+      "name": "Chloro ethane",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 64.514,
+            "unit": "gram / mole"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Chloro ethane row, M (g/mol) column",
+            "domain_id": "chloroethane-fit-range"
+          }
+        },
+        "charge_number": {
+          "identity": "component/chloroethane/charge_number",
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "explicit-neutral-model",
+            "locator": "Neutral molecule; explicit zero charge, not a fitted coordinate.",
+            "domain_id": "chloroethane-fit-range"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/chloroethane/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 2.2207,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Chloro ethane row, m column",
+            "domain_id": "chloroethane-fit-range"
+          }
+        },
+        {
+          "identity": "component/chloroethane/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 3.4335,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Chloro ethane row, sigma (Å) column",
+            "domain_id": "chloroethane-fit-range"
+          }
+        },
+        {
+          "identity": "component/chloroethane/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 237.03,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Chloro ethane row, ε/k (K) column",
+            "domain_id": "chloroethane-fit-range"
+          }
+        },
+        {
+          "identity": "component/chloroethane/dipole_moment",
+          "family": "dipole_moment",
+          "value": {
+            "magnitude": 2.05,
+            "unit": "debye"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "Table 2 (p. 1200), Chloro ethane row, μ (D), literature value column",
+            "domain_id": "chloroethane-fit-range"
+          }
+        },
+        {
+          "identity": "component/chloroethane/dipole_count",
+          "family": "dipole_count",
+          "value": {
+            "magnitude": 1,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "gross-vrabec-2006",
+            "locator": "p. 1197: n_mu,i equals unity for the low-molecular-weight substances of this study",
+            "domain_id": "chloroethane-fit-range"
+          }
+        }
+      ]
+    }
+  ],
+  "pairs": [],
+  "topology": {
+    "presets": [],
+    "sites": [],
+    "edges": []
+  }
+}

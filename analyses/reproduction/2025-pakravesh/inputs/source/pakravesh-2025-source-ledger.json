@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "source_id": "pakravesh-zarei-2025",
+  "citation": {
+    "title": "Thermodynamic Modeling of Pure, Binary, and Ternary Mixtures of Alkanolamines Using Three Versions of SAFT Equations of State",
+    "authors": ["Pakravesh", "Zarei"],
+    "journal": "Journal of Chemical & Engineering Data",
+    "year": 2025,
+    "doi": "10.1021/acs.jced.4c00390"
+  },
+  "source_markdown": {
+    "path": "/home/tnnrpolley21/Workspaces/Engineering/MEA-Thermodynamics/docs/papers/md/Pakravesh and Zarei - 2025 - Thermodynamic Modeling of Pure, Binary, and Ternary Mixtures of Alkanol.md",
+    "sha256": "4fd7013414a22b1601176932bef040ec120c24753292494632ce3c84e4b4c7fd"
+  },
+  "literature_review": {
+    "path": "/home/tnnrpolley21/Workspaces/Engineering/MEA-Thermodynamics/docs/ePC-SAFT/amine-epcsaft-model-hierarchy-literature-review.md",
+    "role": "source inventory and MDEA model-hierarchy locator"
+  },
+  "paper_model": {
+    "primary": "P-rho-T-SAFT-HR",
+    "comparators": ["PC-SAFT", "SAFT-HR"],
+    "mdea_association_scheme": "3B",
+    "mdea_parameters": {
+      "m": 4.2022,
+      "u_over_kb_K": 410.174,
+      "v00_micro_m3_per_mol": 16.7847,
+      "epsilon_over_kb_K": 575.91,
+      "kappa_times_100": 25.2412,
+      "percent_objective": 1.86
+    }
+  },
+  "declared_topologies": [
+    {
+      "case_id": "mdea-p-rho-t-pure",
+      "phase_count": 1,
+      "phase_roles": ["finite-liquid-or-single-fluid"],
+      "discovery": false
+    },
+    {
+      "case_id": "mdea-mea-water-vle",
+      "phase_count": 2,
+      "phase_roles": ["finite-liquid", "vapor"],
+      "vapor_support": ["MDEA", "MEA", "water"],
+      "discovery": false
+    },
+    {
+      "case_id": "mdea-mea-water-density",
+      "phase_count": 1,
+      "phase_roles": ["finite-liquid"],
+      "discovery": false
+    },
+    {
+      "case_id": "mdea-dea-water-density",
+      "phase_count": 1,
+      "phase_roles": ["finite-liquid"],
+      "discovery": false
+    }
+  ],
+  "source_ranges": {
+    "mdea_p_rho_t_temperature_K": [313.0, 362.0],
+    "mdea_p_rho_t_pressure_MPa": [1.0, 20.0],
+    "mdea_mea_water_density_temperature_K": [293.0, 323.0],
+    "mdea_dea_water_density_temperature_K": [293.0, 393.0],
+    "mdea_dea_water_density_pressure_MPa": [0.1, 140.0],
+    "mdea_mea_water_vle_temperature_K": [313.0, 473.0],
+    "mdea_mea_water_vle_pressure_kPa": [5.98, 90.30]
+  },
+  "reported_metrics_provenance_only": {
+    "mdea_p_rho_t_percent_aad": {
+      "density": 0.007,
+      "heat_capacity": 9.91,
+      "sound_velocity": 0.60,
+      "thermal_expansivity": 0.71,
+      "isothermal_compressibility": 1.14,
+      "vapor_pressure": 3.92,
+      "saturated_liquid_density": 1.02,
+      "critical_point": 18.6,
+      "average": 4.49
+    },
+    "mdea_mea_water_vle_percent_aad": {
+      "x_mdea": 1.16,
+      "x_mea": 0.84,
+      "y_mdea": 0.0029,
+      "y_mea": 0.0108,
+      "average": 0.50
+    }
+  },
+  "observation_status": {
+    "exact_source_point_table": "missing",
+    "supporting_information_materialized": false,
+    "digitized_figures": false,
+    "reproduction_status": "blocked_pending_observation_materialization_and_same_model_route"
+  },
+  "claim_boundary": {
+    "phase_discovery": false,
+    "globality": "not-established",
+    "predictive_accuracy": "not-adjudicated",
+    "parameter_promotion": "none"
+  }
+}

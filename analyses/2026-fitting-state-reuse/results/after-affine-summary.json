@@ -1,0 +1,27 @@
+{
+  "wheel_sha256": "659b2606737be0c66b4bc764aee3adda2b4e983b8196659b8a824955a5fd47c0",
+  "input_sha256": "013f57c6390a821599942f33f22445e37904e50ee85f272ac153fd5073fe39ba",
+  "mode": "affine",
+  "states": 6,
+  "targets": 9,
+  "wall_s": 1.7832467360058217,
+  "cpu_s": 1.780491724,
+  "initial_cost": 0.7812681271116075,
+  "final_cost": 0.7812681271116075,
+  "physical": [
+    -0.06655083317309618,
+    0.1466880086746801,
+    0.5,
+    -1.0,
+    88.44665375790703
+  ],
+  "status": "limit_reached",
+  "message": "Maximum solver time reached. Total solver time: 7.104874e-05 >= 1.000000e-06.",
+  "residual_evaluations": 0,
+  "jacobian_evaluations": 1,
+  "trial_failures": 0,
+  "iterations": 1,
+  "residual_to_jacobian_promotions": 0,
+  "values_file": "results/before-affine.csv",
+  "values_sha256": "d544ae6ac50f894ffa595f3da4dbfa1dbd83227165cedb9f77b4ae03a5e1346a"
+}

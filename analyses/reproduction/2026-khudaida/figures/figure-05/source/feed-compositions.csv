@@ -1,0 +1,6 @@
+point_id,x_ethanol_salt_free,x_isobutanol_salt_free,x_water_salt_free,series_label,source
+1,0.03994,0.25056,0.70949,feed,user_supplied_figure_trace
+2,0.03168,0.24755,0.72077,feed,user_supplied_figure_trace
+3,0.02342,0.24692,0.72966,feed,user_supplied_figure_trace
+4,0.01377,0.23983,0.7464,feed,user_supplied_figure_trace
+5,0.00689,0.23612,0.75699,feed,user_supplied_figure_trace

@@ -1,0 +1,995 @@
+span,scope,parent,name,values
+1321,equilibrium_continuation_initial,0,path_value,[0.0]
+1770,solve_equilibrium,1321,ipopt_iteration,"[359.26478465332195, 1.0, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0]"
+1770,solve_equilibrium,1321,ipopt_iteration,"[1.1368683772161603e-13, 0.0599929611771991, 0.1, 328.02939380044523, 0.0, 1.0, 0.9900077746092831, 1.0]"
+1321,equilibrium_continuation_initial,0,driver_result_present,[1.0]
+1321,equilibrium_continuation_initial,0,row_residual,[8.526512829121202e-14]
+1321,equilibrium_continuation_initial,0,selected_density,[55706.60657766682]
+1321,equilibrium_continuation_initial,0,corrected_density,[55706.60657766731]
+1321,equilibrium_continuation_initial,0,anchor_density,[55706.60657766682]
+1321,equilibrium_continuation_initial,0,corrected_displacement,[8.881784197001213e-15]
+1321,equilibrium_continuation_initial,0,corrected_slope,[72197.75923949726]
+1321,equilibrium_continuation_initial,0,density_residual,[2.56588546525445e-13]
+1321,equilibrium_continuation_initial,0,selected_density,[4.924716946949888]
+1321,equilibrium_continuation_initial,0,corrected_density,[4.924716946949887]
+1321,equilibrium_continuation_initial,0,anchor_density,[4.924716946949888]
+1321,equilibrium_continuation_initial,0,corrected_displacement,[3.33066907387547e-16]
+1321,equilibrium_continuation_initial,0,corrected_slope,[2567.937277097649]
+1321,equilibrium_continuation_initial,0,density_residual,[0.0]
+1321,equilibrium_continuation_initial,0,accepted,[1.0]
+1321,equilibrium_continuation_initial,0,reached_target,[1.0]
+4581,equilibrium_continuation_attempt,0,path_value,[0.04]
+4581,equilibrium_continuation_attempt,0,predictor_projected,[0.0]
+6336,solve_equilibrium,4581,ipopt_iteration,"[0.0007088178172409698, 1.0, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0]"
+6336,solve_equilibrium,4581,ipopt_iteration,"[1.3107921859045746e-08, 0.030412594317942077, 0.1, 0.6931482976697574, 0.0, 1.0, 0.9899540702562882, 1.0]"
+6336,solve_equilibrium,4581,ipopt_iteration,"[2.5579538487363607e-13, 0.00028404624160405234, 0.1, 5.80587145082964e-05, 0.0, 1.0, 0.9907749338493329, 1.0]"
+4581,equilibrium_continuation_attempt,0,driver_result_present,[1.0]
+4581,equilibrium_continuation_attempt,0,row_residual,[5.684341886080802e-14]
+4581,equilibrium_continuation_attempt,0,selected_density,[55707.98113894369]
+4581,equilibrium_continuation_attempt,0,corrected_density,[55707.98113894369]
+4581,equilibrium_continuation_attempt,0,anchor_density,[55706.606577667335]
+4581,equilibrium_continuation_attempt,0,corrected_displacement,[2.4674709202766773e-05]
+4581,equilibrium_continuation_attempt,0,corrected_slope,[72201.8904983498]
+4581,equilibrium_continuation_attempt,0,density_residual,[4.45063636552584e-15]
+4581,equilibrium_continuation_attempt,0,selected_density,[4.944754178723292]
+4581,equilibrium_continuation_attempt,0,corrected_density,[4.944754178723291]
+4581,equilibrium_continuation_attempt,0,anchor_density,[4.924716946949887]
+4581,equilibrium_continuation_attempt,0,corrected_displacement,[0.004060452489945312]
+4581,equilibrium_continuation_attempt,0,corrected_slope,[2567.7534860742066]
+4581,equilibrium_continuation_attempt,0,density_residual,[1.1102230246251565e-16]
+4581,equilibrium_continuation_attempt,0,accepted,[1.0]
+4581,equilibrium_continuation_attempt,0,reached_target,[1.0]
+9447,equilibrium_continuation_attempt,0,path_value,[0.08]
+9447,equilibrium_continuation_attempt,0,predictor_projected,[0.0]
+11212,solve_equilibrium,9447,ipopt_iteration,"[0.0007214037468088463, 1.0, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0]"
+11212,solve_equilibrium,9447,ipopt_iteration,"[1.6606236385996453e-08, 0.031048236344961122, 0.1, 0.7579357364221012, 0.0, 1.0, 0.9899492631401116, 1.0]"
+11212,solve_equilibrium,9447,ipopt_iteration,"[1.1368683772161603e-13, 0.00029069682493432225, 0.1, 7.1657268343073e-05, 0.0, 1.0, 0.9907717418128238, 1.0]"
+9447,equilibrium_continuation_attempt,0,driver_result_present,[1.0]
+9447,equilibrium_continuation_attempt,0,row_residual,[2.842170943040401e-14]
+9447,equilibrium_continuation_attempt,0,selected_density,[55709.43635693821]
+9447,equilibrium_continuation_attempt,0,corrected_density,[55709.43635693827]
+9447,equilibrium_continuation_attempt,0,anchor_density,[55707.981138943695]
+9447,equilibrium_continuation_attempt,0,corrected_displacement,[2.6121912127663597e-05]
+9447,equilibrium_continuation_attempt,0,corrected_slope,[72206.52706220941]
+9447,equilibrium_continuation_attempt,0,density_residual,[1.2326538444476509e-14]
+9447,equilibrium_continuation_attempt,0,selected_density,[4.965367289725521]
+9447,equilibrium_continuation_attempt,0,corrected_density,[4.9653672897255205]
+9447,equilibrium_continuation_attempt,0,anchor_density,[4.94475417872329]
+9447,equilibrium_continuation_attempt,0,corrected_displacement,[0.004160017774748121]
+9447,equilibrium_continuation_attempt,0,corrected_slope,[2567.5643377512188]
+9447,equilibrium_continuation_attempt,0,density_residual,[0.0]
+9447,equilibrium_continuation_attempt,0,accepted,[1.0]
+9447,equilibrium_continuation_attempt,0,reached_target,[1.0]
+14675,equilibrium_continuation_attempt,0,path_value,[0.12]
+14675,equilibrium_continuation_attempt,0,predictor_projected,[0.0]
+16440,solve_equilibrium,14675,ipopt_iteration,"[0.0007347112748448126, 1.0, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0]"
+16440,solve_equilibrium,14675,ipopt_iteration,"[2.1217147150309756e-08, 0.031728487644032466, 0.1, 0.8333505126922419, 0.0, 1.0, 0.9899436863055375, 1.0]"
+16440,solve_equilibrium,14675,ipopt_iteration,"[1.1368683772161603e-13, 0.00029790455752509715, 0.1, 8.924053103295179e-05, 0.0, 1.0, 0.990768479280483, 1.0]"
+14675,equilibrium_continuation_attempt,0,driver_result_present,[1.0]
+14675,equilibrium_continuation_attempt,0,row_residual,[5.684341886080802e-14]
+14675,equilibrium_continuation_attempt,0,selected_density,[55710.986347376514]
+14675,equilibrium_continuation_attempt,0,corrected_density,[55710.98634737651]
+14675,equilibrium_continuation_attempt,0,anchor_density,[55709.43635693827]
+14675,equilibrium_continuation_attempt,0,corrected_displacement,[2.782237583948848e-05]
+14675,equilibrium_continuation_attempt,0,corrected_slope,[72211.73170489809]
+14675,equilibrium_continuation_attempt,0,density_residual,[8.056123585072072e-15]
+14675,equilibrium_continuation_attempt,0,selected_density,[4.986612468694066]
+14675,equilibrium_continuation_attempt,0,corrected_density,[4.986612468694069]
+14675,equilibrium_continuation_attempt,0,anchor_density,[4.9653672897255205]
+14675,equilibrium_continuation_attempt,0,corrected_displacement,[0.004269544705169623]
+14675,equilibrium_continuation_attempt,0,corrected_slope,[2567.369282701281]
+14675,equilibrium_continuation_attempt,0,density_residual,[1.1102230246251565e-16]
+14675,equilibrium_continuation_attempt,0,accepted,[1.0]
+14675,equilibrium_continuation_attempt,0,reached_target,[1.0]
+20077,equilibrium_continuation_attempt,0,path_value,[0.16]
+20077,equilibrium_continuation_attempt,0,predictor_projected,[0.0]
+21842,solve_equilibrium,20077,ipopt_iteration,"[0.000748854187975212, 1.0, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0]"
+21842,solve_equilibrium,20077,ipopt_iteration,"[2.735686166488449e-08, 0.03245998530396754, 0.1, 0.9217102516907717, 0.0, 1.0, 0.9899371751631272, 1.0]"
+21842,solve_equilibrium,20077,ipopt_iteration,"[3.410605131648481e-13, 0.00030576595912501503, 0.1, 0.00011223332657176806, 0.0, 1.0, 0.9907651383292981, 1.0]"
+20077,equilibrium_continuation_attempt,0,driver_result_present,[1.0]
+20077,equilibrium_continuation_attempt,0,row_residual,[5.684341886080802e-14]
+20077,equilibrium_continuation_attempt,0,selected_density,[55712.64742043276]
+20077,equilibrium_continuation_attempt,0,corrected_density,[55712.64742043274]
+20077,equilibrium_continuation_attempt,0,anchor_density,[55710.98634737651]
+20077,equilibrium_continuation_attempt,0,corrected_displacement,[2.9815452973282976e-05]
+20077,equilibrium_continuation_attempt,0,corrected_slope,[72217.57779000179]
+20077,equilibrium_continuation_attempt,0,density_residual,[9.338843175339673e-15]
+20077,equilibrium_continuation_attempt,0,selected_density,[5.008555409723985]
+20077,equilibrium_continuation_attempt,0,corrected_density,[5.008555409723984]
+20077,equilibrium_continuation_attempt,0,anchor_density,[4.986612468694069]
+20077,equilibrium_continuation_attempt,0,corrected_displacement,[0.004390716904183377]
+20077,equilibrium_continuation_attempt,0,corrected_slope,[2567.167683098537]
+20077,equilibrium_continuation_attempt,0,density_residual,[0.0]
+20077,equilibrium_continuation_attempt,0,accepted,[1.0]
+20077,equilibrium_continuation_attempt,0,reached_target,[1.0]
+24951,equilibrium_continuation_attempt,0,path_value,[0.2]
+24951,equilibrium_continuation_attempt,0,predictor_projected,[0.0]
+26716,solve_equilibrium,24951,ipopt_iteration,"[0.0007639742219680556, 1.0, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0]"
+26716,solve_equilibrium,24951,ipopt_iteration,"[3.562377060006838e-08, 0.03325076871877064, 0.1, 1.0259776342690958, 0.0, 1.0, 0.9899295200721779, 1.0]"
+26716,solve_equilibrium,24951,ipopt_iteration,"[1.7053025658242404e-13, 0.00031440131810756, 0.1, 0.00014267178250754658, 0.0, 1.0, 0.9907617096150815, 1.0]"
+24951,equilibrium_continuation_attempt,0,driver_result_present,[1.0]
+24951,equilibrium_continuation_attempt,0,row_residual,[2.842170943040401e-14]
+24951,equilibrium_continuation_attempt,0,selected_density,[55714.43855230676]
+24951,equilibrium_continuation_attempt,0,corrected_density,[55714.438552306776]
+24951,equilibrium_continuation_attempt,0,anchor_density,[55712.64742043274]
+24951,equilibrium_continuation_attempt,0,corrected_displacement,[3.2148949396897664e-05]
+24951,equilibrium_continuation_attempt,0,corrected_slope,[72224.1515119856]
+24951,equilibrium_continuation_attempt,0,density_residual,[1.4781768474178558e-14]
+24951,equilibrium_continuation_attempt,0,selected_density,[5.031273455463565]
+24951,equilibrium_continuation_attempt,0,corrected_density,[5.031273455463561]
+24951,equilibrium_continuation_attempt,0,anchor_density,[5.008555409723984]
+24951,equilibrium_continuation_attempt,0,corrected_displacement,[0.0045255919834111]
+24951,equilibrium_continuation_attempt,0,corrected_slope,[2566.9587936256457]
+24951,equilibrium_continuation_attempt,0,density_residual,[0.0]
+24951,equilibrium_continuation_attempt,0,accepted,[1.0]
+24951,equilibrium_continuation_attempt,0,reached_target,[1.0]
+29649,equilibrium_continuation_attempt,0,path_value,[0.24000000000000002]
+29649,equilibrium_continuation_attempt,0,predictor_projected,[0.0]
+31414,solve_equilibrium,29649,ipopt_iteration,"[0.0007802500205116303, 1.0, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0]"
+31414,solve_equilibrium,29649,ipopt_iteration,"[4.6897525862732437e-08, 0.034110671169868656, 0.1, 1.149986723939156, 0.0, 1.0, 0.9899204507448827, 1.0]"
+31414,solve_equilibrium,29649,ipopt_iteration,"[1.1368683772161603e-13, 0.00032396247576294, 0.1, 0.00018352471013099954, 0.0, 1.0, 0.990758182032922, 1.0]"
+29649,equilibrium_continuation_attempt,0,driver_result_present,[1.0]
+29649,equilibrium_continuation_attempt,0,row_residual,[8.526512829121202e-14]
+29649,equilibrium_continuation_attempt,0,selected_density,[55716.381987528664]
+29649,equilibrium_continuation_attempt,0,corrected_density,[55716.3819875287]
+29649,equilibrium_continuation_attempt,0,anchor_density,[55714.43855230676]
+29649,equilibrium_continuation_attempt,0,corrected_displacement,[3.4881466594622586e-05]
+29649,equilibrium_continuation_attempt,0,corrected_slope,[72231.55475902806]
+29649,equilibrium_continuation_attempt,0,density_residual,[2.0461727472977087e-14]
+29649,equilibrium_continuation_attempt,0,selected_density,[5.0548583602998445]
+29649,equilibrium_continuation_attempt,0,corrected_density,[5.054858360299843]
+29649,equilibrium_continuation_attempt,0,anchor_density,[5.0312734554635625]
+29649,equilibrium_continuation_attempt,0,corrected_displacement,[0.004676708227437112]
+29649,equilibrium_continuation_attempt,0,corrected_slope,[2566.741737027889]
+29649,equilibrium_continuation_attempt,0,density_residual,[0.0]
+29649,equilibrium_continuation_attempt,0,accepted,[1.0]
+29649,equilibrium_continuation_attempt,0,reached_target,[1.0]
+34698,equilibrium_continuation_attempt,0,path_value,[0.28]
+34698,equilibrium_continuation_attempt,0,predictor_projected,[0.0]
+36463,solve_equilibrium,34698,ipopt_iteration,"[0.0007979097048576023, 1.0, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0]"
+36463,solve_equilibrium,34698,ipopt_iteration,"[6.248939143915777e-08, 0.03505185219475315, 0.1, 1.298767970533304, 0.0, 1.0, 0.9899096139258409, 1.0]"
+36463,solve_equilibrium,34698,ipopt_iteration,"[1.4210854715202004e-13, 0.0003346439007279045, 0.1, 0.00023920605187971735, 0.0, 1.0, 0.9907545422697195, 1.0]"
+34698,equilibrium_continuation_attempt,0,driver_result_present,[1.0]
+34698,equilibrium_continuation_attempt,0,row_residual,[1.4210854715202004e-13]
+34698,equilibrium_continuation_attempt,0,selected_density,[55718.50401866779]
+34698,equilibrium_continuation_attempt,0,corrected_density,[55718.50401866788]
+34698,equilibrium_continuation_attempt,0,anchor_density,[55716.3819875287]
+34698,equilibrium_continuation_attempt,0,corrected_displacement,[3.808558011746499e-05]
+34698,equilibrium_continuation_attempt,0,corrected_slope,[72239.90881951814]
+34698,equilibrium_continuation_attempt,0,density_residual,[6.096468815885991e-16]
+34698,equilibrium_continuation_attempt,0,selected_density,[5.079419900693723]
+34698,equilibrium_continuation_attempt,0,corrected_density,[5.0794199006937255]
+34698,equilibrium_continuation_attempt,0,anchor_density,[5.0548583602998445]
+34698,equilibrium_continuation_attempt,0,corrected_displacement,[0.004847229936275623]
+34698,equilibrium_continuation_attempt,0,corrected_slope,[2566.515472389308]
+34698,equilibrium_continuation_attempt,0,density_residual,[1.1102230246251565e-16]
+34698,equilibrium_continuation_attempt,0,accepted,[1.0]
+34698,equilibrium_continuation_attempt,0,reached_target,[1.0]
+39220,equilibrium_continuation_attempt,0,path_value,[0.32]
+39220,equilibrium_continuation_attempt,0,predictor_projected,[0.0]
+40985,solve_equilibrium,39220,ipopt_iteration,"[0.0008172488328739291, 1.0, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0]"
+40985,solve_equilibrium,39220,ipopt_iteration,"[8.440372312179534e-08, 0.036089534567498305, 0.1, 1.4790245738741552, 0.0, 1.0, 0.9898965407908686, 1.0]"
+40985,solve_equilibrium,39220,ipopt_iteration,"[1.7053025658242404e-13, 0.00034669880522919527, 0.1, 0.0003164303868472593, 0.0, 1.0, 0.9907507742019361, 1.0]"
+39220,equilibrium_continuation_attempt,0,driver_result_present,[1.0]
+39220,equilibrium_continuation_attempt,0,row_residual,[5.684341886080802e-14]
+39220,equilibrium_continuation_attempt,0,selected_density,[55720.83601109471]
+39220,equilibrium_continuation_attempt,0,corrected_density,[55720.83601109469]
+39220,equilibrium_continuation_attempt,0,anchor_density,[55718.50401866786]
+39220,equilibrium_continuation_attempt,0,corrected_displacement,[4.185222968030879e-05]
+39220,equilibrium_continuation_attempt,0,corrected_slope,[72249.35925386027]
+39220,equilibrium_continuation_attempt,0,density_residual,[1.0671259882688577e-16]
+39220,equilibrium_continuation_attempt,0,selected_density,[5.105090663664415]
+39220,equilibrium_continuation_attempt,0,corrected_density,[5.105090663664413]
+39220,equilibrium_continuation_attempt,0,anchor_density,[5.079419900693727]
+39220,equilibrium_continuation_attempt,0,corrected_displacement,[0.0050411489434061115]
+39220,equilibrium_continuation_attempt,0,corrected_slope,[2566.2787533350856]
+39220,equilibrium_continuation_attempt,0,density_residual,[2.220446049250313e-16]
+39220,equilibrium_continuation_attempt,0,accepted,[1.0]
+39220,equilibrium_continuation_attempt,0,reached_target,[1.0]
+44296,equilibrium_continuation_attempt,0,path_value,[0.36]
+44296,equilibrium_continuation_attempt,0,predictor_projected,[0.0]
+46071,solve_equilibrium,44296,ipopt_iteration,"[0.0008386566125864192, 1.0, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0]"
+46071,solve_equilibrium,44296,ipopt_iteration,"[1.1577600389500731e-07, 0.03724304552886881, 0.1, 1.6998469715755795, 0.0, 1.0, 0.9898805982280977, 1.0]"
+46071,solve_equilibrium,44296,ipopt_iteration,"[2.2737367544323206e-13, 0.00036046320756089045, 0.1, 0.0004256843502582348, 0.0, 1.0, 0.990746858065931, 1.0]"
+44296,equilibrium_continuation_attempt,0,driver_result_present,[1.0]
+44296,equilibrium_continuation_attempt,0,row_residual,[9.947598300641403e-14]
+44296,equilibrium_continuation_attempt,0,selected_density,[55723.415773074244]
+44296,equilibrium_continuation_attempt,0,corrected_density,[55723.4157730742]
+44296,equilibrium_continuation_attempt,0,anchor_density,[55720.83601109469]
+44296,equilibrium_continuation_attempt,0,corrected_displacement,[4.629690519998688e-05]
+44296,equilibrium_continuation_attempt,0,corrected_slope,[72260.08240834637]
+44296,equilibrium_continuation_attempt,0,density_residual,[9.489100043919008e-15]
+44296,equilibrium_continuation_attempt,0,selected_density,[5.132032506643311]
+44296,equilibrium_continuation_attempt,0,corrected_density,[5.132032506643313]
+44296,equilibrium_continuation_attempt,0,anchor_density,[5.105090663664412]
+44296,equilibrium_continuation_attempt,0,corrected_displacement,[0.00526356960505583]
+44296,equilibrium_continuation_attempt,0,corrected_slope,[2566.0300720076007]
+44296,equilibrium_continuation_attempt,0,density_residual,[0.0]
+44296,equilibrium_continuation_attempt,0,accepted,[1.0]
+44296,equilibrium_continuation_attempt,0,reached_target,[1.0]
+49204,equilibrium_continuation_attempt,0,path_value,[0.39999999999999997]
+49204,equilibrium_continuation_attempt,0,predictor_projected,[0.0]
+50979,solve_equilibrium,49204,ipopt_iteration,"[0.0008626550783787934, 1.0, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0]"
+50979,solve_equilibrium,49204,ipopt_iteration,"[1.6164938188012457e-07, 0.03853732226145157, 0.1, 1.9738128340995933, 0.0, 1.0, 0.9898609141207528, 1.0]"
+50979,solve_equilibrium,49204,ipopt_iteration,"[1.7053025658242404e-13, 0.00037639292480262654, 0.1, 0.000583838377822237, 0.0, 1.0, 0.9907427692828928, 1.0]"
+49204,equilibrium_continuation_attempt,0,driver_result_present,[1.0]
+49204,equilibrium_continuation_attempt,0,row_residual,[2.842170943040401e-14]
+49204,equilibrium_continuation_attempt,0,selected_density,[55726.289423638635]
+49204,equilibrium_continuation_attempt,0,corrected_density,[55726.28942363865]
+49204,equilibrium_continuation_attempt,0,anchor_density,[55723.4157730742]
+49204,equilibrium_continuation_attempt,0,corrected_displacement,[5.156856287797164e-05]
+49204,equilibrium_continuation_attempt,0,corrected_slope,[72272.29429578116]
+49204,equilibrium_continuation_attempt,0,density_residual,[4.9360336781476e-15]
+49204,equilibrium_continuation_attempt,0,selected_density,[5.160445442488919]
+49204,equilibrium_continuation_attempt,0,corrected_density,[5.160445442488916]
+49204,equilibrium_continuation_attempt,0,anchor_density,[5.132032506643312]
+49204,equilibrium_continuation_attempt,0,corrected_displacement,[0.0055211209897991585]
+49204,equilibrium_continuation_attempt,0,corrected_slope,[2565.767582489059]
+49204,equilibrium_continuation_attempt,0,density_residual,[0.0]
+49204,equilibrium_continuation_attempt,0,accepted,[1.0]
+49204,equilibrium_continuation_attempt,0,reached_target,[1.0]
+54112,equilibrium_continuation_attempt,0,path_value,[0.43999999999999995]
+54112,equilibrium_continuation_attempt,0,predictor_projected,[0.0]
+55887,solve_equilibrium,54112,ipopt_iteration,"[0.0008899592406521606, 1.0, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0]"
+55887,solve_equilibrium,54112,ipopt_iteration,"[2.3039967800286831e-07, 0.0400051468402034, 0.1, 2.318731832568107, 0.0, 1.0, 0.9898362593145029, 1.0]"
+55887,solve_equilibrium,54112,ipopt_iteration,"[8.526512829121202e-14, 0.00039512238945427214, 0.1, 0.0008189869608293725, 0.0, 1.0, 0.9907384767353454, 1.0]"
+54112,equilibrium_continuation_attempt,0,driver_result_present,[1.0]
+54112,equilibrium_continuation_attempt,0,row_residual,[5.684341886080802e-14]
+54112,equilibrium_continuation_attempt,0,selected_density,[55729.51399680251]
+54112,equilibrium_continuation_attempt,0,corrected_density,[55729.51399680248]
+54112,equilibrium_continuation_attempt,0,anchor_density,[55726.28942363865]
+54112,equilibrium_continuation_attempt,0,corrected_displacement,[5.786281316489651e-05]
+54112,equilibrium_continuation_attempt,0,corrected_slope,[72286.26297684303]
+54112,equilibrium_continuation_attempt,0,density_residual,[5.750472797591555e-15]
+54112,equilibrium_continuation_attempt,0,selected_density,[5.190580135445368]
+54112,equilibrium_continuation_attempt,0,corrected_density,[5.190580135445365]
+54112,equilibrium_continuation_attempt,0,anchor_density,[5.160445442488915]
+54112,equilibrium_continuation_attempt,0,corrected_displacement,[0.005822568568845363]
+54112,equilibrium_continuation_attempt,0,corrected_slope,[2565.48899374654]
+54112,equilibrium_continuation_attempt,0,density_residual,[1.1102230246251565e-16]
+54112,equilibrium_continuation_attempt,0,accepted,[1.0]
+54112,equilibrium_continuation_attempt,0,reached_target,[1.0]
+59019,equilibrium_continuation_attempt,0,path_value,[0.4799999999999999]
+59019,equilibrium_continuation_attempt,0,predictor_projected,[0.0]
+60794,solve_equilibrium,59019,ipopt_iteration,"[0.0009215723467548287, 1.0, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0]"
+60794,solve_equilibrium,59019,ipopt_iteration,"[3.3646796282482683e-07, 0.04169056666213056, 0.1, 2.760510090140137, 0.0, 1.0, 0.9898048546721788, 1.0]"
+60794,solve_equilibrium,59019,ipopt_iteration,"[3.979039320256561e-13, 0.0004175618901944844, 0.1, 0.0011798472121794393, 0.0, 1.0, 0.9907339401278555, 1.0]"
+59019,equilibrium_continuation_attempt,0,driver_result_present,[1.0]
+59019,equilibrium_continuation_attempt,0,row_residual,[5.684341886080802e-14]
+59019,equilibrium_continuation_attempt,0,selected_density,[55733.16116806957]
+59019,equilibrium_continuation_attempt,0,corrected_density,[55733.161168069506]
+59019,equilibrium_continuation_attempt,0,anchor_density,[55729.51399680248]
+59019,equilibrium_continuation_attempt,0,corrected_displacement,[6.5442019275696e-05]
+59019,equilibrium_continuation_attempt,0,corrected_slope,[72302.32627650167]
+59019,equilibrium_continuation_attempt,0,density_residual,[2.2149423679722335e-14]
+59019,equilibrium_continuation_attempt,0,selected_density,[5.222755936575323]
+59019,equilibrium_continuation_attempt,0,corrected_density,[5.222755936575324]
+59019,equilibrium_continuation_attempt,0,anchor_density,[5.190580135445366]
+59019,equilibrium_continuation_attempt,0,corrected_displacement,[0.0061797493723383745]
+59019,equilibrium_continuation_attempt,0,corrected_slope,[2565.1914160038546]
+59019,equilibrium_continuation_attempt,0,density_residual,[1.1102230246251565e-16]
+59019,equilibrium_continuation_attempt,0,accepted,[1.0]
+59019,equilibrium_continuation_attempt,0,reached_target,[1.0]
+63748,equilibrium_continuation_attempt,0,path_value,[0.5199999999999999]
+63748,equilibrium_continuation_attempt,0,predictor_projected,[0.0]
+65523,solve_equilibrium,63748,ipopt_iteration,"[0.0009589422727458441, 1.0, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0]"
+65523,solve_equilibrium,63748,ipopt_iteration,"[5.058737428953464e-07, 0.04365431787199725, 0.1, 3.3380458394340264, 0.0, 1.0, 0.9897640428220339, 1.0]"
+65523,solve_equilibrium,63748,ipopt_iteration,"[2.2737367544323206e-13, 0.00044506589633641624, 0.1, 0.0017550325318723451, 0.0, 1.0, 0.9907291057188516, 1.0]"
+63748,equilibrium_continuation_attempt,0,driver_result_present,[1.0]
+63748,equilibrium_continuation_attempt,0,row_residual,[5.684341886080802e-14]
+63748,equilibrium_continuation_attempt,0,selected_density,[55737.322752326465]
+63748,equilibrium_continuation_attempt,0,corrected_density,[55737.322752326436]
+63748,equilibrium_continuation_attempt,0,anchor_density,[55733.16116806953]
+63748,equilibrium_continuation_attempt,0,corrected_displacement,[7.466701699811267e-05]
+63748,equilibrium_continuation_attempt,0,corrected_slope,[72320.917920091]
+63748,equilibrium_continuation_attempt,0,density_residual,[2.8498796204867727e-14]
+63748,equilibrium_continuation_attempt,0,selected_density,[5.257387719371535]
+63748,equilibrium_continuation_attempt,0,corrected_density,[5.25738771937154]
+63748,equilibrium_continuation_attempt,0,anchor_density,[5.222755936575324]
+63748,equilibrium_continuation_attempt,0,corrected_displacement,[0.006609052316745192]
+63748,equilibrium_continuation_attempt,0,corrected_slope,[2564.871133398548]
+63748,equilibrium_continuation_attempt,0,density_residual,[1.1102230246251565e-16]
+63748,equilibrium_continuation_attempt,0,accepted,[1.0]
+63748,equilibrium_continuation_attempt,0,reached_target,[1.0]
+68834,equilibrium_continuation_attempt,0,path_value,[0.5599999999999999]
+68834,equilibrium_continuation_attempt,0,predictor_projected,[0.0]
+70609,solve_equilibrium,68834,ipopt_iteration,"[0.001004229367111975, 1.0, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0]"
+70609,solve_equilibrium,68834,ipopt_iteration,"[7.880390171521867e-07, 0.04598279045493303, 0.1, 4.112004841178337, 0.0, 1.0, 0.9897097026690861, 1.0]"
+70609,solve_equilibrium,68834,ipopt_iteration,"[1.1368683772161603e-13, 0.0004797408303289785, 0.1, 0.0027152788036143107, 0.0, 1.0, 0.9907238989155751, 1.0]"
+68834,equilibrium_continuation_attempt,0,driver_result_present,[1.0]
+68834,equilibrium_continuation_attempt,0,row_residual,[5.684341886080802e-14]
+68834,equilibrium_continuation_attempt,0,selected_density,[55742.11911602089]
+68834,equilibrium_continuation_attempt,0,corrected_density,[55742.119116020745]
+68834,equilibrium_continuation_attempt,0,anchor_density,[55737.322752326436]
+68834,equilibrium_continuation_attempt,0,corrected_displacement,[8.604929513253407e-05]
+68834,equilibrium_continuation_attempt,0,corrected_slope,[72342.60751953379]
+68834,equilibrium_continuation_attempt,0,density_residual,[5.98106769189935e-14]
+68834,equilibrium_continuation_attempt,0,selected_density,[5.295027287781187]
+68834,equilibrium_continuation_attempt,0,corrected_density,[5.295027287781184]
+68834,equilibrium_continuation_attempt,0,anchor_density,[5.257387719371541]
+68834,equilibrium_continuation_attempt,0,corrected_displacement,[0.007133860450578188]
+68834,equilibrium_continuation_attempt,0,corrected_slope,[2564.5232549995444]
+68834,equilibrium_continuation_attempt,0,density_residual,[1.1102230246251565e-16]
+68834,equilibrium_continuation_attempt,0,accepted,[1.0]
+68834,equilibrium_continuation_attempt,0,reached_target,[1.0]
+73741,equilibrium_continuation_attempt,0,path_value,[0.6]
+73741,equilibrium_continuation_attempt,0,predictor_projected,[0.0]
+75516,solve_equilibrium,73741,ipopt_iteration,"[0.0010607889583127417, 1.0, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0]"
+75516,solve_equilibrium,73741,ipopt_iteration,"[1.2830787454731762e-06, 0.04880360067553724, 0.1, 5.181479271025286, 0.0, 1.0, 0.9896351438658559, 1.0]"
+75516,solve_equilibrium,73741,ipopt_iteration,"[3.979039320256561e-13, 0.0005250464956496614, 0.1, 0.004413606197633905, 0.0, 1.0, 0.9907182102063686, 1.0]"
+73741,equilibrium_continuation_attempt,0,driver_result_present,[1.0]
+73741,equilibrium_continuation_attempt,0,row_residual,[5.684341886080802e-14]
+73741,equilibrium_continuation_attempt,0,selected_density,[55747.71263007419]
+73741,equilibrium_continuation_attempt,0,corrected_density,[55747.712630074035]
+73741,equilibrium_continuation_attempt,0,anchor_density,[55742.1191160208]
+73741,equilibrium_continuation_attempt,0,corrected_displacement,[0.00010034124135491267]
+73741,equilibrium_continuation_attempt,0,corrected_slope,[72368.16451202173]
+73741,equilibrium_continuation_attempt,0,density_residual,[7.031721938662722e-14]
+73741,equilibrium_continuation_attempt,0,selected_density,[5.336430155191463]
+73741,equilibrium_continuation_attempt,0,corrected_density,[5.33643015519146]
+73741,equilibrium_continuation_attempt,0,anchor_density,[5.2950272877812266]
+73741,equilibrium_continuation_attempt,0,corrected_displacement,[0.007788786615858469]
+73741,equilibrium_continuation_attempt,0,corrected_slope,[2564.141154750759]
+73741,equilibrium_continuation_attempt,0,density_residual,[1.1102230246251565e-16]
+73741,equilibrium_continuation_attempt,0,accepted,[1.0]
+73741,equilibrium_continuation_attempt,0,reached_target,[1.0]
+78471,equilibrium_continuation_attempt,0,path_value,[0.64]
+78471,equilibrium_continuation_attempt,0,predictor_projected,[0.0]
+80246,solve_equilibrium,78471,ipopt_iteration,"[0.001145734899978379, 1.0, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0]"
+80246,solve_equilibrium,78471,ipopt_iteration,"[2.21078494178073e-06, 0.052314303586761035, 0.1, 6.7179251908867705, 0.0, 1.0, 0.9895288678316031, 1.0]"
+80246,solve_equilibrium,78471,ipopt_iteration,"[1.0800249583553523e-12, 0.0005870724284005036, 0.1, 0.007647578647392515, 0.0, 1.0, 0.9907118650879883, 1.0]"
+78471,equilibrium_continuation_attempt,0,driver_result_present,[1.0]
+78471,equilibrium_continuation_attempt,0,row_residual,[1.1368683772161603e-13]
+78471,equilibrium_continuation_attempt,0,selected_density,[55754.330397191276]
+78471,equilibrium_continuation_attempt,0,corrected_density,[55754.33039719092]
+78471,equilibrium_continuation_attempt,0,anchor_density,[55747.71263007404]
+78471,equilibrium_continuation_attempt,0,corrected_displacement,[0.00011870216804959775]
+78471,equilibrium_continuation_attempt,0,corrected_slope,[72398.66616093183]
+78471,equilibrium_continuation_attempt,0,density_residual,[1.4977540149958835e-13]
+78471,equilibrium_continuation_attempt,0,selected_density,[5.38266931420938]
+78471,equilibrium_continuation_attempt,0,corrected_density,[5.382669314209383]
+78471,equilibrium_continuation_attempt,0,anchor_density,[5.33643015519146]
+78471,equilibrium_continuation_attempt,0,corrected_displacement,[0.008627487031267814]
+78471,equilibrium_continuation_attempt,0,corrected_slope,[2563.715521712609]
+78471,equilibrium_continuation_attempt,0,density_residual,[0.0]
+78471,equilibrium_continuation_attempt,0,accepted,[1.0]
+78471,equilibrium_continuation_attempt,0,reached_target,[1.0]
+83023,equilibrium_continuation_attempt,0,path_value,[0.68]
+83023,equilibrium_continuation_attempt,0,predictor_projected,[0.0]
+84798,solve_equilibrium,83023,ipopt_iteration,"[0.001625809420772839, 1.0, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0]"
+84798,solve_equilibrium,83023,ipopt_iteration,"[4.106260007574747e-06, 0.05683931844911516, 0.1, 9.040749715551398, 0.0, 1.0, 0.9893696135929888, 1.0]"
+84798,solve_equilibrium,83023,ipopt_iteration,"[3.808509063674137e-12, 0.0006775480593725902, 0.1, 0.014438264395566584, 0.0, 1.0, 0.9907045491138203, 1.0]"
+83023,equilibrium_continuation_attempt,0,driver_result_present,[1.0]
+83023,equilibrium_continuation_attempt,0,row_residual,[1.1368683772161603e-13]
+83023,equilibrium_continuation_attempt,0,selected_density,[55762.305434603644]
+83023,equilibrium_continuation_attempt,0,corrected_density,[55762.30543460298]
+83023,equilibrium_continuation_attempt,0,anchor_density,[55754.33039719093]
+83023,equilibrium_continuation_attempt,0,corrected_displacement,[0.00014302865874955443]
+83023,equilibrium_continuation_attempt,0,corrected_slope,[72435.69322055756]
+83023,equilibrium_continuation_attempt,0,density_residual,[3.1972058193215774e-13]
+83023,equilibrium_continuation_attempt,0,selected_density,[5.4353431522663005]
+83023,equilibrium_continuation_attempt,0,corrected_density,[5.435343152266302]
+83023,equilibrium_continuation_attempt,0,anchor_density,[5.382669314209383]
+83023,equilibrium_continuation_attempt,0,corrected_displacement,[0.009738249884608908]
+83023,equilibrium_continuation_attempt,0,corrected_slope,[2563.232631911708]
+83023,equilibrium_continuation_attempt,0,density_residual,[0.0]
+83023,equilibrium_continuation_attempt,0,accepted,[1.0]
+83023,equilibrium_continuation_attempt,0,reached_target,[1.0]
+87931,equilibrium_continuation_attempt,0,path_value,[0.7200000000000001]
+87931,equilibrium_continuation_attempt,0,predictor_projected,[0.0]
+89706,solve_equilibrium,87931,ipopt_iteration,"[0.0023407809416653436, 1.0, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0]"
+89706,solve_equilibrium,87931,ipopt_iteration,"[8.465883581720846e-06, 0.06295321157825828, 0.1, 12.806518973846325, 0.0, 1.0, 0.9891140492510376, 1.0]"
+89706,solve_equilibrium,87931,ipopt_iteration,"[2.1032064978498966e-11, 0.0008220153325835255, 0.1, 0.030766546514311897, 0.0, 1.0, 0.9906955794268011, 1.0]"
+87931,equilibrium_continuation_attempt,0,driver_result_present,[1.0]
+87931,equilibrium_continuation_attempt,0,row_residual,[8.526512829121202e-14]
+87931,equilibrium_continuation_attempt,0,selected_density,[55772.15857855001]
+87931,equilibrium_continuation_attempt,0,corrected_density,[55772.15857854852]
+87931,equilibrium_continuation_attempt,0,anchor_density,[55762.305434603004]
+87931,equilibrium_continuation_attempt,0,corrected_displacement,[0.00017668339662237726]
+87931,equilibrium_continuation_attempt,0,corrected_slope,[72481.71898713865]
+87931,equilibrium_continuation_attempt,0,density_residual,[7.30262936709733e-13]
+87931,equilibrium_continuation_attempt,0,accepted,[0.0]
+87931,equilibrium_continuation_attempt,0,branch_lost,[1.0]
+92637,equilibrium_continuation_attempt,0,path_value,[0.7000000000000001]
+92637,equilibrium_continuation_attempt,0,predictor_projected,[0.0]
+94412,solve_equilibrium,92637,ipopt_iteration,"[0.0005693332531677697, 1.0, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0]"
+94412,solve_equilibrium,92637,ipopt_iteration,"[4.505707238422474e-07, 0.05747073614310061, 0.1, 2.9996284389229992, 0.0, 1.0, 0.989796648207767, 1.0]"
+94412,solve_equilibrium,92637,ipopt_iteration,"[2.2737367544323206e-13, 0.0005827416135115726, 0.1, 0.0016030535548491873, 0.0, 1.0, 0.9907016825204705, 1.0]"
+92637,equilibrium_continuation_attempt,0,driver_result_present,[1.0]
+92637,equilibrium_continuation_attempt,0,row_residual,[1.1368683772161603e-13]
+92637,equilibrium_continuation_attempt,0,selected_density,[55766.95352903547]
+92637,equilibrium_continuation_attempt,0,corrected_density,[55766.95352903546]
+92637,equilibrium_continuation_attempt,0,anchor_density,[55762.305434603004]
+92637,equilibrium_continuation_attempt,0,corrected_displacement,[8.335201862435909e-05]
+92637,equilibrium_continuation_attempt,0,corrected_slope,[72457.37365216797]
+92637,equilibrium_continuation_attempt,0,density_residual,[2.6305211264440742e-14]
+92637,equilibrium_continuation_attempt,0,selected_density,[5.464830698681266]
+92637,equilibrium_continuation_attempt,0,corrected_density,[5.464830698681268]
+92637,equilibrium_continuation_attempt,0,anchor_density,[5.4353431522663005]
+92637,equilibrium_continuation_attempt,0,corrected_displacement,[0.005410485878747615]
+92637,equilibrium_continuation_attempt,0,corrected_slope,[2562.963437956769]
+92637,equilibrium_continuation_attempt,0,density_residual,[1.1102230246251565e-16]
+92637,equilibrium_continuation_attempt,0,accepted,[1.0]
+92637,equilibrium_continuation_attempt,0,reached_target,[1.0]
+97545,equilibrium_continuation_attempt,0,path_value,[0.7200000000000001]
+97545,equilibrium_continuation_attempt,0,predictor_projected,[0.0]
+99320,solve_equilibrium,97545,ipopt_iteration,"[0.0006908108437073679, 1.0, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0]"
+99320,solve_equilibrium,97545,ipopt_iteration,"[6.716373377457785e-07, 0.06039920680758204, 0.1, 3.6383803091276894, 0.0, 1.0, 0.9897532900681748, 1.0]"
+99320,solve_equilibrium,97545,ipopt_iteration,"[4.547473508864641e-13, 0.0006236245894122305, 0.1, 0.002434375994101153, 0.0, 1.0, 0.9906975562362503, 1.0]"
+97545,equilibrium_continuation_attempt,0,driver_result_present,[1.0]
+97545,equilibrium_continuation_attempt,0,row_residual,[8.526512829121202e-14]
+97545,equilibrium_continuation_attempt,0,selected_density,[55772.15857854865]
+97545,equilibrium_continuation_attempt,0,corrected_density,[55772.15857854854]
+97545,equilibrium_continuation_attempt,0,anchor_density,[55766.953529035454]
+97545,equilibrium_continuation_attempt,0,corrected_displacement,[9.33313779983337e-05]
+97545,equilibrium_continuation_attempt,0,corrected_slope,[72481.71898713872]
+97545,equilibrium_continuation_attempt,0,density_residual,[6.244630463766998e-14]
+97545,equilibrium_continuation_attempt,0,selected_density,[5.4969925629097744]
+97545,equilibrium_continuation_attempt,0,corrected_density,[5.496992562909771]
+97545,equilibrium_continuation_attempt,0,anchor_density,[5.464830698681268]
+97545,equilibrium_continuation_attempt,0,corrected_displacement,[0.005867993991087068]
+97545,equilibrium_continuation_attempt,0,corrected_slope,[2562.670895674755]
+97545,equilibrium_continuation_attempt,0,density_residual,[0.0]
+97545,equilibrium_continuation_attempt,0,accepted,[1.0]
+97545,equilibrium_continuation_attempt,0,reached_target,[1.0]
+102273,equilibrium_continuation_attempt,0,path_value,[0.7400000000000001]
+102273,equilibrium_continuation_attempt,0,predictor_projected,[0.0]
+104048,solve_equilibrium,102273,ipopt_iteration,"[0.0008476953410081478, 1.0, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0]"
+104048,solve_equilibrium,102273,ipopt_iteration,"[1.0457151802256703e-06, 0.06389819896870375, 0.1, 4.508139803478582, 0.0, 1.0, 0.9896945973460547, 1.0]"
+104048,solve_equilibrium,102273,ipopt_iteration,"[3.410605131648481e-13, 0.0006758617981166282, 0.1, 0.0038874706301745715, 0.0, 1.0, 0.990693025883965, 1.0]"
+102273,equilibrium_continuation_attempt,0,driver_result_present,[1.0]
+102273,equilibrium_continuation_attempt,0,row_residual,[2.8421709430404007e-13]
+102273,equilibrium_continuation_attempt,0,selected_density,[55778.04469997444]
+102273,equilibrium_continuation_attempt,0,corrected_density,[55778.04469997402]
+102273,equilibrium_continuation_attempt,0,anchor_density,[55772.15857854854]
+102273,equilibrium_continuation_attempt,0,corrected_displacement,[0.00010553313679320885]
+102273,equilibrium_continuation_attempt,0,corrected_slope,[72509.31872466048]
+102273,equilibrium_continuation_attempt,0,density_residual,[8.479916530253206e-14]
+102273,equilibrium_continuation_attempt,0,selected_density,[5.532445993698835]
+102273,equilibrium_continuation_attempt,0,corrected_density,[5.53244599369879]
+102273,equilibrium_continuation_attempt,0,anchor_density,[5.496992562909773]
+102273,equilibrium_continuation_attempt,0,corrected_displacement,[0.006428895308958001]
+102273,equilibrium_continuation_attempt,0,corrected_slope,[2562.3498208080487]
+102273,equilibrium_continuation_attempt,0,density_residual,[1.1102230246251565e-16]
+102273,equilibrium_continuation_attempt,0,accepted,[1.0]
+102273,equilibrium_continuation_attempt,0,reached_target,[1.0]
+107358,equilibrium_continuation_attempt,0,path_value,[0.7600000000000001]
+107358,equilibrium_continuation_attempt,0,predictor_projected,[0.0]
+109133,solve_equilibrium,107358,ipopt_iteration,"[0.0010564175750573668, 1.0, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0]"
+109133,solve_equilibrium,107358,ipopt_iteration,"[1.7213013165928714e-06, 0.06818501478915007, 0.1, 5.739609711958743, 0.0, 1.0, 0.9896120294731588, 1.0]"
+109133,solve_equilibrium,107358,ipopt_iteration,"[1.4779288903810084e-12, 0.0007456153955809341, 0.1, 0.006623316709051292, 0.0, 1.0, 0.9906879559216765, 1.0]"
+107358,equilibrium_continuation_attempt,0,driver_result_present,[1.0]
+107358,equilibrium_continuation_attempt,0,row_residual,[5.684341886080802e-14]
+107358,equilibrium_continuation_attempt,0,selected_density,[55784.78412388265]
+107358,equilibrium_continuation_attempt,0,corrected_density,[55784.78412388237]
+107358,equilibrium_continuation_attempt,0,anchor_density,[55778.04469997425]
+107358,equilibrium_continuation_attempt,0,corrected_displacement,[0.00012081844799684006]
+107358,equilibrium_continuation_attempt,0,corrected_slope,[72540.99085912365]
+107358,equilibrium_continuation_attempt,0,density_residual,[1.6461571689108112e-13]
+107358,equilibrium_continuation_attempt,0,selected_density,[5.572054910838686]
+107358,equilibrium_continuation_attempt,0,corrected_density,[5.572054910838688]
+107358,equilibrium_continuation_attempt,0,anchor_density,[5.532445993698925]
+107358,equilibrium_continuation_attempt,0,corrected_displacement,[0.0071338793994116705]
+107358,equilibrium_continuation_attempt,0,corrected_slope,[2561.992992239061]
+107358,equilibrium_continuation_attempt,0,density_residual,[1.1102230246251565e-16]
+107358,equilibrium_continuation_attempt,0,accepted,[1.0]
+107358,equilibrium_continuation_attempt,0,reached_target,[1.0]
+112268,equilibrium_continuation_attempt,0,path_value,[0.7800000000000001]
+112268,equilibrium_continuation_attempt,0,predictor_projected,[0.0]
+114043,solve_equilibrium,112268,ipopt_iteration,"[0.001344998365595984, 1.0, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0]"
+114043,solve_equilibrium,112268,ipopt_iteration,"[3.049981444291916e-06, 0.07361714479003201, 0.1, 7.574654630472953, 0.0, 1.0, 0.9894898716369512, 1.0]"
+114043,solve_equilibrium,112268,ipopt_iteration,"[4.547473508864641e-12, 0.0008445789884534705, 0.1, 0.012304334644706988, 0.0, 1.0, 0.9906821027013465, 1.0]"
+112268,equilibrium_continuation_attempt,0,driver_result_present,[1.0]
+112268,equilibrium_continuation_attempt,0,row_residual,[5.684341886080802e-14]
+112268,equilibrium_continuation_attempt,0,selected_density,[55792.62750359334]
+112268,equilibrium_continuation_attempt,0,corrected_density,[55792.62750359282]
+112268,equilibrium_continuation_attempt,0,anchor_density,[55784.78412388237]
+112268,equilibrium_continuation_attempt,0,corrected_displacement,[0.00014059081688618655]
+112268,equilibrium_continuation_attempt,0,corrected_slope,[72577.92574457976]
+112268,equilibrium_continuation_attempt,0,density_residual,[2.775847043542945e-13]
+112268,equilibrium_continuation_attempt,0,selected_density,[5.617087744168302]
+112268,equilibrium_continuation_attempt,0,corrected_density,[5.6170877441682965]
+112268,equilibrium_continuation_attempt,0,anchor_density,[5.572054910838687]
+112268,equilibrium_continuation_attempt,0,corrected_displacement,[0.008049423958514722]
+112268,equilibrium_continuation_attempt,0,corrected_slope,[2561.589857493693]
+112268,equilibrium_continuation_attempt,0,density_residual,[0.0]
+112268,equilibrium_continuation_attempt,0,accepted,[1.0]
+112268,equilibrium_continuation_attempt,0,reached_target,[1.0]
+117354,equilibrium_continuation_attempt,0,path_value,[0.8000000000000002]
+117354,equilibrium_continuation_attempt,0,predictor_projected,[0.0]
+119129,solve_equilibrium,117354,ipopt_iteration,"[0.0017651768544624247, 1.0, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0]"
+119129,solve_equilibrium,117354,ipopt_iteration,"[5.986442772609735e-06, 0.08083619071662351, 0.1, 10.507036513403317, 0.0, 1.0, 0.9892962482731145, 1.0]"
+119129,solve_equilibrium,117354,ipopt_iteration,"[2.1998403099132702e-11, 0.0009977491147115103, 0.1, 0.025809223546165945, 0.0, 1.0, 0.9906749367574869, 1.0]"
+117354,equilibrium_continuation_attempt,0,driver_result_present,[1.0]
+117354,equilibrium_continuation_attempt,0,row_residual,[5.684341886080802e-14]
+117354,equilibrium_continuation_attempt,0,selected_density,[55801.96402228834]
+117354,equilibrium_continuation_attempt,0,corrected_density,[55801.96402228718]
+117354,equilibrium_continuation_attempt,0,anchor_density,[55792.62750359282]
+117354,equilibrium_continuation_attempt,0,corrected_displacement,[0.0001673292332268147]
+117354,equilibrium_continuation_attempt,0,corrected_slope,[72621.97134534986]
+117354,equilibrium_continuation_attempt,0,density_residual,[5.750850235472851e-13]
+117354,equilibrium_continuation_attempt,0,selected_density,[5.669531963983014]
+117354,equilibrium_continuation_attempt,0,corrected_density,[5.669531963983011]
+117354,equilibrium_continuation_attempt,0,anchor_density,[5.617087744168298]
+117354,equilibrium_continuation_attempt,0,corrected_displacement,[0.009293233689478311]
+117354,equilibrium_continuation_attempt,0,corrected_slope,[2561.123957684967]
+117354,equilibrium_continuation_attempt,0,density_residual,[0.0]
+117354,equilibrium_continuation_attempt,0,accepted,[1.0]
+117354,equilibrium_continuation_attempt,0,reached_target,[1.0]
+122262,equilibrium_continuation_attempt,0,path_value,[0.8200000000000002]
+122262,equilibrium_continuation_attempt,0,predictor_projected,[0.0]
+124037,solve_equilibrium,122262,ipopt_iteration,"[0.0024234719318201314, 1.0, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0]"
+124037,solve_equilibrium,122262,ipopt_iteration,"[1.3679224252882705e-05, 0.0911414035187228, 0.1, 15.69408022684972, 0.0, 1.0, 0.9889570091738937, 1.0]"
+124037,solve_equilibrium,122262,ipopt_iteration,"[1.5711520973127335e-10, 0.0012684928722794808, 0.1, 0.06500717169767561, 0.0, 1.0, 0.9906649315549635, 1.0]"
+124037,solve_equilibrium,122262,ipopt_iteration,"[2.2737367544323206e-13, 1.0000000053161928e-06, 0.1, 6.52247104765613e-07, 0.0, 1.0, 1.0, 1.0]"
+122262,equilibrium_continuation_attempt,0,driver_result_present,[1.0]
+122262,equilibrium_continuation_attempt,0,row_residual,[1.1368683772161603e-13]
+122262,equilibrium_continuation_attempt,0,selected_density,[55813.457230794455]
+122262,equilibrium_continuation_attempt,0,corrected_density,[55813.457230794455]
+122262,equilibrium_continuation_attempt,0,anchor_density,[55801.964022287204]
+122262,equilibrium_continuation_attempt,0,corrected_displacement,[0.00020594302147217494]
+122262,equilibrium_continuation_attempt,0,corrected_slope,[72676.2777487802]
+122262,equilibrium_continuation_attempt,0,density_residual,[5.182486384480711e-16]
+122262,equilibrium_continuation_attempt,0,accepted,[0.0]
+122262,equilibrium_continuation_attempt,0,branch_lost,[1.0]
+127103,equilibrium_continuation_attempt,0,path_value,[0.8100000000000002]
+127103,equilibrium_continuation_attempt,0,predictor_projected,[0.0]
+128878,solve_equilibrium,127103,ipopt_iteration,"[0.0005965191187442542, 1.0, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0]"
+128878,solve_equilibrium,127103,ipopt_iteration,"[7.15352712177264e-07, 0.08149276119153104, 0.1, 3.6322770935563233, 0.0, 1.0, 0.989762382319818, 1.0]"
+128878,solve_equilibrium,127103,ipopt_iteration,"[3.694822225952521e-13, 0.0008453639999874696, 0.1, 0.003209901768187085, 0.0, 1.0, 0.9906729405753789, 1.0]"
+127103,equilibrium_continuation_attempt,0,driver_result_present,[1.0]
+127103,equilibrium_continuation_attempt,0,row_residual,[1.4210854715202004e-13]
+127103,equilibrium_continuation_attempt,0,selected_density,[55807.38182438676]
+127103,equilibrium_continuation_attempt,0,corrected_density,[55807.38182438668]
+127103,equilibrium_continuation_attempt,0,anchor_density,[55801.964022287204]
+127103,equilibrium_continuation_attempt,0,corrected_displacement,[9.708509735687793e-05]
+127103,equilibrium_continuation_attempt,0,corrected_slope,[72647.56086767778]
+127103,equilibrium_continuation_attempt,0,density_residual,[4.6435552343397635e-14]
+127103,equilibrium_continuation_attempt,0,selected_density,[5.6995093190594055]
+127103,equilibrium_continuation_attempt,0,corrected_density,[5.6995093190594135]
+127103,equilibrium_continuation_attempt,0,anchor_density,[5.669531963983012]
+127103,equilibrium_continuation_attempt,0,corrected_displacement,[0.005273518461683436]
+127103,equilibrium_continuation_attempt,0,corrected_slope,[2560.8594185885986]
+127103,equilibrium_continuation_attempt,0,density_residual,[1.1102230246251565e-16]
+127103,equilibrium_continuation_attempt,0,accepted,[1.0]
+127103,equilibrium_continuation_attempt,0,reached_target,[1.0]
+131833,equilibrium_continuation_attempt,0,path_value,[0.8200000000000002]
+131833,equilibrium_continuation_attempt,0,predictor_projected,[0.0]
+133608,solve_equilibrium,131833,ipopt_iteration,"[0.0007159356214287982, 1.0, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0]"
+133608,solve_equilibrium,131833,ipopt_iteration,"[1.1467312219792802e-06, 0.08620757476484897, 0.1, 4.570808935615559, 0.0, 1.0, 0.9897009766611697, 1.0]"
+133608,solve_equilibrium,131833,ipopt_iteration,"[1.1368683772161603e-12, 0.0009193538966698611, 0.1, 0.005426930505614338, 0.0, 1.0, 0.9906689191554396, 1.0]"
+131833,equilibrium_continuation_attempt,0,driver_result_present,[1.0]
+131833,equilibrium_continuation_attempt,0,row_residual,[5.684341886080802e-14]
+131833,equilibrium_continuation_attempt,0,selected_density,[55813.457230794666]
+131833,equilibrium_continuation_attempt,0,corrected_density,[55813.45723079447]
+131833,equilibrium_continuation_attempt,0,anchor_density,[55807.38182438668]
+131833,equilibrium_continuation_attempt,0,corrected_displacement,[0.00010885792411544571]
+131833,equilibrium_continuation_attempt,0,corrected_slope,[72676.27774878053]
+131833,equilibrium_continuation_attempt,0,density_residual,[9.985619915577754e-14]
+131833,equilibrium_continuation_attempt,0,selected_density,[5.732808505256729]
+131833,equilibrium_continuation_attempt,0,corrected_density,[5.732808505256728]
+131833,equilibrium_continuation_attempt,0,anchor_density,[5.699509319059416]
+131833,equilibrium_continuation_attempt,0,corrected_displacement,[0.005825464420982104]
+131833,equilibrium_continuation_attempt,0,corrected_slope,[2560.567088867691]
+131833,equilibrium_continuation_attempt,0,density_residual,[1.1102230246251565e-16]
+131833,equilibrium_continuation_attempt,0,accepted,[1.0]
+131833,equilibrium_continuation_attempt,0,reached_target,[1.0]
+136385,equilibrium_continuation_attempt,0,path_value,[0.8300000000000002]
+136385,equilibrium_continuation_attempt,0,predictor_projected,[0.0]
+138160,solve_equilibrium,136385,ipopt_iteration,"[0.0008793093591066281, 1.0, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0]"
+138160,solve_equilibrium,136385,ipopt_iteration,"[1.9764730723181856e-06, 0.09204338739781193, 0.1, 5.95938548568059, 0.0, 1.0, 0.989610631104281, 1.0]"
+138160,solve_equilibrium,136385,ipopt_iteration,"[4.092726157978177e-12, 0.0010218912342043751, 0.1, 0.010001793168023606, 0.0, 1.0, 0.9906642980798027, 1.0]"
+136385,equilibrium_continuation_attempt,0,driver_result_present,[1.0]
+136385,equilibrium_continuation_attempt,0,row_residual,[5.684341886080802e-14]
+136385,equilibrium_continuation_attempt,0,selected_density,[55820.37481249265]
+136385,equilibrium_continuation_attempt,0,corrected_density,[55820.3748124923]
+136385,equilibrium_continuation_attempt,0,anchor_density,[55813.457230794476]
+136385,equilibrium_continuation_attempt,0,corrected_displacement,[0.00012393342735006168]
+136385,equilibrium_continuation_attempt,0,corrected_slope,[72708.99793304648]
+136385,equilibrium_continuation_attempt,0,density_residual,[1.8298668244716432e-13]
+136385,equilibrium_continuation_attempt,0,selected_density,[5.770391699308632]
+136385,equilibrium_continuation_attempt,0,corrected_density,[5.770391699308626]
+136385,equilibrium_continuation_attempt,0,anchor_density,[5.732808505256728]
+136385,equilibrium_continuation_attempt,0,corrected_displacement,[0.006534412530848365]
+136385,equilibrium_continuation_attempt,0,corrected_slope,[2560.239073910976]
+136385,equilibrium_continuation_attempt,0,density_residual,[0.0]
+136385,equilibrium_continuation_attempt,0,accepted,[1.0]
+136385,equilibrium_continuation_attempt,0,reached_target,[1.0]
+141649,equilibrium_continuation_attempt,0,path_value,[0.8400000000000002]
+141649,equilibrium_continuation_attempt,0,predictor_projected,[0.0]
+143424,solve_equilibrium,141649,ipopt_iteration,"[0.0011146362124918596, 1.0, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0]"
+143424,solve_equilibrium,141649,ipopt_iteration,"[3.767902455820149e-06, 0.09959845736812767, 0.1, 8.162485185663584, 0.0, 1.0, 0.9894681869888237, 1.0]"
+143424,solve_equilibrium,141649,ipopt_iteration,"[1.8417267710901797e-11, 0.001176444318453207, 0.1, 0.020803563057507676, 0.0, 1.0, 0.9906586755752642, 1.0]"
+141649,equilibrium_continuation_attempt,0,driver_result_present,[1.0]
+141649,equilibrium_continuation_attempt,0,row_residual,[1.1368683772161603e-13]
+141649,equilibrium_continuation_attempt,0,selected_density,[55828.42023727717]
+141649,equilibrium_continuation_attempt,0,corrected_density,[55828.420237276485]
+141649,equilibrium_continuation_attempt,0,anchor_density,[55820.3748124923]
+141649,equilibrium_continuation_attempt,0,corrected_displacement,[0.0001441202261881819]
+141649,equilibrium_continuation_attempt,0,corrected_slope,[72747.0769209106]
+141649,equilibrium_continuation_attempt,0,density_residual,[3.1665139531723147e-13]
+141649,equilibrium_continuation_attempt,0,selected_density,[5.81375578935996]
+141649,equilibrium_continuation_attempt,0,corrected_density,[5.813755789359957]
+141649,equilibrium_continuation_attempt,0,anchor_density,[5.770391699308626]
+141649,equilibrium_continuation_attempt,0,corrected_displacement,[0.007486833649118267]
+141649,equilibrium_continuation_attempt,0,corrected_slope,[2559.8631170824783]
+141649,equilibrium_continuation_attempt,0,density_residual,[0.0]
+141649,equilibrium_continuation_attempt,0,accepted,[1.0]
+141649,equilibrium_continuation_attempt,0,reached_target,[1.0]
+146380,equilibrium_continuation_attempt,0,path_value,[0.8500000000000002]
+146380,equilibrium_continuation_attempt,0,predictor_projected,[0.0]
+148155,solve_equilibrium,146380,ipopt_iteration,"[0.001479218862016296, 1.0, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0]"
+148155,solve_equilibrium,146380,ipopt_iteration,"[8.345989101599116e-06, 0.11001776270440011, 0.1, 12.031659581980456, 0.0, 1.0, 0.9892198386244521, 1.0]"
+148155,solve_equilibrium,146380,ipopt_iteration,"[1.2374812285997905e-10, 0.0033500179364729377, 0.1, 0.052123963089532724, 0.0, 1.0, 0.9906508733950229, 1.0]"
+148155,solve_equilibrium,146380,ipopt_iteration,"[4.547473508864641e-13, 1.0000000045511798e-06, 0.1, 6.859093409923246e-07, 0.0, 1.0, 1.0, 1.0]"
+146380,equilibrium_continuation_attempt,0,driver_result_present,[1.0]
+146380,equilibrium_continuation_attempt,0,row_residual,[8.526512829121202e-14]
+146380,equilibrium_continuation_attempt,0,selected_density,[55838.0791238709]
+146380,equilibrium_continuation_attempt,0,corrected_density,[55838.079123869604]
+146380,equilibrium_continuation_attempt,0,anchor_density,[55828.42023727647]
+146380,equilibrium_continuation_attempt,0,corrected_displacement,[0.0001729952433806745]
+146380,equilibrium_continuation_attempt,0,corrected_slope,[72792.81853192908]
+146380,equilibrium_continuation_attempt,0,density_residual,[6.625345346129852e-13]
+146380,equilibrium_continuation_attempt,0,selected_density,[5.865459130496265]
+146380,equilibrium_continuation_attempt,0,corrected_density,[5.8654591304962675]
+146380,equilibrium_continuation_attempt,0,anchor_density,[5.813755789359957]
+146380,equilibrium_continuation_attempt,0,corrected_displacement,[0.00885396480060381]
+146380,equilibrium_continuation_attempt,0,corrected_slope,[2559.41831314242]
+146380,equilibrium_continuation_attempt,0,density_residual,[1.1102230246251565e-16]
+146380,equilibrium_continuation_attempt,0,accepted,[1.0]
+146380,equilibrium_continuation_attempt,0,reached_target,[1.0]
+151601,equilibrium_continuation_attempt,0,path_value,[0.8600000000000002]
+151601,equilibrium_continuation_attempt,0,predictor_projected,[0.0]
+153376,solve_equilibrium,151601,ipopt_iteration,"[0.002110556659943086, 1.0, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0]"
+153376,solve_equilibrium,151601,ipopt_iteration,"[2.369539527080633e-05, 0.12420710904546972, 0.1, 20.025717351604243, 0.0, 1.0, 0.9887112960759324, 1.0]"
+153376,solve_equilibrium,151601,ipopt_iteration,"[1.5569412425975315e-09, 0.012773026279932154, 0.1, 0.17796514748526432, 0.0, 1.0, 0.990635647841286, 1.0]"
+153376,solve_equilibrium,151601,ipopt_iteration,"[1.1368683772161603e-13, 1.0000003480628572e-06, 0.1, 1.0578128756413666e-05, 0.0, 1.0, 1.0, 1.0]"
+151601,equilibrium_continuation_attempt,0,driver_result_present,[1.0]
+151601,equilibrium_continuation_attempt,0,row_residual,[9.947598300641403e-14]
+151601,equilibrium_continuation_attempt,0,selected_density,[55850.31019869209]
+151601,equilibrium_continuation_attempt,0,corrected_density,[55850.31019869213]
+151601,equilibrium_continuation_attempt,0,anchor_density,[55838.07912386961]
+151601,equilibrium_continuation_attempt,0,corrected_displacement,[0.00021902142103761118]
+151601,equilibrium_continuation_attempt,0,corrected_slope,[72850.77001815659]
+151601,equilibrium_continuation_attempt,0,density_residual,[1.5280908049336572e-14]
+151601,equilibrium_continuation_attempt,0,accepted,[0.0]
+151601,equilibrium_continuation_attempt,0,branch_lost,[1.0]
+156797,equilibrium_continuation_attempt,0,path_value,[0.8550000000000002]
+156797,equilibrium_continuation_attempt,0,predictor_projected,[0.0]
+158572,solve_equilibrium,156797,ipopt_iteration,"[0.0006865405579133868, 1.0, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0]"
+158572,solve_equilibrium,156797,ipopt_iteration,"[1.1824738521681866e-06, 0.11061090631528359, 0.1, 4.519087423887555, 0.0, 1.0, 0.9897125293522173, 1.0]"
+158572,solve_equilibrium,156797,ipopt_iteration,"[3.0127011996228248e-12, 0.0075179753300727015, 0.1, 0.008219202322195137, 0.0, 1.0, 0.9906504084675979, 1.0]"
+156797,equilibrium_continuation_attempt,0,driver_result_present,[1.0]
+156797,equilibrium_continuation_attempt,0,row_residual,[5.684341886080802e-14]
+156797,equilibrium_continuation_attempt,0,selected_density,[55843.77815549841]
+156797,equilibrium_continuation_attempt,0,corrected_density,[55843.77815549822]
+156797,equilibrium_continuation_attempt,0,anchor_density,[55838.07912386961]
+156797,equilibrium_continuation_attempt,0,corrected_displacement,[0.00010205832482360385]
+156797,equilibrium_continuation_attempt,0,corrected_slope,[72819.81759443099]
+156797,equilibrium_continuation_attempt,0,density_residual,[7.73023409606638e-14]
+156797,equilibrium_continuation_attempt,0,selected_density,[5.895838179698715]
+156797,equilibrium_continuation_attempt,0,corrected_density,[5.895838179698716]
+156797,equilibrium_continuation_attempt,0,anchor_density,[5.8654591304962675]
+156797,equilibrium_continuation_attempt,0,corrected_displacement,[0.005165946572334052]
+156797,equilibrium_continuation_attempt,0,corrected_slope,[2559.15867155127]
+156797,equilibrium_continuation_attempt,0,density_residual,[2.220446049250313e-16]
+156797,equilibrium_continuation_attempt,0,accepted,[1.0]
+156797,equilibrium_continuation_attempt,0,reached_target,[1.0]
+162061,equilibrium_continuation_attempt,0,path_value,[0.8600000000000002]
+162061,equilibrium_continuation_attempt,0,predictor_projected,[0.0]
+163836,solve_equilibrium,162061,ipopt_iteration,"[0.0011616197392903679, 1.0, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0]"
+163836,solve_equilibrium,162061,ipopt_iteration,"[2.216967970980477e-06, 0.11696538357649011, 0.1, 6.147458645004336, 0.0, 1.0, 0.9896088822479084, 1.0]"
+163836,solve_equilibrium,162061,ipopt_iteration,"[1.3642420526593924e-11, 0.012663031274591674, 0.1, 0.017097890554281736, 0.0, 1.0, 0.9906460586086872, 1.0]"
+162061,equilibrium_continuation_attempt,0,driver_result_present,[1.0]
+162061,equilibrium_continuation_attempt,0,row_residual,[7.105427357601002e-14]
+162061,equilibrium_continuation_attempt,0,selected_density,[55850.310198692365]
+162061,equilibrium_continuation_attempt,0,corrected_density,[55850.3101986921]
+162061,equilibrium_continuation_attempt,0,anchor_density,[55843.77815549824]
+162061,equilibrium_continuation_attempt,0,corrected_displacement,[0.000116963096213141]
+162061,equilibrium_continuation_attempt,0,corrected_slope,[72850.77001815666]
+162061,equilibrium_continuation_attempt,0,density_residual,[1.453537675421765e-13]
+162061,equilibrium_continuation_attempt,0,selected_density,[5.930581497918388]
+162061,equilibrium_continuation_attempt,0,corrected_density,[5.930581497918384]
+162061,equilibrium_continuation_attempt,0,anchor_density,[5.895838179698716]
+162061,equilibrium_continuation_attempt,0,corrected_displacement,[0.005875559825885578]
+162061,equilibrium_continuation_attempt,0,corrected_slope,[2558.863238613524]
+162061,equilibrium_continuation_attempt,0,density_residual,[0.0]
+162061,equilibrium_continuation_attempt,0,accepted,[1.0]
+162061,equilibrium_continuation_attempt,0,reached_target,[1.0]
+166967,equilibrium_continuation_attempt,0,path_value,[0.8650000000000002]
+166967,equilibrium_continuation_attempt,0,predictor_projected,[0.0]
+168742,solve_equilibrium,166967,ipopt_iteration,"[0.0016884800011134813, 1.0, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0]"
+168742,solve_equilibrium,166967,ipopt_iteration,"[4.82809053892197e-06, 0.12465067998190271, 0.1, 9.001632098753479, 0.0, 1.0, 0.989428202000738, 1.0]"
+168742,solve_equilibrium,166967,ipopt_iteration,"[8.782308213994838e-11, 0.0191909481269672, 0.1, 0.04221027693781195, 0.0, 1.0, 0.9906400498656551, 1.0]"
+166967,equilibrium_continuation_attempt,0,driver_result_present,[1.0]
+166967,equilibrium_continuation_attempt,0,row_residual,[5.684341886080802e-14]
+166967,equilibrium_continuation_attempt,0,selected_density,[55858.029569583145]
+166967,equilibrium_continuation_attempt,0,corrected_density,[55858.029569582635]
+166967,equilibrium_continuation_attempt,0,anchor_density,[55850.31019869209]
+166967,equilibrium_continuation_attempt,0,corrected_displacement,[0.00013820581200739334]
+166967,equilibrium_continuation_attempt,0,corrected_slope,[72887.35585895793]
+166967,equilibrium_continuation_attempt,0,density_residual,[2.5893188689094654e-13]
+166967,equilibrium_continuation_attempt,0,selected_density,[5.971578681261922]
+166967,equilibrium_continuation_attempt,0,corrected_density,[5.971578681261924]
+166967,equilibrium_continuation_attempt,0,anchor_density,[5.930581497918387]
+166967,equilibrium_continuation_attempt,0,corrected_displacement,[0.006889059610549245]
+166967,equilibrium_continuation_attempt,0,corrected_slope,[2558.516639423443]
+166967,equilibrium_continuation_attempt,0,density_residual,[0.0]
+166967,equilibrium_continuation_attempt,0,accepted,[1.0]
+166967,equilibrium_continuation_attempt,0,reached_target,[1.0]
+172231,equilibrium_continuation_attempt,0,path_value,[0.8700000000000002]
+172231,equilibrium_continuation_attempt,0,predictor_projected,[0.0]
+174006,solve_equilibrium,172231,ipopt_iteration,"[0.0022922768500556637, 1.0, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0]"
+174006,solve_equilibrium,172231,ipopt_iteration,"[1.3485771262367052e-05, 0.1348800958802201, 0.1, 14.89763438562823, 0.0, 1.0, 0.9890574353679236, 1.0]"
+174006,solve_equilibrium,172231,ipopt_iteration,"[1.06649622466648e-09, 0.028061983055044593, 0.1, 0.14130655573193296, 0.0, 1.0, 0.9906283635418862, 1.0]"
+174006,solve_equilibrium,172231,ipopt_iteration,"[3.410605131648481e-13, 1.0000002675283198e-06, 0.1, 1.0372295896150079e-05, 0.0, 1.0, 1.0, 1.0]"
+172231,equilibrium_continuation_attempt,0,driver_result_present,[1.0]
+172231,equilibrium_continuation_attempt,0,row_residual,[1.1368683772161603e-13]
+172231,equilibrium_continuation_attempt,0,selected_density,[55867.63722592916]
+172231,equilibrium_continuation_attempt,0,corrected_density,[55867.63722592783]
+172231,equilibrium_continuation_attempt,0,anchor_density,[55858.02956958263]
+172231,equilibrium_continuation_attempt,0,corrected_displacement,[0.00017198655679475907]
+172231,equilibrium_continuation_attempt,0,corrected_slope,[72932.89834957178]
+172231,equilibrium_continuation_attempt,0,density_residual,[6.430330307940699e-13]
+172231,equilibrium_continuation_attempt,0,selected_density,[6.022579963275089]
+172231,equilibrium_continuation_attempt,0,corrected_density,[6.022579963275085]
+172231,equilibrium_continuation_attempt,0,anchor_density,[5.971578681261924]
+172231,equilibrium_continuation_attempt,0,corrected_displacement,[0.00850440467111331]
+172231,equilibrium_continuation_attempt,0,corrected_slope,[2558.088391066689]
+172231,equilibrium_continuation_attempt,0,density_residual,[1.1102230246251565e-16]
+172231,equilibrium_continuation_attempt,0,accepted,[1.0]
+172231,equilibrium_continuation_attempt,0,reached_target,[1.0]
+177096,equilibrium_continuation_attempt,0,path_value,[0.8750000000000002]
+177096,equilibrium_continuation_attempt,0,predictor_projected,[0.0]
+178871,solve_equilibrium,177096,ipopt_iteration,"[0.0030288334438830847, 1.0, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0]"
+178871,solve_equilibrium,177096,ipopt_iteration,"[6.216658118773921e-05, 0.48106700496762345, 0.1, 31.550947874759586, 0.0, 1.0, 0.9880196821033957, 1.0]"
+178871,solve_equilibrium,177096,ipopt_iteration,"[4.8418485221191077e-08, 0.042152168164355075, 0.1, 0.9099316257195322, 0.0, 1.0, 0.9905726861964229, 1.0]"
+178871,solve_equilibrium,177096,ipopt_iteration,"[3.410605131648481e-13, 1.0002528917415349e-06, 0.1, 0.0006812385402971161, 0.0, 1.0, 1.0, 1.0]"
+177096,equilibrium_continuation_attempt,0,driver_result_present,[1.0]
+177096,equilibrium_continuation_attempt,0,row_residual,[5.684341886080802e-14]
+177096,equilibrium_continuation_attempt,0,selected_density,[55880.99300295301]
+177096,equilibrium_continuation_attempt,0,corrected_density,[55880.99300295302]
+177096,equilibrium_continuation_attempt,0,anchor_density,[55867.63722592785]
+177096,equilibrium_continuation_attempt,0,corrected_displacement,[0.00023903249751533595]
+177096,equilibrium_continuation_attempt,0,corrected_slope,[72996.21346502959]
+177096,equilibrium_continuation_attempt,0,density_residual,[1.7751235594290482e-15]
+177096,equilibrium_continuation_attempt,0,accepted,[0.0]
+177096,equilibrium_continuation_attempt,0,branch_lost,[1.0]
+181937,equilibrium_continuation_attempt,0,path_value,[0.8725000000000002]
+181937,equilibrium_continuation_attempt,0,predictor_projected,[0.0]
+183712,solve_equilibrium,181937,ipopt_iteration,"[0.002692833160972352, 1.0, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0]"
+183712,solve_equilibrium,181937,ipopt_iteration,"[3.807087814999832e-06, 0.13471256146332244, 0.1, 6.685322500207913, 0.0, 1.0, 0.9895827172256231, 1.0]"
+183712,solve_equilibrium,181937,ipopt_iteration,"[6.02540239924565e-11, 0.03389719875320374, 0.1, 0.034282192776938995, 0.0, 1.0, 0.9906318824903858, 1.0]"
+181937,equilibrium_continuation_attempt,0,driver_result_present,[1.0]
+181937,equilibrium_continuation_attempt,0,row_residual,[5.684341886080802e-14]
+181937,equilibrium_continuation_attempt,0,selected_density,[55873.618775636816]
+181937,equilibrium_continuation_attempt,0,corrected_density,[55873.618775636634]
+181937,equilibrium_continuation_attempt,0,anchor_density,[55867.63722592785]
+181937,equilibrium_continuation_attempt,0,corrected_displacement,[0.00010706072096433391]
+181937,equilibrium_continuation_attempt,0,corrected_slope,[72961.25448558891]
+181937,equilibrium_continuation_attempt,0,density_residual,[1.0315941080963481e-13]
+181937,equilibrium_continuation_attempt,0,selected_density,[6.0543515265088]
+181937,equilibrium_continuation_attempt,0,corrected_density,[6.054351526508808]
+181937,equilibrium_continuation_attempt,0,anchor_density,[6.022579963275085]
+181937,equilibrium_continuation_attempt,0,corrected_displacement,[0.005261541237867467]
+181937,equilibrium_continuation_attempt,0,corrected_slope,[2557.823187624324]
+181937,equilibrium_continuation_attempt,0,density_residual,[1.1102230246251565e-16]
+181937,equilibrium_continuation_attempt,0,accepted,[1.0]
+181937,equilibrium_continuation_attempt,0,reached_target,[1.0]
+187023,equilibrium_continuation_attempt,0,path_value,[0.8750000000000001]
+187023,equilibrium_continuation_attempt,0,predictor_projected,[0.0]
+188798,solve_equilibrium,187023,ipopt_iteration,"[0.0031034773597645726, 1.0, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0]"
+188798,solve_equilibrium,187023,ipopt_iteration,"[7.65941172176099e-06, 0.14208472346917844, 0.1, 11.092290423131386, 0.0, 1.0, 0.9893079023542857, 1.0]"
+188798,solve_equilibrium,187023,ipopt_iteration,"[7.344169716816396e-10, 0.041722205164827386, 0.1, 0.11426039762584174, 0.0, 1.0, 0.9906228144978555, 1.0]"
+188798,solve_equilibrium,187023,ipopt_iteration,"[2.2737367544323206e-13, 1.0000002199118951e-06, 0.1, 1.034942140222322e-05, 0.0, 1.0, 1.0, 1.0]"
+187023,equilibrium_continuation_attempt,0,driver_result_present,[1.0]
+187023,equilibrium_continuation_attempt,0,row_residual,[8.526512829121202e-14]
+187023,equilibrium_continuation_attempt,0,selected_density,[55880.99300295325]
+187023,equilibrium_continuation_attempt,0,corrected_density,[55880.99300295276]
+187023,equilibrium_continuation_attempt,0,anchor_density,[55873.618775636634]
+187023,equilibrium_continuation_attempt,0,corrected_displacement,[0.00013197177654624448]
+187023,equilibrium_continuation_attempt,0,corrected_slope,[72996.2134650283]
+187023,equilibrium_continuation_attempt,0,density_residual,[2.380837226586413e-13]
+187023,equilibrium_continuation_attempt,0,selected_density,[6.093570682644841]
+187023,equilibrium_continuation_attempt,0,corrected_density,[6.093570682644837]
+187023,equilibrium_continuation_attempt,0,anchor_density,[6.054351526508806]
+187023,equilibrium_continuation_attempt,0,corrected_displacement,[0.006456954814490559]
+187023,equilibrium_continuation_attempt,0,corrected_slope,[2557.497418040902]
+187023,equilibrium_continuation_attempt,0,density_residual,[2.220446049250313e-16]
+187023,equilibrium_continuation_attempt,0,accepted,[1.0]
+187023,equilibrium_continuation_attempt,0,reached_target,[1.0]
+192242,equilibrium_continuation_attempt,0,path_value,[0.8775000000000001]
+192242,equilibrium_continuation_attempt,0,predictor_projected,[0.0]
+194017,solve_equilibrium,192242,ipopt_iteration,"[0.003609519121837602, 1.0, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0]"
+194017,solve_equilibrium,192242,ipopt_iteration,"[3.602414943770782e-05, 0.4042714540600201, 0.1, 23.79647816256561, 0.0, 1.0, 0.9885210010238039, 1.0]"
+194017,solve_equilibrium,192242,ipopt_iteration,"[3.546244897734141e-08, 0.053757738824645074, 0.1, 0.7624165132955995, 0.0, 1.0, 0.9905768895925213, 1.0]"
+194017,solve_equilibrium,192242,ipopt_iteration,"[1.7053025658242404e-13, 1.000235664133306e-06, 0.1, 0.0007330885203193722, 0.0, 1.0, 1.0, 1.0]"
+192242,equilibrium_continuation_attempt,0,driver_result_present,[1.0]
+192242,equilibrium_continuation_attempt,0,row_residual,[5.684341886080802e-14]
+192242,equilibrium_continuation_attempt,0,selected_density,[55891.17162436969]
+192242,equilibrium_continuation_attempt,0,corrected_density,[55891.17162436802]
+192242,equilibrium_continuation_attempt,0,anchor_density,[55880.993002952746]
+192242,equilibrium_continuation_attempt,0,corrected_displacement,[0.00018213159738565533]
+192242,equilibrium_continuation_attempt,0,corrected_slope,[73044.46584543546]
+192242,equilibrium_continuation_attempt,0,density_residual,[8.272420021129129e-13]
+192242,equilibrium_continuation_attempt,0,selected_density,[6.147845184888626]
+192242,equilibrium_continuation_attempt,0,corrected_density,[6.147845184888626]
+192242,equilibrium_continuation_attempt,0,anchor_density,[6.093570682644838]
+192242,equilibrium_continuation_attempt,0,corrected_displacement,[0.008867415088101892]
+192242,equilibrium_continuation_attempt,0,corrected_slope,[2557.049380418276]
+192242,equilibrium_continuation_attempt,0,density_residual,[0.0]
+192242,equilibrium_continuation_attempt,0,accepted,[1.0]
+192242,equilibrium_continuation_attempt,0,reached_target,[1.0]
+197995,equilibrium_continuation_attempt,0,path_value,[0.88]
+197995,equilibrium_continuation_attempt,0,predictor_projected,[0.0]
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.004356144566022715, 1.0, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.001042631738584987, 28.308787426217673, 0.1, 125.33554470820066, 0.0, 1.0, 0.98232889339303, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.000994569310478255, 34.40441278794439, 0.1, 279.98881500531274, 0.0, 0.125, 0.9737340785795364, 4.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.004432024112531963, 3504.422368230531, 0.1, 942.0925563468775, 0.0, 0.25, 1.0, 3.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.0014418580640835899, 806.1931552032081, 0.1, 148.87427489377504, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.0011810595988777095, 890.459632718362, 0.020000000000000004, 132.91852071519472, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.001713211224398492, 5140.490033674311, 0.020000000000000004, 159.37590632983645, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.0010083665653723983, 961.3632083031207, 0.020000000000000004, 123.0822949534215, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.011451194382800622, 504592.7392272399, 0.002828427124746191, 417.21724230394733, 0.0, 1.0, 0.893209607052116, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.0031917991128125323, 123874.09124408227, 0.002828427124746191, 224.45081509867228, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.0011342380561814025, 22723.2999371015, 0.002828427124746191, 131.77558330615378, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.0010022065149541959, 2989.6718819265775, 0.002828427124746191, 190.24172896252924, 0.0, 0.25, 1.0, 3.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.17588643351706423, 485201531.6451736, 0.002828427124746191, 1703.179673032846, 0.0, 1.0, 0.8884987081957162, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.09939259212126217, 266920134.06141663, 0.002828427124746191, 921.188088863805, 0.0, 0.5, 1.0, 2.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.055881397142059086, 147822145.01608405, 0.002828427124746191, 675.4455945185358, 0.0, 0.5, 1.0, 2.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.03131258961957428, 82135418.32203986, 0.002828427124746191, 491.48795727619404, 0.0, 0.5, 1.0, 2.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.007542939657696479, 19071529.250522055, 0.002828427124746191, 359.1162175761639, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.0020080373770952065, 4200163.119751566, 0.002828427124746191, 178.3724859705869, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.0009941147500285297, 138314.37608394818, 0.002828427124746191, 122.5856325274489, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.12074330805762656, 10536154212.939802, 0.002828427124746191, 1398.6852469884473, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.06820063355417005, 5831018439.716346, 0.002828427124746191, 752.5568120047154, 0.0, 0.5, 1.0, 2.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.03836883158692217, 3240532702.909382, 0.002828427124746191, 550.9483294017267, 0.0, 0.5, 1.0, 2.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.009534823657872948, 762750996.032311, 0.002828427124746191, 403.2043494424737, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.0024471882321677185, 171137235.48476613, 0.002828427124746191, 197.95995999380736, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.0010162026572402283, 17731007.07051527, 0.002828427124746191, 124.29963530480569, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.0009979616347663978, 5457590.75150025, 0.002828427124746191, 453.69613275755364, 0.0, 0.03125, 1.0, 6.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.0009977204883284685, 3270110.847077419, 0.002828427124746191, 3439.7743922260925, 0.0, 0.0009243789688329518, 1.0, 10.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.6170046267872067, 27221406202213.785, 0.00015042412372345582, 6649.497614759604, 0.0, 0.5, 0.19731625037569597, 2.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.5136571192683732, 22478484623423.31, 0.00015042412372345582, 1726.88784872368, 0.0, 0.1755973041889315, 0.8225956175077183, 3.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.40651218361983865, 17593386230890.008, 0.00015042412372345582, 1622.6293231779225, 0.0, 0.22127295390253182, 1.0, 3.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.35729644068720745, 15423001463438.016, 0.00015042412372345582, 1468.5871427387058, 0.0, 0.125, 1.0, 4.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.3462172666323795, 14942743016432.875, 0.00015042412372345582, 1379.4408028416094, 0.0, 0.03125, 1.0, 6.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.3354814287989143, 14477496045287.273, 0.00015042412372345582, 1357.6728206457444, 0.0, 0.03125, 1.0, 6.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.08785230309774761, 3451039495049.3936, 0.00015042412372345582, 1336.0291008011825, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.017247619096224298, 658786466528.5258, 0.00015042412372345582, 624.4718849422378, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.0036046408696961407, 122571017774.84909, 0.00015042412372345582, 249.59897932751292, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.0011708589091199428, 19440753058.963406, 0.00015042412372345582, 134.42178988262685, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.001111470104945056, 34286794706.066444, 0.00015042412372345582, 177.08025682389518, 0.0, 0.5, 1.0, 2.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.002577031410453401, 634882408575.0076, 0.00015042412372345582, 195.9583462794741, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.0010539182918591905, 98878048980.02512, 0.00015042412372345582, 126.43816959413921, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.0009972137996783204, 27246292390.391884, 0.00015042412372345582, 267.4368265432165, 0.0, 0.125, 1.0, 4.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.14587821516943222, 2692241144512507.0, 0.00015042412372345582, 1543.9862218473202, 0.0, 1.0, 0.9342107483055548, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.08241339101215317, 1485895498175856.5, 0.00015042412372345582, 833.0816326554267, 0.0, 0.5, 1.0, 2.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.020943961593786753, 346134704458828.1, 0.00015042412372345582, 610.0115835155516, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.004844736292398011, 77508125530716.94, 0.00015042412372345582, 286.43458018418085, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.0014333873810414843, 16019813450618.094, 0.00015042412372345582, 149.36376266885324, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.0010171525122473213, 3198732439524.8755, 0.00015042412372345582, 134.37757316917, 0.0, 0.5, 1.0, 2.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.0010105165682716688, 598075296706.2822, 0.00015042412372345582, 750.5136692059527, 0.0, 0.015625, 1.0, 7.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.7110248468703162, 2.0788310729256084e+18, 0.00015042412372345582, 3591.6393830155343, 0.0, 1.0, 0.3962796873864724, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.6983847938522558, 2.0416932825684636e+18, 0.00015042412372345582, 1822.4731692703608, 0.0, 0.017860471449153398, 1.0, 6.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.6920507268928873, 2.0231302913856727e+18, 0.00015042412372345582, 1814.9864538629756, 0.0, 0.00909111387808556, 1.0, 7.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.6888791823690212, 2.0138472028822584e+18, 0.00015042412372345582, 1810.9868522907448, 0.0, 0.004588296264932394, 1.0, 8.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.6880854291629817, 2.011526053625168e+18, 0.00015042412372345582, 1808.9222858093015, 0.0, 0.0011525839163325116, 1.0, 10.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.6876884697960008, 2.0103654165709358e+18, 0.00015042412372345582, 1808.3986181339474, 0.0, 0.0005769907080418902, 1.0, 11.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.3467520964675259, 8.759909260051546e+17, 0.00015042412372345582, 1808.1357622426412, 0.0, 0.5911976437431504, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.0867135395444052, 2.588942098030936e+17, 0.00015042412372345582, 1426.0464411413043, 0.0, 1.0, 0.0007030508620025819, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.016435541001101228, 4.186648661422161e+16, 0.00015042412372345582, 621.0296241815277, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.003349669408748923, 6910473238653812.0, 0.00015042412372345582, 241.05160802389068, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.0011242016199730642, 968372140308418.0, 0.00015042412372345582, 131.57139407172284, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.0010115927264564561, 311297566941488.0, 0.00015042412372345582, 200.5083693038145, 0.0, 0.25, 1.0, 3.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.036468218297386557, 2.1790571466443085e+18, 0.00015042412372345582, 753.2870727270075, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.00964744943757978, 5.3045420547955264e+17, 0.00015042412372345582, 399.5485518977707, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.002508513090162978, 1.2138201619494982e+17, 0.00015042412372345582, 200.21158590191078, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.0010237143288236439, 1.4091820892967488e+16, 0.00015042412372345582, 124.79581275914207, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.0009995167091005897, 6671394304009600.0, 0.00015042412372345582, 389.1907660367641, 0.0, 0.0625, 1.0, 5.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.11930835813802787, 4.4880753132315437e+20, 0.00015042412372345582, 1389.9771974714588, 0.0, 1.0, 0.967532823482119, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.031651100921749276, 1.0402677957647937e+20, 0.00015042412372345582, 747.7414974954678, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.007107547886278098, 2.328272813815188e+19, 0.00015042412372345582, 354.08972783844104, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.001889239593253933, 5.003144006696108e+18, 0.00015042412372345582, 172.99083314321868, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.0011941167184659207, 2.363221465633452e+18, 0.00015042412372345582, 122.97433050343015, 0.0, 0.5, 1.0, 2.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.0010242395676982596, 5.045108816323379e+17, 0.00015042412372345582, 175.46512209269943, 0.0, 0.25, 1.0, 3.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.001022888024351687, 1.466969164638843e+17, 0.00015042412372345582, 1605.4165570911425, 0.0, 0.00390625, 1.0, 9.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.25086462421404576, 3.0586818419100306e+23, 0.00015042412372345582, 4104.480063202168, 0.0, 0.5, 0.3295285016083706, 2.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.2205108093607464, 2.684016607669095e+23, 0.00015042412372345582, 1113.421877905728, 0.0, 0.125, 1.0, 4.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.20694713797615805, 2.5180043881074482e+23, 0.00015042412372345582, 1041.1248484423393, 0.0, 0.0625, 1.0, 5.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.19421707141748357, 2.3623001168127956e+23, 0.00015042412372345582, 1006.7214235342108, 0.0, 0.0625, 1.0, 5.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.19345915460559127, 2.3530785427385e+23, 0.00015042412372345582, 973.2023809988991, 0.0, 0.00390625, 1.0, 9.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.19336470369734116, 2.351929674533833e+23, 0.00015042412372345582, 971.1656151017598, 0.0, 0.00048828125, 1.0, 12.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.05118645693170265, 5.172264248030278e+22, 0.00015042412372345582, 970.9114692235445, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.010869377421897752, 1.147373258690869e+22, 0.00015042412372345582, 456.0634098704186, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.002600638580076975, 2.397656206438356e+21, 0.00015042412372345582, 205.95125239511083, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.0010303372019393464, 2.8215718148123604e+20, 0.00015042412372345582, 125.30893404271924, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.0009996222440236124, 2.0654491673068634e+19, 0.00015042412372345582, 358.19030753190776, 0.0, 0.0625, 1.0, 5.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.33704544727123675, 6.477797663276967e+25, 0.00015042412372345582, 4803.38518670532, 0.0, 0.5, 0.3209280974138744, 2.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.19075988654537923, 3.5000377118111126e+25, 0.00015042412372345582, 1298.8918870852158, 0.0, 0.5, 1.0, 2.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.10720376927525876, 1.9191784048711128e+25, 0.00015042412372345582, 972.7087786277361, 0.0, 0.5, 1.0, 2.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.025749509482238864, 4.3672370965477364e+24, 0.00015042412372345582, 704.2929423500892, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.00564744288158181, 9.502314620203568e+23, 0.00015042412372345582, 314.32655213635775, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.0015770260584417883, 1.924993636907469e+23, 0.00015042412372345582, 157.29071380971777, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.0010602984681895578, 6.838473667038153e+22, 0.00015042412372345582, 128.0014153424667, 0.0, 0.5, 1.0, 2.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.0010192217809503745, 2.9565341780734252e+22, 0.00015042412372345582, 309.964807302346, 0.0, 0.0625, 1.0, 5.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.001017363422931794, 8.864143413278306e+21, 0.00015042412372345582, 1437.212733054685, 0.0, 0.00390625, 1.0, 9.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.27689440018343703, 5.236041037900408e+28, 0.00015042412372345582, 12365.334130882427, 0.0, 0.1748131894757918, 0.12348320913715835, 3.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.15662336921212727, 2.8485634255254566e+28, 0.00015042412372345582, 1172.879928847922, 0.0, 0.5, 1.0, 2.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.08802244196806441, 1.5677983227970453e+28, 0.00015042412372345582, 869.4803062676591, 0.0, 0.5, 1.0, 2.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.021251142481844454, 3.594918663345105e+27, 0.00015042412372345582, 629.8811035614599, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.004797965030604701, 7.876248467239052e+26, 0.00015042412372345582, 286.276534214816, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.0014162997391622412, 1.5864476588751118e+26, 0.00015042412372345582, 148.49220713890756, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.0010142830942641012, 2.6812849332461467e+25, 0.00015042412372345582, 135.61324292450055, 0.0, 0.5, 1.0, 2.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.0010102799093374415, 7.762214082084238e+24, 0.00015042412372345582, 976.776045126541, 0.0, 0.0078125, 1.0, 8.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.27696521507004945, 9.708302037518458e+31, 0.00015042412372345582, 36337.95905007782, 0.0, 0.05948483898936657, 0.04409468029758665, 3.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.15666054221065906, 5.281518749453741e+31, 0.00015042412372345582, 1172.9918686930425, 0.0, 0.5, 1.0, 2.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.0880429224270074, 2.9068457322900195e+31, 0.00015042412372345582, 869.5876756755049, 0.0, 0.5, 1.0, 2.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.021256483189063147, 6.665597012566545e+30, 0.00015042412372345582, 629.9690784447158, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.004799475592108138, 1.460461532738121e+30, 0.00015042412372345582, 286.3234874936272, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.001416610048295297, 2.941851269135268e+29, 0.00015042412372345582, 148.50935036564988, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.001229841908354956, 3.9267060158521134e+29, 0.00015042412372345582, 135.5915194846525, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.0014894967241048107, 1.4203468727268787e+30, 0.00015042412372345582, 148.45078183711956, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.001090004834281899, 9.080854898229254e+29, 0.00015042412372345582, 127.7272308717539, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.0027117547967918654, 1.8732471481965008e+31, 0.00015042412372345582, 201.10621913057298, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.00107646125957217, 3.176869726994987e+30, 0.00015042412372345582, 127.85807946996529, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.0010352439921348378, 5.398649350460452e+30, 0.00015042412372345582, 232.96672458978495, 0.0, 0.25, 1.0, 3.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.006185826419084606, 7.543279621833172e+32, 0.00015042412372345582, 305.2689255100875, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.0018686877897948762, 1.8090850279210396e+32, 0.00015042412372345582, 170.16409792860733, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.001000132234423745, 1.9734312196381694e+31, 0.00015042412372345582, 122.80605103009903, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.023070166653440083, 4.5468062365840385e+34, 0.00015042412372345582, 595.9917303788787, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.00617180658974803, 1.1149298985392284e+34, 0.00015042412372345582, 316.25102002356886, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.0017513651630451932, 2.5116821197162384e+33, 0.00015042412372345582, 165.59362281818923, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.001130020098003115, 1.106400370278017e+33, 0.00015042412372345582, 124.01483042272565, 0.0, 0.5, 1.0, 2.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.0010204281815049399, 5.11794965253548e+32, 0.00015042412372345582, 203.15495605775683, 0.0, 0.25, 1.0, 3.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.02852122058294526, 1.8877031044167494e+36, 0.00015042412372345582, 664.1708496278875, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.016134747215630796, 1.055813979181186e+36, 0.00015042412372345582, 352.16490192795436, 0.0, 0.5, 1.0, 2.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.004309308849713034, 2.563183915537233e+35, 0.00015042412372345582, 262.9761880455895, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.0013510232130897748, 5.431610830178732e+34, 0.00015042412372345582, 144.51420176216132, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.0010043530386383281, 2.0529917613353328e+33, 0.00015042412372345582, 140.439496113776, 0.0, 0.5, 1.0, 2.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.9996883176290794, 1.8426895462603902e+40, 0.00015042412372345582, 12019.481248916796, 0.0, 0.3596851880419987, 0.13488730175268018, 2.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.9592199710525051, 1.7668418125330882e+40, 0.00015042412372345582, 1982.173149326498, 0.0, 0.04092653135906781, 1.0, 4.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.9543221215596418, 1.7578018852201445e+40, 0.00015042412372345582, 1993.1077626733982, 0.0, 0.005112981212946203, 1.0, 7.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.9531020147650224, 1.755553389343688e+40, 0.00015042412372345582, 1993.8738904105257, 0.0, 0.0012789379843531658, 1.0, 9.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.9524925451567015, 1.7544305017942637e+40, 0.00015042412372345582, 1994.0474377893358, 0.0, 0.0006395668928035231, 1.0, 10.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.9521879556556314, 1.75386939662661e+40, 0.00015042412372345582, 1994.1317603639138, 0.0, 0.00031980849580468614, 1.0, 11.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.6680350490451588, 1.1675950943020749e+40, 0.00015042412372345582, 1994.1733106822044, 0.0, 0.3274968723910276, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.6678502235848782, 1.1672720306378635e+40, 0.00015042412372345582, 1938.6632461295385, 0.0, 0.0002766896681821118, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.6678502235848782, 999.9999967341973, 0.6678502235848782, 0.0, 0.0, 2.0842364358459373e-08, 0.0, 2.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.22384095364782297, 1010.7563344380371, 0.6678502235848782, 669.4227103684085, 0.0, 0.0012743021219569681, 0.006612005057202456, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.11759526073566917, 985.9418230097447, 0.6678502235848782, 1041.7829864587004, 0.0, 0.006188256471285362, 0.02580714207440586, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.21351023313997075, 953.2492523350816, 0.6678502235848782, 981.6132988107829, 0.0, 0.029355203088996303, 0.04809904807477577, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.26109920314570445, 887.9093882226963, 0.6678502235848782, 878.3335189791229, 0.0, 0.08776287894978965, 0.03821732390754067, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.31951648502825947, 805.511828081283, 0.6678502235848782, 201.84180949547115, 0.0, 0.06114987172728111, 0.5361361082987546, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.30322947093310404, 778.0409876834115, 0.6678502235848782, 72.53061897232286, 0.0, 0.11114861699757268, 0.01233765635921544, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.0858695741964084, 90.24922006339303, 0.6678502235848782, 39.183843019178276, 0.0, 0.8094291267122108, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.07773234757041791, 74.1414101958876, 0.6678502235848782, 12.260580527068006, 0.0, 1.0, 0.5612840886472266, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.01045676185708544, 1.2063384701659743, 0.6678502235848782, 1.1799521153105046, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.01780820242953496, 4.168038371328706, 0.004366250019110768, 9.890105224471093, 0.0, 0.9549381519233059, 0.9043514739709818, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.018510345654021876, 70.88781689669997, 0.004366250019110768, 871.3894859661834, 0.0, 0.44827274397321415, 0.9920319376414763, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.01964782761558581, 0.6843498331399794, 0.004366250019110768, 464.00965037796897, 0.0, 1.0, 0.9895908984535651, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.005247781074723373, 0.008784271465179428, 0.004366250019110768, 6.147692029568862, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.00526196941534601, 0.020543862718254178, 4.900544658156128e-06, 0.9262738572161553, 0.0, 1.0, 0.9995891101193118, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.1283427739653007, 86.41346475583146, 4.900544658156128e-06, 1605.4706319454158, 0.0, 0.6368821301913786, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.025814551004032182, 1.9561965327943889, 4.900544658156128e-06, 621.1665847481668, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.007237430240820686, 0.09181040601314773, 4.900544658156128e-06, 342.18844682118055, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.00019639819822714344, 23.23453262637048, 4.900544658156128e-06, 61.08109939085734, 0.0, 1.0, 0.8325050987845437, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.00014045612629188888, 0.0012036797070858957, 4.900544658156128e-06, 12.213687834775428, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.0001407062113428167, 5.618717328199457e-08, 4.900544658156128e-06, 0.2269848649062619, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.0001407007917604779, 0.0011563731816418795, 1.0848420902967367e-08, 0.01563005046339117, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.0053631211085871655, 23.85736894414174, 1.0848420902967367e-08, 416.0174530345885, 0.0, 0.6371943717018708, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.00010353836773902003, 0.17164325287214002, 1.0848420902967367e-08, 28.457193367561345, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.001599398887094594, 0.07499472980753506, 1.0848420902967367e-08, 148.88785893160284, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.0009016563585646509, 0.0778094656745083, 1.0848420902967367e-08, 115.74956514748597, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.0007863961001817188, 345.7306421274966, 1.0848420902967367e-08, 108.3965455760084, 0.0, 1.0, 0.674672400958676, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[0.00031533580187215193, 0.07975554759991134, 1.0848420902967367e-08, 67.75814367719526, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[3.8799549145096535e-05, 0.00028298420459043987, 1.0848420902967367e-08, 23.520013948060505, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[5.789955485246068e-06, 5.866249073819104e-09, 1.0848420902967367e-08, 0.012803411141859388, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[5.789962440525508e-06, 6.501764409224173e-05, 9.090909090909092e-12, 8.283357391240759e-05, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[9.77071957777298e-05, 0.0009276215287571305, 9.090909090909092e-12, 37.89634179714735, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[5.211269624090137e-06, 9.70323669605313e-08, 9.090909090909092e-12, 0.7463725982780278, 0.0, 1.0, 1.0, 1.0]"
+199770,solve_equilibrium,197995,ipopt_iteration,"[5.211561860462618e-06, 8.124966754441016e-13, 9.090909090909092e-12, 0.00013440893942729632, 0.0, 1.0, 1.0, 1.0]"
+197995,equilibrium_continuation_attempt,0,driver_result_present,[1.0]
+197995,equilibrium_continuation_attempt,0,row_residual,[5.211561860462618e-06]
+197995,equilibrium_continuation_attempt,0,accepted,[0.0]
+197995,equilibrium_continuation_attempt,0,infeasible,[1.0]

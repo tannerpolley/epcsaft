@@ -1,0 +1,20 @@
+salt,solvent,temperature_K,pressure_reported,molality_mol_kg,density_kg_m3,absolute_print_tolerance_kg_m3,instrument_maximum_uncertainty_kg_m3,evidence_label,locator,markdown_line,zotero_key,pdf_attachment_key,markdown_attachment_key,doi
+LiCl,ethanol,298.15,ambient,0.6044,805.52,0.005,0.0015,physical comparison,Table 1; p. 330; LiCl; m=0.6044 mol/kg,71,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+LiBr,ethanol,298.15,ambient,0.2943,805.04,0.005,0.0015,physical comparison,Table 1; p. 330; LiBr; m=0.2943 mol/kg,71,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+LiI,ethanol,298.15,ambient,0.193,804.12,0.005,0.0015,physical comparison,Table 1; p. 330; LiI; m=0.193 mol/kg,71,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+NaBr,ethanol,298.15,ambient,0.0884,792.23,0.005,0.0015,physical comparison,Table 1; p. 330; NaBr; m=0.0884 mol/kg,71,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+LiCl,ethanol,298.15,ambient,1.2346,823.73,0.005,0.0015,physical comparison,Table 1; p. 330; LiCl; m=1.2346 mol/kg,72,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+LiBr,ethanol,298.15,ambient,0.6049,823.87,0.005,0.0015,physical comparison,Table 1; p. 330; LiBr; m=0.6049 mol/kg,72,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+LiI,ethanol,298.15,ambient,0.3939,823.16,0.005,0.0015,physical comparison,Table 1; p. 330; LiI; m=0.3939 mol/kg,72,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+NaBr,ethanol,298.15,ambient,0.1422,795.96,0.005,0.0015,physical comparison,Table 1; p. 330; NaBr; m=0.1422 mol/kg,72,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+NaBr,ethanol,298.15,ambient,0.2192,800.77,0.005,0.0015,physical comparison,Table 1; p. 330; NaBr; m=0.2192 mol/kg,73,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+NaI,ethanol,298.15,ambient,0.1715,803.38,0.005,0.0015,physical comparison,Table 1; p. 330; NaI; m=0.1715 mol/kg,76,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+NH4Cl,ethanol,298.15,ambient,0.0376,786.45,0.005,0.0015,physical comparison,Table 1; p. 330; NH4Cl; m=0.0376 mol/kg,76,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+NH4Br,ethanol,298.15,ambient,0.1046,791.64,0.005,0.0015,physical comparison,Table 1; p. 330; NH4Br; m=0.1046 mol/kg,76,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+NH4I,ethanol,298.15,ambient,0.1769,800.90,0.005,0.0015,physical comparison,Table 1; p. 330; NH4I; m=0.1769 mol/kg,76,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+NaI,ethanol,298.15,ambient,0.3511,820.99,0.005,0.0015,physical comparison,Table 1; p. 330; NaI; m=0.3511 mol/kg,77,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+NH4Cl,ethanol,298.15,ambient,0.0907,788.09,0.005,0.0015,physical comparison,Table 1; p. 330; NH4Cl; m=0.0907 mol/kg,77,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+NH4Br,ethanol,298.15,ambient,0.2064,797.58,0.005,0.0015,physical comparison,Table 1; p. 330; NH4Br; m=0.2064 mol/kg,77,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+NH4I,ethanol,298.15,ambient,0.3658,817.06,0.005,0.0015,physical comparison,Table 1; p. 330; NH4I; m=0.3658 mol/kg,77,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+NH4Cl,ethanol,298.15,ambient,0.1377,789.06,0.005,0.0015,physical comparison,Table 1; p. 330; NH4Cl; m=0.1377 mol/kg,78,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040
+NH4Br,ethanol,298.15,ambient,0.2975,802.71,0.005,0.0015,physical comparison,Table 1; p. 330; NH4Br; m=0.2975 mol/kg,78,D6PNJV3L,4KXXHSPQ,8TI2PAFV,10.1016/j.ces.2011.09.040

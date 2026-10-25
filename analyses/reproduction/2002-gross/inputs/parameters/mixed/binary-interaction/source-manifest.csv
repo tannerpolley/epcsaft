@@ -1,0 +1,13 @@
+parameter,component_i,component_j,value,source,provenance_status
+l_ij,*,*,0,default zero for unpublished values,unresolved_default_zero
+k_hb_ij,*,*,0,default zero for unpublished values,unresolved_default_zero
+k_ij,methanol,2-methyl-2-butanol,0.05,Gross2002 Table2,source_backed
+k_ij,methanol,cyclohexane,0.051,Gross2002 Table2,source_backed
+k_ij,methanol,1-octanol,0.020,Gross2002 Table2,source_backed
+k_ij,ethanol,butane,0.028,Gross2002 Table2,source_backed
+k_ij,1-propanol,benzene,0.020,Gross2002 Table2,source_backed
+k_ij,1-propanol,ethylbenzene,0.023,Gross2002 Table2,source_backed
+k_ij,2-propanol,benzene,0.021,Gross2002 Table2,source_backed
+k_ij,1-butanol,butane,0.015,Gross2002 Table2,source_backed
+k_ij,1-pentanol,benzene,0.0135,Gross2002 Table2,source_backed
+k_ij,H2O,1-pentanol,0.016,Gross2002 Table2,source_backed

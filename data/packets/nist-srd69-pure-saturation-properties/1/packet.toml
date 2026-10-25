@@ -1,0 +1,98 @@
+schema_version = 2
+packet_id = "nist-srd69-pure-saturation-properties"
+packet_version = "1"
+title = "NIST SRD 69 pure-component saturation properties"
+description = "Reusable source-backed saturation-pressure and saturated-liquid-density observations for methane, ethane, and propane, retained as property inputs for pure-component workflows. The propane rows are auxiliary NIST reference-equation values, not the direct Glos experimental target."
+license_or_use_basis = "Numeric property records and project-authored provenance are retained under the NIST Standard Reference Data use and redistribution terms; the packet contains no paper, figure, generated result, or model output."
+tolerance_rationale = "The NIST records do not provide uncertainty columns in the retained query tables. This packet preserves the source values without asserting a numerical acceptance tolerance; any fitting or validation tolerance belongs to the consuming Regression or Validation campaign."
+
+[[sources]]
+source_id = "nist-webbook-srd69-methane-saturation"
+citation = "NIST Chemistry WebBook, SRD 69, methane (CAS 74-82-8) fluid properties."
+url = "https://webbook.nist.gov/cgi/fluid.cgi?Action=Data&Wide=on&ID=C74828&Type=SatP&Digits=8&THigh=180&TLow=100&TInc=10&RefState=DEF&TUnit=K&PUnit=Pa&DUnit=kg%2Fm3&HUnit=kJ%2Fmol&WUnit=m%2Fs&VisUnit=uPa*s&STUnit=N%2Fm"
+retrieved_on = "2026-07-17"
+use_basis = "Saturation-pressure and saturated-liquid-density source records retained subject to the NIST SRD terms."
+
+[[sources]]
+source_id = "nist-webbook-srd69-ethane-saturation"
+citation = "NIST Chemistry WebBook, SRD 69, ethane (CAS 74-84-0) fluid properties."
+url = "https://webbook.nist.gov/cgi/fluid.cgi?Action=Data&Wide=on&ID=C74840&Type=SatP&Digits=8&THigh=280&TLow=100&TInc=20&RefState=DEF&TUnit=K&PUnit=Pa&DUnit=kg%2Fm3&HUnit=kJ%2Fmol&WUnit=m%2Fs&VisUnit=uPa*s&STUnit=N%2Fm"
+retrieved_on = "2026-07-17"
+use_basis = "Saturation-pressure and saturated-liquid-density source records retained subject to the NIST SRD terms."
+
+[[sources]]
+source_id = "nist-webbook-srd69-propane-reference-eos-auxiliary"
+citation = "NIST Chemistry WebBook, SRD 69, propane (CAS 74-98-6), based on Lemmon, McLinden, and Wagner, Thermodynamic Properties of Propane. III. A Reference Equation of State for Temperatures from the Melting Line to 650 K and Pressures up to 1000 MPa, Journal of Chemical & Engineering Data 2009, 54, 3141-3180."
+doi = "10.1021/je900217v"
+url = "https://webbook.nist.gov/cgi/fluid.cgi?Action=Data&Wide=on&ID=C74986&Type=SatP&Digits=8&THigh=360&TLow=100&TInc=20&RefState=DEF&TUnit=K&PUnit=Pa&DUnit=kg%2Fm3&HUnit=kJ%2Fmol&WUnit=m%2Fs&VisUnit=uPa*s&STUnit=N%2Fm"
+retrieved_on = "2026-07-17"
+use_basis = "Auxiliary reference-equation property values retained for scale and source reproducibility; they are not direct experimental evidence and do not define an ePC-SAFT model-acceptance tolerance. NIST SRD terms apply."
+
+[[domains]]
+domain_id = "nist-methane-saturation-100-180-k"
+kind = "source-observation"
+temperature_min = 100.0
+temperature_max = 180.0
+temperature_unit = "kelvin"
+description = "NIST SRD 69 methane saturation observations at 100–180 K in 10 K increments."
+
+[[domains]]
+domain_id = "nist-ethane-saturation-100-280-k"
+kind = "source-observation"
+temperature_min = 100.0
+temperature_max = 280.0
+temperature_unit = "kelvin"
+description = "NIST SRD 69 ethane saturation observations at 100–280 K in 20 K increments."
+
+[[domains]]
+domain_id = "nist-propane-reference-saturation-100-360-k"
+kind = "source-reference-observation"
+temperature_min = 100.0
+temperature_max = 360.0
+temperature_unit = "kelvin"
+description = "NIST SRD 69 propane auxiliary reference-equation saturation values at 100–360 K in 20 K increments; the source-supplied relative uncertainty fields are retained where available."
+
+[[files]]
+path = "observations/methane-saturation.csv"
+role = "observations"
+media_type = "text/csv"
+sha256 = "dec64d5a6cac414a4a92393a0d728fa27c02135c6a159d0d1881d7b6dde6d26c"
+source_refs = ["nist-webbook-srd69-methane-saturation"]
+domain_refs = ["nist-methane-saturation-100-180-k"]
+units_basis = "species is the source display name; T_K is kelvin; p_sat_Pa is pascals; rho_sat_liq_kg_m3 is saturated-liquid mass density in kilograms per cubic metre; source is the exact NIST query URL."
+
+[[files]]
+path = "observations/ethane-saturation.csv"
+role = "observations"
+media_type = "text/csv"
+sha256 = "b01333e827933c0a7148672c8ae3eef78393320c0d18f2c4d5a0fc40d9bef6b2"
+source_refs = ["nist-webbook-srd69-ethane-saturation"]
+domain_refs = ["nist-ethane-saturation-100-280-k"]
+units_basis = "species is the source display name; T_K is kelvin; p_sat_Pa is pascals; rho_sat_liq_kg_m3 is saturated-liquid mass density in kilograms per cubic metre; source is the exact NIST query URL."
+
+[[files]]
+path = "observations/propane-reference-saturation.csv"
+role = "observations"
+media_type = "text/csv"
+sha256 = "4a05958854ed5fed28ce4f2b3dc1e98d2d5f833c3eb2f1290ce6428492f0051c"
+source_refs = ["nist-webbook-srd69-propane-reference-eos-auxiliary"]
+domain_refs = ["nist-propane-reference-saturation-100-360-k"]
+units_basis = "T_K is kelvin; p_sat_Pa is pascals; rho_sat_liq_kg_m3 is saturated-liquid mass density in kilograms per cubic metre; source_pressure_relative_uncertainty and source_liquid_density_relative_uncertainty are dimensionless relative values supplied by the NIST reference-equation source; role is the source-defined reference_only category."
+
+[[files]]
+path = "provenance/source-origin.toml"
+role = "provenance"
+media_type = "application/toml"
+sha256 = "b9bb5a2f655b0d1f50be75ec87a6176710a68e408b4ec2fc5ec15f8e917fe5db"
+source_refs = ["nist-webbook-srd69-methane-saturation", "nist-webbook-srd69-ethane-saturation", "nist-webbook-srd69-propane-reference-eos-auxiliary"]
+domain_refs = ["nist-methane-saturation-100-180-k", "nist-ethane-saturation-100-280-k", "nist-propane-reference-saturation-100-360-k"]
+units_basis = "Origin repository, immutable commits, source URLs, source hashes, retained paths, and transformation metadata are non-numeric identifiers."
+
+[[files]]
+path = "sources/propane-reference-source.yaml"
+role = "source"
+media_type = "application/yaml"
+sha256 = "e4d93b64c67b0b78bce73a64d72259d1089c0cab416c011ec49919ca68494d44"
+source_refs = ["nist-webbook-srd69-propane-reference-eos-auxiliary"]
+domain_refs = ["nist-propane-reference-saturation-100-360-k"]
+units_basis = "Source citation, reference-equation identity, query record, uncertainty meaning, transformation, and claim-boundary metadata are non-numeric source records."

@@ -1,0 +1,12 @@
+native oracle A-propane-vapor 0
+Traceback (most recent call last):
+  File "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/analyses/2026-density-root-benchmark/scripts/prepare.py", line 694, in <module>
+    refresh(args.output, args.release_metadata)
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/analyses/2026-density-root-benchmark/scripts/prepare.py", line 286, in refresh
+    state["main_pressure_floor"] = pressure_floor(ms[case["model"]], state)
+                                   ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-501-complete-the-package-paper-draft-for-the/analyses/2026-density-root-benchmark/scripts/prepare.py", line 121, in pressure_floor
+    assert floors and all(math.isfinite(f) and f >= 0 for f in floors)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

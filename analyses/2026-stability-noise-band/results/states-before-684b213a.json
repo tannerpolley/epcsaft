@@ -1,0 +1,12 @@
+{
+ "wheel_sha256": "684b213ac8065fbe35950ca8998a33a5c05264fad5b174560110f112d60ef8ba",
+ "label": "before-684b213a",
+ "omp_num_threads": "1",
+ "states": 150,
+ "outcomes": {
+  "stable": 127,
+  "not_positive_definite": 23
+ },
+ "repeat_first_20_identical": true,
+ "minimum_equilibrated_margin": 21801049869.205357
+}

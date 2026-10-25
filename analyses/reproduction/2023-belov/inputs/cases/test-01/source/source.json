@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "case_id": "belov-aristova-2023-test1-gas-restriction",
+  "claim": "eight-species ideal-gas trace-resolution benchmark",
+  "citation": "G. V. Belov and N. M. Aristova, Calculation of Complex Chemical Equilibrium Using Optimization Package Ipopt, International Journal of Thermodynamics 26(4), 77-83 (2023), doi:10.5541/ijot.1317496",
+  "article_url": "https://doi.org/10.5541/ijot.1317496",
+  "source_repository": "https://github.com/gvbelov/Heterogeneous-Equilibrium",
+  "source_commit": "c74b87545a3418262e8e38a7c7a2e31e1b12966a",
+  "source_path": "test1.dat",
+  "source_git_blob": "5490caab3f7a3f8cdea0d1cb883cce4323902657",
+  "source_sha256": "2f24904e5db64e96aa2ee96c53bd80863c9518b6c2ddd914e266181fe7459f84",
+  "temperature_k": 2000.0,
+  "pressure_pa": 100000.0,
+  "source_standard_pressure_pa": 101325.0,
+  "species_ids": ["O", "O2", "O3", "C", "C2", "CO", "CO2", "C2O"],
+  "source_standard_gibbs_over_rt": [-7.072468897041624, -28.765987200068952, -26.51300119486301, 21.44955454258845, 21.26761422175228, -34.35125913287487, -55.36542486137457, -17.10224518423043],
+  "balance_matrix": [
+    [0.0, 0.0, 0.0, 1.0, 2.0, 1.0, 1.0, 2.0],
+    [1.0, 2.0, 3.0, 0.0, 0.0, 1.0, 2.0, 1.0]
+  ],
+  "conserved_totals": [2.0, 1.0],
+  "reaction_matrix": [
+    [-2.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    [-3.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    [0.0, 0.0, 0.0, -2.0, 1.0, 0.0, 0.0, 0.0],
+    [-1.0, 0.0, 0.0, -1.0, 0.0, 1.0, 0.0, 0.0],
+    [-2.0, 0.0, 0.0, -1.0, 0.0, 0.0, 1.0, 0.0],
+    [-1.0, 0.0, 0.0, -2.0, 0.0, 0.0, 0.0, 1.0]
+  ],
+  "feed_amounts_mol": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0],
+  "independent_expected_amounts_mol": [5.969938280702114e-17, 5.249059580600665e-27, 1.838054910648896e-47, 1.7496236329525488e-5, 0.4996074090543112, 0.9992323142113352, 4.453885591412746e-11, 0.0007676856995870245],
+  "expected_amount_oracle": "independent 80-decimal element-potential solve",
+  "log_amount_absolute_tolerance": 2e-6,
+  "strict_interior_amount_floor_mol": 1e-50,
+  "limitations": [
+    "Graphite and diamond are deliberately removed; this is the homogeneous gas-only restriction, not the source's heterogeneous answer.",
+    "The benchmark validates trace handling and local equilibrium, not ePC-SAFT Provider behavior."
+  ]
+}

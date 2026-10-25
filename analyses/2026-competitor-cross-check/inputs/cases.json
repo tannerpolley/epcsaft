@@ -1,0 +1,1350 @@
+{
+  "models": {
+    "C1": {
+      "components": [
+        {
+          "id": "propane",
+          "m": 2.002,
+          "sigma": 3.6184,
+          "epsilon": 208.11,
+          "epsilon_ab": 0,
+          "kappa_ab": 0,
+          "molar_mass": 0.044096
+        }
+      ],
+      "source": "Gross2001 Table 2"
+    },
+    "C2": {
+      "components": [
+        {
+          "id": "ethanol",
+          "m": 2.3827,
+          "sigma": 3.1771,
+          "epsilon": 198.24,
+          "epsilon_ab": 2653.4,
+          "kappa_ab": 0.032384,
+          "molar_mass": 0.04606844
+        },
+        {
+          "id": "butane",
+          "m": 2.3316,
+          "sigma": 3.7086,
+          "epsilon": 222.88,
+          "epsilon_ab": 0,
+          "kappa_ab": 0,
+          "molar_mass": 0.0581222
+        }
+      ],
+      "k": 0.028,
+      "source": "Gross2002 Table 1 and Fig.7; Gross2001 Table 2 n-butane"
+    },
+    "C4": {
+      "components": [
+        {
+          "id": "water",
+          "m": 1.0656,
+          "sigma": 3.0007,
+          "epsilon": 366.51,
+          "epsilon_ab": 2500.7,
+          "kappa_ab": 0.034868,
+          "molar_mass": 0.01801528
+        },
+        {
+          "id": "pentanol",
+          "m": 3.626,
+          "sigma": 3.4508,
+          "epsilon": 247.28,
+          "epsilon_ab": 2252.1,
+          "kappa_ab": 0.010319,
+          "molar_mass": 0.08814818
+        }
+      ],
+      "k": 0.016,
+      "source": "Gross2002 Table 1 and Fig.10"
+    },
+    "C5": {
+      "components": [
+        {
+          "id": "acetone",
+          "m": 2.7447,
+          "sigma": 3.2742,
+          "epsilon": 232.99,
+          "mu": 2.88,
+          "nmu": 1,
+          "molar_mass": 0.05807914
+        }
+      ],
+      "source": "GrossVrabec2006 Table 2"
+    },
+    "C3": {
+      "packet": "data/packets/held-2014-strategy2/1/parameters/parameters.json",
+      "components": [
+        {
+          "id": "water",
+          "m": 1.2047,
+          "sigma": 2.7927,
+          "epsilon": 353.95,
+          "epsilon_ab": 2425.7,
+          "kappa_ab": 0.0451,
+          "molar_mass": 0.01801528
+        },
+        {
+          "id": "sodium-cation",
+          "m": 1,
+          "sigma": 2.8232,
+          "epsilon": 230,
+          "z": 1,
+          "molar_mass": 0.02298977
+        },
+        {
+          "id": "chloride-anion",
+          "m": 1,
+          "sigma": 2.756,
+          "epsilon": 170,
+          "z": -1,
+          "molar_mass": 0.03545
+        }
+      ],
+      "pairs": [
+        [
+          0,
+          1,
+          0.00045485000000011766
+        ],
+        [
+          0,
+          2,
+          -0.25
+        ],
+        [
+          1,
+          2,
+          0.317
+        ]
+      ],
+      "source": "Held2014 Table1 footnote and Table2 strategy2; Figiel2025 Table1 epsilon78.09"
+    }
+  },
+  "requests": [
+    {
+      "id": "C1-200",
+      "case": "C1",
+      "operation": "saturation",
+      "T": 200,
+      "timing": ""
+    },
+    {
+      "id": "C1-250",
+      "case": "C1",
+      "operation": "saturation",
+      "T": 250,
+      "timing": ""
+    },
+    {
+      "id": "C1-300",
+      "case": "C1",
+      "operation": "saturation",
+      "T": 300,
+      "timing": "T2"
+    },
+    {
+      "id": "C1-350",
+      "case": "C1",
+      "operation": "saturation",
+      "T": 350,
+      "timing": "",
+      "engine_pressure_guess": 2000000.0
+    },
+    {
+      "id": "C2-0.2",
+      "case": "C2",
+      "operation": "bubble",
+      "T": 373.15,
+      "x": [
+        0.2,
+        0.8
+      ],
+      "timing": ""
+    },
+    {
+      "id": "C2-0.5",
+      "case": "C2",
+      "operation": "bubble",
+      "T": 373.15,
+      "x": [
+        0.5,
+        0.5
+      ],
+      "timing": "T2"
+    },
+    {
+      "id": "C2-0.8",
+      "case": "C2",
+      "operation": "bubble",
+      "T": 373.15,
+      "x": [
+        0.8,
+        0.19999999999999996
+      ],
+      "timing": ""
+    },
+    {
+      "id": "C4-assoc-298.15",
+      "case": "C4",
+      "operation": "fixed",
+      "T": 298.15,
+      "rho": 10000,
+      "x": [
+        0.5,
+        0.5
+      ]
+    },
+    {
+      "id": "C4-298.15",
+      "case": "C4",
+      "operation": "lle",
+      "T": 298.15,
+      "P": 101300,
+      "x": [
+        0.5,
+        0.5
+      ],
+      "timing": "T2"
+    },
+    {
+      "id": "C4-assoc-323.15",
+      "case": "C4",
+      "operation": "fixed",
+      "T": 323.15,
+      "rho": 10000,
+      "x": [
+        0.5,
+        0.5
+      ]
+    },
+    {
+      "id": "C4-323.15",
+      "case": "C4",
+      "operation": "lle",
+      "T": 323.15,
+      "P": 101300,
+      "x": [
+        0.5,
+        0.5
+      ],
+      "timing": "T2"
+    },
+    {
+      "id": "C5-300",
+      "case": "C5",
+      "operation": "saturation",
+      "T": 300
+    },
+    {
+      "id": "C5-fixed-300-13300",
+      "case": "C5",
+      "operation": "fixed",
+      "T": 300,
+      "rho": 13300,
+      "x": [
+        1.0
+      ]
+    },
+    {
+      "id": "C5-fixed-300-40",
+      "case": "C5",
+      "operation": "fixed",
+      "T": 300,
+      "rho": 40,
+      "x": [
+        1.0
+      ]
+    },
+    {
+      "id": "C5-fixed-300-0.001",
+      "case": "C5",
+      "operation": "fixed",
+      "T": 300,
+      "rho": 0.001,
+      "x": [
+        1.0
+      ]
+    },
+    {
+      "id": "C5-fixed-450-10000",
+      "case": "C5",
+      "operation": "fixed",
+      "T": 450,
+      "rho": 10000,
+      "x": [
+        1.0
+      ]
+    },
+    {
+      "id": "C5-fixed-450-800",
+      "case": "C5",
+      "operation": "fixed",
+      "T": 450,
+      "rho": 800,
+      "x": [
+        1.0
+      ]
+    },
+    {
+      "id": "C3-sigma-0.01",
+      "case": "C3",
+      "operation": "activity",
+      "T": 298.15,
+      "P": 100000,
+      "m": 0.01,
+      "diameter": "sigma",
+      "electrostatic": "matched",
+      "kcl": -0.25,
+      "timing": ""
+    },
+    {
+      "id": "C3-sigma-0.1",
+      "case": "C3",
+      "operation": "activity",
+      "T": 298.15,
+      "P": 100000,
+      "m": 0.1,
+      "diameter": "sigma",
+      "electrostatic": "matched",
+      "kcl": -0.25,
+      "timing": ""
+    },
+    {
+      "id": "C3-sigma-0.5",
+      "case": "C3",
+      "operation": "activity",
+      "T": 298.15,
+      "P": 100000,
+      "m": 0.5,
+      "diameter": "sigma",
+      "electrostatic": "matched",
+      "kcl": -0.25,
+      "timing": ""
+    },
+    {
+      "id": "C3-sigma-1",
+      "case": "C3",
+      "operation": "activity",
+      "T": 298.15,
+      "P": 100000,
+      "m": 1,
+      "diameter": "sigma",
+      "electrostatic": "matched",
+      "kcl": -0.25,
+      "timing": "T2"
+    },
+    {
+      "id": "C3-sigma-2",
+      "case": "C3",
+      "operation": "activity",
+      "T": 298.15,
+      "P": 100000,
+      "m": 2,
+      "diameter": "sigma",
+      "electrostatic": "matched",
+      "kcl": -0.25,
+      "timing": ""
+    },
+    {
+      "id": "C3-sigma-4",
+      "case": "C3",
+      "operation": "activity",
+      "T": 298.15,
+      "P": 100000,
+      "m": 4,
+      "diameter": "sigma",
+      "electrostatic": "matched",
+      "kcl": -0.25,
+      "timing": ""
+    },
+    {
+      "id": "C3-ref-sigma-0",
+      "case": "C3",
+      "operation": "reference",
+      "T": 298.15,
+      "P": 100000,
+      "m": 0,
+      "diameter": "sigma",
+      "electrostatic": "matched",
+      "kcl": -0.25
+    },
+    {
+      "id": "C3-ref-sigma-0.0001",
+      "case": "C3",
+      "operation": "reference",
+      "T": 298.15,
+      "P": 100000,
+      "m": 0.0001,
+      "diameter": "sigma",
+      "electrostatic": "matched",
+      "kcl": -0.25
+    },
+    {
+      "id": "C3-ref-sigma-1e-06",
+      "case": "C3",
+      "operation": "reference",
+      "T": 298.15,
+      "P": 100000,
+      "m": 1e-06,
+      "diameter": "sigma",
+      "electrostatic": "matched",
+      "kcl": -0.25
+    },
+    {
+      "id": "C3-ref-sigma-1e-08",
+      "case": "C3",
+      "operation": "reference",
+      "T": 298.15,
+      "P": 100000,
+      "m": 1e-08,
+      "diameter": "sigma",
+      "electrostatic": "matched",
+      "kcl": -0.25
+    },
+    {
+      "id": "C3-ref-sigma-1e-10",
+      "case": "C3",
+      "operation": "reference",
+      "T": 298.15,
+      "P": 100000,
+      "m": 1e-10,
+      "diameter": "sigma",
+      "electrostatic": "matched",
+      "kcl": -0.25
+    },
+    {
+      "id": "C3-ref-sigma-1e-12",
+      "case": "C3",
+      "operation": "reference",
+      "T": 298.15,
+      "P": 100000,
+      "m": 1e-12,
+      "diameter": "sigma",
+      "electrostatic": "matched",
+      "kcl": -0.25
+    },
+    {
+      "id": "C3-ref-sigma-1e-20",
+      "case": "C3",
+      "operation": "reference",
+      "T": 298.15,
+      "P": 100000,
+      "m": 1e-20,
+      "diameter": "sigma",
+      "electrostatic": "matched",
+      "kcl": -0.25
+    },
+    {
+      "id": "C3-0.88sigma-0.01",
+      "case": "C3",
+      "operation": "activity",
+      "T": 298.15,
+      "P": 100000,
+      "m": 0.01,
+      "diameter": "0.88sigma",
+      "electrostatic": "matched",
+      "kcl": -0.25,
+      "timing": ""
+    },
+    {
+      "id": "C3-0.88sigma-0.1",
+      "case": "C3",
+      "operation": "activity",
+      "T": 298.15,
+      "P": 100000,
+      "m": 0.1,
+      "diameter": "0.88sigma",
+      "electrostatic": "matched",
+      "kcl": -0.25,
+      "timing": ""
+    },
+    {
+      "id": "C3-0.88sigma-0.5",
+      "case": "C3",
+      "operation": "activity",
+      "T": 298.15,
+      "P": 100000,
+      "m": 0.5,
+      "diameter": "0.88sigma",
+      "electrostatic": "matched",
+      "kcl": -0.25,
+      "timing": ""
+    },
+    {
+      "id": "C3-0.88sigma-1",
+      "case": "C3",
+      "operation": "activity",
+      "T": 298.15,
+      "P": 100000,
+      "m": 1,
+      "diameter": "0.88sigma",
+      "electrostatic": "matched",
+      "kcl": -0.25,
+      "timing": "T2"
+    },
+    {
+      "id": "C3-0.88sigma-2",
+      "case": "C3",
+      "operation": "activity",
+      "T": 298.15,
+      "P": 100000,
+      "m": 2,
+      "diameter": "0.88sigma",
+      "electrostatic": "matched",
+      "kcl": -0.25,
+      "timing": ""
+    },
+    {
+      "id": "C3-0.88sigma-4",
+      "case": "C3",
+      "operation": "activity",
+      "T": 298.15,
+      "P": 100000,
+      "m": 4,
+      "diameter": "0.88sigma",
+      "electrostatic": "matched",
+      "kcl": -0.25,
+      "timing": ""
+    },
+    {
+      "id": "C3-ref-0.88sigma-0",
+      "case": "C3",
+      "operation": "reference",
+      "T": 298.15,
+      "P": 100000,
+      "m": 0,
+      "diameter": "0.88sigma",
+      "electrostatic": "matched",
+      "kcl": -0.25
+    },
+    {
+      "id": "C3-ref-0.88sigma-0.0001",
+      "case": "C3",
+      "operation": "reference",
+      "T": 298.15,
+      "P": 100000,
+      "m": 0.0001,
+      "diameter": "0.88sigma",
+      "electrostatic": "matched",
+      "kcl": -0.25
+    },
+    {
+      "id": "C3-ref-0.88sigma-1e-06",
+      "case": "C3",
+      "operation": "reference",
+      "T": 298.15,
+      "P": 100000,
+      "m": 1e-06,
+      "diameter": "0.88sigma",
+      "electrostatic": "matched",
+      "kcl": -0.25
+    },
+    {
+      "id": "C3-ref-0.88sigma-1e-08",
+      "case": "C3",
+      "operation": "reference",
+      "T": 298.15,
+      "P": 100000,
+      "m": 1e-08,
+      "diameter": "0.88sigma",
+      "electrostatic": "matched",
+      "kcl": -0.25
+    },
+    {
+      "id": "C3-ref-0.88sigma-1e-10",
+      "case": "C3",
+      "operation": "reference",
+      "T": 298.15,
+      "P": 100000,
+      "m": 1e-10,
+      "diameter": "0.88sigma",
+      "electrostatic": "matched",
+      "kcl": -0.25
+    },
+    {
+      "id": "C3-ref-0.88sigma-1e-12",
+      "case": "C3",
+      "operation": "reference",
+      "T": 298.15,
+      "P": 100000,
+      "m": 1e-12,
+      "diameter": "0.88sigma",
+      "electrostatic": "matched",
+      "kcl": -0.25
+    },
+    {
+      "id": "C3-ref-0.88sigma-1e-20",
+      "case": "C3",
+      "operation": "reference",
+      "T": 298.15,
+      "P": 100000,
+      "m": 1e-20,
+      "diameter": "0.88sigma",
+      "electrostatic": "matched",
+      "kcl": -0.25
+    },
+    {
+      "id": "C3-diagnosis-original",
+      "case": "C3",
+      "operation": "activity",
+      "T": 298.15,
+      "P": 100000,
+      "m": 1,
+      "diameter": "sigma",
+      "electrostatic": "literal",
+      "engine_epsilon_factor": 1,
+      "kcl": -0.25
+    },
+    {
+      "id": "C3-diagnosis-diameter",
+      "case": "C3",
+      "operation": "activity",
+      "T": 298.15,
+      "P": 100000,
+      "m": 1,
+      "diameter": "0.88sigma",
+      "electrostatic": "literal",
+      "engine_epsilon_factor": 1,
+      "kcl": -0.25
+    },
+    {
+      "id": "C3-diagnosis-constants",
+      "case": "C3",
+      "operation": "activity",
+      "T": 298.15,
+      "P": 100000,
+      "m": 1,
+      "diameter": "0.88sigma",
+      "electrostatic": "literal",
+      "engine_epsilon_factor": 0.999996858797149,
+      "kcl": -0.25
+    },
+    {
+      "id": "C3-diagnosis-interaction",
+      "case": "C3",
+      "operation": "activity",
+      "T": 298.15,
+      "P": 100000,
+      "m": 1,
+      "diameter": "0.88sigma",
+      "electrostatic": "literal",
+      "engine_epsilon_factor": 0.999996858797149,
+      "kcl": 0
+    },
+    {
+      "id": "C3-literal-sigma",
+      "case": "C3",
+      "operation": "activity",
+      "T": 298.15,
+      "P": 100000,
+      "m": 1,
+      "diameter": "sigma",
+      "electrostatic": "literal",
+      "kcl": -0.25
+    },
+    {
+      "id": "C3-literal-0.88sigma",
+      "case": "C3",
+      "operation": "activity",
+      "T": 298.15,
+      "P": 100000,
+      "m": 1,
+      "diameter": "0.88sigma",
+      "electrostatic": "literal",
+      "kcl": -0.25
+    },
+    {
+      "id": "C1-gradient",
+      "case": "C1",
+      "operation": "gradient",
+      "T": 300,
+      "x": [
+        1
+      ],
+      "timing": "T3"
+    },
+    {
+      "id": "C2-gradient",
+      "case": "C2",
+      "operation": "gradient",
+      "T": 373.15,
+      "x": [
+        0.5,
+        0.5
+      ],
+      "timing": "T3"
+    },
+    {
+      "id": "C1-200-common-liquid",
+      "case": "C1",
+      "operation": "fixed",
+      "T": 200,
+      "timing": "",
+      "rho": 13892.601926000209,
+      "x": [
+        1.0
+      ],
+      "phase": "liquid"
+    },
+    {
+      "id": "C1-200-common-vapor",
+      "case": "C1",
+      "operation": "fixed",
+      "T": 200,
+      "timing": "",
+      "rho": 12.24689389047584,
+      "x": [
+        1.0
+      ],
+      "phase": "vapor"
+    },
+    {
+      "id": "C1-250-common-liquid",
+      "case": "C1",
+      "operation": "fixed",
+      "T": 250,
+      "timing": "",
+      "rho": 12637.853756408791,
+      "x": [
+        1.0
+      ],
+      "phase": "liquid"
+    },
+    {
+      "id": "C1-250-common-vapor",
+      "case": "C1",
+      "operation": "fixed",
+      "T": 250,
+      "timing": "",
+      "rho": 111.19704467815949,
+      "x": [
+        1.0
+      ],
+      "phase": "vapor"
+    },
+    {
+      "id": "C1-300-common-liquid",
+      "case": "C1",
+      "operation": "fixed",
+      "T": 300,
+      "timing": "T1",
+      "rho": 11100.251233209614,
+      "x": [
+        1.0
+      ],
+      "phase": "liquid"
+    },
+    {
+      "id": "C1-300-common-vapor",
+      "case": "C1",
+      "operation": "fixed",
+      "T": 300,
+      "timing": "",
+      "rho": 482.5121268150343,
+      "x": [
+        1.0
+      ],
+      "phase": "vapor"
+    },
+    {
+      "id": "C1-350-common-liquid",
+      "case": "C1",
+      "operation": "fixed",
+      "T": 350,
+      "timing": "",
+      "engine_pressure_guess": 2000000.0,
+      "rho": 8640.98064263196,
+      "x": [
+        1.0
+      ],
+      "phase": "liquid"
+    },
+    {
+      "id": "C1-350-common-vapor",
+      "case": "C1",
+      "operation": "fixed",
+      "T": 350,
+      "timing": "",
+      "engine_pressure_guess": 2000000.0,
+      "rho": 1663.4705253524908,
+      "x": [
+        1.0
+      ],
+      "phase": "vapor"
+    },
+    {
+      "id": "C2-0.2-common-liquid",
+      "case": "C2",
+      "operation": "fixed",
+      "T": 373.15,
+      "x": [
+        0.2,
+        0.8
+      ],
+      "timing": "",
+      "rho": 8905.573772007392,
+      "phase": "liquid"
+    },
+    {
+      "id": "C2-0.2-common-vapor",
+      "case": "C2",
+      "operation": "fixed",
+      "T": 373.15,
+      "x": [
+        0.10034634883021801,
+        0.899653651169782
+      ],
+      "timing": "",
+      "rho": 655.2720115630117,
+      "phase": "vapor"
+    },
+    {
+      "id": "C2-0.5-common-liquid",
+      "case": "C2",
+      "operation": "fixed",
+      "T": 373.15,
+      "x": [
+        0.5000000000000001,
+        0.5
+      ],
+      "timing": "T1",
+      "rho": 10841.806748043731,
+      "phase": "liquid"
+    },
+    {
+      "id": "C2-0.5-common-vapor",
+      "case": "C2",
+      "operation": "fixed",
+      "T": 373.15,
+      "x": [
+        0.1334790674464235,
+        0.8665209325535765
+      ],
+      "timing": "",
+      "rho": 581.0840261067528,
+      "phase": "vapor"
+    },
+    {
+      "id": "C2-0.8-common-liquid",
+      "case": "C2",
+      "operation": "fixed",
+      "T": 373.15,
+      "x": [
+        0.8,
+        0.19999999999999998
+      ],
+      "timing": "",
+      "rho": 13318.561533012537,
+      "phase": "liquid"
+    },
+    {
+      "id": "C2-0.8-common-vapor",
+      "case": "C2",
+      "operation": "fixed",
+      "T": 373.15,
+      "x": [
+        0.2027477562796156,
+        0.7972522437203844
+      ],
+      "timing": "",
+      "rho": 398.2549533531923,
+      "phase": "vapor"
+    },
+    {
+      "id": "C4-298.15-common-water-rich",
+      "case": "C4",
+      "operation": "fixed",
+      "T": 298.15,
+      "P": 101300,
+      "x": [
+        0.9993566483864803,
+        0.0006433516135197861
+      ],
+      "timing": "",
+      "rho": 51031.59536600846,
+      "phase": "water-rich"
+    },
+    {
+      "id": "C4-298.15-common-water-poor",
+      "case": "C4",
+      "operation": "fixed",
+      "T": 298.15,
+      "P": 101300,
+      "x": [
+        0.31959730095094624,
+        0.6804026990490537
+      ],
+      "timing": "",
+      "rho": 12519.772604220327,
+      "phase": "water-poor"
+    },
+    {
+      "id": "C4-323.15-common-water-rich",
+      "case": "C4",
+      "operation": "fixed",
+      "T": 323.15,
+      "P": 101300,
+      "x": [
+        0.9987381153667891,
+        0.001261884633210845
+      ],
+      "timing": "",
+      "rho": 50092.98959647934,
+      "phase": "water-rich"
+    },
+    {
+      "id": "C4-323.15-common-water-poor",
+      "case": "C4",
+      "operation": "fixed",
+      "T": 323.15,
+      "P": 101300,
+      "x": [
+        0.3731937674552232,
+        0.6268062325447769
+      ],
+      "timing": "",
+      "rho": 12998.296206949826,
+      "phase": "water-poor"
+    },
+    {
+      "id": "C5-300-common-liquid",
+      "case": "C5",
+      "operation": "fixed",
+      "T": 300,
+      "rho": 13302.593165405153,
+      "x": [
+        1.0
+      ],
+      "phase": "liquid",
+      "timing": ""
+    },
+    {
+      "id": "C5-300-common-vapor",
+      "case": "C5",
+      "operation": "fixed",
+      "T": 300,
+      "rho": 13.440561641491765,
+      "x": [
+        1.0
+      ],
+      "phase": "vapor",
+      "timing": ""
+    },
+    {
+      "id": "C3-sigma-0.01-common-liquid",
+      "case": "C3",
+      "operation": "fixed",
+      "T": 298.15,
+      "P": 100000,
+      "m": 0.01,
+      "diameter": "sigma",
+      "electrostatic": "matched",
+      "kcl": -0.25,
+      "timing": "",
+      "rho": 55347.43781477581,
+      "x": [
+        0.9996398241733672,
+        0.00018008791331633982,
+        0.00018008791331633982
+      ],
+      "phase": "liquid"
+    },
+    {
+      "id": "C3-sigma-0.1-common-liquid",
+      "case": "C3",
+      "operation": "fixed",
+      "T": 298.15,
+      "P": 100000,
+      "m": 0.1,
+      "diameter": "sigma",
+      "electrostatic": "matched",
+      "kcl": -0.25,
+      "timing": "",
+      "rho": 55410.84597804613,
+      "x": [
+        0.9964098794055484,
+        0.0017950602972257189,
+        0.0017950602972257189
+      ],
+      "phase": "liquid"
+    },
+    {
+      "id": "C3-sigma-0.5-common-liquid",
+      "case": "C3",
+      "operation": "fixed",
+      "T": 298.15,
+      "P": 100000,
+      "m": 0.5,
+      "diameter": "sigma",
+      "electrostatic": "matched",
+      "kcl": -0.25,
+      "timing": "",
+      "rho": 55689.584626121235,
+      "x": [
+        0.9823035269175918,
+        0.008848236541203978,
+        0.008848236541203978
+      ],
+      "phase": "liquid"
+    },
+    {
+      "id": "C3-sigma-1-common-liquid",
+      "case": "C3",
+      "operation": "fixed",
+      "T": 298.15,
+      "P": 100000,
+      "m": 1,
+      "diameter": "sigma",
+      "electrostatic": "matched",
+      "kcl": -0.25,
+      "timing": "T1",
+      "rho": 56028.936178136835,
+      "x": [
+        0.9652224930507842,
+        0.017388753474607933,
+        0.017388753474607933
+      ],
+      "phase": "liquid"
+    },
+    {
+      "id": "C3-sigma-2-common-liquid",
+      "case": "C3",
+      "operation": "fixed",
+      "T": 298.15,
+      "P": 100000,
+      "m": 2,
+      "diameter": "sigma",
+      "electrostatic": "matched",
+      "kcl": -0.25,
+      "timing": "",
+      "rho": 56677.01655732602,
+      "x": [
+        0.9327826383630069,
+        0.033608680818496627,
+        0.033608680818496627
+      ],
+      "phase": "liquid"
+    },
+    {
+      "id": "C3-sigma-4-common-liquid",
+      "case": "C3",
+      "operation": "fixed",
+      "T": 298.15,
+      "P": 100000,
+      "m": 4,
+      "diameter": "sigma",
+      "electrostatic": "matched",
+      "kcl": -0.25,
+      "timing": "",
+      "rho": 57858.186092513955,
+      "x": [
+        0.8740324810048268,
+        0.06298375949758654,
+        0.06298375949758654
+      ],
+      "phase": "liquid"
+    },
+    {
+      "id": "C3-0.88sigma-0.01-common-liquid",
+      "case": "C3",
+      "operation": "fixed",
+      "T": 298.15,
+      "P": 100000,
+      "m": 0.01,
+      "diameter": "0.88sigma",
+      "electrostatic": "matched",
+      "kcl": -0.25,
+      "timing": "",
+      "rho": 55347.43813658357,
+      "x": [
+        0.9996398241733672,
+        0.00018008791331633982,
+        0.00018008791331633982
+      ],
+      "phase": "liquid"
+    },
+    {
+      "id": "C3-0.88sigma-0.1-common-liquid",
+      "case": "C3",
+      "operation": "fixed",
+      "T": 298.15,
+      "P": 100000,
+      "m": 0.1,
+      "diameter": "0.88sigma",
+      "electrostatic": "matched",
+      "kcl": -0.25,
+      "timing": "",
+      "rho": 55410.86785241499,
+      "x": [
+        0.9964098794055484,
+        0.0017950602972257189,
+        0.0017950602972257189
+      ],
+      "phase": "liquid"
+    },
+    {
+      "id": "C3-0.88sigma-0.5-common-liquid",
+      "case": "C3",
+      "operation": "fixed",
+      "T": 298.15,
+      "P": 100000,
+      "m": 0.5,
+      "diameter": "0.88sigma",
+      "electrostatic": "matched",
+      "kcl": -0.25,
+      "timing": "",
+      "rho": 55689.89004731051,
+      "x": [
+        0.9823035269175918,
+        0.008848236541203978,
+        0.008848236541203978
+      ],
+      "phase": "liquid"
+    },
+    {
+      "id": "C3-0.88sigma-1-common-liquid",
+      "case": "C3",
+      "operation": "fixed",
+      "T": 298.15,
+      "P": 100000,
+      "m": 1,
+      "diameter": "0.88sigma",
+      "electrostatic": "matched",
+      "kcl": -0.25,
+      "timing": "T1",
+      "rho": 56029.782582682645,
+      "x": [
+        0.9652224930507842,
+        0.017388753474607933,
+        0.017388753474607933
+      ],
+      "phase": "liquid"
+    },
+    {
+      "id": "C3-0.88sigma-2-common-liquid",
+      "case": "C3",
+      "operation": "fixed",
+      "T": 298.15,
+      "P": 100000,
+      "m": 2,
+      "diameter": "0.88sigma",
+      "electrostatic": "matched",
+      "kcl": -0.25,
+      "timing": "",
+      "rho": 56679.18271952349,
+      "x": [
+        0.9327826383630069,
+        0.033608680818496627,
+        0.033608680818496627
+      ],
+      "phase": "liquid"
+    },
+    {
+      "id": "C3-0.88sigma-4-common-liquid",
+      "case": "C3",
+      "operation": "fixed",
+      "T": 298.15,
+      "P": 100000,
+      "m": 4,
+      "diameter": "0.88sigma",
+      "electrostatic": "matched",
+      "kcl": -0.25,
+      "timing": "",
+      "rho": 57863.30928346442,
+      "x": [
+        0.8740324810048268,
+        0.06298375949758654,
+        0.06298375949758654
+      ],
+      "phase": "liquid"
+    },
+    {
+      "id": "C3-diagnosis-original-common-liquid",
+      "case": "C3",
+      "operation": "fixed",
+      "T": 298.15,
+      "P": 100000,
+      "m": 1,
+      "diameter": "sigma",
+      "electrostatic": "literal",
+      "engine_epsilon_factor": 1,
+      "kcl": -0.25,
+      "rho": 56028.936178136835,
+      "x": [
+        0.9652224930507842,
+        0.017388753474607933,
+        0.017388753474607933
+      ],
+      "phase": "liquid",
+      "timing": ""
+    },
+    {
+      "id": "C3-diagnosis-diameter-common-liquid",
+      "case": "C3",
+      "operation": "fixed",
+      "T": 298.15,
+      "P": 100000,
+      "m": 1,
+      "diameter": "0.88sigma",
+      "electrostatic": "literal",
+      "engine_epsilon_factor": 1,
+      "kcl": -0.25,
+      "rho": 56029.782582682645,
+      "x": [
+        0.9652224930507842,
+        0.017388753474607933,
+        0.017388753474607933
+      ],
+      "phase": "liquid",
+      "timing": ""
+    },
+    {
+      "id": "C3-diagnosis-constants-common-liquid",
+      "case": "C3",
+      "operation": "fixed",
+      "T": 298.15,
+      "P": 100000,
+      "m": 1,
+      "diameter": "0.88sigma",
+      "electrostatic": "literal",
+      "engine_epsilon_factor": 0.999996858797149,
+      "kcl": -0.25,
+      "rho": 56029.7826168471,
+      "x": [
+        0.9652224930507842,
+        0.017388753474607933,
+        0.017388753474607933
+      ],
+      "phase": "liquid",
+      "timing": ""
+    },
+    {
+      "id": "C3-diagnosis-interaction-common-liquid",
+      "case": "C3",
+      "operation": "fixed",
+      "T": 298.15,
+      "P": 100000,
+      "m": 1,
+      "diameter": "0.88sigma",
+      "electrostatic": "literal",
+      "engine_epsilon_factor": 0.999996858797149,
+      "kcl": 0,
+      "rho": 55965.99350067333,
+      "x": [
+        0.9652224930507842,
+        0.017388753474607933,
+        0.017388753474607933
+      ],
+      "phase": "liquid",
+      "timing": ""
+    },
+    {
+      "id": "C3-literal-sigma-common-liquid",
+      "case": "C3",
+      "operation": "fixed",
+      "T": 298.15,
+      "P": 100000,
+      "m": 1,
+      "diameter": "sigma",
+      "electrostatic": "literal",
+      "kcl": -0.25,
+      "rho": 56028.936178136835,
+      "x": [
+        0.9652224930507842,
+        0.017388753474607933,
+        0.017388753474607933
+      ],
+      "phase": "liquid",
+      "timing": ""
+    },
+    {
+      "id": "C3-literal-0.88sigma-common-liquid",
+      "case": "C3",
+      "operation": "fixed",
+      "T": 298.15,
+      "P": 100000,
+      "m": 1,
+      "diameter": "0.88sigma",
+      "electrostatic": "literal",
+      "kcl": -0.25,
+      "rho": 56029.782582682645,
+      "x": [
+        0.9652224930507842,
+        0.017388753474607933,
+        0.017388753474607933
+      ],
+      "phase": "liquid",
+      "timing": ""
+    }
+    ,{"id":"C3-diameter-at-original-density","case":"C3","operation":"fixed","T":298.15,"P":100000,"m":1,"diameter":"0.88sigma","electrostatic":"matched","kcl":-0.25,"rho":56028.936178136835,"x":[0.9652224930507842,0.017388753474607933,0.017388753474607933],"phase":"liquid"}
+    ,{"id":"C3-diagnosis-finite","case":"C3","operation":"activity","T":298.15,"P":100000,"m":1,"diameter":"0.88sigma","electrostatic":"literal","engine_epsilon_factor":0.999996858797149,"kcl":0,"reference_m":1e-12}
+    ,{"id":"C5-300-matched","case":"C5","operation":"saturation","T":300,"dipole_convention":"matched"}
+    ,{"id":"C5-fixed-300-13300-matched","case":"C5","operation":"fixed","T":300,"rho":13300,"x":[1],"dipole_convention":"matched"}
+    ,{"id":"C5-fixed-300-40-matched","case":"C5","operation":"fixed","T":300,"rho":40,"x":[1],"dipole_convention":"matched"}
+    ,{"id":"C5-fixed-300-0.001-matched","case":"C5","operation":"fixed","T":300,"rho":0.001,"x":[1],"dipole_convention":"matched"}
+    ,{"id":"C5-fixed-450-10000-matched","case":"C5","operation":"fixed","T":450,"rho":10000,"x":[1],"dipole_convention":"matched"}
+    ,{"id":"C5-fixed-450-800-matched","case":"C5","operation":"fixed","T":450,"rho":800,"x":[1],"dipole_convention":"matched"}
+    ,{"id":"C5-300-common-liquid-matched","case":"C5","operation":"fixed","T":300,"rho":13302.593165405153,"x":[1],"phase":"liquid","dipole_convention":"matched"}
+    ,{"id":"C5-300-common-vapor-matched","case":"C5","operation":"fixed","T":300,"rho":13.440561641491765,"x":[1],"phase":"vapor","dipole_convention":"matched"}
+  ],
+  "constants": {
+    "Engine": {
+      "e": 1.602176634e-19,
+      "epsilon0": 8.8541878128e-12,
+      "kB": 1.380649e-23,
+      "NA": 6.02214076e+23
+    },
+    "FeOs": {
+      "e": 1.602176634e-19,
+      "epsilon0": 8.85416e-12,
+      "kB": 1.380649e-23,
+      "NA": 6.02214076e+23
+    },
+    "Clapeyron": {
+      "e": 1.60217662e-19,
+      "epsilon0": 8.85418782e-12,
+      "kB": 1.380649e-23,
+      "NA": 6.02214076e+23
+    }
+  },
+  "packet_hashes": {
+    "data/packets/gross-2001-propane/3/parameters/parameters.json": "6dc4d60f10ef4364c01cbccf9821447ff9c4c815cc8e94284b853d1cdee71ccb",
+    "data/packets/held-2014-strategy2/1/parameters/parameters.json": "49e5dce5503979d157ec0a8251cf89f233d2bc8f190ac9102a4dfd1519f0ab71",
+    "data/packets/gross-vrabec-2006/1/parameters/parameters.json": "40e5309f3348bbdc6974cc6f16e7bfc4efd4ab45c988799eb63728bc82003a00",
+    "analyses/reproduction/2002-gross/inputs/parameters/pure/any-solvent.csv": "00a5bbbf29c14926731e2d31713a10f788458074104b925fa3a36744b00a2620"
+  },
+  "gradients": {
+    "C1": [
+      "m [Pa]",
+      "sigma [Pa/angstrom]",
+      "epsilon [Pa/K]"
+    ],
+    "C2": [
+      "k [Pa]",
+      "epsilon_ab [Pa/K]",
+      "kappa_ab [Pa]"
+    ]
+  },
+  "controls": {
+    "Engine_row_tolerance": 1e-12,
+    "FeOs_tolerance": 1e-12,
+    "FeOs_max_iter": 1000,
+    "warmups": 5,
+    "samples": 25,
+    "repetitions": 3,
+    "near_zero": "absolute differences; physical gradients mixed 1e-6 max(abs(gL),abs(gE))+1e-8"
+  },
+  "targets": {
+    "fixed_neutral": 1e-12,
+    "fixed_electrolyte": 1e-11,
+    "solved_relative": 1e-08,
+    "fractions_absolute": 1e-08,
+    "electrolyte_absolute": 1e-05,
+    "closure": 1e-10
+  }
+}

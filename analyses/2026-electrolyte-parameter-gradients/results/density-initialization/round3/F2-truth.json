@@ -1,0 +1,44 @@
+[
+ {
+  "coordinate": "optimizer0",
+  "truth": -0.35000000000000003,
+  "seeded_minus_truth": -3.119610125779104e-11,
+  "cold_minus_truth": 3.310685059432217e-13
+ },
+ {
+  "coordinate": "optimizer1",
+  "truth": 0.9,
+  "seeded_minus_truth": -6.481282177617231e-11,
+  "cold_minus_truth": 9.997558336749535e-13
+ },
+ {
+  "coordinate": "optimizer2",
+  "truth": -0.25,
+  "seeded_minus_truth": -3.8402614421784165e-11,
+  "cold_minus_truth": 1.2690404282977852e-12
+ },
+ {
+  "coordinate": "optimizer3",
+  "truth": 0.9,
+  "seeded_minus_truth": -8.248557392676048e-11,
+  "cold_minus_truth": 2.986944025451521e-12
+ },
+ {
+  "coordinate": "optimizer4",
+  "truth": -0.05,
+  "seeded_minus_truth": -2.675338423019369e-11,
+  "cold_minus_truth": 3.740500964521942e-12
+ },
+ {
+  "coordinate": "optimizer5",
+  "truth": 0.1,
+  "seeded_minus_truth": -7.782055555516365e-11,
+  "cold_minus_truth": 1.081576495032266e-11
+ },
+ {
+  "coordinate": "optimizer6",
+  "truth": 6.01,
+  "seeded_minus_truth": 1.5223378113660146e-11,
+  "cold_minus_truth": -1.6227019727921288e-12
+ }
+]

@@ -1,0 +1,8 @@
+Component,$m_{i}^{\text {seg }} /-$,$\sigma_{i} /$,$\boldsymbol{u}_{\boldsymbol{i}} \boldsymbol{k}_{\boldsymbol{B}}^{\boldsymbol{-} \mathbf{1}} \boldsymbol{/} \mathbf{K}$,$N_{i}$,$\varepsilon^{A_{i} B_{i}} k_{B}^{-1} / K$,$\boldsymbol{\kappa}^{A_{i} B_{i} /-}$,Ref.
+Water,1.2047,*,353.95,2,2425.7,0.04509,[104]
+Acetic acid,1.3402,3.8582,311.59,2,3044.4,0.07555,[105]
+1-Pentanol,3.6260,3.4508,247.28,2,2252.1,0.01033,[105]
+1-Hexanol,3.5146,3.6735,262.32,2,2538.9,0.00575,[105]
+Pentyl Acetate,4.7077,3.4729,234.57,2,0.0,0.04509,[106]
+Hexyl Acetate,4.8847,3.5834,241.42,2,0.0,0.04509,[107]
+$* \sigma=2.7927+\left(10.11 e^{-0.01775 T}-1.417 e^{-0.01146 T}\right)$,,,,,,,

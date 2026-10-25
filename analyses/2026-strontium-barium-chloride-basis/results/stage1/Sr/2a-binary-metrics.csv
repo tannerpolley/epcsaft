@@ -1,0 +1,3 @@
+bucket_mol_per_kg,states,phi_RMS,phi_RMS_limit,phi_max,phi_max_limit,gamma_MARD_percent,gamma_MARD_limit_percent,gamma_max_percent,gamma_max_limit_percent,passes,phi_RMS_passes,phi_max_passes,gamma_MARD_percent_passes,gamma_max_percent_passes
+<=1,28,0.02151150696197326,0.01,0.05271182492924176,0.03,3.504611930513851,2,7.864451434450914,5,False,False,False,False,False
+1-3.518,11,0.05201624529672517,0.01,0.07051486894987558,0.03,4.130507530485894,2,6.537998737821383,5,False,False,False,False,False

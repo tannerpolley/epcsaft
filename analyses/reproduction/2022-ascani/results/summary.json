@@ -1,0 +1,672 @@
+{
+  "schema": "ascani-2022-case-study-2.v1",
+  "temperature_K": 298.15,
+  "pressure_Pa": 100000.0,
+  "components": [
+    "water",
+    "1-butanol",
+    "sodium-cation",
+    "potassium-cation",
+    "chloride-anion"
+  ],
+  "row_tolerance": 1e-10,
+  "parameters": {
+    "path": "data/packets/ascani-2022-case-study-2-electrolyte-lle/3/parameters/parameters.json",
+    "sha256": "382b2e634bccf3312fa0fb164e1d2449192a13d0396f0fe46ef674ff56d34b94",
+    "water_butanol_k_ij_l_ij": {
+      "nann-2013-expression": [
+        -0.014343900000000007,
+        -0.0044
+      ],
+      "si-table-s3-printed": [
+        -0.102,
+        -0.0044
+      ],
+      "l-ij-sign-flipped": [
+        -0.014343900000000007,
+        0.0044
+      ]
+    }
+  },
+  "tracer_sha256": "388f62d02f995fc89fb099bb625a907713eebe70f19ea631688cc8e4169acecd",
+  "engine": [
+    "9f1c740b423f9e2bc1aebce920f37ab5d05a20e2",
+    true
+  ],
+  "git_commit": "9f1c740b423f9e2bc1aebce920f37ab5d05a20e2",
+  "cpu_count": 32,
+  "phase_discovery": "permittivity model has no low-density limit; declare phases",
+  "solves": [
+    {
+      "variant": "nann-2013-expression",
+      "system": "binary",
+      "start": "generic",
+      "k_ij_water_butanol": -0.014343900000000007,
+      "l_ij_water_butanol": -0.0044,
+      "feed": [
+        0.8,
+        0.2
+      ],
+      "success": true,
+      "requested_tolerance_met": true,
+      "message": "converged: residual 3.6119026540770624e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 10 iterations, contraction absent, floor 1.4459666417384812e-10, amplification 0",
+      "solver_status": "SUCCESS",
+      "iterations": 10,
+      "evaluations": 13,
+      "hessian_calls": 11,
+      "seconds": 0.01527637799972581,
+      "phases": [
+        {
+          "amount": 0.6062037057983426,
+          "x": [
+            0.9847153727980719,
+            0.015284627201928101
+          ],
+          "rho": 52153.07873779113,
+          "pressure": 99999.99999842893,
+          "dp_drho": 81175.77700296187,
+          "permittivity": 0.0,
+          "charge": 0.0,
+          "ln_f": [
+            -3.4701873742164273,
+            -5.152913327580433
+          ],
+          "ln_f_groups": {
+            "water": -3.4701873742164273,
+            "1-butanol": -5.152913327580433
+          },
+          "label": "aqueous"
+        },
+        {
+          "amount": 0.3937962942016574,
+          "x": [
+            0.5156521146672531,
+            0.4843478853327469
+          ],
+          "rho": 18425.69672954844,
+          "pressure": 100000.0000000342,
+          "dp_drho": 84314.3275755708,
+          "permittivity": 0.0,
+          "charge": 0.0,
+          "ln_f": [
+            -3.470187374232398,
+            -5.152913327596379
+          ],
+          "ln_f_groups": {
+            "water": -3.470187374232398,
+            "1-butanol": -5.152913327596379
+          },
+          "label": "organic"
+        }
+      ],
+      "material_balance_max_abs": 2.7755575615628914e-17,
+      "charge_max_abs": 0.0,
+      "pressure_max_rel": 1.5710684238001706e-11,
+      "ln_f_gap_max_abs": 1.5970780253837802e-11,
+      "classified_residual_max_abs": 3.6119026540770624e-15,
+      "reduced_hessian_minimum": 0.005204243191461,
+      "objective_g_over_rt": -0.10940029805696538
+    },
+    {
+      "variant": "si-table-s3-printed",
+      "system": "binary",
+      "start": "generic",
+      "k_ij_water_butanol": -0.102,
+      "l_ij_water_butanol": -0.0044,
+      "feed": [
+        0.8,
+        0.2
+      ],
+      "success": false,
+      "requested_tolerance_met": false,
+      "message": "phase phase-0 vanished; Michelsen deficit 0.992538",
+      "solver_status": "SUCCESS",
+      "iterations": 69,
+      "evaluations": 85,
+      "hessian_calls": 70,
+      "seconds": 0.048235974000817805,
+      "phases": []
+    },
+    {
+      "variant": "l-ij-sign-flipped",
+      "system": "binary",
+      "start": "generic",
+      "k_ij_water_butanol": -0.014343900000000007,
+      "l_ij_water_butanol": 0.0044,
+      "feed": [
+        0.8,
+        0.2
+      ],
+      "success": true,
+      "requested_tolerance_met": true,
+      "message": "converged: residual 1.3013527838865268e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 11 iterations, contraction absent, floor 1.5239306342250271e-10, amplification 0",
+      "solver_status": "SUCCESS",
+      "iterations": 11,
+      "evaluations": 15,
+      "hessian_calls": 12,
+      "seconds": 0.016863804000422533,
+      "phases": [
+        {
+          "amount": 0.7051022784469062,
+          "x": [
+            0.9969350269006907,
+            0.0030649730993092547
+          ],
+          "rho": 54665.04996709941,
+          "pressure": 100000.00000041297,
+          "dp_drho": 81634.60274949524,
+          "permittivity": 0.0,
+          "charge": 0.0,
+          "ln_f": [
+            -3.4612731751061845,
+            -4.97926032963697
+          ],
+          "ln_f_groups": {
+            "water": -3.4612731751061845,
+            "1-butanol": -4.97926032963697
+          },
+          "label": "aqueous"
+        },
+        {
+          "amount": 0.29489772155309385,
+          "x": [
+            0.3291271311206813,
+            0.6708728688793186
+          ],
+          "rho": 14559.313098568144,
+          "pressure": 100000.00000024613,
+          "dp_drho": 88629.2152653222,
+          "permittivity": 0.0,
+          "charge": 0.0,
+          "ln_f": [
+            -3.4612731751044934,
+            -4.979260329635276
+          ],
+          "ln_f_groups": {
+            "water": -3.4612731751044934,
+            "1-butanol": -4.979260329635276
+          },
+          "label": "organic"
+        }
+      ],
+      "material_balance_max_abs": 2.7755575615628914e-17,
+      "charge_max_abs": 0.0,
+      "pressure_max_rel": 4.129688022658229e-12,
+      "ln_f_gap_max_abs": 1.6937562463681388e-12,
+      "classified_residual_max_abs": 1.3013527838865268e-14,
+      "reduced_hessian_minimum": 0.0018528474500783818,
+      "objective_g_over_rt": -0.06753833916024385
+    },
+    {
+      "variant": "nann-2013-expression",
+      "system": "quaternary",
+      "start": "generic",
+      "k_ij_water_butanol": -0.014343900000000007,
+      "l_ij_water_butanol": -0.0044,
+      "feed": [
+        0.9403742328474496,
+        0.04879524350242891,
+        0.0019339333595015447,
+        0.0034813284655591703,
+        0.005415261825060715
+      ],
+      "success": true,
+      "requested_tolerance_met": true,
+      "message": "converged: residual 1.4085772542437825e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 22 iterations, contraction absent, floor 1.407963062048734e-10, amplification 0",
+      "solver_status": "SUCCESS",
+      "iterations": 22,
+      "evaluations": 26,
+      "hessian_calls": 23,
+      "seconds": 0.032457199999953446,
+      "phases": [
+        {
+          "amount": 0.9325752247530225,
+          "x": [
+            0.9711121361281804,
+            0.017506861258194305,
+            0.0020635925499853038,
+            0.003626908756827351,
+            0.005690501306812657
+          ],
+          "rho": 51593.74935386064,
+          "pressure": 99999.9999968417,
+          "dp_drho": 79738.83010425734,
+          "permittivity": 73.16639661336488,
+          "charge": -1.734723475976807e-18,
+          "ln_f": [
+            -3.4807217514786157,
+            -5.1470932817996555,
+            -195.85953286941327,
+            -162.77873938186107,
+            -198.17894924955795
+          ],
+          "ln_f_groups": {
+            "water": -3.4807217514786157,
+            "1-butanol": -5.1470932817996555,
+            "KCl": -180.47884431570952,
+            "NaCl": -197.0192410594856
+          },
+          "label": "aqueous"
+        },
+        {
+          "amount": 0.06742477524697749,
+          "x": [
+            0.515227735058432,
+            0.4815556049080621,
+            0.00014057256202367111,
+            0.0014677574547292674,
+            0.0016083300167529378
+          ],
+          "rho": 18486.058189688927,
+          "pressure": 99999.9999964539,
+          "dp_drho": 83943.74535168365,
+          "permittivity": 30.023021586712048,
+          "charge": 6.2341624917916505e-19,
+          "ln_f": [
+            -3.48072175147478,
+            -5.147093281795824,
+            -196.3998358800882,
+            -163.31904239253603,
+            -197.63864623887525
+          ],
+          "ln_f_groups": {
+            "water": -3.48072175147478,
+            "1-butanol": -5.147093281795824,
+            "KCl": -180.47884431570566,
+            "NaCl": -197.01924105948171
+          },
+          "label": "organic"
+        }
+      ],
+      "material_balance_max_abs": 6.938893903907228e-18,
+      "charge_max_abs": 1.734723475976807e-18,
+      "pressure_max_rel": 3.5460980143398044e-11,
+      "ln_f_gap_max_abs": 3.893774191965349e-12,
+      "classified_residual_max_abs": 1.4085772542437825e-14,
+      "reduced_hessian_minimum": 9.685503543111814e-06,
+      "objective_g_over_rt": -1.8456588917931607,
+      "delta_g_split_minus_feed_J_per_mol": -16.817902853679797,
+      "stability": {
+        "refused": "permittivity model has no low-density limit; declare phases"
+      }
+    },
+    {
+      "variant": "nann-2013-expression",
+      "system": "quaternary",
+      "start": "paper",
+      "k_ij_water_butanol": -0.014343900000000007,
+      "l_ij_water_butanol": -0.0044,
+      "feed": [
+        0.9403742328474496,
+        0.04879524350242891,
+        0.0019339333595015447,
+        0.0034813284655591703,
+        0.005415261825060715
+      ],
+      "success": true,
+      "requested_tolerance_met": true,
+      "message": "converged: residual 9.4555021802738281e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 22 iterations, contraction absent, floor 1.4079630620487356e-10, amplification 0",
+      "solver_status": "SUCCESS",
+      "iterations": 22,
+      "evaluations": 26,
+      "hessian_calls": 23,
+      "seconds": 0.0324419400003535,
+      "phases": [
+        {
+          "amount": 0.9325752247530174,
+          "x": [
+            0.97111213612818,
+            0.017506861258194506,
+            0.0020635925499853107,
+            0.003626908756827334,
+            0.005690501306812645
+          ],
+          "rho": 51593.74935386064,
+          "pressure": 99999.99999960132,
+          "dp_drho": 79738.83010425771,
+          "permittivity": 73.16639661336485,
+          "charge": -4.336808689942018e-19,
+          "ln_f": [
+            -3.480721751506147,
+            -5.147093281827095,
+            -195.85953286944076,
+            -162.77873938188858,
+            -198.17894924958546
+          ],
+          "ln_f_groups": {
+            "water": -3.480721751506147,
+            "1-butanol": -5.147093281827095,
+            "KCl": -180.47884431573704,
+            "NaCl": -197.0192410595131
+          },
+          "label": "aqueous"
+        },
+        {
+          "amount": 0.06742477524698241,
+          "x": [
+            0.5152277350584676,
+            0.48155560490802546,
+            0.00014057256202372055,
+            0.0014677574547296661,
+            0.0016083300167533863
+          ],
+          "rho": 18486.05818968989,
+          "pressure": 99999.99999857323,
+          "dp_drho": 83943.74535168317,
+          "permittivity": 30.02302158671346,
+          "charge": 4.0657581468206416e-19,
+          "ln_f": [
+            -3.4807217514959548,
+            -5.147093281816982,
+            -196.39983588010944,
+            -163.3190423925572,
+            -197.63864623889648
+          ],
+          "ln_f_groups": {
+            "water": -3.4807217514959548,
+            "1-butanol": -5.147093281816982,
+            "KCl": -180.47884431572686,
+            "NaCl": -197.01924105950297
+          },
+          "label": "organic"
+        }
+      ],
+      "material_balance_max_abs": 3.3306690738754696e-16,
+      "charge_max_abs": 4.336808689942018e-19,
+      "pressure_max_rel": 1.4267716323956847e-11,
+      "ln_f_gap_max_abs": 1.0192291455268787e-11,
+      "classified_residual_max_abs": 9.455502180273828e-15,
+      "reduced_hessian_minimum": 9.685503543527677e-06,
+      "objective_g_over_rt": -1.8456588917931631,
+      "delta_g_split_minus_feed_J_per_mol": -16.817902920855374,
+      "stability": {
+        "refused": "permittivity model has no low-density limit; declare phases"
+      }
+    },
+    {
+      "variant": "si-table-s3-printed",
+      "system": "quaternary",
+      "start": "generic",
+      "k_ij_water_butanol": -0.102,
+      "l_ij_water_butanol": -0.0044,
+      "feed": [
+        0.9403742328474496,
+        0.04879524350242891,
+        0.0019339333595015447,
+        0.0034813284655591703,
+        0.005415261825060715
+      ],
+      "success": false,
+      "requested_tolerance_met": false,
+      "message": "phase phase-1 vanished; Michelsen deficit 0.991118",
+      "solver_status": "SUCCESS",
+      "iterations": 102,
+      "evaluations": 118,
+      "hessian_calls": 103,
+      "seconds": 0.09069647699925554,
+      "phases": []
+    },
+    {
+      "variant": "si-table-s3-printed",
+      "system": "quaternary",
+      "start": "paper",
+      "k_ij_water_butanol": -0.102,
+      "l_ij_water_butanol": -0.0044,
+      "feed": [
+        0.9403742328474496,
+        0.04879524350242891,
+        0.0019339333595015447,
+        0.0034813284655591703,
+        0.005415261825060715
+      ],
+      "success": false,
+      "requested_tolerance_met": false,
+      "message": "phase phase-1 vanished; Michelsen deficit 1.000000",
+      "solver_status": "SUCCESS",
+      "iterations": 74,
+      "evaluations": 102,
+      "hessian_calls": 75,
+      "seconds": 0.08314539299954049,
+      "phases": []
+    },
+    {
+      "variant": "l-ij-sign-flipped",
+      "system": "quaternary",
+      "start": "generic",
+      "k_ij_water_butanol": -0.014343900000000007,
+      "l_ij_water_butanol": 0.0044,
+      "feed": [
+        0.9403742328474496,
+        0.04879524350242891,
+        0.0019339333595015447,
+        0.0034813284655591703,
+        0.005415261825060715
+      ],
+      "success": true,
+      "requested_tolerance_met": true,
+      "message": "converged: residual 3.5022636418932179e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 14 iterations, contraction absent, floor 1.4946488907663621e-10, amplification 0",
+      "solver_status": "SUCCESS",
+      "iterations": 14,
+      "evaluations": 17,
+      "hessian_calls": 15,
+      "seconds": 0.03731793800034211,
+      "phases": [
+        {
+          "amount": 0.9323578621090599,
+          "x": [
+            0.9849841159681646,
+            0.0034648599804908012,
+            0.002072529381114443,
+            0.003702982644557822,
+            0.005775512025672265
+          ],
+          "rho": 54442.32896522008,
+          "pressure": 100000.00000475984,
+          "dp_drho": 80211.72259470212,
+          "permittivity": 76.43029769918321,
+          "charge": 4.336808689942018e-19,
+          "ln_f": [
+            -3.471829691076176,
+            -4.975275710338093,
+            -195.8299942173482,
+            -162.6019221938066,
+            -198.10619753803863
+          ],
+          "ln_f_groups": {
+            "water": -3.471829691076176,
+            "1-butanol": -4.975275710338093,
+            "KCl": -180.3540598659226,
+            "NaCl": -196.96809587769343
+          },
+          "label": "aqueous"
+        },
+        {
+          "amount": 0.06764213789094008,
+          "x": [
+            0.325485695137057,
+            0.6736149311539453,
+            2.356957685223357e-05,
+            0.000426117277646653,
+            0.00044968685449888656
+          ],
+          "rho": 14512.685178802114,
+          "pressure": 99999.99999965543,
+          "dp_drho": 88650.9737872495,
+          "permittivity": 23.954238037280447,
+          "charge": 2.371692252312041e-20,
+          "ln_f": [
+            -3.4718296910253015,
+            -4.975275710287347,
+            -196.59681333478443,
+            -163.36874131124287,
+            -197.33937842050068
+          ],
+          "ln_f_groups": {
+            "water": -3.4718296910253015,
+            "1-butanol": -4.975275710287347,
+            "KCl": -180.35405986587176,
+            "NaCl": -196.96809587764255
+          },
+          "label": "organic"
+        }
+      ],
+      "material_balance_max_abs": 6.938893903907228e-18,
+      "charge_max_abs": 4.336808689942018e-19,
+      "pressure_max_rel": 4.759844159707427e-11,
+      "ln_f_gap_max_abs": 5.0874859880423173e-11,
+      "classified_residual_max_abs": 3.502263641893218e-14,
+      "reduced_hessian_minimum": 1.6229629485075921e-06,
+      "objective_g_over_rt": -1.8278464929366103,
+      "delta_g_split_minus_feed_J_per_mol": -109.40160496343763,
+      "stability": {
+        "refused": "permittivity model has no low-density limit; declare phases"
+      }
+    },
+    {
+      "variant": "l-ij-sign-flipped",
+      "system": "quaternary",
+      "start": "paper",
+      "k_ij_water_butanol": -0.014343900000000007,
+      "l_ij_water_butanol": 0.0044,
+      "feed": [
+        0.9403742328474496,
+        0.04879524350242891,
+        0.0019339333595015447,
+        0.0034813284655591703,
+        0.005415261825060715
+      ],
+      "success": true,
+      "requested_tolerance_met": true,
+      "message": "converged: residual 2.8242417141322303e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 14 iterations, contraction absent, floor 1.4946488907663626e-10, amplification 0",
+      "solver_status": "SUCCESS",
+      "iterations": 14,
+      "evaluations": 19,
+      "hessian_calls": 15,
+      "seconds": 0.0265274009998393,
+      "phases": [
+        {
+          "amount": 0.9323578621090596,
+          "x": [
+            0.9849841159681647,
+            0.0034648599804908012,
+            0.002072529381114443,
+            0.003702982644557822,
+            0.00577551202567227
+          ],
+          "rho": 54442.32896522008,
+          "pressure": 100000.00000328082,
+          "dp_drho": 80211.72259470195,
+          "permittivity": 76.43029769918323,
+          "charge": -4.7704895589362195e-18,
+          "ln_f": [
+            -3.4718296910615023,
+            -4.975275710323472,
+            -195.8299942173335,
+            -162.6019221937919,
+            -198.10619753802396
+          ],
+          "ln_f_groups": {
+            "water": -3.4718296910615023,
+            "1-butanol": -4.975275710323472,
+            "KCl": -180.3540598659079,
+            "NaCl": -196.96809587767873
+          },
+          "label": "aqueous"
+        },
+        {
+          "amount": 0.06764213789094035,
+          "x": [
+            0.32548569513705977,
+            0.6736149311539424,
+            2.3569576852230924e-05,
+            0.00042611727764664905,
+            0.00044968685449888
+          ],
+          "rho": 14512.685178802169,
+          "pressure": 100000.0000005708,
+          "dp_drho": 88650.97378724982,
+          "permittivity": 23.954238037280522,
+          "charge": -2.0328790734103208e-20,
+          "ln_f": [
+            -3.4718296910344444,
+            -4.975275710296461,
+            -196.59681333479367,
+            -163.368741311252,
+            -197.3393784205098
+          ],
+          "ln_f_groups": {
+            "water": -3.4718296910344444,
+            "1-butanol": -4.975275710296461,
+            "KCl": -180.3540598658809,
+            "NaCl": -196.96809587765173
+          },
+          "label": "organic"
+        }
+      ],
+      "material_balance_max_abs": 1.1102230246251565e-16,
+      "charge_max_abs": 4.7704895589362195e-18,
+      "pressure_max_rel": 3.280816599726677e-11,
+      "ln_f_gap_max_abs": 2.7057911466954465e-11,
+      "classified_residual_max_abs": 2.8242417141322303e-14,
+      "reduced_hessian_minimum": 1.6229629518361938e-06,
+      "objective_g_over_rt": -1.8278464929366094,
+      "delta_g_split_minus_feed_J_per_mol": -109.401604931052,
+      "stability": {
+        "refused": "permittivity model has no low-density limit; declare phases"
+      }
+    }
+  ],
+  "paper_point_diagnostics": {
+    "organic": {
+      "ln_f": {
+        "water": -3.5378496043229957,
+        "1-butanol": -5.093000793581333,
+        "KCl": -181.04879689043975,
+        "NaCl": -197.49341449423244
+      },
+      "born_part": {
+        "water": -0.004265411755705273,
+        "1-butanol": 0.003381969538654772,
+        "KCl": -178.7584501130914,
+        "NaCl": -193.59721263978756
+      },
+      "permittivity": 27.384289810516407,
+      "born_scale_matching_paper": {
+        "KCl": 1.1436810572776346,
+        "NaCl": 1.1415184915742784
+      }
+    },
+    "aqueous": {
+      "ln_f": {
+        "water": -3.5113797835811664,
+        "1-butanol": -5.6371582811370295,
+        "KCl": -179.05120132493994,
+        "NaCl": -195.69788696253977
+      },
+      "born_part": {
+        "water": -0.011078183830317556,
+        "1-butanol": 0.4036242774805139,
+        "KCl": -182.84015258638473,
+        "NaCl": -198.02688989549824
+      },
+      "permittivity": 71.82235379915852,
+      "born_scale_matching_paper": {
+        "KCl": 1.151398903815624,
+        "NaCl": 1.1474199440937838
+      }
+    },
+    "printed_phase_organic_share_by_balance": {
+      "water": 0.03325868110313033,
+      "1-butanol": 0.06766171312979918,
+      "NaCl": 0.7482604081628486,
+      "KCl": 0.8186107826068497
+    },
+    "paper_ln_f": {
+      "water": -3.521,
+      "1-butanol": -5.088,
+      "KCl": -206.733,
+      "NaCl": -224.891
+    }
+  },
+  "wall_seconds": 0.13254442600009497
+}

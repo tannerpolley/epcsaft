@@ -1,0 +1,7 @@
+{
+  "wheel_sha256": "9e6a76cf59d4e2fef3347d895bf3a966ecced01f13dc6e0caec74c3c3d618dc4",
+  "script_sha256": "a11dfc10824dc98178d0021c6a6cd6a70605da81d11a21a7267b965ea6351980",
+  "packet_sha256": "36cf241f3a9bd353cf775ae943ddc98e70817d5b004cac3bc001a9c5604d752d",
+  "baseline_seconds_78_rows": 0.15,
+  "conditions": "298.15 K, 100000 Pa, fully dissociated formula-unit molality/kg water"
+}

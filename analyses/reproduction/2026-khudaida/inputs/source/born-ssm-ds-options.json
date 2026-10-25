@@ -1,0 +1,17 @@
+{
+  "elec_model": {
+    "rel_perm": {
+      "rule": "empirical",
+      "differential_mode": "cppad"
+    },
+    "born_model": {
+      "d_Born_mode": 3,
+      "solvation_shell_model": true,
+      "dielectric_saturation": true,
+      "mu_born_model": {
+        "differential_mode": "cppad",
+        "comp_dep_delta_d": true
+      }
+    }
+  }
+}

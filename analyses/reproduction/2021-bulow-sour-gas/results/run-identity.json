@@ -1,0 +1,289 @@
+{
+  "engine": [
+    "0c44f995f6123786ac2aa27a698eabfb6c93d638",
+    true
+  ],
+  "native_library": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-789-live-literature-reproductions-the-3/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so",
+  "native_library_sha256": "2960be5d6b6780c4bc9700386fa2d17ed2113ca79a4dd37a242e3703e4a0d32b",
+  "declared_model": {
+    "schema": "epcsaft.parameters",
+    "schema_version": 1,
+    "components": [
+      {
+        "component_id": "sulfolane",
+        "coefficients": [
+          {
+            "identity": "sulfolane/segment_count",
+            "family": "segment_count",
+            "value": {
+              "magnitude": 2.7894,
+              "unit": "dimensionless"
+            }
+          },
+          {
+            "identity": "sulfolane/segment_diameter",
+            "family": "segment_diameter",
+            "value": {
+              "magnitude": 3.702,
+              "unit": "angstrom"
+            }
+          },
+          {
+            "identity": "sulfolane/dispersion_energy_over_k",
+            "family": "dispersion_energy_over_k",
+            "value": {
+              "magnitude": 436.47,
+              "unit": "kelvin"
+            }
+          }
+        ],
+        "fixed": {
+          "molar_mass": {
+            "value": {
+              "magnitude": 0.12017,
+              "unit": "kilogram / mole"
+            }
+          },
+          "charge_number": {
+            "value": {
+              "magnitude": 0,
+              "unit": "elementary-charge"
+            }
+          }
+        }
+      },
+      {
+        "component_id": "CO2",
+        "coefficients": [
+          {
+            "identity": "CO2/segment_count",
+            "family": "segment_count",
+            "value": {
+              "magnitude": 2.0729,
+              "unit": "dimensionless"
+            }
+          },
+          {
+            "identity": "CO2/segment_diameter",
+            "family": "segment_diameter",
+            "value": {
+              "magnitude": 2.7852,
+              "unit": "angstrom"
+            }
+          },
+          {
+            "identity": "CO2/dispersion_energy_over_k",
+            "family": "dispersion_energy_over_k",
+            "value": {
+              "magnitude": 169.21,
+              "unit": "kelvin"
+            }
+          }
+        ],
+        "fixed": {
+          "molar_mass": {
+            "value": {
+              "magnitude": 0.0440095,
+              "unit": "kilogram / mole"
+            }
+          },
+          "charge_number": {
+            "value": {
+              "magnitude": 0,
+              "unit": "elementary-charge"
+            }
+          }
+        }
+      }
+    ],
+    "topology": {
+      "sites": [
+        {
+          "component_id": "sulfolane",
+          "site_id": "donor",
+          "multiplicity": 1
+        },
+        {
+          "component_id": "sulfolane",
+          "site_id": "acceptor",
+          "multiplicity": 1
+        },
+        {
+          "component_id": "CO2",
+          "site_id": "donor",
+          "multiplicity": 1
+        },
+        {
+          "component_id": "CO2",
+          "site_id": "acceptor",
+          "multiplicity": 1
+        }
+      ],
+      "edges": [
+        {
+          "endpoint_a": {
+            "component_id": "sulfolane",
+            "site_id": "donor"
+          },
+          "endpoint_b": {
+            "component_id": "sulfolane",
+            "site_id": "acceptor"
+          },
+          "source": {
+            "kind": "explicit"
+          },
+          "energy_over_k": {
+            "identity": "sulfolanesulfolane/energy",
+            "value": {
+              "magnitude": 0,
+              "unit": "kelvin"
+            }
+          },
+          "volume": {
+            "identity": "sulfolanesulfolane/volume",
+            "value": {
+              "magnitude": 0.045,
+              "unit": "dimensionless"
+            }
+          }
+        },
+        {
+          "endpoint_a": {
+            "component_id": "sulfolane",
+            "site_id": "donor"
+          },
+          "endpoint_b": {
+            "component_id": "CO2",
+            "site_id": "acceptor"
+          },
+          "source": {
+            "kind": "explicit"
+          },
+          "energy_over_k": {
+            "identity": "sulfolaneCO2/energy",
+            "value": {
+              "magnitude": 0,
+              "unit": "kelvin"
+            }
+          },
+          "volume": {
+            "identity": "sulfolaneCO2/volume",
+            "value": {
+              "magnitude": 0.045,
+              "unit": "dimensionless"
+            }
+          }
+        },
+        {
+          "endpoint_a": {
+            "component_id": "CO2",
+            "site_id": "donor"
+          },
+          "endpoint_b": {
+            "component_id": "sulfolane",
+            "site_id": "acceptor"
+          },
+          "source": {
+            "kind": "explicit"
+          },
+          "energy_over_k": {
+            "identity": "CO2sulfolane/energy",
+            "value": {
+              "magnitude": 0,
+              "unit": "kelvin"
+            }
+          },
+          "volume": {
+            "identity": "CO2sulfolane/volume",
+            "value": {
+              "magnitude": 0.045,
+              "unit": "dimensionless"
+            }
+          }
+        },
+        {
+          "endpoint_a": {
+            "component_id": "CO2",
+            "site_id": "donor"
+          },
+          "endpoint_b": {
+            "component_id": "CO2",
+            "site_id": "acceptor"
+          },
+          "source": {
+            "kind": "explicit"
+          },
+          "energy_over_k": {
+            "identity": "CO2CO2/energy",
+            "value": {
+              "magnitude": 0,
+              "unit": "kelvin"
+            }
+          },
+          "volume": {
+            "identity": "CO2CO2/volume",
+            "value": {
+              "magnitude": 0.045,
+              "unit": "dimensionless"
+            }
+          }
+        }
+      ]
+    },
+    "model_families": [
+      {
+        "kind": "base",
+        "choice": "pc-saft"
+      },
+      {
+        "kind": "association",
+        "choice": "general-site"
+      },
+      {
+        "kind": "electrolyte",
+        "choice": "none"
+      },
+      {
+        "kind": "permittivity",
+        "choice": "none"
+      }
+    ],
+    "pairs": [
+      {
+        "component_id_a": "sulfolane",
+        "component_id_b": "CO2",
+        "coefficients": [
+          {
+            "identity": "sulfolane-CO2/kij",
+            "family": "k_ij",
+            "value": {
+              "magnitude": 0.055,
+              "unit": "dimensionless"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "numerical_limits": {
+    "pressure_relative": 1e-08,
+    "isofugacity": 1e-08,
+    "normalization": 1e-10
+  },
+  "source_sha256": {
+    "inputs/parameters/paper-parameters.csv": "a4a67f5a295d016d0a57ee109bb7d02445cec8a0275825e731641ca0ec2a7734",
+    "inputs/source/README.md": "83573e5d4076fd45d2719134dcb95b9c26814a443139740b732ab25308872260",
+    "inputs/source/paper-result-summary.csv": "9662117e8765e06ffd5180990b65a52106754b77fec05d2fb84a7ddb140d16c3",
+    "inputs/source/source-manifest.csv": "7062433ddce694a3e7c95860ee5e94adae15852dff9dedc0390f698cb98f3d80",
+    "inputs/source/reference-limits.md": "abcea665c099650d8e9010d8814668ff7a0e5ddd633a8c92c5223b9261824d4c",
+    "inputs/source/reaction-network.csv": "66dcecd753e48703e21bb1d49c4a80fa157e5c5277bad44738f9484155155786",
+    "inputs/source/bulow-2021-si-tables.csv": "a547a65bc4a131a818e66357a250f124d77dc93ad831d2cbae41e5ad26ba30c8",
+    "inputs/source/binary-figure-digitized.csv": "84e2e9abbbe84bd5a09c166258fa045d8135aad1a68337aa861393ab8818ef59",
+    "inputs/source/figure-1/extracted.csv": "6921856660afc0ee3d5f9e223f0802aa485cf289a51293e3bc6df8f43dad62f3",
+    "inputs/source/figure-1/source.png": "96192bbcc329318dec103a4cd10eb028db373cdfab687f09508d37b622fcac51",
+    "inputs/source/figure-1/comparison-points.csv": "cf182088c192bb495f34c62f3ebdb3268d3345df44af0502aea6c370250b9e73",
+    "inputs/source/figure-1/qa.png": "d901aa3b92041ceee5451bbcc964c73e2991c587a26c3ca24bd9324961ea661d",
+    "inputs/source/figure-1/calibration.json": "8c1ecf48c204062e3c69b8ed4ec95dd176d886c7790d85f6d1157820435df1f0",
+    "inputs/source/figure-1/metadata.json": "c2f3f1c9e0af529b2e3301eeaa04b028f3edb12109fb84eb28558c882a995b29"
+  }
+}

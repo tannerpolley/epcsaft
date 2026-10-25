@@ -1,0 +1,95 @@
+{
+  "base_commit": "8ffd627f0f7e4e68fdf9db634773ff00e058d85e",
+  "wheel_sha256": "4e331275a44ab795d0daa18f09455acfaeaa7681372d2fd07f8e809655008bfd",
+  "decision": "b: replay both point evaluators at the fitted coordinates with the same cold density initialization; retain stored-fit minus cold values as diagnostics",
+  "old_failures": [
+    {
+      "case": "B4-start-1-native",
+      "quantity": "row-3/prediction",
+      "exact": "0.9440422332179867",
+      "reference": "0.9440422332170179",
+      "error": "9.688916335903741e-13",
+      "tolerance": "9.440422332170179e-13"
+    },
+    {
+      "case": "B4-start-1-native",
+      "quantity": "row-9/prediction",
+      "exact": "0.9354884674716663",
+      "reference": "0.9354884674730273",
+      "error": "1.3610224058879794e-12",
+      "tolerance": "9.354884674730272e-13"
+    }
+  ],
+  "density_probe": {
+    "start": 1,
+    "row": 3,
+    "temperature_K": 298.15,
+    "pressure_Pa": 100000.0,
+    "salt": "LiCl",
+    "molality_mol_kg": 0.1,
+    "branch": "liquid",
+    "solvent_density_mol_m3": 55340.37925215373,
+    "density_difference_ulps": 1,
+    "parameter_record": "identical fitted physical parameters",
+    "source": "native solvent_activity with each admitted anchored liquid root; exact reproduction of both original predictions"
+  },
+  "cause": {
+    "seed_reuse_commit": "27d7a2a42",
+    "seed_reuse_main_merge": "fb73b791f",
+    "reference_limit_commit": "488451a32",
+    "reference_limit_main_merge": "44e6b4168",
+    "wheel_transition": "21e761c3 to cc63a135; only relevant Properties calculation change is #594 terminal reference limit; equilibrium-only projections do not enter these rows",
+    "same_snapshot_proof": "The current native solvent_activity reproduces both original values by changing the admitted mixture density by one ulp; no Engine source repair is indicated."
+  },
+  "probe_reproduction": {
+    "python": "build/issue-757/probe.py and wheel-probe.py; native fits use unchanged 300 iterations / 120 s and 600 / 240 shared",
+    "native": "tools/native-driver regression_checks analyses/2026-electrolyte-parameter-gradients/scripts/density_sensitivity.cpp; run with results/minimax-density-parameters.txt and the prepared build library directory in LD_LIBRARY_PATH",
+    "controls_on_pre245_wheel": "Default-constructed FitControls assigned the same two explicit budgets because that older binding has no keyword constructor"
+  },
+  "limits": [
+    "manufactured-data numerical verification only",
+    "no experimental validation, parameter adoption, global optimality or unique parameter estimate",
+    "Independent review of this repair is left to the parent task."
+  ],
+  "density_sensitivity": {
+    "density_ulp_mol_m3": 7.275957614183426e-12,
+    "dphi_drho_m3_mol": 0.00030468119455730994,
+    "smooth_one_ulp_change": 2.216847457437761e-15,
+    "observed_absolute_change": 9.688916335903741e-13,
+    "observed_over_smooth": 437.05832367474756,
+    "binary64_secant_m3_mol": -0.1331634521484375,
+    "log_activity_change": 3.4911309954033243e-15,
+    "finite_differences": [
+      {
+        "step_mol_m3": 0.01,
+        "dphi_drho_m3_mol": 0.0003046811838602892
+      },
+      {
+        "step_mol_m3": 0.001,
+        "dphi_drho_m3_mol": 0.0003046817477758701
+      }
+    ],
+    "derivative_method": "exact Engine residual Helmholtz gradient and Hessian, fixed T, composition, prescribed P and pure-solvent reference in the Euler expression",
+    "derivation": "dphi/drho = -((a_rho - P/(RT rho^2) - sum_i!=w x_i mu_i_rho)/x_w + 1/rho)/D; a_rho=-A_V/rho^2 and mu_i_rho=-A_niV/rho^2 for one total mole",
+    "interpretation": "Smooth propagation is about 437 times smaller and has the opposite sign to the binary64 secant. A one-ulp density perturbation changes rounded Helmholtz/chemical-potential operands; the analytic derivative does not bound this quantization.",
+    "finite_difference_limit_m3_mol": 1e-09,
+    "finite_difference_basis": "Off-root evaluation of the smooth common-pressure Euler expression using native Helmholtz values; no pressure-convergence record is assigned to off-root states."
+  },
+  "comparison": {
+    "relative_limit": 1e-12,
+    "absolute_limit_at_zero": 1e-12,
+    "density_seed": "absent (cold) in both fresh evaluate_minimax and evaluate_observations calls at each returned optimizer point",
+    "stored_prediction": "retained as fitted-minus-cold without a replay-equality assertion; it used previous-trial initialization",
+    "preserved_checks": "stored candidate exact physical/optimizer columns, physical chart, holds, final/frozen checks, constraints and KKT limits remain asserted",
+    "reason": "The original strict prediction assertion compared different initializations. Continuous one-ulp propagation cannot justify a larger universal tolerance for rounded operands."
+  },
+  "verification": {
+    "producer": "passed: two converged starts, 12 and 11 iterations; 7066 retained records, 5666 asserted numeric comparisons; no failures",
+    "notebook_numbers": "passed: changed notebook has zero literal-number findings",
+    "check_affected_origin_main": "blocked at analysis-layout: pre-existing duplicate IDAES result files",
+    "analysis_layout": "failed: analyses/2026-idaes-asl-adapter/results/domain.csv and results/issue-720/domain.csv have identical content",
+    "baseline_duplicate_blob": "7cfc36c6dc7847e4be913b0cca7e8fc76d380e2d (both paths tracked at origin/main 8ffd627f)",
+    "supplementary": "analysis declarations, runtime code budgets, changed-leaf placement/result ownership and git diff --check passed",
+    "independent_review": "pending parent task; no subagent review started"
+  }
+}
