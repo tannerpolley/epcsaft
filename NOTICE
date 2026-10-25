@@ -104,10 +104,14 @@ Retained data
   source-attributed scientific research and asserts no broader redistribution
   licence. Other packets' private-verification use bases remain in their
   declarations; this notice does not establish missing redistribution rights.
-* data/packets/nasa-glenn-2002-hda-species/1/: NASA technical publication
-  and NASA CEA distribution under the NASA Open Source Agreement, including
-  a four-record coefficient excerpt. See packet.toml for the publication,
-  pinned https://github.com/nasa/cea source and transformation provenance.
+* data/packets/nasa-glenn-2002-hda-species/1/: the NASA technical publication
+  NASA/TP-2002-211556 is cited separately from the pinned NASA CEA
+  machine-readable distribution, which uses Apache 2.0 and includes the retained
+  four-record coefficient excerpt from data/thermo.inp. Preserve the full
+  upstream licence in sources/LICENSE.txt and upstream attribution text in
+  sources/NOTICE.txt, including its NASA/database notice. See packet.toml and
+  provenance/source-origin.toml for the pinned https://github.com/nasa/cea source,
+  hashes and unchanged numerical-file provenance.
 * analyses/reproduction/2025-perdomo/inputs/source/
   perdomo-2025-held2-source-ledger.yaml records CC BY 4.0 for its source
   workbook, DOI 10.5281/zenodo.13646853; workbook bytes are not included.
