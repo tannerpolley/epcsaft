@@ -3,7 +3,7 @@ packet_id = "nasa-glenn-2002-hda-species"
 packet_version = "1"
 title = "NASA Glenn NASA9 ideal-gas records for hydrogen, methane, benzene and toluene"
 description = "Gas-phase nine-coefficient NASA Glenn records (every source temperature interval, a1-a7, b1, b2, formation enthalpy at 298.15 K and molar mass) for the toluene hydrodealkylation species H2, CH4, C6H6 and C7H8, with the source gas constant R = 8.314510 J/(mol K) and standard pressure 1 bar."
-license_or_use_basis = "NASA technical publication and NASA CEA open-source distribution (NASA Open Source Agreement); factual coefficient records and a verbatim four-record excerpt are retained for scientific verification, no full report is included."
+license_or_use_basis = "NASA/TP-2002-211556 is the separately cited technical publication. The pinned NASA CEA machine-readable distribution is Apache 2.0; its full licence and upstream NOTICE, including the NASA/database attribution for data/thermo.inp, are retained in sources/LICENSE.txt and sources/NOTICE.txt. Factual coefficient records and a verbatim four-record excerpt are retained for scientific verification; no full report is included."
 tolerance_rationale = "The coefficients are source values, not fitted here. Their evaluation is qualified by analyses/2026-hda-two-flash/scripts/nasa9_reference_check.py against the issue #73 reference table (abs 1e-6 J/(mol K) for cp and s, 1e-3 J/mol for h); no physical-validation tolerance against calorimetric data is asserted."
 
 [[sources]]
@@ -20,7 +20,11 @@ citation = "NASA Glenn CEA thermodynamic database data/thermo.inp (header dated 
 url = "https://raw.githubusercontent.com/nasa/cea/985fd33368b2334c4162a586c499e0ab41d12bd3/data/thermo.inp"
 retrieved_on = "2026-09-25"
 file_sha256 = "fa7746572952d74e249e818a82a35c113829742fb421a308e167185528884363"
-use_basis = "Machine-readable distribution of the same records; all nine coefficient strings and H(298.15)-H(0) of the four species equal the TP-2002 Appendix D listing. The 2021 revision raised the benzene and toluene first-interval lower bound from 200 K to 300 K. The four records are identical in the initial public release commit 69f64a4df1223ecbaceb9a8abd17871ac928a2ad (file SHA-256 7a9ada73835d4185f4dd70156cb4b9ee7f49b9777da633ad5f296330b07fc346)."
+license_url = "https://raw.githubusercontent.com/nasa/cea/985fd33368b2334c4162a586c499e0ab41d12bd3/LICENSE.txt"
+license_sha256 = "a60026be9384468d074c19425e552f1bb4a6f507f805e55a96fad586716168ed"
+notice_url = "https://raw.githubusercontent.com/nasa/cea/985fd33368b2334c4162a586c499e0ab41d12bd3/NOTICE.txt"
+notice_sha256 = "03b64364559d540d97615c31675a69e8eb1965e30de8859a2f8c5c9a38ecb55e"
+use_basis = "Apache 2.0 machine-readable distribution; the pinned upstream licence and NOTICE are retained verbatim in sources/LICENSE.txt and sources/NOTICE.txt. All nine coefficient strings and H(298.15)-H(0) of the four species equal the TP-2002 Appendix D listing. The 2021 revision raised the benzene and toluene first-interval lower bound from 200 K to 300 K. The four records are identical in the initial public release commit 69f64a4df1223ecbaceb9a8abd17871ac928a2ad (file SHA-256 7a9ada73835d4185f4dd70156cb4b9ee7f49b9777da633ad5f296330b07fc346)."
 
 [[domains]]
 domain_id = "nasa9-gas-200-6000-k"
@@ -55,3 +59,30 @@ sha256 = "5354925c5e2c961c3e54216eba78fe322e3f99291448684169c8691410ea522f"
 source_refs = ["nasa-cea-thermo-inp"]
 domain_refs = ["nasa9-gas-200-6000-k", "nasa9-hydrogen-6000-20000-k"]
 units_basis = "Byte-exact excerpt of the four gas records (NASA fixed-width format: K, g/mol, J/mol, Fortran D-exponent coefficients) from the pinned thermo.inp."
+
+[[files]]
+path = "sources/LICENSE.txt"
+role = "source"
+media_type = "text/plain"
+sha256 = "a60026be9384468d074c19425e552f1bb4a6f507f805e55a96fad586716168ed"
+source_refs = ["nasa-cea-thermo-inp"]
+domain_refs = ["nasa9-gas-200-6000-k", "nasa9-hydrogen-6000-20000-k"]
+units_basis = "Non-numeric attribution, licence terms and source provenance."
+
+[[files]]
+path = "sources/NOTICE.txt"
+role = "source"
+media_type = "text/plain"
+sha256 = "03b64364559d540d97615c31675a69e8eb1965e30de8859a2f8c5c9a38ecb55e"
+source_refs = ["nasa-cea-thermo-inp"]
+domain_refs = ["nasa9-gas-200-6000-k", "nasa9-hydrogen-6000-20000-k"]
+units_basis = "Non-numeric attribution, licence terms and source provenance."
+
+[[files]]
+path = "provenance/source-origin.toml"
+role = "provenance"
+media_type = "application/toml"
+sha256 = "8ed82163aee1da85f58f7d4e7dd0ce7f6ad4c253fbc5338d21dded851713ddc1"
+source_refs = ["nasa-cea-thermo-inp"]
+domain_refs = ["nasa9-gas-200-6000-k", "nasa9-hydrogen-6000-20000-k"]
+units_basis = "Non-numeric attribution, licence terms and source provenance."

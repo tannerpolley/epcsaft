@@ -1,0 +1,43 @@
+provenance_kind = "source-record-provenance-v1"
+schema_version = 1
+transformations = ["Issue #850 corrects the distribution terms and retains upstream licence and NOTICE text verbatim; coefficient JSON and the four-record excerpt are unchanged."]
+
+[[records]]
+retained_path = "parameters/nasa9-records.json"
+sha256 = "d1341f0776cd4c5512bb09d4e51bbbee53b15c513caa996e743aac113faac39b"
+origin_repository = "tannerpolley/ePC-SAFT"
+origin_commit = "22c9dcc48702355408befc3e34a44379587fcd79"
+origin_tree = "787b037790fdb6245f220efcbd714c013d2e1c87"
+origin_path = "data/packets/nasa-glenn-2002-hda-species/1/parameters/nasa9-records.json"
+origin_sha256 = "d1341f0776cd4c5512bb09d4e51bbbee53b15c513caa996e743aac113faac39b"
+recipe = "Retain the existing source-derived coefficient JSON byte-for-byte; source interpretation remains in packet.toml."
+
+[[records]]
+retained_path = "sources/cea-thermo-inp-excerpt.txt"
+sha256 = "5354925c5e2c961c3e54216eba78fe322e3f99291448684169c8691410ea522f"
+origin_repository = "nasa/cea"
+origin_commit = "985fd33368b2334c4162a586c499e0ab41d12bd3"
+origin_tree = "774f713b8b3289abab18e4e46b3e9c2464d5f5cd"
+origin_path = "data/thermo.inp"
+origin_sha256 = "fa7746572952d74e249e818a82a35c113829742fb421a308e167185528884363"
+recipe = "Retain the existing four-record excerpt byte-for-byte."
+
+[[records]]
+retained_path = "sources/LICENSE.txt"
+sha256 = "a60026be9384468d074c19425e552f1bb4a6f507f805e55a96fad586716168ed"
+origin_repository = "nasa/cea"
+origin_commit = "985fd33368b2334c4162a586c499e0ab41d12bd3"
+origin_tree = "774f713b8b3289abab18e4e46b3e9c2464d5f5cd"
+origin_path = "LICENSE.txt"
+origin_sha256 = "a60026be9384468d074c19425e552f1bb4a6f507f805e55a96fad586716168ed"
+recipe = "Copy the pinned upstream file verbatim, including its original end-of-file bytes."
+
+[[records]]
+retained_path = "sources/NOTICE.txt"
+sha256 = "03b64364559d540d97615c31675a69e8eb1965e30de8859a2f8c5c9a38ecb55e"
+origin_repository = "nasa/cea"
+origin_commit = "985fd33368b2334c4162a586c499e0ab41d12bd3"
+origin_tree = "774f713b8b3289abab18e4e46b3e9c2464d5f5cd"
+origin_path = "NOTICE.txt"
+origin_sha256 = "03b64364559d540d97615c31675a69e8eb1965e30de8859a2f8c5c9a38ecb55e"
+recipe = "Copy the pinned upstream file verbatim, including its original end-of-file bytes."
