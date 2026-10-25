@@ -10,7 +10,7 @@ import subprocess
 import tempfile
 
 LIMIT = 50 * 1024 * 1024
-HSL = re.compile(r"(?:^|[/_.-])(?:ma27|ma57|ma77|ma86|ma97|libhsl|coinhsl)(?:$|[/_.-])", re.I)
+HSL = re.compile(r"ma27|ma57|ma77|ma86|ma97|libhsl|coinhsl", re.I)
 JOURNAL = re.compile(r"(?:^|/)(?:sources?|inputs?|library|zotero|mathpix)(?:/|$)|paper|article|journal", re.I)
 PERSONAL = b"~"
 
@@ -45,7 +45,7 @@ def self_test(parent):
             pass
         else:
             raise AssertionError("External symlink accepted")
-        assert HSL.search("lib/coinhsl/ma57.f")
+        assert all(HSL.search(path) for path in ("lib/coinhsl/ma57.f", "libcoinhsl.so", "ma57d.f"))
         assert not HSL.search("normal/calculation.csv")
         assert JOURNAL.search("inputs/source/example.pdf")
     print("snapshot self-check passed")
