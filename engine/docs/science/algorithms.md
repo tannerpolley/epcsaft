@@ -634,7 +634,7 @@ The prospective double endpoint retains the compulsory fresh full correction.
 Its corrected endpoint starts the polish residual history. Further exact
 undamped double corrections continue within the same work limits until the
 next log-density correction is at most `EQUILIBRIUM_POLISH_CORRECTION`, or
-the reduced residual reaches its evaluation floor or ceases to contract.
+the reduced residual reaches its evaluation floor or stops decreasing.
 The extended-precision engagement check follows this double polish.
 The same equilibrated full-pivot factorization supplies correction and inverse
 row sums by solving unit right-hand sides and undoing both scales. Define
