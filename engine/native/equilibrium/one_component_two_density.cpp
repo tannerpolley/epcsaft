@@ -137,11 +137,14 @@ EquilibriumResult one_component_two_density_attempt(const CompiledSystem& c, con
         };
         auto at = evaluate(u);
         const double tolerance = c.problem.solver_options.value(policy::row);
+        bool polishing = false;
+        double polish_residual = std::numeric_limits<double>::infinity();
         for (std::size_t step = 0; step < static_cast<std::size_t>(policy::EQUILIBRIUM_MAX_ITERATIONS.value); ++step) {
             if (limits && (limits->expired() || limits->consumed >= limits->iterations))
                 throw std::runtime_error("one-component two-density iteration/elapsed budget");
             const auto full = c.evaluate_at(at.phase);
-            const bool final = maximum_abs(c.classified_residuals(at.phase, full.values)) <= tolerance;
+            polishing = polishing || maximum_abs(c.classified_residuals(at.phase, full.values)) <= tolerance;
+            const bool final = polishing;
             const ReducedCorrection<double> correction(at.jacobian, at.rows);
             const auto& delta = correction.delta;
             const double forward = polish_forward_bound(at.jacobian, at.rows, {delta[0], delta[1]}, {1.0, 1.0});
@@ -168,6 +171,11 @@ EquilibriumResult one_component_two_density_attempt(const CompiledSystem& c, con
             const ReducedCorrection<double> estimate(at.jacobian, at.rows);
             result.linear_solve_diagnostics = diagnostics(reduced, estimate);
             scope.probe("one_component_two_density_error", {estimate.inverse, result.linear_solve_diagnostics->forward_error_estimate, reduced.floor});
+            const double achieved = maximum_abs(at.rows);
+            const bool contracting = achieved < polish_residual;
+            polish_residual = achieved;
+            if (estimate.delta.lpNorm<Eigen::Infinity>() > policy::EQUILIBRIUM_POLISH_CORRECTION.value
+                && achieved > reduced.floor && contracting) continue;
             if (result.linear_solve_diagnostics->forward_error_estimate > policy::TWO_DENSITY_FORWARD_ERROR.value
                 || estimate.delta.lpNorm<Eigen::Infinity>() > policy::TWO_DENSITY_FORWARD_ERROR.value) {
                 if constexpr (std::numeric_limits<long double>::digits <= std::numeric_limits<double>::digits) {
