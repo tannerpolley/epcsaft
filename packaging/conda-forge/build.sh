@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 JOBS=${CPU_COUNT:-1}
+export CFLAGS="${CFLAGS:-} -ffile-prefix-map=$SRC_DIR=."
+export CXXFLAGS="${CXXFLAGS:-} -ffile-prefix-map=$SRC_DIR=."
 IPOPT_PREFIX="$SRC_DIR/ipopt-prefix"
 mkdir -p "$SRC_DIR/ipopt-build"
 cd "$SRC_DIR/ipopt-build"
