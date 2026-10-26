@@ -1302,8 +1302,16 @@ std::vector<double> HelmholtzModel::residual_coefficient_errors(
                 right[a] += std::abs(jacobian[((k * (ns + 1) + 1 + a) * count * ns) + j]) * previous[j];
         }
         previous.segment(k * ns, ns) = core::inverse_error_action(lu, right);
-        for (std::size_t j = 0; j < (k + 1) * ns; ++j)
+        // The gradient's base-site contribution is the achieved-residual floor below.
+        for (std::size_t j = k == 1 ? ns : 0; j < (k + 1) * ns; ++j)
             errors[k] += std::abs(jacobian[k * (ns + 1) * count * ns + j]) * previous[j];
+        if (k == 1) {
+            double base_residual = epsilon * ns;
+            for (std::size_t a = 0; a < ns; ++a) base_residual = std::max(base_residual, std::abs(known[a]));
+            for (std::size_t a = 0; a < ns; ++a)
+                errors[k] += std::abs(coefficients[ns + a] * total * composition[p.site_component[a]]
+                    * p.site_multiplicity[a] / sites[a]) * base_residual;
+        }
         if (k == 0) {
             std::vector<double> weights(count * (ns + 1), 0.0); weights[0] = 1;
             const auto hessian = map.Hessian(coefficients, weights);

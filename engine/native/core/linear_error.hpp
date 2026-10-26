@@ -1,11 +1,24 @@
 #pragma once
 
-#include <Eigen/Dense>
+#include "core/numerical_policy.hpp"
+#include "core/trace.hpp"
+#include <cstddef>
 #include <cmath>
 #include <limits>
 #include <string>
 
 namespace epcsaft::core {
+
+struct NumericalRank final {
+    std::string basis;
+    std::size_t dimension = 0, rank = 0;
+    double threshold = 0;
+};
+
+template <typename Factor>
+NumericalRank numerical_rank(const Factor& lu, const char* basis) {
+    return {basis, static_cast<std::size_t>(lu.cols()), static_cast<std::size_t>(lu.rank()), double(lu.threshold())};
+}
 
 // Rigal-Gaches normwise backward error; the zero right-hand side needs no unit floor.
 inline double backward_error(double residual, double jacobian_norm, double solution, double right) {
@@ -14,11 +27,12 @@ inline double backward_error(double residual, double jacobian_norm, double solut
 }
 
 // Ogita-Rump-Oishi Dot2: FMA TwoProduct and TwoSum preserve the cancellation defect.
-inline Eigen::VectorXd compensated_defect(const Eigen::MatrixXd& matrix, const Eigen::VectorXd& solution, const Eigen::VectorXd& right) {
-    Eigen::VectorXd result(right.size());
-    for (Eigen::Index row = 0; row < right.size(); ++row) {
+template <typename Matrix, typename Solution, typename Right>
+typename Right::PlainObject compensated_defect(const Matrix& matrix, const Solution& solution, const Right& right) {
+    typename Right::PlainObject result(right.size());
+    for (std::ptrdiff_t row = 0; row < right.size(); ++row) {
         double sum = right(row), error = 0.0;
-        for (Eigen::Index column = 0; column < solution.size(); ++column) {
+        for (std::ptrdiff_t column = 0; column < solution.size(); ++column) {
             const double term = -matrix(row, column) * solution(column), next = sum + term, part = next - sum;
             error += (sum - (next - part)) + (term - part) + std::fma(-matrix(row, column), solution(column), -term);
             sum = next;
@@ -32,7 +46,7 @@ inline Eigen::VectorXd compensated_defect(const Eigen::MatrixXd& matrix, const E
 template <typename Factor, typename Vector>
 auto inverse_infinity_norm(const Factor& lu, const Vector& rows, const Vector& columns) {
     Vector sums = Vector::Zero(columns.size());
-    for (Eigen::Index i = 0; i < columns.size(); ++i) {
+    for (std::ptrdiff_t i = 0; i < columns.size(); ++i) {
         const Vector rhs = Vector::Unit(columns.size(), i);
         sums += (columns.asDiagonal() * lu.solve(rows.asDiagonal() * rhs)).cwiseAbs();
     }
@@ -40,11 +54,12 @@ auto inverse_infinity_norm(const Factor& lu, const Vector& rows, const Vector& c
 }
 
 // Propagate nonnegative row errors through an already admitted factorization.
-template <typename Factor>
-Eigen::VectorXd inverse_error_action(const Factor& lu, const Eigen::VectorXd& right) {
-    Eigen::VectorXd result = Eigen::VectorXd::Zero(right.size());
-    for (Eigen::Index i = 0; i < right.size(); ++i)
-        result += lu.solve(Eigen::VectorXd::Unit(right.size(), i)).cwiseAbs() * right[i];
+template <typename Factor, typename Right>
+typename Right::PlainObject inverse_error_action(const Factor& lu, const Right& right) {
+    using Vector = typename Right::PlainObject;
+    Vector result = Vector::Zero(right.size());
+    for (std::ptrdiff_t i = 0; i < right.size(); ++i)
+        result += lu.solve(Vector::Unit(right.size(), i)).cwiseAbs() * right[i];
     return result;
 }
 
@@ -53,40 +68,45 @@ Real reduced_error_envelope(Real inverse, Real residual, Real floor, Real displa
     return inverse * (residual + floor) + displacement;
 }
 
-inline Eigen::VectorXd canonical_row_floor(const Eigen::MatrixXd& j, const Eigen::VectorXd& physical_scale,
-    const Eigen::VectorXd& terms, const Eigen::VectorXd& inner) {
+template <typename Matrix, typename Scale, typename Terms, typename Inner>
+typename Scale::PlainObject canonical_row_floor(const Matrix& j, const Scale& physical_scale,
+    const Terms& terms, const Inner& inner) {
     const double epsilon = std::numeric_limits<double>::epsilon();
     const double gamma = j.cols() * epsilon / (1 - j.cols() * epsilon);
     return (gamma * (j.cwiseAbs() * physical_scale)).cwiseMax(inner + epsilon * terms);
 }
 
+template <typename Vector>
 struct LinearError final {
-    Eigen::VectorXd correction, floor, defect, radius;
+    Vector correction, floor, defect, radius;
     std::size_t rank = 0;
     double threshold = 0, matrix_norm = 0, inverse_norm = INFINITY, condition = INFINITY, backward = INFINITY;
     std::string cause;
 };
 
-inline LinearError linear_error(const Eigen::MatrixXd& j, const Eigen::VectorXd& f, const Eigen::MatrixXd& g,
-    const Eigen::VectorXd& eta, const Eigen::VectorXd& row, const Eigen::VectorXd& column) {
-    LinearError out;
-    const Eigen::MatrixXd a = row.asDiagonal() * j * column.asDiagonal();
+template <typename Jacobian, typename Residual, typename Projection, typename Floor, typename RowScale, typename ColumnScale>
+LinearError<typename Residual::PlainObject> linear_error(const Jacobian& j, const Residual& f, const Projection& g,
+    const Floor& eta, const RowScale& row, const ColumnScale& column) {
+    using Matrix = typename Jacobian::PlainObject;
+    using Vector = typename Residual::PlainObject;
+    LinearError<Vector> out;
+    const Matrix a = row.asDiagonal() * j * column.asDiagonal();
     if (a.rows() != a.cols() || !a.allFinite() || !f.allFinite() || !eta.allFinite()
         || !g.allFinite() || (eta.array() < 0).any()) { out.cause = "nonfinite_or_unavailable_rows"; return out; }
-    const Eigen::FullPivLU<Eigen::MatrixXd> lu(a);
+    const auto lu = a.fullPivLu();
     out.rank = static_cast<std::size_t>(lu.rank()); out.threshold = lu.threshold();
     out.matrix_norm = a.cwiseAbs().rowwise().sum().maxCoeff();
     if (out.rank != static_cast<std::size_t>(a.cols())) { out.cause = "rank_deficient"; return out; }
-    const Eigen::VectorXd right = -row.cwiseProduct(f), d = lu.solve(right);
-    const Eigen::VectorXd defect = compensated_defect(a, d, right);
-    const Eigen::MatrixXd gc = g * column.asDiagonal();
+    const Vector right = -row.cwiseProduct(f), d = lu.solve(right);
+    const Vector defect = compensated_defect(a, d, right);
+    const Matrix gc = g * column.asDiagonal();
     out.correction = gc * d;
-    out.floor = Eigen::VectorXd::Zero(g.rows()); out.defect = out.floor;
-    Eigen::VectorXd sums = Eigen::VectorXd::Zero(a.cols());
-    for (Eigen::Index i = 0; i < a.cols(); ++i) {
-        const Eigen::VectorXd unit = lu.solve(Eigen::VectorXd::Unit(a.cols(), i));
+    out.floor = Vector::Zero(g.rows()); out.defect = out.floor;
+    Vector sums = Vector::Zero(a.cols());
+    for (std::ptrdiff_t i = 0; i < a.cols(); ++i) {
+        const Vector unit = lu.solve(Vector::Unit(a.cols(), i));
         sums += unit.cwiseAbs();
-        const Eigen::VectorXd action = (gc * unit).cwiseAbs();
+        const Vector action = (gc * unit).cwiseAbs();
         out.floor += action * (std::abs(row[i]) * eta[i]);
         out.defect += action * std::abs(defect[i]);
     }
@@ -115,10 +135,19 @@ struct EquilibriumComparison final {
 };
 inline double log_difference(double a, double b) {
     const double relative = (a - b) / b;
-    return std::abs(std::isfinite(relative) && std::abs(relative) < 0.5 ? std::log1p(relative) : std::log(a) - std::log(b));
+    return std::abs(std::isfinite(relative) && std::abs(relative) < policy::LOG_RATIO_NEAR_UNITY.value ? std::log1p(relative) : std::log(a) - std::log(b));
+}
+inline NumericalEstimate project_numerical_estimate(double value, double mapped, double radius, bool positive, bool constant) {
+    const double rounding = constant ? 0.0 : std::numeric_limits<double>::epsilon() * (positive ? 1.0 : std::abs(value));
+    const double displacement = positive ? log_difference(value, mapped) : std::abs(value - mapped);
+    const double chart = radius + displacement + rounding;
+    const double absolute = positive ? value * std::expm1(chart) : chart;
+    const bool available = std::isfinite(absolute) && std::isfinite(chart);
+    return {absolute, chart, available, available, available ? "" : "nonfinite_projection"};
 }
 inline EquilibriumComparison compare_equilibrium_quantity(Quantity quantity, double a, double b, double allowance,
     const NumericalEstimate& ea, const NumericalEstimate& eb, ComparisonEligibility eligibility, ComparisonMode mode) {
+    core::Scope scope("compare_equilibrium_quantity");
     EquilibriumComparison out; out.difference = std::abs(a - b);
     if (!std::isfinite(a) || !std::isfinite(b) || !std::isfinite(allowance) || allowance < 0) { out.cause = "nonfinite_operand"; return out; }
     if (quantity == Quantity::Positive && (!(a > 0) || !(b > 0))) { out.cause = "positive_domain"; return out; }

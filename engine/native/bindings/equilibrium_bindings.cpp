@@ -28,8 +28,11 @@ static ParameterDocument record_document(const nb::object& model) {
 }
 
 void register_equilibrium(nb::module_& module) {
+    nb::class_<core::NumericalRank>(module, "NumericalRank")
+        EPCSAFT_READONLY(core::NumericalRank, basis, dimension, rank, threshold);
     using core::Quantity; using core::ComparisonMode; using core::NumericalEstimate;
     using core::ComparisonEligibility; using core::EquilibriumComparison;
+    using core::compare_equilibrium_quantity;
     nb::enum_<Quantity>(module, "Quantity") EPCSAFT_VALUES(Quantity, Linear, Positive, LogPositive);
     nb::enum_<ComparisonMode>(module, "ComparisonMode") EPCSAFT_VALUES(ComparisonMode, Strict, EstimatedError);
     nb::class_<NumericalEstimate>(module, "NumericalEstimate").def(nb::init<>())
@@ -39,7 +42,7 @@ void register_equilibrium(nb::module_& module) {
             residual_a, residual_b, admission_a, admission_b);
     nb::class_<EquilibriumComparison>(module, "EquilibriumComparison")
         EPCSAFT_READONLY(EquilibriumComparison, judgment, cause, difference, chart_difference, radius_sum);
-    module.def("compare_equilibrium_quantity", &core::compare_equilibrium_quantity,
+    module.def("compare_equilibrium_quantity", &compare_equilibrium_quantity,
         nb::arg("quantity"), nb::arg("a"), nb::arg("b"), nb::arg("ordinary_allowance"),
         nb::arg("estimate_a"), nb::arg("estimate_b"), nb::arg("eligibility"), nb::arg("mode"));
     nb::class_<EquilibriumNumericalEstimates>(module, "EquilibriumNumericalEstimates")
@@ -47,6 +50,8 @@ void register_equilibrium(nb::module_& module) {
             condition, inverse_norm, backward_error, residuals, row_terms, row_inner, row_floor, physical_scale,
             temperature, pressure, densities, packing, composition, amounts);
     module.def("equilibrium_numerical_estimates", nb::overload_cast<const HelmholtzModel&, const EquilibriumResult&>(
+        &equilibrium_numerical_estimates), nb::arg("model"), nb::arg("result"));
+    module.def("equilibrium_numerical_estimates", nb::overload_cast<const IdealMoleFraction&, const EquilibriumResult&>(
         &equilibrium_numerical_estimates), nb::arg("model"), nb::arg("result"));
     module.def("property_asl_record", [](nb::object model) {
         const auto document = record_document(model);
@@ -163,7 +168,7 @@ void register_equilibrium(nb::module_& module) {
         EPCSAFT_READONLY(PointEvaluation, values, objective, floor);
     nb::class_<CompiledSystem>(module, "CompiledSystem")
         .def_prop_ro("rows", [](const CompiledSystem& system) { return system.rows; })
-        EPCSAFT_READONLY(CompiledSystem, pinned_count, free_intensive_count, rank, charge_row_count, primal_size,
+        EPCSAFT_READONLY(CompiledSystem, last_rank, pinned_count, free_intensive_count, rank, charge_row_count, primal_size,
             generic_nullity, feed_total, has_ions, has_reaction, conserves_total_moles, jacobian_rank, removed_species)
         .def("solve", [](const CompiledSystem& system) { return solve_compiled(system); }, nb::keep_alive<0, 1>())
         .def("generic_point", &CompiledSystem::generic_point)
@@ -192,7 +197,7 @@ void register_equilibrium(nb::module_& module) {
             // Extensive-objective multipliers of the non-chemical, non-pressure `rows` in order, formed at
             // the returned point from `multipliers`; raw optimizer duals only when a phase amount is pinned.
             constraint_multipliers, residuals, classified_residuals, coordinates, phase_count, iterations, evaluations,
-            hessian_calls, objective, reduced_hessian_minimum, convergence, linear_solve_diagnostics, numerical_estimates, rows, unknown_count, jacobian_rank,
+            hessian_calls, objective, reduced_hessian_minimum, convergence, last_rank, linear_solve_diagnostics, numerical_estimates, rows, unknown_count, jacobian_rank,
             generic_nullity, requested_tolerance_met, topology_event, topology_phase, topology_pair, critical,
             // Per declared solid: amount in mol and saturation index SI_s in decades.
             solid_amounts, solid_affinity_decades);

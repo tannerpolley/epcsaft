@@ -1403,7 +1403,8 @@ static CompiledSystem compile_with_basis(
         const double norm = matrix.col(column).cwiseAbs().maxCoeff();
         if (norm > 0.0) matrix.col(column) /= norm;
     }
-    compiled.jacobian_rank = static_cast<std::size_t>(matrix.fullPivLu().rank());
+    compiled.last_rank = core::numerical_rank(matrix.fullPivLu(), "column_scaled");
+    compiled.jacobian_rank = compiled.last_rank->rank;
     compiled.generic_nullity = point.size() - compiled.jacobian_rank;  // the rank is at most the column count
     compiled.feasible = compiled.generic_nullity == 0;
     // The compiled record is the sole source for both the driver and callers.
@@ -1511,6 +1512,7 @@ CompiledSystem compile_problem(const IdealMoleFraction& model, const Equilibrium
     for (std::size_t r = 0; r < request.reactions.size(); ++r) c.rows.push_back({model.activity_basis == "molarity" ? RowKind::ReactionMolarity : RowKind::ReactionMassAction, 0, r});
     for (std::size_t k = 0; k < c.rank; ++k) c.rows.push_back({RowKind::Moiety, 0, k});
     const auto info = inspect_sensitivity(c, c.generic_point());
+    c.last_rank = core::NumericalRank{"canonical", c.primal_size, info.rank, info.threshold};
     c.jacobian_rank = info.rank; c.generic_nullity = c.primal_size - info.rank; c.feasible = info.nonsingular;
     return c;
 }
@@ -1772,7 +1774,27 @@ PointEvaluation CompiledSystem::evaluate_at(const PhasePoint& prepared) const {
 RowUncertainty CompiledSystem::row_uncertainty(const PhasePoint& at) const {
     RowUncertainty out;
     out.terms.assign(rows.size(), 0.0); out.inner = out.terms;
-    if (ideal) { out.cause = "ideal_reaction_row_error_unavailable"; return out; }
+    if (ideal) {
+        const auto& support = problem.phases[0].support;
+        const double shift = *std::max_element(at.point.begin(), at.point.end());
+        double total = 0.0;
+        for (double y : at.point) total += std::exp(y - shift);
+        const double log_total = shift + std::log(total);
+        for (std::size_t r = 0; r < problem.reactions.size(); ++r) {
+            out.terms[r] = std::abs(ideal_log_k[r]);
+            for (std::size_t j = 0; j < support.size(); ++j) {
+                const double activity = ideal->activity_basis == "molarity"
+                    ? ideal->molarity_log_activity(at.point[j] + std::log(feed_total), support[j]) : at.point[j] - log_total;
+                out.terms[r] += std::abs(problem.reactions[r].stoichiometry[support[j]] * activity);
+            }
+        }
+        for (std::size_t k = 0; k < rank; ++k) {
+            auto& terms = out.terms[problem.reactions.size() + k];
+            terms = std::abs(balance[k] / feed_total);
+            for (std::size_t j = 0; j < support.size(); ++j) terms += std::abs(B[k][support[j]] * std::exp(at.point[j]));
+        }
+        return out;
+    }
     const auto components = model->parameters().component_count(), width = 2 + components + model->active_parameters().size();
     const double rt = GAS_CONSTANT_J_PER_MOL_K * at.temperature;
     std::vector<std::vector<double>> gradient_error(at.shape.size(), std::vector<double>(width, 0.0));

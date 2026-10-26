@@ -17,6 +17,7 @@ Examples
 
 from .. import _core
 from .problem import (
+    _Model,
     Amounts,
     IdealMoleFraction,
     effective_water_amounts,
@@ -87,7 +88,7 @@ EquilibriumNumericalEstimates = _core.EquilibriumNumericalEstimates
 compare_equilibrium_quantity = _core.compare_equilibrium_quantity
 
 
-def equilibrium_numerical_estimates(model, result):
+def equilibrium_numerical_estimates(model: _Model | IdealMoleFraction, result: EquilibriumResult) -> EquilibriumNumericalEstimates:
     return _core.equilibrium_numerical_estimates(model._model, result)
 
 

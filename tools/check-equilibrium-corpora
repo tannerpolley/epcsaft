@@ -85,6 +85,9 @@ def values(text):
 
 def differences(a_rows, b_rows, reported=REPORTED):
     """Rows of B that differ from A outside the comparison above."""
+    from epcsaft.equilibrium import (ComparisonEligibility, ComparisonMode, NumericalEstimate, Quantity,
+                                      compare_equilibrium_quantity)
+    estimate, eligibility = NumericalEstimate(), ComparisonEligibility()
     found = [dict(row=i, reason='row missing') for i in range(min(len(a_rows), len(b_rows)), max(len(a_rows), len(b_rows)))]
     for i, (a, b) in enumerate(zip(a_rows, b_rows)):
         for key in sorted((set(a) | set(b)) - reported):
@@ -96,10 +99,13 @@ def differences(a_rows, b_rows, reported=REPORTED):
             if type(x) is not type(y):
                 found.append(dict(row=i, key=key, a=x, b=y, reason='kind changed'))
                 continue
-            if x == y:
-                continue
-            if u is None or v is None or len(u) != len(v) or not all(
-                    math.isclose(p, q, rel_tol=1e-10, abs_tol=1e-12) for p, q in zip(u, v)):
+            if u is None or v is None:
+                if x != y:
+                    found.append(dict(row=i, key=key, a=x, b=y))
+            elif len(u) != len(v) or any(compare_equilibrium_quantity(
+                    Quantity.Linear, p, q, max(1e-12, 1e-10 * max(abs(p), abs(q))),
+                    estimate, estimate, eligibility, ComparisonMode.EstimatedError).judgment == 'failed'
+                    for p, q in zip(u, v)):
                 found.append(dict(row=i, key=key, a=x, b=y))
     return found
 
@@ -110,6 +116,9 @@ def table(path):
 
 def family_differences(a_rows, b_rows):
     """The declared 73-state MEA family: row criterion and its frozen entrywise metric."""
+    from epcsaft.equilibrium import (ComparisonEligibility, ComparisonMode, NumericalEstimate, Quantity,
+                                      compare_equilibrium_quantity)
+    estimate, eligibility = NumericalEstimate(), ComparisonEligibility()
     found = []
     quantities = {'amounts': 2, 'mole_fractions': 18, 'molar_densities': 2}
     for label, rows in (('A', a_rows), ('B', b_rows)):
@@ -130,7 +139,8 @@ def family_differences(a_rows, b_rows):
         for key in quantities:
             for j, (p, q) in enumerate(zip(a[key], b[key])):
                 metric = abs(p - q) / max(abs(p), abs(q), 1e-14)
-                if not math.isfinite(metric) or metric > 1e-10:
+                if compare_equilibrium_quantity(Quantity.Linear, p, q, 1e-10 * max(abs(p), abs(q), 1e-14),
+                        estimate, estimate, eligibility, ComparisonMode.Strict).judgment == 'failed':
                     found.append(dict(row=a['index'], key=key, entry=j, a=p, b=q, metric=metric))
     return found
 
@@ -162,6 +172,9 @@ def main():
     parser.add_argument('prepared_b')
     parser.add_argument('--out', type=Path, default=ROOT / f'build/equilibrium-corpora/{time.strftime("%Y%m%dT%H%M%S")}')
     args = parser.parse_args()
+    comparison_python, comparison_env = prepared_python(args.prepared_b)
+    if Path(os.path.abspath(sys.executable)) != comparison_python:
+        os.execve(str(comparison_python), [str(comparison_python), str(Path(__file__).resolve()), *sys.argv[1:]], comparison_env)
     out = args.out.resolve()
     if out.is_relative_to(ROOT) and not out.is_relative_to(ROOT / 'build'):
         parser.error('--out must be outside the tracked tree (use build/)')

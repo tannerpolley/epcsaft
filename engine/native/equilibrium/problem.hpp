@@ -327,6 +327,7 @@ struct CompiledSolid final {
 };
 
 struct CompiledSystem final {
+    std::optional<core::NumericalRank> last_rank;
     std::vector<double> optimizer_identity() const;
     const HelmholtzModel* model = nullptr;
     const IdealMoleFraction* ideal = nullptr;
@@ -500,6 +501,7 @@ struct LinearSolveDiagnostics final {
 };
 
 struct EquilibriumResult final {
+    std::optional<core::NumericalRank> last_rank;
     std::map<std::string, double> solver_settings;
     std::string diagnostic_options_file, linear_solver;  // linear_solver: empty when no Ipopt solve ran
     std::shared_ptr<const OptimizerState> optimizer_state;
@@ -554,6 +556,7 @@ struct EquilibriumResult final {
 
 EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSystem&, const EquilibriumResult&);
 EquilibriumNumericalEstimates equilibrium_numerical_estimates(const HelmholtzModel&, const EquilibriumResult&);
+EquilibriumNumericalEstimates equilibrium_numerical_estimates(const IdealMoleFraction&, const EquilibriumResult&);
 
 // EqID reaction_activity_quotient; per declared phase/reaction, in component order.
 struct ReactionActivities final {
