@@ -1907,10 +1907,10 @@ EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::opti
             if (start.has_value()) initial = start_point(compiled, *start, std::move(initial));
         }
         if (newton_eligible(compiled) || (!warm && !std::getenv("EPCSAFT_IPOPT_OPTIONS_FILE") && free_amount_newton_eligible(compiled))) {
-            auto fast = pure_saturation_eligible(compiled)
-                ? pure_saturation_attempt(compiled, initial, structural, scope, limits)
+            auto fast = one_component_two_density_eligible(compiled)
+                ? one_component_two_density_attempt(compiled, initial, structural, scope, limits)
                 : newton_attempt(compiled, initial, structural, limits);
-            if (pure_saturation_eligible(compiled) && !fast.success) {
+            if (one_component_two_density_eligible(compiled) && !fast.success) {
                 reduction_failure = fast.message; reduction_diagnostics = fast.linear_solve_diagnostics;
             }
             if (fast.success) { stages.report(fast); return fast; }
@@ -1939,7 +1939,7 @@ EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::opti
     }
     stages.report(result);
     if (!result.success && !reduction_failure.empty()) {
-        result.message += "; pure saturation attempt: " + reduction_failure;
+        result.message += "; one-component two-density attempt: " + reduction_failure;
         result.linear_solve_diagnostics = reduction_diagnostics;
         if (result.linear_solve_diagnostics) result.linear_solve_diagnostics->reason = "rejected attempt: " + reduction_failure;
     }

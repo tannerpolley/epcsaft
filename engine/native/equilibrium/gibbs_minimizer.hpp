@@ -27,13 +27,13 @@ struct StageWork final {  // the work of the sub-solves that seed a solve, faile
 // A `packed` phase's packing guess is supplied by the caller and replaces its density root.
 std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate = true, const DriverLimits* limits = nullptr,
                                    StageWork* stages = nullptr, const std::vector<bool>& packed = {});
-struct PureSaturationPoint final {
+struct OneComponentTwoDensityPoint final {
     PhasePoint phase;
     std::vector<double> rows, jacobian;
 };
-PureSaturationPoint pure_saturation_point(const CompiledSystem&, const std::vector<double>&);
-bool pure_saturation_eligible(const CompiledSystem&);
-EquilibriumResult pure_saturation_attempt(const CompiledSystem&, const std::vector<double>&,
+OneComponentTwoDensityPoint one_component_two_density_point(const CompiledSystem&, const std::vector<double>&);
+bool one_component_two_density_eligible(const CompiledSystem&);
+EquilibriumResult one_component_two_density_attempt(const CompiledSystem&, const std::vector<double>&,
     const EquilibriumResult&, core::Scope&, const DriverLimits*);
 EquilibriumResult publish_candidate(const CompiledSystem&, const PhasePoint&, EquilibriumResult,
     core::Scope&, const DriverLimits* = nullptr);

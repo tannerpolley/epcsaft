@@ -1219,7 +1219,7 @@ BranchCheck check_density_branches(
     if (limits) limits->check();
     const auto owned = supplied ? std::optional<PhasePoint>{} : std::make_optional(compiled.prepare(result.coordinates, true));
     const auto& prepared = supplied ? *supplied : *owned;
-    const bool pure = pure_saturation_eligible(compiled);
+    const bool pure = one_component_two_density_eligible(compiled);
     for (std::size_t phase = 0; phase < compiled.problem.phases.size(); ++phase) {
         if (limits) limits->check();
         const auto& spec = compiled.problem.phases[phase];
@@ -1237,7 +1237,7 @@ BranchCheck check_density_branches(
             if (initial) {
                 root = declared_root(model, prepared.temperature, prepared.pressure, x, spec.kind);
                 if (pure && root.stable_root_count.value_or(0) < 2) {
-                    outcome.message = "pure saturation requires two distinct stable density branches"; return outcome;
+                    outcome.message = "one-component two-density requires two distinct stable density branches"; return outcome;
                 }
                 anchor = root.molar_density;
                 if (limits) limits->check();

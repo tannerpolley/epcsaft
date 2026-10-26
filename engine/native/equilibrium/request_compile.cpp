@@ -1666,7 +1666,7 @@ PhasePoint CompiledSystem::prepare(const std::vector<double>& point, bool state_
             ? point[*layout.amount] : phase_amount(problem.phases[phase]));
         const auto order = !state_only ? DerivativeOrder::Hessian : problem.temperature.free
             ? DerivativeOrder::PhaseHessian : DerivativeOrder::IsothermalPhaseHessian;
-        if (state_only && pure_saturation_eligible(*this)) {
+        if (state_only && one_component_two_density_eligible(*this)) {
             result.pure.push_back(model->pure_isothermal(result.temperature, result.volume.back(), total));
             result.derivative.push_back(result.pure.back().derivative);
         } else result.derivative.push_back(model->evaluate(result.temperature, result.volume.back(), values, order));

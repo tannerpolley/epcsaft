@@ -476,7 +476,7 @@ struct CriticalRecord final {
 
 struct OptimizerState;
 struct LinearSolveDiagnostics final {
-    std::string system = "pure_saturation_reduction", reason;
+    std::string system = "one_component_two_density_reduction", reason;
     double residual_norm = std::numeric_limits<double>::infinity(), evaluation_floor = std::numeric_limits<double>::infinity();
     double jacobian_inverse_norm = std::numeric_limits<double>::infinity(), condition_estimate = std::numeric_limits<double>::infinity();
     double forward_error_estimate = std::numeric_limits<double>::infinity();

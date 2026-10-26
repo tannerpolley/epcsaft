@@ -1,6 +1,6 @@
 // S6-S16, C1, C3, F5 and E2: solve, reuse, availability and thermal-solve checks.
 #include "equilibrium_checks_shared.hpp"
-#include "pure_saturation_inputs.hpp"
+#include "one_component_two_density_inputs.hpp"
 
 namespace equilibrium_checks {
 
@@ -1159,7 +1159,7 @@ void check_pure_saturation() {
         if (!result.has_state()) throw std::runtime_error(name + ": " + result.message);
         for (double shift : {0.0, -0.01}) {
             const std::vector<double> u{std::log(result.molar_densities[0]) + shift, std::log(result.molar_densities[1]) - shift};
-            const auto reduced = pure_saturation_point(c, u); const auto& limited = reduced.phase;
+            const auto reduced = one_component_two_density_point(c, u); const auto& limited = reduced.phase;
             const auto full = c.prepare(limited.point); const auto rows = c.evaluate_at(full).values;
             const auto jacobian = c.jacobian_at(full), limited_jacobian = c.jacobian_at(limited);
             const std::string id = name + "/" + std::to_string(shift);

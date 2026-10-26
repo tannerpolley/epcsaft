@@ -612,7 +612,7 @@ trial chemistry does not establish a global physical-inventory certificate.
 Numerical qualification checks the reduced Jacobian at the solved endpoint,
 separate mechanical branches and the unchanged raw/classified residual criteria.
 
-### Pure-fluid fixed-temperature saturation reduction
+### One-component two-density reduction
 
 An ordinary compiled declaration with one neutral nonideal component, fixed
 positive T, free P, two liquid/vapor supports {0}, one free amount and one
@@ -627,7 +627,7 @@ At unit phase amount, let $E=A^r/(RT)$, $v=1/\rho$,
 $Z=1-vE_v$, $K=P_\rho/(RT)$, $u=\ln\rho$ and $r=\rho_V/\rho_L$.
 The reduced pressure row is $(P_L-P_V)/(RT\rho_L)$ and the chemical row is the
 difference of the full chemical rows after eliminating their common standard
-term and multiplier. Their log-density Jacobian retains the derivative of the
+term and multiplier. EqID `one_component_two_density` defines the rows and exact Jacobian. Their log-density Jacobian retains the derivative of the
 liquid pressure scale. The full rows still determine the caller criterion.
 
 The prospective double endpoint retains the compulsory fresh full correction.
@@ -677,7 +677,7 @@ in energy and gradient enters the explicit $\epsilon_q$ term above. The outer
 density estimate retains any unresolved propagated inner error.
 
 Refinement engages once when the double estimate or its actual correction
-exceeds the 1e-10 density-equivalence scale. It repeats the shared Helmholtz,
+exceeds `TWO_DENSITY_FORWARD_ERROR`, the 1e-10 log-density target. It repeats the shared Helmholtz,
 temperature/geometry, polar and association arithmetic in long double, using
 the existing Newton damping and bounds and remaining work limits. No fluid or
 temperature selector is used. After a fresh full correction, the reduced rows

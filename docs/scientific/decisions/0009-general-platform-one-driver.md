@@ -154,3 +154,31 @@ topology changes, donor descent, objective ordering and final phase-set checks.
 ones. Retain their work without counting them as Ipopt invocations. This
 extension changes no trial minimizer, ionic/reacting refusal or ordinary-call
 eligibility. The #828 A/B evidence qualifies only its retained finite cases.
+
+**Amendment 2026-10-26 (#854, lead; precision decision by owner).** Within
+the existing driver, an eligible ordinary fixed-T, free-P one-component
+liquid/vapor declaration replaces its full-row Newton attempt with the exact
+two-log-density reduction (EqID `one_component_two_density`). Selection uses
+the completed declaration: one neutral nonideal component, both supports
+equal to that component, one free amount and one zero-pinned amount, with
+no reaction, source-reference conversion, solid, discovery, caloric,
+azeotrope, critical or envelope condition. Association and dipoles remain
+admitted contributions. Ordered starts and coordinate correctors retain
+their methods.
+
+Properties owns the shared volume-series projection. The existing start,
+full-row admission, result publication and immutable-original-start Ipopt
+fallback remain their sole owners. The two-density attempt replaces the
+eligible full-row attempt; the two attempts are not chained. Full rows and
+complete derivative preparation remain for Ipopt and solved-state actions.
+
+The reduced inverse norm and achieved residual/evaluation floor estimate
+log-density error. When it exceeds the named target, the same shared
+Helmholtz and association equations are refined in long double if that type
+has additional significand bits. Otherwise the admitted double result keeps
+its actual error estimate and 53-bit precision, without a wider-accuracy
+claim. Full-row criteria and branch admission are unchanged. The estimate is
+first order, not a certified interval; #860 will absorb its local owner.
+ALG-EQUILIBRIUM defines its quantities and failure meanings. No new physical
+model, start correlation or independently callable equilibrium solver is
+authorized.

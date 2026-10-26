@@ -45,16 +45,16 @@ struct ReducedCorrection final {
         using Matrix = Eigen::Matrix<Base, 2, 2>;
         const Matrix j = Eigen::Map<const Eigen::Matrix<Base, 2, 2, Eigen::RowMajor>>(jacobian.data());
         const Vector f(values[0], values[1]);
-        if (!j.allFinite() || !f.allFinite()) throw std::runtime_error("pure saturation nonfinite rows/Jacobian");
+        if (!j.allFinite() || !f.allFinite()) throw std::runtime_error("one-component two-density nonfinite rows/Jacobian");
         const Vector columns = j.cwiseAbs().colwise().maxCoeff().transpose().unaryExpr(
             [](Base v) { return v > 0.0 ? 1.0 / v : 1.0; });
         const Matrix column_scaled = j * columns.asDiagonal();
         const Vector rows = column_scaled.cwiseAbs().rowwise().maxCoeff().unaryExpr(
             [](Base v) { return v > 0.0 ? 1.0 / v : 1.0; });
         const Eigen::FullPivLU<Matrix> lu(rows.asDiagonal() * column_scaled);
-        if (lu.rank() != 2) throw std::runtime_error("pure saturation reduced-Jacobian rank");
+        if (lu.rank() != 2) throw std::runtime_error("one-component two-density reduced-Jacobian rank");
         delta = columns.asDiagonal() * lu.solve(-(rows.asDiagonal() * f));
-        if (!delta.allFinite()) throw std::runtime_error("pure saturation nonfinite direction");
+        if (!delta.allFinite()) throw std::runtime_error("one-component two-density nonfinite direction");
         Vector sums = Vector::Zero();
         for (Eigen::Index i = 0; i < 2; ++i) {
             const Vector rhs = Vector::Unit(i);
@@ -67,12 +67,12 @@ struct ReducedCorrection final {
 template <typename Base>
 LinearSolveDiagnostics diagnostics(const Reduction<Base>& at, const ReducedCorrection<Base>& step, Base displacement = 0) {
     const Base norm = std::max(std::abs(at.rows[0]), std::abs(at.rows[1]));
-    return {"pure_saturation_reduction", "", double(norm), double(at.floor), double(step.inverse), double(step.condition),
+    return {"one_component_two_density_reduction", "", double(norm), double(at.floor), double(step.inverse), double(step.condition),
         double(step.inverse * (norm + at.floor) + displacement), std::numeric_limits<Base>::digits, 0};
 }
 }  // namespace
 
-bool pure_saturation_eligible(const CompiledSystem& c) {
+bool one_component_two_density_eligible(const CompiledSystem& c) {
     if (c.ideal || !c.model || c.model->parameters().ideal_gas || !newton_eligible(c)
         || c.model->parameters().component_count() != 1 || c.problem.source_reference
         || !c.problem.solids.empty() || c.problem.temperature.free || !c.problem.temperature.is_positive()
@@ -81,8 +81,8 @@ bool pure_saturation_eligible(const CompiledSystem& c) {
         && c.problem.phases[1].support == std::vector<std::size_t>{0};
 }
 
-// EqID pure_saturation_reduction: eliminate normalization, feed, P and the common chemical multiplier.
-PureSaturationPoint pure_saturation_point(const CompiledSystem& c, const std::vector<double>& u) {
+// EqID one_component_two_density: eliminate normalization, feed, P and the common chemical multiplier.
+OneComponentTwoDensityPoint one_component_two_density_point(const CompiledSystem& c, const std::vector<double>& u) {
     if (u.size() != 2 || !std::all_of(u.begin(), u.end(), [](double v) { return std::isfinite(v); }))
         throw std::invalid_argument("nonfinite pure log densities");
     const auto offsets = c.phase_offsets();
@@ -96,8 +96,8 @@ PureSaturationPoint pure_saturation_point(const CompiledSystem& c, const std::ve
         point[eta] = std::log(coefficient) + u[p];
         (c.problem.phases[p].kind == PhaseKind::Liquid ? liquid : vapor) = p;
     }
-    if (!(u[liquid] > u[vapor])) throw std::domain_error("pure saturation density ordering");
-    PureSaturationPoint out;
+    if (!(u[liquid] > u[vapor])) throw std::domain_error("one-component two-density density ordering");
+    OneComponentTwoDensityPoint out;
     out.phase = c.prepare(point, true);
     auto& at = out.phase;
     const auto& v = at.pure[vapor];
@@ -108,10 +108,10 @@ PureSaturationPoint pure_saturation_point(const CompiledSystem& c, const std::ve
     return out;
 }
 
-EquilibriumResult pure_saturation_attempt(const CompiledSystem& c, const std::vector<double>& initial,
+EquilibriumResult one_component_two_density_attempt(const CompiledSystem& c, const std::vector<double>& initial,
     const EquilibriumResult& structural, core::Scope& scope, const DriverLimits* limits) {
     auto result = structural;
-    result.message = "pure saturation initialization";
+    result.message = "one-component two-density initialization";
     result.linear_solve_diagnostics.emplace();
     try {
         const auto offsets = c.phase_offsets();
@@ -121,7 +121,7 @@ EquilibriumResult pure_saturation_attempt(const CompiledSystem& c, const std::ve
             u.push_back(initial[offsets[p] + 1 + (c.problem.phases[p].is_free() ? 1 : 0)] - log_c);
         GibbsMinimizer bounds(c, initial, &scope, limits);
         std::vector<double> lower(initial.size()), upper(initial.size());
-        if (!bounds.physical_bounds(lower, upper)) throw std::runtime_error("pure saturation bounds unavailable");
+        if (!bounds.physical_bounds(lower, upper)) throw std::runtime_error("one-component two-density bounds unavailable");
         const auto inside = [&](const PhasePoint& at) {
             for (std::size_t i = 0; i < lower.size(); ++i)
                 if (!std::isfinite(at.point[i]) || at.point[i] < lower[i] || at.point[i] > upper[i]) return false;
@@ -130,33 +130,33 @@ EquilibriumResult pure_saturation_attempt(const CompiledSystem& c, const std::ve
         const auto evaluate = [&](const std::vector<double>& logs) {
             if (limits) {
                 limits->check();
-                if (!limits->spend(limits->evaluations, limits->evaluation_cap)) throw std::runtime_error("pure saturation evaluation budget");
+                if (!limits->spend(limits->evaluations, limits->evaluation_cap)) throw std::runtime_error("one-component two-density evaluation budget");
             }
             ++result.evaluations;
-            return pure_saturation_point(c, logs);
+            return one_component_two_density_point(c, logs);
         };
         auto at = evaluate(u);
         const double tolerance = c.problem.solver_options.value(policy::row);
         for (std::size_t step = 0; step < static_cast<std::size_t>(policy::EQUILIBRIUM_MAX_ITERATIONS.value); ++step) {
             if (limits && (limits->expired() || limits->consumed >= limits->iterations))
-                throw std::runtime_error("pure saturation iteration/elapsed budget");
+                throw std::runtime_error("one-component two-density iteration/elapsed budget");
             const auto full = c.evaluate_at(at.phase);
             const bool final = maximum_abs(c.classified_residuals(at.phase, full.values)) <= tolerance;
             const ReducedCorrection<double> correction(at.jacobian, at.rows);
             const auto& delta = correction.delta;
             const double forward = polish_forward_bound(at.jacobian, at.rows, {delta[0], delta[1]}, {1.0, 1.0});
-            scope.probe("pure_saturation_correction", {delta.lpNorm<Eigen::Infinity>(), forward,
+            scope.probe("one_component_two_density_correction", {delta.lpNorm<Eigen::Infinity>(), forward,
                 policy::EQUILIBRIUM_POLISH_CORRECTION.value}, step);
             ++result.iterations;
             if (limits) ++limits->consumed;
             bool accepted = false;
-            std::string cause = "pure saturation contraction";
+            std::string cause = "one-component two-density contraction";
             for (const double damping : {1.0, 0.5, 0.25}) {
                 if (final && damping != 1.0) break;
                 const std::vector<double> trial{u[0] + damping * delta[0], u[1] + damping * delta[1]};
                 try {
                     auto candidate = evaluate(trial);
-                    if (!inside(candidate.phase)) { cause = "pure saturation bounds"; continue; }
+                    if (!inside(candidate.phase)) { cause = "one-component two-density bounds"; continue; }
                     if (!final && !(maximum_abs(candidate.rows) < maximum_abs(at.rows))) continue;
                     u = trial; at = std::move(candidate); accepted = true; break;
                 } catch (const std::exception& error) { cause = error.what(); }
@@ -167,9 +167,9 @@ EquilibriumResult pure_saturation_attempt(const CompiledSystem& c, const std::ve
             const auto reduced = reduction(at.phase.pure, at.phase.volume, u, liquid, at.phase.temperature);
             const ReducedCorrection<double> estimate(at.jacobian, at.rows);
             result.linear_solve_diagnostics = diagnostics(reduced, estimate);
-            scope.probe("pure_saturation_error", {estimate.inverse, result.linear_solve_diagnostics->forward_error_estimate, reduced.floor});
-            if (result.linear_solve_diagnostics->forward_error_estimate > 1e-10
-                || estimate.delta.lpNorm<Eigen::Infinity>() > 1e-10) {
+            scope.probe("one_component_two_density_error", {estimate.inverse, result.linear_solve_diagnostics->forward_error_estimate, reduced.floor});
+            if (result.linear_solve_diagnostics->forward_error_estimate > policy::TWO_DENSITY_FORWARD_ERROR.value
+                || estimate.delta.lpNorm<Eigen::Infinity>() > policy::TWO_DENSITY_FORWARD_ERROR.value) {
                 if constexpr (std::numeric_limits<long double>::digits <= std::numeric_limits<double>::digits) {
                     result.linear_solve_diagnostics->reason = "long double has no additional significand bits";
                 } else {
@@ -177,10 +177,10 @@ EquilibriumResult pure_saturation_attempt(const CompiledSystem& c, const std::ve
                     std::vector<Wide> logs{Wide(u[0]), Wide(u[1])};
                     const Wide temperature = c.problem.temperature.value;
                     const auto wide_evaluate = [&](const std::vector<Wide>& values) {
-                        core::Scope extended("pure_saturation_extended_evaluate");
-                        if (!(values[liquid] > values[1 - liquid])) throw std::runtime_error("pure saturation density ordering");
+                        core::Scope extended("one_component_two_density_extended_evaluate");
+                        if (!(values[liquid] > values[1 - liquid])) throw std::runtime_error("one-component two-density density ordering");
                         if (limits) { limits->check(); if (!limits->spend(limits->evaluations, limits->evaluation_cap))
-                            throw std::runtime_error("pure saturation evaluation budget"); }
+                            throw std::runtime_error("one-component two-density evaluation budget"); }
                         ++result.evaluations;
                         std::vector<Wide> volume; std::vector<PureIsothermalValues<Wide>> phases;
                         for (Wide value : values) {
@@ -202,7 +202,7 @@ EquilibriumResult pure_saturation_attempt(const CompiledSystem& c, const std::ve
                     for (;;) {
                         if (result.iterations >= static_cast<std::size_t>(policy::EQUILIBRIUM_MAX_ITERATIONS.value)
                             || (limits && (limits->expired() || limits->consumed >= limits->iterations)))
-                            throw std::runtime_error("pure saturation extended iteration/elapsed budget");
+                            throw std::runtime_error("one-component two-density extended iteration/elapsed budget");
                         const ReducedCorrection<Wide> correction(wide.jacobian, wide.rows);
                         const Wide norm = std::max(std::abs(wide.rows[0]), std::abs(wide.rows[1]));
                         const bool final_wide = norm <= Wide(tolerance);
@@ -216,7 +216,7 @@ EquilibriumResult pure_saturation_attempt(const CompiledSystem& c, const std::ve
                             if (!final_wide && !(std::max(std::abs(next.rows[0]), std::abs(next.rows[1])) < norm)) continue;
                             logs = trial; wide = std::move(next); vapor = std::move(next_vapor); accepted_wide = true; break;
                         }
-                        if (!accepted_wide) throw std::runtime_error("pure saturation extended contraction/bounds");
+                        if (!accepted_wide) throw std::runtime_error("one-component two-density extended contraction/bounds");
                         const ReducedCorrection<Wide> next(wide.jacobian, wide.rows);
                         auto record = diagnostics(wide, next); record.refinement_iterations = refinements;
                         result.linear_solve_diagnostics = record;
@@ -225,8 +225,8 @@ EquilibriumResult pure_saturation_attempt(const CompiledSystem& c, const std::ve
                         if (!final_wide || achieved > Wide(tolerance)
                             || !((correction_norm <= policy::EQUILIBRIUM_POLISH_CORRECTION.value && error <= policy::EQUILIBRIUM_POLISH_CORRECTION.value)
                                 || (achieved <= wide.floor && correction_norm <= next.inverse * wide.floor))) continue;
-                        if (!(logs[liquid] - logs[1 - liquid] > 2 * error)) throw std::runtime_error("pure saturation unresolved density intervals");
-                        if (limits && !limits->spend(limits->evaluations, limits->evaluation_cap)) throw std::runtime_error("pure saturation evaluation budget");
+                        if (!(logs[liquid] - logs[1 - liquid] > 2 * error)) throw std::runtime_error("one-component two-density unresolved density intervals");
+                        if (limits && !limits->spend(limits->evaluations, limits->evaluation_cap)) throw std::runtime_error("one-component two-density evaluation budget");
                         ++result.evaluations;
                         at.phase = c.prepare(lift(logs, vapor).point, true);
                         std::vector<Wide> exported; Wide displacement = 0;
@@ -246,7 +246,7 @@ EquilibriumResult pure_saturation_attempt(const CompiledSystem& c, const std::ve
             result.residuals = endpoint.values;
             result.classified_residuals = c.classified_residuals(at.phase, endpoint.values);
             result.objective = endpoint.objective;
-            auto& convergence = result.convergence;
+            core::Convergence& convergence = result.convergence;
             convergence = {};
             convergence.residual = maximum_abs(result.classified_residuals);
             core::stopping_criterion(convergence, c.problem.solver_options, policy::row);
@@ -267,9 +267,9 @@ EquilibriumResult pure_saturation_attempt(const CompiledSystem& c, const std::ve
             }
             return result;
         }
-        result.message = "pure saturation iteration budget";
+        result.message = "one-component two-density iteration budget";
     } catch (const std::exception& error) { result.message = error.what(); }
-    scope.probe("pure_saturation_rejected", {static_cast<double>(result.iterations), static_cast<double>(result.evaluations)}, 0, result.message.c_str());
+    scope.probe("one_component_two_density_rejected", {static_cast<double>(result.iterations), static_cast<double>(result.evaluations)}, 0, result.message.c_str());
     if (result.linear_solve_diagnostics) result.linear_solve_diagnostics->reason = "rejected attempt: " + result.message;
     result.success = false; clear_state(result);
     return result;
