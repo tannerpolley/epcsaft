@@ -33,6 +33,7 @@ void register_equilibrium(nb::module_& module) {
     using core::Quantity; using core::ComparisonMode; using core::NumericalEstimate;
     using core::ComparisonEligibility; using core::EquilibriumComparison;
     using core::compare_equilibrium_quantity;
+    using core::project_numerical_estimate;
     nb::enum_<Quantity>(module, "Quantity") EPCSAFT_VALUES(Quantity, Linear, Positive, LogPositive);
     nb::enum_<ComparisonMode>(module, "ComparisonMode") EPCSAFT_VALUES(ComparisonMode, Strict, EstimatedError);
     nb::class_<NumericalEstimate>(module, "NumericalEstimate").def(nb::init<>())
@@ -45,6 +46,8 @@ void register_equilibrium(nb::module_& module) {
     module.def("compare_equilibrium_quantity", &compare_equilibrium_quantity,
         nb::arg("quantity"), nb::arg("a"), nb::arg("b"), nb::arg("ordinary_allowance"),
         nb::arg("estimate_a"), nb::arg("estimate_b"), nb::arg("eligibility"), nb::arg("mode"));
+    module.def("project_numerical_estimate", &project_numerical_estimate,
+        nb::arg("value"), nb::arg("mapped"), nb::arg("radius"), nb::arg("positive"), nb::arg("constant"));
     nb::class_<EquilibriumNumericalEstimates>(module, "EquilibriumNumericalEstimates")
         EPCSAFT_READONLY(EquilibriumNumericalEstimates, basis, cause, rank, dimension, precision_bits, threshold,
             condition, inverse_norm, backward_error, residuals, row_terms, row_inner, row_floor, physical_scale,
@@ -172,6 +175,23 @@ void register_equilibrium(nb::module_& module) {
             generic_nullity, feed_total, has_ions, has_reaction, conserves_total_moles, jacobian_rank, removed_species)
         .def("solve", [](const CompiledSystem& system) { return solve_compiled(system); }, nb::keep_alive<0, 1>())
         .def("generic_point", &CompiledSystem::generic_point)
+        .def("numerical_estimates", [](const CompiledSystem& system, std::vector<double> coordinates,
+                double temperature, double pressure, std::vector<double> amounts, std::vector<double> composition,
+                std::vector<double> densities, std::vector<double> packing) {
+            const auto phases = system.problem.phases.size(), components = system.n_feed.size();
+            if (coordinates.size() != system.primal_size + system.rank + system.charge_row_count
+                || amounts.size() != phases || composition.size() != phases * components
+                || (!system.ideal && (densities.size() != phases || packing.size() != phases)))
+                throw std::invalid_argument("numerical estimate snapshot shape");
+            EquilibriumResult result;
+            result.success = true; result.temperature = temperature; result.pressure = pressure;
+            result.declaration = std::make_shared<const EquilibriumProblem>(system.problem);
+            result.coordinates = std::move(coordinates); result.amounts = std::move(amounts);
+            result.mole_fractions = std::move(composition); result.molar_densities = std::move(densities);
+            result.packing_fractions = std::move(packing);
+            return equilibrium_numerical_estimates(system, result);
+        }, nb::arg("coordinates"), nb::arg("temperature"), nb::arg("pressure"), nb::arg("amounts"),
+           nb::arg("composition"), nb::arg("densities"), nb::arg("packing"))
         .def("evaluate", [](const CompiledSystem& system, const std::vector<double>& point) {
             return system.evaluate(point); })
         .def("jacobian", [](const CompiledSystem& system, const std::vector<double>& point) {

@@ -86,6 +86,7 @@ ComparisonEligibility = _core.ComparisonEligibility
 EquilibriumComparison = _core.EquilibriumComparison
 EquilibriumNumericalEstimates = _core.EquilibriumNumericalEstimates
 compare_equilibrium_quantity = _core.compare_equilibrium_quantity
+project_numerical_estimate = _core.project_numerical_estimate
 
 
 def equilibrium_numerical_estimates(model: _Model | IdealMoleFraction, result: EquilibriumResult) -> EquilibriumNumericalEstimates:
@@ -94,7 +95,7 @@ def equilibrium_numerical_estimates(model: _Model | IdealMoleFraction, result: E
 
 __all__ = (
     "Quantity", "ComparisonMode", "NumericalEstimate", "ComparisonEligibility", "EquilibriumComparison",
-    "EquilibriumNumericalEstimates", "compare_equilibrium_quantity", "equilibrium_numerical_estimates",
+    "EquilibriumNumericalEstimates", "compare_equilibrium_quantity", "equilibrium_numerical_estimates", "project_numerical_estimate",
     "Amounts",
     "IdealMoleFraction",
     "effective_water_amounts",

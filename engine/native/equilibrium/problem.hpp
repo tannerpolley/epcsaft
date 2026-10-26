@@ -258,9 +258,11 @@ struct PackingTerms final {
     std::vector<double> component;
 };
 
+inline constexpr auto SOURCE_REFERENCE_ERROR_NOT_PROPAGATED = "source-reference error not propagated";
 // derivative[k][i] is d^k (g_i / RT) / dT^k at the prepared temperature.  The
 // pressure fields are the matching first and second derivatives at fixed T.
 struct StandardTerm final {
+    std::string numerical_error_cause;
     std::vector<std::vector<double>> derivative;
     std::vector<double> pressure_derivative;
     std::vector<double> pressure_second_derivative;
@@ -686,6 +688,7 @@ enum class SolvedStateActionStatus {
 // Per-species ideal-gas h (J/mol) and, on request, cp (J/(mol K)) at the standard pressure
 // of a referenced problem (EqID: reference_species_calorics); a refusal clears both.
 struct ReferenceCalorics final {
+    std::string numerical_error_cause;
     struct Column final {
         std::vector<double> values;
         SolvedStateActionStatus status = SolvedStateActionStatus::Available;

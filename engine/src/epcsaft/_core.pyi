@@ -2481,6 +2481,10 @@ def compare_equilibrium_quantity(
     """Apply the accepted ordinary or conditional comparison in the native owner."""
     ...
 
+def project_numerical_estimate(value: float, mapped: float, radius: float, positive: bool, constant: bool) -> NumericalEstimate:
+    """Project a native log or linear radius, including output displacement and rounding."""
+    ...
+
 def equilibrium_numerical_estimates(model: HelmholtzModel | IdealMoleFraction, result: EquilibriumResult) -> EquilibriumNumericalEstimates:
     """Estimate numerical error at the frozen returned state of the declared model."""
     ...
@@ -2753,6 +2757,11 @@ class CompiledSystem:
     """Component indices eliminated by exact inventory/support restrictions."""
     def solve(self) -> EquilibriumResult:
         """Solve this declaration from a fresh start through the native equilibrium driver."""
+        ...
+    def numerical_estimates(self, coordinates: Sequence[float], temperature: float, pressure: float,
+                            amounts: Sequence[float], composition: Sequence[float], densities: Sequence[float],
+                            packing: Sequence[float]) -> EquilibriumNumericalEstimates:
+        """Estimate a frozen endpoint in this declaration; admission remains the reader's original outcome."""
         ...
     def generic_point(self) -> list[float]:
         """Construct the native generic chart seed.

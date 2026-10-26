@@ -120,7 +120,7 @@ LinearError<typename Residual::PlainObject> linear_error(const Jacobian& j, cons
 enum class Quantity { Linear, Positive, LogPositive };
 enum class ComparisonMode { Strict, EstimatedError };
 struct NumericalEstimate final {
-    double absolute = 0, chart = 0;
+    double absolute = NAN, chart = NAN;
     bool available = false, resolved = false;
     std::string cause = "not_evaluated";
 };
@@ -138,6 +138,7 @@ inline double log_difference(double a, double b) {
     return std::abs(std::isfinite(relative) && std::abs(relative) < policy::LOG_RATIO_NEAR_UNITY.value ? std::log1p(relative) : std::log(a) - std::log(b));
 }
 inline NumericalEstimate project_numerical_estimate(double value, double mapped, double radius, bool positive, bool constant) {
+    core::Scope scope("project_numerical_estimate");
     const double rounding = constant ? 0.0 : std::numeric_limits<double>::epsilon() * (positive ? 1.0 : std::abs(value));
     const double displacement = positive ? log_difference(value, mapped) : std::abs(value - mapped);
     const double chart = radius + displacement + rounding;

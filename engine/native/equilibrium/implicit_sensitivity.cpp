@@ -1284,7 +1284,9 @@ EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSyst
         const auto evaluation = c.evaluate_at(at);
         const auto uncertainty = c.row_uncertainty(at);
         out.residuals = evaluation.values; out.row_terms = uncertainty.terms; out.row_inner = uncertainty.inner;
-        if (!uncertainty.cause.empty()) { out.cause = uncertainty.cause; return out; }
+        if (!uncertainty.cause.empty()) {
+            out.temperature.cause = out.pressure.cause = out.cause = uncertainty.cause; return out;
+        }
         const auto n = out.dimension, phases = at.amount.size(), components = c.n_feed.size();
         const auto per_phase = 3 + components, outputs = 2 + phases * per_phase;
         Eigen::MatrixXd g = Eigen::MatrixXd::Zero(outputs, n);

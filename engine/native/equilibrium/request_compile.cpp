@@ -287,6 +287,7 @@ StandardTerm standard_term(
             gibbs = standard_state(temperature, components, reactions, {});
         }
         StandardTerm result;
+        result.numerical_error_cause = SOURCE_REFERENCE_ERROR_NOT_PROPAGATED;
         result.derivative.assign(order + 1, std::vector<double>(components, 0.0));
         result.pressure_derivative.assign(components, 0.0);
         result.pressure_second_derivative.assign(components, 0.0);
@@ -1092,6 +1093,8 @@ ReferenceCalorics reference_calorics(const CompiledSystem &compiled, double temp
                                   pressure_slope, reference_solvent_anchor(compiled.reference_diagnostics),
                                   std::min(derivative_order, std::size_t(2)),
                                   parameter_slopes, derivative_order);
+    if (!diagnostics.empty() && !derived.empty())
+        result.numerical_error_cause = SOURCE_REFERENCE_ERROR_NOT_PROPAGATED;
     for (std::size_t c = 0; c <= std::size_t(parameter_slopes); ++c)
         for (std::size_t a = 0; a + c <= derivative_order; ++a)
             for (std::size_t b = 0; a + b + c <= derivative_order; ++b) {
@@ -1822,7 +1825,9 @@ RowUncertainty CompiledSystem::row_uncertainty(const PhasePoint& at) const {
             inner = gradient_error[p][2 + species];
             for (std::size_t k = 0; k < rank; ++k) terms += std::abs(at.point[primal_size + k] * B[k][species]);
             if (phi[p]) terms += std::abs(model->parameters().charge_number[species] * at.point[*phi[p]]);
-            if (!at.standard.reference_diagnostics.empty()) out.cause = "reference_error_unavailable";
+            if (!at.standard.numerical_error_cause.empty()) {
+                inner = NAN; out.cause = at.standard.numerical_error_cause;
+            }
         } else if (row.kind == RowKind::Pressure) {
             terms = (model->parameters().ideal_gas ? std::abs(sum(at.composition[p])) : 1.0)
                 + std::abs(at.volume[p] * at.derivative[p].gradient[1]) + std::abs(at.pressure * at.volume[p] / rt);
@@ -1861,7 +1866,9 @@ RowUncertainty CompiledSystem::row_uncertainty(const PhasePoint& at) const {
                 inner += weight * (at.temperature * gradient_error[a][0]
                     + (enthalpy ? std::abs(at.volume[a]) * gradient_error[a][1] : energy_error[a]));
             }
-            if (!at.standard.reference_diagnostics.empty()) out.cause = "reference_caloric_error_unavailable";
+            if (!at.standard.numerical_error_cause.empty()) {
+                inner = NAN; out.cause = at.standard.numerical_error_cause;
+            }
         } else if (row.kind == RowKind::CriticalMode || row.kind == RowKind::CriticalCubic) {
             const auto& derivative = at.derivative[p];
             std::vector<double> point{at.temperature, at.volume[p]}, w(width, 0.0);
@@ -1895,7 +1902,7 @@ RowUncertainty CompiledSystem::row_uncertainty(const PhasePoint& at) const {
             terms = std::abs(solid.log_k) + std::abs(spec.molar_volume_m3_per_mol * (at.pressure - *spec.reference->reference_pressure_pa) / rt);
             for (std::size_t j = 0; j < components; ++j) terms += std::abs(spec.stoichiometry[j] * at.standard.derivative[0][j]);
             for (std::size_t j = 0; j < rank; ++j) terms += std::abs(at.point[primal_size + j] * solid.balance[j]);
-            if (!at.standard.reference_diagnostics.empty()) out.cause = "reference_solid_error_unavailable";
+            inner = NAN; out.cause = SOURCE_REFERENCE_ERROR_NOT_PROPAGATED;
 
         }
     }

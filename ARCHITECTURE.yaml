@@ -30,7 +30,7 @@ plan:
 # #811 owner approval, 2026-10-23; rule 1: Core 1096 + 11, Equilibrium 10501 + 106;
 # total 27591 + 276 capped by the layer-ceiling sum 27818.
 # #814 rule 2: Properties 5983 -> 5981 (count 5921 + band 60); total = layer-ceiling sum 27816.
-code_budgets: {"core": 1263, "contributions": 1254, "properties": 6129, "equilibrium": 11387, "regression": 3728, "surface": 785, "bindings": 2216, "python": 2244, "total": 29006}
+code_budgets: {"core": 1264, "contributions": 1254, "properties": 6129, "equilibrium": 11399, "regression": 3728, "surface": 785, "bindings": 2244, "python": 2246, "total": 29049}
 
 property_categories: [Ideal, Residual, Total]
 
