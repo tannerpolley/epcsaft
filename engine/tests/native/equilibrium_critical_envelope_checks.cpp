@@ -204,7 +204,7 @@ void pure() {
         const auto slope=solved_state_actions(compile_problem(m,sat),r,{{{SolvedStateObservableKind::Pressure}},{{1,0,{0},{}}}}).results[0];CHECK(slope.action);
         const auto liquid=m.state(t,r.molar_densities[0],{1}),vapor=m.state(t,r.molar_densities[1],{1});
         const double clapeyron=(vapor.residual_enthalpy-liquid.residual_enthalpy)/(t*(1/r.molar_densities[1]-1/r.molar_densities[0]));
-        compare("E3/clapeyron-"+std::to_string(static_cast<int>(t)),*slope.action,clapeyron,std::abs(clapeyron),1e-8);
+        compare("E3/clapeyron-"+std::to_string(static_cast<int>(t)),*slope.action,clapeyron,std::abs(clapeyron),1e-10);
     }
     const auto c1=solved(m,critical_cell({1},375,5000),"E3/C1");const double W=policy::DENSITY_ANCHOR_LOG_WINDOW.value;
     {

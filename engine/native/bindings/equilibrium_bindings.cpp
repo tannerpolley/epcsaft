@@ -145,6 +145,7 @@ void register_equilibrium(nb::module_& module) {
         .def_prop_ro("rows", [](const CompiledSystem& system) { return system.rows; })
         EPCSAFT_READONLY(CompiledSystem, pinned_count, free_intensive_count, rank, charge_row_count, primal_size,
             generic_nullity, feed_total, has_ions, has_reaction, conserves_total_moles, jacobian_rank, removed_species)
+        .def("solve", [](const CompiledSystem& system) { return solve_compiled(system); }, nb::keep_alive<0, 1>())
         .def("generic_point", &CompiledSystem::generic_point)
         .def("evaluate", [](const CompiledSystem& system, const std::vector<double>& point) {
             return system.evaluate(point); })
@@ -157,6 +158,9 @@ void register_equilibrium(nb::module_& module) {
                            const std::vector<double>& multipliers) {
             return system.hessian(point, multipliers); },
             nb::arg("point"), nb::arg("constraint_multipliers") = std::vector<double>{});
+    nb::class_<LinearSolveDiagnostics>(module, "LinearSolveDiagnostics")
+        EPCSAFT_READONLY(LinearSolveDiagnostics, system, reason, residual_norm, evaluation_floor, jacobian_inverse_norm,
+            condition_estimate, forward_error_estimate, precision_bits, refinement_iterations);
     nb::class_<EquilibriumResult>(module, "EquilibriumResult", "Phases in declared order; K, Pa, mol, mol/m^3; per-phase-per-component lists are phase-major in component_ids order.")
         .def_prop_ro("solver_options", [](const EquilibriumResult& v) { return v.declaration ? bindings::solver_options_view(v.declaration->solver_options, 7) : nb::list(); })
         EPCSAFT_READONLY(EquilibriumResult, solver_settings, diagnostic_options_file, linear_solver)
@@ -168,7 +172,7 @@ void register_equilibrium(nb::module_& module) {
             // Extensive-objective multipliers of the non-chemical, non-pressure `rows` in order, formed at
             // the returned point from `multipliers`; raw optimizer duals only when a phase amount is pinned.
             constraint_multipliers, residuals, classified_residuals, coordinates, phase_count, iterations, evaluations,
-            hessian_calls, objective, reduced_hessian_minimum, convergence, rows, unknown_count, jacobian_rank,
+            hessian_calls, objective, reduced_hessian_minimum, convergence, linear_solve_diagnostics, rows, unknown_count, jacobian_rank,
             generic_nullity, requested_tolerance_met, topology_event, topology_phase, topology_pair, critical,
             // Per declared solid: amount in mol and saturation index SI_s in decades.
             solid_amounts, solid_affinity_decades);

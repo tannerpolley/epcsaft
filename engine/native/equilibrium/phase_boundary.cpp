@@ -152,7 +152,7 @@ PhaseStart start_compositions(const CompiledSystem& compiled, core::Scope& scope
     const std::size_t components = compiled.model->parameters().component_count();
     std::vector<std::vector<double>> result(phases, compiled.feed_composition);
     if (pressure_loop_eligible(compiled)) if (auto rho = superancillary_densities(*compiled.model, compiled.seed_temperature())) {
-        const double pressure = compiled.model->state(compiled.seed_temperature(), (*rho)[1], compiled.feed_composition).pressure;
+        const double pressure = compiled.model->pure_isothermal(compiled.seed_temperature(), 1.0 / (*rho)[1]).pressure;
         scope.probe("superancillary_start", pressure);
         if (compiled.problem.phases[0].kind == PhaseKind::Vapor) std::swap((*rho)[0], (*rho)[1]);
         return {result, {}, 0.0, pressure, 0.0, {}, {(*rho)[0], (*rho)[1]}};
@@ -1212,11 +1212,14 @@ DensityRoot declared_root(const HelmholtzModel& model, double T, double P, const
 // state is recomputed from the coordinates, never taken from the supplied result's arrays.
 BranchCheck check_density_branches(
     const HelmholtzModel& model, const CompiledSystem& compiled, const EquilibriumResult& result,
-    const std::vector<double>& anchors, bool initial, core::Scope& scope, const DriverLimits* limits
+    const std::vector<double>& anchors, bool initial, core::Scope& scope, const DriverLimits* limits,
+    const PhasePoint* supplied
 ) {
     BranchCheck outcome;
     if (limits) limits->check();
-    const PhasePoint prepared = compiled.prepare(result.coordinates);
+    const auto owned = supplied ? std::optional<PhasePoint>{} : std::make_optional(compiled.prepare(result.coordinates, true));
+    const auto& prepared = supplied ? *supplied : *owned;
+    const bool pure = one_component_two_density_eligible(compiled);
     for (std::size_t phase = 0; phase < compiled.problem.phases.size(); ++phase) {
         if (limits) limits->check();
         const auto& spec = compiled.problem.phases[phase];
@@ -1225,13 +1228,17 @@ BranchCheck check_density_branches(
         for (double& value : x) value /= total;  // the driver's own normalisation of the log chart
         const double corrected = (model.parameters().ideal_gas ? total : 1.0) / prepared.volume[phase];
         const auto branch = spec.kind == PhaseKind::Vapor ? DensityBranch::Vapor : DensityBranch::Liquid;
-        const auto state = model.state(prepared.temperature, corrected, x);
+        const double slope = pure ? prepared.pure[phase].pressure_density_derivative
+            : model.state(prepared.temperature, corrected, x).pressure_density_derivative;
         if (limits) limits->check();
         double anchor = anchors.empty() ? 0.0 : anchors[phase];
         DensityRoot root;
         try {
             if (initial) {
                 root = declared_root(model, prepared.temperature, prepared.pressure, x, spec.kind);
+                if (pure && root.stable_root_count.value_or(0) < 2) {
+                    outcome.message = "one-component two-density requires two distinct stable density branches"; return outcome;
+                }
                 anchor = root.molar_density;
                 if (limits) limits->check();
             }
@@ -1247,10 +1254,10 @@ BranchCheck check_density_branches(
         scope.probe("corrected_density", corrected, static_cast<std::uint32_t>(phase));
         scope.probe("anchor_density", anchor, static_cast<std::uint32_t>(phase));
         scope.probe("corrected_displacement", displacement, static_cast<std::uint32_t>(phase));
-        scope.probe("corrected_slope", state.pressure_density_derivative, static_cast<std::uint32_t>(phase));
+        scope.probe("corrected_slope", slope, static_cast<std::uint32_t>(phase));
         scope.probe("density_residual", root.convergence.residual, static_cast<std::uint32_t>(phase));
         const bool ok = std::isfinite(corrected) && corrected > 0.0
-            && std::isfinite(state.pressure_density_derivative) && state.pressure_density_derivative > 0.0
+            && std::isfinite(slope) && slope > 0.0
             && root.convergence.residual <= root.convergence.criterion->value
             && displacement <= policy::DENSITY_ANCHOR_LOG_WINDOW.value
             && selected_displacement <= policy::DENSITY_ANCHOR_LOG_WINDOW.value;

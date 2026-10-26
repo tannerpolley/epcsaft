@@ -143,6 +143,13 @@ numerical kernels. Continuation and phase discovery control sequences of
 problems and reuse the same equilibrium driver where equilibrium is solved;
 their search operations do not duplicate it. The [ADR 0009 amendment](decisions/0009-general-platform-one-driver.md)
 defines the Newton attempt inside that driver.
+For the eligible fixed-temperature one-component two-density declaration,
+the #854 amendment replaces that attempt with its exact log-density
+reduction. Properties retains the shared isothermal projection, and the
+driver retains starts, full-row publication, branch admission and the
+original-start fallback. Complete preparation still owns derivative actions.
+Conditional wider arithmetic reports its actual precision and a first-order
+log-density error estimate; #860 is the future shared owner of that estimate.
 
 The rule governs equilibrium specifications implemented inside the Engine
 (owner decision, 2026-09-16). An external process model, such as an IDAES

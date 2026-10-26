@@ -112,6 +112,7 @@ equilibrium_sources = files(
   'native/equilibrium/stoichiometry.cpp',
   'native/equilibrium/request_compile.cpp',
   'native/equilibrium/gibbs_minimizer.cpp',
+  'native/equilibrium/one_component_two_density.cpp',
   'native/equilibrium/phase_stability.cpp',
   'native/equilibrium/phase_boundary.cpp',
   'native/equilibrium/implicit_sensitivity.cpp',

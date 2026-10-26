@@ -813,6 +813,204 @@ static void capture_driver(const GibbsMinimizer& nlp, const EquilibriumResult& r
 }
 
 // The one Ipopt lifecycle shared by the public seed route and the private coordinate route.
+EquilibriumResult publish_candidate(const CompiledSystem& compiled, const PhasePoint& prepared,
+    EquilibriumResult result, core::Scope& scope, const DriverLimits* limits) {
+    const auto* model = compiled.model;
+    const auto& full = prepared.point;
+    const double row_tolerance = compiled.problem.solver_options.value(policy::row);
+    const auto expired = [&] { return limits && limits->expired(); };
+    std::vector<double> volumes;
+    const double temperature = prepared.temperature;
+    bool topology_ok = true;
+    std::string topology_failure;
+    // Preparation above admitted every composition with a positive total.
+    const auto topology = check_topology(compiled, full);
+    const auto& compositions = topology.compositions;
+    const auto& amounts = topology.amounts;
+    result.topology_event = topology.event;
+    result.topology_phase = topology.phase;
+    result.topology_pair = topology.pair;
+    for (std::size_t phase = 0; !compiled.ideal && phase < compiled.problem.phases.size(); ++phase) {
+        const auto& spec = compiled.problem.phases[phase];
+        volumes.push_back(model->parameters().ideal_gas ? prepared.volume[phase] / sum(prepared.composition[phase])
+            : model->packing_fraction_coefficient(temperature, compositions[phase]) / std::exp(topology.log_packing[phase]));
+        const double deficit = michelsen_deficit(
+            compiled, compositions[phase], phase, result.residuals);
+        scope.probe("michelsen_deficit", deficit, static_cast<std::uint32_t>(phase));
+        if (topology.event == TopologyEvent::PhaseDisappeared && topology.phase == phase) {
+            topology_ok = false;
+            topology_failure = "phase " + spec.name + " vanished; Michelsen deficit "
+                + std::to_string(deficit);
+        }
+    }
+    for (const double distance : topology.distances) scope.probe("phase_distance", distance);
+    if (topology.event == TopologyEvent::PhasesCoalesced) {
+        topology_ok = false;
+        topology_failure = "phases_coincide: phase distance between "
+            + compiled.problem.phases[topology.pair->first].name + " and "
+            + compiled.problem.phases[topology.pair->second].name + " is too small: "
+            + std::to_string(topology.distance);
+    }
+    // The recomputed rows classify: a criterion-meeting point is accepted after any non-error
+    // stop (error stops never classify as converged); a floor-limited point needs success.
+    std::string present;
+    for (std::size_t s = 0; s < compiled.solids.size(); ++s)
+        if (compiled.solids[s].present) present += (present.empty() ? "" : ", ") + compiled.problem.solids[s].name;
+    std::string violations;
+    for (std::size_t i = 0; i < compiled.solids.size(); ++i) {
+        const auto& solid = compiled.solids[i];
+        if (solid.column && !(solid.present ? full[*solid.column] > 0.0 : compiled.solid_affinity(prepared, i) <= row_tolerance))
+            violations += (violations.empty() ? "" : ", ") + compiled.problem.solids[i].name;
+    }
+    if (!violations.empty()) {
+        topology_ok = false;
+        topology_failure = "solid classification violated after one flip round: " + violations;
+    } else if (!present.empty() && !inspect_sensitivity(compiled, full).nonsingular) {
+        topology_ok = false;
+        result.convergence.stop = core::Stop::singular;
+        topology_failure = "rank-deficient classified equations with present solids: " + present;
+    }
+    if (!compiled.log_charge_rows.empty()) {
+        const auto physical = compiled.jacobian_at(prepared);
+        const auto numerical = compiled.numerical_rows(prepared, physical, full.size());
+        const auto n = static_cast<Eigen::Index>(full.size());
+        using Matrix = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+        const auto physical_rank = Eigen::Map<const Matrix>(physical.data(), n, n).fullPivLu().rank();
+        const auto numerical_rank = Eigen::Map<const Matrix>(numerical.data(), n, n).fullPivLu().rank();
+        scope.probe("charge_endpoint_ranks", {static_cast<double>(physical_rank), static_cast<double>(numerical_rank)});
+        if (numerical_rank != n) { topology_ok = false; topology_failure = "rank-deficient log-charge equations"; }
+    }
+    bool accepted = !expired() && result.success && topology_ok;
+    if (accepted) {
+        topology_failure = local_phase_instability(compiled, prepared);
+        topology_ok = accepted = topology_failure.empty();
+    }
+    if (!accepted) {
+        result.success = false;
+        if (!topology_ok) result.message = topology_failure;
+        clear_state(result);
+        return result;
+    }
+    if (result.requested_tolerance_met.has_value() && !*result.requested_tolerance_met) {
+        result.message += "; requested row tolerance " + std::to_string(row_tolerance)
+            + " not met by an available floor-limited state";
+    }
+    result.success = true;
+    result.temperature = temperature;
+    result.pressure = prepared.pressure;
+    if (!prepared.standard.reference_diagnostics.empty()) {
+        result.reference_diagnostics = prepared.standard.reference_diagnostics;
+    }
+    result.amounts = amounts;
+    result.molar_densities.reserve(volumes.size());
+    result.packing_fractions.reserve(volumes.size());
+    for (std::size_t phase = 0; phase < volumes.size(); ++phase) {
+        result.molar_densities.push_back(1.0 / volumes[phase]);
+        result.packing_fractions.push_back(
+            model->packing_fraction_coefficient(temperature, compositions[phase]) / volumes[phase]);
+        result.mole_fractions.insert(result.mole_fractions.end(),
+                                     compositions[phase].begin(), compositions[phase].end());
+    }
+    if (compiled.ideal) result.mole_fractions = compositions[0];
+    result.multipliers.assign(full.begin() + static_cast<std::ptrdiff_t>(compiled.primal_size), full.end());
+    // Extensive-objective constraint multipliers at the returned (polished) point, from the row
+    // multipliers: a material row (B n - b)/N_feed carries -N_feed lambda_j, a charge row sum z x
+    // carries -n_p phi_p, and a free-amount phase's normalization row is zero because the
+    // objective and material rows obey joint extensive homogeneity in amount, composition
+    // and volume, together with stationarity in the free amount. The raw
+    // optimizer values stay a trace probe.
+    if (!compiled.feasibility_cell()) {
+        std::size_t electro = 0;
+        for (const auto& row : compiled.rows) {
+            if (row.kind == RowKind::Moiety) {
+                result.constraint_multipliers.push_back(-compiled.feed_total * full[compiled.primal_size + row.index]);
+            } else if (row.kind == RowKind::Electro) {
+                result.constraint_multipliers.push_back(
+                    -prepared.amount[row.phase] * full[compiled.primal_size + compiled.rank + electro++]);
+            } else if (!stationarity_row(row.kind)) {
+                result.constraint_multipliers.push_back(0.0);
+            }
+        }
+    }
+    result.coordinates = full;
+    if (expired()) { result.message = "elapsed work budget exhausted"; reject_elapsed(result, scope); return result; }
+    if (compiled.ideal) {
+        const auto info = inspect_sensitivity(compiled, full);
+        result.jacobian_rank = info.rank;
+        if (!info.nonsingular) {
+            result.success = false; result.message = "rank-deficient ideal endpoint";
+            result.convergence.stop = core::Stop::singular; clear_state(result); return result;
+        }
+    }
+    Curvature curvature = reduced_curvature_at(compiled, prepared, result.constraint_multipliers);
+    if (compiled.has_caloric_condition()) {
+        const bool pure = model->parameters().component_count() == 1 && compiled.problem.phases.size() == 2;
+        if (pure) {
+            if (!(amounts[0] > 0.0 && amounts[1] > 0.0) || volumes[0] == volumes[1]) {
+                result.success = false;
+                result.message = "caloric coexistence requires an interior distinct split";
+                clear_state(result);
+                return result;
+            }
+            result.message += "; coexistence equality root; fixed-TP Gibbs split is analytically flat";
+        } else {
+            auto diagnostic = compiled.problem;
+            diagnostic.enthalpy_j.reset();
+            diagnostic.entropy_j_per_k.reset();
+            diagnostic.temperature = FreeValue::fixed(temperature);
+            auto tp = compile_problem(*model, diagnostic);
+            auto restricted = tp.generic_point();
+            const auto layout = tp.prepare(restricted).shape;
+            for (std::size_t p = 0; p < layout.size(); ++p) {
+                for (std::size_t i = 0; i < layout[p].x.size(); ++i)
+                    restricted[layout[p].x[i]] = full[prepared.shape[p].x[i]];
+                restricted[layout[p].volume] = full[prepared.shape[p].volume];
+                restricted[*layout[p].amount] = amounts[p];
+            }
+            restricted.resize(tp.primal_size);
+            restricted = add_multipliers(tp, restricted);
+            std::vector<double> weights;
+            for (const auto& row : tp.rows) {
+                if (row.kind == RowKind::Chemical || row.kind == RowKind::Pressure) continue;
+                weights.push_back(row.kind == RowKind::Moiety ? -tp.feed_total * restricted[tp.primal_size + row.index] : 0.0);
+            }
+            curvature = reduced_curvature_at(tp, tp.prepare(restricted), weights);
+        }
+    }
+    result.reduced_hessian_minimum = curvature.minimum;
+    scope.probe("reduced_hessian_equilibrated", curvature.equilibrated);
+    scope.probe("reduced_hessian_band", curvature.band);
+    if ((!compiled.feasibility_cell() || compiled.has_caloric_condition()) && !(curvature.equilibrated > curvature.band)) {
+        // Inside the band the inertia is unresolved at working precision: a typed singular outcome, not a noise sign.
+        const bool singular = curvature.equilibrated >= -curvature.band;
+        if (singular || std::isnan(curvature.equilibrated))
+            result.convergence.stop = singular ? core::Stop::singular : core::Stop::nonfinite;
+        result.success = false;
+        result.message = std::string("reduced_hessian_stability ") + (singular ? "is indeterminate" : "is not positive definite")
+            + ": equilibrated minimum " + core::optional_number(curvature.equilibrated)
+            + ", rounding band " + core::optional_number(curvature.band);
+        clear_state(result);
+        return result;
+    }
+    if (expired()) { result.message = "elapsed work budget exhausted";
+        reject_elapsed(result, scope); return result; }
+    scope.probe("returned_temperature", *result.temperature);
+    scope.probe("returned_pressure", *result.pressure);
+    scope.probe("returned_amounts", result.amounts);
+    scope.probe("returned_mole_fractions", result.mole_fractions);
+    scope.probe("returned_densities", result.molar_densities);
+    for (std::size_t s = 0; s < compiled.solids.size(); ++s) {  // EqID solid_saturation_index
+        result.solid_amounts.push_back(compiled.solids[s].column ? full[*compiled.solids[s].column] : 0.0);
+        result.solid_affinity_decades.push_back(compiled.solid_affinity(prepared, s) / std::log(10.0));
+    }
+    if (!all_numeric(result.residuals) || result.rows.empty()) {
+        throw std::runtime_error("equilibrium result has invalid residuals");
+    }
+    require_solution_shape(result, compiled.problem.phases.size(),
+                           compiled.n_feed.size());
+    return result;
+}
+
 static EquilibriumResult run_driver_once(
     const HelmholtzModel* model, const CompiledSystem& declared,
     std::vector<double> initial, EquilibriumResult result, core::Scope& scope,
@@ -1216,205 +1414,19 @@ static EquilibriumResult run_driver_once(
     }
     result.message = core::describe(convergence);
     scope.finish(convergence);
-    std::vector<double> volumes;
-    const double temperature = prepared.temperature;
-    bool topology_ok = true;
-    std::string topology_failure;
-    // Preparation above admitted every composition with a positive total.
-    const auto topology = check_topology(compiled, full);
-    const auto& compositions = topology.compositions;
-    const auto& amounts = topology.amounts;
-    result.topology_event = topology.event;
-    result.topology_phase = topology.phase;
-    result.topology_pair = topology.pair;
-    for (std::size_t phase = 0; !compiled.ideal && phase < compiled.problem.phases.size(); ++phase) {
-        const auto& spec = compiled.problem.phases[phase];
-        volumes.push_back(model->parameters().ideal_gas ? prepared.volume[phase] / sum(prepared.composition[phase])
-            : model->packing_fraction_coefficient(temperature, compositions[phase]) / std::exp(topology.log_packing[phase]));
-        const double deficit = michelsen_deficit(
-            compiled, compositions[phase], phase, result.residuals);
-        scope.probe("michelsen_deficit", deficit, static_cast<std::uint32_t>(phase));
-        if (topology.event == TopologyEvent::PhaseDisappeared && topology.phase == phase) {
-            topology_ok = false;
-            topology_failure = "phase " + spec.name + " vanished; Michelsen deficit "
-                + std::to_string(deficit);
-        }
-    }
-    for (const double distance : topology.distances) scope.probe("phase_distance", distance);
-    if (topology.event == TopologyEvent::PhasesCoalesced) {
-        topology_ok = false;
-        topology_failure = "phases_coincide: phase distance between "
-            + compiled.problem.phases[topology.pair->first].name + " and "
-            + compiled.problem.phases[topology.pair->second].name + " is too small: "
-            + std::to_string(topology.distance);
-    }
-    // The recomputed rows classify: a criterion-meeting point is accepted after any non-error
-    // stop (error stops never classify as converged); a floor-limited point needs success.
-    std::string present;
-    for (std::size_t s = 0; s < compiled.solids.size(); ++s)
-        if (compiled.solids[s].present) present += (present.empty() ? "" : ", ") + compiled.problem.solids[s].name;
-    if (const auto names = solid_violations(false); !names.empty()) {
-        topology_ok = false;
-        topology_failure = "solid classification violated after one flip round: " + names;
-    } else if (!present.empty() && !inspect_sensitivity(compiled, full).nonsingular) {
-        topology_ok = false;
-        result.convergence.stop = core::Stop::singular;
-        topology_failure = "rank-deficient classified equations with present solids: " + present;
-    }
-    if (!compiled.log_charge_rows.empty()) {
-        const auto physical = compiled.jacobian_at(prepared);
-        const auto numerical = compiled.numerical_rows(prepared, physical, full.size());
-        const auto n = static_cast<Eigen::Index>(full.size());
-        using Matrix = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
-        const auto physical_rank = Eigen::Map<const Matrix>(physical.data(), n, n).fullPivLu().rank();
-        const auto numerical_rank = Eigen::Map<const Matrix>(numerical.data(), n, n).fullPivLu().rank();
-        scope.probe("charge_endpoint_ranks", {static_cast<double>(physical_rank), static_cast<double>(numerical_rank)});
-        if (numerical_rank != n) { topology_ok = false; topology_failure = "rank-deficient log-charge equations"; }
-    }
-    bool accepted = !expired() && non_error && topology_ok && (!newton || (!capped && in_bounds && corrected))
-        && (result.convergence.stop == core::Stop::converged
-        || (!newton && result.convergence.stop == core::Stop::converged_to_floor && status == Ipopt::SUCCESS));
-    const bool rows_ok = result.convergence.stop == core::Stop::converged, original_topology_ok = topology_ok;
-    if (accepted) {
-        topology_failure = local_phase_instability(compiled, prepared);
-        topology_ok = accepted = topology_failure.empty();
-    }
-    if (!accepted) {
-        result.success = false;
-        if (!topology_ok) result.message = topology_failure;
+    result.success = non_error && (!newton || (!capped && in_bounds && corrected))
+        && (convergence.stop == core::Stop::converged
+            || (!newton && convergence.stop == core::Stop::converged_to_floor && status == Ipopt::SUCCESS));
+    if (newton && result.success && !free_amount_newton) result.solver_status = "NEWTON_CONVERGED";
+    if (!newton) scope.probe("optimizer_constraint_multipliers", nlp->constraint_multipliers());
+    if (compiled.feasibility_cell()) result.constraint_multipliers = newton
+        ? std::vector<double>(compiled.rows.size(), 0.0) : nlp->constraint_multipliers();
+    result = publish_candidate(compiled, prepared, std::move(result), scope, limits);
+    if (!result.success) {
         result.message += ipopt_failure;
         if (!rejected_preparation.empty()) result.message += "; trial preparation failed: " + rejected_preparation;
-        if (newton) result.message = capped ? "cap" : !in_bounds ? "bounds" : !rows_ok || !corrected ? "rows"
-            : !original_topology_ok ? "topology" : "stability";
-        if (retry_eligible) *retry_eligible = non_error && topology.event == TopologyEvent::PhaseDisappeared;
-        clear_state(result);
-        return result;
-    }
-    if (result.requested_tolerance_met.has_value() && !*result.requested_tolerance_met) {
-        result.message += "; requested row tolerance " + std::to_string(row_tolerance)
-            + " not met by an available floor-limited state";
-    }
-    result.success = true;
-    if (newton && !free_amount_newton) result.solver_status = "NEWTON_CONVERGED";
-    result.temperature = temperature;
-    result.pressure = prepared.pressure;
-    if (!prepared.standard.reference_diagnostics.empty()) {
-        result.reference_diagnostics = prepared.standard.reference_diagnostics;
-    }
-    result.amounts = amounts;
-    result.molar_densities.reserve(volumes.size());
-    result.packing_fractions.reserve(volumes.size());
-    for (std::size_t phase = 0; phase < volumes.size(); ++phase) {
-        result.molar_densities.push_back(1.0 / volumes[phase]);
-        result.packing_fractions.push_back(
-            model->packing_fraction_coefficient(temperature, compositions[phase]) / volumes[phase]);
-        result.mole_fractions.insert(result.mole_fractions.end(),
-                                     compositions[phase].begin(), compositions[phase].end());
-    }
-    if (compiled.ideal) result.mole_fractions = compositions[0];
-    result.multipliers.assign(full.begin() + static_cast<std::ptrdiff_t>(compiled.primal_size), full.end());
-    // Extensive-objective constraint multipliers at the returned (polished) point, from the row
-    // multipliers: a material row (B n - b)/N_feed carries -N_feed lambda_j, a charge row sum z x
-    // carries -n_p phi_p, and a free-amount phase's normalization row is zero because the
-    // objective and material rows obey joint extensive homogeneity in amount, composition
-    // and volume, together with stationarity in the free amount. The raw
-    // optimizer values stay a trace probe.
-    if (!newton) scope.probe("optimizer_constraint_multipliers", nlp->constraint_multipliers());
-    if (!compiled.feasibility_cell()) {
-        std::size_t electro = 0;
-        for (const auto& row : compiled.rows) {
-            if (row.kind == RowKind::Moiety) {
-                result.constraint_multipliers.push_back(-compiled.feed_total * full[compiled.primal_size + row.index]);
-            } else if (row.kind == RowKind::Electro) {
-                result.constraint_multipliers.push_back(
-                    -prepared.amount[row.phase] * full[compiled.primal_size + compiled.rank + electro++]);
-            } else if (!stationarity_row(row.kind)) {
-                result.constraint_multipliers.push_back(0.0);
-            }
-        }
-    } else {
-        result.constraint_multipliers = newton ? std::vector<double>(compiled.rows.size(), 0.0) : nlp->constraint_multipliers();
-    }
-    result.coordinates = full;
-    if (expired()) return limited_result();
-    if (compiled.ideal) {
-        const auto info = inspect_sensitivity(compiled, full);
-        result.jacobian_rank = info.rank;
-        if (!info.nonsingular) {
-            result.success = false; result.message = "rank-deficient ideal endpoint";
-            result.convergence.stop = core::Stop::singular; clear_state(result); return result;
-        }
-    }
-    Curvature curvature = reduced_curvature_at(compiled, prepared, result.constraint_multipliers);
-    if (compiled.has_caloric_condition()) {
-        const bool pure = model->parameters().component_count() == 1 && compiled.problem.phases.size() == 2;
-        if (pure) {
-            if (!(amounts[0] > 0.0 && amounts[1] > 0.0) || volumes[0] == volumes[1]) {
-                result.success = false;
-                result.message = "caloric coexistence requires an interior distinct split";
-                clear_state(result);
-                return result;
-            }
-            result.message += "; coexistence equality root; fixed-TP Gibbs split is analytically flat";
-        } else {
-            auto diagnostic = compiled.problem;
-            diagnostic.enthalpy_j.reset();
-            diagnostic.entropy_j_per_k.reset();
-            diagnostic.temperature = FreeValue::fixed(temperature);
-            auto tp = compile_problem(*model, diagnostic);
-            auto restricted = tp.generic_point();
-            const auto layout = tp.prepare(restricted).shape;
-            for (std::size_t p = 0; p < layout.size(); ++p) {
-                for (std::size_t i = 0; i < layout[p].x.size(); ++i)
-                    restricted[layout[p].x[i]] = full[prepared.shape[p].x[i]];
-                restricted[layout[p].volume] = full[prepared.shape[p].volume];
-                restricted[*layout[p].amount] = amounts[p];
-            }
-            restricted.resize(tp.primal_size);
-            restricted = add_multipliers(tp, restricted);
-            std::vector<double> weights;
-            for (const auto& row : tp.rows) {
-                if (row.kind == RowKind::Chemical || row.kind == RowKind::Pressure) continue;
-                weights.push_back(row.kind == RowKind::Moiety ? -tp.feed_total * restricted[tp.primal_size + row.index] : 0.0);
-            }
-            curvature = reduced_curvature_at(tp, tp.prepare(restricted), weights);
-        }
-    }
-    result.reduced_hessian_minimum = curvature.minimum;
-    scope.probe("reduced_hessian_equilibrated", curvature.equilibrated);
-    scope.probe("reduced_hessian_band", curvature.band);
-    if ((!compiled.feasibility_cell() || compiled.has_caloric_condition()) && !(curvature.equilibrated > curvature.band)) {
-        // Inside the band the inertia is unresolved at working precision: a typed singular outcome, not a noise sign.
-        const bool singular = curvature.equilibrated >= -curvature.band;
-        if (singular || std::isnan(curvature.equilibrated))
-            result.convergence.stop = singular ? core::Stop::singular : core::Stop::nonfinite;
-        result.success = false;
-        result.message = std::string("reduced_hessian_stability ") + (singular ? "is indeterminate" : "is not positive definite")
-            + ": equilibrated minimum " + core::optional_number(curvature.equilibrated)
-            + ", rounding band " + core::optional_number(curvature.band);
-        if (!rejected_preparation.empty()) {
-            result.message += "; trial preparation failed: " + rejected_preparation;
-        }
-        clear_state(result);
-        return result;
-    }
-    if (expired()) { result.message = "elapsed work budget exhausted";
-        reject_elapsed(result, scope); return result; }
-    scope.probe("returned_temperature", *result.temperature);
-    scope.probe("returned_pressure", *result.pressure);
-    scope.probe("returned_amounts", result.amounts);
-    scope.probe("returned_mole_fractions", result.mole_fractions);
-    scope.probe("returned_densities", result.molar_densities);
-    if (!newton && result.requested_tolerance_met.value_or(false)) result.optimizer_state = nlp->optimizer_state();
-    for (std::size_t s = 0; s < compiled.solids.size(); ++s) {  // EqID solid_saturation_index
-        result.solid_amounts.push_back(compiled.solids[s].column ? full[*compiled.solids[s].column] : 0.0);
-        result.solid_affinity_decades.push_back(compiled.solid_affinity(prepared, s) / std::log(10.0));
-    }
-    if (!all_numeric(result.residuals) || result.rows.empty()) {
-        throw std::runtime_error("equilibrium result has invalid residuals");
-    }
-    require_solution_shape(result, compiled.problem.phases.size(),
-                           compiled.n_feed.size());
+        if (retry_eligible) *retry_eligible = non_error && result.topology_event == TopologyEvent::PhaseDisappeared;
+    } else if (!newton && result.requested_tolerance_met.value_or(false)) result.optimizer_state = nlp->optimizer_state();
     return result;
 }
 
@@ -1882,6 +1894,8 @@ EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::opti
     EquilibriumResult result;
     bool admission_refused = false;
     bool retry_eligible = false;
+    std::string reduction_failure;
+    std::optional<LinearSolveDiagnostics> reduction_diagnostics;
     // The speciated seed when there is one; the caller's start alone or after the seed's failure.
     for (int attempt = seeded ? 0 : 1; attempt < 2 && !result.success; ++attempt) {
         stages.add(result);  // a failed seeded attempt
@@ -1893,7 +1907,12 @@ EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::opti
             if (start.has_value()) initial = start_point(compiled, *start, std::move(initial));
         }
         if (newton_eligible(compiled) || (!warm && !std::getenv("EPCSAFT_IPOPT_OPTIONS_FILE") && free_amount_newton_eligible(compiled))) {
-            auto fast = newton_attempt(compiled, initial, structural, limits);
+            auto fast = one_component_two_density_eligible(compiled)
+                ? one_component_two_density_attempt(compiled, initial, structural, scope, limits)
+                : newton_attempt(compiled, initial, structural, limits);
+            if (one_component_two_density_eligible(compiled) && !fast.success) {
+                reduction_failure = fast.message; reduction_diagnostics = fast.linear_solve_diagnostics;
+            }
             if (fast.success) { stages.report(fast); return fast; }
             stages.add(fast);
         }
@@ -1919,6 +1938,11 @@ EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::opti
         }
     }
     stages.report(result);
+    if (!result.success && !reduction_failure.empty()) {
+        result.message += "; one-component two-density attempt: " + reduction_failure;
+        result.linear_solve_diagnostics = reduction_diagnostics;
+        if (result.linear_solve_diagnostics) result.linear_solve_diagnostics->reason = "rejected attempt: " + reduction_failure;
+    }
     result = recover_physical_amounts(compiled, std::move(result), retry_eligible && !admission_refused,
         scope, nullptr, limits, nullptr, nullptr, true);
     if (result.success || !recover || admission_refused || (limits && (limits->expired() || limits->consumed >= limits->iterations))

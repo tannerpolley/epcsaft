@@ -612,6 +612,106 @@ trial chemistry does not establish a global physical-inventory certificate.
 Numerical qualification checks the reduced Jacobian at the solved endpoint,
 separate mechanical branches and the unchanged raw/classified residual criteria.
 
+### One-component two-density reduction
+
+An ordinary compiled declaration with one neutral nonideal component, fixed
+positive T, free P, two liquid/vapor supports {0}, one free amount and one
+zero-pinned amount uses the exact two-density reduction inside the existing
+driver. Other Newton exclusions remain effective. The existing start owner,
+full-row assembly, topology/local checks, branch admission and immutable-start
+Ipopt fallback retain their responsibilities. Complete preparation remains the
+owner of solved-state actions; the limited isothermal preparation supplies only
+energy and amount/volume derivatives and their homogeneity reconstruction.
+
+At unit phase amount, let $E=A^r/(RT)$, $v=1/\rho$,
+$Z=1-vE_v$, $K=P_\rho/(RT)$, $u=\ln\rho$ and $r=\rho_V/\rho_L$.
+The reduced pressure row is $(P_L-P_V)/(RT\rho_L)$ and the chemical row is the
+difference of the full chemical rows after eliminating their common standard
+term and multiplier. EqID `one_component_two_density` defines the rows and exact Jacobian. Their log-density Jacobian retains the derivative of the
+liquid pressure scale. The full rows still determine the caller criterion.
+
+The prospective double endpoint retains the compulsory fresh full correction.
+Its corrected endpoint starts the polish residual history. Further exact
+undamped double corrections continue within the same work limits until the
+next log-density correction is at most `EQUILIBRIUM_POLISH_CORRECTION`, or
+the reduced residual reaches its evaluation floor or stops decreasing.
+The extended-precision engagement check follows this double polish.
+The same equilibrated full-pivot factorization supplies correction and inverse
+row sums by solving unit right-hand sides and undoing both scales. Define
+$I=\|J^{-1}\|_\infty$, $\kappa=\|J\|_\infty I$ and
+$E_u=I(\|F\|_\infty+\eta_q)$, in the original two rows and log densities.
+The residual floor is
+$$
+\eta_q=\epsilon_q\max\left\{
+1+|v_LE_{v,L}|+r(1+|v_VE_{v,V}|),\
+|u_L-u_V|+|E_L|+|E_V|+|v_LE_{v,L}|+|v_VE_{v,V}|
+\right\}
++\max\{v_Lg_L+rv_Vg_V,\ v_Lg_L+v_Vg_V\}.
+$$
+Here $g_p$ estimates the error in the unit-amount residual-energy volume
+gradient, with units mol/m³. Its pressure-row and chemical-row factors differ.
+The estimate is local and first order, with no rigorous global-error claim.
+
+The double association path retains its admitted site solve, factorization and
+existing gradient floor. The extended instantiation refines values and implicit
+volume coefficients against the shared wide mass-action residual. It reuses
+the admitted double full-pivot factorization as a preconditioner; residual
+re-evaluation supplies the linear defect before another update. Values and
+coefficients stay wide. For coefficient k, the normalized residual is
+$\max_s|R_{s,k}v^k|$ and its arithmetic scale is
+$\max\{1,\max_s|X_{s,k}v^k/X_{s,0}|\}$. Refinement ends at working epsilon times
+that scale, within the existing association iteration limit including its
+starting solve. Nonfinite or out-of-domain sites, unchanged coefficients above
+that floor, or exhausted work refuse the calculation with their cause.
+
+After refinement, let $\delta X_k$ be the preconditioned correction of the
+remaining wide coefficient residual, $w_s=n x_{c(s)}m_s$, and $R_{s,k}$ the
+remaining mass-action coefficients. The retained volume-gradient error estimate is
+$$
+g=\sum_s\left|\frac{w_s}{X_{s,0}}\right|
+\left(
+\left|\left[R_{s,1}-R_{s,0}\frac{X_{s,1}}{X_{s,0}}\right]\delta X_{s,0}\right|
++|R_{s,0}\delta X_{s,1}|
+\right).
+$$
+The stationary association potential removes first-order site-value error in
+the energy; no separate first-order energy-error term is added to the chemical
+row. Terms beyond that order are outside this estimate. No starting double
+residual floor is relabeled as an extended result. Remaining arithmetic error
+in energy and gradient enters the explicit $\epsilon_q$ term above. The outer
+density estimate retains any unresolved propagated inner error.
+
+Refinement engages once when the double estimate or its actual correction
+exceeds `TWO_DENSITY_FORWARD_ERROR`, the 1e-10 log-density target. It repeats the shared Helmholtz,
+temperature/geometry, polar and association arithmetic in long double, using
+the existing Newton damping and bounds and remaining work limits. No fluid or
+temperature selector is used. After a fresh full correction, the reduced rows
+must meet the unchanged criterion and either both correction and estimate meet
+EQUILIBRIUM_POLISH_CORRECTION, or the residual is at most the estimated floor
+and the correction is at most $I\eta_q$. The estimated log-density intervals
+must remain separated, $u_L-u_V>2E_u$. Existing branch admission still decides
+whether the two phases are numerically resolved.
+
+The exported double coordinates are prepared and checked again, with no
+subsequent double Newton correction. Re-evaluation at the actually exported
+double densities gives
+$E_u=I(\|F_{\rm exported}\|_\infty+\eta_q)
++\|u_{\rm exported}-u_{\rm internal}\|_\infty$;
+$\operatorname{expm1}(E_u)$ is the relative-density error estimate.
+The result's linear_solve_diagnostics reports the row norm, floor, inverse norm,
+condition estimate, coordinate forward-error estimate, working significand bits
+and extended correction count. A rejected attempt is identified explicitly on
+failure and is retained in trace evidence; its estimate is absent from a
+successful fallback state's diagnostics. If long double has no more bits than
+double, the admitted double result remains, with its actual estimate, 53 bits,
+zero extended corrections and the reason additional precision was unavailable.
+An estimate above 1e-10 does not claim that density accuracy.
+
+Untriggered states retain pre-refinement arithmetic, outputs, iteration count
+and thermodynamic/density work. The fixed preservation inventory is independent
+of the trigger. Issue #860 owns the later shared conditioning implementation
+and must absorb and retire this local producer when that work is delivered.
+
 Repeated public solves and accepted continuation/envelope correctors may reuse the
 previous Ipopt endpoint's primal coordinates and equality/bound multipliers when
 the ordered model, phase, support, balance-basis, row and coordinate layout is

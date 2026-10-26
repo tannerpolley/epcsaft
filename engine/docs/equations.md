@@ -2183,6 +2183,28 @@ $$
 =a^r+(Z-1)+a_{x_i}-\sum_jx_ja_{x_j}.
 $$
 
+## `one_component_two_density`
+
+- Section: Equilibrium
+- Status: Exact derivation
+- Source: [Gross2001], Eqs. (A.23), (A.33); pressure, pressure_density_derivative, residual_chemical_potential and phase_helmholtz_amount_volume.
+- Description: One neutral component at fixed T, with distinct positive densities rho_L > rho_V and positive mechanical slopes; the common standard term cancels and is restored in the full chemical multiplier.
+- Change note: #854 analytically eliminates normalized compositions, feed amount, pressure and the common multiplier; full defining rows remain for admission and actions. E is A^r/(RT); v is V/n; the series uses unit amount. ALG-EQUILIBRIUM owns iteration and conditioning.
+
+$$
+u_p=\ln(\rho_p/\rho_0),\quad r=e^{u_V-u_L},\quad
+M_p=u_p+a_p^r+Z_p-1,\quad K_p=P_{\rho,p}/(RT),
+\qquad F_P=\frac{P_L-P_V}{RT\rho_L}=Z_L-rZ_V,\quad F_\mu=M_L-M_V,
+\\
+J=\begin{pmatrix}K_L-F_P&-rK_V\\K_L&-K_V\end{pmatrix},\qquad
+\det J\big|_{F=0}=-(1-r)K_LK_V,
+\\
+E(v+t)=c_0+c_1t+c_2t^2+\cdots,\quad
+P=RT(\rho-c_1),\quad M=u+c_0-vc_1,\quad K=1+2c_2/\rho^2,
+\\
+E_n=(E-VE_V)/n,\quad E_{Vn}=-VE_{VV}/n,\quad E_{nn}=V^2E_{VV}/n^2.
+$$
+
 ## `residual_enthalpy`
 
 - Section: Thermodynamic properties

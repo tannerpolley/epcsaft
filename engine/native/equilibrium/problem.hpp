@@ -277,6 +277,7 @@ struct PhasePoint final {
     std::vector<double> eta;
     std::vector<PackingTerms> packing;
     std::vector<HelmholtzDerivatives> derivative;
+    std::vector<PureIsothermal> pure;
     StandardTerm standard;
     // A referenced problem's standard term with jets along every active parameter, built on the
     // first parameter-driven row series at this point and reused by every later direction.
@@ -474,6 +475,14 @@ struct CriticalRecord final {
 };
 
 struct OptimizerState;
+struct LinearSolveDiagnostics final {
+    std::string system = "one_component_two_density_reduction", reason;
+    double residual_norm = std::numeric_limits<double>::infinity(), evaluation_floor = std::numeric_limits<double>::infinity();
+    double jacobian_inverse_norm = std::numeric_limits<double>::infinity(), condition_estimate = std::numeric_limits<double>::infinity();
+    double forward_error_estimate = std::numeric_limits<double>::infinity();
+    std::size_t precision_bits = std::numeric_limits<double>::digits, refinement_iterations = 0;
+};
+
 struct EquilibriumResult final {
     std::map<std::string, double> solver_settings;
     std::string diagnostic_options_file, linear_solver;  // linear_solver: empty when no Ipopt solve ran
@@ -504,6 +513,7 @@ struct EquilibriumResult final {
     double objective = 0.0;
     double reduced_hessian_minimum = 0.0;
     core::Convergence convergence;
+    std::optional<LinearSolveDiagnostics> linear_solve_diagnostics;
     std::vector<Row> rows;
     std::size_t unknown_count = 0;
     std::size_t jacobian_rank = 0;
