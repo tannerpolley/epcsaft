@@ -1297,6 +1297,33 @@ DensityDiagnostics HelmholtzModel::density_diagnostics(
     return result;
 }
 
+PureIsothermal HelmholtzModel::pure_isothermal(double temperature, double volume, double amount) const {
+    validate_point(temperature, volume, {amount});
+    if (parameters_.component_count() != 1 || parameters_.ideal_gas || parameters_.charge_number[0] != 0.0)
+        throw std::invalid_argument("pure isothermal projection requires one neutral nonideal component");
+    PureIsothermal result;
+    auto& d = result.derivative;
+    std::vector<double> sites;
+    const auto energy = PressureSeries(*this, temperature, {amount}).residual<2>(1.0 / volume, d.gradient_floor, nullptr, &sites);
+    if (!std::all_of(energy.c.begin(), energy.c.end(), [](double v) { return std::isfinite(v); }))
+        throw std::runtime_error("nonfinite pure isothermal derivatives");
+    const std::size_t width = 3 + active_.size();
+    d.value = energy.c[0];
+    d.gradient.assign(width, 0.0); d.hessian.assign(width * width, 0.0);
+    d.gradient[1] = energy.c[1];
+    d.gradient[2] = (d.value - volume * d.gradient[1]) / amount;
+    d.volume_second_derivative = 2.0 * energy.c[2];
+    d.hessian[width + 1] = d.volume_second_derivative;
+    d.hessian[width + 2] = d.hessian[2 * width + 1] = -volume * d.volume_second_derivative / amount;
+    d.hessian[2 * width + 2] = volume * volume * d.volume_second_derivative / (amount * amount);
+    for (std::size_t i = 0; i < sites.size(); i += 2) d.site_fractions.push_back(sites[i]);
+    const double rt = GAS_CONSTANT_J_PER_MOL_K * temperature;
+    result.pressure = rt * (amount / volume - d.gradient[1]);
+    result.chemical_potential_over_rt = std::log(amount / volume) + d.gradient[2];
+    result.pressure_density_derivative = rt * (1.0 + volume * volume * d.volume_second_derivative / amount);
+    return result;
+}
+
 Taylor<3> properties::density_volume_taylor(const HelmholtzModel& model, double temperature, double density,
     const std::vector<double>& composition, double& gradient_floor) {
     return PressureSeries(model, temperature, composition).residual<3>(density, gradient_floor);

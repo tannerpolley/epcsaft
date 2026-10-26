@@ -47,6 +47,12 @@ struct HelmholtzDerivatives final {
     std::vector<double> site_fractions;
 };
 
+// Fixed-temperature pure-fluid projection of the shared volume series (EqID pure_isothermal_projection).
+struct PureIsothermal final {
+    HelmholtzDerivatives derivative;
+    double pressure = 0.0, chemical_potential_over_rt = 0.0, pressure_density_derivative = 0.0;
+};
+
 struct SweepCounters final {
     std::size_t forward = 0;
     std::size_t reverse = 0;
@@ -423,6 +429,7 @@ public:
     void store_references(std::vector<double> inputs, const std::vector<NeutralReferenceReactionDiagnostic>& result) const;
     void reset_counters() const;
     const policy::SolverOptions& solver_options() const { return solver_options_; }
+    PureIsothermal pure_isothermal(double temperature, double volume, double amount = 1.0) const;
     const Parameters& parameters() const { return parameters_; }
     const std::vector<ActiveParameter>& active_parameters() const { return active_; }
     std::vector<double> active_parameter_values() const;

@@ -1666,8 +1666,10 @@ PhasePoint CompiledSystem::prepare(const std::vector<double>& point, bool state_
             ? point[*layout.amount] : phase_amount(problem.phases[phase]));
         const auto order = !state_only ? DerivativeOrder::Hessian : problem.temperature.free
             ? DerivativeOrder::PhaseHessian : DerivativeOrder::IsothermalPhaseHessian;
-        result.derivative.push_back(model->evaluate(
-            result.temperature, result.volume.back(), values, order));
+        if (state_only && pure_saturation_eligible(*this)) {
+            result.pure.push_back(model->pure_isothermal(result.temperature, result.volume.back(), total));
+            result.derivative.push_back(result.pure.back().derivative);
+        } else result.derivative.push_back(model->evaluate(result.temperature, result.volume.back(), values, order));
         scope.probe("gradient_floor", result.derivative.back().gradient_floor,
                     static_cast<std::uint32_t>(phase));
         result.composition.push_back(std::move(values));

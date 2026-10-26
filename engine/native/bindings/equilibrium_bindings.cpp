@@ -145,6 +145,7 @@ void register_equilibrium(nb::module_& module) {
         .def_prop_ro("rows", [](const CompiledSystem& system) { return system.rows; })
         EPCSAFT_READONLY(CompiledSystem, pinned_count, free_intensive_count, rank, charge_row_count, primal_size,
             generic_nullity, feed_total, has_ions, has_reaction, conserves_total_moles, jacobian_rank, removed_species)
+        .def("solve", [](const CompiledSystem& system) { return solve_compiled(system); }, nb::keep_alive<0, 1>())
         .def("generic_point", &CompiledSystem::generic_point)
         .def("evaluate", [](const CompiledSystem& system, const std::vector<double>& point) {
             return system.evaluate(point); })

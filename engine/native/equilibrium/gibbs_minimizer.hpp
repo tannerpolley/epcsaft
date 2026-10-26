@@ -27,6 +27,16 @@ struct StageWork final {  // the work of the sub-solves that seed a solve, faile
 // A `packed` phase's packing guess is supplied by the caller and replaces its density root.
 std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate = true, const DriverLimits* limits = nullptr,
                                    StageWork* stages = nullptr, const std::vector<bool>& packed = {});
+struct PureSaturationPoint final {
+    PhasePoint phase;
+    std::vector<double> rows, jacobian;
+};
+PureSaturationPoint pure_saturation_point(const CompiledSystem&, const std::vector<double>&);
+bool pure_saturation_eligible(const CompiledSystem&);
+EquilibriumResult pure_saturation_attempt(const CompiledSystem&, const std::vector<double>&,
+    const EquilibriumResult&, core::Scope&, const DriverLimits*);
+EquilibriumResult publish_candidate(const CompiledSystem&, const PhasePoint&, EquilibriumResult,
+    core::Scope&, const DriverLimits* = nullptr);
 bool newton_eligible(const CompiledSystem&), recovery_eligible(const CompiledSystem&);
 bool discovery_newton_eligible(const CompiledSystem&);
 EquilibriumResult newton_attempt(const CompiledSystem&, const std::vector<double>& initial,
@@ -61,7 +71,8 @@ struct BranchCheck final {
 
 BranchCheck check_density_branches(
     const HelmholtzModel& model, const CompiledSystem& compiled, const EquilibriumResult& result,
-    const std::vector<double>& anchors, bool initial, core::Scope& scope, const DriverLimits* limits = nullptr
+    const std::vector<double>& anchors, bool initial, core::Scope& scope, const DriverLimits* limits = nullptr,
+    const PhasePoint* prepared = nullptr
 );
 // Cold root on the declared branch; throws when the stored negative-slope sample places a sole root on the other side (#423).
 DensityRoot declared_root(const HelmholtzModel& model, double T, double P, const std::vector<double>& x, PhaseKind kind);

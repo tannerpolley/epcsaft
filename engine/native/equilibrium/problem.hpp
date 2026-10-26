@@ -277,6 +277,7 @@ struct PhasePoint final {
     std::vector<double> eta;
     std::vector<PackingTerms> packing;
     std::vector<HelmholtzDerivatives> derivative;
+    std::vector<PureIsothermal> pure;
     StandardTerm standard;
     // A referenced problem's standard term with jets along every active parameter, built on the
     // first parameter-driven row series at this point and reused by every later direction.

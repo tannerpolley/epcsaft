@@ -2668,6 +2668,9 @@ class CompiledSystem:
     """Defining-Jacobian rank measured at the generic point."""
     removed_species: list[int]
     """Component indices eliminated by exact inventory/support restrictions."""
+    def solve(self) -> EquilibriumResult:
+        """Solve this declaration from a fresh start through the native equilibrium driver."""
+        ...
     def generic_point(self) -> list[float]:
         """Construct the native generic chart seed.
 
