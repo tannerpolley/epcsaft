@@ -28,6 +28,26 @@ static ParameterDocument record_document(const nb::object& model) {
 }
 
 void register_equilibrium(nb::module_& module) {
+    using core::Quantity; using core::ComparisonMode; using core::NumericalEstimate;
+    using core::ComparisonEligibility; using core::EquilibriumComparison;
+    nb::enum_<Quantity>(module, "Quantity") EPCSAFT_VALUES(Quantity, Linear, Positive, LogPositive);
+    nb::enum_<ComparisonMode>(module, "ComparisonMode") EPCSAFT_VALUES(ComparisonMode, Strict, EstimatedError);
+    nb::class_<NumericalEstimate>(module, "NumericalEstimate").def(nb::init<>())
+        EPCSAFT_READWRITE(NumericalEstimate, absolute, chart, available, resolved, cause);
+    nb::class_<ComparisonEligibility>(module, "ComparisonEligibility").def(nb::init<>())
+        EPCSAFT_READWRITE(ComparisonEligibility, declaration, branch, phase_matching, inventory,
+            residual_a, residual_b, admission_a, admission_b);
+    nb::class_<EquilibriumComparison>(module, "EquilibriumComparison")
+        EPCSAFT_READONLY(EquilibriumComparison, judgment, cause, difference, chart_difference, radius_sum);
+    module.def("compare_equilibrium_quantity", &core::compare_equilibrium_quantity,
+        nb::arg("quantity"), nb::arg("a"), nb::arg("b"), nb::arg("ordinary_allowance"),
+        nb::arg("estimate_a"), nb::arg("estimate_b"), nb::arg("eligibility"), nb::arg("mode"));
+    nb::class_<EquilibriumNumericalEstimates>(module, "EquilibriumNumericalEstimates")
+        EPCSAFT_READONLY(EquilibriumNumericalEstimates, basis, cause, rank, dimension, precision_bits, threshold,
+            condition, inverse_norm, backward_error, residuals, row_terms, row_inner, row_floor, physical_scale,
+            temperature, pressure, densities, packing, composition, amounts);
+    module.def("equilibrium_numerical_estimates", nb::overload_cast<const HelmholtzModel&, const EquilibriumResult&>(
+        &equilibrium_numerical_estimates), nb::arg("model"), nb::arg("result"));
     module.def("property_asl_record", [](nb::object model) {
         const auto document = record_document(model);
         const nb::object native_owner = model.attr("_model");
@@ -172,7 +192,7 @@ void register_equilibrium(nb::module_& module) {
             // Extensive-objective multipliers of the non-chemical, non-pressure `rows` in order, formed at
             // the returned point from `multipliers`; raw optimizer duals only when a phase amount is pinned.
             constraint_multipliers, residuals, classified_residuals, coordinates, phase_count, iterations, evaluations,
-            hessian_calls, objective, reduced_hessian_minimum, convergence, linear_solve_diagnostics, rows, unknown_count, jacobian_rank,
+            hessian_calls, objective, reduced_hessian_minimum, convergence, linear_solve_diagnostics, numerical_estimates, rows, unknown_count, jacobian_rank,
             generic_nullity, requested_tolerance_met, topology_event, topology_phase, topology_pair, critical,
             // Per declared solid: amount in mol and saturation index SI_s in decades.
             solid_amounts, solid_affinity_decades);

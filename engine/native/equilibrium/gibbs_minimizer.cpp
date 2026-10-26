@@ -1647,20 +1647,14 @@ TopologyCheck check_topology(const CompiledSystem& compiled, const std::vector<d
 
 // Observe only frozen returned states; isolated work never enters search accounting.
 static void observe_endpoint(const HelmholtzModel& model, const CompiledSystem* compiled,
-    const EquilibriumResult& result, core::Scope& scope, std::uint32_t attempt = 0) noexcept {
+    EquilibriumResult& result, core::Scope& scope, std::uint32_t attempt = 0) noexcept {
     if (!scope.diagnostics_on() || !result.has_state()) return;
     scope.observe([&] {
-        SensitivityInfo info;
-        try {
-            core::Capture isolated(false);
-            info = inspect_sensitivity(compiled ? *compiled : compile_problem(model, *result.declaration), result.coordinates);
-        } catch (const std::exception& error) {
-            scope.probe("solved_endpoint_jacobian", {NAN, static_cast<double>(result.coordinates.size()), NAN, NAN}, attempt, error.what());
-            return;
-        }
-        scope.probe("solved_endpoint_jacobian", {static_cast<double>(info.equations),
-            static_cast<double>(result.coordinates.size()), static_cast<double>(info.rank), info.condition_estimate},
-            attempt, "raw defining Jacobian");
+        result.numerical_estimates = compiled ? equilibrium_numerical_estimates(*compiled, result)
+            : equilibrium_numerical_estimates(model, result);
+        const auto& e = *result.numerical_estimates;
+        scope.probe("solved_endpoint_jacobian", {static_cast<double>(e.dimension), static_cast<double>(e.dimension),
+            static_cast<double>(e.rank), e.condition}, attempt, e.cause.c_str());
     });
 }
 

@@ -78,7 +78,22 @@ cooling_onset = _core.cooling_onset
 stability_test = _core.stability_test
 StabilityOptions = _core.StabilityOptions
 
+Quantity = _core.Quantity
+ComparisonMode = _core.ComparisonMode
+NumericalEstimate = _core.NumericalEstimate
+ComparisonEligibility = _core.ComparisonEligibility
+EquilibriumComparison = _core.EquilibriumComparison
+EquilibriumNumericalEstimates = _core.EquilibriumNumericalEstimates
+compare_equilibrium_quantity = _core.compare_equilibrium_quantity
+
+
+def equilibrium_numerical_estimates(model, result):
+    return _core.equilibrium_numerical_estimates(model._model, result)
+
+
 __all__ = (
+    "Quantity", "ComparisonMode", "NumericalEstimate", "ComparisonEligibility", "EquilibriumComparison",
+    "EquilibriumNumericalEstimates", "compare_equilibrium_quantity", "equilibrium_numerical_estimates",
     "Amounts",
     "IdealMoleFraction",
     "effective_water_amounts",

@@ -1769,6 +1769,117 @@ PointEvaluation CompiledSystem::evaluate_at(const PhasePoint& prepared) const {
     return result;
 }
 
+RowUncertainty CompiledSystem::row_uncertainty(const PhasePoint& at) const {
+    RowUncertainty out;
+    out.terms.assign(rows.size(), 0.0); out.inner = out.terms;
+    if (ideal) { out.cause = "ideal_reaction_row_error_unavailable"; return out; }
+    const auto components = model->parameters().component_count(), width = 2 + components + model->active_parameters().size();
+    const double rt = GAS_CONSTANT_J_PER_MOL_K * at.temperature;
+    std::vector<std::vector<double>> gradient_error(at.shape.size(), std::vector<double>(width, 0.0));
+    std::vector<double> energy_error(at.shape.size(), 0.0);
+    for (std::size_t p = 0; p < at.shape.size(); ++p) {
+        std::vector<double> point{at.temperature, at.volume[p]};
+        point.insert(point.end(), at.composition[p].begin(), at.composition[p].end());
+        const auto active = model->active_parameter_values(); point.insert(point.end(), active.begin(), active.end());
+        for (std::size_t j = 0; j < 2 + components; ++j) {
+            if (j >= 2 && at.composition[p][j - 2] == 0.0) { gradient_error[p][j] = NAN; continue; }
+            std::vector<double> unit(width, 0.0); unit[j] = 1.0;
+            const auto error = model->residual_coefficient_errors({point, unit}, at.derivative[p].site_fractions);
+            energy_error[p] = error[0]; gradient_error[p][j] = error[1];
+        }
+    }
+    std::vector<std::optional<std::size_t>> phi(at.shape.size());
+    std::size_t charge = 0;
+    for (const auto& row : rows) if (row.kind == RowKind::Electro) phi[row.phase] = primal_size + rank + charge++;
+    for (std::size_t i = 0; i < rows.size(); ++i) {
+        const auto& row = rows[i]; const auto p = row.phase, species = row.index;
+        double& terms = out.terms[i]; double& inner = out.inner[i];
+        if (row.kind == RowKind::Chemical) {
+            terms = std::abs(std::log(at.composition[p][species] / at.volume[p]))
+                + std::abs(at.derivative[p].gradient[2 + species]) + std::abs(at.standard.derivative[0][species]);
+            inner = gradient_error[p][2 + species];
+            for (std::size_t k = 0; k < rank; ++k) terms += std::abs(at.point[primal_size + k] * B[k][species]);
+            if (phi[p]) terms += std::abs(model->parameters().charge_number[species] * at.point[*phi[p]]);
+            if (!at.standard.reference_diagnostics.empty()) out.cause = "reference_error_unavailable";
+        } else if (row.kind == RowKind::Pressure) {
+            terms = (model->parameters().ideal_gas ? std::abs(sum(at.composition[p])) : 1.0)
+                + std::abs(at.volume[p] * at.derivative[p].gradient[1]) + std::abs(at.pressure * at.volume[p] / rt);
+            inner = std::abs(at.volume[p]) * gradient_error[p][1];
+        } else if (row.kind == RowKind::Moiety) {
+            terms = std::abs(balance[species]);
+            for (std::size_t a = 0; a < at.shape.size(); ++a)
+                for (std::size_t j = 0; j < components; ++j) terms += std::abs(at.amount[a] * B[species][j] * at.composition[a][j]);
+            for (const auto& solid : solids) if (solid.column) terms += std::abs(solid.balance[species] * at.point[*solid.column]);
+            terms /= feed_total;
+        } else if (row.kind == RowKind::Electro || row.kind == RowKind::Normalization) {
+            terms = row.kind == RowKind::Normalization ? 1.0 : 0.0;
+            for (std::size_t j = 0; j < components; ++j)
+                terms += std::abs(at.composition[p][j] * (row.kind == RowKind::Electro ? model->parameters().charge_number[j] : 1));
+        } else if (row.kind == RowKind::CriticalNormalization) {
+            terms = 1;
+            for (std::size_t j = 0; j < mode_count; ++j) terms += std::pow(at.point[mode_offset() + j], 2);
+        } else if (row.kind == RowKind::AzeotropeCondition) {
+            const auto local = problem.phases[0].support[species];
+            terms = std::abs(std::log(at.composition[0][local])) + std::abs(std::log(at.composition[1][local]));
+        } else if (row.kind == RowKind::EnvelopeCondition) {
+            const auto& e = *problem.envelope;
+            terms = std::abs(e.target);
+            if (e.kind != EnvelopeCoordinate::LogK) terms += std::abs(std::log(e.kind == EnvelopeCoordinate::LogPressure ? at.pressure : at.temperature));
+            else terms += std::abs(std::log(at.composition[0][e.component])) + std::abs(std::log(at.composition[1][e.component]));
+        } else if (row.kind == RowKind::Enthalpy || row.kind == RowKind::Entropy) {
+            const bool enthalpy = row.kind == RowKind::Enthalpy;
+            const double denominator = feed_total * GAS_CONSTANT_J_PER_MOL_K * (enthalpy ? at.temperature : 1.0);
+            terms = std::abs(enthalpy ? *problem.enthalpy_j : *problem.entropy_j_per_k) / denominator;
+            for (std::size_t a = 0; a < at.shape.size(); ++a) {
+                const auto ideal = caloric_ideal(*this, a, at.temperature, at.volume[a], at.composition[a], at.temperature);
+                const double weight = at.amount[a] / feed_total;
+                terms += std::abs(at.amount[a] * (enthalpy ? ideal.enthalpy : ideal.entropy)) / denominator;
+                terms += weight * (at.temperature * std::abs(at.derivative[a].gradient[0])
+                    + (enthalpy ? std::abs(at.volume[a] * at.derivative[a].gradient[1]) : std::abs(at.derivative[a].value)));
+                inner += weight * (at.temperature * gradient_error[a][0]
+                    + (enthalpy ? std::abs(at.volume[a]) * gradient_error[a][1] : energy_error[a]));
+            }
+            if (!at.standard.reference_diagnostics.empty()) out.cause = "reference_caloric_error_unavailable";
+        } else if (row.kind == RowKind::CriticalMode || row.kind == RowKind::CriticalCubic) {
+            const auto& derivative = at.derivative[p];
+            std::vector<double> point{at.temperature, at.volume[p]}, w(width, 0.0);
+            point.insert(point.end(), at.composition[p].begin(), at.composition[p].end());
+            const auto active = model->active_parameter_values(); point.insert(point.end(), active.begin(), active.end());
+            for (std::size_t j = 0; j < components; ++j) w[2 + j] = std::sqrt(n_feed[j] / feed_total) * at.point[mode_offset() + j];
+            const auto coefficient_error = [&](const std::vector<double>& direction, std::size_t order) {
+                std::vector<std::vector<double>> path(order + 1, std::vector<double>(width, 0.0));
+                path[0] = point; path[1] = direction;
+                return model->residual_coefficient_errors(path, derivative.site_fractions)[order];
+            };
+            if (row.kind == RowKind::CriticalMode) {
+                const double d = std::sqrt(n_feed[species] / feed_total);
+                terms = std::abs(d * w[2 + species] / at.composition[p][species]);
+                for (std::size_t j = 0; j < components; ++j)
+                    terms += std::abs(d * derivative.hessian[(2 + species) * width + 2 + j] * w[2 + j]);
+                // Polarization of E2 supplies this requested mixed contraction without a tensor.
+                std::vector<double> unit(width, 0.0), sum = w; unit[2 + species] = 1.0; sum[2 + species] += 1.0;
+                inner = std::abs(d) * (coefficient_error(sum, 2) + coefficient_error(unit, 2) + coefficient_error(w, 2));
+            } else {
+                const auto nominal = model->residual_energy_action(at.temperature, at.volume[p], at.composition[p], {w, w, w});
+                if (!nominal.action) { out.cause = "critical_contraction_unavailable"; continue; }
+                terms = std::abs(*nominal.action);
+                for (std::size_t j = 0; j < components; ++j)
+                    terms += std::abs(std::pow(w[2 + j], 3) / std::pow(at.composition[p][j], 2));
+                inner = 6 * coefficient_error(w, 3);
+            }
+        } else if (row.kind == RowKind::SolidAffinity) {
+            const auto& solid = solids[species]; const auto& spec = problem.solids[species];
+            if (!solid.present) { terms = std::abs(at.point[*solid.column]); continue; }
+            terms = std::abs(solid.log_k) + std::abs(spec.molar_volume_m3_per_mol * (at.pressure - *spec.reference->reference_pressure_pa) / rt);
+            for (std::size_t j = 0; j < components; ++j) terms += std::abs(spec.stoichiometry[j] * at.standard.derivative[0][j]);
+            for (std::size_t j = 0; j < rank; ++j) terms += std::abs(at.point[primal_size + j] * solid.balance[j]);
+            if (!at.standard.reference_diagnostics.empty()) out.cause = "reference_solid_error_unavailable";
+
+        }
+    }
+    return out;
+}
+
 double CompiledSystem::solid_gibbs(const PhasePoint& prepared, std::size_t solid) const {
     const auto& spec = problem.solids[solid];
     double value = solids[solid].log_k + spec.molar_volume_m3_per_mol * (prepared.pressure - *spec.reference->reference_pressure_pa)
