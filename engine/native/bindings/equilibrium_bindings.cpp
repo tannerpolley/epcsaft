@@ -179,7 +179,7 @@ void register_equilibrium(nb::module_& module) {
                 double temperature, double pressure, std::vector<double> amounts, std::vector<double> composition,
                 std::vector<double> densities, std::vector<double> packing) {
             const auto phases = system.problem.phases.size(), components = system.n_feed.size();
-            if (coordinates.size() != system.primal_size + system.rank + system.charge_row_count
+            if (coordinates.size() != system.unknown_count()
                 || amounts.size() != phases || composition.size() != phases * components
                 || (!system.ideal && (densities.size() != phases || packing.size() != phases)))
                 throw std::invalid_argument("numerical estimate snapshot shape");
