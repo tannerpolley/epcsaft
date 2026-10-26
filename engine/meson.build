@@ -26,7 +26,7 @@ release_link_args = get_option('buildtype') == 'release' \
 threads_dep = dependency('threads')
 # Exact: gibbs_minimizer.cpp static_asserts Ipopt 3.11.9 internals.
 ipopt_dep = dependency('ipopt', method: 'pkg-config', version: '==3.11.9', include_type: 'system')
-eigen_dep = dependency('eigen3', method: 'pkg-config', version: '>=3.4', include_type: 'system')
+eigen_dep = dependency('eigen3', method: 'pkg-config', version: ['>=3.4', '<3.5'], include_type: 'system')
 ceres_dep = dependency(
   'Ceres',
   method: 'cmake',
