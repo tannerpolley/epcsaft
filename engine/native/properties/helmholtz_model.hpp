@@ -37,21 +37,27 @@ struct NeutralPropertyDerivatives final {
     std::vector<double> hessian;
 };
 
-struct HelmholtzDerivatives final {
-    double value = 0.0;
-    std::vector<double> gradient;
-    std::vector<double> hessian;
-    double volume_second_derivative = 0.0;
+template <typename Base>
+struct HelmholtzDerivativeValues final {
+    Base value = 0.0;
+    std::vector<Base> gradient;
+    std::vector<Base> hessian;
+    Base volume_second_derivative = 0.0;
     // Per-order association residual floor; zero when no association sites are present.
-    double gradient_floor = 0.0;
-    std::vector<double> site_fractions;
+    Base gradient_floor = 0.0;
+    std::vector<Base> site_fractions;
 };
 
+using HelmholtzDerivatives = HelmholtzDerivativeValues<double>;
+
 // Fixed-temperature pure-fluid projection of the shared volume series (EqID pure_isothermal_projection).
-struct PureIsothermal final {
-    HelmholtzDerivatives derivative;
-    double pressure = 0.0, chemical_potential_over_rt = 0.0, pressure_density_derivative = 0.0;
+template <typename Base>
+struct PureIsothermalValues final {
+    HelmholtzDerivativeValues<Base> derivative;
+    Base pressure = 0.0, chemical_potential_over_rt = 0.0, pressure_density_derivative = 0.0;
 };
+
+using PureIsothermal = PureIsothermalValues<double>;
 
 struct SweepCounters final {
     std::size_t forward = 0;
@@ -429,7 +435,8 @@ public:
     void store_references(std::vector<double> inputs, const std::vector<NeutralReferenceReactionDiagnostic>& result) const;
     void reset_counters() const;
     const policy::SolverOptions& solver_options() const { return solver_options_; }
-    PureIsothermal pure_isothermal(double temperature, double volume, double amount = 1.0) const;
+    template <typename Base>
+    PureIsothermalValues<Base> pure_isothermal(Base temperature, Base volume, Base amount = 1.0) const;
     const Parameters& parameters() const { return parameters_; }
     const std::vector<ActiveParameter>& active_parameters() const { return active_; }
     std::vector<double> active_parameter_values() const;

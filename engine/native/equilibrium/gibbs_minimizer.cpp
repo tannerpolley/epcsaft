@@ -1895,6 +1895,7 @@ EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::opti
     bool admission_refused = false;
     bool retry_eligible = false;
     std::string reduction_failure;
+    std::optional<LinearSolveDiagnostics> reduction_diagnostics;
     // The speciated seed when there is one; the caller's start alone or after the seed's failure.
     for (int attempt = seeded ? 0 : 1; attempt < 2 && !result.success; ++attempt) {
         stages.add(result);  // a failed seeded attempt
@@ -1909,7 +1910,9 @@ EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::opti
             auto fast = pure_saturation_eligible(compiled)
                 ? pure_saturation_attempt(compiled, initial, structural, scope, limits)
                 : newton_attempt(compiled, initial, structural, limits);
-            if (pure_saturation_eligible(compiled) && !fast.success) reduction_failure = fast.message;
+            if (pure_saturation_eligible(compiled) && !fast.success) {
+                reduction_failure = fast.message; reduction_diagnostics = fast.linear_solve_diagnostics;
+            }
             if (fast.success) { stages.report(fast); return fast; }
             stages.add(fast);
         }
@@ -1935,7 +1938,11 @@ EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::opti
         }
     }
     stages.report(result);
-    if (!result.success && !reduction_failure.empty()) result.message += "; pure saturation attempt: " + reduction_failure;
+    if (!result.success && !reduction_failure.empty()) {
+        result.message += "; pure saturation attempt: " + reduction_failure;
+        result.linear_solve_diagnostics = reduction_diagnostics;
+        if (result.linear_solve_diagnostics) result.linear_solve_diagnostics->reason = "rejected attempt: " + reduction_failure;
+    }
     result = recover_physical_amounts(compiled, std::move(result), retry_eligible && !admission_refused,
         scope, nullptr, limits, nullptr, nullptr, true);
     if (result.success || !recover || admission_refused || (limits && (limits->expired() || limits->consumed >= limits->iterations))

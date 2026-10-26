@@ -2757,6 +2757,40 @@ class CompiledSystem:
         """
         ...
 
+class LinearSolveDiagnostics:
+    """Local first-order error estimates in the named system's unscaled coordinates.
+
+    Attributes
+    ----------
+    system : str
+        Defining equations and coordinate basis.
+    reason : str
+        Precision limitation or rejected-attempt cause, when present.
+    residual_norm : float
+        Achieved infinity norm of the defining rows.
+    evaluation_floor : float
+        Estimated row-evaluation error, including association.
+    jacobian_inverse_norm : float
+        Infinity norm of the inverse in the original row and coordinate scales.
+    condition_estimate : float
+        Jacobian infinity norm times its inverse norm.
+    forward_error_estimate : float
+        Estimated absolute coordinate error; for log densities, expm1 gives relative density error.
+    precision_bits : int
+        Working significand bits.
+    refinement_iterations : int
+        Extended corrections actually taken.
+    """
+    system: str
+    reason: str
+    residual_norm: float
+    evaluation_floor: float
+    jacobian_inverse_norm: float
+    condition_estimate: float
+    forward_error_estimate: float
+    precision_bits: int
+    refinement_iterations: int
+
 class EquilibriumResult:
     """Solved phases and numerical evidence on the declared feed basis.
 
@@ -2830,6 +2864,8 @@ class EquilibriumResult:
     """
     convergence: Convergence
     """Residual, effective criterion, floor and stopping evidence."""
+    linear_solve_diagnostics: LinearSolveDiagnostics | None
+    """Reduced-system accuracy at the returned state, or explicitly rejected-attempt evidence on failure."""
     rows: list[Row]
     """Equation identities in residual order."""
     unknown_count: int
