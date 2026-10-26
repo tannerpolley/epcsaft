@@ -121,7 +121,10 @@ EquilibriumResult one_component_two_density_attempt(const CompiledSystem& c, con
             u.push_back(initial[offsets[p] + 1 + (c.problem.phases[p].is_free() ? 1 : 0)] - log_c);
         GibbsMinimizer bounds(c, initial, &scope, limits);
         std::vector<double> lower(initial.size()), upper(initial.size());
-        if (!bounds.physical_bounds(lower, upper)) throw std::runtime_error("one-component two-density bounds unavailable");
+        if (!bounds.physical_bounds(lower, upper)) {
+            if (limits) limits->check();
+            throw std::runtime_error("one-component two-density bounds unavailable");
+        }
         const auto inside = [&](const PhasePoint& at) {
             for (std::size_t i = 0; i < lower.size(); ++i)
                 if (!std::isfinite(at.point[i]) || at.point[i] < lower[i] || at.point[i] > upper[i]) return false;
