@@ -102,6 +102,7 @@ Budget changes must not silently change scientific scope.
 - #862 Equilibrium **11,530 → 11,950** for shared preparation, chronological recovery and bounded Ipopt observations (count 11,831 + band 119).
 - #862 Bindings **2,244 → 2,327** for native result/exception, continuation and ASL observation transport (count 2,303 + band 24).
 - #862 Total **29,445 → 30,087**, limited by the layer-ceiling sum below count 29,867 + band 299; measured use is 949 gross, 235 removals, +714 net, with unchanged numerical owners.
+- 2026-10-26, #855 (lead allowance: 160 gross formatted Equilibrium lines): lazy exact trial Hessians, identical first-point seed-root reuse and removal of the repeated initial Liquid compilation use 17 added / 11 removed formatted runtime lines against `761f14f43`, +6 net, all Equilibrium. Equilibrium counts 10,944 and total 28,028; both remain within the existing rule-1 ceilings and bands. Every other runtime layer and every ceiling is unchanged. Numerical and cost evidence is retained under `build/issue-855/build-r1/`.
 
 - 2026-10-26, #869 (lead allowance, rule 1): Properties **6,129 → 6,346** and Equilibrium **11,399 → 11,530**, the final formatted counts 6,283 and 11,415 plus their 1% bands. Total **29,049 → 29,445**, the smaller of the layer-ceiling sum and total count 29,153 plus its 292-line band. Gross additions stay within the issue's 640-line allowance and its per-area limits; retained accounting is in `build/issue-869/build-r1/runtime-lines.json`.
 

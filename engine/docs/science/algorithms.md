@@ -1650,8 +1650,12 @@ For systems whose fed-plus-participant species are all neutral and that declare 
 enumerated distinct start natively with Michelsen's modified tangent-plane objective (EqID:
 `michelsen_modified_tangent_plane`). Take `TANGENT_PLANE_SUBSTITUTIONS` direct substitutions (Michelsen 1982 eq.
 19), then second-order steps in αᵢ = 2√Wᵢ with the exact T,P Jacobian (eqs. 25–27). Take a step when its
-Cholesky factor exists, α stays positive and g* does not increase; otherwise take a substitution step. Each
-iterate uses the trial label's unanchored density-owner root. A trial converges when
+Cholesky factor exists, α stays positive and g* does not increase; otherwise take a substitution step.
+Each objective point requests the shared Helmholtz gradient. Only an attempted second-order step
+requests the exact isothermal phase Hessian at that current composition and volume, without another
+density solve. The first objective point reuses its seed's density root only when the full normalized
+composition is exactly equal; every other point uses the trial label's unanchored density-owner root.
+The root is local to that trial and is never reused at a changed composition. A trial converges when
 ‖ln Wᵢ + ψᵢ + sᵢ‖∞ ≤ `EQUILIBRIUM_ROW_RESIDUAL`, and its trial dual is k = −ln ΣW. A start that reaches
 `EQUILIBRIUM_MAX_ITERATIONS`, throws, or leaves finite positive W runs through the shared driver unchanged. Run
 every other enumerated distinct start, and every start of ionic or reacting systems, through the shared driver. Compile an

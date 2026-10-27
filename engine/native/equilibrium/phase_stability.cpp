@@ -69,22 +69,23 @@ void packing_admission(double eta) {
 // ALG-STABILITY, EqID michelsen_modified_tangent_plane (all-neutral, non-reacting systems); empty: the driver fallback.
 using TrialPoint = std::pair<PhasePoint, double>;  // composition and packing fraction; dual -ln sum W
 std::optional<TrialPoint> tangent_plane_trial(const HelmholtzModel& model, double T, double P, const PhaseSpec& phase,
-    const std::vector<double>& seed, const std::vector<double>& shift, StabilityTrial& trial, Quantities& work) {
+    const std::vector<double>& seed, double seed_density, const std::vector<double>& shift, StabilityTrial& trial, Quantities& work) {
     const auto& S = phase.support;
     const auto n = static_cast<Eigen::Index>(S.size());
-    struct Iterate { Eigen::VectorXd W, g; Eigen::MatrixXd J; std::vector<double> w; double density = 0.0, objective = 0.0; };
+    struct Iterate { Eigen::VectorXd W, g; std::vector<double> w; double density = 0.0, objective = 0.0; };
     auto& o = trial.optimizer;
+    bool first = true;
     const auto at = [&](Eigen::VectorXd W) {
-        Iterate p{std::move(W), Eigen::VectorXd(n), {}, std::vector<double>(seed.size(), 0.0)};
+        Iterate p{std::move(W), Eigen::VectorXd(n), std::vector<double>(seed.size(), 0.0)};
         for (Eigen::Index a = 0; a < n; ++a) p.w[S[a]] = p.W(a) / p.W.sum();
         ++o.evaluations;
-        p.density = stability_root(model, T, P, p.w, phase.kind).molar_density;
+        p.density = first && p.w == seed ? seed_density : stability_root(model, T, P, p.w, phase.kind).molar_density;
+        first = false;
         packing_admission(model.packing_fraction_coefficient(T, p.w) * p.density);
-        const auto d = model.evaluate(T, 1.0 / p.density, p.w, DerivativeOrder::IsothermalPhaseHessian);
+        const auto d = model.evaluate(T, 1.0 / p.density, p.w, DerivativeOrder::Gradient);
         for (Eigen::Index a = 0; a < n; ++a)  // g_i = ln W_i + ln phi_i + ln(P/RT) + standard_i - plane_i
             p.g(a) = std::log(p.W(a)) + d.gradient[2 + S[a]] + std::log(p.density) + shift[S[a]];
         if (!p.g.allFinite()) throw std::domain_error("non-finite or non-positive Michelsen amounts");  // via ln W
-        p.J = Eigen::Map<const Eigen::MatrixXd>(tangent_plane_jacobian(d, 1.0 / p.density, S).data(), n, n);
         p.objective = 1.0 + p.W.dot(p.g) - p.W.sum();  // g* (eqs. 13-17)
         return p;
     };
@@ -95,8 +96,12 @@ std::optional<TrialPoint> tangent_plane_trial(const HelmholtzModel& model, doubl
         while (p.g.lpNorm<Eigen::Infinity>() > criterion.value && o.iterations < policy::EQUILIBRIUM_MAX_ITERATIONS.value) {
             std::optional<Iterate> q;
             if (o.iterations++ >= policy::TANGENT_PLANE_SUBSTITUTIONS.value) {
+                ++work["trial_tangent_plane_hessian_evaluations"];
+                const auto d = model.evaluate(T, 1.0 / p.density, p.w, DerivativeOrder::IsothermalPhaseHessian);
+                const Eigen::MatrixXd J = Eigen::Map<const Eigen::MatrixXd>(
+                    tangent_plane_jacobian(d, 1.0 / p.density, S).data(), n, n);
                 const Eigen::VectorXd root = p.W.array().sqrt();
-                Eigen::MatrixXd H = p.J.cwiseProduct(root * root.transpose()) / p.W.sum();
+                Eigen::MatrixXd H = J.cwiseProduct(root * root.transpose()) / p.W.sum();
                 H.diagonal().array() += 1.0 + 0.5 * p.g.array();
                 const Eigen::LLT<Eigen::MatrixXd> factor(H);
                 if (factor.info() != Eigen::Success) core::retain_first(o.first_numerical_failure, [&] {
@@ -598,11 +603,12 @@ StabilityReport test_snapshot(const CompiledSystem& c, const EquilibriumResult& 
                 }
                 seed = reconstruct_trial_composition(std::move(seed), phase.support, z, phase.kind);
                 ++report.work["reconstruction_evaluations"];
-                double eta;
+                double eta, seed_density = 0.0;
                 if (options.evaluate_supplied_trials && phase.packing_guess) eta = *phase.packing_guess;
                 else {
                     const auto root = stability_root(*c.model, at.temperature, at.pressure, seed, phase.kind);
                     if (condensed) condensed_admission(root);
+                    seed_density = root.molar_density;
                     eta = c.model->packing_fraction_coefficient(at.temperature, seed) * root.molar_density;
                 }
                 packing_admission(eta);
@@ -625,7 +631,7 @@ StabilityReport test_snapshot(const CompiledSystem& c, const EquilibriumResult& 
                 if (!native) compile();
                 core::Scope scope("tangent_plane_trial");
                 ++report.work["trial_invocations"];
-                const auto found = native ? tangent_plane_trial(*c.model, at.temperature, at.pressure, phase, seed, shift,
+                const auto found = native ? tangent_plane_trial(*c.model, at.temperature, at.pressure, phase, seed, seed_density, shift,
                     trial, report.work) : std::nullopt;
                 if (native && !found) compile();
                 const auto initial = found ? std::vector<double>{} : trial_coordinates(compiled, seed, eta);
@@ -978,7 +984,7 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
     for (const auto kind : {PhaseKind::Liquid, PhaseKind::Vapor}) {
         if (has_charge && kind == PhaseKind::Vapor) continue;
         declaration.phases[0].kind = kind; declaration.phases[0].name = kind == PhaseKind::Liquid ? "L1" : "V1";
-        compiled = compile_problem(model, declaration);
+        if (kind == PhaseKind::Vapor) compiled = compile_problem(model, declaration);
         std::vector<double> attempt;
         auto result = invoke(compiled, {}, "initial", attempt);
         if (result.success && (!best.success || result.objective < best.objective)) {
