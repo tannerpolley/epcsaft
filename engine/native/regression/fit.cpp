@@ -10,7 +10,8 @@
 #include <fcntl.h>
 #include <poll.h>
 #include <signal.h>
-#include <spawn.h>
+#include <sys/resource.h>
+#include <sys/syscall.h>
 #include <sys/prctl.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
@@ -36,6 +37,10 @@
 #include <type_traits>
 #include <utility>
 #include <variant>
+
+#if !defined(SYS_close_range) && defined(__linux__) && defined(__x86_64__)
+#define SYS_close_range 436  // The package targets linux-64, including the glibc 2.17 sysroot.
+#endif
 
 namespace epcsaft::regression {
 namespace {
@@ -303,7 +308,7 @@ FitHost fit_host;
 bool interrupted() { return fit_host.interrupted && fit_host.interrupted(); }
 int extension_image = -1;
 
-// Sources stay above inherited fd 3/4 so spawn's descriptor copies cannot overwrite one another.
+// Sources stay above inherited fd 3/4 so the child's descriptor copies cannot overwrite one another.
 int open_image(const void* address) {
     Dl_info image{};
     if (!dladdr(address, &image)) return -1;
@@ -433,7 +438,7 @@ template <class... T> void get(int fd, T&... values) {
 
 // Ipopt 3.11.9 drives MUMPS 5.6, whose Fortran modules and C I/O state are process-global (#380), so concurrent
 // states run in worker processes. They start by exec, since fork alone is unsafe in a threaded host, and inherit
-// only their own socket after the child bootstrap closes inherited descriptors. The fit kills and reaps them on every exit,
+// only their own socket and pinned images after pre-exec descriptor closure. The fit kills and reaps them on every exit,
 // an exception or cancellation included.
 struct Workers final {
     std::vector<int> sockets;
@@ -496,24 +501,24 @@ struct ObservationEvaluator::Impl final {
         std::vector<char*> command;
         for (auto& word : fit_host.worker) command.push_back(word.data());
         command.push_back(nullptr);
+        char** arguments = command.data();
+        rlimit descriptors;
+        if (getrlimit(RLIMIT_NOFILE, &descriptors) != 0) throw std::runtime_error("fit worker process unavailable");
         for (std::size_t k = 1; k < std::min(count, rank); ++k) {
             int pair[2];
             if (socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0, pair) != 0) throw std::runtime_error("fit worker socket unavailable");
             workers_.sockets.push_back(pair[0]);
             // The worker keeps its socket end as fd 0, the extension/native images as fd 3/4 and the standard streams. Its own
             // process group keeps terminal signals away: the fit, not its workers, answers an interrupt.
-            posix_spawn_file_actions_t actions;
-            posix_spawn_file_actions_init(&actions);
-            posix_spawn_file_actions_adddup2(&actions, pair[1], 0);
-            posix_spawn_file_actions_adddup2(&actions, extension_image, 3);
-            posix_spawn_file_actions_adddup2(&actions, native_image, 4);
-            posix_spawnattr_t attributes;
-            posix_spawnattr_init(&attributes);
-            posix_spawnattr_setflags(&attributes, POSIX_SPAWN_SETPGROUP);
             pid_t process = 0;
-            const int error = posix_spawn(&process, command[0], &actions, &attributes, command.data(), environ);
-            posix_spawnattr_destroy(&attributes);
-            posix_spawn_file_actions_destroy(&actions);
+            const int error = (process = fork()) < 0;
+            if (process == 0) {
+                if (setpgid(0, 0) != 0 || dup2(pair[1], 0) < 0 || dup2(extension_image, 3) < 0 || dup2(native_image, 4) < 0) _exit(127);
+                if (syscall(SYS_close_range, 5, ~0U, 0) != 0)
+                    for (rlim_t fd = 5; fd < descriptors.rlim_cur; ++fd) close(static_cast<int>(fd));
+                execve(arguments[0], arguments, environ);
+                _exit(127);
+            }
             close(pair[1]);
             if (error != 0) throw std::runtime_error("fit worker process unavailable");
             workers_.processes.push_back(process);
