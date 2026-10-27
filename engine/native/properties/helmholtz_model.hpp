@@ -375,6 +375,9 @@ public:
     ) const;
     // Mixed contraction of the extensive residual Helmholtz scalar with three to five
     // directions of width 2 + C + A in [T, V, n, active parameters]: E3, E4 or E5.
+    // Errors of E's ordinary Taylor coefficients on a requested path, including the site recurrence.
+    std::vector<double> residual_coefficient_errors(const std::vector<std::vector<double>>& regular,
+        const std::vector<double>& sites) const;
     ResidualEnergyAction residual_energy_action(double, double, const std::vector<double>&, const std::vector<std::vector<double>>&) const;
     ReferenceTaylor reference_taylor(double temperature, double volume,
         const std::vector<double>& composition, const std::vector<double>& stoichiometry,

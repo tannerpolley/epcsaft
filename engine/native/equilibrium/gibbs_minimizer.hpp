@@ -226,7 +226,7 @@ std::vector<double> sensitivity(
 struct SensitivityInfo final {
     std::size_t equations = 0;
     std::size_t rank = 0;
-    double condition_estimate = 0.0;
+    double condition_estimate = 0.0, threshold = 0.0;
     bool nonsingular = false;
 };
 

@@ -309,6 +309,21 @@ void properties_p2() {
 
     const auto associating_parameters = properties_support::associating_binary();
     epcsaft::HelmholtzModel associating(associating_parameters);
+    {
+        const double temperature = 330.0, volume = 6e-5;
+        const std::vector<double> composition{0.3, 0.7};
+        const auto at = associating.evaluate(temperature, volume, composition, epcsaft::DerivativeOrder::Hessian);
+        const auto errors = associating.residual_coefficient_errors(
+            {{temperature, volume, 0.3, 0.7}, {0.0, 1.0, 0.0, 0.0}}, at.site_fractions);
+        const bool covered = errors[1] >= at.gradient_floor;
+        recording_support::compare_custom("coefficient-volume-floor", "volume_derivative_error", "mol/m^3",
+            errors[1], at.gradient_floor,
+            recording_support::fields({model_inputs(associating_parameters, temperature, volume, composition)}),
+            "Relationship", "achieved-site-residual", "coefficient errors retain the achieved site-residual contribution",
+            "absolute", covered, "coefficient-volume-floor", "volume", "error", "T,V,n",
+            "error>=achieved-site-residual-floor", "case");
+        CHECK(covered);
+    }
     const auto record_zero_support = [&](const char* point,
                                          const epcsaft::HelmholtzModel& model,
                                          double temperature_value, double density_value,

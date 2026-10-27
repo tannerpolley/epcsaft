@@ -1397,10 +1397,54 @@ trial quantities are NaN. `polish_stop` retains raw/classified defects, step and
 the exit cause. Ordinary capture keeps the existing `polish_step` records.
 
 `solved_endpoint_jacobian` reports defining-row count, solved-chart width, rank
-and raw-J two-norm condition estimate after all deadlines, branch admission and
-attempt selection. Failed diagnostic inspection retains its cause and unavailable
-rank/condition. This estimate depends on coordinates and is no error bound or
-stability certificate. Its isolated EOS work is excluded from solve/search work
+and the scaled infinity-norm condition estimate after all deadlines, branch
+admission and attempt selection. For the canonical defining residuals $F$ and
+their exact Jacobian $J$, the endpoint calculation uses $A=J\operatorname{diag}(h)$.
+The physical coordinate scale $h$ is one for log and multiplier coordinates,
+the feed total for free phase and solid amounts, and $\max(|T|,1\ \mathrm{K})$ or
+$\max(|P|,1\ \mathrm{Pa})$ for free temperature or pressure. `condition` is
+$\|A\|_\infty\|A^{-1}\|_\infty$ and `inverse_norm` is
+$\|A^{-1}\|_\infty$, not a norm of the unscaled inverse Jacobian.
+
+The canonical row floor is
+$$
+\eta_i=\max\!\left(\gamma_n\sum_j|J_{ij}|h_j,
+u_i+\epsilon t_i\right),\qquad
+\gamma_n=\frac{n\epsilon}{1-n\epsilon},
+$$
+where $n$ is the solved-chart width, $\epsilon$ is the working-precision machine
+epsilon, $u_i$ is the row's propagated inner error and $t_i$ its term scale.
+Numerical row equilibration transports this floor by the absolute row scale.
+The shared linear calculation combines the Newton correction, propagated row
+floor and compensated linear defect through the exact physical-output
+derivatives. Output estimates also include returned-versus-mapped displacement
+and rounding. Temperature, pressure, amounts and compositions use absolute
+radii; positive density and packing use log radii, exported to absolute radii
+with `expm1`. Structural constants have no added rounding contribution.
+
+Detailed capture or an explicit post-hoc request computes these estimates.
+Unavailable rows, singularity or nonfinite projection retain their cause;
+unresolved composition, amount, packing or phase-separation domains prevent a
+conditional comparison. Under the accepted r5 scope, source-reference
+single-insertion errors remain unavailable with the cause
+`source-reference error not propagated`; their propagation belongs to
+[#869](https://github.com/tannerpolley/ePC-SAFT/issues/869).
+The [retained notebook](../../../analyses/2026-equilibrium-forward-error/notebook.qmd)
+records the comparison coverage and limitations.
+
+The native comparison first requires the original admission, residual, branch,
+phase and inventory conditions and applies the ordinary allowance. Beyond it,
+an estimated-error pass requires available, resolved estimates at both
+endpoints, at least one absolute radius above that allowance, and a difference
+no larger than the sum of radii in the quantity's chart. Positive density and
+packing use log differences. Strict comparisons retain the ordinary allowance.
+An ordinary pass never consults error estimates.
+
+Default recorded rank may be structural or an existing solve decision; it is
+not a continuously measured endpoint condition number. Failed detailed
+inspection retains its cause and unavailable rank/condition. These local
+linear estimates depend on coordinates and are no rigorous nonlinear error
+bound or stability certificate. Their isolated EOS work is excluded from solve/search work
 counts, but may update model caches/counters and adds uncapped time before return.
 Detailed capture can advance finite deadlines; untimed returned-state identity
 is qualified separately. Disabled capture adds no numerical work or clock reads.

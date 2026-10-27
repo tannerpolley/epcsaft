@@ -542,3 +542,31 @@ def test_parameter_reference_chain_matches_resolves(evidence: Any, mode: str, fa
         dc_dk = (contraction[0] - contraction[1]) / (2 * step)
         dx_dlnk = (solve(center, 1e-4).mole_fractions[1] - solve(center, -1e-4).mole_fractions[1]) / 2e-4
         assert abs(dx_dlnk * dc_dk) > 0.5 * abs(item.action)  # measured ~2x the action: omission flips its sign
+
+
+def test_source_reference_numerical_error_unavailable() -> None:
+    """#861 r5: missing insertion-error propagation cannot authorize a comparison."""
+    from epcsaft import trace
+    from epcsaft.equilibrium import (
+        ComparisonEligibility, ComparisonMode, Quantity, compare_equilibrium_quantity, equilibrium_numerical_estimates,
+    )
+    from tests.native_inputs import A_RECORD, dimer_problem, twin_ethane
+
+    model = twin_ethane(A_RECORD, [])
+    problem = dimer_problem(280.0, None)
+    ordinary = solve_equilibrium(model, problem)
+    with trace(diagnostics=True):
+        detailed = solve_equilibrium(model, problem)
+    assert ordinary.success and detailed.success
+    for field in ('temperature', 'pressure', 'amounts', 'mole_fractions', 'molar_densities', 'coordinates',
+                  'residuals', 'iterations', 'evaluations', 'hessian_calls', 'requested_tolerance_met'):
+        assert getattr(ordinary, field) == getattr(detailed, field), field
+    error = equilibrium_numerical_estimates(model, ordinary)
+    captured = detailed.numerical_estimates
+    assert captured is not None and captured.cause == error.cause == 'source-reference error not propagated'
+    assert any(math.isnan(value) for value in error.row_inner)
+    assert not error.pressure.available and not math.isfinite(error.pressure.absolute)
+    assert not math.isfinite(error.condition)
+    comparison = compare_equilibrium_quantity(Quantity.Linear, 1.0, 2.0, 1e-10,
+        error.pressure, error.pressure, ComparisonEligibility(), ComparisonMode.EstimatedError)
+    assert comparison.judgment == 'failed' and comparison.cause == 'unavailable_or_unresolved'

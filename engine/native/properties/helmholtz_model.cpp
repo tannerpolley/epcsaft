@@ -1,6 +1,7 @@
 #include "properties/helmholtz_model.hpp"
 
 #include "core/trace.hpp"
+#include "core/linear_error.hpp"
 #include "contributions/association.hpp"
 #include "contributions/born.hpp"
 #include "contributions/electrolyte.hpp"
@@ -1203,6 +1204,124 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
     scope.probe("site_fractions", result.site_fractions);
     scope.probe("gradient_floor", result.gradient_floor);
     return result;
+}
+
+std::vector<double> HelmholtzModel::residual_coefficient_errors(
+    const std::vector<std::vector<double>>& regular, const std::vector<double>& sites) const {
+    const std::size_t count = regular.size(), ns = sites.size();
+    if (count > 4 || count == 0) throw std::invalid_argument("coefficient error order");
+    const std::size_t width = regular.front().size();
+    for (const auto& row : regular)
+        if (row.size() != width || !finite_vector(row)) throw std::invalid_argument("coefficient error path");
+    if (width != 2 + parameters_.component_count() + active_.size()) throw std::invalid_argument("coefficient error width");
+    std::vector<double> errors(count, 0.0);
+    if (ns == 0) return errors;
+    std::lock_guard<std::mutex> lock(mutex_);
+    const auto& p = parameters_;
+    double total = std::accumulate(regular[0].begin() + 2, regular[0].begin() + 2 + p.component_count(), 0.0);
+    std::vector<double> composition(regular[0].begin() + 2, regular[0].begin() + 2 + p.component_count());
+    for (double& x : composition) x /= total;
+    ensure_tape(regular[0], sites, predicate_signature(regular[0][0], composition), {}, 0.0, true);
+    const auto sigma = segment_sigma(regular[0][0], p), diameter = segment_diameter(regular[0][0], p, sigma);
+    const auto lu = properties::site_factorization(sites, composition, p,
+        total / regular[0][1] * NUMBER_DENSITY_PER_ANGSTROM3,
+        association_delta(regular[0][0], total / regular[0][1], composition, p, sigma, diameter));
+    std::vector<double> coefficients(count * ns, 0.0), input(width + ns), known(count * ns, 0.0);
+    std::copy(sites.begin(), sites.end(), coefficients.begin());
+    for (std::size_t k = 0; k < count; ++k) {
+        std::copy(regular[k].begin(), regular[k].end(), input.begin());
+        std::fill(input.begin() + width, input.end(), 0.0);
+        if (k == 0) std::copy(sites.begin(), sites.end(), input.begin() + width);
+        auto value = k == 0 ? tape_->forward_zero(input) : tape_->function.Forward(k, input);
+        for (std::size_t a = 0; a < ns; ++a) known[k * ns + a] = -value[1 + a];
+        if (k == 0) continue;
+        const Eigen::VectorXd next = lu.solve(Eigen::Map<const Eigen::VectorXd>(known.data() + k * ns, ns));
+        for (std::size_t a = 0; a < ns; ++a) input[width + a] = coefficients[k * ns + a] = next[a];
+        tape_->function.Forward(k, input);
+    }
+    // Differentiate the complete coefficient equations with every X_k independent. In particular,
+    // d(r_k)/dX_0 includes the changing site Jacobian while holding X_k fixed.
+    using AD = CppAD::AD<double>;
+    std::vector<AD> independent(coefficients.begin(), coefficients.end()), output;
+    CppAD::Independent(independent);
+    auto lifted = tape_->function.base2ad();
+    for (std::size_t k = 0; k < count; ++k) {
+        std::vector<AD> argument(regular[k].begin(), regular[k].end());
+        argument.insert(argument.end(), independent.begin() + k * ns, independent.begin() + (k + 1) * ns);
+        const auto value = lifted.Forward(k, argument);
+        output.insert(output.end(), value.begin(), value.begin() + 1 + ns);
+    }
+    CppAD::ADFun<double> map(independent, output);
+    map.Forward(0, coefficients);
+    const auto jacobian = map.Jacobian(coefficients);
+    // Absolute convolution terms of X_a + X_a rho_N sum_b x_b nu_b X_b Delta_ab - 1.
+    using Series = Taylor<3>;
+    std::vector<Series> q(width), x(p.component_count()), site(ns);
+    for (std::size_t k = 0; k < count; ++k) {
+        for (std::size_t j = 0; j < width; ++j) q[j].c[k] = regular[k][j];
+        for (std::size_t a = 0; a < ns; ++a) site[a].c[k] = coefficients[k * ns + a];
+    }
+    Series amount;
+    for (std::size_t i = 0; i < x.size(); ++i) amount += q[2 + i];
+    for (std::size_t i = 0; i < x.size(); ++i) x[i] = q[2 + i] / amount;
+    const Series density = amount / q[1];
+    ParameterRecord<Series> series_parameters;
+    static_cast<FixedParameters&>(series_parameters) = p;
+    for (std::size_t f = 0; f < detail::PARAMETER_FAMILY_COUNT; ++f) {
+        const auto family = static_cast<detail::ParameterFamily>(f);
+        const auto source = detail::family_values(p, family);
+        const auto target = detail::family_values(series_parameters, family, source.second);
+        for (std::size_t i = 0; i < source.second; ++i) target.first[i] = Series(source.first[i]);
+    }
+    const auto series_sigma = segment_sigma(q[0], series_parameters);
+    const auto series_diameter = segment_diameter(q[0], series_parameters, series_sigma);
+    const auto delta = association_delta_values(q[0], density, x, series_parameters, series_sigma, series_diameter,
+        series_parameters.association_energy_over_k, series_parameters.association_volume);
+    const auto absolute = [](Series v) { for (double& c : v.c) c = std::abs(c); return v; };
+    std::vector<Series> terms(ns);
+    for (std::size_t a = 0; a < ns; ++a) {
+        Series bonded;
+        for (std::size_t b = 0; b < ns; ++b)
+            bonded += absolute(x[p.site_component[b]]) * p.site_multiplicity[b] * absolute(site[b]) * absolute(delta[a * ns + b]);
+        terms[a] = absolute(site[a]) + absolute(site[a]) * absolute(density) * NUMBER_DENSITY_PER_ANGSTROM3 * bonded;
+        terms[a].c[0] += 1;
+    }
+    const auto strength = association_delta(regular[0][0], total / regular[0][1], composition, p, sigma, diameter);
+    const Eigen::MatrixXd matrix = mass_action_jacobian(composition, p, sites,
+        total / regular[0][1] * NUMBER_DENSITY_PER_ANGSTROM3, strength, bonded_densities(composition, p, sites, strength));
+    Eigen::VectorXd previous = Eigen::VectorXd::Zero(count * ns);
+    const double epsilon = std::numeric_limits<double>::epsilon();
+    for (std::size_t k = 0; k < count; ++k) {
+        Eigen::VectorXd right(ns);
+        const Eigen::VectorXd coefficient = Eigen::Map<const Eigen::VectorXd>(coefficients.data() + k * ns, ns);
+        const Eigen::VectorXd rhs = Eigen::Map<const Eigen::VectorXd>(known.data() + k * ns, ns);
+        const Eigen::VectorXd defect = k == 0 ? rhs : core::compensated_defect(matrix, coefficient, rhs);
+        for (std::size_t a = 0; a < ns; ++a) {
+            right[a] = std::abs(defect[a]) + epsilon * std::max(terms[a].c[k], k == 0 ? double(ns) : 0.0);
+            for (std::size_t j = 0; j < k * ns; ++j)
+                right[a] += std::abs(jacobian[((k * (ns + 1) + 1 + a) * count * ns) + j]) * previous[j];
+        }
+        previous.segment(k * ns, ns) = core::inverse_error_action(lu, right);
+        // The gradient's base-site contribution is the achieved-residual floor below.
+        for (std::size_t j = k == 1 ? ns : 0; j < (k + 1) * ns; ++j)
+            errors[k] += std::abs(jacobian[k * (ns + 1) * count * ns + j]) * previous[j];
+        if (k == 1) {
+            double base_residual = epsilon * ns;
+            for (std::size_t a = 0; a < ns; ++a) base_residual = std::max(base_residual, std::abs(known[a]));
+            for (std::size_t a = 0; a < ns; ++a)
+                errors[k] += std::abs(coefficients[ns + a] * total * composition[p.site_component[a]]
+                    * p.site_multiplicity[a] / sites[a]) * base_residual;
+        }
+        if (k == 0) {
+            std::vector<double> weights(count * (ns + 1), 0.0); weights[0] = 1;
+            const auto hessian = map.Hessian(coefficients, weights);
+            for (std::size_t a = 0; a < ns; ++a)
+                for (std::size_t b = 0; b < ns; ++b)
+                    errors[0] += 0.5 * previous[a] * std::abs(hessian[a * count * ns + b]) * previous[b];
+        }
+        if (!std::isfinite(errors[k])) throw std::runtime_error("nonfinite association coefficient error");
+    }
+    return errors;
 }
 
 ResidualEnergyAction HelmholtzModel::residual_energy_action(double temperature, double volume,

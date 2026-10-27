@@ -2403,6 +2403,92 @@ class CriticalRecord:
     rank: int
     """Numerical rank of the augmented defining Jacobian, a count."""
 
+class NumericalRank:
+    """Most recent existing factorization's rank decision and relative threshold."""
+    basis: str
+    dimension: int
+    rank: int
+    threshold: float
+
+class Quantity:
+    """Comparison chart: linear, positive physical quantity, or stored logarithm."""
+    Linear: Quantity
+    Positive: Quantity
+    LogPositive: Quantity
+
+class ComparisonMode:
+    """Strict ordinary allowance or the accepted conditional numerical-error rule."""
+    Strict: ComparisonMode
+    EstimatedError: ComparisonMode
+
+class NumericalEstimate:
+    """Local numerical-error radius in the stored quantity and its comparison chart."""
+    absolute: float
+    chart: float
+    available: bool
+    resolved: bool
+    cause: str
+    def __init__(self) -> None: ...
+
+class ComparisonEligibility:
+    """Original declaration, branch, inventory, residual and admission outcomes."""
+    declaration: bool
+    branch: bool
+    phase_matching: bool
+    inventory: bool
+    residual_a: bool
+    residual_b: bool
+    admission_a: bool
+    admission_b: bool
+    def __init__(self) -> None: ...
+
+class EquilibriumComparison:
+    """Native judgment and differences; the caller retains the comparison operands."""
+    judgment: str
+    cause: str
+    difference: float
+    chart_difference: float
+    radius_sum: float
+
+class EquilibriumNumericalEstimates:
+    """Requested local error estimates at the returned equilibrium point, not enclosures."""
+    basis: str
+    cause: str
+    rank: int
+    dimension: int
+    precision_bits: int
+    threshold: float
+    condition: float
+    inverse_norm: float
+    backward_error: float
+    residuals: list[float]
+    row_terms: list[float]
+    row_inner: list[float]
+    row_floor: list[float]
+    physical_scale: list[float]
+    temperature: NumericalEstimate
+    pressure: NumericalEstimate
+    densities: list[NumericalEstimate]
+    packing: list[NumericalEstimate]
+    composition: list[NumericalEstimate]
+    amounts: list[NumericalEstimate]
+
+def compare_equilibrium_quantity(
+    quantity: Quantity, a: float, b: float, ordinary_allowance: float,
+    estimate_a: NumericalEstimate, estimate_b: NumericalEstimate,
+    eligibility: ComparisonEligibility, mode: ComparisonMode,
+) -> EquilibriumComparison:
+    """Apply the accepted ordinary or conditional comparison in the native owner."""
+    ...
+
+def project_numerical_estimate(value: float, mapped: float, radius: float, positive: bool, constant: bool) -> NumericalEstimate:
+    """Project a native log or linear radius, including output displacement and rounding."""
+    ...
+
+def equilibrium_numerical_estimates(model: HelmholtzModel | IdealMoleFraction, result: EquilibriumResult) -> EquilibriumNumericalEstimates:
+    """Estimate numerical error at the frozen returned state of the declared model."""
+    ...
+
 class EquilibriumProblem:
     """Declared fluid/reaction/solid equilibrium and extensive constraints.
 
@@ -2664,12 +2750,18 @@ class CompiledSystem:
     """Whether reaction declarations are present."""
     conserves_total_moles: bool
     """Whether the admitted stoichiometry conserves total molar amount."""
+    last_rank: NumericalRank | None
     jacobian_rank: int
     """Defining-Jacobian rank measured at the generic point."""
     removed_species: list[int]
     """Component indices eliminated by exact inventory/support restrictions."""
     def solve(self) -> EquilibriumResult:
         """Solve this declaration from a fresh start through the native equilibrium driver."""
+        ...
+    def numerical_estimates(self, coordinates: Sequence[float], temperature: float, pressure: float,
+                            amounts: Sequence[float], composition: Sequence[float], densities: Sequence[float],
+                            packing: Sequence[float]) -> EquilibriumNumericalEstimates:
+        """Estimate a frozen endpoint in this declaration; admission remains the reader's original outcome."""
         ...
     def generic_point(self) -> list[float]:
         """Construct the native generic chart seed.
@@ -2864,6 +2956,10 @@ class EquilibriumResult:
     """
     convergence: Convergence
     """Residual, effective criterion, floor and stopping evidence."""
+    last_rank: NumericalRank | None
+    """Most recent evaluated rank decision; its basis identifies the matrix."""
+    numerical_estimates: EquilibriumNumericalEstimates | None
+    """Endpoint estimates on detailed capture; None when unrequested."""
     linear_solve_diagnostics: LinearSolveDiagnostics | None
     """Reduced-system accuracy at the returned state, or explicitly rejected-attempt evidence on failure."""
     rows: list[Row]

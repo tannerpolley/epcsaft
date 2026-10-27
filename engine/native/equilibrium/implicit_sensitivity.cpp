@@ -1,6 +1,7 @@
 #include "equilibrium/gibbs_minimizer.hpp"
 
 #include "core/trace.hpp"
+#include "core/linear_error.hpp"
 #include "core/numerical_policy.hpp"
 #include "equilibrium/stoichiometry.hpp"
 
@@ -39,28 +40,8 @@ bool valid_point(const std::vector<double>& point) {
         point.begin(), point.end(), [](double value) { return std::isfinite(value); });
 }
 
-// Normwise backward error |r|/(|J||y| + |b|) in the infinity norm (Rigal-Gaches). Unlike
-// |r|/max(1, |b|), it does not cap the realized amplification |J||y|/|b| or depend on chart scale.
-double backward_error(double residual, double jacobian_norm, double solution, double right) {
-    const double denominator = jacobian_norm * solution + right;
-    return residual == 0.0 ? 0.0 : denominator > 0.0 ? residual / denominator : std::numeric_limits<double>::infinity();
-}
-
-// The defect b - A z in double-double: FMA TwoProduct and TwoSum (Ogita-Rump-Oishi Dot2), accurate
-// as if computed in twice the working precision and independent of the host's x87 precision control.
-Eigen::VectorXd defect(const Eigen::MatrixXd& matrix, const Eigen::VectorXd& solution, const Eigen::VectorXd& right) {
-    Eigen::VectorXd result(right.size());
-    for (Eigen::Index row = 0; row < right.size(); ++row) {
-        double sum = right(row), error = 0.0;
-        for (Eigen::Index column = 0; column < solution.size(); ++column) {
-            const double term = -matrix(row, column) * solution(column), next = sum + term, part = next - sum;
-            error += (sum - (next - part)) + (term - part) + std::fma(-matrix(row, column), solution(column), -term);
-            sum = next;
-        }
-        result(row) = sum + error;
-    }
-    return result;
-}
+using core::backward_error;
+using core::compensated_defect;
 
 bool square_and_numeric(const Eigen::MatrixXd& matrix) { return matrix.rows() == matrix.cols() && matrix.allFinite(); }
 
@@ -83,6 +64,7 @@ SensitivityInfo inspect_sensitivity(
     SensitivityInfo result;
     result.equations = rows;
     result.rank = static_cast<std::size_t>(lu.rank());
+    result.threshold = lu.threshold();
     result.condition_estimate = condition_estimate(matrix);
     result.nonsingular = square_and_numeric(matrix) && result.rank == dimension;
     scope.probe("equations", static_cast<double>(rows));
@@ -390,7 +372,7 @@ Path follow(const CompiledSystem& compiled, const Center& center, const std::vec
         right_norm[k] = right.cwiseAbs().maxCoeff();
         // Solve R J C z = R b, then refine once with the double-double defect.
         Eigen::VectorXd scaled = center.lu.solve(right);
-        scaled += center.lu.solve(defect(center.jacobian, scaled, right));
+        scaled += center.lu.solve(compensated_defect(center.jacobian, scaled, right));
         solution_norm[k] = scaled.cwiseAbs().maxCoeff();
         const Eigen::VectorXd solution = center.column.cwiseProduct(scaled);
         ++diagnostics.linear_solves;
@@ -1290,6 +1272,113 @@ std::vector<SolvedStateActionBatch> solved_state_first_actions(
     for (const auto& request : requests)
         batches.push_back(evaluate_action(classified ? *classified : compiled, central, request, shared, scope, cover));
     return batches;
+}
+
+EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSystem& c, const EquilibriumResult& result) {
+    core::Capture isolated(false);
+    EquilibriumNumericalEstimates out;
+    out.dimension = result.coordinates.size();
+    if (!result.has_state() || !result.declaration) { out.cause = "original_state_unavailable"; return out; }
+    try {
+        const auto at = c.prepare(result.coordinates);
+        const auto evaluation = c.evaluate_at(at);
+        const auto uncertainty = c.row_uncertainty(at);
+        out.residuals = evaluation.values; out.row_terms = uncertainty.terms; out.row_inner = uncertainty.inner;
+        if (!uncertainty.cause.empty()) {
+            out.temperature.cause = out.pressure.cause = out.cause = uncertainty.cause; return out;
+        }
+        const auto n = out.dimension, phases = at.amount.size(), components = c.n_feed.size();
+        const auto per_phase = 3 + components, outputs = 2 + phases * per_phase;
+        Eigen::MatrixXd g = Eigen::MatrixXd::Zero(outputs, n);
+        Eigen::VectorXd values = Eigen::VectorXd::Zero(outputs), h = Eigen::VectorXd::Ones(n);
+        values[0] = *result.temperature; values[1] = *result.pressure;
+        for (std::size_t p = 0; p < phases; ++p) {
+            const auto o = 2 + p * per_phase;
+            if (!c.ideal) { values[o] = result.molar_densities[p]; values[o + 1] = result.packing_fractions[p]; }
+            values[o + 2] = result.amounts[p];
+            for (std::size_t j = 0; j < components; ++j) values[o + 3 + j] = result.mole_fractions[p * components + j];
+            if (!c.ideal && at.shape[p].amount) h[*at.shape[p].amount] = c.feed_total;
+        }
+        for (const auto& solid : c.solids) if (solid.column) h[*solid.column] = c.feed_total;
+        if (c.problem.pressure.free) h[c.primal_size - 1] = std::max(std::abs(at.pressure), 1.0);
+        if (c.problem.temperature.free) h[c.primal_size - c.free_intensive_count] = std::max(std::abs(at.temperature), 1.0);
+        // Reuse the actions' exact physical map; no chart is reconstructed in a reader.
+        std::vector<double> mapped(outputs, 0.0);
+        if (c.ideal) {
+            mapped[0] = at.temperature; mapped[1] = at.pressure; mapped[4] = at.amount[0];
+            for (std::size_t i = 0; i < components; ++i) mapped[5 + i] = at.composition[0][i];
+            for (std::size_t j = 0; j < n; ++j) {
+                const auto species = c.problem.phases[0].support[j];
+                const double x = at.composition[0][species];
+                g(4, j) = at.amount[0] * x;
+                for (std::size_t i = 0; i < components; ++i)
+                    g(5 + i, j) = at.composition[0][i] * (double(i == species) - x);
+            }
+        } else for (std::size_t j = 0; j < n; ++j) {
+            std::vector<double> unit(n, 0.0); unit[j] = 1.0;
+            const auto series = c.row_series(at, {at.point, unit}, std::vector<double>(c.control_width(), 0.0), 1);
+            if (series.energy != PropertyActionStatus::Available) { out.cause = "projection_derivative_unavailable"; return out; }
+            g(0, j) = series.temperature[1]; g(1, j) = series.pressure[1];
+            mapped[0] = series.temperature[0]; mapped[1] = series.pressure[0];
+            for (std::size_t p = 0; p < phases; ++p) {
+                const auto map = phase_map(*c.model, series, p, components); const auto o = 2 + p * per_phase;
+                g(o, j) = logarithm(map.density)[1]; g(o + 1, j) = c.model->parameters().ideal_gas ? 0.0 : logarithm(map.packing)[1]; g(o + 2, j) = map.amount[1];
+                mapped[o] = map.density[0]; mapped[o + 1] = map.packing[0]; mapped[o + 2] = map.amount[0];
+                for (std::size_t i = 0; i < components; ++i) {
+                    g(o + 3 + i, j) = map.mole_fraction[i][1]; mapped[o + 3 + i] = map.mole_fraction[i][0];
+                }
+            }
+        }
+        const auto j = dense_matrix(c.jacobian_at(at), c.rows.size(), n);
+        const Eigen::VectorXd f = Eigen::Map<const Eigen::VectorXd>(evaluation.values.data(), n);
+        const Eigen::VectorXd terms = Eigen::Map<const Eigen::VectorXd>(uncertainty.terms.data(), n);
+        const Eigen::VectorXd inner = Eigen::Map<const Eigen::VectorXd>(uncertainty.inner.data(), n);
+        const Eigen::VectorXd eta = core::canonical_row_floor(j, h, terms, inner);
+        out.physical_scale = {h.data(), h.data() + n}; out.row_floor = {eta.data(), eta.data() + n};
+        const auto e = core::linear_error(j, f, g, eta, Eigen::VectorXd::Ones(n), h);
+        out.rank = e.rank; out.threshold = e.threshold; out.condition = e.condition;
+        out.inverse_norm = e.inverse_norm; out.backward_error = e.backward;
+        if (!e.cause.empty()) { out.cause = e.cause; return out; }
+        const auto project = [&](std::size_t i, bool positive) {
+            return core::project_numerical_estimate(values[i], mapped[i], e.radius[i], positive, g.row(i).isZero(0.0));
+        };
+        out.temperature = project(0, false); out.pressure = project(1, false);
+        bool domain = true;
+        for (std::size_t p = 0; p < phases; ++p) {
+            const auto o = 2 + p * per_phase;
+            if (!c.ideal) { out.densities.push_back(project(o, true)); out.packing.push_back(project(o + 1, !c.model->parameters().ideal_gas)); }
+            out.amounts.push_back(project(o + 2, false));
+            domain = domain && values[o + 2] - out.amounts.back().absolute >= 0;
+            domain = domain && (c.ideal || c.model->parameters().ideal_gas || (values[o + 1] * std::exp(-out.packing.back().chart) >= policy::PACKING_FRACTION_FLOOR.value
+                && values[o + 1] * std::exp(out.packing.back().chart) <= policy::PACKING_FRACTION_CEILING.value));
+            for (std::size_t i = 0; i < components; ++i) {
+                out.composition.push_back(project(o + 3 + i, false));
+                domain = domain && values[o + 3 + i] - out.composition.back().absolute >= 0
+                    && values[o + 3 + i] + out.composition.back().absolute <= 1;
+            }
+        }
+        for (std::size_t p = 0; p < phases; ++p) for (std::size_t q = p + 1; q < phases; ++q)
+            if (c.problem.phases[p].kind != c.problem.phases[q].kind)
+                domain = domain && std::abs(result.molar_densities[p] - result.molar_densities[q])
+                    > out.densities[p].absolute + out.densities[q].absolute;
+        out.cause = domain ? "" : "unresolved_domain";
+        if (!domain) {
+            out.temperature.resolved = out.pressure.resolved = false;
+            for (auto* entries : {&out.densities, &out.packing, &out.composition, &out.amounts})
+                for (auto& estimate : *entries) { estimate.resolved = false; estimate.cause = out.cause; }
+        }
+    } catch (const std::exception& error) { out.cause = error.what(); }
+    return out;
+}
+
+EquilibriumNumericalEstimates equilibrium_numerical_estimates(const HelmholtzModel& model, const EquilibriumResult& result) {
+    if (result.model_identity != &model || !result.declaration) throw std::invalid_argument("numerical estimate model/result mismatch");
+    return equilibrium_numerical_estimates(compile_problem(model, *result.declaration), result);
+}
+
+EquilibriumNumericalEstimates equilibrium_numerical_estimates(const IdealMoleFraction& model, const EquilibriumResult& result) {
+    if (result.ideal_identity != &model || !result.declaration) throw std::invalid_argument("numerical estimate model/result mismatch");
+    return equilibrium_numerical_estimates(compile_problem(model, *result.declaration), result);
 }
 
 }  // namespace epcsaft::equilibrium
