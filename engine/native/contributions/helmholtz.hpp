@@ -220,7 +220,7 @@ Scalar packing_fraction_from_geometry(
             * parameters.segment_count[component]
             * diameter[component] * diameter[component] * diameter[component];
     }
-    return (PI / 6.0) * molar_density * NUMBER_DENSITY_PER_ANGSTROM3 * moment;
+    return (Scalar(PI) / 6.0) * molar_density * NUMBER_DENSITY_PER_ANGSTROM3 * moment;
 }
 
 // EqID: packing_moments
@@ -241,7 +241,7 @@ std::array<Scalar, 4> packing_moments(
             for (std::size_t exponent = 0; exponent < order; ++exponent) power *= diameter[i];
             moment += mole_fractions[i] * parameters.segment_count[i] * power;
         }
-        zeta[order] = (PI / 6.0) * number_density * moment;
+        zeta[order] = (Scalar(PI) / 6.0) * number_density * moment;
     }
     zeta[3] = packing_fraction_from_geometry(molar_density, mole_fractions, parameters, diameter);
     return zeta;
@@ -291,7 +291,7 @@ Scalar multipole_helmholtz(
     const std::vector<Fixed>& sigma, const std::vector<Fixed>& epsilon, bool quadrupole
 ) {
     const std::size_t size = x.size();
-    constexpr double scale = DEBYE_SQUARED_J_ANGSTROM3 / BOLTZMANN_J_PER_K;
+    const Fixed scale = Fixed(DEBYE_SQUARED_J_ANGSTROM3) / Fixed(BOLTZMANN_J_PER_K);
     const auto& moment = quadrupole ? parameters.quadrupole_moment_debye_angstrom : parameters.dipole_moment_debye;
     const auto& count = quadrupole ? parameters.quadrupole_count : parameters.dipole_count;
     const int power = quadrupole ? 5 : 3;
@@ -308,7 +308,7 @@ Scalar multipole_helmholtz(
     for (std::size_t i = 0; i < size; ++i) {
         if (moment[i] == 0.0 || count[i] == 0.0) continue;
         polar.push_back(i);
-        q[i] = count[i] * moment[i] * moment[i] * scale / times(temperature * parameters.segment_count[i], sigma[i], power);
+        q[i] = Fixed(count[i]) * moment[i] * moment[i] * scale / times(temperature * parameters.segment_count[i], sigma[i], power);
     }
     Scalar second = Scalar(0.0);
     Scalar third = Scalar(0.0);
@@ -336,10 +336,10 @@ Scalar multipole_helmholtz(
     }
     // EqID: dipolar_second_order
     // EqID: quadrupolar_second_order
-    const Scalar a2 = (quadrupole ? -9.0 * PI / 16.0 : -PI) * number_density * second;
+    const Scalar a2 = (quadrupole ? -9.0 * Scalar(PI) / 16.0 : -Scalar(PI)) * number_density * second;
     // EqID: dipolar_third_order
     // EqID: quadrupolar_third_order
-    const Scalar a3 = (quadrupole ? 9.0 * PI * PI / 16.0 : -4.0 * PI * PI / 3.0) * number_density * number_density * third;
+    const Scalar a3 = (quadrupole ? 9.0 * Scalar(PI) * PI / 16.0 : -4.0 * Scalar(PI) * PI / 3.0) * number_density * number_density * third;
     // a_polar = A2 / (1 - A3/A2). With every moment absent A2 = A3 = 0 and the Pade factor
     // is taken as its limit 1; both selected operands avoid 0/0 on the tape.
     return a2 * scalar_select_less(Scalar(0.0), a2 * a2, a2, Scalar(1.0))
@@ -355,7 +355,7 @@ std::vector<Fixed> temperature_law_values(const Fixed& temperature, const Parame
         const auto law = static_cast<std::size_t>(parameters.temperature_law_term_law[term]);
         const double reference = parameters.temperature_law_reference_k[law];
         const int power = parameters.temperature_law_term_power[term];
-        Fixed basis = power < 0 ? Fixed(1.0) / temperature - Fixed(1.0 / reference) : Fixed(1.0);
+        Fixed basis = power < 0 ? Fixed(1.0) / temperature - Fixed(1.0) / Fixed(reference) : Fixed(1.0);
         for (int p = 0; p < power; ++p) basis *= temperature - Fixed(reference);
         values[law] += parameters.temperature_law_coefficient[term] * basis;
     }
@@ -405,7 +405,7 @@ Fixed pair_correction(const Fixed& temperature, const ParameterSet& parameters, 
     Fixed k_ij = parameters.k_ij[pair];
     if (reference_temperature > 0.0) {
         k_ij += parameters.k_ij_reciprocal_temperature_slope[pair]
-            * (Fixed(1.0) / temperature - Fixed(1.0 / reference_temperature));
+            * (Fixed(1.0) / temperature - Fixed(1.0) / Fixed(reference_temperature));
     }
     return k_ij;
 }
@@ -518,7 +518,7 @@ HelmholtzResult<Scalar> residual_helmholtz(
     }
     // EqID: dispersion_helmholtz
     const Scalar dispersion =
-        -2.0 * PI * number_density * integral_1 * first_moment -
+        -2.0 * Scalar(PI) * number_density * integral_1 * first_moment -
         PI * number_density * mean_segment_count * c1 * integral_2 * second_moment;
 
     // Optional: an undeclared polar family leaves the dipole and quadrupole arrays empty.

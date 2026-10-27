@@ -49,7 +49,7 @@ void register_equilibrium(nb::module_& module) {
     module.def("project_numerical_estimate", &project_numerical_estimate,
         nb::arg("value"), nb::arg("mapped"), nb::arg("radius"), nb::arg("positive"), nb::arg("constant"));
     nb::class_<EquilibriumNumericalEstimates>(module, "EquilibriumNumericalEstimates")
-        EPCSAFT_READONLY(EquilibriumNumericalEstimates, basis, cause, rank, dimension, precision_bits, threshold,
+        EPCSAFT_READONLY(EquilibriumNumericalEstimates, basis, cause, source_reference_method, rank, dimension, precision_bits, threshold,
             condition, inverse_norm, backward_error, residuals, row_terms, row_inner, row_floor, physical_scale,
             temperature, pressure, densities, packing, composition, amounts);
     module.def("equilibrium_numerical_estimates", nb::overload_cast<const HelmholtzModel&, const EquilibriumResult&>(

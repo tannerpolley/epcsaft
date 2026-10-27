@@ -162,6 +162,10 @@ struct ReferenceTaylor final {
     PropertyActionStatus status = PropertyActionStatus::Nonfinite;
     PropertyActionDiagnostics diagnostics;
 };
+struct ReferenceTaylorError final {
+    std::array<double, 2> fixed{}, pressure{}, pressure_floor{};
+    double temperature_coefficient = 0.0;
+};
 inline double require_component_property(const std::optional<double>& value) {
     if (!value) throw std::invalid_argument("ionic_insertion: absent charged component property");
     return *value;
@@ -295,7 +299,11 @@ enum class NeutralReferenceStatus {
     Nonfinite,
 };
 
+struct NeutralReferenceTrace;
 struct NeutralReferenceReactionDiagnostic final {
+    std::shared_ptr<const NeutralReferenceTrace> trace;
+    std::array<double, 2> numerical_error{NAN, NAN};
+    std::string numerical_error_cause;
     policy::SolverOptions solver_options;
     std::size_t reaction_index = 0;
     std::optional<double> terminal_contraction;
@@ -381,7 +389,7 @@ public:
     ResidualEnergyAction residual_energy_action(double, double, const std::vector<double>&, const std::vector<std::vector<double>>&) const;
     ReferenceTaylor reference_taylor(double temperature, double volume,
         const std::vector<double>& composition, const std::vector<double>& stoichiometry,
-        const PressureActionDirection& direction, std::size_t order, bool infinite_dilution = false) const;
+        const PressureActionDirection& direction, std::size_t order, bool infinite_dilution = false, ReferenceTaylorError* error = nullptr) const;
     NeutralPropertyDerivatives neutral_property(
         double temperature,
         double molar_density,
@@ -509,6 +517,7 @@ NeutralReferenceReactionDiagnostic reaction_reference(
 );
 
 // Raw source-pressure partial; infinite_dilution selects the ion-free first-insertion limit.
+void reference_errors(const HelmholtzModel&, double, const std::vector<double>&, NeutralReferenceReactionDiagnostic&);
 ResidualEnergyAction reference_partial_from_state(const HelmholtzModel&, double temperature,
     const std::vector<double>& composition, const std::vector<double>& stoichiometry,
     std::size_t temperature_order, std::size_t pressure_order,

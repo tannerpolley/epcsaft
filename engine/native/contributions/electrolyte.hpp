@@ -115,16 +115,16 @@ Scalar bulk_relative_permittivity(
             // EqID: effective_dipolar_density
             effective_dipolar_density += number_density_angstrom3 * fraction
                 * (
-                    parameters.dipole_scaling_debye2[component]
+                    Fixed(parameters.dipole_scaling_debye2[component])
                         * DEBYE_SQUARED_J_ANGSTROM3 / (BOLTZMANN_J_PER_K * temperature)
-                    + 3.0 * parameters.polarizability_scaling_angstrom3[component]
+                    + Fixed(3.0) * parameters.polarizability_scaling_angstrom3[component]
                 );
             // EqID: dipolar_correlation_integral
             dipolar_correlation += fraction
                 * parameters.correlation_integral_parameter[component];
         }
         // EqID: effective_dipolar_density
-        const Scalar y_effective = (4.0 * PI / 9.0)
+        const Scalar y_effective = (4.0 * Scalar(PI) / 9.0)
             * effective_dipolar_density;
         // EqID: dipolar_correlation_integral
         const Scalar integral = Scalar(1.0) + dipolar_correlation
@@ -296,7 +296,7 @@ ElectrolyteResult<Scalar> electrolyte_contribution(
     // EqID: debye_huckel_helmholtz
     const Scalar debye_huckel = -kappa * ELEMENTARY_CHARGE_C
         * ELEMENTARY_CHARGE_C * weighted_chi
-        / (12.0 * PI * VACUUM_PERMITTIVITY_F_PER_M
+        / (12.0 * Scalar(PI) * VACUUM_PERMITTIVITY_F_PER_M
            * bulk_permittivity * BOLTZMANN_J_PER_K * temperature);
     return {bulk_permittivity, debye_huckel};
 }

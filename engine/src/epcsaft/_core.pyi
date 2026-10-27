@@ -2454,6 +2454,7 @@ class EquilibriumNumericalEstimates:
     """Requested local error estimates at the returned equilibrium point, not enclosures."""
     basis: str
     cause: str
+    source_reference_method: str
     rank: int
     dimension: int
     precision_bits: int

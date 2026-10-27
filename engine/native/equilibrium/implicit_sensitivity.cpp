@@ -1284,6 +1284,10 @@ EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSyst
         const auto evaluation = c.evaluate_at(at);
         const auto uncertainty = c.row_uncertainty(at);
         out.residuals = evaluation.values; out.row_terms = uncertainty.terms; out.row_inner = uncertainty.inner;
+        if (!c.reference_diagnostics.empty() || !c.solids.empty()) out.source_reference_method =
+            "local higher-precision re-evaluation plus first-order pressure/site propagation; "
+            "can underestimate shared errors and internal cancellation; fixed-input arithmetic excludes supplied operand uncertainty; "
+            "reference replay precision: " + std::to_string(std::numeric_limits<long double>::digits) + " bits";
         if (!uncertainty.cause.empty()) {
             out.temperature.cause = out.pressure.cause = out.cause = uncertainty.cause; return out;
         }
