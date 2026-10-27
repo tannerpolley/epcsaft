@@ -148,8 +148,9 @@ inline std::string describe(const Convergence& record) {
 
 class __attribute__((visibility("default"))) ConvergenceFailure : public std::runtime_error {
 public:
-    explicit ConvergenceFailure(const Convergence& record, std::optional<Convergence> first = std::nullopt)
-        : std::runtime_error(describe(record)), record(record), first_numerical_failure(std::move(first)) {}
+    explicit ConvergenceFailure(const Convergence& record)
+        : std::runtime_error(describe(record)), record(record) {}
+    ConvergenceFailure(const Convergence& record, std::optional<Convergence>& first);
 
     Convergence record;
     std::optional<Convergence> first_numerical_failure;
