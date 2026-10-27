@@ -1,5 +1,6 @@
 #pragma once
 #include "core/convergence.hpp"
+#include "equilibrium/problem.hpp"
 #include "core/trace.hpp"
 #if __has_include(<HSLLoader.h>)
 #include <HSLLoader.h>
@@ -92,6 +93,18 @@ inline const std::string& linear_solver() {
 #endif
     }();
     return chosen;
+}
+
+inline void observe_ipopt(IpoptDiagnostics& d, core::Scope* scope, const IpoptIteration& iteration) {
+    ++d.callbacks;
+    if (iteration.mode == int(Ipopt::RestorationPhaseMode) && (!d.last || d.last->mode != iteration.mode)) {
+        ++d.restoration_entries;
+        if (!d.first_restoration_iteration) d.first_restoration_iteration = iteration.iteration;
+    }
+    d.last = iteration;
+    if (scope) scope->probe("ipopt_iteration",
+        {double(iteration.mode), iteration.objective, iteration.inf_pr, iteration.inf_du, iteration.mu, iteration.step_norm, iteration.regularization,
+         iteration.alpha_pr, iteration.alpha_du, double(iteration.line_search_trials)}, iteration.iteration);
 }
 
 // One checked option/lifecycle owner for exact curvature and estimation's BFGS.
