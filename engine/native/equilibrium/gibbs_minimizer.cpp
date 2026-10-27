@@ -18,7 +18,6 @@
 #include <Eigen/Dense>
 
 #include <algorithm>
-#include <array>
 #include <cmath>
 #include <exception>
 #include <limits>
@@ -1120,8 +1119,8 @@ static bool polish_correction(const CompiledSystem& compiled, std::vector<Base>&
             });
             if constexpr (!std::is_same_v<Base, double>) core::retain_failure(result.first_numerical_failure, reason, "wide correction");
             if (detailed) scope.observe([&] { scope.probe("polish_stop",
-                {maximum_abs(numerical(at, rows_before)),
-                 maximum_abs(classified_rows(at, rows_before)),
+                {double(maximum_abs(numerical(at, rows_before))),
+                 double(maximum_abs(classified_rows(at, rows_before))),
                  static_cast<double>(final_step)}, static_cast<std::uint32_t>(final_step), reason); });
         };
         for (std::size_t step = 0; step < static_cast<std::size_t>(policy::EQUILIBRIUM_MAX_ITERATIONS.value); ++step) {
@@ -1206,17 +1205,17 @@ static bool polish_correction(const CompiledSystem& compiled, std::vector<Base>&
                 Base feed_relative = 0.0;
                 for (const auto& shape : at.shape) if (shape.amount)
                     feed_relative = std::max(feed_relative, std::abs(delta(*shape.amount)) / compiled.feed_total);
-                scope.probe("polish_correction", {scaled_correction, static_cast<double>(controlling), feed_relative, bound,
-                classified_before, full == best ? 1.0 : 0.0, positive ? 1.0 : 0.0,
+                scope.probe("polish_correction", {double(scaled_correction), static_cast<double>(controlling), double(feed_relative), double(bound),
+                double(classified_before), full == best ? 1.0 : 0.0, positive ? 1.0 : 0.0,
                 size_admitted ? static_cast<double>(lu.rank()) : -1.0, correction_stop ? 1.0 : 0.0},
                 static_cast<std::uint32_t>(step)); });
-            Base correction = std::numeric_limits<double>::quiet_NaN(), control = correction;
+            double correction = std::numeric_limits<double>::quiet_NaN(), control = correction;
             if (detailed) scope.observe([&] {
                 Eigen::Index index = 0;
                 correction = delta.cwiseAbs().maxCoeff(&index); control = static_cast<double>(index);
-                scope.probe("polish_direction", {correction, control, defect, classified_before,
-                    extension ? 1.0 : 0.0, ratio}, step, delta.allFinite() ? "" : "nonfinite direction");
-                Base phase = std::numeric_limits<double>::quiet_NaN(), component = phase;
+                scope.probe("polish_direction", {correction, control, double(defect), double(classified_before),
+                    extension ? 1.0 : 0.0, double(ratio)}, step, delta.allFinite() ? "" : "nonfinite direction");
+                double phase = std::numeric_limits<double>::quiet_NaN(), component = phase;
                 const char* quantity = "multiplier in RT units";
                 const auto offsets = compiled.phase_offsets();
                 for (std::size_t p = 0; p < offsets.size(); ++p) {
@@ -1231,7 +1230,7 @@ static bool polish_correction(const CompiledSystem& compiled, std::vector<Base>&
                 auto intensive = compiled.primal_size - compiled.free_intensive_count;
                 if (compiled.problem.temperature.free && index == static_cast<Eigen::Index>(intensive++)) quantity = "T in K";
                 if (compiled.problem.pressure.free && index == static_cast<Eigen::Index>(intensive)) quantity = "P in Pa";
-                scope.probe("polish_coordinate", {control, phase, component, full[index]}, step, quantity);
+                scope.probe("polish_coordinate", {control, phase, component, double(full[index])}, step, quantity);
             });
             if (correction_stop && !final_correction) { stop("scaled correction"); break; }
 
@@ -1239,11 +1238,9 @@ static bool polish_correction(const CompiledSystem& compiled, std::vector<Base>&
             // Bounded damping retains raw contraction; preparation admits only positive finite x.
             // Best-point selection below protects the returned classified residual.
             std::uint32_t trial = 0;
-            const auto dampings = [] {
-                if constexpr (std::is_same_v<Base, double>) return std::array{1.0, 0.5, 0.25};
-                else return std::array{1.0, 0.5, 0.25, 0.125};
-            }();
-            for (const Base damping : dampings) {
+            // Binary64 uses the first three existing fractions; the fourth belongs to the wide correction.
+            for (const Base damping : {1.0, 0.5, 0.25, 0.125}) {
+                if constexpr (std::is_same_v<Base, double>) if (trial == 3) break;
                 const Base alpha = std::min((trial_recovery ? trial_scale : Base(1)) * damping, trial_limit);
                 if (final_correction && alpha != 1.0) break;
                 const auto trial_index = trial++;
