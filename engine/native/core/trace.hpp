@@ -9,6 +9,7 @@
 #include <cstring>
 #include <exception>
 #include <initializer_list>
+#include <limits>
 #include <string>
 #include <string_view>
 #include <optional>
@@ -74,6 +75,7 @@ inline void retain_failure(std::optional<Convergence>& first, const std::excepti
     if (first) return;
     if (!observe_diagnostic([&] {
         Convergence record;
+        record.residual = std::numeric_limits<double>::quiet_NaN();
         if (const auto* c = dynamic_cast<const ConvergenceFailure*>(&error)) record = c->first_numerical_failure.value_or(c->record);
         else if (const auto* d = dynamic_cast<const DeclarationError*>(&error); d && d->record) record = *d->record;
         if (record.cause.empty()) record.cause = std::string(operation) + ": " + error.what();

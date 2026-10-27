@@ -97,11 +97,11 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
-- 2026-10-27, #862, lead allowance 950 gross / +740 net against `e8444c997` (rule 1): Core **1,264 → 1,380** for contained first-refusal/rank copies and capture lifetime (count 1,366 + band 14).
+- 2026-10-27, #862, lead allowance 950 gross / +740 net against `e8444c997` (rule 1): Core **1,264 → 1,382** for contained first-refusal/rank copies and capture lifetime (count 1,368 + band 14).
 - #862 Contributions **1,254 → 1,274** for separate recovered association refusal and final site convergence (count 1,261 + band 13).
 - #862 Equilibrium **11,530 → 11,950** for shared preparation, chronological recovery and bounded Ipopt observations (count 11,831 + band 119).
 - #862 Bindings **2,244 → 2,327** for native result/exception, continuation and ASL observation transport (count 2,303 + band 24).
-- #862 Total **29,445 → 30,085**, limited by the layer-ceiling sum below count 29,864 + band 299; measured use is 945 gross, 234 removals, +711 net, with unchanged numerical owners.
+- #862 Total **29,445 → 30,087**, limited by the layer-ceiling sum below count 29,867 + band 299; measured use is 949 gross, 235 removals, +714 net, with unchanged numerical owners.
 
 - 2026-10-26, #869 (lead allowance, rule 1): Properties **6,129 → 6,346** and Equilibrium **11,399 → 11,530**, the final formatted counts 6,283 and 11,415 plus their 1% bands. Total **29,049 → 29,445**, the smaller of the layer-ceiling sum and total count 29,153 plus its 292-line band. Gross additions stay within the issue's 640-line allowance and its per-area limits; retained accounting is in `build/issue-869/build-r1/runtime-lines.json`.
 

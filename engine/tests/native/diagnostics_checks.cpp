@@ -3,6 +3,7 @@
 #include "core/physical_constants.hpp"
 #include "properties/helmholtz_model.hpp"
 #include "properties_support.hpp"
+#include "equilibrium_support.hpp"
 #include "contributions/association.hpp"
 #include "recording_support.hpp"
 
@@ -510,6 +511,24 @@ void producer_boundaries() {
             recording_support::field("gradient_floor", derivative.gradient_floor)}),
         "Relationship", "mass-action", "recovered factor refusal retains its operands", "absolute", 0.0, 0.0,
         preserved, "native.diagnostics.c3", "C3", "association", "site-fractions", "T,rho,parameters", "separate final convergence");
+    epcsaft::HelmholtzModel callback_model(properties_support::neutral_binary());
+    const auto callback_system = epcsaft::equilibrium::compile_problem(callback_model, equilibrium_support::flash(2));
+    const auto initial = epcsaft::equilibrium::boundary_start(callback_system);
+    epcsaft::equilibrium::GibbsMinimizer callback(callback_system, initial);
+    Ipopt::Index n, m, j, h; Ipopt::TNLP::IndexStyleEnum style;
+    callback.get_nlp_info(n, m, j, h, style);
+    auto refused = initial; refused[0] = 10000.0;
+    std::vector<double> rows(m);
+    const bool rejected = !callback.eval_g(n, refused.data(), true, m, rows.data());
+    const bool recovered_callback = callback.eval_g(n, initial.data(), true, m, rows.data());
+    epcsaft::equilibrium::EquilibriumResult observed;
+    callback.publish_observations(observed);
+    const bool unavailable = rejected && recovered_callback && observed.first_numerical_failure
+        && std::isnan(observed.first_numerical_failure->residual)
+        && observed.first_numerical_failure->cause.find("invalid composition") != std::string::npos;
+    recording_support::compare("callback-refusal", "unmeasured-residual", "1", unavailable ? 1.0 : 0.0, 1.0, {},
+        "Relationship", "constraint-callback", "an unmeasured refusal residual is unavailable", "absolute", 0.0, 0.0,
+        unavailable, "native.diagnostics.c3", "C3", "callback", "residual", "trial-coordinates", "no fabricated zero");
     const bool verdict = nonfinite && domain
         && !std::isfinite(nonfinite_record.residual)
         && std::isinf(domain_record.residual);
