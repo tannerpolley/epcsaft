@@ -134,7 +134,7 @@ struct DensityStructureError final : std::runtime_error {
         : std::runtime_error(message) { core::retain_first(first_numerical_failure, first); }
     std::optional<core::Convergence> first_numerical_failure;
 };
-inline void retain_density_failure(std::optional<core::Convergence>& first, const std::exception& error, const char* operation) noexcept {
+inline void retain_density_failure(std::optional<core::Convergence>& first, const std::exception& error, const char* operation) {
     if (const auto* structure = dynamic_cast<const DensityStructureError*>(&error))
         core::retain_first(first, structure->first_numerical_failure);
     core::retain_failure(first, error, operation);

@@ -113,10 +113,11 @@ private:
         if (trace_.ipopt_log && (!previous_ || previous_->ipopt_log != trace_.ipopt_log)) trace_.ipopt_log->application.reset();
     }
     void forward() {
-        if (forwarded_ || !trace_.diagnostics || !previous_ || !previous_->diagnostics) return;
+        if (forwarded_ || !previous_) return;
         forwarded_ = true;
-        const auto spans = previous_->spans.size();
         previous_->incomplete |= trace_.incomplete;
+        if (!trace_.diagnostics || !previous_->diagnostics) return;
+        const auto spans = previous_->spans.size();
         for (auto span : trace_.spans) {
             span.parent = span.parent ? std::optional<std::uint32_t>(*span.parent + spans) : parent_;
             previous_->spans.push_back(std::move(span));
