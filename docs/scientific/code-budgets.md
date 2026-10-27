@@ -101,9 +101,9 @@ Budget changes must not silently change scientific scope.
   Equilibrium **11,950 → 12,083** is count 11,963 plus band 120. The increase
   retains observations from direct pure-state evaluation, one rejected native
   result and original-start continuation while both entries share the reduction.
-  Bindings **2,325 → 2,417** is count 2,393 plus band 24, for one bulk snapshot
+  Bindings **2,325 → 2,420** is count 2,396 plus band 24, for one bulk snapshot
   with optional records, actual phase pressures and the owning native result.
-  Total **30,025 → 30,250** is the layer-ceiling sum; total count is 30,032.
+  Total **30,025 → 30,253** is the layer-ceiling sum; total count is 30,035.
   Equations, precision, physical admission and general continuation remain
   their existing owners. Campaign code is included in the issue accounting.
 

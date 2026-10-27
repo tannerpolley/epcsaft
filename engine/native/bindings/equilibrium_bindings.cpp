@@ -29,11 +29,13 @@ static ParameterDocument record_document(const nb::object& model) {
 
 static nb::dict convergence_values(const core::Convergence& c) {
     nb::dict values;
-    values["residual"] = std::isfinite(c.residual) ? nb::cast(c.residual) : nb::none();
+    const bool measured = c.criterion || !std::isnan(c.residual);
+    values["residual"] = std::isnan(c.residual) ? nb::none() : nb::cast(c.residual);
     values["floor"] = nb::cast(c.floor); values["amplification"] = nb::cast(c.amplification);
     values["contraction"] = nb::cast(c.contraction);
-    values["iterations"] = c.iterations; values["evaluations"] = c.evaluations;
-    values["stop"] = core::stop_name(c.stop);
+    values["iterations"] = measured ? nb::cast(c.iterations) : nb::none();
+    values["evaluations"] = measured ? nb::cast(c.evaluations) : nb::none();
+    values["stop"] = measured ? nb::cast(core::stop_name(c.stop)) : nb::none();
     values["criterion"] = c.criterion ? nb::cast(c.criterion->value) : nb::none();
     return values;
 }
@@ -49,7 +51,8 @@ static nb::object failure_values(const std::optional<core::Convergence>& record)
 static nb::dict saturation_values(const EquilibriumResult& r) {
     nb::dict out;
     const auto finite = [](double value) -> nb::object { return std::isfinite(value) ? nb::cast(value) : nb::none(); };
-    out["convergence"] = convergence_values(r.convergence);
+    out["convergence"] = std::isnan(r.convergence.residual) && !r.convergence.criterion
+        ? nb::object(nb::none()) : nb::object(convergence_values(r.convergence));
     out["P"] = nb::cast(r.pressure); out["T"] = nb::cast(r.temperature);
     out["success"] = r.success; out["requested_tolerance_met"] = nb::cast(r.requested_tolerance_met);
     out["message"] = r.message; out["solver_status"] = r.solver_status;
