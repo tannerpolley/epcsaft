@@ -109,7 +109,6 @@ public:
         else if (previous_) trace_.ipopt_log = previous_->ipopt_log;
         trace_.diagnostics = diagnostics ? *diagnostics : previous_ && previous_->diagnostics;
         parent_ = trace_.diagnostics && previous_ ? previous_->current : std::nullopt;
-        current_trace() = &trace_;
     }
     ~Capture() { close_log(); forward(); current_trace() = previous_; }
     Capture(const Capture&) = delete;
