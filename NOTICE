@@ -38,7 +38,9 @@ Native dependencies (not all are bundled in the source tree)
   https://gitlab.com/libeigen/eigen/-/blob/3.4.0/COPYING.MPL2
 * Ceres 2.2: BSD terms, with Apache-2.0 third-party terms.
   https://github.com/ceres-solver/ceres-solver/blob/2.2.0/LICENSE
-* HiGHS 1.15.1: MIT.
+* HiGHS 1.15.1: MIT, with embedded pdqsort under Zlib and the LP reader
+  under Michael Feldmeier's MIT notice. Retain extern/pdqsort/license.txt
+  and highs/io/filereaderlp/LICENSE alongside the main licence.
   https://github.com/ERGO-Code/HiGHS/blob/v1.15.1/LICENSE.txt
 * ASL interface headers: Lucent notice retained in
   engine/build/subprojects/packagefiles/asl/funcadd.h and stdio1.h.

@@ -79,7 +79,7 @@ about:
     download alongside the matching version at
     https://github.com/tannerpolley/epcsaft/releases. It contains the exact
     Engine and Ipopt sources, embedded dependency sources, recipe and patches.
-  license: LicenseRef-GPL-3.0-with-Ipopt-permission AND EPL-1.0 AND (EPL-2.0 OR GPL-2.0-or-later) AND MPL-2.0 AND BSD-3-Clause AND MIT AND LicenseRef-NIST AND LicenseRef-ASL-headers
+  license: LicenseRef-GPL-3.0-with-Ipopt-permission AND EPL-1.0 AND (EPL-2.0 OR GPL-2.0-or-later) AND MPL-2.0 AND BSD-3-Clause AND MIT AND Zlib AND LicenseRef-NIST AND LicenseRef-ASL-headers
   license_file:
     - LICENSE
     - NOTICE
@@ -87,6 +87,8 @@ about:
     - engine/build/subprojects/CppAD-20250000.3/COPYING
     - engine/build/subprojects/CppAD-20250000.3/epl-2.0.txt
     - engine/build/subprojects/HiGHS-1.15.1/LICENSE.txt
+    - engine/build/subprojects/HiGHS-1.15.1/extern/pdqsort/license.txt
+    - engine/build/subprojects/HiGHS-1.15.1/highs/io/filereaderlp/LICENSE
     - engine/data/superancillary/LICENSE-NIST.md
     - engine/build/subprojects/packagefiles/asl/funcadd.h
     - engine/build/subprojects/packagefiles/asl/stdio1.h
