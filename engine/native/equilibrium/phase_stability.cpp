@@ -109,7 +109,7 @@ std::optional<TrialPoint> tangent_plane_trial(const HelmholtzModel& model, doubl
                 H.diagonal().array() += 1.0 + 0.5 * p.g.array();
                 const Eigen::LLT<Eigen::MatrixXd> factor(H);
                 if (factor.info() != Eigen::Success) core::retain_first(o.first_numerical_failure, [&] {
-                    core::Convergence r; r.cause = "tangent-plane matrix not positive definite"; r.stop = core::Stop::stalled;
+                    core::Convergence r; r.cause = "tangent-plane matrix not positive definite";
                     r.residual = p.g.lpNorm<Eigen::Infinity>(); r.iterations = o.iterations;
                     return r;
                 });
