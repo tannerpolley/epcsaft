@@ -328,6 +328,7 @@ Prediction predict(
             }
             project_prediction(model, observation, result);
         } catch (const std::exception& error) {
+            if (!dynamic_cast<const std::runtime_error*>(&error) && !dynamic_cast<const std::invalid_argument*>(&error)) throw;
             result.status = observation.kind == ObservationKind::BulkRelativePermittivity
                 ? ObservationStatus::DensityUnavailable : ObservationStatus::ReferenceUnavailable;
             retain_density_failure(result.first_numerical_failure, error, "prediction");
@@ -733,10 +734,13 @@ std::vector<PredictionGradient> differentiate_group(
         std::swap(center.solved, center.final_solved); std::swap(center.compiled, center.final_compiled);
         item.problem = item.final_problem;
         auto final = differentiate_group(model, {&item}, center, coordinates).front();
+        core::retain_first(final.first_numerical_failure, initial.first_numerical_failure, true);
         if (final.status != ObservationStatus::Available) { final.message = "final:" + final.message; return {final}; }
         item.kind = ObservationKind::FeedEnthalpy;
-        const auto feed = differentiate(model, item, prediction);
-        if (feed.status != ObservationStatus::Available) return {{{}, feed.status, "feed:" + feed.message}};
+        auto feed = differentiate(model, item, prediction);
+        core::retain_first(feed.first_numerical_failure, final.first_numerical_failure, true);
+        if (feed.status != ObservationStatus::Available) { feed.message = "feed:" + feed.message; return {feed}; }
+        core::retain_first(initial.first_numerical_failure, feed.first_numerical_failure);
         for (std::size_t k = 0; k < width; ++k)
             initial.value[k] = (final.value[k] - initial.value[k]) / item.feed_amount - (k < feed.value.size() ? feed.value[k] : 0.0);
         return {initial};
@@ -819,11 +823,7 @@ std::vector<PredictionGradient> differentiate_group(
         auto& gradient = gradients[row];
         gradient.value.assign(width, 0.0);
         gradient.status = ObservationStatus::Available;
-        for (const auto& batch : batches) {
-            gradient.state_diagnostics.push_back(batch.diagnostics);
-            for (const auto& item : batch.results)
-                if (item.property_diagnostics) core::retain_first(gradient.first_numerical_failure, item.property_diagnostics->first_numerical_failure);
-        }
+        for (const auto& batch : batches) gradient.state_diagnostics.push_back(batch.diagnostics);
         for (std::size_t k = 0; k < width; ++k) {
             if (observation.kind == ObservationKind::LogEquilibriumConstant) {
                 for (std::size_t j = 0; j < problem.reactions.size(); ++j)
@@ -846,6 +846,7 @@ std::vector<PredictionGradient> differentiate_group(
             std::vector<double> action;
             for (const auto j : slots[row]) {
                 const auto& item = batches[k].results[j];
+                if (item.property_diagnostics) core::retain_first(gradient.first_numerical_failure, item.property_diagnostics->first_numerical_failure);
                 if (item.status != equilibrium::SolvedStateActionStatus::Available || !item.action.has_value()) {
                     gradient.value.clear();
                     gradient.status = ObservationStatus::ActionUnavailable;
