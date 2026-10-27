@@ -115,7 +115,7 @@ private:
     void forward() {
         if (forwarded_ || !previous_) return;
         forwarded_ = true;
-        previous_->incomplete |= trace_.incomplete;
+        if (previous_->ipopt_log == trace_.ipopt_log) previous_->incomplete |= trace_.incomplete;
         if (!trace_.diagnostics || !previous_->diagnostics) return;
         const auto spans = previous_->spans.size();
         for (auto span : trace_.spans) {
