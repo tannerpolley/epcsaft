@@ -97,6 +97,8 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-10-26, #855 (lead allowance: 160 gross formatted Equilibrium lines): lazy exact trial Hessians, identical first-point seed-root reuse and removal of the repeated initial Liquid compilation use 17 added / 11 removed formatted runtime lines against `761f14f43`, +6 net, all Equilibrium. Equilibrium counts 10,944 and total 28,028; both remain within the existing rule-1 ceilings and bands. Every other runtime layer and every ceiling is unchanged. Numerical and cost evidence is retained under `build/issue-855/build-r1/`.
+
 - 2026-10-26, #869 (lead allowance, rule 1): Properties **6,129 → 6,346** and Equilibrium **11,399 → 11,530**, the final formatted counts 6,283 and 11,415 plus their 1% bands. Total **29,049 → 29,445**, the smaller of the layer-ceiling sum and total count 29,153 plus its 292-line band. Gross additions stay within the issue's 640-line allowance and its per-area limits; retained accounting is in `build/issue-869/build-r1/runtime-lines.json`.
 
 - 2026-10-26, #853 round 4 (lead-approved Regression allowance: 44 gross formatted additions; Equilibrium 10, Bindings 0): pre-exec descriptor placement and closure bring parameter Regression to 3,739 lines. Rule 1 raises its ceiling **3,728 → 3,777**, count plus band 38. Other layer ceilings and the total remain unchanged. Qualification is retained in `build/issue-853/build-r4/`.
