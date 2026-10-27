@@ -20,6 +20,8 @@ struct Taylor final {
     std::array<Base, N + 1> c{};
     Taylor() = default;
     Taylor(Base value) : c{value} {}  // NOLINT(google-explicit-constructor): constants enter the kernels as values
+    friend bool operator==(const Taylor& a, const Taylor& b) { return a.c[0] == b.c[0]; }
+    friend bool operator>(const Taylor& a, const Taylor& b) { return a.c[0] > b.c[0]; }
     [[gnu::always_inline]] Taylor& operator+=(const Taylor& o) { _Pragma("GCC unroll 8") for (std::size_t k = 0; k <= N; ++k) c[k] += o.c[k]; return *this; }
     [[gnu::always_inline]] Taylor& operator-=(const Taylor& o) { _Pragma("GCC unroll 8") for (std::size_t k = 0; k <= N; ++k) c[k] -= o.c[k]; return *this; }
     [[gnu::always_inline]] Taylor& operator*=(const Taylor& o) { return *this = *this * o; }

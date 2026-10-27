@@ -26,7 +26,7 @@ Scalar born_radial_charging_work(std::size_t component, const ParameterSet& para
             throw std::invalid_argument("Born outer-shell diameter is nonpositive");
     }
     // EqID: born_radial_charging_work
-    return charge * charge
+    return Scalar(charge) * charge
         * ((Scalar(1.0) - Scalar(1.0) / bulk_relative_permittivity) / outer_shell_diameter
            + parameters.born_c_dielectric
                * (Scalar(1.0) - Scalar(1.0) / ionic_region_relative_permittivity)
@@ -60,8 +60,8 @@ Scalar born_contribution(
             component, parameters, mixture_solvation, bulk_relative_permittivity);
     }
     // EqID: born_residual_helmholtz
-    return -ELEMENTARY_CHARGE_C * ELEMENTARY_CHARGE_C * radial_work
-        / (4.0 * PI * VACUUM_PERMITTIVITY_F_PER_M * BOLTZMANN_J_PER_K * temperature);
+    return -Scalar(ELEMENTARY_CHARGE_C) * ELEMENTARY_CHARGE_C * radial_work
+        / (4.0 * Fixed(PI) * VACUUM_PERMITTIVITY_F_PER_M * BOLTZMANN_J_PER_K * temperature);
 }
 
 }  // namespace epcsaft

@@ -544,8 +544,8 @@ def test_parameter_reference_chain_matches_resolves(evidence: Any, mode: str, fa
         assert abs(dx_dlnk * dc_dk) > 0.5 * abs(item.action)  # measured ~2x the action: omission flips its sign
 
 
-def test_source_reference_numerical_error_unavailable() -> None:
-    """#861 r5: missing insertion-error propagation cannot authorize a comparison."""
+def test_source_reference_numerical_error() -> None:
+    """The retained ethane source-reference row has finite local errors at its returned point."""
     from epcsaft import trace
     from epcsaft.equilibrium import (
         ComparisonEligibility, ComparisonMode, Quantity, compare_equilibrium_quantity, equilibrium_numerical_estimates,
@@ -563,10 +563,17 @@ def test_source_reference_numerical_error_unavailable() -> None:
         assert getattr(ordinary, field) == getattr(detailed, field), field
     error = equilibrium_numerical_estimates(model, ordinary)
     captured = detailed.numerical_estimates
-    assert captured is not None and captured.cause == error.cause == 'source-reference error not propagated'
-    assert any(math.isnan(value) for value in error.row_inner)
-    assert not error.pressure.available and not math.isfinite(error.pressure.absolute)
-    assert not math.isfinite(error.condition)
+    assert captured is not None and captured.cause == error.cause == ''
+    assert captured.row_inner == error.row_inner
+    assert captured.source_reference_method == error.source_reference_method
+    assert 'local higher-precision re-evaluation plus first-order pressure/site propagation' in error.source_reference_method
+    assert 'underestimate shared errors and internal cancellation' in error.source_reference_method
+    assert 'excludes supplied operand uncertainty' in error.source_reference_method
+    assert error.precision_bits == 53
+    assert all(math.isfinite(value) and value >= 0 for value in error.row_inner)
+    assert math.isfinite(error.condition)
+    assert all(value.available and value.resolved and math.isfinite(value.absolute)
+               for value in (error.pressure, *error.densities, *error.amounts, *error.composition))
     comparison = compare_equilibrium_quantity(Quantity.Linear, 1.0, 2.0, 1e-10,
         error.pressure, error.pressure, ComparisonEligibility(), ComparisonMode.EstimatedError)
-    assert comparison.judgment == 'failed' and comparison.cause == 'unavailable_or_unresolved'
+    assert comparison.judgment == 'failed'

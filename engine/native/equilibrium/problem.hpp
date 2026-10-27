@@ -259,11 +259,13 @@ struct PackingTerms final {
     std::vector<double> component;
 };
 
-inline constexpr auto SOURCE_REFERENCE_ERROR_NOT_PROPAGATED = "source-reference error not propagated";
 // derivative[k][i] is d^k (g_i / RT) / dT^k at the prepared temperature.  The
 // pressure fields are the matching first and second derivatives at fixed T.
 struct StandardTerm final {
-    std::string_view numerical_error_cause;
+    struct NumericalError final {
+        std::array<std::vector<double>, 2> absolute;
+        std::string cause;
+    };
     std::vector<std::vector<double>> derivative;
     std::vector<double> pressure_derivative;
     std::vector<double> pressure_second_derivative;
@@ -327,6 +329,7 @@ struct CompiledSolid final {
     double log_k = 0.0;
     std::optional<double> log_k_slope;
     bool present = false;
+    std::optional<NeutralReferenceReactionDiagnostic> reference;
 };
 
 struct CompiledSystem final {
@@ -487,6 +490,7 @@ struct CriticalRecord final {
 
 struct EquilibriumNumericalEstimates final {
     std::string basis = "canonical_defining_rows", cause = "not_evaluated";
+    std::string source_reference_method;
     std::size_t rank = 0, dimension = 0, precision_bits = std::numeric_limits<double>::digits;
     double threshold = 0, condition = INFINITY, inverse_norm = INFINITY, backward_error = INFINITY;
     std::vector<double> residuals, row_terms, row_inner, row_floor, physical_scale;
@@ -689,9 +693,9 @@ enum class SolvedStateActionStatus {
 // Per-species ideal-gas h (J/mol) and, on request, cp (J/(mol K)) at the standard pressure
 // of a referenced problem (EqID: reference_species_calorics); a refusal clears both.
 struct ReferenceCalorics final {
-    std::string_view numerical_error_cause;
+    std::string numerical_error_cause;
     struct Column final {
-        std::vector<double> values;
+        std::vector<double> values, numerical_error;
         SolvedStateActionStatus status = SolvedStateActionStatus::Available;
         std::string message;
     };
@@ -709,7 +713,7 @@ struct ReferenceCalorics final {
 };
 ReferenceCalorics reference_calorics(const CompiledSystem &compiled, double temperature, double pressure,
                                      bool heat_capacity, bool pressure_slope = false,
-                                     bool parameter_slopes = false, std::size_t derivative_order = 2);
+                                     bool parameter_slopes = false, std::size_t derivative_order = 2, bool numerical_errors = false);
 
 struct SolvedStateActionResult final {
     SolvedStateObservable observable;

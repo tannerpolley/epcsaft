@@ -36,7 +36,8 @@ std::vector<double> standard_state(
 std::vector<std::vector<double>> standard_state_series(
     double temperature, std::size_t components,
     const std::vector<ReactionSpec>& reactions,
-    const std::vector<double>& supplied, std::size_t order, const ThermochemistryRecord* thermochemistry = nullptr
+    const std::vector<double>& supplied, std::size_t order, const ThermochemistryRecord* thermochemistry = nullptr,
+    std::vector<std::vector<double>>* inverse_map = nullptr
 );
 
 // series[k][r] is d^k t_r / dT^k of the reaction target t_r = nu_r . g in J/mol:
