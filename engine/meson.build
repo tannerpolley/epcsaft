@@ -249,7 +249,7 @@ diagnostics_checks = executable(
   'tests/native/diagnostics_checks.cpp',
   cpp_args: native_warnings,
   gnu_symbol_visibility: 'inlineshidden',
-  dependencies: [eigen_dep, cppad_headers_dep],
+  dependencies: [ipopt_dep, eigen_dep, cppad_headers_dep],
   include_directories: native_inc,
   link_with: epcsaft_native,
   build_rpath: '$ORIGIN',
