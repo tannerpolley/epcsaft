@@ -1101,7 +1101,8 @@ ReferenceCalorics reference_calorics(const CompiledSystem &compiled, double temp
          (charge.norm() == 0.0 ||
           (matrix * charge).norm() > std::sqrt(std::numeric_limits<double>::epsilon()) * charge.norm())))
         return refuse(SolvedStateActionStatus::ReferenceUnavailable,
-                      "record-less calorics undetermined beyond charge gauge");
+                      "record-less calorics undetermined beyond charge gauge; rank " + std::to_string(decomposition.rank())
+                      + "/" + std::to_string(derived.size()) + "; threshold " + core::optional_number(decomposition.threshold()));
     result.reaction_map.assign(rows, std::vector<double>(components, 0.0));
     for (std::size_t r = 0; r < rows; ++r) {
         Eigen::VectorXd unit = Eigen::VectorXd::Zero(rows);
@@ -1279,7 +1280,7 @@ static CompiledSystem compile_with_basis(
         compiled.declared_supports.push_back(omitted ? all : phase.support);
         if (omitted && phase.composition_guess.size() == components) restrict_composition_guess(phase, all);
     }
-    compiled.B = trial_basis ? *trial_basis : balance_basis(components, request.reactions);
+    compiled.B = trial_basis ? *trial_basis : balance_basis(components, request.reactions, &compiled);
     // An azeotrope cell's B' = T B makes the last row the total amount, the only balance row it keeps.
     if (request.azeotrope && request.reactions.empty()) compiled.B.back().assign(components, 1.0);
     compiled.rank = compiled.B.size();
@@ -1429,7 +1430,7 @@ static CompiledSystem compile_with_basis(
         model, request, temperature_guess, pressure_guess,
         compiled.reference_diagnostics, false);
     // central_reference_reactions refuses supplied standard Gibbs with a source reference.
-    compiled.standard_gibbs = standard_state(temperature_guess, components, central_reactions, request.standard_gibbs_j_per_mol, model.thermochemistry() ? &*model.thermochemistry() : nullptr);
+    compiled.standard_gibbs = standard_state(temperature_guess, components, central_reactions, request.standard_gibbs_j_per_mol, model.thermochemistry() ? &*model.thermochemistry() : nullptr, &compiled);
     admit_solids(compiled, covered);
     for (std::size_t row = request.azeotrope ? compiled.B.size() - 1 : 0; row < compiled.B.size(); ++row)
         compiled.rows.push_back({RowKind::Moiety, 0, row});
@@ -1527,7 +1528,7 @@ CompiledSystem compile_problem(const IdealMoleFraction& model, const Equilibrium
     for (double& value : c.feed_composition) value /= c.feed_total;
     const std::vector<double> z(model.charge_number.begin(), model.charge_number.end());
     if (!exact_zero_dot(z, c.n_feed)) throw std::invalid_argument("ideal feed carries net z");
-    c.B = balance_basis(c.n_feed.size(), request.reactions);
+    c.B = balance_basis(c.n_feed.size(), request.reactions, &c);
     c.rank = c.B.size(); c.balance = matvec(c.B, c.n_feed);
     c.has_reaction = !request.reactions.empty();
     c.has_ions = std::any_of(z.begin(), z.end(), [](double value) { return value != 0.0; });
@@ -1596,6 +1597,7 @@ CompiledSystem compile_stability_trial(const HelmholtzModel& model, double T, do
     physical.row(0).setOnes();
     if (has_charge) for (std::size_t i = 0; i < support.size(); ++i) physical(1, i) = z[support[i]];
     std::vector<std::vector<double>> B;
+    std::vector<core::NumericalRank> ranks;
     transformation.clear();
     if (has_charge && phase.kind == PhaseKind::Vapor) {
         B.assign(2, std::vector<double>(w.size(), 0.0));
@@ -1604,7 +1606,9 @@ CompiledSystem compile_stability_trial(const HelmholtzModel& model, double T, do
         }
         transformation = {{1.0, 0.0}, {0.0, 1.0}};
     } else {
-        const Eigen::MatrixXd kernel = physical.fullPivLu().kernel();
+        const auto factor = physical.fullPivLu();
+        core::observe_diagnostic([&] { core::retain_rank(ranks, core::numerical_rank(factor, "trial_normalization_charge")); });
+        const Eigen::MatrixXd kernel = factor.kernel();
         std::vector<ReactionSpec> directions;
         if (support.size() > static_cast<std::size_t>(physical.rows())) {
             for (Eigen::Index j = 0; j < kernel.cols(); ++j) {
@@ -1620,7 +1624,9 @@ CompiledSystem compile_stability_trial(const HelmholtzModel& model, double T, do
         B.assign(reduced.size(), std::vector<double>(w.size(), 0.0));
         for (std::size_t k = 0; k < B.size(); ++k) {
             for (std::size_t i = 0; i < support.size(); ++i) B[k][support[i]] = reduced[k][i];
-            const Eigen::VectorXd coefficients = physical.transpose().colPivHouseholderQr().solve(
+            const auto transform = physical.transpose().colPivHouseholderQr();
+            core::observe_diagnostic([&] { core::retain_rank(ranks, core::numerical_rank(transform, "trial_basis_transform")); });
+            const Eigen::VectorXd coefficients = transform.solve(
                 Eigen::Map<const Eigen::VectorXd>(reduced[k].data(), reduced[k].size()));
             transformation.emplace_back(coefficients.data(), coefficients.data() + coefficients.size());
         }
@@ -1632,7 +1638,9 @@ CompiledSystem compile_stability_trial(const HelmholtzModel& model, double T, do
     request.phases[0].amount = AmountSpec::free();
     request.solver_options.values[policy::row] = policy::EQUILIBRIUM_ROW_RESIDUAL.value;
     for (double coefficient : c) request.standard_gibbs_j_per_mol.push_back(coefficient * GAS_CONSTANT_J_PER_MOL_K * T);
-    return compile_with_basis(model, request, &B);
+    auto compiled = compile_with_basis(model, request, &B);
+    for (const auto& r : ranks) compiled.diagnostics_incomplete |= !core::retain_rank(compiled.rank_records, r);
+    return compiled;
 }
 
 std::vector<double> CompiledSystem::generic_point() const {

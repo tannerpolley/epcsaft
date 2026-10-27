@@ -1385,6 +1385,7 @@ DensityDiagnostics HelmholtzModel::density_diagnostics(
     }
     for (auto* roots : {&result.pressure_roots, &result.spinodals})
         std::sort(roots->begin(), roots->end(), [](const auto& a, const auto& b) { return a.molar_density < b.molar_density; });
+    core::retain_first(result.first_numerical_failure, series.first_numerical_failure);
     return result;
 }
 

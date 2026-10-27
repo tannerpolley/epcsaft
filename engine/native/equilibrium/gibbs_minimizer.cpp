@@ -815,6 +815,7 @@ EquilibriumResult structural_result(const CompiledSystem& compiled, core::Scope&
     result.last_rank = compiled.last_rank;
     core::retain_first(result.first_numerical_failure, compiled.first_numerical_failure);
     result.diagnostics_incomplete |= !core::observe_diagnostic([&] { result.rank_records = compiled.rank_records; });
+    result.diagnostics_incomplete |= compiled.diagnostics_incomplete;
     result.generic_nullity = compiled.generic_nullity;
     if (!compiled.feasible) {
         // Structural rank loss at the generic point: no start, no optimizer, no candidate.
@@ -914,7 +915,9 @@ EquilibriumResult publish_candidate(const CompiledSystem& compiled, const PhaseP
         const auto numerical = compiled.numerical_rows(prepared, physical, full.size());
         const auto n = static_cast<Eigen::Index>(full.size());
         using Matrix = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
-        const auto physical_rank = Eigen::Map<const Matrix>(physical.data(), n, n).fullPivLu().rank();
+        const auto raw = Eigen::Map<const Matrix>(physical.data(), n, n).fullPivLu();
+        const auto physical_rank = raw.rank();
+        result.diagnostics_incomplete |= !core::observe_diagnostic([&] { core::retain_rank(result.rank_records, core::numerical_rank(raw, "raw_charge_endpoint")); });
         result.last_rank = core::numerical_rank(Eigen::Map<const Matrix>(numerical.data(), n, n).fullPivLu(), "log_charge");
         const auto numerical_rank = static_cast<Eigen::Index>(result.last_rank->rank);
         scope.probe("charge_endpoint_ranks", {static_cast<double>(physical_rank), static_cast<double>(numerical_rank)});
@@ -1259,7 +1262,7 @@ static EquilibriumResult run_driver_once(
                 Eigen::RowMajor>>(jacobian.data(), n, n).fullPivLu();
             core::observe_diagnostic([&] { result.last_rank = core::numerical_rank(lu, "numerical"); });
             if (free_amount_newton || !compiled.log_charge_rows.empty()) {
-                if (result.last_rank->rank != static_cast<std::size_t>(n)) { stop("Jacobian rank"); break; }
+                if (lu.rank() != n) { stop("Jacobian rank"); break; }
             }
             const Eigen::VectorXd delta = lu.solve(-Eigen::Map<const Eigen::VectorXd>(rows_scaled.data(), n));
             if ((free_amount_newton || refine_trial) && !delta.allFinite()) { stop("nonfinite direction"); break; }
@@ -1473,6 +1476,7 @@ static EquilibriumResult run_driver_once(
     if (!newton) scope.probe("optimizer_constraint_multipliers", nlp->constraint_multipliers());
     if (compiled.feasibility_cell()) result.constraint_multipliers = newton
         ? std::vector<double>(compiled.rows.size(), 0.0) : nlp->constraint_multipliers();
+    if (audit) { StageWork observations; observations.observe(result); std::move(observations).publish_observations(*audit); }
     result = publish_candidate(compiled, prepared, std::move(result), scope, limits);
     if (!result.success) {
         result.message += ipopt_failure;
@@ -1522,6 +1526,7 @@ EquilibriumResult recover_physical_amounts(
         }
         if (limits && limits->expired()) throw std::runtime_error("elapsed work budget exhausted");
     } catch (const std::exception& error) {
+        core::retain_failure(retried.first_numerical_failure, error, "physical amount retry");
         retried.success = false;
         retried.message = std::string(stage) + " failed: " + error.what() + "; driver: " + retried.message;
         clear_state(retried);
@@ -1629,8 +1634,12 @@ std::optional<std::vector<double>> speciated_start(const CompiledSystem& compile
     if (!compiled.has_reaction || !problem.pressure.free || problem.temperature.free || present.phases.empty()
         || present.phases.size() == problem.phases.size()) return std::nullopt;
     present.pressure = FreeValue::fixed(compiled.seed_pressure());
+    EquilibriumResult audit;
     try {
-        const auto solved = solve_compiled(compile_problem(*compiled.model, present), std::nullopt, nullptr, limits);
+        const auto solved = [&] {
+            try { return solve_compiled(compile_problem(*compiled.model, present), std::nullopt, nullptr, limits, {}, false, &audit); }
+            catch (...) { stages.observe(audit); throw; }
+        }();
         stages.add(solved);
         if (!solved.success) return std::nullopt;
         const std::size_t components = compiled.model->parameters().component_count();
@@ -1645,7 +1654,8 @@ std::optional<std::vector<double>> speciated_start(const CompiledSystem& compile
             for (const std::size_t i : phase.support) phase.composition_guess.push_back(solved.mole_fractions[source * components + i]);
         }
         return boundary_start(seeded, true, limits, &stages);
-    } catch (const std::exception&) {
+    } catch (const std::exception& error) {
+        core::retain_failure(stages.first_numerical_failure, error, "speciated start");
         return std::nullopt;
     }
 }
@@ -1961,7 +1971,12 @@ EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::opti
         if (attempt == 0) {
             initial = std::move(*seeded);
         } else {
-            initial = use_start ? compiled.generic_point() : boundary_start(cold ? *cold : compiled, !copied, limits, &stages);
+            try { initial = use_start ? compiled.generic_point() : boundary_start(cold ? *cold : compiled, !copied, limits, &stages); }
+            catch (const std::exception& error) {
+                core::retain_failure(stages.first_numerical_failure, error, "solve initialization");
+                if (audit) stages.report_observations(*audit);
+                throw;
+            }
             if (start.has_value()) initial = start_point(compiled, *start, std::move(initial));
         }
         if (newton_eligible(compiled) || (!warm && !std::getenv("EPCSAFT_IPOPT_OPTIONS_FILE") && free_amount_newton_eligible(compiled))) {

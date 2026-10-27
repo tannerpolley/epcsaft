@@ -255,9 +255,16 @@ Candidate stability_candidate(const CompiledSystem& c, const EquilibriumResult& 
         const double scale = weighted.row(k).cwiseAbs().maxCoeff();
         if (scale > 0.0) { weighted.row(k) /= scale; scaled_rhs(k) /= scale; }
     }
-    const Eigen::VectorXd intended = amount.cwiseProduct(weighted.completeOrthogonalDecomposition().solve(scaled_rhs));
+    const auto factor = weighted.completeOrthogonalDecomposition();
+    core::observe_diagnostic([&] { report.last_rank = core::numerical_rank(factor, "weighted_amount_correction"); });
+    const auto refuse = [&](const char* cause, double defect) {
+        core::Convergence r; r.cause = cause; r.residual = defect; r.stop = core::Stop::infeasible; r.rank = report.last_rank;
+        core::retain_first(report.first_numerical_failure, r);
+        throw core::DeclarationError(cause, r);
+    };
+    const Eigen::VectorXd intended = amount.cwiseProduct(factor.solve(scaled_rhs));
     if (!intended.allFinite())
-        throw std::invalid_argument("stability amount correction rank/consistency failure");
+        refuse("stability amount correction nonfinite response", NAN);
     Eigen::VectorXd applied(cells.size());
     std::vector<std::vector<double>> inventory(at.amount.size(), std::vector<double>(c.n_feed.size(), 0.0));
     for (std::size_t j = 0; j < cells.size(); ++j) {
@@ -269,7 +276,7 @@ Candidate stability_candidate(const CompiledSystem& c, const EquilibriumResult& 
         candidate.correction_norm += std::abs(applied(j));
     }
     if ((J * applied - rhs).lpNorm<Eigen::Infinity>() > policy::ADDITION_MATERIAL_BALANCE.value * std::max(1.0, c.feed_total))
-        throw std::invalid_argument("stability amount correction rank/consistency failure");
+        refuse("stability amount correction applied balance defect", (J * applied - rhs).lpNorm<Eigen::Infinity>());
     at.energy_actions.clear();
     report.candidate_coordinates.clear();
     for (std::size_t p = 0; p < at.amount.size(); ++p) {

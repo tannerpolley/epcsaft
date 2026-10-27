@@ -62,7 +62,7 @@ struct OneComponentTwoDensityPoint final {
     PhasePoint phase;
     std::vector<double> rows, jacobian;
 };
-OneComponentTwoDensityPoint one_component_two_density_point(const CompiledSystem&, const std::vector<double>&);
+OneComponentTwoDensityPoint one_component_two_density_point(const CompiledSystem&, const std::vector<double>&, std::optional<core::Convergence>* = nullptr);
 bool one_component_two_density_eligible(const CompiledSystem&);
 EquilibriumResult one_component_two_density_attempt(const CompiledSystem&, const std::vector<double>&,
     const EquilibriumResult&, core::Scope&, const DriverLimits*);
@@ -212,6 +212,7 @@ struct ContinuationRequest final {
 };
 
 struct ContinuationResult final {
+    StageWork observations;
     bool success = false;
     std::string message;
     ContinuationStop stop = ContinuationStop::initial_failure;

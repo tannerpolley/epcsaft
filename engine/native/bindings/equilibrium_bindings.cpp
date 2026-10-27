@@ -171,7 +171,7 @@ void register_equilibrium(nb::module_& module) {
         EPCSAFT_READONLY(PointEvaluation, values, objective, floor);
     nb::class_<CompiledSystem>(module, "CompiledSystem")
         .def_prop_ro("rows", [](const CompiledSystem& system) { return system.rows; })
-        EPCSAFT_READONLY(CompiledSystem, last_rank, pinned_count, free_intensive_count, rank, charge_row_count, primal_size,
+        EPCSAFT_READONLY(CompiledSystem, first_numerical_failure, rank_records, diagnostics_incomplete, last_rank, pinned_count, free_intensive_count, rank, charge_row_count, primal_size,
             generic_nullity, feed_total, has_ions, has_reaction, conserves_total_moles, jacobian_rank, removed_species)
         .def("solve", [](const CompiledSystem& system) { return solve_compiled(system); }, nb::keep_alive<0, 1>())
         .def("generic_point", &CompiledSystem::generic_point)
@@ -206,9 +206,17 @@ void register_equilibrium(nb::module_& module) {
     nb::class_<LinearSolveDiagnostics>(module, "LinearSolveDiagnostics")
         EPCSAFT_READONLY(LinearSolveDiagnostics, system, reason, residual_norm, evaluation_floor, jacobian_inverse_norm,
             condition_estimate, forward_error_estimate, precision_bits, refinement_iterations);
+    nb::class_<IpoptIteration>(module, "IpoptIteration")
+        EPCSAFT_READONLY(IpoptIteration, mode, iteration, line_search_trials, objective, inf_pr, inf_du, mu, step_norm, regularization, alpha_du, alpha_pr);
+    nb::class_<IpoptPoint>(module, "IpoptPoint")
+        EPCSAFT_READONLY(IpoptPoint, tnlp_coordinates, coordinate_scale, tnlp_lower_multipliers, tnlp_upper_multipliers,
+            tnlp_constraint_multipliers, declaration, rows, constraint_rows, objective_factor);
+    nb::class_<IpoptDiagnostics>(module, "IpoptDiagnostics")
+        EPCSAFT_READONLY(IpoptDiagnostics, last, first_restoration_iteration, initialization_return, application_return,
+            restoration_entries, callbacks, warm_initialized, predicted, physical_amounts, incomplete, failed_point);
     nb::class_<EquilibriumResult>(module, "EquilibriumResult", "Phases in declared order; K, Pa, mol, mol/m^3; per-phase-per-component lists are phase-major in component_ids order.")
         .def_prop_ro("solver_options", [](const EquilibriumResult& v) { return v.declaration ? bindings::solver_options_view(v.declaration->solver_options, 7) : nb::list(); })
-        EPCSAFT_READONLY(EquilibriumResult, solver_settings, diagnostic_options_file, linear_solver)
+        EPCSAFT_READONLY(EquilibriumResult, solver_settings, diagnostic_options_file, linear_solver, first_numerical_failure, rank_records, ipopt_diagnostics, recovered_ipopt_diagnostics, diagnostics_incomplete)
         .def_ro("neutral_reference_diagnostics", &EquilibriumResult::reference_diagnostics)
         EPCSAFT_READONLY(EquilibriumResult, discovery, success, message, solver_status, temperature, pressure, amounts,
             mole_fractions, molar_densities, packing_fractions,
@@ -228,7 +236,7 @@ void register_equilibrium(nb::module_& module) {
             composition, split_coordinates, basis, row_transformation, quantities, split_checks, donor,
             resolved_descent);
     nb::class_<StabilityReport>(module, "StabilityReport")
-        EPCSAFT_READONLY(StabilityReport, completed, message, trials, candidate_coordinates, standard_over_rt,
+        EPCSAFT_READONLY(StabilityReport, first_numerical_failure, last_rank, completed, message, trials, candidate_coordinates, standard_over_rt,
             plane_over_rt, present_phases, work);
     nb::class_<DiscoveryRecord>(module, "DiscoveryRecord")
         EPCSAFT_READONLY(DiscoveryRecord, declaration, candidate, rounds, declarations, declaration_roles,
@@ -352,7 +360,12 @@ void register_equilibrium(nb::module_& module) {
     module.def("linear_solver", [] { return linear_solver(); });  // the process-level record
     module.def("compile_problem", nb::overload_cast<const HelmholtzModel&, const EquilibriumProblem&>(&compile_problem), nb::keep_alive<0, 1>());
     module.def("compile_problem", nb::overload_cast<const IdealMoleFraction&, const EquilibriumProblem&>(&compile_problem), nb::keep_alive<0, 1>());
-    module.def("sensitivity", &sensitivity);
+    module.def("sensitivity", [](const CompiledSystem& compiled, const std::vector<double>& point, const std::vector<double>& lever) {
+        std::optional<core::Convergence> failure;
+        auto result = sensitivity(compiled, point, lever, &failure);
+        if (failure) throw core::ConvergenceFailure(*failure);
+        return result;
+    }, nb::arg("compiled"), nb::arg("point"), nb::arg("lever"));
     module.def("solve_equilibrium", nb::overload_cast<const HelmholtzModel&, const EquilibriumProblem&, const std::optional<EquilibriumResult>&>(&solve_equilibrium), nb::arg("model"), nb::arg("problem"),
                nb::arg("start") = std::nullopt);
     module.def("solve_equilibrium", nb::overload_cast<const IdealMoleFraction&, const EquilibriumProblem&, const std::optional<EquilibriumResult>&>(&solve_equilibrium),
