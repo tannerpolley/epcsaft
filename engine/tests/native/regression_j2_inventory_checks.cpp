@@ -222,6 +222,8 @@ void check_j2() {
     agree("r2-j2/not_converged/projected_gradient", "projected_gradient_max", "1",
           iterate.covariance.projected_gradient_norm, projected_gradient(unfinished, iterate), 0.0, 1.0e-10, summary(iterate),
           "the projected gradient is reported at the returned point", "r2-j2");
+    CHECK(iterate.rank_records.size() == 1 && iterate.rank_records.front().rank == 2);
+    CHECK(iterate.rank_records.front().dimension == 2);
     const auto other = fit(recovery_request(truth_case, 156.0, 0.05));
     agree("r2-j2/second_start/epsilon", "dispersion_energy_over_k", "K", other.physical[0], 152.0, 0.0, 1.0e-6, summary(other),
           "a second start recovers the same parameters", "r2-j2");
@@ -369,6 +371,14 @@ void check_r3() {
     truth("r3/rank_deficient", "one row and two coordinates withhold covariance as rank deficient",
           deficient.usable && deficient.covariance.status == "rank_deficient" && deficient.covariance.rank == 1
               && deficient.covariance.optimizer.empty() && !deficient.covariance.variance_factor.has_value(), summary(deficient), "r3");
+    CHECK(deficient.rank_records.size() == 1);
+    const auto& rank = deficient.rank_records.front();
+    CHECK(rank.rank == 1 && rank.dimension == 2);
+    agree("r3/rank_cutoff", "absolute_singular_value_cutoff", "optimizer_J", rank.threshold,
+        5.47456335865895e-15, 1e-29, 0.0, summary(deficient), "the existing singular spectrum determines the absolute cutoff", "r3");
+    CHECK(deficient.first_numerical_failure && deficient.first_numerical_failure->stop == core::Stop::singular);
+    CHECK(deficient.first_numerical_failure->rank->threshold == rank.threshold);
+    CHECK(ignored.rank_records.front().rank == ignored.covariance.rank);
     // Covariance transformation through a tie and scales, and the variance factor.
     auto shared = recovery_request(truth_case, 148.0, 0.0);
     shared.parameters.sigma_constant = {3.6, 3.6};
@@ -431,6 +441,13 @@ void check_hydration_failures() {
     ObservationEvaluation values;
     CHECK(good.evaluate(start, true, values));
     const auto saved = values.chart.physical;
+    CHECK(values.chart.holds.front().rank.rank == 1);
+    auto exhausted = request; exhausted.controls = budgeted_controls(); exhausted.holds[0].maximum_iterations = 1;
+    const auto limited = fit(exhausted);
+    CHECK(limited.status == "initial_evaluation_failed" && limited.trial_failures == 1 && limited.jacobian_evaluations == 1);
+    CHECK(limited.first_numerical_failure && limited.first_numerical_failure->stop == core::Stop::budget_exhausted);
+    CHECK(limited.first_numerical_failure->iterations == 1 && std::isfinite(limited.first_numerical_failure->residual));
+    CHECK(!limited.first_numerical_failure->criterion && limited.first_numerical_failure->rank->rank == 1);
     for (const bool singular : {false, true}) {
         auto bad = request;
         bad.holds[0].lower = saved.back() - 1e-6;
@@ -446,6 +463,13 @@ void check_hydration_failures() {
         const auto admitted = values.chart.physical;
         const bool accepted = evaluator.evaluate(rejected, true, values);
         const auto& cause = failures.failures.back().message;
+        const auto& record = failures.failures.back().first_numerical_failure;
+        CHECK(record && record->stop == (singular ? core::Stop::singular : core::Stop::left_domain));
+        if (singular) {
+            CHECK(record->rank && record->rank->rank == 0 && record->rank->dimension == 1);
+            CHECK(record->rank->threshold == std::numeric_limits<double>::epsilon()
+                * std::max(1.0, std::abs(bad.holds[0].reference.observed)) / std::max(1.0, std::abs(std::clamp(parameters.born_diameter_angstrom[1], bad.holds[0].lower, bad.holds[0].upper))));
+        }
         truth(singular ? "hydration-failure/singular" : "hydration-failure/no-root",
             "A failed native held-coordinate trial publishes no diameter or Jacobian", !accepted && values.chart.physical.empty()
             && values.chart.map.empty() && values.gradient.empty() && cause.find(singular ? "singular" : "outside bracket") != std::string::npos,

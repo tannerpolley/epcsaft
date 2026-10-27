@@ -511,8 +511,16 @@ eq::SolvedStateActionBatch actions(EquilibriumContext& context, const std::vecto
         auto status = item.status;
         if (status == ActionStatus::Available && (!item.value || !item.action
             || !std::isfinite(*item.value) || !std::isfinite(*item.action))) status = ActionStatus::Nonfinite;
-        if (status != ActionStatus::Available)
-            throw EquilibriumFailure(status, eq::solved_state_observable_id(item.observable), item.diagnostic_message.value_or(""));
+        if (status != ActionStatus::Available) {
+            const auto& d = batch.diagnostics;
+            throw EquilibriumFailure(status, eq::solved_state_observable_id(item.observable), item.diagnostic_message.value_or("")
+                + "; power-of-two column-then-row equilibrated defining Jacobian rank "
+                + (d.rank ? std::to_string(*d.rank) : "absent") + "/" + std::to_string(d.state_dimension)
+                + "; condition " + epcsaft::core::optional_number(d.condition_estimate)
+                + "; backward error " + epcsaft::core::optional_number(d.maximum_linear_residual)
+                + (item.property_diagnostics && item.property_diagnostics->first_numerical_failure
+                    ? "; " + epcsaft::core::describe(*item.property_diagnostics->first_numerical_failure) : ""));
+        }
         context.values[row] = *item.value;
     }
     return batch;
@@ -675,7 +683,9 @@ void evaluate_property(PropertyContext& context, std::size_t phase, const std::v
             if (m.find("no stable density root") != std::string::npos || m.find("density domain is empty") != std::string::npos)
                 root = "no_density_root";
             throw std::runtime_error("epcsaft_property:" + cause(batch.density_status, root) + ":"
-                + std::to_string(static_cast<int>(batch.density_status)) + ":density:" + m);
+                + std::to_string(static_cast<int>(batch.density_status)) + ":density:"
+                + (batch.diagnostics.first_numerical_failure ? epcsaft::core::describe(*batch.diagnostics.first_numerical_failure)
+                    : batch.density_convergence ? epcsaft::core::describe(*batch.density_convergence) : "") + "; " + m);
         }
         const auto fail = [&](std::size_t row, int k, Status status) {
             if (k < branch.failures[row].first)
