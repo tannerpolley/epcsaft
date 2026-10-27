@@ -91,6 +91,7 @@ project_map: {
     ["downstream/", "applications", "external"],
     ["downstream/README.md", "applications", "specification"],
     ["tools/", "tooling", "tooling"],
+    ["packaging/conda-forge/", "tooling", "configuration"],
     ["docs/scientific/reviews/", "documentation", "evidence"],
     ["docs/", "documentation", "specification"],
     ["AGENTS.md", "documentation", "specification"],
