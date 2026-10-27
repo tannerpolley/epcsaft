@@ -539,7 +539,8 @@ struct ObservationEvaluator::Impl final {
                             }
                         }
                         if (bytes < 0 || close(directory) != 0) _exit(127);
-                    } else for (rlim_t fd = 5; fd < descriptor_limit; ++fd) close(static_cast<int>(fd));
+                    } else for (rlim_t fd = 5; fd < descriptor_limit; ++fd)
+                        if (close(static_cast<int>(fd)) != 0 && errno != EBADF) _exit(127);
                 }
                 execve(arguments[0], arguments, environ);
                 _exit(127);
