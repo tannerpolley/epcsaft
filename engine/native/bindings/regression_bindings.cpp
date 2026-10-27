@@ -48,9 +48,11 @@ FitRequest point_request(const Parameters& parameters, std::vector<Coordinate> c
 void register_regression(nb::module_& module) {
     FitHost host;
     if (const nb::object python = nb::module_::import_("sys").attr("executable"); !python.is_none() && nb::len(python) > 0)
-        // The native library loads by its installed path, so its $ORIGIN RUNPATH finds bundled libraries; a path that no
+        // Close inherited descriptors in the child before loading either image; a parent snapshot races other threads.
+        // The native library loads by its installed path, so its $ORIGIN search path finds bundled libraries; a path that no
         // longer names the held file (an editable relink replaced it) refuses the worker.
-        host.worker = {nb::cast<std::string>(python), "-I", "-c", "import ctypes, os, importlib.machinery as i, importlib.util as u; "
+        host.worker = {nb::cast<std::string>(python), "-I", "-c", "import os; os.closerange(5, max(map(int, os.listdir('/proc/self/fd'))) + 1); "
+            "import ctypes, importlib.machinery as i, importlib.util as u; "
             "p = os.readlink('/proc/self/fd/4'); s, f = os.stat(p), os.fstat(4); "
             "(s.st_dev, s.st_ino) == (f.st_dev, f.st_ino) or os._exit(1); "
             "native = ctypes.CDLL(p, mode=ctypes.RTLD_GLOBAL); "

@@ -433,7 +433,8 @@ template <class... T> void get(int fd, T&... values) {
 
 // Ipopt 3.11.9 drives MUMPS 5.6, whose Fortran modules and C I/O state are process-global (#380), so concurrent
 // states run in worker processes. They start by exec, since fork alone is unsafe in a threaded host, and inherit
-// only their own socket. The fit kills and reaps them on every exit, an exception or cancellation included.
+// only their own socket after the child bootstrap closes inherited descriptors. The fit kills and reaps them on every exit,
+// an exception or cancellation included.
 struct Workers final {
     std::vector<int> sockets;
     std::vector<pid_t> processes;
@@ -506,7 +507,6 @@ struct ObservationEvaluator::Impl final {
             posix_spawn_file_actions_adddup2(&actions, pair[1], 0);
             posix_spawn_file_actions_adddup2(&actions, extension_image, 3);
             posix_spawn_file_actions_adddup2(&actions, native_image, 4);
-            posix_spawn_file_actions_addclosefrom_np(&actions, 5);
             posix_spawnattr_t attributes;
             posix_spawnattr_init(&attributes);
             posix_spawnattr_setflags(&attributes, POSIX_SPAWN_SETPGROUP);
