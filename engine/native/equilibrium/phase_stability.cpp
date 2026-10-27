@@ -79,10 +79,13 @@ std::optional<TrialPoint> tangent_plane_trial(const HelmholtzModel& model, doubl
         Iterate p{std::move(W), Eigen::VectorXd(n), std::vector<double>(seed.size(), 0.0)};
         for (Eigen::Index a = 0; a < n; ++a) p.w[S[a]] = p.W(a) / p.W.sum();
         ++o.evaluations;
-        p.density = first && p.w == seed ? seed_density : stability_root(model, T, P, p.w, phase.kind).molar_density;
+        if (first && p.w == seed) p.density = seed_density;
+        else { const auto root = stability_root(model, T, P, p.w, phase.kind);
+            core::retain_first(o.first_numerical_failure, root.first_numerical_failure); p.density = root.molar_density; }
         first = false;
         packing_admission(model.packing_fraction_coefficient(T, p.w) * p.density);
         const auto d = model.evaluate(T, 1.0 / p.density, p.w, DerivativeOrder::Gradient);
+        core::retain_first(o.first_numerical_failure, d.first_numerical_failure);
         for (Eigen::Index a = 0; a < n; ++a)  // g_i = ln W_i + ln phi_i + ln(P/RT) + standard_i - plane_i
             p.g(a) = std::log(p.W(a)) + d.gradient[2 + S[a]] + std::log(p.density) + shift[S[a]];
         if (!p.g.allFinite()) throw std::domain_error("non-finite or non-positive Michelsen amounts");  // via ln W
@@ -98,6 +101,7 @@ std::optional<TrialPoint> tangent_plane_trial(const HelmholtzModel& model, doubl
             if (o.iterations++ >= policy::TANGENT_PLANE_SUBSTITUTIONS.value) {
                 ++work["trial_tangent_plane_hessian_evaluations"];
                 const auto d = model.evaluate(T, 1.0 / p.density, p.w, DerivativeOrder::IsothermalPhaseHessian);
+                core::retain_first(o.first_numerical_failure, d.first_numerical_failure);
                 const Eigen::MatrixXd J = Eigen::Map<const Eigen::MatrixXd>(
                     tangent_plane_jacobian(d, 1.0 / p.density, S).data(), n, n);
                 const Eigen::VectorXd root = p.W.array().sqrt();
@@ -105,7 +109,7 @@ std::optional<TrialPoint> tangent_plane_trial(const HelmholtzModel& model, doubl
                 H.diagonal().array() += 1.0 + 0.5 * p.g.array();
                 const Eigen::LLT<Eigen::MatrixXd> factor(H);
                 if (factor.info() != Eigen::Success) core::retain_first(o.first_numerical_failure, [&] {
-                    core::Convergence r; r.cause = "tangent-plane matrix not positive definite"; r.stop = core::Stop::singular;
+                    core::Convergence r; r.cause = "tangent-plane matrix not positive definite"; r.stop = core::Stop::stalled;
                     r.residual = p.g.lpNorm<Eigen::Infinity>(); r.iterations = o.iterations;
                     return r;
                 });
@@ -128,7 +132,7 @@ std::optional<TrialPoint> tangent_plane_trial(const HelmholtzModel& model, doubl
             PhasePoint point; point.composition = {p.w}; point.eta = o.packing_fractions;
             result.emplace(std::move(point), -std::log(p.W.sum()));
         }
-    } catch (const std::exception& error) { core::retain_failure(o.first_numerical_failure, error, "tangent-plane trial"); }
+    } catch (const std::exception& error) { retain_density_failure(o.first_numerical_failure, error, "tangent-plane trial"); }
     ++work["trial_tangent_plane_invocations"];
     work["trial_tangent_plane_iterations"] += o.iterations; work["trial_tangent_plane_newton_steps"] += o.hessian_calls;
     return result;
@@ -607,6 +611,7 @@ StabilityReport test_snapshot(const CompiledSystem& c, const EquilibriumResult& 
                 if (options.evaluate_supplied_trials && phase.packing_guess) eta = *phase.packing_guess;
                 else {
                     const auto root = stability_root(*c.model, at.temperature, at.pressure, seed, phase.kind);
+                    core::retain_first(trial.optimizer.first_numerical_failure, root.first_numerical_failure);
                     if (condensed) condensed_admission(root);
                     seed_density = root.molar_density;
                     eta = c.model->packing_fraction_coefficient(at.temperature, seed) * root.molar_density;
@@ -941,8 +946,9 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
         const auto before = calls;
         std::vector<double> retry_attempt;
         try {
-            if (seed.empty()) seed = boundary_start(c);
-            else seed = add_multipliers(c, seed);
+            if (seed.empty()) seed = boundary_start(c, true, nullptr, &newton_work);
+            else seed = add_multipliers(c, seed, &audit);
+            newton_work.report_observations(audit);
             if (discovery_newton_eligible(c)) {
                 ++record->work["declaration_newton_attempts"];
                 result = newton_attempt(c, seed, audit, nullptr, &attempt);

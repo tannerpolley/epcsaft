@@ -354,13 +354,13 @@ bool ideal_speciation(const std::vector<std::vector<double>>& B, const std::vect
                 control = std::min(control, (ln_total - ln_n[j] - 0.5 * trace) / (step - x(r)));
             g[j] = step;
         }
-        if (!std::isfinite(change)) { if (observations) core::retain_failure(observations->first_numerical_failure, std::runtime_error("nonfinite ideal speciation change"), "seed"); return false; }
+        if (!std::isfinite(change)) { if (observations) core::retain_failure(observations->first_numerical_failure, "nonfinite ideal speciation change", "seed"); return false; }
         if (change <= policy::EQUILIBRIUM_START_SPECIATION_STEP.value) return true;
         control = std::max(0.0, std::min(control, 2.0 / std::max(major, 2.0)));
         for (std::size_t j = 0; j < m; ++j) ln_n[j] += control * g[j];
         ln_total += control * x(r);
     }
-    if (observations) core::retain_failure(observations->first_numerical_failure, std::runtime_error("ideal speciation iteration cap"), "seed");
+    if (observations) core::retain_failure(observations->first_numerical_failure, "ideal speciation iteration cap", "seed");
     return false;
 }
 
@@ -400,7 +400,7 @@ std::optional<std::pair<double, double>> speciate_single_phase(const CompiledSys
             try {  // continue the previous sweep's root; a speciation jump beyond its window solves it anew
                 density = root(density);
             } catch (const std::exception& error) {
-                if (observations) core::retain_failure(observations->first_numerical_failure, error, "speciation density");
+                if (observations) retain_density_failure(observations->first_numerical_failure, error, "speciation density");
                 if (!density) throw;
                 density = root(std::nullopt);
             }
@@ -417,7 +417,7 @@ std::optional<std::pair<double, double>> speciate_single_phase(const CompiledSys
             for (std::size_t j = 0; j < m; ++j) composition[phase.support[j]] = n[j];
         }
     } catch (const std::exception& error) {
-        if (observations) core::retain_failure(observations->first_numerical_failure, error, "speciation seed");
+        if (observations) retain_density_failure(observations->first_numerical_failure, error, "speciation seed");
     }
     if (speciated.empty()) return std::nullopt;
     n = speciated;
@@ -459,6 +459,7 @@ std::optional<PhaseStart> true_species_split(
         for (std::size_t j = 0; j < ls.size(); ++j) z[ls[j]] = std::exp(point[compiled.phase_offsets()[liquid] + j]);
         const double t = compiled.seed_temperature(), p = compiled.seed_pressure();
         const auto liquid_state = compiled.model->state_at_pressure(t, p, z, DensityBranch::Liquid);
+        if (stages) core::retain_first(stages->first_numerical_failure, liquid_state.first_numerical_failure);
         if (!liquid_state.log_fugacity_coefficient) return std::nullopt;
         const auto& ln_phi_liquid = *liquid_state.log_fugacity_coefficient;
         for (int pass = 0; pass < 2; ++pass) {
@@ -467,9 +468,10 @@ std::optional<PhaseStart> true_species_split(
             for (const std::size_t i : vs) y[i] /= sum;
             const auto gas = [&] {  // the first pass's root continues to the second y; outside its window, a new scan
                 if (pass > 0) try { return compiled.model->state_at_pressure(t, p, y, DensityBranch::Vapor, vapor_density); }
-                    catch (const std::exception&) {}
+                    catch (const std::exception& error) { if (stages) retain_density_failure(stages->first_numerical_failure, error, "split vapor anchor"); }
                 return compiled.model->state_at_pressure(t, p, y, DensityBranch::Vapor);
             }();
+            if (stages) core::retain_first(stages->first_numerical_failure, gas.first_numerical_failure);
             if (!gas.log_fugacity_coefficient) return std::nullopt;
             vapor_density = gas.molar_density;
             for (const std::size_t i : vs) ln_phi_vapor[i] = require_component_property((*gas.log_fugacity_coefficient)[i]);
@@ -478,7 +480,8 @@ std::optional<PhaseStart> true_species_split(
             k[i] = std::exp(require_component_property(ln_phi_liquid[i]) - ln_phi_vapor[i]);
             if (!(std::isfinite(k[i]) && k[i] > 0.0)) return std::nullopt;
         }
-    } catch (const std::exception&) {  // an exhausted budget stops the start; any other failure keeps the fallback
+    } catch (const std::exception& error) {  // an exhausted budget stops the start; any other failure keeps the fallback
+        if (stages) retain_density_failure(stages->first_numerical_failure, error, "split seed");
         if (limits) limits->check();
         return std::nullopt;
     }
@@ -694,7 +697,7 @@ void reject(ContinuationResult& result, const Attempt& attempt, double q) {
 // domain and the same-driver corrector with carried anchors.
 Attempt advance(const HelmholtzModel& trial, const CompiledSystem& start, const CompiledSystem& current,
                 const std::vector<double>& y, const CompiledSystem& compiled, const EquilibriumProblem& problem,
-                const std::function<std::vector<double>()>& tangent_at, double delta,
+                const std::function<std::vector<double>(std::optional<core::Convergence>*)>& tangent_at, double delta,
                 const std::vector<double>& anchors, core::Scope& scope, std::shared_ptr<const OptimizerState> warm,
                 const DriverLimits* limits = nullptr, StageWork* observations = nullptr) {
     Attempt attempt;
@@ -706,8 +709,9 @@ Attempt advance(const HelmholtzModel& trial, const CompiledSystem& start, const 
     } else if (!compiled.feasible) {
         // Same layout, generic-point rank loss at the generated problem.
         attempt.stop = ContinuationStop::singular_jacobian;
+        attempt.observations.observe(structural_result(compiled, scope));
         attempt.message = "generated problem loses generic rank (nullity " + std::to_string(compiled.generic_nullity) + ")";
-    } else if ((tangent = tangent_at()).empty()) {
+    } else if ((tangent = tangent_at(&attempt.convergence)).empty()) {
         // A state-local tangent cannot change by halving the step: singular is terminal
         // (owner decision 2026-09-16), the branch end at that accepted state.
         const auto jacobian = current.jacobian(y);
@@ -733,6 +737,7 @@ Attempt advance(const HelmholtzModel& trial, const CompiledSystem& start, const 
         attempt.stop = ContinuationStop::left_domain;
         attempt.message = "predicted coordinates leave the admitted domain";
     }
+    core::retain_first(attempt.observations.first_numerical_failure, attempt.convergence);
     core::retain_failure(attempt.observations.first_numerical_failure, attempt.message, "continuation predictor");
     return attempt;
 }
@@ -749,10 +754,14 @@ void coalesced(Attempt& attempt, const CompiledSystem& compiled, std::pair<std::
 }
 
 // J dy/ds = -dF/ds of an envelope cell, dF/ds = -1 on its condition row (the last row).
-std::vector<double> envelope_tangent(const CompiledSystem& compiled, const PhasePoint& prepared, std::optional<core::Convergence>* failure) {
+std::vector<double> envelope_tangent(const CompiledSystem& compiled, const PhasePoint& prepared, ContinuationResult& result) {
     std::vector<double> rows(compiled.rows.size(), 0.0);
     rows.back() = -1.0;
-    return solve_implicit(compiled, prepared, rows, failure);
+    std::optional<core::Convergence> failure;
+    auto tangent = solve_implicit(compiled, prepared, rows, &failure);
+    core::retain_first(result.observations.first_numerical_failure, failure);
+    if (tangent.empty()) result.cause_convergence = std::move(failure);
+    return tangent;
 }
 
 // Value and d/ds of ln T, ln P, ln rho of phases 0 and 1, then ln K_i = ln x_i^inc - ln x_i^feed on the
@@ -820,7 +829,7 @@ ContinuationResult trace_envelope(const HelmholtzModel& model, const Continuatio
             "envelope_max_log_step, minimum_step > 0 and max_steps > 0");
     EquilibriumProblem base = request.start_problem;
     const CompiledSystem start = compile_problem(model, base);
-    if (!start.feasible) return finish(std::move(result), ContinuationStop::invalid_path, "envelope cell is not full rank");
+    if (!start.feasible) { observations.observe(structural_result(start, scope)); return finish(std::move(result), ContinuationStop::invalid_path, "envelope cell is not full rank"); }
     const bool pure = start.n_feed.size() == 1;
     EquilibriumResult audit;
     auto admitted = [&] {
@@ -846,10 +855,10 @@ ContinuationResult trace_envelope(const HelmholtzModel& model, const Continuatio
     bool transfer = true;
     while (result.accepted_steps < options.max_steps) {
         const auto at = current.prepare(y);
-        auto tangent = envelope_tangent(current, at, &result.cause_convergence);
-        core::retain_first(observations.first_numerical_failure, result.cause_convergence);
-        if (tangent.empty())
+        auto tangent = envelope_tangent(current, at, result);
+        if (tangent.empty()) {
             return finish(std::move(result), ContinuationStop::singular_jacobian, "envelope tangent is unavailable at the accepted state");
+        }
         auto c = envelope_coordinates(current, at, tangent);
         // Orientation by continuity of the dimensionless (d ln T, d ln P, d ln K)/ds.
         std::vector<double> heading = {c[0][1], c[1][1]};
@@ -911,7 +920,7 @@ ContinuationResult trace_envelope(const HelmholtzModel& model, const Continuatio
         core::Scope attempt_scope("equilibrium_envelope_attempt");
         attempt_scope.probe("path_value", s_try);
         CompiledSystem compiled = compile_problem(model, problem);
-        auto attempt = advance(model, start, current, y, compiled, problem, [&] { return tangent; }, s_try - s, expected, attempt_scope, transfer ? result.states.back().optimizer_state : nullptr, nullptr, &observations);
+        auto attempt = advance(model, start, current, y, compiled, problem, [&](auto*) { return tangent; }, s_try - s, expected, attempt_scope, transfer ? result.states.back().optimizer_state : nullptr, nullptr, &observations);
         observations.observe(attempt.observations);
         if (attempt.accepted) {
             const auto pair = swapped_pair(compiled, y, attempt.result->coordinates);
@@ -923,8 +932,7 @@ ContinuationResult trace_envelope(const HelmholtzModel& model, const Continuatio
             } else if (straddle) {
                 // Both endpoint tangents in the same s; cubic Hermite values at s = 0 seed the critical cell.
                 const auto passed_at = compiled.prepare(attempt.result->coordinates);
-                const auto far = envelope_tangent(compiled, passed_at, &result.cause_convergence);
-                core::retain_first(observations.first_numerical_failure, result.cause_convergence);
+                const auto far = envelope_tangent(compiled, passed_at, result);
                 if (far.empty()) return finish(std::move(result), ContinuationStop::singular_jacobian, "passage tangent unavailable");
                 const auto there = envelope_coordinates(compiled, passed_at, far);
                 const std::array<double, 3> seed{hermite(s, s_try, c[0], there[0]), hermite(s, s_try, c[1], there[1]),
@@ -1145,10 +1153,10 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
             if (start->vapor_density > 0.0 && branch == DensityBranch::Vapor) try {  // the phi^V estimate's root continues
                 root = solve_density(*compiled.model, t, p, composition, branch, start->vapor_density);
             } catch (const DensityStructureError&) { throw;
-            } catch (const std::exception& error) { if (stages) core::retain_failure(stages->first_numerical_failure, error, "boundary anchor"); root = unanchored(); }
+            } catch (const std::exception& error) { if (stages) retain_density_failure(stages->first_numerical_failure, error, "boundary anchor"); root = unanchored(); }
             else root = unanchored();
         } catch (const std::runtime_error& error) {
-            if (stages) core::retain_failure(stages->first_numerical_failure, error, "boundary density");
+            if (stages) retain_density_failure(stages->first_numerical_failure, error, "boundary density");
             throw std::runtime_error(
                 std::string("boundary seed has no density root: ") + error.what()
             );
@@ -1368,8 +1376,11 @@ static ContinuationResult continue_path(const HelmholtzModel& model, const Conti
     CompiledSystem target = compile_problem(target_model ? *target_model : model, request.target_problem);
     const std::string layout = layout_difference(start, target);
     if (!layout.empty()) return finish(std::move(result), ContinuationStop::invalid_path, layout);
-    if (!start.feasible || !target.feasible)
+    if (!start.feasible || !target.feasible) {
+        core::Scope rank_scope("continuation_endpoint_rank");
+        observations.observe(structural_result(start, rank_scope)); observations.observe(structural_result(target, rank_scope));
         return finish(std::move(result), ContinuationStop::invalid_path, "endpoint is not full rank at its generic point");
+    }
     Path path;
     path.base = request.start_problem;
     path.feed_start = start.n_feed;
@@ -1455,11 +1466,9 @@ static ContinuationResult continue_path(const HelmholtzModel& model, const Conti
         auto trial_model = parameter_model(q_try);
         const auto& trial = trial_model ? *trial_model : model;
         CompiledSystem compiled = compile_problem(trial, problem);
-        std::optional<core::Convergence> tangent_failure;
-        Attempt attempt = advance(trial, start, current, y_current, compiled, problem, [&] {
-            return sensitivity(current, y_current, path.lever(current), &tangent_failure);
+        Attempt attempt = advance(trial, start, current, y_current, compiled, problem, [&](auto* failure) {
+            return sensitivity(current, y_current, path.lever(current), failure);
         }, q_try - q, anchors, attempt_scope, transfer ? result.states.back().optimizer_state : nullptr, limits, &observations);
-        if (tangent_failure) { attempt.convergence = tangent_failure; core::retain_first(attempt.observations.first_numerical_failure, tangent_failure); }
         observations.observe(attempt.observations);
         if (attempt.accepted)
             if (const auto pair = swapped_pair(compiled, y_current, attempt.result->coordinates)) coalesced(attempt, compiled, *pair);
@@ -1567,7 +1576,7 @@ EquilibriumResult recover_from_source(const CompiledSystem& target, const Driver
         reached.declaration = std::make_shared<const EquilibriumProblem>(target.problem);
         return publish(std::move(reached));
     } catch (const std::exception& error) {
-        core::retain_failure(observations.first_numerical_failure, error, "source recovery");
+        retain_density_failure(observations.first_numerical_failure, error, "source recovery");
         refused.message = error.what();
         return publish(std::move(refused));
     }

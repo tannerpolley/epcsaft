@@ -1195,7 +1195,11 @@ ReferenceCalorics reference_calorics(const CompiledSystem &compiled, double temp
                                                                std::max(1.0, scale(r)))) {
                                 column.status = SolvedStateActionStatus::ReferenceUnavailable;
                                 column.message = "supplied records inconsistent with reaction " +
-                                                 reaction_name(problem.reactions[r], r);
+                                                 reaction_name(problem.reactions[r], r)
+                                    + "; residual " + core::optional_number(std::abs(residual(r)))
+                                    + "; criterion " + core::optional_number(std::sqrt(std::numeric_limits<double>::epsilon()) * std::max(1.0, scale(r)));
+                                if (!derived.empty()) column.message += "; reference_completion rank " + std::to_string(decomposition.rank())
+                                    + "/" + std::to_string(derived.size()) + "; threshold " + core::optional_number(decomposition.threshold());
                             }
                         for (std::size_t j = 0; j < derived.size(); ++j)
                             column.values[derived[j]] = solution(j);

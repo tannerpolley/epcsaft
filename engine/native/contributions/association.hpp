@@ -183,7 +183,7 @@ inline std::vector<double> solve_linear(
     const auto ratio = admitted_pivot_ratio(factorization);
     if (!ratio) {
         if (first) core::retain_first(*first, [&] {
-            core::Convergence r; r.stop = core::Stop::singular;
+            core::Convergence r; r.stop = core::Stop::stalled;
             const auto pivots = factorization.matrixLU().diagonal().cwiseAbs();
             r.residual = Eigen::Map<const Eigen::VectorXd>(right_hand_side.data(), right_hand_side.size()).cwiseAbs().maxCoeff();
             r.amplification = pivots.maxCoeff() / pivots.minCoeff();

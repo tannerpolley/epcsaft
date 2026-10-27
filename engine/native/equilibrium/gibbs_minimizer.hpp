@@ -28,6 +28,8 @@ struct StageWork final {  // the work of the sub-solves that seed a solve, faile
         diagnostics_incomplete |= r.diagnostics_incomplete;
         core::retain_first(first_numerical_failure, r.first_numerical_failure);
         for (const auto& rank : r.rank_records) diagnostics_incomplete |= !core::retain_rank(rank_records, rank);
+        if constexpr (std::is_same_v<R, EquilibriumResult>)
+            if (r.last_rank) diagnostics_incomplete |= !core::retain_rank(rank_records, *r.last_rank);
         diagnostics_incomplete |= !core::observe_diagnostic([&] {
             if (!recovered_ipopt_diagnostics && ipopt_diagnostics && ipopt_diagnostics->first_restoration_iteration && r.ipopt_diagnostics)
                 recovered_ipopt_diagnostics = ipopt_diagnostics;
@@ -48,6 +50,8 @@ struct StageWork final {  // the work of the sub-solves that seed a solve, faile
     }
     static void publish_observations(const EquilibriumResult& source, EquilibriumResult& destination) noexcept {
         StageWork observations; observations.observe(source); std::move(observations).publish_observations(destination);
+        if (!destination.declaration) destination.declaration = source.declaration;
+        destination.diagnostics_incomplete |= !core::observe_diagnostic([&] { if (source.last_rank) destination.last_rank = source.last_rank; });
     }
     void report_observations(EquilibriumResult& r) const noexcept {
         r.diagnostics_incomplete |= !core::observe_diagnostic([&] {

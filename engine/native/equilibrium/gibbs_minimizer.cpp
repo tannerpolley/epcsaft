@@ -1091,7 +1091,7 @@ static EquilibriumResult run_driver_once(
             limits ? std::max(0.0, std::chrono::duration<double>(limits->deadline - std::chrono::steady_clock::now()).count()) : 0.0,
             true, 1.0 / declared.feed_total, &result.solver_settings, row_tolerance,
             warm_start, &result.linear_solver);
-        } catch (...) { capture_driver(*nlp, result, audit); throw; }
+        } catch (...) { nlp->publish_observations(result); capture_driver(*nlp, result, audit); throw; }
     }();
     if (!newton) {
         nlp->finish_ipopt(int(initialized), int(returned), predicted, physical_amounts);
@@ -1114,6 +1114,7 @@ static EquilibriumResult run_driver_once(
     const std::string ipopt_failure = fatal ? "; Ipopt " + result.solver_status : "";
     if (audit) audit->solver_status = result.solver_status;
     const auto limited_result = [&] {
+        StageWork::publish_observations(result, *audit);
         auto failed = *audit;
         failed.message = "elapsed work budget exhausted";
         reject_elapsed(failed, scope); return failed;
@@ -1233,9 +1234,10 @@ static EquilibriumResult run_driver_once(
         const auto stop = [&](const char* reason) {
             if (stopped) return;
             stopped = true;
-            if (std::string_view(reason) == "Jacobian rank") core::observe_diagnostic([&] {
+            if (std::string_view(reason) == "Jacobian rank") core::retain_first(result.first_numerical_failure, [&] {
                 core::Convergence refusal; refusal.stop = core::Stop::singular; refusal.rank = result.last_rank;
-                refusal.cause = reason; core::retain_first(result.first_numerical_failure, refusal);
+                refusal.residual = maximum_abs(compiled.numerical_rows(at, rows_before));
+                refusal.cause = reason; return refusal;
             });
             if (detailed) scope.observe([&] { scope.probe("polish_stop",
                 {maximum_abs(compiled.numerical_rows(at, rows_before)),

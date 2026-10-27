@@ -49,10 +49,10 @@ struct DensityPartition final {
     std::map<double, PressurePoint> samples;
     std::size_t evaluations = 0, intervals = 0, stable = 0;
     bool active = false;
-    DensityStructureError refused(const std::string& cause_now) const {
+    DensityStructureError refused(const std::string& cause_now, const std::optional<core::Convergence>& first) const {
         return DensityStructureError(cause + "; enumeration interval=[" + core::optional_number(lower) + "," + core::optional_number(upper)
             + "] mol/m3; cells=" + std::to_string(intervals) + "; stable=" + std::to_string(stable)
-            + "; evaluations=" + std::to_string(evaluations) + "; unresolved: " + cause_now);
+            + "; evaluations=" + std::to_string(evaluations) + "; unresolved: " + cause_now, first);
     }
 
 };
@@ -647,7 +647,7 @@ std::vector<DensityRoot> scan_roots(
     }
     return roots;
 } catch (const std::exception& error) {
-    if (model.partition && dynamic_cast<const DensityStructureError*>(&error) == nullptr) throw model.partition->refused(error.what());
+    if (model.partition && dynamic_cast<const DensityStructureError*>(&error) == nullptr) throw model.partition->refused(error.what(), model.first_numerical_failure);
     throw;
 }
 
@@ -1173,13 +1173,13 @@ DensityRoot anchor(
         anchor_record.stop = core::classify(anchor_record.residual, *anchor_record.criterion,
             anchor_record.floor, anchor_record.contraction, true, anchor_record.amplification);
     }
-    core::observe_diagnostic([&] { anchor_record.cause = "density anchor branch " + std::to_string(static_cast<int>(branch))
+    anchor_record.incomplete |= !core::observe_diagnostic([&] { anchor_record.cause = "density anchor branch " + std::to_string(static_cast<int>(branch))
         + "; anchor " + core::optional_number(std::exp(log_anchor)) + "; window [" + core::optional_number(local_lower)
         + "," + core::optional_number(local_upper) + "] mol/m3"; });
     anchor_scope.finish(anchor_record);
-    throw core::ConvergenceFailure(anchor_record);
+    throw core::ConvergenceFailure(anchor_record, model.first_numerical_failure);
 } catch (const std::exception& error) {
-    if (model.partition && dynamic_cast<const DensityStructureError*>(&error) == nullptr) throw model.partition->refused(error.what());
+    if (model.partition && dynamic_cast<const DensityStructureError*>(&error) == nullptr) throw model.partition->refused(error.what(), model.first_numerical_failure);
     throw;
 }
 
@@ -1497,7 +1497,7 @@ DensityRoot solve_density(
             if (!(*anchor_density > lower && *anchor_density < upper)) {
                 core::Convergence record{0.0, model.solver_options().criterion(policy::density), std::nullopt,
                     std::nullopt, std::nullopt, 0, evaluations, core::Stop::left_domain, model.solver_options().owners[policy::density]};
-                core::observe_diagnostic([&] { record.cause = "density anchor outside " + std::to_string(static_cast<int>(branch))
+                record.incomplete |= !core::observe_diagnostic([&] { record.cause = "density anchor outside " + std::to_string(static_cast<int>(branch))
                     + " domain; anchor=" + core::optional_number(*anchor_density) + "; lower=" + core::optional_number(lower)
                     + "; upper=" + core::optional_number(upper); });
                 throw core::ConvergenceFailure(record);
@@ -1564,7 +1564,7 @@ DensityRoot solve_density(
         }
         scope.probe("stable_root_count", static_cast<double>(count));
         if (series.partition && (stable.empty() || (count > 1 && branch == DensityBranch::Unspecified)))
-            throw series.partition->refused("branch ambiguous or not established by finite search; stable=" + std::to_string(count));
+            throw series.partition->refused("branch ambiguous or not established by finite search; stable=" + std::to_string(count), series.first_numerical_failure);
         if (count > 1 && branch == DensityBranch::Unspecified)
             throw std::runtime_error("density root is ambiguous (stable count "
                                      + std::to_string(count) + ")");

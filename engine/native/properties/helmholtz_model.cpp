@@ -1740,7 +1740,7 @@ PropertyActionBatch HelmholtzModel::directional_actions(
             sites = solve_site_fractions(temperature, molar_density, mole_fractions,
                 parameters_, sigma, diameter, nullptr, nullptr, nullptr, false, solver_options_, &first);
         } catch (const core::ConvergenceFailure& error) {
-            core::retain_failure(first, error, "density action association");
+            retain_density_failure(first, error, "density action association");
             need_residual = false;
             association_status = PropertyActionStatus::CentralPropertyUnavailable;
         }
@@ -2008,7 +2008,7 @@ PropertyActionBatch HelmholtzModel::pressure_actions(
             batch.density_convergence = structure->first_numerical_failure;
             core::retain_first(batch.diagnostics.first_numerical_failure, structure->first_numerical_failure);
         }
-        core::retain_failure(batch.diagnostics.first_numerical_failure, error, "density closure");
+        retain_density_failure(batch.diagnostics.first_numerical_failure, error, "density closure");
         batch.density_structure_refused = dynamic_cast<const DensityStructureError*>(&error) != nullptr;
         if (const auto* failure = dynamic_cast<const core::ConvergenceFailure*>(&error))
             batch.density_convergence = failure->record;
