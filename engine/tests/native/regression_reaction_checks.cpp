@@ -662,7 +662,6 @@ void check_log_constant() {
         problem.temperature = FreeValue::fixed(T);
         std::reverse(problem.reactions.begin(), problem.reactions.end());
         auto row = log_constant(problem, "reaction_a");
-        row.mass_basis = T == 200.0; // A direct constant has no solved composition to convert.
         validate(row, model);
         const auto prediction = predict(model, row);
         const double value = 0.4 + 80.0 / T + 0.5 * std::log(T / 300.0) + 0.001 * T;
