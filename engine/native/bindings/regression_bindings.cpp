@@ -100,7 +100,7 @@ void register_regression(nb::module_& module) {
             maximum_iterations);
     nb::class_<HoldResult>(module, "HoldResult")
         EPCSAFT_READONLY(HoldResult, energy_error, correction, uncertainty, derivative, parameter_derivative,
-            iterations);
+            iterations, rank);
     nb::class_<EvaluatedCoordinates>(module, "EvaluatedCoordinates")
         EPCSAFT_READONLY(EvaluatedCoordinates, parameters, active, physical, map, holds, reaction_laws);
     module.def("reaction_log10_reciprocal", &reaction_log10_reciprocal, nb::arg("law"));
@@ -113,9 +113,9 @@ void register_regression(nb::module_& module) {
     nb::class_<Prediction>(module, "Prediction")
         EPCSAFT_SOLVER_OPTIONS(Prediction, 7)
         EPCSAFT_READONLY(Prediction, value, unit, status, message, residual, convergence, branch, stable_root_count,
-            requested_tolerance_met);
+            requested_tolerance_met, first_numerical_failure);
     nb::class_<PredictionGradient>(module, "PredictionGradient")
-        EPCSAFT_READONLY(PredictionGradient, value, status, message, parameter_actions);
+        EPCSAFT_READONLY(PredictionGradient, value, status, message, parameter_actions, first_numerical_failure);
     nb::enum_<ReactionCoefficient>(module, "ReactionCoefficient")
         EPCSAFT_VALUES(ReactionCoefficient, A, B, C, D, EnthalpyShift);
     nb::class_<ReactionCoordinate>(module, "ReactionCoordinate")
@@ -152,7 +152,7 @@ void register_regression(nb::module_& module) {
             bindings::solver_option(c.solver_options, policy::SOLVER_POLICIES[i]->name, v, 63, true);
         }, nb::for_setter(nb::arg("v").none()));
     nb::class_<TrialFailure>(module, "TrialFailure")
-        EPCSAFT_READONLY(TrialFailure, trial, observation, optimizer, status, message, jacobian, parameter_actions);
+        EPCSAFT_READONLY(TrialFailure, trial, observation, optimizer, status, message, jacobian, parameter_actions, first_numerical_failure);
     nb::class_<FitCovariance>(module, "FitCovariance")
         EPCSAFT_READONLY(FitCovariance, status, assumption, rank, singular_values, left_vectors, right_vectors,
             projected_gradient_norm, objective_rows, active_bounds, optimizer, physical, variance_factor);
@@ -176,13 +176,13 @@ void register_regression(nb::module_& module) {
             target_maximum, gap, primal, stationarity, dual_sign, complementarity, point, lower, upper, values,
             physical_values, jacobian, multipliers, physical_multipliers, z_lower, z_upper, physical_z_lower,
             physical_z_upper, lower_distances, upper_distances, hold_multipliers, full_stationarity, root_errors,
-            slack_groups, slack_rows, active_lower, active_upper, hold_causes, rows, frozen_checks);
+            slack_groups, slack_rows, active_lower, active_upper, hold_causes, rows, frozen_checks, ipopt_diagnostics);
     nb::class_<FitResult>(module, "FitResult")
         EPCSAFT_SOLVER_OPTIONS(FitResult, 63)
         EPCSAFT_READONLY(FitResult, minimax, status, chart, checks, acceptance, optimizer, message, usable, physical,
             parameters, predictions, residuals, weighted_residuals, physical_jacobian, optimizer_jacobian, statuses,
             failures, iterations, residual_evaluations, jacobian_evaluations, trial_failures, iteration_seconds,
-            iteration_costs, initial_cost, final_cost, covariance, reconciliation);
+            iteration_costs, initial_cost, final_cost, covariance, reconciliation, rank_records, first_numerical_failure);
     module.def("predict", [](const HelmholtzModel& model, const Observation& observation) {
         core::Scope scope("predict");
         validate(observation, model);
@@ -221,7 +221,7 @@ void register_regression(nb::module_& module) {
     nb::class_<ObservationEvaluation>(module, "ObservationEvaluation")
         EPCSAFT_SOLVER_OPTIONS(ObservationEvaluation, 63)
         EPCSAFT_READONLY(ObservationEvaluation, predictions, gradient, optimizer_gradient, chart,
-            residual_optimizer_gradient, statuses, reconciliation, state_densities, reference_values);
+            residual_optimizer_gradient, statuses, reconciliation, state_densities, reference_values, first_numerical_failure, first_numerical_failure_observation);
     module.def("evaluate_observations", [](const Parameters& parameters, std::vector<Coordinate> coordinates,
         const std::vector<double>& optimizer, std::vector<HydrationHold> holds, std::vector<Observation> observations,
         std::optional<ThermochemistryRecord> thermochemistry, std::optional<MeasurementUncertainty> uncertainty, nb::object solver_options) {

@@ -4254,6 +4254,9 @@ class Prediction:
     requested_tolerance_met: Optional[bool]
     """Whether a retained central solve meets the caller criterion, or None without that evidence."""
 
+    first_numerical_failure: Optional[Convergence]
+    """First producer refusal, including recovered causes."""
+
 class PredictionGradient:
     parameter_actions: list[ResidualEnergyAction]
     """Exact first partials of one physical prediction.
@@ -4271,6 +4274,9 @@ class PredictionGradient:
     """Availability or blocking native action cause."""
     message: str
     """Derivative refusal explanation, possibly empty."""
+
+    first_numerical_failure: Optional[Convergence]
+    """First native action refusal, including a successful retry."""
 
 class ReactionCoefficient:
     """Source reaction coordinate and its physical unit.
@@ -4460,6 +4466,9 @@ class TrialFailure:
     """Original native explanation; not replaced by an apparent zero residual."""
     jacobian: bool
     """Whether the refusal occurred while derivative columns were requested."""
+
+    first_numerical_failure: Optional[Convergence]
+    """First cause in this trial's serial row prefix."""
 
 class FitCovariance:
     """Local least-squares covariance and rank evidence.
@@ -4666,6 +4675,9 @@ class MinimaxResult:
     """Inequality identities/scales in values and Jacobian row order."""
     frozen_checks: list[CheckResult]
     """Check reports fixing baseline thresholds before optimization."""
+    ipopt_diagnostics: Optional[IpoptDiagnostics]
+    """Actual invocation summary; absent for a point reader."""
+
 class MeasuredInputKind:
     """Physical input whose reported uncertainty is declared.
 
@@ -4807,6 +4819,10 @@ class FitResult:
     -----
     Only positive-weight objective rows enter least-squares trial values/rank/variance. Zero-weight rows receive final reporting and checks. Fitted parameters are candidates; neither convergence nor covariance proves independent physical validation. See ALG-FIT.
     """
+    first_numerical_failure: Optional[Convergence]
+    """First chronological producer refusal, retained after successful recovery."""
+    rank_records: list[NumericalRank]
+    """Numerical determination of the complete weighted optimizer Jacobian."""
     solver_options: list[dict[str, Any]]
     """Effective named numerical settings and provenance."""
     reconciliation: InputReconciliation | None
@@ -5052,6 +5068,9 @@ class HoldResult:
     iterations: int
     """Inner safeguarded-Newton iteration count."""
 
+    rank: NumericalRank
+    """Scalar hold derivative rank and its actual cutoff."""
+
 class EvaluatedCoordinates:
     """Mapped candidate parameters, dependent diameters and reaction laws."""
     reaction_laws: dict[str, ReactionLogPolynomial]
@@ -5253,6 +5272,10 @@ class ObservationEvaluation:
     -----
     For Difference, dr/dv=(dy/dv)/scale; for LogRatio, dr/dv=(dy/dv)/prediction. These point-reader prediction columns must not be confused with weighted Ceres residual columns. See ALG-FIT.
     """
+    first_numerical_failure: Optional[Convergence]
+    """First producer refusal in the eligible row prefix."""
+    first_numerical_failure_observation: int
+    """Source row, meaningful only when a first cause is present."""
     solver_options: list[dict[str, Any]]
     """Effective named numerical settings and provenance."""
     reconciliation: InputReconciliation | None
