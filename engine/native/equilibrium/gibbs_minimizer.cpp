@@ -320,9 +320,7 @@ std::vector<double> add_multipliers(
         }
     }
     const auto factor = matrix.colPivHouseholderQr();
-    if (observations) observations->diagnostics_incomplete |= !core::observe_diagnostic([&] {
-        core::retain_rank(observations->rank_records, core::numerical_rank(factor, "weighted_multiplier_lift"));
-    });
+    if (observations) core::retain_rank(observations->rank_records, observations->diagnostics_incomplete, factor, "weighted_multiplier_lift");
     const Eigen::VectorXd solved = factor.solve(rhs);
     for (std::size_t column = 0; column < width; ++column) {
         result[point.size() + column] = solved(static_cast<Eigen::Index>(column));
@@ -581,7 +579,7 @@ bool GibbsMinimizer::eval_f(
         value = !compiled_.feasibility_cell() ? rows_at(n, x).objective : 0.0;
         return std::isfinite(value);
     } catch (const std::exception& error) {
-        core::retain_failure(observations_.first_numerical_failure, error, "eval_f");
+        retain_callback_failure(error, "eval_f");
         return false;
     }
 }
@@ -596,7 +594,7 @@ bool GibbsMinimizer::eval_grad_f(
         for (Ipopt::Index i = 0; i < n; ++i) grad_f[i] = (*gradient_)[i] * chart_[i];
         return true;
     } catch (const std::exception& error) {
-        core::retain_failure(observations_.first_numerical_failure, error, "eval_grad_f");
+        retain_callback_failure(error, "eval_grad_f");
         return false;
     }
 }
@@ -612,7 +610,7 @@ bool GibbsMinimizer::eval_g(
         for (Ipopt::Index row = 0; row < m; ++row) g[row] = values[rows[row]];
         return true;
     } catch (const std::exception& error) {
-        core::retain_failure(observations_.first_numerical_failure, error, "eval_g");
+        retain_callback_failure(error, "eval_g");
         return false;
     }
 }
@@ -645,7 +643,7 @@ bool GibbsMinimizer::eval_jac_g(
         }
         return entry == nele_jac;
     } catch (const std::exception& error) {
-        core::retain_failure(observations_.first_numerical_failure, error, "eval_jac_g");
+        retain_callback_failure(error, "eval_jac_g");
         return false;
     }
 }
@@ -691,7 +689,7 @@ bool GibbsMinimizer::eval_h(
         }
         return entry == nele_hess;
     } catch (const std::exception& error) {
-        core::retain_failure(observations_.first_numerical_failure, error, "eval_h");
+        retain_callback_failure(error, "eval_h");
         return false;
     }
 }
@@ -742,6 +740,8 @@ bool GibbsMinimizer::intermediate_callback(
         {double(mode), obj_value, inf_pr, inf_du, mu, d_norm, regularization_size,
                             alpha_pr, alpha_du, static_cast<double>(ls_trials)},
         static_cast<std::uint32_t>(iter));
+    if (warm_ && restored_) core::retain_failure(observations_.first_numerical_failure,
+        "warm attempt stopped on restoration", "Ipopt callback");
     return !(warm_ && restored_) && (!limits_ || !limits_->expired());  // max_iter owns iteration termination
 }
 
@@ -917,7 +917,7 @@ EquilibriumResult publish_candidate(const CompiledSystem& compiled, const PhaseP
         using Matrix = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
         const auto raw = Eigen::Map<const Matrix>(physical.data(), n, n).fullPivLu();
         const auto physical_rank = raw.rank();
-        result.diagnostics_incomplete |= !core::observe_diagnostic([&] { core::retain_rank(result.rank_records, core::numerical_rank(raw, "raw_charge_endpoint")); });
+        core::retain_rank(result.rank_records, result.diagnostics_incomplete, raw, "raw_charge_endpoint");
         result.last_rank = core::numerical_rank(Eigen::Map<const Matrix>(numerical.data(), n, n).fullPivLu(), "log_charge");
         const auto numerical_rank = static_cast<Eigen::Index>(result.last_rank->rank);
         scope.probe("charge_endpoint_ranks", {static_cast<double>(physical_rank), static_cast<double>(numerical_rank)});
@@ -1060,7 +1060,7 @@ static EquilibriumResult run_driver_once(
     std::vector<double> initial, EquilibriumResult result, core::Scope& scope,
     std::vector<double>* attempt, EquilibriumResult* audit, const DriverLimits* limits, bool newton,
     std::shared_ptr<const OptimizerState> warm, bool predicted, bool refine_trial, bool* initialized_warm = nullptr,
-    bool* retry_eligible = nullptr, bool physical_amounts = false
+    bool* retry_eligible = nullptr, bool physical_amounts = false, bool publishing = false
 ) try {
     if (retry_eligible) *retry_eligible = false;
     const double row_tolerance = declared.problem.solver_options.value(policy::row);
@@ -1196,7 +1196,7 @@ static EquilibriumResult run_driver_once(
             }
             const auto branch = check_density_branches(*model, compiled, view, {}, true, scope, limits);
             if (branch.accepted && !expired()) return true;
-            core::retain_failure(result.first_numerical_failure, std::runtime_error(branch.message), "trial branch");
+            core::retain_failure(result.first_numerical_failure, branch.message, "trial branch");
         } catch (const core::ConvergenceFailure& error) {
             result.convergence = error.record; core::retain_failure(result.first_numerical_failure, error, "trial branch");
         } catch (const std::exception& error) { core::retain_failure(result.first_numerical_failure, error, "trial branch"); }
@@ -1260,7 +1260,10 @@ static EquilibriumResult run_driver_once(
                 [](double value) { return std::isfinite(value); })) { stop("nonfinite Jacobian"); break; }
             const auto lu = Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
                 Eigen::RowMajor>>(jacobian.data(), n, n).fullPivLu();
-            core::observe_diagnostic([&] { result.last_rank = core::numerical_rank(lu, "numerical"); });
+            result.diagnostics_incomplete |= !core::observe_diagnostic([&] {
+                result.last_rank = core::numerical_rank(lu, "numerical");
+                if (scope.diagnostics_on()) scope.probe("numerical_rank", {double(result.last_rank->rank), double(result.last_rank->dimension), result.last_rank->threshold}, 0, "numerical");
+            });
             if (free_amount_newton || !compiled.log_charge_rows.empty()) {
                 if (lu.rank() != n) { stop("Jacobian rank"); break; }
             }
@@ -1476,7 +1479,8 @@ static EquilibriumResult run_driver_once(
     if (!newton) scope.probe("optimizer_constraint_multipliers", nlp->constraint_multipliers());
     if (compiled.feasibility_cell()) result.constraint_multipliers = newton
         ? std::vector<double>(compiled.rows.size(), 0.0) : nlp->constraint_multipliers();
-    if (audit) { StageWork observations; observations.observe(result); std::move(observations).publish_observations(*audit); }
+    if (audit) StageWork::publish_observations(result, *audit);
+    publishing = true;
     result = publish_candidate(compiled, prepared, std::move(result), scope, limits);
     if (!result.success) {
         result.message += ipopt_failure;
@@ -1485,8 +1489,9 @@ static EquilibriumResult run_driver_once(
     } else if (!newton && result.requested_tolerance_met.value_or(false)) result.optimizer_state = nlp->optimizer_state();
     return result;
 } catch (const std::exception& error) {
-        core::retain_failure(result.first_numerical_failure, error, "equilibrium preparation");
-        if (audit) { StageWork observations; observations.observe(result); observations.report_observations(*audit); }
+        auto& observed = publishing && audit ? *audit : result;
+        core::retain_failure(observed.first_numerical_failure, error, "equilibrium preparation");
+        if (audit && !publishing) StageWork::publish_observations(result, *audit);
         throw;
 }
 
@@ -1567,8 +1572,11 @@ EquilibriumResult run_driver(
     scope.probe("warm_fallback", {static_cast<double>(tried.iterations), static_cast<double>(tried.evaluations)}, 0, tried.message.c_str());
     if (audit) *audit = tried;
     core::Scope cold_scope("equilibrium_cold_fallback");
-    auto cold = run_driver_once(&model, compiled, std::move(initial), result, cold_scope, attempt, audit, work, false, {}, predicted, refine_trial, nullptr, rejection);
-    StageWork stages; stages.add(tried); stages.report(cold);
+    StageWork stages; stages.add(tried);
+    EquilibriumResult cold;
+    try { cold = run_driver_once(&model, compiled, std::move(initial), result, cold_scope, attempt, &cold, work, false, {}, predicted, refine_trial, nullptr, rejection); }
+    catch (...) { stages.report_observations(cold); if (audit) StageWork::publish_observations(cold, *audit); throw; }
+    stages.report(cold);
     return cold;
     };
     auto selected = primary();
@@ -1900,7 +1908,7 @@ EquilibriumResult newton_attempt(const CompiledSystem& compiled, const std::vect
         fast = run_driver(*compiled.model, compiled, initial, structural, scope, &coordinates, &fast, limits, true);
         const auto branch = fast.success ? check_density_branches(*compiled.model, compiled, fast, {}, true, scope, limits) : BranchCheck{};
         const bool accepted = fast.success && branch.accepted;
-        if (fast.success && !accepted) core::retain_failure(fast.first_numerical_failure, std::runtime_error(branch.message), "Newton admission");
+        if (fast.success && !accepted) core::retain_failure(fast.first_numerical_failure, branch.message, "Newton admission");
         scope.probe("newton_fast_path_outcome", {static_cast<double>(fast.evaluations)}, 0,
             accepted ? "accepted" : fast.success ? "admission" : fast.message.c_str());
         if (accepted) { if (attempt) *attempt = std::move(coordinates); return fast; }

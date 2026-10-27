@@ -182,7 +182,7 @@ inline std::vector<double> solve_linear(
     const Eigen::FullPivLU<Eigen::MatrixXd> factorization(matrix);
     const auto ratio = admitted_pivot_ratio(factorization);
     if (!ratio) {
-        core::observe_diagnostic([&] {
+        if (first) core::retain_first(*first, [&] {
             core::Convergence r; r.stop = core::Stop::singular;
             const auto pivots = factorization.matrixLU().diagonal().cwiseAbs();
             r.residual = Eigen::Map<const Eigen::VectorXd>(right_hand_side.data(), right_hand_side.size()).cwiseAbs().maxCoeff();
@@ -191,7 +191,7 @@ inline std::vector<double> solve_linear(
             r.cause = "association Jacobian is ill-conditioned; largest " + core::optional_number(pivots.maxCoeff())
                 + "; smallest " + core::optional_number(pivots.minCoeff()) + "; relative pivot cutoff "
                 + core::optional_number(policy::ASSOCIATION_JACOBIAN_CONDITION.value);
-            if (first) core::retain_first(*first, r);
+            return r;
         });
         throw std::runtime_error("association Jacobian is ill-conditioned");
     }

@@ -10,8 +10,10 @@
 #include <exception>
 #include <initializer_list>
 #include <string>
+#include <string_view>
 #include <optional>
 #include <utility>
+#include <type_traits>
 #include <vector>
 
 namespace epcsaft::core {
@@ -53,10 +55,19 @@ template<class Observation> bool observe_diagnostic(Observation&& observation) n
     try { observation(); return true; }
     catch (...) { if (current_trace()) current_trace()->incomplete = true; return false; }
 }
-inline void retain_first(std::optional<Convergence>& first, const std::optional<Convergence>& next) noexcept {
-    if (!next || first) return;
-    if (!observe_diagnostic([&] { first = next; })) {
-        first.emplace(); first->incomplete = true;
+inline void retain_first(std::optional<Convergence>& first, const std::optional<Convergence>& next, bool earlier = false) noexcept {
+    if (!next || (first && !earlier)) return;
+    if (!observe_diagnostic([&] { auto copy = *next; first = std::move(copy); })) {
+        if (!first) first.emplace();
+        first->incomplete = true;
+    }
+}
+template<class Factory, std::enable_if_t<std::is_invocable_v<Factory>, int> = 0>
+void retain_first(std::optional<Convergence>& first, Factory&& build) noexcept {
+    if (first) return;
+    if (!observe_diagnostic([&] { auto record = build(); retain_first(first, record); })) {
+        if (!first) first.emplace();
+        first->incomplete = true;
     }
 }
 inline void retain_failure(std::optional<Convergence>& first, const std::exception& error, const char* operation) noexcept {
@@ -68,6 +79,13 @@ inline void retain_failure(std::optional<Convergence>& first, const std::excepti
         if (record.cause.empty()) record.cause = std::string(operation) + ": " + error.what();
         first = std::move(record);
     })) { first.emplace(); first->incomplete = true; }
+}
+inline void retain_failure(std::optional<Convergence>& first, std::string_view cause, const char* operation) noexcept {
+    if (first) return;
+    if (!observe_diagnostic([&] { retain_failure(first, std::runtime_error(std::string(cause)), operation); })) {
+        if (!first) first.emplace();
+        first->incomplete = true;
+    }
 }
 inline bool retain_rank(std::vector<NumericalRank>& records, const NumericalRank& rank) noexcept {
     return observe_diagnostic([&] {
@@ -86,6 +104,7 @@ void observe(Trace* trace, Observation&& observation) noexcept {
 class Capture final {
 public:
     explicit Capture(std::optional<bool> diagnostics = std::nullopt, const std::string& ipopt_log = {}) noexcept : previous_(current_trace()) {
+        current_trace() = &trace_;
         if (!ipopt_log.empty()) observe_diagnostic([&] { trace_.ipopt_log = std::make_shared<IpoptLog>(); trace_.ipopt_log->destination = ipopt_log; });
         else if (previous_) trace_.ipopt_log = previous_->ipopt_log;
         trace_.diagnostics = diagnostics ? *diagnostics : previous_ && previous_->diagnostics;

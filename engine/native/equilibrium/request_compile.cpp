@@ -1598,6 +1598,7 @@ CompiledSystem compile_stability_trial(const HelmholtzModel& model, double T, do
     if (has_charge) for (std::size_t i = 0; i < support.size(); ++i) physical(1, i) = z[support[i]];
     std::vector<std::vector<double>> B;
     std::vector<core::NumericalRank> ranks;
+    bool incomplete = false;
     transformation.clear();
     if (has_charge && phase.kind == PhaseKind::Vapor) {
         B.assign(2, std::vector<double>(w.size(), 0.0));
@@ -1607,7 +1608,7 @@ CompiledSystem compile_stability_trial(const HelmholtzModel& model, double T, do
         transformation = {{1.0, 0.0}, {0.0, 1.0}};
     } else {
         const auto factor = physical.fullPivLu();
-        core::observe_diagnostic([&] { core::retain_rank(ranks, core::numerical_rank(factor, "trial_normalization_charge")); });
+        core::retain_rank(ranks, incomplete, factor, "trial_normalization_charge");
         const Eigen::MatrixXd kernel = factor.kernel();
         std::vector<ReactionSpec> directions;
         if (support.size() > static_cast<std::size_t>(physical.rows())) {
@@ -1625,7 +1626,7 @@ CompiledSystem compile_stability_trial(const HelmholtzModel& model, double T, do
         for (std::size_t k = 0; k < B.size(); ++k) {
             for (std::size_t i = 0; i < support.size(); ++i) B[k][support[i]] = reduced[k][i];
             const auto transform = physical.transpose().colPivHouseholderQr();
-            core::observe_diagnostic([&] { core::retain_rank(ranks, core::numerical_rank(transform, "trial_basis_transform")); });
+            core::retain_rank(ranks, incomplete, transform, "trial_basis_transform");
             const Eigen::VectorXd coefficients = transform.solve(
                 Eigen::Map<const Eigen::VectorXd>(reduced[k].data(), reduced[k].size()));
             transformation.emplace_back(coefficients.data(), coefficients.data() + coefficients.size());
@@ -1639,6 +1640,7 @@ CompiledSystem compile_stability_trial(const HelmholtzModel& model, double T, do
     request.solver_options.values[policy::row] = policy::EQUILIBRIUM_ROW_RESIDUAL.value;
     for (double coefficient : c) request.standard_gibbs_j_per_mol.push_back(coefficient * GAS_CONSTANT_J_PER_MOL_K * T);
     auto compiled = compile_with_basis(model, request, &B);
+    compiled.diagnostics_incomplete |= incomplete;
     for (const auto& r : ranks) compiled.diagnostics_incomplete |= !core::retain_rank(compiled.rank_records, r);
     return compiled;
 }

@@ -484,6 +484,32 @@ void producer_boundaries() {
         domain = error.record.stop == Stop::left_domain;
     }
 
+    // ALG-ASSOCIATION: a full-rank rejected pivot is distinct from final site convergence.
+    auto recovered = properties_support::ethane();
+    recovered.site_component = {0, 0, 0}; recovered.site_multiplicity = {1, 1, 1};
+    recovered.association_active.assign(9, 0); recovered.association_energy_over_k.assign(9, 0.0);
+    recovered.association_volume.assign(9, 0.0);
+    recovered.association_active[1] = recovered.association_active[3] = 1;
+    recovered.association_energy_over_k[1] = recovered.association_energy_over_k[3] = 3000.0;
+    recovered.association_volume[1] = recovered.association_volume[3] = 953099165.27749503;
+    const auto rs = epcsaft::segment_sigma(300.0, recovered);
+    const auto rd = epcsaft::segment_diameter(300.0, recovered, rs);
+    epcsaft::core::Convergence final_sites;
+    std::optional<epcsaft::core::Convergence> first;
+    const auto sites = epcsaft::solve_site_fractions(300.0, 1.0e4, {1.0}, recovered, rs, rd,
+        &final_sites, nullptr, nullptr, false, {}, &first);
+    const epcsaft::HelmholtzModel recovered_model(recovered);
+    const auto derivative = recovered_model.evaluate(300.0, 1.0e-4, {1.0}, epcsaft::DerivativeOrder::IsothermalPhaseHessian);
+    const bool preserved = first && first->rank && first->rank->rank == 3 && first->rank->dimension == 3
+        && first->residual == 9999999999999.5 && final_sites.stop == Stop::converged
+        && final_sites.iterations == 26 && final_sites.evaluations == 51
+        && derivative.first_numerical_failure && derivative.first_numerical_failure->cause == first->cause;
+    recording_support::compare("association-recovery", "first-and-final", "1", preserved ? 1.0 : 0.0, 1.0,
+        recording_support::fields({recording_support::field("first_residual", first ? first->residual : NAN),
+            recording_support::field("final_residual", final_sites.residual),
+            recording_support::field("gradient_floor", derivative.gradient_floor)}),
+        "Relationship", "mass-action", "recovered factor refusal retains its operands", "absolute", 0.0, 0.0,
+        preserved, "native.diagnostics.c3", "C3", "association", "site-fractions", "T,rho,parameters", "separate final convergence");
     const bool verdict = nonfinite && domain
         && !std::isfinite(nonfinite_record.residual)
         && std::isinf(domain_record.residual);

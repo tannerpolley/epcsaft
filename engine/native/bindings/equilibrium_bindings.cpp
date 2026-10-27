@@ -266,6 +266,11 @@ void register_equilibrium(nb::module_& module) {
         .def(nb::init<>())
         EPCSAFT_READWRITE(ContinuationRequest, start_problem, target_problem, start_result, options, parameter_targets);
     nb::class_<ContinuationResult>(module, "ContinuationResult")
+        .def_prop_ro("first_numerical_failure", [](const ContinuationResult& r) { return r.observations.first_numerical_failure; })
+        .def_prop_ro("rank_records", [](const ContinuationResult& r) { return r.observations.rank_records; })
+        .def_prop_ro("ipopt_diagnostics", [](const ContinuationResult& r) { return r.observations.ipopt_diagnostics; })
+        .def_prop_ro("recovered_ipopt_diagnostics", [](const ContinuationResult& r) { return r.observations.recovered_ipopt_diagnostics; })
+        .def_prop_ro("diagnostics_incomplete", [](const ContinuationResult& r) { return r.observations.diagnostics_incomplete; })
         EPCSAFT_READONLY(ContinuationResult, success, message, stop, path_values, parameter_values, states,
             reached_path, attempted_path, event_phase, event_pair, attempts, accepted_steps, retries, last_result,
             cause_stop, cause_convergence, cause_message, conditions, critical_points, critical_seeds);

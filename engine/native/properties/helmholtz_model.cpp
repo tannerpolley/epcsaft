@@ -1948,9 +1948,7 @@ PropertyActionBatch HelmholtzModel::directional_actions(
     }
     if (root != nullptr) {
         result.diagnostics.pressure_density_derivative = root->pressure_density_derivative;
-        auto first = root->first_numerical_failure;
-        core::retain_first(first, result.diagnostics.first_numerical_failure);
-        result.diagnostics.first_numerical_failure = std::move(first);
+        core::retain_first(result.diagnostics.first_numerical_failure, root->first_numerical_failure, true);
         result.diagnostics.stability_determinant = root->pressure_density_derivative
             / (GAS_CONSTANT_J_PER_MOL_K * temperature);
         result.diagnostics.pressure_residual = root->pressure_residual;
@@ -2006,11 +2004,11 @@ PropertyActionBatch HelmholtzModel::pressure_actions(
         batch.density_status = PropertyActionStatus::DensityUnavailable;
         batch.solver_options = solver_options_;
         batch.density_message = error.what();
-        core::retain_failure(batch.diagnostics.first_numerical_failure, error, "density closure");
         if (const auto* structure = dynamic_cast<const DensityStructureError*>(&error)) {
             batch.density_convergence = structure->first_numerical_failure;
             core::retain_first(batch.diagnostics.first_numerical_failure, structure->first_numerical_failure);
         }
+        core::retain_failure(batch.diagnostics.first_numerical_failure, error, "density closure");
         batch.density_structure_refused = dynamic_cast<const DensityStructureError*>(&error) != nullptr;
         if (const auto* failure = dynamic_cast<const core::ConvergenceFailure*>(&error))
             batch.density_convergence = failure->record;
@@ -2360,9 +2358,7 @@ State HelmholtzModel::state_at_pressure(
             (*result.log_fugacity_coefficient)[i] = *result.residual_chemical_potential_over_rt[i] - log_z;
     }
     result.density_convergence = root.convergence;
-    auto first = root.first_numerical_failure;
-    core::retain_first(first, result.first_numerical_failure);
-    result.first_numerical_failure = std::move(first);
+    core::retain_first(result.first_numerical_failure, root.first_numerical_failure, true);
     result.density_branch = root.branch;
     result.requested_density_branch = branch;
     result.stable_root_count = root.stable_root_count;

@@ -1497,6 +1497,9 @@ DensityRoot solve_density(
             if (!(*anchor_density > lower && *anchor_density < upper)) {
                 core::Convergence record{0.0, model.solver_options().criterion(policy::density), std::nullopt,
                     std::nullopt, std::nullopt, 0, evaluations, core::Stop::left_domain, model.solver_options().owners[policy::density]};
+                core::observe_diagnostic([&] { record.cause = "density anchor outside " + std::to_string(static_cast<int>(branch))
+                    + " domain; anchor=" + core::optional_number(*anchor_density) + "; lower=" + core::optional_number(lower)
+                    + "; upper=" + core::optional_number(upper); });
                 throw core::ConvergenceFailure(record);
             }
             result = anchor(series, temperature, pressure, mole_fractions, branch, lower, upper,

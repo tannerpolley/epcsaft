@@ -14,6 +14,16 @@ NumericalRank numerical_rank(const Factor& lu, const char* basis) {
     return {basis, static_cast<std::size_t>(lu.cols()), static_cast<std::size_t>(lu.rank()), double(lu.threshold())};
 }
 
+template <typename Factor>
+void retain_rank(std::vector<NumericalRank>& records, bool& incomplete, const Factor& factor, const char* basis) noexcept {
+    incomplete |= !observe_diagnostic([&] {
+        const auto rank = numerical_rank(factor, basis);
+        incomplete |= !retain_rank(records, rank);
+        Scope scope("numerical_rank");
+        if (scope.diagnostics_on()) scope.probe("rank", {double(rank.rank), double(rank.dimension), rank.threshold}, 0, basis);
+    });
+}
+
 // Rigal-Gaches normwise backward error; the zero right-hand side needs no unit floor.
 inline double backward_error(double residual, double jacobian_norm, double solution, double right) {
     const double denominator = jacobian_norm * solution + right;

@@ -58,7 +58,7 @@ Eigen::MatrixXd reaction_matrix(
     return matrix;
 }
 
-Eigen::Index numerical_rank(const Eigen::MatrixXd& matrix, core::NumericalRank* observation = nullptr) {
+Eigen::Index numerical_rank(const Eigen::MatrixXd& matrix, core::NumericalRank* observation = nullptr, bool* incomplete = nullptr) {
     if (matrix.rows() == 0 || matrix.cols() == 0) return 0;
     const auto svd = matrix.jacobiSvd(Eigen::ComputeThinU | Eigen::ComputeThinV);
     const double largest = svd.singularValues().size() == 0
@@ -70,7 +70,14 @@ Eigen::Index numerical_rank(const Eigen::MatrixXd& matrix, core::NumericalRank* 
     for (const double singular : svd.singularValues()) {
         if (singular > scale) ++rank;
     }
-    if (observation) core::observe_diagnostic([&] { *observation = {"reaction_stoichiometry_absolute_svd", std::size_t(matrix.cols()), std::size_t(rank), scale}; });
+    if (observation) {
+        const bool retained = core::observe_diagnostic([&] {
+            *observation = {"reaction_stoichiometry_absolute_svd", std::size_t(matrix.cols()), std::size_t(rank), scale};
+            core::Scope scope("numerical_rank");
+            if (scope.diagnostics_on()) scope.probe("rank", {double(rank), double(matrix.cols()), scale}, 0, observation->basis.c_str());
+        });
+        if (incomplete) *incomplete |= !retained;
+    }
     return rank;
 }
 
@@ -384,8 +391,8 @@ std::vector<std::vector<double>> balance_basis(
     validate_reaction_set(components, reactions);
     const auto matrix = reaction_matrix(components, reactions);
     core::NumericalRank snapshot;
-    const Eigen::Index rank = numerical_rank(matrix, &snapshot);
-    if (observations) observations->diagnostics_incomplete |= !core::retain_rank(observations->rank_records, snapshot);
+    const Eigen::Index rank = numerical_rank(matrix, &snapshot, observations ? &observations->diagnostics_incomplete : nullptr);
+    if (observations && !snapshot.basis.empty()) observations->diagnostics_incomplete |= !core::retain_rank(observations->rank_records, snapshot);
     core::Convergence refusal; refusal.residual = NAN; refusal.stop = core::Stop::singular; refusal.rank = snapshot;
     if (rank != matrix.rows()) {
         for (std::size_t row = 0; row < reactions.size(); ++row) {
@@ -539,9 +546,7 @@ std::vector<std::vector<double>> standard_state_series(
         return result;
     }
     const auto svd = matrix.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV);
-    if (observations) observations->diagnostics_incomplete |= !core::observe_diagnostic([&] {
-        core::retain_rank(observations->rank_records, core::numerical_rank(svd, "minimum_norm_standard_state"));
-    });
+    if (observations) core::retain_rank(observations->rank_records, observations->diagnostics_incomplete, svd, "minimum_norm_standard_state");
     if (inverse_map) {
         inverse_map->assign(components, std::vector<double>(reactions.size(), 0.0));
         for (std::size_t r = 0; r < reactions.size(); ++r) {

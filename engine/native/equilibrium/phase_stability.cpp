@@ -99,10 +99,10 @@ std::optional<TrialPoint> tangent_plane_trial(const HelmholtzModel& model, doubl
                 Eigen::MatrixXd H = p.J.cwiseProduct(root * root.transpose()) / p.W.sum();
                 H.diagonal().array() += 1.0 + 0.5 * p.g.array();
                 const Eigen::LLT<Eigen::MatrixXd> factor(H);
-                if (factor.info() != Eigen::Success) core::observe_diagnostic([&] {
+                if (factor.info() != Eigen::Success) core::retain_first(o.first_numerical_failure, [&] {
                     core::Convergence r; r.cause = "tangent-plane matrix not positive definite"; r.stop = core::Stop::singular;
                     r.residual = p.g.lpNorm<Eigen::Infinity>(); r.iterations = o.iterations;
-                    core::retain_first(o.first_numerical_failure, r);
+                    return r;
                 });
                 const Eigen::VectorXd alpha = 2.0 * root - factor.solve(root.cwiseProduct(p.g));
                 if (factor.info() == Eigen::Success && (alpha.array() > 0.0).all()) q = at((0.5 * alpha).array().square());
@@ -256,7 +256,9 @@ Candidate stability_candidate(const CompiledSystem& c, const EquilibriumResult& 
         if (scale > 0.0) { weighted.row(k) /= scale; scaled_rhs(k) /= scale; }
     }
     const auto factor = weighted.completeOrthogonalDecomposition();
-    core::observe_diagnostic([&] { report.last_rank = core::numerical_rank(factor, "weighted_amount_correction"); });
+    if (!core::observe_diagnostic([&] { report.last_rank = core::numerical_rank(factor, "weighted_amount_correction"); })) {
+        report.first_numerical_failure.emplace(); report.first_numerical_failure->incomplete = true;
+    }
     const auto refuse = [&](const char* cause, double defect) {
         core::Convergence r; r.cause = cause; r.residual = defect; r.stop = core::Stop::infeasible; r.rank = report.last_rank;
         core::retain_first(report.first_numerical_failure, r);
@@ -270,7 +272,7 @@ Candidate stability_candidate(const CompiledSystem& c, const EquilibriumResult& 
     for (std::size_t j = 0; j < cells.size(); ++j) {
         const auto [p, i] = cells[j];
         inventory[p][i] = amount(j) + intended(j);
-        if (!(inventory[p][i] > 0.0) || !std::isfinite(inventory[p][i])) throw std::invalid_argument("stability correction destroys positive support");
+        if (!(inventory[p][i] > 0.0) || !std::isfinite(inventory[p][i])) refuse("stability correction destroys positive support", std::abs(inventory[p][i]));
         applied(j) = inventory[p][i] - amount(j);
         candidate.feasibility_estimate += (std::abs(applied(j)) + std::abs(intended(j) - applied(j))) * std::abs(mu(j));
         candidate.correction_norm += std::abs(applied(j));
@@ -314,7 +316,7 @@ Candidate stability_candidate(const CompiledSystem& c, const EquilibriumResult& 
         const auto [p, i] = cells[j];
         const double represented = at.amount[p] * at.composition[p][i];
         const double logged = at.amount[p] * std::exp(std::log(at.composition[p][i]));
-        if (!(represented > 0.0) || !(logged > 0.0)) throw std::invalid_argument("stability correction destroys positive support");
+        if (!(represented > 0.0) || !(logged > 0.0)) refuse("stability correction destroys positive support", std::abs(inventory[p][i]));
         represented_rhs -= J.col(j) * represented; logged_rhs -= J.col(j) * logged;
         const double displacement = std::abs(represented - inventory[p][i]) + std::abs(logged - represented);
         candidate.correction_norm += displacement;

@@ -36,6 +36,12 @@ class DensityStructureError(EosError):
     A failed or incomplete scan is not evidence of a unique stable root. See ALG-DENSITY in engine/docs/science/algorithms.md.
     """
     ...
+    record: Optional[Convergence]
+    """Final native refusal, or None when unmeasured."""
+    first_numerical_failure: Optional[Convergence]
+    """Earlier native refusal, when retained separately from final convergence."""
+
+
 class ConvergenceError(EosError):
     """A native iterative calculation stops without an admitted result.
 
@@ -44,9 +50,20 @@ class ConvergenceError(EosError):
     The exception message retains the residual, stopping criterion and available convergence diagnostics.
     """
     ...
+    record: Convergence
+    """Final native refusal, or None when unmeasured."""
+    first_numerical_failure: Optional[Convergence]
+    """Earlier native refusal, when retained separately from final convergence."""
+
+
 class DeclarationError(ParameterError):
     """A required physical declaration is absent or inadmissible."""
     ...
+    record: Optional[Convergence]
+    """Final native refusal, or None when unmeasured."""
+    first_numerical_failure: Optional[Convergence]
+    """Earlier native refusal, when retained separately from final convergence."""
+
 
 class Stop:
     """Reason an iterative calculation stopped.
@@ -156,6 +173,18 @@ class Convergence:
         """
         ...
 
+    cause: str
+    """Producing operation and actual refused operands; empty without an observation."""
+
+    rank: Optional[NumericalRank]
+    """Rank in the named matrix basis, or None without a factor observation."""
+
+    backward_error: Optional[float]
+    """Dimensionless measured linear backward error, or None when unavailable."""
+
+    incomplete: bool
+    """True if an observation could not be retained."""
+
 class Event:
     """One named numerical probe within a captured span."""
     name: str
@@ -193,6 +222,9 @@ class Trace:
     incomplete: bool
     """True if collecting trace evidence failed; the retained trace may omit observations."""
 
+    ipopt_log_error: str
+    """Opening error for the requested Ipopt destination; empty without an error."""
+
 class Capture:
     """Capture native numerical traces in a context manager.
 
@@ -200,13 +232,15 @@ class Capture:
     -----
     Capture observes calculations without changing their stopping criteria. Detailed probes are enabled by diagnostics; exceptions from the enclosed calculation are not suppressed.
     """
-    def __init__(self, diagnostics: bool = False) -> None:
+    def __init__(self, diagnostics: bool = False, ipopt_log: str = "") -> None:
         """Initialize Capture from the declared inputs.
 
         Parameters
         ----------
         diagnostics : bool
             Enable detailed numerical probes in addition to operation spans.
+        ipopt_log : str
+            Optional absolute destination for the original calculation's sequential Ipopt log.
 
         Returns
         -------
@@ -1195,6 +1229,9 @@ class PropertyActionDiagnostics:
     stable_root_count: Optional[int]
     """Number of mechanically stable roots established by the search, or None when not established."""
 
+    first_numerical_failure: Optional[Convergence]
+    """Earliest observed numerical refusal, separate from final convergence."""
+
 class PropertyActionBatch:
     """Property actions sharing one central state and implicit work."""
     solver_options: list[dict[str, Any]]
@@ -1395,6 +1432,9 @@ class State:
     without a positive finite pressure slope or admitted thermochemistry, for zero-fraction
     species or unavailable insertions, or for nonfinite results."""
 
+    first_numerical_failure: Optional[Convergence]
+    """Earliest observed numerical refusal, separate from final convergence."""
+
 class DensityDiagnosticPoint:
     """One sampled or refined point on a fixed-composition isotherm."""
     molar_density: float
@@ -1472,6 +1512,9 @@ class DensityDiagnostics:
     """Number of diagnostic EOS evaluations."""
     stop: str
     """Diagnostic termination explanation; an incomplete search does not establish uniqueness."""
+
+    first_numerical_failure: Optional[Convergence]
+    """Earliest observed site or density refusal during this search."""
 
 class SweepCounters:
     """Cumulative derivative work counts for a HelmholtzModel."""
@@ -2260,6 +2303,12 @@ class StabilityReport:
     """Counts for this finite search; absent keys have no retained count. root_calls counts solve_density trace spans, root_evaluations counts energy-evaluation spans inside those roots, and energy_evaluations counts all energy-evaluation spans. trial_invocations counts rooted, distinct trials admitted to direct evaluation or search; reconstruction_evaluations counts completed composition reconstructions. driver_invocations and trial_driver_invocations count shared-driver trial calls; iterations, evaluations and hessian_calls sum their returned work. trial_tangent_plane_invocations, trial_tangent_plane_iterations and trial_tangent_plane_newton_steps report the separate reduced tangent-plane search work. association_diagnostic_evaluations counts extra association diagnostics; finite_split_evaluations counts finite donor/split energy comparisons. All are counts; no elapsed time is retained.
     """
 
+    first_numerical_failure: Optional[Convergence]
+    """Earliest observed numerical refusal, separate from final convergence."""
+
+    last_rank: Optional[NumericalRank]
+    """Rank of the candidate amount correction, when measured."""
+
 class DiscoveryRecord:
     """Retained candidate topology and the finite discovery sequence.
 
@@ -2850,6 +2899,15 @@ class CompiledSystem:
         """
         ...
 
+    first_numerical_failure: Optional[Convergence]
+    """Earliest observed numerical refusal, separate from final convergence."""
+
+    rank_records: list[NumericalRank]
+    """Latest observed rank per named operation; no extra admission rule."""
+
+    diagnostics_incomplete: bool
+    """True if a requested observation could not be retained."""
+
 class LinearSolveDiagnostics:
     """Local first-order error estimates in the named system's unscaled coordinates.
 
@@ -2883,6 +2941,77 @@ class LinearSolveDiagnostics:
     forward_error_estimate: float
     precision_bits: int
     refinement_iterations: int
+
+class IpoptIteration:
+    """Last callback tuple in Ipopt's internal optimization and scaling basis."""
+    mode: int
+    """Ipopt callback mode, a count or mode ordinal."""
+    iteration: int
+    """Ipopt callback iteration, a count or mode ordinal."""
+    line_search_trials: int
+    """Ipopt callback line search trials, a count or mode ordinal."""
+    objective: float
+    """Unmodified Ipopt callback objective; units follow Ipopt's internal basis."""
+    inf_pr: float
+    """Unmodified Ipopt callback inf_pr; units follow Ipopt's internal basis."""
+    inf_du: float
+    """Unmodified Ipopt callback inf_du; units follow Ipopt's internal basis."""
+    mu: float
+    """Unmodified Ipopt callback mu; units follow Ipopt's internal basis."""
+    step_norm: float
+    """Unmodified Ipopt callback step_norm; units follow Ipopt's internal basis."""
+    regularization: float
+    """Unmodified Ipopt callback regularization; units follow Ipopt's internal basis."""
+    alpha_du: float
+    """Unmodified Ipopt callback alpha_du; units follow Ipopt's internal basis."""
+    alpha_pr: float
+    """Unmodified Ipopt callback alpha_pr; units follow Ipopt's internal basis."""
+
+class IpoptPoint:
+    """Original TNLP final point before polish; absent without finalization."""
+    tnlp_coordinates: list[float]
+    """Original TNLP tnlp coordinates; see ALG-TERMINATION for the chart."""
+    coordinate_scale: list[float]
+    """Original TNLP coordinate scale; see ALG-TERMINATION for the chart."""
+    tnlp_lower_multipliers: list[float]
+    """Original TNLP tnlp lower multipliers; see ALG-TERMINATION for the chart."""
+    tnlp_upper_multipliers: list[float]
+    """Original TNLP tnlp upper multipliers; see ALG-TERMINATION for the chart."""
+    tnlp_constraint_multipliers: list[float]
+    """Original TNLP tnlp constraint multipliers; see ALG-TERMINATION for the chart."""
+    declaration: EquilibriumProblem
+    """Originating declaration; it may differ from the returned state's declaration."""
+    rows: list[Row]
+    """Originating defining rows."""
+    constraint_rows: list[int]
+    """Indices into this point's own rows, in TNLP multiplier order."""
+    objective_factor: float
+    """Requested objective normalization, 1/feed_total; not applied again to the arrays."""
+
+class IpoptDiagnostics:
+    """Bounded observations of one invoked Ipopt attempt."""
+    last: Optional[IpoptIteration]
+    """Last callback tuple, or None if no callback ran."""
+    first_restoration_iteration: Optional[int]
+    """Observed first restoration iteration, or None when unavailable."""
+    initialization_return: Optional[int]
+    """Observed initialization return, or None when unavailable."""
+    application_return: Optional[int]
+    """Observed application return, or None when unavailable."""
+    restoration_entries: int
+    """Attempt-local restoration entries, a count."""
+    callbacks: int
+    """Attempt-local callbacks, a count."""
+    warm_initialized: bool
+    """Whether this attempt was warm initialized."""
+    predicted: bool
+    """Whether this attempt was predicted."""
+    physical_amounts: bool
+    """Whether this attempt was physical amounts."""
+    incomplete: bool
+    """Whether this attempt was incomplete."""
+    failed_point: Optional[IpoptPoint]
+    """Original TNLP tuple on unsuccessful termination, or None without one."""
 
 class EquilibriumResult:
     """Solved phases and numerical evidence on the declared feed basis.
@@ -3003,6 +3132,21 @@ class EquilibriumResult:
             Length n of dimensionless mole fractions in component_ids order.
         """
         ...
+
+    first_numerical_failure: Optional[Convergence]
+    """Earliest observed numerical refusal, separate from final convergence."""
+
+    rank_records: list[NumericalRank]
+    """Latest observed rank per named operation; no extra admission rule."""
+
+    ipopt_diagnostics: Optional[IpoptDiagnostics]
+    """Latest actually invoked Ipopt attempt, including initialization-only attempts."""
+
+    recovered_ipopt_diagnostics: Optional[IpoptDiagnostics]
+    """Earliest superseded restoration-bearing attempt."""
+
+    diagnostics_incomplete: bool
+    """True if a requested observation could not be retained."""
 
 class TopologyEvent:
     """Candidate topology change detected by the native solve.
@@ -3190,6 +3334,21 @@ class ContinuationResult:
     critical_seeds: list[list[float]]
     """Per-candidate [ln(T/(1 K)), ln(P/(1 Pa)), ln(rho/(1 mol/m^3))] seeds, dimensionless."""
 
+    first_numerical_failure: Optional[Convergence]
+    """Earliest observed numerical refusal, separate from final convergence."""
+
+    rank_records: list[NumericalRank]
+    """Latest observed rank per named operation; no extra admission rule."""
+
+    ipopt_diagnostics: Optional[IpoptDiagnostics]
+    """Latest actually invoked Ipopt attempt, including initialization-only attempts."""
+
+    recovered_ipopt_diagnostics: Optional[IpoptDiagnostics]
+    """Earliest superseded restoration-bearing attempt."""
+
+    diagnostics_incomplete: bool
+    """True if a requested observation could not be retained."""
+
 def continue_equilibrium(model: HelmholtzModel, request: ContinuationRequest) -> ContinuationResult:
     """Trace a declared equilibrium path or incipient phase envelope.
 
@@ -3210,6 +3369,7 @@ def continue_equilibrium(model: HelmholtzModel, request: ContinuationRequest) ->
     Ordinary continuation follows the start-to-target path. Both endpoint declarations are first checked for unsupported solids; an envelope start then selects the native envelope controller and ignores the target declaration.
     """
     ...
+
 
 class SolvedStateObservableKind:
     """Quantity extracted from the admitted equilibrium state.

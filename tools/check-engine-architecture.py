@@ -503,7 +503,9 @@ def rule_stub_matches_extension() -> list[str]:
             # Enum implementations supply name/value accessors.
             implicit = {"name", "value"} if hasattr(native, "__members__") else set()
             members = {name for name in vars(native) if not name.startswith("_")} - implicit
-            findings += mismatch(node.name, declared(node.body), members)
+            instance_fields = {n.target.id for n in node.body if isinstance(n, ast.AnnAssign) and isinstance(n.target, ast.Name)} if issubclass(native, BaseException) else set()
+            # Native translators attach exception fields to instances, not their classes.
+            findings += mismatch(node.name, declared(node.body) - instance_fields, members)
     return findings
 
 

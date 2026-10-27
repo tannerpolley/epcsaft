@@ -87,24 +87,25 @@ std::vector<double> solve_implicit(
     if (!valid_point(prepared.point)) throw std::invalid_argument("invalid sensitivity point");
     if (!all_numeric(column)) throw std::invalid_argument("invalid parameter derivative");
     const auto jacobian = compiled.jacobian_at(prepared);
-    const auto refuse = [&](const char* cause, std::optional<core::NumericalRank> rank = std::nullopt,
-                            std::optional<double> backward = std::nullopt) {
-        if (failure) core::observe_diagnostic([&] { core::Convergence r; r.cause = cause; r.rank = std::move(rank);
-            r.backward_error = backward; r.stop = core::Stop::singular; core::retain_first(*failure, r); });
+    const auto refuse = [&](const char* cause, const auto* factor, std::optional<double> backward = std::nullopt) {
+        if (failure && !core::observe_diagnostic([&] { core::Convergence r; r.cause = cause;
+            if (factor) r.rank = core::numerical_rank(*factor, "implicit defining rows");
+            r.backward_error = backward; r.stop = core::Stop::singular; core::retain_first(*failure, r);
+        })) { if (!*failure) failure->emplace(); (*failure)->incomplete = true; }
         return std::vector<double>{};
     };
-    if (jacobian.size() != rows * dimension || rows != dimension) return refuse("implicit Jacobian shape");
+    if (jacobian.size() != rows * dimension || rows != dimension) return refuse("implicit Jacobian shape", static_cast<const Eigen::FullPivLU<Eigen::MatrixXd>*>(nullptr));
     const auto matrix = dense_matrix(jacobian, rows, dimension);
     const auto lu = matrix.fullPivLu();
     if (!square_and_numeric(matrix) || static_cast<std::size_t>(lu.rank()) != dimension)
-        return refuse(matrix.allFinite() ? "implicit Jacobian rank" : "implicit nonfinite Jacobian", core::numerical_rank(lu, "implicit defining rows"));
+        return refuse(matrix.allFinite() ? "implicit Jacobian rank" : "implicit nonfinite Jacobian", &lu);
     // One column, kept a matrix so that Eigen takes the same solve path.
     const Eigen::MatrixXd right = -Eigen::Map<const Eigen::VectorXd>(column.data(), static_cast<Eigen::Index>(column.size()));
     const Eigen::MatrixXd result = lu.solve(right);
     const double error = std::max(0.0, backward_error((matrix * result.col(0) - right.col(0)).cwiseAbs().maxCoeff(),
         matrix.cwiseAbs().rowwise().sum().maxCoeff(), result.cwiseAbs().maxCoeff(), right.cwiseAbs().maxCoeff()));
     if (!result.allFinite() || !(error <= policy::EQUILIBRIUM_ACTION_BACKWARD_ERROR.value))
-        return refuse(result.allFinite() ? "implicit backward error" : "implicit nonfinite response", core::numerical_rank(lu, "implicit defining rows"), error);
+        return refuse(result.allFinite() ? "implicit backward error" : "implicit nonfinite response", &lu, error);
     scope.probe("max_solution", result.cwiseAbs().maxCoeff());
     scope.probe("backward_error", error);
     scope.probe("equations", static_cast<double>(rows));

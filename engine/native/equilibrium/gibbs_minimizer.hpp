@@ -46,6 +46,9 @@ struct StageWork final {  // the work of the sub-solves that seed a solve, faile
         r.diagnostics_incomplete |= diagnostics_incomplete;
         if (r.diagnostics_incomplete && core::current_trace()) core::current_trace()->incomplete = true;
     }
+    static void publish_observations(const EquilibriumResult& source, EquilibriumResult& destination) noexcept {
+        StageWork observations; observations.observe(source); std::move(observations).publish_observations(destination);
+    }
     void report_observations(EquilibriumResult& r) const noexcept {
         r.diagnostics_incomplete |= !core::observe_diagnostic([&] {
             StageWork combined = *this; combined.observe(r); std::move(combined).publish_observations(r);
@@ -339,6 +342,10 @@ private:
     std::vector<std::size_t> constraint_rows() const;
     // One latest-point phase evaluation per solve; every derived quantity is cached
     // with it and invalidated when the callback point changes.
+    void retain_callback_failure(const std::exception& error, const char* operation) noexcept {
+        if (dynamic_cast<const std::domain_error*>(&error) && std::strcmp(error.what(), "amount step") == 0) return;
+        core::retain_failure(observations_.first_numerical_failure, error, operation);
+    }
     const PhasePoint& prepared(Ipopt::Index n, const Ipopt::Number* x);
     const PointEvaluation& rows_at(Ipopt::Index n, const Ipopt::Number* x);
 
