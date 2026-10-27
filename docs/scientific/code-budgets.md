@@ -97,6 +97,16 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-10-27, #886 (owner allowance 750 gross / +610 net against `7929f13be`):
+  Equilibrium **11,950 → 12,083** is count 11,963 plus band 120. The increase
+  retains observations from direct pure-state evaluation, one rejected native
+  result and original-start continuation while both entries share the reduction.
+  Bindings **2,325 → 2,417** is count 2,393 plus band 24, for one bulk snapshot
+  with optional records, actual phase pressures and the owning native result.
+  Total **30,025 → 30,250** is the layer-ceiling sum; total count is 30,032.
+  Equations, precision, physical admission and general continuation remain
+  their existing owners. Campaign code is included in the issue accounting.
+
 - 2026-10-27, #862 owner scope change (rules 1 and 2): the allowance remains 1,100 gross / +860 net against `bd81c3ea4`; measured use is 957 added / 299 removed / +658 net formatted runtime lines. Diagnostic allocation-failure containment, incomplete-record fallbacks and controls are removed. Ordinary exception transfers copy the first record, preserving the anchor partition and association consumers' sources. Core **1,382 → 1,323** is count 1,309 plus band 14; Bindings **2,327 → 2,325** is count 2,301 plus band 24. Total **30,086 → 30,025** is the lowered layer-ceiling sum. Other counts/ceilings are Contributions 1,260/1,273, Properties 6,339/6,346, Equilibrium 11,841/11,950, parameter Regression 3,767/3,777, Surface 777/785 and Python 2,223/2,246. Total count is 29,817. Every ceiling remains within one band of its count. Shared first causes, named ranks, chronological recovery and bounded Ipopt observations retain their existing owners. Round-7 evidence is retained in `build/issue-862/build-r7/`.
 
 - 2026-10-26, #855 (lead allowance: 160 gross formatted Equilibrium lines): lazy exact trial Hessians, identical first-point seed-root reuse and removal of the repeated initial Liquid compilation use 17 added / 11 removed formatted runtime lines against `761f14f43`, +6 net, all Equilibrium. Equilibrium counts 10,944 and total 28,028; both remain within the existing rule-1 ceilings and bands. Every other runtime layer and every ceiling is unchanged. Numerical and cost evidence is retained under `build/issue-855/build-r1/`.

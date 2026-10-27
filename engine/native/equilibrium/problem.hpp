@@ -529,6 +529,9 @@ struct IpoptDiagnostics final {
     std::optional<IpoptPoint> failed_point;
 };
 struct EquilibriumResult final {
+    std::shared_ptr<const EquilibriumResult> rejected_reduction;
+    std::optional<core::Convergence> terminal_numerical_failure, last_full_evaluation;
+    std::vector<double> phase_pressures;
     std::optional<core::Convergence> first_numerical_failure;
     std::vector<core::NumericalRank> rank_records;
     std::optional<IpoptDiagnostics> ipopt_diagnostics, recovered_ipopt_diagnostics;
@@ -658,6 +661,8 @@ struct DriverLimits;
 EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::optional<EquilibriumResult>& start = std::nullopt,
                                  core::Scope* outer = nullptr, const DriverLimits* limits = nullptr,
                                  std::shared_ptr<const OptimizerState> warm = {}, bool recover = false, EquilibriumResult* audit = nullptr);
+
+EquilibriumResult solve_saturation(const CompiledSystem&);
 
 // ---- Solved-state derivative actions: native records, no public promise.
 

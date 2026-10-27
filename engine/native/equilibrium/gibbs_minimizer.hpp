@@ -50,6 +50,11 @@ struct StageWork final {  // the work of the sub-solves that seed a solve, faile
     void add(const EquilibriumResult& r) { iterations += r.iterations; evaluations += r.evaluations; hessian_calls += r.hessian_calls; observe(r); }
     void report(EquilibriumResult& r) const { r.iterations += iterations; r.evaluations += evaluations; r.hessian_calls += hessian_calls; report_observations(r); }
 };
+// Shared general continuation; an original start skips initialization and reduced attempts.
+EquilibriumResult continue_compiled(const CompiledSystem&, const std::optional<EquilibriumResult>&,
+    core::Scope&, const DriverLimits*, std::shared_ptr<const OptimizerState>, bool recover, EquilibriumResult* audit,
+    const EquilibriumResult& structural, StageWork stages = {}, std::optional<std::vector<double>> original = std::nullopt,
+    std::shared_ptr<const EquilibriumResult> rejected = {});
 // `speciate` false: a supplied composition replaces the start's, so a reacting phase is not speciated.
 // A `packed` phase's packing guess is supplied by the caller and replaces its density root.
 std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate = true, const DriverLimits* limits = nullptr,
@@ -58,7 +63,7 @@ struct OneComponentTwoDensityPoint final {
     PhasePoint phase;
     std::vector<double> rows, jacobian;
 };
-OneComponentTwoDensityPoint one_component_two_density_point(const CompiledSystem&, const std::vector<double>&, std::optional<core::Convergence>* = nullptr);
+OneComponentTwoDensityPoint one_component_two_density_point(const CompiledSystem&, const std::vector<double>&, std::optional<core::Convergence>* = nullptr, const PhasePoint* = nullptr, double log_coefficient = 0.0);
 bool one_component_two_density_eligible(const CompiledSystem&);
 EquilibriumResult one_component_two_density_attempt(const CompiledSystem&, const std::vector<double>&,
     const EquilibriumResult&, core::Scope&, const DriverLimits*);

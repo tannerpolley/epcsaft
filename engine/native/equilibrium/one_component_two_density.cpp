@@ -80,23 +80,37 @@ bool one_component_two_density_eligible(const CompiledSystem& c) {
 }
 
 // EqID one_component_two_density: eliminate normalization, feed, P and the common chemical multiplier.
-OneComponentTwoDensityPoint one_component_two_density_point(const CompiledSystem& c, const std::vector<double>& u, std::optional<core::Convergence>* first) {
+OneComponentTwoDensityPoint one_component_two_density_point(const CompiledSystem& c, const std::vector<double>& u, std::optional<core::Convergence>* first, const PhasePoint* layout, double log_coefficient) {
     if (u.size() != 2 || !std::all_of(u.begin(), u.end(), [](double v) { return std::isfinite(v); }))
         throw std::invalid_argument("nonfinite pure log densities");
-    const auto offsets = c.phase_offsets();
-    auto point = c.generic_point();
-    const double coefficient = c.model->packing_fraction_coefficient(c.problem.temperature.value, {1.0});
-    std::size_t liquid = 0, vapor = 1;
-    for (std::size_t p = 0; p < offsets.size(); ++p) {
-        point[offsets[p]] = 0.0;
-        if (c.problem.phases[p].is_free()) point[offsets[p] + 1] = c.feed_total;
-        const auto eta = offsets[p] + 1 + (c.problem.phases[p].is_free() ? 1 : 0);
-        point[eta] = std::log(coefficient) + u[p];
-        (c.problem.phases[p].kind == PhaseKind::Liquid ? liquid : vapor) = p;
-    }
+    const auto liquid = c.problem.phases[0].kind == PhaseKind::Liquid ? 0U : 1U, vapor = 1U - liquid;
     if (!(u[liquid] > u[vapor])) throw std::domain_error("one-component two-density density ordering");
     OneComponentTwoDensityPoint out;
-    out.phase = c.prepare(point, true, first);
+    if (!layout) {
+        const auto offsets = c.phase_offsets();
+        auto point = c.generic_point();
+        const double coefficient = c.model->packing_fraction_coefficient(c.problem.temperature.value, {1.0});
+        for (std::size_t p = 0; p < 2; ++p) {
+            point[offsets[p]] = 0.0;
+            if (c.problem.phases[p].is_free()) point[offsets[p] + 1] = c.feed_total;
+            point[offsets[p] + 1 + (c.problem.phases[p].is_free() ? 1 : 0)] = std::log(coefficient) + u[p];
+        }
+        out.phase = c.prepare(point, true, first);
+    } else {
+        out.phase = *layout;
+        auto& at = out.phase;
+        at.parameter_standard.reset(); at.energy_actions.clear();
+        for (std::size_t p = 0; p < 2; ++p) {
+            at.point[at.shape[p].volume] = log_coefficient + u[p];
+            at.eta[p] = std::exp(at.point[at.shape[p].volume]);
+            if (c.log_packing_unbounded() && !admitted_packing_fraction(at.eta[p]))
+                throw std::invalid_argument("packing fraction outside the fluid domain");
+            at.volume[p] = at.packing[p].coefficient / at.eta[p];
+            at.pure[p] = c.model->pure_isothermal(at.temperature, at.volume[p]);
+            if (first) core::retain_first(*first, at.pure[p].derivative.first_numerical_failure);
+            at.derivative[p] = at.pure[p].derivative;
+        }
+    }
     auto& at = out.phase;
     const auto& v = at.pure[vapor];
     const auto reduced = reduction(at.pure, at.volume, u, liquid, at.temperature);
@@ -110,7 +124,14 @@ EquilibriumResult one_component_two_density_attempt(const CompiledSystem& c, con
     const EquilibriumResult& structural, core::Scope& scope, const DriverLimits* limits) {
     auto result = structural;
     result.message = "one-component two-density initialization";
-    result.linear_solve_diagnostics.emplace();
+    result.convergence.residual = std::numeric_limits<double>::quiet_NaN();
+    const auto retain = [&](const std::exception& error) {
+        core::retain_failure(result.first_numerical_failure, error, "one-component two-density attempt");
+        if (const auto* failure = dynamic_cast<const core::ConvergenceFailure*>(&error)) {
+            result.terminal_numerical_failure = failure->record;
+            if (failure->record.rank) core::retain_rank(result.rank_records, *failure->record.rank);
+        }
+    };
     try {
         const auto offsets = c.phase_offsets();
         const double log_c = std::log(c.model->packing_fraction_coefficient(c.problem.temperature.value, {1.0}));
@@ -128,13 +149,29 @@ EquilibriumResult one_component_two_density_attempt(const CompiledSystem& c, con
                 if (!std::isfinite(at.point[i]) || at.point[i] < lower[i] || at.point[i] > upper[i]) return false;
             return true;
         };
+        std::optional<PhasePoint> layout;
         const auto evaluate = [&](const std::vector<double>& logs) {
             if (limits) {
                 limits->check();
                 if (!limits->spend(limits->evaluations, limits->evaluation_cap)) throw std::runtime_error("one-component two-density evaluation budget");
             }
             ++result.evaluations;
-            return one_component_two_density_point(c, logs, &result.first_numerical_failure);
+            auto point = one_component_two_density_point(c, logs, &result.first_numerical_failure, layout ? &*layout : nullptr, log_c);
+            if (!layout) layout = point.phase;
+            return point;
+        };
+        const auto full_evaluate = [&](const PhasePoint& phase) {
+            const auto full = c.evaluate_at(phase);
+            result.residuals = full.values;
+            result.classified_residuals = c.classified_residuals(phase, full.values);
+            result.objective = full.objective;
+            auto& record = result.last_full_evaluation.emplace();
+            record.residual = maximum_abs(result.classified_residuals);
+            core::stopping_criterion(record, c.problem.solver_options, policy::row);
+            if (full.floor > 0.0) record.floor = full.floor;
+            record.iterations = result.iterations; record.evaluations = result.evaluations;
+            record.stop = core::classify(record.residual, *record.criterion, record.floor,
+                record.contraction, false, record.amplification);
         };
         auto at = evaluate(u);
         const double tolerance = c.problem.solver_options.value(policy::row);
@@ -143,8 +180,8 @@ EquilibriumResult one_component_two_density_attempt(const CompiledSystem& c, con
         for (std::size_t step = 0; step < static_cast<std::size_t>(policy::EQUILIBRIUM_MAX_ITERATIONS.value); ++step) {
             if (limits && (limits->expired() || limits->consumed >= limits->iterations))
                 throw std::runtime_error("one-component two-density iteration/elapsed budget");
-            const auto full = c.evaluate_at(at.phase);
-            polishing = polishing || maximum_abs(c.classified_residuals(at.phase, full.values)) <= tolerance;
+            full_evaluate(at.phase);
+            polishing = polishing || result.last_full_evaluation->residual <= tolerance;
             const bool final = polishing;
             const ReducedCorrection<double> correction(at.jacobian, at.rows, result.last_rank);
             const auto& delta = correction.delta;
@@ -163,7 +200,8 @@ EquilibriumResult one_component_two_density_attempt(const CompiledSystem& c, con
                     if (!inside(candidate.phase)) { cause = "one-component two-density bounds"; continue; }
                     if (!final && !(maximum_abs(candidate.rows) < maximum_abs(at.rows))) continue;
                     u = trial; at = std::move(candidate); accepted = true; break;
-                } catch (const std::exception& error) { cause = error.what(); }
+                } catch (const std::bad_alloc&) { throw; }
+                catch (const std::exception& error) { retain(error); cause = error.what(); }
             }
             if (!accepted) throw std::runtime_error(cause);
             if (!final) continue;
@@ -195,6 +233,7 @@ EquilibriumResult one_component_two_density_attempt(const CompiledSystem& c, con
                         for (Wide value : values) {
                             volume.push_back(1 / std::exp(value));
                             phases.push_back(c.model->pure_isothermal(temperature, volume.back()));
+                            core::retain_first(result.first_numerical_failure, phases.back().derivative.first_numerical_failure);
                         }
                         return std::tuple{reduction(phases, volume, values, liquid, temperature), phases[1 - liquid]};
                     };
@@ -251,18 +290,9 @@ EquilibriumResult one_component_two_density_attempt(const CompiledSystem& c, con
                     }
                 }
             }
-            const auto endpoint = c.evaluate_at(at.phase);
-            result.residuals = endpoint.values;
-            result.classified_residuals = c.classified_residuals(at.phase, endpoint.values);
-            result.objective = endpoint.objective;
+            full_evaluate(at.phase);
             core::Convergence& convergence = result.convergence;
-            convergence = {};
-            convergence.residual = maximum_abs(result.classified_residuals);
-            core::stopping_criterion(convergence, c.problem.solver_options, policy::row);
-            if (endpoint.floor > 0.0) convergence.floor = endpoint.floor;
-            convergence.iterations = result.iterations; convergence.evaluations = result.evaluations;
-            convergence.stop = core::classify(convergence.residual, *convergence.criterion, convergence.floor,
-                convergence.contraction, false, convergence.amplification);
+            convergence = *result.last_full_evaluation;
             result.requested_tolerance_met = convergence.residual <= tolerance;
             result.success = convergence.stop == core::Stop::converged && inside(at.phase);
             result.message = core::describe(convergence);
@@ -272,15 +302,73 @@ EquilibriumResult one_component_two_density_attempt(const CompiledSystem& c, con
             result = publish_candidate(c, at.phase, std::move(result), scope, limits);
             if (result.success) {
                 const auto branch = check_density_branches(*c.model, c, result, {}, true, scope, limits, &at.phase);
-                if (!branch.accepted) { result.success = false; result.message = branch.message; clear_state(result); }
+                if (!branch.accepted) {
+                    core::retain_failure(result.first_numerical_failure, branch.message, "one-component two-density admission");
+                    result.success = false; result.message = branch.message; clear_state(result);
+                }
+            }
+            if (result.has_state()) {
+                for (const auto density : result.molar_densities) {
+                    const auto pure = c.model->pure_isothermal(*result.temperature, 1.0 / density);
+                    core::retain_first(result.first_numerical_failure, pure.derivative.first_numerical_failure);
+                    result.phase_pressures.push_back(pure.pressure);
+                }
             }
             return result;
         }
         result.message = "one-component two-density iteration budget";
-    } catch (const std::exception& error) { result.message = error.what(); }
+    } catch (const std::bad_alloc&) { throw; }
+    catch (const std::exception& error) { retain(error); result.message = error.what(); }
     scope.probe("one_component_two_density_rejected", {static_cast<double>(result.iterations), static_cast<double>(result.evaluations)}, 0, result.message.c_str());
+    if (result.last_rank) core::retain_rank(result.rank_records, *result.last_rank);
     if (result.linear_solve_diagnostics) result.linear_solve_diagnostics->reason = "rejected attempt: " + result.message;
+    core::retain_failure(result.first_numerical_failure, result.message, "one-component two-density refusal");
     result.success = false; clear_state(result);
+    return result;
+}
+EquilibriumResult solve_saturation(const CompiledSystem& compiled) {
+    core::Scope scope("solve_saturation");
+    if (!one_component_two_density_eligible(compiled) || std::getenv("EPCSAFT_IPOPT_OPTIONS_FILE"))
+        return solve_compiled(compiled);
+    const auto structural = structural_result(compiled, scope);
+    StageWork stages;
+    std::vector<double> initial;
+    try { initial = boundary_start(compiled, true, nullptr, &stages); }
+    catch (const std::bad_alloc&) { throw; }
+    catch (const std::exception& error) {
+        auto failed = structural;
+        failed.message = error.what();
+        failed.convergence.residual = std::numeric_limits<double>::quiet_NaN();
+        core::retain_failure(failed.first_numerical_failure, error, "saturation initialization");
+        if (const auto* failure = dynamic_cast<const core::ConvergenceFailure*>(&error)) failed.terminal_numerical_failure = failure->record;
+        stages.report(failed);
+        return failed;
+    }
+    auto result = one_component_two_density_attempt(compiled, initial, structural, scope, nullptr);
+    if (!result.success) {
+        stages.add(result);
+        const auto rejected = std::make_shared<const EquilibriumResult>(std::move(result));
+        result = structural;
+        result.convergence.residual = std::numeric_limits<double>::quiet_NaN();
+        try {
+            result = continue_compiled(compiled, std::nullopt, scope, nullptr, {}, false, &result,
+                structural, stages, initial, rejected);
+        } catch (const std::bad_alloc&) { throw; }
+        catch (const std::exception& error) {
+            core::retain_failure(result.first_numerical_failure, error, "saturation continuation");
+            if (const auto* failure = dynamic_cast<const core::ConvergenceFailure*>(&error)) result.terminal_numerical_failure = failure->record;
+            result.message = error.what(); result.success = false; clear_state(result);
+            stages.report(result);
+            result.rejected_reduction = rejected;
+        }
+    } else stages.report(result);
+    if (result.has_state() && result.phase_pressures.empty()) {
+        for (const auto density : result.molar_densities) {
+            const auto pure = compiled.model->pure_isothermal(*result.temperature, 1.0 / density);
+            core::retain_first(result.first_numerical_failure, pure.derivative.first_numerical_failure);
+            result.phase_pressures.push_back(pure.pressure);
+        }
+    }
     return result;
 }
 }  // namespace epcsaft::equilibrium

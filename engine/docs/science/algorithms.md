@@ -614,6 +614,20 @@ separate mechanical branches and the unchanged raw/classified residual criteria.
 
 ### One-component two-density reduction
 
+The general driver and native prepared `CompiledSystem.solve_saturation()` entry
+reuse this single reduction/refinement owner. The prepared entry uses the same
+eligibility predicate and falls back to the general entry for an explicit
+options file or an ineligible declaration. Previous-result, optimizer-transfer
+and bounded calls retain their existing general entry points. Rejection retains
+an owned failed result and continues once from the original start, adding its
+work once without replacing the fallback's own endpoint or linear diagnostics.
+The bulk snapshot retains optional absence until a record is evaluated and an
+owning reference to the complete result. Phase pressures are evaluated natively
+at the actually exported densities. Direct pure-state evaluations retain inner
+first observations in evaluation order, including rejected trials and wider
+arithmetic; typed exceptions also retain their terminal record. Allocation
+failure propagates.
+
 An ordinary compiled declaration with one neutral nonideal component, fixed
 positive T, free P, two liquid/vapor supports {0}, one free amount and one
 zero-pinned amount uses the exact two-density reduction inside the existing
