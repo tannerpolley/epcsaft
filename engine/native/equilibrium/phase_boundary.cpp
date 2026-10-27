@@ -1195,30 +1195,37 @@ std::string declared_state_difference(const EquilibriumProblem& a, const Equilib
     return difference;
 }
 
-DensityRoot declared_root(const HelmholtzModel& model, double T, double P, const std::vector<double>& x, PhaseKind kind) {
-    const auto branch = kind == PhaseKind::Vapor ? DensityBranch::Vapor : DensityBranch::Liquid;
-    auto root = solve_density(model, T, P, x, branch, std::nullopt);
+namespace {
+
+void check_declared_side(const DensityRoot& root, DensityBranch branch) {
     const auto side = properties::density_side(root.branch, root.molar_density, root.negative_slope_density);
     const bool liquid = side == DensityBranch::Liquid;
     if (side != DensityBranch::Unspecified && side != branch)
         throw std::runtime_error(std::string(liquid ? "vapor" : "liquid") + " branch not admitted by the finite search: the sole stable root "
             + core::optional_number(root.molar_density) + " mol/m3 lies " + (liquid ? "above" : "below")
             + " the negative-slope sample " + core::optional_number(root.negative_slope_density) + " mol/m3");
+}
+
+}  // namespace
+
+DensityRoot declared_root(const HelmholtzModel& model, double T, double P, const std::vector<double>& x, PhaseKind kind) {
+    const auto branch = kind == PhaseKind::Vapor ? DensityBranch::Vapor : DensityBranch::Liquid;
+    auto root = solve_density(model, T, P, x, branch, std::nullopt);
+    check_declared_side(root, branch);
     return root;
 }
+
+namespace {
 
 // Corrected-phase branch identity: the corrected density and the anchored locally unique
 // root must share the anchor's window, with a positive corrected pressure slope. The physical
 // state is recomputed from the coordinates, never taken from the supplied result's arrays.
-BranchCheck check_density_branches(
-    const HelmholtzModel& model, const CompiledSystem& compiled, const EquilibriumResult& result,
+BranchCheck density_branches_at(
+    const HelmholtzModel& model, const CompiledSystem& compiled, const PhasePoint& prepared,
     const std::vector<double>& anchors, bool initial, core::Scope& scope, const DriverLimits* limits,
-    const PhasePoint* supplied
+    const std::array<DensityRoot, 2>* roots
 ) {
     BranchCheck outcome;
-    if (limits) limits->check();
-    const auto owned = supplied ? std::optional<PhasePoint>{} : std::make_optional(compiled.prepare(result.coordinates, true));
-    const auto& prepared = supplied ? *supplied : *owned;
     const bool pure = one_component_two_density_eligible(compiled);
     for (std::size_t phase = 0; phase < compiled.problem.phases.size(); ++phase) {
         if (limits) limits->check();
@@ -1235,7 +1242,12 @@ BranchCheck check_density_branches(
         DensityRoot root;
         try {
             if (initial) {
-                root = declared_root(model, prepared.temperature, prepared.pressure, x, spec.kind);
+                if (roots) {
+                    root = (*roots)[spec.kind == PhaseKind::Vapor ? 1 : 0];
+                    check_declared_side(root, branch);
+                } else {
+                    root = declared_root(model, prepared.temperature, prepared.pressure, x, spec.kind);
+                }
                 if (pure && root.stable_root_count.value_or(0) < 2) {
                     outcome.message = "one-component two-density requires two distinct stable density branches"; return outcome;
                 }
@@ -1279,6 +1291,39 @@ BranchCheck check_density_branches(
             }
     outcome.accepted = true;
     return outcome;
+}
+
+}  // namespace
+
+BranchCheck check_density_branches(
+    const HelmholtzModel& model, const CompiledSystem& compiled, const EquilibriumResult& result,
+    const std::vector<double>& anchors, bool initial, core::Scope& scope, const DriverLimits* limits,
+    const PhasePoint* supplied
+) {
+    if (limits) limits->check();
+    const auto owned = supplied ? std::optional<PhasePoint>{} : std::make_optional(compiled.prepare(result.coordinates, true));
+    const auto& prepared = supplied ? *supplied : *owned;
+    if (initial && !limits && one_component_two_density_eligible(compiled)) {
+        std::array<DensityRoot, 2> roots;
+        bool complete = false;
+        try {
+            auto x = prepared.composition.front();
+            const double total = std::accumulate(x.begin(), x.end(), 0.0);
+            for (double& value : x) value /= total;
+            roots[0] = solve_density(model, prepared.temperature, prepared.pressure, x,
+                DensityBranch::Liquid, std::nullopt, &roots[1]);
+            complete = roots[0].branch == DensityBranch::Liquid && roots[1].branch == DensityBranch::Vapor
+                && roots[0].stable_root_count.value_or(0) >= 2 && roots[1].stable_root_count.value_or(0) >= 2
+                && roots[0].molar_density > roots[1].molar_density && roots[1].molar_density > 0.0;
+        } catch (const std::exception&) {
+            // Ordinary admission owns the phase and first cause of any failed shared search.
+        }
+        if (complete) {
+            const auto shared = density_branches_at(model, compiled, prepared, anchors, initial, scope, limits, &roots);
+            if (shared.accepted) return shared;
+        }
+    }
+    return density_branches_at(model, compiled, prepared, anchors, initial, scope, limits, nullptr);
 }
 
 const char* continuation_stop_name(ContinuationStop stop) noexcept {
