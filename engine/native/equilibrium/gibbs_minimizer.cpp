@@ -18,6 +18,7 @@
 #include <Eigen/Dense>
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <exception>
 #include <limits>
@@ -1238,8 +1239,11 @@ static bool polish_correction(const CompiledSystem& compiled, std::vector<Base>&
             // Bounded damping retains raw contraction; preparation admits only positive finite x.
             // Best-point selection below protects the returned classified residual.
             std::uint32_t trial = 0;
-            for (const Base damping : {1.0, 0.5, 0.25, 0.125}) {
-                if constexpr (std::is_same_v<Base, double>) if (damping < 0.25) break;
+            const auto dampings = [] {
+                if constexpr (std::is_same_v<Base, double>) return std::array{1.0, 0.5, 0.25};
+                else return std::array{1.0, 0.5, 0.25, 0.125};
+            }();
+            for (const Base damping : dampings) {
                 const Base alpha = std::min((trial_recovery ? trial_scale : Base(1)) * damping, trial_limit);
                 if (final_correction && alpha != 1.0) break;
                 const auto trial_index = trial++;
