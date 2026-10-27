@@ -342,7 +342,7 @@ bool ideal_speciation(const std::vector<std::vector<double>>& B, const std::vect
             }
         }
         const auto lu = A.fullPivLu();
-        if (observations) core::retain_rank(observations->rank_records, observations->diagnostics_incomplete, lu, "ideal_speciation");
+        if (observations) core::retain_rank(observations->rank_records, lu, "ideal_speciation");
         const Eigen::VectorXd x = lu.solve(rhs);
         double change = std::abs(x(r)), major = 5.0 * change, control = 1.0;
         for (std::size_t j = 0; j < m; ++j) {

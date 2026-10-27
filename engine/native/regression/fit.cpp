@@ -380,7 +380,7 @@ struct Wire final {
     }
     void one(core::Convergence& v) {
         (*this)(v.residual, v.floor, v.amplification, v.contraction, v.iterations, v.evaluations,
-            v.stop, v.cause, v.rank, v.backward_error, v.incomplete);
+            v.stop, v.cause, v.rank, v.backward_error);
         std::string name = v.criterion ? v.criterion->name : "";
         double target = v.criterion ? v.criterion->value : 0;
         (*this)(name, target);

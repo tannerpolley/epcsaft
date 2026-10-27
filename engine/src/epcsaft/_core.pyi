@@ -182,8 +182,6 @@ class Convergence:
     backward_error: Optional[float]
     """Dimensionless measured linear backward error, or None when unavailable."""
 
-    incomplete: bool
-    """True if an observation could not be retained."""
 
 class Event:
     """One named numerical probe within a captured span."""
@@ -220,7 +218,7 @@ class Trace:
     current: Optional[int]
     """Currently active span index, or None when no span is open."""
     incomplete: bool
-    """True if collecting trace evidence failed; the retained trace may omit observations."""
+    """True if opening the requested Ipopt log failed; diagnostic allocation failure propagates normally."""
 
     ipopt_log_error: str
     """Opening error for the requested Ipopt destination; empty without an error."""
@@ -2905,8 +2903,6 @@ class CompiledSystem:
     rank_records: list[NumericalRank]
     """Latest observed rank per named operation; no extra admission rule."""
 
-    diagnostics_incomplete: bool
-    """True if a requested observation could not be retained."""
 
 class LinearSolveDiagnostics:
     """Local first-order error estimates in the named system's unscaled coordinates.
@@ -3008,8 +3004,6 @@ class IpoptDiagnostics:
     """Whether this attempt was predicted."""
     physical_amounts: bool
     """Whether this attempt was physical amounts."""
-    incomplete: bool
-    """Whether this attempt was incomplete."""
     failed_point: Optional[IpoptPoint]
     """Original TNLP tuple on unsuccessful termination, or None without one."""
 
@@ -3145,8 +3139,6 @@ class EquilibriumResult:
     recovered_ipopt_diagnostics: Optional[IpoptDiagnostics]
     """Earliest superseded restoration-bearing attempt."""
 
-    diagnostics_incomplete: bool
-    """True if a requested observation could not be retained."""
 
 class TopologyEvent:
     """Candidate topology change detected by the native solve.
@@ -3346,8 +3338,6 @@ class ContinuationResult:
     recovered_ipopt_diagnostics: Optional[IpoptDiagnostics]
     """Earliest superseded restoration-bearing attempt."""
 
-    diagnostics_incomplete: bool
-    """True if a requested observation could not be retained."""
 
 def continue_equilibrium(model: HelmholtzModel, request: ContinuationRequest) -> ContinuationResult:
     """Trace a declared equilibrium path or incipient phase envelope.

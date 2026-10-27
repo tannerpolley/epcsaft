@@ -1448,14 +1448,14 @@ counts, but may update model caches/counters and adds uncapped time before retur
 Detailed capture can advance finite deadlines; untimed returned-state identity
 is qualified separately. Disabled capture adds no numerical work or clock reads.
 
-Core contains all observation failures, retains a readable prefix and exposes
-sticky `capture.trace.incomplete`; missing evidence never selects numerical
-recovery. Trace-only containers and strings are constructed inside `Scope::observe`
-or Core’s initializer-list `probe` overload. A `scope.on()` guard alone does not
-contain allocation failure. The source rule in
-`tools/check-engine-architecture.py` guards the known eager-temporary and
-named-local payload patterns during `check-all`; it is not a complete
-allocation-safety proof.
+Diagnostic records use ordinary construction and copies. Allocation failure
+while constructing, copying or retaining a record propagates normally; it has
+no incomplete-record fallback. An Ipopt log-open refusal leaves the solve
+unchanged and sets `capture.trace.incomplete` with `ipopt_log_error`.
+Trace-only containers and strings are constructed inside `Scope::observe`
+or Core's initializer-list `probe` overload. The source rule in
+`tools/check-engine-architecture.py` guards known eager-temporary and
+named-local payload patterns during `check-all`.
 Nested native work captures forward detailed records once with remapped
 parents. Python declares capture and reads/serializes completed records only.
 
@@ -2491,8 +2491,9 @@ intermediate operation. Its presence does not establish the cause of a later
 termination. Default records retain that first refusal, the latest rank per
 named operation, the last actually invoked Ipopt attempt and the earliest
 superseded restoration-bearing attempt. Detailed capture retains intervening
-observations. Read `diagnostics_incomplete`, each record's `incomplete` and
-`capture.trace.incomplete` before relying on their completeness.
+observations. Inspect `capture.trace.ipopt_log_error` and
+`capture.trace.incomplete` for a failed log destination. Diagnostic retention
+does not handle out-of-memory failure specially.
 
 1. Retain the exact declaration, parameter/library identity, units, starts,
    requested criteria, work budgets and default result. Read final convergence

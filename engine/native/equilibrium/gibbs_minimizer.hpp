@@ -23,40 +23,29 @@ struct StageWork final {  // the work of the sub-solves that seed a solve, faile
     std::optional<core::Convergence> first_numerical_failure;
     std::vector<core::NumericalRank> rank_records;
     std::optional<IpoptDiagnostics> ipopt_diagnostics, recovered_ipopt_diagnostics;
-    bool diagnostics_incomplete = false;
-    template<class R> void observe(const R& r) noexcept {
-        diagnostics_incomplete |= r.diagnostics_incomplete;
+    template<class R> void observe(const R& r) {
         core::retain_first(first_numerical_failure, r.first_numerical_failure);
-        for (const auto& rank : r.rank_records) diagnostics_incomplete |= !core::retain_rank(rank_records, rank);
+        for (const auto& rank : r.rank_records) core::retain_rank(rank_records, rank);
         if constexpr (std::is_same_v<R, EquilibriumResult>)
-            if (r.last_rank) diagnostics_incomplete |= !core::retain_rank(rank_records, *r.last_rank);
-        diagnostics_incomplete |= !core::observe_diagnostic([&] {
-            if (!recovered_ipopt_diagnostics && ipopt_diagnostics && ipopt_diagnostics->first_restoration_iteration && r.ipopt_diagnostics)
-                recovered_ipopt_diagnostics = ipopt_diagnostics;
-            if (!recovered_ipopt_diagnostics) recovered_ipopt_diagnostics = r.recovered_ipopt_diagnostics;
-            if (r.ipopt_diagnostics) ipopt_diagnostics = r.ipopt_diagnostics;
-        });
-        diagnostics_incomplete |= first_numerical_failure && first_numerical_failure->incomplete;
-        diagnostics_incomplete |= r.ipopt_diagnostics && r.ipopt_diagnostics->incomplete;
-        diagnostics_incomplete |= r.recovered_ipopt_diagnostics && r.recovered_ipopt_diagnostics->incomplete;
+            if (r.last_rank) core::retain_rank(rank_records, *r.last_rank);
+        if (!recovered_ipopt_diagnostics && ipopt_diagnostics && ipopt_diagnostics->first_restoration_iteration && r.ipopt_diagnostics)
+            recovered_ipopt_diagnostics = ipopt_diagnostics;
+        if (!recovered_ipopt_diagnostics) recovered_ipopt_diagnostics = r.recovered_ipopt_diagnostics;
+        if (r.ipopt_diagnostics) ipopt_diagnostics = r.ipopt_diagnostics;
     }
-    void publish_observations(EquilibriumResult& r) && noexcept {
+    void publish_observations(EquilibriumResult& r) && {
         r.first_numerical_failure = std::move(first_numerical_failure);
         r.rank_records = std::move(rank_records);
         r.ipopt_diagnostics = std::move(ipopt_diagnostics);
         r.recovered_ipopt_diagnostics = std::move(recovered_ipopt_diagnostics);
-        r.diagnostics_incomplete |= diagnostics_incomplete;
-        if (r.diagnostics_incomplete && core::current_trace()) core::current_trace()->incomplete = true;
     }
-    static void publish_observations(const EquilibriumResult& source, EquilibriumResult& destination) noexcept {
+    static void publish_observations(const EquilibriumResult& source, EquilibriumResult& destination) {
         StageWork observations; observations.observe(source); std::move(observations).publish_observations(destination);
         if (!destination.declaration) destination.declaration = source.declaration;
-        destination.diagnostics_incomplete |= !core::observe_diagnostic([&] { if (source.last_rank) destination.last_rank = source.last_rank; });
+        if (source.last_rank) destination.last_rank = source.last_rank;
     }
-    void report_observations(EquilibriumResult& r) const noexcept {
-        r.diagnostics_incomplete |= !core::observe_diagnostic([&] {
-            StageWork combined = *this; combined.observe(r); std::move(combined).publish_observations(r);
-        });
+    void report_observations(EquilibriumResult& r) const {
+        StageWork combined = *this; combined.observe(r); std::move(combined).publish_observations(r);
     }
     void add(const EquilibriumResult& r) { iterations += r.iterations; evaluations += r.evaluations; hessian_calls += r.hessian_calls; observe(r); }
     void report(EquilibriumResult& r) const { r.iterations += iterations; r.evaluations += evaluations; r.hessian_calls += hessian_calls; report_observations(r); }
@@ -340,13 +329,13 @@ public:
         d.initialization_return = initialized; d.application_return = returned;
         d.warm_initialized = warm_; d.predicted = predicted; d.physical_amounts = physical;
     }
-    void publish_observations(EquilibriumResult& result) const noexcept { observations_.report_observations(result); }
+    void publish_observations(EquilibriumResult& result) const { observations_.report_observations(result); }
 
 private:
     std::vector<std::size_t> constraint_rows() const;
     // One latest-point phase evaluation per solve; every derived quantity is cached
     // with it and invalidated when the callback point changes.
-    void retain_callback_failure(const std::exception& error, const char* operation) noexcept {
+    void retain_callback_failure(const std::exception& error, const char* operation) {
         if (dynamic_cast<const std::domain_error*>(&error) && std::strcmp(error.what(), "amount step") == 0) return;
         core::retain_failure(observations_.first_numerical_failure, error, operation);
     }

@@ -171,7 +171,7 @@ void register_equilibrium(nb::module_& module) {
         EPCSAFT_READONLY(PointEvaluation, values, objective, floor);
     nb::class_<CompiledSystem>(module, "CompiledSystem")
         .def_prop_ro("rows", [](const CompiledSystem& system) { return system.rows; })
-        EPCSAFT_READONLY(CompiledSystem, first_numerical_failure, rank_records, diagnostics_incomplete, last_rank, pinned_count, free_intensive_count, rank, charge_row_count, primal_size,
+        EPCSAFT_READONLY(CompiledSystem, first_numerical_failure, rank_records, last_rank, pinned_count, free_intensive_count, rank, charge_row_count, primal_size,
             generic_nullity, feed_total, has_ions, has_reaction, conserves_total_moles, jacobian_rank, removed_species)
         .def("solve", [](const CompiledSystem& system) { return solve_compiled(system); }, nb::keep_alive<0, 1>())
         .def("generic_point", &CompiledSystem::generic_point)
@@ -213,10 +213,10 @@ void register_equilibrium(nb::module_& module) {
             tnlp_constraint_multipliers, declaration, rows, constraint_rows, objective_factor);
     nb::class_<IpoptDiagnostics>(module, "IpoptDiagnostics")
         EPCSAFT_READONLY(IpoptDiagnostics, last, first_restoration_iteration, initialization_return, application_return,
-            restoration_entries, callbacks, warm_initialized, predicted, physical_amounts, incomplete, failed_point);
+            restoration_entries, callbacks, warm_initialized, predicted, physical_amounts, failed_point);
     nb::class_<EquilibriumResult>(module, "EquilibriumResult", "Phases in declared order; K, Pa, mol, mol/m^3; per-phase-per-component lists are phase-major in component_ids order.")
         .def_prop_ro("solver_options", [](const EquilibriumResult& v) { return v.declaration ? bindings::solver_options_view(v.declaration->solver_options, 7) : nb::list(); })
-        EPCSAFT_READONLY(EquilibriumResult, solver_settings, diagnostic_options_file, linear_solver, first_numerical_failure, rank_records, ipopt_diagnostics, recovered_ipopt_diagnostics, diagnostics_incomplete)
+        EPCSAFT_READONLY(EquilibriumResult, solver_settings, diagnostic_options_file, linear_solver, first_numerical_failure, rank_records, ipopt_diagnostics, recovered_ipopt_diagnostics)
         .def_ro("neutral_reference_diagnostics", &EquilibriumResult::reference_diagnostics)
         EPCSAFT_READONLY(EquilibriumResult, discovery, success, message, solver_status, temperature, pressure, amounts,
             mole_fractions, molar_densities, packing_fractions,
@@ -270,7 +270,6 @@ void register_equilibrium(nb::module_& module) {
         .def_prop_ro("rank_records", [](const ContinuationResult& r) { return r.observations.rank_records; })
         .def_prop_ro("ipopt_diagnostics", [](const ContinuationResult& r) { return r.observations.ipopt_diagnostics; })
         .def_prop_ro("recovered_ipopt_diagnostics", [](const ContinuationResult& r) { return r.observations.recovered_ipopt_diagnostics; })
-        .def_prop_ro("diagnostics_incomplete", [](const ContinuationResult& r) { return r.observations.diagnostics_incomplete; })
         EPCSAFT_READONLY(ContinuationResult, success, message, stop, path_values, parameter_values, states,
             reached_path, attempted_path, event_phase, event_pair, attempts, accepted_steps, retries, last_result,
             cause_stop, cause_convergence, cause_message, conditions, critical_points, critical_seeds);

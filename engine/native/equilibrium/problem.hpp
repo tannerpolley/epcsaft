@@ -335,7 +335,6 @@ struct CompiledSolid final {
 struct CompiledSystem final {
     std::optional<core::Convergence> first_numerical_failure;
     std::vector<core::NumericalRank> rank_records;
-    bool diagnostics_incomplete = false;
     std::optional<core::NumericalRank> last_rank;
     std::vector<double> optimizer_identity() const;
     const HelmholtzModel* model = nullptr;
@@ -526,14 +525,13 @@ struct IpoptDiagnostics final {
     std::optional<IpoptIteration> last;
     std::optional<int> first_restoration_iteration, initialization_return, application_return;
     std::size_t restoration_entries = 0, callbacks = 0;
-    bool warm_initialized = false, predicted = false, physical_amounts = false, incomplete = false;
+    bool warm_initialized = false, predicted = false, physical_amounts = false;
     std::optional<IpoptPoint> failed_point;
 };
 struct EquilibriumResult final {
     std::optional<core::Convergence> first_numerical_failure;
     std::vector<core::NumericalRank> rank_records;
     std::optional<IpoptDiagnostics> ipopt_diagnostics, recovered_ipopt_diagnostics;
-    bool diagnostics_incomplete = false;
     std::optional<core::NumericalRank> last_rank;
     std::map<std::string, double> solver_settings;
     std::string diagnostic_options_file, linear_solver;  // linear_solver: empty when no Ipopt solve ran

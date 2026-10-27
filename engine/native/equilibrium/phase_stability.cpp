@@ -265,9 +265,7 @@ Candidate stability_candidate(const CompiledSystem& c, const EquilibriumResult& 
         if (scale > 0.0) { weighted.row(k) /= scale; scaled_rhs(k) /= scale; }
     }
     const auto factor = weighted.completeOrthogonalDecomposition();
-    if (!core::observe_diagnostic([&] { report.last_rank = core::numerical_rank(factor, "weighted_amount_correction"); })) {
-        report.first_numerical_failure.emplace(); report.first_numerical_failure->incomplete = true;
-    }
+    report.last_rank = core::numerical_rank(factor, "weighted_amount_correction");
     const auto refuse = [&](const char* cause, double defect) {
         core::Convergence r; r.cause = cause; r.residual = defect; r.stop = core::Stop::infeasible; r.rank = report.last_rank;
         core::retain_first(report.first_numerical_failure, r);

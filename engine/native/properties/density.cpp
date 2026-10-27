@@ -1173,9 +1173,9 @@ DensityRoot anchor(
         anchor_record.stop = core::classify(anchor_record.residual, *anchor_record.criterion,
             anchor_record.floor, anchor_record.contraction, true, anchor_record.amplification);
     }
-    anchor_record.incomplete |= !core::observe_diagnostic([&] { anchor_record.cause = "density anchor branch " + std::to_string(static_cast<int>(branch))
+    anchor_record.cause = "density anchor branch " + std::to_string(static_cast<int>(branch))
         + "; anchor " + core::optional_number(std::exp(log_anchor)) + "; window [" + core::optional_number(local_lower)
-        + "," + core::optional_number(local_upper) + "] mol/m3"; });
+        + "," + core::optional_number(local_upper) + "] mol/m3";
     anchor_scope.finish(anchor_record);
     throw core::ConvergenceFailure(anchor_record, model.first_numerical_failure);
 } catch (const std::exception& error) {
@@ -1497,9 +1497,9 @@ DensityRoot solve_density(
             if (!(*anchor_density > lower && *anchor_density < upper)) {
                 core::Convergence record{0.0, model.solver_options().criterion(policy::density), std::nullopt,
                     std::nullopt, std::nullopt, 0, evaluations, core::Stop::left_domain, model.solver_options().owners[policy::density]};
-                record.incomplete |= !core::observe_diagnostic([&] { record.cause = "density anchor outside " + std::to_string(static_cast<int>(branch))
+                record.cause = "density anchor outside " + std::to_string(static_cast<int>(branch))
                     + " domain; anchor=" + core::optional_number(*anchor_density) + "; lower=" + core::optional_number(lower)
-                    + "; upper=" + core::optional_number(upper); });
+                    + "; upper=" + core::optional_number(upper);
                 throw core::ConvergenceFailure(record);
             }
             result = anchor(series, temperature, pressure, mole_fractions, branch, lower, upper,

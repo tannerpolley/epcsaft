@@ -54,7 +54,7 @@ void register_diagnostics(nb::module_& module) {
             // A value copy outlives the record that may own a caller-valued criterion.
             return nb::cast(*record.criterion);
         })
-        EPCSAFT_READONLY(core::Convergence, residual, floor, amplification, contraction, iterations, evaluations, stop, cause, rank, backward_error, incomplete)
+        EPCSAFT_READONLY(core::Convergence, residual, floor, amplification, contraction, iterations, evaluations, stop, cause, rank, backward_error)
         .def_prop_ro("residual_over_criterion", [](const core::Convergence& record) -> nb::object {
             if (record.criterion == nullptr) return nb::none();
             return nb::float_(record.residual / record.criterion->value);

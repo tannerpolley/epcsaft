@@ -320,7 +320,7 @@ std::vector<double> add_multipliers(
         }
     }
     const auto factor = matrix.colPivHouseholderQr();
-    if (observations) core::retain_rank(observations->rank_records, observations->diagnostics_incomplete, factor, "weighted_multiplier_lift");
+    if (observations) core::retain_rank(observations->rank_records, factor, "weighted_multiplier_lift");
     const Eigen::VectorXd solved = factor.solve(rhs);
     for (std::size_t column = 0; column < width; ++column) {
         result[point.size() + column] = solved(static_cast<Eigen::Index>(column));
@@ -754,17 +754,15 @@ void GibbsMinimizer::finalize_solution(
 ) {
     if (status != Ipopt::SUCCESS && observations_.ipopt_diagnostics) {
         auto& d = *observations_.ipopt_diagnostics;
-        d.incomplete |= !core::observe_diagnostic([&] {
-            IpoptPoint point;
-            point.tnlp_coordinates.assign(x, x + n);
-            point.tnlp_lower_multipliers.assign(z_L, z_L + n);
-            point.tnlp_upper_multipliers.assign(z_U, z_U + n);
-            point.tnlp_constraint_multipliers.assign(lambda, lambda + m);
-            point.coordinate_scale = chart_; point.constraint_rows = constraint_rows();
-            point.declaration = std::make_shared<const EquilibriumProblem>(compiled_.problem);
-            point.rows = compiled_.rows; point.objective_factor = 1.0 / compiled_.feed_total;
-            d.failed_point = std::move(point);
-        });
+        IpoptPoint point;
+        point.tnlp_coordinates.assign(x, x + n);
+        point.tnlp_lower_multipliers.assign(z_L, z_L + n);
+        point.tnlp_upper_multipliers.assign(z_U, z_U + n);
+        point.tnlp_constraint_multipliers.assign(lambda, lambda + m);
+        point.coordinate_scale = chart_; point.constraint_rows = constraint_rows();
+        point.declaration = std::make_shared<const EquilibriumProblem>(compiled_.problem);
+        point.rows = compiled_.rows; point.objective_factor = 1.0 / compiled_.feed_total;
+        d.failed_point = std::move(point);
     }
     status_ = status;
     solution_.assign(x, x + n);
@@ -814,8 +812,7 @@ EquilibriumResult structural_result(const CompiledSystem& compiled, core::Scope&
     result.jacobian_rank = compiled.jacobian_rank;
     result.last_rank = compiled.last_rank;
     core::retain_first(result.first_numerical_failure, compiled.first_numerical_failure);
-    result.diagnostics_incomplete |= !core::observe_diagnostic([&] { result.rank_records = compiled.rank_records; });
-    result.diagnostics_incomplete |= compiled.diagnostics_incomplete;
+    result.rank_records = compiled.rank_records;
     result.generic_nullity = compiled.generic_nullity;
     if (!compiled.feasible) {
         // Structural rank loss at the generic point: no start, no optimizer, no candidate.
@@ -917,7 +914,7 @@ EquilibriumResult publish_candidate(const CompiledSystem& compiled, const PhaseP
         using Matrix = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
         const auto raw = Eigen::Map<const Matrix>(physical.data(), n, n).fullPivLu();
         const auto physical_rank = raw.rank();
-        core::retain_rank(result.rank_records, result.diagnostics_incomplete, raw, "raw_charge_endpoint");
+        core::retain_rank(result.rank_records, raw, "raw_charge_endpoint");
         result.last_rank = core::numerical_rank(Eigen::Map<const Matrix>(numerical.data(), n, n).fullPivLu(), "log_charge");
         const auto numerical_rank = static_cast<Eigen::Index>(result.last_rank->rank);
         scope.probe("charge_endpoint_ranks", {static_cast<double>(physical_rank), static_cast<double>(numerical_rank)});
@@ -1262,10 +1259,8 @@ static EquilibriumResult run_driver_once(
                 [](double value) { return std::isfinite(value); })) { stop("nonfinite Jacobian"); break; }
             const auto lu = Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
                 Eigen::RowMajor>>(jacobian.data(), n, n).fullPivLu();
-            result.diagnostics_incomplete |= !core::observe_diagnostic([&] {
-                result.last_rank = core::numerical_rank(lu, "numerical");
-                if (scope.diagnostics_on()) scope.probe("numerical_rank", {double(result.last_rank->rank), double(result.last_rank->dimension), result.last_rank->threshold}, 0, "numerical");
-            });
+            result.last_rank = core::numerical_rank(lu, "numerical");
+            if (scope.diagnostics_on()) scope.probe("numerical_rank", {double(result.last_rank->rank), double(result.last_rank->dimension), result.last_rank->threshold}, 0, "numerical");
             if (free_amount_newton || !compiled.log_charge_rows.empty()) {
                 if (lu.rank() != n) { stop("Jacobian rank"); break; }
             }

@@ -45,7 +45,6 @@ struct Convergence final {
     std::string cause;
     std::optional<NumericalRank> rank;
     std::optional<double> backward_error;
-    bool incomplete = false;
 };
 
 inline void stopping_criterion(Convergence& record, const policy::SolverOptions& options, std::size_t i) {
@@ -150,7 +149,8 @@ class __attribute__((visibility("default"))) ConvergenceFailure : public std::ru
 public:
     explicit ConvergenceFailure(const Convergence& record)
         : std::runtime_error(describe(record)), record(record) {}
-    ConvergenceFailure(const Convergence& record, std::optional<Convergence>& first);
+    ConvergenceFailure(const Convergence& record, const std::optional<Convergence>& first)
+        : ConvergenceFailure(record) { first_numerical_failure = first; }
 
     Convergence record;
     std::optional<Convergence> first_numerical_failure;

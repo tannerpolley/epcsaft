@@ -113,14 +113,14 @@ inline std::pair<Ipopt::ApplicationReturnStatus, Ipopt::ApplicationReturnStatus>
         using Application = Ipopt::SmartPtr<Ipopt::IpoptApplication>;
         if (!request.attempted) {
             request.attempted = true;
-            const bool retained = core::observe_diagnostic([&] {
-                auto holder = std::make_shared<Application>(::IpoptApplicationFactory());
-                if (!(*holder)->OpenOutputFile(request.destination, Ipopt::J_ALL))
-                    throw std::runtime_error("Ipopt OpenOutputFile refused destination");
+            auto holder = std::make_shared<Application>(::IpoptApplicationFactory());
+            if ((*holder)->OpenOutputFile(request.destination, Ipopt::J_ALL)) {
                 (*holder)->Jnlst()->GetJournal("OutputFile:" + request.destination)->SetPrintLevel(Ipopt::J_MAIN, Ipopt::J_ITERSUMMARY);
                 request.application = std::move(holder);
-            });
-            if (!retained) core::observe_diagnostic([&] { request.error = "Ipopt log could not be opened"; });
+            } else {
+                request.error = "Ipopt log could not be opened";
+                trace->incomplete = true;
+            }
         }
         if (request.application) logged = *std::static_pointer_cast<Application>(request.application);
     }
