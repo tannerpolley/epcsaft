@@ -396,7 +396,7 @@ packet materializations are explicit and hash-bound. Installed-wheel analyses
 live in `../analyses/`. See `../AGENTS.md`, `../ARCHITECTURE.yaml`, and
 `../docs/scientific/CONTEXT.md`.
 
-Meson discovers threads natively; Ipopt exactly 3.11.9 and Eigen 3.4 or newer
+Meson discovers threads natively; Ipopt exactly 3.11.9 and Eigen >=3.4,<3.5
 through pkg-config; Ceres 2.2 through its CMake package metadata. Exact
 archive wraps own CppAD 20250000.3 and HiGHS 1.15.1. CMake only resolves the
 Ceres imported target; the Engine has no CMake build route.
@@ -405,6 +405,22 @@ The HiGHS tag archive replaces its same-version source release asset because
 that asset embeds Git metadata. All archive URLs and SHA-256 values are pinned.
 Downloads and extracted trees stay ignored under `engine/build/subprojects/`
 and never enter the wheel.
+
+## Conda package
+
+`../packaging/conda-forge/` prepares Linux x86-64 / CPython 3.13 with private
+Ipopt 3.11.9, MUMPS 5.8.2/OpenBLAS, Ceres 2.2.0 CPU, Eigen 3.4.0 and
+nanobind 2.12.0. It installs the Python package, extension, native and ASL
+libraries, private Ipopt and notices; parameter packets, analyses, manuscript
+sources and Coin-HSL are excluded. Supply parameter declarations explicitly.
+The release version and public archive checksum remain publication placeholders.
+
+Corresponding source is available from the distributor as a source-set download
+alongside the matching version at
+https://github.com/tannerpolley/epcsaft/releases: exact Engine and Ipopt sources,
+embedded third-party sources, recipe/build instructions, patches and original
+notices with SHA-256 checksums. Before binary publication, verify retrieval of
+those exact bytes. See `../NOTICE` for the source-availability rule and terms.
 
 ## Scientific specification and availability
 

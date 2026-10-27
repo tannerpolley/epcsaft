@@ -10,7 +10,8 @@
 #include <fcntl.h>
 #include <poll.h>
 #include <signal.h>
-#include <spawn.h>
+#include <sys/resource.h>
+#include <sys/syscall.h>
 #include <sys/prctl.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
@@ -36,6 +37,10 @@
 #include <type_traits>
 #include <utility>
 #include <variant>
+
+#if !defined(SYS_close_range) && defined(__linux__) && defined(__x86_64__)
+#define SYS_close_range 436  // The package targets linux-64, including the glibc 2.17 sysroot.
+#endif
 
 namespace epcsaft::regression {
 namespace {
@@ -303,7 +308,7 @@ FitHost fit_host;
 bool interrupted() { return fit_host.interrupted && fit_host.interrupted(); }
 int extension_image = -1;
 
-// Sources stay above inherited fd 3/4 so spawn's descriptor copies cannot overwrite one another.
+// Sources stay above inherited fd 3/4 so the child's descriptor copies cannot overwrite one another.
 int open_image(const void* address) {
     Dl_info image{};
     if (!dladdr(address, &image)) return -1;
@@ -433,7 +438,8 @@ template <class... T> void get(int fd, T&... values) {
 
 // Ipopt 3.11.9 drives MUMPS 5.6, whose Fortran modules and C I/O state are process-global (#380), so concurrent
 // states run in worker processes. They start by exec, since fork alone is unsafe in a threaded host, and inherit
-// only their own socket. The fit kills and reaps them on every exit, an exception or cancellation included.
+// only their own socket and pinned images after pre-exec descriptor closure. The fit kills and reaps them on every exit,
+// an exception or cancellation included.
 struct Workers final {
     std::vector<int> sockets;
     std::vector<pid_t> processes;
@@ -495,25 +501,50 @@ struct ObservationEvaluator::Impl final {
         std::vector<char*> command;
         for (auto& word : fit_host.worker) command.push_back(word.data());
         command.push_back(nullptr);
+        char** arguments = command.data();
+        rlimit descriptors;
+        if (getrlimit(RLIMIT_NOFILE, &descriptors) != 0) throw std::runtime_error("fit worker process unavailable");
+        // linux-64: nr_open bounds descriptor allocation, even when the soft limit was lowered.
+        rlim_t nr_open = std::numeric_limits<int>::max();
+        std::ifstream("/proc/sys/fs/nr_open") >> nr_open;
+        const rlim_t descriptor_limit = std::min(descriptors.rlim_max, nr_open);
         for (std::size_t k = 1; k < std::min(count, rank); ++k) {
             int pair[2];
             if (socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0, pair) != 0) throw std::runtime_error("fit worker socket unavailable");
             workers_.sockets.push_back(pair[0]);
             // The worker keeps its socket end as fd 0, the extension/native images as fd 3/4 and the standard streams. Its own
             // process group keeps terminal signals away: the fit, not its workers, answers an interrupt.
-            posix_spawn_file_actions_t actions;
-            posix_spawn_file_actions_init(&actions);
-            posix_spawn_file_actions_adddup2(&actions, pair[1], 0);
-            posix_spawn_file_actions_adddup2(&actions, extension_image, 3);
-            posix_spawn_file_actions_adddup2(&actions, native_image, 4);
-            posix_spawn_file_actions_addclosefrom_np(&actions, 5);
-            posix_spawnattr_t attributes;
-            posix_spawnattr_init(&attributes);
-            posix_spawnattr_setflags(&attributes, POSIX_SPAWN_SETPGROUP);
             pid_t process = 0;
-            const int error = posix_spawn(&process, command[0], &actions, &attributes, command.data(), environ);
-            posix_spawnattr_destroy(&attributes);
-            posix_spawn_file_actions_destroy(&actions);
+            const int error = (process = fork()) < 0;
+            if (process == 0) {
+                if (setpgid(0, 0) != 0) _exit(127);
+                const int sources[] = {fcntl(pair[1], F_DUPFD_CLOEXEC, 5), fcntl(extension_image, F_DUPFD_CLOEXEC, 5), fcntl(native_image, F_DUPFD_CLOEXEC, 5)};
+                const int targets[] = {0, 3, 4};
+                for (int i = 0; i < 3; ++i)
+                    if (sources[i] < 0 || dup2(sources[i], targets[i]) < 0 || fcntl(targets[i], F_SETFD, 0) < 0) _exit(127);
+                if (syscall(SYS_close_range, 5, ~0U, 0) != 0) {
+                    const int directory = static_cast<int>(syscall(SYS_open, "/proc/self/fd", O_RDONLY | O_DIRECTORY | O_CLOEXEC));
+                    if (directory >= 0) {
+                        char buffer[4096];
+                        long bytes;
+                        while ((bytes = syscall(SYS_getdents64, directory, buffer, sizeof buffer)) > 0) {
+                            for (long at = 0; at < bytes;) {
+                                // linux_dirent64 has d_reclen at byte 16 and d_name at byte 19 on linux-64.
+                                unsigned short length;
+                                std::memcpy(&length, buffer + at + 16, sizeof length);
+                                int fd = 0;
+                                for (const char* digit = buffer + at + 19; *digit >= '0' && *digit <= '9'; ++digit) fd = 10 * fd + *digit - '0';
+                                if (fd >= 5 && fd != directory && close(fd) != 0) _exit(127);
+                                at += length;
+                            }
+                        }
+                        if (bytes < 0 || close(directory) != 0) _exit(127);
+                    } else for (rlim_t fd = 5; fd < descriptor_limit; ++fd)
+                        if (close(static_cast<int>(fd)) != 0 && errno != EBADF) _exit(127);
+                }
+                execve(arguments[0], arguments, environ);
+                _exit(127);
+            }
             close(pair[1]);
             if (error != 0) throw std::runtime_error("fit worker process unavailable");
             workers_.processes.push_back(process);

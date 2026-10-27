@@ -1,6 +1,7 @@
 #include "equilibrium/gibbs_minimizer.hpp"
 #include "core/physical_constants.hpp"
 #include "core/trace.hpp"
+#include "core/linear_error.hpp"
 
 #include <Eigen/Dense>
 
@@ -41,7 +42,7 @@ struct ReducedCorrection final {
     using Vector = Eigen::Matrix<Base, 2, 1>;
     Vector delta;
     Base inverse, condition;
-    explicit ReducedCorrection(const std::vector<Base>& jacobian, const std::vector<Base>& values) {
+    explicit ReducedCorrection(const std::vector<Base>& jacobian, const std::vector<Base>& values, std::optional<core::NumericalRank>& rank) {
         using Matrix = Eigen::Matrix<Base, 2, 2>;
         const Matrix j = Eigen::Map<const Eigen::Matrix<Base, 2, 2, Eigen::RowMajor>>(jacobian.data());
         const Vector f(values[0], values[1]);
@@ -52,15 +53,12 @@ struct ReducedCorrection final {
         const Vector rows = column_scaled.cwiseAbs().rowwise().maxCoeff().unaryExpr(
             [](Base v) { return v > 0.0 ? 1.0 / v : 1.0; });
         const Eigen::FullPivLU<Matrix> lu(rows.asDiagonal() * column_scaled);
-        if (lu.rank() != 2) throw std::runtime_error("one-component two-density reduced-Jacobian rank");
+        rank = core::numerical_rank(lu, "reduced");
+        if (rank->rank != 2) throw std::runtime_error("one-component two-density reduced-Jacobian rank");
         delta = columns.asDiagonal() * lu.solve(-(rows.asDiagonal() * f));
         if (!delta.allFinite()) throw std::runtime_error("one-component two-density nonfinite direction");
-        Vector sums = Vector::Zero();
-        for (Eigen::Index i = 0; i < 2; ++i) {
-            const Vector rhs = Vector::Unit(i);
-            sums += (columns.asDiagonal() * lu.solve(rows.asDiagonal() * rhs)).cwiseAbs();
-        }
-        inverse = sums.maxCoeff(); condition = j.cwiseAbs().rowwise().sum().maxCoeff() * inverse;
+        inverse = core::inverse_infinity_norm(lu, rows, columns);
+        condition = j.cwiseAbs().rowwise().sum().maxCoeff() * inverse;
     }
 };
 
@@ -68,7 +66,7 @@ template <typename Base>
 LinearSolveDiagnostics diagnostics(const Reduction<Base>& at, const ReducedCorrection<Base>& step, Base displacement = 0) {
     const Base norm = std::max(std::abs(at.rows[0]), std::abs(at.rows[1]));
     return {"one_component_two_density_reduction", "", double(norm), double(at.floor), double(step.inverse), double(step.condition),
-        double(step.inverse * (norm + at.floor) + displacement), std::numeric_limits<Base>::digits, 0};
+        double(core::reduced_error_envelope(step.inverse, norm, at.floor, displacement)), std::numeric_limits<Base>::digits, 0};
 }
 }  // namespace
 
@@ -148,7 +146,7 @@ EquilibriumResult one_component_two_density_attempt(const CompiledSystem& c, con
             const auto full = c.evaluate_at(at.phase);
             polishing = polishing || maximum_abs(c.classified_residuals(at.phase, full.values)) <= tolerance;
             const bool final = polishing;
-            const ReducedCorrection<double> correction(at.jacobian, at.rows);
+            const ReducedCorrection<double> correction(at.jacobian, at.rows, result.last_rank);
             const auto& delta = correction.delta;
             const double forward = polish_forward_bound(at.jacobian, at.rows, {delta[0], delta[1]}, {1.0, 1.0});
             scope.probe("one_component_two_density_correction", {delta.lpNorm<Eigen::Infinity>(), forward,
@@ -171,7 +169,7 @@ EquilibriumResult one_component_two_density_attempt(const CompiledSystem& c, con
             if (!final) continue;
             std::size_t liquid = c.problem.phases[0].kind == PhaseKind::Liquid ? 0 : 1;
             const auto reduced = reduction(at.phase.pure, at.phase.volume, u, liquid, at.phase.temperature);
-            const ReducedCorrection<double> estimate(at.jacobian, at.rows);
+            const ReducedCorrection<double> estimate(at.jacobian, at.rows, result.last_rank);
             result.linear_solve_diagnostics = diagnostics(reduced, estimate);
             scope.probe("one_component_two_density_error", {estimate.inverse, result.linear_solve_diagnostics->forward_error_estimate, reduced.floor});
             const double achieved = maximum_abs(at.rows);
@@ -214,7 +212,7 @@ EquilibriumResult one_component_two_density_attempt(const CompiledSystem& c, con
                         if (result.iterations >= static_cast<std::size_t>(policy::EQUILIBRIUM_MAX_ITERATIONS.value)
                             || (limits && (limits->expired() || limits->consumed >= limits->iterations)))
                             throw std::runtime_error("one-component two-density extended iteration/elapsed budget");
-                        const ReducedCorrection<Wide> correction(wide.jacobian, wide.rows);
+                        const ReducedCorrection<Wide> correction(wide.jacobian, wide.rows, result.last_rank);
                         const Wide norm = std::max(std::abs(wide.rows[0]), std::abs(wide.rows[1]));
                         const bool final_wide = norm <= Wide(tolerance);
                         bool accepted_wide = false;
@@ -228,11 +226,11 @@ EquilibriumResult one_component_two_density_attempt(const CompiledSystem& c, con
                             logs = trial; wide = std::move(next); vapor = std::move(next_vapor); accepted_wide = true; break;
                         }
                         if (!accepted_wide) throw std::runtime_error("one-component two-density extended contraction/bounds");
-                        const ReducedCorrection<Wide> next(wide.jacobian, wide.rows);
+                        const ReducedCorrection<Wide> next(wide.jacobian, wide.rows, result.last_rank);
                         auto record = diagnostics(wide, next); record.refinement_iterations = refinements;
                         result.linear_solve_diagnostics = record;
                         const Wide achieved = std::max(std::abs(wide.rows[0]), std::abs(wide.rows[1]));
-                        const Wide error = next.inverse * (achieved + wide.floor), correction_norm = next.delta.template lpNorm<Eigen::Infinity>();
+                        const Wide error = core::reduced_error_envelope(next.inverse, achieved, wide.floor), correction_norm = next.delta.template lpNorm<Eigen::Infinity>();
                         if (!final_wide || achieved > Wide(tolerance)
                             || !((correction_norm <= policy::EQUILIBRIUM_POLISH_CORRECTION.value && error <= policy::EQUILIBRIUM_POLISH_CORRECTION.value)
                                 || (achieved <= wide.floor && correction_norm <= next.inverse * wide.floor))) continue;
@@ -246,7 +244,7 @@ EquilibriumResult one_component_two_density_attempt(const CompiledSystem& c, con
                             displacement = std::max(displacement, std::abs(exported.back() - logs[p]));
                         }
                         const auto [output, output_vapor] = wide_evaluate(exported);
-                        const ReducedCorrection<Wide> output_step(output.jacobian, output.rows);
+                        const ReducedCorrection<Wide> output_step(output.jacobian, output.rows, result.last_rank);
                         result.linear_solve_diagnostics = diagnostics(output, output_step, displacement);
                         result.linear_solve_diagnostics->refinement_iterations = refinements;
                         break;

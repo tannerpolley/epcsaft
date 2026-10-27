@@ -781,6 +781,7 @@ EquilibriumResult structural_result(const CompiledSystem& compiled, core::Scope&
     result.phase_count = compiled.problem.phases.size();
     result.unknown_count = compiled.unknown_count();
     result.jacobian_rank = compiled.jacobian_rank;
+    result.last_rank = compiled.last_rank;
     result.generic_nullity = compiled.generic_nullity;
     if (!compiled.feasible) {
         // Structural rank loss at the generic point: no start, no optimizer, no candidate.
@@ -865,10 +866,14 @@ EquilibriumResult publish_candidate(const CompiledSystem& compiled, const PhaseP
     if (!violations.empty()) {
         topology_ok = false;
         topology_failure = "solid classification violated after one flip round: " + violations;
-    } else if (!present.empty() && !inspect_sensitivity(compiled, full).nonsingular) {
-        topology_ok = false;
-        result.convergence.stop = core::Stop::singular;
-        topology_failure = "rank-deficient classified equations with present solids: " + present;
+    } else if (!present.empty()) {
+        const auto info = inspect_sensitivity(compiled, full);
+        result.last_rank = core::NumericalRank{"canonical", full.size(), info.rank, info.threshold};
+        if (!info.nonsingular) {
+            topology_ok = false;
+            result.convergence.stop = core::Stop::singular;
+            topology_failure = "rank-deficient classified equations with present solids: " + present;
+        }
     }
     if (!compiled.log_charge_rows.empty()) {
         const auto physical = compiled.jacobian_at(prepared);
@@ -876,7 +881,8 @@ EquilibriumResult publish_candidate(const CompiledSystem& compiled, const PhaseP
         const auto n = static_cast<Eigen::Index>(full.size());
         using Matrix = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
         const auto physical_rank = Eigen::Map<const Matrix>(physical.data(), n, n).fullPivLu().rank();
-        const auto numerical_rank = Eigen::Map<const Matrix>(numerical.data(), n, n).fullPivLu().rank();
+        result.last_rank = core::numerical_rank(Eigen::Map<const Matrix>(numerical.data(), n, n).fullPivLu(), "log_charge");
+        const auto numerical_rank = static_cast<Eigen::Index>(result.last_rank->rank);
         scope.probe("charge_endpoint_ranks", {static_cast<double>(physical_rank), static_cast<double>(numerical_rank)});
         if (numerical_rank != n) { topology_ok = false; topology_failure = "rank-deficient log-charge equations"; }
     }
@@ -937,6 +943,7 @@ EquilibriumResult publish_candidate(const CompiledSystem& compiled, const PhaseP
     if (compiled.ideal) {
         const auto info = inspect_sensitivity(compiled, full);
         result.jacobian_rank = info.rank;
+        result.last_rank = core::NumericalRank{"canonical", full.size(), info.rank, info.threshold};
         if (!info.nonsingular) {
             result.success = false; result.message = "rank-deficient ideal endpoint";
             result.convergence.stop = core::Stop::singular; clear_state(result); return result;
@@ -1208,7 +1215,10 @@ static EquilibriumResult run_driver_once(
                 [](double value) { return std::isfinite(value); })) { stop("nonfinite Jacobian"); break; }
             const auto lu = Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
                 Eigen::RowMajor>>(jacobian.data(), n, n).fullPivLu();
-            if ((free_amount_newton || !compiled.log_charge_rows.empty()) && lu.rank() != n) { stop("Jacobian rank"); break; }
+            if (free_amount_newton || !compiled.log_charge_rows.empty()) {
+                result.last_rank = core::numerical_rank(lu, "numerical");
+                if (result.last_rank->rank != static_cast<std::size_t>(n)) { stop("Jacobian rank"); break; }
+            }
             const Eigen::VectorXd delta = lu.solve(-Eigen::Map<const Eigen::VectorXd>(rows_scaled.data(), n));
             if ((free_amount_newton || refine_trial) && !delta.allFinite()) { stop("nonfinite direction"); break; }
             double trial_limit = 1.0;
@@ -1542,6 +1552,7 @@ BranchCheck admit_critical(const CompiledSystem& compiled, EquilibriumResult& re
     record.cubic = result.residuals.back();
     record.zero_band = (M * u).norm() / u.norm() + static_cast<double>(c) * std::numeric_limits<double>::epsilon() * M.norm();
     record.rank = static_cast<std::size_t>(lu.rank());
+    result.last_rank = core::numerical_rank(lu, "critical");
     record.condition_estimate = singular(0) / singular(n - 1);
     record.backward_error = (J * solution - right).cwiseAbs().maxCoeff()
         / (J.cwiseAbs().rowwise().sum().maxCoeff() * solution.cwiseAbs().maxCoeff() + 1.0);
@@ -1646,21 +1657,16 @@ TopologyCheck check_topology(const CompiledSystem& compiled, const std::vector<d
 }
 
 // Observe only frozen returned states; isolated work never enters search accounting.
-static void observe_endpoint(const HelmholtzModel& model, const CompiledSystem* compiled,
-    const EquilibriumResult& result, core::Scope& scope, std::uint32_t attempt = 0) noexcept {
+template <typename Model>
+static void observe_endpoint(const Model& model, const CompiledSystem* compiled,
+    EquilibriumResult& result, core::Scope& scope, std::uint32_t attempt = 0) noexcept {
     if (!scope.diagnostics_on() || !result.has_state()) return;
     scope.observe([&] {
-        SensitivityInfo info;
-        try {
-            core::Capture isolated(false);
-            info = inspect_sensitivity(compiled ? *compiled : compile_problem(model, *result.declaration), result.coordinates);
-        } catch (const std::exception& error) {
-            scope.probe("solved_endpoint_jacobian", {NAN, static_cast<double>(result.coordinates.size()), NAN, NAN}, attempt, error.what());
-            return;
-        }
-        scope.probe("solved_endpoint_jacobian", {static_cast<double>(info.equations),
-            static_cast<double>(result.coordinates.size()), static_cast<double>(info.rank), info.condition_estimate},
-            attempt, "raw defining Jacobian");
+        result.numerical_estimates = compiled ? equilibrium_numerical_estimates(*compiled, result)
+            : equilibrium_numerical_estimates(model, result);
+        const auto& e = *result.numerical_estimates;
+        scope.probe("solved_endpoint_jacobian", {static_cast<double>(e.dimension), static_cast<double>(e.dimension),
+            static_cast<double>(e.rank), e.condition}, attempt, e.cause.c_str());
     });
 }
 
@@ -1680,7 +1686,10 @@ EquilibriumResult solve_equilibrium(const IdealMoleFraction& model, const Equili
                                     const std::optional<EquilibriumResult>& start) {
     if (start) throw std::invalid_argument("ideal previous-result starts unsupported before calculation");
     core::Scope scope("solve_equilibrium");
-    return solve_compiled(compile_problem(model, request), std::nullopt, &scope);
+    const auto compiled = compile_problem(model, request);
+    auto result = solve_compiled(compiled, std::nullopt, &scope);
+    observe_endpoint(model, &compiled, result, scope);
+    return result;
 }
 
 namespace {

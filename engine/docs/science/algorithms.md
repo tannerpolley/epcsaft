@@ -1397,10 +1397,53 @@ trial quantities are NaN. `polish_stop` retains raw/classified defects, step and
 the exit cause. Ordinary capture keeps the existing `polish_step` records.
 
 `solved_endpoint_jacobian` reports defining-row count, solved-chart width, rank
-and raw-J two-norm condition estimate after all deadlines, branch admission and
-attempt selection. Failed diagnostic inspection retains its cause and unavailable
-rank/condition. This estimate depends on coordinates and is no error bound or
-stability certificate. Its isolated EOS work is excluded from solve/search work
+and the scaled infinity-norm condition estimate after all deadlines, branch
+admission and attempt selection. For the canonical defining residuals $F$ and
+their exact Jacobian $J$, the endpoint calculation uses $A=J\operatorname{diag}(h)$.
+The physical coordinate scale $h$ is one for log and multiplier coordinates,
+the feed total for free phase and solid amounts, and $\max(|T|,1\ \mathrm{K})$ or
+$\max(|P|,1\ \mathrm{Pa})$ for free temperature or pressure. `condition` is
+$\|A\|_\infty\|A^{-1}\|_\infty$ and `inverse_norm` is
+$\|A^{-1}\|_\infty$, not a norm of the unscaled inverse Jacobian.
+
+The canonical row floor is
+$$
+\eta_i=\max\!\left(\gamma_n\sum_j|J_{ij}|h_j,
+u_i+\epsilon t_i\right),\qquad
+\gamma_n=\frac{n\epsilon}{1-n\epsilon},
+$$
+where $n$ is the solved-chart width, $\epsilon$ is the working-precision machine
+epsilon, $u_i$ is the row's propagated inner error and $t_i$ its term scale.
+Numerical row equilibration transports this floor by the absolute row scale.
+The shared linear calculation combines the Newton correction, propagated row
+floor and compensated linear defect through the exact physical-output
+derivatives. Output estimates also include returned-versus-mapped displacement
+and rounding. Temperature, pressure, amounts and compositions use absolute
+radii; positive density and packing use log radii, exported to absolute radii
+with `expm1`. Structural constants have no added rounding contribution.
+
+Detailed capture or an explicit post-hoc request computes these estimates.
+Unavailable rows, singularity or nonfinite projection retain their cause;
+unresolved composition, amount, packing or phase-separation domains prevent a
+conditional comparison. Source-reference chemical and first-thermal rows use
+the local estimate described in [ALG-REFERENCE](#alg-reference); its returned
+method annotation preserves the separate reference-replay precision and limits.
+The [retained notebook](../../../analyses/2026-equilibrium-forward-error/notebook.qmd)
+records the comparison coverage and limitations.
+
+The native comparison first requires the original admission, residual, branch,
+phase and inventory conditions and applies the ordinary allowance. Beyond it,
+an estimated-error pass requires available, resolved estimates at both
+endpoints, at least one absolute radius above that allowance, and a difference
+no larger than the sum of radii in the quantity's chart. Positive density and
+packing use log differences. Strict comparisons retain the ordinary allowance.
+An ordinary pass never consults error estimates.
+
+Default recorded rank may be structural or an existing solve decision; it is
+not a continuously measured endpoint condition number. Failed detailed
+inspection retains its cause and unavailable rank/condition. These local
+linear estimates depend on coordinates and are no rigorous nonlinear error
+bound or stability certificate. Their isolated EOS work is excluded from solve/search work
 counts, but may update model caches/counters and adds uncapped time before return.
 Detailed capture can advance finite deadlines; untimed returned-state identity
 is qualified separately. Disabled capture adds no numerical work or clock reads.
@@ -2106,6 +2149,68 @@ T/P derivatives through order four and one parameter through T/P order three.
 One amount insertion appears at degree r+1; extraction through degree 2r+1
 cannot contain two such insertions. No ionic-concentration Hessian is required.
 
+Requested source-reference errors for the dimensionless contraction $C$ and
+its first thermal derivative $C_T$ use local higher-precision re-evaluation plus
+first-order pressure/site propagation (#869). Named retained machine constants,
+supplied parameters and captured path/site coefficients are fixed inputs;
+computed reciprocals, products and sums are evaluated within the common scalar
+expressions. The existing `long double` Taylor evaluator replays captured sites;
+the selected-tape association-error owner propagates their coefficient errors
+through degree five. It adds no second association or density solve for the replay.
+The existing diagnostic cache owns the solvent and selected pure-reference states.
+Only explicit error requests and detailed endpoint capture run this calculation.
+
+For a returned coefficient, wider result $x_w$ and absolute extraction/assembly
+scale $S_x$, the arithmetic estimate is
+
+$$
+e_x^{\mathrm{arith}}=|\widehat x-x_w|+\gamma_N^w S_x+N d_{\min}^w,
+\qquad \gamma_N^w=\frac{N u_w}{1-Nu_w},\quad u_w=\epsilon_w/2.
+$$
+
+The recurrence count uses $4(d+1)^2$ operations per selected tape operation and
+sign path, summed over the pressure, value and first-thermal extractions, plus
+the short assembly. Differences and allowances are formed in wider arithmetic;
+`nextafter` converts the final nonnegative estimate upward. The center is the
+actual degree-one $C$ or normalized degree-three $C_T$ value. Pure/dilute sums
+are recentered on their returned columns. With signed achieved pressure
+coefficients, original target $P_s$, arithmetic/site floors $\eta_{P,k}$ and
+the retained density floor converted once to Pa,
+
+$$
+b_0=|p_0-P_s|+\eta_{P,0}+\epsilon|P_s|+e_{\rho,\mathrm{Pa}},\qquad
+b_1=|p_1|+\eta_{P,1},
+$$
+$$
+e_C=e_{C,\mathrm{fixed}}+|C_{P_s}|b_0,\qquad
+e_{C_T}=e_{C_T,\mathrm{fixed}}+|C_{TP_s}|b_0+|C_{P_s}|b_1/|T_1|.
+$$
+
+Raw source-pressure partials remain nonzero for a fixed source, whose public
+system-pressure columns are zero. Existing species maps transport errors with
+absolute coefficients, compensated equation/application defects and their
+arithmetic floors. The anchored Gibbs-temperature column retains both $e_C$
+and $T e_{C_T}$. Supplied caloric records receive no source-reference solve
+error; higher caloric-error columns remain uncomputed. Present-solid affinity
+uses its own source-reference error and the mapped species errors.
+
+This is a local estimate, with the same comparison meaning as ALG-TERMINATION,
+and can underestimate shared errors and internal cancellation. A final-scale
+roundoff allowance does not bound arbitrary internal amplification. Fixed-input
+arithmetic excludes supplied operand uncertainty: an exact quotient at both
+precisions can still change under an uncertain denominator. The retained
+underflow and reciprocal examples and the qualified stencil are in the
+[forward-error notebook](../../../analyses/2026-equilibrium-forward-error/notebook.qmd).
+Pressure/site propagation omits second-order sensitivity-error products and
+requires the existing admitted regular branch. The result annotation states
+these limits separately from failure causes and labels wider precision only as
+the reference replay's precision. The endpoint/Jacobian precision and shared
+`estimated_error` eligibility and judgment are unchanged. Where `long double`
+is not wider than `double`, preserve ordinary values and return the explicit
+cause `source-reference estimate unavailable: long double is not wider than double`.
+Missing states, unavailable sensitivities and nonfinite estimates retain their
+actual causes; error production never changes physical admission.
+
 Values and columns have independent availability, actual association residuals,
 site conditioning and pressure response diagnostics. Density convergence is
 retained separately. No terminal sequence or terminal error estimate is measured;
@@ -2377,6 +2482,9 @@ gradient describe local conditioning; dependent-target uncertainty, profiles,
 parameter Hessians and physical validation are not supplied.
 
 ## ALG-TERMINATION
+
+Requested source-reference estimates follow [ALG-REFERENCE](#alg-reference).
+Their returned method annotation supplies no new termination or admission criterion.
 
 Core CORE1 keeps the numerical domains separate. `EQUILIBRIUM_COMPOSITION_BOX`
 $\beta$ sets the lower box of the intensive `log(x_i)` coordinate inside the

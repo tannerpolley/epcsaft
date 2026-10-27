@@ -28,6 +28,34 @@ static ParameterDocument record_document(const nb::object& model) {
 }
 
 void register_equilibrium(nb::module_& module) {
+    nb::class_<core::NumericalRank>(module, "NumericalRank")
+        EPCSAFT_READONLY(core::NumericalRank, basis, dimension, rank, threshold);
+    using core::Quantity; using core::ComparisonMode; using core::NumericalEstimate;
+    using core::ComparisonEligibility; using core::EquilibriumComparison;
+    using core::compare_equilibrium_quantity;
+    using core::project_numerical_estimate;
+    nb::enum_<Quantity>(module, "Quantity") EPCSAFT_VALUES(Quantity, Linear, Positive, LogPositive);
+    nb::enum_<ComparisonMode>(module, "ComparisonMode") EPCSAFT_VALUES(ComparisonMode, Strict, EstimatedError);
+    nb::class_<NumericalEstimate>(module, "NumericalEstimate").def(nb::init<>())
+        EPCSAFT_READWRITE(NumericalEstimate, absolute, chart, available, resolved, cause);
+    nb::class_<ComparisonEligibility>(module, "ComparisonEligibility").def(nb::init<>())
+        EPCSAFT_READWRITE(ComparisonEligibility, declaration, branch, phase_matching, inventory,
+            residual_a, residual_b, admission_a, admission_b);
+    nb::class_<EquilibriumComparison>(module, "EquilibriumComparison")
+        EPCSAFT_READONLY(EquilibriumComparison, judgment, cause, difference, chart_difference, radius_sum);
+    module.def("compare_equilibrium_quantity", &compare_equilibrium_quantity,
+        nb::arg("quantity"), nb::arg("a"), nb::arg("b"), nb::arg("ordinary_allowance"),
+        nb::arg("estimate_a"), nb::arg("estimate_b"), nb::arg("eligibility"), nb::arg("mode"));
+    module.def("project_numerical_estimate", &project_numerical_estimate,
+        nb::arg("value"), nb::arg("mapped"), nb::arg("radius"), nb::arg("positive"), nb::arg("constant"));
+    nb::class_<EquilibriumNumericalEstimates>(module, "EquilibriumNumericalEstimates")
+        EPCSAFT_READONLY(EquilibriumNumericalEstimates, basis, cause, source_reference_method, rank, dimension, precision_bits, threshold,
+            condition, inverse_norm, backward_error, residuals, row_terms, row_inner, row_floor, physical_scale,
+            temperature, pressure, densities, packing, composition, amounts);
+    module.def("equilibrium_numerical_estimates", nb::overload_cast<const HelmholtzModel&, const EquilibriumResult&>(
+        &equilibrium_numerical_estimates), nb::arg("model"), nb::arg("result"));
+    module.def("equilibrium_numerical_estimates", nb::overload_cast<const IdealMoleFraction&, const EquilibriumResult&>(
+        &equilibrium_numerical_estimates), nb::arg("model"), nb::arg("result"));
     module.def("property_asl_record", [](nb::object model) {
         const auto document = record_document(model);
         const nb::object native_owner = model.attr("_model");
@@ -143,10 +171,27 @@ void register_equilibrium(nb::module_& module) {
         EPCSAFT_READONLY(PointEvaluation, values, objective, floor);
     nb::class_<CompiledSystem>(module, "CompiledSystem")
         .def_prop_ro("rows", [](const CompiledSystem& system) { return system.rows; })
-        EPCSAFT_READONLY(CompiledSystem, pinned_count, free_intensive_count, rank, charge_row_count, primal_size,
+        EPCSAFT_READONLY(CompiledSystem, last_rank, pinned_count, free_intensive_count, rank, charge_row_count, primal_size,
             generic_nullity, feed_total, has_ions, has_reaction, conserves_total_moles, jacobian_rank, removed_species)
         .def("solve", [](const CompiledSystem& system) { return solve_compiled(system); }, nb::keep_alive<0, 1>())
         .def("generic_point", &CompiledSystem::generic_point)
+        .def("numerical_estimates", [](const CompiledSystem& system, std::vector<double> coordinates,
+                double temperature, double pressure, std::vector<double> amounts, std::vector<double> composition,
+                std::vector<double> densities, std::vector<double> packing) {
+            const auto phases = system.problem.phases.size(), components = system.n_feed.size();
+            if (coordinates.size() != system.unknown_count()
+                || amounts.size() != phases || composition.size() != phases * components
+                || (!system.ideal && (densities.size() != phases || packing.size() != phases)))
+                throw std::invalid_argument("numerical estimate snapshot shape");
+            EquilibriumResult result;
+            result.success = true; result.temperature = temperature; result.pressure = pressure;
+            result.declaration = std::make_shared<const EquilibriumProblem>(system.problem);
+            result.coordinates = std::move(coordinates); result.amounts = std::move(amounts);
+            result.mole_fractions = std::move(composition); result.molar_densities = std::move(densities);
+            result.packing_fractions = std::move(packing);
+            return equilibrium_numerical_estimates(system, result);
+        }, nb::arg("coordinates"), nb::arg("temperature"), nb::arg("pressure"), nb::arg("amounts"),
+           nb::arg("composition"), nb::arg("densities"), nb::arg("packing"))
         .def("evaluate", [](const CompiledSystem& system, const std::vector<double>& point) {
             return system.evaluate(point); })
         .def("jacobian", [](const CompiledSystem& system, const std::vector<double>& point) {
@@ -172,7 +217,7 @@ void register_equilibrium(nb::module_& module) {
             // Extensive-objective multipliers of the non-chemical, non-pressure `rows` in order, formed at
             // the returned point from `multipliers`; raw optimizer duals only when a phase amount is pinned.
             constraint_multipliers, residuals, classified_residuals, coordinates, phase_count, iterations, evaluations,
-            hessian_calls, objective, reduced_hessian_minimum, convergence, linear_solve_diagnostics, rows, unknown_count, jacobian_rank,
+            hessian_calls, objective, reduced_hessian_minimum, convergence, last_rank, linear_solve_diagnostics, numerical_estimates, rows, unknown_count, jacobian_rank,
             generic_nullity, requested_tolerance_met, topology_event, topology_phase, topology_pair, critical,
             // Per declared solid: amount in mol and saturation index SI_s in decades.
             solid_amounts, solid_affinity_decades);

@@ -3,6 +3,7 @@
 
 #include "core/physical_constants.hpp"
 #include "core/trace.hpp"
+#include "core/linear_error.hpp"
 #include "contributions/helmholtz.hpp"
 #include "properties/helmholtz_tape.hpp"
 
@@ -254,9 +255,18 @@ std::vector<double> species_standard_slopes(double temperature, std::size_t comp
     return standard_state(temperature, components, reactions, {});
 }
 
+static Eigen::VectorXd map_error(const Eigen::MatrixXd& n, const Eigen::MatrixXd& w, const Eigen::VectorXd& b,
+    const Eigen::VectorXd& s, const Eigen::VectorXd& eb) {
+    const double eps = std::numeric_limits<double>::epsilon(), gamma = n.cols() * eps / (1 - n.cols() * eps);
+    const Eigen::VectorXd defect = core::compensated_defect(n, s, b), application = core::compensated_defect(w, b, s);
+    return w.cwiseAbs() * (eb + gamma * (b.cwiseAbs() + n.cwiseAbs() * s.cwiseAbs()))
+        + (w * defect).cwiseAbs() + application.cwiseAbs() + eps * (s.cwiseAbs() + w.cwiseAbs() * b.cwiseAbs());
+}
+
 StandardTerm standard_term(
     const CompiledSystem& compiled, double temperature, double pressure, std::size_t order,
-    bool pressure_jets, bool temperature_jets = false, const std::vector<double>& active_control = {}
+    bool pressure_jets, bool temperature_jets = false, const std::vector<double>& active_control = {},
+    StandardTerm::NumericalError* error = nullptr
 ) {
     const auto& problem = compiled.problem;
     const std::size_t components = compiled.model->parameters().component_count();
@@ -274,6 +284,7 @@ StandardTerm standard_term(
         auto diagnostics = compiled.reference_diagnostics;
         auto reactions = problem.reactions;
         auto gibbs = compiled.standard_gibbs;
+        std::vector<std::vector<double>> inverse;
         const bool parameter_jets = std::any_of(active_control.begin(), active_control.end(),
             [](double value) { return value != 0.0; });
         // Fixed-T/P references do not change with phase coordinates or feed directions.
@@ -284,7 +295,7 @@ StandardTerm standard_term(
                 &compiled.reference_diagnostics,
                 thermal, parameter_jets,
                 parameter_jets && order > 1 && (temperature_jets || pressure_jets) ? 2 : 0);
-            gibbs = standard_state(temperature, components, reactions, {});
+            gibbs = standard_state_series(temperature, components, reactions, {}, 0, nullptr, error ? &inverse : nullptr).front();
         }
         StandardTerm result;
         result.derivative.assign(order + 1, std::vector<double>(components, 0.0));
@@ -349,6 +360,37 @@ StandardTerm standard_term(
             result.pressure_derivative = species_slope(zero, "pressure derivative", 0, 1);
             result.pressure_second_derivative = species_slope(zero, "second pressure derivative", 0, 2);
             if (thermal > 1) result.temperature_pressure_derivative = species_slope(zero, "temperature-pressure derivative", 1, 1);
+        }
+        if (error) {
+            Eigen::MatrixXd n(reactions.size(), components), w(components, reactions.size());
+            for (std::size_t r = 0; r < reactions.size(); ++r) for (std::size_t i = 0; i < components; ++i) {
+                n(r, i) = reactions[r].stoichiometry[i]; w(i, r) = inverse[i][r];
+            }
+            for (auto& diagnostic : diagnostics) {
+                reference_errors(*compiled.model, temperature, problem.reactions[diagnostic.reaction_index].stoichiometry, diagnostic);
+                if (!diagnostic.numerical_error_cause.empty()) error->cause = diagnostic.numerical_error_cause;
+            }
+            for (std::size_t k = 0; k <= std::min(order, std::size_t(1)); ++k) {
+                Eigen::VectorXd b(reactions.size()), eb(reactions.size()), species(components);
+                for (std::size_t r = 0; r < reactions.size(); ++r) {
+                    b(r) = k ? first[r] : targets[0][r] / rt;
+                    eb(r) = std::numeric_limits<double>::epsilon() * std::abs(b(r));
+                }
+                for (const auto& diagnostic : diagnostics) {
+                    const auto r = diagnostic.reaction_index;
+                    const auto& reaction = problem.reactions[r];
+                    const auto law = reaction.correlation ? evaluate_reaction_properties(*reaction.correlation, temperature) : ReactionProperties{};
+                    const double source = k ? law.derivative : reaction.correlation ? law.ln_k : std::log(*reaction.equilibrium_constant);
+                    const double scale = !k && reaction.reference->source_basis == ReferenceSourceBasis::CommonMolalityInfiniteDilution
+                        ? reaction_reference_log_scale(*compiled.model, *problem.source_reference, reaction.stoichiometry) : 0.0;
+                    const double c = k ? *diagnostic.terminal_contraction_temperature_derivative : *diagnostic.terminal_contraction;
+                    b(r) = -source - scale - c;
+                    eb(r) = diagnostic.numerical_error[k] + std::numeric_limits<double>::epsilon() * (std::abs(source) + std::abs(scale) + std::abs(c));
+                }
+                for (std::size_t i = 0; i < components; ++i) species(i) = result.derivative[k][i];
+                const auto mapped = map_error(n, w, b, species, eb);
+                error->absolute[k].assign(mapped.data(), mapped.data() + mapped.size());
+            }
         }
         return result;
     }
@@ -952,6 +994,7 @@ void admit_solids(CompiledSystem& compiled, const std::vector<bool>& covered) {
         if (solid.correlation && reference.terminal_contraction_temperature_derivative)
             item.log_k_slope = evaluate_reaction_properties(*solid.correlation, T).derivative
                 + *reference.terminal_contraction_temperature_derivative;
+        item.reference = reference;
         compiled.solids.push_back(std::move(item));
     }
 }
@@ -964,7 +1007,7 @@ void admit_solids(CompiledSystem& compiled, const std::vector<bool>& covered) {
 // the ionic charge gauge may remain free: it cancels in every electroneutral phase.
 ReferenceCalorics reference_calorics(const CompiledSystem &compiled, double temperature, double pressure,
                                      bool heat_capacity, bool pressure_slope, bool parameter_slopes,
-                                     std::size_t derivative_order) {
+                                     std::size_t derivative_order, bool numerical_errors) {
     if (compiled.ideal) throw std::invalid_argument("ideal reference calorics unavailable");
     derivative_order = std::max(derivative_order, heat_capacity ? std::size_t(2) : std::size_t(1));
     using AD = CppAD::AD<double>;
@@ -1085,13 +1128,17 @@ ReferenceCalorics reference_calorics(const CompiledSystem &compiled, double temp
             references.push_back(*problem.reactions[r].reference);
             reference_rows.push_back(r);
         }
-    const auto diagnostics =
+    auto diagnostics =
         references.empty()
             ? std::vector<NeutralReferenceReactionDiagnostic>{}
             : reaction_references(model, temperature, pressure, *problem.source_reference, nu, references,
                                   pressure_slope, reference_solvent_anchor(compiled.reference_diagnostics),
                                   std::min(derivative_order, std::size_t(2)),
                                   parameter_slopes, derivative_order);
+    if (numerical_errors && !derived.empty()) for (std::size_t r = 0; r < diagnostics.size(); ++r) {
+        reference_errors(model, temperature, problem.reactions[reference_rows[r]].stoichiometry, diagnostics[r]);
+        if (!diagnostics[r].numerical_error_cause.empty()) result.numerical_error_cause = diagnostics[r].numerical_error_cause;
+    }
     for (std::size_t c = 0; c <= std::size_t(parameter_slopes); ++c)
         for (std::size_t a = 0; a + c <= derivative_order; ++a)
             for (std::size_t b = 0; a + b + c <= derivative_order; ++b) {
@@ -1124,6 +1171,11 @@ ReferenceCalorics reference_calorics(const CompiledSystem &compiled, double temp
                             right(reference_rows[r]) -=
                                 GAS_CONSTANT_J_PER_MOL_K * (temperature * *upper + double(a) * *lower);
                     }
+                    Eigen::VectorXd source_error = Eigen::VectorXd::Zero(numerical_errors ? rows : 0);
+                    if (numerical_errors && !b && !c && a <= 1) for (std::size_t r = 0; r < diagnostics.size(); ++r) {
+                        const auto& e = diagnostics[r].numerical_error;
+                        source_error(reference_rows[r]) = GAS_CONSTANT_J_PER_MOL_K * (temperature * e[a] + (a ? e[0] : 0.0));
+                    }
                     scale = right.cwiseAbs();
                     for (std::size_t r = 0; r < rows; ++r)
                         for (std::size_t i = 0; i < components; ++i)
@@ -1146,6 +1198,15 @@ ReferenceCalorics reference_calorics(const CompiledSystem &compiled, double temp
                             }
                         for (std::size_t j = 0; j < derived.size(); ++j)
                             column.values[derived[j]] = solution(j);
+                        if (numerical_errors && !b && !c && a <= 1) {
+                            Eigen::MatrixXd inverse(derived.size(), rows);
+                            for (std::size_t r = 0; r < rows; ++r) for (std::size_t j = 0; j < derived.size(); ++j)
+                                inverse(j, r) = result.reaction_map[r][derived[j]];
+                            source_error += std::numeric_limits<double>::epsilon() * (scale + right.cwiseAbs());
+                            const auto mapped = map_error(matrix, inverse, right, solution, source_error);
+                            column.numerical_error.assign(components, 0.0);
+                            for (std::size_t j = 0; j < derived.size(); ++j) column.numerical_error[derived[j]] = mapped(j);
+                        }
                     }
                     result.gibbs.push_back(std::move(entry));
                 }
@@ -1403,7 +1464,8 @@ static CompiledSystem compile_with_basis(
         const double norm = matrix.col(column).cwiseAbs().maxCoeff();
         if (norm > 0.0) matrix.col(column) /= norm;
     }
-    compiled.jacobian_rank = static_cast<std::size_t>(matrix.fullPivLu().rank());
+    compiled.last_rank = core::numerical_rank(matrix.fullPivLu(), "column_scaled");
+    compiled.jacobian_rank = compiled.last_rank->rank;
     compiled.generic_nullity = point.size() - compiled.jacobian_rank;  // the rank is at most the column count
     compiled.feasible = compiled.generic_nullity == 0;
     // The compiled record is the sole source for both the driver and callers.
@@ -1511,6 +1573,7 @@ CompiledSystem compile_problem(const IdealMoleFraction& model, const Equilibrium
     for (std::size_t r = 0; r < request.reactions.size(); ++r) c.rows.push_back({model.activity_basis == "molarity" ? RowKind::ReactionMolarity : RowKind::ReactionMassAction, 0, r});
     for (std::size_t k = 0; k < c.rank; ++k) c.rows.push_back({RowKind::Moiety, 0, k});
     const auto info = inspect_sensitivity(c, c.generic_point());
+    c.last_rank = core::NumericalRank{"canonical", c.primal_size, info.rank, info.threshold};
     c.jacobian_rank = info.rank; c.generic_nullity = c.primal_size - info.rank; c.feasible = info.nonsingular;
     return c;
 }
@@ -1767,6 +1830,151 @@ PointEvaluation CompiledSystem::evaluate_at(const PhasePoint& prepared) const {
     for (std::size_t s = 0; s < solids.size(); ++s)
         if (solids[s].column) result.objective += point[*solids[s].column] * solid_gibbs(prepared, s);
     return result;
+}
+
+RowUncertainty CompiledSystem::row_uncertainty(const PhasePoint& at) const {
+    RowUncertainty out;
+    out.terms.assign(rows.size(), 0.0); out.inner = out.terms;
+    if (ideal) {
+        const auto& support = problem.phases[0].support;
+        const double shift = *std::max_element(at.point.begin(), at.point.end());
+        double total = 0.0;
+        for (double y : at.point) total += std::exp(y - shift);
+        const double log_total = shift + std::log(total);
+        for (std::size_t r = 0; r < problem.reactions.size(); ++r) {
+            out.terms[r] = std::abs(ideal_log_k[r]);
+            for (std::size_t j = 0; j < support.size(); ++j) {
+                const double activity = ideal->activity_basis == "molarity"
+                    ? ideal->molarity_log_activity(at.point[j] + std::log(feed_total), support[j]) : at.point[j] - log_total;
+                out.terms[r] += std::abs(problem.reactions[r].stoichiometry[support[j]] * activity);
+            }
+        }
+        for (std::size_t k = 0; k < rank; ++k) {
+            auto& terms = out.terms[problem.reactions.size() + k];
+            terms = std::abs(balance[k] / feed_total);
+            for (std::size_t j = 0; j < support.size(); ++j) terms += std::abs(B[k][support[j]] * std::exp(at.point[j]));
+        }
+        return out;
+    }
+    const auto components = model->parameters().component_count(), width = 2 + components + model->active_parameters().size();
+    const double rt = GAS_CONSTANT_J_PER_MOL_K * at.temperature;
+    std::vector<std::vector<double>> gradient_error(at.shape.size(), std::vector<double>(width, 0.0));
+    std::vector<double> energy_error(at.shape.size(), 0.0);
+    for (std::size_t p = 0; p < at.shape.size(); ++p) {
+        std::vector<double> point{at.temperature, at.volume[p]};
+        point.insert(point.end(), at.composition[p].begin(), at.composition[p].end());
+        const auto active = model->active_parameter_values(); point.insert(point.end(), active.begin(), active.end());
+        for (std::size_t j = 0; j < 2 + components; ++j) {
+            if (j >= 2 && at.composition[p][j - 2] == 0.0) { gradient_error[p][j] = NAN; continue; }
+            std::vector<double> unit(width, 0.0); unit[j] = 1.0;
+            const auto error = model->residual_coefficient_errors({point, unit}, at.derivative[p].site_fractions);
+            energy_error[p] = error[0]; gradient_error[p][j] = error[1];
+        }
+    }
+    StandardTerm::NumericalError standard_error;
+    if (!reference_diagnostics.empty()) standard_term(*this, at.temperature, at.pressure, 1, false, true, {}, &standard_error);
+    std::vector<std::optional<std::size_t>> phi(at.shape.size());
+    std::size_t charge = 0;
+    for (const auto& row : rows) if (row.kind == RowKind::Electro) phi[row.phase] = primal_size + rank + charge++;
+    for (std::size_t i = 0; i < rows.size(); ++i) {
+        const auto& row = rows[i]; const auto p = row.phase, species = row.index;
+        double& terms = out.terms[i]; double& inner = out.inner[i];
+        if (row.kind == RowKind::Chemical) {
+            terms = std::abs(std::log(at.composition[p][species] / at.volume[p]))
+                + std::abs(at.derivative[p].gradient[2 + species]) + std::abs(at.standard.derivative[0][species]);
+            inner = gradient_error[p][2 + species];
+            for (std::size_t k = 0; k < rank; ++k) terms += std::abs(at.point[primal_size + k] * B[k][species]);
+            if (phi[p]) terms += std::abs(model->parameters().charge_number[species] * at.point[*phi[p]]);
+            if (!standard_error.cause.empty()) { inner = NAN; out.cause = standard_error.cause; }
+            else if (!standard_error.absolute[0].empty()) inner += standard_error.absolute[0][species];
+        } else if (row.kind == RowKind::Pressure) {
+            terms = (model->parameters().ideal_gas ? std::abs(sum(at.composition[p])) : 1.0)
+                + std::abs(at.volume[p] * at.derivative[p].gradient[1]) + std::abs(at.pressure * at.volume[p] / rt);
+            inner = std::abs(at.volume[p]) * gradient_error[p][1];
+        } else if (row.kind == RowKind::Moiety) {
+            terms = std::abs(balance[species]);
+            for (std::size_t a = 0; a < at.shape.size(); ++a)
+                for (std::size_t j = 0; j < components; ++j) terms += std::abs(at.amount[a] * B[species][j] * at.composition[a][j]);
+            for (const auto& solid : solids) if (solid.column) terms += std::abs(solid.balance[species] * at.point[*solid.column]);
+            terms /= feed_total;
+        } else if (row.kind == RowKind::Electro || row.kind == RowKind::Normalization) {
+            terms = row.kind == RowKind::Normalization ? 1.0 : 0.0;
+            for (std::size_t j = 0; j < components; ++j)
+                terms += std::abs(at.composition[p][j] * (row.kind == RowKind::Electro ? model->parameters().charge_number[j] : 1));
+        } else if (row.kind == RowKind::CriticalNormalization) {
+            terms = 1;
+            for (std::size_t j = 0; j < mode_count; ++j) terms += std::pow(at.point[mode_offset() + j], 2);
+        } else if (row.kind == RowKind::AzeotropeCondition) {
+            const auto local = problem.phases[0].support[species];
+            terms = std::abs(std::log(at.composition[0][local])) + std::abs(std::log(at.composition[1][local]));
+        } else if (row.kind == RowKind::EnvelopeCondition) {
+            const auto& e = *problem.envelope;
+            terms = std::abs(e.target);
+            if (e.kind != EnvelopeCoordinate::LogK) terms += std::abs(std::log(e.kind == EnvelopeCoordinate::LogPressure ? at.pressure : at.temperature));
+            else terms += std::abs(std::log(at.composition[0][e.component])) + std::abs(std::log(at.composition[1][e.component]));
+        } else if (row.kind == RowKind::Enthalpy || row.kind == RowKind::Entropy) {
+            const bool enthalpy = row.kind == RowKind::Enthalpy;
+            const double denominator = feed_total * GAS_CONSTANT_J_PER_MOL_K * (enthalpy ? at.temperature : 1.0);
+            terms = std::abs(enthalpy ? *problem.enthalpy_j : *problem.entropy_j_per_k) / denominator;
+            for (std::size_t a = 0; a < at.shape.size(); ++a) {
+                const auto ideal = caloric_ideal(*this, a, at.temperature, at.volume[a], at.composition[a], at.temperature);
+                const double weight = at.amount[a] / feed_total;
+                terms += std::abs(at.amount[a] * (enthalpy ? ideal.enthalpy : ideal.entropy)) / denominator;
+                terms += weight * (at.temperature * std::abs(at.derivative[a].gradient[0])
+                    + (enthalpy ? std::abs(at.volume[a] * at.derivative[a].gradient[1]) : std::abs(at.derivative[a].value)));
+                inner += weight * (at.temperature * gradient_error[a][0]
+                    + (enthalpy ? std::abs(at.volume[a]) * gradient_error[a][1] : energy_error[a]));
+            }
+        } else if (row.kind == RowKind::CriticalMode || row.kind == RowKind::CriticalCubic) {
+            const auto& derivative = at.derivative[p];
+            std::vector<double> point{at.temperature, at.volume[p]}, w(width, 0.0);
+            point.insert(point.end(), at.composition[p].begin(), at.composition[p].end());
+            const auto active = model->active_parameter_values(); point.insert(point.end(), active.begin(), active.end());
+            for (std::size_t j = 0; j < components; ++j) w[2 + j] = std::sqrt(n_feed[j] / feed_total) * at.point[mode_offset() + j];
+            const auto coefficient_error = [&](const std::vector<double>& direction, std::size_t order) {
+                std::vector<std::vector<double>> path(order + 1, std::vector<double>(width, 0.0));
+                path[0] = point; path[1] = direction;
+                return model->residual_coefficient_errors(path, derivative.site_fractions)[order];
+            };
+            if (row.kind == RowKind::CriticalMode) {
+                const double d = std::sqrt(n_feed[species] / feed_total);
+                terms = std::abs(d * w[2 + species] / at.composition[p][species]);
+                for (std::size_t j = 0; j < components; ++j)
+                    terms += std::abs(d * derivative.hessian[(2 + species) * width + 2 + j] * w[2 + j]);
+                // Polarization of E2 supplies this requested mixed contraction without a tensor.
+                std::vector<double> unit(width, 0.0), sum = w; unit[2 + species] = 1.0; sum[2 + species] += 1.0;
+                inner = std::abs(d) * (coefficient_error(sum, 2) + coefficient_error(unit, 2) + coefficient_error(w, 2));
+            } else {
+                const auto nominal = model->residual_energy_action(at.temperature, at.volume[p], at.composition[p], {w, w, w});
+                if (!nominal.action) { out.cause = "critical_contraction_unavailable"; continue; }
+                terms = std::abs(*nominal.action);
+                for (std::size_t j = 0; j < components; ++j)
+                    terms += std::abs(std::pow(w[2 + j], 3) / std::pow(at.composition[p][j], 2));
+                inner = 6 * coefficient_error(w, 3);
+            }
+        } else if (row.kind == RowKind::SolidAffinity) {
+            const auto& solid = solids[species]; const auto& spec = problem.solids[species];
+            if (!solid.present) { terms = std::abs(at.point[*solid.column]); continue; }
+            terms = std::abs(solid.log_k) + std::abs(spec.molar_volume_m3_per_mol * (at.pressure - *spec.reference->reference_pressure_pa) / rt);
+            for (std::size_t j = 0; j < components; ++j) terms += std::abs(spec.stoichiometry[j] * at.standard.derivative[0][j]);
+            for (std::size_t j = 0; j < rank; ++j) terms += std::abs(at.point[primal_size + j] * solid.balance[j]);
+            auto reference = *solid.reference;
+            reference_errors(*model, at.temperature, spec.stoichiometry, reference);
+            if (!reference.numerical_error_cause.empty() || !standard_error.cause.empty()) {
+                inner = NAN; out.cause = !reference.numerical_error_cause.empty() ? reference.numerical_error_cause : standard_error.cause;
+            } else {
+                const double source = spec.correlation ? evaluate_reaction_properties(*spec.correlation, at.temperature).ln_k : std::log(*spec.equilibrium_constant);
+                const double scale = spec.reference->source_basis == ReferenceSourceBasis::CommonMolalityInfiniteDilution
+                    ? reaction_reference_log_scale(*model, *problem.source_reference, spec.stoichiometry) : 0.0;
+                inner = reference.numerical_error[0] + std::numeric_limits<double>::epsilon()
+                    * (std::abs(source) + std::abs(scale) + std::abs(*reference.terminal_contraction));
+                for (std::size_t j = 0; j < components; ++j) if (!standard_error.absolute[0].empty())
+                    inner += std::abs(spec.stoichiometry[j]) * standard_error.absolute[0][j];
+            }
+
+        }
+    }
+    return out;
 }
 
 double CompiledSystem::solid_gibbs(const PhasePoint& prepared, std::size_t solid) const {

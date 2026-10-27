@@ -169,8 +169,6 @@ ResidualEnergyAction reference_partial_from_state(const HelmholtzModel& model, d
     return result;
 }
 
-namespace {
-
 struct NeutralReferenceTrace final {
     double pressure = 0.0;
     std::size_t solvent_index = 0;
@@ -181,8 +179,61 @@ struct NeutralReferenceTrace final {
     bool parameter_jets = false;
 };
 
+void reference_errors(const HelmholtzModel& model, double temperature, const std::vector<double>& nu,
+    NeutralReferenceReactionDiagnostic& diagnostic) {
+    try {
+        if (!diagnostic.trace) throw std::runtime_error("reference state unavailable");
+        const auto& trace = *diagnostic.trace;
+        diagnostic.numerical_error = {0.0, 0.0};
+        std::array<long double, 2> replayed_sum{};
+        const auto accumulate = [&](const State& state, const std::vector<double>& composition,
+            const std::vector<double>& insertion, bool dilute) {
+            ReferenceTaylorError constant_error, error;
+            PressureActionDirection direction; direction.temperature = temperature;
+            const auto constant = model.reference_taylor(temperature, 1 / state.molar_density, composition, insertion, {}, 0, dilute, &constant_error);
+            const auto value = model.reference_taylor(temperature, 1 / state.molar_density, composition, insertion, direction, 1, dilute, &error);
+            if (constant.status != PropertyActionStatus::Available || value.status != PropertyActionStatus::Available)
+                throw std::runtime_error("reference error column unavailable");
+            const auto cp = reference_partial_from_state(model, temperature, composition, insertion, 0, 1, {}, state, dilute);
+            const auto ctp = reference_partial_from_state(model, temperature, composition, insertion, 1, 1, {}, state, dilute);
+            if (!cp.action || !ctp.action) throw std::runtime_error("reference pressure sensitivity unavailable");
+            double b0 = std::abs(error.pressure[0] - trace.pressure) + error.pressure_floor[0]
+                + std::numeric_limits<double>::epsilon() * std::abs(trace.pressure);
+            if (state.density_convergence && state.density_convergence->floor)
+                b0 += *state.density_convergence->floor * GAS_CONSTANT_J_PER_MOL_K * temperature * state.molar_density;
+            const double b1 = std::abs(error.pressure[1]) + error.pressure_floor[1];
+            diagnostic.numerical_error[0] += constant_error.fixed[0] + std::abs(*cp.action) * b0;
+            diagnostic.numerical_error[1] += (error.fixed[1] + std::abs(*cp.action) * b1) / std::abs(error.temperature_coefficient)
+                + std::abs(*ctp.action) * b0;
+            replayed_sum[0] += constant.contraction[0];
+            replayed_sum[1] += static_cast<long double>(value.contraction[1]) / temperature;
+        };
+        auto dilute = nu;
+        for (std::size_t i = 0; i < trace.pure_state.size(); ++i) if (trace.pure_state[i]) dilute[i] = 0;
+        if (std::any_of(dilute.begin(), dilute.end(), [](double v) { return v != 0; }))
+            accumulate(trace.state, trace.composition, dilute, true);
+        for (std::size_t i = 0; i < trace.pure_state.size(); ++i) if (trace.pure_state[i] && nu[i] != 0) {
+            std::vector<double> composition(nu.size(), 0), insertion(nu.size(), 0);
+            composition[i] = 1; insertion[i] = nu[i];
+            accumulate(*trace.pure_state[i], composition, insertion, false);
+        }
+        if (!diagnostic.terminal_contraction || !diagnostic.terminal_contraction_temperature_derivative)
+            throw std::runtime_error("reference consumed center unavailable");
+        diagnostic.numerical_error[0] += std::abs(static_cast<long double>(*diagnostic.terminal_contraction) - replayed_sum[0]);
+        diagnostic.numerical_error[1] += std::abs(static_cast<long double>(*diagnostic.terminal_contraction_temperature_derivative) - replayed_sum[1]);
+        if (diagnostic.observed_terminal_change) diagnostic.numerical_error[0] += std::abs(*diagnostic.observed_terminal_change);
+        if (diagnostic.observed_temperature_derivative_change) diagnostic.numerical_error[1] += std::abs(*diagnostic.observed_temperature_derivative_change);
+        for (double e : diagnostic.numerical_error) if (!std::isfinite(e) || e < 0) throw std::runtime_error("nonfinite reference error");
+        diagnostic.numerical_error_cause.clear();
+    } catch (const std::exception& error) {
+        diagnostic.numerical_error = {NAN, NAN}; diagnostic.numerical_error_cause = error.what();
+    }
+}
+
+namespace {
+
 struct NeutralReferenceTraceResult final {
-    std::optional<NeutralReferenceTrace> trace;
+    std::shared_ptr<const NeutralReferenceTrace> trace;
     NeutralReferenceStatus status = NeutralReferenceStatus::Nonfinite;
     std::string message;
 };
@@ -282,7 +333,7 @@ NeutralReferenceTraceResult build_neutral_reference_trace(
                 }
             }
         }
-        result.trace = std::move(trace);
+        result.trace = std::make_shared<const NeutralReferenceTrace>(std::move(trace));
         result.status = NeutralReferenceStatus::Available;
         return result;
     } catch (const std::invalid_argument& error) {
@@ -594,7 +645,7 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
             cache.push_back(std::move(item));
             found = std::prev(cache.end());
         }
-        if (!found->result.trace.has_value()) {
+        if (!found->result.trace) {
             diagnostic.reference_pressure_pa = pressure;
             diagnostic.status = found->result.status;
             diagnostic.message = found->result.message;
@@ -608,6 +659,7 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
         diagnostic = neutral_reference_from_trace(
             model, temperature, stoichiometries[row], reference,
             need_jets, *found->result.trace);
+        diagnostic.trace = found->result.trace;
         diagnostic.solvent_density = found->result.trace->state.molar_density;
         // Additional consumed columns at the same solvent state.
         const auto& trace = *found->result.trace;

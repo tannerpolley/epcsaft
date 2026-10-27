@@ -494,9 +494,11 @@ std::optional<std::size_t> thermal_reference_missing(
 std::vector<std::vector<double>> standard_state_series(
     double temperature, std::size_t components,
     const std::vector<ReactionSpec>& reactions,
-    const std::vector<double>& supplied, std::size_t order, const ThermochemistryRecord* thermochemistry
+    const std::vector<double>& supplied, std::size_t order, const ThermochemistryRecord* thermochemistry,
+    std::vector<std::vector<double>>* inverse_map
 ) {
     require_positive(temperature, "temperature");
+    if (inverse_map) inverse_map->clear();
     validate_reaction_set(components, reactions);
     std::vector<std::vector<double>> result(order + 1, std::vector<double>(components, 0.0));
     if (reactions.empty() && supplied.empty()) return result;
@@ -526,6 +528,13 @@ std::vector<std::vector<double>> standard_state_series(
         return result;
     }
     const auto svd = matrix.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV);
+    if (inverse_map) {
+        inverse_map->assign(components, std::vector<double>(reactions.size(), 0.0));
+        for (std::size_t r = 0; r < reactions.size(); ++r) {
+            const Eigen::VectorXd image = svd.solve(Eigen::VectorXd::Unit(reactions.size(), r));
+            for (std::size_t i = 0; i < components; ++i) (*inverse_map)[i][r] = image(i);
+        }
+    }
     for (std::size_t k = 0; k <= order; ++k) {
         Eigen::VectorXd right(static_cast<Eigen::Index>(reactions.size()));
         for (std::size_t row = 0; row < reactions.size(); ++row) {

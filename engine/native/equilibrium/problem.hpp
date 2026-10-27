@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/convergence.hpp"
+#include "core/linear_error.hpp"
 #include "properties/helmholtz_model.hpp"
 
 #include <cstddef>
@@ -11,6 +12,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -228,6 +230,11 @@ inline double maximum_abs(const std::vector<double>& values) noexcept {
     return result;
 }
 
+struct RowUncertainty final {
+    std::vector<double> terms, inner;
+    std::string cause;
+};
+
 struct PointEvaluation final {
     std::vector<double> values;
     double objective = 0.0;
@@ -255,6 +262,10 @@ struct PackingTerms final {
 // derivative[k][i] is d^k (g_i / RT) / dT^k at the prepared temperature.  The
 // pressure fields are the matching first and second derivatives at fixed T.
 struct StandardTerm final {
+    struct NumericalError final {
+        std::array<std::vector<double>, 2> absolute;
+        std::string cause;
+    };
     std::vector<std::vector<double>> derivative;
     std::vector<double> pressure_derivative;
     std::vector<double> pressure_second_derivative;
@@ -318,9 +329,11 @@ struct CompiledSolid final {
     double log_k = 0.0;
     std::optional<double> log_k_slope;
     bool present = false;
+    std::optional<NeutralReferenceReactionDiagnostic> reference;
 };
 
 struct CompiledSystem final {
+    std::optional<core::NumericalRank> last_rank;
     std::vector<double> optimizer_identity() const;
     const HelmholtzModel* model = nullptr;
     const IdealMoleFraction* ideal = nullptr;
@@ -375,6 +388,7 @@ struct CompiledSystem final {
                                               std::size_t width = 1) const;
     std::vector<double> numerical_rows(const PhasePoint&, std::vector<double>, std::size_t width = 1) const;
     double classified_residual_norm(const std::vector<double>& point) const;
+    RowUncertainty row_uncertainty(const PhasePoint&) const;
     PointEvaluation evaluate_at(const PhasePoint& prepared) const;
     std::vector<double> generic_point() const;
     // First solved-chart coordinate of each declared phase: its log compositions, then a free amount and log packing.
@@ -474,6 +488,16 @@ struct CriticalRecord final {
     std::size_t rank = 0;
 };
 
+struct EquilibriumNumericalEstimates final {
+    std::string basis = "canonical_defining_rows", cause = "not_evaluated";
+    std::string source_reference_method;
+    std::size_t rank = 0, dimension = 0, precision_bits = std::numeric_limits<double>::digits;
+    double threshold = 0, condition = INFINITY, inverse_norm = INFINITY, backward_error = INFINITY;
+    std::vector<double> residuals, row_terms, row_inner, row_floor, physical_scale;
+    core::NumericalEstimate temperature, pressure;
+    std::vector<core::NumericalEstimate> densities, packing, composition, amounts;
+};
+
 struct OptimizerState;
 struct LinearSolveDiagnostics final {
     std::string system = "one_component_two_density_reduction", reason;
@@ -484,6 +508,7 @@ struct LinearSolveDiagnostics final {
 };
 
 struct EquilibriumResult final {
+    std::optional<core::NumericalRank> last_rank;
     std::map<std::string, double> solver_settings;
     std::string diagnostic_options_file, linear_solver;  // linear_solver: empty when no Ipopt solve ran
     std::shared_ptr<const OptimizerState> optimizer_state;
@@ -514,6 +539,7 @@ struct EquilibriumResult final {
     double reduced_hessian_minimum = 0.0;
     core::Convergence convergence;
     std::optional<LinearSolveDiagnostics> linear_solve_diagnostics;
+    std::optional<EquilibriumNumericalEstimates> numerical_estimates;
     std::vector<Row> rows;
     std::size_t unknown_count = 0;
     std::size_t jacobian_rank = 0;
@@ -534,6 +560,10 @@ struct EquilibriumResult final {
 
     double residual_norm() const noexcept { return maximum_abs(residuals); }
 };
+
+EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSystem&, const EquilibriumResult&);
+EquilibriumNumericalEstimates equilibrium_numerical_estimates(const HelmholtzModel&, const EquilibriumResult&);
+EquilibriumNumericalEstimates equilibrium_numerical_estimates(const IdealMoleFraction&, const EquilibriumResult&);
 
 // EqID reaction_activity_quotient; per declared phase/reaction, in component order.
 struct ReactionActivities final {
@@ -663,8 +693,9 @@ enum class SolvedStateActionStatus {
 // Per-species ideal-gas h (J/mol) and, on request, cp (J/(mol K)) at the standard pressure
 // of a referenced problem (EqID: reference_species_calorics); a refusal clears both.
 struct ReferenceCalorics final {
+    std::string numerical_error_cause;
     struct Column final {
-        std::vector<double> values;
+        std::vector<double> values, numerical_error;
         SolvedStateActionStatus status = SolvedStateActionStatus::Available;
         std::string message;
     };
@@ -682,7 +713,7 @@ struct ReferenceCalorics final {
 };
 ReferenceCalorics reference_calorics(const CompiledSystem &compiled, double temperature, double pressure,
                                      bool heat_capacity, bool pressure_slope = false,
-                                     bool parameter_slopes = false, std::size_t derivative_order = 2);
+                                     bool parameter_slopes = false, std::size_t derivative_order = 2, bool numerical_errors = false);
 
 struct SolvedStateActionResult final {
     SolvedStateObservable observable;
