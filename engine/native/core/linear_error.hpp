@@ -9,12 +9,6 @@
 
 namespace epcsaft::core {
 
-struct NumericalRank final {
-    std::string basis;
-    std::size_t dimension = 0, rank = 0;
-    double threshold = 0;
-};
-
 template <typename Factor>
 NumericalRank numerical_rank(const Factor& lu, const char* basis) {
     return {basis, static_cast<std::size_t>(lu.cols()), static_cast<std::size_t>(lu.rank()), double(lu.threshold())};

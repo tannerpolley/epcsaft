@@ -1,4 +1,5 @@
 #pragma once
+#include "core/trace.hpp"
 
 #include "core/convergence.hpp"
 #include "properties/helmholtz_tape.hpp"
@@ -46,6 +47,7 @@ struct HelmholtzDerivativeValues final {
     // Per-order association residual floor; zero when no association sites are present.
     Base gradient_floor = 0.0;
     std::vector<Base> site_fractions;
+    std::optional<core::Convergence> first_numerical_failure;
 };
 
 using HelmholtzDerivatives = HelmholtzDerivativeValues<double>;
@@ -128,6 +130,9 @@ struct PropertyActionResult final {
 enum class DensityBranch { Unspecified, Vapor, Liquid };
 struct DensityStructureError final : std::runtime_error {
     using std::runtime_error::runtime_error;
+    DensityStructureError(const std::string& message, const std::optional<core::Convergence>& first)
+        : std::runtime_error(message) { core::retain_first(first_numerical_failure, first); }
+    std::optional<core::Convergence> first_numerical_failure;
 };
 struct PropertyActionDiagnostics final {
     std::size_t site_rank = 0, site_factorizations = 0, site_solves = 0;
@@ -138,6 +143,7 @@ struct PropertyActionDiagnostics final {
     std::size_t thermal_evaluations = 0, recordings = 0, directional_paths = 0, forward_sweeps = 0;
     DensityBranch branch = DensityBranch::Unspecified;
     std::optional<std::size_t> stable_root_count;
+    std::optional<core::Convergence> first_numerical_failure;
 };
 struct PropertyActionBatch final {
     policy::SolverOptions solver_options;
@@ -219,6 +225,7 @@ struct State final {
         isentropic_compressibility, speed_of_sound, joule_thomson_coefficient;
     std::optional<std::vector<std::optional<double>>> partial_molar_volume, partial_molar_enthalpy,
         partial_molar_entropy;  // component order
+    std::optional<core::Convergence> first_numerical_failure;
 };
 
 std::optional<std::array<double, 2>> superancillary_densities(const class HelmholtzModel&, double temperature);
@@ -232,6 +239,7 @@ struct DensityRoot final {
     DensityBranch branch = DensityBranch::Unspecified;
     core::Convergence convergence;
     std::optional<double> negative_slope_density;  // no new EOS evaluation
+    std::optional<core::Convergence> first_numerical_failure;
 };
 
 // Fixed-composition pressure crossings, slope zeros and finite-evaluation brackets (ALG-DENSITY).
@@ -258,6 +266,7 @@ struct DensityDiagnostics final {
     double geometric_cap = 0.0;
     std::size_t declared_crossings = 0, evaluations = 0;
     std::string stop;
+    std::optional<core::Convergence> first_numerical_failure;
 };
 
 // A Stage-A neutral reference is a pure, neutral solvent plus one explicit

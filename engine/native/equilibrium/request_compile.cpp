@@ -1680,7 +1680,8 @@ std::vector<std::size_t> CompiledSystem::phase_offsets() const {
     return result;
 }
 
-PhasePoint CompiledSystem::prepare(const std::vector<double>& point, bool state_only) const {
+PhasePoint CompiledSystem::prepare(const std::vector<double>& point, bool state_only,
+    std::optional<core::Convergence>* first_numerical_failure) const {
     core::Scope scope("equilibrium_prepare");
     if (point.size() < primal_size) {
         throw std::invalid_argument("equilibrium point is too short");
@@ -1733,6 +1734,7 @@ PhasePoint CompiledSystem::prepare(const std::vector<double>& point, bool state_
             result.pure.push_back(model->pure_isothermal(result.temperature, result.volume.back(), total));
             result.derivative.push_back(result.pure.back().derivative);
         } else result.derivative.push_back(model->evaluate(result.temperature, result.volume.back(), values, order));
+        if (first_numerical_failure) core::retain_first(*first_numerical_failure, result.derivative.back().first_numerical_failure);
         scope.probe("gradient_floor", result.derivative.back().gradient_floor,
                     static_cast<std::uint32_t>(phase));
         result.composition.push_back(std::move(values));

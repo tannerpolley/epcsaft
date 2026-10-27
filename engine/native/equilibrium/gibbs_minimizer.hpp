@@ -20,8 +20,39 @@ namespace epcsaft::equilibrium {
 
 struct StageWork final {  // the work of the sub-solves that seed a solve, failed ones included
     std::size_t iterations = 0, evaluations = 0, hessian_calls = 0;
-    void add(const EquilibriumResult& r) { iterations += r.iterations; evaluations += r.evaluations; hessian_calls += r.hessian_calls; }
-    void report(EquilibriumResult& r) const { r.iterations += iterations; r.evaluations += evaluations; r.hessian_calls += hessian_calls; }
+    std::optional<core::Convergence> first_numerical_failure;
+    std::vector<core::NumericalRank> rank_records;
+    std::optional<IpoptDiagnostics> ipopt_diagnostics, recovered_ipopt_diagnostics;
+    bool diagnostics_incomplete = false;
+    template<class R> void observe(const R& r) noexcept {
+        diagnostics_incomplete |= r.diagnostics_incomplete;
+        core::retain_first(first_numerical_failure, r.first_numerical_failure);
+        for (const auto& rank : r.rank_records) diagnostics_incomplete |= !core::retain_rank(rank_records, rank);
+        diagnostics_incomplete |= !core::observe_diagnostic([&] {
+            if (!recovered_ipopt_diagnostics && ipopt_diagnostics && ipopt_diagnostics->first_restoration_iteration && r.ipopt_diagnostics)
+                recovered_ipopt_diagnostics = ipopt_diagnostics;
+            if (!recovered_ipopt_diagnostics) recovered_ipopt_diagnostics = r.recovered_ipopt_diagnostics;
+            if (r.ipopt_diagnostics) ipopt_diagnostics = r.ipopt_diagnostics;
+        });
+        diagnostics_incomplete |= first_numerical_failure && first_numerical_failure->incomplete;
+        diagnostics_incomplete |= r.ipopt_diagnostics && r.ipopt_diagnostics->incomplete;
+        diagnostics_incomplete |= r.recovered_ipopt_diagnostics && r.recovered_ipopt_diagnostics->incomplete;
+    }
+    void publish_observations(EquilibriumResult& r) && noexcept {
+        r.first_numerical_failure = std::move(first_numerical_failure);
+        r.rank_records = std::move(rank_records);
+        r.ipopt_diagnostics = std::move(ipopt_diagnostics);
+        r.recovered_ipopt_diagnostics = std::move(recovered_ipopt_diagnostics);
+        r.diagnostics_incomplete |= diagnostics_incomplete;
+        if (r.diagnostics_incomplete && core::current_trace()) core::current_trace()->incomplete = true;
+    }
+    void report_observations(EquilibriumResult& r) const noexcept {
+        r.diagnostics_incomplete |= !core::observe_diagnostic([&] {
+            StageWork combined = *this; combined.observe(r); std::move(combined).publish_observations(r);
+        });
+    }
+    void add(const EquilibriumResult& r) { iterations += r.iterations; evaluations += r.evaluations; hessian_calls += r.hessian_calls; observe(r); }
+    void report(EquilibriumResult& r) const { r.iterations += iterations; r.evaluations += evaluations; r.hessian_calls += hessian_calls; report_observations(r); }
 };
 // `speciate` false: a supplied composition replaces the start's, so a reacting phase is not speciated.
 // A `packed` phase's packing guess is supplied by the caller and replaces its density root.
@@ -103,7 +134,7 @@ EquilibriumResult recover_from_source(const CompiledSystem& target, const Driver
 // The driver internals the stability search (phase_stability.cpp) shares.
 void clear_state(EquilibriumResult& result);
 double largest_difference(const std::vector<double>& left, const std::vector<double>& right);
-std::vector<double> add_multipliers(const CompiledSystem& compiled, const std::vector<double>& point);
+std::vector<double> add_multipliers(const CompiledSystem& compiled, const std::vector<double>& point, EquilibriumResult* observations = nullptr);
 EquilibriumResult structural_result(const CompiledSystem& compiled, core::Scope& scope);
 EquilibriumResult run_driver(
     const HelmholtzModel& model, const CompiledSystem& compiled,
@@ -214,13 +245,13 @@ ContinuationResult continue_equilibrium(
 std::vector<double> solve_implicit(
     const CompiledSystem& compiled,
     const PhasePoint& prepared,
-    const std::vector<double>& column
+    const std::vector<double>& column, std::optional<core::Convergence>* failure = nullptr
 );
 
 std::vector<double> sensitivity(
     const CompiledSystem& compiled,
     const std::vector<double>& point,
-    const std::vector<double>& lever
+    const std::vector<double>& lever, std::optional<core::Convergence>* failure = nullptr
 );
 
 struct SensitivityInfo final {
@@ -295,9 +326,13 @@ public:
 
     double regularization_size() const noexcept { return regularization_size_; }
     const std::optional<std::string>& step_rule_error() const noexcept { return step_rule_error_; }
-    const std::optional<std::string>& preparation_error() const noexcept {
-        return preparation_error_;
+    void begin_ipopt() { observations_.ipopt_diagnostics.emplace(); }
+    void finish_ipopt(int initialized, int returned, bool predicted, bool physical) noexcept {
+        auto& d = *observations_.ipopt_diagnostics;
+        d.initialization_return = initialized; d.application_return = returned;
+        d.warm_initialized = warm_; d.predicted = predicted; d.physical_amounts = physical;
     }
+    void publish_observations(EquilibriumResult& result) const noexcept { observations_.report_observations(result); }
 
 private:
     std::vector<std::size_t> constraint_rows() const;
@@ -318,7 +353,7 @@ private:
     std::optional<std::vector<double>> objective_hessian_;
     std::optional<std::vector<double>> constraint_hessian_;
     std::vector<double> constraint_hessian_multipliers_;
-    std::optional<std::string> preparation_error_;
+    StageWork observations_;
     std::vector<double> solution_;
     std::vector<double> constraint_multipliers_;
     Ipopt::SolverReturn status_ = Ipopt::UNASSIGNED;

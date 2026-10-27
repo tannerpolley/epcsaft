@@ -99,6 +99,11 @@ std::optional<TrialPoint> tangent_plane_trial(const HelmholtzModel& model, doubl
                 Eigen::MatrixXd H = p.J.cwiseProduct(root * root.transpose()) / p.W.sum();
                 H.diagonal().array() += 1.0 + 0.5 * p.g.array();
                 const Eigen::LLT<Eigen::MatrixXd> factor(H);
+                if (factor.info() != Eigen::Success) core::observe_diagnostic([&] {
+                    core::Convergence r; r.cause = "tangent-plane matrix not positive definite"; r.stop = core::Stop::singular;
+                    r.residual = p.g.lpNorm<Eigen::Infinity>(); r.iterations = o.iterations;
+                    core::retain_first(o.first_numerical_failure, r);
+                });
                 const Eigen::VectorXd alpha = 2.0 * root - factor.solve(root.cwiseProduct(p.g));
                 if (factor.info() == Eigen::Success && (alpha.array() > 0.0).all()) q = at((0.5 * alpha).array().square());
             }
@@ -118,7 +123,7 @@ std::optional<TrialPoint> tangent_plane_trial(const HelmholtzModel& model, doubl
             PhasePoint point; point.composition = {p.w}; point.eta = o.packing_fractions;
             result.emplace(std::move(point), -std::log(p.W.sum()));
         }
-    } catch (const std::exception&) {}
+    } catch (const std::exception& error) { core::retain_failure(o.first_numerical_failure, error, "tangent-plane trial"); }
     ++work["trial_tangent_plane_invocations"];
     work["trial_tangent_plane_iterations"] += o.iterations; work["trial_tangent_plane_newton_steps"] += o.hessian_calls;
     return result;
@@ -618,10 +623,12 @@ StabilityReport test_snapshot(const CompiledSystem& c, const EquilibriumResult& 
                 if (options.evaluate_supplied_trials) trial.raw_coordinates = initial;
                 else if (!found) {
                     EquilibriumResult audit;
+                    StageWork prior; prior.observe(trial.optimizer);
                     try {
                         trial.optimizer = run_driver(*c.model, compiled, initial, structural_result(compiled, scope),
                             scope, &trial.raw_coordinates, &audit, nullptr, false, {}, false, true);
                     } catch (const std::exception& error) { trial.optimizer = audit; trial.optimizer.message = error.what(); }
+                    prior.report_observations(trial.optimizer);
                     count_driver(report.work, trial.optimizer, "trial_driver_invocations");
                     trial.message = trial.optimizer.message;
                 }

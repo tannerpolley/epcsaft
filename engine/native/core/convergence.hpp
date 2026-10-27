@@ -25,6 +25,12 @@ enum class Stop : std::uint8_t {
     nonfinite,
 };
 
+struct NumericalRank final {
+    std::string basis;
+    std::size_t dimension = 0, rank = 0;
+    double threshold = 0;
+};
+
 struct Convergence final {
     double residual = 0.0;
     const policy::Tolerance* criterion = nullptr;
@@ -36,6 +42,10 @@ struct Convergence final {
     Stop stop = Stop::stalled;
     // Owns a caller-valued criterion; static policy producers leave it empty.
     std::shared_ptr<const policy::Tolerance> criterion_owner;
+    std::string cause;
+    std::optional<NumericalRank> rank;
+    std::optional<double> backward_error;
+    bool incomplete = false;
 };
 
 inline void stopping_criterion(Convergence& record, const policy::SolverOptions& options, std::size_t i) {
@@ -129,15 +139,20 @@ inline std::string describe(const Convergence& record) {
     );
     if (size < 0) return {};
     result.resize(static_cast<std::size_t>(size));
+    if (!record.cause.empty()) result += "; " + record.cause;
+    if (record.rank) result += "; " + record.rank->basis + " rank " + std::to_string(record.rank->rank)
+        + "/" + std::to_string(record.rank->dimension) + "; threshold " + optional_number(record.rank->threshold);
+    if (record.backward_error) result += "; backward error " + optional_number(record.backward_error);
     return result;
 }
 
 class __attribute__((visibility("default"))) ConvergenceFailure : public std::runtime_error {
 public:
-    explicit ConvergenceFailure(const Convergence& record)
-        : std::runtime_error(describe(record)), record(record) {}
+    explicit ConvergenceFailure(const Convergence& record, std::optional<Convergence> first = std::nullopt)
+        : std::runtime_error(describe(record)), record(record), first_numerical_failure(std::move(first)) {}
 
     Convergence record;
+    std::optional<Convergence> first_numerical_failure;
 };
 
 }  // namespace epcsaft::core

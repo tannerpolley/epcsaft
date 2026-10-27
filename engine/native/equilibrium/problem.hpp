@@ -333,6 +333,9 @@ struct CompiledSolid final {
 };
 
 struct CompiledSystem final {
+    std::optional<core::Convergence> first_numerical_failure;
+    std::vector<core::NumericalRank> rank_records;
+    bool diagnostics_incomplete = false;
     std::optional<core::NumericalRank> last_rank;
     std::vector<double> optimizer_identity() const;
     const HelmholtzModel* model = nullptr;
@@ -374,7 +377,8 @@ struct CompiledSystem final {
 
     // State-only preparation differentiates V, support amounts and T when free (phase Hessians);
     // fixed controls and active parameters are padding. Sensitivity and lever callers need full.
-    PhasePoint prepare(const std::vector<double>& point, bool state_only = false) const;
+    PhasePoint prepare(const std::vector<double>& point, bool state_only = false,
+        std::optional<core::Convergence>* first_numerical_failure = nullptr) const;
     PointEvaluation evaluate(const std::vector<double>& point) const;
     // Residuals that classify a solve: for a free-amount (Gibbs) cell the chemical and
     // pressure rows are scaled by N_p x_i / N_feed and N_p / N_feed, the first-order
@@ -507,7 +511,29 @@ struct LinearSolveDiagnostics final {
     std::size_t precision_bits = std::numeric_limits<double>::digits, refinement_iterations = 0;
 };
 
+struct IpoptIteration final {
+    int mode = 0, iteration = 0, line_search_trials = 0;
+    double objective = 0, inf_pr = 0, inf_du = 0, mu = 0, step_norm = 0, regularization = 0, alpha_du = 0, alpha_pr = 0;
+};
+struct IpoptPoint final {
+    std::vector<double> tnlp_coordinates, coordinate_scale, tnlp_lower_multipliers, tnlp_upper_multipliers, tnlp_constraint_multipliers;
+    std::shared_ptr<const EquilibriumProblem> declaration;
+    std::vector<Row> rows;
+    std::vector<std::size_t> constraint_rows;
+    double objective_factor = 0;
+};
+struct IpoptDiagnostics final {
+    std::optional<IpoptIteration> last;
+    std::optional<int> first_restoration_iteration, initialization_return, application_return;
+    std::size_t restoration_entries = 0, callbacks = 0;
+    bool warm_initialized = false, predicted = false, physical_amounts = false, incomplete = false;
+    std::optional<IpoptPoint> failed_point;
+};
 struct EquilibriumResult final {
+    std::optional<core::Convergence> first_numerical_failure;
+    std::vector<core::NumericalRank> rank_records;
+    std::optional<IpoptDiagnostics> ipopt_diagnostics, recovered_ipopt_diagnostics;
+    bool diagnostics_incomplete = false;
     std::optional<core::NumericalRank> last_rank;
     std::map<std::string, double> solver_settings;
     std::string diagnostic_options_file, linear_solver;  // linear_solver: empty when no Ipopt solve ran
@@ -588,6 +614,8 @@ struct StabilityTrial final {
     bool resolved_descent = false;
 };
 struct StabilityReport final {
+    std::optional<core::Convergence> first_numerical_failure;
+    std::optional<core::NumericalRank> last_rank;
     bool completed = false;
     std::string message;
     std::vector<StabilityTrial> trials;
@@ -631,7 +659,7 @@ std::map<std::string, double> effective_water_amounts(const IdealMoleFraction&, 
 struct DriverLimits;
 EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::optional<EquilibriumResult>& start = std::nullopt,
                                  core::Scope* outer = nullptr, const DriverLimits* limits = nullptr,
-                                 std::shared_ptr<const OptimizerState> warm = {}, bool recover = false);
+                                 std::shared_ptr<const OptimizerState> warm = {}, bool recover = false, EquilibriumResult* audit = nullptr);
 
 // ---- Solved-state derivative actions: native records, no public promise.
 

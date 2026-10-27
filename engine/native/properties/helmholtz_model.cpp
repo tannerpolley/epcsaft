@@ -998,8 +998,9 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
     require(positive_vector(diameter), "segment diameter");
     require_law_domain(temperature, parameters_);
     core::Convergence site_record;
+    std::optional<core::Convergence> first;
     const auto sites = solve_site_fractions(
-        temperature, density, composition, parameters_, sigma, diameter, &site_record, nullptr, nullptr, false, solver_options_
+        temperature, density, composition, parameters_, sigma, diameter, &site_record, nullptr, nullptr, false, solver_options_, &first
     );
     // The gradient floor propagates the achieved site residual, not the site tolerance.
     const double site_residual = std::max(site_record.residual, site_record.floor.value_or(0.0));
@@ -1030,6 +1031,7 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
     const auto values = tape_->forward_zero(full_point, &counters_.forward);
     tape_->site_values = sites;
     HelmholtzDerivatives result;
+    core::retain_first(result.first_numerical_failure, first);
     result.site_fractions = sites;
     result.value = values.front();
     scope.probe("residual_helmholtz_extensive", result.value);
@@ -1725,6 +1727,7 @@ PropertyActionBatch HelmholtzModel::directional_actions(
     const auto ideal_status = !need_ideal || ideal_available ? PropertyActionStatus::Available
         : !record_missing ? PropertyActionStatus::OutsideInterval
         : PropertyActionStatus::MissingThermochemistry;
+    std::optional<core::Convergence> first;
     PropertyActionStatus association_status = PropertyActionStatus::Available;
     std::vector<double> sites, sigma, diameter;
     if (need_residual) {
@@ -1735,14 +1738,16 @@ PropertyActionBatch HelmholtzModel::directional_actions(
         require_law_domain(temperature, parameters_);
         try {
             sites = solve_site_fractions(temperature, molar_density, mole_fractions,
-                parameters_, sigma, diameter, nullptr, nullptr, nullptr, false, solver_options_);
-        } catch (const core::ConvergenceFailure&) {
+                parameters_, sigma, diameter, nullptr, nullptr, nullptr, false, solver_options_, &first);
+        } catch (const core::ConvergenceFailure& error) {
+            core::retain_failure(first, error, "density action association");
             need_residual = false;
             association_status = PropertyActionStatus::CentralPropertyUnavailable;
         }
     }
     const auto signature = predicate_signature(temperature, mole_fractions, ideal_available);
     PropertyActionBatch result;
+    core::retain_first(result.diagnostics.first_numerical_failure, first);
     result.diagnostics.recordings = ensure_tape(point, sites, signature,
         ideal_available ? correlations : std::vector<IdealCorrelation>{},
         ideal_available ? thermochemistry_->standard_pressure : 0.0, need_residual) ? 1 : 0;
@@ -1943,6 +1948,9 @@ PropertyActionBatch HelmholtzModel::directional_actions(
     }
     if (root != nullptr) {
         result.diagnostics.pressure_density_derivative = root->pressure_density_derivative;
+        auto first = root->first_numerical_failure;
+        core::retain_first(first, result.diagnostics.first_numerical_failure);
+        result.diagnostics.first_numerical_failure = std::move(first);
         result.diagnostics.stability_determinant = root->pressure_density_derivative
             / (GAS_CONSTANT_J_PER_MOL_K * temperature);
         result.diagnostics.pressure_residual = root->pressure_residual;
@@ -1998,6 +2006,11 @@ PropertyActionBatch HelmholtzModel::pressure_actions(
         batch.density_status = PropertyActionStatus::DensityUnavailable;
         batch.solver_options = solver_options_;
         batch.density_message = error.what();
+        core::retain_failure(batch.diagnostics.first_numerical_failure, error, "density closure");
+        if (const auto* structure = dynamic_cast<const DensityStructureError*>(&error)) {
+            batch.density_convergence = structure->first_numerical_failure;
+            core::retain_first(batch.diagnostics.first_numerical_failure, structure->first_numerical_failure);
+        }
         batch.density_structure_refused = dynamic_cast<const DensityStructureError*>(&error) != nullptr;
         if (const auto* failure = dynamic_cast<const core::ConvergenceFailure*>(&error))
             batch.density_convergence = failure->record;
@@ -2154,6 +2167,7 @@ State HelmholtzModel::state(
     const double cv_over_r = -2.0 * temperature * phi_t
         - temperature * temperature * derivatives.hessian[0];
     State result;
+    core::retain_first(result.first_numerical_failure, derivatives.first_numerical_failure);
     result.solver_options = solver_options_;
     result.hard_chain = terms.hard_chain;
     result.dispersion = terms.dispersion;
@@ -2346,6 +2360,9 @@ State HelmholtzModel::state_at_pressure(
             (*result.log_fugacity_coefficient)[i] = *result.residual_chemical_potential_over_rt[i] - log_z;
     }
     result.density_convergence = root.convergence;
+    auto first = root.first_numerical_failure;
+    core::retain_first(first, result.first_numerical_failure);
+    result.first_numerical_failure = std::move(first);
     result.density_branch = root.branch;
     result.requested_density_branch = branch;
     result.stable_root_count = root.stable_root_count;

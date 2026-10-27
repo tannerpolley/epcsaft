@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/convergence.hpp"
+#include "core/declared.hpp"
 
 #include <chrono>
 #include <cstddef>
@@ -31,15 +32,50 @@ struct Span final {
     bool completed = false;
 };
 
+struct IpoptLog final {
+    std::string destination, error;
+    bool attempted = false;
+    std::shared_ptr<void> application;
+};
+
 struct Trace final {
     std::vector<Span> spans;
     std::vector<Event> events;
     std::optional<std::uint32_t> current;
     bool diagnostics = false;
     bool incomplete = false;
+    std::shared_ptr<IpoptLog> ipopt_log;
 };
 
 Trace*& current_trace() noexcept;
+
+template<class Observation> bool observe_diagnostic(Observation&& observation) noexcept {
+    try { observation(); return true; }
+    catch (...) { if (current_trace()) current_trace()->incomplete = true; return false; }
+}
+inline void retain_first(std::optional<Convergence>& first, const std::optional<Convergence>& next) noexcept {
+    if (!next || first) return;
+    if (!observe_diagnostic([&] { first = next; })) {
+        first.emplace(); first->incomplete = true;
+    }
+}
+inline void retain_failure(std::optional<Convergence>& first, const std::exception& error, const char* operation) noexcept {
+    if (first) return;
+    if (!observe_diagnostic([&] {
+        Convergence record;
+        if (const auto* c = dynamic_cast<const ConvergenceFailure*>(&error)) record = c->first_numerical_failure.value_or(c->record);
+        else if (const auto* d = dynamic_cast<const DeclarationError*>(&error); d && d->record) record = *d->record;
+        if (record.cause.empty()) record.cause = std::string(operation) + ": " + error.what();
+        first = std::move(record);
+    })) { first.emplace(); first->incomplete = true; }
+}
+inline bool retain_rank(std::vector<NumericalRank>& records, const NumericalRank& rank) noexcept {
+    return observe_diagnostic([&] {
+        for (auto& r : records) if (r.basis == rank.basis) { r = rank; return; }
+        records.push_back(rank);
+    });
+}
+
 
 template <typename Observation>
 void observe(Trace* trace, Observation&& observation) noexcept {
@@ -49,17 +85,20 @@ void observe(Trace* trace, Observation&& observation) noexcept {
 
 class Capture final {
 public:
-    explicit Capture(std::optional<bool> diagnostics = std::nullopt) noexcept : previous_(current_trace()) {
+    explicit Capture(std::optional<bool> diagnostics = std::nullopt, const std::string& ipopt_log = {}) noexcept : previous_(current_trace()) {
+        if (!ipopt_log.empty()) observe_diagnostic([&] { trace_.ipopt_log = std::make_shared<IpoptLog>(); trace_.ipopt_log->destination = ipopt_log; });
+        else if (previous_) trace_.ipopt_log = previous_->ipopt_log;
         trace_.diagnostics = diagnostics ? *diagnostics : previous_ && previous_->diagnostics;
         parent_ = trace_.diagnostics && previous_ ? previous_->current : std::nullopt;
         current_trace() = &trace_;
     }
-    ~Capture() { forward(); current_trace() = previous_; }
+    ~Capture() { close_log(); forward(); current_trace() = previous_; }
     Capture(const Capture&) = delete;
     Capture& operator=(const Capture&) = delete;
 
     const Trace& trace() const noexcept { return trace_; }
     Trace take() noexcept {
+        close_log();
         forward();
         Trace result = std::move(trace_);
         trace_ = {};
@@ -72,6 +111,9 @@ private:
     Trace* previous_;
     std::optional<std::uint32_t> parent_;
     bool forwarded_ = false;
+    void close_log() noexcept {
+        if (trace_.ipopt_log && (!previous_ || previous_->ipopt_log != trace_.ipopt_log)) trace_.ipopt_log->application.reset();
+    }
     void forward() noexcept {
         if (forwarded_ || !trace_.diagnostics || !previous_ || !previous_->diagnostics) return;
         forwarded_ = true;
