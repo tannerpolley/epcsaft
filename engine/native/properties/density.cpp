@@ -49,10 +49,10 @@ struct DensityPartition final {
     std::map<double, PressurePoint> samples;
     std::size_t evaluations = 0, intervals = 0, stable = 0;
     bool active = false;
-    DensityStructureError refused(const std::string& cause_now) const {
+    DensityStructureError refused(const std::string& cause_now, const std::optional<core::Convergence>& first) const {
         return DensityStructureError(cause + "; enumeration interval=[" + core::optional_number(lower) + "," + core::optional_number(upper)
             + "] mol/m3; cells=" + std::to_string(intervals) + "; stable=" + std::to_string(stable)
-            + "; evaluations=" + std::to_string(evaluations) + "; unresolved: " + cause_now);
+            + "; evaluations=" + std::to_string(evaluations) + "; unresolved: " + cause_now, first);
     }
 
 };
@@ -104,6 +104,7 @@ public:
                 parameters_.association_active.begin() + static_cast<std::ptrdiff_t>((a + 1) * sites), [](int v) { return v != 0; }) == 1;
     }
     mutable std::optional<DensityPartition> partition;
+    mutable std::optional<core::Convergence> first_numerical_failure;
     const policy::SolverOptions& solver_options() const { return model_.solver_options(); }
     const HelmholtzModel& model() const { return model_; }
 
@@ -137,14 +138,15 @@ public:
             }
         }
         core::Convergence record;
-        const auto sites = [&] {
+        const auto sites = [&]() -> std::vector<double> { try {
             if (strength.empty()) return std::vector<double>{};
             const auto* seed = !pairs_ && start != nullptr && start->size() == parameters_.site_component.size() ? start : nullptr;
             if constexpr (std::is_same_v<Base, double>)
-                return solve_site_fractions(temperature_, rho0, composition_, parameters_, sigma_, diameter_, &record, seed, &strength, true, solver_options());
+                return solve_site_fractions(temperature_, rho0, composition_, parameters_, sigma_, diameter_, &record, seed, &strength, true, solver_options(), &first_numerical_failure);
             else return solve_site_fractions(static_cast<double>(temperature_), static_cast<double>(rho0),
                 {composition_.begin(), composition_.end()}, model_.parameters(), {sigma_.begin(), sigma_.end()},
-                {diameter_.begin(), diameter_.end()}, &record, seed, &strength, true, solver_options());
+                {diameter_.begin(), diameter_.end()}, &record, seed, &strength, true, solver_options(), &first_numerical_failure);
+        } catch (const std::exception& error) { core::retain_failure(first_numerical_failure, error, "density association"); throw; }
         }();
         site_series.assign(sites.begin(), sites.end());
         floor = 0.0;
@@ -623,7 +625,7 @@ std::vector<DensityRoot> scan_roots(
             interruptions += "node " + std::to_string(index) + " rho "
                 + core::optional_number(density) + ": " + error.what() + "\n";
             if (!association)
-                throw std::runtime_error("density scan interrupted by association: " + interruptions);
+                throw DensityStructureError("density scan interrupted by association: " + interruptions, model.first_numerical_failure);
             linked = false;
             continue;
         }
@@ -632,7 +634,7 @@ std::vector<DensityRoot> scan_roots(
         linked = true;
     }
     if (!interruptions.empty())
-        throw std::runtime_error("density scan interrupted by association: " + interruptions);
+        throw DensityStructureError("density scan interrupted by association: " + interruptions, model.first_numerical_failure);
     if (!model.partition) search_slope(model, temperature, pressure, composition, points, scope, evaluations);
     auto roots = partition_roots(model, temperature, pressure, composition, points, scope, evaluations);
     if (model.partition) {
@@ -645,7 +647,7 @@ std::vector<DensityRoot> scan_roots(
     }
     return roots;
 } catch (const std::exception& error) {
-    if (model.partition && dynamic_cast<const DensityStructureError*>(&error) == nullptr) throw model.partition->refused(error.what());
+    if (model.partition && dynamic_cast<const DensityStructureError*>(&error) == nullptr) throw model.partition->refused(error.what(), model.first_numerical_failure);
     throw;
 }
 
@@ -1171,10 +1173,13 @@ DensityRoot anchor(
         anchor_record.stop = core::classify(anchor_record.residual, *anchor_record.criterion,
             anchor_record.floor, anchor_record.contraction, true, anchor_record.amplification);
     }
+    anchor_record.cause = "density anchor branch " + std::to_string(static_cast<int>(branch))
+        + "; anchor " + core::optional_number(std::exp(log_anchor)) + "; window [" + core::optional_number(local_lower)
+        + "," + core::optional_number(local_upper) + "] mol/m3";
     anchor_scope.finish(anchor_record);
-    throw core::ConvergenceFailure(anchor_record);
+    throw core::ConvergenceFailure(anchor_record, model.first_numerical_failure);
 } catch (const std::exception& error) {
-    if (model.partition && dynamic_cast<const DensityStructureError*>(&error) == nullptr) throw model.partition->refused(error.what());
+    if (model.partition && dynamic_cast<const DensityStructureError*>(&error) == nullptr) throw model.partition->refused(error.what(), model.first_numerical_failure);
     throw;
 }
 
@@ -1380,6 +1385,7 @@ DensityDiagnostics HelmholtzModel::density_diagnostics(
     }
     for (auto* roots : {&result.pressure_roots, &result.spinodals})
         std::sort(roots->begin(), roots->end(), [](const auto& a, const auto& b) { return a.molar_density < b.molar_density; });
+    core::retain_first(result.first_numerical_failure, series.first_numerical_failure);
     return result;
 }
 
@@ -1391,7 +1397,9 @@ PureIsothermalValues<Base> HelmholtzModel::pure_isothermal(Base temperature, Bas
     PureIsothermalValues<Base> result;
     auto& d = result.derivative;
     std::vector<Base> sites;
-    const auto energy = PressureSeries<Base>(*this, temperature, {amount}).template residual<2>(1.0 / volume, d.gradient_floor, nullptr, &sites);
+    const PressureSeries<Base> series(*this, temperature, {amount});
+    const auto energy = series.template residual<2>(1.0 / volume, d.gradient_floor, nullptr, &sites);
+    core::retain_first(d.first_numerical_failure, series.first_numerical_failure);
     if (!std::all_of(energy.c.begin(), energy.c.end(), [](Base v) { return std::isfinite(v); }))
         throw std::runtime_error("nonfinite pure isothermal derivatives");
     const std::size_t width = 3 + active_.size();
@@ -1489,6 +1497,9 @@ DensityRoot solve_density(
             if (!(*anchor_density > lower && *anchor_density < upper)) {
                 core::Convergence record{0.0, model.solver_options().criterion(policy::density), std::nullopt,
                     std::nullopt, std::nullopt, 0, evaluations, core::Stop::left_domain, model.solver_options().owners[policy::density]};
+                record.cause = "density anchor outside " + std::to_string(static_cast<int>(branch))
+                    + " domain; anchor=" + core::optional_number(*anchor_density) + "; lower=" + core::optional_number(lower)
+                    + "; upper=" + core::optional_number(upper);
                 throw core::ConvergenceFailure(record);
             }
             result = anchor(series, temperature, pressure, mole_fractions, branch, lower, upper,
@@ -1553,7 +1564,7 @@ DensityRoot solve_density(
         }
         scope.probe("stable_root_count", static_cast<double>(count));
         if (series.partition && (stable.empty() || (count > 1 && branch == DensityBranch::Unspecified)))
-            throw series.partition->refused("branch ambiguous or not established by finite search; stable=" + std::to_string(count));
+            throw series.partition->refused("branch ambiguous or not established by finite search; stable=" + std::to_string(count), series.first_numerical_failure);
         if (count > 1 && branch == DensityBranch::Unspecified)
             throw std::runtime_error("density root is ambiguous (stable count "
                                      + std::to_string(count) + ")");
@@ -1577,6 +1588,8 @@ DensityRoot solve_density(
         if (sibling_root) sibling_root->convergence.evaluations = evaluations;
     }
     scope.probe("density_root", result.molar_density);
+    core::retain_first(result.first_numerical_failure, series.first_numerical_failure);
+    if (sibling_root) core::retain_first(sibling_root->first_numerical_failure, series.first_numerical_failure);
     scope.finish(result.convergence);
     return result;
 

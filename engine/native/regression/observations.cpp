@@ -798,7 +798,7 @@ std::vector<PredictionGradient> differentiate_group(
         const auto phase = observation.phase;
         const double* fractions = solved ? solved->mole_fractions.data() + phase * components : nullptr;
         bool missing_mass = false;
-        const double mass = observation.mass_basis ? mean_molar_mass(parameters, fractions, missing_mass) : 1.0;
+        const double mass = solved && observation.mass_basis ? mean_molar_mass(parameters, fractions, missing_mass) : 1.0;
         auto& gradient = gradients[row];
         gradient.value.assign(width, 0.0);
         gradient.status = ObservationStatus::Available;

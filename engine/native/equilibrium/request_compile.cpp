@@ -1101,7 +1101,8 @@ ReferenceCalorics reference_calorics(const CompiledSystem &compiled, double temp
          (charge.norm() == 0.0 ||
           (matrix * charge).norm() > std::sqrt(std::numeric_limits<double>::epsilon()) * charge.norm())))
         return refuse(SolvedStateActionStatus::ReferenceUnavailable,
-                      "record-less calorics undetermined beyond charge gauge");
+                      "record-less calorics undetermined beyond charge gauge; rank " + std::to_string(decomposition.rank())
+                      + "/" + std::to_string(derived.size()) + "; threshold " + core::optional_number(decomposition.threshold()));
     result.reaction_map.assign(rows, std::vector<double>(components, 0.0));
     for (std::size_t r = 0; r < rows; ++r) {
         Eigen::VectorXd unit = Eigen::VectorXd::Zero(rows);
@@ -1194,7 +1195,11 @@ ReferenceCalorics reference_calorics(const CompiledSystem &compiled, double temp
                                                                std::max(1.0, scale(r)))) {
                                 column.status = SolvedStateActionStatus::ReferenceUnavailable;
                                 column.message = "supplied records inconsistent with reaction " +
-                                                 reaction_name(problem.reactions[r], r);
+                                                 reaction_name(problem.reactions[r], r)
+                                    + "; residual " + core::optional_number(std::abs(residual(r)))
+                                    + "; criterion " + core::optional_number(std::sqrt(std::numeric_limits<double>::epsilon()) * std::max(1.0, scale(r)));
+                                if (!derived.empty()) column.message += "; reference_completion rank " + std::to_string(decomposition.rank())
+                                    + "/" + std::to_string(derived.size()) + "; threshold " + core::optional_number(decomposition.threshold());
                             }
                         for (std::size_t j = 0; j < derived.size(); ++j)
                             column.values[derived[j]] = solution(j);
@@ -1279,7 +1284,7 @@ static CompiledSystem compile_with_basis(
         compiled.declared_supports.push_back(omitted ? all : phase.support);
         if (omitted && phase.composition_guess.size() == components) restrict_composition_guess(phase, all);
     }
-    compiled.B = trial_basis ? *trial_basis : balance_basis(components, request.reactions);
+    compiled.B = trial_basis ? *trial_basis : balance_basis(components, request.reactions, &compiled);
     // An azeotrope cell's B' = T B makes the last row the total amount, the only balance row it keeps.
     if (request.azeotrope && request.reactions.empty()) compiled.B.back().assign(components, 1.0);
     compiled.rank = compiled.B.size();
@@ -1429,7 +1434,7 @@ static CompiledSystem compile_with_basis(
         model, request, temperature_guess, pressure_guess,
         compiled.reference_diagnostics, false);
     // central_reference_reactions refuses supplied standard Gibbs with a source reference.
-    compiled.standard_gibbs = standard_state(temperature_guess, components, central_reactions, request.standard_gibbs_j_per_mol, model.thermochemistry() ? &*model.thermochemistry() : nullptr);
+    compiled.standard_gibbs = standard_state(temperature_guess, components, central_reactions, request.standard_gibbs_j_per_mol, model.thermochemistry() ? &*model.thermochemistry() : nullptr, &compiled);
     admit_solids(compiled, covered);
     for (std::size_t row = request.azeotrope ? compiled.B.size() - 1 : 0; row < compiled.B.size(); ++row)
         compiled.rows.push_back({RowKind::Moiety, 0, row});
@@ -1527,7 +1532,7 @@ CompiledSystem compile_problem(const IdealMoleFraction& model, const Equilibrium
     for (double& value : c.feed_composition) value /= c.feed_total;
     const std::vector<double> z(model.charge_number.begin(), model.charge_number.end());
     if (!exact_zero_dot(z, c.n_feed)) throw std::invalid_argument("ideal feed carries net z");
-    c.B = balance_basis(c.n_feed.size(), request.reactions);
+    c.B = balance_basis(c.n_feed.size(), request.reactions, &c);
     c.rank = c.B.size(); c.balance = matvec(c.B, c.n_feed);
     c.has_reaction = !request.reactions.empty();
     c.has_ions = std::any_of(z.begin(), z.end(), [](double value) { return value != 0.0; });
@@ -1596,6 +1601,7 @@ CompiledSystem compile_stability_trial(const HelmholtzModel& model, double T, do
     physical.row(0).setOnes();
     if (has_charge) for (std::size_t i = 0; i < support.size(); ++i) physical(1, i) = z[support[i]];
     std::vector<std::vector<double>> B;
+    std::vector<core::NumericalRank> ranks;
     transformation.clear();
     if (has_charge && phase.kind == PhaseKind::Vapor) {
         B.assign(2, std::vector<double>(w.size(), 0.0));
@@ -1604,7 +1610,9 @@ CompiledSystem compile_stability_trial(const HelmholtzModel& model, double T, do
         }
         transformation = {{1.0, 0.0}, {0.0, 1.0}};
     } else {
-        const Eigen::MatrixXd kernel = physical.fullPivLu().kernel();
+        const auto factor = physical.fullPivLu();
+        core::retain_rank(ranks, factor, "trial_normalization_charge");
+        const Eigen::MatrixXd kernel = factor.kernel();
         std::vector<ReactionSpec> directions;
         if (support.size() > static_cast<std::size_t>(physical.rows())) {
             for (Eigen::Index j = 0; j < kernel.cols(); ++j) {
@@ -1620,7 +1628,9 @@ CompiledSystem compile_stability_trial(const HelmholtzModel& model, double T, do
         B.assign(reduced.size(), std::vector<double>(w.size(), 0.0));
         for (std::size_t k = 0; k < B.size(); ++k) {
             for (std::size_t i = 0; i < support.size(); ++i) B[k][support[i]] = reduced[k][i];
-            const Eigen::VectorXd coefficients = physical.transpose().colPivHouseholderQr().solve(
+            const auto transform = physical.transpose().colPivHouseholderQr();
+            core::retain_rank(ranks, transform, "trial_basis_transform");
+            const Eigen::VectorXd coefficients = transform.solve(
                 Eigen::Map<const Eigen::VectorXd>(reduced[k].data(), reduced[k].size()));
             transformation.emplace_back(coefficients.data(), coefficients.data() + coefficients.size());
         }
@@ -1632,7 +1642,9 @@ CompiledSystem compile_stability_trial(const HelmholtzModel& model, double T, do
     request.phases[0].amount = AmountSpec::free();
     request.solver_options.values[policy::row] = policy::EQUILIBRIUM_ROW_RESIDUAL.value;
     for (double coefficient : c) request.standard_gibbs_j_per_mol.push_back(coefficient * GAS_CONSTANT_J_PER_MOL_K * T);
-    return compile_with_basis(model, request, &B);
+    auto compiled = compile_with_basis(model, request, &B);
+    for (const auto& r : ranks) core::retain_rank(compiled.rank_records, r);
+    return compiled;
 }
 
 std::vector<double> CompiledSystem::generic_point() const {
@@ -1680,7 +1692,8 @@ std::vector<std::size_t> CompiledSystem::phase_offsets() const {
     return result;
 }
 
-PhasePoint CompiledSystem::prepare(const std::vector<double>& point, bool state_only) const {
+PhasePoint CompiledSystem::prepare(const std::vector<double>& point, bool state_only,
+    std::optional<core::Convergence>* first_numerical_failure) const {
     core::Scope scope("equilibrium_prepare");
     if (point.size() < primal_size) {
         throw std::invalid_argument("equilibrium point is too short");
@@ -1733,6 +1746,7 @@ PhasePoint CompiledSystem::prepare(const std::vector<double>& point, bool state_
             result.pure.push_back(model->pure_isothermal(result.temperature, result.volume.back(), total));
             result.derivative.push_back(result.pure.back().derivative);
         } else result.derivative.push_back(model->evaluate(result.temperature, result.volume.back(), values, order));
+        if (first_numerical_failure) core::retain_first(*first_numerical_failure, result.derivative.back().first_numerical_failure);
         scope.probe("gradient_floor", result.derivative.back().gradient_floor,
                     static_cast<std::uint32_t>(phase));
         result.composition.push_back(std::move(values));

@@ -80,7 +80,7 @@ bool one_component_two_density_eligible(const CompiledSystem& c) {
 }
 
 // EqID one_component_two_density: eliminate normalization, feed, P and the common chemical multiplier.
-OneComponentTwoDensityPoint one_component_two_density_point(const CompiledSystem& c, const std::vector<double>& u) {
+OneComponentTwoDensityPoint one_component_two_density_point(const CompiledSystem& c, const std::vector<double>& u, std::optional<core::Convergence>* first) {
     if (u.size() != 2 || !std::all_of(u.begin(), u.end(), [](double v) { return std::isfinite(v); }))
         throw std::invalid_argument("nonfinite pure log densities");
     const auto offsets = c.phase_offsets();
@@ -96,7 +96,7 @@ OneComponentTwoDensityPoint one_component_two_density_point(const CompiledSystem
     }
     if (!(u[liquid] > u[vapor])) throw std::domain_error("one-component two-density density ordering");
     OneComponentTwoDensityPoint out;
-    out.phase = c.prepare(point, true);
+    out.phase = c.prepare(point, true, first);
     auto& at = out.phase;
     const auto& v = at.pure[vapor];
     const auto reduced = reduction(at.pure, at.volume, u, liquid, at.temperature);
@@ -134,7 +134,7 @@ EquilibriumResult one_component_two_density_attempt(const CompiledSystem& c, con
                 if (!limits->spend(limits->evaluations, limits->evaluation_cap)) throw std::runtime_error("one-component two-density evaluation budget");
             }
             ++result.evaluations;
-            return one_component_two_density_point(c, logs);
+            return one_component_two_density_point(c, logs, &result.first_numerical_failure);
         };
         auto at = evaluate(u);
         const double tolerance = c.problem.solver_options.value(policy::row);
@@ -237,7 +237,7 @@ EquilibriumResult one_component_two_density_attempt(const CompiledSystem& c, con
                         if (!(logs[liquid] - logs[1 - liquid] > 2 * error)) throw std::runtime_error("one-component two-density unresolved density intervals");
                         if (limits && !limits->spend(limits->evaluations, limits->evaluation_cap)) throw std::runtime_error("one-component two-density evaluation budget");
                         ++result.evaluations;
-                        at.phase = c.prepare(lift(logs, vapor).point, true);
+                        at.phase = c.prepare(lift(logs, vapor).point, true, &result.first_numerical_failure);
                         std::vector<Wide> exported; Wide displacement = 0;
                         for (std::size_t p = 0; p < 2; ++p) {
                             exported.push_back(std::log(Wide(1.0 / at.phase.volume[p])));

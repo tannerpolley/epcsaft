@@ -1,5 +1,6 @@
 #pragma once
 #include "core/convergence.hpp"
+#include "core/trace.hpp"
 #if __has_include(<HSLLoader.h>)
 #include <HSLLoader.h>
 #endif
@@ -106,7 +107,25 @@ inline std::pair<Ipopt::ApplicationReturnStatus, Ipopt::ApplicationReturnStatus>
     const char* options_file = std::getenv("EPCSAFT_IPOPT_OPTIONS_FILE");
     // Clones share this thread's option registry and journalist (#646); an options file's output_file must not.
     thread_local const Ipopt::SmartPtr<Ipopt::IpoptApplication> base = ::IpoptApplicationFactory();
-    const Ipopt::SmartPtr<Ipopt::IpoptApplication> app = options_file && *options_file ? ::IpoptApplicationFactory() : base->clone();
+    Ipopt::SmartPtr<Ipopt::IpoptApplication> logged;
+    if (auto* trace = core::current_trace(); trace && trace->ipopt_log) {
+        auto& request = *trace->ipopt_log;
+        using Application = Ipopt::SmartPtr<Ipopt::IpoptApplication>;
+        if (!request.attempted) {
+            request.attempted = true;
+            auto holder = std::make_shared<Application>(::IpoptApplicationFactory());
+            if ((*holder)->OpenOutputFile(request.destination, Ipopt::J_ALL)) {
+                (*holder)->Jnlst()->GetJournal("OutputFile:" + request.destination)->SetPrintLevel(Ipopt::J_MAIN, Ipopt::J_ITERSUMMARY);
+                request.application = std::move(holder);
+            } else {
+                request.error = "Ipopt log could not be opened";
+                trace->incomplete = true;
+            }
+        }
+        if (request.application) logged = *std::static_pointer_cast<Application>(request.application);
+    }
+    const Ipopt::SmartPtr<Ipopt::IpoptApplication> app = options_file && *options_file ? ::IpoptApplicationFactory()
+        : Ipopt::IsValid(logged) ? logged->clone() : base->clone();
     const auto options = app->Options();
     const auto admit = [](bool ok) { if (!ok) throw std::invalid_argument("Ipopt option rejected"); };
     admit(options->SetIntegerValue("print_level", 0));

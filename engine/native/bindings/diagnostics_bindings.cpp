@@ -19,7 +19,8 @@ struct CaptureWrapper final {
     std::optional<epcsaft::core::Capture> capture;
     std::optional<epcsaft::core::Trace> captured;
     bool diagnostics = false;
-    explicit CaptureWrapper(bool detail) : diagnostics(detail) {}
+    std::string ipopt_log;
+    CaptureWrapper(bool detail, std::string destination) : diagnostics(detail), ipopt_log(std::move(destination)) {}
 };
 
 nb::object tolerance_reference(const epcsaft::policy::Tolerance& tolerance) {
@@ -53,7 +54,7 @@ void register_diagnostics(nb::module_& module) {
             // A value copy outlives the record that may own a caller-valued criterion.
             return nb::cast(*record.criterion);
         })
-        EPCSAFT_READONLY(core::Convergence, residual, floor, amplification, contraction, iterations, evaluations, stop)
+        EPCSAFT_READONLY(core::Convergence, residual, floor, amplification, contraction, iterations, evaluations, stop, cause, rank, backward_error)
         .def_prop_ro("residual_over_criterion", [](const core::Convergence& record) -> nb::object {
             if (record.criterion == nullptr) return nb::none();
             return nb::float_(record.residual / record.criterion->value);
@@ -70,12 +71,13 @@ void register_diagnostics(nb::module_& module) {
     nb::class_<core::Span>(module, "Span")
         EPCSAFT_READONLY(core::Span, name, parent, convergence, wall_us);
     nb::class_<core::Trace>(module, "Trace")
-        EPCSAFT_READONLY(core::Trace, spans, events, current, incomplete);
+        EPCSAFT_READONLY(core::Trace, spans, events, current, incomplete)
+        .def_prop_ro("ipopt_log_error", [](const core::Trace& t) { return t.ipopt_log ? t.ipopt_log->error : std::string{}; });
     nb::class_<CaptureWrapper>(module, "Capture")
-        .def(nb::init<bool>(),
-             nb::arg("diagnostics") = false)
+        .def(nb::init<bool, std::string>(),
+             nb::arg("diagnostics") = false, nb::arg("ipopt_log") = "")
         .def("__enter__", [](CaptureWrapper& wrapper) -> CaptureWrapper& {
-            wrapper.capture.emplace(wrapper.diagnostics);
+            wrapper.capture.emplace(wrapper.diagnostics, wrapper.ipopt_log);
             wrapper.captured.reset();
             return wrapper;
         }, nb::rv_policy::reference_internal)

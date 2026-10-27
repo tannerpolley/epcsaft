@@ -41,7 +41,9 @@ void validate_correlation(const ReactionLogPolynomial& correlation) {
 void validate_correlation_temperature(const ReactionLogPolynomial& correlation, double temperature) {
     validate_correlation(correlation);
     if (!std::isfinite(temperature) || temperature < correlation.temperature_min || temperature > correlation.temperature_max)
-        throw std::invalid_argument("temperature outside reaction correlation");
+        throw std::invalid_argument("temperature outside reaction correlation; T=" + std::to_string(temperature)
+            + " K; interval=[" + std::to_string(correlation.temperature_min) + ","
+            + std::to_string(correlation.temperature_max) + "] K");
 }
 ReactionProperties make_reaction_properties(
     double ln_k, double derivative, double enthalpy, const std::string& identity,

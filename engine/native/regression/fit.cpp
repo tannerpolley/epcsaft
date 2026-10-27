@@ -325,6 +325,11 @@ const int native_image = open_image(reinterpret_cast<const void*>(&interrupted))
 // Every member of a request aggregate in declaration order, named by position: the structured binding stops
 // compiling when a member is added or removed, so a worker's request cannot silently omit one.
 #define FIELDS(T, ...) auto fields(T& item) { auto& [__VA_ARGS__] = item; return std::tie(__VA_ARGS__); }
+FIELDS(ResidualEnergyAction, action, status, diagnostics)
+FIELDS(PropertyActionDiagnostics, site_rank, site_factorizations, site_solves, site_pivot_ratio, association_residual,
+    pressure_density_derivative, pressure_residual, stability_determinant, pressure_factorizations, pressure_solves, thermal_evaluations,
+    recordings, directional_paths, forward_sweeps, branch, stable_root_count, first_numerical_failure)
+FIELDS(core::NumericalRank, basis, dimension, rank, threshold)
 FIELDS(FixedParameters, ideal_gas, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z, A, B, C, D, E, F, G, H)
 FIELDS(IdealPolynomial, a, b, c, d)
 FIELDS(IdealCorrelation, a, b)
@@ -372,6 +377,21 @@ struct Wire final {
     template <class T> void one(T& value) {
         if constexpr (std::is_trivially_copyable_v<T>) bytes(&value, sizeof(T));
         else std::apply(*this, fields(value));
+    }
+    void one(core::Convergence& v) {
+        (*this)(v.residual, v.floor, v.amplification, v.contraction, v.iterations, v.evaluations,
+            v.stop, v.cause, v.rank, v.backward_error);
+        std::string name = v.criterion ? v.criterion->name : "";
+        double target = v.criterion ? v.criterion->value : 0;
+        (*this)(name, target);
+        if (!out) {
+            v.criterion = nullptr; v.criterion_owner.reset();
+            for (const auto* entry : policy::ENTRIES) if (name == entry->name) {
+                auto owned = std::make_shared<policy::Tolerance>(*entry); owned->value = target;
+                v.criterion = owned.get(); v.criterion_owner = std::move(owned); break;
+            }
+            if (!name.empty() && !v.criterion) throw std::runtime_error("fit worker criterion name");
+        }
     }
     void one(policy::SolverOptions& options) { for (auto& v : options.values) one(v); }
     template <class T, std::size_t N> void one(std::array<T, N>& values) { for (auto& v : values) one(v); }

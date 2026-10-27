@@ -9,15 +9,17 @@
 
 namespace epcsaft::core {
 
-struct NumericalRank final {
-    std::string basis;
-    std::size_t dimension = 0, rank = 0;
-    double threshold = 0;
-};
-
 template <typename Factor>
 NumericalRank numerical_rank(const Factor& lu, const char* basis) {
     return {basis, static_cast<std::size_t>(lu.cols()), static_cast<std::size_t>(lu.rank()), double(lu.threshold())};
+}
+
+template <typename Factor>
+void retain_rank(std::vector<NumericalRank>& records, const Factor& factor, const char* basis) {
+    const auto rank = numerical_rank(factor, basis);
+    retain_rank(records, rank);
+    Scope scope("numerical_rank");
+    if (scope.diagnostics_on()) scope.probe("rank", {double(rank.rank), double(rank.dimension), rank.threshold}, 0, basis);
 }
 
 // Rigal-Gaches normwise backward error; the zero right-hand side needs no unit floor.
