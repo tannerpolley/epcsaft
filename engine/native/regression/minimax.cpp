@@ -4,6 +4,7 @@
 #include <chrono>
 #include <cmath>
 #include <set>
+#include <new>
 #include <stdexcept>
 
 namespace epcsaft::regression {
@@ -299,8 +300,9 @@ FitResult solve_minimax(const FitRequest& request, const std::vector<double>& st
         } else nlp->finish();
         if (returned != Solve_Succeeded && returned != Solved_To_Acceptable_Level)
             core::retain_failure(result.first_numerical_failure, result.minimax->application_status, "minimax Ipopt");
+    } catch (const std::bad_alloc&) {
+        throw;
     } catch (const std::exception& error) {
-        if (!dynamic_cast<const std::runtime_error*>(&error) && !dynamic_cast<const std::invalid_argument*>(&error)) throw;
         retain_density_failure(result.first_numerical_failure, error, "minimax"); result.message = error.what();
     }
     return result;
@@ -328,8 +330,9 @@ FitResult fit_minimax(const FitRequest& request, const std::optional<std::vector
         result.residual_evaluations = failures.residual_evaluations; result.jacobian_evaluations = failures.jacobian_evaluations;
         if (result.usable || evaluation_point) finish_checks(result, request);
         return result;
+    } catch (const std::bad_alloc&) {
+        throw;
     } catch (const std::exception& error) {
-        if (!dynamic_cast<const std::runtime_error*>(&error) && !dynamic_cast<const std::invalid_argument*>(&error)) throw;
         retain_density_failure(failures.first_numerical_failure, error, "minimax"); failures.message = error.what(); return failures;
     }
 }

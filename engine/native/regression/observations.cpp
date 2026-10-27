@@ -7,6 +7,7 @@
 #include <cmath>
 #include <set>
 #include <numeric>
+#include <new>
 #include <stdexcept>
 #include <string>
 #include <tuple>
@@ -327,8 +328,9 @@ Prediction predict(
                 }
             }
             project_prediction(model, observation, result);
+        } catch (const std::bad_alloc&) {
+            throw;
         } catch (const std::exception& error) {
-            if (!dynamic_cast<const std::runtime_error*>(&error) && !dynamic_cast<const std::invalid_argument*>(&error)) throw;
             result.status = observation.kind == ObservationKind::BulkRelativePermittivity
                 ? ObservationStatus::DensityUnavailable : ObservationStatus::ReferenceUnavailable;
             retain_density_failure(result.first_numerical_failure, error, "prediction");

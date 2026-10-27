@@ -30,6 +30,7 @@
 #include <limits>
 #include <memory>
 #include <numeric>
+#include <new>
 #include <stdexcept>
 #include <string>
 #include <thread>
@@ -894,8 +895,9 @@ struct ObservationEvaluator::Impl final {
                     out.input_gradient[i * measurement_.groups.size() + c] = gradient.value.at(local++);
             }
             return std::nullopt;
+        } catch (const std::bad_alloc&) {
+            throw;
         } catch (const std::exception& error) {
-            if (!dynamic_cast<const std::runtime_error*>(&error) && !dynamic_cast<const std::invalid_argument*>(&error)) throw;
             if (!out.first_numerical_failure) out.first_numerical_failure_observation = i;
             retain_density_failure(out.first_numerical_failure, error, "fit trial");
             return Failure{i, n, ObservationStatus::InadmissibleTrial, jacobian, error.what(), {}, out.first_numerical_failure};
