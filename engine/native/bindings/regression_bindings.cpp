@@ -48,7 +48,7 @@ FitRequest point_request(const Parameters& parameters, std::vector<Coordinate> c
 void register_regression(nb::module_& module) {
     FitHost host;
     if (const nb::object python = nb::module_::import_("sys").attr("executable"); !python.is_none() && nb::len(python) > 0)
-        // The native library loads by its installed path, so its $ORIGIN RUNPATH finds bundled libraries; a path that no
+        // The native library loads by its installed path, so its $ORIGIN search path finds bundled libraries; a path that no
         // longer names the held file (an editable relink replaced it) refuses the worker.
         host.worker = {nb::cast<std::string>(python), "-I", "-c", "import ctypes, os, importlib.machinery as i, importlib.util as u; "
             "p = os.readlink('/proc/self/fd/4'); s, f = os.stat(p), os.fstat(4); "
