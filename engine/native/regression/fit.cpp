@@ -504,6 +504,10 @@ struct ObservationEvaluator::Impl final {
         char** arguments = command.data();
         rlimit descriptors;
         if (getrlimit(RLIMIT_NOFILE, &descriptors) != 0) throw std::runtime_error("fit worker process unavailable");
+        // linux-64: nr_open bounds descriptor allocation, even when the soft limit was lowered.
+        rlim_t nr_open = std::numeric_limits<int>::max();
+        std::ifstream("/proc/sys/fs/nr_open") >> nr_open;
+        const rlim_t descriptor_limit = std::min(descriptors.rlim_max, nr_open);
         for (std::size_t k = 1; k < std::min(count, rank); ++k) {
             int pair[2];
             if (socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0, pair) != 0) throw std::runtime_error("fit worker socket unavailable");
@@ -513,9 +517,30 @@ struct ObservationEvaluator::Impl final {
             pid_t process = 0;
             const int error = (process = fork()) < 0;
             if (process == 0) {
-                if (setpgid(0, 0) != 0 || dup2(pair[1], 0) < 0 || dup2(extension_image, 3) < 0 || dup2(native_image, 4) < 0) _exit(127);
-                if (syscall(SYS_close_range, 5, ~0U, 0) != 0)
-                    for (rlim_t fd = 5; fd < descriptors.rlim_cur; ++fd) close(static_cast<int>(fd));
+                if (setpgid(0, 0) != 0) _exit(127);
+                const int sources[] = {fcntl(pair[1], F_DUPFD_CLOEXEC, 5), fcntl(extension_image, F_DUPFD_CLOEXEC, 5), fcntl(native_image, F_DUPFD_CLOEXEC, 5)};
+                const int targets[] = {0, 3, 4};
+                for (int i = 0; i < 3; ++i)
+                    if (sources[i] < 0 || dup2(sources[i], targets[i]) < 0 || fcntl(targets[i], F_SETFD, 0) < 0) _exit(127);
+                if (syscall(SYS_close_range, 5, ~0U, 0) != 0) {
+                    const int directory = static_cast<int>(syscall(SYS_open, "/proc/self/fd", O_RDONLY | O_DIRECTORY | O_CLOEXEC));
+                    if (directory >= 0) {
+                        char buffer[4096];
+                        long bytes;
+                        while ((bytes = syscall(SYS_getdents64, directory, buffer, sizeof buffer)) > 0) {
+                            for (long at = 0; at < bytes;) {
+                                // linux_dirent64 has d_reclen at byte 16 and d_name at byte 19 on linux-64.
+                                unsigned short length;
+                                std::memcpy(&length, buffer + at + 16, sizeof length);
+                                int fd = 0;
+                                for (const char* digit = buffer + at + 19; *digit >= '0' && *digit <= '9'; ++digit) fd = 10 * fd + *digit - '0';
+                                if (fd >= 5 && fd != directory && close(fd) != 0) _exit(127);
+                                at += length;
+                            }
+                        }
+                        if (bytes < 0 || close(directory) != 0) _exit(127);
+                    } else for (rlim_t fd = 5; fd < descriptor_limit; ++fd) close(static_cast<int>(fd));
+                }
                 execve(arguments[0], arguments, environ);
                 _exit(127);
             }
