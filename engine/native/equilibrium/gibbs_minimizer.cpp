@@ -51,10 +51,11 @@ namespace {
 struct Curvature final { double minimum = 0.0, equilibrated = 1.0, band = 0.0; };
 
 Curvature reduced_curvature_at(
-    const CompiledSystem& compiled, PhasePoint prepared,
+    const CompiledSystem& compiled, const PhasePoint& at,
     const std::vector<double>& multipliers
 ) {
-    if (compiled.feasibility_cell() || prepared.point.empty()) return {};
+    if (compiled.feasibility_cell() || at.point.empty()) return {};
+    auto prepared = at;
     prepared.point.resize(compiled.primal_size);
     using Dense = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
     const auto n = static_cast<Eigen::Index>(prepared.point.size());
