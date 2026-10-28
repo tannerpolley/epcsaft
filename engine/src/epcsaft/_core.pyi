@@ -4177,6 +4177,7 @@ class Observation:
     charge.
     """
     molality: float
+    finite_solute_molalities: list[float] | None
     """Formula-unit salt concentration in mol/kg solvent for formula-salt observations."""
     reference_composition: list[float]
     """Optional length-n reference solvent composition, dimensionless in component order; used for

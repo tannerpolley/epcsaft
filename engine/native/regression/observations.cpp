@@ -109,7 +109,8 @@ bool same_state(const Observation& left, const Observation& right) {
             && left.temperature == right.temperature && left.pressure == right.pressure && left.branch == right.branch
             && left.composition == right.composition && left.ion_indices == right.ion_indices
             && left.stoichiometry == right.stoichiometry && left.molality == right.molality
-            && left.reference_composition == right.reference_composition;
+            && left.reference_composition == right.reference_composition
+            && left.finite_solute_molalities == right.finite_solute_molalities;
     // Pressure closures stay singletons; equilibrium projection and residual metadata do not select physics.
     if (pressure_closed(left.kind) || pressure_closed(right.kind)
         || left.kind == ObservationKind::LogEquilibriumConstant || right.kind == ObservationKind::LogEquilibriumConstant
@@ -144,6 +145,11 @@ void validate(const Observation& observation, const HelmholtzModel& model,
             || (std::isfinite(observation.scale) && observation.scale > 0.0), "scale");
     require(!observation.mass_basis || observation.kind == ObservationKind::Density
             || observation.kind == ObservationKind::PhaseDensity, "mass basis is defined only for a density");
+    require(!observation.finite_solute_molalities || observation.kind == ObservationKind::MeanIonicActivityCoefficient,
+            "full solute molalities require mean ionic activity");
+    if (observation.finite_solute_molalities)
+        (void)formula_composition(observation.composition, model.parameters(), observation.ion_indices,
+            observation.stoichiometry, observation.molality, observation.finite_solute_molalities);
     if (electrolyte_observation(observation.kind)) {
         require(std::isfinite(observation.temperature) && observation.temperature > 0.0
             && std::isfinite(observation.pressure) && observation.pressure > 0.0, "positive finite T/P");
@@ -301,6 +307,7 @@ Prediction predict(
                 auto& cache = references ? *references : local;
                 const auto reference = [&](const auto& x, const InfiniteDilutionReference* old) {
                     auto key = observation;
+                    key.finite_solute_molalities.reset();
                     key.composition = x; key.molality = 0.0; key.reference_composition.clear();
                     for (const auto& entry : cache) if (same_state(key, entry.first)) return entry.second;
                     const State* solvent = old && old->solvent_state ? &*old->solvent_state : nullptr;
@@ -316,13 +323,13 @@ Prediction predict(
                     previous && previous->second_reference ? &*previous->second_reference : nullptr);
                 if (observation.kind == ObservationKind::MeanIonicActivityCoefficient || observation.kind == ObservationKind::OsmoticCoefficient) {
                     if (observation.molality > 0.0) {
-                        const auto x = formula_composition(observation.composition, model.parameters(), observation.ion_indices, observation.stoichiometry, observation.molality);
+                        const auto x = formula_composition(observation.composition, model.parameters(), observation.ion_indices, observation.stoichiometry, observation.molality, observation.finite_solute_molalities);
                         const auto old_x = previous_model ? formula_composition(observation.composition, previous_model->parameters(),
-                            observation.ion_indices, observation.stoichiometry, observation.molality) : x;
+                            observation.ion_indices, observation.stoichiometry, observation.molality, observation.finite_solute_molalities) : x;
                         const State* old = previous && previous->activity ? &previous->activity->state : nullptr;
                         const auto anchor = prior(old, x, old_x, DensityBranch::Liquid);
                         result.activity = electrolyte_activity(model, observation.temperature, observation.pressure,
-                            observation.composition, observation.ion_indices, observation.stoichiometry, observation.molality, *result.reference, anchor);
+                            observation.composition, observation.ion_indices, observation.stoichiometry, observation.molality, *result.reference, anchor, observation.finite_solute_molalities);
                         accepted(result.activity->state, old, anchor);
                     }
                 }
@@ -680,6 +687,11 @@ std::vector<PredictionGradient> differentiate_group(
     if (electrolyte_observation(observations.front()->kind) || pressure_closed(observations.front()->kind)) {
         std::vector<PredictionGradient> result;
         for (const auto* row : observations) {
+            if (row->finite_solute_molalities && !inputs.empty()) {
+                PredictionGradient unavailable;
+                unavailable.message = "full solute input actions are not declared";
+                result.push_back(std::move(unavailable)); continue;
+            }
             auto projected = prediction;
             if (!pressure_closed(row->kind)) project_prediction(model, *row, projected);
             auto gradient = differentiate(model, *row, projected);

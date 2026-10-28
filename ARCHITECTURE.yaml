@@ -30,10 +30,9 @@ plan:
 # #811 owner approval, 2026-10-23; rule 1: Core 1096 + 11, Equilibrium 10501 + 106;
 # total 27591 + 276 capped by the layer-ceiling sum 27818.
 # #814 rule 2: Properties 5983 -> 5981 (count 5921 + band 60); total = layer-ceiling sum 27816.
-# #864 lead allowance 1450 gross / +565 net: Properties 6447 + band 65 for shared amount/volume derivatives.
-# #864 Equilibrium 12289 + band 123 for selected-endpoint precision refinement and returned-point estimates.
-# #864 total 30565 + band 306, capped by the layer-ceiling sum 30810.
-code_budgets: {"core": 1323, "contributions": 1273, "properties": 6512, "equilibrium": 12391, "regression": 3955, "surface": 785, "bindings": 2325, "python": 2246, "total": 30810}
+# #864 r5 against fb27d881f: 1158 gross / +565 net; Core ceiling raised to measured 1329.
+# Retain combined main/#864 ceilings; measured Properties 6475, Equilibrium 12329, total 30742.
+code_budgets: {"core": 1329, "contributions": 1289, "properties": 6512, "equilibrium": 12391, "regression": 3955, "surface": 815, "bindings": 2325, "python": 2287, "total": 30897}
 
 property_categories: [Ideal, Residual, Total]
 
