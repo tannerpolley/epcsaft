@@ -206,4 +206,4 @@ def test_ion_free_nonsolvent_state() -> None:
     with pytest.raises(ValueError, match="solvent denominator"):
         model.state(353.15, 1000.0, [0.0] * 3 + [0.5, 0.5] + [0.0] * 4)
     with pytest.raises(ValueError, match="solvent denominator"):
-        c.infinite_dilution_reference(model, 353.15, state.pressure, x, [3, 4], [1, 1])
+        c.infinite_dilution_reference(model, 353.15, state.pressure, x, (3, 4), (1, 1))
