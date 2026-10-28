@@ -41,6 +41,7 @@ struct Observation final {
     std::array<std::size_t, 2> ion_indices{};
     std::array<int, 2> stoichiometry{};
     double molality = 0.0;
+    std::optional<std::vector<double>> finite_solute_molalities;
     std::vector<double> reference_composition;
     DensityBranch branch = DensityBranch::Unspecified;
     // Equilibrium kinds: the declared problem; `phase` indexes its phases, `species` is a

@@ -604,6 +604,31 @@ void check_minimax_consistency() {
         } catch (const IonicReferenceBackground&) { refused = true; }
         CHECK(refused);
     }
+    {
+        HelmholtzModel mixed(properties_support::nine_species(), {{ParameterFamily::Kij, {3, 27}}});
+        auto o = gamma; o.composition = {1,0,0,0,0,0,0,0,0}; o.ion_indices = {3,4};
+        o.molality = .2; o.finite_solute_molalities = std::vector<double>{0,0,0,.2,1,0,0,.8,0};
+        const auto ref = infinite_dilution_reference(mixed, o.temperature, o.pressure, o.composition, o.ion_indices, o.stoichiometry);
+        auto previous = predict(mixed, o);
+        for (double background : {.8, .4, 0.}) {
+            (*o.finite_solute_molalities)[7] = background; (*o.finite_solute_molalities)[4] = .2+background;
+            validate(o, mixed);
+            const auto direct = electrolyte_activity(mixed, o.temperature, o.pressure, o.composition, o.ion_indices,
+                o.stoichiometry, o.molality, ref, {}, o.finite_solute_molalities);
+            const auto predicted = predict(mixed, o, {}, {}, nullptr, &previous, &mixed, true);
+            CHECK(predicted.status == ObservationStatus::Available);
+            CHECK(std::abs(std::log(*predicted.value)-direct.mean_ionic_log_molality_scale) < 1e-10);
+            const auto gradient = differentiate(mixed, o, predicted);
+            CHECK(gradient.status == ObservationStatus::Available);
+            CHECK(std::abs(gradient.value[0]-*direct.mean_ionic_parameter_derivative[0].action) < 1e-10);
+            if (background == 0) { auto binary = o; binary.finite_solute_molalities.reset();
+                CHECK(std::abs(std::log(*predict(mixed, binary).value / *predicted.value)) < 1e-10); }
+            previous = predicted;
+        }
+        (*o.finite_solute_molalities)[4] += .1;
+        bool refused = false; try { validate(o, mixed); } catch (const std::invalid_argument&) { refused = true; }
+        CHECK(refused);
+    }
     const auto u = request.coordinates.start(parameters);
     request.observations = observations_at(request, u, {0, 0, .1, 0});
     request.weights = {1, 1, 0, 0};
