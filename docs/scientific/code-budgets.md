@@ -97,6 +97,8 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-10-28, #886 after merging `fb27d881f`: total **30,372 → 30,394**, the measured formatted runtime count. Main contributes 30,177 lines and the saturation work contributes 217 net Engine runtime lines. Main’s Contributions, Properties, Surface and Python ceilings and the saturation work’s Equilibrium and Bindings ceilings remain sufficient. This increase uses the existing owner allowance of at most 750 gross / +610 net, including campaign support; it changes no numerical rule.
+
 - 2026-10-28, dedicated pure-fluid route after integration with `f0e0de987`: total **30,253 → 30,276**, exactly the measured formatted runtime count. Main alone counts 30,059; the accepted route adds 217 Engine runtime lines. All layer ceilings pass; the old total alone was short by 23 after retaining main’s regression changes. The complete task count, including campaign support, is 575 gross / +500 net against current main, within the owner’s 750 gross / +610 net allowance. Shared cold enumeration remains main’s single admission owner and receives no new credit here.
 
 - 2026-10-27, #886 (owner allowance 750 gross / +610 net against `7929f13be`):
