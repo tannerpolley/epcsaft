@@ -708,7 +708,7 @@ std::map<std::string, double> effective_water_amounts(const IdealMoleFraction&, 
 struct DriverLimits;
 EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::optional<EquilibriumResult>& start = std::nullopt,
                                  core::Scope* outer = nullptr, const DriverLimits* limits = nullptr,
-                                 std::shared_ptr<const OptimizerState> warm = {}, bool recover = false, EquilibriumResult* audit = nullptr);
+                                 std::shared_ptr<const OptimizerState> warm = {}, bool recover = false, EquilibriumResult* audit = nullptr, bool select_endpoint = false);
 
 // ---- Solved-state derivative actions: native records, no public promise.
 

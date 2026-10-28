@@ -22,7 +22,7 @@ guess, reactions and neutral reference.
 
 **Timing.** Each ordinary case has one complete warmup per environment. Each pair holds an AB
 and a BA block, alternating which comes first. Workers share one CPU
-(`taskset`), one numerical thread and niceness 10 (inherited niceness above 10
+(`taskset`; `--cpu 31` selects CPU 31 while full fits retain the controller's full affinity), one numerical thread and niceness 10 (inherited niceness above 10
 is rejected). Times sum equilibrium-call wall times only, excluding imports,
 declaration and start preparation, messages and output reading. A block's
 change is `100 (B/A - 1)` percent; the two blocks of a pair are averaged, and
