@@ -1558,11 +1558,6 @@
       "use_basis": "Short-range theta/psi structure only; published Pitzer coefficients are report-only and share Yao data lineage."
     },
     {
-      "source_id": "issue-676-declaration",
-      "title": "Approved HCl trial declaration, issue 676",
-      "year": 2026
-    },
-    {
       "source_id": "hydrogen-chloride-calibration",
       "citation": "Hamer and Wu 1972; Jiang 1996; Held 2008; native two-coordinate HCl calibration",
       "use_basis": "70 fitted observations and 14 adjusted-water guards of zero fitting weight"
