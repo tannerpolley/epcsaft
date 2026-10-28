@@ -2136,6 +2136,10 @@ owns the tested cases, tolerances, errors and interpretation limits.
 
 ## ALG-REFERENCE
 
+Referenced solved-state third actions admit feed directions only at fixed T/P.
+Thermal and mixed thermal/feed third actions retain the Engine refusal;
+the solvent mole-weighting relation does not extend this derivative order.
+
 Native fitting may supply solvent-reference and finite-activity density anchors.
 Each anchor is checked for regularity before use; an anchor failure is recorded
 and retried cold by the existing density owner. There is no reference-wide retry.
