@@ -1862,7 +1862,6 @@ PointEvaluationValues<Base> CompiledSystem::evaluate_at(const PhasePointValues<B
     return result;
 }
 
-template PointEvaluationValues<double> CompiledSystem::evaluate_at(const PhasePointValues<double>&) const;
 template PointEvaluationValues<long double> CompiledSystem::evaluate_at(const PhasePointValues<long double>&) const;
 
 RowUncertainty CompiledSystem::row_uncertainty(const PhasePoint& at) const {
@@ -2095,7 +2094,6 @@ std::vector<Base> CompiledSystem::trace_moiety_relative(
     return values;
 }
 
-template std::vector<double> CompiledSystem::trace_moiety_relative(const PhasePoint&, std::vector<double>, std::size_t) const;
 template std::vector<long double> CompiledSystem::trace_moiety_relative(const PhasePointValues<long double>&, std::vector<long double>, std::size_t) const;
 
 // Numerical charge representation only; physical equations and Ipopt derivatives remain unchanged.
@@ -2265,7 +2263,6 @@ std::vector<Base> CompiledSystem::jacobian_at(const PhasePointValues<Base>& prep
     return result;
 }
 
-template std::vector<double> CompiledSystem::jacobian_at(const PhasePointValues<double>&) const;
 template std::vector<long double> CompiledSystem::jacobian_at(const PhasePointValues<long double>&) const;
 
 std::vector<double> CompiledSystem::lever_jacobian(const std::vector<double>& point) const {

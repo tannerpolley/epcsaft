@@ -97,9 +97,9 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
-- 2026-10-27, #864 (lead allowance 1,400 gross / +550 net; measured 1,137 gross / 589 removed / +548 net against merged main `2e3a1440d`): Properties **6,346 → 6,512**, count 6,447 plus band 65, for shared amount/volume derivatives and achieved association errors.
-- #864 Equilibrium **11,950 → 12,395**, count 12,272 plus band 123, for selected-endpoint precision refinement and returned-point estimates in the shared driver.
-- #864 total **30,025 → 30,814**, count 30,548 plus band 306 capped by the layer-ceiling sum 30,814; the scope and numerical criteria are unchanged.
+- 2026-10-27, #864 (lead allowance 1,400 gross / +550 net; measured 1,133 gross / 589 removed / +544 net against merged main `2e3a1440d`): Properties **6,346 → 6,512**, count 6,447 plus band 65, for shared amount/volume derivatives and achieved association errors.
+- #864 Equilibrium **11,950 → 12,391**, count 12,268 plus band 123, for selected-endpoint precision refinement and returned-point estimates in the shared driver.
+- #864 total **30,025 → 30,810**, count 30,544 plus band 306 capped by the layer-ceiling sum 30,810; the scope and numerical criteria are unchanged.
 
 - 2026-10-27, #863 (lead allowance after Ready): parameter Regression **3,777 → 3,955**, the measured 3,915 plus band 40, for existing rank/whitening/hold decisions and selected first causes through predictions and worker replies, plus minimax's shared Ipopt observations. The approved task allowance was amended to 270 gross / +170 net. Actual runtime growth is 255 gross / +168 net against `7929f13be`; no numerical method or calculation budget changes. Other layer and total ceilings remain sufficient.
 

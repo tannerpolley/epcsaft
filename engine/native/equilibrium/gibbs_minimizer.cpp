@@ -1306,13 +1306,13 @@ static bool polish_correction(const CompiledSystem& compiled, std::vector<Base>&
                 if (trial_recovery) trial_scale *= 0.125;
                 else if (refine_trial && best_classified > row_tolerance) {
                     trial_recovery = true;
-                    scope.probe("trial_recovery_begin", {defect, classified_before}, step);
+                    scope.probe("trial_recovery_begin", {double(defect), double(classified_before)}, step);
                 } else { stop("no accepted trial"); break; }
             }
             if (step + 1 == static_cast<std::size_t>(policy::EQUILIBRIUM_MAX_ITERATIONS.value)) { capped = true; stop("iteration cap"); }
             if constexpr (std::is_same_v<Base, double>) if (final_correction) { corrected = true; stop("final correction"); break; }
         }
-        if (detailed && best != full) scope.probe("polish_stop", {best_raw, best_classified,
+        if (detailed && best != full) scope.probe("polish_stop", {double(best_raw), double(best_classified),
             static_cast<double>(final_step)}, final_step, "best classified point returned");
         full = std::move(best);
         if constexpr (!std::is_same_v<Base, double>) break;

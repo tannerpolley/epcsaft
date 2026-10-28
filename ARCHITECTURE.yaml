@@ -31,9 +31,9 @@ plan:
 # total 27591 + 276 capped by the layer-ceiling sum 27818.
 # #814 rule 2: Properties 5983 -> 5981 (count 5921 + band 60); total = layer-ceiling sum 27816.
 # #864 lead allowance 1400 gross / +550 net: Properties 6447 + band 65 for shared amount/volume derivatives.
-# #864 Equilibrium 12272 + band 123 for selected-endpoint precision refinement and returned-point estimates.
-# #864 total 30548 + band 306, capped by the layer-ceiling sum 30814.
-code_budgets: {"core": 1323, "contributions": 1273, "properties": 6512, "equilibrium": 12395, "regression": 3955, "surface": 785, "bindings": 2325, "python": 2246, "total": 30814}
+# #864 Equilibrium 12268 + band 123 for selected-endpoint precision refinement and returned-point estimates.
+# #864 total 30544 + band 306, capped by the layer-ceiling sum 30810.
+code_budgets: {"core": 1323, "contributions": 1273, "properties": 6512, "equilibrium": 12391, "regression": 3955, "surface": 785, "bindings": 2325, "python": 2246, "total": 30810}
 
 property_categories: [Ideal, Residual, Total]
 
