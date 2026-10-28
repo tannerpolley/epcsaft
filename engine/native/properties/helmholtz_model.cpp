@@ -1553,6 +1553,9 @@ ReferenceTaylor HelmholtzModel::reference_taylor(double temperature, double volu
     for (double& v : motion) v /= norm;
     const auto signature = predicate_signature(temperature, composition);
     if (infinite_dilution) {
+        if (parameters_.permittivity_form.is(PermittivityForm::SolventMoleWeighting)
+            && parameters_.permittivity_solvent_normalized)
+            (void)bulk_relative_permittivity(temperature, 1.0 / volume, composition, parameters_);
         const auto electro = electrolyte_contribution(temperature, 1.0 / volume, composition, composition, parameters_);
         (void)born_contribution(temperature, composition, parameters_, electro.bulk_relative_permittivity);
         if (!reference_tape_ || reference_tape_->predicates != signature) {
