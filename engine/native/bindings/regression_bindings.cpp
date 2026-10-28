@@ -89,7 +89,7 @@ void register_regression(nb::module_& module) {
             ActionUnavailable, Nonfinite, InadmissibleTrial);
     nb::class_<Observation>(module, "Observation")
         .def(nb::init<>())
-        EPCSAFT_READWRITE(Observation, kind, temperature, pressure, composition, ion_indices, stoichiometry, molality,
+        EPCSAFT_READWRITE(Observation, kind, temperature, pressure, composition, ion_indices, stoichiometry, molality, finite_solute_molalities,
             reference_composition, branch, problem, final_problem, feed_amount, reaction, phase, species,
             denominator_phase, denominator_species, mass_basis, observed, form, scale);
     nb::enum_<CheckMetric>(module, "CheckMetric")
