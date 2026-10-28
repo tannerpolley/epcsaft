@@ -13,6 +13,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <iomanip>
 #include <string>
 #include <tuple>
 #include <utility>
@@ -736,12 +737,19 @@ void solvent_mole_permittivity() {
         check("composition-third",ds[3],normalized?87.890625:0,1e-10);
         check("composition-fourth",ds[4],normalized?-439.453125:0,1e-9);
         for (std::size_t k:{3U,4U}) {
-            double old=0;
-            for (double step:{0.001,0.0005}) {
-                const double diff=(derivatives(step)[k-1]-derivatives(-step)[k-1])/(2*step);
-                if(old!=0) check("composition-Richardson",(4*diff-old)/3,ds[k],1e-6*std::max(1.,std::abs(ds[k])));
-                old=diff;
-            }
+            const double step=0.00025, half=step/2;
+            const double coarse=(derivatives(step)[k-1]-derivatives(-step)[k-1])/(2*step);
+            const double fine=(derivatives(half)[k-1]-derivatives(-half)[k-1])/(2*half);
+            const double extrapolated=(4*fine-coarse)/3;
+            const double refinement=std::abs(fine-coarse)/3;
+            const double target=1e-6*std::max(1.,std::abs(ds[k]));
+            std::cout << "contraction-refinement normalized=" << normalized << " order=" << k
+                      << " h=" << step << " half=" << half << " coarse=" << std::setprecision(17) << coarse
+                      << " fine=" << fine << " extrapolated=" << extrapolated
+                      << " error=" << std::abs(extrapolated-ds[k]) << " refinement=" << refinement
+                      << " target=" << target << std::endl;
+            CHECK(refinement<=target/4);
+            check("composition-Richardson",extrapolated,ds[k],target);
         }
         check("pure-water",epcsaft::bulk_relative_permittivity(300.,1000.,std::vector<double>{1,0,0,0},p),80);
         check("pure-amine",epcsaft::bulk_relative_permittivity(300.,1000.,std::vector<double>{0,1,0,0},p),20);

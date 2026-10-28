@@ -192,3 +192,16 @@ def test_solvent_mole_weighting_fit_workers(mode: str) -> None:
         assert a == pytest.approx(b, rel=1e-10, abs=1e-12)
         print(mode, name, a, flush=True)
     assert any(abs(v) > 1e-8 for v in results[0].optimizer_jacobian)
+
+
+def test_ion_free_nonsolvent_state() -> None:
+    # Preserve the empty electrostatic sums without assigning a dielectric quotient.
+    _, model, _ = packet("solvent-normalized")
+    x = [1.0] + [0.0] * 8
+    state = model.state(353.15, 1000.0, x)
+    assert abs(state.pressure - 2687360.5777911283) <= 1e-6
+    assert state.bulk_relative_permittivity == 0.0
+    model.state(353.15, 1000.0, [0.0, 0.0, 1.0] + [0.0] * 6)
+    assert model.state(353.15, 1000.0, x).pressure == state.pressure
+    with pytest.raises(ValueError, match="solvent denominator"):
+        model.state(353.15, 1000.0, [0.0] * 3 + [0.5, 0.5] + [0.0] * 4)

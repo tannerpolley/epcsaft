@@ -960,7 +960,7 @@ void HelmholtzModel::validate_point(
     for (double amount : amounts) total += amount;
     require(std::isfinite(total) && total > 0.0, "total amount");
     if (parameters_.permittivity_form.is(PermittivityForm::SolventMoleWeighting)
-        && parameters_.permittivity_solvent_normalized) {
+        && parameters_.permittivity_solvent_normalized && detail::charged_support(amounts, parameters_)) {
         double solvent = 0.0;
         for (std::size_t i = 0; i < amounts.size(); ++i)
             if (parameters_.permittivity_solvent[i]) solvent += amounts[i];
