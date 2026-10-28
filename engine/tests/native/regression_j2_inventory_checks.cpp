@@ -605,29 +605,45 @@ void check_minimax_consistency() {
         CHECK(refused);
     }
     {
-        HelmholtzModel mixed(properties_support::nine_species(), {{ParameterFamily::Kij, {3, 27}}});
+        FitRequest mixtures; mixtures.parameters = properties_support::nine_species();
+        mixtures.parameters.charge_number[7] = 2; // HCl–MgCl2 inventory: H=3, Cl=4, Mg=7.
+        mixtures.coordinates.coordinates = {{{{ParameterFamily::Kij, {3, 27}}}, 0, 1, -5, 5},
+            {{{ParameterFamily::Kij, {31, 39}}}, 0, 1, -5, 5}};
         auto o = gamma; o.composition = {1,0,0,0,0,0,0,0,0}; o.ion_indices = {3,4};
-        o.molality = .2; o.finite_solute_molalities = std::vector<double>{0,0,0,.2,1,0,0,.8,0};
-        const auto ref = infinite_dilution_reference(mixed, o.temperature, o.pressure, o.composition, o.ion_indices, o.stoichiometry);
-        auto previous = predict(mixed, o);
-        for (double background : {.8, .4, 0.}) {
-            (*o.finite_solute_molalities)[7] = background; (*o.finite_solute_molalities)[4] = .2+background;
-            validate(o, mixed);
-            const auto direct = electrolyte_activity(mixed, o.temperature, o.pressure, o.composition, o.ion_indices,
-                o.stoichiometry, o.molality, ref, {}, o.finite_solute_molalities);
-            const auto predicted = predict(mixed, o, {}, {}, nullptr, &previous, &mixed, true);
-            CHECK(predicted.status == ObservationStatus::Available);
-            CHECK(std::abs(std::log(*predicted.value)-direct.mean_ionic_log_molality_scale) < 1e-10);
-            const auto gradient = differentiate(mixed, o, predicted);
-            CHECK(gradient.status == ObservationStatus::Available);
-            CHECK(std::abs(gradient.value[0]-*direct.mean_ionic_parameter_derivative[0].action) < 1e-10);
-            if (background == 0) { auto binary = o; binary.finite_solute_molalities.reset();
-                CHECK(std::abs(std::log(*predict(mixed, binary).value / *predicted.value)) < 1e-10); }
-            previous = predicted;
+        for (const auto [acid, background] : {std::pair{.2,.4}, {.7,1.1}, {.2,1.1}, {.2,0.}}) {
+            o.molality = acid; o.finite_solute_molalities = std::vector<double>{0,0,0,acid,acid+2*background,0,0,background,0};
+            mixtures.observations.push_back(o);
         }
+        FitResult failures; ObservationEvaluation values;
+        ObservationEvaluator grouped(mixtures, failures, {0,1,2,3});
+        CHECK(grouped.evaluate(mixtures.coordinates.start(mixtures.parameters), true, values));
+        HelmholtzModel mixed(values.chart.parameters, values.chart.active);
+        const auto ref = infinite_dilution_reference(mixed, o.temperature, o.pressure, o.composition, o.ion_indices, o.stoichiometry);
+        for (std::size_t i = 0; i < mixtures.observations.size(); ++i) {
+            const auto& row = mixtures.observations[i];
+            const auto direct = electrolyte_activity(mixed, row.temperature, row.pressure, row.composition, row.ion_indices,
+                row.stoichiometry, row.molality, ref, {}, row.finite_solute_molalities);
+            CHECK(values.statuses[i] == ObservationStatus::Available);
+            agree("HCl-MgCl2/"+std::to_string(i), "log_activity", "1", std::log(values.predictions[i]),
+                direct.mean_ionic_log_molality_scale, 1e-10, 0, "298.15 K,100000 Pa", "Properties mapping", "ALG-FIT");
+            for (std::size_t c = 0; c < 2; ++c)
+                agree("HCl-MgCl2/"+std::to_string(i)+"/"+std::to_string(c), "parameter_column", "1",
+                    values.gradient[2*i+c], *direct.mean_ionic_parameter_derivative[c].action, 1e-12, 1e-10,
+                    "H-water,H-Cl", "Properties mapping", "ALG-FIT");
+        }
+        auto binary = o; binary.finite_solute_molalities.reset();
+        CHECK(std::abs(std::log(*predict(mixed, binary).value / values.predictions.back())) < 1e-10);
         (*o.finite_solute_molalities)[4] += .1;
         bool refused = false; try { validate(o, mixed); } catch (const std::invalid_argument&) { refused = true; }
         CHECK(refused);
+        HelmholtzModel dilute_model(mixtures.parameters);
+        const auto dilute_ref = infinite_dilution_reference(dilute_model, o.temperature, o.pressure, o.composition, o.ion_indices, o.stoichiometry);
+        for (double acid : {1e-15, 1.0000005e-8/2}) {
+            const auto dilute = electrolyte_activity(dilute_model, o.temperature, o.pressure, o.composition, o.ion_indices,
+                o.stoichiometry, acid, dilute_ref, {}, std::vector<double>{0,0,0,acid,acid,0,0,0,0});
+            CHECK((*dilute.state.log_fugacity_coefficient)[3].has_value());
+            CHECK(std::holds_alternative<double>(*dilute.osmotic_coefficient) == (acid > 1e-9));
+        }
     }
     const auto u = request.coordinates.start(parameters);
     request.observations = observations_at(request, u, {0, 0, .1, 0});
