@@ -4,7 +4,9 @@ import gzip
 import json
 from pathlib import Path
 from typing import Any
+
 import pytest
+
 import epcsaft
 from epcsaft import _core as c
 
@@ -27,8 +29,10 @@ def decode(v: Any) -> Any:
     return obj
 
 
-def packet(mode: str, frozen: bool = False) -> Any:
-    data = json.load(gzip.open(Path(__file__).resolve().parents[3] / "tools/fixtures/mea-cp.json.gz"))
+def packet(mode: str) -> Any:
+    data = json.loads(
+        gzip.decompress((Path(__file__).resolve().parents[3] / "tools/fixtures/mea-cp.json.gz").read_bytes())
+    )
     doc = data["parameters"]
     f = next(f for f in doc["model_families"] if f["kind"] == "permittivity")
     f.update(choice="solvent-mole-weighting", solvents=["water", "monoethanolamine"], normalization=mode)
@@ -38,16 +42,14 @@ def packet(mode: str, frozen: bool = False) -> Any:
         ]
     for name, e, cs in [("water", 80, [-0.2, 0.001, 0.00001]), ("monoethanolamine", 20, [-0.05, 0.0005, -0.000002])]:
         doc["correlations"].append(
-            dict(
-                correlation_id="test/" + name,
-                component_id=name,
-                family="relative_permittivity",
-                form="constant-plus-polynomial-in-temperature",
-                constant={"value": {"magnitude": e, "unit": "dimensionless"}},
-                reference_temperature={"magnitude": 353.15, "unit": "kelvin"},
-                terms=[]
-                if frozen
-                else [
+            {
+                "correlation_id": "test/" + name,
+                "component_id": name,
+                "family": "relative_permittivity",
+                "form": "constant-plus-polynomial-in-temperature",
+                "constant": {"value": {"magnitude": e, "unit": "dimensionless"}},
+                "reference_temperature": {"magnitude": 353.15, "unit": "kelvin"},
+                "terms": [
                     {
                         "power": k,
                         "coefficient": {
@@ -57,7 +59,7 @@ def packet(mode: str, frozen: bool = False) -> Any:
                     }
                     for k, v in enumerate(cs, 1)
                 ],
-            )
+            }
         )
     p = epcsaft.Parameters.from_mapping(doc)
     m = c.HelmholtzModel(p._native, [], decode(data["thermochemistry"]))
@@ -131,21 +133,21 @@ def test_solvent_mole_weighting_actions(mode: str) -> None:
                     assert err <= target, (mode, names[i], rich, exact[i], target)
                 print(
                     json.dumps(
-                        dict(
-                            mode=mode,
-                            directions=[x.temperature_k for x in ds],
-                            quantity=names[i],
-                            h=h,
-                            coarse=a,
-                            fine=b,
-                            rich=rich,
-                            exact=exact[i],
-                            refinement=refine,
-                            target=target,
-                            error=err,
-                            resolved=done[i],
-                            passed=done[i] and err <= target,
-                        )
+                        {
+                            "mode": mode,
+                            "directions": [x.temperature_k for x in ds],
+                            "quantity": names[i],
+                            "h": h,
+                            "coarse": a,
+                            "fine": b,
+                            "rich": rich,
+                            "exact": exact[i],
+                            "refinement": refine,
+                            "target": target,
+                            "error": err,
+                            "resolved": done[i],
+                            "passed": done[i] and err <= target,
+                        }
                     ),
                     flush=True,
                 )
