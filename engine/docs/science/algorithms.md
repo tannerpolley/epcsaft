@@ -1448,14 +1448,14 @@ counts, but may update model caches/counters and adds uncapped time before retur
 Detailed capture can advance finite deadlines; untimed returned-state identity
 is qualified separately. Disabled capture adds no numerical work or clock reads.
 
-Core contains all observation failures, retains a readable prefix and exposes
-sticky `capture.trace.incomplete`; missing evidence never selects numerical
-recovery. Trace-only containers and strings are constructed inside `Scope::observe`
-or Core’s initializer-list `probe` overload. A `scope.on()` guard alone does not
-contain allocation failure. The source rule in
-`tools/check-engine-architecture.py` guards the known eager-temporary and
-named-local payload patterns during `check-all`; it is not a complete
-allocation-safety proof.
+Diagnostic records use ordinary construction and copies. Allocation failure
+while constructing, copying or retaining a record propagates normally; it has
+no incomplete-record fallback. An Ipopt log-open refusal leaves the solve
+unchanged and sets `capture.trace.incomplete` with `ipopt_log_error`.
+Trace-only containers and strings are constructed inside `Scope::observe`
+or Core's initializer-list `probe` overload. The source rule in
+`tools/check-engine-architecture.py` guards known eager-temporary and
+named-local payload patterns during `check-all`.
 Nested native work captures forward detailed records once with remapped
 parents. Python declares capture and reads/serializes completed records only.
 
@@ -2376,6 +2376,36 @@ method. Initialization, bounds, loss, covariance assumptions and budget are
 scientific inputs to the fit. A failed state is a failed evaluation, never a
 successful zero residual. Fitted values remain candidate parameters.
 
+`FitResult.rank_records` publishes the existing SVD decision for the complete
+weighted optimizer observation Jacobian, including admitted measured-input
+columns and penalty rows. Its dimension is the column count; its absolute
+cutoff is `FIT_RANK_RECIPROCAL_CONDITION` times the largest singular value.
+This numerical determination is separate from statistical covariance:
+unfinished, active-bound and rank-deficient candidates keep their actual rank
+while withholding the normal inverse. No parameter forward-error estimate
+is derived from covariance, and opaque Ceres QR or Ipopt BFGS/KKT condition
+estimates remain unavailable.
+
+`first_numerical_failure` retains a producer's first refusal through prediction,
+actions, fit trials and worker replies, including successful cold replacement.
+Within an evaluation, only the serial row prefix through its first refused
+row is eligible; recovered causes are selected in row and producer order.
+Across evaluations the fit retains the chronological first cause. A
+`TrialFailure` keeps its own evaluation's cause, row and optimizer point.
+Recovered causes on successful rows do not create rejected trials.
+Measurement LLT refusal is infeasible, rather than necessarily rank deficient;
+whitening distinguishes nonfinite solved operands from overflowing cost.
+Hydration holds retain both caller criteria in detailed capture, the existing
+scalar derivative cutoff and actual bracket/residual operands. Their Core
+record has no invented single criterion for the two acceptance conditions.
+
+Minimax retains `ipopt_diagnostics` only for an actual invocation. Its last
+callback tuple, restoration entries and initialization/application returns
+have the same observer as Gibbs minimization; a point reader creates no
+optimizer attempt. Earlier concrete observation/hold causes precede generic
+callback or application-status text. Final coordinates and multipliers keep
+the existing constrained-estimator basis.
+
 See the fitting appendix for [cation-mixing coordinates](#cation-mixing-coordinates),
 [declared measurement uncertainty](#declared-measurement-uncertainty),
 [optional fitting-density offers](#optional-fitting-density-offers) and
@@ -2482,6 +2512,85 @@ gradient describe local conditioning; dependent-target uncertainty, profiles,
 parameter Hessians and physical validation are not supplied.
 
 ## ALG-TERMINATION
+
+### Diagnose an observed refusal
+
+The first numerical refusal and final convergence answer different questions.
+A successful substitution, cold replacement or polish can retain a rejected
+intermediate operation. Its presence does not establish the cause of a later
+termination. Default records retain that first refusal, the latest rank per
+named operation, the last actually invoked Ipopt attempt and the earliest
+superseded restoration-bearing attempt. Detailed capture retains intervening
+observations. Inspect `capture.trace.ipopt_log_error` and
+`capture.trace.incomplete` for a failed log destination. Diagnostic retention
+does not handle out-of-memory failure specially.
+
+ASL replay uses the same real controls and requested derivative order. Its
+density errors format the existing first cause, falling back to density
+convergence; solved-state action errors retain rank/dimension and present
+condition/backward-error operands. The condition basis is the power-of-two
+column-then-row equilibrated defining Jacobian, $RJC$. Rank refusal precedes
+the inverse-condition estimate and Taylor solves, so absent operands stay
+absent. ASL never computes an estimate during conversion. Compare successful
+native and ASL actions in the same $(T,P,w)$ coordinates, including the
+normalization chain rule for $x=w/\sum w$; raw composition actions have a
+different basis.
+
+1. Retain the exact declaration, parameter/library identity, units, starts,
+   requested criteria, work budgets and default result. Read final convergence
+   separately from `first_numerical_failure`, `rank_records`, `last_rank`,
+   `ipopt_diagnostics` and `recovered_ipopt_diagnostics`. Discovery declarations
+   and trials retain their own observations; unrelated trials do not share a
+   first cause.
+   For a fit, inspect its rank records separately from covariance status and
+   its first refusal separately from termination. For minimax, read
+   `result.minimax.ipopt_diagnostics` and the existing point/multipliers.
+2. With `EPCSAFT_IPOPT_OPTIONS_FILE` unset, replay those inputs through
+   `with epcsaft.trace(diagnostics=True) as capture:`. Native callers use
+   `core::Capture(true)`. Read the deepest association, density or callback
+   refusal before attributing an outer termination to rank or restoration.
+   Detailed estimates are separate observation work and can advance finite
+   deadlines; untimed numerical equivalence does not promise deadline identity.
+3. Request `equilibrium_numerical_estimates(model, result)` or compiled
+   `numerical_estimates` at the actual admitted returned point. Retain the
+   basis, cutoff, residual, floor, condition, availability and physical-quantity
+   radii. A failed optimizer's point is labelled **Ipopt final point before
+   polish**, not an admitted returned-state estimate. Its raw TNLP coordinates,
+   lower/upper bound multipliers and constraint multipliers retain the
+   originating declaration, rows, constraint-row selection, actual coordinate
+   scale and objective factor. Engine coordinates are `coordinate_scale *
+   tnlp_coordinates`; bound coefficients would divide by that scale. No
+   transformation is reapplied to the stored arrays. Callback quantities use
+   Ipopt's internal scaling basis and are not physical Gibbs-energy measures.
+4. If Ipopt internals are needed, supply `ipopt_log="/absolute/unique/ipopt.log"`
+   on that same capture; native callers use `core::Capture(true, destination)`.
+   Keep the options-file variable unset. The destination opens lazily on the
+   first actual Ipopt invocation and retains sequential warm/cold attempts
+   without truncation. Nested captures inherit it unless they request another
+   destination; the owning capture closes it on exit or `take`. Read every
+   iteration, restoration marker, termination, factorization and line-search
+   message alongside the bounded callback observations. A Newton-only solve
+   opens no log. Inspect `capture.trace.ipopt_log_error` if opening fails; this
+   failure leaves the calculation on its original path. J_MAIN uses level 5
+   iteration summaries and other normal categories level 12. An all-category
+   J_MAIN level-12 dump is not qualified on installed Ipopt 3.11.9.
+5. Interpret each quantity in its own basis. Structural rank, endpoint rank,
+   association pivot admission, pressure slope and Ipopt regularization describe
+   different operations. Small backward error alone does not bound physical
+   forward error; Ipopt's internal KKT condition is not the final defining-row
+   condition. Preserve unavailable-estimate causes. For ASL retain `Errmsg`,
+   stderr and real controls, then replay those exact inputs through these same
+   steps. Preserve the original cause before later continuation failure;
+   unavailable external functions supply no physical result.
+
+The [options-file explanation](#ipopt-diagnostic-options) describes a deliberately
+changed experiment. A nonempty `EPCSAFT_IPOPT_OPTIONS_FILE` disables warm reuse;
+its presence, even with an empty value, bypasses discovery/free-amount Newton
+predicates. Other eligible Newton paths can still finish without Ipopt. Preserve
+that file/settings and unset the variable afterward. An incidental `ipopt.opt`
+is ignored. Capture-owned logging changes no numerical option, eligibility,
+retry or acceptance rule. File output and detailed observations can affect
+finite deadlines; no timing identity is claimed.
 
 Requested source-reference estimates follow [ALG-REFERENCE](#alg-reference).
 Their returned method annotation supplies no new termination or admission criterion.

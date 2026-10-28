@@ -226,6 +226,35 @@ void check_measurement_correlation() {
         item.uncertainty->correlation.reset(); (*item.uncertainty->covariance)[0] *= 1.01; });
     auto roundoff = joint(RHO, false); (*roundoff.uncertainty->correlation)[1] += 4e-14;
     CHECK(fit(roundoff).status == "converged");
+    // Finite triangular operands whose squared norm overflows, after an admitted LLT.
+    FitRequest overflow; overflow.parameters = properties_support::ethane(); overflow.controls = budgeted_controls();
+    overflow.controls.maximum_iterations = 1;
+    overflow.coordinates.coordinates = {{{{ParameterFamily::DispersionEnergyOverK, {0}}}, 191.42, 10, 180, 200}};
+    for (double t : {300., 320.}) {
+        auto row = density(t, 1e5, {1}, DensityBranch::Vapor); row.form = ResidualForm::Difference; row.scale = 1; row.observed = t == 300 ? 1e153 : -1e153;
+        overflow.observations.push_back(row);
+    }
+    overflow.uncertainty.emplace(); overflow.uncertainty->output_sigma = {1, 1};
+    const double r = 1 - 1e-12; overflow.uncertainty->correlation = {1, r, r, 1};
+    for (bool detailed : {false, true}) {
+        core::Capture capture(detailed); const auto result = fit(overflow);
+        CHECK(result.status == "initial_evaluation_failed" && result.trial_failures == 1 && result.jacobian_evaluations == 1);
+        CHECK(result.first_numerical_failure && result.first_numerical_failure->stop == core::Stop::nonfinite);
+        CHECK(result.first_numerical_failure->cause == "whitened cost not finite");
+        CHECK(!result.first_numerical_failure->rank);
+        if (detailed) {
+            bool solved = false, cost = false;
+            for (const auto& event : capture.trace().events) {
+                if (event.name == std::string("solved_operands")) { solved = true; for (double v : event.values) CHECK(std::isfinite(v)); }
+                if (event.name == std::string("cost")) { cost = true; CHECK(!std::isfinite(event.values[0])); }
+            }
+            CHECK(solved && cost);
+        }
+    }
+    overflow.uncertainty->correlation = {1, 1, 1, 1};
+    const auto llt = fit(overflow);
+    CHECK(llt.status == "invalid_setup" && llt.first_numerical_failure && llt.first_numerical_failure->stop == core::Stop::infeasible);
+    CHECK(!llt.first_numerical_failure->rank && std::isnan(llt.first_numerical_failure->residual));
     // Permuted groups with an intervening zero-weight output and a fixed zero-sigma input equal the canonical order.
     auto canonical = intercept_request({300, 320, 340}, {y[0], y[1], y[2]}, {0.02, 0.02, 0.02});
     canonical.uncertainty->groups = {{{0}, {input(MeasuredInputKind::Temperature, 2, 250, 450)}, {}, 0},

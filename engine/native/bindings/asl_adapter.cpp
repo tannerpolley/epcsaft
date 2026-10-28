@@ -259,9 +259,9 @@ using ActionStatus = eq::SolvedStateActionStatus;
 
 class EquilibriumFailure final : public std::runtime_error {
 public:
-    EquilibriumFailure(ActionStatus status, const std::string& observable)
+    EquilibriumFailure(ActionStatus status, const std::string& observable, const std::string& detail = {})
         : std::runtime_error(std::string("epcsaft_equilibrium:")
-              + eq::solved_state_status_name(status) + ":" + observable) {}
+              + eq::solved_state_status_name(status) + ":" + observable + (detail.empty() ? "" : ": " + detail)) {}
 };
 
 // Record admission reconstructs native inputs; the Surface builder owns parameter rules.
@@ -327,18 +327,20 @@ struct EquilibriumContext final {
 };
 
 void require_central(const EquilibriumContext& context, const eq::EquilibriumResult& result, const std::string& observable) {
+    const auto failure = [&](ActionStatus status) { return EquilibriumFailure(status, observable, result.message
+        + (result.first_numerical_failure ? "; first refusal: " + epcsaft::core::describe(*result.first_numerical_failure) : "")); };
     const auto count = context.map.offset.size(), identity = context.map.identity_component;
     if (result.topology_event == eq::TopologyEvent::PhasesCoalesced)
-        throw EquilibriumFailure(ActionStatus::NonuniqueCoalescedPhases, observable);
+        throw failure(ActionStatus::NonuniqueCoalescedPhases);
     if (result.topology_event == eq::TopologyEvent::PhaseDisappeared)
-        throw EquilibriumFailure(ActionStatus::PhaseBoundaryNotDifferentiable, observable);
-    if (!result.has_state()) throw EquilibriumFailure(ActionStatus::CentralSolveUnavailable, observable);
+        throw failure(ActionStatus::PhaseBoundaryNotDifferentiable);
+    if (!result.has_state()) throw failure(ActionStatus::CentralSolveUnavailable);
     if (!result.requested_tolerance_met.value_or(false))
-        throw EquilibriumFailure(ActionStatus::DefiningEquationsNotSatisfied, observable);
+        throw failure(ActionStatus::DefiningEquationsNotSatisfied);
     if (result.topology_event != eq::TopologyEvent::None || result.phase_count != 2
         || result.mole_fractions.size() != 2 * count || result.amounts.size() != 2
         || !(result.mole_fractions[identity] - result.mole_fractions[count + identity] > context.map.minimum_gap))
-        throw EquilibriumFailure(ActionStatus::PhaseBoundaryNotDifferentiable, observable);
+        throw failure(ActionStatus::PhaseBoundaryNotDifferentiable);
 }
 
 epcsaft::ParameterDocument read_document(RecordReader& reader) {
@@ -469,9 +471,11 @@ void select_feed(EquilibriumContext& context, const std::vector<double>& feed,
     else try {
         context.central = eq::solve_equilibrium(*context.model, target);
         require_central(context, context.central, observable);
-    } catch (const std::exception&) {
+    } catch (const std::exception& original) {
         const eq::ContinuationRequest request{context.anchor, target, context.anchor_result, context.options};
-        const auto result = eq::continue_equilibrium(*context.model, request);
+        eq::ContinuationResult result;
+        try { result = eq::continue_equilibrium(*context.model, request); }
+        catch (const std::exception& later) { throw EquilibriumFailure(ActionStatus::CentralSolveUnavailable, observable, std::string(original.what()) + "; continuation: " + later.what()); }
         if (!result.success || result.stop != eq::ContinuationStop::reached_target || result.states.empty()) {
             std::fprintf(stderr, "epcsaft_equilibrium diagnostic: stop=%s reached=%.17g message=%s\n",
                          eq::continuation_stop_name(result.stop), result.reached_path, result.message.c_str());
@@ -481,7 +485,7 @@ void select_feed(EquilibriumContext& context, const std::vector<double>& feed,
             if (result.event_pair) std::fprintf(stderr, "event_pair=%zu,%zu\n", result.event_pair->first, result.event_pair->second);
             if (result.last_result) std::fprintf(stderr, "solver=%s raw_residual=%.17g classified_residual=%.17g\n",
                 result.last_result->solver_status.c_str(), result.last_result->residual_norm(), result.last_result->convergence.residual);
-            throw EquilibriumFailure(continuation_status(result.stop), observable);
+            throw EquilibriumFailure(continuation_status(result.stop), observable, std::string(original.what()) + "; continuation: " + result.message);
         }
         context.central = result.states.back();
     }
@@ -507,8 +511,16 @@ eq::SolvedStateActionBatch actions(EquilibriumContext& context, const std::vecto
         auto status = item.status;
         if (status == ActionStatus::Available && (!item.value || !item.action
             || !std::isfinite(*item.value) || !std::isfinite(*item.action))) status = ActionStatus::Nonfinite;
-        if (status != ActionStatus::Available)
-            throw EquilibriumFailure(status, eq::solved_state_observable_id(item.observable));
+        if (status != ActionStatus::Available) {
+            const auto& d = batch.diagnostics;
+            throw EquilibriumFailure(status, eq::solved_state_observable_id(item.observable), item.diagnostic_message.value_or("")
+                + "; power-of-two column-then-row equilibrated defining Jacobian rank "
+                + (d.rank ? std::to_string(*d.rank) : "absent") + "/" + std::to_string(d.state_dimension)
+                + "; condition " + epcsaft::core::optional_number(d.condition_estimate)
+                + "; backward error " + epcsaft::core::optional_number(d.maximum_linear_residual)
+                + (item.property_diagnostics && item.property_diagnostics->first_numerical_failure
+                    ? "; " + epcsaft::core::describe(*item.property_diagnostics->first_numerical_failure) : ""));
+        }
         context.values[row] = *item.value;
     }
     return batch;
@@ -574,7 +586,7 @@ double equilibrium_amount(arglist* arguments) {
         callback_error = error.what();
     } catch (const std::exception& error) {
         std::fprintf(stderr, "epcsaft_equilibrium diagnostic: %s\n", error.what());
-        callback_error = EquilibriumFailure(ActionStatus::DefiningEquationsNotSatisfied, observable).what();
+        callback_error = EquilibriumFailure(ActionStatus::DefiningEquationsNotSatisfied, observable, error.what()).what();
     } catch (...) {
         callback_error = EquilibriumFailure(ActionStatus::Nonfinite, observable).what();
     }
@@ -671,12 +683,19 @@ void evaluate_property(PropertyContext& context, std::size_t phase, const std::v
             if (m.find("no stable density root") != std::string::npos || m.find("density domain is empty") != std::string::npos)
                 root = "no_density_root";
             throw std::runtime_error("epcsaft_property:" + cause(batch.density_status, root) + ":"
-                + std::to_string(static_cast<int>(batch.density_status)) + ":density:" + m);
+                + std::to_string(static_cast<int>(batch.density_status)) + ":density:"
+                + (batch.diagnostics.first_numerical_failure ? epcsaft::core::describe(*batch.diagnostics.first_numerical_failure)
+                    : batch.density_convergence ? epcsaft::core::describe(*batch.density_convergence) : "") + "; " + m);
         }
         const auto fail = [&](std::size_t row, int k, Status status) {
             if (k < branch.failures[row].first)
                 branch.failures[row] = {k, "epcsaft_property:" + cause(status, "unavailable_derivative") + ":"
-                    + std::to_string(static_cast<int>(status)) + ":" + std::to_string(row)};
+                    + std::to_string(static_cast<int>(status)) + ":" + std::to_string(row)
+                    + (status == Status::ThermalBoundary ? ": ThermalBoundary at T=" + epcsaft::core::optional_number(q[0]) + " K" : "")
+                    + "; site rank " + std::to_string(batch.diagnostics.site_rank)
+                    + "; pivot ratio " + epcsaft::core::optional_number(batch.diagnostics.site_pivot_ratio)
+                    + "; association residual " + epcsaft::core::optional_number(batch.diagnostics.association_residual)
+                    + (batch.diagnostics.first_numerical_failure ? "; " + epcsaft::core::describe(*batch.diagnostics.first_numerical_failure) : "")};
         };
         std::vector<double> actions(n);
         const bool first = !anchor;

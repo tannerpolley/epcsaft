@@ -79,7 +79,7 @@ SensitivityInfo inspect_sensitivity(
 std::vector<double> solve_implicit(
     const CompiledSystem& compiled,
     const PhasePoint& prepared,
-    const std::vector<double>& column
+    const std::vector<double>& column, std::optional<core::Convergence>* failure
 ) {
     core::Scope scope("implicit_sensitivity");
     const std::size_t rows = compiled.rows.size();
@@ -87,16 +87,28 @@ std::vector<double> solve_implicit(
     if (!valid_point(prepared.point)) throw std::invalid_argument("invalid sensitivity point");
     if (!all_numeric(column)) throw std::invalid_argument("invalid parameter derivative");
     const auto jacobian = compiled.jacobian_at(prepared);
-    if (jacobian.size() != rows * dimension || rows != dimension) return {};
+    const auto refuse = [&](const char* cause, core::Stop stop, const auto* factor, std::optional<double> backward = std::nullopt) {
+        if (failure) { core::Convergence r; r.cause = cause;
+            if (factor) r.rank = core::numerical_rank(*factor, "implicit defining rows");
+            r.residual = backward.value_or(NAN); r.backward_error = backward; r.stop = stop;
+            if (backward) r.criterion = &policy::EQUILIBRIUM_ACTION_BACKWARD_ERROR;
+            core::retain_first(*failure, r);
+        }
+        return std::vector<double>{};
+    };
+    if (jacobian.size() != rows * dimension || rows != dimension) return refuse("implicit Jacobian shape", core::Stop::infeasible, static_cast<const Eigen::FullPivLU<Eigen::MatrixXd>*>(nullptr));
     const auto matrix = dense_matrix(jacobian, rows, dimension);
     const auto lu = matrix.fullPivLu();
-    if (!square_and_numeric(matrix) || static_cast<std::size_t>(lu.rank()) != dimension) return {};
+    if (!square_and_numeric(matrix) || static_cast<std::size_t>(lu.rank()) != dimension)
+        return refuse(matrix.allFinite() ? "implicit Jacobian rank" : "implicit nonfinite Jacobian", matrix.allFinite() ? core::Stop::singular : core::Stop::nonfinite, &lu);
     // One column, kept a matrix so that Eigen takes the same solve path.
     const Eigen::MatrixXd right = -Eigen::Map<const Eigen::VectorXd>(column.data(), static_cast<Eigen::Index>(column.size()));
     const Eigen::MatrixXd result = lu.solve(right);
     const double error = std::max(0.0, backward_error((matrix * result.col(0) - right.col(0)).cwiseAbs().maxCoeff(),
         matrix.cwiseAbs().rowwise().sum().maxCoeff(), result.cwiseAbs().maxCoeff(), right.cwiseAbs().maxCoeff()));
-    if (!result.allFinite() || !(error <= policy::EQUILIBRIUM_ACTION_BACKWARD_ERROR.value)) return {};
+    if (!result.allFinite() || !(error <= policy::EQUILIBRIUM_ACTION_BACKWARD_ERROR.value))
+        return refuse(result.allFinite() ? "implicit backward error" : "implicit nonfinite response", result.allFinite() ? core::Stop::stalled : core::Stop::nonfinite, &lu,
+            result.allFinite() ? std::optional<double>(error) : std::nullopt);
     scope.probe("max_solution", result.cwiseAbs().maxCoeff());
     scope.probe("backward_error", error);
     scope.probe("equations", static_cast<double>(rows));
@@ -107,7 +119,7 @@ std::vector<double> solve_implicit(
 std::vector<double> sensitivity(
     const CompiledSystem& compiled,
     const std::vector<double>& point,
-    const std::vector<double>& lever
+    const std::vector<double>& lever, std::optional<core::Convergence>* failure
 ) {
     core::Scope scope("sensitivity");
     if (lever.size() != compiled.control_width() && lever.size() != compiled.extended_control_width())
@@ -117,7 +129,7 @@ std::vector<double> sensitivity(
     const auto prepared = compiled.prepare(point);
     const std::vector<std::vector<double>> state = {prepared.point, std::vector<double>(point.size(), 0.0)};
     const auto series = compiled.row_series(prepared, state, lever, 1);
-    return solve_implicit(compiled, prepared, series.rows[1]);
+    return solve_implicit(compiled, prepared, series.rows[1], failure);
 }
 
 // ------------------------------------------------------------- solved-state actions

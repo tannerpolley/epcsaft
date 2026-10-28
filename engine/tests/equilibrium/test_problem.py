@@ -248,6 +248,17 @@ def test_ipopt_initialization_or_fatal_return_publishes_no_state(tmp_path: Path,
         result = solve_equilibrium(model, loose)
         if not fatal:
             assert result.success and math.isclose(result.amounts[0], 1.0)
+            diagnostic = result.ipopt_diagnostics
+            assert diagnostic is not None and diagnostic.callbacks == 1
+            assert diagnostic.first_restoration_iteration is None and diagnostic.restoration_entries == 0
+            point = diagnostic.failed_point
+            assert point is not None and diagnostic.last is not None
+            assert result.solver_status == "MAXITER_EXCEEDED"
+            assert point.tnlp_upper_multipliers == [1.0, 1.0, 0.0, 0.0]
+            assert point.tnlp_lower_multipliers == [1.0, 1.0, 1.0, 0.0]
+            assert point.coordinate_scale == [1.0] * 4 and len(result.coordinates) == 6
+            assert len(point.rows) == 6 and point.constraint_rows == [3, 4, 5]
+            assert point.declaration.phases[0].name == "L"
             continue
         assert not result.success and result.amounts == [] and result.mole_fractions == []
         # The fallback rows meet the criterion: the fatal return alone withholds the state.
