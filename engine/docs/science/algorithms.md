@@ -1682,7 +1682,8 @@ optimizer attempt, including a nonconverged attempt. Failed initialization has
 no optimizer point. A Michelsen trial retains its converged primal chart [ln wᵢ, 1, ln η] as raw coordinates and has no raw
 residuals, basis or row transformation. Keep raw residuals separate from reconstructed composition,
 displacement and reevaluated energy. Normalize neutral trials; ionic rescaling
-and the Liquid largest-entry positive/negative pivot correction follow EqID:
+and the Liquid charge-only increase of the largest opposite-sign pivot followed
+by common multiplicative normalization follow EqID:
 `electroneutral_trial_reconstruction` with ties by index. Newly admitted charged
 Vapor trials retain common normalization and multiplicative charge repair in
 log arithmetic, without adding normalization roundoff to ionic coordinates. Recompute molar volume
