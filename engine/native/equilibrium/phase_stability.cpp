@@ -383,7 +383,7 @@ std::vector<double> tangent_plane_jacobian(const HelmholtzDerivatives& d, double
     return J;
 }
 
-// Charge rescaling followed by a two-pivot arithmetic correction (largest entry, ties by index).
+// Charge repair increases the opposite-sign pivot before common normalization (ties by index).
 std::vector<double> reconstruct_trial_composition(std::vector<double> w,
     const std::vector<std::size_t>& support, const std::vector<int>& z, PhaseKind kind) {
     if (support.empty() || z.size() != w.size()) throw std::invalid_argument("invalid reconstruction support");
@@ -410,10 +410,14 @@ std::vector<double> reconstruct_trial_composition(std::vector<double> w,
     if (!(std::isfinite(total) && total > 0.0)) throw std::invalid_argument("trial normalization failed");
     for (auto i : support) w[i] /= total;
     if (plus && kind != PhaseKind::Vapor) {
-        double sum = 0.0, charge = 0.0;
-        for (auto i : support) { sum += w[i]; charge += z[i] * w[i]; }
-        const double dp = (-charge + z[*minus] * (sum - 1.0)) / (z[*plus] - z[*minus]);
-        w[*plus] += dp; w[*minus] += 1.0 - sum - dp;
+        double charge = 0.0;
+        for (auto i : support) charge += z[i] * w[i];
+        if (charge > 0.0) w[*minus] += charge / (-z[*minus]);
+        if (charge < 0.0) w[*plus] += (-charge) / z[*plus];
+        total = 0.0;
+        for (auto i : support) total += w[i];
+        if (!(std::isfinite(total) && total > 0.0)) throw std::invalid_argument("trial normalization failed");
+        for (auto i : support) w[i] /= total;
     } else if (!plus) {
         const auto pivot = *std::max_element(support.begin(), support.end(), [&](auto a, auto b) { return w[a] < w[b]; });
         double sum = 0.0; for (auto i : support) sum += w[i]; w[pivot] += 1.0 - sum;

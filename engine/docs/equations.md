@@ -2495,19 +2495,19 @@ $$
 
 - Section: Equilibrium / Tangent-plane testing
 - Status: Implementation convention
-- Source: Normalization and two linear charge/amount equations; #223 adopted numerical admission
-- Description: Reconstruct finite positive supported u=exp(y). Ionic supports require both charge signs. Rescale charge groups and normalize; structural zeros remain zero. Liquid trials then correct arithmetic residuals on the largest positive and negative entries (ties by index). Charged Vapor trials use multiplicative log rescaling and omit the additive ionic correction to preserve trace coordinates.
-- Change note: Reject loss of positivity/support or domain. Neutral supports normalize directly; a singleton is exactly one. Reevaluate energy at v=c(T,w)/η. This is numerical admission, not exact-real feasibility.
+- Source: Charge equality and common normalization; #223 adopted numerical admission, #904 positive charge repair
+- Description: Reconstruct finite positive supported u=exp(y). Ionic supports require both charge signs. Rescale charge groups and normalize; unsupported entries retain their input values. Liquid trials increase the largest opposite-sign entry to correct charge roundoff (ties by index), then normalize by common division. Charged Vapor trials use multiplicative log rescaling and omit the additive ionic correction to preserve trace coordinates.
+- Change note: Reject loss of positivity/support or domain. Neutral supports normalize directly; a singleton is exactly one. Reevaluate energy at v=c(T,w)/η. This is numerical admission, not exact-real feasibility. For $q=0$, use $v=w$ and the same common normalization. Stored fractions must remain finite and strictly positive; both absolute sum and charge defects must be at most $10^{-12}$. Overflow or underflow is not repaired.
 
 $$
 \begin{aligned}
 Q_+&=\sum_{z_i>0}z_i u_i,\quad Q_-=\sum_{z_i<0}|z_i|u_i,\\
 \widehat u_i&=\begin{cases}u_i\sqrt{Q_-/Q_+},&z_i>0,\\u_i\sqrt{Q_+/Q_-},&z_i<0,\\u_i,&z_i=0,\end{cases}
 \qquad w_i=\frac{\widehat u_i}{\sum_{j\in S}\widehat u_j},\\
-\begin{pmatrix}1&1\\z_+&z_-\end{pmatrix}
-\begin{pmatrix}\delta w_+\\\delta w_-\end{pmatrix}
-&=\begin{pmatrix}1-\sum_i w_i\\-\sum_i z_iw_i\end{pmatrix},\qquad
-(w_+,w_-)\leftarrow(w_++\delta w_+,w_-+\delta w_-).
+q&=\sum_{i\in S}z_iw_i,\qquad
+k=\begin{cases}-,&q>0,\\+,&q<0,\end{cases}\\
+v_i&=w_i+\mathbf1_{i=k}\frac{|q|}{|z_k|},\qquad
+w_i^{\mathrm{new}}=\frac{v_i}{\sum_{j\in S}v_j}\quad(q\ne0).
 \end{aligned}
 $$
 
