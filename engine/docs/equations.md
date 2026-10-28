@@ -339,6 +339,21 @@ $$
 +\sum_{i\in\mathcal{I}}x_i\epsilon_{r,i}.
 $$
 
+## `solvent_mole_weighted_bulk_permittivity`
+
+- Section: Electrolyte dielectric and Debye--Huckel relations
+- Status: Implementation convention
+- Source: [Bulow2021a], Theory, Eq. (19); solvent normalization requested in #896
+- Description: Sum over an explicitly declared nonempty set $S$ of neutral solvents, using total-mixture mole fractions. Normalization is an explicit fixed declaration.
+- Change note: Component laws use component_permittivity_temperature_polynomial; the same expression supplies temperature/composition derivatives to DH and Born. No density or explicit ion term. The normalized form requires a positive solvent total at every evaluated point; no value is assigned at zero solvent total.
+
+$$
+N=\sum_{s\in S}x_s\epsilon_{r,s}(T),\qquad D=\sum_{s\in S}x_s,
+\qquad \epsilon_{r,\mathrm{bulk}}=
+\begin{cases}N&\text{unnormalized (Bülow Eq. 19)},\\
+N/D&\text{solvent-normalized},\ D>0.\end{cases}
+$$
+
 ## `component_permittivity_temperature_polynomial`
 
 - Section: Electrolyte dielectric and Debye--Huckel relations

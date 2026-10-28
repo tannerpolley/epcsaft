@@ -119,6 +119,12 @@ physical source interval remains a separate admission operation.
 
 ## ALG-PARAMETERS
 
+The solvent membership and normalization for `solvent-mole-weighting` are
+fixed parameter entries, retained through selection, reordering, fitting-worker
+transport and optimizer identity. `bulk_relative_permittivity` owns the sum or
+quotient; it reuses the existing component laws and automatic differentiation.
+
+
 `BornDiameter`, `DebyeHuckelDiameter` and `PackingDiameter` own positive
 Angstrom values in charged component slots. `IonSuppressionCoefficient` owns
 one dimensionless charged-slot value; a common C ties all declared charged
