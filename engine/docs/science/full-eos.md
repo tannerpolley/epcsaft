@@ -366,6 +366,16 @@ parameter family. It is not a caller option and there is no phase label or
 runtime fallback. Mixed or incomplete topology records fail during model
 resolution.
 
+The `solvent-mole-weighting` declaration selects neutral component identifiers
+in `solvents` and requires `normalization` equal to `unnormalized` or
+`solvent-normalized`. It consumes only their constant or existing polynomial
+relative-permittivity laws. Charged, missing, duplicate or unknown solvent
+identifiers and unconsumed dielectric laws are refused. An actually neutral-only
+component selection retains the removed-electrolyte convention.
+Defining relation: [EqID: `solvent_mole_weighted_bulk_permittivity`](../equations.md#solvent_mole_weighted_bulk_permittivity).
+Bülow2021a Eq. (19) supplies the unnormalized relation; normalization is the
+explicitly requested alternative. Existing mass and density rules retain their arithmetic.
+
 ### 6.1 Figiel composition-only and Ascani mole-fraction topologies
 
 For the bounded Figiel2025 solvent/electrolyte model, first form salt-free

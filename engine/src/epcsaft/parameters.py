@@ -102,7 +102,7 @@ def _choice(families: Sequence[object], kind: str, default: str | None = None) -
 
 
 # The model_families fields from_mapping reads.
-_FAMILY_FIELDS = ("choice", "ionic_dispersion", "c_shell", "c_dielectric")
+_FAMILY_FIELDS = ("choice", "ionic_dispersion", "c_shell", "c_dielectric", "solvents", "normalization")
 
 
 def _named(record: Mapping[str, Any]) -> set[str]:
@@ -198,7 +198,7 @@ def parameter_document(root: str | Path, packets: Sequence[tuple[str, Sequence[s
         for kind in ("base", "association", "electrolyte", "permittivity", "polar"):
             record = declared.get(kind, {"kind": kind, "choice": "none"})
             first, kept = families.setdefault(kind, (packet, record))
-            this, that = ({k: r[k] for k in _FAMILY_FIELDS if k in r} for r in (record, kept))
+            this, that = ({k: sorted(r[k]) if k == "solvents" else r[k] for k in _FAMILY_FIELDS if k in r} for r in (record, kept))
             if this == that or (kind == "association" and record["choice"] == "none"):
                 continue
             # A component without sites joins general-site exactly; every other difference is refused.
@@ -548,6 +548,27 @@ class Parameters:
                 raise _core.ParameterError(f"unknown model family kind {kind}")
         electrolyte = _choice(families, "electrolyte")
         permittivity = _choice(families, "permittivity")
+        if permittivity == "solvent-mole-weighting":
+            record = next(_mapping(item, "permittivity") for item in families if _mapping(item, "permittivity").get("kind") == "permittivity")
+            solvents = _array(record.get("solvents"), "permittivity solvents")
+            mode = record.get("normalization")
+            if mode not in ("unnormalized", "solvent-normalized"):
+                raise ParameterError("explicit permittivity normalization required")
+            if not solvents or any(not isinstance(s, str) or s not in component_records for s in solvents):
+                raise ParameterError("permittivity solvents must name known components")
+            if len(set(cast(Sequence[str], solvents))) != len(solvents):
+                raise ParameterError("duplicate permittivity solvent")
+            for solvent in cast(Sequence[str], solvents):
+                fixed = _mapping(component_records[solvent].get("fixed", {}), "solvent fixed")
+                charge = _mapping(fixed.get("charge_number"), "solvent charge")
+                if _mapping(charge.get("value"), "solvent charge value").get("magnitude") != 0:
+                    raise ParameterError("permittivity solvent must be neutral")
+            for name in selected_ids:
+                if name in solvents:
+                    entries.append(_entry(f"permittivity/solvent/{name}", "permittivity_solvent", (positions[name],),
+                                          {"magnitude": 1, "unit": "dimensionless"}, "permittivity"))
+            entries.append(_entry("permittivity/normalization", "permittivity_normalization", (),
+                                  {"magnitude": int(mode == "solvent-normalized"), "unit": "dimensionless"}, "permittivity"))
         base = _choice(families, "base")
         association = _choice(families, "association")
         polar = _choice(families, "polar", "none")  # optional family (ADR 0011)
