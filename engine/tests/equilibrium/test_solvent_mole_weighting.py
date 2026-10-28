@@ -65,14 +65,14 @@ def packet(mode: str, frozen: bool = False) -> Any:
 
 
 D = c.SolvedStateActionDirection
-O = c.SolvedStateObservable
+Observable = c.SolvedStateObservable
 K = c.SolvedStateObservableKind
 os = [
-    O(K.PhaseMolarDensity, 0),
-    *[O(K.PhaseComponentAmount, 0, i) for i in [2, 1, 3]],
-    O(K.PhaseResidualChemicalPotentialOverRt, 0, 3),
-    O(K.PhaseProperty, 0, 0, c.PropertyObservable.TotalEnthalpy),
-    O(K.SystemEnthalpy),
+    Observable(K.PhaseMolarDensity, 0),
+    *[Observable(K.PhaseComponentAmount, 0, i) for i in [2, 1, 3]],
+    Observable(K.PhaseResidualChemicalPotentialOverRt, 0, 3),
+    Observable(K.PhaseProperty, 0, 0, c.PropertyObservable.TotalEnthalpy),
+    Observable(K.SystemEnthalpy),
 ]
 names = ["rho", "water", "amine", "MEAH", "mu_res_RT", "h", "H"]
 atols = [1e-6, 1e-10, 1e-10, 1e-10, 1e-11, 1e-5, 1e-5]
@@ -166,7 +166,7 @@ def test_solvent_mole_weighting_fit_workers(mode: str) -> None:
     observations[1].problem = changed
     coords = decode(data["coordinates"])
     thermal = decode(data["thermochemistry"])
-    results = [
+    results: list[Any] = [
         c.fit(
             params._native,
             thermal,
@@ -177,6 +177,7 @@ def test_solvent_mole_weighting_fit_workers(mode: str) -> None:
         )
         for w in [1, 2]
     ]
+    assert isinstance(params._document, c.ParameterDocument)
     for r in results:
         assert r.usable, r.message
         assert all(s == c.ObservationStatus.Available for s in r.statuses)
