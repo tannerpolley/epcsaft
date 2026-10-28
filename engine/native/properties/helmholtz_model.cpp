@@ -878,6 +878,16 @@ HelmholtzModel::HelmholtzModel(
             "ionic_region_relative_permittivity");
     require(std::isfinite(parameters_.born_c_shell), "born_c_shell");
     require(std::isfinite(parameters_.born_c_dielectric), "born_c_dielectric");
+    if (parameters_.permittivity_form.is(PermittivityForm::SolventMoleWeighting)) {
+        require(parameters_.permittivity_solvent.size() == components, "permittivity solvent size");
+        require(std::count(parameters_.permittivity_solvent.begin(), parameters_.permittivity_solvent.end(), 1) > 0, "permittivity solvent set");
+        for (std::size_t i = 0; i < components; ++i) {
+            const int member = parameters_.permittivity_solvent[i];
+            require(member == 0 || member == 1, "permittivity solvent membership");
+            require(!member || (parameters_.charge_number[i] == 0 && (parameters_.relative_permittivity[i] > 0.0
+                || std::find(parameters_.permittivity_term_component.begin(), parameters_.permittivity_term_component.end(), i) != parameters_.permittivity_term_component.end())), "permittivity neutral solvent");
+        }
+    }
     // ComponentMixing stays defined on ions alone (Bulow 2019 Eq. 7). IonSuppression and DensityTemperature
     // average neutral-solvent records; Rueben 2024 fit DipolarPerturbation ion records to water-salt mixtures.
     if (parameters_.permittivity_form.declared()
@@ -949,6 +959,13 @@ void HelmholtzModel::validate_point(
     double total = 0.0;
     for (double amount : amounts) total += amount;
     require(std::isfinite(total) && total > 0.0, "total amount");
+    if (parameters_.permittivity_form.is(PermittivityForm::SolventMoleWeighting)
+        && parameters_.permittivity_solvent_normalized && detail::charged_support(amounts, parameters_)) {
+        double solvent = 0.0;
+        for (std::size_t i = 0; i < amounts.size(); ++i)
+            if (parameters_.permittivity_solvent[i]) solvent += amounts[i];
+        require(solvent > 0.0, "permittivity has no solvent denominator");
+    }
 }
 
 detail::PredicateSignature HelmholtzModel::predicate_signature(
@@ -1536,6 +1553,9 @@ ReferenceTaylor HelmholtzModel::reference_taylor(double temperature, double volu
     for (double& v : motion) v /= norm;
     const auto signature = predicate_signature(temperature, composition);
     if (infinite_dilution) {
+        if (parameters_.permittivity_form.is(PermittivityForm::SolventMoleWeighting)
+            && parameters_.permittivity_solvent_normalized)
+            (void)bulk_relative_permittivity(temperature, 1.0 / volume, composition, parameters_);
         const auto electro = electrolyte_contribution(temperature, 1.0 / volume, composition, composition, parameters_);
         (void)born_contribution(temperature, composition, parameters_, electro.bulk_relative_permittivity);
         if (!reference_tape_ || reference_tape_->predicates != signature) {

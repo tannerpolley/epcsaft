@@ -21,6 +21,8 @@ inline bool dielectric_solvent_component(
     std::size_t component,
     const ParameterSet& parameters
 ) {
+    if (parameters.permittivity_form.is(PermittivityForm::SolventMoleWeighting))
+        return parameters.permittivity_solvent[component] != 0;
     if (parameters.charge_number[component] != 0) {
         return false;
     }
@@ -80,6 +82,21 @@ Scalar bulk_relative_permittivity(
     const ParameterSet& parameters
 ) {
     const auto relative_permittivity = component_relative_permittivities(temperature, parameters);
+    // EqID: solvent_mole_weighted_bulk_permittivity
+    if (parameters.permittivity_form.is(PermittivityForm::SolventMoleWeighting)) {
+        Fixed numerator = Fixed(0.0), denominator = Fixed(0.0);
+        for (std::size_t i = 0; i < mole_fractions.size(); ++i) {
+            if (!parameters.permittivity_solvent[i]) continue;
+            numerator += mole_fractions[i] * relative_permittivity[i];
+            denominator += mole_fractions[i];
+        }
+        if (parameters.permittivity_solvent_normalized) {
+            if constexpr (std::is_same_v<Fixed, double>)
+                if (!(denominator > 0.0)) throw std::invalid_argument("permittivity has no solvent denominator");
+            return numerator / denominator;
+        }
+        return numerator;
+    }
     Fixed solvent_mass = Fixed(0.0);
     Fixed dielectric_mass = Fixed(0.0);
     Fixed solvent_fraction = Fixed(0.0);

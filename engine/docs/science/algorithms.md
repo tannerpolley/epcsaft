@@ -119,6 +119,12 @@ physical source interval remains a separate admission operation.
 
 ## ALG-PARAMETERS
 
+The solvent membership and normalization for `solvent-mole-weighting` are
+fixed parameter entries, retained through selection, reordering, fitting-worker
+transport and optimizer identity. `bulk_relative_permittivity` owns the sum or
+quotient; it reuses the existing component laws and automatic differentiation.
+
+
 `BornDiameter`, `DebyeHuckelDiameter` and `PackingDiameter` own positive
 Angstrom values in charged component slots. `IonSuppressionCoefficient` owns
 one dimensionless charged-slot value; a common C ties all declared charged
@@ -2129,6 +2135,10 @@ increment; Taylor factorial conversion is separate and applied once. The
 owns the tested cases, tolerances, errors and interpretation limits.
 
 ## ALG-REFERENCE
+
+Referenced solved-state third actions admit feed directions only at fixed T/P.
+Thermal and mixed thermal/feed third actions retain the Engine refusal;
+the solvent mole-weighting relation does not extend this derivative order.
 
 Native fitting may supply solvent-reference and finite-activity density anchors.
 Each anchor is checked for regularity before use; an anchor failure is recorded
