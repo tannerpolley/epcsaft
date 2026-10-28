@@ -339,7 +339,7 @@ FIELDS(PropertyActionDiagnostics, site_rank, site_factorizations, site_solves, s
     pressure_density_derivative, pressure_residual, stability_determinant, pressure_factorizations, pressure_solves, thermal_evaluations,
     recordings, directional_paths, forward_sweeps, branch, stable_root_count, first_numerical_failure)
 FIELDS(core::NumericalRank, basis, dimension, rank, threshold)
-FIELDS(FixedParameters, ideal_gas, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z, A, B, C, D, E, F, G, H)
+FIELDS(FixedParameters, ideal_gas, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z, A, B, C, D, E, F, G, H, I, J)
 FIELDS(IdealPolynomial, a, b, c, d)
 FIELDS(IdealCorrelation, a, b)
 FIELDS(IdealInterval, a, b, c, d, e)

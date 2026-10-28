@@ -108,6 +108,7 @@ Budget changes must not silently change scientific scope.
   Total **30,025 → 30,253** is the layer-ceiling sum; total count is 30,035.
   Equations, precision, physical admission and general continuation remain
   their existing owners. Campaign code is included in the issue accounting.
+- 2026-10-28, #896 (lead allowance: 200 gross formatted runtime lines): the declared solvent mole-weighting relation, membership/domain admission and fixed-parameter transport use 124 gross additions against `3cf744eed`. Contributions 1,273 → 1,289; Properties 6,346 → 6,428; Surface 785 → 815; Python 2,246 → 2,287; total 30,025 → 30,372. Area ceilings use their measured count plus the 1% band; the total is capped by the layer-ceiling sum. Other area ceilings suffice. Numerical qualification remains separate.
 
 - 2026-10-27, #863 (lead allowance after Ready): parameter Regression **3,777 → 3,955**, the measured 3,915 plus band 40, for existing rank/whitening/hold decisions and selected first causes through predictions and worker replies, plus minimax's shared Ipopt observations. The approved task allowance was amended to 270 gross / +170 net. Actual runtime growth is 255 gross / +168 net against `7929f13be`; no numerical method or calculation budget changes. Other layer and total ceilings remain sufficient.
 
