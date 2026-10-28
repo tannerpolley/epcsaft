@@ -261,16 +261,16 @@ public:
             }
             residuals = association_residuals(rho, composition, parameters_, site_series, delta);
         }
-        const auto [electrolyte, born] = [&] {
+        const auto electrostatics = [&] {
             if constexpr (std::is_same_v<Base, double>) return detail::supported_electrostatics(temperature_, rho, composition_, composition_, parameters_);
             else return detail::supported_electrostatics(Series(temperature_), rho, composition, {composition_.begin(), composition_.end()}, parameters_);
         }();
         const auto contributions = [&] {
             if constexpr (std::is_same_v<Base, double>) return residual_helmholtz(temperature_, rho, composition_, parameters_, sigma_,
-                diameter_, site_series, electrolyte.debye_huckel, born);
+                diameter_, site_series, electrostatics.first.debye_huckel, electrostatics.second);
             else return residual_helmholtz(Series(temperature_), rho, composition, parameters_,
                 std::vector<Series>(sigma_.begin(), sigma_.end()), std::vector<Series>(diameter_.begin(), diameter_.end()),
-                site_series, electrolyte.debye_huckel, born);
+                site_series, electrostatics.first.debye_huckel, electrostatics.second);
         }();
         if (sites_out != nullptr) {
             sites_out->clear();

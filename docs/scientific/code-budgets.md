@@ -97,7 +97,7 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
-- 2026-10-27, #864 (lead allowance 1,400 gross / +550 net; measured 1,133 gross / 589 removed / +544 net against merged main `2e3a1440d`): Properties **6,346 → 6,512**, count 6,447 plus band 65, for shared amount/volume derivatives and achieved association errors.
+- 2026-10-27, #864 (lead allowance 1,400 gross / +550 net; measured 1,134 gross / 590 removed / +544 net against merged main `2e3a1440d`): Properties **6,346 → 6,512**, count 6,447 plus band 65, for shared amount/volume derivatives and achieved association errors.
 - #864 Equilibrium **11,950 → 12,391**, count 12,268 plus band 123, for selected-endpoint precision refinement and returned-point estimates in the shared driver.
 - #864 total **30,025 → 30,810**, count 30,544 plus band 306 capped by the layer-ceiling sum 30,810; the scope and numerical criteria are unchanged.
 
