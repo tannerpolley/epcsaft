@@ -2762,7 +2762,7 @@ $$
 - Status: Exact derivation
 - Source: Closed-system enthalpy balance for a declared finite feed addition, using EqIDs `total_enthalpy`, `ideal_enthalpy` and `residual_enthalpy`; accepted observation definition in issue #210
 - Description: Signed total-system enthalpy increment per mole of total feed added between two declared equilibrium states, less the ideal-plus-residual feed enthalpy at its declared temperature, pressure, composition and branch. Each phase enthalpy uses EqID `total_enthalpy` on the declared thermochemistry's $P^{\circ}$ basis. Exothermic absorption is negative. A zero-pinned phase contributes zero and is not evaluated.
-- Change note: Both endpoint problems share parameters, thermochemistry, ordered reactions and source reference. Their feed amounts differ by $n_{add}\mathbf y$ within the admission tolerance. Each endpoint may have its own specification and temperature, with referenced free-temperature endpoints consuming the shared native first caloric actions at their solved temperatures. Every feed species needs an ideal-gas record. The exact first action holds feed state and amount fixed, differentiates both endpoint phase amounts and enthalpies, and subtracts the feed residual action; ideal feed enthalpy is independent of fitted parameters. The observation is an enthalpy increment for free-pressure endpoints; interpreting it as measured heat is an energy-balance choice unless endpoints and feed are isobaric at one pressure.
+- Change note: Both endpoint problems share parameters, thermochemistry, ordered reactions and source reference. Their feed amounts differ by $n_{add}\mathbf y$ within the admission tolerance. Each endpoint may have its own specification and temperature, with referenced free-temperature endpoints consuming the shared native first caloric actions at their solved temperatures. Every feed species needs an ideal-gas record. The exact first action holds feed state and amount fixed, differentiates both endpoint phase amounts and enthalpies, and subtracts the feed residual action; ideal feed enthalpy is independent of fitted parameters. The observation is an enthalpy increment for free-pressure endpoints; interpreting it as measured heat is an energy-balance choice unless endpoints and feed are isobaric at one pressure. For the fixed-T/P saturation-capped declaration in #906, the fixed analytical basis is N_b mol and source loading cap is alpha_LP mol/mol. The existing bubble rows compose n(alpha)=n0+N_b alpha y with (p_b-P)/P=0 through the same driver; ALG-EQUILIBRIUM owns the search and its limits. The endpoint enthalpy action includes movement of its feed. The source branch has zero endpoint-loading action; the saturation branch uses the loading coordinate action from EqID `implicit_sensitivity`. The eliminated ordinary-bubble check is alpha_s,v=-p_b,v/p_b,alpha at fixed physical P. Exact equality preserves heat but refuses its classical gradient, with one-sided loading action min(0,D alpha_s); unresolved nearby branches also refuse the gradient without changing the exact minimum. EqID `affine_parameter_coordinate_map` applies the coordinate map once.
 
 $$
 \Delta h_{add}=\frac{H^{(2)}-H^{(1)}}{n_{add}}-h_{feed},\qquad
@@ -2772,7 +2772,13 @@ h_{feed}=h^{id}(T_f,\mathbf y)+h^{res}(T_f,P_f,\mathbf y;\theta),\\
 \left(\dot n_p^{(k)}h_p^{(k)}+n_p^{(k)}\dot h_p^{(k)}\right)
 -\left.\frac{\partial h^{res}}{\partial\theta}\right|_{T_f,P_f,\mathbf y},\qquad
 \sigma_1=-1,\quad\sigma_2=1.
+\\
+\alpha_e=\min(\alpha_{LP},\alpha_s),\quad n_{add}=N_b\alpha_e,\quad
+Q=\frac{H_e-H_0}{N_b\alpha_e}-h_{feed},\\
+Q_{v_j}=\frac{H_{e,v_j}-H_{0,v_j}}{N_b\alpha_e}-h_{feed,v_j}
+-\frac{H_e-H_0}{N_b\alpha_e^2}\alpha_{e,v_j}.
 $$
+
 
 ## `total_entropy`
 

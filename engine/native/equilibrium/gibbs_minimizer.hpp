@@ -113,8 +113,10 @@ struct DriverLimits final {
     std::size_t evaluation_cap = 0, hessian_cap = 0;
     mutable std::size_t evaluations = 0, hessian_calls = 0;
     mutable bool exhausted = false;
+    std::size_t attempt_cap = 0;
+    mutable std::size_t attempts = 0;
     bool expired() const {
-        exhausted = exhausted || (recovery && consumed >= iterations);
+        exhausted = exhausted || (recovery && consumed >= iterations) || (attempt_cap && attempts > attempt_cap);
         return exhausted || std::chrono::steady_clock::now() >= deadline;
     }
     void check() const { if (expired()) throw std::runtime_error("elapsed work budget exhausted"); }

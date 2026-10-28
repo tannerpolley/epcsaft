@@ -51,7 +51,7 @@ void register_equilibrium(nb::module_& module) {
     nb::class_<EquilibriumNumericalEstimates>(module, "EquilibriumNumericalEstimates")
         EPCSAFT_READONLY(EquilibriumNumericalEstimates, basis, cause, source_reference_method, rank, dimension, precision_bits, threshold,
             condition, inverse_norm, backward_error, residuals, row_terms, row_inner, row_floor, physical_scale,
-            temperature, pressure, densities, packing, composition, amounts);
+            temperature, pressure, loading, densities, packing, composition, amounts);
     module.def("equilibrium_numerical_estimates", nb::overload_cast<const HelmholtzModel&, const EquilibriumResult&>(
         &equilibrium_numerical_estimates), nb::arg("model"), nb::arg("result"));
     module.def("equilibrium_numerical_estimates", nb::overload_cast<const IdealMoleFraction&, const EquilibriumResult&>(
@@ -163,7 +163,7 @@ void register_equilibrium(nb::module_& module) {
             entropy_j_per_k, critical, envelope, azeotrope, discovery, solids);
     nb::enum_<RowKind>(module, "RowKind")
         EPCSAFT_VALUES(RowKind, Chemical, Pressure, Moiety, Electro, Normalization, Enthalpy, Entropy, CriticalMode,
-            CriticalNormalization, CriticalCubic, EnvelopeCondition, AzeotropeCondition, SolidAffinity, ReactionMassAction, ReactionMolarity);
+            CriticalNormalization, CriticalCubic, EnvelopeCondition, AzeotropeCondition, SolidAffinity, ReactionMassAction, ReactionMolarity, SaturationPressure);
     nb::class_<Row>(module, "Row")
         EPCSAFT_READONLY(Row, kind, phase, index)
         .def_prop_ro("eqid", [](const Row& row) { return row_kind_name(row.kind); });
