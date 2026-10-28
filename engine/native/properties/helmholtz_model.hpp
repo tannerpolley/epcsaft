@@ -651,7 +651,8 @@ std::vector<double> formula_composition(
     const Parameters& parameters,
     const std::array<std::size_t, 2>& ion_indices,
     const std::array<int, 2>& stoichiometry,
-    double molality
+    double molality, const std::optional<std::vector<double>>& finite_solute_molalities = std::nullopt,
+    double* declared_solute_ratio = nullptr
 );
 
 InfiniteDilutionReference infinite_dilution_reference(

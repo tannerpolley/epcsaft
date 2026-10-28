@@ -51,10 +51,11 @@ namespace {
 struct Curvature final { double minimum = 0.0, equilibrated = 1.0, band = 0.0; };
 
 Curvature reduced_curvature_at(
-    const CompiledSystem& compiled, PhasePoint prepared,
+    const CompiledSystem& compiled, const PhasePoint& at,
     const std::vector<double>& multipliers
 ) {
-    if (compiled.feasibility_cell() || prepared.point.empty()) return {};
+    if (compiled.feasibility_cell() || at.point.empty()) return {};
+    auto prepared = at;
     prepared.point.resize(compiled.primal_size);
     using Dense = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
     const auto n = static_cast<Eigen::Index>(prepared.point.size());
@@ -703,15 +704,7 @@ bool GibbsMinimizer::intermediate_callback(
     const Ipopt::IpoptData* ip_data, Ipopt::IpoptCalculatedQuantities* ip_cq
 ) {
     core::Scope callback("ipopt_intermediate");
-    if (observations_.ipopt_diagnostics) {
-        auto& d = *observations_.ipopt_diagnostics;
-        ++d.callbacks;
-        if (mode == Ipopt::RestorationPhaseMode && (!d.last || d.last->mode != int(mode))) {
-            ++d.restoration_entries;
-            if (!d.first_restoration_iteration) d.first_restoration_iteration = iter;
-        }
-        d.last = IpoptIteration{int(mode), iter, ls_trials, obj_value, inf_pr, inf_du, mu, d_norm, regularization_size, alpha_du, alpha_pr};
-    }
+    observe_ipopt(*observations_.ipopt_diagnostics, scope_, {int(mode), iter, ls_trials, obj_value, inf_pr, inf_du, mu, d_norm, regularization_size, alpha_du, alpha_pr});
     restored_ = restored_ || mode == Ipopt::RestorationPhaseMode;
     // Ipopt adjusts bounds only when it accepts a point, before this callback, so the active problem's bound read
     // here holds for every search until the next callback; in restoration that is restoration's own bound block, whose
@@ -737,10 +730,6 @@ bool GibbsMinimizer::intermediate_callback(
     iterations_ = static_cast<std::size_t>(iter);
     if (limits_) limits_->consumed = std::max(limits_->consumed, consumed_before_ + iterations_);
     regularization_size_ = regularization_size;
-    if (scope_ != nullptr) scope_->probe("ipopt_iteration",
-        {double(mode), obj_value, inf_pr, inf_du, mu, d_norm, regularization_size,
-                            alpha_pr, alpha_du, static_cast<double>(ls_trials)},
-        static_cast<std::uint32_t>(iter));
     if (warm_ && restored_) core::retain_failure(observations_.first_numerical_failure,
         "warm attempt stopped on restoration", "Ipopt callback");
     return !(warm_ && restored_) && (!limits_ || !limits_->expired());  // max_iter owns iteration termination

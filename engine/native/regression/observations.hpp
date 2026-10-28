@@ -41,6 +41,7 @@ struct Observation final {
     std::array<std::size_t, 2> ion_indices{};
     std::array<int, 2> stoichiometry{};
     double molality = 0.0;
+    std::optional<std::vector<double>> finite_solute_molalities;
     std::vector<double> reference_composition;
     DensityBranch branch = DensityBranch::Unspecified;
     // Equilibrium kinds: the declared problem; `phase` indexes its phases, `species` is a
@@ -74,6 +75,7 @@ struct HoldResult final {
     double energy_error = 0.0, correction = 0.0, uncertainty = 0.0, derivative = 0.0;
     std::vector<double> parameter_derivative;
     int iterations = 0;
+    core::NumericalRank rank;
 };
 struct EvaluatedCoordinates final {
     Parameters parameters;
@@ -97,6 +99,7 @@ struct Prediction final {
     std::string message;
     std::optional<double> residual;  // the declared form, unweighted
     std::optional<core::Convergence> convergence;
+    std::optional<core::Convergence> first_numerical_failure;
     // Pressure closure: the branch the closure resolved (Unspecified when one stable root exists) and the count.
     std::optional<DensityBranch> branch;
     std::optional<std::size_t> stable_root_count;
@@ -116,6 +119,7 @@ struct PredictionGradient final {
     std::vector<ElectrolyteInputAction> input_actions;
     std::vector<ResidualEnergyAction> parameter_actions{};
     std::vector<equilibrium::SolvedStateActionDiagnostics> state_diagnostics;
+    std::optional<core::Convergence> first_numerical_failure;
 };
 struct ObservationInputDirection final {
     equilibrium::SolvedStateActionDirection state;

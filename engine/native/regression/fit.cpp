@@ -30,6 +30,7 @@
 #include <limits>
 #include <memory>
 #include <numeric>
+#include <new>
 #include <stdexcept>
 #include <string>
 #include <thread>
@@ -237,7 +238,14 @@ struct MeasurementChart final {
         }
         const Eigen::LLT<Eigen::MatrixXd> llt(r);  // reads the lower triangle
         const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> l = llt.matrixL();
-        require(llt.info() == Eigen::Success && l.allFinite(), "measurement matrix is not positive definite");
+        core::Scope scope("fit_measurement");
+        scope.probe("normalized_matrix", r.data(), r.size());
+        scope.probe("llt_success", llt.info() == Eigen::Success ? 1.0 : 0.0);
+        if (!(llt.info() == Eigen::Success && l.allFinite())) {
+            core::Convergence record; record.residual = NAN; record.stop = core::Stop::infeasible;
+            record.cause = "fit measurement matrix is not positive definite";
+            scope.finish(record); throw core::DeclarationError(record.cause, record);
+        }
         factor.assign(l.data(), l.data() + l.size());
     }
 
@@ -301,6 +309,7 @@ struct Failure final {
     bool jacobian = false;
     std::string message;
     std::vector<ResidualEnergyAction> parameter_actions{};
+    std::optional<core::Convergence> first_numerical_failure;
 };
 
 FitHost fit_host;
@@ -344,9 +353,9 @@ FIELDS(ReactionLogPolynomial, a, b, c, d, e, f, g, h, i, j)
 FIELDS(equilibrium::ReactionSpec, a, b, c, d, e, f)
 FIELDS(NeutralReferenceDeclaration, a, b, c, d)
 FIELDS(equilibrium::CriticalDeclaration, a, b)
-FIELDS(Observation, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u)
+FIELDS(Observation, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v)
 FIELDS(HydrationHold, a, b, c, d, e, f)
-FIELDS(Failure, a, b, c, d, e, f)
+FIELDS(Failure, a, b, c, d, e, f, first_numerical_failure)
 FIELDS(MeasuredInput, a, b, c, d, e, f)
 FIELDS(MeasurementGroup, a, b, c, d)
 FIELDS(MeasurementUncertainty, a, b, c, d)
@@ -600,7 +609,7 @@ struct ObservationEvaluator::Impl final {
             std::optional<Failure> theirs;
             ObservationEvaluation part;
             get(workers_.sockets[k - 1], theirs, part.predictions, part.residuals, part.statuses, part.gradient, part.input_gradient,
-                part.state_densities, part.reference_values);
+                part.state_densities, part.reference_values, part.first_numerical_failure, part.first_numerical_failure_observation);
             // A trial refused before its rows sends none; any other reply carries every row.
             const bool rows = part.statuses.size() == n && part.predictions.size() == n && part.residuals.size() == n
                 && part.gradient.size() == (jacobian ? n * width : 0)
@@ -616,7 +625,16 @@ struct ObservationEvaluator::Impl final {
                     measurement_.groups.size(), out.input_gradient.begin() + i * measurement_.groups.size());
             }
             if (theirs && (!failure || theirs->row < failure->row)) failure = std::move(theirs);
+            if (part.first_numerical_failure && (!out.first_numerical_failure
+                || part.first_numerical_failure_observation < out.first_numerical_failure_observation)) {
+                out.first_numerical_failure = part.first_numerical_failure;
+                out.first_numerical_failure_observation = part.first_numerical_failure_observation;
+            }
         }
+        if (out.first_numerical_failure && failure && out.first_numerical_failure_observation > failure->row)
+            out.first_numerical_failure.reset();
+        if (failure) core::retain_first(out.first_numerical_failure, failure->first_numerical_failure);
+        core::retain_first(result_.first_numerical_failure, out.first_numerical_failure);
         // The serial sweep stops at its first failure: later rows stay unevaluated.
         for (std::size_t i = failure ? failure->row + 1 : n; i < out.statuses.size(); ++i) {
             out.predictions[i] = out.residuals[i] = 0.0;
@@ -625,7 +643,7 @@ struct ObservationEvaluator::Impl final {
         }
         const auto reject = [&](std::size_t index, ObservationStatus status, std::string message, bool flagged, std::vector<ResidualEnergyAction> actions = {}) {
             for (const int fd : workers_.sockets) put(fd, false);
-            return fail(index, optimizer, status, std::move(message), flagged, std::move(actions));
+            return fail(index, optimizer, status, std::move(message), flagged, std::move(actions), out.first_numerical_failure);
         };
         if (failure) return reject(failure->observation, failure->status, std::move(failure->message), failure->jacobian, std::move(failure->parameter_actions));
         out.weighted.resize(n);
@@ -699,7 +717,16 @@ struct ObservationEvaluator::Impl final {
         reconciled.input_cost = 0.5 * e.col(0).tail(inputs).squaredNorm();
         for (Eigen::Index c = 0; c < inputs; ++c) reconciled.penalties[static_cast<std::size_t>(c)] = e(m - inputs + c, 0) * e(m - inputs + c, 0);
         out.cost = reconciled.output_cost + reconciled.input_cost;
-        return e.allFinite() && std::isfinite(out.cost);
+        const bool finite = e.allFinite() && std::isfinite(out.cost);
+        if (!finite) {
+            core::Convergence record; record.residual = out.cost; record.stop = core::Stop::nonfinite;
+            record.cause = e.allFinite() ? "whitened cost not finite" : "whitened residual or Jacobian not finite";
+            core::retain_first(out.first_numerical_failure, record);
+            core::Scope scope("fit_whitening");
+            scope.probe("solved_operands", e.data(), e.size());
+            scope.probe("cost", out.cost); scope.finish(record);
+        }
+        return finite;
     }
 
     // A worker answers each evaluation with its rows and first failure, then publishes on the fit's verdict.
@@ -714,7 +741,7 @@ struct ObservationEvaluator::Impl final {
             ObservationEvaluation out;
             const auto failure = compute(optimizer, jacobian, out, trial, same_point, scope);
             put(fd, failure, out.predictions, out.residuals, out.statuses, out.gradient, out.input_gradient,
-                out.state_densities, out.reference_values);
+                out.state_densities, out.reference_values, out.first_numerical_failure, out.first_numerical_failure_observation);
             get(fd, commit);
             if (commit) publish(optimizer, jacobian, out, trial, fresh, same_point);
         }
@@ -733,8 +760,10 @@ struct ObservationEvaluator::Impl final {
     }
 
     bool fail(std::size_t observation, const std::vector<double>& optimizer, ObservationStatus status,
-              std::string message, bool jacobian, std::vector<ResidualEnergyAction> actions = {}) {
-        result_.failures.push_back({trials_, observation, optimizer, status, std::move(message), jacobian, std::move(actions)});
+              std::string message, bool jacobian, std::vector<ResidualEnergyAction> actions = {}, std::optional<core::Convergence> first = {}) {
+        core::retain_failure(first, message, "fit evaluation");
+        core::retain_first(result_.first_numerical_failure, first);
+        result_.failures.push_back({trials_, observation, optimizer, status, std::move(message), jacobian, std::move(actions), first});
         ++result_.trial_failures;
         return false;
     }
@@ -764,6 +793,11 @@ struct ObservationEvaluator::Impl final {
                                        Trial& trial, bool same_point, core::Scope& scope) {
         const std::size_t n = request_.observations.size(), width = request_.coordinates.tie().size() + request_.holds.size();
         std::size_t i = 0;
+        const auto retain = [&](const auto& first) {
+            if (!out.first_numerical_failure && first) {
+                out.first_numerical_failure = first; out.first_numerical_failure_observation = i;
+            }
+        };
         try {
             require(optimizer.size() == this->width(), "complete optimizer width");
             const std::vector<double> parameter_point(optimizer.begin(), optimizer.begin() + request_.coordinates.coordinates.size());
@@ -816,12 +850,16 @@ struct ObservationEvaluator::Impl final {
                     prediction = predict(model, observation, starts_[g], std::move(prediction.compiled), &trial.references,
                         seed && unchanged ? &seed->centers[g] : nullptr, seed && unchanged ? seed->model.get() : nullptr,
                         seed && unchanged && trial.chart.physical == seed->chart.physical);
-                    if (prediction.status != ObservationStatus::Available && starts_[g])
-                        prediction = predict(model, observation, std::nullopt, std::move(prediction.compiled), &trial.references);
+                    if (prediction.status != ObservationStatus::Available && starts_[g]) {
+                        auto retry = predict(model, observation, std::nullopt, std::move(prediction.compiled), &trial.references);
+                        core::retain_first(retry.first_numerical_failure, prediction.first_numerical_failure, true);
+                        prediction = std::move(retry);
+                    }
                 } else if (!pressure_closed(observation.kind)) project_prediction(model, observation, prediction);
+                retain(prediction.first_numerical_failure);
                 out.statuses[i] = prediction.status;
                 if (prediction.status != ObservationStatus::Available)
-                    return Failure{i, i, prediction.status, jacobian, prediction.message};
+                    return Failure{i, i, prediction.status, jacobian, prediction.message, {}, prediction.first_numerical_failure};
                 out.predictions[i] = *prediction.value;
                 out.residuals[i] = *prediction.residual;
                 if (request_.uncertainty) {
@@ -847,8 +885,9 @@ struct ObservationEvaluator::Impl final {
                         : differentiate_group(model, rows, prediction, request_.coordinates, directions);
                 }
                 const auto& gradient = gradients[g][position[g]++];
+                retain(gradient.first_numerical_failure);
                 if (gradient.status != ObservationStatus::Available)
-                    return Failure{i, i, gradient.status, true, gradient.message, gradient.parameter_actions};
+                    return Failure{i, i, gradient.status, true, gradient.message, gradient.parameter_actions, gradient.first_numerical_failure};
                 std::copy_n(gradient.value.begin(), std::min(width, gradient.value.size()),
                           out.gradient.begin() + static_cast<std::ptrdiff_t>(i * width));
                 std::size_t local = width;
@@ -856,8 +895,12 @@ struct ObservationEvaluator::Impl final {
                     out.input_gradient[i * measurement_.groups.size() + c] = gradient.value.at(local++);
             }
             return std::nullopt;
+        } catch (const std::bad_alloc&) {
+            throw;
         } catch (const std::exception& error) {
-            return Failure{i, n, ObservationStatus::InadmissibleTrial, jacobian, error.what()};
+            if (!out.first_numerical_failure) out.first_numerical_failure_observation = i;
+            retain_density_failure(out.first_numerical_failure, error, "fit trial");
+            return Failure{i, n, ObservationStatus::InadmissibleTrial, jacobian, error.what(), {}, out.first_numerical_failure};
         }
     }
 
@@ -1114,6 +1157,17 @@ void covariance(FitResult& result, const FitRequest& request, std::size_t n,
     const double floor = policy::FIT_RANK_RECIPROCAL_CONDITION.value * (singular.size() > 0 ? singular(0) : 0.0);
     cov.rank = static_cast<std::size_t>(std::count_if(cov.singular_values.begin(), cov.singular_values.end(),
         [&](double value) { return value > floor && value > 0.0; }));
+    result.rank_records.push_back({"weighted optimizer observation Jacobian", point.size(), cov.rank, floor});
+    if (cov.rank < point.size()) core::retain_first(result.first_numerical_failure, [&] {
+        core::Convergence record; record.residual = NAN; record.stop = core::Stop::singular;
+        record.cause = "parameter Jacobian rank deficient; normal inverse unavailable";
+        record.rank = result.rank_records.back(); return record;
+    });
+    if (auto scope = core::Scope::detailed("fit_rank")) {
+        scope->probe("singular_values", cov.singular_values);
+        for (const auto row : cov.objective_rows) scope->probe("objective_rows", static_cast<double>(row));
+        for (std::size_t c = 0; c < point.size(); ++c) scope->probe("optimizer_columns", static_cast<double>(c));
+    }
     // A bound is active in optimizer space, within the fit's own active distance of the values it bounds.
     for (std::size_t c = 0; c < point.size(); ++c)
         if (std::min(point[c] - lower[c], upper[c] - point[c]) < policy::FIT_ACTIVE_BOUND_DISTANCE.value)
@@ -1320,6 +1374,7 @@ FitResult fit(const FitRequest& request) {
         for (std::size_t i = 0; i < request.weights.size(); ++i) sqrt_weights[i] = std::sqrt(request.weights[i]);
         owned = std::make_unique<ObservationEvaluator::Impl>(request, result, groups, sqrt_weights);
     } catch (const std::invalid_argument& error) {
+        core::retain_failure(result.first_numerical_failure, error, "fit setup");
         result.message = error.what();
         return result;
     }

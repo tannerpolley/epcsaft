@@ -185,9 +185,11 @@ EquilibriumResult one_component_two_density_attempt(const CompiledSystem& c, con
             const bool final = polishing;
             const ReducedCorrection<double> correction(at.jacobian, at.rows, result.last_rank);
             const auto& delta = correction.delta;
-            const double forward = polish_forward_bound(at.jacobian, at.rows, {delta[0], delta[1]}, {1.0, 1.0});
-            scope.probe("one_component_two_density_correction", {delta.lpNorm<Eigen::Infinity>(), forward,
-                policy::EQUILIBRIUM_POLISH_CORRECTION.value}, step);
+            scope.observe([&] {
+                const double forward = polish_forward_bound(at.jacobian, at.rows, {delta[0], delta[1]}, {1.0, 1.0});
+                scope.probe("one_component_two_density_correction", {delta.lpNorm<Eigen::Infinity>(), forward,
+                    policy::EQUILIBRIUM_POLISH_CORRECTION.value}, step);
+            });
             ++result.iterations;
             if (limits) ++limits->consumed;
             bool accepted = false;

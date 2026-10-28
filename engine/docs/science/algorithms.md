@@ -2390,6 +2390,36 @@ method. Initialization, bounds, loss, covariance assumptions and budget are
 scientific inputs to the fit. A failed state is a failed evaluation, never a
 successful zero residual. Fitted values remain candidate parameters.
 
+`FitResult.rank_records` publishes the existing SVD decision for the complete
+weighted optimizer observation Jacobian, including admitted measured-input
+columns and penalty rows. Its dimension is the column count; its absolute
+cutoff is `FIT_RANK_RECIPROCAL_CONDITION` times the largest singular value.
+This numerical determination is separate from statistical covariance:
+unfinished, active-bound and rank-deficient candidates keep their actual rank
+while withholding the normal inverse. No parameter forward-error estimate
+is derived from covariance, and opaque Ceres QR or Ipopt BFGS/KKT condition
+estimates remain unavailable.
+
+`first_numerical_failure` retains a producer's first refusal through prediction,
+actions, fit trials and worker replies, including successful cold replacement.
+Within an evaluation, only the serial row prefix through its first refused
+row is eligible; recovered causes are selected in row and producer order.
+Across evaluations the fit retains the chronological first cause. A
+`TrialFailure` keeps its own evaluation's cause, row and optimizer point.
+Recovered causes on successful rows do not create rejected trials.
+Measurement LLT refusal is infeasible, rather than necessarily rank deficient;
+whitening distinguishes nonfinite solved operands from overflowing cost.
+Hydration holds retain both caller criteria in detailed capture, the existing
+scalar derivative cutoff and actual bracket/residual operands. Their Core
+record has no invented single criterion for the two acceptance conditions.
+
+Minimax retains `ipopt_diagnostics` only for an actual invocation. Its last
+callback tuple, restoration entries and initialization/application returns
+have the same observer as Gibbs minimization; a point reader creates no
+optimizer attempt. Earlier concrete observation/hold causes precede generic
+callback or application-status text. Final coordinates and multipliers keep
+the existing constrained-estimator basis.
+
 See the fitting appendix for [cation-mixing coordinates](#cation-mixing-coordinates),
 [declared measurement uncertainty](#declared-measurement-uncertainty),
 [optional fitting-density offers](#optional-fitting-density-offers) and
@@ -2509,12 +2539,26 @@ observations. Inspect `capture.trace.ipopt_log_error` and
 `capture.trace.incomplete` for a failed log destination. Diagnostic retention
 does not handle out-of-memory failure specially.
 
+ASL replay uses the same real controls and requested derivative order. Its
+density errors format the existing first cause, falling back to density
+convergence; solved-state action errors retain rank/dimension and present
+condition/backward-error operands. The condition basis is the power-of-two
+column-then-row equilibrated defining Jacobian, $RJC$. Rank refusal precedes
+the inverse-condition estimate and Taylor solves, so absent operands stay
+absent. ASL never computes an estimate during conversion. Compare successful
+native and ASL actions in the same $(T,P,w)$ coordinates, including the
+normalization chain rule for $x=w/\sum w$; raw composition actions have a
+different basis.
+
 1. Retain the exact declaration, parameter/library identity, units, starts,
    requested criteria, work budgets and default result. Read final convergence
    separately from `first_numerical_failure`, `rank_records`, `last_rank`,
    `ipopt_diagnostics` and `recovered_ipopt_diagnostics`. Discovery declarations
    and trials retain their own observations; unrelated trials do not share a
    first cause.
+   For a fit, inspect its rank records separately from covariance status and
+   its first refusal separately from termination. For minimax, read
+   `result.minimax.ipopt_diagnostics` and the existing point/multipliers.
 2. With `EPCSAFT_IPOPT_OPTIONS_FILE` unset, replay those inputs through
    `with epcsaft.trace(diagnostics=True) as capture:`. Native callers use
    `core::Capture(true)`. Read the deepest association, density or callback
