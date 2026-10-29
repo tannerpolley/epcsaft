@@ -2499,6 +2499,8 @@ class EquilibriumComparison:
 
 class EquilibriumNumericalEstimates:
     """Requested local error estimates at the returned equilibrium point, not enclosures."""
+    loading: NumericalEstimate
+
     basis: str
     cause: str
     source_reference_method: str
@@ -2713,6 +2715,8 @@ class RowKind:
     """Chemical-potential stationarity, normalized by RT."""
     Pressure: RowKind
     """Pressure equality in the native dimensionless row normalization."""
+    SaturationPressure: RowKind
+    """Declared target pressure, normalized by that pressure."""
     Moiety: RowKind
     """Conserved moiety balance normalized on the feed basis."""
     Electro: RowKind
@@ -4066,6 +4070,8 @@ class ObservationKind:
 
     See ALG-FIT and engine/docs/regression/science/pure-saturation-regression.md for observation algebra, bases and admission. Parameter fitting is calibration, not independent physical validation.
     """
+    SaturationCappedAdditionEnthalpy: ObservationKind
+
     MeanIonicActivityCoefficient: ObservationKind
     """Dimensionless mean ionic activity coefficient on the declared molality scale."""
     OsmoticCoefficient: ObservationKind
@@ -4170,6 +4176,11 @@ class Observation:
     -----
     Only the fields consumed by kind define its observation. A failed prediction is unavailable with a cause, never a successful zero residual. Endpoint reaction/reference identities and component balances must match for AdditionEnthalpy.
     """
+    basis_amount: float
+    loading_cap: float
+    loading_bounds: tuple[float, float]
+    loading_grid: list[float]
+
     ion_indices: tuple[int, int]
     """Two component indices in (cation, anion) order for the formula-salt reference."""
     stoichiometry: tuple[int, int]
@@ -4232,6 +4243,14 @@ class Observation:
 
 class Prediction:
     """One native observation prediction with physical units and failure evidence."""
+    saturation: Optional[SaturationSearch]
+    saturation_loading: Optional[float]
+    endpoint_loading: Optional[float]
+    added_amount: Optional[float]
+    cap_branch: str
+    saturation_loading_gradient: list[float]
+    endpoint_loading_gradient: list[float]
+
     solver_options: list[dict[str, Any]]
     """Effective named numerical settings and provenance."""
     value: Optional[float]
@@ -4259,6 +4278,8 @@ class Prediction:
     """First producer refusal, including recovered causes."""
 
 class PredictionGradient:
+    saturation_loading_gradient: list[float]
+    endpoint_loading_gradient: list[float]
     parameter_actions: list[ResidualEnergyAction]
     """Exact first partials of one physical prediction.
 
@@ -4820,6 +4841,8 @@ class FitResult:
     -----
     Only positive-weight objective rows enter least-squares trial values/rank/variance. Zero-weight rows receive final reporting and checks. Fitted parameters are candidates; neither convergence nor covariance proves independent physical validation. See ALG-FIT.
     """
+    saturation_predictions: list[Optional[Prediction]]
+
     first_numerical_failure: Optional[Convergence]
     """First chronological producer refusal, retained after successful recovery."""
     rank_records: list[NumericalRank]
@@ -5273,6 +5296,8 @@ class ObservationEvaluation:
     -----
     For Difference, dr/dv=(dy/dv)/scale; for LogRatio, dr/dv=(dy/dv)/prediction. These point-reader prediction columns must not be confused with weighted Ceres residual columns. See ALG-FIT.
     """
+    saturation_predictions: list[Optional[Prediction]]
+
     first_numerical_failure: Optional[Convergence]
     """First producer refusal in the eligible row prefix."""
     first_numerical_failure_observation: int
@@ -5596,3 +5621,66 @@ class ReactionActivities:
 def reaction_activities(model: HelmholtzModel, result: EquilibriumResult) -> list[ReactionActivities]: ...
 @overload
 def reaction_activities(model: IdealMoleFraction, result: EquilibriumResult) -> list[ReactionActivities]: ...
+
+class AffineLoading:
+    """Declared n(alpha)=initial+alpha*direction, mol; positive loading bounds in mol/mol and target pressure in Pa."""
+    initial: list[float]
+    direction: list[float]
+    lower: float
+    upper: float
+    seed: float
+    pressure: float
+
+class SaturationOperand:
+    quantity: Quantity
+    """Physical candidate comparison value and its native local numerical estimate."""
+    value: float
+    error: NumericalEstimate
+
+class SaturationCandidate:
+    """Composed state and comparison operands: loading, T, P, then density, packing, amount and all mole fractions per declared phase."""
+    state: EquilibriumResult
+    operands: list[SaturationOperand]
+
+class SaturationComparison:
+    """All pairwise candidate comparison judgments; no transitive chaining of numerical error estimates."""
+    left: int
+    right: int
+    identity: str
+    operands: list[EquilibriumComparison]
+
+class SaturationNode:
+    """One required grid node: loading in mol/mol, pressure mismatch in Pa, slope in Pa per mol/mol."""
+    loading: float
+    mismatch: float
+    slope: float
+    state: EquilibriumResult
+    estimates: EquilibriumNumericalEstimates
+    action_cause: str
+    action_seconds: float
+    estimate_seconds: float
+    local_estimates: EquilibriumNumericalEstimates
+    action_diagnostics: Optional[SolvedStateActionDiagnostics]
+
+class SaturationSearch:
+    """Finite grid/search evidence; unique within the declared search, without interval or global certification."""
+    grid: list[float]
+    nodes: list[SaturationNode]
+    events: list[tuple[int, int]]
+    candidates: list[SaturationCandidate]
+    comparisons: list[SaturationComparison]
+    causes: list[str]
+    groups: list[list[int]]
+    accepted: Optional[int]
+    first_numerical_failure: Optional[Convergence]
+    brackets: int
+    iterations: int
+    evaluations: int
+    hessian_calls: int
+    attempts: int
+    complete: bool
+    declaration: AffineLoading
+    work_at_entry: tuple[int, int, int, int]
+    """Iterations, evaluations, Hessian callbacks and driver attempts spent before this search."""
+    uniqueness_scope: str
+    detection_limits: str

@@ -17,8 +17,11 @@ namespace epcsaft::regression {
 enum class ObservationKind {
     MeanIonicActivityCoefficient, OsmoticCoefficient, MixtureOsmoticCoefficient, SolvationGibbsEnergy, TransferGibbsEnergy, BulkRelativePermittivity,
     Density, IsobaricHeatCapacity, EquilibriumIsobaricHeatCapacity, PhaseDensity, EquilibriumPressure, EquilibriumTemperature, PhaseMoleFraction,
-    PhaseFraction, PartialPressure, PhaseAmountRatio, LogEquilibriumConstant, AdditionEnthalpy, SystemEnthalpy, FeedEnthalpy
+    PhaseFraction, PartialPressure, PhaseAmountRatio, LogEquilibriumConstant, AdditionEnthalpy, SaturationCappedAdditionEnthalpy, SystemEnthalpy, FeedEnthalpy
 };
+inline bool addition(ObservationKind kind) {
+    return kind == ObservationKind::AdditionEnthalpy || kind == ObservationKind::SaturationCappedAdditionEnthalpy;
+}
 inline bool pressure_closed(ObservationKind kind) {
     return kind == ObservationKind::Density || kind == ObservationKind::IsobaricHeatCapacity || kind == ObservationKind::FeedEnthalpy;
 }
@@ -49,6 +52,9 @@ struct Observation final {
     equilibrium::EquilibriumProblem problem;
     equilibrium::EquilibriumProblem final_problem;
     double feed_amount = 0.0;
+    double basis_amount = 0, loading_cap = 0;
+    std::array<double, 2> loading_bounds{};
+    std::vector<double> loading_grid;
     std::string reaction;  // LogEquilibriumConstant: named source record at problem.temperature.value.
     std::size_t phase = 0;
     std::vector<std::size_t> species;
@@ -108,6 +114,10 @@ struct Prediction final {
     std::optional<equilibrium::CompiledSystem> compiled;    // the problem it solved, reused by differentiate
     std::optional<equilibrium::EquilibriumResult> final_solved;
     std::optional<equilibrium::CompiledSystem> final_compiled;
+    std::shared_ptr<equilibrium::SaturationSearch> saturation;
+    std::optional<double> saturation_loading, endpoint_loading, added_amount, enthalpy_difference;
+    std::string cap_branch;
+    std::vector<double> saturation_loading_gradient, endpoint_loading_gradient;
 };
 
 // d(value)/d(theta) in EOS-row order, then the requested reaction-coordinate order;
@@ -120,6 +130,7 @@ struct PredictionGradient final {
     std::vector<ResidualEnergyAction> parameter_actions{};
     std::vector<equilibrium::SolvedStateActionDiagnostics> state_diagnostics;
     std::optional<core::Convergence> first_numerical_failure;
+    std::vector<double> saturation_loading_gradient, endpoint_loading_gradient;
 };
 struct ObservationInputDirection final {
     equilibrium::SolvedStateActionDirection state;
@@ -138,7 +149,8 @@ Prediction predict(
     const std::optional<equilibrium::EquilibriumResult>& start = std::nullopt,
     std::optional<equilibrium::CompiledSystem> prepared = std::nullopt, ReferenceCache* references = nullptr,
     const Prediction* previous = nullptr, const HelmholtzModel* previous_model = nullptr,
-    bool same_parameters = false
+    bool same_parameters = false,
+    std::chrono::steady_clock::time_point deadline = std::chrono::steady_clock::time_point::max()
 );
 PredictionGradient differentiate(
     const HelmholtzModel& model, const Observation& observation, const Prediction& prediction
