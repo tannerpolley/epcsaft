@@ -152,7 +152,7 @@ def main():
             raise ValueError(f"Symlink chain leaves snapshot: {item['path']}")
     manifest = {"head": head, "tree": str(tree), "file_count": len(files),
                 "size_bytes": sum(item["bytes"] for item in files), "threshold_bytes": LIMIT,
-                "policy": "HEAD only; no Git history or refs; build/ and every ignored path excluded",
+                "policy": "HEAD only; no Git history or refs; agent configuration, build/ and every ignored path excluded",
                 "excluded": excluded, "replaced": replacements, "checks": checks, "files": files}
     (output / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
     print(json.dumps({key: manifest[key] for key in ("head", "tree", "file_count", "size_bytes", "checks")}, indent=2))

@@ -5,7 +5,7 @@ a private repository. Public source releases do not use that tool.
 
 Maintainers prepare a local snapshot with `python3 tools/release-snapshot` after
 committing the candidate. It writes a new tree and a JSON manifest under
-`build/release/`, excludes ignored files and `build/`, and replaces files larger
+`build/release/`, excludes agent configuration, ignored files and `build/`, and replaces files larger
 than 50 MiB with SHA-256 notes. The manifest records the HSL and journal-PDF
 path checks and personal-path counts. Complete the secret scan before any
 publication; snapshot generation does not publish or tag a release.
