@@ -3,8 +3,9 @@ ePC-SAFT third-party notices
 The project code is licensed under GNU GPL version 3, with the section 7
 additional permission for linking with EPL-licensed Ipopt in LICENSE and
 engine/LICENSE. That permission does not relicense third-party components
-or data. Public releases contain source; tools/refresh-main-wheel remains
-private-only. Retain each component's upstream notices when redistributing it.
+or data. Public source releases and corresponding-source downloads are available at
+https://github.com/tannerpolley/epcsaft/releases. Retain each component's
+upstream notices when redistributing it.
 
 Conda package contents and corresponding source
 
