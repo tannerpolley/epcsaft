@@ -122,7 +122,11 @@ struct Workers final {
         Handle client(CreateFileW(name.c_str(), GENERIC_READ | GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, nullptr));
         windows_require(client.handle != nullptr);
         // CreateFile connected the local client before this call.
-        windows_require(ConnectNamedPipe(server.handle, nullptr) || GetLastError() == ERROR_PIPE_CONNECTED);
+        Handle connected(CreateEventW(nullptr, TRUE, FALSE, nullptr));
+        windows_require(connected.handle != nullptr);
+        OVERLAPPED connection{};
+        connection.hEvent = connected.handle;
+        windows_require(ConnectNamedPipe(server.handle, &connection) || GetLastError() == ERROR_PIPE_CONNECTED);
         Handle null(CreateFileW(L"NUL", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
             nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr));
         windows_require(null.handle != nullptr);
