@@ -36,8 +36,14 @@ export LDFLAGS="$LDFLAGS -L$library_prefix/lib"
 } > "$evidence/compilers.txt" 2>&1
 cd "$source_dir/../ipopt-build"
 build_dir=$PWD
-# Keep failed configure/link probes as well as successful configuration headers.
-trap 'find "$build_dir" -name config.log -exec cp --parents {} "$evidence" \;' EXIT
+# Copy in the shell: MSYS find -exec exceeds its Windows argument/environment limit.
+retain_configuration() {
+    cd "$build_dir"
+    while IFS= read -r path; do
+        cp --parents "$path" "$evidence"
+    done < <(find . \( -name config.log -o -name 'config*.h' -o -name libtool -o -name '*.def' \) -print)
+}
+trap retain_configuration EXIT
 # Native Windows make cannot resolve MSYS absolute /d source paths.
 ../ipopt-source/configure --prefix="$private_prefix" \
     --disable-static --enable-dependency-linking \
@@ -81,7 +87,6 @@ Version: 3.11.9
 Libs: -L\${libdir} -lepcsaft_ipopt_3119
 Cflags: -I\${includedir}
 PC
-find . \( -name 'config*.h' -o -name libtool -o -name '*.def' \) -exec cp --parents {} "$evidence" \;
 sha256sum "$private_prefix/bin/epcsaft_ipopt_3119.dll" \
     "$private_prefix/lib/epcsaft_ipopt_3119.lib" > "$evidence/sha256.txt"
 llvm-readobj --coff-imports --coff-exports "$private_prefix/bin/epcsaft_ipopt_3119.dll" > "$evidence/dll.txt"
