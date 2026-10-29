@@ -1152,14 +1152,24 @@ void check_pure_saturation() {
     for (const auto& [name, parameters, temperature] : std::vector<std::tuple<std::string, Parameters, double>>{
         {"propane", caloric_specification_checks::propane_parameters(), 300},
         {"propane-low-pressure", caloric_specification_checks::propane_parameters(), 110},
+        {"propane-packing-conversion", caloric_specification_checks::propane_parameters(), 216.4},
         {"acetone", pure_saturation_checks::acetone(), 300}, {"methanol", pure_saturation_checks::methanol(), 300}}) {
         HelmholtzModel model(parameters);
         const auto p = pure_saturation_checks::saturation(temperature);
         const auto c = compile_problem(model, p); const auto result = solve_compiled(c);
+        const auto dedicated = solve_saturation(c);
+        CHECK(dedicated.success && dedicated.requested_tolerance_met.value_or(false));
+        CHECK(dedicated.residuals == result.residuals && dedicated.molar_densities == result.molar_densities);
+        CHECK(dedicated.pressure == result.pressure && dedicated.phase_pressures.size() == 2);
+        for (std::size_t i = 0; i < 2; ++i)
+            CHECK(dedicated.phase_pressures[i] == model.pure_isothermal(temperature, 1 / dedicated.molar_densities[i]).pressure);
         if (!result.has_state()) throw std::runtime_error(name + ": " + result.message);
         for (double shift : {0.0, -0.01}) {
             const std::vector<double> u{std::log(result.molar_densities[0]) + shift, std::log(result.molar_densities[1]) - shift};
             const auto reduced = one_component_two_density_point(c, u); const auto& limited = reduced.phase;
+            const auto repeated = one_component_two_density_point(c, u, nullptr, &limited,
+                std::log(model.packing_fraction_coefficient(temperature, {1.0})));
+            CHECK(repeated.phase.point == limited.point && repeated.rows == reduced.rows);
             const auto full = c.prepare(limited.point); const auto rows = c.evaluate_at(full).values;
             const auto jacobian = c.jacobian_at(full), limited_jacobian = c.jacobian_at(limited);
             const std::string id = name + "/" + std::to_string(shift);
@@ -1202,7 +1212,7 @@ void check_pure_saturation() {
         auto changed = p; std::reverse(changed.phases.begin(), changed.phases.end());
         changed.phases[0].amount = AmountSpec::free(); changed.phases[1].amount = AmountSpec::pinned(0);
         changed.phases[0].name = "gas"; changed.phases[1].name = "condensed"; changed.feed.values = {100};
-        const auto lifted = solve_equilibrium(model, changed);
+        const auto lifted = solve_saturation(compile_problem(model, changed));
         if (!lifted.has_state()) throw std::runtime_error(name + " reversed: " + lifted.message);
         compare(name + "/feed-pressure", *lifted.pressure, *result.pressure, *result.pressure);
         compare(name + "/extensive-objective", lifted.objective, 100 * result.objective, 100);

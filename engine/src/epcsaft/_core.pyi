@@ -2807,6 +2807,8 @@ class CompiledSystem:
     """Defining-Jacobian rank measured at the generic point."""
     removed_species: list[int]
     """Component indices eliminated by exact inventory/support restrictions."""
+    def solve_saturation(self) -> EquilibriumResult: ...
+
     def solve(self) -> EquilibriumResult:
         """Solve this declaration from a fresh start through the native equilibrium driver."""
         ...
@@ -3012,6 +3014,13 @@ class IpoptDiagnostics:
     """Original TNLP tuple on unsuccessful termination, or None without one."""
 
 class EquilibriumResult:
+    rejected_reduction: EquilibriumResult | None
+    terminal_numerical_failure: Convergence | None
+    last_full_evaluation: Convergence | None
+    phase_pressures: list[float]
+
+    def saturation_values(self) -> dict[str, Any]: ...
+
     """Solved phases and numerical evidence on the declared feed basis.
 
     Notes

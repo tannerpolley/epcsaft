@@ -268,6 +268,7 @@ double largest_difference(
 }
 
 void clear_state(EquilibriumResult& result) {
+    result.phase_pressures.clear();
     result.optimizer_state.reset();
     result.temperature.reset();
     result.pressure.reset();
@@ -1937,16 +1938,10 @@ static bool recovery_trigger(const EquilibriumResult& result) {
         || (result.message.rfind("local phase instability:", 0) == 0 && result.message.find(" has lowest eigenvalue ") != std::string::npos));
 }
 
-EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::optional<EquilibriumResult>& start,
-                                 core::Scope* outer, const DriverLimits* limits, std::shared_ptr<const OptimizerState> warm,
-                                 bool recover, EquilibriumResult* audit) {
-    std::optional<core::Scope> own;
-    auto& scope = outer != nullptr ? *outer : own.emplace("solve_equilibrium");
-    if (compiled.ideal && start) throw std::invalid_argument("ideal previous-result starts unsupported before calculation");
-    const EquilibriumResult structural = structural_result(compiled, scope);
-    if (!compiled.feasible) return structural;
-    if (compiled.ideal) return run_driver_once(nullptr, compiled, compiled.generic_point(), structural, scope,
-        nullptr, nullptr, limits, false, {}, false, false);
+EquilibriumResult continue_compiled(const CompiledSystem& compiled, const std::optional<EquilibriumResult>& start,
+    core::Scope& scope, const DriverLimits* limits, std::shared_ptr<const OptimizerState> warm,
+    bool recover, EquilibriumResult* audit, const EquilibriumResult& structural, StageWork stages,
+    std::optional<std::vector<double>> original, std::shared_ptr<const EquilibriumResult> rejected) {
     const auto& model = *compiled.model;
     const bool use_start = start.has_value() && usable_start(compiled, *start);
     // A previous result that start_point copies replaces the start's composition; skip its speciation.
@@ -1959,21 +1954,20 @@ EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::opti
                 cold->problem.phases[phase].declared_composition_guess = false;
         }
     }
-    StageWork stages;
-    auto seeded = start.has_value() ? std::nullopt : speciated_start(compiled, limits, stages);
+    auto seeded = start.has_value() || original ? std::nullopt : speciated_start(compiled, limits, stages);
     EquilibriumResult result;
     bool admission_refused = false;
     bool retry_eligible = false;
-    std::string reduction_failure;
-    std::optional<LinearSolveDiagnostics> reduction_diagnostics;
     // The speciated seed when there is one; the caller's start alone or after the seed's failure.
     for (int attempt = seeded ? 0 : 1; attempt < 2 && !result.success; ++attempt) {
         stages.add(result);  // a failed seeded attempt
         std::vector<double> initial;
-        if (attempt == 0) {
+        if (original) initial = *original;
+        else if (attempt == 0) {
             initial = std::move(*seeded);
         } else {
             try { initial = use_start ? compiled.generic_point() : boundary_start(cold ? *cold : compiled, !copied, limits, &stages); }
+            catch (const std::bad_alloc&) { throw; }
             catch (const std::exception& error) {
                 core::retain_failure(stages.first_numerical_failure, error, "solve initialization");
                 if (audit) stages.report_observations(*audit);
@@ -1981,19 +1975,19 @@ EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::opti
             }
             if (start.has_value()) initial = start_point(compiled, *start, std::move(initial));
         }
-        if (newton_eligible(compiled) || (!warm && !std::getenv("EPCSAFT_IPOPT_OPTIONS_FILE") && free_amount_newton_eligible(compiled))) {
+        if (!original && (newton_eligible(compiled) || (!warm && !std::getenv("EPCSAFT_IPOPT_OPTIONS_FILE") && free_amount_newton_eligible(compiled)))) {
             auto fast = one_component_two_density_eligible(compiled)
                 ? one_component_two_density_attempt(compiled, initial, structural, scope, limits)
                 : newton_attempt(compiled, initial, structural, limits);
-            if (one_component_two_density_eligible(compiled) && !fast.success) {
-                reduction_failure = fast.message; reduction_diagnostics = fast.linear_solve_diagnostics;
-            }
-            if (fast.success) { stages.report(fast); return fast; }
+            if (one_component_two_density_eligible(compiled) && !fast.success)
+                rejected = std::make_shared<const EquilibriumResult>(fast);
+            if (fast.success) { fast.rejected_reduction = rejected; stages.report(fast); return fast; }
             stages.add(fast);
         }
         try {
             result = run_driver(model, compiled, std::move(initial), structural, scope, nullptr, &result, limits, false, warm, false, false, &retry_eligible);
-        } catch (const std::exception& error) {
+        } catch (const std::bad_alloc&) { throw; }
+        catch (const std::exception& error) {
             core::retain_failure(result.first_numerical_failure, error, "seeded driver");
             if (audit) { stages.report_observations(result); *audit = result; }
             if (attempt == 0) continue;  // the seeded attempt's exception falls back to the declared start
@@ -2004,7 +1998,8 @@ EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::opti
         try {
             branches = compiled.problem.critical ? admit_critical(compiled, result)
                 : check_density_branches(model, compiled, result, {}, true, scope, limits);
-        } catch (const std::exception& error) {
+        } catch (const std::bad_alloc&) { throw; }
+        catch (const std::exception& error) {
             branches.message = std::string("density branch admission failed: ") + error.what();
         }
         if (!branches.accepted) {
@@ -2015,13 +2010,9 @@ EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::opti
         }
     }
     stages.report(result);
-    if (!result.success && !reduction_failure.empty()) {
-        result.message += "; one-component two-density attempt: " + reduction_failure;
-        result.linear_solve_diagnostics = reduction_diagnostics;
-        if (result.linear_solve_diagnostics) result.linear_solve_diagnostics->reason = "rejected attempt: " + reduction_failure;
-    }
     result = recover_physical_amounts(compiled, std::move(result), retry_eligible && !admission_refused,
         scope, nullptr, limits, nullptr, nullptr, true);
+    result.rejected_reduction = rejected;
     if (result.success || !recover || admission_refused || (limits && (limits->expired() || limits->consumed >= limits->iterations))
         || !recovery_eligible(compiled) || !recovery_trigger(result)) return result;
     // ALG-EQUILIBRIUM neutral recovery: its own caps, within any caller remainder; both causes and all work are kept.
@@ -2036,11 +2027,25 @@ EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::opti
     result.evaluations += work.evaluations;
     result.hessian_calls += work.hessian_calls;
     if (!recovered.success) { result.message += "; recovery: " + recovered.message; return result; }
+    recovered.rejected_reduction = rejected;
     recovered.message += "; recovered after: " + result.message;
     recovered.iterations = result.iterations;
     recovered.evaluations = result.evaluations;
     recovered.hessian_calls = result.hessian_calls;
     return recovered;
+}
+
+EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::optional<EquilibriumResult>& start,
+                                 core::Scope* outer, const DriverLimits* limits, std::shared_ptr<const OptimizerState> warm,
+                                 bool recover, EquilibriumResult* audit) {
+    std::optional<core::Scope> own;
+    auto& scope = outer != nullptr ? *outer : own.emplace("solve_equilibrium");
+    if (compiled.ideal && start) throw std::invalid_argument("ideal previous-result starts unsupported before calculation");
+    const EquilibriumResult structural = structural_result(compiled, scope);
+    if (!compiled.feasible) return structural;
+    if (compiled.ideal) return run_driver_once(nullptr, compiled, compiled.generic_point(), structural, scope,
+        nullptr, nullptr, limits, false, {}, false, false);
+    return continue_compiled(compiled, start, scope, limits, std::move(warm), recover, audit, structural);
 }
 
 EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,

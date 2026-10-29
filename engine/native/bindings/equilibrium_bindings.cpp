@@ -27,6 +27,76 @@ static ParameterDocument record_document(const nb::object& model) {
     return nb::cast<ParameterDocument>(document);
 }
 
+static nb::dict convergence_values(const core::Convergence& c) {
+    nb::dict values;
+    const bool measured = c.criterion || !std::isnan(c.residual);
+    values["residual"] = std::isnan(c.residual) ? nb::none() : nb::cast(c.residual);
+    values["floor"] = nb::cast(c.floor); values["amplification"] = nb::cast(c.amplification);
+    values["contraction"] = nb::cast(c.contraction);
+    values["iterations"] = measured ? nb::cast(c.iterations) : nb::none();
+    values["evaluations"] = measured ? nb::cast(c.evaluations) : nb::none();
+    values["stop"] = measured ? nb::cast(core::stop_name(c.stop)) : nb::none();
+    values["criterion"] = c.criterion ? nb::cast(c.criterion->value) : nb::none();
+    return values;
+}
+
+static nb::object failure_values(const std::optional<core::Convergence>& record) {
+    if (!record) return nb::none();
+    auto values = convergence_values(*record);
+    values["cause"] = record->cause; values["rank"] = nb::cast(record->rank);
+    values["backward_error"] = nb::cast(record->backward_error);
+    return values;
+}
+
+static nb::dict saturation_values(const EquilibriumResult& r) {
+    nb::dict out;
+    const auto finite = [](double value) -> nb::object { return std::isfinite(value) ? nb::cast(value) : nb::none(); };
+    out["convergence"] = std::isnan(r.convergence.residual) && !r.convergence.criterion
+        ? nb::object(nb::none()) : nb::object(convergence_values(r.convergence));
+    out["P"] = nb::cast(r.pressure); out["T"] = nb::cast(r.temperature);
+    out["success"] = r.success; out["requested_tolerance_met"] = nb::cast(r.requested_tolerance_met);
+    out["message"] = r.message; out["solver_status"] = r.solver_status;
+    out["max_residual"] = r.residuals.empty() ? nb::none() : finite(r.residual_norm());
+    out["iterations"] = r.iterations; out["evaluations"] = r.evaluations; out["hessian_calls"] = r.hessian_calls;
+    out["first_numerical_failure"] = failure_values(r.first_numerical_failure);
+    out["terminal_numerical_failure"] = failure_values(r.terminal_numerical_failure);
+    out["last_full_evaluation"] = failure_values(r.last_full_evaluation);
+    nb::object rank = nb::none();
+    if (r.last_rank) {
+        nb::dict values;
+        values["basis"] = r.last_rank->basis; values["dimension"] = r.last_rank->dimension;
+        values["rank"] = r.last_rank->rank; values["threshold"] = r.last_rank->threshold;
+        rank = std::move(values);
+    }
+    out["rank"] = std::move(rank);
+    nb::object linear = nb::none();
+    if (r.linear_solve_diagnostics) {
+        const auto& d = *r.linear_solve_diagnostics;
+        nb::dict values;
+        values["method"] = d.system; values["reason"] = d.reason;
+        values["residual"] = finite(d.residual_norm); values["evaluation_floor"] = finite(d.evaluation_floor);
+        values["inverse_norm"] = finite(d.jacobian_inverse_norm); values["condition_estimate"] = finite(d.condition_estimate);
+        values["forward_error_estimate"] = finite(d.forward_error_estimate);
+        values["working_precision_bits"] = d.precision_bits;
+        values["refinement_iterations"] = d.refinement_iterations;
+        linear = std::move(values);
+    }
+    out["linear"] = std::move(linear);
+    nb::list phases;
+    for (std::size_t p = 0; r.has_state() && p < r.phase_count; ++p) {
+        nb::dict phase;
+        phase["phase"] = r.declaration->phases[p].kind == PhaseKind::Liquid ? "liquid" : "vapor";
+        phase["rho"] = r.molar_densities[p];
+        const auto n = r.mole_fractions.size() / r.phase_count;
+        phase["x"] = nb::cast(std::vector<double>(r.mole_fractions.begin() + p * n, r.mole_fractions.begin() + (p + 1) * n));
+        phase["P"] = p < r.phase_pressures.size() ? nb::cast(r.phase_pressures[p]) : nb::none();
+        phases.append(std::move(phase));
+    }
+    out["phases"] = std::move(phases);
+    out["rejected_reduction"] = r.rejected_reduction ? nb::object(saturation_values(*r.rejected_reduction)) : nb::object(nb::none());
+    return out;
+}
+
 void register_equilibrium(nb::module_& module) {
     nb::class_<core::NumericalRank>(module, "NumericalRank")
         EPCSAFT_READONLY(core::NumericalRank, basis, dimension, rank, threshold);
@@ -174,6 +244,7 @@ void register_equilibrium(nb::module_& module) {
         EPCSAFT_READONLY(CompiledSystem, first_numerical_failure, rank_records, last_rank, pinned_count, free_intensive_count, rank, charge_row_count, primal_size,
             generic_nullity, feed_total, has_ions, has_reaction, conserves_total_moles, jacobian_rank, removed_species)
         .def("solve", [](const CompiledSystem& system) { return solve_compiled(system); }, nb::keep_alive<0, 1>())
+        .def("solve_saturation", &solve_saturation, nb::keep_alive<0, 1>())
         .def("generic_point", &CompiledSystem::generic_point)
         .def("numerical_estimates", [](const CompiledSystem& system, std::vector<double> coordinates,
                 double temperature, double pressure, std::vector<double> amounts, std::vector<double> composition,
@@ -215,10 +286,16 @@ void register_equilibrium(nb::module_& module) {
         EPCSAFT_READONLY(IpoptDiagnostics, last, first_restoration_iteration, initialization_return, application_return,
             restoration_entries, callbacks, warm_initialized, predicted, physical_amounts, failed_point);
     nb::class_<EquilibriumResult>(module, "EquilibriumResult", "Phases in declared order; K, Pa, mol, mol/m^3; per-phase-per-component lists are phase-major in component_ids order.")
+        .def("saturation_values", [](nb::object self) {
+            auto values = saturation_values(nb::cast<const EquilibriumResult&>(self));
+            values["diagnostics"] = self;
+            return values;
+        })
+        .def_prop_ro("rejected_reduction", [](const EquilibriumResult& r) { return r.rejected_reduction ? nb::cast(*r.rejected_reduction) : nb::none(); })
         .def_prop_ro("solver_options", [](const EquilibriumResult& v) { return v.declaration ? bindings::solver_options_view(v.declaration->solver_options, 7) : nb::list(); })
         EPCSAFT_READONLY(EquilibriumResult, solver_settings, diagnostic_options_file, linear_solver, first_numerical_failure, rank_records, ipopt_diagnostics, recovered_ipopt_diagnostics)
         .def_ro("neutral_reference_diagnostics", &EquilibriumResult::reference_diagnostics)
-        EPCSAFT_READONLY(EquilibriumResult, discovery, success, message, solver_status, temperature, pressure, amounts,
+        EPCSAFT_READONLY(EquilibriumResult, terminal_numerical_failure, last_full_evaluation, phase_pressures, discovery, success, message, solver_status, temperature, pressure, amounts,
             mole_fractions, molar_densities, packing_fractions,
             // Dimensionless reduced-energy balance/charge stationarity coordinates of the solution.
             multipliers,
