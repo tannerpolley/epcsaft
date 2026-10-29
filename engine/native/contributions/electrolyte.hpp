@@ -21,6 +21,8 @@ inline bool dielectric_solvent_component(
     std::size_t component,
     const ParameterSet& parameters
 ) {
+    if (parameters.permittivity_form.is(PermittivityForm::SolventMoleWeighting))
+        return parameters.permittivity_solvent[component] != 0;
     if (parameters.charge_number[component] != 0) {
         return false;
     }
@@ -80,6 +82,21 @@ Scalar bulk_relative_permittivity(
     const ParameterSet& parameters
 ) {
     const auto relative_permittivity = component_relative_permittivities(temperature, parameters);
+    // EqID: solvent_mole_weighted_bulk_permittivity
+    if (parameters.permittivity_form.is(PermittivityForm::SolventMoleWeighting)) {
+        Fixed numerator = Fixed(0.0), denominator = Fixed(0.0);
+        for (std::size_t i = 0; i < mole_fractions.size(); ++i) {
+            if (!parameters.permittivity_solvent[i]) continue;
+            numerator += mole_fractions[i] * relative_permittivity[i];
+            denominator += mole_fractions[i];
+        }
+        if (parameters.permittivity_solvent_normalized) {
+            if constexpr (std::is_same_v<Fixed, double>)
+                if (!(denominator > 0.0)) throw std::invalid_argument("permittivity has no solvent denominator");
+            return numerator / denominator;
+        }
+        return numerator;
+    }
     Fixed solvent_mass = Fixed(0.0);
     Fixed dielectric_mass = Fixed(0.0);
     Fixed solvent_fraction = Fixed(0.0);
@@ -115,16 +132,16 @@ Scalar bulk_relative_permittivity(
             // EqID: effective_dipolar_density
             effective_dipolar_density += number_density_angstrom3 * fraction
                 * (
-                    parameters.dipole_scaling_debye2[component]
+                    Fixed(parameters.dipole_scaling_debye2[component])
                         * DEBYE_SQUARED_J_ANGSTROM3 / (BOLTZMANN_J_PER_K * temperature)
-                    + 3.0 * parameters.polarizability_scaling_angstrom3[component]
+                    + Fixed(3.0) * parameters.polarizability_scaling_angstrom3[component]
                 );
             // EqID: dipolar_correlation_integral
             dipolar_correlation += fraction
                 * parameters.correlation_integral_parameter[component];
         }
         // EqID: effective_dipolar_density
-        const Scalar y_effective = (4.0 * PI / 9.0)
+        const Scalar y_effective = (4.0 * Scalar(PI) / 9.0)
             * effective_dipolar_density;
         // EqID: dipolar_correlation_integral
         const Scalar integral = Scalar(1.0) + dipolar_correlation
@@ -296,7 +313,7 @@ ElectrolyteResult<Scalar> electrolyte_contribution(
     // EqID: debye_huckel_helmholtz
     const Scalar debye_huckel = -kappa * ELEMENTARY_CHARGE_C
         * ELEMENTARY_CHARGE_C * weighted_chi
-        / (12.0 * PI * VACUUM_PERMITTIVITY_F_PER_M
+        / (12.0 * Scalar(PI) * VACUUM_PERMITTIVITY_F_PER_M
            * bulk_permittivity * BOLTZMANN_J_PER_K * temperature);
     return {bulk_permittivity, debye_huckel};
 }

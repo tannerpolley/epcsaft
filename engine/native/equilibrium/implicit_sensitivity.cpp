@@ -1,6 +1,7 @@
 #include "equilibrium/gibbs_minimizer.hpp"
 
 #include "core/trace.hpp"
+#include "core/linear_error.hpp"
 #include "core/numerical_policy.hpp"
 #include "equilibrium/stoichiometry.hpp"
 
@@ -39,28 +40,8 @@ bool valid_point(const std::vector<double>& point) {
         point.begin(), point.end(), [](double value) { return std::isfinite(value); });
 }
 
-// Normwise backward error |r|/(|J||y| + |b|) in the infinity norm (Rigal-Gaches). Unlike
-// |r|/max(1, |b|), it does not cap the realized amplification |J||y|/|b| or depend on chart scale.
-double backward_error(double residual, double jacobian_norm, double solution, double right) {
-    const double denominator = jacobian_norm * solution + right;
-    return residual == 0.0 ? 0.0 : denominator > 0.0 ? residual / denominator : std::numeric_limits<double>::infinity();
-}
-
-// The defect b - A z in double-double: FMA TwoProduct and TwoSum (Ogita-Rump-Oishi Dot2), accurate
-// as if computed in twice the working precision and independent of the host's x87 precision control.
-Eigen::VectorXd defect(const Eigen::MatrixXd& matrix, const Eigen::VectorXd& solution, const Eigen::VectorXd& right) {
-    Eigen::VectorXd result(right.size());
-    for (Eigen::Index row = 0; row < right.size(); ++row) {
-        double sum = right(row), error = 0.0;
-        for (Eigen::Index column = 0; column < solution.size(); ++column) {
-            const double term = -matrix(row, column) * solution(column), next = sum + term, part = next - sum;
-            error += (sum - (next - part)) + (term - part) + std::fma(-matrix(row, column), solution(column), -term);
-            sum = next;
-        }
-        result(row) = sum + error;
-    }
-    return result;
-}
+using core::backward_error;
+using core::compensated_defect;
 
 bool square_and_numeric(const Eigen::MatrixXd& matrix) { return matrix.rows() == matrix.cols() && matrix.allFinite(); }
 
@@ -83,6 +64,7 @@ SensitivityInfo inspect_sensitivity(
     SensitivityInfo result;
     result.equations = rows;
     result.rank = static_cast<std::size_t>(lu.rank());
+    result.threshold = lu.threshold();
     result.condition_estimate = condition_estimate(matrix);
     result.nonsingular = square_and_numeric(matrix) && result.rank == dimension;
     scope.probe("equations", static_cast<double>(rows));
@@ -97,7 +79,7 @@ SensitivityInfo inspect_sensitivity(
 std::vector<double> solve_implicit(
     const CompiledSystem& compiled,
     const PhasePoint& prepared,
-    const std::vector<double>& column
+    const std::vector<double>& column, std::optional<core::Convergence>* failure
 ) {
     core::Scope scope("implicit_sensitivity");
     const std::size_t rows = compiled.rows.size();
@@ -105,16 +87,28 @@ std::vector<double> solve_implicit(
     if (!valid_point(prepared.point)) throw std::invalid_argument("invalid sensitivity point");
     if (!all_numeric(column)) throw std::invalid_argument("invalid parameter derivative");
     const auto jacobian = compiled.jacobian_at(prepared);
-    if (jacobian.size() != rows * dimension || rows != dimension) return {};
+    const auto refuse = [&](const char* cause, core::Stop stop, const auto* factor, std::optional<double> backward = std::nullopt) {
+        if (failure) { core::Convergence r; r.cause = cause;
+            if (factor) r.rank = core::numerical_rank(*factor, "implicit defining rows");
+            r.residual = backward.value_or(NAN); r.backward_error = backward; r.stop = stop;
+            if (backward) r.criterion = &policy::EQUILIBRIUM_ACTION_BACKWARD_ERROR;
+            core::retain_first(*failure, r);
+        }
+        return std::vector<double>{};
+    };
+    if (jacobian.size() != rows * dimension || rows != dimension) return refuse("implicit Jacobian shape", core::Stop::infeasible, static_cast<const Eigen::FullPivLU<Eigen::MatrixXd>*>(nullptr));
     const auto matrix = dense_matrix(jacobian, rows, dimension);
     const auto lu = matrix.fullPivLu();
-    if (!square_and_numeric(matrix) || static_cast<std::size_t>(lu.rank()) != dimension) return {};
+    if (!square_and_numeric(matrix) || static_cast<std::size_t>(lu.rank()) != dimension)
+        return refuse(matrix.allFinite() ? "implicit Jacobian rank" : "implicit nonfinite Jacobian", matrix.allFinite() ? core::Stop::singular : core::Stop::nonfinite, &lu);
     // One column, kept a matrix so that Eigen takes the same solve path.
     const Eigen::MatrixXd right = -Eigen::Map<const Eigen::VectorXd>(column.data(), static_cast<Eigen::Index>(column.size()));
     const Eigen::MatrixXd result = lu.solve(right);
     const double error = std::max(0.0, backward_error((matrix * result.col(0) - right.col(0)).cwiseAbs().maxCoeff(),
         matrix.cwiseAbs().rowwise().sum().maxCoeff(), result.cwiseAbs().maxCoeff(), right.cwiseAbs().maxCoeff()));
-    if (!result.allFinite() || !(error <= policy::EQUILIBRIUM_ACTION_BACKWARD_ERROR.value)) return {};
+    if (!result.allFinite() || !(error <= policy::EQUILIBRIUM_ACTION_BACKWARD_ERROR.value))
+        return refuse(result.allFinite() ? "implicit backward error" : "implicit nonfinite response", result.allFinite() ? core::Stop::stalled : core::Stop::nonfinite, &lu,
+            result.allFinite() ? std::optional<double>(error) : std::nullopt);
     scope.probe("max_solution", result.cwiseAbs().maxCoeff());
     scope.probe("backward_error", error);
     scope.probe("equations", static_cast<double>(rows));
@@ -125,7 +119,7 @@ std::vector<double> solve_implicit(
 std::vector<double> sensitivity(
     const CompiledSystem& compiled,
     const std::vector<double>& point,
-    const std::vector<double>& lever
+    const std::vector<double>& lever, std::optional<core::Convergence>* failure
 ) {
     core::Scope scope("sensitivity");
     if (lever.size() != compiled.control_width() && lever.size() != compiled.extended_control_width())
@@ -135,7 +129,7 @@ std::vector<double> sensitivity(
     const auto prepared = compiled.prepare(point);
     const std::vector<std::vector<double>> state = {prepared.point, std::vector<double>(point.size(), 0.0)};
     const auto series = compiled.row_series(prepared, state, lever, 1);
-    return solve_implicit(compiled, prepared, series.rows[1]);
+    return solve_implicit(compiled, prepared, series.rows[1], failure);
 }
 
 // ------------------------------------------------------------- solved-state actions
@@ -189,7 +183,7 @@ bool is_solid_kind(SolvedStateObservableKind kind) {
 
 bool is_phase_kind(SolvedStateObservableKind kind) {
     return kind != SolvedStateObservableKind::Temperature && kind != SolvedStateObservableKind::Pressure
-        && kind != SolvedStateObservableKind::SystemEnthalpy
+        && kind != SolvedStateObservableKind::Loading && kind != SolvedStateObservableKind::SystemEnthalpy
         && kind != SolvedStateObservableKind::EquilibriumIsobaricHeatCapacity && !is_solid_kind(kind);
 }
 
@@ -209,6 +203,7 @@ bool same_observable(const SolvedStateObservable& a, const SolvedStateObservable
 
 const char* observable_unit(const SolvedStateObservable& observable) {
     switch (observable.kind) {
+    case SolvedStateObservableKind::Loading: return "mol/mol";
     case SolvedStateObservableKind::SystemEnthalpy: return "J";
     case SolvedStateObservableKind::EquilibriumIsobaricHeatCapacity: return "J/(mol-feed K)";
     case SolvedStateObservableKind::Temperature: return "K";
@@ -234,6 +229,7 @@ std::string property_name(PropertyObservable observable) {
 
 // Every observable except a fixed T or P input depends on the solved state.
 bool state_dependent(const SolvedStateObservable& observable, const EquilibriumProblem& problem) {
+    if (observable.kind == SolvedStateObservableKind::Loading) return problem.loading.has_value();
     if (observable.kind == SolvedStateObservableKind::Temperature) return problem.temperature.free;
     if (observable.kind == SolvedStateObservableKind::Pressure) return problem.pressure.free;
     return true;
@@ -276,6 +272,9 @@ void validate_request(const CompiledSystem& compiled, const EquilibriumResult& c
     }
     if (request.directions.empty() || request.directions.size() > 3)
         throw std::invalid_argument("solved-state action order");
+    for (const auto& item : request.observables)
+        if (item.kind == SolvedStateObservableKind::Loading && !problem.loading)
+            throw std::invalid_argument("loading action requires a declared affine coordinate");
     for (const auto& direction : request.directions) {
         if (!std::isfinite(direction.temperature_k) || !std::isfinite(direction.pressure_pa)
             || direction.feed_amounts_mol.size() != components || direction.active_parameters.size() != actives
@@ -390,7 +389,7 @@ Path follow(const CompiledSystem& compiled, const Center& center, const std::vec
         right_norm[k] = right.cwiseAbs().maxCoeff();
         // Solve R J C z = R b, then refine once with the double-double defect.
         Eigen::VectorXd scaled = center.lu.solve(right);
-        scaled += center.lu.solve(defect(center.jacobian, scaled, right));
+        scaled += center.lu.solve(compensated_defect(center.jacobian, scaled, right));
         solution_norm[k] = scaled.cwiseAbs().maxCoeff();
         const Eigen::VectorXd solution = center.column.cwiseProduct(scaled);
         ++diagnostics.linear_solves;
@@ -470,6 +469,7 @@ Series observable_series(const HelmholtzModel &model, const SolvedStateObservabl
     case SolvedStateObservableKind::SystemEnthalpy:
         return system_enthalpy_series(model, series, maps, calorics, result, diagnostics);
     case SolvedStateObservableKind::Temperature: return series.temperature;
+    case SolvedStateObservableKind::Loading: return series.loading;
     case SolvedStateObservableKind::Pressure: return series.pressure;
     case SolvedStateObservableKind::PhaseAmount: return maps[observable.phase].amount;
     case SolvedStateObservableKind::PhaseComponentAmount:
@@ -851,6 +851,7 @@ std::string solved_state_observable_id(const SolvedStateObservable& observable) 
     case SolvedStateObservableKind::SystemEnthalpy: return "system.enthalpy";
     case SolvedStateObservableKind::EquilibriumIsobaricHeatCapacity: return "system.isobaric_heat_capacity";
     case SolvedStateObservableKind::Temperature: return "temperature";
+    case SolvedStateObservableKind::Loading: return "loading";
     case SolvedStateObservableKind::Pressure: return "pressure";
     case SolvedStateObservableKind::PhaseAmount: return phase + ".amount";
     case SolvedStateObservableKind::PhaseComponentAmount: return phase + ".amount" + component;
@@ -1290,6 +1291,123 @@ std::vector<SolvedStateActionBatch> solved_state_first_actions(
     for (const auto& request : requests)
         batches.push_back(evaluate_action(classified ? *classified : compiled, central, request, shared, scope, cover));
     return batches;
+}
+
+EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSystem& c, const EquilibriumResult& result) {
+    core::Capture isolated(false);
+    EquilibriumNumericalEstimates out;
+    out.dimension = result.coordinates.size();
+    if (!result.has_state() || !result.declaration) { out.cause = "original_state_unavailable"; return out; }
+    try {
+        const auto at = c.prepare(result.coordinates);
+        const auto evaluation = c.evaluate_at(at);
+        const auto uncertainty = c.row_uncertainty(at);
+        out.residuals = evaluation.values; out.row_terms = uncertainty.terms; out.row_inner = uncertainty.inner;
+        if (!c.reference_diagnostics.empty() || !c.solids.empty()) out.source_reference_method =
+            "local higher-precision re-evaluation plus first-order pressure/site propagation; "
+            "can underestimate shared errors and internal cancellation; fixed-input arithmetic excludes supplied operand uncertainty; "
+            "reference replay precision: " + std::to_string(std::numeric_limits<long double>::digits) + " bits";
+        if (!uncertainty.cause.empty()) {
+            out.temperature.cause = out.pressure.cause = out.cause = uncertainty.cause; return out;
+        }
+        const auto n = out.dimension, phases = at.amount.size(), components = c.n_feed.size();
+        const auto per_phase = 3 + components, outputs = 2 + phases * per_phase + c.problem.loading.has_value();
+        Eigen::MatrixXd g = Eigen::MatrixXd::Zero(outputs, n);
+        Eigen::VectorXd values = Eigen::VectorXd::Zero(outputs), h = Eigen::VectorXd::Ones(n);
+        values[0] = *result.temperature; values[1] = *result.pressure;
+        if (c.problem.loading) {
+            values[outputs - 1] = at.point[c.loading_column()];
+            g(outputs - 1, c.loading_column()) = 1;
+        }
+        for (std::size_t p = 0; p < phases; ++p) {
+            const auto o = 2 + p * per_phase;
+            if (!c.ideal) { values[o] = result.molar_densities[p]; values[o + 1] = result.packing_fractions[p]; }
+            values[o + 2] = result.amounts[p];
+            for (std::size_t j = 0; j < components; ++j) values[o + 3 + j] = result.mole_fractions[p * components + j];
+            if (!c.ideal && at.shape[p].amount) h[*at.shape[p].amount] = c.feed_total;
+        }
+        for (const auto& solid : c.solids) if (solid.column) h[*solid.column] = c.feed_total;
+        if (c.problem.pressure.free) h[c.primal_size - 1] = std::max(std::abs(at.pressure), 1.0);
+        if (c.problem.temperature.free) h[c.primal_size - c.free_intensive_count] = std::max(std::abs(at.temperature), 1.0);
+        // Reuse the actions' exact physical map; no chart is reconstructed in a reader.
+        std::vector<double> mapped(outputs, 0.0);
+        if (c.ideal) {
+            mapped[0] = at.temperature; mapped[1] = at.pressure; mapped[4] = at.amount[0];
+            for (std::size_t i = 0; i < components; ++i) mapped[5 + i] = at.composition[0][i];
+            for (std::size_t j = 0; j < n; ++j) {
+                const auto species = c.problem.phases[0].support[j];
+                const double x = at.composition[0][species];
+                g(4, j) = at.amount[0] * x;
+                for (std::size_t i = 0; i < components; ++i)
+                    g(5 + i, j) = at.composition[0][i] * (double(i == species) - x);
+            }
+        } else for (std::size_t j = 0; j < n; ++j) {
+            std::vector<double> unit(n, 0.0); unit[j] = 1.0;
+            const auto series = c.row_series(at, {at.point, unit}, std::vector<double>(c.control_width(), 0.0), 1);
+            if (series.energy != PropertyActionStatus::Available) { out.cause = "projection_derivative_unavailable"; return out; }
+            g(0, j) = series.temperature[1]; g(1, j) = series.pressure[1];
+            mapped[0] = series.temperature[0]; mapped[1] = series.pressure[0];
+            for (std::size_t p = 0; p < phases; ++p) {
+                const auto map = phase_map(*c.model, series, p, components); const auto o = 2 + p * per_phase;
+                g(o, j) = logarithm(map.density)[1]; g(o + 1, j) = c.model->parameters().ideal_gas ? 0.0 : logarithm(map.packing)[1]; g(o + 2, j) = map.amount[1];
+                mapped[o] = map.density[0]; mapped[o + 1] = map.packing[0]; mapped[o + 2] = map.amount[0];
+                for (std::size_t i = 0; i < components; ++i) {
+                    g(o + 3 + i, j) = map.mole_fraction[i][1]; mapped[o + 3 + i] = map.mole_fraction[i][0];
+                }
+            }
+        }
+        const auto j = dense_matrix(c.jacobian_at(at), c.rows.size(), n);
+        const Eigen::VectorXd f = Eigen::Map<const Eigen::VectorXd>(evaluation.values.data(), n);
+        const Eigen::VectorXd terms = Eigen::Map<const Eigen::VectorXd>(uncertainty.terms.data(), n);
+        const Eigen::VectorXd inner = Eigen::Map<const Eigen::VectorXd>(uncertainty.inner.data(), n);
+        const Eigen::VectorXd eta = core::canonical_row_floor(j, h, terms, inner);
+        out.physical_scale = {h.data(), h.data() + n}; out.row_floor = {eta.data(), eta.data() + n};
+        const auto e = core::linear_error(j, f, g, eta, Eigen::VectorXd::Ones(n), h);
+        out.rank = e.rank; out.threshold = e.threshold; out.condition = e.condition;
+        out.inverse_norm = e.inverse_norm; out.backward_error = e.backward;
+        if (!e.cause.empty()) { out.cause = e.cause; return out; }
+        if (c.problem.loading) mapped.back() = values[outputs - 1];
+        const auto project = [&](std::size_t i, bool positive) {
+            return core::project_numerical_estimate(values[i], mapped[i], e.radius[i], positive, g.row(i).isZero(0.0));
+        };
+        out.temperature = project(0, false); out.pressure = project(1, false);
+        if (c.problem.loading) out.loading = project(outputs - 1, false);
+        bool domain = true;
+        for (std::size_t p = 0; p < phases; ++p) {
+            const auto o = 2 + p * per_phase;
+            if (!c.ideal) { out.densities.push_back(project(o, true)); out.packing.push_back(project(o + 1, !c.model->parameters().ideal_gas)); }
+            out.amounts.push_back(project(o + 2, false));
+            domain = domain && values[o + 2] - out.amounts.back().absolute >= 0;
+            domain = domain && (c.ideal || c.model->parameters().ideal_gas || (values[o + 1] * std::exp(-out.packing.back().chart) >= policy::PACKING_FRACTION_FLOOR.value
+                && values[o + 1] * std::exp(out.packing.back().chart) <= policy::PACKING_FRACTION_CEILING.value));
+            for (std::size_t i = 0; i < components; ++i) {
+                out.composition.push_back(project(o + 3 + i, false));
+                domain = domain && values[o + 3 + i] - out.composition.back().absolute >= 0
+                    && values[o + 3 + i] + out.composition.back().absolute <= 1;
+            }
+        }
+        for (std::size_t p = 0; p < phases; ++p) for (std::size_t q = p + 1; q < phases; ++q)
+            if (c.problem.phases[p].kind != c.problem.phases[q].kind)
+                domain = domain && std::abs(result.molar_densities[p] - result.molar_densities[q])
+                    > out.densities[p].absolute + out.densities[q].absolute;
+        out.cause = domain ? "" : "unresolved_domain";
+        if (!domain) {
+            out.loading.resolved = out.temperature.resolved = out.pressure.resolved = false;
+            for (auto* entries : {&out.densities, &out.packing, &out.composition, &out.amounts})
+                for (auto& estimate : *entries) { estimate.resolved = false; estimate.cause = out.cause; }
+        }
+    } catch (const std::exception& error) { out.cause = error.what(); }
+    return out;
+}
+
+EquilibriumNumericalEstimates equilibrium_numerical_estimates(const HelmholtzModel& model, const EquilibriumResult& result) {
+    if (result.model_identity != &model || !result.declaration) throw std::invalid_argument("numerical estimate model/result mismatch");
+    return equilibrium_numerical_estimates(compile_problem(model, *result.declaration), result);
+}
+
+EquilibriumNumericalEstimates equilibrium_numerical_estimates(const IdealMoleFraction& model, const EquilibriumResult& result) {
+    if (result.ideal_identity != &model || !result.declaration) throw std::invalid_argument("numerical estimate model/result mismatch");
+    return equilibrium_numerical_estimates(compile_problem(model, *result.declaration), result);
 }
 
 }  // namespace epcsaft::equilibrium

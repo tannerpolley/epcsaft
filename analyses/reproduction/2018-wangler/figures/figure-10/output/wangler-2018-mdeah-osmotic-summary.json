@@ -1,5 +1,5 @@
 {
-  "wheel_sha256": "3da83fae632df817a1f7b9d9f92b183dedc92ad42ef58db2a2b9091782092e3f",
+  "wheel_sha256": "cc916148d165da9ad47a3d537da605b426a4458a5a58b867a8c2ef7a269e03a6",
   "source_sha256": "f58033b8f757ad42d03c940c6ab4f4c582a2fb0b5fb32c69b3a50fecbea53f40",
   "paper_ard_percent": 5.05,
   "objective": "OF3 (Eq. 33): sum (phi/phi_obs - 1)^2, native Ceres Levenberg-Marquardt, exact Jacobian",
@@ -20,55 +20,55 @@
       "isotherms": {
         "273": {
           "l_hb_table_7": 0.34508950000000005,
-          "k_ij": 0.3495328331783972,
-          "other_start_k_ij": 0.34953283225171045,
-          "start_difference": 9.266867273538537e-10,
-          "u_phi_allowance": 0.001960753971442139,
+          "k_ij": 0.3495328331784128,
+          "other_start_k_ij": 0.34953283225172693,
+          "start_difference": 9.266858946865852e-10,
+          "u_phi_allowance": 0.001960753971442133,
           "status": "converged",
-          "message": "Function tolerance reached. |cost_change|/cost: 3.297973e-12 <= 1.000000e-10",
-          "iterations": 4,
+          "message": "Function tolerance reached. |cost_change|/cost: 4.037024e-13 <= 1.000000e-10",
+          "iterations": 3,
           "residual_evaluations": 4,
-          "relative_sse": 0.0058117400976455645,
+          "relative_sse": 0.005811740097679043,
           "covariance": {
             "status": "available",
             "rank": 1,
             "singular_values": [
-              7.691779499519042
+              7.6917794995190665
             ],
             "active_bounds": [],
             "physical": [
-              0.016902321118180182
+              0.016902321118180075
             ]
           }
         },
         "313": {
           "l_hb_table_7": 0.3878895,
-          "k_ij": 0.32592593101085465,
-          "other_start_k_ij": 0.32592592979507423,
-          "start_difference": 1.2157804207824086e-09,
-          "u_phi_allowance": 0.002201767832570232,
+          "k_ij": 0.3259259310107838,
+          "other_start_k_ij": 0.325925929794929,
+          "start_difference": 1.2158548057250584e-09,
+          "u_phi_allowance": 0.0022017678325702774,
           "status": "converged",
-          "message": "Function tolerance reached. |cost_change|/cost: 9.477414e-14 <= 1.000000e-10",
-          "iterations": 4,
+          "message": "Function tolerance reached. |cost_change|/cost: 1.066148e-12 <= 1.000000e-10",
+          "iterations": 3,
           "residual_evaluations": 4,
-          "relative_sse": 0.0008900205043320235,
+          "relative_sse": 0.0008900205043409183,
           "covariance": {
             "status": "available",
             "rank": 1,
             "singular_values": [
-              4.263623236823937
+              4.263623236823848
             ],
             "active_bounds": [],
             "physical": [
-              0.05501009045648958
+              0.0550100904564919
             ]
           }
         }
       },
-      "ard_percent": 2.3715456606576755,
-      "printed_parameter_ard_percent": 129.36265417884542,
-      "k_ij_303_k": 0.33182765655274027,
-      "k_ij_303_k_allowance": 0.0021415143672882087,
+      "ard_percent": 2.3715456606632768,
+      "printed_parameter_ard_percent": 129.3626541788454,
+      "k_ij_303_k": 0.3318276565526911,
+      "k_ij_303_k_allowance": 0.0021415143672882412,
       "F1": {
         "ard_limit_percent": 6.05,
         "interior": true,
@@ -81,55 +81,55 @@
       "isotherms": {
         "273": {
           "l_hb_table_7": 0.34508950000000005,
-          "k_ij": 0.028174816934558356,
-          "other_start_k_ij": 0.02817481440738042,
-          "start_difference": 2.5271779356683677e-09,
-          "u_phi_allowance": 0.0021221515872298117,
+          "k_ij": 0.028174816934610398,
+          "other_start_k_ij": 0.02817481440736411,
+          "start_difference": 2.527246287242768e-09,
+          "u_phi_allowance": 0.0021221515872297835,
           "status": "converged",
-          "message": "Function tolerance reached. |cost_change|/cost: 4.708661e-12 <= 1.000000e-10",
-          "iterations": 3,
+          "message": "Function tolerance reached. |cost_change|/cost: 1.878572e-12 <= 1.000000e-10",
+          "iterations": 2,
           "residual_evaluations": 3,
-          "relative_sse": 0.0050709965378154375,
+          "relative_sse": 0.0050709965378028824,
           "covariance": {
             "status": "available",
             "rank": 1,
             "singular_values": [
-              7.107415807813918
+              7.107415807814007
             ],
             "active_bounds": [],
             "physical": [
-              0.019795959300054643
+              0.019795959300054143
             ]
           }
         },
         "313": {
           "l_hb_table_7": 0.3878895,
-          "k_ij": 0.014357981599571605,
-          "other_start_k_ij": 0.014357992170130862,
-          "start_difference": 1.057055925776651e-08,
-          "u_phi_allowance": 0.0024116564432045437,
+          "k_ij": 0.014357981599508931,
+          "other_start_k_ij": 0.014357992170134571,
+          "start_difference": 1.0570625640429765e-08,
+          "u_phi_allowance": 0.002411656443204564,
           "status": "converged",
-          "message": "Function tolerance reached. |cost_change|/cost: 6.021071e-12 <= 1.000000e-10",
-          "iterations": 3,
+          "message": "Function tolerance reached. |cost_change|/cost: 4.729811e-12 <= 1.000000e-10",
+          "iterations": 2,
           "residual_evaluations": 3,
-          "relative_sse": 0.0006163007057724128,
+          "relative_sse": 0.0006163007057706302,
           "covariance": {
             "status": "available",
             "rank": 1,
             "singular_values": [
-              3.893352368919963
+              3.8933523689199325
             ],
             "active_bounds": [],
             "physical": [
-              0.06597092554926795
+              0.06597092554926898
             ]
           }
         }
       },
-      "ard_percent": 2.157299583831517,
-      "printed_parameter_ard_percent": 46.66747022611323,
-      "k_ij_303_k": 0.017812190433318293,
-      "k_ij_303_k_allowance": 0.0023392802292108604,
+      "ard_percent": 2.1572995838295728,
+      "printed_parameter_ard_percent": 46.66747022611254,
+      "k_ij_303_k": 0.017812190433284296,
+      "k_ij_303_k_allowance": 0.002339280229210869,
       "F1": {
         "ard_limit_percent": 6.05,
         "interior": true,

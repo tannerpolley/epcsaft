@@ -1,0 +1,318 @@
+{
+  "key-control": {
+    "cpu": 31,
+    "nice": 10,
+    "gate_failures": [],
+    "cases": {
+      "case-6/figure-2-point-7/cold": {
+        "work_A": {
+          "iterations": 10,
+          "evaluations": 15,
+          "hessian_calls": 11
+        },
+        "work_B": {
+          "iterations": 10,
+          "evaluations": 15,
+          "hessian_calls": 11
+        },
+        "work_identical": true,
+        "max_state_difference": 0.0
+      },
+      "case-6/figure-2-point-7/accepted": {
+        "work_A": {
+          "iterations": 7,
+          "evaluations": 11,
+          "hessian_calls": 8
+        },
+        "work_B": {
+          "iterations": 7,
+          "evaluations": 11,
+          "hessian_calls": 8
+        },
+        "work_identical": true,
+        "max_state_difference": 0.0
+      },
+      "case-7/flash-5918.5286-Pa/cold": {
+        "work_A": {
+          "iterations": 19,
+          "evaluations": 35,
+          "hessian_calls": 20
+        },
+        "work_B": {
+          "iterations": 19,
+          "evaluations": 35,
+          "hessian_calls": 20
+        },
+        "work_identical": true,
+        "max_state_difference": 0.0
+      },
+      "case-7/flash-5918.5286-Pa/accepted": {
+        "work_A": {
+          "iterations": 17,
+          "evaluations": 22,
+          "hessian_calls": 18
+        },
+        "work_B": {
+          "iterations": 17,
+          "evaluations": 22,
+          "hessian_calls": 18
+        },
+        "work_identical": true,
+        "max_state_difference": 0.0
+      },
+      "khudaida/sequential-8": {
+        "work_A": {
+          "iterations": 46,
+          "evaluations": 70,
+          "hessian_calls": 54
+        },
+        "work_B": {
+          "iterations": 46,
+          "evaluations": 70,
+          "hessian_calls": 54
+        },
+        "work_identical": true,
+        "max_state_difference": 0.0
+      },
+      "mea-nominally-unloaded/353.15-K": {
+        "work_A": {
+          "iterations": 13,
+          "evaluations": 19,
+          "hessian_calls": 14
+        },
+        "work_B": {
+          "iterations": 13,
+          "evaluations": 19,
+          "hessian_calls": 14
+        },
+        "work_identical": true,
+        "max_state_difference": 0.0
+      },
+      "mea-f1/residual-jacobian": {
+        "work_A": {
+          "reference_computations": 295,
+          "reference_columns": 3388,
+          "density_solves": 1223,
+          "equilibrium_iterations": 1426
+        },
+        "work_B": {
+          "reference_computations": 295,
+          "reference_columns": 3388,
+          "density_solves": 1223,
+          "equilibrium_iterations": 1426
+        },
+        "work_identical": true,
+        "max_state_difference": 0.0,
+        "control_wall_seconds": [
+          7.3254791739746,
+          8.850253634998808
+        ],
+        "fit_max_state_difference": 0.0,
+        "serial_cpu_seconds": {
+          "A": 4.357788132,
+          "B": 4.360191032
+        },
+        "fits": {
+          "A": {
+            "seconds": 7.3254791739746,
+            "critical_cpu_seconds": 5.916729557000001,
+            "workers": 32,
+            "initial_cost": 230.90624790128786,
+            "final_cost": 31.1237269986244,
+            "iterations": 14,
+            "residual_evaluations": 15,
+            "jacobian_evaluations": 12
+          },
+          "B": {
+            "seconds": 8.850253634998808,
+            "critical_cpu_seconds": 6.2834269959999975,
+            "workers": 32,
+            "initial_cost": 230.90624790128786,
+            "final_cost": 31.1237269986244,
+            "iterations": 14,
+            "residual_evaluations": 15,
+            "jacobian_evaluations": 12
+          }
+        }
+      },
+      "mea-cp/hilliard-353.15-K-0.358": {
+        "work_A": {
+          "reference_computations": 3,
+          "reference_columns": 280,
+          "density_solves": 11,
+          "equilibrium_iterations": 13
+        },
+        "work_B": {
+          "reference_computations": 3,
+          "reference_columns": 280,
+          "density_solves": 11,
+          "equilibrium_iterations": 13
+        },
+        "work_identical": true,
+        "max_state_difference": 0.0,
+        "serial_cpu_seconds": {
+          "A": 0.6075151979999998,
+          "B": 0.5804956720000005
+        }
+      }
+    }
+  },
+  "key-comparison": {
+    "cpu": 31,
+    "nice": 10,
+    "gate_failures": [],
+    "cases": {
+      "case-6/figure-2-point-7/cold": {
+        "work_A": {
+          "iterations": 10,
+          "evaluations": 15,
+          "hessian_calls": 11
+        },
+        "work_B": {
+          "iterations": 10,
+          "evaluations": 15,
+          "hessian_calls": 11
+        },
+        "work_identical": true,
+        "max_state_difference": 0.0
+      },
+      "case-6/figure-2-point-7/accepted": {
+        "work_A": {
+          "iterations": 7,
+          "evaluations": 11,
+          "hessian_calls": 8
+        },
+        "work_B": {
+          "iterations": 7,
+          "evaluations": 11,
+          "hessian_calls": 8
+        },
+        "work_identical": true,
+        "max_state_difference": 0.0
+      },
+      "case-7/flash-5918.5286-Pa/cold": {
+        "work_A": {
+          "iterations": 19,
+          "evaluations": 35,
+          "hessian_calls": 20
+        },
+        "work_B": {
+          "iterations": 19,
+          "evaluations": 35,
+          "hessian_calls": 20
+        },
+        "work_identical": true,
+        "max_state_difference": 0.0
+      },
+      "case-7/flash-5918.5286-Pa/accepted": {
+        "work_A": {
+          "iterations": 17,
+          "evaluations": 22,
+          "hessian_calls": 18
+        },
+        "work_B": {
+          "iterations": 17,
+          "evaluations": 22,
+          "hessian_calls": 18
+        },
+        "work_identical": true,
+        "max_state_difference": 0.0
+      },
+      "khudaida/sequential-8": {
+        "work_A": {
+          "iterations": 46,
+          "evaluations": 70,
+          "hessian_calls": 54
+        },
+        "work_B": {
+          "iterations": 46,
+          "evaluations": 70,
+          "hessian_calls": 54
+        },
+        "work_identical": true,
+        "max_state_difference": 0.0
+      },
+      "mea-nominally-unloaded/353.15-K": {
+        "work_A": {
+          "iterations": 13,
+          "evaluations": 19,
+          "hessian_calls": 14
+        },
+        "work_B": {
+          "iterations": 13,
+          "evaluations": 19,
+          "hessian_calls": 14
+        },
+        "work_identical": true,
+        "max_state_difference": 0.0
+      },
+      "mea-f1/residual-jacobian": {
+        "work_A": {
+          "reference_computations": 295,
+          "reference_columns": 3388,
+          "density_solves": 1223,
+          "equilibrium_iterations": 1426
+        },
+        "work_B": {
+          "reference_computations": 295,
+          "reference_columns": 3388,
+          "density_solves": 1223,
+          "equilibrium_iterations": 1426
+        },
+        "work_identical": true,
+        "max_state_difference": 0.0,
+        "control_wall_seconds": [
+          7.3254791739746,
+          8.850253634998808
+        ],
+        "fit_max_state_difference": 0.0,
+        "serial_cpu_seconds": {
+          "A": 4.390422591,
+          "B": 5.9435962700000005
+        },
+        "fits": {
+          "A": {
+            "seconds": 7.128631208994193,
+            "critical_cpu_seconds": 5.850412954000001,
+            "workers": 32,
+            "initial_cost": 230.90624790128786,
+            "final_cost": 31.1237269986244,
+            "iterations": 14,
+            "residual_evaluations": 15,
+            "jacobian_evaluations": 12
+          },
+          "B": {
+            "seconds": 7.169774070993299,
+            "critical_cpu_seconds": 5.788703072,
+            "workers": 32,
+            "initial_cost": 230.90624790128786,
+            "final_cost": 31.1237269986244,
+            "iterations": 14,
+            "residual_evaluations": 15,
+            "jacobian_evaluations": 12
+          }
+        }
+      },
+      "mea-cp/hilliard-353.15-K-0.358": {
+        "work_A": {
+          "reference_computations": 3,
+          "reference_columns": 280,
+          "density_solves": 11,
+          "equilibrium_iterations": 13
+        },
+        "work_B": {
+          "reference_computations": 3,
+          "reference_columns": 280,
+          "density_solves": 11,
+          "equilibrium_iterations": 13
+        },
+        "work_identical": true,
+        "max_state_difference": 0.0,
+        "serial_cpu_seconds": {
+          "A": 0.9358037680000004,
+          "B": 0.9483600150000004
+        }
+      }
+    }
+  }
+}

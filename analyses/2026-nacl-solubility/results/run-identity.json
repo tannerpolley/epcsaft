@@ -1,0 +1,12 @@
+{
+  "native_module": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so",
+  "native_sha256": "df77c126d7350535c0ef889705bed080729f1678a13c15ac0b4dad9ddfebb79b",
+  "input_sha256": {
+    "clarke-glew-1985-table34.csv": "6e3d15d3fee6e3f5c69be8cfb4ad36d5a1dfddd156f8fb820fab9689420a5e46",
+    "held-1-malmberg-maryott.json": "48f8955b3f72b8794b89c098d450523fdeb0187d3160177a2d66ff64264c23da",
+    "held-2-malmberg-maryott.json": "3c6cfefd6e23b41a1ca5c343ed85c1e8ef9b955ad360d7fc7e06ee13a4009480",
+    "pinho-macedo-2005.csv": "9654adf97c0631cde4b9532ec3c25f803c1cb440f95aed313d6b520be748ee02",
+    "source-hashes.json": "dbc8ee53c01e22793827ce7cd4354ffab3e76f7c75e4166325cc4378e403d1b2",
+    "sources.md": "234c48e41ebe4c3ff518a14f2949fdd45697daecc4da67e7b0b2c8bbdcc15430"
+  }
+}

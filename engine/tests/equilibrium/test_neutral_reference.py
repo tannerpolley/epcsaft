@@ -542,3 +542,38 @@ def test_parameter_reference_chain_matches_resolves(evidence: Any, mode: str, fa
         dc_dk = (contraction[0] - contraction[1]) / (2 * step)
         dx_dlnk = (solve(center, 1e-4).mole_fractions[1] - solve(center, -1e-4).mole_fractions[1]) / 2e-4
         assert abs(dx_dlnk * dc_dk) > 0.5 * abs(item.action)  # measured ~2x the action: omission flips its sign
+
+
+def test_source_reference_numerical_error() -> None:
+    """The retained ethane source-reference row has finite local errors at its returned point."""
+    from epcsaft import trace
+    from epcsaft.equilibrium import (
+        ComparisonEligibility, ComparisonMode, Quantity, compare_equilibrium_quantity, equilibrium_numerical_estimates,
+    )
+    from tests.native_inputs import A_RECORD, dimer_problem, twin_ethane
+
+    model = twin_ethane(A_RECORD, [])
+    problem = dimer_problem(280.0, None)
+    ordinary = solve_equilibrium(model, problem)
+    with trace(diagnostics=True):
+        detailed = solve_equilibrium(model, problem)
+    assert ordinary.success and detailed.success
+    for field in ('temperature', 'pressure', 'amounts', 'mole_fractions', 'molar_densities', 'coordinates',
+                  'residuals', 'iterations', 'evaluations', 'hessian_calls', 'requested_tolerance_met'):
+        assert getattr(ordinary, field) == getattr(detailed, field), field
+    error = equilibrium_numerical_estimates(model, ordinary)
+    captured = detailed.numerical_estimates
+    assert captured is not None and captured.cause == error.cause == ''
+    assert captured.row_inner == error.row_inner
+    assert captured.source_reference_method == error.source_reference_method
+    assert 'local higher-precision re-evaluation plus first-order pressure/site propagation' in error.source_reference_method
+    assert 'underestimate shared errors and internal cancellation' in error.source_reference_method
+    assert 'excludes supplied operand uncertainty' in error.source_reference_method
+    assert error.precision_bits == 53
+    assert all(math.isfinite(value) and value >= 0 for value in error.row_inner)
+    assert math.isfinite(error.condition)
+    assert all(value.available and value.resolved and math.isfinite(value.absolute)
+               for value in (error.pressure, *error.densities, *error.amounts, *error.composition))
+    comparison = compare_equilibrium_quantity(Quantity.Linear, 1.0, 2.0, 1e-10,
+        error.pressure, error.pressure, ComparisonEligibility(), ComparisonMode.EstimatedError)
+    assert comparison.judgment == 'failed'

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/convergence.hpp"
+#include "core/declared.hpp"
 
 #include <chrono>
 #include <cstddef>
@@ -8,9 +9,12 @@
 #include <cstring>
 #include <exception>
 #include <initializer_list>
+#include <limits>
 #include <string>
+#include <string_view>
 #include <optional>
 #include <utility>
+#include <type_traits>
 #include <vector>
 
 namespace epcsaft::core {
@@ -31,35 +35,68 @@ struct Span final {
     bool completed = false;
 };
 
+struct IpoptLog final {
+    std::string destination, error;
+    bool attempted = false;
+    std::shared_ptr<void> application;
+};
+
 struct Trace final {
     std::vector<Span> spans;
     std::vector<Event> events;
     std::optional<std::uint32_t> current;
     bool diagnostics = false;
     bool incomplete = false;
+    std::shared_ptr<IpoptLog> ipopt_log;
 };
 
 Trace*& current_trace() noexcept;
 
+inline void retain_first(std::optional<Convergence>& first, const std::optional<Convergence>& next, bool earlier = false) {
+    if (next && (!first || earlier)) first = next;
+}
+template<class Factory, std::enable_if_t<std::is_invocable_v<Factory>, int> = 0>
+void retain_first(std::optional<Convergence>& first, Factory&& build) {
+    if (!first) first = build();
+}
+inline void retain_failure(std::optional<Convergence>& first, const std::exception& error, const char* operation) {
+    if (first) return;
+    Convergence record;
+    record.residual = std::numeric_limits<double>::quiet_NaN();
+    if (const auto* c = dynamic_cast<const ConvergenceFailure*>(&error)) record = c->first_numerical_failure.value_or(c->record);
+    else if (const auto* d = dynamic_cast<const DeclarationError*>(&error); d && d->record) record = *d->record;
+    if (record.cause.empty()) record.cause = std::string(operation) + ": " + error.what();
+    first = std::move(record);
+}
+inline void retain_failure(std::optional<Convergence>& first, std::string_view cause, const char* operation) {
+    if (!first) retain_failure(first, std::runtime_error(std::string(cause)), operation);
+}
+inline void retain_rank(std::vector<NumericalRank>& records, const NumericalRank& rank) {
+    for (auto& r : records) if (r.basis == rank.basis) { r = rank; return; }
+    records.push_back(rank);
+}
+
 template <typename Observation>
-void observe(Trace* trace, Observation&& observation) noexcept {
-    if (trace == nullptr) return;
-    try { observation(); } catch (...) { trace->incomplete = true; }
+void observe(Trace* trace, Observation&& observation) {
+    if (trace) observation();
 }
 
 class Capture final {
 public:
-    explicit Capture(std::optional<bool> diagnostics = std::nullopt) noexcept : previous_(current_trace()) {
+    explicit Capture(std::optional<bool> diagnostics = std::nullopt, const std::string& ipopt_log = {}) : previous_(current_trace()) {
+        if (!ipopt_log.empty()) { trace_.ipopt_log = std::make_shared<IpoptLog>(); trace_.ipopt_log->destination = ipopt_log; }
+        else if (previous_) trace_.ipopt_log = previous_->ipopt_log;
         trace_.diagnostics = diagnostics ? *diagnostics : previous_ && previous_->diagnostics;
         parent_ = trace_.diagnostics && previous_ ? previous_->current : std::nullopt;
         current_trace() = &trace_;
     }
-    ~Capture() { forward(); current_trace() = previous_; }
+    ~Capture() noexcept(false) { close_log(); current_trace() = previous_; forward(); }
     Capture(const Capture&) = delete;
     Capture& operator=(const Capture&) = delete;
 
     const Trace& trace() const noexcept { return trace_; }
-    Trace take() noexcept {
+    Trace take() {
+        close_log();
         forward();
         Trace result = std::move(trace_);
         trace_ = {};
@@ -72,39 +109,33 @@ private:
     Trace* previous_;
     std::optional<std::uint32_t> parent_;
     bool forwarded_ = false;
-    void forward() noexcept {
-        if (forwarded_ || !trace_.diagnostics || !previous_ || !previous_->diagnostics) return;
+    void close_log() noexcept {
+        if (trace_.ipopt_log && (!previous_ || previous_->ipopt_log != trace_.ipopt_log)) trace_.ipopt_log->application.reset();
+    }
+    void forward() {
+        if (forwarded_ || !previous_) return;
         forwarded_ = true;
-        const auto spans = previous_->spans.size(), events = previous_->events.size();
-        observe(previous_, [&] {
-            previous_->incomplete = previous_->incomplete || trace_.incomplete;
-            try {
-                for (auto span : trace_.spans) {
-                    span.parent = span.parent ? std::optional<std::uint32_t>(*span.parent + spans) : parent_;
-                    previous_->spans.push_back(std::move(span));
-                }
-                for (auto event : trace_.events) {
-                    event.span += spans;
-                    previous_->events.push_back(std::move(event));
-                }
-            } catch (...) {
-                previous_->spans.resize(spans); previous_->events.resize(events);
-                trace_.incomplete = true;
-                throw;
-            }
-        });
+        if (previous_->ipopt_log == trace_.ipopt_log) previous_->incomplete |= trace_.incomplete;
+        if (!trace_.diagnostics || !previous_->diagnostics) return;
+        const auto spans = previous_->spans.size();
+        for (auto span : trace_.spans) {
+            span.parent = span.parent ? std::optional<std::uint32_t>(*span.parent + spans) : parent_;
+            previous_->spans.push_back(std::move(span));
+        }
+        for (auto event : trace_.events) {
+            event.span += spans;
+            previous_->events.push_back(std::move(event));
+        }
     }
 };
 
 class Scope final {
 public:
-    explicit Scope(const char* name) noexcept : trace_(current_trace()) {
+    explicit Scope(const char* name) : trace_(current_trace()) {
         if (trace_ == nullptr) return;
         const auto now = std::chrono::steady_clock::now();
         parent_ = trace_->current;
-        const auto size = trace_->spans.size();
         observe([&] { trace_->spans.push_back({name, parent_, std::nullopt, 0.0}); });
-        if (trace_->spans.size() == size) { trace_ = nullptr; return; }
         index_ = static_cast<std::uint32_t>(trace_->spans.size() - 1);
         trace_->current = index_;
         start_ = now;
@@ -121,7 +152,7 @@ public:
 
     bool on() const noexcept { return trace_ != nullptr; }
     bool diagnostics_on() const noexcept { return on() && trace_->diagnostics; }
-    static std::optional<Scope> detailed(const char* name) noexcept {
+    static std::optional<Scope> detailed(const char* name) {
         const auto* trace = current_trace();
         if (!trace || !trace->diagnostics) return std::nullopt;
         return std::optional<Scope>(std::in_place, name);
@@ -132,31 +163,31 @@ public:
         return false;
     }
     template <typename Observation>
-    void observe(Observation&& observation) noexcept {
+    void observe(Observation&& observation) {
         core::observe(trace_, std::forward<Observation>(observation));
     }
 
-    void probe(const char* name, double value, std::uint32_t iteration = 0) noexcept {
+    void probe(const char* name, double value, std::uint32_t iteration = 0) {
         probe(name, {value}, iteration);
     }
     void probe(const char* name, std::initializer_list<double> values,
-               std::uint32_t iteration = 0, const char* reason = "") noexcept {
+               std::uint32_t iteration = 0, const char* reason = "") {
         observe([&] { trace_->events.push_back({name, *index_, iteration, values, reason}); });
     }
 
     void probe(const char* name, const double* values, std::size_t count,
-               std::uint32_t iteration = 0) noexcept {
+               std::uint32_t iteration = 0) {
         observe([&] { trace_->events.push_back({
             name, *index_, iteration, std::vector<double>(values, values + count), {}
         }); });
     }
 
     void probe(const char* name, const std::vector<double>& values,
-               std::uint32_t iteration = 0) noexcept {
+               std::uint32_t iteration = 0) {
         observe([&] { trace_->events.push_back({name, *index_, iteration, values, {}}); });
     }
 
-    void finish(const Convergence& record) noexcept {
+    void finish(const Convergence& record) {
         observe([&] { trace_->spans[*index_].convergence = record; });
     }
 

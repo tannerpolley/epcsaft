@@ -119,6 +119,12 @@ physical source interval remains a separate admission operation.
 
 ## ALG-PARAMETERS
 
+The solvent membership and normalization for `solvent-mole-weighting` are
+fixed parameter entries, retained through selection, reordering, fitting-worker
+transport and optimizer identity. `bulk_relative_permittivity` owns the sum or
+quotient; it reuses the existing component laws and automatic differentiation.
+
+
 `BornDiameter`, `DebyeHuckelDiameter` and `PackingDiameter` own positive
 Angstrom values in charged component slots. `IonSuppressionCoefficient` owns
 one dimensionless charged-slot value; a common C ties all declared charged
@@ -611,6 +617,120 @@ The formulation's emerging-phase limit on the same exact face owns this domain;
 trial chemistry does not establish a global physical-inventory certificate.
 Numerical qualification checks the reduced Jacobian at the solved endpoint,
 separate mechanical branches and the unchanged raw/classified residual criteria.
+
+### One-component two-density reduction
+
+The general driver and native prepared `CompiledSystem.solve_saturation()` entry
+reuse this single reduction/refinement owner. The prepared entry uses the same
+eligibility predicate and falls back to the general entry for an explicit
+options file or an ineligible declaration. Previous-result, optimizer-transfer
+and bounded calls retain their existing general entry points. Rejection retains
+an owned failed result and continues once from the original start, adding its
+work once without replacing the fallback's own endpoint or linear diagnostics.
+The bulk snapshot retains optional absence until a record is evaluated and an
+owning reference to the complete result. Phase pressures are evaluated natively
+at the actually exported densities. Direct pure-state evaluations retain inner
+first observations in evaluation order, including rejected trials and wider
+arithmetic; typed exceptions also retain their terminal record. Allocation
+failure propagates.
+
+An ordinary compiled declaration with one neutral nonideal component, fixed
+positive T, free P, two liquid/vapor supports {0}, one free amount and one
+zero-pinned amount uses the exact two-density reduction inside the existing
+driver. Other Newton exclusions remain effective. The existing start owner,
+full-row assembly, topology/local checks, branch admission and immutable-start
+Ipopt fallback retain their responsibilities. Complete preparation remains the
+owner of solved-state actions; the limited isothermal preparation supplies only
+energy and amount/volume derivatives and their homogeneity reconstruction.
+
+At unit phase amount, let $E=A^r/(RT)$, $v=1/\rho$,
+$Z=1-vE_v$, $K=P_\rho/(RT)$, $u=\ln\rho$ and $r=\rho_V/\rho_L$.
+The reduced pressure row is $(P_L-P_V)/(RT\rho_L)$ and the chemical row is the
+difference of the full chemical rows after eliminating their common standard
+term and multiplier. EqID `one_component_two_density` defines the rows and exact Jacobian. Their log-density Jacobian retains the derivative of the
+liquid pressure scale. The full rows still determine the caller criterion.
+
+The prospective double endpoint retains the compulsory fresh full correction.
+Its corrected endpoint starts the polish residual history. Further exact
+undamped double corrections continue within the same work limits until the
+next log-density correction is at most `EQUILIBRIUM_POLISH_CORRECTION`, or
+the reduced residual reaches its evaluation floor or stops decreasing.
+The extended-precision engagement check follows this double polish.
+The same equilibrated full-pivot factorization supplies correction and inverse
+row sums by solving unit right-hand sides and undoing both scales. Define
+$I=\|J^{-1}\|_\infty$, $\kappa=\|J\|_\infty I$ and
+$E_u=I(\|F\|_\infty+\eta_q)$, in the original two rows and log densities.
+The residual floor is
+$$
+\eta_q=\epsilon_q\max\left\{
+1+|v_LE_{v,L}|+r(1+|v_VE_{v,V}|),\
+|u_L-u_V|+|E_L|+|E_V|+|v_LE_{v,L}|+|v_VE_{v,V}|
+\right\}
++\max\{v_Lg_L+rv_Vg_V,\ v_Lg_L+v_Vg_V\}.
+$$
+Here $g_p$ estimates the error in the unit-amount residual-energy volume
+gradient, with units mol/m³. Its pressure-row and chemical-row factors differ.
+The estimate is local and first order, with no rigorous global-error claim.
+
+The double association path retains its admitted site solve, factorization and
+existing gradient floor. The extended instantiation refines values and implicit
+volume coefficients against the shared wide mass-action residual. It reuses
+the admitted double full-pivot factorization as a preconditioner; residual
+re-evaluation supplies the linear defect before another update. Values and
+coefficients stay wide. For coefficient k, the normalized residual is
+$\max_s|R_{s,k}v^k|$ and its arithmetic scale is
+$\max\{1,\max_s|X_{s,k}v^k/X_{s,0}|\}$. Refinement ends at working epsilon times
+that scale, within the existing association iteration limit including its
+starting solve. Nonfinite or out-of-domain sites, unchanged coefficients above
+that floor, or exhausted work refuse the calculation with their cause.
+
+After refinement, let $\delta X_k$ be the preconditioned correction of the
+remaining wide coefficient residual, $w_s=n x_{c(s)}m_s$, and $R_{s,k}$ the
+remaining mass-action coefficients. The retained volume-gradient error estimate is
+$$
+g=\sum_s\left|\frac{w_s}{X_{s,0}}\right|
+\left(
+\left|\left[R_{s,1}-R_{s,0}\frac{X_{s,1}}{X_{s,0}}\right]\delta X_{s,0}\right|
++|R_{s,0}\delta X_{s,1}|
+\right).
+$$
+The stationary association potential removes first-order site-value error in
+the energy; no separate first-order energy-error term is added to the chemical
+row. Terms beyond that order are outside this estimate. No starting double
+residual floor is relabeled as an extended result. Remaining arithmetic error
+in energy and gradient enters the explicit $\epsilon_q$ term above. The outer
+density estimate retains any unresolved propagated inner error.
+
+Refinement engages once when the double estimate or its actual correction
+exceeds `TWO_DENSITY_FORWARD_ERROR`, the 1e-10 log-density target. It repeats the shared Helmholtz,
+temperature/geometry, polar and association arithmetic in long double, using
+the existing Newton damping and bounds and remaining work limits. No fluid or
+temperature selector is used. After a fresh full correction, the reduced rows
+must meet the unchanged criterion and either both correction and estimate meet
+EQUILIBRIUM_POLISH_CORRECTION, or the residual is at most the estimated floor
+and the correction is at most $I\eta_q$. The estimated log-density intervals
+must remain separated, $u_L-u_V>2E_u$. Existing branch admission still decides
+whether the two phases are numerically resolved.
+
+The exported double coordinates are prepared and checked again, with no
+subsequent double Newton correction. Re-evaluation at the actually exported
+double densities gives
+$E_u=I(\|F_{\rm exported}\|_\infty+\eta_q)
++\|u_{\rm exported}-u_{\rm internal}\|_\infty$;
+$\operatorname{expm1}(E_u)$ is the relative-density error estimate.
+The result's linear_solve_diagnostics reports the row norm, floor, inverse norm,
+condition estimate, coordinate forward-error estimate, working significand bits
+and extended correction count. A rejected attempt is identified explicitly on
+failure and is retained in trace evidence; its estimate is absent from a
+successful fallback state's diagnostics. If long double has no more bits than
+double, the admitted double result remains, with its actual estimate, 53 bits,
+zero extended corrections and the reason additional precision was unavailable.
+An estimate above 1e-10 does not claim that density accuracy.
+
+Untriggered states retain pre-refinement arithmetic, outputs, iteration count
+and thermodynamic/density work. The fixed preservation inventory is independent
+of the trigger. Issue #860 owns the later shared conditioning implementation
+and must absorb and retire this local producer when that work is delivered.
 
 Repeated public solves and accepted continuation/envelope correctors may reuse the
 previous Ipopt endpoint's primal coordinates and equality/bound multipliers when
@@ -1297,28 +1417,92 @@ trial quantities are NaN. `polish_stop` retains raw/classified defects, step and
 the exit cause. Ordinary capture keeps the existing `polish_step` records.
 
 `solved_endpoint_jacobian` reports defining-row count, solved-chart width, rank
-and raw-J two-norm condition estimate after all deadlines, branch admission and
-attempt selection. Failed diagnostic inspection retains its cause and unavailable
-rank/condition. This estimate depends on coordinates and is no error bound or
-stability certificate. Its isolated EOS work is excluded from solve/search work
+and the scaled infinity-norm condition estimate after all deadlines, branch
+admission and attempt selection. For the canonical defining residuals $F$ and
+their exact Jacobian $J$, the endpoint calculation uses $A=J\operatorname{diag}(h)$.
+The physical coordinate scale $h$ is one for log and multiplier coordinates,
+the feed total for free phase and solid amounts, and $\max(|T|,1\ \mathrm{K})$ or
+$\max(|P|,1\ \mathrm{Pa})$ for free temperature or pressure. `condition` is
+$\|A\|_\infty\|A^{-1}\|_\infty$ and `inverse_norm` is
+$\|A^{-1}\|_\infty$, not a norm of the unscaled inverse Jacobian.
+
+The canonical row floor is
+$$
+\eta_i=\max\!\left(\gamma_n\sum_j|J_{ij}|h_j,
+u_i+\epsilon t_i\right),\qquad
+\gamma_n=\frac{n\epsilon}{1-n\epsilon},
+$$
+where $n$ is the solved-chart width, $\epsilon$ is the working-precision machine
+epsilon, $u_i$ is the row's propagated inner error and $t_i$ its term scale.
+Numerical row equilibration transports this floor by the absolute row scale.
+The shared linear calculation combines the Newton correction, propagated row
+floor and compensated linear defect through the exact physical-output
+derivatives. Output estimates also include returned-versus-mapped displacement
+and rounding. Temperature, pressure, amounts and compositions use absolute
+radii; positive density and packing use log radii, exported to absolute radii
+with `expm1`. Structural constants have no added rounding contribution.
+
+Detailed capture or an explicit post-hoc request computes these estimates.
+Unavailable rows, singularity or nonfinite projection retain their cause;
+unresolved composition, amount, packing or phase-separation domains prevent a
+conditional comparison. Source-reference chemical and first-thermal rows use
+the local estimate described in [ALG-REFERENCE](#alg-reference); its returned
+method annotation preserves the separate reference-replay precision and limits.
+The [retained notebook](../../../analyses/2026-equilibrium-forward-error/notebook.qmd)
+records the comparison coverage and limitations.
+
+The native comparison first requires the original admission, residual, branch,
+phase and inventory conditions and applies the ordinary allowance. Beyond it,
+an estimated-error pass requires available, resolved estimates at both
+endpoints, at least one absolute radius above that allowance, and a difference
+no larger than the sum of radii in the quantity's chart. Positive density and
+packing use log differences. Strict comparisons retain the ordinary allowance.
+An ordinary pass never consults error estimates.
+
+Default recorded rank may be structural or an existing solve decision; it is
+not a continuously measured endpoint condition number. Failed detailed
+inspection retains its cause and unavailable rank/condition. These local
+linear estimates depend on coordinates and are no rigorous nonlinear error
+bound or stability certificate. Their isolated EOS work is excluded from solve/search work
 counts, but may update model caches/counters and adds uncapped time before return.
 Detailed capture can advance finite deadlines; untimed returned-state identity
 is qualified separately. Disabled capture adds no numerical work or clock reads.
 
-Core contains all observation failures, retains a readable prefix and exposes
-sticky `capture.trace.incomplete`; missing evidence never selects numerical
-recovery. Trace-only containers and strings are constructed inside `Scope::observe`
-or Core’s initializer-list `probe` overload. A `scope.on()` guard alone does not
-contain allocation failure. The source rule in
-`tools/check-engine-architecture.py` guards the known eager-temporary and
-named-local payload patterns during `check-all`; it is not a complete
-allocation-safety proof.
+Diagnostic records use ordinary construction and copies. Allocation failure
+while constructing, copying or retaining a record propagates normally; it has
+no incomplete-record fallback. An Ipopt log-open refusal leaves the solve
+unchanged and sets `capture.trace.incomplete` with `ipopt_log_error`.
+Trace-only containers and strings are constructed inside `Scope::observe`
+or Core's initializer-list `probe` overload. The source rule in
+`tools/check-engine-architecture.py` guards known eager-temporary and
+named-local payload patterns during `check-all`.
 Nested native work captures forward detailed records once with remapped
 parents. Python declares capture and reads/serializes completed records only.
 
 See the specification appendix for [cooling-onset dew](#cooling-onset-dew),
 [critical-equation candidates and phase envelopes](#critical-equation-candidates-and-phase-envelopes),
 and [pure stoichiometric solids](#pure-stoichiometric-solids).
+
+The #906 saturation-loading search declares a positive increasing grid with
+both interval endpoints. It solves ordinary free-pressure bubble nodes in order,
+starting cold and then mapping the preceding admitted current-vector state.
+Native pressure estimates resolve signs; native exact feed actions and the
+augmented defining-row loading projection establish sampled local regularity.
+Each strict sign bracket or pressure-uncertain node event receives one bounded
+affine-loading correction through the same driver. A bracket uses its midpoint
+and lower-node state; a node event uses that node and its adjacent-node span.
+There is no scalar inversion, grid refinement or outer retry.
+
+One existing recovery work envelope covers all grid, seed, fallback and
+correction calls, including driver attempts. Candidate comparison uses all
+loading, T/P and declared-order phase/state operands with their own native
+estimates and zero comparison allowance. Every pair in a duplicate group must
+agree; multiple strict brackets refuse independently of candidate deduplication.
+Candidate corrections/comparisons precede the sampled slope audit. All nodes
+and required events must be examined, with one admitted root group and no
+refusal, before publication. “Unique within the declared search” excludes
+between-node and undiscovered-branch claims. EqID `finite_addition_enthalpy`
+owns the heat, moving denominator and switch derivative.
 
 ## ALG-STABILITY
 
@@ -1507,8 +1691,12 @@ For systems whose fed-plus-participant species are all neutral and that declare 
 enumerated distinct start natively with Michelsen's modified tangent-plane objective (EqID:
 `michelsen_modified_tangent_plane`). Take `TANGENT_PLANE_SUBSTITUTIONS` direct substitutions (Michelsen 1982 eq.
 19), then second-order steps in αᵢ = 2√Wᵢ with the exact T,P Jacobian (eqs. 25–27). Take a step when its
-Cholesky factor exists, α stays positive and g* does not increase; otherwise take a substitution step. Each
-iterate uses the trial label's unanchored density-owner root. A trial converges when
+Cholesky factor exists, α stays positive and g* does not increase; otherwise take a substitution step.
+Each objective point requests the shared Helmholtz gradient. Only an attempted second-order step
+requests the exact isothermal phase Hessian at that current composition and volume, without another
+density solve. The first objective point reuses its seed's density root only when the full normalized
+composition is exactly equal; every other point uses the trial label's unanchored density-owner root.
+The root is local to that trial and is never reused at a changed composition. A trial converges when
 ‖ln Wᵢ + ψᵢ + sᵢ‖∞ ≤ `EQUILIBRIUM_ROW_RESIDUAL`, and its trial dual is k = −ln ΣW. A start that reaches
 `EQUILIBRIUM_MAX_ITERATIONS`, throws, or leaves finite positive W runs through the shared driver unchanged. Run
 every other enumerated distinct start, and every start of ionic or reacting systems, through the shared driver. Compile an
@@ -1529,7 +1717,8 @@ optimizer attempt, including a nonconverged attempt. Failed initialization has
 no optimizer point. A Michelsen trial retains its converged primal chart [ln wᵢ, 1, ln η] as raw coordinates and has no raw
 residuals, basis or row transformation. Keep raw residuals separate from reconstructed composition,
 displacement and reevaluated energy. Normalize neutral trials; ionic rescaling
-and the Liquid largest-entry positive/negative pivot correction follow EqID:
+and the Liquid charge-only increase of the largest opposite-sign pivot followed
+by common multiplicative normalization follow EqID:
 `electroneutral_trial_reconstruction` with ties by index. Newly admitted charged
 Vapor trials retain common normalization and multiplicative charge repair in
 log arithmetic, without adding normalization roundoff to ionic coordinates. Recompute molar volume
@@ -1983,6 +2172,10 @@ owns the tested cases, tolerances, errors and interpretation limits.
 
 ## ALG-REFERENCE
 
+Referenced solved-state third actions admit feed directions only at fixed T/P.
+Thermal and mixed thermal/feed third actions retain the Engine refusal;
+the solvent mole-weighting relation does not extend this derivative order.
+
 Native fitting may supply solvent-reference and finite-activity density anchors.
 Each anchor is checked for regularity before use; an anchor failure is recorded
 and retried cold by the existing density owner. There is no reference-wide retry.
@@ -2001,6 +2194,68 @@ The existing association Jacobian and implicit pressure coefficients supply all
 T/P derivatives through order four and one parameter through T/P order three.
 One amount insertion appears at degree r+1; extraction through degree 2r+1
 cannot contain two such insertions. No ionic-concentration Hessian is required.
+
+Requested source-reference errors for the dimensionless contraction $C$ and
+its first thermal derivative $C_T$ use local higher-precision re-evaluation plus
+first-order pressure/site propagation (#869). Named retained machine constants,
+supplied parameters and captured path/site coefficients are fixed inputs;
+computed reciprocals, products and sums are evaluated within the common scalar
+expressions. The existing `long double` Taylor evaluator replays captured sites;
+the selected-tape association-error owner propagates their coefficient errors
+through degree five. It adds no second association or density solve for the replay.
+The existing diagnostic cache owns the solvent and selected pure-reference states.
+Only explicit error requests and detailed endpoint capture run this calculation.
+
+For a returned coefficient, wider result $x_w$ and absolute extraction/assembly
+scale $S_x$, the arithmetic estimate is
+
+$$
+e_x^{\mathrm{arith}}=|\widehat x-x_w|+\gamma_N^w S_x+N d_{\min}^w,
+\qquad \gamma_N^w=\frac{N u_w}{1-Nu_w},\quad u_w=\epsilon_w/2.
+$$
+
+The recurrence count uses $4(d+1)^2$ operations per selected tape operation and
+sign path, summed over the pressure, value and first-thermal extractions, plus
+the short assembly. Differences and allowances are formed in wider arithmetic;
+`nextafter` converts the final nonnegative estimate upward. The center is the
+actual degree-one $C$ or normalized degree-three $C_T$ value. Pure/dilute sums
+are recentered on their returned columns. With signed achieved pressure
+coefficients, original target $P_s$, arithmetic/site floors $\eta_{P,k}$ and
+the retained density floor converted once to Pa,
+
+$$
+b_0=|p_0-P_s|+\eta_{P,0}+\epsilon|P_s|+e_{\rho,\mathrm{Pa}},\qquad
+b_1=|p_1|+\eta_{P,1},
+$$
+$$
+e_C=e_{C,\mathrm{fixed}}+|C_{P_s}|b_0,\qquad
+e_{C_T}=e_{C_T,\mathrm{fixed}}+|C_{TP_s}|b_0+|C_{P_s}|b_1/|T_1|.
+$$
+
+Raw source-pressure partials remain nonzero for a fixed source, whose public
+system-pressure columns are zero. Existing species maps transport errors with
+absolute coefficients, compensated equation/application defects and their
+arithmetic floors. The anchored Gibbs-temperature column retains both $e_C$
+and $T e_{C_T}$. Supplied caloric records receive no source-reference solve
+error; higher caloric-error columns remain uncomputed. Present-solid affinity
+uses its own source-reference error and the mapped species errors.
+
+This is a local estimate, with the same comparison meaning as ALG-TERMINATION,
+and can underestimate shared errors and internal cancellation. A final-scale
+roundoff allowance does not bound arbitrary internal amplification. Fixed-input
+arithmetic excludes supplied operand uncertainty: an exact quotient at both
+precisions can still change under an uncertain denominator. The retained
+underflow and reciprocal examples and the qualified stencil are in the
+[forward-error notebook](../../../analyses/2026-equilibrium-forward-error/notebook.qmd).
+Pressure/site propagation omits second-order sensitivity-error products and
+requires the existing admitted regular branch. The result annotation states
+these limits separately from failure causes and labels wider precision only as
+the reference replay's precision. The endpoint/Jacobian precision and shared
+`estimated_error` eligibility and judgment are unchanged. Where `long double`
+is not wider than `double`, preserve ordinary values and return the explicit
+cause `source-reference estimate unavailable: long double is not wider than double`.
+Missing states, unavailable sensitivities and nonfinite estimates retain their
+actual causes; error production never changes physical admission.
 
 Values and columns have independent availability, actual association residuals,
 site conditioning and pressure response diagnostics. Density convergence is
@@ -2167,6 +2422,36 @@ method. Initialization, bounds, loss, covariance assumptions and budget are
 scientific inputs to the fit. A failed state is a failed evaluation, never a
 successful zero residual. Fitted values remain candidate parameters.
 
+`FitResult.rank_records` publishes the existing SVD decision for the complete
+weighted optimizer observation Jacobian, including admitted measured-input
+columns and penalty rows. Its dimension is the column count; its absolute
+cutoff is `FIT_RANK_RECIPROCAL_CONDITION` times the largest singular value.
+This numerical determination is separate from statistical covariance:
+unfinished, active-bound and rank-deficient candidates keep their actual rank
+while withholding the normal inverse. No parameter forward-error estimate
+is derived from covariance, and opaque Ceres QR or Ipopt BFGS/KKT condition
+estimates remain unavailable.
+
+`first_numerical_failure` retains a producer's first refusal through prediction,
+actions, fit trials and worker replies, including successful cold replacement.
+Within an evaluation, only the serial row prefix through its first refused
+row is eligible; recovered causes are selected in row and producer order.
+Across evaluations the fit retains the chronological first cause. A
+`TrialFailure` keeps its own evaluation's cause, row and optimizer point.
+Recovered causes on successful rows do not create rejected trials.
+Measurement LLT refusal is infeasible, rather than necessarily rank deficient;
+whitening distinguishes nonfinite solved operands from overflowing cost.
+Hydration holds retain both caller criteria in detailed capture, the existing
+scalar derivative cutoff and actual bracket/residual operands. Their Core
+record has no invented single criterion for the two acceptance conditions.
+
+Minimax retains `ipopt_diagnostics` only for an actual invocation. Its last
+callback tuple, restoration entries and initialization/application returns
+have the same observer as Gibbs minimization; a point reader creates no
+optimizer attempt. Earlier concrete observation/hold causes precede generic
+callback or application-status text. Final coordinates and multipliers keep
+the existing constrained-estimator basis.
+
 See the fitting appendix for [cation-mixing coordinates](#cation-mixing-coordinates),
 [declared measurement uncertainty](#declared-measurement-uncertainty),
 [optional fitting-density offers](#optional-fitting-density-offers) and
@@ -2273,6 +2558,88 @@ gradient describe local conditioning; dependent-target uncertainty, profiles,
 parameter Hessians and physical validation are not supplied.
 
 ## ALG-TERMINATION
+
+### Diagnose an observed refusal
+
+The first numerical refusal and final convergence answer different questions.
+A successful substitution, cold replacement or polish can retain a rejected
+intermediate operation. Its presence does not establish the cause of a later
+termination. Default records retain that first refusal, the latest rank per
+named operation, the last actually invoked Ipopt attempt and the earliest
+superseded restoration-bearing attempt. Detailed capture retains intervening
+observations. Inspect `capture.trace.ipopt_log_error` and
+`capture.trace.incomplete` for a failed log destination. Diagnostic retention
+does not handle out-of-memory failure specially.
+
+ASL replay uses the same real controls and requested derivative order. Its
+density errors format the existing first cause, falling back to density
+convergence; solved-state action errors retain rank/dimension and present
+condition/backward-error operands. The condition basis is the power-of-two
+column-then-row equilibrated defining Jacobian, $RJC$. Rank refusal precedes
+the inverse-condition estimate and Taylor solves, so absent operands stay
+absent. ASL never computes an estimate during conversion. Compare successful
+native and ASL actions in the same $(T,P,w)$ coordinates, including the
+normalization chain rule for $x=w/\sum w$; raw composition actions have a
+different basis.
+
+1. Retain the exact declaration, parameter/library identity, units, starts,
+   requested criteria, work budgets and default result. Read final convergence
+   separately from `first_numerical_failure`, `rank_records`, `last_rank`,
+   `ipopt_diagnostics` and `recovered_ipopt_diagnostics`. Discovery declarations
+   and trials retain their own observations; unrelated trials do not share a
+   first cause.
+   For a fit, inspect its rank records separately from covariance status and
+   its first refusal separately from termination. For minimax, read
+   `result.minimax.ipopt_diagnostics` and the existing point/multipliers.
+2. With `EPCSAFT_IPOPT_OPTIONS_FILE` unset, replay those inputs through
+   `with epcsaft.trace(diagnostics=True) as capture:`. Native callers use
+   `core::Capture(true)`. Read the deepest association, density or callback
+   refusal before attributing an outer termination to rank or restoration.
+   Detailed estimates are separate observation work and can advance finite
+   deadlines; untimed numerical equivalence does not promise deadline identity.
+3. Request `equilibrium_numerical_estimates(model, result)` or compiled
+   `numerical_estimates` at the actual admitted returned point. Retain the
+   basis, cutoff, residual, floor, condition, availability and physical-quantity
+   radii. A failed optimizer's point is labelled **Ipopt final point before
+   polish**, not an admitted returned-state estimate. Its raw TNLP coordinates,
+   lower/upper bound multipliers and constraint multipliers retain the
+   originating declaration, rows, constraint-row selection, actual coordinate
+   scale and objective factor. Engine coordinates are `coordinate_scale *
+   tnlp_coordinates`; bound coefficients would divide by that scale. No
+   transformation is reapplied to the stored arrays. Callback quantities use
+   Ipopt's internal scaling basis and are not physical Gibbs-energy measures.
+4. If Ipopt internals are needed, supply `ipopt_log="/absolute/unique/ipopt.log"`
+   on that same capture; native callers use `core::Capture(true, destination)`.
+   Keep the options-file variable unset. The destination opens lazily on the
+   first actual Ipopt invocation and retains sequential warm/cold attempts
+   without truncation. Nested captures inherit it unless they request another
+   destination; the owning capture closes it on exit or `take`. Read every
+   iteration, restoration marker, termination, factorization and line-search
+   message alongside the bounded callback observations. A Newton-only solve
+   opens no log. Inspect `capture.trace.ipopt_log_error` if opening fails; this
+   failure leaves the calculation on its original path. J_MAIN uses level 5
+   iteration summaries and other normal categories level 12. An all-category
+   J_MAIN level-12 dump is not qualified on installed Ipopt 3.11.9.
+5. Interpret each quantity in its own basis. Structural rank, endpoint rank,
+   association pivot admission, pressure slope and Ipopt regularization describe
+   different operations. Small backward error alone does not bound physical
+   forward error; Ipopt's internal KKT condition is not the final defining-row
+   condition. Preserve unavailable-estimate causes. For ASL retain `Errmsg`,
+   stderr and real controls, then replay those exact inputs through these same
+   steps. Preserve the original cause before later continuation failure;
+   unavailable external functions supply no physical result.
+
+The [options-file explanation](#ipopt-diagnostic-options) describes a deliberately
+changed experiment. A nonempty `EPCSAFT_IPOPT_OPTIONS_FILE` disables warm reuse;
+its presence, even with an empty value, bypasses discovery/free-amount Newton
+predicates. Other eligible Newton paths can still finish without Ipopt. Preserve
+that file/settings and unset the variable afterward. An incidental `ipopt.opt`
+is ignored. Capture-owned logging changes no numerical option, eligibility,
+retry or acceptance rule. File output and detailed observations can affect
+finite deadlines; no timing identity is claimed.
+
+Requested source-reference estimates follow [ALG-REFERENCE](#alg-reference).
+Their returned method annotation supplies no new termination or admission criterion.
 
 Core CORE1 keeps the numerical domains separate. `EQUILIBRIUM_COMPOSITION_BOX`
 $\beta$ sets the lower box of the intensive `log(x_i)` coordinate inside the

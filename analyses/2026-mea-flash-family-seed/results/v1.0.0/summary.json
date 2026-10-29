@@ -1,0 +1,77 @@
+{
+  "total": 73,
+  "converged": 73,
+  "previous_converged": 69,
+  "common": 69,
+  "lost": [],
+  "recovered": [
+    4,
+    9,
+    47,
+    54
+  ],
+  "failed": [],
+  "row_tolerance": 1e-10,
+  "state_criterion": 1e-10,
+  "state_metric": "max |a-b|/max(|a|,|b|,1e-14), over phase amounts, mole fractions and molar densities",
+  "max_state_difference": 4.969152127251347e-12,
+  "worst_state_index": 72,
+  "worst_quantity": "amounts[1]",
+  "largest_converged_residual": 1.91402449445377e-11,
+  "largest_phase_fraction_sum_error": 2.220446049250313e-16,
+  "reaction_invariant_vectors": [
+    [
+      0.0,
+      1.0,
+      0.0,
+      1.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      1.0,
+      -1.0,
+      0.0,
+      -1.0,
+      0.0,
+      1.0,
+      1.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.5,
+      0.0,
+      0.5,
+      0.5,
+      0.0,
+      0.5,
+      0.0,
+      1.0,
+      0.0
+    ],
+    [
+      -1.5,
+      1.0,
+      0.5,
+      0.5,
+      0.0,
+      -0.5,
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "largest_reaction_invariant_error_mol": 9.493322757813056e-10,
+  "largest_scaled_invariant_error": 2.753629295644602e-11,
+  "invariant_scale": "max(1 mol, sum_i |invariant_i * feed_i|); exact nullspace of declared reaction rows",
+  "physical_array_checks": "finite values; positive phase amounts/densities; fractions in [0,1]; normalized phases",
+  "key_flash_work": {
+    "iterations": 19,
+    "evaluations": 35,
+    "hessian_calls": 20
+  }
+}

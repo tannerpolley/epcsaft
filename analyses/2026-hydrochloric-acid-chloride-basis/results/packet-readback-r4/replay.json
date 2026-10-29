@@ -1,0 +1,32 @@
+[
+  {
+    "family": "training",
+    "rows": 84,
+    "matches": true,
+    "cold_matches": true
+  },
+  {
+    "family": "roy1980-hcl-mg",
+    "rows": 58,
+    "matches": true,
+    "cold_matches": true
+  },
+  {
+    "family": "khoo1977-hcl-mg",
+    "rows": 30,
+    "matches": true,
+    "cold_matches": true
+  },
+  {
+    "family": "jiang1996-hcl-li",
+    "rows": 40,
+    "matches": true,
+    "cold_matches": true
+  },
+  {
+    "family": "khoo1977-hcl-ca",
+    "rows": 30,
+    "matches": true,
+    "cold_matches": true
+  }
+]

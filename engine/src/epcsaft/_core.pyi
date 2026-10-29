@@ -36,6 +36,12 @@ class DensityStructureError(EosError):
     A failed or incomplete scan is not evidence of a unique stable root. See ALG-DENSITY in engine/docs/science/algorithms.md.
     """
     ...
+    record: Optional[Convergence]
+    """Final native refusal, or None when unmeasured."""
+    first_numerical_failure: Optional[Convergence]
+    """Earlier native refusal, when retained separately from final convergence."""
+
+
 class ConvergenceError(EosError):
     """A native iterative calculation stops without an admitted result.
 
@@ -44,9 +50,20 @@ class ConvergenceError(EosError):
     The exception message retains the residual, stopping criterion and available convergence diagnostics.
     """
     ...
+    record: Convergence
+    """Final native refusal, or None when unmeasured."""
+    first_numerical_failure: Optional[Convergence]
+    """Earlier native refusal, when retained separately from final convergence."""
+
+
 class DeclarationError(ParameterError):
     """A required physical declaration is absent or inadmissible."""
     ...
+    record: Optional[Convergence]
+    """Final native refusal, or None when unmeasured."""
+    first_numerical_failure: Optional[Convergence]
+    """Earlier native refusal, when retained separately from final convergence."""
+
 
 class Stop:
     """Reason an iterative calculation stopped.
@@ -156,6 +173,16 @@ class Convergence:
         """
         ...
 
+    cause: str
+    """Producing operation and actual refused operands; empty without an observation."""
+
+    rank: Optional[NumericalRank]
+    """Rank in the named matrix basis, or None without a factor observation."""
+
+    backward_error: Optional[float]
+    """Dimensionless measured linear backward error, or None when unavailable."""
+
+
 class Event:
     """One named numerical probe within a captured span."""
     name: str
@@ -191,7 +218,10 @@ class Trace:
     current: Optional[int]
     """Currently active span index, or None when no span is open."""
     incomplete: bool
-    """True if collecting trace evidence failed; the retained trace may omit observations."""
+    """True if opening the requested Ipopt log failed; diagnostic allocation failure propagates normally."""
+
+    ipopt_log_error: str
+    """Opening error for the requested Ipopt destination; empty without an error."""
 
 class Capture:
     """Capture native numerical traces in a context manager.
@@ -200,13 +230,15 @@ class Capture:
     -----
     Capture observes calculations without changing their stopping criteria. Detailed probes are enabled by diagnostics; exceptions from the enclosed calculation are not suppressed.
     """
-    def __init__(self, diagnostics: bool = False) -> None:
+    def __init__(self, diagnostics: bool = False, ipopt_log: str = "") -> None:
         """Initialize Capture from the declared inputs.
 
         Parameters
         ----------
         diagnostics : bool
             Enable detailed numerical probes in addition to operation spans.
+        ipopt_log : str
+            Optional absolute destination for the original calculation's sequential Ipopt log.
 
         Returns
         -------
@@ -1195,6 +1227,9 @@ class PropertyActionDiagnostics:
     stable_root_count: Optional[int]
     """Number of mechanically stable roots established by the search, or None when not established."""
 
+    first_numerical_failure: Optional[Convergence]
+    """Earliest observed numerical refusal, separate from final convergence."""
+
 class PropertyActionBatch:
     """Property actions sharing one central state and implicit work."""
     solver_options: list[dict[str, Any]]
@@ -1395,6 +1430,9 @@ class State:
     without a positive finite pressure slope or admitted thermochemistry, for zero-fraction
     species or unavailable insertions, or for nonfinite results."""
 
+    first_numerical_failure: Optional[Convergence]
+    """Earliest observed numerical refusal, separate from final convergence."""
+
 class DensityDiagnosticPoint:
     """One sampled or refined point on a fixed-composition isotherm."""
     molar_density: float
@@ -1472,6 +1510,9 @@ class DensityDiagnostics:
     """Number of diagnostic EOS evaluations."""
     stop: str
     """Diagnostic termination explanation; an incomplete search does not establish uniqueness."""
+
+    first_numerical_failure: Optional[Convergence]
+    """Earliest observed site or density refusal during this search."""
 
 class SweepCounters:
     """Cumulative derivative work counts for a HelmholtzModel."""
@@ -2260,6 +2301,12 @@ class StabilityReport:
     """Counts for this finite search; absent keys have no retained count. root_calls counts solve_density trace spans, root_evaluations counts energy-evaluation spans inside those roots, and energy_evaluations counts all energy-evaluation spans. trial_invocations counts rooted, distinct trials admitted to direct evaluation or search; reconstruction_evaluations counts completed composition reconstructions. driver_invocations and trial_driver_invocations count shared-driver trial calls; iterations, evaluations and hessian_calls sum their returned work. trial_tangent_plane_invocations, trial_tangent_plane_iterations and trial_tangent_plane_newton_steps report the separate reduced tangent-plane search work. association_diagnostic_evaluations counts extra association diagnostics; finite_split_evaluations counts finite donor/split energy comparisons. All are counts; no elapsed time is retained.
     """
 
+    first_numerical_failure: Optional[Convergence]
+    """Earliest observed numerical refusal, separate from final convergence."""
+
+    last_rank: Optional[NumericalRank]
+    """Rank of the candidate amount correction, when measured."""
+
 class DiscoveryRecord:
     """Retained candidate topology and the finite discovery sequence.
 
@@ -2402,6 +2449,95 @@ class CriticalRecord:
     """Dimensionless numerical backward-error estimate."""
     rank: int
     """Numerical rank of the augmented defining Jacobian, a count."""
+
+class NumericalRank:
+    """Most recent existing factorization's rank decision and relative threshold."""
+    basis: str
+    dimension: int
+    rank: int
+    threshold: float
+
+class Quantity:
+    """Comparison chart: linear, positive physical quantity, or stored logarithm."""
+    Linear: Quantity
+    Positive: Quantity
+    LogPositive: Quantity
+
+class ComparisonMode:
+    """Strict ordinary allowance or the accepted conditional numerical-error rule."""
+    Strict: ComparisonMode
+    EstimatedError: ComparisonMode
+
+class NumericalEstimate:
+    """Local numerical-error radius in the stored quantity and its comparison chart."""
+    absolute: float
+    chart: float
+    available: bool
+    resolved: bool
+    cause: str
+    def __init__(self) -> None: ...
+
+class ComparisonEligibility:
+    """Original declaration, branch, inventory, residual and admission outcomes."""
+    declaration: bool
+    branch: bool
+    phase_matching: bool
+    inventory: bool
+    residual_a: bool
+    residual_b: bool
+    admission_a: bool
+    admission_b: bool
+    def __init__(self) -> None: ...
+
+class EquilibriumComparison:
+    """Native judgment and differences; the caller retains the comparison operands."""
+    judgment: str
+    cause: str
+    difference: float
+    chart_difference: float
+    radius_sum: float
+
+class EquilibriumNumericalEstimates:
+    """Requested local error estimates at the returned equilibrium point, not enclosures."""
+    loading: NumericalEstimate
+
+    basis: str
+    cause: str
+    source_reference_method: str
+    rank: int
+    dimension: int
+    precision_bits: int
+    threshold: float
+    condition: float
+    inverse_norm: float
+    backward_error: float
+    residuals: list[float]
+    row_terms: list[float]
+    row_inner: list[float]
+    row_floor: list[float]
+    physical_scale: list[float]
+    temperature: NumericalEstimate
+    pressure: NumericalEstimate
+    densities: list[NumericalEstimate]
+    packing: list[NumericalEstimate]
+    composition: list[NumericalEstimate]
+    amounts: list[NumericalEstimate]
+
+def compare_equilibrium_quantity(
+    quantity: Quantity, a: float, b: float, ordinary_allowance: float,
+    estimate_a: NumericalEstimate, estimate_b: NumericalEstimate,
+    eligibility: ComparisonEligibility, mode: ComparisonMode,
+) -> EquilibriumComparison:
+    """Apply the accepted ordinary or conditional comparison in the native owner."""
+    ...
+
+def project_numerical_estimate(value: float, mapped: float, radius: float, positive: bool, constant: bool) -> NumericalEstimate:
+    """Project a native log or linear radius, including output displacement and rounding."""
+    ...
+
+def equilibrium_numerical_estimates(model: HelmholtzModel | IdealMoleFraction, result: EquilibriumResult) -> EquilibriumNumericalEstimates:
+    """Estimate numerical error at the frozen returned state of the declared model."""
+    ...
 
 class EquilibriumProblem:
     """Declared fluid/reaction/solid equilibrium and extensive constraints.
@@ -2579,6 +2715,8 @@ class RowKind:
     """Chemical-potential stationarity, normalized by RT."""
     Pressure: RowKind
     """Pressure equality in the native dimensionless row normalization."""
+    SaturationPressure: RowKind
+    """Declared target pressure, normalized by that pressure."""
     Moiety: RowKind
     """Conserved moiety balance normalized on the feed basis."""
     Electro: RowKind
@@ -2664,10 +2802,21 @@ class CompiledSystem:
     """Whether reaction declarations are present."""
     conserves_total_moles: bool
     """Whether the admitted stoichiometry conserves total molar amount."""
+    last_rank: NumericalRank | None
     jacobian_rank: int
     """Defining-Jacobian rank measured at the generic point."""
     removed_species: list[int]
     """Component indices eliminated by exact inventory/support restrictions."""
+    def solve_saturation(self) -> EquilibriumResult: ...
+
+    def solve(self) -> EquilibriumResult:
+        """Solve this declaration from a fresh start through the native equilibrium driver."""
+        ...
+    def numerical_estimates(self, coordinates: Sequence[float], temperature: float, pressure: float,
+                            amounts: Sequence[float], composition: Sequence[float], densities: Sequence[float],
+                            packing: Sequence[float]) -> EquilibriumNumericalEstimates:
+        """Estimate a frozen endpoint in this declaration; admission remains the reader's original outcome."""
+        ...
     def generic_point(self) -> list[float]:
         """Construct the native generic chart seed.
 
@@ -2754,7 +2903,124 @@ class CompiledSystem:
         """
         ...
 
+    first_numerical_failure: Optional[Convergence]
+    """Earliest observed numerical refusal, separate from final convergence."""
+
+    rank_records: list[NumericalRank]
+    """Latest observed rank per named operation; no extra admission rule."""
+
+
+class LinearSolveDiagnostics:
+    """Local first-order error estimates in the named system's unscaled coordinates.
+
+    Attributes
+    ----------
+    system : str
+        Defining equations and coordinate basis.
+    reason : str
+        Precision limitation or rejected-attempt cause, when present.
+    residual_norm : float
+        Achieved infinity norm of the defining rows.
+    evaluation_floor : float
+        Estimated row-evaluation error, including association.
+    jacobian_inverse_norm : float
+        Infinity norm of the inverse in the original row and coordinate scales.
+    condition_estimate : float
+        Jacobian infinity norm times its inverse norm.
+    forward_error_estimate : float
+        Estimated absolute coordinate error; for log densities, expm1 gives relative density error.
+    precision_bits : int
+        Working significand bits.
+    refinement_iterations : int
+        Extended corrections actually taken.
+    """
+    system: str
+    reason: str
+    residual_norm: float
+    evaluation_floor: float
+    jacobian_inverse_norm: float
+    condition_estimate: float
+    forward_error_estimate: float
+    precision_bits: int
+    refinement_iterations: int
+
+class IpoptIteration:
+    """Last callback tuple in Ipopt's internal optimization and scaling basis."""
+    mode: int
+    """Ipopt callback mode, a count or mode ordinal."""
+    iteration: int
+    """Ipopt callback iteration, a count or mode ordinal."""
+    line_search_trials: int
+    """Ipopt callback line search trials, a count or mode ordinal."""
+    objective: float
+    """Unmodified Ipopt callback objective; units follow Ipopt's internal basis."""
+    inf_pr: float
+    """Unmodified Ipopt callback inf_pr; units follow Ipopt's internal basis."""
+    inf_du: float
+    """Unmodified Ipopt callback inf_du; units follow Ipopt's internal basis."""
+    mu: float
+    """Unmodified Ipopt callback mu; units follow Ipopt's internal basis."""
+    step_norm: float
+    """Unmodified Ipopt callback step_norm; units follow Ipopt's internal basis."""
+    regularization: float
+    """Unmodified Ipopt callback regularization; units follow Ipopt's internal basis."""
+    alpha_du: float
+    """Unmodified Ipopt callback alpha_du; units follow Ipopt's internal basis."""
+    alpha_pr: float
+    """Unmodified Ipopt callback alpha_pr; units follow Ipopt's internal basis."""
+
+class IpoptPoint:
+    """Original TNLP final point before polish; absent without finalization."""
+    tnlp_coordinates: list[float]
+    """Original TNLP tnlp coordinates; see ALG-TERMINATION for the chart."""
+    coordinate_scale: list[float]
+    """Original TNLP coordinate scale; see ALG-TERMINATION for the chart."""
+    tnlp_lower_multipliers: list[float]
+    """Original TNLP tnlp lower multipliers; see ALG-TERMINATION for the chart."""
+    tnlp_upper_multipliers: list[float]
+    """Original TNLP tnlp upper multipliers; see ALG-TERMINATION for the chart."""
+    tnlp_constraint_multipliers: list[float]
+    """Original TNLP tnlp constraint multipliers; see ALG-TERMINATION for the chart."""
+    declaration: EquilibriumProblem
+    """Originating declaration; it may differ from the returned state's declaration."""
+    rows: list[Row]
+    """Originating defining rows."""
+    constraint_rows: list[int]
+    """Indices into this point's own rows, in TNLP multiplier order."""
+    objective_factor: float
+    """Requested objective normalization, 1/feed_total; not applied again to the arrays."""
+
+class IpoptDiagnostics:
+    """Bounded observations of one invoked Ipopt attempt."""
+    last: Optional[IpoptIteration]
+    """Last callback tuple, or None if no callback ran."""
+    first_restoration_iteration: Optional[int]
+    """Observed first restoration iteration, or None when unavailable."""
+    initialization_return: Optional[int]
+    """Observed initialization return, or None when unavailable."""
+    application_return: Optional[int]
+    """Observed application return, or None when unavailable."""
+    restoration_entries: int
+    """Attempt-local restoration entries, a count."""
+    callbacks: int
+    """Attempt-local callbacks, a count."""
+    warm_initialized: bool
+    """Whether this attempt was warm initialized."""
+    predicted: bool
+    """Whether this attempt was predicted."""
+    physical_amounts: bool
+    """Whether this attempt was physical amounts."""
+    failed_point: Optional[IpoptPoint]
+    """Original TNLP tuple on unsuccessful termination, or None without one."""
+
 class EquilibriumResult:
+    rejected_reduction: EquilibriumResult | None
+    terminal_numerical_failure: Convergence | None
+    last_full_evaluation: Convergence | None
+    phase_pressures: list[float]
+
+    def saturation_values(self) -> dict[str, Any]: ...
+
     """Solved phases and numerical evidence on the declared feed basis.
 
     Notes
@@ -2827,6 +3093,12 @@ class EquilibriumResult:
     """
     convergence: Convergence
     """Residual, effective criterion, floor and stopping evidence."""
+    last_rank: NumericalRank | None
+    """Most recent evaluated rank decision; its basis identifies the matrix."""
+    numerical_estimates: EquilibriumNumericalEstimates | None
+    """Endpoint estimates on detailed capture; None when unrequested."""
+    linear_solve_diagnostics: LinearSolveDiagnostics | None
+    """Reduced-system accuracy at the returned state, or explicitly rejected-attempt evidence on failure."""
     rows: list[Row]
     """Equation identities in residual order."""
     unknown_count: int
@@ -2867,6 +3139,19 @@ class EquilibriumResult:
             Length n of dimensionless mole fractions in component_ids order.
         """
         ...
+
+    first_numerical_failure: Optional[Convergence]
+    """Earliest observed numerical refusal, separate from final convergence."""
+
+    rank_records: list[NumericalRank]
+    """Latest observed rank per named operation; no extra admission rule."""
+
+    ipopt_diagnostics: Optional[IpoptDiagnostics]
+    """Latest actually invoked Ipopt attempt, including initialization-only attempts."""
+
+    recovered_ipopt_diagnostics: Optional[IpoptDiagnostics]
+    """Earliest superseded restoration-bearing attempt."""
+
 
 class TopologyEvent:
     """Candidate topology change detected by the native solve.
@@ -3054,6 +3339,19 @@ class ContinuationResult:
     critical_seeds: list[list[float]]
     """Per-candidate [ln(T/(1 K)), ln(P/(1 Pa)), ln(rho/(1 mol/m^3))] seeds, dimensionless."""
 
+    first_numerical_failure: Optional[Convergence]
+    """Earliest observed numerical refusal, separate from final convergence."""
+
+    rank_records: list[NumericalRank]
+    """Latest observed rank per named operation; no extra admission rule."""
+
+    ipopt_diagnostics: Optional[IpoptDiagnostics]
+    """Latest actually invoked Ipopt attempt, including initialization-only attempts."""
+
+    recovered_ipopt_diagnostics: Optional[IpoptDiagnostics]
+    """Earliest superseded restoration-bearing attempt."""
+
+
 def continue_equilibrium(model: HelmholtzModel, request: ContinuationRequest) -> ContinuationResult:
     """Trace a declared equilibrium path or incipient phase envelope.
 
@@ -3074,6 +3372,7 @@ def continue_equilibrium(model: HelmholtzModel, request: ContinuationRequest) ->
     Ordinary continuation follows the start-to-target path. Both endpoint declarations are first checked for unsupported solids; an envelope start then selects the native envelope controller and ignores the target declaration.
     """
     ...
+
 
 class SolvedStateObservableKind:
     """Quantity extracted from the admitted equilibrium state.
@@ -3780,6 +4079,8 @@ class ObservationKind:
 
     See ALG-FIT and engine/docs/regression/science/pure-saturation-regression.md for observation algebra, bases and admission. Parameter fitting is calibration, not independent physical validation.
     """
+    SaturationCappedAdditionEnthalpy: ObservationKind
+
     MeanIonicActivityCoefficient: ObservationKind
     """Dimensionless mean ionic activity coefficient on the declared molality scale."""
     OsmoticCoefficient: ObservationKind
@@ -3884,6 +4185,11 @@ class Observation:
     -----
     Only the fields consumed by kind define its observation. A failed prediction is unavailable with a cause, never a successful zero residual. Endpoint reaction/reference identities and component balances must match for AdditionEnthalpy.
     """
+    basis_amount: float
+    loading_cap: float
+    loading_bounds: tuple[float, float]
+    loading_grid: list[float]
+
     ion_indices: tuple[int, int]
     """Two component indices in (cation, anion) order for the formula-salt reference."""
     stoichiometry: tuple[int, int]
@@ -3891,6 +4197,7 @@ class Observation:
     charge.
     """
     molality: float
+    finite_solute_molalities: list[float] | None
     """Formula-unit salt concentration in mol/kg solvent for formula-salt observations."""
     reference_composition: list[float]
     """Optional length-n reference solvent composition, dimensionless in component order; used for
@@ -3945,6 +4252,14 @@ class Observation:
 
 class Prediction:
     """One native observation prediction with physical units and failure evidence."""
+    saturation: Optional[SaturationSearch]
+    saturation_loading: Optional[float]
+    endpoint_loading: Optional[float]
+    added_amount: Optional[float]
+    cap_branch: str
+    saturation_loading_gradient: list[float]
+    endpoint_loading_gradient: list[float]
+
     solver_options: list[dict[str, Any]]
     """Effective named numerical settings and provenance."""
     value: Optional[float]
@@ -3968,7 +4283,12 @@ class Prediction:
     requested_tolerance_met: Optional[bool]
     """Whether a retained central solve meets the caller criterion, or None without that evidence."""
 
+    first_numerical_failure: Optional[Convergence]
+    """First producer refusal, including recovered causes."""
+
 class PredictionGradient:
+    saturation_loading_gradient: list[float]
+    endpoint_loading_gradient: list[float]
     parameter_actions: list[ResidualEnergyAction]
     """Exact first partials of one physical prediction.
 
@@ -3985,6 +4305,9 @@ class PredictionGradient:
     """Availability or blocking native action cause."""
     message: str
     """Derivative refusal explanation, possibly empty."""
+
+    first_numerical_failure: Optional[Convergence]
+    """First native action refusal, including a successful retry."""
 
 class ReactionCoefficient:
     """Source reaction coordinate and its physical unit.
@@ -4174,6 +4497,9 @@ class TrialFailure:
     """Original native explanation; not replaced by an apparent zero residual."""
     jacobian: bool
     """Whether the refusal occurred while derivative columns were requested."""
+
+    first_numerical_failure: Optional[Convergence]
+    """First cause in this trial's serial row prefix."""
 
 class FitCovariance:
     """Local least-squares covariance and rank evidence.
@@ -4380,6 +4706,9 @@ class MinimaxResult:
     """Inequality identities/scales in values and Jacobian row order."""
     frozen_checks: list[CheckResult]
     """Check reports fixing baseline thresholds before optimization."""
+    ipopt_diagnostics: Optional[IpoptDiagnostics]
+    """Actual invocation summary; absent for a point reader."""
+
 class MeasuredInputKind:
     """Physical input whose reported uncertainty is declared.
 
@@ -4521,6 +4850,12 @@ class FitResult:
     -----
     Only positive-weight objective rows enter least-squares trial values/rank/variance. Zero-weight rows receive final reporting and checks. Fitted parameters are candidates; neither convergence nor covariance proves independent physical validation. See ALG-FIT.
     """
+    saturation_predictions: list[Optional[Prediction]]
+
+    first_numerical_failure: Optional[Convergence]
+    """First chronological producer refusal, retained after successful recovery."""
+    rank_records: list[NumericalRank]
+    """Numerical determination of the complete weighted optimizer Jacobian."""
     solver_options: list[dict[str, Any]]
     """Effective named numerical settings and provenance."""
     reconciliation: InputReconciliation | None
@@ -4766,6 +5101,9 @@ class HoldResult:
     iterations: int
     """Inner safeguarded-Newton iteration count."""
 
+    rank: NumericalRank
+    """Scalar hold derivative rank and its actual cutoff."""
+
 class EvaluatedCoordinates:
     """Mapped candidate parameters, dependent diameters and reaction laws."""
     reaction_laws: dict[str, ReactionLogPolynomial]
@@ -4967,6 +5305,12 @@ class ObservationEvaluation:
     -----
     For Difference, dr/dv=(dy/dv)/scale; for LogRatio, dr/dv=(dy/dv)/prediction. These point-reader prediction columns must not be confused with weighted Ceres residual columns. See ALG-FIT.
     """
+    saturation_predictions: list[Optional[Prediction]]
+
+    first_numerical_failure: Optional[Convergence]
+    """First producer refusal in the eligible row prefix."""
+    first_numerical_failure_observation: int
+    """Source row, meaningful only when a first cause is present."""
     solver_options: list[dict[str, Any]]
     """Effective named numerical settings and provenance."""
     reconciliation: InputReconciliation | None
@@ -5286,3 +5630,66 @@ class ReactionActivities:
 def reaction_activities(model: HelmholtzModel, result: EquilibriumResult) -> list[ReactionActivities]: ...
 @overload
 def reaction_activities(model: IdealMoleFraction, result: EquilibriumResult) -> list[ReactionActivities]: ...
+
+class AffineLoading:
+    """Declared n(alpha)=initial+alpha*direction, mol; positive loading bounds in mol/mol and target pressure in Pa."""
+    initial: list[float]
+    direction: list[float]
+    lower: float
+    upper: float
+    seed: float
+    pressure: float
+
+class SaturationOperand:
+    quantity: Quantity
+    """Physical candidate comparison value and its native local numerical estimate."""
+    value: float
+    error: NumericalEstimate
+
+class SaturationCandidate:
+    """Composed state and comparison operands: loading, T, P, then density, packing, amount and all mole fractions per declared phase."""
+    state: EquilibriumResult
+    operands: list[SaturationOperand]
+
+class SaturationComparison:
+    """All pairwise candidate comparison judgments; no transitive chaining of numerical error estimates."""
+    left: int
+    right: int
+    identity: str
+    operands: list[EquilibriumComparison]
+
+class SaturationNode:
+    """One required grid node: loading in mol/mol, pressure mismatch in Pa, slope in Pa per mol/mol."""
+    loading: float
+    mismatch: float
+    slope: float
+    state: EquilibriumResult
+    estimates: EquilibriumNumericalEstimates
+    action_cause: str
+    action_seconds: float
+    estimate_seconds: float
+    local_estimates: EquilibriumNumericalEstimates
+    action_diagnostics: Optional[SolvedStateActionDiagnostics]
+
+class SaturationSearch:
+    """Finite grid/search evidence; unique within the declared search, without interval or global certification."""
+    grid: list[float]
+    nodes: list[SaturationNode]
+    events: list[tuple[int, int]]
+    candidates: list[SaturationCandidate]
+    comparisons: list[SaturationComparison]
+    causes: list[str]
+    groups: list[list[int]]
+    accepted: Optional[int]
+    first_numerical_failure: Optional[Convergence]
+    brackets: int
+    iterations: int
+    evaluations: int
+    hessian_calls: int
+    attempts: int
+    complete: bool
+    declaration: AffineLoading
+    work_at_entry: tuple[int, int, int, int]
+    """Iterations, evaluations, Hessian callbacks and driver attempts spent before this search."""
+    uniqueness_scope: str
+    detection_limits: str

@@ -1,0 +1,63 @@
+{
+  "base_commit": "37c58923e82a57460518bc01f8afcf61484fc2d1",
+  "files": {
+    "analyses/reproduction/2018-wangler/scripts/compare_neutral.py": "9e0fd8e52e9091bc7a281bbad11826efae4918a0936f4852308a12731d44bcb6",
+    "analyses/reproduction/2018-wangler/scripts/reference_pressure.py": "e58ba5eae07eaf864d537abe8ebf158c2cfd8f7a29affe390c7a45f67df7e8c9",
+    "analyses/reproduction/2018-wangler/scripts/neutral_feos.py": "0ff12e0bfc3de469420dc4b4278b96beaf03ea10b0db688694516695d5a8bcb9",
+    "analyses/reproduction/2018-wangler/scripts/present.py": "cae17c3d3359560a59c67ba917a59e9cfc2b23dca24e268a70aa7789f9106f29",
+    "analyses/reproduction/2018-wangler/scripts/neutral_models.py": "0c85989f8d5601244c128d69dfe2e4a32d0393977f70debee12ed882f5e44427",
+    "analyses/reproduction/2018-wangler/scripts/neutral_engine.py": "c5cb1003e0858fc352bfb7f696286eab0bb9fe7d94f69925a24516108d8eb947",
+    "build/issue-857/build-r1/feos-cross-r2.json": "c3971950c6754703792419e894cef161a48bcca5411f466857c4e2bd28b1a288",
+    "build/issue-857/build-r1/pure-observations-r2.json": "67827ba77cfa4d70616655873be70402b46692a4f7f850b30af10deb65d4e973",
+    "build/issue-857/build-r1/convention-sweep-r2.json": "82e7c224f464cd051a7ce8c758324af6f6bd4ea7a0d4b2e5ade128d65c6290c9",
+    "build/issue-857/build-r1/pure-mdea-r2.json": "d6931e8d7d85e530031d02407a7d8a2939abf584baef7e67cc206e9242bb374b",
+    "build/issue-857/build-r1/engine-cross-r2.json": "49ef6bac5b6731d68d2dccced6b7b2fda2fc5408fd49b94f5582040bcce7de49",
+    "build/issue-857/build-r1/feos-literal-eq12-r2.json": "fa8bd6361cbd8296b2b7a3b6c41ea7c10af8fe73132b703503e0339894934aaf",
+    "build/issue-857/build-r1/feos-fixed-r2.json": "d54079d6e7f65c5d28878bd23913ef85df066e95ac61e60aa8fcbf5eadac9ae6",
+    "build/issue-857/build-r1/feos-pure-r2.json": "a8159ba9c7d63ec5c0204fc85a57e71fec8de567221783b09cc2de8a9b9d2541"
+  },
+  "Engine_identity": {
+    "asl_library": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-857-diagnose-the-wangler-mdea-co2-total/build/engine-meson/shared/libepcsaft_asl.so",
+    "asl_library_sha256": "f980695ef6a0b645e4c0c6a9c11f727574cb5b46a007dffc0e505888b39da233",
+    "build_configuration": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-857-diagnose-the-wangler-mdea-co2-total/build/engine-meson/shared/meson-info/intro-buildoptions.json",
+    "build_configuration_sha256": "990cedf401018c17de2ca7cd8184f8e24e2e265fe8657e82d7209acf9ab44e22",
+    "direct_url": {
+      "dir_info": {
+        "editable": true
+      },
+      "url": "file:///home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-857-diagnose-the-wangler-mdea-co2-total/engine"
+    },
+    "epcsaft": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-857-diagnose-the-wangler-mdea-co2-total/engine/src/epcsaft/__init__.py",
+    "epcsaft_sha256": "984ad28616d1eeb7fbb51cecf366ece0b79a29624306b2995da8f137e55bc873",
+    "extension": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-857-diagnose-the-wangler-mdea-co2-total/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so",
+    "extension_sha256": "f7d057be3e76b3db1acc37c076fa0d3caf11eecb2396414b10eb9b9c56bec195",
+    "interpreter": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-857-diagnose-the-wangler-mdea-co2-total/.venv/bin/python",
+    "lock_sha256": "73c3756a1ffb929301c49c00cf6d2ded67e8d4c159bb810ea8653d88a2014d9b",
+    "meson_build_dir": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-857-diagnose-the-wangler-mdea-co2-total/build/engine-meson/shared",
+    "meson_configuration_sha256": "52edb18450b6bd0fc2dc412e2eb4cbf3ef9385cc203a52f85c46cd4c64069f81",
+    "native_library": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-857-diagnose-the-wangler-mdea-co2-total/build/engine-meson/shared/libepcsaft_native.so",
+    "native_library_sha256": "69dd79a6944f013ac85a51deb81e961876bb3b4224900de91f46397fdcc0ad6c",
+    "prepared_stage": "editable",
+    "python": "3.13.14 (main, Jun 23 2026, 15:18:27) [Clang 22.1.3 ]",
+    "source_diff_sha256": "f8b85f46818d3d7f7311dc097b4f7ee92815f2bd3750933fd0adb03006aa30dd",
+    "source_revision": "37c58923e82a57460518bc01f8afcf61484fc2d1",
+    "source_root": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-857-diagnose-the-wangler-mdea-co2-total",
+    "version": "1.0.0",
+    "wheel": null,
+    "wheel_sha256": null
+  },
+  "FeOs_identity": {
+    "version": "0.10.1",
+    "native_libraries": {
+      "/home/tnnrpolley21/.cache/epcsaft-comparators/222/feos/lib/python3.13/site-packages/feos/feos.abi3.so": "8bd879f02abeae2a9534e0a399a2e37a544d86e5b5483146e4568422cc856973"
+    },
+    "threads": 1,
+    "constants": {
+      "NA": 6.02214076e+23,
+      "kB": 1.380649e-23,
+      "R": 8.31446261815324
+    }
+  },
+  "comparison_limits": "1e-6 relative equilibrium observables; 1e-7 absolute a/RT and mu/RT",
+  "derivative_verification": "Engine term mu from five-point differences of native energies; exact Engine totals and exact FeOs term derivatives"
+}

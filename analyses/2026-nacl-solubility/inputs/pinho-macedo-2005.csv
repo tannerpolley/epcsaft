@@ -1,0 +1,9 @@
+salt,temperature_K,mass_fraction_salt,expanded_uncertainty_mass_fraction_95_percent,pressure_Pa,source_locator
+NaCl,298.15,0.26483,0.00084,101300,10.1021/je049922y; Table 1 p30; ThermoML dataset 1 row 1
+NaCl,303.15,0.2655,0.00084,101300,10.1021/je049922y; Table 1 p30; ThermoML dataset 1 row 2
+NaCl,313.15,0.26701,0.00085,101300,10.1021/je049922y; Table 1 p30; ThermoML dataset 1 row 3
+NaCl,323.15,0.26889,0.00085,101300,10.1021/je049922y; Table 1 p30; ThermoML dataset 1 row 4
+NaCl,333.15,0.27106,0.00086,101300,10.1021/je049922y; Table 1 p30; ThermoML dataset 1 row 5
+NaCl,343.15,0.27338,0.00087,101300,10.1021/je049922y; Table 1 p30; ThermoML dataset 1 row 6
+NaCl,348.15,0.27478,0.00088,101300,10.1021/je049922y; Table 1 p30; ThermoML dataset 1 row 7
+NaCl,353.15,0.27602,0.00089,101300,10.1021/je049922y; Table 1 p30; ThermoML dataset 1 row 8

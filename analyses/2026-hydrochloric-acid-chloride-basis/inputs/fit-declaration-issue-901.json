@@ -1,0 +1,179 @@
+{
+  "design_sha256": "f075b5cdb63ec1ecda1fd58bc3c20e7a1788b7e95dd22e57ade43b226f83b59a",
+  "readiness_sha256": "33ef5a66deac3c319e706be037e85c7debb9462435c829d054e5bbb3e445cfcb",
+  "amendment_sha256": "4e9cb84f892f1b7053f7886f8ba5a857fb10422184d0e328ecfaba7ec2617a83",
+  "temperature_K": 298.15,
+  "pressure_Pa": 100000,
+  "maximum_iterations": 300,
+  "maximum_seconds": 30,
+  "total_maximum_iterations": 900,
+  "total_maximum_seconds": 90,
+  "starts": [
+    [
+      -1.0706252324767123
+    ],
+    [
+      0
+    ],
+    [
+      -10
+    ]
+  ],
+  "H_fixed": {
+    "segment_diameter": 2.274,
+    "dispersion_energy_over_k": 1616.4939,
+    "packing_diameter": 2.0011200000000002,
+    "debye_huckel_diameter": 2.0011200000000002,
+    "born_diameter": 2.274
+  },
+  "H_Cl_k": 0,
+  "H_Cl_convention": "Explicit modelling assumption: uncorrected geometric-mean H-Cl attraction",
+  "identification": {
+    "rank_ratio_strict": 1e-14,
+    "bound_distance_strict": 1e-06,
+    "cost_floor": 1e-10,
+    "cost_fraction": 0.0001,
+    "max_h": 0.051,
+    "max_endpoint_distance": 0.051
+  },
+  "training_states": 30,
+  "weights": "Five equal blocks, design.md objective; adjusted water is guard only.",
+  "input_hashes": {
+    "candidate.json": "bdf8038c1b16b2a68f11a51623fd23af739a851059d5d42855077a822531f2ad",
+    "hamer-wu-hcl.csv": "04371336304c9ddc5625c314adcaee453bcce72c859be651999f831ef62233c2",
+    "khoo1977-hcl-ca.csv": "19dbb71c6a3e860150b0487f1f8d77d007373805bf2ccacc9cd3ce4c5e2ad938",
+    "jiang1996-hcl-li.csv": "7906e1604cd646f2907122d4a0050ac60edcee949e04f3dee0f38db7051aa934",
+    "messnaoui2020-hcl.csv": "997d571aa6a39eb424da686d2eb27fc864061a633f5ad3aaf28a7313776cc659",
+    "khoo1977-hcl-mg.csv": "07966ab4640a68d558ea20d5f5ed86dd4b4a2a635d54db80f684cff19cdc3dd2",
+    "roy1980-hcl-mg.csv": "c321d5135c207407565c74ab82875328539b21a211f7fa365b34600a5a5daedc",
+    "issue-901-jiang-baseline.csv": "9ee4fe7036eb45676e873520663271bbb29fcca682b08de7453403a2fd5010aa"
+  },
+  "native_library": {
+    "path": "build/engine-meson/shared/libepcsaft_native.so"
+  },
+  "profile": {
+    "coarse": [
+      -0.1,
+      0,
+      -0.25,
+      -0.5,
+      -0.75,
+      -1.0,
+      -1.25,
+      -1.5,
+      -1.75,
+      -2.0,
+      -2.25,
+      -2.5,
+      -2.75,
+      -3.0,
+      -3.25,
+      -3.5,
+      -3.75,
+      -4.0,
+      -4.25,
+      -4.5,
+      -4.75,
+      -5.0,
+      -5.25,
+      -5.5,
+      -5.75,
+      -6.0,
+      -6.25,
+      -6.5,
+      -6.75,
+      -7.0,
+      -7.25,
+      -7.5,
+      -7.75,
+      -8.0,
+      -8.25,
+      -8.5,
+      -8.75,
+      -9.0,
+      -9.25,
+      -9.5,
+      -9.75,
+      -10.0
+    ],
+    "refinement_offsets": [
+      -0.25,
+      -0.2,
+      -0.15000000000000002,
+      -0.1,
+      -0.05,
+      0.0,
+      0.05,
+      0.1,
+      0.15000000000000002,
+      0.2,
+      0.25
+    ],
+    "compensation": 0.661984454555934,
+    "anchor": -1.0706252324767123,
+    "bounds": [
+      -10,
+      0
+    ],
+    "gamma_scales": [
+      1.02,
+      1.05
+    ],
+    "target_mean": 5,
+    "target_max": 10,
+    "starts": [
+      0,
+      -10
+    ],
+    "gross_line_ceiling": 640,
+    "mean_limits": [
+      0.011,
+      2,
+      0.003
+    ],
+    "max_limits": [
+      0.03,
+      5,
+      0.006
+    ]
+  },
+  "training_observations": 70,
+  "coordinates": [
+    {
+      "family": "k_ij",
+      "pair": [
+        "hydronium-cation",
+        "water"
+      ],
+      "origin": 0,
+      "scale": 1,
+      "bounds": [
+        -50,
+        1
+      ],
+      "name": "k_H_water"
+    },
+    {
+      "family": "k_ij",
+      "pair": [
+        "hydronium-cation",
+        "chloride-anion"
+      ],
+      "name": "k_H_Cl",
+      "origin": 0,
+      "scale": 1,
+      "bounds": [
+        -10,
+        0
+      ]
+    }
+  ],
+  "accepted_plan_hashes": {
+    "design.md": "73ae05b54ff2f003565df6095f6753ea4f6b70794979c6d76ff90384153aa774",
+    "design-amendment-r1.md": "768c840f5fa33e5d6c516e69f383384d90b5534c2430e2ed8708cf7576ff09f8",
+    "design-amendment-r2.md": "eb9c3fb17634642cde24f92ade487270bb04d80ac22699def475a48c68f64883",
+    "design-amendment-r3.md": "a17cacf0143ec02e373ce50e7f39cda7caca60c8d7bcf3a343273b989dc79bb4",
+    "design-amendment-r4.md": "3d5f889a2c7469788e2ca380ef05d480da81816430c7b73518cca3ede50d6466",
+    "readiness-r5.md": "320bd9654b7699b8345e5448065474662cb2377b2aff44b56effb29b8ef5a7bf"
+  }
+}

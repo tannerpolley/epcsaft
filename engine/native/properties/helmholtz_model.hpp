@@ -1,4 +1,5 @@
 #pragma once
+#include "core/trace.hpp"
 
 #include "core/convergence.hpp"
 #include "properties/helmholtz_tape.hpp"
@@ -37,15 +38,28 @@ struct NeutralPropertyDerivatives final {
     std::vector<double> hessian;
 };
 
-struct HelmholtzDerivatives final {
-    double value = 0.0;
-    std::vector<double> gradient;
-    std::vector<double> hessian;
-    double volume_second_derivative = 0.0;
+template <typename Base>
+struct HelmholtzDerivativeValues final {
+    Base value = 0.0;
+    std::vector<Base> gradient;
+    std::vector<Base> hessian;
+    Base volume_second_derivative = 0.0;
     // Per-order association residual floor; zero when no association sites are present.
-    double gradient_floor = 0.0;
-    std::vector<double> site_fractions;
+    Base gradient_floor = 0.0;
+    std::vector<Base> site_fractions;
+    std::optional<core::Convergence> first_numerical_failure;
 };
+
+using HelmholtzDerivatives = HelmholtzDerivativeValues<double>;
+
+// Fixed-temperature pure-fluid projection of the shared volume series (EqID pure_isothermal_projection).
+template <typename Base>
+struct PureIsothermalValues final {
+    HelmholtzDerivativeValues<Base> derivative;
+    Base pressure = 0.0, chemical_potential_over_rt = 0.0, pressure_density_derivative = 0.0;
+};
+
+using PureIsothermal = PureIsothermalValues<double>;
 
 struct SweepCounters final {
     std::size_t forward = 0;
@@ -116,7 +130,15 @@ struct PropertyActionResult final {
 enum class DensityBranch { Unspecified, Vapor, Liquid };
 struct DensityStructureError final : std::runtime_error {
     using std::runtime_error::runtime_error;
+    DensityStructureError(const std::string& message, const std::optional<core::Convergence>& first)
+        : std::runtime_error(message) { core::retain_first(first_numerical_failure, first); }
+    std::optional<core::Convergence> first_numerical_failure;
 };
+inline void retain_density_failure(std::optional<core::Convergence>& first, const std::exception& error, const char* operation) {
+    if (const auto* structure = dynamic_cast<const DensityStructureError*>(&error))
+        core::retain_first(first, structure->first_numerical_failure);
+    core::retain_failure(first, error, operation);
+}
 struct PropertyActionDiagnostics final {
     std::size_t site_rank = 0, site_factorizations = 0, site_solves = 0;
     double site_pivot_ratio = 0.0, association_residual = 0.0;
@@ -126,6 +148,7 @@ struct PropertyActionDiagnostics final {
     std::size_t thermal_evaluations = 0, recordings = 0, directional_paths = 0, forward_sweeps = 0;
     DensityBranch branch = DensityBranch::Unspecified;
     std::optional<std::size_t> stable_root_count;
+    std::optional<core::Convergence> first_numerical_failure;
 };
 struct PropertyActionBatch final {
     policy::SolverOptions solver_options;
@@ -149,6 +172,10 @@ struct ReferenceTaylor final {
     std::vector<double> contraction, volume;
     PropertyActionStatus status = PropertyActionStatus::Nonfinite;
     PropertyActionDiagnostics diagnostics;
+};
+struct ReferenceTaylorError final {
+    std::array<double, 2> fixed{}, pressure{}, pressure_floor{};
+    double temperature_coefficient = 0.0;
 };
 inline double require_component_property(const std::optional<double>& value) {
     if (!value) throw std::invalid_argument("ionic_insertion: absent charged component property");
@@ -203,6 +230,7 @@ struct State final {
         isentropic_compressibility, speed_of_sound, joule_thomson_coefficient;
     std::optional<std::vector<std::optional<double>>> partial_molar_volume, partial_molar_enthalpy,
         partial_molar_entropy;  // component order
+    std::optional<core::Convergence> first_numerical_failure;
 };
 
 std::optional<std::array<double, 2>> superancillary_densities(const class HelmholtzModel&, double temperature);
@@ -216,6 +244,7 @@ struct DensityRoot final {
     DensityBranch branch = DensityBranch::Unspecified;
     core::Convergence convergence;
     std::optional<double> negative_slope_density;  // no new EOS evaluation
+    std::optional<core::Convergence> first_numerical_failure;
 };
 
 // Fixed-composition pressure crossings, slope zeros and finite-evaluation brackets (ALG-DENSITY).
@@ -242,6 +271,7 @@ struct DensityDiagnostics final {
     double geometric_cap = 0.0;
     std::size_t declared_crossings = 0, evaluations = 0;
     std::string stop;
+    std::optional<core::Convergence> first_numerical_failure;
 };
 
 // A Stage-A neutral reference is a pure, neutral solvent plus one explicit
@@ -283,7 +313,11 @@ enum class NeutralReferenceStatus {
     Nonfinite,
 };
 
+struct NeutralReferenceTrace;
 struct NeutralReferenceReactionDiagnostic final {
+    std::shared_ptr<const NeutralReferenceTrace> trace;
+    std::array<double, 2> numerical_error{NAN, NAN};
+    std::string numerical_error_cause;
     policy::SolverOptions solver_options;
     std::size_t reaction_index = 0;
     std::optional<double> terminal_contraction;
@@ -363,10 +397,13 @@ public:
     ) const;
     // Mixed contraction of the extensive residual Helmholtz scalar with three to five
     // directions of width 2 + C + A in [T, V, n, active parameters]: E3, E4 or E5.
+    // Errors of E's ordinary Taylor coefficients on a requested path, including the site recurrence.
+    std::vector<double> residual_coefficient_errors(const std::vector<std::vector<double>>& regular,
+        const std::vector<double>& sites) const;
     ResidualEnergyAction residual_energy_action(double, double, const std::vector<double>&, const std::vector<std::vector<double>>&) const;
     ReferenceTaylor reference_taylor(double temperature, double volume,
         const std::vector<double>& composition, const std::vector<double>& stoichiometry,
-        const PressureActionDirection& direction, std::size_t order, bool infinite_dilution = false) const;
+        const PressureActionDirection& direction, std::size_t order, bool infinite_dilution = false, ReferenceTaylorError* error = nullptr) const;
     NeutralPropertyDerivatives neutral_property(
         double temperature,
         double molar_density,
@@ -423,6 +460,8 @@ public:
     void store_references(std::vector<double> inputs, const std::vector<NeutralReferenceReactionDiagnostic>& result) const;
     void reset_counters() const;
     const policy::SolverOptions& solver_options() const { return solver_options_; }
+    template <typename Base>
+    PureIsothermalValues<Base> pure_isothermal(Base temperature, Base volume, Base amount = 1.0) const;
     const Parameters& parameters() const { return parameters_; }
     const std::vector<ActiveParameter>& active_parameters() const { return active_; }
     std::vector<double> active_parameter_values() const;
@@ -492,6 +531,7 @@ NeutralReferenceReactionDiagnostic reaction_reference(
 );
 
 // Raw source-pressure partial; infinite_dilution selects the ion-free first-insertion limit.
+void reference_errors(const HelmholtzModel&, double, const std::vector<double>&, NeutralReferenceReactionDiagnostic&);
 ResidualEnergyAction reference_partial_from_state(const HelmholtzModel&, double temperature,
     const std::vector<double>& composition, const std::vector<double>& stoichiometry,
     std::size_t temperature_order, std::size_t pressure_order,
@@ -611,7 +651,8 @@ std::vector<double> formula_composition(
     const Parameters& parameters,
     const std::array<std::size_t, 2>& ion_indices,
     const std::array<int, 2>& stoichiometry,
-    double molality
+    double molality, const std::optional<std::vector<double>>& finite_solute_molalities = std::nullopt,
+    double* declared_solute_ratio = nullptr
 );
 
 InfiniteDilutionReference infinite_dilution_reference(

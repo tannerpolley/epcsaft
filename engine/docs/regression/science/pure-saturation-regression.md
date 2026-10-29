@@ -16,6 +16,39 @@ finite-addition enthalpy, extraction fractions and ratios of selectivities witho
 application-specific property code. Every operation must respect its domain:
 positive log arguments, nonzero denominators and valid real powers.
 
+## Saturation-capped addition heat
+
+`saturation_capped_addition_enthalpy` declares the fixed-T/P composition in
+EqID `finite_addition_enthalpy`. The caller supplies the analytical basis,
+source loading cap, positive loading interval and complete increasing grid.
+Equilibrium owns the seeded bubble grid, bracket corrections through the shared
+driver and local numerical admission. Parameter Regression reuses ordinary
+addition enthalpy and its endpoint/feed actions; Python declares inputs only.
+A saturation endpoint reuses the admitted zero-vapor bubble state's enthalpy.
+
+Predictions retain signed heat in J/mol added feed, saturation and endpoint
+loadings in mol/mol, added amount in mol, and `source_cap`, `saturation_cap` or
+`switch`. Search evidence includes every required node, event, corrected
+candidate and state comparison, original causes, residuals, numerical estimates,
+rank/conditioning, exact pressure-loading actions and shared work counts.
+The result states “unique within the declared search”; tangencies, paired
+crossings or several roots in one cell, turns between nodes and undiscovered
+branches can escape this finite search. It is not an interval uniqueness or
+phase-stability certificate.
+
+Missing search coverage, competing roots, branch/domain loss, unresolved slope
+reversals or exhausted shared work refuse loading, heat and the fit residual,
+even below the source cap. Missing initial calorics can preserve the admitted
+saturation result while refusing heat. A later derivative refusal preserves a
+valid heat. At the exact minimum switch there is no ordinary heat gradient;
+no smoothing or tolerance band changes the heat value.
+
+Native point evaluations and accepted fit results expose per-observation
+`saturation_predictions`. Their loading columns follow the declared optimizer
+coordinates. Direct native `PredictionGradient` loading columns follow the
+same physical-parameter order as its heat columns. The ordinary coordinate map
+and residual scale retain their existing owners.
+
 ## Built-in observations (R1)
 
 The implemented inventory is finite; each kind names one shared owner and one

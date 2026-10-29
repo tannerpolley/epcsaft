@@ -1,0 +1,1 @@
+The selected 84 blocks contain 2,100 timed samples. Full-result preflight and postflight, frozen input checks and every selected timed sample pass the existing numerical allowance, with zero scaled difference across 142,692 scalar comparisons. The selected loads span 3.41–3.85.

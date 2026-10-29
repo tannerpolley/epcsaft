@@ -251,3 +251,126 @@ Neither declaration is selected for Lithium's mixed-brine use by this study.
 A later mixture refit would require a separate accepted design.
 Stage A and this Stage B comparison have independent delivered support; this
 notebook has not had investigator promotion for manuscript use.
+
+## Wu inlet and reagent projections with frozen chloride packet /3
+
+This separate study implements [#926](https://github.com/tannerpolley/ePC-SAFT/issues/926),
+part of [#902](https://github.com/tannerpolley/ePC-SAFT/issues/902).
+It predicts the chloride projections of Wu's treated feed, fresh scrub,
+regeneration reagent and fresh strip, using the complete H⁺-containing `/3` packet.
+No parameter was fitted and no new packet was published.
+The tables are source-relative evidence summaries, never qualification.
+Independent delivered review and investigator promotion remain outstanding.
+
+[The frozen input declaration](inputs/issue-902-p12-r1/input-identities.json)
+retains source paths and hashes; the copied source tables retain printed tokens,
+locators, reference standards, phase labels and exclusions.
+Lithium #255 owns the Wu inventory: treated cations are converted from grams per
+litre using its atomic masses, scrub retains incoming LiCl, regeneration retains
+the carbonate dose separately, and strip is converted from molarity.
+The three assumed water masses are discrete sensitivities, not measurements or
+confidence limits. Fe, contacted acidity, carbonate dissolution and outlet water
+inventories are unavailable. The treated-feed hydrate dose is not counted twice.
+
+All evaluations use native Properties at the declared room temperature and
+primary pressure. The separate pressure table repeats the acid and Wu states
+with same-pressure solvent and solute references.
+The native producer owns composition arithmetic, source conversions, signed
+errors, neighbours and descriptive envelopes.
+Water activity and osmotic coefficient share an observation; calculated
+hygrometric activity coefficients supply no additional activity measurements.
+Jiang's positive and Roy/Khoo's negative decimal-log conventions are preserved.
+
+{{< include results/issue-902-p12-r1/state-summary.md >}}
+
+Errors are prediction minus reference. `lnGammaHCl` and `lnGammaMgCl2`
+use natural logarithms; `lnAHCl` and `lnAMgCl2` denote neutral products.
+`B_obs` is a symmetric maximum absolute source-relative discrepancy on the
+selected composition lines and concentration bands crossed by the water cases.
+The summary names every contributor and the row determining each union maximum; source-specific
+roles and reference alternatives remain separate in
+[the attached bands](results/issue-902-p12-r1/coverage.csv).
+The feed and scrub water maxima come from the dependent, smoothed Rard
+Table IX row 33 at 5.8 m. Regeneration maxima come from its row 29 at 5 m.
+These are evaluated comparisons, separate from Rard's primary measurements.
+The strip water union maxima come from unadjusted Messnaoui correction
+sensitivity at 6 m; the smaller adjusted-water-only scales remain separate
+contributors in the table.
+Adjusted Messnaoui matches at 5 and 6 m are calibration-selected guards;
+its 7.5 m comparison is one-sided and borrowed. Hamer–Wu brackets 7.5 m
+on the same evaluated curve above the calibration range.
+Matched regeneration signed discrepancies retain each measured or evaluated
+reference separately in the summary and attachments; none is averaged.
+Each state also retains a separate phase-unresolved note and unavailable
+contacted or outlet inventory, including the metal-bearing strip outlet.
+Composition matching uses a relative molality tolerance of $10^{-9}$:
+$|a-b| \le 10^{-9}\max(|a|,|b|)$ for each cation in mol/kg water.
+Bracketing applies the same tolerance to each cation molality divided by ionic
+strength at both concentration endpoints; zero and nonzero species remain distinct.
+This tolerance handles arithmetic roundoff, not measurement uncertainty.
+It corrects ten regeneration attachments from borrowed comparison scales to
+bracketing-evidence summaries (between-row error remains unverified):
+
+| Water basis, kg-water/L | Source and reference | Observables | `coverage.csv` lines |
+| --- | --- | --- | --- |
+| 0.8 | Rard reference paths, second CaCl₂ reference | Water activity; osmotic coefficient | 656–657 |
+| 1.2 | El Guendouzi 2001, printed | Water activity; osmotic coefficient | 826–827 |
+| 1.2 | Rard reference paths, H₂SO₄ reference | Water activity; osmotic coefficient | 850–851 |
+| 1.2 | Rard Table IX, printed | Water activity; osmotic coefficient; log mean activity coefficient; log neutral product | 862–865 |
+
+The El Guendouzi rows now have coverage “inside independent evidence; reference
+dependent”; the other eight retain their dependent-comparison coverage.
+The 456 finite attachments comprise 42 complete matches, 36 brackets and 378
+borrowed comparisons. All predictions, source residuals, band magnitudes and
+all other retained result files are byte-identical to the preceding correction.
+
+A finite borrowed scale supplies no guaranteed error at an unmeasured Wu state.
+Li, Na and K product errors in the feed, trace-Li scrub activity, actual acidity,
+carbonate regeneration and contacted/outlet inventories remain unbounded.
+
+[Every signed source comparison](results/issue-902-p12-r1/errors.csv),
+[statistics by source, line, role, phase and concentration band](results/issue-902-p12-r1/source-statistics.csv),
+and [nearest rows and composition differences](results/issue-902-p12-r1/nearest.csv)
+retain the evidence behind the summary. Rard primary reconstructions and its
+correlated alternatives remain separate from its smoothed table. Robinson's
+absolute reconstructions remain provisional comparison scales. The disputed
+binary magnesium series is retained rather than averaged into Rard.
+Yao's inherited exclusions and printed-rounding realizations are sensitivity
+records, not additional experiments. Empty groups and absent observables do not pass.
+
+The predicted water-mass spread is separate from the comparison scale:
+
+{{< include results/issue-902-p12-r1/water-mass-spread.md >}}
+
+The [numerical diagnostics](results/issue-902-p12-r1/numerical.csv) retain
+positive density and pressure slope, achieved closure and native stopping limit,
+and direct neutral log-activity identities.
+[Composition, Rard conversion and acid replay checks](results/issue-902-p12-r1/checks.csv)
+verify the stated numerical relations.
+The following unchanged acid guards preserve the published endpoint;
+they do not qualify the Wu mixtures:
+
+{{< include results/issue-902-p12-r1/acid-guards.md >}}
+
+The [acid study](../2026-hydrochloric-acid-chloride-basis/notebook.qmd)
+owns its historical replay and endpoint selection evidence.
+These new results support numerical verification and source-relative comparisons.
+They provide no independent physical validation of the complete Wu circuit,
+trace-Li selectivity or phase stability. Source uncertainty remains incomplete;
+reference, rounding and water-mass sensitivities are not combined statistically.
+
+Reproduce from the checkout root with its own environment:
+
+```bash
+EPCSAFT_BUILD_JOBS=6 nice -n 10 .venv/bin/python analyses/2026-mixed-chloride-water-activity/scripts/wu_inputs.py
+EPCSAFT_BUILD_JOBS=6 nice -n 10 tools/native-run wu_chloride_coverage
+.venv/bin/python analyses/2026-mixed-chloride-water-activity/scripts/wu_present.py
+```
+
+Inherited Na/K evidence remains secondary:
+[the chloride packet provenance](../../data/packets/figiel-2025-chloride-mixture-refit/2/provenance/source-origin.toml)
+identifies the Na–Mg and Na–K–Ca calibration owners, while
+[the existing Na–Ca and Na–Mg residuals](results/nominal-residuals.csv)
+retain the separate water comparisons. Those systems contain neither the
+simultaneous five-cation feed nor trace-Li activity measurements.
+Their water residuals are not converted into NaCl or KCl product-error bounds.

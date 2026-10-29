@@ -1,0 +1,11 @@
+{
+  "attempted_temperatures": 8,
+  "closed_temperatures": 8,
+  "native_attempts": 50,
+  "native_failed": 0,
+  "aard_percent": 5.7923058864892445,
+  "max_absolute_error_mol_kg": 0.6703117760383135,
+  "mean_absolute_error_mol_kg": 0.3691946018392184,
+  "disjoint_count": 8,
+  "feed_invariance_relative": 1.9984014443252818e-15
+}

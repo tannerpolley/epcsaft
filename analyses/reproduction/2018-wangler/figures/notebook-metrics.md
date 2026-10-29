@@ -1,6 +1,35 @@
-Calibration, transfer and failed prediction from the Figure 10 and Table 10 native summaries. The pressure change is the retained allowance probe, not a full uncertainty interval.
+Native osmotic calibration and withheld Table 10 prediction. The allowance is measurement propagation, not total model uncertainty.
 
-| Lane   |   Osmotic calibration AARD / % |   Calibration limit / % |   Transferred k |   k allowance |   Pressure prediction AARD / % |   Solved pressure states |   Maximum pressure change from k allowance / % |
-|:-------|-------------------------------:|------------------------:|----------------:|--------------:|-------------------------------:|-------------------------:|-----------------------------------------------:|
-| S0     |                        2.37155 |                    6.05 |       0.331828  |    0.00214151 |                        96.2476 |                        3 |                                        3.74163 |
-| S1     |                        2.1573  |                    6.05 |       0.0178122 |    0.00233928 |                        89.5527 |                        3 |                                        1.94339 |
+<table class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>Convention</th>
+      <th>Osmotic AARD / %</th>
+      <th>Transferred k</th>
+      <th>k allowance</th>
+      <th>Pressure AARD / %</th>
+      <th>Solved states</th>
+      <th>Maximum pressure change from k allowance / %</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>S0</td>
+      <td>2.3715457</td>
+      <td>0.33182766</td>
+      <td>0.0021415144</td>
+      <td>96.248872</td>
+      <td>3</td>
+      <td>3.7430775</td>
+    </tr>
+    <tr>
+      <td>S1</td>
+      <td>2.1572996</td>
+      <td>0.01781219</td>
+      <td>0.0023392802</td>
+      <td>89.550063</td>
+      <td>3</td>
+      <td>1.944621</td>
+    </tr>
+  </tbody>
+</table>

@@ -1,0 +1,6 @@
+path,operation,quiet,blocks,matched_images
+results/raw/measurement-0.jsonl.gz,ordinary,True,6,False
+results/raw/measurement-0.jsonl.gz,prepared,False,5,False
+results/raw/measurement-1.jsonl.gz,ordinary,False,18,True
+results/raw/measurement-1.jsonl.gz,prepared,True,18,True
+results/raw/measurement-2.jsonl.gz,ordinary,True,18,True

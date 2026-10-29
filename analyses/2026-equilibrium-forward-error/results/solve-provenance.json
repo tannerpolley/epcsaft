@@ -1,0 +1,98 @@
+{
+  "runtime_parent": "a134f21d241d3199bf5a1853abcfb813d695aeb1",
+  "runtime_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "base": "bd81c3ea49baba15147b785e042a3b2aab1f77ad",
+  "classification": "Selected fixed-input numerical verification of observations and unchanged calculations; no physical validation",
+  "evidence_destination": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-862/build-r9",
+  "limits": "Manufactured association, tangent, transport and consistency controls establish only their inspected boundaries. Independent delivered review and investigator promotion remain with the lead.",
+  "qualification_files": [
+    {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/issue-862/build-r9/boundary-probe.cpp",
+      "sha256": "92dd5b53cdbc9ec90c528ea5e30e7318ae04ff32d847adb11bb633356030c916"
+    },
+    {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/issue-862/build-r9/capture-forward-probe.cpp",
+      "sha256": "b302e1d6d8438dbb9d2d6279a61f68eba6822ff454ab70e372454cace7207717"
+    },
+    {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/issue-862/build-r9/capture-log-probe.py",
+      "sha256": "3e0ed9e825ac1164f27df62a871f71e785d679469c194a78f603da5e3c43dac1"
+    },
+    {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/issue-862/build-r9/compile-native.py",
+      "sha256": "7621b64d6d6b039b03dce63c8fdd8b17b763f79ac1ffc599cfe5410b927217f5"
+    },
+    {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/issue-862/build-r9/compile-probe.py",
+      "sha256": "6c4d0fe5d2f8d51720243503a57665d5c82f6e99439d93b7efc7a791b89ad819"
+    },
+    {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/issue-862/build-r9/count.py",
+      "sha256": "cab8c5439bc61e7b02b3a9b4ccddb276d898389d0e310744c302ac445d6d469b"
+    },
+    {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/issue-862/build-r9/density-probe.cpp",
+      "sha256": "faec84b264ccce560656aa201538da392eef79fce184c8529a017b3dbae016d8"
+    },
+    {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/issue-862/build-r9/extra-observations.py",
+      "sha256": "a23e858bb7218f560c8e544f35043870f03a95c6936426be22bfa22e6db06ddb"
+    },
+    {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/issue-862/build-r9/invariance.py",
+      "sha256": "80174c26d576ab46c0c355ad4075d0824d409e26a9a90584391d613b7aac9306"
+    },
+    {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/issue-862/build-r9/native.cpp",
+      "sha256": "4ac4ba80c92f977d67d0b2ea1f9154b7937b058950667768e1d3c92df47e5cad"
+    },
+    {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/issue-862/build-r9/prepare-pr.py",
+      "sha256": "59bb8da2e88f515f8f098d6423d16e3b79a49211a04c2b3a62b607063e486c8a"
+    },
+    {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/issue-862/build-r9/public-probe.py",
+      "sha256": "e1f5058b4ea6d7359d58ff662fcc32bf0e12923272e4e747fb8937d8307e0f26"
+    },
+    {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/issue-862/build-r9/r1_asl.py",
+      "sha256": "f166d7d29ac2a93e5067d941c622b100717b0049030b7ec84d09a6235280a280"
+    },
+    {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/issue-862/build-r9/r1_boundaries.py",
+      "sha256": "7e05a4219bd993584d45e144b866be17c9e1e14c2df7eed7676fe3b3ef86c507"
+    },
+    {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/issue-862/build-r9/r1_common.py",
+      "sha256": "0df1f6ea6fc93a0ca84b23853801a4dfdafd0b7041d0c7391b854762fe3711af"
+    },
+    {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/issue-862/build-r9/r1_iteration_limit.py",
+      "sha256": "f3d16b62b47c814365ad9dd186bd9f6a89e9e095b0db5c75486eba8f730651f0"
+    },
+    {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/issue-862/build-r9/refresh-evidence.py",
+      "sha256": "fd1ca0d7f02fbd57c4a91070d821d7e9ead7d08210138293fd0939e0c469472b"
+    },
+    {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/issue-862/build-r9/reproduce-final.py",
+      "sha256": "137e0072327a995657a73101f564ef9d584d3b51141701ce4b5488e5740f19ba"
+    },
+    {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/issue-862/build-r9/runtime-identity.py",
+      "sha256": "8a516718b638103c904cf322feb4ab6c46361bc41b2232aebe4c3c920123810d"
+    },
+    {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/issue-862/build-r9/s2-probe.cpp",
+      "sha256": "31e4976fbdf0f72b072b692c96f408decd54634d7c6c26fd5f353516b22ac90e"
+    },
+    {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/issue-862/build-r9/trial-probe.cpp",
+      "sha256": "49b454747ef96f8415932a0feddf7b038a82dff90aa53690a79109124a0532e3"
+    },
+    {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/issue-862/build-r9/write-report.py",
+      "sha256": "ba2370903c11f2cedcb2a123131bb3e5fccb39195f8726c6c4df2a14b7bc11ba"
+    }
+  ]
+}

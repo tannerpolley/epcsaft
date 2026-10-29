@@ -1,0 +1,14 @@
+{
+  "scalar_pairs": 7272,
+  "work_row_pairs": 42,
+  "states_byte_identical": true,
+  "work_rows_identical": true,
+  "fit_rows_byte_identical": true,
+  "state_bytes_sha256": "dbcfc4673378be544a722c950c0c81d969c1ae55ca30446fe4eb2bd75b49ee0c",
+  "fit_rows_sha256": "cb814a22ebb5762a8f51fb83fcdf2edbba6988b4b1efd1f602c201a751395c4c",
+  "inputs": {
+    "states.csv": "718e9e2e212659c66b1a428b562edbef55b0775d0c31da8cbd40d022bfe2dd3a",
+    "work.csv": "623f450f541aee50e9e9aade6145d024bf9ec52810223d34c7210cc4f5802a0c",
+    "summary.json": "70e0e2c535d89edf83692f875f80b6cdaf57531e64e89773fc6cef254311bd0a"
+  }
+}

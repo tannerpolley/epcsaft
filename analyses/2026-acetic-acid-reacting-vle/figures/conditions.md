@@ -1,0 +1,1 @@
+The analytical feed is one mole of water plus acetic acid at **323.15 K**. The acid constant is **$K_{a,m}=1.633e-05$**, with a standard molality of **1 mol kg⁻¹** and adopted source pressure **101325 Pa**. The water-ionization constant is **$pK_w=13.26$** at source pressure **100000 Pa**. The adopted acetic-acid relative permittivity is **6.663182867**.

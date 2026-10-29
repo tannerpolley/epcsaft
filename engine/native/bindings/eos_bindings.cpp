@@ -171,7 +171,7 @@ void register_eos(nb::module_& module) {
         EPCSAFT_READONLY(Diagnostics, site_rank, site_factorizations, site_solves, site_pivot_ratio,
             association_residual, pressure_density_derivative, pressure_residual, stability_determinant,
             pressure_factorizations, pressure_solves, thermal_evaluations, recordings, directional_paths,
-            forward_sweeps, branch, stable_root_count);
+            forward_sweeps, branch, stable_root_count, first_numerical_failure);
     nb::class_<epcsaft::ResidualEnergyAction>(module, "ResidualEnergyAction")
         EPCSAFT_READONLY(epcsaft::ResidualEnergyAction, action, status, diagnostics);
     nb::class_<epcsaft::PropertyActionBatch>(module, "PropertyActionBatch")
@@ -199,7 +199,7 @@ void register_eos(nb::module_& module) {
             ideal_internal_energy, ideal_entropy, ideal_isobaric_heat_capacity, ideal_isochoric_heat_capacity,
             total_enthalpy, total_internal_energy, total_entropy, total_isobaric_heat_capacity,
             total_isochoric_heat_capacity, molar_density, pressure_density_derivative, site_fractions,
-            density_convergence, thermochemistry_status,
+            density_convergence, first_numerical_failure, thermochemistry_status,
             // Unspecified and absent in the T-rho chart: no pressure-root search was performed.
             density_branch, stable_root_count)
         EPCSAFT_READONLY(epcsaft::State, isothermal_compressibility, isobaric_expansivity, heat_capacity_ratio,
@@ -213,7 +213,7 @@ void register_eos(nb::module_& module) {
     nb::class_<epcsaft::DensityDiagnostics>(module, "DensityDiagnostics")
         EPCSAFT_SOLVER_OPTIONS(epcsaft::DensityDiagnostics, 7)
         EPCSAFT_READONLY(epcsaft::DensityDiagnostics, samples, pressure_roots, spinodals, declared_brackets, unresolved,
-            evaluation_order, finite_domain, geometric_cap, declared_crossings, evaluations, stop);
+            evaluation_order, finite_domain, geometric_cap, declared_crossings, evaluations, stop, first_numerical_failure);
     nb::class_<epcsaft::SweepCounters>(module, "SweepCounters")
         EPCSAFT_READONLY(epcsaft::SweepCounters, forward, reverse, hessian_calls, recordings);
     nb::class_<epcsaft::HelmholtzModel>(module, "HelmholtzModel")

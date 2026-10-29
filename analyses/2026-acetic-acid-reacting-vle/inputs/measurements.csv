@@ -1,0 +1,12 @@
+row,T_K,x_water,y_water_reported,P_Pa,U95_P_Pa,U95_x,selected,exclusion
+1,323.15,0.0093,0.019,7800.0,140.0,0.0063,False,Acid-rich state outside adopted comparison
+2,323.15,0.0351,0.073,8200.0,140.0,0.0066,False,Acid-rich state outside adopted comparison
+3,323.15,0.0992,0.1638,8850.0,150.0,0.0069,False,Acid-rich state outside adopted comparison
+4,323.15,0.1033,0.1717,8910.0,150.0,0.007,False,Acid-rich state outside adopted comparison
+5,323.15,0.1845,0.272,9440.0,150.0,0.0087,False,Acid-rich state outside adopted comparison
+6,323.15,0.278,0.3722,9920.0,160.0,0.0107,False,Acid-rich state outside adopted comparison
+7,323.15,0.3859,0.4754,10330.0,160.0,0.0131,False,Acid-rich state outside adopted comparison
+8,323.15,0.4815,0.5744,10690.0,160.0,0.0155,False,Acid-rich state outside adopted comparison
+9,323.15,0.5781,0.6626,11010.0,160.0,0.014,True,
+10,323.15,0.6673,0.7565,11310.0,170.0,0.0121,True,
+11,323.15,0.7683,0.8285,11580.0,170.0,0.0105,True,

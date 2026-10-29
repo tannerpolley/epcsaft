@@ -1,0 +1,11 @@
+| point | start | quantity | bucket | states | mean | worst | mean_limit | worst_limit | verified | signed_mean |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 11 | 2 | phi | low | 23 | 0.00891353888 | 0.0183503993 | 0.011 | 0.03 | True | unavailable |
+| 11 | 2 | phi | high | 7 | 0.0106042494 | 0.0159280651 | 0.011 | 0.03 | True | unavailable |
+| 11 | 2 | gamma | low | 23 | 1.22555994 | 2.50788313 | 2 | 5 | True | unavailable |
+| 11 | 2 | gamma | high | 7 | 0.880953415 | 1.81511075 | 2 | 5 | True | unavailable |
+| 11 | 2 | aw | low | 8 | 0.00275719308 | 0.00540172178 | 0.003 | 0.006 | True | unavailable |
+| 11 | 2 | aw | high | 6 | 0.00290225075 | 0.003478438 | 0.003 | 0.006 | True | unavailable |
+| 11 | 2 | Jiang-I5 | mixtures | 9 | 1.13707689 | 2.0702 | unavailable | unavailable | True | -1.13707689 |
+| 11 | 2 | Jiang-I5 | endpoint | 1 | 0.668690504 | 0.668690504 | unavailable | unavailable | True | 0.668690504 |
+| 11 | 2 | Jiang-I5 | line | 10 | 1.09023825 | 2.0702 | unavailable | unavailable | True | -0.956500148 |

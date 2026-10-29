@@ -3,14 +3,31 @@ ePC-SAFT third-party notices
 The project code is licensed under GNU GPL version 3, with the section 7
 additional permission for linking with EPL-licensed Ipopt in LICENSE and
 engine/LICENSE. That permission does not relicense third-party components
-or data. Public releases contain source; tools/refresh-main-wheel remains
-private-only. Retain each component's upstream notices when redistributing it.
+or data. Public source releases and corresponding-source downloads are available at
+https://github.com/tannerpolley/epcsaft/releases. Retain each component's
+upstream notices when redistributing it.
+
+Conda package contents and corresponding source
+
+The Linux x86-64 / CPython 3.13 package contains the Python package, _core,
+native and ASL libraries, private Ipopt 3.11.9 and the applicable notices.
+It uses conda MUMPS 5.8.2, OpenBLAS, Ceres 2.2.0 CPU, Eigen 3.4.0 and
+nanobind 2.12.0. It contains no parameter packets, analyses, manuscript
+sources, restricted data collections or Coin-HSL.
+
+Corresponding source is available from the distributor in the source-set
+download alongside each matching binary release at
+https://github.com/tannerpolley/epcsaft/releases. That version-associated
+set contains the exact Engine and Ipopt archives, embedded third-party
+sources, recipe, build instructions, patches and original notices, with
+SHA-256 checksums. The distributor retains responsibility for continued
+availability. Verify retrieval and hashes before publishing binaries.
 
 Native dependencies (not all are bundled in the source tree)
 
 * Ipopt 3.11.9: Eclipse Public License 1.0 (EPL-1.0).
   https://github.com/coin-or/Ipopt/blob/releases/3.11.9/Ipopt/LICENSE
-* MUMPS 5.6, selected through the inspected system Ipopt: CeCILL-C v1.
+* MUMPS 5.8.2 in conda; 5.6 through the system Ipopt: CeCILL-C v1.
   The distribution separately identifies BSD-3-clause AMD ordering code in
   src/ana_orderings.F and public-domain PORD. Retain those separate notices.
   Source: https://mumps-solver.org/; version-specific distribution notices:
@@ -22,7 +39,9 @@ Native dependencies (not all are bundled in the source tree)
   https://gitlab.com/libeigen/eigen/-/blob/3.4.0/COPYING.MPL2
 * Ceres 2.2: BSD terms, with Apache-2.0 third-party terms.
   https://github.com/ceres-solver/ceres-solver/blob/2.2.0/LICENSE
-* HiGHS 1.15.1: MIT.
+* HiGHS 1.15.1: MIT, with embedded pdqsort under Zlib and the LP reader
+  under Michael Feldmeier's MIT notice. Retain extern/pdqsort/license.txt
+  and highs/io/filereaderlp/LICENSE alongside the main licence.
   https://github.com/ERGO-Code/HiGHS/blob/v1.15.1/LICENSE.txt
 * ASL interface headers: Lucent notice retained in
   engine/build/subprojects/packagefiles/asl/funcadd.h and stdio1.h.

@@ -13,6 +13,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <iomanip>
 #include <string>
 #include <tuple>
 #include <utility>
@@ -678,9 +679,91 @@ void component_permittivity_zero_solvent() {
     }
 }
 
+// Bülow 2021 Eq. 19 and its explicitly solvent-normalized alternative.
+void solvent_mole_permittivity() {
+    using AD = CppAD::AD<double>;
+    auto p = electrolyte_fixture();
+    p.charge_number = {0, 0, 1, -1};
+    p.permittivity_form = epcsaft::PermittivityForm::SolventMoleWeighting;
+    p.permittivity_solvent = {1, 1, 0, 0};
+    p.relative_permittivity = {80, 20, 0, 0};
+    p.permittivity_reference_temperature_k = {300, 300, 0, 0};
+    p.permittivity_term_component = {0, 0, 0, 1, 1, 1};
+    p.permittivity_term_power = {1, 2, 3, 1, 2, 3};
+    p.permittivity_term_coefficient = {-0.2, 0.001, 0.00001, -0.05, 0.0005, -0.000002};
+    p.born_c_shell = p.born_c_dielectric = 0;
+    p.born_diameter_angstrom = p.sigma_constant;
+    auto check = [](const char* name, double value, double expected, double tolerance=1e-12) {
+        recording_support::compare(name, name, "1", value, expected, "T:300;x:0.7,0.1,0.1,0.1",
+            "Relationship", "analytic", "solvent mole weighting", "absolute", tolerance, 0,
+            std::abs(value-expected)<=tolerance, "solvent-mole-permittivity");
+    };
+    for (bool normalized : {false, true}) {
+        p.permittivity_solvent_normalized = normalized;
+        const double expected = normalized ? 72.5 : 58;
+        const std::vector<double> x{0.7,0.1,0.1,0.1};
+        for (double mass : {0.018,0.061}) for (double rho : {1000.,20000.}) {
+            p.molar_mass_kg_per_mol = {mass,0.08-mass,0.023,0.035};
+            check("value-mass-density",epcsaft::bulk_relative_permittivity(300.,rho,x,p),expected);
+        }
+        std::vector<AD> u{300,0.7,0.1,0.1,0.1,1000}; CppAD::Independent(u);
+        std::vector<AD> ax{u[1],u[2],u[3],u[4]};
+        const AD eps = epcsaft::bulk_relative_permittivity(u[0],u[5],ax,p);
+        const AD born = epcsaft::born_contribution(u[0],ax,p,eps);
+        AD radial=0; for (std::size_t i=2;i<4;++i) radial+=ax[i]/(p.sigma_constant[i]*epcsaft::ANGSTROM_M);
+        const AD classic=-epcsaft::ELEMENTARY_CHARGE_C*epcsaft::ELEMENTARY_CHARGE_C
+            /(4*epcsaft::PI*epcsaft::VACUUM_PERMITTIVITY_F_PER_M*epcsaft::BOLTZMANN_J_PER_K*u[0])*(1-1/eps)*radial;
+        CppAD::ADFun<double> f(u,{eps,born-classic});
+        const std::vector<double> point{300,0.7,0.1,0.1,0.1,1000};
+        const auto j=f.Jacobian(point),h=f.Hessian(point,0),bj=f.Jacobian(point),bh=f.Hessian(point,1);
+        check("thermal-first",j[0],normalized?-0.18125:-0.145);
+        check("thermal-second",h[0],normalized?0.001875:0.0015);
+        check("mixed-T-water",h[1],normalized?-0.0234375:-0.2);
+        check("water-first",j[1],normalized?9.375:80);
+        check("amine-first",j[2],normalized?-65.625:20);
+        check("water-second",h[7],normalized?-23.4375:0);
+        check("water-amine",h[8],normalized?70.3125:0);
+        for (std::size_t i=0;i<6;++i) {check("density-mixed",h[30+i],0);check("classic-Born-gradient",bj[6+i],0,1e-10);}
+        for (double v:bh) check("classic-Born-hessian",v,0,1e-10);
+        check("classic-Born-value",f.Forward(0,point)[1],0,1e-10);
+        auto derivatives=[&](double lambda) {
+            auto z=point;z[1]+=lambda;z[3]-=lambda/2;z[4]-=lambda/2;
+            std::vector<double> d(6,0);d[1]=1;d[3]=d[4]=-0.5;
+            std::vector<double> result{f.Forward(0,z)[0]};double factorial=1;
+            for (std::size_t k=1;k<=4;++k) {factorial*=k;result.push_back(f.Forward(k,k==1?d:std::vector<double>(6,0))[0]*factorial);}
+            return result;
+        };
+        const auto ds=derivatives(0);
+        check("composition-third",ds[3],normalized?87.890625:0,1e-10);
+        check("composition-fourth",ds[4],normalized?-439.453125:0,1e-9);
+        for (std::size_t k:{3U,4U}) {
+            const double step=0.00025, half=step/2;
+            const double coarse=(derivatives(step)[k-1]-derivatives(-step)[k-1])/(2*step);
+            const double fine=(derivatives(half)[k-1]-derivatives(-half)[k-1])/(2*half);
+            const double extrapolated=(4*fine-coarse)/3;
+            const double refinement=std::abs(fine-coarse)/3;
+            const double target=1e-6*std::max(1.,std::abs(ds[k]));
+            std::cout << "contraction-refinement normalized=" << normalized << " order=" << k
+                      << " h=" << step << " half=" << half << " coarse=" << std::setprecision(17) << coarse
+                      << " fine=" << fine << " extrapolated=" << extrapolated
+                      << " error=" << std::abs(extrapolated-ds[k]) << " refinement=" << refinement
+                      << " target=" << target << std::endl;
+            CHECK(refinement<=target/4);
+            check("composition-Richardson",extrapolated,ds[k],target);
+        }
+        check("pure-water",epcsaft::bulk_relative_permittivity(300.,1000.,std::vector<double>{1,0,0,0},p),80);
+        check("pure-amine",epcsaft::bulk_relative_permittivity(300.,1000.,std::vector<double>{0,1,0,0},p),20);
+        check("salt-dilution",epcsaft::bulk_relative_permittivity(300.,1000.,std::vector<double>{0.35,0.05,0.3,0.3},p),normalized?72.5:29);
+        bool refused=false;try {check("zero-solvent",epcsaft::bulk_relative_permittivity(300.,1000.,std::vector<double>{0,0,0.5,0.5},p),0);}
+        catch(const std::invalid_argument& e) {refused=std::string(e.what()).find("solvent denominator")!=std::string::npos;}
+        CHECK(refused==normalized);
+    }
+}
+
 // These references use only the accepted scalar equations, including numerical
 // radial and finite-size integrals; they do not route through the contribution owners.
 void electrolyte_born_and_dielectric_match_independent_equations() {
+    solvent_mole_permittivity();
     component_permittivity_zero_solvent();
     const double temperature = 320.0, density = 9.0e3;
     const std::vector<double> x = {0.4, 0.3, 0.2, 0.1};

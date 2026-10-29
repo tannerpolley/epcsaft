@@ -152,7 +152,7 @@ def association_topology(
     return {"presets": [], "sites": sites, "edges": edges}
 
 
-def build_parameters(temperature: float, water_mdeah_k: float, ionic_dispersion: str) -> epcsaft.Parameters:
+def parameter_mapping(temperature: float, water_mdeah_k: float, ionic_dispersion: str) -> dict:
     """Paper parameters (Tables 4-7) with a declared water-MDEAH+ k_ij."""
     eps_water = water_permittivity(temperature)
     eps_mdea = 22.4
@@ -281,7 +281,11 @@ def build_parameters(temperature: float, water_mdeah_k: float, ionic_dispersion:
         ],
         "topology": association_topology(temperature, water_mdeah_l),
     }
-    return epcsaft.Parameters.from_mapping(mapping)
+    return mapping
+
+
+def build_parameters(temperature: float, water_mdeah_k: float, ionic_dispersion: str) -> epcsaft.Parameters:
+    return epcsaft.Parameters.from_mapping(parameter_mapping(temperature, water_mdeah_k, ionic_dispersion))
 
 
 TEMPERATURE = 303.0
@@ -317,7 +321,8 @@ def problem(alpha: float, pressure_seed_pa: float) -> equilibrium.Problem:
             ),
             reference=equilibrium.ReactionReference(
                 equilibrium.ReferenceSourceBasis.RawMoleFractionInfiniteDilution,
-                reference_pressure_pa=1.0e5,
+                # Wangler p. 18, Eqs. 20–21: standards at the system pressure.
+                reference_pressure_pa=None,
             ),
         )
         for index, (nu, (c1, c2, c3, c4)) in enumerate(zip(REACTIONS, LN_K_COEFFICIENTS, strict=True), 1)
@@ -503,7 +508,7 @@ def write_outputs(rows: list[dict]) -> None:
         "figure_10_summary_sha256": hashlib.sha256(FIGURE_10.read_bytes()).hexdigest(),
         "declaration": {"basis": "RawMoleFractionInfiniteDilution", "solvent": "water",
                         "species_reference": "water pure liquid; every other species infinite dilution in water",
-                        "reference_pressure_pa": 1.0e5, "reaction_constants": "Table 2, Eq. 19, unconverted",
+                        "reference_pressure_pa": None, "reaction_constants": "Table 2, Eq. 19, unconverted",
                         "permittivity": "fixed 60 wt% blend 0.4 eps_water + 0.6 * 22.4 on every neutral species",
                         "ions": "MDEAH+ m 3.675; packing 0.88 sigma; Debye-Hueckel diameter sigma",
                         "l_hb": "Table 7 at 303 K",

@@ -1,0 +1,771 @@
+{
+  "rows": [
+    {
+      "row_id": "6a/measured/1",
+      "panel": "6a",
+      "series": "measured",
+      "evidence": "physical comparison",
+      "x": "0.34154688569472963",
+      "y": "358.9873417721519",
+      "x_half_width": "0.002053388090349076",
+      "y_half_width": "0.569620253164557",
+      "y_scale": "linear",
+      "pixel_x": "745",
+      "pixel_y": "902",
+      "source_pdf_page": "5",
+      "pressure_Pa": "40000",
+      "condition_note": ""
+    },
+    {
+      "row_id": "6a/measured/2",
+      "panel": "6a",
+      "series": "measured",
+      "evidence": "physical comparison",
+      "x": "0.5578370978781656",
+      "y": "370.1898734177215",
+      "x_half_width": "0.002053388090349076",
+      "y_half_width": "0.569620253164557",
+      "y_scale": "linear",
+      "pixel_x": "1061",
+      "pixel_y": "843",
+      "source_pdf_page": "5",
+      "pressure_Pa": "40000",
+      "condition_note": ""
+    },
+    {
+      "row_id": "6a/measured/3",
+      "panel": "6a",
+      "series": "measured",
+      "evidence": "physical comparison",
+      "x": "0.7967145790554415",
+      "y": "394.873417721519",
+      "x_half_width": "0.002053388090349076",
+      "y_half_width": "0.569620253164557",
+      "y_scale": "linear",
+      "pixel_x": "1410",
+      "pixel_y": "713",
+      "source_pdf_page": "5",
+      "pressure_Pa": "40000",
+      "condition_note": ""
+    },
+    {
+      "row_id": "6b/measured/1",
+      "panel": "6b",
+      "series": "measured",
+      "evidence": "physical comparison",
+      "x": "0.3517006802721088",
+      "y": "365.79617834394907",
+      "x_half_width": "0.002040816326530612",
+      "y_half_width": "0.5095541401273885",
+      "y_scale": "linear",
+      "pixel_x": "747",
+      "pixel_y": "900",
+      "source_pdf_page": "5",
+      "pressure_Pa": "53300",
+      "condition_note": ""
+    },
+    {
+      "row_id": "6b/measured/2",
+      "panel": "6b",
+      "series": "measured",
+      "evidence": "physical comparison",
+      "x": "0.5836734693877551",
+      "y": "379.04458598726114",
+      "x_half_width": "0.002040816326530612",
+      "y_half_width": "0.5095541401273885",
+      "y_scale": "linear",
+      "pixel_x": "1088",
+      "pixel_y": "822",
+      "source_pdf_page": "5",
+      "pressure_Pa": "53300",
+      "condition_note": ""
+    },
+    {
+      "row_id": "6b/measured/3",
+      "panel": "6b",
+      "series": "measured",
+      "evidence": "physical comparison",
+      "x": "0.746938775510204",
+      "y": "386.5180467091295",
+      "x_half_width": "0.002040816326530612",
+      "y_half_width": "0.5095541401273885",
+      "y_scale": "linear",
+      "pixel_x": "1328",
+      "pixel_y": "778",
+      "source_pdf_page": "5",
+      "pressure_Pa": "53300",
+      "condition_note": ""
+    }
+  ],
+  "fit_coordinates": 1,
+  "electrolyte_parameters_changed": false,
+  "reaction_constants_changed": false,
+  "fits": [
+    {
+      "candidate": "inherited-4C-2B",
+      "training_panel": "6a",
+      "start_offset": 0,
+      "physical_start": -0.118,
+      "omitted_start_defect": 0.0,
+      "status": "converged",
+      "message": "Function tolerance reached. |cost_change|/cost: 1.226863e-13 <= 1.000000e-12",
+      "usable": true,
+      "physical": [
+        0.005335092516387682
+      ],
+      "residuals": [
+        -3.075224847215793,
+        -0.7411553269204774,
+        2.978943944312391
+      ],
+      "iterations": 5,
+      "held_cost": 88.31918725923055,
+      "held_predictions": [
+        365.23380807597863,
+        381.34911882313446,
+        399.59517340456784
+      ],
+      "held_residuals": [
+        -0.5623702679704365,
+        2.3045328358733173,
+        13.077126695438324
+      ],
+      "held_statuses": [
+        "ObservationStatus.Available",
+        "ObservationStatus.Available",
+        "ObservationStatus.Available"
+      ],
+      "baseline_held_cost": 1035.873850785923,
+      "conditional_covariance": [
+        9.86130164833908e-06
+      ],
+      "variance_factor": 9.440213051455732,
+      "projected_gradient_norm": 2.4981987735372968e-05,
+      "inherited_origin": -0.118,
+      "final_cost": 9.440213051455732,
+      "rank": 1,
+      "covariance_status": "available",
+      "active_bounds": [],
+      "singular_values": [
+        318.44385897575637
+      ],
+      "failures": []
+    },
+    {
+      "candidate": "inherited-4C-2B",
+      "training_panel": "6a",
+      "start_offset": -0.1,
+      "physical_start": -0.218,
+      "omitted_start_defect": 0.1,
+      "status": "converged",
+      "message": "Function tolerance reached. |cost_change|/cost: 5.795610e-14 <= 1.000000e-12",
+      "usable": true,
+      "physical": [
+        0.005335094030898893
+      ],
+      "residuals": [
+        -3.0752250666304235,
+        -0.741155631911738,
+        2.978943641924843
+      ],
+      "iterations": 5,
+      "held_cost": 88.31918284669719,
+      "held_predictions": [
+        365.2338078511727,
+        381.3491185239198,
+        399.59517311020596
+      ],
+      "held_residuals": [
+        -0.5623704927763811,
+        2.3045325366586553,
+        13.077126401076441
+      ],
+      "held_statuses": [
+        "ObservationStatus.Available",
+        "ObservationStatus.Available",
+        "ObservationStatus.Available"
+      ],
+      "baseline_held_cost": 1035.873850785923,
+      "conditional_covariance": [
+        9.861301606995527e-06
+      ],
+      "variance_factor": 9.440213051455515,
+      "projected_gradient_norm": 0.00017681871054264775,
+      "inherited_origin": -0.118,
+      "final_cost": 9.440213051455515,
+      "rank": 1,
+      "covariance_status": "available",
+      "active_bounds": [],
+      "singular_values": [
+        318.44385964329507
+      ],
+      "failures": []
+    },
+    {
+      "candidate": "inherited-4C-2B",
+      "training_panel": "6a",
+      "start_offset": 0.1,
+      "physical_start": -0.017999999999999988,
+      "omitted_start_defect": -0.1,
+      "status": "converged",
+      "message": "Function tolerance reached. |cost_change|/cost: 9.353888e-13 <= 1.000000e-12",
+      "usable": true,
+      "physical": [
+        0.005335106796465677
+      ],
+      "residuals": [
+        -3.075226916041231,
+        -0.7411582026319365,
+        2.9789410931504676
+      ],
+      "iterations": 3,
+      "held_cost": 88.31914565415315,
+      "held_predictions": [
+        365.23380595631886,
+        381.3491160018893,
+        399.5951706290752
+      ],
+      "held_residuals": [
+        -0.5623723876302051,
+        2.304530014628142,
+        13.077123919945677
+      ],
+      "held_statuses": [
+        "ObservationStatus.Available",
+        "ObservationStatus.Available",
+        "ObservationStatus.Available"
+      ],
+      "baseline_held_cost": 1035.873850785923,
+      "conditional_covariance": [
+        9.86130125851759e-06
+      ],
+      "variance_factor": 9.440213051466785,
+      "projected_gradient_norm": 0.0014566253436214538,
+      "inherited_origin": -0.118,
+      "final_cost": 9.440213051466785,
+      "rank": 1,
+      "covariance_status": "available",
+      "active_bounds": [],
+      "singular_values": [
+        318.44386526986784
+      ],
+      "failures": []
+    },
+    {
+      "candidate": "inherited-4C-2B",
+      "training_panel": "6b",
+      "start_offset": 0,
+      "physical_start": -0.118,
+      "omitted_start_defect": 0.0,
+      "status": "converged",
+      "message": "Function tolerance reached. |cost_change|/cost: 8.610323e-15 <= 1.000000e-12",
+      "usable": true,
+      "physical": [
+        0.034731965042863466
+      ],
+      "residuals": [
+        -4.948062229454081,
+        -3.623978772436317,
+        7.176867093658359
+      ],
+      "iterations": 5,
+      "held_cost": 54.55293977477811,
+      "held_predictions": [
+        351.64309936309337,
+        363.4395451203362,
+        391.77486146673493
+      ],
+      "held_residuals": [
+        -7.344242409058552,
+        -6.750328297385295,
+        -3.0985562547840573
+      ],
+      "held_statuses": [
+        "ObservationStatus.Available",
+        "ObservationStatus.Available",
+        "ObservationStatus.Available"
+      ],
+      "baseline_held_cost": 653.9748901275972,
+      "conditional_covariance": [
+        9.281265659127346e-06
+      ],
+      "variance_factor": 44.56198162482765,
+      "projected_gradient_norm": 0.0003311881080207968,
+      "inherited_origin": -0.118,
+      "final_cost": 44.56198162482765,
+      "rank": 1,
+      "covariance_status": "available",
+      "active_bounds": [],
+      "singular_values": [
+        328.2436990421147
+      ],
+      "failures": []
+    },
+    {
+      "candidate": "inherited-4C-2B",
+      "training_panel": "6b",
+      "start_offset": -0.1,
+      "physical_start": -0.218,
+      "omitted_start_defect": 0.1,
+      "status": "converged",
+      "message": "Function tolerance reached. |cost_change|/cost: 2.997668e-13 <= 1.000000e-12",
+      "usable": true,
+      "physical": [
+        0.0347319782669587
+      ],
+      "residuals": [
+        -4.948064211653616,
+        -3.62398149320245,
+        7.176864353180747
+      ],
+      "iterations": 5,
+      "held_cost": 54.552981184973945,
+      "held_predictions": [
+        351.64309743879437,
+        363.43954237855166,
+        391.7748586364742
+      ],
+      "held_residuals": [
+        -7.344244333357551,
+        -6.7503310391698506,
+        -3.0985590850447693
+      ],
+      "held_statuses": [
+        "ObservationStatus.Available",
+        "ObservationStatus.Available",
+        "ObservationStatus.Available"
+      ],
+      "baseline_held_cost": 653.9748901275972,
+      "conditional_covariance": [
+        9.281265300524647e-06
+      ],
+      "variance_factor": 44.56198162483884,
+      "projected_gradient_norm": 0.0017288054011714848,
+      "inherited_origin": -0.118,
+      "final_cost": 44.56198162483884,
+      "rank": 1,
+      "covariance_status": "available",
+      "active_bounds": [],
+      "singular_values": [
+        328.2437053833339
+      ],
+      "failures": []
+    },
+    {
+      "candidate": "inherited-4C-2B",
+      "training_panel": "6b",
+      "start_offset": 0.1,
+      "physical_start": -0.017999999999999988,
+      "omitted_start_defect": -0.1,
+      "status": "converged",
+      "message": "Function tolerance reached. |cost_change|/cost: 1.006132e-13 <= 1.000000e-12",
+      "usable": true,
+      "physical": [
+        0.034731969688378356
+      ],
+      "residuals": [
+        -4.948062925784427,
+        -3.6239797282190125,
+        7.176866130951339
+      ],
+      "iterations": 4,
+      "held_cost": 54.552954321834434,
+      "held_predictions": [
+        351.643098687103,
+        363.43954415716996,
+        391.7748604724881
+      ],
+      "held_residuals": [
+        -7.344243085048902,
+        -6.750329260551553,
+        -3.0985572490308755
+      ],
+      "held_statuses": [
+        "ObservationStatus.Available",
+        "ObservationStatus.Available",
+        "ObservationStatus.Available"
+      ],
+      "baseline_held_cost": 653.9748901275972,
+      "conditional_covariance": [
+        9.28126553315318e-06
+      ],
+      "variance_factor": 44.561981624830565,
+      "projected_gradient_norm": 0.0008221594953283784,
+      "inherited_origin": -0.118,
+      "final_cost": 44.561981624830565,
+      "rank": 1,
+      "covariance_status": "available",
+      "active_bounds": [],
+      "singular_values": [
+        328.2437012697326
+      ],
+      "failures": []
+    },
+    {
+      "candidate": "nasrifar-3B-2B",
+      "training_panel": "6a",
+      "start_offset": 0,
+      "physical_start": 0.0,
+      "omitted_start_defect": 0.0,
+      "status": "converged",
+      "message": "Function tolerance reached. |cost_change|/cost: 6.758355e-14 <= 1.000000e-12",
+      "usable": true,
+      "physical": [
+        -0.010778319570510888
+      ],
+      "residuals": [
+        -2.895263387213504,
+        -0.47707052513476356,
+        2.110197698161187
+      ],
+      "iterations": 3,
+      "held_cost": 71.45915005286821,
+      "held_predictions": [
+        364.14459359912007,
+        380.0391450608026,
+        398.3164118579805
+      ],
+      "held_residuals": [
+        -1.6515847448289946,
+        0.9945590735414385,
+        11.798365148850962
+      ],
+      "held_statuses": [
+        "ObservationStatus.Available",
+        "ObservationStatus.Available",
+        "ObservationStatus.Available"
+      ],
+      "baseline_held_cost": 47.80708004794794,
+      "conditional_covariance": [
+        7.54862442152146e-06
+      ],
+      "variance_factor": 6.531540346308072,
+      "projected_gradient_norm": 2.156979167011741e-05,
+      "inherited_origin": 0,
+      "final_cost": 6.531540346308072,
+      "rank": 1,
+      "covariance_status": "available",
+      "active_bounds": [],
+      "singular_values": [
+        363.97042107938836
+      ],
+      "failures": []
+    },
+    {
+      "candidate": "nasrifar-3B-2B",
+      "training_panel": "6a",
+      "start_offset": -0.1,
+      "physical_start": -0.1,
+      "omitted_start_defect": 0.1,
+      "status": "converged",
+      "message": "Function tolerance reached. |cost_change|/cost: 2.871961e-13 <= 1.000000e-12",
+      "usable": true,
+      "physical": [
+        -0.010778314632898134
+      ],
+      "residuals": [
+        -2.8952641365570457,
+        -0.4770715616684811,
+        2.110196435698583
+      ],
+      "iterations": 3,
+      "held_cost": 71.45913559914806,
+      "held_predictions": [
+        364.1445928171993,
+        380.03914397524625,
+        398.31641061497095
+      ],
+      "held_residuals": [
+        -1.651585526749784,
+        0.9945579879851039,
+        11.798363905841427
+      ],
+      "held_statuses": [
+        "ObservationStatus.Available",
+        "ObservationStatus.Available",
+        "ObservationStatus.Available"
+      ],
+      "baseline_held_cost": 47.80708004794794,
+      "conditional_covariance": [
+        7.548624405972109e-06
+      ],
+      "variance_factor": 6.531540346310612,
+      "projected_gradient_norm": 0.0006742788524434218,
+      "inherited_origin": 0,
+      "final_cost": 6.531540346310612,
+      "rank": 1,
+      "covariance_status": "available",
+      "active_bounds": [],
+      "singular_values": [
+        363.97042145425826
+      ],
+      "failures": []
+    },
+    {
+      "candidate": "nasrifar-3B-2B",
+      "training_panel": "6a",
+      "start_offset": 0.1,
+      "physical_start": 0.1,
+      "omitted_start_defect": -0.1,
+      "status": "converged",
+      "message": "Function tolerance reached. |cost_change|/cost: 4.902187e-13 <= 1.000000e-12",
+      "usable": true,
+      "physical": [
+        -0.01077831412105432
+      ],
+      "residuals": [
+        -2.895264214235681,
+        -0.47707166911800414,
+        2.1101963048289463
+      ],
+      "iterations": 3,
+      "held_cost": 71.4591341008438,
+      "held_predictions": [
+        364.1445927361438,
+        380.0391438627148,
+        398.3164104861179
+      ],
+      "held_residuals": [
+        -1.6515856078052593,
+        0.9945578754536655,
+        11.798363776988367
+      ],
+      "held_statuses": [
+        "ObservationStatus.Available",
+        "ObservationStatus.Available",
+        "ObservationStatus.Available"
+      ],
+      "baseline_held_cost": 47.80708004794794,
+      "conditional_covariance": [
+        7.548624404360233e-06
+      ],
+      "variance_factor": 6.531540346311266,
+      "projected_gradient_norm": 0.0007419401439392459,
+      "inherited_origin": 0,
+      "final_cost": 6.531540346311266,
+      "rank": 1,
+      "covariance_status": "available",
+      "active_bounds": [],
+      "singular_values": [
+        363.970421493118
+      ],
+      "failures": []
+    },
+    {
+      "candidate": "nasrifar-3B-2B",
+      "training_panel": "6b",
+      "start_offset": 0,
+      "physical_start": 0.0,
+      "omitted_start_defect": 0.0,
+      "status": "converged",
+      "message": "Function tolerance reached. |cost_change|/cost: 4.191262e-14 <= 1.000000e-12",
+      "usable": true,
+      "physical": [
+        0.010671944886567915
+      ],
+      "residuals": [
+        -5.044298276234144,
+        -3.7248971497047023,
+        6.379509091553757
+      ],
+      "iterations": 3,
+      "held_cost": 37.076001987655054,
+      "held_predictions": [
+        352.84077109067704,
+        365.20796783822675,
+        391.4745517886022
+      ],
+      "held_residuals": [
+        -6.146570681474884,
+        -4.981905579494764,
+        -3.398865932916806
+      ],
+      "held_statuses": [
+        "ObservationStatus.Available",
+        "ObservationStatus.Available",
+        "ObservationStatus.Available"
+      ],
+      "baseline_held_cost": 14.227245924529083,
+      "conditional_covariance": [
+        7.2630982597613265e-06
+      ],
+      "variance_factor": 40.00897006235701,
+      "projected_gradient_norm": 6.692131091767806e-05,
+      "inherited_origin": 0,
+      "final_cost": 40.00897006235701,
+      "rank": 1,
+      "covariance_status": "available",
+      "active_bounds": [],
+      "singular_values": [
+        371.0556425608293
+      ],
+      "failures": []
+    },
+    {
+      "candidate": "nasrifar-3B-2B",
+      "training_panel": "6b",
+      "start_offset": -0.1,
+      "physical_start": -0.1,
+      "omitted_start_defect": 0.1,
+      "status": "converged",
+      "message": "Function tolerance reached. |cost_change|/cost: 2.104511e-13 <= 1.000000e-12",
+      "usable": true,
+      "physical": [
+        0.010671957973023413
+      ],
+      "residuals": [
+        -5.044300343549196,
+        -3.7249000310867473,
+        6.379505774526649
+      ],
+      "iterations": 3,
+      "held_cost": 37.07603933472337,
+      "held_predictions": [
+        352.84076910956003,
+        365.20796508874946,
+        391.47454841325725
+      ],
+      "held_residuals": [
+        -6.146572662591893,
+        -4.981908328972054,
+        -3.3988693082617374
+      ],
+      "held_statuses": [
+        "ObservationStatus.Available",
+        "ObservationStatus.Available",
+        "ObservationStatus.Available"
+      ],
+      "baseline_held_cost": 14.227245924529083,
+      "conditional_covariance": [
+        7.263098232572714e-06
+      ],
+      "variance_factor": 40.00897006236973,
+      "projected_gradient_norm": 0.0017280658378240332,
+      "inherited_origin": 0,
+      "final_cost": 40.00897006236973,
+      "rank": 1,
+      "covariance_status": "available",
+      "active_bounds": [],
+      "singular_values": [
+        371.05564325533237
+      ],
+      "failures": []
+    },
+    {
+      "candidate": "nasrifar-3B-2B",
+      "training_panel": "6b",
+      "start_offset": 0.1,
+      "physical_start": 0.1,
+      "omitted_start_defect": -0.1,
+      "status": "converged",
+      "message": "Function tolerance reached. |cost_change|/cost: 2.012161e-13 <= 1.000000e-12",
+      "usable": true,
+      "physical": [
+        0.010671956805552182
+      ],
+      "residuals": [
+        -5.04430015911953,
+        -3.7248997740326786,
+        6.379506070445871
+      ],
+      "iterations": 3,
+      "held_cost": 37.076036002907024,
+      "held_predictions": [
+        352.8407692862995,
+        365.2079653340369,
+        391.4745487143794
+      ],
+      "held_residuals": [
+        -6.146572485852403,
+        -4.98190808368463,
+        -3.398869007139581
+      ],
+      "held_statuses": [
+        "ObservationStatus.Available",
+        "ObservationStatus.Available",
+        "ObservationStatus.Available"
+      ],
+      "baseline_held_cost": 14.227245924529083,
+      "conditional_covariance": [
+        7.2630982349982784e-06
+      ],
+      "variance_factor": 40.00897006236886,
+      "projected_gradient_norm": 0.0015679311904932547,
+      "inherited_origin": 0,
+      "final_cost": 40.00897006236886,
+      "rank": 1,
+      "covariance_status": "available",
+      "active_bounds": [],
+      "singular_values": [
+        371.055643193374
+      ],
+      "failures": []
+    }
+  ],
+  "start_controls": [
+    {
+      "candidate": "inherited-4C-2B",
+      "panel": "6a",
+      "minimum_separation": 0.1,
+      "omitted_start_defects": [
+        0.0,
+        0.1,
+        -0.1
+      ],
+      "limit": 1e-08,
+      "final_parameter_spread": 1.4280077995088014e-08
+    },
+    {
+      "candidate": "inherited-4C-2B",
+      "panel": "6b",
+      "minimum_separation": 0.1,
+      "omitted_start_defects": [
+        0.0,
+        0.1,
+        -0.1
+      ],
+      "limit": 1e-08,
+      "final_parameter_spread": 1.322409523552004e-08
+    },
+    {
+      "candidate": "nasrifar-3B-2B",
+      "panel": "6a",
+      "minimum_separation": 0.1,
+      "omitted_start_defects": [
+        0.0,
+        0.1,
+        -0.1
+      ],
+      "limit": 1e-08,
+      "final_parameter_spread": 5.449456568287769e-09
+    },
+    {
+      "candidate": "nasrifar-3B-2B",
+      "panel": "6b",
+      "minimum_separation": 0.1,
+      "omitted_start_defects": [
+        0.0,
+        0.1,
+        -0.1
+      ],
+      "limit": 1e-08,
+      "final_parameter_spread": 1.3086455497371419e-08
+    }
+  ],
+  "MDEA_held_out_scores": {
+    "6a": {
+      "current_held_cost": 88.31918725923055,
+      "candidate_held_cost": 71.45915005286821,
+      "improvement": 0.19089891709346807,
+      "passes_20_percent": false
+    },
+    "6b": {
+      "current_held_cost": 54.55293977477811,
+      "candidate_held_cost": 37.076001987655054,
+      "improvement": 0.3203665624488179,
+      "passes_20_percent": true
+    }
+  },
+  "qualified": false,
+  "limits": "MDEA selection only. Matched MEA, induced ketone, common-water, reactive/salt transfer and preservation/cost scoring remain unqualified."
+}

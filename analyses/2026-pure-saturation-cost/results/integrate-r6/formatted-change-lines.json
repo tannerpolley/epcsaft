@@ -1,0 +1,87 @@
+{
+  "base": "94b4de381",
+  "method": "Pinned formatting, physical lines including comments and blanks, runtime and campaign sources; tests/stubs/docs separate",
+  "files": [
+    {
+      "file": "analyses/2026-pure-saturation-cost/scripts/engine_worker.py",
+      "added": 65,
+      "removed": 5,
+      "net": 60
+    },
+    {
+      "file": "analyses/2026-pure-saturation-cost/scripts/present.py",
+      "added": 96,
+      "removed": 0,
+      "net": 96
+    },
+    {
+      "file": "analyses/2026-pure-saturation-cost/scripts/present_r4.py",
+      "added": 57,
+      "removed": 0,
+      "net": 57
+    },
+    {
+      "file": "analyses/2026-pure-saturation-cost/scripts/reduce.py",
+      "added": 52,
+      "removed": 4,
+      "net": 48
+    },
+    {
+      "file": "analyses/2026-pure-saturation-cost/scripts/run.py",
+      "added": 27,
+      "removed": 5,
+      "net": 22
+    },
+    {
+      "file": "engine/native/bindings/equilibrium_bindings.cpp",
+      "added": 100,
+      "removed": 2,
+      "net": 98
+    },
+    {
+      "file": "engine/native/equilibrium/gibbs_minimizer.cpp",
+      "added": 39,
+      "removed": 29,
+      "net": 10
+    },
+    {
+      "file": "engine/native/equilibrium/gibbs_minimizer.hpp",
+      "added": 8,
+      "removed": 1,
+      "net": 7
+    },
+    {
+      "file": "engine/native/equilibrium/one_component_two_density.cpp",
+      "added": 132,
+      "removed": 29,
+      "net": 103
+    },
+    {
+      "file": "engine/native/equilibrium/problem.hpp",
+      "added": 4,
+      "removed": 0,
+      "net": 4
+    },
+    {
+      "file": "build/issue-886/integrate-r6/phase_pressures.cpp",
+      "added": 13,
+      "removed": 0,
+      "net": 13
+    },
+    {
+      "file": "build/issue-886/integrate-r6/compile_pressure.py",
+      "added": 38,
+      "removed": 0,
+      "net": 38
+    },
+    {
+      "file": "build/issue-886/integrate-r6/campaign.py",
+      "added": 34,
+      "removed": 0,
+      "net": 34
+    }
+  ],
+  "gross": 665,
+  "removed": 75,
+  "net": 590
+}

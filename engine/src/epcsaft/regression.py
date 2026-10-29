@@ -60,7 +60,7 @@ _KINDS = {
     "amount_ratio": ObservationKind.PhaseAmountRatio,
 }
 __all__ = ("MinimaxRequest", "MinimaxResult", "MinimaxRow", "ObservationEvaluation", "CoordinateTarget", "Coordinate", "CoordinateSet", "FitControls", "FitCovariance", "FitResult", "Observation", "ObservationKind",
-           "ObservationStatus", "Prediction", "PredictionGradient", "ResidualForm", "TrialFailure", "addition_enthalpy",
+           "ObservationStatus", "Prediction", "PredictionGradient", "ResidualForm", "TrialFailure", "addition_enthalpy", "saturation_capped_addition_enthalpy",
            "active_parameter", "coordinate", "density", "isobaric_heat_capacity", "differentiate", "fit", "fitted_parameters", "observation",
            "predict", "reaction_coordinate", "reaction_enthalpy_shift", "reaction_log10_reciprocal", "HydrationHold", "HoldResult", "EvaluatedCoordinates", "CheckMetric",
            "CheckGroup", "CheckResult", "electrolyte", "mixture_osmotic_coefficient", "hydration_hold", "evaluate_coordinates", "evaluate_checks",
@@ -550,6 +550,65 @@ def observation(parameters: Parameters, kind: str, problem: Problem, *, observed
         result.denominator_phase = _index([item.name for item in problem.phases], denominator_phase, "denominator phase")
         result.denominator_species = [_index(parameters.component_ids, name, "species") for name in denominator_species or ()]
     return _finish(result, observed, form, scale, False if mass_basis is None else mass_basis)
+
+
+def saturation_capped_addition_enthalpy(parameters: Parameters, initial: Problem, bubble: Problem,
+        feed: Mapping[str, float], *, basis_amount: float, loading_cap: float,
+        loading_bounds: tuple[float, float], loading_grid: Sequence[float], T: float, P: float,
+        phase: str, observed: float, form: str, scale: float | None = None) -> Observation:
+    """Declare addition heat capped by the native model's saturation loading.
+
+    Parameters
+    ----------
+    parameters : Parameters
+        Component and fitted-parameter declaration shared by the states.
+    initial, bubble : Problem
+        Zero-addition state at fixed T/P and declared free-pressure bubble state.
+    feed : mapping of str to float
+        Neutral pure added feed, with mole fraction one.
+    basis_amount : float
+        Fixed analytical solvent basis in mol.
+    loading_cap : float
+        Fixed source loading cap in mol added feed per mol analytical basis.
+    loading_bounds : tuple of float
+        Positive lower and upper loading bounds in mol/mol.
+    loading_grid : sequence of float
+        Positive increasing native search nodes, including both bounds.
+    T, P : float
+        Common temperature in K and physical pressure in Pa.
+    phase : str
+        Declared feed density branch, liquid or vapor.
+    observed : float
+        Signed measured heat in J/mol added feed; exothermic heat is negative.
+    form : str
+        Difference residual with its fixed source scale.
+    scale : float, optional
+        Fixed positive difference scale in J/mol added feed.
+
+    Returns
+    -------
+    observation : Observation
+        Native declaration; no solve or thermodynamic calculation is done here.
+
+    Raises
+    ------
+    ParameterError
+        The feed, state, grid, branch or residual declaration is inadmissible.
+
+    Notes
+    -----
+    The grid and successive native seeds define a finite search. Unsampled
+    tangencies, paired crossings or multiple roots within a cell, turns between
+    nodes and undiscovered branches can escape detection. Availability means
+    unique within the declared search. At an exact cap switch the classical
+    gradient is unavailable. Native results retain search and action causes.
+    """
+    result = addition_enthalpy(parameters, initial, bubble, feed, basis_amount, T, P,
+                              phase=phase, observed=observed, form=form, scale=scale)
+    result.kind = ObservationKind.SaturationCappedAdditionEnthalpy
+    result.basis_amount, result.loading_cap = basis_amount, loading_cap
+    result.loading_bounds, result.loading_grid = loading_bounds, list(loading_grid)
+    return result
 
 
 def addition_enthalpy(parameters: Parameters, initial: Problem, final: Problem, feed: Mapping[str, float], amount: float,

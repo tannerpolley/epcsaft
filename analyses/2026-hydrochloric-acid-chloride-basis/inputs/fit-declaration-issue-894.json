@@ -1,0 +1,113 @@
+{
+  "design_sha256": "31cb19d87794dfb999b5e781d5f32708979f56b7faaaee4006aadf7d48151d5f",
+  "readiness_sha256": "30ba4db2ea6554321e7db3c94848819d46706a4bfbfae5d73ffb05f214d96d7e",
+  "temperature_K": 298.15,
+  "pressure_Pa": 100000,
+  "maximum_iterations": 1500,
+  "maximum_seconds": 450,
+  "total_maximum_iterations": 4500,
+  "total_maximum_seconds": 1350,
+  "starts": [
+    [
+      0,
+      0
+    ],
+    [
+      -1.5,
+      0.7
+    ],
+    [
+      -3,
+      -5
+    ]
+  ],
+  "H_fixed": {
+    "segment_diameter": 2.274,
+    "dispersion_energy_over_k": 1616.4939,
+    "packing_diameter": 2.0011200000000002,
+    "debye_huckel_diameter": 2.0011200000000002,
+    "born_diameter": 2.274
+  },
+  "H_Cl_k": 0,
+  "H_Cl_convention": "Explicit modelling assumption: uncorrected geometric-mean H-Cl attraction",
+  "identification": {
+    "rank_ratio_strict": 1e-14,
+    "bound_distance_strict": 1e-06,
+    "cost_floor": 1e-10,
+    "cost_fraction": 0.0001,
+    "max_h": 0.051,
+    "max_endpoint_distance": 0.051,
+    "max_correlation": 0.99
+  },
+  "training_states": 30,
+  "weights": "Unchanged four equal-total-weight groups, phi difference scale .01 and gamma log ratio with ln(1.02) scale",
+  "input_hashes": {
+    "candidate.json": "bdf8038c1b16b2a68f11a51623fd23af739a851059d5d42855077a822531f2ad",
+    "hamer-wu-hcl.csv": "04371336304c9ddc5625c314adcaee453bcce72c859be651999f831ef62233c2",
+    "roy1980-hcl-mg.csv": "c321d5135c207407565c74ab82875328539b21a211f7fa365b34600a5a5daedc"
+  },
+  "native_library": {
+    "path": "build/engine-meson/shared/libepcsaft_native.so"
+  },
+  "screen_points": [
+    [
+      0,
+      0
+    ],
+    [
+      -1.5,
+      0.7
+    ],
+    [
+      -3,
+      -5
+    ]
+  ],
+  "coordinates": [
+    {
+      "family": "k_ij",
+      "pair": [
+        "hydronium-cation",
+        "water"
+      ],
+      "origin": 0,
+      "scale": 1,
+      "bounds": [
+        -50,
+        1
+      ],
+      "name": "H-water"
+    },
+    {
+      "family": "k_ij",
+      "pair": [
+        "hydronium-cation",
+        "chloride-anion"
+      ],
+      "origin": 0,
+      "scale": 1,
+      "bounds": [
+        -50,
+        1
+      ],
+      "name": "H-Cl"
+    }
+  ],
+  "training_observations": 118,
+  "hcl_mixture_training": true,
+  "trial": {
+    "ion": "hydronium-cation",
+    "label": "H",
+    "source": "Hamer\u2013Wu and corrected Roy",
+    "training": "hamer-wu-hcl.csv",
+    "split": 3,
+    "cutoff": 7,
+    "low_states": 23,
+    "stoichiometry": [
+      1,
+      1
+    ],
+    "candidate": "candidate.json",
+    "build": "build/issue-894"
+  }
+}

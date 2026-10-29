@@ -1,4 +1,5 @@
 #include "equilibrium/stoichiometry.hpp"
+#include "core/linear_error.hpp"
 
 #include "core/declared.hpp"
 #include "core/physical_constants.hpp"
@@ -57,7 +58,7 @@ Eigen::MatrixXd reaction_matrix(
     return matrix;
 }
 
-Eigen::Index numerical_rank(const Eigen::MatrixXd& matrix) {
+Eigen::Index numerical_rank(const Eigen::MatrixXd& matrix, core::NumericalRank* observation = nullptr) {
     if (matrix.rows() == 0 || matrix.cols() == 0) return 0;
     const auto svd = matrix.jacobiSvd(Eigen::ComputeThinU | Eigen::ComputeThinV);
     const double largest = svd.singularValues().size() == 0
@@ -68,6 +69,11 @@ Eigen::Index numerical_rank(const Eigen::MatrixXd& matrix) {
     Eigen::Index rank = 0;
     for (const double singular : svd.singularValues()) {
         if (singular > scale) ++rank;
+    }
+    if (observation) {
+        *observation = {"reaction_stoichiometry_absolute_svd", std::size_t(matrix.cols()), std::size_t(rank), scale};
+        core::Scope scope("numerical_rank");
+        if (scope.diagnostics_on()) scope.probe("rank", {double(rank), double(matrix.cols()), scale}, 0, observation->basis.c_str());
     }
     return rank;
 }
@@ -376,21 +382,25 @@ std::vector<double> resolve_feed(const IdealMoleFraction& model, const FeedSpec&
 }
 
 std::vector<std::vector<double>> balance_basis(
-    std::size_t components, const std::vector<ReactionSpec>& reactions
+    std::size_t components, const std::vector<ReactionSpec>& reactions, CompiledSystem* observations
 ) {
     if (components == 0) throw std::invalid_argument("no components");
     validate_reaction_set(components, reactions);
     const auto matrix = reaction_matrix(components, reactions);
-    const Eigen::Index rank = numerical_rank(matrix);
+    core::NumericalRank snapshot;
+    const Eigen::Index rank = numerical_rank(matrix, &snapshot);
+    if (observations && !snapshot.basis.empty()) core::retain_rank(observations->rank_records, snapshot);
     if (rank != matrix.rows()) {
+        core::Convergence refusal; refusal.residual = NAN; refusal.stop = core::Stop::singular;
+        if (!snapshot.basis.empty()) refusal.rank = snapshot;
         for (std::size_t row = 0; row < reactions.size(); ++row) {
             Eigen::MatrixXd prefix = matrix.topRows(static_cast<Eigen::Index>(row + 1));
             if (numerical_rank(prefix) <= static_cast<Eigen::Index>(row)) {
                 const std::string label = reaction_name(reactions[row], row);
-                throw std::invalid_argument("dependent reaction " + label);
+                throw core::DeclarationError("dependent reaction " + label, refusal);
             }
         }
-        throw std::invalid_argument("dependent reaction set");
+        throw core::DeclarationError("dependent reaction set", refusal);
     }
     if (rank == 0) {
         std::vector<std::vector<double>> result(components, std::vector<double>(components, 0.0));
@@ -494,9 +504,11 @@ std::optional<std::size_t> thermal_reference_missing(
 std::vector<std::vector<double>> standard_state_series(
     double temperature, std::size_t components,
     const std::vector<ReactionSpec>& reactions,
-    const std::vector<double>& supplied, std::size_t order, const ThermochemistryRecord* thermochemistry
+    const std::vector<double>& supplied, std::size_t order, const ThermochemistryRecord* thermochemistry,
+    std::vector<std::vector<double>>* inverse_map, CompiledSystem* observations
 ) {
     require_positive(temperature, "temperature");
+    if (inverse_map) inverse_map->clear();
     validate_reaction_set(components, reactions);
     std::vector<std::vector<double>> result(order + 1, std::vector<double>(components, 0.0));
     if (reactions.empty() && supplied.empty()) return result;
@@ -514,18 +526,33 @@ std::vector<std::vector<double>> standard_state_series(
     }
     const double criterion = std::sqrt(std::numeric_limits<double>::epsilon())
         * std::max(1.0, target.norm());
+    const auto refuse = [&](double residual, const Eigen::BDCSVD<Eigen::MatrixXd>* factor) {
+        core::Convergence r; r.residual = residual; r.stop = core::Stop::infeasible;
+        if (factor) r.rank = core::numerical_rank(*factor, "minimum_norm_standard_state");
+        r.criterion_owner = std::make_shared<policy::Tolerance>(policy::Tolerance{"standard state consistency", criterion,
+            policy::Category::AlgorithmTolerance, "sqrt(eps) max(1, norm(target)) J/mol"}); r.criterion = r.criterion_owner.get();
+        throw core::DeclarationError("inconsistent standard state", r);
+    };
     if (!supplied.empty()) {
         if (supplied.size() != components) throw std::invalid_argument("standard state size");
         if (!all_numeric(supplied)) throw std::invalid_argument("invalid standard state");
         const Eigen::Map<const Eigen::VectorXd> gibbs(supplied.data(),
                                                       static_cast<Eigen::Index>(components));
         if ((matrix * gibbs - target).norm() > criterion) {
-            throw std::invalid_argument("inconsistent standard state");
+            refuse((matrix * gibbs - target).norm(), nullptr);
         }
         result[0] = supplied;
         return result;
     }
     const auto svd = matrix.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV);
+    if (observations) core::retain_rank(observations->rank_records, svd, "minimum_norm_standard_state");
+    if (inverse_map) {
+        inverse_map->assign(components, std::vector<double>(reactions.size(), 0.0));
+        for (std::size_t r = 0; r < reactions.size(); ++r) {
+            const Eigen::VectorXd image = svd.solve(Eigen::VectorXd::Unit(reactions.size(), r));
+            for (std::size_t i = 0; i < components; ++i) (*inverse_map)[i][r] = image(i);
+        }
+    }
     for (std::size_t k = 0; k <= order; ++k) {
         Eigen::VectorXd right(static_cast<Eigen::Index>(reactions.size()));
         for (std::size_t row = 0; row < reactions.size(); ++row) {
@@ -533,7 +560,7 @@ std::vector<std::vector<double>> standard_state_series(
         }
         const Eigen::VectorXd solution = svd.solve(right);
         if (k == 0 && (matrix * solution - target).norm() > criterion) {
-            throw std::invalid_argument("inconsistent standard state");
+            refuse((matrix * solution - target).norm(), &svd);
         }
         result[k].assign(solution.data(), solution.data() + solution.size());
     }
@@ -543,9 +570,9 @@ std::vector<std::vector<double>> standard_state_series(
 std::vector<double> standard_state(
     double temperature, std::size_t components,
     const std::vector<ReactionSpec>& reactions,
-    const std::vector<double>& supplied, const ThermochemistryRecord* thermochemistry
+    const std::vector<double>& supplied, const ThermochemistryRecord* thermochemistry, CompiledSystem* observations
 ) {
-    return standard_state_series(temperature, components, reactions, supplied, 0, thermochemistry).front();
+    return standard_state_series(temperature, components, reactions, supplied, 0, thermochemistry, nullptr, observations).front();
 }
 
 bool conserves_total_moles(const std::vector<std::vector<double>>& basis) {

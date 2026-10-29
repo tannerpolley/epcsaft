@@ -1,0 +1,14 @@
+falsifier,final_outcome,unchanged_work_or_values
+Weighted fit Jacobian,rank 1/2; cutoff 5.4745633586589504e-15,"Existing spectrum, candidate and covariance; capture and A/B bytes equal"
+LLT / whitened cost,infeasible declaration / nonfinite cost with finite solved operands,Native measurement-correlation checks; unchanged admission predicates
+Hydration hold,left_domain / singular / budget_exhausted; scalar cutoff retained,Native hydration-failures and analytic hold/root-error checks; accepted chart preserved
+Shared solve refusal,ObservationStatus.TopologyEvent; original association cause retained,"Actual producer, Prediction, TrialFailure and FitResult records agree"
+Worker selection and recovery,12 serial/child runs; named criterion and every record member agree,Recovered successful row has no TrialFailure; eligible serial-prefix cause and work agree
+Minimax callbacks,3 callbacks; last iteration 2; returns 0/-1,Callback/event tuples equal; capture and log off/on/off preserve numeric bytes and work
+Minimax refusal controls,False callback and typed ConvergenceFailure retained,"Existing analytic R2-D7 point, constraints, multipliers and hold checks pass"
+ASL action conversion,Rank 1/2 with absent condition/residual; full-rank supplied condition/backward error,Actual registered callback at orders 0/1/2; controls and NaN invalidation preserved
+ASL density conversion,PropertyActionStatus.DensityUnavailable; complete native first record retained,"Real controls; quote prefix; NaN value, gradient and packed Hessian"
+ASL native coordinates,max scaled error 0,"Density, total enthalpy and log fugacity in (T,P,w), weight sum 2; A/B output bytes equal"
+Addition-enthalpy feed action,"left_domain and DENSITY_ROOT_RESIDUAL 1e-12 agree in producer, gradient, trial and fit",Ordinary central -63.11723442487346 J/mol; derivative -0.26034139231801134 (J/mol)/K
+Grouped observable attribution,Earlier row cause survives a later-row cause in an earlier direction; unconsumed direction excluded,"Controlled and ordinary successful rows have equal values, Jacobian and work 0/0/1/0"
+Numerical exception conversion,Real nonfinite reaction properties return initial_evaluation_failed and one InadmissibleTrial with original cause; logic and runtime conversions retained,Ordinary ln K 1.3499999999999999; derivative 300 K; work 0/0/1/0; bad_alloc rethrown first; no allocation injection

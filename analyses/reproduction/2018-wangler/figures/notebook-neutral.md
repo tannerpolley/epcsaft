@@ -1,0 +1,53 @@
+Neutral source-curve readouts from Wangler p. 20 Figure 1 at liquid x(MDEA) = 0.2. The ±0.01 bar allowance describes graphical reading, not experimental uncertainty.
+
+<table class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>T_K</th>
+      <th>x_mdea</th>
+      <th>source_curve_bar</th>
+      <th>graphical_allowance_bar</th>
+      <th>Engine_P_bar</th>
+      <th>Engine_minus_source_bar</th>
+      <th>maximum_residual</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>313</td>
+      <td>0.2</td>
+      <td>0.053299492</td>
+      <td>0.01</td>
+      <td>0.047977385</td>
+      <td>-0.0053221072</td>
+      <td>3.907985e-14</td>
+    </tr>
+    <tr>
+      <td>333</td>
+      <td>0.2</td>
+      <td>0.14720812</td>
+      <td>0.01</td>
+      <td>0.12066388</td>
+      <td>-0.026544243</td>
+      <td>2.1316282e-14</td>
+    </tr>
+    <tr>
+      <td>353</td>
+      <td>0.2</td>
+      <td>0.36167513</td>
+      <td>0.01</td>
+      <td>0.28206228</td>
+      <td>-0.07961285</td>
+      <td>4.4408921e-15</td>
+    </tr>
+    <tr>
+      <td>373</td>
+      <td>0.2</td>
+      <td>0.7893401</td>
+      <td>0.01</td>
+      <td>0.63415166</td>
+      <td>-0.15518844</td>
+      <td>2.3280501e-15</td>
+    </tr>
+  </tbody>
+</table>

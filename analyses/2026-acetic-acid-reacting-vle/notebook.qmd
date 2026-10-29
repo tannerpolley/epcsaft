@@ -1,0 +1,349 @@
+---
+title: "Aqueous acetic acid: coupled bubble pressure with liquid dissociation"
+date: 2026-10-26
+format:
+  html:
+    toc: true
+resources:
+  - inputs/source-notes.md
+  - inputs/parameters.json
+  - inputs/reactions.json
+  - inputs/measurement-lineage.json
+  - results/failures.json
+  - results/pressures.csv
+  - results/states.json
+  - results/reference-refinement.json
+  - results/executable.json
+  - results/pressure-diagnosis/
+  - inputs/source/
+execute:
+  enabled: false
+---
+
+## Pressure accuracy at the selected states
+
+{{< include figures/outcome.md >}}
+
+This is a **fixed-parameter comparison; historical calibration overlap unresolved**.
+The result is a coupled-pressure test, predominantly of neutral-mixture behavior in this range.
+It does not test speciation and does not support physical validation beyond these three states.
+It does not establish a within-uncertainty pressure claim even for these states.
+No measured pH, dissociation fraction or ionic activity is compared.
+A stronger speciation test requires independent activity or dissociation measurements.
+
+## Question, basis and fixed declaration
+
+How accurately does the declared native reacting bubble calculation reproduce the selected measured total pressures, without fitting its parameters to those measurements?
+The source identities, exact locators, activity conventions and acquisition limits are retained in [source notes](inputs/source-notes.md), [parameters](inputs/parameters.json), [reactions and numerical criteria](inputs/reactions.json), and [measurement lineage](inputs/measurement-lineage.json).
+
+{{< include figures/conditions.md >}}
+
+The liquid contains water, molecular acetic acid, formal hydrogen ions, acetate and hydroxide.
+The incipient vapor contains only water and molecular acid and has zero pinned amount.
+The Engine solves pressure, phase densities, liquid reaction equilibrium, charge conservation and neutral-species vapor–liquid fugacity equality together.
+The declared reactions and source activity quotients are
+
+$$
+\mathrm{HAc \rightleftharpoons H^+ + Ac^-},
+\qquad K_{a,m}=\frac{a_{H^+}a_{Ac^-}}{a_{HAc}},
+$$
+
+$$
+\mathrm{H_2O \rightleftharpoons H^+ + OH^-},
+\qquad K_w=\frac{a_{H^+}a_{OH^-}}{a_w}.
+$$
+
+Solute activities use the common molality infinite-dilution standard in pure water; water uses its pure-liquid standard.
+The IAPWS hydronium convention is converted explicitly to the formal hydrogen-ion convention in the retained source declaration.
+Source pressures remain fixed while the Engine transfers the standards to the solved state.
+The acid's adopted reference pressure is not a measurement of its pressure dependence.
+
+The equation of state uses hard-chain, dispersion, association, Debye–Hückel and uncorrected Born terms.
+The adopted water/acid/ion family excludes like-sign ion dispersion and uses the published water–acid binary interaction with zero temperature coefficient.
+Both neutral species have one donor and one acceptor site.
+Gross–Sadowski cross-association includes the segment-size factor, an explicit interpretation where Ascani's supplement does not state a cross rule.
+Component-permittivity mixing includes both water and acid with salt-free solvent mass fractions and the total solvent mole fraction, plus the ionic permittivity contribution.
+The original declaration, with only water assigned a neutral dielectric record, remains a control.
+The published parameters remain fixed throughout the comparison.
+
+## Measurements and inherited calibration
+
+The retained NIST ThermoML record of Bernatová–Aim–Wichterle joins pressure group 13 and liquid-water-composition group 14 by their common reported gas-water mole fraction.
+The gas fraction is not the liquid feed composition.
+The extraction retains every joined row and marks the acid-rich rows excluded from this owner-selected comparison.
+Pure-component endpoints are not counted as reacting-mixture observations.
+Molecular partial-pressure scoring is excluded because the chemically corrected vapor-composition convention has not been reconciled with true-species molecular vapor.
+
+The stated uncertainties are combined expanded uncertainties at the compiler's reported confidence level, not standard deviations or independently verified author uncertainty estimates.
+The record supplies neither a temperature uncertainty nor a joint input/output covariance for this selection.
+
+Gross–Sadowski pure-component saturation and density fitting and the adopted water/ion parameter family are inherited calibration.
+Ascani's later binary-parameter table traces the water–acid interaction to Pabsch's binary vapor–liquid fitting.
+The recovered Pabsch supplement identifies the binary fit source and printed temperature interval, as discussed below.
+The individual fitted rows and complete original model declaration remain unavailable.
+Membership of the Bernatová observations in that historical fit is therefore **unresolved**.
+There is no local calibration set, independent withheld-prediction claim, or claim to replay the exact historically fitted model.
+
+{{< include figures/pressures.md >}}
+
+![Calculated and measured total pressure. Blue points have the compiler's expanded pressure and composition uncertainties. Orange squares have the calculated composition-interval pressure range, expanded by the declared numerical allowance. The intervals are conditional on fixed temperature, parameters and the sampled smooth branch; they are not a joint confidence region.](figures/pressure-comparison.png)
+
+Signed error means calculated minus measured pressure.
+The root-mean-square error uses the signed pressure errors before squaring; relative errors divide by the measured pressure.
+Numerical failures are counted separately and are never silently omitted from a score.
+
+## Controls and the speciation limit
+
+{{< include figures/controls.md >}}
+
+Each control changes only the named declaration on the same installed wheel.
+The no-dissociation control removes both reactions and ions while retaining the neutral molecular parameters.
+The acid-only control retains acid dissociation and omits water ionization; its maximum pressure difference is below the numerical resolution of this comparison.
+Water ionization remains included in the primary declaration.
+The acid-permittivity control compares the sourced two-solvent declaration with the original water-only dielectric declaration, keeping the reaction declarations fixed.
+
+{{< include figures/speciation-limit.md >}}
+
+The sourced acid permittivity reduces that signal further.
+The pressure measurement cannot distinguish the reported speciation at this resolution.
+The computed liquid dissociation fractions in the raw state table are model outputs, not validated measurements.
+Permittivity, ionic-parameter and single-ion-activity accuracy remain unvalidated.
+
+## Input-interval falsifier
+
+For each state, define the conditional calculated interval $I_{\mathrm{calc}}$ from the retained composition sweep and numerical expansion, and the measured interval $I_{\mathrm{meas}}=[P-U_P,P+U_P]$.
+If $I_{\mathrm{calc}}\cap I_{\mathrm{meas}}=\varnothing$, that state falsifies the declared within-interval pressure claim.
+One disjoint state falsifies a claim covering all selected states.
+Overlap would mean only that this test did not falsify the claim.
+
+{{< include figures/uncertainty.md >}}
+
+The retained pressures increase across each input interval and the exact native pressure derivatives are positive at every sampled state.
+This supplies numerical evidence for the smooth monotone branch used to select the endpoint ranges.
+Finite samples do not prove the absence of an unsampled turning point; these are numerically qualified conditional ranges, not certified interval arithmetic.
+No joint confidence region, model confidence interval or probability of failure is inferred from the Cartesian input/output intervals.
+The temperature and adopted parameters are fixed; their missing uncertainty budgets remain unknown, not zero.
+The observed separation therefore supports a conditional discrepancy under this declaration, not an uncertainty-complete rejection of every possible parameterization.
+
+## Numerical verification and failures
+
+{{< include figures/numerical-summary.md >}}
+
+{{< include figures/numerical.md >}}
+
+{{< include figures/reference-conditions.md >}}
+
+The primary reference calculation uses an analytic infinite-dilution insertion.
+The separate finite-ladder check compares refined reference values and their native pressure effects with that analytic reference.
+The native pressure-error estimate also includes local higher-precision reference replay and pressure/site propagation.
+These local estimates can underestimate shared errors and internal cancellation; they exclude uncertainty in supplied parameters and constants.
+The conservative pressure allowance is larger than both the retained refinement changes and the returned local estimates.
+Finite positive densities, row residuals, reaction quotients, charge and inventory checks qualify these declared numerical roots.
+They do not prove global phase stability, uniqueness or completeness of the chemistry.
+
+The [failure table](results/failures.json) records numerical failures separately from [pressure discrepancy](results/pressures.csv).
+The full [state table](results/states.json), [reference-refinement calculations](results/reference-refinement.json), and [executable identity](results/executable.json) retain the operands and diagnostics.
+
+## Why the calculated bubble pressure is too high
+
+The positive pressure error lies in the neutral binary mixture's departure from
+its pure-component pressure endpoints.
+Both pure-component pressures have negative central errors, so their endpoint
+contributions partly mask the positive mixture departure.
+This excludes an explanation through excessive pure-component endpoint pressures
+with the mixture departure held fixed.
+Pure-component dispersion and association parameters also affect mixture
+nonideality; their contribution through that path remains unresolved.
+Dissociation reduces pressure slightly and cannot explain the excess.
+
+### Exact decomposition about the pure endpoints
+
+Let $x$ denote the analytical liquid water mole fraction, $P_n$ the neutral
+bubble pressure and $P_r$ the reacting bubble pressure.
+Let $p_w^*$ and $p_a^*$ denote pure water and pure acetic-acid saturation
+pressures; superscripts $m$ and $e$ denote model and measured values.
+Define departure from the straight line between the pure endpoints by
+
+$$
+C^m(x)=P_n(x)-[x p_w^{*,m}+(1-x)p_a^{*,m}],
+\qquad
+C^e(x)=P^e(x)-[x p_w^{*,e}+(1-x)p_a^{*,e}].
+$$
+
+Adding and subtracting those endpoint lines gives the exact identity
+
+$$
+P_r-P^e=
+\underbrace{x(p_w^{*,m}-p_w^{*,e})}_{\text{water endpoint}}+
+\underbrace{(1-x)(p_a^{*,m}-p_a^{*,e})}_{\text{acid endpoint}}+
+\underbrace{C^m-C^e}_{\text{mixing}}+
+\underbrace{P_r-P_n}_{\text{dissociation}}.
+$$
+
+“Mixing” here means the difference between departures from the two endpoint
+straight lines.
+It includes both phases' nonideality and their equilibrium coupling, without
+assuming an ideal vapour or Raoult's law.
+It does not uniquely separate molecular interactions or measure a liquid excess
+property.
+The weights use analytical liquid composition, not the gas-composition join key.
+
+{{< include results/pressure-diagnosis/decomposition-table.md >}}
+
+The [complete decomposition](results/pressure-diagnosis/pressure-decomposition.csv)
+retains all measured mixed compositions.
+The error changes sign on the acid-rich side; it is not a uniform pressure multiplier.
+Replacing only the model endpoints with measured values while holding the model
+departure fixed increases the positive error, as the last column below shows.
+That column is an arithmetic diagnostic, not a new equilibrium calculation.
+
+{{< include results/pressure-diagnosis/departure-table.md >}}
+
+### Pure-component comparison
+
+The pure controls retain the mixture's pure coefficients, water diameter law
+and association schemes and solve liquid–vapour coexistence natively.
+The measured endpoints come from Bernatová–Aim–Wichterle's retained
+[ThermoML record](inputs/bernatova-2006.json), pressure group 13 at the pure gas-water endpoints.
+
+{{< include results/pressure-diagnosis/endpoints-table.md >}}
+
+The uncertainties are compiler-evaluated combined expanded uncertainties at
+95% confidence.
+Water is inside its reported interval; its negative central error alone does
+not establish a statistically resolved water-pressure bias.
+Acid is below the central measurement and its stated interval.
+Both central endpoint errors oppose the positive mixture error.
+
+{{< include results/pressure-diagnosis/source-comparison.md >}}
+
+The acid coefficients trace to [Gross–Sadowski (2002), Table 1](https://doi.org/10.1021/ie010954d),
+which fits pure saturation pressure and liquid density together.
+Its mean pressure deviation is not a pointwise uncertainty.
+The [source notes](inputs/source-notes.md#diagnostic-sources-and-locators)
+retain the coefficient and combining-rule locators.
+The source-rounding control changes pressure only slightly.
+Substituting the inconsistent acid dispersion energy printed in Ascani's later
+table instead severely underpredicts pure-acid pressure; that substitution
+is not a defensible correction.
+
+### Binary interaction and association evidence
+
+{{< include results/pressure-diagnosis/fit-conditions.md >}}
+
+The [retained supplement text](inputs/source/pabsch-2022-si.txt),
+[original supplement](inputs/source/pabsch-2022-si.docx) and
+[Figure S1 extract](inputs/source/pabsch-figure-S1.png) preserve those locators.
+The printed interval and plotted range remain distinct: the supplement does
+not inventory individual fitted observations or establish that every fitted
+row had the plotted pressure.
+The original Ito–Yoshida observations and Pabsch's complete parameter and
+association declaration were not recovered.
+The binary fit cannot be inferred from the esterification experiment's temperature.
+
+The following neutral bubble-pressure probes change one declaration at a time.
+Their changes are relative to the unmodified neutral bubble pressure.
+They are parameter sensitivities, without selecting a corrected parameter.
+
+{{< include results/pressure-diagnosis/sensitivities-table.md >}}
+
+Stronger unlike dispersion attraction reduces the calculated pressures by
+hundreds of pascals.
+That response establishes direction and scale, without identifying an erroneous
+coefficient, a temperature law or a physical cause.
+An effective dispersion interaction may compensate for limitations in association.
+The printed square versus Gross–Sadowski's cube in the association volume size
+factor accounts for only a small fraction of the discrepancy.
+Even removing the size factor does not eliminate it.
+
+Both water and acid use the classical 2B scheme: one donor and one acceptor,
+with self association and both unlike donor–acceptor orientations.
+The [association mass-action and Helmholtz equations](../../engine/docs/equations.md)
+are evaluated at each phase's own density and composition.
+Ordinary vapour association is present:
+
+{{< include results/pressure-diagnosis/vapour-table.md >}}
+
+Direct controls remove specified interactions at the same returned vapour
+density and composition.
+The self-removal control first writes the original cross strengths explicitly,
+so removing self association does not also alter cross association.
+
+{{< include results/pressure-diagnosis/same-state-table.md >}}
+
+These direct state-pressure changes are not re-equilibrated bubble-pressure
+changes or bounds on a different association theory.
+The classical scheme contains no separate doubly bonded cyclic-dimer
+contribution, dimer species or dimer reaction.
+Unbonded-site fractions are not measured monomer or cyclic-dimer fractions.
+[Janeček–Paricaud (2013), primary abstract](https://pubmed.ncbi.nlm.nih.gov/23806104/)
+supports competition between cyclic dimers and cross association in acid mixtures
+with water and alcohols, with improvements particularly in dew curves.
+Only the abstract was inspected; its full equations and parameters were not tested.
+It does not determine a correction's sign or magnitude for these bubble pressures.
+
+### Ranked hypotheses and evidence needed for correction
+
+The ranking gives investigation priority, not a measured causal ordering.
+
+| Rank | Hypothesis | Evidence and limit |
+|---:|---|---|
+| 1 | Effective water–acid interaction transfers poorly to this colder isotherm under the adopted association model | The recovered binary fit is warmer; interaction sensitivities have the required sign and substantial magnitude. The domain mismatch is established, but an erroneous coefficient or a unique temperature-transfer mechanism is not. |
+| 2 | The 2B association representation inadequately describes cyclic acid dimers and competing cross association | Ordinary vapour association exists, while a separate cyclic-dimer contribution is absent. Primary literature supports the hypothesis. The current data do not separate association error from dispersion compensation. The square/cube discrepancy is too small to explain the full excess. |
+| 3 | Pure-component parameters affect the mixture error | Their negative endpoint errors partly mask the excess. Their influence through mixture nonideality remains unresolved. The rounding and inconsistent-energy controls exclude those specific substitutions only. |
+| Excluded as stated | Ordinary vapour association was omitted | Nonzero association energies, bonded sites and same-state removal controls contradict this claim. |
+| Excluded for the retained extraction | Component, phase-coordinate or pressure-unit transcription error | Every joined mixed row and both endpoints reproduce the raw ThermoML extraction. The original experiment and compiler uncertainty assessment remain unverified. |
+
+A source-backed correction requires Pabsch's complete pure-parameter family,
+water diameter law, association convention, vapour treatment and actual
+Ito–Yoshida fitting rows and pressures.
+The published coefficient must first reproduce those calibration observations.
+Figure S1 alone cannot supply the complete fit inventory.
+Independent acid vapour density, compressibility, second-virial or dimerization
+data, together with mixture bubble and dew data over temperature, would help
+separate vapour-association error from interaction transfer.
+Pure saturation pressure alone cannot identify association when its parameters
+were fitted to that property.
+
+If the cause is a parameter-declaration mismatch, adopt the complete source
+family and its combining rules together, then recheck pure endpoints, the
+original binary calibration and this isotherm.
+A different association theory or temperature-dependent interaction requires
+cited equations, parameters, the source's fitting procedure and a numerical
+falsifier before implementation.
+An additional dimer reaction must be reconciled with the existing association
+energy to avoid double counting.
+No sensitivity value is proposed as a correction.
+
+### Numerical verification and interpretation limits
+
+{{< include results/pressure-diagnosis/verification.md >}}
+
+The [probe results](results/pressure-diagnosis/probe-results.json) retain native
+states and independent pressure and fugacity closures.
+The [measurement check](results/pressure-diagnosis/measurement-check.json)
+retains the raw group join, endpoints and uncertainties; pressure and pressure
+uncertainty are converted together from kilopascals to pascals.
+The [run identity](results/pressure-diagnosis/run-identity.json) records the
+freshly built Engine source, loaded binaries and input hashes.
+The [original executable identity](results/pressure-diagnosis/original-executable.json)
+identifies the earlier frozen-wheel calculation.
+The [pure and neutral controls](results/pressure-diagnosis/pure-neutral-controls.json)
+provide a separate replay with the current installed Engine.
+
+This is numerical reproduction and a conditional comparison with physical
+measurements, without physical validation of a molecular explanation.
+The decomposition uses central measured values and is deterministic bookkeeping,
+not an uncertainty-complete statistical attribution.
+Parameter covariance, model-form error, temperature uncertainty, experimental
+covariance, the original fit implementation and full measurement treatment
+remain unknown.
+No unique microscopic cause or numerical implementation defect is established.
+
+## Meaning and remaining limits
+
+The retained evidence is **solution verification plus a conditional physical pressure comparison**.
+All selected pressures are overpredicted, including after the documented composition-interval calculation.
+The discrepancy is much larger than the dissociation signal and the measured pressure uncertainty.
+It does not identify an Engine defect or validate speciation.
+Calibration membership remains unresolved, source access limits remain explicit, and no physical-accuracy claim extends beyond this temperature and the selected states.

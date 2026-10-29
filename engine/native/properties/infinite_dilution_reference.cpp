@@ -169,8 +169,6 @@ ResidualEnergyAction reference_partial_from_state(const HelmholtzModel& model, d
     return result;
 }
 
-namespace {
-
 struct NeutralReferenceTrace final {
     double pressure = 0.0;
     std::size_t solvent_index = 0;
@@ -181,8 +179,61 @@ struct NeutralReferenceTrace final {
     bool parameter_jets = false;
 };
 
+void reference_errors(const HelmholtzModel& model, double temperature, const std::vector<double>& nu,
+    NeutralReferenceReactionDiagnostic& diagnostic) {
+    try {
+        if (!diagnostic.trace) throw std::runtime_error("reference state unavailable");
+        const auto& trace = *diagnostic.trace;
+        diagnostic.numerical_error = {0.0, 0.0};
+        std::array<long double, 2> replayed_sum{};
+        const auto accumulate = [&](const State& state, const std::vector<double>& composition,
+            const std::vector<double>& insertion, bool dilute) {
+            ReferenceTaylorError constant_error, error;
+            PressureActionDirection direction; direction.temperature = temperature;
+            const auto constant = model.reference_taylor(temperature, 1 / state.molar_density, composition, insertion, {}, 0, dilute, &constant_error);
+            const auto value = model.reference_taylor(temperature, 1 / state.molar_density, composition, insertion, direction, 1, dilute, &error);
+            if (constant.status != PropertyActionStatus::Available || value.status != PropertyActionStatus::Available)
+                throw std::runtime_error("reference error column unavailable");
+            const auto cp = reference_partial_from_state(model, temperature, composition, insertion, 0, 1, {}, state, dilute);
+            const auto ctp = reference_partial_from_state(model, temperature, composition, insertion, 1, 1, {}, state, dilute);
+            if (!cp.action || !ctp.action) throw std::runtime_error("reference pressure sensitivity unavailable");
+            double b0 = std::abs(error.pressure[0] - trace.pressure) + error.pressure_floor[0]
+                + std::numeric_limits<double>::epsilon() * std::abs(trace.pressure);
+            if (state.density_convergence && state.density_convergence->floor)
+                b0 += *state.density_convergence->floor * GAS_CONSTANT_J_PER_MOL_K * temperature * state.molar_density;
+            const double b1 = std::abs(error.pressure[1]) + error.pressure_floor[1];
+            diagnostic.numerical_error[0] += constant_error.fixed[0] + std::abs(*cp.action) * b0;
+            diagnostic.numerical_error[1] += (error.fixed[1] + std::abs(*cp.action) * b1) / std::abs(error.temperature_coefficient)
+                + std::abs(*ctp.action) * b0;
+            replayed_sum[0] += constant.contraction[0];
+            replayed_sum[1] += static_cast<long double>(value.contraction[1]) / temperature;
+        };
+        auto dilute = nu;
+        for (std::size_t i = 0; i < trace.pure_state.size(); ++i) if (trace.pure_state[i]) dilute[i] = 0;
+        if (std::any_of(dilute.begin(), dilute.end(), [](double v) { return v != 0; }))
+            accumulate(trace.state, trace.composition, dilute, true);
+        for (std::size_t i = 0; i < trace.pure_state.size(); ++i) if (trace.pure_state[i] && nu[i] != 0) {
+            std::vector<double> composition(nu.size(), 0), insertion(nu.size(), 0);
+            composition[i] = 1; insertion[i] = nu[i];
+            accumulate(*trace.pure_state[i], composition, insertion, false);
+        }
+        if (!diagnostic.terminal_contraction || !diagnostic.terminal_contraction_temperature_derivative)
+            throw std::runtime_error("reference consumed center unavailable");
+        diagnostic.numerical_error[0] += std::abs(static_cast<long double>(*diagnostic.terminal_contraction) - replayed_sum[0]);
+        diagnostic.numerical_error[1] += std::abs(static_cast<long double>(*diagnostic.terminal_contraction_temperature_derivative) - replayed_sum[1]);
+        if (diagnostic.observed_terminal_change) diagnostic.numerical_error[0] += std::abs(*diagnostic.observed_terminal_change);
+        if (diagnostic.observed_temperature_derivative_change) diagnostic.numerical_error[1] += std::abs(*diagnostic.observed_temperature_derivative_change);
+        for (double e : diagnostic.numerical_error) if (!std::isfinite(e) || e < 0) throw std::runtime_error("nonfinite reference error");
+        diagnostic.numerical_error_cause.clear();
+    } catch (const std::exception& error) {
+        diagnostic.numerical_error = {NAN, NAN}; diagnostic.numerical_error_cause = error.what();
+    }
+}
+
+namespace {
+
 struct NeutralReferenceTraceResult final {
-    std::optional<NeutralReferenceTrace> trace;
+    std::shared_ptr<const NeutralReferenceTrace> trace;
     NeutralReferenceStatus status = NeutralReferenceStatus::Nonfinite;
     std::string message;
 };
@@ -282,7 +333,7 @@ NeutralReferenceTraceResult build_neutral_reference_trace(
                 }
             }
         }
-        result.trace = std::move(trace);
+        result.trace = std::make_shared<const NeutralReferenceTrace>(std::move(trace));
         result.status = NeutralReferenceStatus::Available;
         return result;
     } catch (const std::invalid_argument& error) {
@@ -420,7 +471,7 @@ std::vector<double> formula_composition(
     const Parameters& parameters,
     const std::array<std::size_t, 2>& ion_indices,
     const std::array<int, 2>& stoichiometry,
-    double molality
+    double molality, const std::optional<std::vector<double>>& finite_solute_molalities, double* declared_solute_ratio
 ) {
     // EqID: formula_unit_composition
     const auto& molar_masses = parameters.molar_mass_kg_per_mol;
@@ -461,6 +512,7 @@ std::vector<double> formula_composition(
         || std::abs(solvent_charge) > policy::COMPOSITION_SUM_TOLERANCE.value) {
         throw std::invalid_argument("invalid reference solvent composition or molar mass");
     }
+    if (declared_solute_ratio) *declared_solute_ratio = solvent_mass * molality * (static_cast<double>(stoichiometry[0]) + stoichiometry[1]);
     const double solvent_moles = 1.0 / solvent_mass;
     const double total_moles = solvent_moles
         + molality * (static_cast<double>(stoichiometry[0]) + stoichiometry[1]);
@@ -470,6 +522,34 @@ std::vector<double> formula_composition(
     }
     composition[ion_indices[0]] = stoichiometry[0] * molality / total_moles;
     composition[ion_indices[1]] = stoichiometry[1] * molality / total_moles;
+    if (finite_solute_molalities) {
+        const auto& m = *finite_solute_molalities;
+        if (m.size() != composition.size()
+            || std::count(solvent_fractions.begin(), solvent_fractions.end(), 1.0) != 1)
+            throw std::invalid_argument("full solute molalities require one pure solvent and one entry per component");
+        const auto solvent = std::size_t(std::max_element(solvent_fractions.begin(), solvent_fractions.end()) - solvent_fractions.begin());
+        if (parameters.charge_number[solvent] != 0 || m[solvent] != 0.0)
+            throw std::invalid_argument("full solute molalities require an uncharged solvent with zero solute molality");
+        double total = 0.0, charge = 0.0;
+        for (std::size_t i = 0; i < m.size(); ++i) {
+            if (!std::isfinite(m[i]) || m[i] < 0.0)
+                throw std::invalid_argument("full solute molalities must be finite and nonnegative");
+            total += m[i];
+            charge += m[i] * parameters.charge_number[i];
+        }
+        const double mass = parameters.molar_mass_kg_per_mol[solvent];
+        if (declared_solute_ratio) *declared_solute_ratio = mass * total;
+        const double denominator = 1.0 + mass * total;
+        if (!std::isfinite(denominator) || !std::isfinite(charge)
+            || m[ion_indices[0]] <= 0.0 || m[ion_indices[1]] <= 0.0
+            || std::abs(mass * charge / denominator) > policy::COMPOSITION_SUM_TOLERANCE.value
+            || std::abs(mass * (m[ion_indices[0]] - stoichiometry[0] * molality) / denominator)
+                > policy::COMPOSITION_SUM_TOLERANCE.value)
+            throw std::invalid_argument("full solute molalities must be neutral and match the selected formula cation molality");
+        composition[solvent] = 1.0 / denominator;
+        for (std::size_t i = 0; i < m.size(); ++i)
+            if (i != solvent) composition[i] = mass * m[i] / denominator;
+    }
     return composition;
 }
 
@@ -594,7 +674,7 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
             cache.push_back(std::move(item));
             found = std::prev(cache.end());
         }
-        if (!found->result.trace.has_value()) {
+        if (!found->result.trace) {
             diagnostic.reference_pressure_pa = pressure;
             diagnostic.status = found->result.status;
             diagnostic.message = found->result.message;
@@ -608,6 +688,7 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
         diagnostic = neutral_reference_from_trace(
             model, temperature, stoichiometries[row], reference,
             need_jets, *found->result.trace);
+        diagnostic.trace = found->result.trace;
         diagnostic.solvent_density = found->result.trace->state.molar_density;
         // Additional consumed columns at the same solvent state.
         const auto& trace = *found->result.trace;
@@ -941,45 +1022,18 @@ ElectrolyteActivity electrolyte_activity(
     if (!reference.ion_indices) throw std::invalid_argument("IonicReferenceUnavailable: solvent-only reference");
     if (!(reference.solver_options == model.solver_options()))
         throw std::invalid_argument("electrolyte reference solver options do not match the model");
+    double solute_ratio = 0.0;
     auto composition = formula_composition(
         solvent_fractions,
         model.parameters(),
         ion_indices,
         stoichiometry,
-        molality
+        molality, finite_solute_molalities, &solute_ratio
     );
-    std::optional<double> solute_ratio;
     if (finite_solute_molalities) {
-        const auto& m = *finite_solute_molalities;
-        const auto& parameters = model.parameters();
-        if (m.size() != composition.size()
-            || std::count(solvent_fractions.begin(), solvent_fractions.end(), 1.0) != 1)
-            throw std::invalid_argument("full solute molalities require one pure solvent and one entry per component");
         if (reference.model != &model || reference.temperature != temperature || reference.pressure != pressure
             || reference.solvent_fractions != solvent_fractions)
             throw std::invalid_argument("electrolyte reference model, temperature, pressure or solvent mismatch");
-        const auto solvent = std::size_t(std::max_element(solvent_fractions.begin(), solvent_fractions.end()) - solvent_fractions.begin());
-        if (parameters.charge_number[solvent] != 0 || m[solvent] != 0.0)
-            throw std::invalid_argument("full solute molalities require an uncharged solvent with zero solute molality");
-        double total = 0.0, charge = 0.0;
-        for (std::size_t i = 0; i < m.size(); ++i) {
-            if (!std::isfinite(m[i]) || m[i] < 0.0)
-                throw std::invalid_argument("full solute molalities must be finite and nonnegative");
-            total += m[i];
-            charge += m[i] * parameters.charge_number[i];
-        }
-        const double mass = parameters.molar_mass_kg_per_mol[solvent];
-        solute_ratio = mass * total;
-        const double denominator = 1.0 + *solute_ratio;
-        if (!std::isfinite(denominator) || !std::isfinite(charge)
-            || m[ion_indices[0]] <= 0.0 || m[ion_indices[1]] <= 0.0
-            || std::abs(mass * charge / denominator) > policy::COMPOSITION_SUM_TOLERANCE.value
-            || std::abs(mass * (m[ion_indices[0]] - stoichiometry[0] * molality) / denominator)
-                > policy::COMPOSITION_SUM_TOLERANCE.value)
-            throw std::invalid_argument("full solute molalities must be neutral and match the selected formula cation molality");
-        composition[solvent] = 1.0 / denominator;
-        for (std::size_t i = 0; i < m.size(); ++i)
-            if (i != solvent) composition[i] = mass * m[i] / denominator;
     }
     ElectrolyteActivity result;
     result.solver_options = model.solver_options();
@@ -995,14 +1049,9 @@ ElectrolyteActivity electrolyte_activity(
     const double mean_log_x = (
         stoichiometry[0] * first + stoichiometry[1] * second
     ) / coefficient_sum;
-    double solvent_mass = 0.0;
-    for (std::size_t component = 0; component < solvent_fractions.size(); ++component) {
-        solvent_mass += solvent_fractions[component]
-            * model.parameters().molar_mass_kg_per_mol[component];
-    }
     // EqID: molality_activity_conversion
     const double mean_log_m = activity_log(mean_log_x,
-        std::log(1.0 + solute_ratio.value_or(solvent_mass * molality * coefficient_sum)));
+        std::log(1.0 + solute_ratio));
     result.single_ion = {std::exp(first), std::exp(second)};
     result.mean_ionic_mole_fraction_scale = std::exp(mean_log_x);
     result.mean_ionic_log_molality_scale = mean_log_m;
@@ -1011,7 +1060,7 @@ ElectrolyteActivity electrolyte_activity(
         result.osmotic_coefficient = core::Stop::converged_to_floor;
     else if (reference.pure_solvent_state) {
         auto water = solvent_activity(model, temperature, pressure, composition, reference, std::move(result.state),
-            solute_ratio.value_or(coefficient_sum * molality * solvent_mass));
+            solute_ratio);
         result.state = std::move(water.state);
         if (!water.solvent_activity) throw std::runtime_error(water.cause);
         result.osmotic_coefficient = water.osmotic_coefficient;

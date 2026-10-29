@@ -1,0 +1,652 @@
+pubs.acs.org/jced                                                                                                                              Article
+
+
+
+Gas Chromatographic Estimation of Vapor Pressures and Octanol−
+Air Partition Coeﬃcients of Semivolatile Organic Compounds of
+Emerging Concern
+Joseph O. Okeme, Timothy F. M. Rodgers, J. Mark Parnis, Miriam L. Diamond, Terry F. Bidleman,
+and Liisa M. Jantunen*
+      Cite This: J. Chem. Eng. Data 2020, 65, 2467−2475                             Read Online
+
+
+
+
+                                                                                                                                                              Downloaded from pubs.​acs.​org/​jceaax/​article-pdf/​65/​5/​2467/​10510910/​je9b01126.​pdf by BRIGHAM YOUNG UNIV user on 29 October 2026
+ACCESS                        Metrics & More                            Article Recommendations             *
+                                                                                                            sı Supporting Information
+
+
+ABSTRACT: The subcooled liquid-phase vapor pressures (p298         L /Pa) and
+octanol−air partition coeﬃcients (K298     OA ) at T/K = 298, enthalpies of
+vaporization (ΔVAPH/kJ·mol−1), and internal energies of phase transfer
+from octanol to air (ΔOAU/kJ·mol−1) were estimated for synthetic musks,
+novel brominated ﬂame retardants (N-BFR), organophosphate esters, and
+ultraviolet ﬁlters using the capillary gas chromatographic retention time (GC-
+RT) method. These compounds, which spanned approximately six and three
+orders of magnitude for p298                 298
+                             L /Pa and KOA , respectively, were co-chromato-
+graphed with one of three reference compounds to give initial estimates of
+properties at T/K = 298. The initial GC-RT property estimates were
+subsequently calibrated using 18 compounds that spanned 6 log units for p298  L /Pa and 13 compounds covering 4 log units for KOA .
+                                                                                                                                   298
+
+The calibrated log10 p298L  /Pa values   estimated here ranged from   0.14 ±  0.19  to −9.19   ±  0.29 for cyclopentadecanone  to syn-
+dechlorane plus (syn-DDC-CO), respectively, while the range of log10 K298         OA values was 6.59 ± 0.26 to 11.40 ± 0.23 for
+cyclopentadecanone to 2,2′,4,4′,5-pentabromodiphenyl ether (BDE-99), respectively. The calibrated GC-RT-derived values were
+highly correlated with, and were within an average of 0.70 log units of, the literature data for compounds with well-established p298
+                                                                                                                                  L /
+Pa and K298
+          OA measured or derived using non-GC-RT methods. Nonpolar compounds were used in this study to estimate the target
+polar compound data, which may introduce systematic errors. However, the comparison of our GC-RT results against the literature
+non-GC-RT values shows that the GC-RT methods performed similarly well for estimating both polar and nonpolar target
+compounds studied in this work.
+
+
+1. INTRODUCTION                                                                capture compounds in both gas and particle phases5 and thus
+A subset of semivolatile organic compounds (SVOCs) denoted                     accurately estimate atmospheric loadings.6
+as persistent organic pollutants (POPs) are of concern because                    Obtaining reliable measurements of physical−chemical
+they are persistent (P), bio-accumulative (B), and/or toxic (T)                properties, especially for SVOCs, are labor intensive; for
+and can undergo long-range transport (LRT) through air and                     example, gas eﬀusion and gas saturation for vapor pressures of
+water. Management of POPs and other chemicals of concern                       both liquid- and solid compounds and the generator column
+involves screening for PBT and LRT potential (LRTP) using                      method for KOA.2,3,7 These traditional methods require
+tools such as QSARs (quantitative structure−activity relation-                 enormous care to achieve highly accurate and precise data.
+ships) and multimedia fate and transport models (e.g. the                      Consequently, disagreement is common amongst measure-
+Organisation for Economic Co-operation and Development                         ments of physical−chemical properties of some SVOCs
+(OECD) POV and LRTP Screening Tool, OECD).1 QSARs                              reported by diﬀerent laboratories.2,8
+and other models used for chemical screening rely on                              This paper presents experimental-based values of subcooled
+physicochemical properties of compounds, including their                       liquid-phase vapor pressures (pL298/Pa) and dimensionless
+subcooled liquid vapor pressure (pL/Pa) and the octanol−air                    octanol−air partition coeﬃcients (KOA  298
+                                                                                                                          ) at T/K = 298;
+partition coeﬃcient (KOA). Other applications of the physical−
+chemical property data include estimating partitioning and fate
+of compounds between the gas and particle phases in                            Received: December 2, 2019
+multimedia environments,2−4 which, in turn, are needed for                     Accepted: March 16, 2020
+exposure and risk assessments. Knowledge of these properties                   Published: March 30, 2020
+is also needed for designing air measurement campaigns, where
+information on gas-particle partitioning is crucial in determin-
+ing active and/or passive sampling methods that can eﬀectively
+
+                                     © 2020 American Chemical Society                                           https://dx.doi.org/10.1021/acs.jced.9b01126
+                                                                        2467                                       J. Chem. Eng. Data 2020, 65, 2467−2475
+Journal of Chemical & Engineering Data                                                            pubs.acs.org/jced                                            Article
+
+Table 1. Names, CAS, Purities, Suppliers, Formulas, and Molar Masses of Target Compounds
+                                                                                                                 purity                                            molar
+                           compound names                                   common names              CAS         (%)         supplier            formula          mass
+                                                                                   Musks
+ cyclopentadecanone                                                        cyclopentadecanone      502-72-7      98       Sigma-Aldrich        C15H28O             224.4
+ 1-tert-butyl-2-methoxy-4-methyl-3,5-dinitrobenzene                        musk ambrette           83-66-9       >98      Sigma-Aldrich        C12H16N2O5          268.3
+ oxacycloheptadecan-2-one                                                  16-hexadecanolide       109-29-5      97       Sigma-Aldrich        C16H30O2            254.4
+ 1,4-dioxacyclohexadecane-5,16-dione                                       muskonate               54982-83-1    >99      Sigma-Aldrich        C14H24O5            256.3
+ 1-(1,1,2,3,3,6-hexamethyl-2H-inden-5-yl)ethanone                          phantolide              15323-35-0    98       Sigma-Aldrich        C17H24O             244.4
+ 1,6-dioxacycloheptadecan-7-one                                            cervolide               6707-60-4              Sigma-Aldrich        C15H28O3            256.4
+ 1-(1,1,2,6-tetramethyl-3-propan-2-yl-2,3-dihydroinden-5-yl)ethanone       traseolide              68140-48-7             Sigma-Aldrich        C18H26O             258.4
+ 1,1,3,3,5-pentamethyl-4,6-dinitro-2H-indene                               moskene                 116-66-5               Sigma-Aldrich        C14H18N2O4          278.3
+ 4,6,6,7,8,8-hexamethyl-1,3,4,7-tetrahydrocyclopenta[g]isochromene         galaxolide 1            1222-05-5     >85      Sigma-Aldrich        C18H26O             258.4
+ 1,2,3-trimethyl-5-(2-methyl-2-propanyl)-4,6-dinitrobenzene                musk tibetine           145-39-1               Sigma-Aldrich        C13H18N2O4          266.3
+                                                               Novel Brominated Flame Retardants (N-BFRs)
+
+
+
+
+                                                                                                                                                                              Downloaded from pubs.​acs.​org/​jceaax/​article-pdf/​65/​5/​2467/​10510910/​je9b01126.​pdf by BRIGHAM YOUNG UNIV user on 29 October 2026
+ rac-(1R,2R,5R,6R)-1,2,5,6-tetrabromocyclooctane                           β-TBCO                  3194-57-8     >98      Wellington Labs      C6H2Br4O            409.7
+ 1,3,5-tribromo-2-prop-2-enoxybenzene                                      TBP-AE                  3278-89-5     >98      Wellington Labs      C9H7Br3O            370.9
+ 1,2,3,4,5-pentabromobenzene                                               PBBZ                    608-90-2      >98      Wellington Labs      C6HBr5              472.6
+ 1,2,3,4,5-pentabromo-6-ethylbenzene                                       PBEB                    85-22-3       >98      Wellington Labs      C8H5Br5             500.6
+ 1,3,5-tribromo-2-(2,3-dibromopropoxy)benzene                              DPTE                    35109-60-5    >98      Wellington Labs      C9H7Br5O            530.7
+ beta 1,2,5,6,9,10-hexabromocyclododecane                                  β-HBCDD                 134237-51-7   >98      Wellington Labs      C12H18Br6           641.7
+ anti-Dechlorane plus                                                      anti-DDC-CO             13560-92-4    >98      Wellington Labs      C18H12Cl12          653.7
+ syn-Dechlorane plus                                                       syn-DDC-CO              13560-89-9    >98      Wellington Labs      C18H12Cl12          653.7
+                                                                     Organochlorine Pesticides (OCPs)
+ 1,8,9,10,11,11-hexachlorotetracyclo[6.2.1.13,6.02,7]dodec-9-ene-4,5-diol  aldrin                  309-00-2      98       Accustandard         C12H8Cl6            398.9
+ 1-chloro-4-[2,2-dichloro-1-(4-chlorophenyl)ethenyl]benzene                p,p′-DDE                72-55-9       96       EPA Pesticide        C14H8Cl4            318.0
+                                                                                                                           Respository
+ 1-chloro-2-[2,2-dichloro-1-(4-chlorophenyl)ethyl]benzene                o,p′-DDD                  53-19-0       95       EPA Pesticide        C14H10Cl4           320.0
+                                                                                                                           Respository
+ 1-chloro-4-[2,2-dichloro-1-(4-chlorophenyl)ethyl]benzene                p,p′-DDD                  72-54-8       96       EPA Pesticide        C14H10Cl4           320.0
+                                                                                                                           Respository
+ 1-chloro-2-[2,2,2-trichloro-1-(4-chlorophenyl)ethyl]benzene             o,p′-DDT                  789-02-6      97       EPA Pesticide        C14H9Cl5            354.5
+                                                                                                                           Respository
+ trans-Nonachlor                                                           TN                    39765-80-5      97.8     Accustandard         C10H5Cl9            444.2
+                                                                    Organophosphate Esters (OPEs)
+ tris(2-chloroethyl)phosphate                                              TCEP                  115-96-8        100      Accustandard         C6H12Cl3O4P         285.5
+ tris(chloroisopropyl)phosphate                                            TCiPP                 13674-84-5      86       Accustandard         C9H18Cl3O4P         327.6
+ tris(1,3-dichloroisopropyl)phosphate                                      TDCiPP                13674-87-8      97.9     Accustandard         C9H15Cl6O4P         430.9
+ triphenyl phosphate                                                       TPhP                  115-86-6        97.2     Accustandard         C18H15O4P           326.3
+ tris(2-methylphenyl)phosphate                                             ToCP                  78-30-8         99       Accustandard         C21H21O4P           368.4
+ tris(2-butoxyethyl)phosphate                                              TBOEP                 78-51-3         93.3     Accustandard         C18H39O7P           398.5
+ tris(2,3-dibromopropyl)phosphate                                          TDBPP                 126-72-7        100      Accustandard         C9H15Br6O4P         697.6
+ tris(2-ethylhexyl)phosphate                                               TEHP                  78-42-2         97       Accustandard         C24H51O4P           434.6
+ tris(3-methylphenyl)phosphate                                             TmCP                  563-04-2        99       Accustandard         C21H21O4P           368.4
+ tris(4-methylphenyl)phosphate                                             TpCP                  78-32-0         96.7     Accustandard         C21H21O4P           368.4
+ tris(2-propan-2-ylphenyl)phosphate                                        T2iPPP                64532-95-2      98       Accustandard         C27H33O4P           452.5
+ tris(4-tert-butylphenyl)phosphate                                         TTBPP                 78-33-1         98.3     Accustandard         C30H39O4P           494.6
+                                                               Polycyclic Aromatic Hydrocarbons (PAHs)
+ benzo[k]fluoranthene                                                      benzo[k]fluoranthene  207-08-09       97       Accustandard         C20H12              252.3
+ benzo[a]pyrene                                                            benzo[a]pyrene        50-32-8         99       Accustandard         C20H12              252.3
+                                                               Polybrominated Diphenyl Ethers (PBDEs)
+ 1,2-dibromo-4-(2,6-dibromophenoxy)benzene                                 BDE-71                189084-62-6     98       Cambridge            C12H6Br4O           485.8
+                                                                                                                           Isotope Labs
+ 2,4-dibromo-1-(2,4-dibromophenoxy)benzene                               BDE-47                    5436-43-1     >98      Wellington Labs      C12H6Br4O           485.8
+ 1,2-dibromo-4-(2,4-dibromophenoxy)benzene                               BDE-66                    189084-61-5   98       Cambridge            C12H6Br4O           485.8
+                                                                                                                           Isotope Labs
+ 1,2,4-tribromo-5-(2,4-dibromophenoxy)benzene                           BDE-99                     60348-60-9    >98      Wellington Labs      C12H5Br5O           564.7
+                                                                      Polychlorinated Biphenyls
+ 1-chloro-3-(3-chlorophenyl)benzene                                     PCB-11                     2050-67-1     98       Accustandard         C12H4Cl6            223.1
+ 1,3-dichloro-2-(2-chlorophenyl)benzene                                 PCB-19                     38444-73-4    98       Accustandard         C12H7Cl3            257.5
+ 1,3-dichloro-5-(2-chlorophenyl)benzene                                 PCB-34                     37680-68-5    98       Accustandard         C12H7Cl3            257.5
+ 2,4-dichloro-1-(2,4-dichlorophenyl)benzene                             PCB-47                     2437-79-8     98       Accustandard         C12H6Cl4            292.0
+ 1,3,5-trichloro-2-(3,4-dichlorophenyl)benzene                          PCB-119                    56558-17-9    98       Accustandard         C12H5Cl5            326.4
+ 1,2,3,5-tetrachloro-4-(2,3-dichlorophenyl)benzene                      PCB-131                    61798-70-7    98       Accustandard         C12H4Cl6            360.9
+ 1,2,3,5-tetrachloro-4-(2,3,6-trichlorophenyl)benzene                   PCB-176                    52663-65-7    98       Accustandard         C12H3Cl7            395.3
+ 1,2,3,4,5-pentachloro-6-(2,3-dichlorophenyl)benzene                    PCB-173                    68194-16-1    98       Accustandard         C12H3Cl7            395.3
+
+
+                                                                                2468                                            https://dx.doi.org/10.1021/acs.jced.9b01126
+                                                                                                                                   J. Chem. Eng. Data 2020, 65, 2467−2475
+Journal of Chemical & Engineering Data                                                      pubs.acs.org/jced                                           Article
+
+Table 1. continued
+                                                                                                          purity                                            molar
+                           compound names                            common names               CAS        (%)         supplier            formula          mass
+                                                                Polychlorinated Biphenyls
+ 1,2,3,4,5-pentachloro-6-(2,3,4,5,6-pentachlorophenyl)benzene     PCB-209                    2051-24-3     98      Accustandard         C12Cl10             498.6
+                                                                 Ultraviolet (UV) Filters
+ bis(2,3,4,5,6-pentadeuterophenyl)methanone                       benzophenone-D10           22583-75-1    98      CDN Isotopes         C13H10O             192.3
+ 4-methylbenzylidene camphor                                      4-MBC                      36861-47-9    >98     Sigma-Aldrich        C18H22O             254.4
+ (3,3,5-trimethylcyclohexyl) 2-hydroxybenzoate                    homosolate                 118-56-9              Fluka                C16H22O3            262.3
+ (2-hydroxy-4-methoxyphenyl)-phenylmethanone                      oxybenzone                 131-57-7      >98     Sigma-Aldrich        C14H12O3            228.2
+ 2-ethylhexyl(E)-3-(4-methoxyphenyl)prop-2-enoate                 octinoxate                 83834-59-7            Sigma-Aldrich        C18H26O3            290.4
+
+
+
+
+                                                                                                                                                                       Downloaded from pubs.​acs.​org/​jceaax/​article-pdf/​65/​5/​2467/​10510910/​je9b01126.​pdf by BRIGHAM YOUNG UNIV user on 29 October 2026
+Figure 1. Plot of log10 p298                            298
+                           L,GC/Pa vs literature log10 pL /Pa of external calibration compounds used for calibrating subcooled vapor pressure of target
+compounds at 25 °C. In order of decreasing values, α-HCH, phenanthrene, PCB-11*, PCB-19, PCB-34*, PCB-29, anthracene, PCB-45*, pyrene,
+and ﬂuoranthene were chromatographed with HCB as a reference compound, whereas p,p′-DDT was used as the reference compound for o,p′-
+DDT, PCB-105, PCB-118, PCB-153, PCB-138, benz[a]anthracene, PCB-180, and PCB-209. See Table S2 for property values of the external
+calibration compounds. The dashed and bold lines depict 1:1 correlation and regression lines, respectively. Error bars represent the 95% conﬁdence
+interval of the log10 p298
+                       L,GC/Pa values generated by Monte Carlo simulations. Error bars are included with each data point but are inconspicuous for
+highly precise replicates. *These three of 18 calibration compounds were GC-RT-derived values. They were included in the calibration to increase
+diversity of the calibration database because conventionally measured data are scarce for the p298 L range.
+
+
+enthalpies of vaporization (ΔVAPH/kJ·mol−1), and internal                       advantage of using the GC-RT method is that instrumental
+energies of phase transfer from octanol to air (ΔOAU/kJ·                        conditions, such as temperature, can be varied to study the
+mol−1), for over 50 SVOCs measured using the gas                                behavior of target compounds at a range of temperatures from
+chromatography retention time (GC-RT) method. The GC-                           which extrapolation to environmentally relevant temperatures
+RT method relies on the assumption that the chromatographic                     is possible.9
+retention time of a target compound is inversely proportional                      The GC-RT technique is a well-established method for
+                                                                                                                            −1
+and proportional to its temperature-dependent pTL /Pa and KTOA,                                   L /Pa and/or ΔVAPH/kJ·mol
+                                                                                estimating the p298                            of low-polarity
+respectively. The reference and target compounds are co-                        compounds, such as organochlorine pesticides (OCPs),3,10
+chromatographed at a series of isothermal temperatures on a                     polycyclic aromatic hydrocarbons (PAHs),3,11 polybrominated
+nonpolar column. Calculation of p298            298
+                                    L /Pa and KOA is done from                  diphenyl ethers (PBDEs),12,13 perﬂuorinated compounds,11
+the relative retention times of the target compounds to the co-                 polychlorinated naphthalenes (PCNs),11 and polychlorinated
+chromatographed standards at a range of temperatures and                        biphenyls (PCBs).2,14 GC-RT has also been applied to the
+subsequent calibration using compounds with well-established                    measured pL298/Pa of polar compounds such as organo-
+values at T/K = 298. Accuracy of the method relies on                           phosphate esters (OPEs),3,15,16 phthalate esters,3,17 phenolic
+knowledge of these physical−chemical properties for the co-                     compounds,18 and fatty acids.19 The GC-RT method has also
+                                                                                                                         20      20        20,21
+chromatographed reference compounds across the range of                         been used to estimate the K298
+                                                                                                             OA of PBDEs, PCBs, PCNs,
+experimental temperatures and at the temperature of ﬁnal                                                    11
+                                                                                perﬂuorinated compounds, polybrominated biphenyls, and  22
+
+extrapolation (T/K = 298) and for the external calibration                      OPEs.23
+compounds at T/K = 298.                                                            In this study, we used the GC-RT method to estimate p298L /
+   The GC-RT method can be relatively quick and requires                        Pa and K298 OA of over 50 compounds, consisting of selected
+small amounts of analytical standards, which is advantageous                    synthetic musks, novel brominated ﬂame retardants (N-BFRs),
+when dealing with pure compounds that are only available in                     OPEs, and ultraviolet-ﬁlters (UV-ﬁlters). These properties for
+small quantities, or that are toxic and/or hazardous to handle.                 some OPEs have been previously estimated using the GC-RT
+This method can be used to analyze impure and mixed solutes                     method15,16,23 but were estimated here to assess the
+because GC is capable of separating components. Another                         reproducibility of the method for polar compounds.
+                                                                         2469                                            https://dx.doi.org/10.1021/acs.jced.9b01126
+                                                                                                                            J. Chem. Eng. Data 2020, 65, 2467−2475
+Journal of Chemical & Engineering Data                                               pubs.acs.org/jced                                            Article
+
+
+
+
+                                                                                                                                                                 Downloaded from pubs.​acs.​org/​jceaax/​article-pdf/​65/​5/​2467/​10510910/​je9b01126.​pdf by BRIGHAM YOUNG UNIV user on 29 October 2026
+Figure 2. Plot of measured log10 K298 OA,GC vs literature log10 KOA of calibration compounds used for calibrating KOA of target compounds 25 °C. In
+                                                                 298
+
+the order of increasing literature values, α-HCH, phenanthrene, anthracene, PCB-29, ﬂuoranthene, and pyrene were chromatographed with HCB as
+a reference compound, whereas p,p′-DDT was used with PCB-118, PCB 153, PCB-105, PCB-138, benz[a]anthracene, BDE-47, and BDE-66. See
+Table S3 for property values of the external calibration compounds. The dashed and bold lines represent 1:1 correlation and regression,
+respectively. Error bars represent the 95% conﬁdence interval of the log10 K298    OA,GC values generated by Monte Carlo simulations. Error bars are
+inconspicuous for highly precise replicates.
+
+2. EXPERIMENTAL SECTION                                                       used to calculate uncalibrated or GC-derived vapor pressures
+   2.1. Measurement Methods. 2.1.1. Chemicals. Names,                         (p298                                                    298
+                                                                                 L,GC/Pa) and octanol−air partition coeﬃcients (KOA,GC) at
+
+CAS numbers, and percentage purities of standards of target,                  T/K = 298. See Supporting Information SI-1 for equations and
+reference, and calibration compounds are presented in Table 1.                further details.
+Reference compounds were hexachlorobenzene (HCB), 1,1′-                          The GC-RT method assumes ideal conditions which are
+(2,2,2-trichloroethane-1,1-diyl)bis(4-chlorobenzene) (p,p′-                   known not to hold. Speciﬁcally, the ratio of inﬁnite-dilution
+DDT), and 1,2-bis(2,4,6-tribromophenoxy)-ethane (BTBPE),                      activity coeﬃcients of target compounds to co-chromato-
+selected based on the volatility of the co-chromatographed                    graphed reference standards (γ t/γ ref) is not equal to
+target compounds. PCBs, PAHs, and OCPs with well-known                        unity.3,15,24,25 As a consequence, the enthalpy of the phase
+physicochemical properties were used as external calibration                  transfer from the GC silicone stationary phase to the gas phase
+compounds for converting initial GC-derived values to p298                    diﬀers somewhat from ΔVAPH/kJ·mol−1.17,25 To correct for
+                                                            L /Pa                                298             298
+and K298                                                                      nonideality, pL,GC      /Pa and KOA,GC     were converted into
+       OA (Figures 1 and 2) (Tables S2 and S3).
+   2.1.2. Instrumentation. Analysis was performed on a                        calibrated values of pL /Pa and K298
+                                                                                                        298
+                                                                                                                     OA using a log-log plot of
+nonpolar GC column (DB-1, 2.0 m × 0.25 mm i.d., 0.25 μm                       GC-derived and literature values of calibration compounds
+ﬁlm, J & W Scientiﬁc, USA) installed in an Agilent 6890N GC-                  with well-known p298              298
+                                                                                                     L /Pa and KOA . See SI-1 for further details
+5973 mass selective detector (MSD) system operating in the                    of the experimental procedure and discussion of calibration
+split/splitless mode (split opened after 1.5 min). Injector,                  compounds.
+transfer line, source, and quadrupole temperatures were kept at                   2.2. Uncertainty of GC Measurements. GC-RT-derived
+T/°C = (200, 250, 230, and 150), respectively. The GC oven                    values have the following three main sources of errors: (1) the
+temperatures ranged from T/°C = (60 to 100), T/°C = (70 to                    nonsystematic precision of replicate RTt/RTref measurements,
+150), and T/°C = (170 to 200) for compounds co-                               (2) the nonsystematic calculation error resulting from
+chromatographed with HCB, p,p′-DDT, and BTBPE,                                regressing log RTt/RTref against log pT/Pa or log KTOA′ of co-
+respectively, according to the volatility of the target compound.             chromatographed reference compounds (eqs S1 and S3), and
+The helium carrier gas ﬂowed at 1.3 mL min−1. The MSD                         (3) the systematic error introduced by calibrating the GC-
+operated in the electron impact mode with selective ion                       measured p298                 298
+                                                                                            L,GC/Pa and KOA,GC values using literature values of
+                                                                                298            298
+monitoring.                                                                   pL /Pa and KOA for calibration compounds. The latter can be
+   2.1.3. Procedure. Target and reference compounds were co-                  calculated as the standard prediction error as described.16
+chromatographed. Three to four replicates of isothermal                          To account for the ﬁrst and second sources of error, the
+retention times were measured for target (RTt) and reference                  precision and regression errors for all compounds were
+(RTref) compounds to determine the relative retention time                    propagated using Monte Carlo simulation to generate 10,000
+(RTt/RTref). The quantitative procedure for deriving the                      random values lying within the standard deviation of each data
+physicochemical properties has been provided by Hinckley et                   point plotted using eqs S2 and S4. The simulation was
+al.3 and Wania et al.20 Brieﬂy, log (RTt/RTref) values were                   accomplished by varying the slopes and intercepts of eqs S2
+regressed against literature log pTL /Pa and log KTOA values of co-           and S4, assuming a normal distribution about the mean with a
+chromatographed reference compounds across the range of                       standard deviation equal to the standard regression error for
+experimental temperatures of T/°C = 60 to 200 and T/°C =                      each value. For all compounds, >97% of the uncertainty
+140, respectively. The log−log regression was used to estimate                originated from the calibration error, similarly to the ﬁnding of
+the target-to-reference compound ratios of enthalpies of                      other authors.10,20 As such, the standard prediction error of the
+vaporization (ΔVAPH/kJ·mol−1) and internal energies of                        vapor pressure and KOA and standard uncertainties of the
+phase change (ΔoAU/kJ·mol−1). The ratios of enthalpies and                    enthalpies were reported here for consistency with our other
+the intercepts of the corresponding linear regressions were                   publications.10,15
+                                                                       2470                                        https://dx.doi.org/10.1021/acs.jced.9b01126
+                                                                                                                      J. Chem. Eng. Data 2020, 65, 2467−2475
+Journal of Chemical & Engineering Data                                         pubs.acs.org/jced                                            Article
+
+Table 2. Experimental T = K, Uncalibrated (log10 p298
+                                                  L,GC/Pa), and Calibrated (log10 pL /Pa) Liquid-Phase Vapor Pressures ±
+                                                                                   298
+
+Standard Prediction Uncertainties Estimated at K = 298, Average Enthalpy of Vaporization (ΔVAPH/kJ·mol−1) ± Standard
+                                                                                        OA,GC) and Calibrated (log10 KOA )
+Uncertainties Derived at the Range of Experimental Temperatures, Uncalibrated (log10 K298                             298
+
+Octanol−Air Partition Coeﬃcients ± Standard Prediction Uncertainties Estimated Here at K = 298, and Average Internal
+Energies of Phase Transfer from Octanol to Air (ΔOAU/kJ·mol−1) ± Relative Uncertainties Derived at the Range of
+Experimental Temperaturesa
+                                                                                        b                                                     c
+                        reference   experimental      log10                                         log10
+  target compound      compounds       T=K          p298
+                                                     L,GC/Pa    log10 p298
+                                                                       L /Pa     ΔVAPH/kJ·mol−1    K298
+                                                                                                     OA,GC         log10 K298
+                                                                                                                          OA         ΔOAU/kJ·mol−1
+                                                                Musks
+cyclopentadecanone     HCB           343−363         −0.11         0.14 ± 0.19    47.6 ± 5.9        6.61          6.59 ± 0.26           35.5 ± 1.2
+musk ambrette          HCB           343−373         −1.53       −1.36 ± 0.18     79.5 ± 9.9        8.04          7.95 ± 0.23           67.1 ± 2.3
+16-hexadecanolide      HCB           343−363         −0.86       −0.66 ± 0.18     64.5 ± 8.0        7.37          7.31 ± 0.24           52.3 ± 1.8
+muskonate              HCB           333−373         −1.32       −1.14 ± 0.17     77.5 ± 9.6        7.82          7.75 ± 0.23           65.2 ± 2.3
+phantolide             HCB           333−363         −1.00       −0.80 ± 0.18     70.5 ± 8.7        7.50          7.44 ± 0.24           58.2 ± 2.0
+cervolide              p,p′-DDT      373−393         −1.05       −0.86 ± 0.18     48.4 ± 1.7        7.81          7.74 ± 0.23           47.6 ± 2.4
+
+
+
+
+                                                                                                                                                           Downloaded from pubs.​acs.​org/​jceaax/​article-pdf/​65/​5/​2467/​10510910/​je9b01126.​pdf by BRIGHAM YOUNG UNIV user on 29 October 2026
+traseolide             HCB           333−363         −1.29       −1.10 ± 0.18     76.8 ± 9.5        7.79          7.72 ± 0.23           64.5 ± 2.3
+moskene                p,p′-DDT      363−383         −1.15       −0.96 ± 0.18     53.6 ± 1.9        7.91          7.83 ± 0.23           52.8 ± 2.7
+galaxolide 1           HCB           343−363         −1.42       −1.25 ± 0.18     83.9 ± 10         7.93          7.85 ± 0.23           71.5 ± 2.5
+musk tibetine          HCB           343−373         −1.90       −1.75 ± 0.17     89.6 ± 11         8.41          8.30 ± 0.23           77.2 ± 2.7
+                                           Novel Brominated Flame Retardants (N-BFRs)
+β-TBCO                 HCB           333−363         −0.95       −0.75 ± 0.18     64.6 ± 8.0        7.46          7.40 ± 0.24           52.3 ± 1.8
+TBP-AE                 HCB           343−368         −1.15       −0.96 ± 0.18     75.0 ± 9.3        6.83          6.80 ± 0.25           50.2 ± 1.8
+PBBZ                   p,p′-DDT      353−373         −1.64       −1.48 ± 0.17     61.6 ± 2.2        8.40          8.30 ± 0.23           60.8 ± 3.1
+PBEB                   p,p′-DDT      363−403         −2.65       −2.54 ± 0.17     78.3 ± 2.7        9.41          9.26 ± 0.22           77.0 ± 3.9
+DPTE                   p,p′-DDT      443−473         −3.62       −3.56 ± 0.18     65.5 ± 2.0        8.89          8.77 ± 0.22           77.2 ± 3.9
+β-HBCDDa               BTBPE         383−413         −3.81       −3.76 ± 0.18     101 ± 3.5
+anti-DDC-COa           BTBPE         443−473         −8.55       −8.76 ± 0.28     138 ± 4.3
+syn-DDC-COa            BTBPE         443−473         −8.96       −9.19 ± 0.29     145 ± 4.5
+                                                 Organochlorine Pesticides (OCPs)
+aldrin                 HCB           333−363         −1.88       −1.73 ± 0.17     85.6 ± 11         8.39          8.29 ± 0.23           73.2 ± 2.6
+TN                     p,p′-DDT      373−403         −2.33         −2.2 ± 0.17    75.8 ± 2.7        9.09          8.95 ± 0.22           74.7 ± 3.8
+p,p′-DDE               p,p′-DDT      373−403         −2.63       −2.52 ± 0.17     80.7 ± 2.8        9.39          9.24 ± 0.22           79.7 ± 4.1
+o,p′-DDD               p,p′-DDT      373−403         −2.63       −2.52 ± 0.17     80.7 ± 2.8        9.39          9.24 ± 0.22           79.6 ± 4.1
+p,p′-DDD               p,p′-DDT      373−403         −2.91       −2.81 ± 0.17     84.7 ± 3.0        9.66          9.51 ± 0.22           83.6 ± 4.3
+o,p′-DDT               p,p′-DDT      373−403                                                        9.70          9.54 ± 0.22           83.9 ± 4.3
+                                                  Organophosphate Esters (OPEs)
+TCEP                   HCB           333−363         −1.43       −1.25 ± 0.18     81.5 ± 10         7.93          7.85 ± 0.23           69.1 ± 2.4
+TCiPP                  HCB           333−363         −1.62       −1.46 ± 0.17     84.7 ± 11         8.13          8.04 ± 0.23           72.3 ± 2.5
+TDCiPP                 p,p′-DDT      383−413         −3.34       −3.27 ± 0.17     91.2 ± 3.2       10.1           9.92 ± 0.23           90.0 ± 4.6
+TPhP                   p,p′-DDT      383−413         −3.51       −3.45 ± 0.18     92.8 ± 3.2       10.3          10.09 ± 0.23           91.5 ± 4.7
+ToCP                   p,p′-DDT      383−413         −4.18       −4.15 ± 0.18     99.3 ± 3.5       10.9          10.70 ± 0.24           97.9 ± 5.0
+TBOEP                  p,p′-DDT      383−413         −4.20       −4.17 ± 0.18     103 ± 3.6        11.0          10.90 ± 0.24           101 ± 5.2
+TDBPP                  BTBPE         443−473         −4.41       −4.39 ± 0.19     77.2 ± 2.4
+TEHP                   p,p′-DDT      383−413         −4.53       −4.52 ± 0.19     106 ± 3.7        11.2          10.97 ± 0.24           104 ± 5.3
+TmCP                   p,p′-DDT      383−413         −4.54       −4.53 ± 0.19     104 ± 3.6        11.3          11.06 ± 0.24           102 ± 5.2
+TpCP                   p,p′-DDT      383−413         −4.78       −4.78 ± 0.19     106 ± 3.7        11.5          11.30 ± 0.25           104 ± 5.3
+T2iPPP                 p,p′-DDT      383−413         −5.04       −5.05 ± 0.2      109 ± 3.8        11.7          11.44 ± 0.25           106 ± 5.4
+TTBPPa                 BTBPE         443−473         −8.39       −8.59 ± 0.28     135 ± 4.2
+                                             Polycyclic Aromatic Hydrocarbons (PAHs)
+benzo[k]fluoranthene   p,p′-DDT      383−413         −4.24       −4.21 ± 0.18     100 ± 3.5        11.0          10.78 ± 0.24           98.6 ± 5.0
+benzo[a]pyrene         p,p′-DDT      383−413         −4.36       −4.34 ± 0.18     101 ± 3.5        11.1          10.90 ± 0.24           99.4 ± 5.1
+                                             Polybrominated Diphenyl Ethers (PBDEs)
+BDE-71                 p,p′-DDT      363−413         −3.80       −3.75 ± 0.18     100 ± 3.5        10.6          10.36 ± 0.23           98.4 ± 5.0
+BDE-47a                p,p′-DDT      363−403         −3.84       −3.79 ± 0.18     98.2 ± 3.4                                            96.7 ± 4.9
+BDE-66a                p,p′-DDT      363−413         −3.93       −3.89 ± 0.18     99.2 ± 3.5                                            103 ± 5.3
+BDE-99                 p,p′-DDT      383−413         −4.89       −4.90 ± 0.19     113 ± 4.1        11.7          11.40 ± 0.23           112 ± 5.9
+                                                      Polychlorinated Biphenyls
+PCB-11a                HCB           333−363                                                        7.74          7.67 ± 0.23           63.8 ± 2.2
+PCB-19a                HCB           333−363                                                        7.60          7.54 ± 0.24           61.2 ± 2.1
+PCB-34a                HCB           333−363                                                        8.08          7.99 ± 0.23           70.1 ± 2.5
+PCB-47                 HCB           333−363         −2.03       −1.88 ± 0.17     89.4 ± 11         8.53          8.42 ± 0.23           77.0 ± 2.7
+PCB-119                p,p′-DDT      373−403         −2.40       −2.28 ± 0.17     77.1 ± 2.7        9.16          9.03 ± 0.22           76.1 ± 3.9
+PCB-131                p,p′-DDT      373−403         −2.89       −2.79 ± 0.17     84.1 ± 2.9        9.65          9.49 ± 0.22           83.0 ± 4.2
+
+                                                               2471                                          https://dx.doi.org/10.1021/acs.jced.9b01126
+                                                                                                                J. Chem. Eng. Data 2020, 65, 2467−2475
+Journal of Chemical & Engineering Data                                                   pubs.acs.org/jced                                            Article
+
+Table 2. continued
+                                                                                                  b                                                     c
+                          reference        experimental       log10                                           log10
+    target compound      compounds            T=K           p298
+                                                             L,GC/Pa     log10 p298
+                                                                                L /Pa      ΔVAPH/kJ·mol−1    K298
+                                                                                                               OA,GC         log10 K298
+                                                                                                                                    OA         ΔOAU/kJ·mol−1
+                                                             Polychlorinated Biphenyls
+PCB-176                   p,p′-DDT          373−403          −3.21      −3.13 ± 0.17          88.7 ± 3.1      9.97          9.80 ± 0.22           87.5 ± 4.5
+PCB-173                   p,p′-DDT          373−403          −3.63      −3.57 ± 0.18          93.6 ± 3.3     10.4          10.20 ± 0.23           92.3 ± 4.7
+PCB-209a                  p,p′-DDT          383−413                                                          11.6          11.40 ± 0.25           104 ± 5.2
+                                                              Ultraviolet (UV) Filters
+benzophenone              HCB               323−353          −1.03       −0.84 ± 0.18         77.1 ± 9.6      7.54          7.48 ± 0.24           65.7 ± 2.3
+4-MBC                     p,p′-DDT          373−403          −1.89       −1.74 ± 0.17         65.7 ± 2.3      8.65          8.53 ± 0.22           64.9 ± 3.3
+homosolate                HCB               343−373          −2.10       −1.96 ± 0.17         95.3 ± 12       8.60          8.49 ± 0.22           82.9 ± 2.9
+oxybenzone                p,p′-DDT          383−403          −2.44       −2.32 ± 0.17         76.3 ± 2.7      9.20          9.06 ± 0.22           75.3 ± 3.8
+octinoxate                p,p′-DDT          383−403          −4.78       −4.78 ± 0.19         118 ± 4.1      11.5          11.27 ± 0.25           116 ± 5.9
+a
+ Not reported because the compound lacked a suitable reference compound or the data was used in evaluating the GC-RT method. bStandard
+uncertainties were derived by multiplying ΔVAPHt values of the target compounds by the relative uncertainties of the ΔVAPHref (kJ·mol−1) of 0.124
+
+
+
+
+                                                                                                                                                                     Downloaded from pubs.​acs.​org/​jceaax/​article-pdf/​65/​5/​2467/​10510910/​je9b01126.​pdf by BRIGHAM YOUNG UNIV user on 29 October 2026
+for HCB, 0.035 for p,p′-DDT and 0.031 for BTBPE co-chromatographed as reference compounds (S3). cStandard uncertainties were derived by
+multiplying ΔOAUt values of target compounds by the relative uncertainties of the ΔOAUref (kJ·mol−1) of 0.035 for HCB and 0.051 for p,p′-DDT co-
+chromatographed as reference compounds (S3).
+
+
+
+
+Figure 3. The relationship between the average or FAV (ﬁnal adjusted value) literature log10 p298                    298
+                                                                                                 L /Pa and log10 pL /Pa estimated here by the
+calibrated GC-RT method. The dashed and solid lines represent 1:1 correlations and regression trend lines, respectively. See Tables S4 for values of
+the compounds plotted here. Data points are musks and UV ﬁlters (red squares), PBDEs, OCPs and PCBs (blue circles), PAHs (yellow diamonds,
+two compounds), and OPEs (green triangles). Error bars represent minimum and maximum literature values of log10 p298      L /Pa for OPEs.
+
+
+   Not accounted for are the systematic errors in using                       3. RESULTS AND DISCUSSION
+nonpolar compounds in the initial estimation of p298
+                                                  L,GC/Pa and                 Regression equations of the log-log plots p298             298
+                                                                                                                          L,GC/Pa and KOA,GC
+K298
+  OA,GC, subsequent calibration (Figures 1 and 2) to derive                                                  298           298
+                                                                              versus literature values of pL /Pa and KOA for calibration
+p298           298
+ L /Pa and KOA , and in selecting physicochemical properties                  compounds (Figures 1 and 2) were used for obtaining
+for these reference/calibration compounds. A recent review of                 calibrated values of p298          298
+                                                                                                    L /Pa and KOA for the target compounds
+the GC-RT method indicates that errors from these sources                     in this study (Table 2 and Table S7). The p298
+                                                                                                                          L /Pa range for the
+can be orders of magnitude.25 Increased accuracy for                          18 calibration compounds covered 6 log units, whereas the
+compounds of diﬀering polarity has been obtained by selecting                 range for the 13 calibration compounds covered 4 log units for
+reference/calibration compounds of the same chemical class as                 K298
+                                                                                OA . The latter was constrained by a shortage of calibration
+those tested; for example, phenols,18 phthalates,17 and fatty                 and reference compounds for the less volatile compounds with
+acids.19 While preferable, this approach was not feasible                     reliable experimental K298OA values. Determination coeﬃcients
+because of the scarcity of well-characterized polar reference/                (r2) of 0.98 for both calibration plots were close to unity (p <
+calibration compounds when screening large numbers of                         0.001), indicating strong correlations.
+compounds having diﬀering functionalities, as in this paper.                     The enthalpies of vaporization (ΔVAPH/kJ·mol−1) and
+Thus, we opted for nonpolar reference and calibration                         internal energies of phase transfer from octanol to air
+compounds, as in our previous work.3,10,15                                    (ΔOAU/kJ·mol−1) were calculated based on the values of
+                                                                       2472                                            https://dx.doi.org/10.1021/acs.jced.9b01126
+                                                                                                                          J. Chem. Eng. Data 2020, 65, 2467−2475
+Journal of Chemical & Engineering Data                                                   pubs.acs.org/jced                                        Article
+
+these properties for the reference compounds (see S1 for                          DDT. However, as mentioned, we used HCB, p,p′-DDT and
+                                         −1
+                 L /Pa and ΔVAPH/kJ·mol
+details). Log10 p298                         for 52 compounds                     BTBPE as reference compounds, depending on the vapor
+ranged from 0.14 to −9.19 and 48 to 145, respectively, with                       pressure of the target compound, to minimize the diﬀerence in
+the extremes of cyclopentadecanone and syn-Dechlorane Plus                        activity coeﬃcient at inﬁnite dilution between the reference
+                                                             −1
+(syn-DDC-CO). The ranges of log10 K298 OA and ΔOAU/kJ·mol                         and target compounds.
+for 49 compounds were 6.6 to 12.4 and 35 to 117, respectively,                       Overall, our analysis show that the GC-RT values presented
+with the extremes of cyclopentadecanone and BDE-99. K298     OA                   here were comparable to the literature ﬁnal adjusted value/
+values were not determined for anti-DDC-CO, syn-DDC-CO,                           average conventional data and literature GC-RT values. We
+tris(4-tert-butylphenyl)phosphate (TTBPP), tris(2,3-
+                                                                                  noted discrepancies between our estimates and literature GC-
+dibromopropyl)phosphate (TDBPP), and 1,2,5,6,9,10-hexab-
+romocyclododecane (HBCDD) because BTBPE, which was                                RT estimates for a few compounds. We recommend our values
+used as a GC reference compound for vapor pressure                                because of the broader range of reference compounds
+measurements, lacked a literature experimental K298                               (especially low vapor pressure compounds) used here versus
+                                                   OA value.
+   The calibrated GC-RT values of p298
+                                    L  /Pa  and  K 298
+                                                   OA estimated
+                                                                                  other GC-RT studies. The results presented here do not
+here were compared with their literature values obtained using                    account for systematic errors associated with using nonpolar
+
+
+
+
+                                                                                                                                                                 Downloaded from pubs.​acs.​org/​jceaax/​article-pdf/​65/​5/​2467/​10510910/​je9b01126.​pdf by BRIGHAM YOUNG UNIV user on 29 October 2026
+both non-GC-RT and GC-RT methods to assess the                                    compounds in the initial GC estimation and subsequent
+performance of the GC-RT method (Figures 3, 4 and S2).                            external calibration to derive vapor pressures (p298L /Pa) and
+                                                                                  octanol−air partition coeﬃcients (K298
+                                                                                                                       OA ) at T/K = 298 K and in
+                                                                                  selecting physicochemical property data for the reference/
+                                                                                  calibration compounds. It is possible that these errors can be
+                                                                                  orders of magnitude for polar compounds,25 such as the OPEs
+                                                                                  reported here. However, comparison with literature non-GC-
+                                                                                  RT suggest that the GC-RT method evaluated here performed
+                                                                                  equally well for both polar and nonpolar target compounds
+                                                                                  studied in this work. Accuracy of the GC-RT method for
+                                                                                  estimating polar compounds can be increased by selecting
+                                                                                  reference and external calibration compounds with varying
+                                                                                  polarity, but this approach was not feasible in this study
+                                                                                  because of scarcity of well-known property data for polar
+                                                                                  compounds.
+Figure 4. The relationship between average or FAV (ﬁnal adjusted
+value) literature log10 K298               298
+                          OA and log10 KOA estimated here by the                  4. CONCLUSIONS
+calibrated GC-RT method. The dashed and solid lines represent 1:1
+correlations and regression trend lines, respectively. See Tables S4 for          The liquid subcooled vapor pressure, p298
+                                                                                                                          L /Pa, and octanol−air
+values of the compounds plotted here.                                             partition coeﬃcient, K298
+                                                                                                         OA , of over 50 SVOCs were estimated
+                                                                                  using the GC-RT method. This is the ﬁrst paper to report a
+                                                                                  wide variety of SVOCs that span such a broad range for these
+The compounds compared were independent of the external
+calibration datasets plotted in Figures 1 and 2. Root mean                        properties, which were compared to measurements from the
+square errors (RMSE) for the comparison of the GC-RT                              literature. Values of log10 p298
+                                                                                                                 L /Pa for 53 SVOCs indirectly
+values estimated here versus literature non-GC-RT values for                      measured ranged from 0.14 to −9.19 for cyclopentadecanone
+p298              298
+  L /Pa and KOA ranged from 0.35 to 0.68 log unit for
+                                                                                  to syn-DDC-CO, respectively. The range of values of log10 K298
+                                                                                                                                              OA
+individual classes of compounds and 0.57 for all classes of                       for 49 compounds was 6.6 to 11.4 for cyclopentadecanone to
+target compounds combined. Agreement between our values                           BDE-99, respectively.
+and the literature values was as good as the agreement among                         The values estimated here by GC-RT were comparable to
+the diﬀerent literature values. For compounds with more than                      literature measured values with some discrepancies noted
+one literature measurement, such as some OPEs presented                           because of the broader range of reference compounds
+here (Figure 3), variability was up to three orders of magnitude                  (especially low vapor pressure compounds) used here versus
+among literature sources reported.                                                other studies. The use of a broader range of reference
+   To assess the reproducibility of the GC-RT method, we                          compounds bolsters the reliability of the GC-RT estimates
+compared the values estimated here against literature values                      presented here.
+obtained using GC-RT (Figure S2). RMSEs for the                                      Accurate estimates of P°L and KOA are important as model
+comparison between GC-RT estimates in this study and the                          inputs, whether these are for accurate loadings of PBT
+literature for all compounds were 0.60 log unit for p298
+                                                       L /Pa and
+                                                                                  compounds to land and water or inputs into screening models
+0.65 for K298
+            OA . Exceptions to this agreement included literature
+GC-RT values for TCiPP22 and octinoxate,26 which diﬀered                          used by risk assessors and managers to determine if further
+from GC-RT values estimated in this study by 1.40 to 1.64 log                     research and possible regulations are warranted.
+units. Bias for log10 K298                            298                            For future determinations, conventional techniques such as
+                        OA was higher than for log10 pL /Pa. The
+disagreement between GC-RT values estimated for OPEs such                         gas saturation and generator column methods should be used
+as TCiPP in this study and those of Wang et al.,16,23 for                         to measure p298            298
+                                                                                                L /Pa and KOA , respectively, of polar compounds
+example, was likely because the latter used only p,p′-DDT as a                    that can serve as reference compounds for estimating polar
+reference compound for the entire set of target OPEs, the                         compounds such as OPEs by means of the faster GC-RT
+more volatile OPEs fall well below the property range for p,p′-                   method.
+                                                                           2473                                    https://dx.doi.org/10.1021/acs.jced.9b01126
+                                                                                                                      J. Chem. Eng. Data 2020, 65, 2467−2475
+Journal of Chemical & Engineering Data
+
+■
+                                                                                        pubs.acs.org/jced                                            Article
+
+    ASSOCIATED CONTENT                                                          Organic Compounds from Gas Chromatograhic Retention Data. J.
+                                                                                Chem. Eng. Data 1990, 35, 232−237.
+*
+sı Supporting Information
+                                                                                  (4) Csiszar, S. A.; Daggupaty, S. M.; Verkoeyen, S.; Giang, A.;
+The Supporting Information is available free of charge at                       Diamond, M. L. SO-MUM: A Coupled Atmospheric Transport and
+https://pubs.acs.org/doi/10.1021/acs.jced.9b01126.                              Multimedia Model Used to Predict Intraurban-Scale PCB and PBDE
+        Further description of methods and results and literature               Emissions and Fate. Environ. Sci. Technol. 2013, 47, 436−445.
+        comparison of vapor pressures and octanol−air partition                   (5) Okeme, J. O.; Parnis, J. M.; Poole, J.; Diamond, M. L.; Jantunen,
+        coeﬃcients (PDF)                                                        L. M. Polydimethylsiloxane-Air Partition Ratios for Semi-Volatile
+                                                                                Organic Compounds by GC-Based Measurement and COSMO-RS
+
+■   AUTHOR INFORMATION
+Corresponding Author
+                                                                                Estimation: Rapid Measurements and Accurate Modelling. Chemo-
+                                                                                sphere 2016, 156, 436−445.
+                                                                                  (6) Shunthirasingham, C.; Gawor, A.; Hung, H.; Brice, K. A.; Su, K.;
+                                                                                Alexandrou, N.; Dryfhout-Clark, H.; Backus, S.; Sverko, E.; Shin, C.;
+  Liisa M. Jantunen − Air Quality Processes Research Section,                   et al. Atmospheric Concentrations and Loadings of Organochlorine
+    Environment and Climate Change Canada, Egbert L0L 1N0,                      Pesticides and Polychlorinated Biphenyls in the Canadian Great Lakes
+    Ontario, Canada; Department of Earth Sciences, University of                Basin (GLB): Spatial and Temporal Analysis (1992−2012). Environ.
+    Toronto, Toronto M5S 3B1, Ontario, Canada; orcid.org/
+
+
+
+
+                                                                                                                                                                    Downloaded from pubs.​acs.​org/​jceaax/​article-pdf/​65/​5/​2467/​10510910/​je9b01126.​pdf by BRIGHAM YOUNG UNIV user on 29 October 2026
+                                                                                Pollut. 2016, 217, 124−133.
+    0000-0003-0261-9539; Phone: 705 458-3318;                                     (7) Harner, T.; Bidleman, T. F. Measurements of Octanol−Air
+    Email: liisa.jantunen@canada.ca                                             Partition Coefficients for Polychlorinated Biphenyls. J. Chem. Eng.
+                                                                                Data 1996, 41, 895−899.
+Authors                                                                           (8) Shen, L.; Lei, Y. D.; Wania, F. Sorption of Chlorobenzene
+  Joseph O. Okeme − Department of Physical and Environmental                    Vapors on StyreneDivinylbenzene Polymer. J. Chem. Eng. Data
+     Sciences, University of Toronto Scarborough, Toronto M1C                   2002, 47, 944−949.
+     1A4, Ontario, Canada; orcid.org/0000-0001-7604-0736                          (9) Conder, J.; Young, C. Physicochemical Measurement by Gas
+  Timothy F. M. Rodgers − Department of Chemical Engineering                    Chromatography; Wiley: New York, 1979.
+     and Applied Chemistry, University of Toronto, Toronto M5S                    (10) Bidleman, T. F.; Leone, A. D.; Falconer, R. L. Vapor Pressures
+     3E5, Ontario, Canada; orcid.org/0000-0003-1850-404X                        and Enthalpies of Vaporization for Toxaphene Congeners. J. Chem.
+                                                                                Eng. Data 2003, 48, 1122−1127.
+  J. Mark Parnis − Chemical Properties Research Group,                            (11) Lei, Y. D.; Wania, F.; Mathers, D.; Mabury, S. A. Determination
+     Department of Chemistry, Trent University, Peterborough K9L                of Vapor Pressures, Octanol−Air, and Water−Air Partition Co-
+     0G2, Ontario, Canada                                                       efficients for Polyfluorinated Sulfonamide, Sulfonamidoethanols, and
+  Miriam L. Diamond − Department of Earth Sciences and                          Telomer Alcohols. J. Chem. Eng. Data 2004, 49, 1013−1022.
+     Department of Chemical Engineering and Applied Chemistry,                    (12) Tittlemier, S. A.; Halldorson, T.; Stern, G. A.; Tomy, G. T.
+     University of Toronto, Toronto M5S 3B1, Ontario, Canada;                   Vapor Pressures, Aqueous Solubilities, and Henry’s Law Constants of
+     Department of Physical and Environmental Sciences, University              Some Brominated Flame Retardants. Environ. Toxicol. Chem. 2002,
+     of Toronto Scarborough, Toronto M1C 1A4, Ontario, Canada;                  21, 1804−1810.
+        orcid.org/0000-0001-6296-6431                                             (13) Wong, A.; Lei, Y. D.; Alaee, M.; Wania, F. Vapor Pressures of
+  Terry F. Bidleman − Department of Chemistry, Umeå                             the Polybrominated Diphenyl Ethers. J. Chem. Eng. Data 2001, 46,
+     University, Umeå SE-901 87, Sweden; orcid.org/0000-                        239−242.
+                                                                                  (14) Puri, S.; Chickos, J. S.; Welsh, W. J. Determination of
+     0001-7469-0532                                                             Vaporization Enthalpies of Polychlorinated Biphenyls by Correlation
+Complete contact information is available at:                                   Gas Chromatography. Anal. Chem. 2001, 73, 1480−1484.
+https://pubs.acs.org/10.1021/acs.jced.9b01126                                     (15) Brommer, S.; Jantunen, L. M.; Bidleman, T. F.; Harrad, S.;
+                                                                                Diamond, M. L. Determination of Vapor Pressures for Organo-
+Notes                                                                           phosphate Esters. J. Chem. Eng. Data 2014, 59, 1441−1447.
+The authors declare no competing ﬁnancial interest.                               (16) Wang, Q.; Zhao, H.; Wang, Y.; Xie, Q.; Chen, J.; Quan, X.
+
+
+■
+                                                                                Determination and Prediction for Vapor Pressures of Organo-
+                                                                                phosphate Flame Retardants by Gas Chromatography. Chin. J.
+    ACKNOWLEDGMENTS                                                             Chromatogr. 2017, 35, 1008.
+We thank Dr. Tom Harner, Environment Canada, Toronto,                             (17) Gobble, C.; Chickos, J.; Verevkin, S. P. Vapor Pressures and
+Canada, for his comments on the manuscript and Justin Poole                     Vaporization Enthalpies of a Series of Dialkyl Phthalates by
+and Alyse Hegmans for help during GC-RT analysis. Research                      Correlation Gas Chromatography. J. Chem. Eng. Data 2014, 59,
+funding was provided by the Allergy, Genes and Environment                      1353−1365.
+Network (AllerGen NCE) and the Natural Sciences and                               (18) Lei, Y. D.; Wania, F.; Shiu, W. Y.; Boocock, D. G. B.
+Engineering Research Council (NSERC) of Canada to M.L.D.                        Temperature Dependent Vapor Pressures of Chlorinated Catechols,
+                                                                                Syringols, and Syringaldehydes. J. Chem. Eng. Data 1999, 44, 200−
+T.F.B.’s contribution was supported by the Swedish Strategic
+                                                                                202.
+Research Environment EcoChange.
+
+■
+                                                                                  (19) Wilson, J.; Gobble, C.; Chickos, J. Vaporization, Sublimation,
+                                                                                and Fusion Enthalpies of Some Saturated and Unsaturated Long
+    REFERENCES                                                                  Chain Fatty Acids by Correlation Gas Chromatography. J. Chem. Eng.
+ (1) Wegmann, F.; Cavin, L.; MacLeod, M.; Scheringer, M.;                       Data 2015, 60, 202−212.
+Hungerbühler, K. The OECD Software Tool for Screening Chemicals                  (20) Wania, F.; Lei, Y. D.; Harner, T. Estimating Octanol-Air
+for Persistence and Long-Range Transport Potential. Environ. Model.             Partition Coefficients of Nonpolar Semivolatile Organic Compounds
+Software 2009, 24, 228−237.                                                     from Gas Chromatographic Retention Times. Anal. Chem. 2002, 74,
+ (2) Bidleman, T. F. Estimation of Vapor Pressures for Nonpolar                 3476−3483.
+Organic Compounds by Capillary Gas Chromatography. Anal. Chem.                    (21) Su, Y.; Lei, Y. D.; Daly, G. L.; Wania, F. Determination of
+1984, 56, 2490−2496.                                                            Octanol−Air Partition Coefficient (KOA) Values for Chlorobenzenes
+ (3) Hinckley, D. A.; Bidleman, T. F.; Foreman, W. T.; Tuschall, J. R.          and Polychlorinated Naphthalenes from Gas Chromatographic
+Determination of Vapor Pressures for Nonpolar and Semipolar                     Retention Times. J. Chem. Eng. Data 2002, 47, 449−455.
+
+                                                                         2474                                         https://dx.doi.org/10.1021/acs.jced.9b01126
+                                                                                                                         J. Chem. Eng. Data 2020, 65, 2467−2475
+Journal of Chemical & Engineering Data                                              pubs.acs.org/jced                                  Article
+
+  (22) Hongxia, Z.; Jingwen, C.; Xie, Q.; Baocheng, Q.; Xinmiao, L.
+Octanol−Air Partition Coefficients of Polybrominated Biphenyls.
+Chemosphere 2009, 74, 1490−1494.
+  (23) Wang, Q.; Zhao, H.; Wang, Y.; Xie, Q.; Chen, J.; Quan, X.
+Determination and Prediction of Octanol-Air Partition Coefficients
+for Organophosphate Flame Retardants. Ecotoxicol. Environ. Saf. 2017,
+145, 283−288.
+  (24) Koutek, B.; Cvačka, J.; Streinz, L.; Vrkočová, P.; Doubský, J.;
+Š imonová, H.; Feltl, L.; Svoboda, V. Comparison of Methods
+Employing Gas Chromatography Retention Data to Determine
+Vapour Pressures at 298 K. J. Chromatogr. A 2001, 923, 137−152.
+  (25) Růzǐ čka, K.; Koutek, B.; Fulem, M.; Hoskovec, M. Indirect
+Determination of Vapor Pressures by Capillary Gas−Liquid
+Chromatography: Analysis of the Reference Vapor-Pressure Data
+and Their Treatment. J. Chem. Eng. Data 2012, 57, 1349−1368.
+  (26) Pegoraro, C. N.; Chiappero, M. S.; Montejano, H. A.
+
+
+
+
+                                                                                                                                                      Downloaded from pubs.​acs.​org/​jceaax/​article-pdf/​65/​5/​2467/​10510910/​je9b01126.​pdf by BRIGHAM YOUNG UNIV user on 29 October 2026
+Measurements of Octanol-Air Partition Coefficients, Vapor Pressures
+and Vaporization Enthalpies of the (E) and (Z) Isomers of the 2-
+Ethylhexyl 4-Methoxycinnamate as Parameters of Environmental
+Impact Assessment. Chemosphere 2015, 138, 546−552.
+
+
+
+
+                                                                             2475                       https://dx.doi.org/10.1021/acs.jced.9b01126
+                                                                                                           J. Chem. Eng. Data 2020, 65, 2467−2475
+

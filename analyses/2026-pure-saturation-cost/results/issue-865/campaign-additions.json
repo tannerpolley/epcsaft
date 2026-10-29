@@ -1,0 +1,12 @@
+[
+  {
+    "file": "analyses/2026-pure-saturation-cost/scripts/run.py",
+    "added": 4,
+    "removed": 7
+  },
+  {
+    "file": "analyses/2026-pure-saturation-cost/scripts/reduce.py",
+    "added": 15,
+    "removed": 16
+  }
+]

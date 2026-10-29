@@ -1,0 +1,236 @@
+4                                                  PITZER, PEl PER, AND BUSEY
+
+place of the older and less accurate equation of Keenan et                The molar heat of solution iJ.H.ln 2 is the heat change mea-
+ill. 2·'                                                                  sured when I mol of salt is dissolved in enough water to form
+         The leading terms in Eqs. (5). (8), and (9) are Debye-           a solution of concentration m. It is related to the apparent
+Huckel terms describing long-range electrostatic interac-                 molal enthalpy by
+tions, The parameters b and a have fixed values of 1.2 and
+2.0 kg!/z mol-1/2, respectively, for all I-I, 2-1, and 3-1                                                                                        (1&)
+electrolytes. They are assumed to be temperature and pres-                where iJ.H~ is the partial molal heat of solution at infinite
+sure independent. The adjustable parameters /3 ~x, f3 ~x ,                dilution.
+ and Ct.x account for short-range interactions between ions                    The apparent molal heat capacity is defined as the dif-
+and for indirect forces arising from the solvent. Ct.x de-                ference between the heat capacity of the solution and the
+pends on triple ion interactions and is important only at high            heat capacity of pure water contained in the solution, per
+ concentrations.                                                          mol of salt,
+         Equations (5), (8), (9), and their temperature derivatives
+have been used succcessfully.l to describe the activity and                     1>     _       Cp - nlC;,1
+                                                                                 Cp -                        •                                    (19)
+ thermal properties of aqueous sodium chloride solutions                                             n2
+ over a wide range of temperature. Rogers and Pitzer! used                The superscript in         C;,
+                                                                                                t implies a molar amount as well as the
+ appropriate pressure derivatives of these equations to de-               standard state. The apparent molal heat capacity is related to
+ scribe volumetric properties and give detailed equations for             the apparent molal enthalpy by
+ the volume-related functions including the pressure depen-
+ dence of various thermodynamic properties,                                     1>C _ Co
+                                                                                     p -       p.2   +
+                                                                                                         (B"'L)
+                                                                                                           aT r.m'                                (20)
+         In addition to the excess Gibbs energy and the related
+ activity and osmotic coefficients, the excess enthalpy, en-                          ;,2
+                                                                          where C is the partial molal heat capacity of the solute at
+ tropy, and heat capacity are of primary importance. These                infinite dilution. Combination of Eq. (20) and the tempera-
+are obtained from appropriate temperature derivatives of the              ture deriative ofEq. (14) yields
+excess Gibbs energy. The excess enthalpy is also called the
+relative enthalpy L and is related to the excess Gibbs energy             .pCp = C;.2 + VIZMZX IAJh (I)
+of the solution by the equation                                                   -2VMvxRT2[mB~tX +m2(vMzM)C~X]'                                  (21)
+                           EX
+     L = G EX _     T(BG        )         = _ T2 (BGEX/T)          .
+                         aT         P,m            aT       P,rn
+                                                                   (11)
+Also, the excess entropy of the solution is
+     SEX = (L _ GEX)!T.                                            (12)
+The apparent molal enthalpy is defined as                                 /11% = [d2/1(!l",/JT2]p + 2,B~lf<IT.                                  (22c)
+      ¢L=Lln z'                                                    (13)   C~x = (J CMX laT2)p
+                                                                                           2
+                                                                                                            + 2CtxlT,                             (23)
+The parametric form of the equation for the apparent molal
+                                                                          whereA J is the Debye-Hiickel slope for the heat capacity as
+enthalpy is, 2
+                                                                          recently defined. 23
+      .pL = vlzMzxlAuh (I)                                                     Two equations of Bradley and PitzerZ3 require correc-
+             - 2VMVxRT2[ mBtx + m2(vMzM)CtX]' (14)                        tion as follows
+      h (I) = In(l + bl 'I ")/2b,                                  (IS)         Av = 2A¢RT [3(BlnDIBP)T -{3],
+     B   tx = (BOMXIBT)p,[,                                                     A Ex = (aAvIBT)p.
+            =/3~~ + 2.B~~ [1- (1 + aI 1/2)
+                                                                                The chemical potential is the partial molal Gibbs ener-
+               xexp( _aI1IZ)]la 2I,                            (16a)
+                                                                          gy at constant Tand P; for the solvent it is readily related to
+     f3~~ = [af3~xlaTh, f3~~ = [af3~xlaT)p, (16b)                         the osmotic coefficient and for the solute to the activity coef-
+      ctx = (aCMxIBT)p.                                        (16c)      ficient. Nevertheless, it seems worthwhile to give explicitly
+                                                                          the equations for the two chemical potentials. The tempera-
+Au is the Debye-Huckel slope for enthalpy as defined by                   ture dependence of these chemical potentials or of the activ-
+Bradley and Pitzer23 ; this is smaller by the factor 2/3 than             ity and osmotic coefficients are now best represented by the
+the definition nsecl earlier 2                                            t:lIuatiuw; fUI tlIe l:lIt:ffil:ielll:> A.p ,,1 (Ill, .0 w, and C" as a fum;-
+       The experimental determination of the enthalpy of an               tion of temperature. Thus there is less need to use the partial
+electrolyte solution is made through heat of dilution or heat             molal enthalpies Of heat capacities than formerly when these
+of solution measurements. The molar heat of dilution iJ.H d I             quantities gave the only expressions for the temperature de-
+n 2 is the heat change per mol measured when a solution at                pendencies of Ihe chemical potentials. Nevertheless, these
+concentration m I is diluted to concentration m 2 , and it is             thermal quantities arc well defined and of significance.
+related to the apparent molal enthalpies at m 2 and ml by                 Equations for HII of these partial molal quantities are readily
+     iJ.H d/n2 = 1>L (m21- 1>L (md.                                (17)   derived from Eqs. (1\-(21) and are given below.
+
+J. Phys. Chern. Ref. Data, Vol. 13, No.1, 1984
+                   THERMODYNAMIC PROPERTIES OF AQUEOUS SODIUM CHLORIDE SOLUTIONS                                                                                       5
+
+(PI -p~)/RT = (a 1 - G~I/RT                                                          The many resulting simplifications will be introduced here-
+                                                                                     after and the subscript MX will be omitted.
+                   =     (~) {-Vm+2A¢ (1 ::;1/21                                     3. Review and Evaluation of Literature Data
+                   -2vMvXm2[p~x +p~ exp( _aI I/2 )
+                                                                                           Table 1 presents a summary of the data incorporated
+                   +2vMz MmCMX              J},                               (24)   into this work. These sources were selected from a much
+                                                                                     wider array of information primarily on the basis of preci-
+(P2 -p~)/RT ={02 - a;/RT= vln(mr ±)                                                  sion. In a few cases, it was necessary to convert measured
+            = v In m - VIZMZX I·A¢                                                   quantities into more fundamental thermodynamic quanti-
+                                                                                     ties. Those conversions are indicated by columns 5 and 6 of
+                   X [     11121/2      +          In(l + bI 1/2 )]                  Table 1. The estimated precision of each data set (column 7)
+                         1 +bl                b
+                                                         2/3(11
+                                                                                     was taken as stated by the original investigator or as calculat-
+                   + 2vMv x m { 2fJ~x + ~                                            ed from an isothermal-isobaric fit of the appropriate form of
+                                                          aI                         Piuer's equation to the data, whichever was larger. The final
+                   X[1 - (1 + aI 1/2 - a;0exp( - al 1                    1/2)
+                                                                                     column gives the precision with which the fully optimized
+                                                                                     equations (see Sees. 2 and 4) reproduce the measurements.
+                                                                                           Estimates of the precision must be understood as
+                                                                              (2S)
+                                                                                     weighted averages. Precise determination of the osmotic co-
+                                                                                     efficient from isopiestic or vapor pressure measurements is
+(HI ...:.H~)      ( Mw ) {        AH [ 13/2 ]
+                                                                                     relatively difficult at low molalities due to the small changes
+    RT         =    1000     - 2RT 1 + bl l/2                                        in water activity between the solution and pure solvent. A
+               + 2VM V X Tm 2 [P\ei~ + p~~ exp( - al l / 2 )                         similar situation holds for the apparent molal heat capacity
+                                                                                     and for the enthalpy of dilution where uncertainties are large
+               + 2VMZMmCk]},                                             (26)        at low ionic strength. From definitions of the fit quantities,
+                                                                                     one might assume the uncertainty to behave as m -1. How-
+                   vlZMzx IAH [             11/2         + 2 1n (1 + bI l / 2)]      ever, it seems to us that the uncertainty will increase less
+                         4RT   1 + bl l/2    b                                       rapidly than m - I from 1.0 to 0.1 mol kg - I and will remain
+                                 (OIL   2f3~~                                        relatively constant above 1.0 mol kg-I. At the opposite end
+               - 2VM Vx Tm [ 2{3 MX + - - 2 -                                        of the composition range, it must be remembered that the
+                                                       aI
+                                                                                     equations used here are virial expansions including pair and
+               X{I (1 + aI              I/2
+                                                   a;0      exp( -aI I/2 )J          triplet ion-interaction terms, hence they are valid only at
+                                                                                     moderate solute concentrations. Experience with NaCl and
+               + 3vMzMmC~~:x ],                                               (27)   other 1:1 charge-type electrolytes has shown that there is a
+                                                                                     deterioration in the ability of these equations to reproduce
+8 1 = (HI - GIl/T,                                                                   experimental measurements above an ionic strength of ap-
+                                                                                     proximately 6.0 mol kg-I. For this reason, it is necessary to
+82 = (H2 - ( 2 )/T,
+                                                                                     decrease the weight of data at the very highest concentra-
+                                                                                     tions in least-squares calculations. Therefore, one may as-
+(Cp,l - C;,I) = (~) {_ Af [
+                                                            3 2
+                                                         1 /        ]                sume the uncertainty in a measurement to behave as
+      R                  1000                 2R     1 + bl l / 2                           ulml/2, 0.1 <m<l mol kg-I,
+                                                                                            u, l<m<6molkg- l ,
+                                                                                           um 2/36, m>6molkg- l •
+                                                                              (28)   It is the quantity uwhich is given in the last columns of Table
+                                                                                     1.
+                                                                                            There is one notable exception to this assumption; it
+                                                                                     involves data for the enthalpy of solution. As determined by
+                                                                                     Cobble and co-workers,25-27 this quantity was measured at
+          ""IZMZX      IA J [     1112         + 2.1n (1 + bI I/2)]                  \,;ull\,;c::ulnltiulls lc::ss lhllI! 0.05 lIlul kg - \, W hc::rc:: il SlXlIlcU bc::l-
+                4R              1 + bI II2           b                               ter to assign composition-independent uncertainties.
+                                                   2PII)J                                  Of the data listed in Table 1, two sets represent compila-
+           2VM Vx T 2 m [ 2{3 ~ +                     MX                             tions of a large number of older measurements: the osmotic
+                                                                                     coefficients of Robinson and Stokes28 and the apparent enth-
+          X{I (1 +a1              1/2
+                                            a;gexp( _aI I/2 )}                       alpies of Parker. 29 These two sets were weighted more heavi-
+                                                                                     ly in least-squares calculations to reflect the fact that they are
+          + 3VMZMmck].                                                        (29)   \';ulIlpilalium, bl:lsc::U Ull ml:lny mel:llSun::menLS uf rehtLivdy
+                                                                                     high accuracy.
+     All equations to this point are written for a general va-                            Since the report of Silvester and Pitzer, 2 no significant
+lence type, For NaCI, VM = Vx = ZM = Zx = 1 and v = 2.                               measurements of the NaCl(aq) activity or osmotic coeffi-
+
+                                                                                                              J. Phys. Chem. Ref. Data, Vol. 13, No.1, 1984
+6                                                          PITZER, PEl PER, AND BUSEY
+
+     Table 1.     Literature Data for NaCl(aq) Thermal Properties
+
+                    Temperature        Pressure              Composition_      Quantity       Quantity         Est'd Precision     Precision
+     Reference       Ran!le (OC)                                          1
+                                      Ran!le (bar)         Range (mol kg )     Measured         Fit           of Fitted guantitl    of Fit
+
+         30                0            1.013              o - 1.3                f.p.              ~               0.001            0.002
+         28               25            1.013              0.1 - 6.0              a                 4               0.0005           0.001
+         31              25-100        .!=:at:ur;!.t"ion   1.0 - 6.1             v_p_                o}             0.002            0.002
+        3~ ,35           60-100        saturation          0.5 - 4.0              b.p.
+                    I
+                                                                                                     op             0.002            0.004
+        32,33          75-250          saturation          0.1 - saturation      v.p.                op             0.002            0.003
+                      275,300          saturation          0.1 - saturation      v.p.                               0.004            0.005
+
+         29               25            1.013              o - 5.8                a               <PL/RT            0.004            0.005
+         38              25-75          1.013               0.04 - 5.0            toHd            toHd/RT           0.003            0.004
+         37              40-80          1.013              o - 6.0                toHd            /loHd/ RT         0.020            0.025
+
+                    { 75,100            1.013              0.01 - 6.0             /loHd           /loHd/RT          0.005            0.008
+         36
+                      150-200          saturation          0.01 - 6.0             flHd            /loHd/ RT         0.007            0.012
+
+                     ('~200
+                                       66.0                0.03 - 5.2             toHd            <lHd/ RT          O.OlD            0.015
+                         250           66.0                0.03 - 5.2             toRd            /loRd /RT         0.030            0.050
+             3
+                         300            105                0.03 - 5.2             toHd            <lHiRT            0.1              0.30
+                         350            205                0.03 - 5.2             <lRd            <lHd/ RT          0.3              3.0
+         25              0-100          1.013              o - 0.02               toR
+                                                                                          s
+                                                                                                  /loR /RT
+                                                                                                     s
+                                                                                                                    0.02             0.03
+         26              114-200       saturation          a - 0.05               <lH
+                                                                                          s       <lH/RT            0.05             0.01
+         27              300           saturation          a - 0.02               AH 0            <lH,,/RT          b                4.0
+
+                                        1.013               0.07 - 1.8                C           <Pc /R            0.25             0.75
+       39-43         {     1. 5                                                           p          p
+                         5 - 45         1.013               0.02 - 6.0                C           ~C /R             0.10             0.15
+                                                                                      p              p
+         6               5 - 85         1.013               0.04 - 6.0                C           ~C /R             0.10             0.15
+                                                                                      p              l'
+                   { 75 - 200           177                       3.0                 C           <Pc /R            0.25             0.30
+                                                                                          p          p
+
+
+
+
+                   f" -
+         4
+                     200 -      325     177                       3.0                 C           OPc /R            0.50             0.70
+                                                                                          P          P
+                                        177                0.1    - 3.0               C
+                                                                                      p
+                                                                                                  <Pc /R
+                                                                                                     p
+                                                                                                                     b               0.60
+                                lSO
+                     215 - 280          177                 0.1    - 3.0              C           ~c /R              b               1..1
+                                                                                          p         p
+                          300           177                 0.1 - 3.0                 C           ~C /"i                b            5.0
+                                                                                          p          P
+                          330           177                 0.1 - 3.0                 Cp          I!>C tR           b               70.0
+                                                                                                     P
+
+
+
+
+             a This data set is a tabulation of values derived from many Wleasurements and employing various techniques.
+
+          b The accuracy of this data set is in question; see the text.
+
+
+cients have been published. At low temperatures, we rely on                        Knowledge of the dilution enthalpy has only recently
+the freezing point measurements of Scatchard and Prentiss 30                  been extended beyond lOOT. Usi ng flow calorimetric meth-
+and the smoothed osmotic coefficients tabulated by Robin-                     ods, Mayrath and Wood'" measured iJH d from 75 to 200 °C,
+son and Stokes28 at 25°C which are based on both osmotic                      along the liquid-vapor saturatioll curve, and Busey3 mea-
+and activity measurements. At higher temperatures, there                      surediJH d from 50 to4(XJ Tal pressuresof66, 100,200,and
+are the vapor pressure measurements of Gibbard et aPl                         400 bars. The pressure dependency equations of Rogers and
+from 25 to 100 °C, and those ofLiu and Lindsay32.33 from 75                   Pitzer have a rapidly increasing uncertainty above 300 °C;
+to 300 0c. The boiling point measurements of Smith and co-                    hence we havt' JJn! lIsed the nJt:asurementsat400 0c. The few
+workers"Q·'3 are very precise but disagree slightly with the                  data at 400 hars, l:orrected via the equations of Rogers and
+vapor pressure measurements, particularly at the higher m 0-                  Pitzer'. agree ....·ith Busey's lower-pressure measurements
+lalities (> 1.0 mol kg-I). As noted in Table 1, the discrepan ..              but arc sOOlewhat sCllllercd about them. Therefore, these few
+cy is not serious.                                                            rncaS\If{'lIlcnts Iwrc also deleted from further calculations
+
+J. Phys. Chern. Ref. Data, Vol. 13. No.1, 1984

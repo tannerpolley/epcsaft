@@ -1,0 +1,1 @@
+At 323.15 K, the fixed published-parameter calculation overpredicts all 3 measured total pressures. The mean signed error is **+0.899838 kPa** and the root-mean-square error is **0.900255 kPa**. The mean absolute relative error is **7.97117%**, with a maximum of **8.39859%**. All 3 conditional calculated intervals are disjoint from the measurement intervals.

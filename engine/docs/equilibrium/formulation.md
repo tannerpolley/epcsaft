@@ -136,6 +136,24 @@ The weighted-Hessian falsifier must vary both independently.
 
 ## Constraints and specification
 
+For one neutral component at fixed positive temperature, free pressure and
+one liquid/one vapor phase with one free amount and one amount pinned at zero,
+EqID `one_component_two_density` eliminates composition normalization, feed
+balance, pressure and the common chemical multiplier exactly. The driver's
+ordinary attempt solves the two log densities; this changes neither the
+full defining rows nor their observable derivatives. The returned pressure is
+the vapor pressure, avoiding subtraction of large liquid terms at low pressure.
+The lift sets each composition to one, the free amount to the feed total,
+and $\ln\eta_p=\ln[C(T,\theta)\rho_p]$ in declaration order.
+
+The shared full-row, topology, local stability and density-branch admission
+checks still govern publication. A row-converged equal-density pair is not
+coexistence. Rejection retains the original-start Ipopt fallback and attempted
+work. Full derivative preparation remains the sole source of solved-state
+actions and parameter-fitting columns; the limited isothermal projection is
+not a temperature or parameter derivative. The scoped method and numerical
+error estimates are defined in ALG-EQUILIBRIUM and ADR 0009.
+
 The balance matrix spans conserved moieties; its nullspace is the admitted
 reaction span. Reactions must conserve charge. Independent balance rows replace
 reaction extents as primal coordinates; extents may be reconstructed afterward.

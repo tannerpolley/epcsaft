@@ -1,0 +1,26 @@
+{
+  "summary": [
+    {
+      "family": "primary",
+      "entries": 51,
+      "comparisons": 61241,
+      "max_error_over_allowance": 0.0,
+      "changed_outcomes": 0
+    },
+    {
+      "family": "native",
+      "entries": 15,
+      "comparisons": 2749,
+      "max_error_over_allowance": 0.0,
+      "changed_outcomes": 0
+    },
+    {
+      "family": "811",
+      "entries": 12,
+      "comparisons": 11304,
+      "max_error_over_allowance": 0.0,
+      "changed_outcomes": 0
+    }
+  ],
+  "failures": []
+}

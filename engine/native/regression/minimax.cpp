@@ -4,6 +4,7 @@
 #include <chrono>
 #include <cmath>
 #include <set>
+#include <new>
 #include <stdexcept>
 
 namespace epcsaft::regression {
@@ -72,33 +73,38 @@ public:
     }
     bool assemble(const Number* x, bool columns) {
         auto& out = *result_.minimax;
-        ObservationEvaluation evaluation;
-        if (!evaluate_(std::vector<double>(x, x + u_), columns, evaluation)) return false;
-        out.values.resize(out.rows.size());
-        if (columns) out.jacobian.assign(out.rows.size() * out.point.size(), 0.0);
-        for (std::size_t r = 0; r < out.rows.size(); ++r) {
-            const auto& row = out.rows[r];
-            double value = -row.threshold;
-            if (row.members.empty()) {
-                const auto [error, slope] = check_error(row.metric, request_.observations.at(row.row), evaluation.predictions.at(row.row));
-                if (!std::isfinite(error) || !std::isfinite(slope)) return false;
-                value += row.sign * error;
-                for (std::size_t c = 0; columns && c < u_; ++c)
-                    out.jacobian[r * out.point.size() + c] = row.sign * slope
-                        * evaluation.optimizer_gradient.at(row.row * u_ + c) / row.scale;
-                if (row.auxiliary) {
-                    value -= x[*row.auxiliary];
-                    if (columns) out.jacobian[r * out.point.size() + *row.auxiliary] = -1.0 / row.scale;
-                }
-            } else for (const auto s : row.members) {
-                value += x[s] / row.members.size();
-                if (columns) out.jacobian[r * out.point.size() + s] = 1.0 / (row.members.size() * row.scale);
+        try {
+            ObservationEvaluation evaluation;
+            if (!evaluate_(std::vector<double>(x, x + u_), columns, evaluation)) {
+                core::retain_failure(result_.first_numerical_failure, "observation callback returned false", "minimax");
+                return false;
             }
-            out.values[r] = value / row.scale;
-            if (!std::isfinite(out.values[r])) return false;
-        }
-        evaluation_ = std::move(evaluation);
-        return true;
+            out.values.resize(out.rows.size());
+            if (columns) out.jacobian.assign(out.rows.size() * out.point.size(), 0.0);
+            for (std::size_t r = 0; r < out.rows.size(); ++r) {
+                const auto& row = out.rows[r];
+                double value = -row.threshold;
+                if (row.members.empty()) {
+                    const auto [error, slope] = check_error(row.metric, request_.observations.at(row.row), evaluation.predictions.at(row.row));
+                    if (!std::isfinite(error) || !std::isfinite(slope)) return false;
+                    value += row.sign * error;
+                    for (std::size_t c = 0; columns && c < u_; ++c)
+                        out.jacobian[r * out.point.size() + c] = row.sign * slope
+                            * evaluation.optimizer_gradient.at(row.row * u_ + c) / row.scale;
+                    if (row.auxiliary) {
+                        value -= x[*row.auxiliary];
+                        if (columns) out.jacobian[r * out.point.size() + *row.auxiliary] = -1.0 / row.scale;
+                    }
+                } else for (const auto s : row.members) {
+                    value += x[s] / row.members.size();
+                    if (columns) out.jacobian[r * out.point.size() + s] = 1.0 / (row.members.size() * row.scale);
+                }
+                out.values[r] = value / row.scale;
+                if (!std::isfinite(out.values[r])) return false;
+            }
+            evaluation_ = std::move(evaluation);
+            return true;
+        } catch (const core::ConvergenceFailure& error) { core::retain_failure(result_.first_numerical_failure, error, "minimax callback"); throw; }
     }
     bool get_nlp_info(Index& n, Index& m, Index& nj, Index& nh, IndexStyleEnum& style) override {
         n = result_.minimax->point.size();
@@ -152,8 +158,10 @@ public:
     bool eval_h(Index, const Number*, bool, Number, Index, const Number*, bool, Index entries, Index*, Index*, Number*) override {
         return entries == 0;
     }
-    bool intermediate_callback(AlgorithmMode, Index iteration, Number, Number, Number, Number, Number,
-                               Number, Number, Number, Index, const IpoptData*, IpoptCalculatedQuantities*) override {
+    bool intermediate_callback(AlgorithmMode mode, Index iteration, Number objective, Number inf_pr, Number inf_du, Number mu, Number step,
+                               Number regularization, Number alpha_du, Number alpha_pr, Index trials, const IpoptData*, IpoptCalculatedQuantities*) override {
+        core::Scope scope("ipopt_intermediate");
+        equilibrium::observe_ipopt(*result_.minimax->ipopt_diagnostics, &scope, {int(mode), iteration, trials, objective, inf_pr, inf_du, mu, step, regularization, alpha_du, alpha_pr});
         result_.iterations = iteration;
         return std::chrono::duration<double>(std::chrono::steady_clock::now() - begin_).count()
             < request_.controls.maximum_elapsed_time_seconds;
@@ -280,15 +288,23 @@ FitResult solve_minimax(const FitRequest& request, const std::vector<double>& st
     try {
         require(request.minimax.has_value(), "missing minimax declaration");
         SmartPtr<Minimax> nlp = new Minimax(request, result, evaluate, start, frozen);
+        auto& diagnostics = result.minimax->ipopt_diagnostics.emplace();
         const auto [initialized, returned] = equilibrium::run_ipopt(nlp, request.minimax->tolerance,
             request.controls.maximum_iterations, request.controls.maximum_elapsed_time_seconds, false, 1.0, nullptr, 0.0, {},
             &result.minimax->linear_solver);
+        diagnostics.initialization_return = initialized; diagnostics.application_return = returned;
         result.minimax->application_status = equilibrium::application_return_name(returned);
         if (initialized != Solve_Succeeded || (returned <= Invalid_Problem_Definition && returned != Invalid_Number_Detected)) {
             result.message = "Ipopt " + equilibrium::application_return_name(initialized) + "; " + result.minimax->application_status;
             result.minimax->availability = "fatal_initialization_or_application";
         } else nlp->finish();
-    } catch (const std::exception& error) { result.message = error.what(); }
+        if (returned != Solve_Succeeded && returned != Solved_To_Acceptable_Level)
+            core::retain_failure(result.first_numerical_failure, result.minimax->application_status, "minimax Ipopt");
+    } catch (const std::bad_alloc&) {
+        throw;
+    } catch (const std::exception& error) {
+        retain_density_failure(result.first_numerical_failure, error, "minimax"); result.message = error.what();
+    }
     return result;
 }
 FitResult fit_minimax(const FitRequest& request, const std::optional<std::vector<double>>& evaluation_point) {
@@ -309,10 +325,15 @@ FitResult fit_minimax(const FitRequest& request, const std::optional<std::vector
             Minimax nlp(request, result, callback, *evaluation_point, frozen);
             nlp.point_values();
         } else result = solve_minimax(request, point, frozen, callback);
+        core::retain_first(result.first_numerical_failure, failures.first_numerical_failure, true);
         result.failures = std::move(failures.failures); result.trial_failures = failures.trial_failures;
         result.residual_evaluations = failures.residual_evaluations; result.jacobian_evaluations = failures.jacobian_evaluations;
         if (result.usable || evaluation_point) finish_checks(result, request);
         return result;
-    } catch (const std::exception& error) { failures.message = error.what(); return failures; }
+    } catch (const std::bad_alloc&) {
+        throw;
+    } catch (const std::exception& error) {
+        retain_density_failure(failures.first_numerical_failure, error, "minimax"); failures.message = error.what(); return failures;
+    }
 }
 }  // namespace epcsaft::regression

@@ -1,0 +1,1240 @@
+{
+  "baseline": "7929f13be4ff9f6b97d72fea023543fa107ff52e",
+  "basis": "Numerical verification of existing native decisions and refusal transport; no physical validation or parameter-error estimate",
+  "rank_and_minimax": {
+    "rank": {
+      "ranks": [
+        {
+          "basis": "weighted optimizer observation Jacobian",
+          "dimension": 2,
+          "rank": 1,
+          "threshold": 5.4745633586589504e-15
+        }
+      ],
+      "first": {
+        "text": "singular: residual nan against absent 0 after 0 iterations, contraction absent, floor absent, amplification absent; parameter Jacobian rank deficient; normal inverse unavailable; weighted optimizer observation Jacobian rank 1/2; threshold 5.4745633586589504e-15",
+        "iterations": 0,
+        "evaluations": 0,
+        "rank": {
+          "basis": "weighted optimizer observation Jacobian",
+          "dimension": 2,
+          "rank": 1,
+          "threshold": 5.4745633586589504e-15
+        }
+      }
+    },
+    "bounded": {
+      "ranks": [
+        {
+          "basis": "weighted optimizer observation Jacobian",
+          "dimension": 2,
+          "rank": 2,
+          "threshold": 9.970693580259146e-15
+        }
+      ],
+      "first": null
+    },
+    "regular": {
+      "ranks": [
+        {
+          "basis": "weighted optimizer observation Jacobian",
+          "dimension": 2,
+          "rank": 2,
+          "threshold": 1.0074989347153327e-14
+        }
+      ],
+      "first": null
+    },
+    "unfinished": {
+      "ranks": [
+        {
+          "basis": "weighted optimizer observation Jacobian",
+          "dimension": 2,
+          "rank": 2,
+          "threshold": 1.00751933729462e-14
+        }
+      ],
+      "first": null
+    },
+    "zero": {
+      "ranks": [
+        {
+          "basis": "weighted optimizer observation Jacobian",
+          "dimension": 2,
+          "rank": 2,
+          "threshold": 8.63769223240171e-15
+        }
+      ],
+      "first": null
+    },
+    "minimax": [
+      {
+        "mode": null,
+        "last": {
+          "mode": 0,
+          "iteration": 2,
+          "objective": 3.84506865892282,
+          "inf_pr": 0.019580153292884553,
+          "inf_du": 0.02794786180209421,
+          "mu": 0.021703878444064618,
+          "step_norm": 5.642506566796581,
+          "regularization": 0.0,
+          "alpha_du": 0.6477506104059958,
+          "alpha_pr": 0.6015565632300125,
+          "line_search_trials": 1
+        },
+        "callbacks": 3,
+        "restoration_entries": 0,
+        "first_restoration_iteration": null,
+        "initialization_return": 0,
+        "application_return": -1,
+        "first": {
+          "text": "stalled: residual nan against absent 0 after 0 iterations, contraction absent, floor absent, amplification absent; minimax Ipopt: Maximum_Iterations_Exceeded",
+          "iterations": 0,
+          "evaluations": 0,
+          "rank": null
+        }
+      },
+      {
+        "mode": false,
+        "last": {
+          "mode": 0,
+          "iteration": 2,
+          "objective": 3.84506865892282,
+          "inf_pr": 0.019580153292884553,
+          "inf_du": 0.02794786180209421,
+          "mu": 0.021703878444064618,
+          "step_norm": 5.642506566796581,
+          "regularization": 0.0,
+          "alpha_du": 0.6477506104059958,
+          "alpha_pr": 0.6015565632300125,
+          "line_search_trials": 1
+        },
+        "callbacks": 3,
+        "restoration_entries": 0,
+        "first_restoration_iteration": null,
+        "initialization_return": 0,
+        "application_return": -1,
+        "first": {
+          "text": "stalled: residual nan against absent 0 after 0 iterations, contraction absent, floor absent, amplification absent; minimax Ipopt: Maximum_Iterations_Exceeded",
+          "iterations": 0,
+          "evaluations": 0,
+          "rank": null
+        }
+      },
+      {
+        "mode": true,
+        "last": {
+          "mode": 0,
+          "iteration": 2,
+          "objective": 3.84506865892282,
+          "inf_pr": 0.019580153292884553,
+          "inf_du": 0.02794786180209421,
+          "mu": 0.021703878444064618,
+          "step_norm": 5.642506566796581,
+          "regularization": 0.0,
+          "alpha_du": 0.6477506104059958,
+          "alpha_pr": 0.6015565632300125,
+          "line_search_trials": 1
+        },
+        "callbacks": 3,
+        "restoration_entries": 0,
+        "first_restoration_iteration": null,
+        "initialization_return": 0,
+        "application_return": -1,
+        "first": {
+          "text": "stalled: residual nan against absent 0 after 0 iterations, contraction absent, floor absent, amplification absent; minimax Ipopt: Maximum_Iterations_Exceeded",
+          "iterations": 0,
+          "evaluations": 0,
+          "rank": null
+        }
+      },
+      {
+        "mode": "log",
+        "last": {
+          "mode": 0,
+          "iteration": 2,
+          "objective": 3.84506865892282,
+          "inf_pr": 0.019580153292884553,
+          "inf_du": 0.02794786180209421,
+          "mu": 0.021703878444064618,
+          "step_norm": 5.642506566796581,
+          "regularization": 0.0,
+          "alpha_du": 0.6477506104059958,
+          "alpha_pr": 0.6015565632300125,
+          "line_search_trials": 1
+        },
+        "callbacks": 3,
+        "restoration_entries": 0,
+        "first_restoration_iteration": null,
+        "initialization_return": 0,
+        "application_return": -1,
+        "first": {
+          "text": "stalled: residual nan against absent 0 after 0 iterations, contraction absent, floor absent, amplification absent; minimax Ipopt: Maximum_Iterations_Exceeded",
+          "iterations": 0,
+          "evaluations": 0,
+          "rank": null
+        }
+      },
+      {
+        "mode": true,
+        "last": {
+          "mode": 0,
+          "iteration": 2,
+          "objective": 3.84506865892282,
+          "inf_pr": 0.019580153292884553,
+          "inf_du": 0.02794786180209421,
+          "mu": 0.021703878444064618,
+          "step_norm": 5.642506566796581,
+          "regularization": 0.0,
+          "alpha_du": 0.6477506104059958,
+          "alpha_pr": 0.6015565632300125,
+          "line_search_trials": 1
+        },
+        "callbacks": 3,
+        "restoration_entries": 0,
+        "first_restoration_iteration": null,
+        "initialization_return": 0,
+        "application_return": -1,
+        "first": {
+          "text": "stalled: residual nan against absent 0 after 0 iterations, contraction absent, floor absent, amplification absent; minimax Ipopt: Maximum_Iterations_Exceeded",
+          "iterations": 0,
+          "evaluations": 0,
+          "rank": null
+        }
+      },
+      {
+        "mode": "invalid-log",
+        "last": {
+          "mode": 0,
+          "iteration": 2,
+          "objective": 3.84506865892282,
+          "inf_pr": 0.019580153292884553,
+          "inf_du": 0.02794786180209421,
+          "mu": 0.021703878444064618,
+          "step_norm": 5.642506566796581,
+          "regularization": 0.0,
+          "alpha_du": 0.6477506104059958,
+          "alpha_pr": 0.6015565632300125,
+          "line_search_trials": 1
+        },
+        "callbacks": 3,
+        "restoration_entries": 0,
+        "first_restoration_iteration": null,
+        "initialization_return": 0,
+        "application_return": -1,
+        "first": {
+          "text": "stalled: residual nan against absent 0 after 0 iterations, contraction absent, floor absent, amplification absent; minimax Ipopt: Maximum_Iterations_Exceeded",
+          "iterations": 0,
+          "evaluations": 0,
+          "rank": null
+        }
+      }
+    ]
+  },
+  "workers": {
+    "host_pid": 618161,
+    "central": 18430.89040393931,
+    "gradient": {
+      "residual": 0.0,
+      "floor": null,
+      "amplification": null,
+      "contraction": null,
+      "backward_error": null,
+      "iterations": 0,
+      "evaluations": 0,
+      "stop": "left_domain",
+      "cause": "density anchor outside 2 domain; anchor=9.9999999999999995e-07; lower=1.336359500474734e-05; upper=33957.955512043998",
+      "criterion": {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12
+      },
+      "rank": null
+    },
+    "cases": [
+      {
+        "request": "NF",
+        "workers": 1,
+        "result": {
+          "status": "initial_evaluation_failed",
+          "work": [
+            0,
+            0,
+            1,
+            1
+          ],
+          "first": {
+            "residual": 0.0,
+            "floor": null,
+            "amplification": null,
+            "contraction": null,
+            "backward_error": null,
+            "iterations": 0,
+            "evaluations": 0,
+            "stop": "left_domain",
+            "cause": "density anchor outside 2 domain; anchor=9.9999999999999995e-07; lower=1.336359500474734e-05; upper=33957.955512043998",
+            "criterion": {
+              "name": "DENSITY_ROOT_RESIDUAL",
+              "value": 1e-12
+            },
+            "rank": null
+          },
+          "predictions": [],
+          "physical": [],
+          "jacobian": [],
+          "statuses": [
+            "ObservationStatus.Available",
+            "ObservationStatus.Available"
+          ]
+        },
+        "producer_pids": [
+          618161
+        ]
+      },
+      {
+        "request": "NF",
+        "workers": 2,
+        "result": {
+          "status": "initial_evaluation_failed",
+          "work": [
+            0,
+            0,
+            1,
+            1
+          ],
+          "first": {
+            "residual": 0.0,
+            "floor": null,
+            "amplification": null,
+            "contraction": null,
+            "backward_error": null,
+            "iterations": 0,
+            "evaluations": 0,
+            "stop": "left_domain",
+            "cause": "density anchor outside 2 domain; anchor=9.9999999999999995e-07; lower=1.336359500474734e-05; upper=33957.955512043998",
+            "criterion": {
+              "name": "DENSITY_ROOT_RESIDUAL",
+              "value": 1e-12
+            },
+            "rank": null
+          },
+          "predictions": [],
+          "physical": [],
+          "jacobian": [],
+          "statuses": [
+            "ObservationStatus.Available",
+            "ObservationStatus.Available"
+          ]
+        },
+        "producer_pids": [
+          618161,
+          618167
+        ]
+      },
+      {
+        "request": "NR",
+        "workers": 1,
+        "result": {
+          "status": "converged",
+          "work": [
+            0,
+            0,
+            1,
+            0
+          ],
+          "first": {
+            "residual": 0.0,
+            "floor": null,
+            "amplification": null,
+            "contraction": null,
+            "backward_error": null,
+            "iterations": 0,
+            "evaluations": 0,
+            "stop": "left_domain",
+            "cause": "density anchor outside 2 domain; anchor=9.9999999999999995e-07; lower=6.68179750237367e-06; upper=33957.955512043998",
+            "criterion": {
+              "name": "DENSITY_ROOT_RESIDUAL",
+              "value": 1e-12
+            },
+            "rank": null
+          },
+          "predictions": [
+            18366.484327389397,
+            18397.22290545075
+          ],
+          "physical": [
+            191.42
+          ],
+          "jacobian": [
+            376.922580326529,
+            372.085957638964
+          ],
+          "statuses": [
+            "ObservationStatus.Available",
+            "ObservationStatus.Available"
+          ]
+        },
+        "producer_pids": [
+          618161
+        ]
+      },
+      {
+        "request": "NR",
+        "workers": 2,
+        "result": {
+          "status": "converged",
+          "work": [
+            0,
+            0,
+            1,
+            0
+          ],
+          "first": {
+            "residual": 0.0,
+            "floor": null,
+            "amplification": null,
+            "contraction": null,
+            "backward_error": null,
+            "iterations": 0,
+            "evaluations": 0,
+            "stop": "left_domain",
+            "cause": "density anchor outside 2 domain; anchor=9.9999999999999995e-07; lower=6.68179750237367e-06; upper=33957.955512043998",
+            "criterion": {
+              "name": "DENSITY_ROOT_RESIDUAL",
+              "value": 1e-12
+            },
+            "rank": null
+          },
+          "predictions": [
+            18366.484327389397,
+            18397.22290545075
+          ],
+          "physical": [
+            191.42
+          ],
+          "jacobian": [
+            376.922580326529,
+            372.085957638964
+          ],
+          "statuses": [
+            "ObservationStatus.Available",
+            "ObservationStatus.Available"
+          ]
+        },
+        "producer_pids": [
+          618161,
+          618168
+        ]
+      },
+      {
+        "request": "NFR",
+        "workers": 1,
+        "result": {
+          "status": "initial_evaluation_failed",
+          "work": [
+            0,
+            0,
+            1,
+            1
+          ],
+          "first": {
+            "residual": 0.0,
+            "floor": null,
+            "amplification": null,
+            "contraction": null,
+            "backward_error": null,
+            "iterations": 0,
+            "evaluations": 0,
+            "stop": "left_domain",
+            "cause": "density anchor outside 2 domain; anchor=9.9999999999999995e-07; lower=1.336359500474734e-05; upper=33957.955512043998",
+            "criterion": {
+              "name": "DENSITY_ROOT_RESIDUAL",
+              "value": 1e-12
+            },
+            "rank": null
+          },
+          "predictions": [],
+          "physical": [],
+          "jacobian": [],
+          "statuses": [
+            "ObservationStatus.Available",
+            "ObservationStatus.Available",
+            "ObservationStatus.NotEvaluated"
+          ]
+        },
+        "producer_pids": [
+          618161
+        ]
+      },
+      {
+        "request": "NFR",
+        "workers": 2,
+        "result": {
+          "status": "initial_evaluation_failed",
+          "work": [
+            0,
+            0,
+            1,
+            1
+          ],
+          "first": {
+            "residual": 0.0,
+            "floor": null,
+            "amplification": null,
+            "contraction": null,
+            "backward_error": null,
+            "iterations": 0,
+            "evaluations": 0,
+            "stop": "left_domain",
+            "cause": "density anchor outside 2 domain; anchor=9.9999999999999995e-07; lower=1.336359500474734e-05; upper=33957.955512043998",
+            "criterion": {
+              "name": "DENSITY_ROOT_RESIDUAL",
+              "value": 1e-12
+            },
+            "rank": null
+          },
+          "predictions": [],
+          "physical": [],
+          "jacobian": [],
+          "statuses": [
+            "ObservationStatus.Available",
+            "ObservationStatus.Available",
+            "ObservationStatus.NotEvaluated"
+          ]
+        },
+        "producer_pids": [
+          618161,
+          618169
+        ]
+      },
+      {
+        "request": "NRF",
+        "workers": 1,
+        "result": {
+          "status": "initial_evaluation_failed",
+          "work": [
+            0,
+            0,
+            1,
+            1
+          ],
+          "first": {
+            "residual": 0.0,
+            "floor": null,
+            "amplification": null,
+            "contraction": null,
+            "backward_error": null,
+            "iterations": 0,
+            "evaluations": 0,
+            "stop": "left_domain",
+            "cause": "density anchor outside 2 domain; anchor=9.9999999999999995e-07; lower=6.68179750237367e-06; upper=33957.955512043998",
+            "criterion": {
+              "name": "DENSITY_ROOT_RESIDUAL",
+              "value": 1e-12
+            },
+            "rank": null
+          },
+          "predictions": [],
+          "physical": [],
+          "jacobian": [],
+          "statuses": [
+            "ObservationStatus.Available",
+            "ObservationStatus.Available",
+            "ObservationStatus.Available"
+          ]
+        },
+        "producer_pids": [
+          618161
+        ]
+      },
+      {
+        "request": "NRF",
+        "workers": 2,
+        "result": {
+          "status": "initial_evaluation_failed",
+          "work": [
+            0,
+            0,
+            1,
+            1
+          ],
+          "first": {
+            "residual": 0.0,
+            "floor": null,
+            "amplification": null,
+            "contraction": null,
+            "backward_error": null,
+            "iterations": 0,
+            "evaluations": 0,
+            "stop": "left_domain",
+            "cause": "density anchor outside 2 domain; anchor=9.9999999999999995e-07; lower=6.68179750237367e-06; upper=33957.955512043998",
+            "criterion": {
+              "name": "DENSITY_ROOT_RESIDUAL",
+              "value": 1e-12
+            },
+            "rank": null
+          },
+          "predictions": [],
+          "physical": [],
+          "jacobian": [],
+          "statuses": [
+            "ObservationStatus.Available",
+            "ObservationStatus.Available",
+            "ObservationStatus.Available"
+          ]
+        },
+        "producer_pids": [
+          618161,
+          618172
+        ]
+      },
+      {
+        "request": "NFG",
+        "workers": 1,
+        "result": {
+          "status": "initial_evaluation_failed",
+          "work": [
+            0,
+            0,
+            1,
+            1
+          ],
+          "first": {
+            "residual": 0.0,
+            "floor": null,
+            "amplification": null,
+            "contraction": null,
+            "backward_error": null,
+            "iterations": 0,
+            "evaluations": 0,
+            "stop": "left_domain",
+            "cause": "density anchor outside 2 domain; anchor=9.9999999999999995e-07; lower=1.336359500474734e-05; upper=33957.955512043998",
+            "criterion": {
+              "name": "DENSITY_ROOT_RESIDUAL",
+              "value": 1e-12
+            },
+            "rank": null
+          },
+          "predictions": [],
+          "physical": [],
+          "jacobian": [],
+          "statuses": [
+            "ObservationStatus.Available",
+            "ObservationStatus.Available",
+            "ObservationStatus.NotEvaluated"
+          ]
+        },
+        "producer_pids": [
+          618161
+        ]
+      },
+      {
+        "request": "NFG",
+        "workers": 2,
+        "result": {
+          "status": "initial_evaluation_failed",
+          "work": [
+            0,
+            0,
+            1,
+            1
+          ],
+          "first": {
+            "residual": 0.0,
+            "floor": null,
+            "amplification": null,
+            "contraction": null,
+            "backward_error": null,
+            "iterations": 0,
+            "evaluations": 0,
+            "stop": "left_domain",
+            "cause": "density anchor outside 2 domain; anchor=9.9999999999999995e-07; lower=1.336359500474734e-05; upper=33957.955512043998",
+            "criterion": {
+              "name": "DENSITY_ROOT_RESIDUAL",
+              "value": 1e-12
+            },
+            "rank": null
+          },
+          "predictions": [],
+          "physical": [],
+          "jacobian": [],
+          "statuses": [
+            "ObservationStatus.Available",
+            "ObservationStatus.Available",
+            "ObservationStatus.NotEvaluated"
+          ]
+        },
+        "producer_pids": [
+          618161,
+          618173
+        ]
+      },
+      {
+        "request": "NGF",
+        "workers": 1,
+        "result": {
+          "status": "initial_evaluation_failed",
+          "work": [
+            0,
+            0,
+            1,
+            1
+          ],
+          "first": {
+            "residual": 0.0,
+            "floor": null,
+            "amplification": null,
+            "contraction": null,
+            "backward_error": null,
+            "iterations": 0,
+            "evaluations": 0,
+            "stop": "left_domain",
+            "cause": "density anchor outside 2 domain; anchor=1.0000000000000001e-05; lower=2.0045392507121008e-05; upper=33957.955512043998",
+            "criterion": {
+              "name": "DENSITY_ROOT_RESIDUAL",
+              "value": 1e-12
+            },
+            "rank": null
+          },
+          "predictions": [],
+          "physical": [],
+          "jacobian": [],
+          "statuses": [
+            "ObservationStatus.Available",
+            "ObservationStatus.Available",
+            "ObservationStatus.NotEvaluated"
+          ]
+        },
+        "producer_pids": [
+          618161
+        ]
+      },
+      {
+        "request": "NGF",
+        "workers": 2,
+        "result": {
+          "status": "initial_evaluation_failed",
+          "work": [
+            0,
+            0,
+            1,
+            1
+          ],
+          "first": {
+            "residual": 0.0,
+            "floor": null,
+            "amplification": null,
+            "contraction": null,
+            "backward_error": null,
+            "iterations": 0,
+            "evaluations": 0,
+            "stop": "left_domain",
+            "cause": "density anchor outside 2 domain; anchor=1.0000000000000001e-05; lower=2.0045392507121008e-05; upper=33957.955512043998",
+            "criterion": {
+              "name": "DENSITY_ROOT_RESIDUAL",
+              "value": 1e-12
+            },
+            "rank": null
+          },
+          "predictions": [],
+          "physical": [],
+          "jacobian": [],
+          "statuses": [
+            "ObservationStatus.Available",
+            "ObservationStatus.Available",
+            "ObservationStatus.NotEvaluated"
+          ]
+        },
+        "producer_pids": [
+          618161,
+          618174
+        ]
+      }
+    ]
+  },
+  "shared": {
+    "status": "ObservationStatus.TopologyEvent",
+    "source": "left_domain: residual inf against ASSOCIATION_RESIDUAL 2.0000000000000001e-13 after 21 iterations, contraction 0.99999999999658284, floor 8.8817841970012523e-16, amplification absent; polish trial: left_domain: residual inf against ASSOCIATION_RESIDUAL 2.0000000000000001e-13 after 21 iterations, contraction 0.99999999999658284, floor 8.8817841970012523e-16, amplification absent",
+    "prediction": "left_domain: residual inf against ASSOCIATION_RESIDUAL 2.0000000000000001e-13 after 21 iterations, contraction 0.99999999999658284, floor 8.8817841970012523e-16, amplification absent; polish trial: left_domain: residual inf against ASSOCIATION_RESIDUAL 2.0000000000000001e-13 after 21 iterations, contraction 0.99999999999658284, floor 8.8817841970012523e-16, amplification absent",
+    "fit": "left_domain: residual inf against ASSOCIATION_RESIDUAL 2.0000000000000001e-13 after 21 iterations, contraction 0.99999999999658284, floor 8.8817841970012523e-16, amplification absent; polish trial: left_domain: residual inf against ASSOCIATION_RESIDUAL 2.0000000000000001e-13 after 21 iterations, contraction 0.99999999999658284, floor 8.8817841970012523e-16, amplification absent",
+    "trial": "left_domain: residual inf against ASSOCIATION_RESIDUAL 2.0000000000000001e-13 after 21 iterations, contraction 0.99999999999658284, floor 8.8817841970012523e-16, amplification absent; polish trial: left_domain: residual inf against ASSOCIATION_RESIDUAL 2.0000000000000001e-13 after 21 iterations, contraction 0.99999999999658284, floor 8.8817841970012523e-16, amplification absent"
+  },
+  "asl_density": {
+    "case": "asl-density",
+    "binaries": {
+      "build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so": "90753239f381074640c8a9ab6eefd94dc92c342f22bc39a7f5b1f5ad35f6ef74",
+      "build/engine-meson/shared/libepcsaft_native.so": "9a5d6339003f1dcf438c8bf7c7b1ea96561caf7bb70d21aae590fab5e1459aa5",
+      "build/engine-meson/shared/libepcsaft_asl.so": "1573392862b23924b0cbacfb45c75bbc60e7cb406ba2a8801b676987a000eff3"
+    },
+    "result": {
+      "native_message": "no stable density root (count 0) at T = 300 K, P = 1000000000000000 Pa; check the units (K, Pa)",
+      "native_status": "PropertyActionStatus.DensityUnavailable",
+      "native_convergence": "None",
+      "native_first": "stalled: residual nan against absent 0 after 0 iterations, contraction absent, floor absent, amplification absent; density closure: no stable density root (count 0) at T = 300 K, P = 1000000000000000 Pa; check the units (K, Pa)",
+      "value": NaN,
+      "gradient": [
+        NaN,
+        NaN,
+        NaN
+      ],
+      "hessian": [
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN
+      ],
+      "message": "\"epcsaft_property:no_density_root:9:density:stalled: residual nan against absent 0 after 0 iterations, contraction absent, floor absent, amplification absent; density closure: no stable density root (count 0) at T = 300 K, P = 1000000000000000 Pa; check the units (K, Pa); no stable density root (count 0) at T = 300 K, P = 1000000000000000 Pa; check the units (K, Pa)"
+    }
+  },
+  "asl_native": [
+    {
+      "observable": 0,
+      "asl": {
+        "value": 18523.708706968977,
+        "message": "",
+        "gradient": [
+          -24.851546510094305,
+          2.6180651331358307e-05,
+          -1558.6640409650363,
+          6234.656163860159
+        ],
+        "hessian": [
+          -0.11499978237227786,
+          1.8998954404606563e-07,
+          -2.897725679115032e-13,
+          1.1468476025682999,
+          8.337415139690915e-07,
+          1814.154584245655,
+          -4.587390410273226,
+          -3.3349660558765114e-06,
+          -3359.9582345700373,
+          -2146.807471370272
+        ]
+      },
+      "native_normalized": [
+        18523.708706968977,
+        -24.851546510094305,
+        2.6180651331358307e-05,
+        -1558.6640409650363,
+        6234.656163860159,
+        -0.11499978237227786,
+        1.8998954404606563e-07,
+        -2.897725679115032e-13,
+        1.1468476025682999,
+        8.337415139690915e-07,
+        1814.154584245655,
+        -4.587390410273226,
+        -3.3349660558765114e-06,
+        -3359.9582345700373,
+        -2146.807471370272
+      ],
+      "maximum_scaled_error": 0.0
+    },
+    {
+      "observable": 1,
+      "asl": {
+        "value": -36884.46153355804,
+        "message": "",
+        "gradient": [
+          91.41019502567326,
+          2.863559256679831e-05,
+          -152.62313654960988,
+          610.4925461984377
+        ],
+        "hessian": [
+          0.26923655214654896,
+          -1.8532057606078734e-07,
+          1.8914993996347995e-13,
+          0.7792970830925507,
+          1.446341475711649e-06,
+          -13.663679243086364,
+          -3.1171883323717964,
+          -5.785365902846424e-06,
+          436.21255834638583,
+          -3271.081598881601
+        ]
+      },
+      "native_normalized": [
+        -36884.46153355804,
+        91.41019502567326,
+        2.863559256679831e-05,
+        -152.62313654960988,
+        610.4925461984377,
+        0.26923655214654896,
+        -1.8532057606078734e-07,
+        1.8914993996347995e-13,
+        0.7792970830925507,
+        1.446341475711649e-06,
+        -13.663679243086364,
+        -3.1171883323717964,
+        -5.785365902846424e-06,
+        436.21255834638583,
+        -3271.081598881601
+      ],
+      "maximum_scaled_error": 0.0
+    },
+    {
+      "observable": 2,
+      "asl": {
+        "value": 0.06952606570843045,
+        "message": "",
+        "gradient": [
+          0.03798614101078873,
+          -9.978326954233886e-06,
+          -0.11932917439374925,
+          0.47731669757499684
+        ],
+        "hessian": [
+          -0.0002788873736966984,
+          -3.095493834296144e-11,
+          9.999996328583468e-11,
+          0.00032652582772151875,
+          1.3649695999152119e-11,
+          0.1507856199260954,
+          -0.0013061033108862767,
+          -5.459878399656174e-11,
+          -0.30481954372000847,
+          0.025986430942516736
+        ]
+      },
+      "native_normalized": [
+        0.06952606570843045,
+        0.03798614101078873,
+        -9.978326954233886e-06,
+        -0.11932917439374925,
+        0.47731669757499684,
+        -0.0002788873736966984,
+        -3.095493834296144e-11,
+        9.999996328583468e-11,
+        0.00032652582772151875,
+        1.3649695999152119e-11,
+        0.1507856199260954,
+        -0.0013061033108862767,
+        -5.459878399656174e-11,
+        -0.30481954372000847,
+        0.025986430942516736
+      ],
+      "maximum_scaled_error": 0.0
+    },
+    {
+      "observable": 3,
+      "asl": {
+        "value": 1.1804367682127914,
+        "message": "",
+        "gradient": [
+          0.03648766394410875,
+          -9.993936648641484e-06,
+          0.47731669757500406,
+          -1.9092667903000144
+        ],
+        "hessian": [
+          -0.00026267339082901693,
+          -1.6754538711956947e-11,
+          1.0000001575978729e-10,
+          -0.00130610331088615,
+          -5.459878399668106e-11,
+          -0.30481954372001024,
+          0.005224413243544542,
+          2.1839513598675795e-10,
+          0.025986430942532612,
+          4.669221251979917
+        ]
+      },
+      "native_normalized": [
+        1.1804367682127914,
+        0.03648766394410875,
+        -9.993936648641484e-06,
+        0.47731669757500406,
+        -1.9092667903000144,
+        -0.00026267339082901693,
+        -1.6754538711956947e-11,
+        1.0000001575978729e-10,
+        -0.00130610331088615,
+        -5.459878399668106e-11,
+        -0.30481954372001024,
+        0.005224413243544542,
+        2.1839513598675795e-10,
+        0.025986430942532612,
+        4.669221251979917
+      ],
+      "maximum_scaled_error": 0.0
+    }
+  ],
+  "corrections": {
+    "addition-ordinary": {
+      "central": -63.11723442487346,
+      "gradient": [
+        -0.26034139231801134
+      ],
+      "status": "ObservationStatus.Available",
+      "first": null,
+      "fit_first": null,
+      "work": [
+        0,
+        0,
+        1,
+        0
+      ]
+    },
+    "addition-controlled": {
+      "central": -63.11723442487346,
+      "gradient": [],
+      "status": "ObservationStatus.ActionUnavailable",
+      "first": {
+        "residual": 0.0,
+        "floor": null,
+        "amplification": null,
+        "contraction": null,
+        "backward_error": null,
+        "iterations": 0,
+        "evaluations": 0,
+        "stop": "left_domain",
+        "cause": "density anchor outside 2 domain; anchor=9.9999999999999995e-07; lower=1.336359500474734e-05; upper=33957.955512043998",
+        "criterion": {
+          "name": "DENSITY_ROOT_RESIDUAL",
+          "value": 1e-12
+        },
+        "rank": null
+      },
+      "fit_first": {
+        "residual": 0.0,
+        "floor": null,
+        "amplification": null,
+        "contraction": null,
+        "backward_error": null,
+        "iterations": 0,
+        "evaluations": 0,
+        "stop": "left_domain",
+        "cause": "density anchor outside 2 domain; anchor=9.9999999999999995e-07; lower=1.336359500474734e-05; upper=33957.955512043998",
+        "criterion": {
+          "name": "DENSITY_ROOT_RESIDUAL",
+          "value": 1e-12
+        },
+        "rank": null
+      },
+      "work": [
+        0,
+        0,
+        1,
+        1
+      ],
+      "producer": {
+        "residual": 0,
+        "floor": null,
+        "amplification": null,
+        "contraction": null,
+        "backward_error": null,
+        "iterations": 0,
+        "evaluations": 0,
+        "stop": "left_domain",
+        "cause": "density anchor outside 2 domain; anchor=9.9999999999999995e-07; lower=1.336359500474734e-05; upper=33957.955512043998",
+        "criterion": {
+          "name": "DENSITY_ROOT_RESIDUAL",
+          "value": 1e-12
+        },
+        "rank": null
+      },
+      "trial_first": {
+        "residual": 0.0,
+        "floor": null,
+        "amplification": null,
+        "contraction": null,
+        "backward_error": null,
+        "iterations": 0,
+        "evaluations": 0,
+        "stop": "left_domain",
+        "cause": "density anchor outside 2 domain; anchor=9.9999999999999995e-07; lower=1.336359500474734e-05; upper=33957.955512043998",
+        "criterion": {
+          "name": "DENSITY_ROOT_RESIDUAL",
+          "value": 1e-12
+        },
+        "rank": null
+      }
+    },
+    "group-ordinary": {
+      "status": "converged",
+      "first": {
+        "residual": NaN,
+        "floor": null,
+        "amplification": null,
+        "contraction": null,
+        "backward_error": null,
+        "iterations": 0,
+        "evaluations": 0,
+        "stop": "singular",
+        "cause": "parameter Jacobian rank deficient; normal inverse unavailable",
+        "criterion": null,
+        "rank": {
+          "basis": "weighted optimizer observation Jacobian",
+          "dimension": 2,
+          "rank": 1,
+          "threshold": 1.6095222473794646e-11
+        }
+      },
+      "predictions": [
+        18366.484327389393,
+        1.0
+      ],
+      "jacobian": [
+        376.9225803265293,
+        -1564.7655521672996,
+        0.0,
+        0.0
+      ],
+      "work": [
+        0,
+        0,
+        1,
+        0
+      ]
+    },
+    "group-rows": {
+      "status": "converged",
+      "first": {
+        "residual": 0.0,
+        "floor": null,
+        "amplification": null,
+        "contraction": null,
+        "backward_error": null,
+        "iterations": 0,
+        "evaluations": 0,
+        "stop": "left_domain",
+        "cause": "earlier row",
+        "criterion": null,
+        "rank": null
+      },
+      "predictions": [
+        18366.484327389393,
+        1.0
+      ],
+      "jacobian": [
+        376.9225803265293,
+        -1564.7655521672996,
+        0.0,
+        0.0
+      ],
+      "work": [
+        0,
+        0,
+        1,
+        0
+      ]
+    },
+    "group-prefix": {
+      "status": "initial_evaluation_failed",
+      "first": {
+        "residual": NaN,
+        "floor": null,
+        "amplification": null,
+        "contraction": null,
+        "backward_error": null,
+        "iterations": 0,
+        "evaluations": 0,
+        "stop": "stalled",
+        "cause": "fit evaluation: central_solve_unavailable: ",
+        "criterion": null,
+        "rank": null
+      },
+      "predictions": [],
+      "jacobian": [],
+      "work": [
+        0,
+        0,
+        1,
+        1
+      ]
+    },
+    "handler-logic": {
+      "status": "initial_evaluation_failed",
+      "first": {
+        "residual": NaN,
+        "floor": null,
+        "amplification": null,
+        "contraction": null,
+        "backward_error": null,
+        "iterations": 0,
+        "evaluations": 0,
+        "stop": "stalled",
+        "cause": "fit trial: narrowed-handler control",
+        "criterion": null,
+        "rank": null
+      },
+      "predictions": [],
+      "jacobian": [],
+      "work": [
+        0,
+        0,
+        1,
+        1
+      ]
+    },
+    "handler-runtime": {
+      "status": "initial_evaluation_failed",
+      "first": {
+        "residual": NaN,
+        "floor": null,
+        "amplification": null,
+        "contraction": null,
+        "backward_error": null,
+        "iterations": 0,
+        "evaluations": 0,
+        "stop": "stalled",
+        "cause": "fit trial: narrowed-handler control",
+        "criterion": null,
+        "rank": null
+      },
+      "predictions": [],
+      "jacobian": [],
+      "work": [
+        0,
+        0,
+        1,
+        1
+      ]
+    },
+    "handler-domain": [
+      {
+        "d": 0.0045,
+        "status": "converged",
+        "message": "Gradient tolerance reached. Gradient max norm: 1.050000e+02 <= 1.000000e+100",
+        "first": null,
+        "predictions": [
+          1.3499999999999999
+        ],
+        "jacobian": [
+          300.0
+        ],
+        "work": [
+          0,
+          0,
+          1,
+          0
+        ],
+        "failures": []
+      },
+      {
+        "d": 1e+308,
+        "status": "initial_evaluation_failed",
+        "message": "nonfinite reaction properties",
+        "first": "stalled: residual nan against absent 0 after 0 iterations, contraction absent, floor absent, amplification absent; fit trial: nonfinite reaction properties",
+        "predictions": [],
+        "jacobian": [],
+        "work": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "failures": [
+          {
+            "message": "nonfinite reaction properties",
+            "status": "ObservationStatus.InadmissibleTrial",
+            "observation": 1
+          }
+        ]
+      }
+    ]
+  }
+}

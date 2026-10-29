@@ -1,0 +1,98 @@
+{
+  "regular_states": 251,
+  "regular_values": 10040,
+  "bitwise_differences": [],
+  "availability_differences": [],
+  "near_critical": [
+    {
+      "case": 250,
+      "A": {
+        "system": "one_component_two_density_reduction",
+        "reason": "",
+        "residual_norm": 1.582664121285715e-15,
+        "evaluation_floor": 7.349250922482691e-16,
+        "jacobian_inverse_norm": 7690.912861631765,
+        "condition_estimate": 36.581748725710774,
+        "forward_error_estimate": 1.7824376690347564e-11,
+        "precision_bits": 53,
+        "refinement_iterations": 0
+      },
+      "B": {
+        "system": "one_component_two_density_reduction",
+        "reason": "",
+        "residual_norm": 1.582664121285715e-15,
+        "evaluation_floor": 7.349250922482691e-16,
+        "jacobian_inverse_norm": 7690.912861631765,
+        "condition_estimate": 36.581748725710774,
+        "forward_error_estimate": 1.7824376690347564e-11,
+        "precision_bits": 53,
+        "refinement_iterations": 0
+      }
+    },
+    {
+      "case": 251,
+      "A": {
+        "system": "one_component_two_density_reduction",
+        "reason": "",
+        "residual_norm": 5.421010862427522e-20,
+        "evaluation_floor": 3.601555214973444e-19,
+        "jacobian_inverse_norm": 372641.5737550914,
+        "condition_estimate": 126.6196629247704,
+        "forward_error_estimate": 1.552043638705378e-13,
+        "precision_bits": 64,
+        "refinement_iterations": 1
+      },
+      "B": {
+        "system": "one_component_two_density_reduction",
+        "reason": "",
+        "residual_norm": 5.421010862427522e-20,
+        "evaluation_floor": 3.601555214973444e-19,
+        "jacobian_inverse_norm": 372641.5737550914,
+        "condition_estimate": 126.6196629247704,
+        "forward_error_estimate": 1.552043638705378e-13,
+        "precision_bits": 64,
+        "refinement_iterations": 1
+      }
+    },
+    {
+      "case": 252,
+      "A": {
+        "system": "one_component_two_density_reduction",
+        "reason": "",
+        "residual_norm": 5.516699934225854e-19,
+        "evaluation_floor": 3.6410037357994166e-19,
+        "jacobian_inverse_norm": 11149482.628544213,
+        "condition_estimate": 388.1266842382958,
+        "forward_error_estimate": 1.0211263518029053e-11,
+        "precision_bits": 64,
+        "refinement_iterations": 1
+      },
+      "B": {
+        "system": "one_component_two_density_reduction",
+        "reason": "",
+        "residual_norm": 5.516699934225854e-19,
+        "evaluation_floor": 3.6410037357994166e-19,
+        "jacobian_inverse_norm": 11149482.628544213,
+        "condition_estimate": 388.1266842382958,
+        "forward_error_estimate": 1.0211263518029053e-11,
+        "precision_bits": 64,
+        "refinement_iterations": 1
+      }
+    },
+    {
+      "case": 253,
+      "A": {
+        "system": "one_component_two_density_reduction",
+        "reason": "rejected attempt: phase L has no locally unique anchored root: infeasible: residual 8.3266726846886741e-16 against DENSITY_ROOT_RESIDUAL 9.9999999999999998e-13 after 1 iterations, contraction absent, floor 0, amplification 2192574656.7781448; density anchor branch 2; anchor 4741.0850420235611; window [4694.1436059639191,4788.4958924437997] mol/m3",
+        "residual_norm": 8.131516293641283e-19,
+        "evaluation_floor": 3.6532320602131365e-19,
+        "jacobian_inverse_norm": 253654590.21690184,
+        "condition_estimate": 1095.5375931337264,
+        "forward_error_estimate": 2.9892646044572655e-10,
+        "precision_bits": 64,
+        "refinement_iterations": 3
+      },
+      "B": null
+    }
+  ]
+}

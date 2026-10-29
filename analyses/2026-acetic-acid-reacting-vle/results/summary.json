@@ -1,0 +1,20 @@
+{
+  "temperature_K": 323.15,
+  "measurements": 3,
+  "attempted": 96,
+  "numerical_failures": 0,
+  "mean_signed_error_kPa": 0.8998378283138487,
+  "RMSE_kPa": 0.9002546928072179,
+  "mean_absolute_relative_error_percent": 7.971171286569034,
+  "maximum_absolute_relative_error_percent": 8.398593280118694,
+  "interval_disjoint_count": 3,
+  "max_row_residual": 1.1368683772161603e-13,
+  "max_charge_error_mol": 5.781375930545418e-19,
+  "max_inventory_error_mol": 2.220446049250313e-16,
+  "max_relative_pressure_closure": 2.911417773532321e-10,
+  "max_neutral_log_fugacity_difference": 2.91110083955326e-10,
+  "max_reaction_log_residual": 2.2737367544323206e-13,
+  "calibration_label": "fixed-parameter comparison; historical calibration overlap unresolved",
+  "uncertainty_label": "Composition intervals at fixed temperature and fixed parameters; no joint confidence region; sampled monotone branch, not certified interval arithmetic.",
+  "reference_error_label": "Analytic infinite-dilution insertion on accepted main. Native local higher-precision reference replay and pressure/site propagation included in pressure estimate. Independent finite-ladder comparison and native pressure re-solves retained separately. Neither local error estimates nor finite refinement differences are rigorous global bounds."
+}

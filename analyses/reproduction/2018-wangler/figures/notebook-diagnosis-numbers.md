@@ -1,0 +1,1 @@
+The independent bubble pressures differ by 4.1e-10 relative. The largest term chemical-potential difference is 8.39e-09 in $\mu/(RT)$. The Engine bubble residual is 4.44e-15; FeOs liquid–vapor pressure closure is 3.15e-06 Pa. The derivative-step change is at most 1.75e-10, and the term sum differs from the exact Engine total by at most 2.4e-11.

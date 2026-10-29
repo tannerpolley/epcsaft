@@ -1,0 +1,247 @@
+2718                                              J. Chem. Eng. Data 2008, 53, 2718–2720
+
+
+Densities and Viscosities of Binary Mixtures of Tris(2-ethylhexyl) Phosphate +
+Cyclohexane or n-Hexane at T ) (293.15, 298.15, and 303.15) K and p ) 0.1 MPa
+
+Sheng Fang,† Chun-Xia Zhao,† Chao-Hong He,*,† Jian-Qing Liu,‡ and Jiang-Hao Sun‡
+Department of Chemical Engineering, Zhejiang University, Hangzhou 310027, China, and Juhua Group Corporation Polyamide
+Fiber Factory, Quzhou 324004, China
+
+
+
+          This work presents densities and viscosities under atmospheric conditions for tris(2-ethylhexyl) phosphate
+          with cyclohexane and n-hexane over the whole range of composition at T ) (293.15, 298.15, and 303.15)
+          K. The viscosity data have been represented by the EyringsUNIQUAC equation for liquid mixture viscosity.
+
+
+
+
+                                                                                                                                                Downloaded from pubs.​acs.​org/​jceaax/​article-pdf/​53/​11/​2718/​11639022/​je8006138.​pdf by BRIGHAM YOUNG UNIV user on 29 October 2026
+Introduction                                                            Table 1. Comparison of Experimental Densities and Viscosities of
+                                                                        Pure Liquids with the Literature Values
+   Tris(2-ethylhexyl) phosphate (TOP; CAS registry no. 78-42-
+                                                                                                     F/g · cm-3                η/mPa · s
+2) has been extensively studied as an organophosphate extractant
+in hydrometallurgical processes for the separation and purifica-           liquids      T/K      exptl        lit.     exptl           lit.
+tion of a number of metal ions and inorganic acids, especially          TOP            293.15    0.9238   0.92414     14.087       13.879a
+in familiar nuclear fuel reprocessing.1-5 For application in the                       298.15    0.9201               11.615       11.556a
+                                                                                       303.15    0.9164                9.708        9.738a
+extraction process, TOP needs to be diluted with a nonpolar             cyclohexane    293.15    0.7786                0.984
+diluent, which is believed to confer a primarily suitable density                      298.15    0.7739   0.7739216    0.903         0.90417
+and viscosity for the organic phase. Cyclohexane and n-hexane                          303.15    0.7692   0.7691817    0.830         0.82018
+are hydrocarbon solvents that are always selected as the diluent        n-hexane       293.15    0.6599   0.6594419    0.319         0.316319
+because of their availability, large solubility for many organo-                       298.15    0.6553   0.6549319    0.304         0.303619
+                                                                                                          0.6552820
+phosphate extractants, and relative low toxicity compared with                         303.15    0.6508   0.6503619     0.290        0.291419
+aromatic hydrocarbons and chloroalkanes. For example, TOP
+diluted in cyclohexane or n-hexane was used for the extraction
+                                                                           a
+                                                                             Calculated by equation log η ) A + B/(C - T) with parameters
+                                                                        from ref 15.
+of HAuCl4,6 HReO4,6 uranium,7 lanthanides,8 Zn(II),9 Ce(III),10
+and Eu(III),10 and so on. Densities and viscosities for binary
+mixtures of TOP + cyclohexane and n-hexane will be beneficial           trometry), 1H NMR, and 31P NMR. The MS was measured with
+for the research of mass transfer in extraction, the simulation         a Thermo Finnigan LCQ-Advantage spectrometer using ESI
+of the extraction process, and the design of the extraction             (electrospray ionization) techniques. 1H NMR and 31P NMR
+equipments. A detailed search of the literature shows that only         spectra were recorded in CDCl3 with tetramethylsilane and
+vapor pressures and the free energy of mixing were measured             H3PO4 as an internal standard, respectively, at ambient tem-
+for the TOP + n-hexane extraction system.11 No measurements             perature on a Varian-400 MHz spectrometer. The 1H NMR
+have been reported on the densities and viscosities of TOP with         (Appendix 1), 31P NMR (Appendix 2), and ESI-MS (Appendix
+cyclohexane and n-hexane.                                               3) spectra for TOP are available as Supporting Information. All
+   In the present article, we report the experimental data of           samples, including the binary mixtures, were centrifugally
+densities and viscosities for the binary mixtures of TOP with           precipitated by a TDL-80-2B centrifuge (Anting Scientific
+cyclohexane and n-hexane over the entire range of composition           Instrument Factory, Shanghai, China) before the viscosity
+at T ) (293.15, 298.15, and 303.15) K and atmospheric pressure.         measurement. For all samples, the purity was also checked by
+The experimental viscosity data have been represented by the            comparing the viscosity and density with their literature values,
+EyringsUNIQUAC equation.12,13                                           as listed in Table 1 as available.
+                                                                           Experimental Measurements. Binary mixtures were prepared
+Experimental Section                                                    by mass in airtight-plugged glass bottles. The masses were
+   Materials. Analytical grade cyclohexane (g 99.5 %) and               recorded on a Sartorius Corp. BS 224S balance to an accuracy
+HPLC grade n-hexane (g 99.9 %) were obtained from Sinop-                of ( 1 · 10-4 g. Care was taken to avoid evaporation and
+harm Group Chemical Reagent. TOP with purity greater than               contamination during mixing. The estimated uncertainty in mole
+99 % was obtained from Hangzhou Nature Organic Chemicals.               fraction was less than 1 · 10-4.
+These pure liquid samples were dried over 4 Å molecular sieves             The densities of the pure components and their mixtures were
+and degassed in an ultrasonic bath prior to use. The purity of          measured with an approximately 50 cm3 Gay-Lussac pycnom-
+these pure samples was ascertained by gas chromatography. TOP           eter, and their volumes over the experimental temperature were
+was ascertained by more analysis including MS (mass spec-               calibrated with freshly boiled doubly distilled water. The
+                                                                        pycnometer filled with air-bubble-free experimental liquids was
+* Corresponding author. Fax: +86 571 87951742. Tel: +86 571 87952709.   kept in a DF-02 transparent walled water bath (Fangao Scientific,
+E-mail: chhezju@zju.edu.cn.
+†
+  Zhejiang University.                                                  Nanjing, China), which was maintained at a constant ( 0.01 K
+‡
+  Juhua Group Corporation Polyamide Fiber Factory.                      for (20 to 25) min to attain thermal equilibrium. The pycnometer
+                                    10.1021/je8006138 CCC: $40.75  2008 American Chemical Society
+                                                       Published on Web 10/24/2008
+                                                                   Journal of Chemical & Engineering Data, Vol. 53, No. 11, 2008 2719
+
+was then removed from the water bath, properly dried, and                                                                         φ1
+weighed on the BS 224S analytical balance. Each reported                 ln(ηmixVmix) ) x1 ln(η1V1) + x2 ln(η2V2) + x1 ln            +
+                                                                                                                                  x1
+
+                                                                                              (                        )
+density datum was determined by the average of two measure-
+                                                                                     φ2 z       θ1         θ2
+ments. The estimated uncertainty of density measurements of                  x2 ln     + q1x1 ln + q2x2 ln     - x1q1 ln(θ1 +
+solvent and binary mixtures was less than 1 · 10-4 g · cm-3.                         x2 2       φ1         φ2
+   The viscosities of the solutions were determined by the use                                     θ2τ21) - x2q2 ln(θ2 + θ1τ12) (2)
+of a Ubbelohde viscometer with capillaries that were (0.3 to
+                                                                         with
+0.4) mm or (0.5 to 0.6) mm in diameter according to the
+viscosity of samples. The Ubbelohde viscometer was calibrated
+at every experimental temperature with freshly boiled doubly
+distilled water. During heating, the viscometer’s limb was closed
+                                                                                   τ21 ) exp -(   u21-u11
+                                                                                                    RT        )
+                                                                                                          , τ12 ) exp -(u12-u22
+                                                                                                                          RT          )         (3)
+
+using a rubber stopper to minimize the evaporation loss. During          where θi is the surface area fraction, φi is the relative volume
+the measurements, the rubber stopper was removed. It was filled          fraction, qi is the surface area parameter for species i, u21-u11
+with experimental liquid and placed vertically in the same water         and u12-u22 are the interaction parameters, and z is the
+bath as that for the density measurement. An electronic                  coordination number usually taken to be 10. More details of
+
+
+
+
+                                                                                                                                                      Downloaded from pubs.​acs.​org/​jceaax/​article-pdf/​53/​11/​2718/​11639022/​je8006138.​pdf by BRIGHAM YOUNG UNIV user on 29 October 2026
+stopwatch with a readability of ( 0.01 s was used for the flow           the UNIQUAC model and the calculation of surface area
+time measurements. The kinematic viscosity of solutions is given         fraction, θi, can be taken from the excellent reference book of
+by
+                                                                         Table 2. Densities and Viscosities for {x1 TOP + (1 - x1)
+                          V ) k1t - k2/t                        (1)      Cyclohexane}
+                                                                                          F           η                       F             η
+where V is the kinematic viscosity, t is the flow time and k1 and
+k2 are the viscometer constants. The k2/t term represents the               x1         g · cm-3     mPa · s       x1       g · cm-3       mPa · s
+correction due to kinetic energy and can generally be neglected.                                      T ) 293.15 K
+The values of k1 determined by calibration with water are                 0.0000       0.7786       0.984     0.5820       0.9028          7.908
+                                                                          0.0997       0.8237       1.709     0.6955       0.9104          9.640
+0.003493, 0.003490, and 0.003492 for the viscometer with
+                                                                          0.1995       0.8525       2.710     0.7732       0.9146         10.797
+capillaries of (0.3 to 0.4) mm and 0.009708, 0.009683, and                0.2978       0.8711       3.894     0.8997       0.9202         12.645
+0.009660 for the viscometer with capillaries of (0.5 to 0.6) mm           0.4007       0.8858       5.246     1.0000       0.9238         14.087
+at T ) (293.15, 298.15, and 303.15) K. The dynamic viscosities            0.4965       0.8958       6.629
+were then calculated from the measured kinematic viscosities                                          T ) 298.15 K
+and the densities of the same solutions. Measurements were                0.0000       0.7739       0.903     0.5820       0.8990          6.682
+                                                                          0.0997       0.8194       1.544     0.6955       0.9066          8.090
+repeated at least four to five times for each solution and                0.1995       0.8483       2.423     0.7732       0.9108          9.002
+temperature. The reproducibility of the viscosity estimates was           0.2978       0.8671       3.415     0.8997       0.9165         10.495
+found to be within ( 0.003 mPa · s.                                       0.4007       0.8818       4.532     1.0000       0.9201         11.615
+                                                                          0.4965       0.8920       5.665
+                                                                                                      T ) 303.15 K
+Results and Discussion                                                    0.0000       0.7692       0.830     0.5820       0.8951          5.732
+                                                                          0.0997       0.8151       1.404     0.6955       0.9028          6.862
+   The densities and viscosities of the pure substance at different       0.1995       0.8442       2.176     0.7732       0.9070          7.619
+temperatures are shown in Table 1. We found that the measured             0.2978       0.8631       3.025     0.8997       0.9126          8.806
+data are in good agreement with those in the literature. TOP              0.4007       0.8779       3.948     1.0000       0.9164          9.708
+has a much higher viscosity than does cyclohexane and                     0.4965       0.8880       4.896
+n-hexane. It is well known that fluids with a high viscosity are         Table 3. Densities and Viscosities for {x1 TOP + (1 - x1)
+more resistant to flow. TOP is a trisubstituted phosphate ester21        n-Hexane}
+with self-association and H-bonding properties mainly attributed                          F           η                       F             η
+to dipolesdipole interactions. The network of dipolesdipole
+                                                                            x1         g · cm-3     mPa · s       x1       g · cm-3       mPa · s
+forces Pδ+ ) Oδ- binds the TOP molecules together. Extra
+energy is required to break this interaction. Therefore, TOP                                          T ) 293.15 K
+                                                                          0.0000       0.6599       0.319     0.5889       0.8836          5.100
+needs to be diluted in a suitable solvent to lower its viscosity          0.1027       0.7394       0.638     0.7133       0.8989          7.340
+for application in the industrial extraction process.                     0.1999       0.7892       1.103     0.8032       0.9083          9.121
+   The experimental viscosity and density data for the binary             0.2976       0.8232       1.754     0.8907       0.9163         11.178
+                                                                          0.4047       0.8515       2.753     1.0000       0.9238         14.087
+mixture of TOP and cyclohexane or n-hexane from (293.15 to                0.5005       0.8697       3.881
+303.15) K at p ) 0.1 MPa are presented in Tables 2 and 3,
+                                                                                                      T ) 298.15 K
+respectively. The densities and viscosities reported in this work         0.0000       0.6553       0.304     0.5889       0.8796          4.479
+will be beneficial for the research of mass transfer during               0.1027       0.7352       0.594     0.7133       0.8953          6.247
+extraction, the simulation of the extraction process, and the             0.1999       0.7850       1.019     0.8032       0.9045          7.730
+design of extraction equipment using TOP dilution systems.                0.2976       0.8190       1.608     0.8907       0.9126          9.353
+                                                                          0.4047       0.8475       2.485     1.0000       0.9201         11.615
+   Primary results show that one parameter model, such as the             0.5005       0.8658       3.438
+GrunbergsNissan22 and KattisChaudhri23 equations, could not                                           T ) 303.15 K
+satisfactorily correlate the experimental viscosity data. Therefore,      0.0000       0.6508       0.290     0.5889       0.8758          3.923
+the EyringsUNIQUAC equation12,13 for organic molecular                    0.1027       0.7309       0.560     0.7133       0.8914          5.405
+                                                                          0.1999       0.7809       0.948     0.8032       0.9008          6.583
+mixtures was used to describe the viscosity data in this work.            0.2976       0.8150       1.475     0.8907       0.9089          7.935
+The EyringsUNIQUAC model has the final form for binary                    0.4047       0.8435       2.246     1.0000       0.9164          9.708
+mixtures as                                                               0.5005       0.8619       3.053
+2720 Journal of Chemical & Engineering Data, Vol. 53, No. 11, 2008
+
+Table 4. Adjustable Parameters and Standard Deviations for (TOP                  (7) Marin, S.; Cornejo, S.; Jara, C.; Duran, N. Determination of trace level
++ Cyclohexane) and (TOP + n-Hexane) Binary Mixtures at T )                           impurities in uranium compounds by ICP-AES after organic extraction.
+(293.15, 298.15, and 303.15) K                                                       Fresenius’ J. Anal. Chem 1996, 355, 680–683.
+                                                                                 (8) Peppard, D. F.; Mason, G. W.; Lewey, S. A. Tetrad grouping of
+                                                                100                  lanthanides(iii) in their liquid-liquid extraction ordering. SolVent Extr.
+          systems                  T/K         u21-u11 u12-u22 (AAD)                 Res., Proc. Int. Conf. SolVent Extr. Chem. 5th 1969, 49–57.
+TOP (1) + cyclohexane (2) 293.15-303.15         -53.94     339.48     0.36       (9) Navratil, O. Synergistic zinc extraction with 1-phenyl-3-methyl-4-acyl-
+TOP (1) + n-hexane (2)    293.15-303.15         -58.60     295.60     0.53           5-pyrazolinone. Collect. Czech. Chem. Commun. 1974, 39, 2019–2022.
+                                                                                (10) Navratil, O. Synergic effects in liquid-liquid extraction of some heavy
+                                                                                     metals by 1-phenyl-3-methyl-4-benzoyl-pyrazol-5-one. Proc. Int.
+Poling et al.24                                                                      SolVent Extr. Conf. 1974, 3, 2585–2592.
+   The interaction parameters, u21-u11 and u12-u22, are obtained                (11) Apelblat, A. Thermodynamic studies of solvent extractions systems.
+                                                                                     IV. The binary mixtures of tris-2-ethyl hexyl phosphate with benzene,
+by regression of the experimental viscosity data by minimizing                       carbon tetrachloride, hexane and chloroform. J. Inorg. Nucl. Chem.
+the following objective function                                                     1980, 42, 411–414.
+                                                                                (12) Martins, R. J.; Cardoso, M. J.; Barcia, O. E. Excess Gibbs free energy
+                           100 % |ηi,exptl - ηi,calcd|
+                                N
+
+                                   ∑
+                                                                                     model for calculating the viscosity of binary liquid mixtures. Ind. Eng.
+                AAD )                                                    (4)         Chem. Res. 2000, 39, 849–854.
+                             N i)1      ηi,exptl                                (13) Pereiro, A. B.; Rodriguez, A.; Canosa, J.; Tojo, J. Density, viscosity,
+                                                                                     and speed of sound of dialkyl carbonates with cyclopentane and methyl
+
+
+
+
+                                                                                                                                                                  Downloaded from pubs.​acs.​org/​jceaax/​article-pdf/​53/​11/​2718/​11639022/​je8006138.​pdf by BRIGHAM YOUNG UNIV user on 29 October 2026
+where N is the number of experimental data points and ηi,exptl                       cyclohexane at several temperatures. J. Chem. Eng. Data 2004, 49,
+and ηi,calcd are the experimental and calculated viscosities,                        1392–1399.
+respectively. The fitting parameters and the average absolute                   (14) Dean, J. A. Lange’s Handbook of Chemistry, 15th ed.; McGraw-Hill:
+                                                                                     New York, 1999.
+deviation (AAD) are reported in Table 4. Over narrow temper-                    (15) Viswanath, D. S.; Natarajan, G. Data Book on Liquid Viscosity;
+ature ranges, the interaction parameters are assumed to be                           Hemisphere: New York, 1989.
+constant, so that their values that were found from the                         (16) Gonzalez, B.; Noelia, C.; Dominguez, A.; Tojo, J. Dynamic viscosities
+experiments can be used at neighboring temperatures. We point                        of binary mixtures of cycloalkanes with primary alcohols at T )
+                                                                                     (293.15, 298.15, and 303.15) K: new UNIFAC-VISCO interaction
+out that the volume (RK) and surface area (QK) parameters for                        parameters. J. Chem. Thermodyn. 2007, 39, 322–334.
+the PdO group are empirically equal to those for the CN group                   (17) Awwad, A. M.; Abu-Daabes, M. A. Densities, viscosities, and excess
+(RK ) 0.970 and QK ) 0.876).25 Other group parameters, RK                            properties of (N-methylmorpholine + cyclohexane, + benzene, and
+                                                                                     + toluene) at T ) (298.15, 303.15, 313.15, 323.15) K. J. Chem.
+and QK, used in the UNIQUAC equation are taken from Poling                           Thermodyn. 2008, 40, 645–652.
+et al.24 Overall, the Eyring-UNIQUAC equation gives a very                      (18) Oswal, S. L.; Gardas, R. L.; Phalak, R. P. Densities, speeds of sound,
+good representation of experimental data with an AAD percent                         isentropic compressibilities, refractive indices and viscosities of binary
+of less than 0.6 % for both systems.                                                 mixtures of tetrahydrofuran with hydrocarbons at 303.15 K. J. Mol.
+                                                                                     Liq. 2005, 116, 109–118.
+                                                                                (19) BolotniKov, M. F.; Neruchev, Y. A. Viscosities and densities of binary
+Supporting Information Available:                                                    mixtures of hexane with 1-chlorohexane between 293.15 and 333.15
+  1
+    H NMR, 31P NMR, and ESI-MS spectra for TOP. This material                        K. J. Chem. Eng. Data 2003, 48, 739–741.
+                                                                                (20) Mato, M. M.; Balseiro, J.; Salgado, J.; Jimenez, E.; Legido, J. L.;
+is available free of charge via the Internet at http://pubs.acs.org.                 Pineiro, M. M.; Paz Andrade, M. I. Study on excess molar enthalpies
+                                                                                     and excess molar volumes of the binary systems 1,2-dichlorobenzene
+Literature Cited                                                                     + (benzene, hexane, 1-chlorohexane) and 1,3-dichlorobenzene +
+                                                                                     (benzene, hexane, 1-chlorohexane) at 298.15 K. J. Chem. Eng. Data
+ (1) Sundaramurthi, N. M.; Desai, G. S.; Shinde, V. M. Extraction and                2002, 47, 4–7.
+     separation studies of uranium(VI) with tris(2-ethylhexyl)phosphate.
+                                                                                (21) Kannan, S.; Kishore, K. Absolute viscosity and density of trisubstituted
+     J. Radioanal. Nucl. Chem. 1990, 144, 439–445.
+                                                                                     phosphoric esters. J. Chem. Eng. Data 1999, 44, 649–655.
+ (2) Desai, G. S.; Shinde, V. M. Liquid-liquid distribution studies of
+     thorium salicylate with tris(2-ethylhexyl)phosphate. J. Radioanal. Nucl.   (22) Grunberg, L.; Nissan, A. H. Mixture law for viscosity. Nature 1949,
+     Chem. 1991, 154, 227–236.                                                       164, 799–800.
+ (3) Pathak, P. N.; Veeraraghavan, R.; Manchanda, V. K. Separation of           (23) Katti, P. K.; Chaudhri, M. M. Viscosities of binary mixtures of benzyl
+     uranium and thorium using tris(2-ethylhexyl) phosphate as extractant.           acetate with dioxane, aniline, and m-cresol. J. Chem. Eng. Data 1964,
+     J. Radioanal. Nucl. Chem. 1999, 240, 15–18.                                     9, 442–443.
+ (4) Chhatre, M. H.; Shinde, V. M. Liquid-liquid extraction of cerium(III)      (24) Poling, B. E.; Prausnitz, J. M.; O’Connell, J. P. The Properties of
+     salicylate with tris(2-ethylhexyl) phosphate and tributylphosphine              Gases and Liquids, 5th ed.; McGraw-Hill: New York, 2001.
+     oxide. SolVent Extr. Ion Exch. 2000, 18, 41–54.                            (25) Chen, J.; Li, Z. C.; Lu, J. F.; Li, Y. G. The predictive capability of
+ (5) Giuseppe, M.; Sherif, N. Thermodynamic study on the synergistic                 the UNIFAC equation for the calculation of liquid-liquid equilibria
+     mixture of bis(chlorophenyl)dithiophosphinic acid and tris(2-ethyl-             with chemical reactions in tributyl phosphate extraction systems for
+     hexyl)phosphate for separation of actinides(III) from lanthanides(III).         nitric acid and uranyl nitrate. Fluid Phase Equilib. 1992, 81, 1–15.
+     SolVent Extr. Ion Exch. 2005, 23, 359–373.
+ (6) Bucher, J. J.; Zuehl, R.; Diamond, R. M. Anion and diluent stabilization
+     of tributyl phosphate and tris-ethylhexyl phosphate complexes in the       Received for review August 4, 2008. Accepted September 29, 2008.
+     extraction of HAuCl4, HReO4, HI, and HBr. J. Inorg. Nucl. Chem.
+     1975, 37, 211–220.                                                         JE8006138
+

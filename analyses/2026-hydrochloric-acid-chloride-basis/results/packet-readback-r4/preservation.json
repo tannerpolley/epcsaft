@@ -1,0 +1,102 @@
+[
+  {
+    "path": "Robinson-Covington.json",
+    "binary64_equal": true
+  },
+  {
+    "path": "Yao.json",
+    "binary64_equal": true
+  },
+  {
+    "path": "held-out/mixed/binary-reference-checks.csv",
+    "binary64_equal": true
+  },
+  {
+    "path": "held-out/mixed/dinane-mounir-failures.csv",
+    "binary64_equal": true
+  },
+  {
+    "path": "held-out/mixed/nominal-buckets.csv",
+    "binary64_equal": true
+  },
+  {
+    "path": "held-out/mixed/verdicts.csv",
+    "binary64_equal": true
+  },
+  {
+    "path": "lithium/yao-nominal.csv",
+    "binary64_equal": true
+  },
+  {
+    "path": "lithium/yao-rounding.csv",
+    "binary64_equal": true
+  },
+  {
+    "path": "mixed/binary-reference-checks.csv",
+    "binary64_equal": true
+  },
+  {
+    "path": "mixed/dinane-mounir-failures.csv",
+    "binary64_equal": true
+  },
+  {
+    "path": "mixed/nominal-buckets.csv",
+    "binary64_equal": true
+  },
+  {
+    "path": "mixed/nominal-residuals.csv",
+    "binary64_equal": true
+  },
+  {
+    "path": "mixed/results/binary-reference-checks.csv",
+    "binary64_equal": true
+  },
+  {
+    "path": "mixed/results/bucket-metrics.csv",
+    "binary64_equal": true
+  },
+  {
+    "path": "mixed/results/fraction-metrics.csv",
+    "binary64_equal": true
+  },
+  {
+    "path": "mixed/results/ms2-formal-molalities.csv",
+    "binary64_equal": true
+  },
+  {
+    "path": "mixed/results/native-predictions.csv",
+    "binary64_equal": true
+  },
+  {
+    "path": "mixed/results/nominal-residuals.csv",
+    "binary64_equal": true
+  },
+  {
+    "path": "mixed/results/pure-reference-checks.csv",
+    "binary64_equal": true
+  },
+  {
+    "path": "mixed/results/realization-coverage.csv",
+    "binary64_equal": true
+  },
+  {
+    "path": "mixed/results/transfer-tests.csv",
+    "binary64_equal": true
+  },
+  {
+    "path": "mixed/results/verdicts.csv",
+    "binary64_equal": true
+  },
+  {
+    "path": "mixed/verdicts.csv",
+    "binary64_equal": true
+  },
+  {
+    "path": "projections.json",
+    "binary64_equal": true
+  },
+  {
+    "path": "scores.json",
+    "binary64_equal": true
+  }
+]

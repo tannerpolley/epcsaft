@@ -4,7 +4,9 @@
 commit `ca719012c31e8b41edcb98ae82a388117b58d343`. Original wheel identities, source
 inputs and retained numerical evidence keep their recorded provenance. The producers
 require the frozen `results/image.json`, its guarded Engine image and an external
-persistent Julia service; they are not portable current-main commands.
+persistent Julia service; they are not portable current-main commands. The
+external audit probe scripts they load (`build/audit-2026-10-15/`) were lost on
+2026-10-28, so the producers can no longer run; the retained results stand.
 
 What do the four 2026-10-15 audits' speed questions (#551–#554, merged as T1–T14)
 cost at current main, against FeOs 0.10.1 and Clapeyron 0.6.29 at identical

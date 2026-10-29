@@ -1,0 +1,254 @@
+{
+  "citation_key": "Cameretti2005",
+  "conversion": {
+    "converter": "none",
+    "mode": "existing-zotero-companions",
+    "pdf_conversion": "forbidden-when-companion-exists"
+  },
+  "doi": "10.1021/ie0488142",
+  "evidence_path": "wiki/evidence/CNAR9DGU",
+  "files": [
+    {
+      "format": "markdown",
+      "hash_matches": true,
+      "passages": [
+        {
+          "line_end": 15,
+          "line_start": 11,
+          "locator": "wiki/evidence/CNAR9DGU/Cameretti, Sadowski, Mollerup - 2005 - Modeling of Aqueous Electrolyte Solutions with Perturbed-Chai.md:L11-L15",
+          "match_score": 1,
+          "matched_terms": [
+            "water"
+          ],
+          "path": "wiki/evidence/CNAR9DGU/Cameretti, Sadowski, Mollerup - 2005 - Modeling of Aqueous Electrolyte Solutions with Perturbed-Chai.md",
+          "role": "main_article",
+          "section": "1. Introduction",
+          "text": "\n\n## 1. Introduction\n\nElectrolyte solutions are commonly encountered in many chemical processes including desalination, wastewater treatment, and extractive distillation. ${ }^{1}$ They also play an important role in biotechnology. For example, salts are used to precipitate proteins out of the filtered fermentation broth and enhance their crystallization. ${ }^{2}$ Conditions for this purification step, i.e., temperature, salt concentration, etc., are still found by trail-and-error methods. ${ }^{3}$ The knowledge of phase equilibria of protein solutions containing electrolytes is not only important for production processes. Precipitation of protein aggregates is suspected of being responsible for a couple of diseases such as Alzheimer's, Creuzfeldt-Jacob disease, and eye cataracts, just to name a few. ${ }^{4}$ Therefore, many research groups are interested in phase equilibria of protein solutions containing salts, on the one hand, to optimize process variables and, on the other hand, to find appropriate remedies against diseases. ${ }^{5,6}$",
+          "zotero_attachment_key": "NUQK8KKZ"
+        },
+        {
+          "line_end": 20,
+          "line_start": 16,
+          "locator": "wiki/evidence/CNAR9DGU/Cameretti, Sadowski, Mollerup - 2005 - Modeling of Aqueous Electrolyte Solutions with Perturbed-Chai.md:L16-L20",
+          "match_score": 1,
+          "matched_terms": [
+            "water"
+          ],
+          "path": "wiki/evidence/CNAR9DGU/Cameretti, Sadowski, Mollerup - 2005 - Modeling of Aqueous Electrolyte Solutions with Perturbed-Chai.md",
+          "role": "main_article",
+          "section": "1. Introduction",
+          "text": "\nThe first step toward modeling complex protein solutions is to be able to accurately model electrolyte systems. Since the beginning of the last century, many researchers have concentrated their efforts in correlating and predicting phase equilibria in electrolyte solutions. In 1923, Debye and H\u00fcckel ${ }^{7}$ published one of the pioneering papers dealing with aqueous electrolyte solutions. They considered a system of hard spheres in a dielectric continuum and calculated the contribution to the system energy for charging up the spheres. Their model is often treated as an excess Gibbs energy model; however, what they developed was an electrostatic contribution to the Helmholtz energy when charging hard spheres at constant temperature, volume, and chemical potential of the solvent. Their development includes the background potential as well as the selfpotential. The latter is also known as the Born potential, which is independent of the configuration as long as we are dealing with pure solvents.\n$g^{\\mathrm{E}}$ models such as the local composition nonrandom two-liquid activity coefficient model by Chen et al. ${ }^{8}$ and\n\n[^0]its extensions ${ }^{9-11}$ or other group contribution models ${ }^{12,13}$ have been applied to correlate activity coefficients of single-salt and mixed-salt electrolyte solutions. However, the great disadvantage of excess Gibbs enthalpy models is that they are not able to predict densities. Equation of state (EOS) models circumvent this crucial disadvantage. Several models based on EOSs were extended to electrolyte systems. F\u00fcrst and Renon ${ }^{14}$ combined the nonelectrolyte EOS of Schwartzentruber et al. with a mean spherical approximation (MSA) longrange term to account for the electrostatic interactions. Wu and Prausnitz ${ }^{15}$ presented an electrolyte EOS based on the Peng-Robinson EOS (PREOS), which itself already accounts for hard-core and dispersion interactions. They added a Born energy term for charging up the uncharged reference system in a continuous medium of given permittivity, a Coulombic term to account for electrostatic interactions between the ions, and further an association term to consider hydrogen bonds between the water molecules. Myers et al. ${ }^{16}$ followed a similar approach using the ideal gas mixture as a reference system, considering also the Born energy to discharge the ions in a vacuum, and then recharging them in the dielectric medium. Both approaches yield good agreement with experimental vapor-pressure data. However, they are based on the semiempirical PREOS, which is known to fail when predicting liquid densities.",
+          "zotero_attachment_key": "NUQK8KKZ"
+        },
+        {
+          "line_end": 47,
+          "line_start": 43,
+          "locator": "wiki/evidence/CNAR9DGU/Cameretti, Sadowski, Mollerup - 2005 - Modeling of Aqueous Electrolyte Solutions with Perturbed-Chai.md:L43-L47",
+          "match_score": 1,
+          "matched_terms": [
+            "water"
+          ],
+          "path": "wiki/evidence/CNAR9DGU/Cameretti, Sadowski, Mollerup - 2005 - Modeling of Aqueous Electrolyte Solutions with Perturbed-Chai.md",
+          "role": "main_article",
+          "section": "1. Introduction",
+          "text": "To describe electrolyte solutions, Galindo et al. ${ }^{41,42}$ have successfully extended the SAFT-VR EOS ${ }^{30}$ to electrolyte solutions by using an additive electrostatic term for the Helmholtz free energy obtained from the solution of the Ornstein-Zernicke equation for the restricted primitive model (RPM) with the MSA closure. Their model yields good results for vapor pressures and liquid densities of aqueous solutions of monovalent ions.\n\nIn this paper, we apply the PC-SAFT model to electrolyte solutions. Whereas the hard-core, dispersion, and association interactions are already taken into account by the original PC-SAFT, the charging of the ions will be considered by the Debye-H\u00fcckel (DH) term. Therefore, the DH term will first be discussed in detail.\n\nDH Theory of Electrolyte Solutions. Debye and H\u00fcckel ${ }^{7}$ considered diluted electrolyte solutions and regarded the solvent (water) as a dielectric continuum. This assumption is feasible because the amount of water molecules is much greater than the total amount of ions. The ions are treated as hard spheres that can approach each other to distance $a_{i}$. This value is equivalent to an",
+          "zotero_attachment_key": "NUQK8KKZ"
+        },
+        {
+          "line_end": 202,
+          "line_start": 198,
+          "locator": "wiki/evidence/CNAR9DGU/Cameretti, Sadowski, Mollerup - 2005 - Modeling of Aqueous Electrolyte Solutions with Perturbed-Chai.md:L198-L202",
+          "match_score": 1,
+          "matched_terms": [
+            "water"
+          ],
+          "path": "wiki/evidence/CNAR9DGU/Cameretti, Sadowski, Mollerup - 2005 - Modeling of Aqueous Electrolyte Solutions with Perturbed-Chai.md",
+          "role": "main_article",
+          "section": "2. The Model",
+          "text": "\\sigma_{k}=\\left(\\frac{\\partial\\left(\\kappa \\chi_{k}\\right)}{\\partial \\kappa}\\right)_{T, \\mathrm{~N}}=-2 \\chi_{k}+\\frac{3}{1+\\kappa a_{k}} \\tag{20}\n\\end{equation*}\n$$\n\nHere, we neglect the pressure and density dependencies of the dielectric constant of water because the values of $\\epsilon_{\\mathrm{r}}$ in the temperature range of $278-373 \\mathrm{~K}$ and at $p=1$ kPa compared to the values at $p=1 \\mathrm{MPa}$ differ only at the second decimal place.",
+          "zotero_attachment_key": "NUQK8KKZ"
+        },
+        {
+          "line_end": 207,
+          "line_start": 203,
+          "locator": "wiki/evidence/CNAR9DGU/Cameretti, Sadowski, Mollerup - 2005 - Modeling of Aqueous Electrolyte Solutions with Perturbed-Chai.md:L203-L207",
+          "match_score": 1,
+          "matched_terms": [
+            "water"
+          ],
+          "path": "wiki/evidence/CNAR9DGU/Cameretti, Sadowski, Mollerup - 2005 - Modeling of Aqueous Electrolyte Solutions with Perturbed-Chai.md",
+          "role": "main_article",
+          "section": "2. The Model",
+          "text": "\nThe original PC-SAFT model for associating, uncharged molecules has five parameters, namely, the\n\n![](https://cdn.mathpix.com/cropped/52ef64d1-fd2e-401b-a5cf-6d75761c4aff-4.jpg?height=632&width=1333&top_left_y=161&top_left_x=397)\nFigure 1. Liquid-phase densities (left) and vapor pressures (right) of pure water calculated with PC-SAFT (line). The crosses represent experimental data. ${ }^{47}$",
+          "zotero_attachment_key": "NUQK8KKZ"
+        },
+        {
+          "line_end": 212,
+          "line_start": 208,
+          "locator": "wiki/evidence/CNAR9DGU/Cameretti, Sadowski, Mollerup - 2005 - Modeling of Aqueous Electrolyte Solutions with Perturbed-Chai.md:L208-L212",
+          "match_score": 1,
+          "matched_terms": [
+            "water"
+          ],
+          "path": "wiki/evidence/CNAR9DGU/Cameretti, Sadowski, Mollerup - 2005 - Modeling of Aqueous Electrolyte Solutions with Perturbed-Chai.md",
+          "role": "main_article",
+          "section": "2. The Model",
+          "text": "\nTable 1. PC-SAFT Parameters for Water\n| segment number | $m_{1}=1.09528$ |\n| :--- | :--- |\n| segment diameter $[\\AA]$ | $\\sigma_{1}=2.88980$ |",
+          "zotero_attachment_key": "NUQK8KKZ"
+        },
+        {
+          "line_end": 223,
+          "line_start": 219,
+          "locator": "wiki/evidence/CNAR9DGU/Cameretti, Sadowski, Mollerup - 2005 - Modeling of Aqueous Electrolyte Solutions with Perturbed-Chai.md:L219-L223",
+          "match_score": 1,
+          "matched_terms": [
+            "water"
+          ],
+          "path": "wiki/evidence/CNAR9DGU/Cameretti, Sadowski, Mollerup - 2005 - Modeling of Aqueous Electrolyte Solutions with Perturbed-Chai.md",
+          "role": "main_article",
+          "section": "3. Results",
+          "text": "segment number, the segment diameter, the dispersion energy, the association energy, and the association volume. The DH term does not require any additional adjustable parameter because the charge of the ions is given by their respective valence.\n\n## 3. Results\n\nWater. To be able to calculate the vapor pressures and densities of electrolyte solutions, the main component, namely, water, has to be modeled as accurately as possible. Gross and Sadowski ${ }^{39}$ fitted PC-SAFT model parameters to vapor-pressure and density data in a temperature range from the triple point to the critical point.",
+          "zotero_attachment_key": "NUQK8KKZ"
+        },
+        {
+          "line_end": 228,
+          "line_start": 224,
+          "locator": "wiki/evidence/CNAR9DGU/Cameretti, Sadowski, Mollerup - 2005 - Modeling of Aqueous Electrolyte Solutions with Perturbed-Chai.md:L224-L228",
+          "match_score": 1,
+          "matched_terms": [
+            "water"
+          ],
+          "path": "wiki/evidence/CNAR9DGU/Cameretti, Sadowski, Mollerup - 2005 - Modeling of Aqueous Electrolyte Solutions with Perturbed-Chai.md",
+          "role": "main_article",
+          "section": "3. Results",
+          "text": "\nBecause our long-term objective is to describe phase equilibria in aqueous protein-electrolyte solutions, the temperature range of interest is restricted to $T=278-$ 393 K . To obtain better agreement between experimental and modeled data in this temperature range, the parameter set was refitted to experimental data in this temperature range using a nonlinear least-squares algorithm. ${ }^{46}$ The parameters are summarized in Table 1. Although a four-site model would reflect best the physics of water molecules, it was shown earlier that a two-site approach yields better agreement between model and reality. ${ }^{39}$ Another advantage of using only two association sites instead of four is the decrease in computational time.\n\nFigure 1 shows the excellent agreement between experimental and calculated data. The average deviations for vapor pressures and liquid densities are less than $0.9 \\%$. The deviation of the liquid density at temperatures around the triple point is due to the wellknown anomaly of water; i.e., it exhibits a density maximum at about $4^{\\circ} \\mathrm{C}$, which cannot be described by any state-of-the-art model.\n",
+          "zotero_attachment_key": "NUQK8KKZ"
+        }
+      ],
+      "path": "wiki/evidence/CNAR9DGU/Cameretti, Sadowski, Mollerup - 2005 - Modeling of Aqueous Electrolyte Solutions with Perturbed-Chai.md",
+      "role": "main_article",
+      "searchable": true,
+      "sha256": "09828f160ea0089fdd1d923a18d7921e48f77bf4ffc8bcbb14fe140383a68e69",
+      "source_filename": "Cameretti, Sadowski, Mollerup - 2005 - Modeling of Aqueous Electrolyte Solutions with Perturbed-Chai.md",
+      "zotero_attachment_key": "NUQK8KKZ"
+    }
+  ],
+  "passages": [
+    {
+      "line_end": 15,
+      "line_start": 11,
+      "locator": "wiki/evidence/CNAR9DGU/Cameretti, Sadowski, Mollerup - 2005 - Modeling of Aqueous Electrolyte Solutions with Perturbed-Chai.md:L11-L15",
+      "match_score": 1,
+      "matched_terms": [
+        "water"
+      ],
+      "path": "wiki/evidence/CNAR9DGU/Cameretti, Sadowski, Mollerup - 2005 - Modeling of Aqueous Electrolyte Solutions with Perturbed-Chai.md",
+      "role": "main_article",
+      "section": "1. Introduction",
+      "text": "\n\n## 1. Introduction\n\nElectrolyte solutions are commonly encountered in many chemical processes including desalination, wastewater treatment, and extractive distillation. ${ }^{1}$ They also play an important role in biotechnology. For example, salts are used to precipitate proteins out of the filtered fermentation broth and enhance their crystallization. ${ }^{2}$ Conditions for this purification step, i.e., temperature, salt concentration, etc., are still found by trail-and-error methods. ${ }^{3}$ The knowledge of phase equilibria of protein solutions containing electrolytes is not only important for production processes. Precipitation of protein aggregates is suspected of being responsible for a couple of diseases such as Alzheimer's, Creuzfeldt-Jacob disease, and eye cataracts, just to name a few. ${ }^{4}$ Therefore, many research groups are interested in phase equilibria of protein solutions containing salts, on the one hand, to optimize process variables and, on the other hand, to find appropriate remedies against diseases. ${ }^{5,6}$",
+      "zotero_attachment_key": "NUQK8KKZ"
+    },
+    {
+      "line_end": 20,
+      "line_start": 16,
+      "locator": "wiki/evidence/CNAR9DGU/Cameretti, Sadowski, Mollerup - 2005 - Modeling of Aqueous Electrolyte Solutions with Perturbed-Chai.md:L16-L20",
+      "match_score": 1,
+      "matched_terms": [
+        "water"
+      ],
+      "path": "wiki/evidence/CNAR9DGU/Cameretti, Sadowski, Mollerup - 2005 - Modeling of Aqueous Electrolyte Solutions with Perturbed-Chai.md",
+      "role": "main_article",
+      "section": "1. Introduction",
+      "text": "\nThe first step toward modeling complex protein solutions is to be able to accurately model electrolyte systems. Since the beginning of the last century, many researchers have concentrated their efforts in correlating and predicting phase equilibria in electrolyte solutions. In 1923, Debye and H\u00fcckel ${ }^{7}$ published one of the pioneering papers dealing with aqueous electrolyte solutions. They considered a system of hard spheres in a dielectric continuum and calculated the contribution to the system energy for charging up the spheres. Their model is often treated as an excess Gibbs energy model; however, what they developed was an electrostatic contribution to the Helmholtz energy when charging hard spheres at constant temperature, volume, and chemical potential of the solvent. Their development includes the background potential as well as the selfpotential. The latter is also known as the Born potential, which is independent of the configuration as long as we are dealing with pure solvents.\n$g^{\\mathrm{E}}$ models such as the local composition nonrandom two-liquid activity coefficient model by Chen et al. ${ }^{8}$ and\n\n[^0]its extensions ${ }^{9-11}$ or other group contribution models ${ }^{12,13}$ have been applied to correlate activity coefficients of single-salt and mixed-salt electrolyte solutions. However, the great disadvantage of excess Gibbs enthalpy models is that they are not able to predict densities. Equation of state (EOS) models circumvent this crucial disadvantage. Several models based on EOSs were extended to electrolyte systems. F\u00fcrst and Renon ${ }^{14}$ combined the nonelectrolyte EOS of Schwartzentruber et al. with a mean spherical approximation (MSA) longrange term to account for the electrostatic interactions. Wu and Prausnitz ${ }^{15}$ presented an electrolyte EOS based on the Peng-Robinson EOS (PREOS), which itself already accounts for hard-core and dispersion interactions. They added a Born energy term for charging up the uncharged reference system in a continuous medium of given permittivity, a Coulombic term to account for electrostatic interactions between the ions, and further an association term to consider hydrogen bonds between the water molecules. Myers et al. ${ }^{16}$ followed a similar approach using the ideal gas mixture as a reference system, considering also the Born energy to discharge the ions in a vacuum, and then recharging them in the dielectric medium. Both approaches yield good agreement with experimental vapor-pressure data. However, they are based on the semiempirical PREOS, which is known to fail when predicting liquid densities.",
+      "zotero_attachment_key": "NUQK8KKZ"
+    },
+    {
+      "line_end": 47,
+      "line_start": 43,
+      "locator": "wiki/evidence/CNAR9DGU/Cameretti, Sadowski, Mollerup - 2005 - Modeling of Aqueous Electrolyte Solutions with Perturbed-Chai.md:L43-L47",
+      "match_score": 1,
+      "matched_terms": [
+        "water"
+      ],
+      "path": "wiki/evidence/CNAR9DGU/Cameretti, Sadowski, Mollerup - 2005 - Modeling of Aqueous Electrolyte Solutions with Perturbed-Chai.md",
+      "role": "main_article",
+      "section": "1. Introduction",
+      "text": "To describe electrolyte solutions, Galindo et al. ${ }^{41,42}$ have successfully extended the SAFT-VR EOS ${ }^{30}$ to electrolyte solutions by using an additive electrostatic term for the Helmholtz free energy obtained from the solution of the Ornstein-Zernicke equation for the restricted primitive model (RPM) with the MSA closure. Their model yields good results for vapor pressures and liquid densities of aqueous solutions of monovalent ions.\n\nIn this paper, we apply the PC-SAFT model to electrolyte solutions. Whereas the hard-core, dispersion, and association interactions are already taken into account by the original PC-SAFT, the charging of the ions will be considered by the Debye-H\u00fcckel (DH) term. Therefore, the DH term will first be discussed in detail.\n\nDH Theory of Electrolyte Solutions. Debye and H\u00fcckel ${ }^{7}$ considered diluted electrolyte solutions and regarded the solvent (water) as a dielectric continuum. This assumption is feasible because the amount of water molecules is much greater than the total amount of ions. The ions are treated as hard spheres that can approach each other to distance $a_{i}$. This value is equivalent to an",
+      "zotero_attachment_key": "NUQK8KKZ"
+    },
+    {
+      "line_end": 202,
+      "line_start": 198,
+      "locator": "wiki/evidence/CNAR9DGU/Cameretti, Sadowski, Mollerup - 2005 - Modeling of Aqueous Electrolyte Solutions with Perturbed-Chai.md:L198-L202",
+      "match_score": 1,
+      "matched_terms": [
+        "water"
+      ],
+      "path": "wiki/evidence/CNAR9DGU/Cameretti, Sadowski, Mollerup - 2005 - Modeling of Aqueous Electrolyte Solutions with Perturbed-Chai.md",
+      "role": "main_article",
+      "section": "2. The Model",
+      "text": "\\sigma_{k}=\\left(\\frac{\\partial\\left(\\kappa \\chi_{k}\\right)}{\\partial \\kappa}\\right)_{T, \\mathrm{~N}}=-2 \\chi_{k}+\\frac{3}{1+\\kappa a_{k}} \\tag{20}\n\\end{equation*}\n$$\n\nHere, we neglect the pressure and density dependencies of the dielectric constant of water because the values of $\\epsilon_{\\mathrm{r}}$ in the temperature range of $278-373 \\mathrm{~K}$ and at $p=1$ kPa compared to the values at $p=1 \\mathrm{MPa}$ differ only at the second decimal place.",
+      "zotero_attachment_key": "NUQK8KKZ"
+    },
+    {
+      "line_end": 207,
+      "line_start": 203,
+      "locator": "wiki/evidence/CNAR9DGU/Cameretti, Sadowski, Mollerup - 2005 - Modeling of Aqueous Electrolyte Solutions with Perturbed-Chai.md:L203-L207",
+      "match_score": 1,
+      "matched_terms": [
+        "water"
+      ],
+      "path": "wiki/evidence/CNAR9DGU/Cameretti, Sadowski, Mollerup - 2005 - Modeling of Aqueous Electrolyte Solutions with Perturbed-Chai.md",
+      "role": "main_article",
+      "section": "2. The Model",
+      "text": "\nThe original PC-SAFT model for associating, uncharged molecules has five parameters, namely, the\n\n![](https://cdn.mathpix.com/cropped/52ef64d1-fd2e-401b-a5cf-6d75761c4aff-4.jpg?height=632&width=1333&top_left_y=161&top_left_x=397)\nFigure 1. Liquid-phase densities (left) and vapor pressures (right) of pure water calculated with PC-SAFT (line). The crosses represent experimental data. ${ }^{47}$",
+      "zotero_attachment_key": "NUQK8KKZ"
+    },
+    {
+      "line_end": 212,
+      "line_start": 208,
+      "locator": "wiki/evidence/CNAR9DGU/Cameretti, Sadowski, Mollerup - 2005 - Modeling of Aqueous Electrolyte Solutions with Perturbed-Chai.md:L208-L212",
+      "match_score": 1,
+      "matched_terms": [
+        "water"
+      ],
+      "path": "wiki/evidence/CNAR9DGU/Cameretti, Sadowski, Mollerup - 2005 - Modeling of Aqueous Electrolyte Solutions with Perturbed-Chai.md",
+      "role": "main_article",
+      "section": "2. The Model",
+      "text": "\nTable 1. PC-SAFT Parameters for Water\n| segment number | $m_{1}=1.09528$ |\n| :--- | :--- |\n| segment diameter $[\\AA]$ | $\\sigma_{1}=2.88980$ |",
+      "zotero_attachment_key": "NUQK8KKZ"
+    },
+    {
+      "line_end": 223,
+      "line_start": 219,
+      "locator": "wiki/evidence/CNAR9DGU/Cameretti, Sadowski, Mollerup - 2005 - Modeling of Aqueous Electrolyte Solutions with Perturbed-Chai.md:L219-L223",
+      "match_score": 1,
+      "matched_terms": [
+        "water"
+      ],
+      "path": "wiki/evidence/CNAR9DGU/Cameretti, Sadowski, Mollerup - 2005 - Modeling of Aqueous Electrolyte Solutions with Perturbed-Chai.md",
+      "role": "main_article",
+      "section": "3. Results",
+      "text": "segment number, the segment diameter, the dispersion energy, the association energy, and the association volume. The DH term does not require any additional adjustable parameter because the charge of the ions is given by their respective valence.\n\n## 3. Results\n\nWater. To be able to calculate the vapor pressures and densities of electrolyte solutions, the main component, namely, water, has to be modeled as accurately as possible. Gross and Sadowski ${ }^{39}$ fitted PC-SAFT model parameters to vapor-pressure and density data in a temperature range from the triple point to the critical point.",
+      "zotero_attachment_key": "NUQK8KKZ"
+    },
+    {
+      "line_end": 228,
+      "line_start": 224,
+      "locator": "wiki/evidence/CNAR9DGU/Cameretti, Sadowski, Mollerup - 2005 - Modeling of Aqueous Electrolyte Solutions with Perturbed-Chai.md:L224-L228",
+      "match_score": 1,
+      "matched_terms": [
+        "water"
+      ],
+      "path": "wiki/evidence/CNAR9DGU/Cameretti, Sadowski, Mollerup - 2005 - Modeling of Aqueous Electrolyte Solutions with Perturbed-Chai.md",
+      "role": "main_article",
+      "section": "3. Results",
+      "text": "\nBecause our long-term objective is to describe phase equilibria in aqueous protein-electrolyte solutions, the temperature range of interest is restricted to $T=278-$ 393 K . To obtain better agreement between experimental and modeled data in this temperature range, the parameter set was refitted to experimental data in this temperature range using a nonlinear least-squares algorithm. ${ }^{46}$ The parameters are summarized in Table 1. Although a four-site model would reflect best the physics of water molecules, it was shown earlier that a two-site approach yields better agreement between model and reality. ${ }^{39}$ Another advantage of using only two association sites instead of four is the decrease in computational time.\n\nFigure 1 shows the excellent agreement between experimental and calculated data. The average deviations for vapor pressures and liquid densities are less than $0.9 \\%$. The deviation of the liquid density at temperatures around the triple point is due to the wellknown anomaly of water; i.e., it exhibits a density maximum at about $4^{\\circ} \\mathrm{C}$, which cannot be described by any state-of-the-art model.\n",
+      "zotero_attachment_key": "NUQK8KKZ"
+    }
+  ],
+  "query": "Water",
+  "title": "Modeling of Aqueous Electrolyte Solutions with Perturbed-Chain Statistical Associated Fluid Theory",
+  "warnings": [],
+  "zotero_key": "CNAR9DGU"
+}

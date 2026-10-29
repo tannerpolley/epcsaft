@@ -1,6 +1,7 @@
 #include "properties/helmholtz_model.hpp"
 
 #include "core/trace.hpp"
+#include "core/linear_error.hpp"
 #include "contributions/association.hpp"
 #include "contributions/born.hpp"
 #include "contributions/electrolyte.hpp"
@@ -877,6 +878,16 @@ HelmholtzModel::HelmholtzModel(
             "ionic_region_relative_permittivity");
     require(std::isfinite(parameters_.born_c_shell), "born_c_shell");
     require(std::isfinite(parameters_.born_c_dielectric), "born_c_dielectric");
+    if (parameters_.permittivity_form.is(PermittivityForm::SolventMoleWeighting)) {
+        require(parameters_.permittivity_solvent.size() == components, "permittivity solvent size");
+        require(std::count(parameters_.permittivity_solvent.begin(), parameters_.permittivity_solvent.end(), 1) > 0, "permittivity solvent set");
+        for (std::size_t i = 0; i < components; ++i) {
+            const int member = parameters_.permittivity_solvent[i];
+            require(member == 0 || member == 1, "permittivity solvent membership");
+            require(!member || (parameters_.charge_number[i] == 0 && (parameters_.relative_permittivity[i] > 0.0
+                || std::find(parameters_.permittivity_term_component.begin(), parameters_.permittivity_term_component.end(), i) != parameters_.permittivity_term_component.end())), "permittivity neutral solvent");
+        }
+    }
     // ComponentMixing stays defined on ions alone (Bulow 2019 Eq. 7). IonSuppression and DensityTemperature
     // average neutral-solvent records; Rueben 2024 fit DipolarPerturbation ion records to water-salt mixtures.
     if (parameters_.permittivity_form.declared()
@@ -948,6 +959,13 @@ void HelmholtzModel::validate_point(
     double total = 0.0;
     for (double amount : amounts) total += amount;
     require(std::isfinite(total) && total > 0.0, "total amount");
+    if (parameters_.permittivity_form.is(PermittivityForm::SolventMoleWeighting)
+        && parameters_.permittivity_solvent_normalized && detail::charged_support(amounts, parameters_)) {
+        double solvent = 0.0;
+        for (std::size_t i = 0; i < amounts.size(); ++i)
+            if (parameters_.permittivity_solvent[i]) solvent += amounts[i];
+        require(solvent > 0.0, "permittivity has no solvent denominator");
+    }
 }
 
 detail::PredicateSignature HelmholtzModel::predicate_signature(
@@ -997,8 +1015,9 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
     require(positive_vector(diameter), "segment diameter");
     require_law_domain(temperature, parameters_);
     core::Convergence site_record;
+    std::optional<core::Convergence> first;
     const auto sites = solve_site_fractions(
-        temperature, density, composition, parameters_, sigma, diameter, &site_record, nullptr, nullptr, false, solver_options_
+        temperature, density, composition, parameters_, sigma, diameter, &site_record, nullptr, nullptr, false, solver_options_, &first
     );
     // The gradient floor propagates the achieved site residual, not the site tolerance.
     const double site_residual = std::max(site_record.residual, site_record.floor.value_or(0.0));
@@ -1029,6 +1048,7 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
     const auto values = tape_->forward_zero(full_point, &counters_.forward);
     tape_->site_values = sites;
     HelmholtzDerivatives result;
+    core::retain_first(result.first_numerical_failure, first);
     result.site_fractions = sites;
     result.value = values.front();
     scope.probe("residual_helmholtz_extensive", result.value);
@@ -1205,6 +1225,139 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
     return result;
 }
 
+static std::vector<double> coefficient_errors(const Parameters& p, detail::HelmholtzTape& tape,
+    const std::vector<std::vector<double>>& regular, const std::vector<double>& sites,
+    const std::vector<double>& coefficients, const std::vector<double>& known,
+    const Eigen::FullPivLU<Eigen::MatrixXd>& lu) {
+    const std::size_t count = regular.size(), ns = sites.size(), width = regular.front().size();
+    if (count > 6 || !count || width != tape.regular_count) throw std::invalid_argument("coefficient error path");
+    std::vector<double> errors(count, 0.0);
+    if (!ns) return errors;
+    const double total = std::accumulate(regular[0].begin() + 2, regular[0].begin() + 2 + p.component_count(), 0.0);
+    std::vector<double> composition(regular[0].begin() + 2, regular[0].begin() + 2 + p.component_count());
+    for (double& x : composition) x /= total;
+    const auto sigma = segment_sigma(regular[0][0], p), diameter = segment_diameter(regular[0][0], p, sigma);
+    // Differentiate the complete coefficient equations with every X_k independent. In particular,
+    // d(r_k)/dX_0 includes the changing site Jacobian while holding X_k fixed.
+    using AD = CppAD::AD<double>;
+    std::vector<AD> independent(coefficients.begin(), coefficients.end()), output;
+    CppAD::Independent(independent);
+    auto lifted = tape.function.base2ad();
+    for (std::size_t k = 0; k < count; ++k) {
+        std::vector<AD> argument(regular[k].begin(), regular[k].end());
+        argument.insert(argument.end(), independent.begin() + k * ns, independent.begin() + (k + 1) * ns);
+        const auto value = lifted.Forward(k, argument);
+        output.insert(output.end(), value.begin(), value.begin() + 1 + ns);
+    }
+    CppAD::ADFun<double> map(independent, output);
+    map.Forward(0, coefficients);
+    const auto jacobian = map.Jacobian(coefficients);
+    // Absolute convolution terms of X_a + X_a rho_N sum_b x_b nu_b X_b Delta_ab - 1.
+    using Series = Taylor<5>;
+    std::vector<Series> q(width), x(p.component_count()), site(ns);
+    for (std::size_t k = 0; k < count; ++k) {
+        for (std::size_t j = 0; j < width; ++j) q[j].c[k] = regular[k][j];
+        for (std::size_t a = 0; a < ns; ++a) site[a].c[k] = coefficients[k * ns + a];
+    }
+    Series amount;
+    for (std::size_t i = 0; i < x.size(); ++i) amount += q[2 + i];
+    for (std::size_t i = 0; i < x.size(); ++i) x[i] = q[2 + i] / amount;
+    const Series density = amount / q[1];
+    ParameterRecord<Series> series_parameters;
+    static_cast<FixedParameters&>(series_parameters) = p;
+    for (std::size_t f = 0; f < detail::PARAMETER_FAMILY_COUNT; ++f) {
+        const auto family = static_cast<detail::ParameterFamily>(f);
+        const auto source = detail::family_values(p, family);
+        const auto target = detail::family_values(series_parameters, family, source.second);
+        for (std::size_t i = 0; i < source.second; ++i) target.first[i] = Series(source.first[i]);
+    }
+    const auto series_sigma = segment_sigma(q[0], series_parameters);
+    const auto series_diameter = segment_diameter(q[0], series_parameters, series_sigma);
+    const auto delta = association_delta_values(q[0], density, x, series_parameters, series_sigma, series_diameter,
+        series_parameters.association_energy_over_k, series_parameters.association_volume);
+    const auto absolute = [](Series v) { for (double& c : v.c) c = std::abs(c); return v; };
+    std::vector<Series> terms(ns);
+    for (std::size_t a = 0; a < ns; ++a) {
+        Series bonded;
+        for (std::size_t b = 0; b < ns; ++b)
+            bonded += absolute(x[p.site_component[b]]) * p.site_multiplicity[b] * absolute(site[b]) * absolute(delta[a * ns + b]);
+        terms[a] = absolute(site[a]) + absolute(site[a]) * absolute(density) * NUMBER_DENSITY_PER_ANGSTROM3 * bonded;
+        terms[a].c[0] += 1;
+    }
+    const auto strength = association_delta(regular[0][0], total / regular[0][1], composition, p, sigma, diameter);
+    const Eigen::MatrixXd matrix = mass_action_jacobian(composition, p, sites,
+        total / regular[0][1] * NUMBER_DENSITY_PER_ANGSTROM3, strength, bonded_densities(composition, p, sites, strength));
+    Eigen::VectorXd previous = Eigen::VectorXd::Zero(count * ns);
+    const double epsilon = std::numeric_limits<double>::epsilon();
+    for (std::size_t k = 0; k < count; ++k) {
+        Eigen::VectorXd right(ns);
+        const Eigen::VectorXd coefficient = Eigen::Map<const Eigen::VectorXd>(coefficients.data() + k * ns, ns);
+        const Eigen::VectorXd rhs = Eigen::Map<const Eigen::VectorXd>(known.data() + k * ns, ns);
+        const Eigen::VectorXd defect = k == 0 ? rhs : core::compensated_defect(matrix, coefficient, rhs);
+        for (std::size_t a = 0; a < ns; ++a) {
+            right[a] = std::abs(defect[a]) + epsilon * std::max(terms[a].c[k], k == 0 ? double(ns) : 0.0);
+            for (std::size_t j = 0; j < k * ns; ++j)
+                right[a] += std::abs(jacobian[((k * (ns + 1) + 1 + a) * count * ns) + j]) * previous[j];
+        }
+        previous.segment(k * ns, ns) = core::inverse_error_action(lu, right);
+        // The gradient's base-site contribution is the achieved-residual floor below.
+        for (std::size_t j = k == 1 ? ns : 0; j < (k + 1) * ns; ++j)
+            errors[k] += std::abs(jacobian[k * (ns + 1) * count * ns + j]) * previous[j];
+        if (k == 1) {
+            double base_residual = epsilon * ns;
+            for (std::size_t a = 0; a < ns; ++a) base_residual = std::max(base_residual, std::abs(known[a]));
+            for (std::size_t a = 0; a < ns; ++a)
+                errors[k] += std::abs(coefficients[ns + a] * total * composition[p.site_component[a]]
+                    * p.site_multiplicity[a] / sites[a]) * base_residual;
+        }
+        if (k == 0) {
+            std::vector<double> weights(count * (ns + 1), 0.0); weights[0] = 1;
+            const auto hessian = map.Hessian(coefficients, weights);
+            for (std::size_t a = 0; a < ns; ++a)
+                for (std::size_t b = 0; b < ns; ++b)
+                    errors[0] += 0.5 * previous[a] * std::abs(hessian[a * count * ns + b]) * previous[b];
+        }
+        if (!std::isfinite(errors[k])) throw std::runtime_error("nonfinite association coefficient error");
+    }
+    return errors;
+}
+
+std::vector<double> HelmholtzModel::residual_coefficient_errors(
+    const std::vector<std::vector<double>>& regular, const std::vector<double>& sites) const {
+    const std::size_t count = regular.size(), ns = sites.size();
+    if (count > 4 || count == 0) throw std::invalid_argument("coefficient error order");
+    const std::size_t width = regular.front().size();
+    for (const auto& row : regular)
+        if (row.size() != width || !finite_vector(row)) throw std::invalid_argument("coefficient error path");
+    if (width != 2 + parameters_.component_count() + active_.size()) throw std::invalid_argument("coefficient error width");
+    std::vector<double> errors(count, 0.0);
+    if (ns == 0) return errors;
+    std::lock_guard<std::mutex> lock(mutex_);
+    const auto& p = parameters_;
+    double total = std::accumulate(regular[0].begin() + 2, regular[0].begin() + 2 + p.component_count(), 0.0);
+    std::vector<double> composition(regular[0].begin() + 2, regular[0].begin() + 2 + p.component_count());
+    for (double& x : composition) x /= total;
+    ensure_tape(regular[0], sites, predicate_signature(regular[0][0], composition), {}, 0.0, true);
+    const auto sigma = segment_sigma(regular[0][0], p), diameter = segment_diameter(regular[0][0], p, sigma);
+    const auto lu = properties::site_factorization(sites, composition, p,
+        total / regular[0][1] * NUMBER_DENSITY_PER_ANGSTROM3,
+        association_delta(regular[0][0], total / regular[0][1], composition, p, sigma, diameter));
+    std::vector<double> coefficients(count * ns, 0.0), input(width + ns), known(count * ns, 0.0);
+    std::copy(sites.begin(), sites.end(), coefficients.begin());
+    for (std::size_t k = 0; k < count; ++k) {
+        std::copy(regular[k].begin(), regular[k].end(), input.begin());
+        std::fill(input.begin() + width, input.end(), 0.0);
+        if (k == 0) std::copy(sites.begin(), sites.end(), input.begin() + width);
+        auto value = k == 0 ? tape_->forward_zero(input) : tape_->function.Forward(k, input);
+        for (std::size_t a = 0; a < ns; ++a) known[k * ns + a] = -value[1 + a];
+        if (k == 0) continue;
+        const Eigen::VectorXd next = lu.solve(Eigen::Map<const Eigen::VectorXd>(known.data() + k * ns, ns));
+        for (std::size_t a = 0; a < ns; ++a) input[width + a] = coefficients[k * ns + a] = next[a];
+        tape_->function.Forward(k, input);
+    }
+    return coefficient_errors(p, *tape_, regular, sites, coefficients, known, lu);
+}
+
 ResidualEnergyAction HelmholtzModel::residual_energy_action(double temperature, double volume,
     const std::vector<double>& amounts, const std::vector<std::vector<double>>& directions) const {
     validate_point(temperature, volume, amounts);
@@ -1290,14 +1443,74 @@ ResidualEnergyAction HelmholtzModel::residual_energy_action(double temperature, 
     return result;
 }
 
+// Fixed-input replay uses the same contribution and stationary-association owners as the tape.
+template<std::size_t D>
+static Taylor<D, long double> reference_coefficients(const Parameters& p, const std::vector<ActiveParameter>& active,
+    const std::vector<std::vector<double>>& path, const std::vector<double>& sites) {
+    using S = Taylor<D, long double>;
+    const auto ns = p.site_component.size(), width = path.front().size(), nc = p.component_count();
+    std::vector<S> q(width), x(nc), xs(ns);
+    for (std::size_t k = 0; k <= D; ++k) {
+        for (std::size_t j = 0; j < width; ++j) q[j].c[k] = path[k][j];
+        for (std::size_t j = 0; j < ns; ++j) xs[j].c[k] = sites[k * ns + j];
+    }
+    const auto mapped = detail::make_tape_parameters(p, active, std::vector<S>(q.begin() + 2 + nc, q.end()));
+    S total;
+    for (std::size_t j = 0; j < nc; ++j) total += q[2 + j];
+    for (std::size_t j = 0; j < nc; ++j) x[j] = q[2 + j] / total;
+    const S rho = total / q[1];
+    const auto sigma = segment_sigma(q[0], mapped), diameter = segment_diameter(q[0], mapped, sigma);
+    const auto delta = p.ideal_gas ? std::vector<S>{} : association_delta_values(q[0], rho, x, mapped, sigma, diameter,
+        mapped.association_energy_over_k, mapped.association_volume);
+    std::vector<double> reference(path[0].begin() + 2, path[0].begin() + 2 + nc);
+    auto [electro, born] = detail::supported_electrostatics(q[0], rho, x, reference, mapped);
+    born = born_contribution(q[0], x, mapped, electro.bulk_relative_permittivity);
+    const auto terms = residual_helmholtz(q[0], rho, x, mapped, sigma, diameter, xs, electro.debye_huckel, born);
+    const auto residual = association_residuals(rho, x, mapped, xs, delta);
+    auto result = total * (terms.hard_chain + terms.dispersion + terms.debye_huckel + terms.born
+        + detail::stationary_association(terms.association, x, mapped, residual) + terms.dipolar);
+    if (!p.cation_mixing.empty()) result += total * terms.cation_mixing;
+    return result;
+}
+
+static double precision_estimate(double center, long double wide, long double scale, std::size_t count) {
+    if (std::numeric_limits<long double>::digits <= std::numeric_limits<double>::digits)
+        throw std::runtime_error("source-reference estimate unavailable: long double is not wider than double");
+    const long double nu = count * (std::numeric_limits<long double>::epsilon() / 2);
+    if (!(nu < 1) || !std::isfinite(wide) || !std::isfinite(scale) || scale < 0)
+        throw std::runtime_error("nonfinite wider reference estimate");
+    const long double estimate = std::abs(static_cast<long double>(center) - wide) + nu / (1 - nu) * scale
+        + count * std::numeric_limits<long double>::denorm_min();
+    const double error = std::nextafter(static_cast<double>(estimate), INFINITY);
+    if (!std::isfinite(error)) throw std::runtime_error("nonfinite wider reference estimate");
+    return error;
+}
+
+template<typename Base>
+static auto inverse_log_series(const std::vector<std::vector<double>>& path, std::size_t order) {
+    const Base volume = path[0][1];
+    std::pair<std::vector<Base>, std::vector<Base>> out;
+    auto& [inverse, logarithm] = out;
+    inverse.assign(order + 1, 0.0); logarithm.assign(order + 1, 0.0);
+    inverse[0] = Base(1.0) / volume; logarithm[0] = std::log(volume);
+    for (std::size_t k = 1; k <= order; ++k) {
+        logarithm[k] = Base(k) * Base(path[k][1]);
+        for (std::size_t j = 1; j <= k; ++j) inverse[k] -= Base(path[j][1]) * inverse[k-j] / volume;
+        for (std::size_t j = 1; j < k; ++j) logarithm[k] -= Base(j) * logarithm[j] * Base(path[k-j][1]);
+        logarithm[k] /= Base(k) * volume;
+    }
+    return out;
+}
+
 ReferenceTaylor HelmholtzModel::reference_taylor(double temperature, double volume,
     const std::vector<double>& composition, const std::vector<double>& stoichiometry,
-    const PressureActionDirection& direction, std::size_t order, bool infinite_dilution) const {
+    const PressureActionDirection& direction, std::size_t order, bool infinite_dilution, ReferenceTaylorError* error) const {
     validate_point(temperature, volume, composition);
     validate_composition(composition);
     require(order <= 4 && stoichiometry.size() == composition.size()
         && finite_vector(stoichiometry) && std::isfinite(direction.temperature)
         && std::isfinite(direction.pressure) && direction.composition.empty(), "reference path");
+    if (error && order > 1) throw std::invalid_argument("reference error order");
     ReferenceTaylor result;
     std::vector<ActionDirection> insertion{{0.0, 0.0, stoichiometry, {}}};
     require(!infinite_dilution || !detail::charged_support(composition, parameters_), "ion-free reference solvent required");
@@ -1340,6 +1553,9 @@ ReferenceTaylor HelmholtzModel::reference_taylor(double temperature, double volu
     for (double& v : motion) v /= norm;
     const auto signature = predicate_signature(temperature, composition);
     if (infinite_dilution) {
+        if (parameters_.permittivity_form.is(PermittivityForm::SolventMoleWeighting)
+            && parameters_.permittivity_solvent_normalized)
+            (void)bulk_relative_permittivity(temperature, 1.0 / volume, composition, parameters_);
         const auto electro = electrolyte_contribution(temperature, 1.0 / volume, composition, composition, parameters_);
         (void)born_contribution(temperature, composition, parameters_, electro.bulk_relative_permittivity);
         if (!reference_tape_ || reference_tape_->predicates != signature) {
@@ -1358,34 +1574,43 @@ ReferenceTaylor HelmholtzModel::reference_taylor(double temperature, double volu
     std::vector<std::vector<double>> path(degree + 1, std::vector<double>(width, 0.0));
     path[0] = point; path[1] = motion;
     // EqID: reference_single_insertion_taylor. Only one insertion reaches degree 2r+1.
+    std::vector<long double> paired_wide, paired_scale;
+    std::vector<double> paired_site;
+    // Recurrence count for the consumed pressure (degree 3), value (1), and thermal (3) extractions.
+    const std::size_t operation_count = 32 + 2 * tape.function.size_op() * 4 * (4 * 4 + 2 * 2 + 4 * 4);
+    bool capture_error = false;
     const auto gradient_series = [&](const std::vector<double>& u, std::size_t last) {
         std::vector<double> gradient(last + 1, 0.0);
+        if (capture_error) {
+            paired_wide.assign(last + 1, 0.0L); paired_scale.assign(last + 1, 0.0L); paired_site.assign(last + 1, 0.0);
+        }
         for (double sign : {1.0, -1.0}) {
             auto inserted = path;
             for (std::size_t i = 0; i < width; ++i) inserted[insertion_degree][i] += sign * u[i];
             std::vector<std::vector<double>> outputs;
+            std::vector<double> sites, known;
             tape.implicit_taylor(inserted, insertion_degree + last, factorization.get(),
                 &result.diagnostics.site_solves, &result.diagnostics.forward_sweeps,
-                &result.diagnostics.association_residual, &outputs);
+                &result.diagnostics.association_residual, &outputs, capture_error ? &sites : nullptr, capture_error ? &known : nullptr);
+            if (capture_error) {
+                std::vector<long double> wide;
+                if (degree == 1) { const auto v = reference_coefficients<1>(parameters_, active_, inserted, sites); wide.assign(v.c.begin(), v.c.end()); }
+                else { const auto v = reference_coefficients<3>(parameters_, active_, inserted, sites); wide.assign(v.c.begin(), v.c.end()); }
+                const auto association = central.site_fractions.empty() ? std::vector<double>(inserted.size(), 0.0)
+                    : coefficient_errors(parameters_, tape, inserted, central.site_fractions, sites, known, *factorization);
+                for (std::size_t k = 0; k <= last; ++k) {
+                    paired_wide[k] += 0.5L * sign * wide[insertion_degree + k];
+                    paired_scale[k] += 0.5L * std::abs(wide[insertion_degree + k]);
+                    paired_site[k] += 0.5 * association[insertion_degree + k];
+                }
+            }
             for (std::size_t k = 0; k <= last; ++k)
                 gradient[k] += 0.5 * sign * outputs[insertion_degree + k][0];
             ++result.diagnostics.directional_paths;
         }
         return gradient;
     };
-    const auto inverse_log = [&]() {
-        std::pair<std::vector<double>, std::vector<double>> out;
-        auto& [inverse, logarithm] = out;
-        inverse.assign(order + 1, 0.0); logarithm.assign(order + 1, 0.0);
-        inverse[0] = 1.0 / volume; logarithm[0] = std::log(volume);
-        for (std::size_t k = 1; k <= order; ++k) {
-            logarithm[k] = double(k) * path[k][1];
-            for (std::size_t j = 1; j <= k; ++j) inverse[k] -= path[j][1] * inverse[k-j] / volume;
-            for (std::size_t j = 1; j < k; ++j) logarithm[k] -= double(j) * logarithm[j] * path[k-j][1];
-            logarithm[k] /= double(k) * volume;
-        }
-        return out;
-    };
+    const auto inverse_log = [&]() { return inverse_log_series<double>(path, order); };
     std::vector<double> u(width, 0.0); u[1] = volume;
     result.diagnostics.pressure_factorizations = 1;
     for (std::size_t k = 1; k <= order; ++k) {
@@ -1396,8 +1621,27 @@ ReferenceTaylor HelmholtzModel::reference_taylor(double temperature, double volu
         path[k][1] = ((k == 1 ? direction.pressure / norm : 0.0) - known) / pv;
         ++result.diagnostics.pressure_solves;
     }
+    capture_error = error != nullptr;
     const auto g = gradient_series(u, order);
     const auto [inverse, logarithm] = inverse_log();
+    const auto wide_series = error ? inverse_log_series<long double>(path, order)
+        : std::pair<std::vector<long double>, std::vector<long double>>{};
+    if (error) {
+        error->temperature_coefficient = motion[0];
+        for (std::size_t k = 0; k <= order; ++k) {
+            const long double r = gas, t = temperature, v = volume, t1 = motion[0];
+            const auto& wi = wide_series.first;
+            const long double pressure_wide = k ? r * (t * (wi[k] - paired_wide[k] / v)
+                + t1 * (wi[k-1] - paired_wide[k-1] / v)) : r * t * (wi[0] - paired_wide[0] / v);
+            const long double scale = std::abs(r * t) * (std::abs(wi[k]) + paired_scale[k] / v)
+                + (k ? std::abs(r * t1) * (std::abs(wi[k-1]) + paired_scale[k-1] / v) : 0.0L);
+            error->pressure[k] = k ? gas * (temperature * (inverse[k] - g[k] / volume)
+                + motion[0] * (inverse[k-1] - g[k-1] / volume)) : gas * temperature * (inverse[0] - g[0] / volume);
+            error->pressure_floor[k] = precision_estimate(error->pressure[k], pressure_wide, scale, operation_count)
+                + std::abs(gas * temperature / volume) * paired_site[k]
+                + (k ? std::abs(gas * motion[0] / volume) * paired_site[k-1] : 0.0);
+        }
+    }
     for (std::size_t k = 1; k <= order; ++k) {
         const double residual = gas * (temperature * (inverse[k] - g[k] / volume)
             + motion[0] * (inverse[k-1] - g[k-1] / volume)) - (k == 1 ? direction.pressure / norm : 0.0);
@@ -1408,10 +1652,18 @@ ReferenceTaylor HelmholtzModel::reference_taylor(double temperature, double volu
     std::copy(stoichiometry.begin(), stoichiometry.end(), u.begin() + 2);
     result.contraction = gradient_series(u, order);
     const double delta = std::accumulate(stoichiometry.begin(), stoichiometry.end(), 0.0);
+    const long double wide_delta = error ? std::accumulate(stoichiometry.begin(), stoichiometry.end(), 0.0L) : 0.0L;
     result.volume.resize(order + 1);
     for (std::size_t k = 0; k <= order; ++k) {
         result.contraction[k] = (result.contraction[k] - delta * logarithm[k]) * std::pow(norm, int(k));
         result.volume[k] = path[k][1] * std::pow(norm, int(k));
+        if (error) {
+            const long double scale = std::pow(static_cast<long double>(norm), int(k));
+            error->fixed[k] = precision_estimate(result.contraction[k],
+                (paired_wide[k] - wide_delta * wide_series.second[k]) * scale,
+                (paired_scale[k] + std::abs(wide_delta * wide_series.second[k])) * scale, operation_count)
+                + paired_site[k] * std::pow(norm, int(k));
+        }
     }
     if (result.diagnostics.association_residual > policy::ASSOCIATION_ACTION_RESIDUAL.value)
         result.status = PropertyActionStatus::AssociationResidual;
@@ -1495,6 +1747,7 @@ PropertyActionBatch HelmholtzModel::directional_actions(
     const auto ideal_status = !need_ideal || ideal_available ? PropertyActionStatus::Available
         : !record_missing ? PropertyActionStatus::OutsideInterval
         : PropertyActionStatus::MissingThermochemistry;
+    std::optional<core::Convergence> first;
     PropertyActionStatus association_status = PropertyActionStatus::Available;
     std::vector<double> sites, sigma, diameter;
     if (need_residual) {
@@ -1505,14 +1758,16 @@ PropertyActionBatch HelmholtzModel::directional_actions(
         require_law_domain(temperature, parameters_);
         try {
             sites = solve_site_fractions(temperature, molar_density, mole_fractions,
-                parameters_, sigma, diameter, nullptr, nullptr, nullptr, false, solver_options_);
-        } catch (const core::ConvergenceFailure&) {
+                parameters_, sigma, diameter, nullptr, nullptr, nullptr, false, solver_options_, &first);
+        } catch (const core::ConvergenceFailure& error) {
+            retain_density_failure(first, error, "density action association");
             need_residual = false;
             association_status = PropertyActionStatus::CentralPropertyUnavailable;
         }
     }
     const auto signature = predicate_signature(temperature, mole_fractions, ideal_available);
     PropertyActionBatch result;
+    core::retain_first(result.diagnostics.first_numerical_failure, first);
     result.diagnostics.recordings = ensure_tape(point, sites, signature,
         ideal_available ? correlations : std::vector<IdealCorrelation>{},
         ideal_available ? thermochemistry_->standard_pressure : 0.0, need_residual) ? 1 : 0;
@@ -1713,6 +1968,7 @@ PropertyActionBatch HelmholtzModel::directional_actions(
     }
     if (root != nullptr) {
         result.diagnostics.pressure_density_derivative = root->pressure_density_derivative;
+        core::retain_first(result.diagnostics.first_numerical_failure, root->first_numerical_failure, true);
         result.diagnostics.stability_determinant = root->pressure_density_derivative
             / (GAS_CONSTANT_J_PER_MOL_K * temperature);
         result.diagnostics.pressure_residual = root->pressure_residual;
@@ -1768,6 +2024,11 @@ PropertyActionBatch HelmholtzModel::pressure_actions(
         batch.density_status = PropertyActionStatus::DensityUnavailable;
         batch.solver_options = solver_options_;
         batch.density_message = error.what();
+        if (const auto* structure = dynamic_cast<const DensityStructureError*>(&error)) {
+            batch.density_convergence = structure->first_numerical_failure;
+            core::retain_first(batch.diagnostics.first_numerical_failure, structure->first_numerical_failure);
+        }
+        retain_density_failure(batch.diagnostics.first_numerical_failure, error, "density closure");
         batch.density_structure_refused = dynamic_cast<const DensityStructureError*>(&error) != nullptr;
         if (const auto* failure = dynamic_cast<const core::ConvergenceFailure*>(&error))
             batch.density_convergence = failure->record;
@@ -1924,6 +2185,7 @@ State HelmholtzModel::state(
     const double cv_over_r = -2.0 * temperature * phi_t
         - temperature * temperature * derivatives.hessian[0];
     State result;
+    core::retain_first(result.first_numerical_failure, derivatives.first_numerical_failure);
     result.solver_options = solver_options_;
     result.hard_chain = terms.hard_chain;
     result.dispersion = terms.dispersion;
@@ -2116,6 +2378,7 @@ State HelmholtzModel::state_at_pressure(
             (*result.log_fugacity_coefficient)[i] = *result.residual_chemical_potential_over_rt[i] - log_z;
     }
     result.density_convergence = root.convergence;
+    core::retain_first(result.first_numerical_failure, root.first_numerical_failure, true);
     result.density_branch = root.branch;
     result.requested_density_branch = branch;
     result.stable_root_count = root.stable_root_count;

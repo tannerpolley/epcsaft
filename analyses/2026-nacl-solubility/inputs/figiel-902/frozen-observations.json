@@ -1,0 +1,125 @@
+{
+  "scope": "issue 902 required parts 3-4 design r1",
+  "training_rows": [],
+  "rows": [
+    {
+      "id": "fang2008-ThermoML-6-1",
+      "source_doi": "10.1021/je8006138",
+      "locator": "ThermoML dataset 6, NumValues row 1, property 1; compound 3",
+      "role": "reference comparison; TOP fit lineage unresolved",
+      "T_K": 293.15,
+      "P_Pa": 101000,
+      "value": 923.8,
+      "unit": "kg/m3",
+      "expanded_uncertainty": 0.4,
+      "uncertainty_basis": "95%, data-file compiler; covariance and coverage factor not stated"
+    },
+    {
+      "id": "fang2008-ThermoML-6-2",
+      "source_doi": "10.1021/je8006138",
+      "locator": "ThermoML dataset 6, NumValues row 2, property 1; compound 3",
+      "role": "reference comparison; TOP fit lineage unresolved",
+      "T_K": 298.15,
+      "P_Pa": 101000,
+      "value": 920.1,
+      "unit": "kg/m3",
+      "expanded_uncertainty": 0.4,
+      "uncertainty_basis": "95%, data-file compiler; covariance and coverage factor not stated"
+    },
+    {
+      "id": "fang2008-ThermoML-6-3",
+      "source_doi": "10.1021/je8006138",
+      "locator": "ThermoML dataset 6, NumValues row 3, property 1; compound 3",
+      "role": "reference comparison; TOP fit lineage unresolved",
+      "T_K": 303.15,
+      "P_Pa": 101000,
+      "value": 916.4,
+      "unit": "kg/m3",
+      "expanded_uncertainty": 0.4,
+      "uncertainty_basis": "95%, data-file compiler; covariance and coverage factor not stated"
+    },
+    {
+      "id": "asadzadeh2024-table2-MIBK",
+      "source_doi": "10.1021/acs.jced.3c00309",
+      "locator": "Table 2, p.3567, MIBK row, This work column and footnotes a,c",
+      "role": "held out; post-Esper 2023 original measurement",
+      "T_K": 298.15,
+      "P_Pa": 101000,
+      "value": 796,
+      "unit": "kg/m3",
+      "standard_uncertainty": 1,
+      "u_T_K": 0.05,
+      "u_P_Pa": 10000,
+      "purity_wt_percent": 99.5,
+      "uncertainty_basis": "author standard uncertainties, confidence/coverage factor not supplied"
+    },
+    {
+      "id": "okeme2020-ThermoML-59-1",
+      "source_doi": "10.1021/acs.jced.9b01126",
+      "locator": "ThermoML dataset 59, NumValues row 1, compound 31",
+      "role": "reference only; correlated GC retention estimates, not direct coexistence observations",
+      "T_K": 298.15,
+      "value": 3.02e-08,
+      "unit": "kPa",
+      "expanded_uncertainty": 2.81e-08,
+      "uncertainty_basis": "95%, data-file compiler",
+      "phase_label": "Metastable liquid/Gas"
+    },
+    {
+      "id": "okeme2020-ThermoML-60-1",
+      "source_doi": "10.1021/acs.jced.9b01126",
+      "locator": "ThermoML dataset 60, NumValues row 1, compound 31",
+      "role": "reference only; correlated GC retention estimates, not direct coexistence observations",
+      "T_K": 298.15,
+      "value": 106,
+      "unit": "kJ/mol",
+      "expanded_uncertainty": 7,
+      "uncertainty_basis": "95%, data-file compiler",
+      "phase_label": "Metastable liquid/Gas"
+    },
+    {
+      "id": "clarke1985-table17A-25C",
+      "source_doi": "10.1063/1.555730",
+      "locator": "Table 17A p.519, 25.000 C row; PDF page 32",
+      "role": "reference; same evaluation as Table 34",
+      "T_K": 298.15,
+      "P_Pa": 101325,
+      "value": 6.1476,
+      "unit": "mol/kg water",
+      "standard_error": 0.0015
+    },
+    {
+      "id": "clarke1985-table34-25C",
+      "source_doi": "10.1063/1.555730",
+      "locator": "Table 34 p.608, 25.000 C row; PDF page 121",
+      "role": "fixed thermochemical input",
+      "T_K": 298.15,
+      "P_Pa": 101325,
+      "delta_g_J_mol": -9038.7,
+      "se_g_J_mol": 3.6,
+      "delta_h_J_mol": 3858.4,
+      "se_h_J_mol": 1.4,
+      "delta_cp_J_mol_K": -134.03,
+      "se_cp_J_mol_K": 0.12
+    },
+    {
+      "id": "pinho2005-ThermoML-1-1",
+      "source_doi": "10.1021/je049922y",
+      "locator": "10.1021/je049922y; Table 1 p30; ThermoML dataset 1 row 1",
+      "role": "held out of selected liquid and solid parameter estimation; previously compared using Held variant",
+      "T_K": 298.15,
+      "P_Pa": 101300,
+      "value": 0.26483,
+      "unit": "kg salt/kg solution",
+      "expanded_uncertainty": 0.00084,
+      "uncertainty_basis": "95%, data-file compiler; source temperature precision +/-0.1 K"
+    }
+  ],
+  "unfrozen": [
+    "TOP direct vapor/coexistence observations",
+    "MIBK independent vapor rows and primary uncertainties",
+    "technical kerosene composition/density/distillation rows",
+    "Cui stable SLE compositions/uncertainties and solid thermochemistry",
+    "Cheng metastable rows/uncertainties, excluded from stable scoring"
+  ]
+}

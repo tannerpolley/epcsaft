@@ -1,0 +1,12 @@
+{
+  "source": "Owner instruction, 29 October 2026, integration r6",
+  "standard": "within reach of the competitors",
+  "prepared_propane_microseconds": {
+    "r5": 35.3,
+    "main": 41.1,
+    "FeOs": 30.0,
+    "Clapeyron": 31.2
+  },
+  "strict_test_passed": false,
+  "new_campaign_required": false
+}

@@ -1,0 +1,97 @@
+[
+  {
+    "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-902/design-r1.md",
+    "sha256": "3410e9a45d0171a2d8fe175a1a25111a8630bdfbd7b0dcabb673ddab9d374dae",
+    "bytes": 38215
+  },
+  {
+    "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-902/readiness-r1.md",
+    "sha256": "4e94dba00ba25f6805feff2755e51c5949608a77bf44f231e0b11617eac13678",
+    "bytes": 18547
+  },
+  {
+    "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-902/top-thermoml.json",
+    "sha256": "ce6fc9bb978341772ebd063edbf7b6b8e27bc496a4d9448ab39e32fb8b025138",
+    "bytes": 109857
+  },
+  {
+    "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-902/top-vapor-thermoml.json",
+    "sha256": "aa5080430cdd4d8aa85391ee8bc1c62b3d1dab135bd01cf10749b0c886a65bee",
+    "bytes": 439517
+  },
+  {
+    "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-902/mibk-asadzadeh-2024.pdf",
+    "sha256": "8797875a5c4c03fb7534cbe5ff834ece880e2e832d0113e392b8f829577126d7",
+    "bytes": 1743244
+  },
+  {
+    "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/data/packets/feos-esper-2023/1/parameters/parameters.json",
+    "sha256": "06ce938221db4f0dd7954bfcea728f2f411daec84f71f43cfe1c9662e93580fe",
+    "bytes": 5700052
+  },
+  {
+    "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-902/p3-r2-ie3c02255_si_001.zip",
+    "sha256": "3a32d289b4f633f8a9a2b10204c3a539363e6c03a43627c084cd225e772e020e",
+    "bytes": 1297874
+  },
+  {
+    "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-902/p3-r2-SI_pcp-saft_parameters.csv",
+    "sha256": "2971644535ea47054991b4312717d8a539b52ae3bab876d297acded30eb18947",
+    "bytes": 519938
+  },
+  {
+    "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-902/p3-r2-SI_pcp-saft_parameters.json",
+    "sha256": "211831f4be9ca1543c90ffa4c61d48b26f7dbb16233c035c4626e0fcea392790",
+    "bytes": 882828
+  },
+  {
+    "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-902/p3-r2-SI_pcp-saft_parameter_statistic.pdf",
+    "sha256": "355f073ded18ceb7bd400189f894191aaa084125df17aaaf9fbbc064a66b3e30",
+    "bytes": 310992
+  },
+  {
+    "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-902/p3-r2-top-nist.html",
+    "sha256": "8ad0198daf0b67cfbb857fff1691f431ce9c15d35bd6db9f12fb704dbe434c21",
+    "bytes": 18523
+  },
+  {
+    "path": "/home/tnnrpolley21/Zotero/storage/IXPZFLT3/Fang et al. - 2008 - Densities and Viscosities of Binary Mixtures of Tris(2-ethylhexyl) Phosphate + Cyclohexane or n-Hexa.pdf",
+    "sha256": "7409fc9806a73e1ecd34e3f9d395f723b5b1bc10f1cc40f281b55e5d05a0af57",
+    "bytes": 92967
+  },
+  {
+    "path": "/home/tnnrpolley21/Zotero/storage/SSMQXR25/Fuge et al. - 1952 - Some Physical Properties of Diacetone Alcohol, Mesityl Oxide and Methyl Isobutyl Ketone.pdf",
+    "sha256": "c13f0c6a39c2f7463a913c288a0075de451558b64ac6c2ab83bd66c4b0ba84f0",
+    "bytes": 557152
+  },
+  {
+    "path": "/home/tnnrpolley21/Zotero/storage/URCZ4JGC/Ambrose et al. - 1988 - Vapour pressure and critical temperature and critical pressure of 4-methylpentan-2-one.pdf",
+    "sha256": "ea3a43d65a1c536a184c99b80fc7ecab41a12203779ea0f24aa39adb925d4f73",
+    "bytes": 158297
+  },
+  {
+    "path": "/home/tnnrpolley21/Zotero/storage/SZ9HQ4YW/Okeme et al. - 2020 - Gas Chromatographic Estimation of Vapor Pressures and Octanol\u2013Air Partition Coefficients of Semivola.pdf",
+    "sha256": "b445d221a35e20eea2218ce57ab5ac75fd089d03fd25edca49b9bcb4b76565e8",
+    "bytes": 1362173
+  },
+  {
+    "path": "/home/tnnrpolley21/Zotero/storage/AS4LVNHT/Esper et al. - 2023 - PCP-SAFT Parameters of Pure Substances Using Large Experimental Databases.pdf",
+    "sha256": "964d90afb281a87eaa9a13e1f301c813c459fa5a0531a636ca043ab9b991c470",
+    "bytes": 2349676
+  },
+  {
+    "path": "/home/tnnrpolley21/Zotero/storage/2MFZLY5G/Yu et al. - 2024 - Highly efficient lithium extraction from magnesium-rich brines with ionic liquid-based collaborative.pdf",
+    "sha256": "a2d78535130208b29756e565efe3e619f330e6418717870c347cab36800bf649",
+    "bytes": 5821396
+  },
+  {
+    "path": "/home/tnnrpolley21/Zotero/storage/S25H49SS/Supporting Information - Highly efficient lithium extraction from magnesium-rich brines with ionic liquid-based collaborative extractants Thermodynamics and molecular insights.pdf",
+    "sha256": "18283cd9624c0614b064c279e42c606136e64b58ad78f7bfb058c294cab8b2b7",
+    "bytes": 492373
+  },
+  {
+    "path": "/home/tnnrpolley21/Zotero/storage/MYSFEQSS/Wu et al. - 2025 - Direct and highly efficient lithium extraction from real oilfield brine via a selective TOP-FeCl3 sy.pdf",
+    "sha256": "c9dbfba90e238f4bb7c4b0539da05a0b700f22e3317537110d25b16328ce5070",
+    "bytes": 4720659
+  }
+]

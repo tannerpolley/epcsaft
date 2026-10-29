@@ -1,0 +1,2981 @@
+[
+  {
+    "probe": "pure-baseline-water",
+    "x_water": null,
+    "success": true,
+    "requested_tolerance_met": true,
+    "termination": "NEWTON_CONVERGED",
+    "row_residual": 1.8207657603852567e-14,
+    "iterations": 4,
+    "P_Pa": 12230.021721802676,
+    "densities_mol_m3": [
+      54832.09966319276,
+      4.5768812138890995
+    ],
+    "mole_fractions": [
+      1.0,
+      1.0
+    ],
+    "amounts_mol": [
+      1.0,
+      0.0
+    ],
+    "states": [
+      {
+        "pressure": 12230.021723876715,
+        "molar_density": 54832.09966319276,
+        "compressibility_factor": 8.301450959669054e-05,
+        "residual_helmholtz": -8.402053394697536,
+        "association": -4.716715135182721,
+        "dispersion": -8.044747059417936,
+        "hard_chain": 4.359408799903237,
+        "log_fugacity_coefficient": [
+          -0.005475229159960904
+        ],
+        "site_fractions": [
+          0.05908275503829262,
+          0.059082755038292536
+        ]
+      },
+      {
+        "pressure": 12230.021721802676,
+        "molar_density": 4.5768812138890995,
+        "compressibility_factor": 0.9945331002067445,
+        "residual_helmholtz": -0.005490227174918663,
+        "association": -0.004888570506540235,
+        "dispersion": -0.000762182644278894,
+        "hard_chain": 0.00016052597590068764,
+        "log_fugacity_coefficient": [
+          -0.005475228990888778
+        ],
+        "site_fractions": [
+          0.9951351730714026,
+          0.9951351730714026
+        ]
+      }
+    ],
+    "relative_pressure_closure": 1.6958590087767789e-10,
+    "log_fugacity_mismatch": [
+      -1.6907212609107436e-10
+    ]
+  },
+  {
+    "probe": "pure-baseline-acetic-acid",
+    "x_water": null,
+    "success": true,
+    "requested_tolerance_met": true,
+    "termination": "NEWTON_CONVERGED",
+    "row_residual": 2.1389569639068144e-15,
+    "iterations": 5,
+    "P_Pa": 7508.245020060129,
+    "densities_mol_m3": [
+      16681.812881293354,
+      3.0483728216110917
+    ],
+    "mole_fractions": [
+      1.0,
+      1.0
+    ],
+    "amounts_mol": [
+      1.0,
+      0.0
+    ],
+    "states": [
+      {
+        "pressure": 7508.245020195097,
+        "molar_density": 16681.812881293354,
+        "compressibility_factor": 0.00016751621281219098,
+        "residual_helmholtz": -7.7814482317248,
+        "association": -6.5777560849712735,
+        "dispersion": -4.658179255312052,
+        "hard_chain": 3.4544871085585247,
+        "log_fugacity_coefficient": [
+          -0.08685029703730685
+        ],
+        "site_fractions": [
+          0.022881251472322773,
+          0.022881251472322686
+        ]
+      },
+      {
+        "pressure": 7508.245020060129,
+        "molar_density": 3.0483728216110917,
+        "compressibility_factor": 0.916710087707901,
+        "residual_helmholtz": -0.09052439443003464,
+        "association": -0.08999085855650502,
+        "dispersion": -0.0008507273963064475,
+        "hard_chain": 0.0003171915227768203,
+        "log_fugacity_coefficient": [
+          -0.08685029701927549
+        ],
+        "site_fractions": [
+          0.9172581097650906,
+          0.9172581097650906
+        ]
+      }
+    ],
+    "relative_pressure_closure": 1.797606508091576e-11,
+    "log_fugacity_mismatch": [
+      -1.8031354187542092e-11
+    ]
+  },
+  {
+    "probe": "neutral-baseline",
+    "x_water": 0.0093,
+    "success": true,
+    "requested_tolerance_met": true,
+    "termination": "NEWTON_CONVERGED",
+    "row_residual": 5.329070518200751e-15,
+    "iterations": 0,
+    "P_Pa": 7626.032071031306,
+    "densities_mol_m3": [
+      16816.275176093768,
+      3.089730694631885
+    ],
+    "mole_fractions": [
+      0.009300000000000003,
+      0.9907,
+      0.023325832986008422,
+      0.9766741670139916
+    ],
+    "amounts_mol": [
+      1.0,
+      0.0
+    ],
+    "states": [
+      {
+        "pressure": 7626.032070953807,
+        "molar_density": 16816.275176093768,
+        "compressibility_factor": 0.00016878368972783608,
+        "residual_helmholtz": -7.779464216630673,
+        "association": -6.558069227076631,
+        "dispersion": -4.683392294346033,
+        "hard_chain": 3.4619973047919914,
+        "log_fugacity_coefficient": [
+          0.9707282989116628,
+          -0.10238276048736417
+        ],
+        "site_fractions": [
+          0.12351179189675442,
+          0.12351179189675435,
+          0.0227561698545096,
+          0.022756169854509588
+        ]
+      },
+      {
+        "pressure": 7626.032071031303,
+        "molar_density": 3.089730694631885,
+        "compressibility_factor": 0.9186279492450602,
+        "residual_helmholtz": -0.08837670738684325,
+        "association": -0.08783295757530313,
+        "dispersion": -0.00085935774272903,
+        "hard_chain": 0.0003156079311889107,
+        "log_fugacity_coefficient": [
+          0.051181240810039275,
+          -0.08812408936879304
+        ],
+        "site_fractions": [
+          0.9838908164915484,
+          0.9838908164915484,
+          0.9176404904846837,
+          0.9176404904846837
+        ]
+      }
+    ],
+    "relative_pressure_closure": 1.016242645590637e-11,
+    "log_fugacity_mismatch": [
+      1.0388467863720052e-11,
+      1.038746866299789e-11
+    ]
+  },
+  {
+    "probe": "neutral-baseline",
+    "x_water": 0.0351,
+    "success": true,
+    "requested_tolerance_met": true,
+    "termination": "NEWTON_CONVERGED",
+    "row_residual": 2.6645352591003757e-15,
+    "iterations": 0,
+    "P_Pa": 7942.379812229692,
+    "densities_mol_m3": [
+      17197.319843595695,
+      3.200667436698764
+    ],
+    "mole_fractions": [
+      0.0351,
+      0.9649,
+      0.08342129484839994,
+      0.9165787051516001
+    ],
+    "amounts_mol": [
+      1.0,
+      0.0
+    ],
+    "states": [
+      {
+        "pressure": 7942.379812335114,
+        "molar_density": 17197.319843595695,
+        "compressibility_factor": 0.00017189036656561907,
+        "residual_helmholtz": -7.774419303728669,
+        "association": -6.503469165331589,
+        "dispersion": -4.753638421524886,
+        "hard_chain": 3.4826882831278065,
+        "log_fugacity_coefficient": [
+          0.9119472034394835,
+          -0.14260863523230682
+        ],
+        "site_fractions": [
+          0.12185904437790113,
+          0.12185904437790061,
+          0.022410631457671578,
+          0.02241063145767147
+        ]
+      },
+      {
+        "pressure": 7942.379812229694,
+        "molar_density": 3.200667436698764,
+        "compressibility_factor": 0.9235741201754294,
+        "residual_helmholtz": -0.08284195316240221,
+        "association": -0.08227212967904243,
+        "dispersion": -0.0008812605308391151,
+        "hard_chain": 0.000311437047479342,
+        "log_fugacity_coefficient": [
+          0.04624472323817121,
+          -0.09123210556469989
+        ],
+        "site_fractions": [
+          0.9841129271668814,
+          0.9841129271668813,
+          0.9187003709847111,
+          0.9187003709847111
+        ]
+      }
+    ],
+    "relative_pressure_closure": 1.3273382393208522e-11,
+    "log_fugacity_mismatch": [
+      -1.3081001559722694e-11,
+      -1.3074805127466504e-11
+    ]
+  },
+  {
+    "probe": "neutral-baseline",
+    "x_water": 0.0992,
+    "success": true,
+    "requested_tolerance_met": true,
+    "termination": "NEWTON_CONVERGED",
+    "row_residual": 3.3861802251067274e-15,
+    "iterations": 0,
+    "P_Pa": 8665.721165158577,
+    "densities_mol_m3": [
+      18198.535560349534,
+      3.4534668842298353
+    ],
+    "mole_fractions": [
+      0.09920000000000001,
+      0.9008,
+      0.20885581893410315,
+      0.7911441810658969
+    ],
+    "amounts_mol": [
+      1.0,
+      0.0
+    ],
+    "states": [
+      {
+        "pressure": 8665.721165342577,
+        "molar_density": 18198.535560349534,
+        "compressibility_factor": 0.0001772270154014599,
+        "residual_helmholtz": -7.764906431343297,
+        "association": -6.367996509034214,
+        "dispersion": -4.930136252103059,
+        "hard_chain": 3.533226329793976,
+        "log_fugacity_coefficient": [
+          0.7806838461312076,
+          -0.22656967980601905
+        ],
+        "site_fractions": [
+          0.11776672895943871,
+          0.11776672895943809,
+          0.021560987670850927,
+          0.021560987670850802
+        ]
+      },
+      {
+        "pressure": 8665.721165158579,
+        "molar_density": 3.4534668842298353,
+        "compressibility_factor": 0.9339229968287581,
+        "residual_helmholtz": -0.07128473310458713,
+        "association": -0.07066211755915915,
+        "dispersion": -0.0009247823545265654,
+        "hard_chain": 0.0003021668090987457,
+        "log_fugacity_coefficient": [
+          0.03617770810200075,
+          -0.09676665050437958
+        ],
+        "site_fractions": [
+          0.9846621200765822,
+          0.9846621200765822,
+          0.9213295460720118,
+          0.9213295460720118
+        ]
+      }
+    ],
+    "relative_pressure_closure": 2.123301534595612e-11,
+    "log_fugacity_mismatch": [
+      -2.1482628176361374e-11,
+      -2.147937383512044e-11
+    ]
+  },
+  {
+    "probe": "neutral-baseline",
+    "x_water": 0.1033,
+    "success": true,
+    "requested_tolerance_met": true,
+    "termination": "NEWTON_CONVERGED",
+    "row_residual": 1.0547118733938987e-14,
+    "iterations": 0,
+    "P_Pa": 8709.108414585644,
+    "densities_mol_m3": [
+      18265.392128608586,
+      3.4685876204108044
+    ],
+    "mole_fractions": [
+      0.1033,
+      0.8966999999999999,
+      0.2159250010042792,
+      0.7840749989957208
+    ],
+    "amounts_mol": [
+      1.0,
+      0.0
+    ],
+    "states": [
+      {
+        "pressure": 8709.108414084072,
+        "molar_density": 18265.392128608586,
+        "compressibility_factor": 0.00017746240026372817,
+        "residual_helmholtz": -7.764449371574399,
+        "association": -6.3593441728724365,
+        "dispersion": -4.941524324533972,
+        "hard_chain": 3.5364191258320097,
+        "log_fugacity_coefficient": [
+          0.7729148624973075,
+          -0.23125037747534627
+        ],
+        "site_fractions": [
+          0.11750557801066372,
+          0.11750557801066297,
+          0.021507050120007705,
+          0.02150705012000755
+        ]
+      },
+      {
+        "pressure": 8709.108414585638,
+        "molar_density": 3.4685876204108044,
+        "compressibility_factor": 0.9345072645746326,
+        "residual_helmholtz": -0.07063335113349117,
+        "association": -0.07000785055984968,
+        "dispersion": -0.0009271155519016314,
+        "hard_chain": 0.00030161497826008596,
+        "log_fugacity_coefficient": [
+          0.03562110874798041,
+          -0.09703369733428542
+        ],
+        "site_fractions": [
+          0.9846971393619424,
+          0.9846971393619424,
+          0.9214976075130186,
+          0.9214976075130186
+        ]
+      }
+    ],
+    "relative_pressure_closure": 5.759159815710291e-11,
+    "log_fugacity_mismatch": [
+      5.7515103790706235e-11,
+      5.751125964348347e-11
+    ]
+  },
+  {
+    "probe": "neutral-baseline",
+    "x_water": 0.1845,
+    "success": true,
+    "requested_tolerance_met": true,
+    "termination": "NEWTON_CONVERGED",
+    "row_residual": 1.099120794378905e-14,
+    "iterations": 0,
+    "P_Pa": 9502.74889396319,
+    "densities_mol_m3": [
+      19666.8336232423,
+      3.7441529654007333
+    ],
+    "mole_fractions": [
+      0.1845,
+      0.8155,
+      0.3380878309485778,
+      0.6619121690514223
+    ],
+    "amounts_mol": [
+      1.0,
+      0.0
+    ],
+    "states": [
+      {
+        "pressure": 9502.748893791842,
+        "molar_density": 19666.8336232423,
+        "compressibility_factor": 0.0001798359296321106,
+        "residual_helmholtz": -7.759354454419844,
+        "association": -6.188474753101081,
+        "dispersion": -5.169661436627784,
+        "hard_chain": 3.5987817353090215,
+        "log_fugacity_coefficient": [
+          0.6318776273775475,
+          -0.3093689956503738
+        ],
+        "site_fractions": [
+          0.11234549953912328,
+          0.11234549953912348,
+          0.020448072225229843,
+          0.020448072225229885
+        ]
+      },
+      {
+        "pressure": 9502.748893963193,
+        "molar_density": 3.7441529654007333,
+        "compressibility_factor": 0.9446204095561079,
+        "residual_helmholtz": -0.059382247576707875,
+        "association": -0.05870921723495294,
+        "dispersion": -0.0009644030483066406,
+        "hard_chain": 0.00029137270655185687,
+        "log_fugacity_coefficient": [
+          0.026221374236647214,
+          -0.10070044559272405
+        ],
+        "site_fractions": [
+          0.9853889252109918,
+          0.9853889252109918,
+          0.9248277446270605,
+          0.9248277446270605
+        ]
+      }
+    ],
+    "relative_pressure_closure": 1.8031354187542092e-11,
+    "log_fugacity_mismatch": [
+      1.7445218880585145e-11,
+      1.744578093099136e-11
+    ]
+  },
+  {
+    "probe": "neutral-baseline",
+    "x_water": 0.278,
+    "success": true,
+    "requested_tolerance_met": true,
+    "termination": "NEWTON_CONVERGED",
+    "row_residual": 8.881784197001252e-16,
+    "iterations": 0,
+    "P_Pa": 10275.77030285647,
+    "densities_mol_m3": [
+      21488.459807555737,
+      4.010195748507234
+    ],
+    "mole_fractions": [
+      0.278,
+      0.722,
+      0.44750512629631417,
+      0.5524948737036859
+    ],
+    "amounts_mol": [
+      1.0,
+      0.0
+    ],
+    "states": [
+      {
+        "pressure": 10275.770302815967,
+        "molar_density": 21488.459807555737,
+        "compressibility_factor": 0.00017797981625289339,
+        "residual_helmholtz": -7.76348296503134,
+        "association": -5.993408033032313,
+        "dispersion": -5.439022096348335,
+        "hard_chain": 3.6689471643493086,
+        "log_fugacity_coefficient": [
+          0.49430433772557514,
+          -0.3696415306974945
+        ],
+        "site_fractions": [
+          0.10642305301058073,
+          0.10642305301058073,
+          0.019248033635104037,
+          0.019248033635104033
+        ]
+      },
+      {
+        "pressure": 10275.770302856468,
+        "molar_density": 4.010195748507234,
+        "compressibility_factor": 0.9536971180386238,
+        "residual_helmholtz": -0.049332835122108676,
+        "association": -0.048622880923143943,
+        "dispersion": -0.000990539710404251,
+        "hard_chain": 0.0002805855114394661,
+        "log_fugacity_coefficient": [
+          0.018237458352068924,
+          -0.10206054679324994
+        ],
+        "site_fractions": [
+          0.9861845654048962,
+          0.9861845654048962,
+          0.92868192862181,
+          0.92868192862181
+        ]
+      }
+    ],
+    "relative_pressure_closure": 3.941624804326693e-12,
+    "log_fugacity_mismatch": [
+      4.088163835236358e-12,
+      4.087397087459976e-12
+    ]
+  },
+  {
+    "probe": "neutral-baseline",
+    "x_water": 0.3859,
+    "success": true,
+    "requested_tolerance_met": true,
+    "termination": "NEWTON_CONVERGED",
+    "row_residual": 4.440892098500626e-15,
+    "iterations": 0,
+    "P_Pa": 11005.098829270415,
+    "densities_mol_m3": [
+      23933.700950538027,
+      4.257951717745
+    ],
+    "mole_fractions": [
+      0.3859,
+      0.6141,
+      0.5471576405434426,
+      0.4528423594565574
+    ],
+    "amounts_mol": [
+      1.0,
+      0.0
+    ],
+    "states": [
+      {
+        "pressure": 11005.098828675671,
+        "molar_density": 23933.700950538027,
+        "compressibility_factor": 0.0001711377198613251,
+        "residual_helmholtz": -7.783189283883587,
+        "association": -5.771812071262208,
+        "dispersion": -5.760227241237016,
+        "hard_chain": 3.7488500286156365,
+        "log_fugacity_coefficient": [
+          0.36062368270681944,
+          -0.405700828889076
+        ],
+        "site_fractions": [
+          0.09959360888912268,
+          0.09959360888912244,
+          0.01788360154683177,
+          0.017883601546831725
+        ]
+      },
+      {
+        "pressure": 11005.098829270415,
+        "molar_density": 4.257951717745,
+        "compressibility_factor": 0.961955249908074,
+        "residual_helmholtz": -0.04024596518085214,
+        "association": -0.03951039971386609,
+        "dispersion": -0.0010041874582744374,
+        "hard_chain": 0.0002686219912883908,
+        "log_fugacity_coefficient": [
+          0.011464999171834193,
+          -0.10108712015792043
+        ],
+        "site_fractions": [
+          0.9871102276706445,
+          0.9871102276706445,
+          0.9331987391348642,
+          0.9331987391348642
+        ]
+      }
+    ],
+    "relative_pressure_closure": 5.404254821428367e-11,
+    "log_fugacity_mismatch": [
+      5.419431223230298e-11,
+      5.41898192985002e-11
+    ]
+  },
+  {
+    "probe": "neutral-baseline",
+    "x_water": 0.4815,
+    "success": true,
+    "requested_tolerance_met": true,
+    "termination": "NEWTON_CONVERGED",
+    "row_residual": 3.552713678800501e-15,
+    "iterations": 0,
+    "P_Pa": 11523.400515090989,
+    "densities_mol_m3": [
+      26491.471651489854,
+      4.430803896530633
+    ],
+    "mole_fractions": [
+      0.4815,
+      0.5185000000000001,
+      0.6201313255269494,
+      0.3798686744730507
+    ],
+    "amounts_mol": [
+      1.0,
+      0.0
+    ],
+    "states": [
+      {
+        "pressure": 11523.400514752175,
+        "molar_density": 26491.471651489854,
+        "compressibility_factor": 0.00016189604022975868,
+        "residual_helmholtz": -7.81597902138936,
+        "association": -5.580057523799531,
+        "dispersion": -6.056072562780715,
+        "hard_chain": 3.820151065190886,
+        "log_fugacity_coefficient": [
+          0.25994695654149247,
+          -0.40969224536216053
+        ],
+        "site_fractions": [
+          0.09352560713854313,
+          0.09352560713854305,
+          0.016687746044300844,
+          0.01668774604430083
+        ]
+      },
+      {
+        "pressure": 11523.400515090996,
+        "molar_density": 4.430803896530633,
+        "compressibility_factor": 0.9679652858748535,
+        "residual_helmholtz": -0.033678467257647206,
+        "association": -0.03293180615767132,
+        "dispersion": -0.0010045881071731515,
+        "hard_chain": 0.000257927007197353,
+        "log_fugacity_coefficient": [
+          0.006921916774915531,
+          -0.09857781721911435
+        ],
+        "site_fractions": [
+          0.9879487169105334,
+          0.9879487169105334,
+          0.9373209427158804,
+          0.9373209427158804
+        ]
+      }
+    ],
+    "relative_pressure_closure": 2.9402258405752946e-11,
+    "log_fugacity_mismatch": [
+      2.927992917567401e-11,
+      2.926925368740285e-11
+    ]
+  },
+  {
+    "probe": "neutral-baseline",
+    "x_water": 0.5781,
+    "success": true,
+    "requested_tolerance_met": true,
+    "termination": "NEWTON_CONVERGED",
+    "row_residual": 1.657007864253046e-14,
+    "iterations": 0,
+    "P_Pa": 11937.204616334751,
+    "densities_mol_m3": [
+      29562.472875948446,
+      4.565163889289627
+    ],
+    "mole_fractions": [
+      0.5781,
+      0.42190000000000005,
+      0.684667432669256,
+      0.31533256733074394
+    ],
+    "amounts_mol": [
+      1.0,
+      0.0
+    ],
+    "states": [
+      {
+        "pressure": 11937.204615226756,
+        "molar_density": 29562.472875948446,
+        "compressibility_factor": 0.0001502877329295771,
+        "residual_helmholtz": -7.8662026334132324,
+        "association": -5.392387970498915,
+        "dispersion": -6.368496192618047,
+        "hard_chain": 3.8946815297037296,
+        "log_fugacity_coefficient": [
+          0.17248338286224296,
+          -0.38588790600080003
+        ],
+        "site_fractions": [
+          0.08735382983760442,
+          0.08735382983760433,
+          0.01548639483671323,
+          0.015486394836713206
+        ]
+      },
+      {
+        "pressure": 11937.20461633474,
+        "molar_density": 4.565163889289627,
+        "compressibility_factor": 0.9732130404237095,
+        "residual_helmholtz": -0.027984895485283868,
+        "association": -0.027236220525984317,
+        "dispersion": -0.000995268773051763,
+        "hard_chain": 0.00024659381375220633,
+        "log_fugacity_coefficient": [
+          0.003297026242318337,
+          -0.09474743815982135
+        ],
+        "site_fractions": [
+          0.9888308101907366,
+          0.9888308101907366,
+          0.9416894204749664,
+          0.9416894204749664
+        ]
+      }
+    ],
+    "relative_pressure_closure": 9.281864166155174e-11,
+    "log_fugacity_mismatch": [
+      9.220521915431767e-11,
+      9.218366348040519e-11
+    ]
+  },
+  {
+    "probe": "neutral-baseline",
+    "x_water": 0.6673,
+    "success": true,
+    "requested_tolerance_met": true,
+    "termination": "NEWTON_CONVERGED",
+    "row_residual": 3.552713678800501e-15,
+    "iterations": 0,
+    "P_Pa": 12226.799776931442,
+    "densities_mol_m3": [
+      32967.5096830652,
+      4.655008335899551
+    ],
+    "mole_fractions": [
+      0.6673,
+      0.3327,
+      0.739600778810113,
+      0.26039922118988695
+    ],
+    "amounts_mol": [
+      1.0,
+      0.0
+    ],
+    "states": [
+      {
+        "pressure": 12226.799777053528,
+        "molar_density": 32967.5096830652,
+        "compressibility_factor": 0.00013803471173501336,
+        "residual_helmholtz": -7.9305958221742685,
+        "association": -5.226369185922686,
+        "dispersion": -6.67235508790285,
+        "hard_chain": 3.968128451651268,
+        "log_fugacity_coefficient": [
+          0.1034529100237691,
+          -0.3350963155893112
+        ],
+        "site_fractions": [
+          0.08159519913995789,
+          0.08159519913995789,
+          0.014378311459851047,
+          0.014378311459851047
+        ]
+      },
+      {
+        "pressure": 12226.79977693144,
+        "molar_density": 4.655008335899551,
+        "compressibility_factor": 0.9775837908990027,
+        "residual_helmholtz": -0.023278989003940122,
+        "association": -0.022536148211980266,
+        "dispersion": -0.0009780597060327612,
+        "hard_chain": 0.00023521891407282067,
+        "log_fugacity_coefficient": [
+          0.0005820774161668166,
+          -0.09007105206202279
+        ],
+        "site_fractions": [
+          0.9897011227698197,
+          0.9897011227698197,
+          0.9460319672132628,
+          0.9460319672132628
+        ]
+      }
+    ],
+    "relative_pressure_closure": 9.985123838873733e-12,
+    "log_fugacity_mismatch": [
+      -1.0548333040372171e-11,
+      -1.0552392293305957e-11
+    ]
+  },
+  {
+    "probe": "neutral-baseline",
+    "x_water": 0.7683,
+    "success": true,
+    "requested_tolerance_met": true,
+    "termination": "NEWTON_CONVERGED",
+    "row_residual": 4.829470157119431e-15,
+    "iterations": 0,
+    "P_Pa": 12446.079717789433,
+    "densities_mol_m3": [
+      37717.60637747038,
+      4.715893244442033
+    ],
+    "mole_fractions": [
+      0.7683000000000001,
+      0.2317,
+      0.8007855774451608,
+      0.19921442255483923
+    ],
+    "amounts_mol": [
+      1.0,
+      0.0
+    ],
+    "states": [
+      {
+        "pressure": 12446.079717879167,
+        "molar_density": 37717.60637747038,
+        "compressibility_factor": 0.00012281463140040305,
+        "residual_helmholtz": -8.028899020825207,
+        "association": -5.049682711555424,
+        "dispersion": -7.040078167962018,
+        "hard_chain": 4.060861858692244,
+        "log_fugacity_coefficient": [
+          0.039469555596431505,
+          -0.23420916970858663
+        ],
+        "site_fractions": [
+          0.07497173736125602,
+          0.0749717373612559,
+          0.013118290321785232,
+          0.013118290321785207
+        ]
+      },
+      {
+        "pressure": 12446.07971778944,
+        "molar_density": 4.715893244442033,
+        "compressibility_factor": 0.9822686147481341,
+        "residual_helmholtz": -0.018279493006012004,
+        "association": -0.017553070015217817,
+        "dispersion": -0.0009468430955910823,
+        "hard_chain": 0.00022042010479689358,
+        "log_fugacity_coefficient": [
+          -0.0019433801775905792,
+          -0.0831474831757054
+        ],
+        "site_fractions": [
+          0.9908078317579375,
+          0.9908078317579375,
+          0.9516011062494062,
+          0.9516011062494063
+        ]
+      }
+    ],
+    "relative_pressure_closure": 7.2097883219157666e-12,
+    "log_fugacity_mismatch": [
+      -7.84841289180882e-12,
+      -7.853565020532471e-12
+    ]
+  },
+  {
+    "probe": "reactive-baseline",
+    "x_water": 0.5781,
+    "success": true,
+    "requested_tolerance_met": true,
+    "termination": "SUCCESS",
+    "row_residual": 5.684341886080802e-14,
+    "iterations": 15,
+    "P_Pa": 11934.685120141068,
+    "densities_mol_m3": [
+      29562.632639973835,
+      4.564263661230844
+    ],
+    "mole_fractions": [
+      0.5780666810692083,
+      0.4218180484558163,
+      5.7635237487719106e-05,
+      5.7635237487717574e-05,
+      1.5522614907579467e-18,
+      0.6844650236513157,
+      0.3155349763486844,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "amounts_mol": [
+      1.0000576385594997,
+      0.0
+    ],
+    "states": [
+      {
+        "pressure": 11934.685120021959,
+        "molar_density": 29562.632639973835,
+        "compressibility_factor": 0.00015025520081612953,
+        "residual_helmholtz": -7.880852210673076,
+        "association": -5.391518597213571,
+        "dispersion": -6.368280008703345,
+        "hard_chain": 3.894494464259263,
+        "log_fugacity_coefficient": [
+          0.1722557468903272,
+          -0.3850566034181693,
+          -139.4996072823127,
+          -115.17215745730128,
+          -241.64688634740412
+        ],
+        "site_fractions": [
+          0.08735959671627697,
+          0.0873595967162772,
+          0.01548754025041428,
+          0.015487540250414327
+        ]
+      },
+      {
+        "pressure": 11934.68512014106,
+        "molar_density": 4.564263661230844,
+        "compressibility_factor": 0.9731995418551402,
+        "residual_helmholtz": -0.027999457982275835,
+        "association": -0.027250860784160967,
+        "dispersion": -0.000995201673539258,
+        "hard_chain": 0.00024660447542438783,
+        "log_fugacity_coefficient": [
+          0.003307428308211409,
+          -0.09475208306276665,
+          null,
+          null,
+          null
+        ],
+        "site_fractions": [
+          0.988829020311268,
+          0.988829020311268,
+          0.9416805238596316,
+          0.9416805238596316
+        ]
+      }
+    ],
+    "relative_pressure_closure": 9.98012783526292e-12,
+    "log_fugacity_mismatch": [
+      9.715998838810691e-12,
+      9.730369288085683e-12
+    ]
+  },
+  {
+    "probe": "kij-delta--0.01",
+    "x_water": 0.5781,
+    "success": true,
+    "requested_tolerance_met": true,
+    "termination": "NEWTON_CONVERGED",
+    "row_residual": 9.159339953157541e-15,
+    "iterations": 0,
+    "P_Pa": 11539.13373743079,
+    "densities_mol_m3": [
+      29604.247124937923,
+      4.410390649930888
+    ],
+    "mole_fractions": [
+      0.5781,
+      0.42190000000000005,
+      0.681610120052102,
+      0.318389879947898
+    ],
+    "amounts_mol": [
+      1.0,
+      0.0
+    ],
+    "states": [
+      {
+        "pressure": 11539.13373759955,
+        "molar_density": 29604.247124937923,
+        "compressibility_factor": 0.000145071078796688,
+        "residual_helmholtz": -7.898876655112142,
+        "association": -5.396269867626052,
+        "dispersion": -6.408682562396942,
+        "hard_chain": 3.9060757749108523,
+        "log_fugacity_coefficient": [
+          0.1680811617669633,
+          -0.37357801990256334
+        ],
+        "site_fractions": [
+          0.08719108323800112,
+          0.08719108323800097,
+          0.01545277037034475,
+          0.015452770370344723
+        ]
+      },
+      {
+        "pressure": 11539.133737430791,
+        "molar_density": 4.410390649930888,
+        "compressibility_factor": 0.9737731661899802,
+        "residual_helmholtz": -0.02737226145691945,
+        "association": -0.02664222316641821,
+        "dispersion": -0.0009691370726189134,
+        "hard_chain": 0.00023909878211774295,
+        "log_fugacity_coefficient": [
+          0.003370202970338597,
+          -0.09208637014003064
+        ],
+        "site_fractions": [
+          0.989133198855281,
+          0.989133198855281,
+          0.9431948310228447,
+          0.9431948310228447
+        ]
+      }
+    ],
+    "relative_pressure_closure": 1.4624967903387187e-11,
+    "log_fugacity_mismatch": [
+      -1.410912359167682e-11,
+      -1.4108089696485138e-11
+    ]
+  },
+  {
+    "probe": "kij-delta-+0.01",
+    "x_water": 0.5781,
+    "success": true,
+    "requested_tolerance_met": true,
+    "termination": "NEWTON_CONVERGED",
+    "row_residual": 8.215650382226158e-15,
+    "iterations": 0,
+    "P_Pa": 12349.231846981469,
+    "densities_mol_m3": [
+      29520.29690277069,
+      4.725517960381408
+    ],
+    "mole_fractions": [
+      0.5781,
+      0.42190000000000005,
+      0.6876946060834068,
+      0.31230539391659323
+    ],
+    "amounts_mol": [
+      1.0,
+      0.0
+    ],
+    "states": [
+      {
+        "pressure": 12349.231846399482,
+        "molar_density": 29520.29690277069,
+        "compressibility_factor": 0.00015569722700237154,
+        "residual_helmholtz": -7.83356587952054,
+        "association": -5.388470280097941,
+        "dispersion": -6.328306254307143,
+        "hard_chain": 3.8832106548845435,
+        "log_fugacity_coefficient": [
+          0.1768164089496782,
+          -0.39827082045234086
+        ],
+        "site_fractions": [
+          0.08751838363498438,
+          0.08751838363498435,
+          0.015520407730809354,
+          0.015520407730809344
+        ]
+      },
+      {
+        "pressure": 12349.231846981475,
+        "molar_density": 4.725517960381408,
+        "compressibility_factor": 0.9726401225855957,
+        "residual_helmholtz": -0.028612751989009488,
+        "association": -0.027844916308391532,
+        "dispersion": -0.00102217445158329,
+        "hard_chain": 0.00025433877096529817,
+        "log_fugacity_coefficient": [
+          0.0032184201108528022,
+          -0.09748403709619732
+        ],
+        "site_fractions": [
+          0.9885197614358836,
+          0.9885197614358836,
+          0.9401449433425286,
+          0.9401449433425286
+        ]
+      }
+    ],
+    "relative_pressure_closure": 4.712741308310342e-11,
+    "log_fugacity_mismatch": [
+      4.736702349794619e-11,
+      4.73548700252735e-11
+    ]
+  },
+  {
+    "probe": "cross-no-size-factor",
+    "x_water": 0.5781,
+    "success": true,
+    "requested_tolerance_met": true,
+    "termination": "NEWTON_CONVERGED",
+    "row_residual": 7.299716386910404e-15,
+    "iterations": 0,
+    "P_Pa": 11732.825490811518,
+    "densities_mol_m3": [
+      29564.154625425657,
+      4.485883768615254
+    ],
+    "mole_fractions": [
+      0.5781,
+      0.42190000000000005,
+      0.6870308211509075,
+      0.31296917884909253
+    ],
+    "amounts_mol": [
+      1.0,
+      0.0
+    ],
+    "states": [
+      {
+        "pressure": 11732.825491187448,
+        "molar_density": 29564.154625425657,
+        "compressibility_factor": 0.00014770622569515446,
+        "residual_helmholtz": -7.884538346909519,
+        "association": -5.410823087047523,
+        "dispersion": -6.368854871351968,
+        "hard_chain": 3.8951396114899715,
+        "log_fugacity_coefficient": [
+          0.17556374135451946,
+          -0.3925072794371136
+        ],
+        "site_fractions": [
+          0.08672325134440105,
+          0.08672325134440094,
+          0.015294808439809645,
+          0.01529480843980962
+        ]
+      },
+      {
+        "pressure": 11732.825490811527,
+        "molar_density": 4.485883768615254,
+        "compressibility_factor": 0.9734558273674868,
+        "residual_helmholtz": -0.027714838710044404,
+        "association": -0.026979968356053527,
+        "dispersion": -0.0009765013374816525,
+        "hard_chain": 0.00024163098349066478,
+        "log_fugacity_coefficient": [
+          0.0029314508656149256,
+          -0.09384367583622295
+        ],
+        "site_fractions": [
+          0.9887607511284419,
+          0.9887607511284419,
+          0.942218509825661,
+          0.942218509825661
+        ]
+      }
+    ],
+    "relative_pressure_closure": 3.204081444607709e-11,
+    "log_fugacity_mismatch": [
+      -3.156109748547742e-11,
+      -3.1554411861201004e-11
+    ]
+  },
+  {
+    "probe": "cross-size-factor-square",
+    "x_water": 0.5781,
+    "success": true,
+    "requested_tolerance_met": true,
+    "termination": "NEWTON_CONVERGED",
+    "row_residual": 9.547918011776346e-15,
+    "iterations": 0,
+    "P_Pa": 11869.067644031946,
+    "densities_mol_m3": [
+      29563.032016304744,
+      4.538728863541171
+    ],
+    "mole_fractions": [
+      0.5781,
+      0.42190000000000005,
+      0.685447263275577,
+      0.3145527367244229
+    ],
+    "amounts_mol": [
+      1.0,
+      0.0
+    ],
+    "states": [
+      {
+        "pressure": 11869.067643911678,
+        "molar_density": 29563.032016304744,
+        "compressibility_factor": 0.0001494270717689039,
+        "residual_helmholtz": -7.872274539395993,
+        "association": -5.3984929176770375,
+        "dispersion": -6.368615446514147,
+        "hard_chain": 3.8948338247951915,
+        "log_fugacity_coefficient": [
+          0.17349925212064754,
+          -0.38806098972916203
+        ],
+        "site_fractions": [
+          0.08714406632729492,
+          0.08714406632729485,
+          0.015422779485911687,
+          0.015422779485911671
+        ]
+      },
+      {
+        "pressure": 11869.06764403195,
+        "molar_density": 4.538728863541171,
+        "compressibility_factor": 0.9732939419089134,
+        "residual_helmholtz": -0.027894847676754136,
+        "association": -0.027150775537457268,
+        "dispersion": -0.0009890108008865932,
+        "hard_chain": 0.00024493866158980913,
+        "log_fugacity_coefficient": [
+          0.0031745519202274683,
+          -0.09444441703048512
+        ],
+        "site_fractions": [
+          0.9888071399330205,
+          0.9888071399330205,
+          0.9418665711851882,
+          0.9418665711851882
+        ]
+      }
+    ],
+    "relative_pressure_closure": 1.0132894523451341e-11,
+    "log_fugacity_mismatch": [
+      1.017439604789061e-11,
+      1.0180634113510223e-11
+    ]
+  },
+  {
+    "probe": "cross-volume-correction--0.01",
+    "x_water": 0.5781,
+    "success": true,
+    "requested_tolerance_met": true,
+    "termination": "NEWTON_CONVERGED",
+    "row_residual": 6.2727600891321345e-15,
+    "iterations": 0,
+    "P_Pa": 11885.313980176805,
+    "densities_mol_m3": [
+      29562.898558798635,
+      4.545031553867011
+    ],
+    "mole_fractions": [
+      0.5781,
+      0.42190000000000005,
+      0.685260598357432,
+      0.3147394016425681
+    ],
+    "amounts_mol": [
+      1.0,
+      0.0
+    ],
+    "states": [
+      {
+        "pressure": 11885.313980226967,
+        "molar_density": 29562.898558798635,
+        "compressibility_factor": 0.0001496322824879881,
+        "residual_helmholtz": -7.8708230962950365,
+        "association": -5.3970335874793625,
+        "dispersion": -6.3685869827761685,
+        "hard_chain": 3.8947974739604945,
+        "log_fugacity_coefficient": [
+          0.17325603800883016,
+          -0.3875398338796181
+        ],
+        "site_fractions": [
+          0.08719412333709357,
+          0.08719412333709356,
+          0.015437970804596825,
+          0.015437970804596822
+        ]
+      },
+      {
+        "pressure": 11885.313980176796,
+        "molar_density": 4.545031553867011,
+        "compressibility_factor": 0.9732746485628025,
+        "residual_helmholtz": -0.027916316845066576,
+        "association": -0.027171147278107696,
+        "dispersion": -0.000990502820960446,
+        "hard_chain": 0.00024533325400149115,
+        "log_fugacity_coefficient": [
+          0.0032037006278730525,
+          -0.0945165147997864
+        ],
+        "site_fractions": [
+          0.9888127556664233,
+          0.9888127556664233,
+          0.9418243998053472,
+          0.9418243998053472
+        ]
+      }
+    ],
+    "relative_pressure_closure": 4.220623850414995e-12,
+    "log_fugacity_mismatch": [
+      -3.87422385839109e-12,
+      -3.87129217571669e-12
+    ]
+  },
+  {
+    "probe": "cross-volume-correction-+0.01",
+    "x_water": 0.5781,
+    "success": true,
+    "requested_tolerance_met": true,
+    "termination": "NEWTON_CONVERGED",
+    "row_residual": 1.0325074129013956e-14,
+    "iterations": 0,
+    "P_Pa": 11989.61804259462,
+    "densities_mol_m3": [
+      29562.04379544384,
+      4.585501539717915
+    ],
+    "mole_fractions": [
+      0.5781,
+      0.42190000000000005,
+      0.6840729435461289,
+      0.3159270564538711
+    ],
+    "amounts_mol": [
+      1.0,
+      0.0
+    ],
+    "states": [
+      {
+        "pressure": 11989.618043255014,
+        "molar_density": 29562.04379544384,
+        "compressibility_factor": 0.00015094980158225635,
+        "residual_helmholtz": -7.86155928453885,
+        "association": -5.387719271355877,
+        "dispersion": -6.368404676615193,
+        "hard_chain": 3.89456466343222,
+        "log_fugacity_coefficient": [
+          0.17170932740405576,
+          -0.38423863625792265
+        ],
+        "site_fractions": [
+          0.08751487568735142,
+          0.08751487568735161,
+          0.015535157985048882,
+          0.015535157985048918
+        ]
+      },
+      {
+        "pressure": 11989.618042594624,
+        "molar_density": 4.585501539717915,
+        "compressibility_factor": 0.9731508334238652,
+        "residual_helmholtz": -0.02805417561562391,
+        "association": -0.027301959605584028,
+        "dispersion": -0.0010000834477636718,
+        "hard_chain": 0.00024786743772375354,
+        "log_fugacity_coefficient": [
+          0.0033916369995212158,
+          -0.09498167000657098
+        ],
+        "site_fractions": [
+          0.9888492271428738,
+          0.9888492271428738,
+          0.9415526476932132,
+          0.9415526476932132
+        ]
+      }
+    ],
+    "relative_pressure_closure": 5.5080384697703266e-11,
+    "log_fugacity_mismatch": [
+      -5.496611152344677e-11,
+      -5.49635892355127e-11
+    ]
+  },
+  {
+    "probe": "vapor-explicit-baseline",
+    "x_water": 0.5781,
+    "density_fixed": true,
+    "state": {
+      "pressure": 11937.20461633474,
+      "molar_density": 4.565163889289627,
+      "compressibility_factor": 0.9732130404237095,
+      "residual_helmholtz": -0.027984895485283868,
+      "association": -0.027236220525984317,
+      "dispersion": -0.000995268773051763,
+      "hard_chain": 0.00024659381375220633,
+      "log_fugacity_coefficient": [
+        0.003297026242318337,
+        -0.09474743815982135
+      ],
+      "site_fractions": [
+        0.9888308101907366,
+        0.9888308101907366,
+        0.9416894204749664,
+        0.9416894204749664
+      ]
+    }
+  },
+  {
+    "probe": "vapor-acid-self-off",
+    "x_water": 0.5781,
+    "density_fixed": true,
+    "state": {
+      "pressure": 12090.886715482375,
+      "molar_density": 4.565163889289627,
+      "compressibility_factor": 0.9857423911198936,
+      "residual_helmholtz": -0.014448823880342193,
+      "association": -0.013700148920942137,
+      "dispersion": -0.000995268773051763,
+      "hard_chain": 0.00024659381375220633,
+      "log_fugacity_coefficient": [
+        -0.010169020327115192,
+        -0.023415946708490648
+      ],
+      "site_fractions": [
+        0.9884969245375219,
+        0.9884969245375219,
+        0.9821417348276051,
+        0.9821417348276051
+      ]
+    }
+  },
+  {
+    "probe": "vapor-cross-off",
+    "x_water": 0.5781,
+    "density_fixed": true,
+    "state": {
+      "pressure": 12063.914281225856,
+      "molar_density": 4.565163889289627,
+      "compressibility_factor": 0.9835433901314633,
+      "residual_helmholtz": -0.017050050545811584,
+      "association": -0.016301375586512103,
+      "dispersion": -0.000995268773051763,
+      "hard_chain": 0.00024659381375220633,
+      "log_fugacity_coefficient": [
+        0.00852699478574077,
+        -0.07215014988415354
+      ],
+      "site_fractions": [
+        0.9966673665116923,
+        0.9966673665116923,
+        0.957429707452442,
+        0.957429707452442
+      ]
+    }
+  },
+  {
+    "probe": "vapor-all-association-off",
+    "x_water": 0.5781,
+    "density_fixed": true,
+    "state": {
+      "pressure": 12256.585019288092,
+      "molar_density": 4.565163889289627,
+      "compressibility_factor": 0.9992513955495528,
+      "residual_helmholtz": -0.0007486749592995566,
+      "association": 0.0,
+      "dispersion": -0.000995268773051763,
+      "hard_chain": 0.00024659381375220633,
+      "log_fugacity_coefficient": [
+        -0.0006395130494596824,
+        -0.0009848042654287646
+      ],
+      "site_fractions": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ]
+    }
+  },
+  {
+    "probe": "reactive-baseline",
+    "x_water": 0.6673,
+    "success": true,
+    "requested_tolerance_met": true,
+    "termination": "SUCCESS",
+    "row_residual": 8.526512829121202e-14,
+    "iterations": 15,
+    "P_Pa": 12223.15424945322,
+    "densities_mol_m3": [
+      32967.61350334771,
+      4.653686934642559
+    ],
+    "mole_fractions": [
+      0.6672263833177782,
+      0.3325529762439726,
+      0.00011032021912467976,
+      0.00011032021912465977,
+      1.9850377041446112e-17,
+      0.7393654804455493,
+      0.26063451955445077,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "amounts_mol": [
+      1.0001103323910183,
+      0.0
+    ],
+    "states": [
+      {
+        "pressure": 12223.15425015125,
+        "molar_density": 32967.61350334771,
+        "compressibility_factor": 0.00013799312091899996,
+        "residual_helmholtz": -7.95880317194869,
+        "association": -5.224697792908507,
+        "dispersion": -6.671886497966444,
+        "hard_chain": 3.9677612336722463,
+        "log_fugacity_coefficient": [
+          0.10325581602469747,
+          -0.3337560206058736,
+          -140.6695854781568,
+          -115.51104288060563,
+          -243.62411426661117
+        ],
+        "site_fractions": [
+          0.0816060222754363,
+          0.08160602227543645,
+          0.014380441485804809,
+          0.014380441485804835
+        ]
+      },
+      {
+        "pressure": 12223.15424945321,
+        "molar_density": 4.653686934642559,
+        "compressibility_factor": 0.9775698151185738,
+        "residual_helmholtz": -0.023293955282976606,
+        "association": -0.022551232040802678,
+        "dispersion": -0.000977944092916432,
+        "hard_chain": 0.00023522085074247594,
+        "log_fugacity_coefficient": [
+          0.0005928501738513108,
+          -0.09007596384888616,
+          null,
+          null,
+          null
+        ],
+        "site_fractions": [
+          0.9896992562641925,
+          0.9896992562641925,
+          0.9460226209669674,
+          0.9460226209669674
+        ]
+      }
+    ],
+    "relative_pressure_closure": 5.710720785145895e-11,
+    "log_fugacity_mismatch": [
+      -5.716404780087281e-11,
+      -5.715206086165381e-11
+    ]
+  },
+  {
+    "probe": "kij-delta--0.01",
+    "x_water": 0.6673,
+    "success": true,
+    "requested_tolerance_met": true,
+    "termination": "NEWTON_CONVERGED",
+    "row_residual": 2.6645352591003757e-15,
+    "iterations": 0,
+    "P_Pa": 11843.301444203948,
+    "densities_mol_m3": [
+      33010.775971280105,
+      4.505157256870692
+    ],
+    "mole_fractions": [
+      0.6673,
+      0.3327,
+      0.7416506495510024,
+      0.2583493504489976
+    ],
+    "amounts_mol": [
+      1.0,
+      0.0
+    ],
+    "states": [
+      {
+        "pressure": 11843.301444075945,
+        "molar_density": 33010.775971280105,
+        "compressibility_factor": 0.0001335299556720626,
+        "residual_helmholtz": -7.963633814889331,
+        "association": -5.230019966941768,
+        "dispersion": -6.712636851470617,
+        "hard_chain": 3.9790230035230545,
+        "log_fugacity_coefficient": [
+          0.10612538243321978,
+          -0.3400451890382179
+        ],
+        "site_fractions": [
+          0.08144968047879424,
+          0.08144968047879438,
+          0.014348619975537413,
+          0.014348619975537439
+        ]
+      },
+      {
+        "pressure": 11843.301444203948,
+        "molar_density": 4.505157256870692,
+        "compressibility_factor": 0.9784181108146643,
+        "residual_helmholtz": -0.022381819673404107,
+        "association": -0.021658511473490055,
+        "dispersion": -0.0009503753245979289,
+        "hard_chain": 0.0002270671246837108,
+        "log_fugacity_coefficient": [
+          0.000486792744554803,
+          -0.08711674652525125
+        ],
+        "site_fractions": [
+          0.9900569431706265,
+          0.9900569431706265,
+          0.9478169843403904,
+          0.9478169843403904
+        ]
+      }
+    ],
+    "relative_pressure_closure": 1.0808021144725899e-11,
+    "log_fugacity_mismatch": [
+      1.0202397954239828e-11,
+      1.0200174038743626e-11
+    ]
+  },
+  {
+    "probe": "kij-delta-+0.01",
+    "x_water": 0.6673,
+    "success": true,
+    "requested_tolerance_met": true,
+    "termination": "NEWTON_CONVERGED",
+    "row_residual": 1.672273430841642e-14,
+    "iterations": 0,
+    "P_Pa": 12622.692386297982,
+    "densities_mol_m3": [
+      32923.841283156915,
+      4.809992734519261
+    ],
+    "mole_fractions": [
+      0.6673,
+      0.3327,
+      0.7375341762828385,
+      0.2624658237171615
+    ],
+    "amounts_mol": [
+      1.0,
+      0.0
+    ],
+    "states": [
+      {
+        "pressure": 12622.692385572574,
+        "molar_density": 32923.841283156915,
+        "compressibility_factor": 0.00014269315940251825,
+        "residual_helmholtz": -7.897593484105737,
+        "association": -5.222685946467982,
+        "dispersion": -6.632070027831485,
+        "hard_chain": 3.957162490193729,
+        "log_fugacity_coefficient": [
+          0.10075624976909836,
+          -0.33024185414422824
+        ],
+        "site_fractions": [
+          0.08174227631086527,
+          0.08174227631086511,
+          0.014408333042327795,
+          0.014408333042327765
+        ]
+      },
+      {
+        "pressure": 12622.692386297973,
+        "molar_density": 4.809992734519261,
+        "compressibility_factor": 0.976718093338509,
+        "residual_helmholtz": -0.02421239382204751,
+        "association": -0.023449528732010966,
+        "dispersion": -0.0010065400174402786,
+        "hard_chain": 0.0002436749274036525,
+        "log_fugacity_coefficient": [
+          0.000683541758211486,
+          -0.0931215493697985
+        ],
+        "site_fractions": [
+          0.9893327636102187,
+          0.9893327636102187,
+          0.9441897710746819,
+          0.9441897710746819
+        ]
+      }
+    ],
+    "relative_pressure_closure": 5.746847442367198e-11,
+    "log_fugacity_mismatch": [
+      5.767819902247062e-11,
+      5.7669202746524206e-11
+    ]
+  },
+  {
+    "probe": "cross-no-size-factor",
+    "x_water": 0.6673,
+    "success": true,
+    "requested_tolerance_met": true,
+    "termination": "NEWTON_CONVERGED",
+    "row_residual": 1.4183099139586375e-14,
+    "iterations": 0,
+    "P_Pa": 12045.104022158184,
+    "densities_mol_m3": [
+      32968.81084583596,
+      4.584191919013936
+    ],
+    "mole_fractions": [
+      0.6673,
+      0.3327,
+      0.7443482188990452,
+      0.2556517811009547
+    ],
+    "amounts_mol": [
+      1.0,
+      0.0
+    ],
+    "states": [
+      {
+        "pressure": 12045.104023003078,
+        "molar_density": 32968.81084583596,
+        "compressibility_factor": 0.00013597808693288638,
+        "residual_helmholtz": -7.947428922306507,
+        "association": -5.2432726112570185,
+        "dispersion": -6.6726119687082734,
+        "hard_chain": 3.9684556576587844,
+        "log_fugacity_coefficient": [
+          0.10950110991861628,
+          -0.35270881924994235
+        ],
+        "site_fractions": [
+          0.08122172259449721,
+          0.08122172259449721,
+          0.014140252758105109,
+          0.014140252758105109
+        ]
+      },
+      {
+        "pressure": 12045.104022158177,
+        "molar_density": 4.584191919013936,
+        "compressibility_factor": 0.9779337135423467,
+        "residual_helmholtz": -0.022900105865338544,
+        "association": -0.022170428659344273,
+        "dispersion": -0.0009599532414632551,
+        "hard_chain": 0.0002302760354689834,
+        "log_fugacity_coefficient": [
+          0.00023186840588268823,
+          -0.08928392460731822
+        ],
+        "site_fractions": [
+          0.9896930705413632,
+          0.9896930705413632,
+          0.946561293360368,
+          0.946561293360368
+        ]
+      }
+    ],
+    "relative_pressure_closure": 7.014411274042232e-11,
+    "log_fugacity_mismatch": [
+      -7.067075050160021e-11,
+      -7.066462692773001e-11
+    ]
+  },
+  {
+    "probe": "cross-size-factor-square",
+    "x_water": 0.6673,
+    "success": true,
+    "requested_tolerance_met": true,
+    "termination": "NEWTON_CONVERGED",
+    "row_residual": 3.194462791710816e-15,
+    "iterations": 0,
+    "P_Pa": 12166.094386718332,
+    "densities_mol_m3": [
+      32967.943220625384,
+      4.631342086300545
+    ],
+    "mole_fractions": [
+      0.6673,
+      0.3327,
+      0.7411727334707713,
+      0.2588272665292288
+    ],
+    "amounts_mol": [
+      1.0,
+      0.0
+    ],
+    "states": [
+      {
+        "pressure": 12166.09438643537,
+        "molar_density": 32967.943220625384,
+        "compressibility_factor": 0.0001373475707759919,
+        "residual_helmholtz": -7.936173190899794,
+        "association": -5.2319699823848325,
+        "dispersion": -6.672440679767526,
+        "hard_chain": 3.9682374712525648,
+        "log_fugacity_coefficient": [
+          0.10545778767760616,
+          -0.3408836582174981
+        ],
+        "site_fractions": [
+          0.08147060510323254,
+          0.08147060510323242,
+          0.014299209421575398,
+          0.014299209421575376
+        ]
+      },
+      {
+        "pressure": 12166.094386718334,
+        "molar_density": 4.631342086300545,
+        "compressibility_factor": 0.9777008112472371,
+        "residual_helmholtz": -0.023152195347708928,
+        "association": -0.02241375230688999,
+        "dispersion": -0.0009720093333800422,
+        "hard_chain": 0.00023356629256127059,
+        "log_fugacity_coefficient": [
+          0.0004638008357729234,
+          -0.08980338982525335
+        ],
+        "site_fractions": [
+          0.9896978649037458,
+          0.9896978649037458,
+          0.9462110570608501,
+          0.9462110570608501
+        ]
+      }
+    ],
+    "relative_pressure_closure": 2.325828418747733e-11,
+    "log_fugacity_mismatch": [
+      2.3362686785155518e-11,
+      2.335961979404999e-11
+    ]
+  },
+  {
+    "probe": "cross-volume-correction--0.01",
+    "x_water": 0.6673,
+    "success": true,
+    "requested_tolerance_met": true,
+    "termination": "NEWTON_CONVERGED",
+    "row_residual": 6.522560269672795e-16,
+    "iterations": 0,
+    "P_Pa": 12180.55701082787,
+    "densities_mol_m3": [
+      32967.83982620238,
+      4.636979837614999
+    ],
+    "mole_fractions": [
+      0.6673,
+      0.3327,
+      0.7407969491414002,
+      0.2592030508585998
+    ],
+    "amounts_mol": [
+      1.0,
+      0.0
+    ],
+    "states": [
+      {
+        "pressure": 12180.55701079657,
+        "molar_density": 32967.83982620238,
+        "compressibility_factor": 0.00013751127599337387,
+        "residual_helmholtz": -7.9348402377023195,
+        "association": -5.230631441532859,
+        "dispersion": -6.672420267056323,
+        "hard_chain": 3.968211470886862,
+        "log_fugacity_coefficient": [
+          0.10497870969352618,
+          -0.33949618998886955
+        ],
+        "site_fractions": [
+          0.08150030564507893,
+          0.08150030564507904,
+          0.014318094002035523,
+          0.01431809400203554
+        ]
+      },
+      {
+        "pressure": 12180.557010827872,
+        "molar_density": 4.636979837614999,
+        "compressibility_factor": 0.977672942306677,
+        "residual_helmholtz": -0.023182383812356582,
+        "association": -0.022442893016849652,
+        "dispersion": -0.0009734507056595231,
+        "hard_chain": 0.00023395991015259435,
+        "log_fugacity_coefficient": [
+          0.0004918646066962226,
+          -0.08986674166364084
+        ],
+        "site_fractions": [
+          0.989698589992589,
+          0.989698589992589,
+          0.946168589787369,
+          0.946168589787369
+        ]
+      }
+    ],
+    "relative_pressure_closure": 2.569611190494925e-12,
+    "log_fugacity_mismatch": [
+      2.544915667090919e-12,
+      2.544159327655393e-12
+    ]
+  },
+  {
+    "probe": "cross-volume-correction-+0.01",
+    "x_water": 0.6673,
+    "success": true,
+    "requested_tolerance_met": true,
+    "termination": "NEWTON_CONVERGED",
+    "row_residual": 1.2156942119645464e-14,
+    "iterations": 0,
+    "P_Pa": 12273.584043637977,
+    "densities_mol_m3": [
+      32967.17636722221,
+      4.673251622605297
+    ],
+    "mole_fractions": [
+      0.6673,
+      0.3327,
+      0.7383988410347176,
+      0.2616011589652823
+    ],
+    "amounts_mol": [
+      1.0,
+      0.0
+    ],
+    "states": [
+      {
+        "pressure": 12273.584044267152,
+        "molar_density": 32967.17636722221,
+        "compressibility_factor": 0.00013856428464287252,
+        "residual_helmholtz": -7.9263286260313945,
+        "association": -5.222083980655492,
+        "dispersion": -6.672289281707545,
+        "hard_chain": 3.9680446363316433,
+        "log_fugacity_coefficient": [
+          0.10191848271801973,
+          -0.3307005539217549
+        ],
+        "site_fractions": [
+          0.08169109407154736,
+          0.08169109407154743,
+          0.01443898209233315,
+          0.014438982092333163
+        ]
+      },
+      {
+        "pressure": 12273.584043637964,
+        "molar_density": 4.673251622605297,
+        "compressibility_factor": 0.9774935267110368,
+        "residual_helmholtz": -0.023376852261108513,
+        "association": -0.02263062237737731,
+        "dispersion": -0.0009827232446730364,
+        "hard_chain": 0.00023649336094205527,
+        "log_fugacity_coefficient": [
+          0.0006740890536870783,
+          -0.09028042071541285
+        ],
+        "site_fractions": [
+          0.9897040145105762,
+          0.9897040145105762,
+          0.9458924674509743,
+          0.9458924674509743
+        ]
+      }
+    ],
+    "relative_pressure_closure": 5.126254976062228e-11,
+    "log_fugacity_mismatch": [
+      -5.0566974219012906e-11,
+      -5.056248475465708e-11
+    ]
+  },
+  {
+    "probe": "vapor-explicit-baseline",
+    "x_water": 0.6673,
+    "density_fixed": true,
+    "state": {
+      "pressure": 12226.79977693144,
+      "molar_density": 4.655008335899551,
+      "compressibility_factor": 0.9775837908990027,
+      "residual_helmholtz": -0.023278989003940122,
+      "association": -0.022536148211980266,
+      "dispersion": -0.0009780597060327612,
+      "hard_chain": 0.00023521891407282067,
+      "log_fugacity_coefficient": [
+        0.0005820774161668131,
+        -0.09007105206202279
+      ],
+      "site_fractions": [
+        0.9897011227698197,
+        0.9897011227698197,
+        0.9460319672132628,
+        0.9460319672132628
+      ]
+    }
+  },
+  {
+    "probe": "vapor-acid-self-off",
+    "x_water": 0.6673,
+    "density_fixed": true,
+    "state": {
+      "pressure": 12336.363718912078,
+      "molar_density": 4.655008335899551,
+      "compressibility_factor": 0.9863438864024355,
+      "residual_helmholtz": -0.013839035687394674,
+      "association": -0.01309619489534669,
+      "dispersion": -0.0009780597060327612,
+      "hard_chain": 0.00023521891407282067,
+      "log_fugacity_coefficient": [
+        -0.008820684456342967,
+        -0.02773106672097063
+      ],
+      "site_fractions": [
+        0.9894622758483433,
+        0.9894622758483433,
+        0.9803461275101374,
+        0.9803461275101374
+      ]
+    }
+  },
+  {
+    "probe": "vapor-cross-off",
+    "x_water": 0.6673,
+    "density_fixed": true,
+    "state": {
+      "pressure": 12345.64139252598,
+      "molar_density": 4.655008335899551,
+      "compressibility_factor": 0.9870856752194336,
+      "residual_helmholtz": -0.013274521363543904,
+      "association": -0.012531680571583964,
+      "dispersion": -0.0009780597060327612,
+      "hard_chain": 0.00023521891407282067,
+      "log_fugacity_coefficient": [
+        0.004264524542217115,
+        -0.06276690111949476
+      ],
+      "site_fractions": [
+        0.9963316167274703,
+        0.9963316167274703,
+        0.9636842491903331,
+        0.9636842491903331
+      ]
+    }
+  },
+  {
+    "probe": "vapor-all-association-off",
+    "x_water": 0.6673,
+    "density_fixed": true,
+    "state": {
+      "pressure": 12497.872964014849,
+      "molar_density": 4.655008335899551,
+      "compressibility_factor": 0.9992572261948065,
+      "residual_helmholtz": -0.0007428407919599406,
+      "association": 0.0,
+      "dispersion": -0.0009780597060327612,
+      "hard_chain": 0.00023521891407282067,
+      "log_fugacity_coefficient": [
+        -0.0006392588936036299,
+        -0.0010359801462477378
+      ],
+      "site_fractions": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ]
+    }
+  },
+  {
+    "probe": "reactive-baseline",
+    "x_water": 0.7683,
+    "success": true,
+    "requested_tolerance_met": true,
+    "termination": "SUCCESS",
+    "row_residual": 4.263256414560601e-14,
+    "iterations": 14,
+    "P_Pa": 12441.674115347258,
+    "densities_mol_m3": [
+      37717.193758731344,
+      4.714248822945414
+    ],
+    "mole_fractions": [
+      0.7681688942041064,
+      0.2314898177680573,
+      0.00017064401391816002,
+      0.00017064401391787083,
+      2.893918770312312e-16,
+      0.8006416335636175,
+      0.19935836643638252,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "amounts_mol": [
+      1.0001706731382676,
+      0.0
+    ],
+    "states": [
+      {
+        "pressure": 12441.67411503762,
+        "molar_density": 37717.193758731344,
+        "compressibility_factor": 0.00012277250116621286,
+        "residual_helmholtz": -8.07273353876071,
+        "association": -5.047075267151848,
+        "dispersion": -7.039236684534721,
+        "hard_chain": 4.060269711188414,
+        "log_fugacity_coefficient": [
+          0.03946641131773809,
+          -0.23257179882712542,
+          -141.79534835043373,
+          -115.53646343694061,
+          -245.5547313012648
+        ],
+        "site_fractions": [
+          0.07498812598063968,
+          0.07498812598063982,
+          0.013121481765636106,
+          0.013121481765636128
+        ]
+      },
+      {
+        "pressure": 12441.674115347267,
+        "molar_density": 4.714248822945414,
+        "compressibility_factor": 0.9822634291821586,
+        "residual_helmholtz": -0.0182849968500716,
+        "association": -0.017558762061278526,
+        "dispersion": -0.0009466195287425837,
+        "hard_chain": 0.00022038473994973206,
+        "log_fugacity_coefficient": [
+          -0.0019374135672686303,
+          -0.08313995154259299,
+          null,
+          null,
+          null
+        ],
+        "site_fractions": [
+          0.9908079808970552,
+          0.9908079808970552,
+          0.9516018626516229,
+          0.9516018626516229
+        ]
+      }
+    ],
+    "relative_pressure_closure": 2.4887092386904897e-11,
+    "log_fugacity_mismatch": [
+      2.4656842539938495e-11,
+      2.4644647433902378e-11
+    ]
+  },
+  {
+    "probe": "kij-delta--0.01",
+    "x_water": 0.7683,
+    "success": true,
+    "requested_tolerance_met": true,
+    "termination": "NEWTON_CONVERGED",
+    "row_residual": 2.3814283878209608e-14,
+    "iterations": 0,
+    "P_Pa": 12104.125934855385,
+    "densities_mol_m3": [
+      37758.80143647432,
+      4.58137993299018
+    ],
+    "mole_fractions": [
+      0.7683000000000001,
+      0.2317,
+      0.8087266961739122,
+      0.19127330382608762
+    ],
+    "amounts_mol": [
+      1.0,
+      0.0
+    ],
+    "states": [
+      {
+        "pressure": 12104.125933636988,
+        "molar_density": 37758.80143647432,
+        "compressibility_factor": 0.0001193100116196888,
+        "residual_helmholtz": -8.059087144782033,
+        "association": -5.052768520998538,
+        "dispersion": -7.076561566979059,
+        "hard_chain": 4.070242943195572,
+        "log_fugacity_coefficient": [
+          0.04912436849952684,
+          -0.27157865516947943
+        ],
+        "site_fractions": [
+          0.07485662733999589,
+          0.07485662733999608,
+          0.01309513900415015,
+          0.013095139004150184
+        ]
+      },
+      {
+        "pressure": 12104.125934855394,
+        "molar_density": 4.58137993299018,
+        "compressibility_factor": 0.9833288451247996,
+        "residual_helmholtz": -0.01715543137573949,
+        "association": -0.016448997578485232,
+        "dispersion": -0.0009183452051269316,
+        "hard_chain": 0.00021191140787267372,
+        "log_fugacity_coefficient": [
+          -0.002156380504917961,
+          -0.07983853918645259
+        ],
+        "site_fractions": [
+          0.9912177422112239,
+          0.9912177422112239,
+          0.9536775516659993,
+          0.9536775516659993
+        ]
+      }
+    ],
+    "relative_pressure_closure": 1.0065970279526937e-10,
+    "log_fugacity_mismatch": [
+      1.007473063308062e-10,
+      1.0072889744527913e-10
+    ]
+  },
+  {
+    "probe": "kij-delta-+0.01",
+    "x_water": 0.7683,
+    "success": true,
+    "requested_tolerance_met": true,
+    "termination": "NEWTON_CONVERGED",
+    "row_residual": 7.993605777301127e-15,
+    "iterations": 0,
+    "P_Pa": 12802.589373392113,
+    "densities_mol_m3": [
+      37676.07545325777,
+      4.856619958089247
+    ],
+    "mole_fractions": [
+      0.7683000000000001,
+      0.2317,
+      0.7925895565903025,
+      0.20741044340969755
+    ],
+    "amounts_mol": [
+      1.0,
+      0.0
+    ],
+    "states": [
+      {
+        "pressure": 12802.58937299341,
+        "molar_density": 37676.07545325777,
+        "compressibility_factor": 0.0001264718329930803,
+        "residual_helmholtz": -7.998739417362494,
+        "association": -5.046572869673233,
+        "dispersion": -7.003592650784734,
+        "hard_chain": 4.05142610309548,
+        "log_fugacity_coefficient": [
+          0.029427381628357452,
+          -0.197371878110566
+        ],
+        "site_fractions": [
+          0.07508792550355116,
+          0.07508792550355096,
+          0.013141666117553987,
+          0.013141666117553954
+        ]
+      },
+      {
+        "pressure": 12802.589373392117,
+        "molar_density": 4.856619958089247,
+        "compressibility_factor": 0.9811272786067337,
+        "residual_helmholtz": -0.01949362542616425,
+        "association": -0.018746499293793156,
+        "dispersion": -0.0009765627947680331,
+        "hard_chain": 0.00022943666239693823,
+        "log_fugacity_coefficient": [
+          -0.0016978410572345073,
+          -0.08662809518328404
+        ],
+        "site_fractions": [
+          0.9903734356787274,
+          0.9903734356787274,
+          0.9494086096479685,
+          0.9494086096479685
+        ]
+      }
+    ],
+    "relative_pressure_closure": 3.1142310952247954e-11,
+    "log_fugacity_mismatch": [
+      3.108288626485489e-11,
+      3.1084829155147986e-11
+    ]
+  },
+  {
+    "probe": "cross-no-size-factor",
+    "x_water": 0.7683,
+    "success": true,
+    "requested_tolerance_met": true,
+    "termination": "NEWTON_CONVERGED",
+    "row_residual": 7.605027718682322e-15,
+    "iterations": 0,
+    "P_Pa": 12296.94147686715,
+    "densities_mol_m3": [
+      37718.453536584035,
+      4.657564053153442
+    ],
+    "mole_fractions": [
+      0.7683000000000001,
+      0.2317,
+      0.8071886337095087,
+      0.19281136629049136
+    ],
+    "amounts_mol": [
+      1.0,
+      0.0
+    ],
+    "states": [
+      {
+        "pressure": 12296.941477017204,
+        "molar_density": 37718.453536584035,
+        "compressibility_factor": 0.00012134024921028885,
+        "residual_helmholtz": -8.042512687173165,
+        "association": -5.063337373466187,
+        "dispersion": -7.040229873213652,
+        "hard_chain": 4.061054559506672,
+        "log_fugacity_coefficient": [
+          0.04715593428095133,
+          -0.2663326266632673
+        ],
+        "site_fractions": [
+          0.07480159158311382,
+          0.07480159158311375,
+          0.012828227489022067,
+          0.012828227489022051
+        ]
+      },
+      {
+        "pressure": 12296.941476867147,
+        "molar_density": 4.657564053153442,
+        "compressibility_factor": 0.9826524122191883,
+        "residual_helmholtz": -0.017871650798354455,
+        "association": -0.017157089082394245,
+        "dispersion": -0.0009304340105034056,
+        "hard_chain": 0.00021587229454323774,
+        "log_fugacity_coefficient": [
+          -0.0022211716398696547,
+          -0.08260152943960608
+        ],
+        "site_fractions": [
+          0.9908534301722238,
+          0.9908534301722238,
+          0.9520367154292052,
+          0.9520367154292052
+        ]
+      }
+    ],
+    "relative_pressure_closure": 1.2202461263655096e-11,
+    "log_fugacity_mismatch": [
+      -1.2930847365089093e-11,
+      -1.2925216452686072e-11
+    ]
+  },
+  {
+    "probe": "cross-size-factor-square",
+    "x_water": 0.7683,
+    "success": true,
+    "requested_tolerance_met": true,
+    "termination": "NEWTON_CONVERGED",
+    "row_residual": 1.9068080447937064e-14,
+    "iterations": 0,
+    "P_Pa": 12396.024628226633,
+    "densities_mol_m3": [
+      37717.88967359942,
+      4.6963096031069
+    ],
+    "mole_fractions": [
+      0.7683000000000001,
+      0.2317,
+      0.8029192740063409,
+      0.1970807259936591
+    ],
+    "amounts_mol": [
+      1.0,
+      0.0
+    ],
+    "states": [
+      {
+        "pressure": 12396.024627182474,
+        "molar_density": 37717.88967359942,
+        "compressibility_factor": 0.00012231978222854156,
+        "residual_helmholtz": -8.033414809463855,
+        "association": -5.054212207968204,
+        "dispersion": -7.040128899718429,
+        "hard_chain": 4.06092629822278,
+        "log_fugacity_coefficient": [
+          0.0420356304775904,
+          -0.24478501463229563
+        ],
+        "site_fractions": [
+          0.07491468876049151,
+          0.07491468876049136,
+          0.013021661550063263,
+          0.013021661550063233
+        ]
+      },
+      {
+        "pressure": 12396.024628226634,
+        "molar_density": 4.6963096031069,
+        "compressibility_factor": 0.9823977636250584,
+        "residual_helmholtz": -0.01814215736403464,
+        "association": -0.01741971372084272,
+        "dispersion": -0.000941335819805337,
+        "hard_chain": 0.00021889217661341683,
+        "log_fugacity_coefficient": [
+          -0.0020382661235080514,
+          -0.08295500469813892
+        ],
+        "site_fractions": [
+          0.9908224934857011,
+          0.9908224934857011,
+          0.9517518537759064,
+          0.9517518537759064
+        ]
+      }
+    ],
+    "relative_pressure_closure": 8.42332870121254e-11,
+    "log_fugacity_mismatch": [
+      8.41445836619048e-11,
+      8.41354347302925e-11
+    ]
+  },
+  {
+    "probe": "cross-volume-correction--0.01",
+    "x_water": 0.7683,
+    "success": true,
+    "requested_tolerance_met": true,
+    "termination": "NEWTON_CONVERGED",
+    "row_residual": 1.9872992140790302e-14,
+    "iterations": 0,
+    "P_Pa": 12407.929316082622,
+    "densities_mol_m3": [
+      37717.82220329107,
+      4.700966597056525
+    ],
+    "mole_fractions": [
+      0.7683000000000001,
+      0.2317,
+      0.802410419749071,
+      0.19758958025092904
+    ],
+    "amounts_mol": [
+      1.0,
+      0.0
+    ],
+    "states": [
+      {
+        "pressure": 12407.929316877724,
+        "molar_density": 37717.82220329107,
+        "compressibility_factor": 0.00012243747270157535,
+        "residual_helmholtz": -8.032336029103035,
+        "association": -5.053130162808484,
+        "dispersion": -7.040116817392034,
+        "hard_chain": 4.060910951097487,
+        "log_fugacity_coefficient": [
+          0.041424090741850605,
+          -0.24225133936003473
+        ],
+        "site_fractions": [
+          0.07492826195949719,
+          0.07492826195949717,
+          0.01304470823690543,
+          0.013044708236905426
+        ]
+      },
+      {
+        "pressure": 12407.929316082613,
+        "molar_density": 4.700966597056525,
+        "compressibility_factor": 0.9823670793524123,
+        "residual_helmholtz": -0.018174777976878675,
+        "association": -0.01745138777174487,
+        "dispersion": -0.0009426456294944323,
+        "hard_chain": 0.00021925542436081015,
+        "log_fugacity_coefficient": [
+          -0.002015849613329488,
+          -0.08299996025769209
+        ],
+        "site_fractions": [
+          0.9908189484069446,
+          0.9908189484069446,
+          0.951716406046742,
+          0.9517164060467419
+        ]
+      }
+    ],
+    "relative_pressure_closure": 6.408007457991971e-11,
+    "log_fugacity_mismatch": [
+      -6.379382785914878e-11,
+      -6.378554628927446e-11
+    ]
+  },
+  {
+    "probe": "cross-volume-correction-+0.01",
+    "x_water": 0.7683,
+    "success": true,
+    "requested_tolerance_met": true,
+    "termination": "NEWTON_CONVERGED",
+    "row_residual": 2.220446049250313e-15,
+    "iterations": 0,
+    "P_Pa": 12484.810156696085,
+    "densities_mol_m3": [
+      37717.38787686942,
+      4.731050906891986
+    ],
+    "mole_fractions": [
+      0.7683000000000001,
+      0.2317,
+      0.7991451032589736,
+      0.2008548967410265
+    ],
+    "amounts_mol": [
+      1.0,
+      0.0
+    ],
+    "states": [
+      {
+        "pressure": 12484.810156643565,
+        "molar_density": 37717.38787686942,
+        "compressibility_factor": 0.00012319752684453178,
+        "residual_helmholtz": -8.025440594690869,
+        "association": -5.046213713878062,
+        "dispersion": -7.04003903928858,
+        "hard_chain": 4.060812158475786,
+        "log_fugacity_coefficient": [
+          0.037493426189241674,
+          -0.22616320727236428
+        ],
+        "site_fractions": [
+          0.07501583949703335,
+          0.07501583949703354,
+          0.013192568396977035,
+          0.01319256839697707
+        ]
+      },
+      {
+        "pressure": 12484.81015669609,
+        "molar_density": 4.731050906891986,
+        "compressibility_factor": 0.9821684435301682,
+        "residual_helmholtz": -0.018386080300601935,
+        "association": -0.017656579360678635,
+        "dispersion": -0.0009511043636299142,
+        "hard_chain": 0.0002216034237067951,
+        "log_fugacity_coefficient": [
+          -0.0018688273002173336,
+          -0.08330251643573011
+        ],
+        "site_fractions": [
+          0.9907969227807094,
+          0.9907969227807094,
+          0.9514814561381044,
+          0.9514814561381044
+        ]
+      }
+    ],
+    "relative_pressure_closure": 4.206635040304718e-12,
+    "log_fugacity_mismatch": [
+      3.843217410981481e-12,
+      3.8437031335547545e-12
+    ]
+  },
+  {
+    "probe": "vapor-explicit-baseline",
+    "x_water": 0.7683,
+    "density_fixed": true,
+    "state": {
+      "pressure": 12446.07971778944,
+      "molar_density": 4.715893244442033,
+      "compressibility_factor": 0.9822686147481341,
+      "residual_helmholtz": -0.018279493006012004,
+      "association": -0.017553070015217817,
+      "dispersion": -0.0009468430955910823,
+      "hard_chain": 0.00022042010479689358,
+      "log_fugacity_coefficient": [
+        -0.0019433801775905792,
+        -0.0831474831757054
+      ],
+      "site_fractions": [
+        0.9908078317579375,
+        0.9908078317579375,
+        0.9516011062494062,
+        0.9516011062494063
+      ]
+    }
+  },
+  {
+    "probe": "vapor-acid-self-off",
+    "x_water": 0.7683,
+    "density_fixed": true,
+    "state": {
+      "pressure": 12512.407353678636,
+      "molar_density": 4.715893244442033,
+      "compressibility_factor": 0.9875033196915128,
+      "residual_helmholtz": -0.01265926505823841,
+      "association": -0.011932842067382878,
+      "dispersion": -0.0009468430955910823,
+      "hard_chain": 0.00022042010479689358,
+      "log_fugacity_coefficient": [
+        -0.007550865143597466,
+        -0.03279833296765664
+      ],
+      "site_fractions": [
+        0.9906626635860186,
+        0.9906626635860186,
+        0.9784574744217442,
+        0.9784574744217442
+      ]
+    }
+  },
+  {
+    "probe": "vapor-cross-off",
+    "x_water": 0.7683,
+    "density_fixed": true,
+    "state": {
+      "pressure": 12548.543426443508,
+      "molar_density": 4.715893244442033,
+      "compressibility_factor": 0.9903552482458877,
+      "residual_helmholtz": -0.009822666228269161,
+      "association": -0.009096243237474927,
+      "dispersion": -0.0009468430955910823,
+      "hard_chain": 0.00022042010479689358,
+      "log_fugacity_coefficient": [
+        0.0002698348137741228,
+        -0.05015668079373461
+      ],
+      "site_fractions": [
+        0.9959790663881571,
+        0.9959790663881571,
+        0.971401428177144,
+        0.971401428177144
+      ]
+    }
+  },
+  {
+    "probe": "vapor-all-association-off",
+    "x_water": 0.7683,
+    "density_fixed": true,
+    "state": {
+      "pressure": 12661.546117931824,
+      "molar_density": 4.715893244442033,
+      "compressibility_factor": 0.9992736385943268,
+      "residual_helmholtz": -0.0007264229907941887,
+      "association": 0.0,
+      "dispersion": -0.0009468430955910823,
+      "hard_chain": 0.00022042010479689358,
+      "log_fugacity_coefficient": [
+        -0.0006360487966760301,
+        -0.001088376819436917
+      ],
+      "site_fractions": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ]
+    }
+  },
+  {
+    "probe": "pure-water-volume-0.04509",
+    "x_water": null,
+    "success": true,
+    "requested_tolerance_met": true,
+    "termination": "NEWTON_CONVERGED",
+    "row_residual": 1.4210854715202004e-14,
+    "iterations": 4,
+    "P_Pa": 12232.574775146837,
+    "densities_mol_m3": [
+      54832.06141971792,
+      4.577836943085929
+    ],
+    "mole_fractions": [
+      1.0,
+      1.0
+    ],
+    "amounts_mol": [
+      1.0,
+      0.0
+    ],
+    "states": [
+      {
+        "pressure": 12232.574773300774,
+        "molar_density": 54832.06141971792,
+        "compressibility_factor": 8.303189700731295e-05,
+        "residual_helmholtz": -8.401844045767412,
+        "association": -4.716504427926386,
+        "dispersion": -8.044741848800081,
+        "hard_chain": 4.35940223095917,
+        "log_fugacity_coefficient": [
+          -0.005475291170824903
+        ],
+        "site_fractions": [
+          0.05908916945992006,
+          0.05908916945991998
+        ]
+      },
+      {
+        "pressure": 12232.574775146837,
+        "molar_density": 4.577836943085929,
+        "compressibility_factor": 0.9945330368447958,
+        "residual_helmholtz": -0.005490289854005235,
+        "association": -0.004888507557417432,
+        "dispersion": -0.000762341794657761,
+        "hard_chain": 0.0001605594980699575,
+        "log_fugacity_coefficient": [
+          -0.005475291321675845
+        ],
+        "site_fractions": [
+          0.9951352354110214,
+          0.9951352354110214
+        ]
+      }
+    ],
+    "relative_pressure_closure": 1.5091372596032215e-10,
+    "log_fugacity_mismatch": [
+      1.5085094198091786e-10
+    ]
+  },
+  {
+    "probe": "water-volume-0.04509",
+    "x_water": 0.5781,
+    "success": true,
+    "requested_tolerance_met": true,
+    "termination": "NEWTON_CONVERGED",
+    "row_residual": 1.4654943925052066e-14,
+    "iterations": 0,
+    "P_Pa": 11938.894574448825,
+    "densities_mol_m3": [
+      29562.451250572885,
+      4.565799834460323
+    ],
+    "mole_fractions": [
+      0.5781,
+      0.42190000000000005,
+      0.6847118225252758,
+      0.3152881774747242
+    ],
+    "amounts_mol": [
+      1.0,
+      0.0
+    ],
+    "states": [
+      {
+        "pressure": 11938.89457464928,
+        "molar_density": 29562.451250572885,
+        "compressibility_factor": 0.0001503091192350814,
+        "residual_helmholtz": -7.866084904978045,
+        "association": -5.392268964316298,
+        "dispersion": -6.368491580300182,
+        "hard_chain": 3.894675639638435,
+        "log_fugacity_coefficient": [
+          0.17254768670987275,
+          -0.3860341883226184
+        ],
+        "site_fractions": [
+          0.08736297858397131,
+          0.08736297858397127,
+          0.015486454214055125,
+          0.015486454214055116
+        ]
+      },
+      {
+        "pressure": 11938.894574448834,
+        "molar_density": 4.565799834460323,
+        "compressibility_factor": 0.9732152461635043,
+        "residual_helmholtz": -0.027982578533003278,
+        "association": -0.027233814620526424,
+        "dispersion": -0.0009953790733524188,
+        "hard_chain": 0.0002466151608754111,
+        "log_fugacity_coefficient": [
+          0.003296498114416336,
+          -0.09475293890754904
+        ],
+        "site_fractions": [
+          0.9888317522308699,
+          0.9888317522308699,
+          0.9416880156474655,
+          0.9416880156474655
+        ]
+      }
+    ],
+    "relative_pressure_closure": 1.6790124846011167e-11,
+    "log_fugacity_mismatch": [
+      -1.7117491452056655e-11,
+      -1.710848129832243e-11
+    ]
+  },
+  {
+    "probe": "water-volume-0.04509",
+    "x_water": 0.6673,
+    "success": true,
+    "requested_tolerance_met": true,
+    "termination": "NEWTON_CONVERGED",
+    "row_residual": 1.824929096727601e-14,
+    "iterations": 0,
+    "P_Pa": 12228.671689962737,
+    "densities_mol_m3": [
+      32967.48485434269,
+      4.6557121946155435
+    ],
+    "mole_fractions": [
+      0.6673,
+      0.3327,
+      0.7396408731432974,
+      0.26035912685670265
+    ],
+    "amounts_mol": [
+      1.0,
+      0.0
+    ],
+    "states": [
+      {
+        "pressure": 12228.67169072597,
+        "molar_density": 32967.48485434269,
+        "compressibility_factor": 0.00013805594871718618,
+        "residual_helmholtz": -7.930459167465701,
+        "association": -5.226231189629866,
+        "dispersion": -6.672350186017359,
+        "hard_chain": 3.9681222081815233,
+        "log_fugacity_coefficient": [
+          0.10350669278114566,
+          -0.33525578036346104
+        ],
+        "site_fractions": [
+          0.08160382094245823,
+          0.08160382094245804,
+          0.014378371004949922,
+          0.01437837100494989
+        ]
+      },
+      {
+        "pressure": 12228.671689962726,
+        "molar_density": 4.6557121946155435,
+        "compressibility_factor": 0.9775856427216706,
+        "residual_helmholtz": -0.02327705417147483,
+        "association": -0.022534116978025463,
+        "dispersion": -0.0009781799634782447,
+        "hard_chain": 0.00023524277002893396,
+        "log_fugacity_coefficient": [
+          0.0005816509176454973,
+          -0.09007653237490187
+        ],
+        "site_fractions": [
+          0.9897019405154954,
+          0.9897019405154954,
+          0.9460304022146708,
+          0.9460304022146708
+        ]
+      }
+    ],
+    "relative_pressure_closure": 6.241340777535243e-11,
+    "log_fugacity_mismatch": [
+      -6.26985754981213e-11,
+      -6.26861340613516e-11
+    ]
+  },
+  {
+    "probe": "water-volume-0.04509",
+    "x_water": 0.7683,
+    "success": true,
+    "requested_tolerance_met": true,
+    "termination": "NEWTON_CONVERGED",
+    "row_residual": 1.1296519275560968e-14,
+    "iterations": 0,
+    "P_Pa": 12448.145486194368,
+    "densities_mol_m3": [
+      37717.57779669993,
+      4.71666926117608
+    ],
+    "mole_fractions": [
+      0.7683000000000001,
+      0.2317,
+      0.8008192774110018,
+      0.1991807225889983
+    ],
+    "amounts_mol": [
+      1.0,
+      0.0
+    ],
+    "states": [
+      {
+        "pressure": 12448.145486187828,
+        "molar_density": 37717.57779669993,
+        "compressibility_factor": 0.00012283510893618121,
+        "residual_helmholtz": -8.02874066339503,
+        "association": -5.049522971275405,
+        "dispersion": -7.04007304978623,
+        "hard_chain": 4.06085535766661,
+        "log_fugacity_coefficient": [
+          0.039511349372913784,
+          -0.23438376471550626
+        ],
+        "site_fractions": [
+          0.07497973268580894,
+          0.07497973268580861,
+          0.013118347936317583,
+          0.013118347936317526
+        ]
+      },
+      {
+        "pressure": 12448.145486194355,
+        "molar_density": 4.71666926117608,
+        "compressibility_factor": 0.9822700132070893,
+        "residual_helmholtz": -0.018278041453095296,
+        "association": -0.017551514183406676,
+        "dispersion": -0.000946973927241497,
+        "hard_chain": 0.0002204466575530577,
+        "log_fugacity_coefficient": [
+          -0.0019436691563408139,
+          -0.08315289959366311
+        ],
+        "site_fractions": [
+          0.9908084947476753,
+          0.9908084947476753,
+          0.9515993520802455,
+          0.9515993520802455
+        ]
+      }
+    ],
+    "relative_pressure_closure": 5.253575352526241e-13,
+    "log_fugacity_mismatch": [
+      5.145640857850964e-13,
+      5.248163015281193e-13
+    ]
+  },
+  {
+    "probe": "pure-acid-Ascani2023-printed-energy-311.59",
+    "x_water": null,
+    "success": true,
+    "requested_tolerance_met": true,
+    "termination": "NEWTON_CONVERGED",
+    "row_residual": 1.1290860802666422e-14,
+    "iterations": 5,
+    "P_Pa": 764.605586415067,
+    "densities_mol_m3": [
+      18250.734005202405,
+      0.2872180066806477
+    ],
+    "mole_fractions": [
+      1.0,
+      1.0
+    ],
+    "amounts_mol": [
+      1.0,
+      0.0
+    ],
+    "states": [
+      {
+        "pressure": 764.605585783207,
+        "molar_density": 18250.734005202405,
+        "compressibility_factor": 1.5592608888281845e-05,
+        "residual_helmholtz": -10.07796635564943,
+        "association": -6.881133716011521,
+        "dispersion": -7.602293259978813,
+        "hard_chain": 4.405460620340904,
+        "log_fugacity_coefficient": [
+          -0.00923721784548448
+        ],
+        "site_fractions": [
+          0.01962889803622262,
+          0.019628898036222513
+        ]
+      },
+      {
+        "pressure": 764.605586415067,
+        "molar_density": 0.2872180066806477,
+        "compressibility_factor": 0.9908033301652074,
+        "residual_helmholtz": -0.009279769123285906,
+        "association": -0.009179864084690292,
+        "dispersion": -0.00013072602905508387,
+        "hard_chain": 3.0820990464799424e-05,
+        "log_fugacity_coefficient": [
+          -0.009237218672707267
+        ],
+        "site_fractions": [
+          0.9909033895060418,
+          0.9909033895060418
+        ]
+      }
+    ],
+    "relative_pressure_closure": 8.263869588631678e-10,
+    "log_fugacity_mismatch": [
+      8.272227867978099e-10
+    ]
+  }
+]

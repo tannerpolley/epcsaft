@@ -80,7 +80,11 @@ that no Python thermodynamic calculation remains.
 
 | Leaf | Question | Status |
 |---|---|---|
+| [2026-reaction-reference-association](2026-reaction-reference-association/) | Inherited MDEA reaction-reference invariance before neutral association selection | current — partial E3 verification; remaining E3 controls and E4 blocked on Design allowance review |
 | [2026-release-computational-cost](2026-release-computational-cost/) | Named-release computational cost with value-matched comparators | current — fresh value-matched measurements; independent review and owner promotion outstanding |
+| [2026-explicit-discovery-cost](2026-explicit-discovery-cost/) | Equivalent finite phase searches and ordinary/prepared discovery cost | current — numerical equivalence and complete quiet ordinary/prepared cost measurements retained |
+| [2026-equilibrium-forward-error](2026-equilibrium-forward-error/) | Numerical determination and conditioning-aware comparison of equilibrium endpoints | current — numerical verification retained; independent review and investigator promotion outstanding |
+| [2026-pure-saturation-cost](2026-pure-saturation-cost/) | Pure-fluid coexistence agreement and ordinary/prepared call cost | current — numerical qualification retained; independent review and investigator promotion outstanding |
 | [2026-audit-timing-campaign](2026-audit-timing-campaign/) | Current-main cost of the four audits' speed questions against FeOs and Clapeyron, with A=A controls (#578) | record |
 | [2026-binary-methane-ethane-bubble-point](2026-binary-methane-ethane-bubble-point/) | Methane/ethane PC-SAFT bubble points across packages (original run) | record |
 | [2026-binary-methane-ethane-tp-flash](2026-binary-methane-ethane-tp-flash/) | Neutral methane/ethane TP-flash cost against the repaired baseline | current |
@@ -117,8 +121,12 @@ that no Python thermodynamic calculation remains.
 
 | Leaf | Question | Status |
 |---|---|---|
+| [2026-nacl-solubility](2026-nacl-solubility/) | Measured halite solubility against the declared Held/dielectric variant (#858) | current — binary comparison reviewed Supported; reversed temperature trend open (#877); transfer case #878 |
+| [2026-neutral-solvent-densities](2026-neutral-solvent-densities/) | Fixed TOP/MIBK density and descriptive MIBK vapor comparisons (#916) | current — density and vapor engineering screens pass; TOP source-scale disagreement; carrier predictions depend on n-dodecane; delivered review pending |
+| [2026-nacl-dilution-enthalpy](2026-nacl-dilution-enthalpy/) | Measured NaCl dilution enthalpy against a study-chosen benchmark, caloric cancellation and finite-concentration heat-capacity predictions | current — independent delivered review and investigator promotion outstanding |
 | [2026-mixed-chloride-water-activity](2026-mixed-chloride-water-activity/) | Mixed NaCl-MgCl2 and NaCl-CaCl2 water properties against independent measurements (#556) | current |
 | [2026-ascani-carboxylic-acid-lle](2026-ascani-carboxylic-acid-lle/) | Acetic acid dissociation with water/toluene liquid–liquid equilibrium against Ascani 2022 (#374) | current |
+| [2026-acetic-acid-reacting-vle](2026-acetic-acid-reacting-vle/) | Coupled aqueous acetic-acid bubble pressure against Bernatová measurements (#856); no speciation test | current — historical calibration overlap unresolved; independent review and investigator promotion outstanding |
 | [2026-association-native-comparison](2026-association-native-comparison/) | Does the fixed-depth log-Newton association candidate match the implicit mass-action reference? | current |
 | [2026-dielectric-alternatives](2026-dielectric-alternatives/) | Admitted permittivity forms on common NaCl(aq) data (#27) | current |
 | [2026-equilibrium-polish-masking](2026-equilibrium-polish-masking/) | Exact residual-polish termination at trace inventory | current |

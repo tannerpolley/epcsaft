@@ -14,6 +14,54 @@ def table(path, frame):
     (R / path).write_text('\n'.join(rows) + '\n')
 
 
+if D.get('profile'):
+    R=Path(__import__('sys').argv[2]).resolve()
+    profile=pd.read_csv(R/'profile.csv',float_precision='round_trip').sort_values('c')
+    metrics=pd.read_csv(R/'metrics.csv',float_precision='round_trip')
+    frozen=pd.read_csv(R/'frozen.csv',float_precision='round_trip').iloc[0]
+    table('conditions-profile.md',pd.DataFrame([{'temperature_K':D['temperature_K'],'pressure_Pa':D['pressure_Pa']}]))
+    table('timing-profile.md',pd.DataFrame([json.loads((R/'wall-time.json').read_text())]))
+    table('selected-columns.md',pd.read_csv(R/'column-summary.csv').query('point==@frozen.point and start==@frozen.start').assign(signed_objective_column_correlation=lambda frame: -frame.inverse_normal_correlation))
+    table('selected-guards.md',metrics[(metrics.point==frozen.point)&(metrics.start==frozen.start)])
+    transfer=pd.read_csv(R/'transfer.csv',float_precision='round_trip')
+    table('selected-transfer.md',transfer[(transfer.point==frozen.point)&(transfer.role=='mixture')][['source','group','states','complete','mean','worst','signed_mean']])
+    for name in ['frozen','transfer','profile','metrics']:
+        table(name+'.md',pd.read_csv(R/(name+'.csv'),float_precision='round_trip'))
+    fig,axes=plt.subplots(2,1,sharex=True,figsize=(8,7))
+    for name in ['B','V']:
+        axes[0].plot(profile.c,profile[name],'.-',label=name)
+    axes[0].axhline(1,color='black',linestyle=':'); axes[0].set_ylabel('Error / limit'); axes[0].legend()
+    axes[1].plot(profile.c,profile.cost,'.-'); axes[1].set(xlabel='k H–Cl',ylabel='Native objective J')
+    failed=profile[~profile.complete]
+    axes[0].scatter(failed.c,failed.B,marker='x',color='red',label='Incomplete')
+    fig.tight_layout(); fig.savefig(R/'profile.png',dpi=160); plt.close(fig)
+    frozen=pd.read_csv(R/'frozen.csv',float_precision='round_trip').iloc[0]
+    training=pd.read_csv(R/'training.csv',float_precision='round_trip')
+    training=training[(training.point==frozen.point)&(training.start==frozen.start)&(training.source=='Jiang-I5')].sort_values('background')
+    fig,ax=plt.subplots(); ax.scatter(training.background/5,training.observed,label='Jiang observations')
+    ax.plot(training.background/5,training.prediction,label='Selected model'); ax.set(xlabel='LiCl fraction of I',ylabel='HCl mean activity coefficient'); ax.legend()
+    fig.tight_layout(); fig.savefig(R/'jiang-I5.png',dpi=160); plt.close(fig)
+    raise SystemExit(0)
+
+if D.get('hcl_mixture_training'):
+    R = LEAF / 'results/issue-894'
+    screen = pd.read_csv(R / 'sensitivity-summary.csv', float_precision='round_trip')
+    table('screen.md', screen[['u', 'k_Cl', 'weighted_norm', 'chloride_weighted_norm', 'correlation', 'passes']].rename(columns={'u': 'H–water', 'k_Cl': 'H–Cl', 'weighted_norm': 'H–water norm', 'chloride_weighted_norm': 'H–Cl norm', 'correlation': 'Absolute correlation', 'passes': 'Passes'}))
+    roy = pd.read_csv(LEAF / 'results/binary-water-qualification/roy/100000/roy.csv', float_precision='round_trip').query('y_background > 0')
+    table('conditions.md', pd.DataFrame([{'quantity': 'Temperature', 'minimum': D['temperature_K'], 'maximum': D['temperature_K'], 'unit': 'K'}, {'quantity': 'Liquid pressure', 'minimum': D['pressure_Pa'], 'maximum': D['pressure_Pa'], 'unit': 'Pa'}] + [{'quantity': 'Roy ' + name, 'minimum': roy[name].min(), 'maximum': roy[name].max(), 'unit': 'mol/kg water'} for name in ['m_HCl', 'm_MgCl2']]))
+    raise SystemExit(0)
+
+
+if (LEAF / 'results/binary-water-qualification/outcome.txt').exists():
+    R = LEAF / 'results/binary-water-qualification'
+    for name in ['binary-metrics', 'water-metrics', 'roy/pressure-metrics']:
+        table(name + '.md', pd.read_csv(R / (name + '.csv'), float_precision='round_trip'))
+    numerical = pd.read_csv(R / 'numerical/numerical.csv', float_precision='round_trip')
+    replay = pd.read_csv(R / 'cold/training-comparison.csv', float_precision='round_trip')
+    table('numerical-summary.md', pd.DataFrame([{'quantity': 'maximum log-activity identity difference', 'value': numerical.error.max(), 'limit': 1e-10}, {'quantity': 'training predictions compared', 'value': len(replay), 'limit': 'All 60'}, {'quantity': 'maximum absolute training difference', 'value': replay.absolute_difference.max(), 'limit': 'Per-row ALG-FIT allowance'}]))
+    raise SystemExit(0)
+
+
 coordinates = D.get('coordinates', [D.get('coordinate')])
 training_label = f"{D['training_states']} {C['source']} training states"
 if D.get('sulfate'): training_label = f"{D['training_observations']} scalar observations: {D['training_states']} binary states and 21 LiCl–MgSO₄ mixtures"

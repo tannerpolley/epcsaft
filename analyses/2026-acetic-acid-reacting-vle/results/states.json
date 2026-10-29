@@ -1,0 +1,6275 @@
+[
+  {
+    "x_water": 0.5640999999999999,
+    "variant": "primary",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 2.842170943040401e-14,
+    "iterations": 15,
+    "P_Pa": 11881.443955546438,
+    "compositions": [
+      0.5640713073095674,
+      0.43582696359831224,
+      5.086454606022873e-05,
+      5.086454606022774e-05,
+      1.0161472205338045e-18,
+      0.6755352501225046,
+      0.3244647498774955,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      29081.892491474715,
+      4.547269547922105
+    ],
+    "phase_amounts_mol": [
+      1.0000508671333939,
+      0.0
+    ],
+    "charge_error_mol": -2.6864426636996448e-20,
+    "acid_inventory_error_mol": 5.551115123125783e-17,
+    "water_inventory_error_mol": 1.1102230246251565e-16,
+    "hydrogen_inventory_error_mol": -2.6864426636996448e-20,
+    "pressure_closure_relative": 7.461142814690902e-12,
+    "neutral_log_fugacity_difference": [
+      -7.55529666607302e-12,
+      -7.563713544378459e-12
+    ],
+    "reaction_log_residuals": [
+      -8.348877145181177e-14,
+      1.3855583347321954e-13
+    ],
+    "acid_dissociation_fraction": 0.00011669450193594217,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      },
+      {
+        "reaction_index": 1,
+        "source_pressure_Pa": 100000.0,
+        "contraction": -391.48243914124134,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "pressure_actions": [
+      {
+        "order": 1,
+        "value": 11881.443955546438,
+        "action": 3880.890480608007,
+        "status": "SolvedStateActionStatus.Available",
+        "cause": null
+      }
+    ],
+    "numerical_estimate": {
+      "pressure": {
+        "absolute": 5.788974508888584e-08,
+        "available": true,
+        "resolved": true,
+        "cause": ""
+      },
+      "source_reference_method": "local higher-precision re-evaluation plus first-order pressure/site propagation; can underestimate shared errors and internal cancellation; fixed-input arithmetic excludes supplied operand uncertainty; reference replay precision: 64 bits",
+      "cause": "",
+      "row_inner": [
+        2.410336451708982e-12,
+        2.024298689022345e-12,
+        2.209154458904862e-12,
+        2.018706218424672e-12,
+        2.4209631993732253e-12,
+        2.5019152338303625e-15,
+        2.408538949877572e-12,
+        2.021009985739975e-12,
+        4.549302857879126e-17,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rank": 14,
+      "dimension": 14,
+      "condition": 400887.89426509757,
+      "backward_error": 4.15733757571932e-18
+    },
+    "measurement_row": 9,
+    "elapsed_s": 0.02398259199981112
+  },
+  {
+    "x_water": 0.5640999999999999,
+    "variant": "acid-only",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 6.394884621840902e-14,
+    "iterations": 9,
+    "P_Pa": 11881.44395554642,
+    "compositions": [
+      0.5640713073095674,
+      0.43582696359831224,
+      5.086454606022847e-05,
+      5.086454606022847e-05,
+      0.6755352501225063,
+      0.32446474987749374,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      29081.89249147471,
+      4.547269547922098
+    ],
+    "phase_amounts_mol": [
+      1.000050867133394,
+      0.0
+    ],
+    "charge_error_mol": 0.0,
+    "acid_inventory_error_mol": 1.1102230246251565e-16,
+    "water_inventory_error_mol": 2.220446049250313e-16,
+    "hydrogen_inventory_error_mol": 0.0,
+    "pressure_closure_relative": 4.6834203182299916e-11,
+    "neutral_log_fugacity_difference": [
+      4.7195209545991545e-11,
+      4.719212520765126e-11
+    ],
+    "reaction_log_residuals": [
+      -6.572520305780927e-14
+    ],
+    "acid_dissociation_fraction": 0.00011669450193594384,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "measurement_row": 9,
+    "elapsed_s": 0.011231504991883412
+  },
+  {
+    "x_water": 0.5640999999999999,
+    "variant": "water-only-permittivity",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 2.842170943040401e-14,
+    "iterations": 15,
+    "P_Pa": 11869.341898930174,
+    "compositions": [
+      0.5638187007840555,
+      0.43518396109878654,
+      0.0004986690585790096,
+      0.0004986690585789382,
+      7.145969707137001e-17,
+      0.6752008201375195,
+      0.3247991798624805,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      29083.25760169524,
+      4.5426614638832525
+    ],
+    "phase_amounts_mol": [
+      1.0004989178534753,
+      0.0
+    ],
+    "charge_error_mol": -1.548466404966647e-19,
+    "acid_inventory_error_mol": 0.0,
+    "water_inventory_error_mol": 1.1102230246251565e-16,
+    "hydrogen_inventory_error_mol": -1.548466404966647e-19,
+    "pressure_closure_relative": 6.324907264598778e-11,
+    "neutral_log_fugacity_difference": [
+      6.279591777125226e-11,
+      6.277545150368269e-11
+    ],
+    "reaction_log_residuals": [
+      -1.2079226507921703e-13,
+      7.815970093361102e-14
+    ],
+    "acid_dissociation_fraction": 0.0011445695193283757,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      },
+      {
+        "reaction_index": 1,
+        "source_pressure_Pa": 100000.0,
+        "contraction": -391.48243914124134,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "measurement_row": 9,
+    "elapsed_s": 0.016392160003306344
+  },
+  {
+    "x_water": 0.5675999999999999,
+    "variant": "primary",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 4.263256414560601e-14,
+    "iterations": 15,
+    "P_Pa": 11894.958750452904,
+    "compositions": [
+      0.5675701950959618,
+      0.4323247841005213,
+      5.251040175850305e-05,
+      5.251040175850193e-05,
+      1.130483156091508e-18,
+      0.6777783898236469,
+      0.3222216101763531,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      29200.847402852283,
+      4.551593674193098
+    ],
+    "phase_amounts_mol": [
+      1.0000525131592455,
+      0.0
+    ],
+    "charge_error_mol": -1.2459030957831758e-20,
+    "acid_inventory_error_mol": 0.0,
+    "water_inventory_error_mol": 0.0,
+    "hydrogen_inventory_error_mol": -1.2459030957831758e-20,
+    "pressure_closure_relative": 5.5668247789242287e-11,
+    "neutral_log_fugacity_difference": [
+      5.531331642716353e-11,
+      5.530470525982878e-11
+    ],
+    "reaction_log_residuals": [
+      -6.750155989720952e-14,
+      1.5276668818842154e-13
+    ],
+    "acid_dissociation_fraction": 0.00012144578918961958,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      },
+      {
+        "reaction_index": 1,
+        "source_pressure_Pa": 100000.0,
+        "contraction": -391.48243914124134,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "pressure_actions": [
+      {
+        "order": 1,
+        "value": 11894.958750452904,
+        "action": 3841.860864661893,
+        "status": "SolvedStateActionStatus.Available",
+        "cause": null
+      }
+    ],
+    "numerical_estimate": {
+      "pressure": {
+        "absolute": 5.799006097192021e-08,
+        "available": true,
+        "resolved": true,
+        "cause": ""
+      },
+      "source_reference_method": "local higher-precision re-evaluation plus first-order pressure/site propagation; can underestimate shared errors and internal cancellation; fixed-input arithmetic excludes supplied operand uncertainty; reference replay precision: 64 bits",
+      "cause": "",
+      "row_inner": [
+        2.410340625390309e-12,
+        2.024308990334357e-12,
+        2.2091603993003168e-12,
+        2.018714634176421e-12,
+        2.420964588332374e-12,
+        2.503231996552221e-15,
+        2.4085388985647252e-12,
+        2.0210097320220456e-12,
+        4.51947887140332e-17,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rank": 14,
+      "dimension": 14,
+      "condition": 389699.23548939906,
+      "backward_error": 3.42304354084654e-18
+    },
+    "measurement_row": 9,
+    "elapsed_s": 0.02255233899632003
+  },
+  {
+    "x_water": 0.5675999999999999,
+    "variant": "acid-only",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 4.263256414560601e-14,
+    "iterations": 9,
+    "P_Pa": 11894.958750452826,
+    "compositions": [
+      0.5675701950959618,
+      0.4323247841005212,
+      5.251040175850323e-05,
+      5.251040175850323e-05,
+      0.677778389823648,
+      0.322221610176352,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      29200.847402852283,
+      4.5515936741930725
+    ],
+    "phase_amounts_mol": [
+      1.0000525131592455,
+      0.0
+    ],
+    "charge_error_mol": 0.0,
+    "acid_inventory_error_mol": -5.551115123125783e-17,
+    "water_inventory_error_mol": 0.0,
+    "hydrogen_inventory_error_mol": 0.0,
+    "pressure_closure_relative": 2.1970314456609685e-11,
+    "neutral_log_fugacity_difference": [
+      2.1633566466006116e-11,
+      2.16313217338282e-11
+    ],
+    "reaction_log_residuals": [
+      -3.375077994860476e-14
+    ],
+    "acid_dissociation_fraction": 0.0001214457891896226,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "measurement_row": 9,
+    "elapsed_s": 0.013514563994249329
+  },
+  {
+    "x_water": 0.5675999999999999,
+    "variant": "water-only-permittivity",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 2.842170943040401e-14,
+    "iterations": 15,
+    "P_Pa": 11882.926153121312,
+    "compositions": [
+      0.5673144809133419,
+      0.43167946169885707,
+      0.000503028693900552,
+      0.0005030286939004751,
+      7.625341947345112e-17,
+      0.6774656066722867,
+      0.3225343933277132,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      29202.195848440995,
+      4.547004799219261
+    ],
+    "phase_amounts_mol": [
+      1.0005032818591166,
+      0.0
+    ],
+    "charge_error_mol": 5.781375930545418e-19,
+    "acid_inventory_error_mol": -5.551115123125783e-17,
+    "water_inventory_error_mol": 0.0,
+    "hydrogen_inventory_error_mol": 5.781375930545418e-19,
+    "pressure_closure_relative": 6.45750120042976e-11,
+    "neutral_log_fugacity_difference": [
+      -6.403300459312256e-11,
+      -6.402087193713157e-11
+    ],
+    "reaction_log_residuals": [
+      -1.1368683772161603e-13,
+      8.171241461241152e-14
+    ],
+    "acid_dissociation_fraction": 0.0011639265937019665,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      },
+      {
+        "reaction_index": 1,
+        "source_pressure_Pa": 100000.0,
+        "contraction": -391.48243914124134,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "measurement_row": 9,
+    "elapsed_s": 0.016350468999007717
+  },
+  {
+    "x_water": 0.5710999999999999,
+    "variant": "primary",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 2.842170943040401e-14,
+    "iterations": 15,
+    "P_Pa": 11908.337059499741,
+    "compositions": [
+      0.5710690534219612,
+      0.4288225712390834,
+      5.4187669477683985e-05,
+      5.4187669477682636e-05,
+      1.2570885829515835e-18,
+      0.6800142728378205,
+      0.31998572716217955,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      29320.616676214264,
+      4.555867361368039
+    ],
+    "phase_amounts_mol": [
+      1.0000541906059404,
+      0.0
+    ],
+    "charge_error_mol": 9.131974668523174e-20,
+    "acid_inventory_error_mol": 0.0,
+    "water_inventory_error_mol": 0.0,
+    "hydrogen_inventory_error_mol": 9.131974668523174e-20,
+    "pressure_closure_relative": 2.5297541839108817e-11,
+    "neutral_log_fugacity_difference": [
+      2.48918073653126e-11,
+      2.488109718257192e-11
+    ],
+    "reaction_log_residuals": [
+      -1.1191048088221578e-13,
+      4.263256414560601e-14
+    ],
+    "acid_dissociation_fraction": 0.0001263478804857219,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      },
+      {
+        "reaction_index": 1,
+        "source_pressure_Pa": 100000.0,
+        "contraction": -391.48243914124134,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "pressure_actions": [
+      {
+        "order": 1,
+        "value": 11908.337059499741,
+        "action": 3802.8980181865427,
+        "status": "SolvedStateActionStatus.Available",
+        "cause": null
+      }
+    ],
+    "numerical_estimate": {
+      "pressure": {
+        "absolute": 5.8129788488404124e-08,
+        "available": true,
+        "resolved": true,
+        "cause": ""
+      },
+      "source_reference_method": "local higher-precision re-evaluation plus first-order pressure/site propagation; can underestimate shared errors and internal cancellation; fixed-input arithmetic excludes supplied operand uncertainty; reference replay precision: 64 bits",
+      "cause": "",
+      "row_inner": [
+        2.4103448258452275e-12,
+        2.0243193625791598e-12,
+        2.2091663811739496e-12,
+        2.0187231088888084e-12,
+        2.42096598682782e-12,
+        2.504551515064592e-15,
+        2.4085388471036944e-12,
+        2.021009477492837e-12,
+        4.4897681427164833e-17,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rank": 14,
+      "dimension": 14,
+      "condition": 378984.86642028263,
+      "backward_error": 4.24857470196654e-18
+    },
+    "measurement_row": 9,
+    "elapsed_s": 0.022527219000039622
+  },
+  {
+    "x_water": 0.5710999999999999,
+    "variant": "acid-only",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 3.552713678800501e-14,
+    "iterations": 9,
+    "P_Pa": 11908.337059499734,
+    "compositions": [
+      0.5710690534219612,
+      0.4288225712390833,
+      5.4187669477684174e-05,
+      5.4187669477684174e-05,
+      0.6800142728378218,
+      0.3199857271621783,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      29320.616676214282,
+      4.555867361368037
+    ],
+    "phase_amounts_mol": [
+      1.0000541906059404,
+      0.0
+    ],
+    "charge_error_mol": 0.0,
+    "acid_inventory_error_mol": -1.1102230246251565e-16,
+    "water_inventory_error_mol": 0.0,
+    "hydrogen_inventory_error_mol": 0.0,
+    "pressure_closure_relative": 1.5447088053122116e-11,
+    "neutral_log_fugacity_difference": [
+      1.5342112996696855e-11,
+      1.533498328321059e-11
+    ],
+    "reaction_log_residuals": [
+      -7.815970093361102e-14
+    ],
+    "acid_dissociation_fraction": 0.0001263478804857255,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "measurement_row": 9,
+    "elapsed_s": 0.011183334994711913
+  },
+  {
+    "x_water": 0.5710999999999999,
+    "variant": "water-only-permittivity",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 2.1316282072803006e-14,
+    "iterations": 15,
+    "P_Pa": 11896.376882020497,
+    "compositions": [
+      0.570810316118553,
+      0.4281752069721603,
+      0.0005072384546433349,
+      0.0005072384546432534,
+      8.133402554016978e-17,
+      0.679723230036227,
+      0.3202767699637729,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      29321.947185022193,
+      4.551298823183101
+    ],
+    "phase_amounts_mol": [
+      1.0005074958760671,
+      0.0
+    ],
+    "charge_error_mol": 1.5670114819458034e-19,
+    "acid_inventory_error_mol": 0.0,
+    "water_inventory_error_mol": 0.0,
+    "hydrogen_inventory_error_mol": 1.5670114819458034e-19,
+    "pressure_closure_relative": 8.992362410253918e-11,
+    "neutral_log_fugacity_difference": [
+      -8.972931078710111e-11,
+      -8.970997555923788e-11
+    ],
+    "reaction_log_residuals": [
+      -1.0658141036401503e-13,
+      1.0302869668521453e-13
+    ],
+    "acid_dissociation_fraction": 0.0011832498859108591,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      },
+      {
+        "reaction_index": 1,
+        "source_pressure_Pa": 100000.0,
+        "contraction": -391.48243914124134,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "measurement_row": 9,
+    "elapsed_s": 0.015996180998627096
+  },
+  {
+    "x_water": 0.5745999999999999,
+    "variant": "primary",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 2.842170943040401e-14,
+    "iterations": 15,
+    "P_Pa": 11921.579110636576,
+    "compositions": [
+      0.5745678821245613,
+      0.4253203257576573,
+      5.5896058890678305e-05,
+      5.5896058890676916e-05,
+      1.397221017978928e-18,
+      0.6822430878671669,
+      0.3177569121328331,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      29441.208864480857,
+      4.560090671329669
+    ],
+    "phase_amounts_mol": [
+      1.0000558991834347,
+      0.0
+    ],
+    "charge_error_mol": -8.1650879958584e-21,
+    "acid_inventory_error_mol": 0.0,
+    "water_inventory_error_mol": 0.0,
+    "hydrogen_inventory_error_mol": -8.1650879958584e-21,
+    "pressure_closure_relative": 6.16626749661009e-11,
+    "neutral_log_fugacity_difference": [
+      -6.186538781260964e-11,
+      -6.185475742714885e-11
+    ],
+    "reaction_log_residuals": [
+      -1.1546319456101628e-13,
+      6.750155989720952e-14
+    ],
+    "acid_dissociation_fraction": 0.0001314038162546453,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      },
+      {
+        "reaction_index": 1,
+        "source_pressure_Pa": 100000.0,
+        "contraction": -391.48243914124134,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "pressure_actions": [
+      {
+        "order": 1,
+        "value": 11921.579110636576,
+        "action": 3763.9986460160862,
+        "status": "SolvedStateActionStatus.Available",
+        "cause": null
+      }
+    ],
+    "numerical_estimate": {
+      "pressure": {
+        "absolute": 5.813250208449125e-08,
+        "available": true,
+        "resolved": true,
+        "cause": ""
+      },
+      "source_reference_method": "local higher-precision re-evaluation plus first-order pressure/site propagation; can underestimate shared errors and internal cancellation; fixed-input arithmetic excludes supplied operand uncertainty; reference replay precision: 64 bits",
+      "cause": "",
+      "row_inner": [
+        2.410349053358041e-12,
+        2.0243298065080176e-12,
+        2.2091724049618786e-12,
+        2.018731643183269e-12,
+        2.4209673949586105e-12,
+        2.5058738097438284e-15,
+        2.408538795491596e-12,
+        2.0210092221374503e-12,
+        4.4601684873212733e-17,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rank": 14,
+      "dimension": 14,
+      "condition": 368722.26747200545,
+      "backward_error": 4.992568660096299e-18
+    },
+    "measurement_row": 9,
+    "elapsed_s": 0.023046346002956852
+  },
+  {
+    "x_water": 0.5745999999999999,
+    "variant": "acid-only",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 4.263256414560601e-14,
+    "iterations": 9,
+    "P_Pa": 11921.579110636667,
+    "compositions": [
+      0.5745678821245613,
+      0.4253203257576573,
+      5.58960588906792e-05,
+      5.58960588906792e-05,
+      0.6822430878671684,
+      0.31775691213283164,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      29441.208864480846,
+      4.5600906713297
+    ],
+    "phase_amounts_mol": [
+      1.0000558991834347,
+      0.0
+    ],
+    "charge_error_mol": 0.0,
+    "acid_inventory_error_mol": 0.0,
+    "water_inventory_error_mol": 0.0,
+    "hydrogen_inventory_error_mol": 0.0,
+    "pressure_closure_relative": 1.801891968966629e-12,
+    "neutral_log_fugacity_difference": [
+      -1.4677530024709284e-12,
+      -1.455224829527424e-12
+    ],
+    "reaction_log_residuals": [
+      -6.217248937900877e-14
+    ],
+    "acid_dissociation_fraction": 0.00013140381625465066,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "measurement_row": 9,
+    "elapsed_s": 0.012011161001282744
+  },
+  {
+    "x_water": 0.5745999999999999,
+    "variant": "water-only-permittivity",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 4.618527782440651e-14,
+    "iterations": 15,
+    "P_Pa": 11909.694176685767,
+    "compositions": [
+      0.5743062090991957,
+      0.4246711981378245,
+      0.0005112963814898877,
+      0.000511296381489801,
+      8.671722527194726e-17,
+      0.6819738555798897,
+      0.31802614442011035,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      29442.520175956513,
+      4.555543553984976
+    ],
+    "phase_amounts_mol": [
+      1.0005115579392132,
+      0.0
+    ],
+    "charge_error_mol": 8.300785908723501e-20,
+    "acid_inventory_error_mol": 0.0,
+    "water_inventory_error_mol": 1.1102230246251565e-16,
+    "hydrogen_inventory_error_mol": 8.300785908723501e-20,
+    "pressure_closure_relative": 2.0701884650975444e-11,
+    "neutral_log_fugacity_difference": [
+      -2.0933980243720285e-11,
+      -2.0915158494005937e-11
+    ],
+    "reaction_log_residuals": [
+      -5.684341886080802e-14,
+      1.5631940186722204e-13
+    ],
+    "acid_dissociation_fraction": 0.0012025339426728794,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      },
+      {
+        "reaction_index": 1,
+        "source_pressure_Pa": 100000.0,
+        "contraction": -391.48243914124134,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "measurement_row": 9,
+    "elapsed_s": 0.015835252008400857
+  },
+  {
+    "x_water": 0.5781,
+    "variant": "primary",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 5.684341886080802e-14,
+    "iterations": 15,
+    "P_Pa": 11934.685120141068,
+    "compositions": [
+      0.5780666810692083,
+      0.4218180484558163,
+      5.7635237487719106e-05,
+      5.7635237487717574e-05,
+      1.5522614907579467e-18,
+      0.6844650236513157,
+      0.3155349763486844,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      29562.632639973835,
+      4.564263661230844
+    ],
+    "phase_amounts_mol": [
+      1.0000576385594997,
+      0.0
+    ],
+    "charge_error_mol": -2.091539223846586e-20,
+    "acid_inventory_error_mol": 0.0,
+    "water_inventory_error_mol": 0.0,
+    "hydrogen_inventory_error_mol": -2.091539223846586e-20,
+    "pressure_closure_relative": 9.98012783526292e-12,
+    "neutral_log_fugacity_difference": [
+      9.715998838810691e-12,
+      9.730369288085683e-12
+    ],
+    "reaction_log_residuals": [
+      -1.1723955140041653e-13,
+      7.815970093361102e-14
+    ],
+    "acid_dissociation_fraction": 0.00013661663782835455,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      },
+      {
+        "reaction_index": 1,
+        "source_pressure_Pa": 100000.0,
+        "contraction": -391.48243914124134,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "pressure_actions": [
+      {
+        "order": 1,
+        "value": 11934.685120141068,
+        "action": 3725.1593732057454,
+        "status": "SolvedStateActionStatus.Available",
+        "cause": null
+      }
+    ],
+    "numerical_estimate": {
+      "pressure": {
+        "absolute": 5.828623047483623e-08,
+        "available": true,
+        "resolved": true,
+        "cause": ""
+      },
+      "source_reference_method": "local higher-precision re-evaluation plus first-order pressure/site propagation; can underestimate shared errors and internal cancellation; fixed-input arithmetic excludes supplied operand uncertainty; reference replay precision: 64 bits",
+      "cause": "",
+      "row_inner": [
+        2.4103533082170604e-12,
+        2.0243403228828337e-12,
+        2.2091784711063837e-12,
+        2.0187402376900347e-12,
+        2.4209688128251745e-12,
+        2.507198901339548e-15,
+        2.4085387437254787e-12,
+        2.0210089659406294e-12,
+        4.430677727621128e-17,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rank": 14,
+      "dimension": 14,
+      "condition": 358890.1527147303,
+      "backward_error": 8.528399569524557e-18
+    },
+    "measurement_row": 9,
+    "elapsed_s": 0.022563029007869773
+  },
+  {
+    "x_water": 0.5781,
+    "variant": "acid-only",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 1.4210854715202004e-14,
+    "iterations": 9,
+    "P_Pa": 11934.685120141034,
+    "compositions": [
+      0.5780666810692083,
+      0.4218180484558163,
+      5.76352374877186e-05,
+      5.76352374877186e-05,
+      0.6844650236513125,
+      0.3155349763486875,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      29562.632639973835,
+      4.564263661230836
+    ],
+    "phase_amounts_mol": [
+      1.0000576385594997,
+      0.0
+    ],
+    "charge_error_mol": 0.0,
+    "acid_inventory_error_mol": 0.0,
+    "water_inventory_error_mol": 0.0,
+    "hydrogen_inventory_error_mol": 0.0,
+    "pressure_closure_relative": 9.977241255398894e-12,
+    "neutral_log_fugacity_difference": [
+      9.720425853121384e-12,
+      9.720529936529942e-12
+    ],
+    "reaction_log_residuals": [
+      -1.1013412404281553e-13
+    ],
+    "acid_dissociation_fraction": 0.000136616637828357,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "measurement_row": 9,
+    "elapsed_s": 0.011779792010202073
+  },
+  {
+    "x_water": 0.5781,
+    "variant": "water-only-permittivity",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 5.684341886080802e-14,
+    "iterations": 15,
+    "P_Pa": 11922.87811760816,
+    "compositions": [
+      0.5778021625084417,
+      0.4211674362061122,
+      0.0005152006427230316,
+      0.0005152006427229388,
+      9.24195634064257e-17,
+      0.6842176489290628,
+      0.3157823510709372,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      29563.923506810417,
+      4.559739005445566
+    ],
+    "phase_amounts_mol": [
+      1.0005154662112463,
+      0.0
+    ],
+    "charge_error_mol": 3.405033961393371e-19,
+    "acid_inventory_error_mol": -1.1102230246251565e-16,
+    "water_inventory_error_mol": 1.1102230246251565e-16,
+    "hydrogen_inventory_error_mol": 3.405033961393371e-19,
+    "pressure_closure_relative": 2.715339064707223e-11,
+    "neutral_log_fugacity_difference": [
+      -2.6854227175299172e-11,
+      -2.6866064928299238e-11
+    ],
+    "reaction_log_residuals": [
+      -1.4921397450962104e-13,
+      7.105427357601002e-15
+    ],
+    "acid_dissociation_fraction": 0.0012217734326766413,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      },
+      {
+        "reaction_index": 1,
+        "source_pressure_Pa": 100000.0,
+        "contraction": -391.48243914124134,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "measurement_row": 9,
+    "elapsed_s": 0.015992111002560705
+  },
+  {
+    "x_water": 0.5815999999999999,
+    "variant": "primary",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 2.842170943040401e-14,
+    "iterations": 15,
+    "P_Pa": 11947.655292333973,
+    "compositions": [
+      0.5815654501509886,
+      0.4183157401894125,
+      5.9404829799485285e-05,
+      5.94048297994836e-05,
+      1.7237262430918106e-18,
+      0.6866802690396113,
+      0.3133197309603887,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      29684.89679652344,
+      4.568386383379674
+    ],
+    "phase_amounts_mol": [
+      1.000059408358943,
+      0.0
+    ],
+    "charge_error_mol": -3.6539015908613314e-20,
+    "acid_inventory_error_mol": -5.551115123125783e-17,
+    "water_inventory_error_mol": 1.1102230246251565e-16,
+    "hydrogen_inventory_error_mol": -3.6539015908613314e-20,
+    "pressure_closure_relative": 4.560574140555218e-11,
+    "neutral_log_fugacity_difference": [
+      -4.5992258612681525e-11,
+      -4.59881299708087e-11
+    ],
+    "reaction_log_residuals": [
+      -4.796163466380676e-14,
+      1.1723955140041653e-13
+    ],
+    "acid_dissociation_fraction": 0.0001419893856188701,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      },
+      {
+        "reaction_index": 1,
+        "source_pressure_Pa": 100000.0,
+        "contraction": -391.48243914124134,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "pressure_actions": [
+      {
+        "order": 1,
+        "value": 11947.655292333973,
+        "action": 3686.376741712634,
+        "status": "SolvedStateActionStatus.Available",
+        "cause": null
+      }
+    ],
+    "numerical_estimate": {
+      "pressure": {
+        "absolute": 5.836676399711098e-08,
+        "available": true,
+        "resolved": true,
+        "cause": ""
+      },
+      "source_reference_method": "local higher-precision re-evaluation plus first-order pressure/site propagation; can underestimate shared errors and internal cancellation; fixed-input arithmetic excludes supplied operand uncertainty; reference replay precision: 64 bits",
+      "cause": "",
+      "row_inner": [
+        2.4103575907146743e-12,
+        2.024350912476339e-12,
+        2.209184580056014e-12,
+        2.0187488930482908e-12,
+        2.42097024052935e-12,
+        2.5085268109779737e-15,
+        2.4085386918023196e-12,
+        2.0210087088867484e-12,
+        4.401293692257378e-17,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rank": 14,
+      "dimension": 14,
+      "condition": 349468.3962367173,
+      "backward_error": 6.750222033625467e-18
+    },
+    "measurement_row": 9,
+    "elapsed_s": 0.02462867800204549
+  },
+  {
+    "x_water": 0.5815999999999999,
+    "variant": "acid-only",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 3.552713678800501e-14,
+    "iterations": 9,
+    "P_Pa": 11947.655292334068,
+    "compositions": [
+      0.5815654501509885,
+      0.41831574018941253,
+      5.940482979948539e-05,
+      5.940482979948539e-05,
+      0.6866802690396094,
+      0.3133197309603906,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      29684.89679652343,
+      4.568386383379712
+    ],
+    "phase_amounts_mol": [
+      1.000059408358943,
+      0.0
+    ],
+    "charge_error_mol": 0.0,
+    "acid_inventory_error_mol": 0.0,
+    "water_inventory_error_mol": 0.0,
+    "hydrogen_inventory_error_mol": 0.0,
+    "pressure_closure_relative": 4.5213166544044725e-11,
+    "neutral_log_fugacity_difference": [
+      4.515878296307285e-11,
+      4.5149994853943554e-11
+    ],
+    "reaction_log_residuals": [
+      -8.348877145181177e-14
+    ],
+    "acid_dissociation_fraction": 0.0001419893856188744,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "measurement_row": 9,
+    "elapsed_s": 0.012610088000656106
+  },
+  {
+    "x_water": 0.5815999999999999,
+    "variant": "water-only-permittivity",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 5.684341886080802e-14,
+    "iterations": 15,
+    "P_Pa": 11935.92877463234,
+    "compositions": [
+      0.5812981789516937,
+      0.4176639219826043,
+      0.0005189495328510706,
+      0.0005189495328509724,
+      9.845846596823039e-17,
+      0.6864547760774653,
+      0.31354522392253475,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      29686.16598629243,
+      4.563885186950211
+    ],
+    "phase_amounts_mol": [
+      1.0005192189812988,
+      0.0
+    ],
+    "charge_error_mol": -2.8087064544395174e-19,
+    "acid_inventory_error_mol": 5.551115123125783e-17,
+    "water_inventory_error_mol": 0.0,
+    "hydrogen_inventory_error_mol": -2.8087064544395174e-19,
+    "pressure_closure_relative": 1.588595921475644e-11,
+    "neutral_log_fugacity_difference": [
+      1.6152336412833534e-11,
+      1.6132734037554997e-11
+    ],
+    "reaction_log_residuals": [
+      -6.394884621840902e-14,
+      1.0302869668521453e-13
+    ],
+    "acid_dissociation_fraction": 0.0012409631484196094,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      },
+      {
+        "reaction_index": 1,
+        "source_pressure_Pa": 100000.0,
+        "contraction": -391.48243914124134,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "measurement_row": 9,
+    "elapsed_s": 0.016938036991632544
+  },
+  {
+    "x_water": 0.5851,
+    "variant": "primary",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 3.197442310920451e-14,
+    "iterations": 15,
+    "P_Pa": 11960.489819282726,
+    "compositions": [
+      0.585064189295809,
+      0.4148134018708598,
+      6.120441666565373e-05,
+      6.120441666565176e-05,
+      1.9132795084211522e-18,
+      0.6888890130644694,
+      0.3111109869355307,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      29808.010251620442,
+      4.5724588851201
+    ],
+    "phase_amounts_mol": [
+      1.0000612081628755,
+      0.0
+    ],
+    "charge_error_mol": 5.171982088504671e-20,
+    "acid_inventory_error_mol": 0.0,
+    "water_inventory_error_mol": 0.0,
+    "hydrogen_inventory_error_mol": 5.171982088504671e-20,
+    "pressure_closure_relative": 3.541078541502429e-11,
+    "neutral_log_fugacity_difference": [
+      -3.490479086321052e-11,
+      -3.4913585911233724e-11
+    ],
+    "reaction_log_residuals": [
+      -6.750155989720952e-14,
+      1.3500311979441904e-13
+    ],
+    "acid_dissociation_fraction": 0.0001475250973139449,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      },
+      {
+        "reaction_index": 1,
+        "source_pressure_Pa": 100000.0,
+        "contraction": -391.48243914124134,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "pressure_actions": [
+      {
+        "order": 1,
+        "value": 11960.489819282726,
+        "action": 3647.647206968082,
+        "status": "SolvedStateActionStatus.Available",
+        "cause": null
+      }
+    ],
+    "numerical_estimate": {
+      "pressure": {
+        "absolute": 5.851360691347502e-08,
+        "available": true,
+        "resolved": true,
+        "cause": ""
+      },
+      "source_reference_method": "local higher-precision re-evaluation plus first-order pressure/site propagation; can underestimate shared errors and internal cancellation; fixed-input arithmetic excludes supplied operand uncertainty; reference replay precision: 64 bits",
+      "cause": "",
+      "row_inner": [
+        2.410361901147424e-12,
+        2.0243615760722896e-12,
+        2.209190732265702e-12,
+        2.0187576099063397e-12,
+        2.4209716781744087e-12,
+        2.5098575601704474e-15,
+        2.4085386397190245e-12,
+        2.0210084509598013e-12,
+        4.372014215442693e-17,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rank": 14,
+      "dimension": 14,
+      "condition": 340437.9633248774,
+      "backward_error": 4.728772096279124e-18
+    },
+    "measurement_row": 9,
+    "elapsed_s": 0.023135246010497212
+  },
+  {
+    "x_water": 0.5851,
+    "variant": "acid-only",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 2.842170943040401e-14,
+    "iterations": 9,
+    "P_Pa": 11960.489819282799,
+    "compositions": [
+      0.585064189295809,
+      0.41481340187085974,
+      6.12044166656523e-05,
+      6.12044166656523e-05,
+      0.6888890130644734,
+      0.31111098693552663,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      29808.010251620428,
+      4.572458885120129
+    ],
+    "phase_amounts_mol": [
+      1.0000612081628755,
+      0.0
+    ],
+    "charge_error_mol": 0.0,
+    "acid_inventory_error_mol": -5.551115123125783e-17,
+    "water_inventory_error_mol": 0.0,
+    "hydrogen_inventory_error_mol": 0.0,
+    "pressure_closure_relative": 6.675038299874814e-11,
+    "neutral_log_fugacity_difference": [
+      6.61856715267195e-11,
+      6.617766057370744e-11
+    ],
+    "reaction_log_residuals": [
+      -1.1191048088221578e-13
+    ],
+    "acid_dissociation_fraction": 0.00014752509731394623,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "measurement_row": 9,
+    "elapsed_s": 0.011323184997309
+  },
+  {
+    "x_water": 0.5851,
+    "variant": "water-only-permittivity",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 4.263256414560601e-14,
+    "iterations": 15,
+    "P_Pa": 11948.846206855382,
+    "compositions": [
+      0.5847942609852314,
+      0.4141606560724733,
+      0.0005225414711476848,
+      0.00052254147114758,
+      1.0485228966658237e-16,
+      0.6886854034795911,
+      0.31131459652040894,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      29809.256548389938,
+      4.567982103394791
+    ],
+    "phase_amounts_mol": [
+      1.000522814663491,
+      0.0
+    ],
+    "charge_error_mol": 4.366231547616806e-20,
+    "acid_inventory_error_mol": 0.0,
+    "water_inventory_error_mol": 0.0,
+    "hydrogen_inventory_error_mol": 4.366231547616806e-20,
+    "pressure_closure_relative": 1.5405798858836306e-10,
+    "neutral_log_fugacity_difference": [
+      1.5431300681711946e-10,
+      1.543018768312976e-10
+    ],
+    "reaction_log_residuals": [
+      -1.1368683772161603e-13,
+      1.0658141036401503e-13
+    ],
+    "acid_dissociation_fraction": 0.001260098007931979,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      },
+      {
+        "reaction_index": 1,
+        "source_pressure_Pa": 100000.0,
+        "contraction": -391.48243914124134,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "measurement_row": 9,
+    "elapsed_s": 0.016089930999442004
+  },
+  {
+    "x_water": 0.5885999999999999,
+    "variant": "primary",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 5.684341886080802e-14,
+    "iterations": 15,
+    "P_Pa": 11973.188880492155,
+    "compositions": [
+      0.5885628984615633,
+      0.41131103446933487,
+      6.303353455092829e-05,
+      6.303353455092617e-05,
+      2.1227474697735424e-18,
+      0.6910914450158877,
+      0.3089085549841123,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      29931.98204861474,
+      4.57648120870742
+    ],
+    "phase_amounts_mol": [
+      1.000063037508028,
+      0.0
+    ],
+    "charge_error_mol": 4.865481018592756e-21,
+    "acid_inventory_error_mol": 0.0,
+    "water_inventory_error_mol": 1.1102230246251565e-16,
+    "hydrogen_inventory_error_mol": 4.865481018592756e-21,
+    "pressure_closure_relative": 3.826194916456416e-11,
+    "neutral_log_fugacity_difference": [
+      3.824750238745622e-11,
+      3.8244379885199464e-11
+    ],
+    "reaction_log_residuals": [
+      -1.2256862191861728e-13,
+      1.4566126083082054e-13
+    ],
+    "acid_dissociation_fraction": 0.00015322680609593202,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      },
+      {
+        "reaction_index": 1,
+        "source_pressure_Pa": 100000.0,
+        "contraction": -391.48243914124134,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "pressure_actions": [
+      {
+        "order": 1,
+        "value": 11973.188880492155,
+        "action": 3608.9671343445457,
+        "status": "SolvedStateActionStatus.Available",
+        "cause": null
+      }
+    ],
+    "numerical_estimate": {
+      "pressure": {
+        "absolute": 5.843425525864761e-08,
+        "available": true,
+        "resolved": true,
+        "cause": ""
+      },
+      "source_reference_method": "local higher-precision re-evaluation plus first-order pressure/site propagation; can underestimate shared errors and internal cancellation; fixed-input arithmetic excludes supplied operand uncertainty; reference replay precision: 64 bits",
+      "cause": "",
+      "row_inner": [
+        2.410366239816076e-12,
+        2.0243723144656626e-12,
+        2.209196928196878e-12,
+        2.0187663889217638e-12,
+        2.4209731258650804e-12,
+        2.5111911708192942e-15,
+        2.4085385874724233e-12,
+        2.0210081921433924e-12,
+        4.342837136290953e-17,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rank": 14,
+      "dimension": 14,
+      "condition": 331780.8461262766,
+      "backward_error": 5.771078903873289e-18
+    },
+    "measurement_row": 9,
+    "elapsed_s": 0.022176201004185714
+  },
+  {
+    "x_water": 0.5885999999999999,
+    "variant": "acid-only",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 3.552713678800501e-14,
+    "iterations": 9,
+    "P_Pa": 11973.18888049211,
+    "compositions": [
+      0.5885628984615632,
+      0.4113110344693349,
+      6.30335345509264e-05,
+      6.30335345509264e-05,
+      0.6910914450158883,
+      0.30890855498411174,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      29931.982048614747,
+      4.576481208707398
+    ],
+    "phase_amounts_mol": [
+      1.000063037508028,
+      0.0
+    ],
+    "charge_error_mol": 0.0,
+    "acid_inventory_error_mol": 5.551115123125783e-17,
+    "water_inventory_error_mol": 0.0,
+    "hydrogen_inventory_error_mol": 0.0,
+    "pressure_closure_relative": 3.417632843394358e-11,
+    "neutral_log_fugacity_difference": [
+      3.451770466678106e-11,
+      3.451726404701816e-11
+    ],
+    "reaction_log_residuals": [
+      -1.0658141036401503e-13
+    ],
+    "acid_dissociation_fraction": 0.00015322680609593256,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "measurement_row": 9,
+    "elapsed_s": 0.011489742988487706
+  },
+  {
+    "x_water": 0.5885999999999999,
+    "variant": "water-only-permittivity",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 2.842170943040401e-14,
+    "iterations": 15,
+    "P_Pa": 11961.630462505238,
+    "compositions": [
+      0.5882904111149331,
+      0.41065763888484,
+      0.0005259750001134044,
+      0.0005259750001132928,
+      1.1162037433112803e-16,
+      0.6909096981438859,
+      0.309090301856114,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      29933.20425455126,
+      4.572029755124025
+    ],
+    "phase_amounts_mol": [
+      1.0005262517954014,
+      0.0
+    ],
+    "charge_error_mol": 1.0212922973235181e-19,
+    "acid_inventory_error_mol": -1.6653345369377348e-16,
+    "water_inventory_error_mol": 0.0,
+    "hydrogen_inventory_error_mol": 1.0212922973235181e-19,
+    "pressure_closure_relative": 7.789502376454038e-11,
+    "neutral_log_fugacity_difference": [
+      -7.765962178885033e-11,
+      -7.764833220846867e-11
+    ],
+    "reaction_log_residuals": [
+      -1.0835776720341528e-13,
+      1.5631940186722204e-13
+    ],
+    "acid_dissociation_fraction": 0.0012791730563963021,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      },
+      {
+        "reaction_index": 1,
+        "source_pressure_Pa": 100000.0,
+        "contraction": -391.48243914124134,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "measurement_row": 9,
+    "elapsed_s": 0.015619882993632928
+  },
+  {
+    "x_water": 0.5921,
+    "variant": "primary",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 5.684341886080802e-14,
+    "iterations": 15,
+    "P_Pa": 11985.752642583064,
+    "compositions": [
+      0.5920615776392855,
+      0.4078086390108935,
+      6.489167491055835e-05,
+      6.489167491055604e-05,
+      2.35413350393205e-18,
+      0.6932877545172896,
+      0.30671224548271037,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      30056.82135896177,
+      4.580453391179007
+    ],
+    "phase_amounts_mol": [
+      1.0000648958861134,
+      0.0
+    ],
+    "charge_error_mol": -5.035666098011992e-20,
+    "acid_inventory_error_mol": 5.551115123125783e-17,
+    "water_inventory_error_mol": 1.1102230246251565e-16,
+    "hydrogen_inventory_error_mol": -5.035666098011992e-20,
+    "pressure_closure_relative": 1.0742073897063165e-11,
+    "neutral_log_fugacity_difference": [
+      1.0509218495435846e-11,
+      1.0512424264419451e-11
+    ],
+    "reaction_log_residuals": [
+      -9.769962616701378e-14,
+      1.1013412404281553e-13
+    ],
+    "acid_dissociation_fraction": 0.00015909753889017096,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      },
+      {
+        "reaction_index": 1,
+        "source_pressure_Pa": 100000.0,
+        "contraction": -391.48243914124134,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "pressure_actions": [
+      {
+        "order": 1,
+        "value": 11985.752642583064,
+        "action": 3570.332795501422,
+        "status": "SolvedStateActionStatus.Available",
+        "cause": null
+      }
+    ],
+    "numerical_estimate": {
+      "pressure": {
+        "absolute": 5.853104969940091e-08,
+        "available": true,
+        "resolved": true,
+        "cause": ""
+      },
+      "source_reference_method": "local higher-precision re-evaluation plus first-order pressure/site propagation; can underestimate shared errors and internal cancellation; fixed-input arithmetic excludes supplied operand uncertainty; reference replay precision: 64 bits",
+      "cause": "",
+      "row_inner": [
+        2.4103706070256992e-12,
+        2.024383128462861e-12,
+        2.2092031683175884e-12,
+        2.0187752307615917e-12,
+        2.4209745837075802e-12,
+        2.512527665223473e-15,
+        2.4085385350592696e-12,
+        2.0210079324207234e-12,
+        4.313760298142046e-17,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rank": 14,
+      "dimension": 14,
+      "condition": 323480.0034781238,
+      "backward_error": 2.4007874099710804e-18
+    },
+    "measurement_row": 9,
+    "elapsed_s": 0.02205928199691698
+  },
+  {
+    "x_water": 0.5921,
+    "variant": "acid-only",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 4.973799150320701e-14,
+    "iterations": 9,
+    "P_Pa": 11985.752642583066,
+    "compositions": [
+      0.5920615776392854,
+      0.40780863901089354,
+      6.489167491055755e-05,
+      6.489167491055755e-05,
+      0.6932877545172892,
+      0.30671224548271087,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      30056.82135896177,
+      4.580453391179005
+    ],
+    "phase_amounts_mol": [
+      1.0000648958861131,
+      0.0
+    ],
+    "charge_error_mol": 0.0,
+    "acid_inventory_error_mol": 0.0,
+    "water_inventory_error_mol": -1.1102230246251565e-16,
+    "hydrogen_inventory_error_mol": 0.0,
+    "pressure_closure_relative": 3.1664892929939015e-11,
+    "neutral_log_fugacity_difference": [
+      -3.2122953602664595e-11,
+      -3.211805821301539e-11
+    ],
+    "reaction_log_residuals": [
+      -6.927791673660977e-14
+    ],
+    "acid_dissociation_fraction": 0.00015909753889017462,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "measurement_row": 9,
+    "elapsed_s": 0.011948801009566523
+  },
+  {
+    "x_water": 0.5921,
+    "variant": "water-only-permittivity",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 6.394884621840902e-14,
+    "iterations": 15,
+    "P_Pa": 11974.281578799439,
+    "compositions": [
+      0.5917866317950732,
+      0.4071548706371962,
+      0.0005292487838652387,
+      0.0005292487838651198,
+      1.187830985902422e-16,
+      0.6931278277264447,
+      0.30687217227355534,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      30058.018295913782,
+      4.57602813786237
+    ],
+    "phase_amounts_mol": [
+      1.0005295290364637,
+      0.0
+    ],
+    "charge_error_mol": 9.0980631672963e-20,
+    "acid_inventory_error_mol": -1.1102230246251565e-16,
+    "water_inventory_error_mol": -1.1102230246251565e-16,
+    "hydrogen_inventory_error_mol": 9.0980631672963e-20,
+    "pressure_closure_relative": 5.716283002499267e-11,
+    "neutral_log_fugacity_difference": [
+      5.665464972159917e-11,
+      5.665695690382222e-11
+    ],
+    "reaction_log_residuals": [
+      -1.6697754290362354e-13,
+      1.0302869668521453e-13
+    ],
+    "acid_dissociation_fraction": 0.0012981834676726884,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      },
+      {
+        "reaction_index": 1,
+        "source_pressure_Pa": 100000.0,
+        "contraction": -391.48243914124134,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "measurement_row": 9,
+    "elapsed_s": 0.016831576998811215
+  },
+  {
+    "x_water": 0.5781,
+    "variant": "no-dissociation",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "NEWTON_CONVERGED",
+    "row_residual": 1.657007864253046e-14,
+    "iterations": 0,
+    "P_Pa": 11937.204616334751,
+    "compositions": [
+      0.5781,
+      0.42190000000000005,
+      0.684667432669256,
+      0.31533256733074394
+    ],
+    "densities_mol_m3": [
+      29562.472875948446,
+      4.565163889289627
+    ],
+    "phase_amounts_mol": [
+      1.0,
+      0.0
+    ],
+    "charge_error_mol": 0.0,
+    "acid_inventory_error_mol": 0.0,
+    "water_inventory_error_mol": 0.0,
+    "hydrogen_inventory_error_mol": 0.0,
+    "pressure_closure_relative": 9.281864166155174e-11,
+    "neutral_log_fugacity_difference": [
+      9.220521915431767e-11,
+      9.218366348040519e-11
+    ],
+    "reaction_log_residuals": [],
+    "acid_dissociation_fraction": 0.0,
+    "checks_met": true,
+    "reaction_references": [],
+    "measurement_row": 9
+  },
+  {
+    "x_water": 0.5781,
+    "variant": "primary",
+    "tighter": true,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 2.842170943040401e-14,
+    "iterations": 16,
+    "P_Pa": 11934.685120141075,
+    "compositions": [
+      0.5780666810692083,
+      0.4218180484558163,
+      5.76352374877186e-05,
+      5.763523748771706e-05,
+      1.552261490758013e-18,
+      0.6844650236513161,
+      0.3155349763486839,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      29562.632639973835,
+      4.564263661230847
+    ],
+    "phase_amounts_mol": [
+      1.0000576385594997,
+      0.0
+    ],
+    "charge_error_mol": -1.413912866049771e-20,
+    "acid_inventory_error_mol": 0.0,
+    "water_inventory_error_mol": 0.0,
+    "hydrogen_inventory_error_mol": -1.413912866049771e-20,
+    "pressure_closure_relative": 9.980682946775232e-12,
+    "neutral_log_fugacity_difference": [
+      9.715360460571532e-12,
+      9.731881966956735e-12
+    ],
+    "reaction_log_residuals": [
+      -1.3500311979441904e-13,
+      1.1013412404281553e-13
+    ],
+    "acid_dissociation_fraction": 0.00013661663782835333,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      },
+      {
+        "reaction_index": 1,
+        "source_pressure_Pa": 100000.0,
+        "contraction": -391.48243914124134,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "measurement_row": 9
+  },
+  {
+    "x_water": 0.6552,
+    "variant": "primary",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 2.842170943040401e-14,
+    "iterations": 15,
+    "P_Pa": 12189.154863738442,
+    "compositions": [
+      0.6551328387601645,
+      0.3446621513502277,
+      0.00010250494480393579,
+      0.0001025049448039214,
+      1.4232290872521425e-17,
+      0.7320552424652075,
+      0.2679447575347925,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      32467.638355850326,
+      4.6434725041352
+    ],
+    "phase_amounts_mol": [
+      1.0001025154531449,
+      0.0
+    ],
+    "charge_error_mol": 1.5903393747555877e-19,
+    "acid_inventory_error_mol": 5.551115123125783e-17,
+    "water_inventory_error_mol": 1.1102230246251565e-16,
+    "hydrogen_inventory_error_mol": 1.5903393747555877e-19,
+    "pressure_closure_relative": 4.2581604908775716e-11,
+    "neutral_log_fugacity_difference": [
+      4.273867718063151e-11,
+      4.272732168075777e-11
+    ],
+    "reaction_log_residuals": [
+      -1.1368683772161603e-13,
+      1.3145040611561853e-13
+    ],
+    "acid_dissociation_fraction": 0.00029731859960785255,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      },
+      {
+        "reaction_index": 1,
+        "source_pressure_Pa": 100000.0,
+        "contraction": -391.48243914124134,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "pressure_actions": [
+      {
+        "order": 1,
+        "value": 12189.154863738442,
+        "action": 2876.7096423729217,
+        "status": "SolvedStateActionStatus.Available",
+        "cause": null
+      }
+    ],
+    "numerical_estimate": {
+      "pressure": {
+        "absolute": 5.99195996794176e-08,
+        "available": true,
+        "resolved": true,
+        "cause": ""
+      },
+      "source_reference_method": "local higher-precision re-evaluation plus first-order pressure/site propagation; can underestimate shared errors and internal cancellation; fixed-input arithmetic excludes supplied operand uncertainty; reference replay precision: 64 bits",
+      "cause": "",
+      "row_inner": [
+        2.41045461460254e-12,
+        2.0245920556782725e-12,
+        2.2093238277357907e-12,
+        2.0189462382465328e-12,
+        2.421002739175882e-12,
+        2.5371454478875613e-15,
+        2.4085375573096892e-12,
+        2.021003072532601e-12,
+        3.8042777000868005e-17,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rank": 14,
+      "dimension": 14,
+      "condition": 219985.45746453266,
+      "backward_error": 3.139318916800305e-18
+    },
+    "measurement_row": 10,
+    "elapsed_s": 0.022181231004651636
+  },
+  {
+    "x_water": 0.6552,
+    "variant": "acid-only",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 2.1316282072803006e-14,
+    "iterations": 9,
+    "P_Pa": 12189.154863738519,
+    "compositions": [
+      0.6551328387601645,
+      0.3446621513502277,
+      0.00010250494480392668,
+      0.00010250494480392668,
+      0.7320552424652087,
+      0.26794475753479136,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      32467.638355850333,
+      4.643472504135231
+    ],
+    "phase_amounts_mol": [
+      1.0001025154531447,
+      0.0
+    ],
+    "charge_error_mol": 0.0,
+    "acid_inventory_error_mol": -5.551115123125783e-17,
+    "water_inventory_error_mol": -1.1102230246251565e-16,
+    "hydrogen_inventory_error_mol": 0.0,
+    "pressure_closure_relative": 6.501910121414767e-12,
+    "neutral_log_fugacity_difference": [
+      6.1886884505923945e-12,
+      6.189104784226629e-12
+    ],
+    "reaction_log_residuals": [
+      -8.704148513061227e-14
+    ],
+    "acid_dissociation_fraction": 0.00029731859960786783,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "measurement_row": 10,
+    "elapsed_s": 0.01155390300846193
+  },
+  {
+    "x_water": 0.6552,
+    "variant": "water-only-permittivity",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 2.842170943040401e-14,
+    "iterations": 15,
+    "P_Pa": 12179.496138939236,
+    "compositions": [
+      0.6548330724036479,
+      0.3440468799884406,
+      0.0005600238039557868,
+      0.0005600238039554396,
+      3.470969762769213e-16,
+      0.7322585178340308,
+      0.26774148216596927,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      32468.209089750493,
+      4.6396267818121215
+    ],
+    "phase_amounts_mol": [
+      1.0005603376063537,
+      0.0
+    ],
+    "charge_error_mol": 8.690829857472356e-20,
+    "acid_inventory_error_mol": 0.0,
+    "water_inventory_error_mol": 0.0,
+    "hydrogen_inventory_error_mol": 8.690829857472356e-20,
+    "pressure_closure_relative": 4.693490041063342e-11,
+    "neutral_log_fugacity_difference": [
+      -4.661193306332301e-11,
+      -4.6604733960897704e-11
+    ],
+    "reaction_log_residuals": [
+      -1.2967404927621828e-13,
+      7.460698725481052e-14
+    ],
+    "acid_dissociation_fraction": 0.0016251090671497944,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      },
+      {
+        "reaction_index": 1,
+        "source_pressure_Pa": 100000.0,
+        "contraction": -391.48243914124134,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "measurement_row": 10,
+    "elapsed_s": 0.01582052199228201
+  },
+  {
+    "x_water": 0.6582250000000001,
+    "variant": "primary",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 5.684341886080802e-14,
+    "iterations": 15,
+    "P_Pa": 12197.806424044576,
+    "compositions": [
+      0.6581562486941305,
+      0.34163485220337547,
+      0.000104449551247014,
+      0.00010444955124699841,
+      1.5471710233707567e-17,
+      0.7338850698139002,
+      0.26611493018609983,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      32591.41345110335,
+      4.646083035319347
+    ],
+    "phase_amounts_mol": [
+      1.0001044604620954,
+      0.0
+    ],
+    "charge_error_mol": 1.1207981377113947e-19,
+    "acid_inventory_error_mol": 0.0,
+    "water_inventory_error_mol": 0.0,
+    "hydrogen_inventory_error_mol": 1.1207981377113947e-19,
+    "pressure_closure_relative": 1.175417541077195e-10,
+    "neutral_log_fugacity_difference": [
+      1.178796123213477e-10,
+      1.1786240039501905e-10
+    ],
+    "reaction_log_residuals": [
+      -1.6342482922482304e-13,
+      1.3145040611561853e-13
+    ],
+    "acid_dissociation_fraction": 0.00030564102727053576,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      },
+      {
+        "reaction_index": 1,
+        "source_pressure_Pa": 100000.0,
+        "contraction": -391.48243914124134,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "pressure_actions": [
+      {
+        "order": 1,
+        "value": 12197.806424044576,
+        "action": 2843.3237566799926,
+        "status": "SolvedStateActionStatus.Available",
+        "cause": null
+      }
+    ],
+    "numerical_estimate": {
+      "pressure": {
+        "absolute": 5.988927456008025e-08,
+        "available": true,
+        "resolved": true,
+        "cause": ""
+      },
+      "source_reference_method": "local higher-precision re-evaluation plus first-order pressure/site propagation; can underestimate shared errors and internal cancellation; fixed-input arithmetic excludes supplied operand uncertainty; reference replay precision: 64 bits",
+      "cause": "",
+      "row_inner": [
+        2.4104589121626335e-12,
+        2.0246027873477694e-12,
+        2.2093300300485368e-12,
+        2.0189550306928545e-12,
+        2.4210041847775118e-12,
+        2.5383519466722963e-15,
+        2.40853750864542e-12,
+        2.0210028299141124e-12,
+        3.7804373480362696e-17,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rank": 14,
+      "dimension": 14,
+      "condition": 216681.98269482693,
+      "backward_error": 5.308264160066077e-18
+    },
+    "measurement_row": 10,
+    "elapsed_s": 0.02221169999393169
+  },
+  {
+    "x_water": 0.6582250000000001,
+    "variant": "acid-only",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 2.1316282072803006e-14,
+    "iterations": 9,
+    "P_Pa": 12197.806424044658,
+    "compositions": [
+      0.6581562486941305,
+      0.34163485220337547,
+      0.00010444955124700676,
+      0.00010444955124700676,
+      0.7338850698139011,
+      0.26611493018609883,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      32591.41345110336,
+      4.6460830353193785
+    ],
+    "phase_amounts_mol": [
+      1.0001044604620954,
+      0.0
+    ],
+    "charge_error_mol": 0.0,
+    "acid_inventory_error_mol": 0.0,
+    "water_inventory_error_mol": 0.0,
+    "hydrogen_inventory_error_mol": 0.0,
+    "pressure_closure_relative": 3.2302160946073855e-11,
+    "neutral_log_fugacity_difference": [
+      -3.1941064376761474e-11,
+      -3.192994479928046e-11
+    ],
+    "reaction_log_residuals": [
+      -9.592326932761353e-14
+    ],
+    "acid_dissociation_fraction": 0.00030564102727056016,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "measurement_row": 10,
+    "elapsed_s": 0.011868251007399522
+  },
+  {
+    "x_water": 0.6582250000000001,
+    "variant": "water-only-permittivity",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 1.1368683772161603e-13,
+    "iterations": 15,
+    "P_Pa": 12188.240456646563,
+    "compositions": [
+      0.6578562989450694,
+      0.34102341223293114,
+      0.0005601444109997345,
+      0.0005601444109993699,
+      3.647479232747015e-16,
+      0.7341033617313607,
+      0.2658966382686393,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      32591.947912498657,
+      4.642268468911056
+    ],
+    "phase_amounts_mol": [
+      1.0005604583486112,
+      0.0
+    ],
+    "charge_error_mol": -1.1831825206714792e-19,
+    "acid_inventory_error_mol": 0.0,
+    "water_inventory_error_mol": -1.1102230246251565e-16,
+    "hydrogen_inventory_error_mol": -1.1831825206714792e-19,
+    "pressure_closure_relative": 5.068456765400242e-11,
+    "neutral_log_fugacity_difference": [
+      5.031684097156486e-11,
+      5.0315501765041404e-11
+    ],
+    "reaction_log_residuals": [
+      -1.3145040611561853e-13,
+      5.3290705182007514e-14
+    ],
+    "acid_dissociation_fraction": 0.0016398459472194938,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      },
+      {
+        "reaction_index": 1,
+        "source_pressure_Pa": 100000.0,
+        "contraction": -391.48243914124134,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "measurement_row": 10,
+    "elapsed_s": 0.015551453005173244
+  },
+  {
+    "x_water": 0.66125,
+    "variant": "primary",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 2.842170943040401e-14,
+    "iterations": 15,
+    "P_Pa": 12206.356931127579,
+    "compositions": [
+      0.6611796423755693,
+      0.3386075557357932,
+      0.00010640094431879544,
+      0.00010640094431877843,
+      1.6815398122858484e-17,
+      0.7357132914607557,
+      0.2642867085392444,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      32715.995632852544,
+      4.648655666578768
+    ],
+    "phase_amounts_mol": [
+      1.0001064122666843,
+      0.0
+    ],
+    "charge_error_mol": 1.9123409337841575e-19,
+    "acid_inventory_error_mol": -5.551115123125783e-17,
+    "water_inventory_error_mol": -1.1102230246251565e-16,
+    "hydrogen_inventory_error_mol": 1.9123409337841575e-19,
+    "pressure_closure_relative": 2.166022916583188e-11,
+    "neutral_log_fugacity_difference": [
+      2.2049022330161705e-11,
+      2.204947335826546e-11
+    ],
+    "reaction_log_residuals": [
+      -9.947598300641403e-14,
+      1.0302869668521453e-13
+    ],
+    "acid_dissociation_fraction": 0.00031413215257399484,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      },
+      {
+        "reaction_index": 1,
+        "source_pressure_Pa": 100000.0,
+        "contraction": -391.48243914124134,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "pressure_actions": [
+      {
+        "order": 1,
+        "value": 12206.356931127579,
+        "action": 2809.8968697181417,
+        "status": "SolvedStateActionStatus.Available",
+        "cause": null
+      }
+    ],
+    "numerical_estimate": {
+      "pressure": {
+        "absolute": 5.992493791970191e-08,
+        "available": true,
+        "resolved": true,
+        "cause": ""
+      },
+      "source_reference_method": "local higher-precision re-evaluation plus first-order pressure/site propagation; can underestimate shared errors and internal cancellation; fixed-input arithmetic excludes supplied operand uncertainty; reference replay precision: 64 bits",
+      "cause": "",
+      "row_inner": [
+        2.4104632363399402e-12,
+        2.024613589506771e-12,
+        2.2093362735013784e-12,
+        2.0189638816601323e-12,
+        2.42100563980435e-12,
+        2.5395609971607196e-15,
+        2.4085374597934932e-12,
+        2.0210025862903484e-12,
+        3.756639660634718e-17,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rank": 14,
+      "dimension": 14,
+      "condition": 213493.12551271135,
+      "backward_error": 2.5991273618249866e-18
+    },
+    "measurement_row": 10,
+    "elapsed_s": 0.021501313996850513
+  },
+  {
+    "x_water": 0.66125,
+    "variant": "acid-only",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 2.1316282072803006e-14,
+    "iterations": 9,
+    "P_Pa": 12206.356931127564,
+    "compositions": [
+      0.6611796423755693,
+      0.3386075557357932,
+      0.00010640094431878864,
+      0.00010640094431878864,
+      0.7357132914607556,
+      0.26428670853924446,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      32715.995632852544,
+      4.64865566657876
+    ],
+    "phase_amounts_mol": [
+      1.0001064122666843,
+      0.0
+    ],
+    "charge_error_mol": 0.0,
+    "acid_inventory_error_mol": -5.551115123125783e-17,
+    "water_inventory_error_mol": -1.1102230246251565e-16,
+    "hydrogen_inventory_error_mol": 0.0,
+    "pressure_closure_relative": 1.2850387420826337e-11,
+    "neutral_log_fugacity_difference": [
+      1.3256156589092072e-11,
+      1.3254244923821545e-11
+    ],
+    "reaction_log_residuals": [
+      -5.3290705182007514e-14
+    ],
+    "acid_dissociation_fraction": 0.000314132152574025,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "measurement_row": 10,
+    "elapsed_s": 0.011196524996194057
+  },
+  {
+    "x_water": 0.66125,
+    "variant": "water-only-permittivity",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 3.907985046680551e-14,
+    "iterations": 15,
+    "P_Pa": 12196.883852542212,
+    "compositions": [
+      0.6608796057106185,
+      0.3380001091041078,
+      0.0005601425926368115,
+      0.0005601425926364284,
+      3.832505363761728e-16,
+      0.7359463058264507,
+      0.26405369417354935,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      32716.493450402148,
+      4.644872435821736
+    ],
+    "phase_amounts_mol": [
+      1.0005604565282096,
+      0.0
+    ],
+    "charge_error_mol": -1.9986366759880265e-19,
+    "acid_inventory_error_mol": -5.551115123125783e-17,
+    "water_inventory_error_mol": 0.0,
+    "hydrogen_inventory_error_mol": -1.9986366759880265e-19,
+    "pressure_closure_relative": 4.2363113017529486e-11,
+    "neutral_log_fugacity_difference": [
+      4.2362380964222623e-11,
+      4.235185813161735e-11
+    ],
+    "reaction_log_residuals": [
+      -1.4566126083082054e-13,
+      9.592326932761353e-14
+    ],
+    "acid_dissociation_fraction": 0.001654484216115719,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      },
+      {
+        "reaction_index": 1,
+        "source_pressure_Pa": 100000.0,
+        "contraction": -391.48243914124134,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "measurement_row": 10,
+    "elapsed_s": 0.015442333999089897
+  },
+  {
+    "x_water": 0.664275,
+    "variant": "primary",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 2.842170943040401e-14,
+    "iterations": 15,
+    "P_Pa": 12214.806254324456,
+    "compositions": [
+      0.664203020381703,
+      0.335580263293591,
+      0.00010835816235303035,
+      0.00010835816235301206,
+      1.8271882732389325e-17,
+      0.7375400477462963,
+      0.2624599522537037,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      32841.39293626246,
+      4.6511903256047855
+    ],
+    "phase_amounts_mol": [
+      1.0001083699051168,
+      0.0
+    ],
+    "charge_error_mol": 8.496278949480657e-21,
+    "acid_inventory_error_mol": -5.551115123125783e-17,
+    "water_inventory_error_mol": 1.1102230246251565e-16,
+    "hydrogen_inventory_error_mol": 8.496278949480657e-21,
+    "pressure_closure_relative": 1.4070078435679534e-11,
+    "neutral_log_fugacity_difference": [
+      1.4185170399416691e-11,
+      1.4174272866540605e-11
+    ],
+    "reaction_log_residuals": [
+      -1.2079226507921703e-13,
+      3.552713678800501e-14
+    ],
+    "acid_dissociation_fraction": 0.00032279367076263287,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      },
+      {
+        "reaction_index": 1,
+        "source_pressure_Pa": 100000.0,
+        "contraction": -391.48243914124134,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "pressure_actions": [
+      {
+        "order": 1,
+        "value": 12214.806254324456,
+        "action": 2776.424574857954,
+        "status": "SolvedStateActionStatus.Available",
+        "cause": null
+      }
+    ],
+    "numerical_estimate": {
+      "pressure": {
+        "absolute": 5.997191929379698e-08,
+        "available": true,
+        "resolved": true,
+        "cause": ""
+      },
+      "source_reference_method": "local higher-precision re-evaluation plus first-order pressure/site propagation; can underestimate shared errors and internal cancellation; fixed-input arithmetic excludes supplied operand uncertainty; reference replay precision: 64 bits",
+      "cause": "",
+      "row_inner": [
+        2.41046758740225e-12,
+        2.024624462864283e-12,
+        2.2093425585055345e-12,
+        2.018972791734806e-12,
+        2.42100710434939e-12,
+        2.5407726195825853e-15,
+        2.4085374107503473e-12,
+        2.0210023416427702e-12,
+        3.7328831920691244e-17,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rank": 14,
+      "dimension": 14,
+      "condition": 210415.23806661135,
+      "backward_error": 3.4223405204970462e-18
+    },
+    "measurement_row": 10,
+    "elapsed_s": 0.025831392005784437
+  },
+  {
+    "x_water": 0.664275,
+    "variant": "acid-only",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 1.4210854715202004e-14,
+    "iterations": 9,
+    "P_Pa": 12214.806254324394,
+    "compositions": [
+      0.664203020381703,
+      0.3355802632935911,
+      0.00010835816235302014,
+      0.00010835816235302014,
+      0.7375400477462972,
+      0.26245995225370283,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      32841.39293626249,
+      4.651190325604758
+    ],
+    "phase_amounts_mol": [
+      1.0001083699051165,
+      0.0
+    ],
+    "charge_error_mol": 0.0,
+    "acid_inventory_error_mol": -5.551115123125783e-17,
+    "water_inventory_error_mol": -1.1102230246251565e-16,
+    "hydrogen_inventory_error_mol": 0.0,
+    "pressure_closure_relative": 1.6343371100902004e-11,
+    "neutral_log_fugacity_difference": [
+      -1.6298070532050346e-11,
+      -1.6290774285110388e-11
+    ],
+    "reaction_log_residuals": [
+      -1.2256862191861728e-13
+    ],
+    "acid_dissociation_fraction": 0.0003227936707626568,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "measurement_row": 10,
+    "elapsed_s": 0.01148472299973946
+  },
+  {
+    "x_water": 0.664275,
+    "variant": "water-only-permittivity",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 5.684341886080802e-14,
+    "iterations": 15,
+    "P_Pa": 12205.426154901392,
+    "compositions": [
+      0.6639029934855117,
+      0.3349769688358527,
+      0.0005600188393177629,
+      0.00056001883931736,
+      4.026457421441926e-16,
+      0.7377874823218884,
+      0.26221251767811166,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      32841.85376843464,
+      4.647438597245931
+    ],
+    "phase_amounts_mol": [
+      1.0005603326361503,
+      0.0
+    ],
+    "charge_error_mol": 2.350100357876029e-19,
+    "acid_inventory_error_mol": 0.0,
+    "water_inventory_error_mol": 0.0,
+    "hydrogen_inventory_error_mol": 2.350100357876029e-19,
+    "pressure_closure_relative": 6.646239114616037e-11,
+    "neutral_log_fugacity_difference": [
+      -6.68837867034977e-11,
+      -6.685832443231732e-11
+    ],
+    "reaction_log_residuals": [
+      -7.460698725481052e-14,
+      2.2026824808563106e-13
+    ],
+    "acid_dissociation_fraction": 0.0016690226707867706,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      },
+      {
+        "reaction_index": 1,
+        "source_pressure_Pa": 100000.0,
+        "contraction": -391.48243914124134,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "measurement_row": 10,
+    "elapsed_s": 0.01849155999661889
+  },
+  {
+    "x_water": 0.6673,
+    "variant": "primary",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 8.526512829121202e-14,
+    "iterations": 15,
+    "P_Pa": 12223.15424945322,
+    "compositions": [
+      0.6672263833177782,
+      0.3325529762439726,
+      0.00011032021912467976,
+      0.00011032021912465977,
+      1.9850377041446112e-17,
+      0.7393654804455493,
+      0.26063451955445077,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      32967.61350334771,
+      4.653686934642559
+    ],
+    "phase_amounts_mol": [
+      1.0001103323910183,
+      0.0
+    ],
+    "charge_error_mol": 1.3741037419377787e-19,
+    "acid_inventory_error_mol": 1.1102230246251565e-16,
+    "water_inventory_error_mol": 1.1102230246251565e-16,
+    "hydrogen_inventory_error_mol": 1.3741037419377787e-19,
+    "pressure_closure_relative": 5.710720785145895e-11,
+    "neutral_log_fugacity_difference": [
+      -5.716404780087281e-11,
+      -5.715206086165381e-11
+    ],
+    "reaction_log_residuals": [
+      -9.947598300641403e-14,
+      4.973799150320701e-14
+    ],
+    "acid_dissociation_fraction": 0.00033162726485787026,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      },
+      {
+        "reaction_index": 1,
+        "source_pressure_Pa": 100000.0,
+        "contraction": -391.48243914124134,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "pressure_actions": [
+      {
+        "order": 1,
+        "value": 12223.15424945322,
+        "action": 2742.902339492011,
+        "status": "SolvedStateActionStatus.Available",
+        "cause": null
+      }
+    ],
+    "numerical_estimate": {
+      "pressure": {
+        "absolute": 6.002364664666693e-08,
+        "available": true,
+        "resolved": true,
+        "cause": ""
+      },
+      "source_reference_method": "local higher-precision re-evaluation plus first-order pressure/site propagation; can underestimate shared errors and internal cancellation; fixed-input arithmetic excludes supplied operand uncertainty; reference replay precision: 64 bits",
+      "cause": "",
+      "row_inner": [
+        2.4104719656209155e-12,
+        2.0246354081388012e-12,
+        2.2093488854777153e-12,
+        2.018981761511166e-12,
+        2.4210085785068552e-12,
+        2.541986834412416e-15,
+        2.4085373615123353e-12,
+        2.0210020959523916e-12,
+        3.7091664890459876e-17,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rank": 14,
+      "dimension": 14,
+      "condition": 207444.83346666867,
+      "backward_error": 1.5469117652510528e-18
+    },
+    "measurement_row": 10,
+    "elapsed_s": 0.026420869995490648
+  },
+  {
+    "x_water": 0.6673,
+    "variant": "acid-only",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 4.263256414560601e-14,
+    "iterations": 9,
+    "P_Pa": 12223.154249453177,
+    "compositions": [
+      0.6672263833177781,
+      0.3325529762439725,
+      0.00011032021912467076,
+      0.00011032021912467076,
+      0.7393654804455493,
+      0.26063451955445066,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      32967.61350334772,
+      4.6536869346425425
+    ],
+    "phase_amounts_mol": [
+      1.0001103323910183,
+      0.0
+    ],
+    "charge_error_mol": 0.0,
+    "acid_inventory_error_mol": 0.0,
+    "water_inventory_error_mol": 0.0,
+    "hydrogen_inventory_error_mol": 0.0,
+    "pressure_closure_relative": 1.0729417354582438e-11,
+    "neutral_log_fugacity_difference": [
+      -1.131277363453087e-11,
+      -1.1302805913437908e-11
+    ],
+    "reaction_log_residuals": [
+      -8.704148513061227e-14
+    ],
+    "acid_dissociation_fraction": 0.0003316272648579034,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "measurement_row": 10,
+    "elapsed_s": 0.012921796005684882
+  },
+  {
+    "x_water": 0.6673,
+    "variant": "water-only-permittivity",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 2.842170943040401e-14,
+    "iterations": 15,
+    "P_Pa": 12213.867180604675,
+    "compositions": [
+      0.6669264630198876,
+      0.33195398960977834,
+      0.0005597736851670177,
+      0.0005597736851665946,
+      4.229765411162838e-16,
+      0.739627025153475,
+      0.26037297484652505,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      32968.037038898154,
+      4.649966863117438
+    ],
+    "phase_amounts_mol": [
+      1.000560087207247,
+      0.0
+    ],
+    "charge_error_mol": 1.6750348966083066e-19,
+    "acid_inventory_error_mol": 0.0,
+    "water_inventory_error_mol": 0.0,
+    "hydrogen_inventory_error_mol": 1.6750348966083066e-19,
+    "pressure_closure_relative": 6.755251913403981e-11,
+    "neutral_log_fugacity_difference": [
+      6.74888235574489e-11,
+      6.747492842240632e-11
+    ],
+    "reaction_log_residuals": [
+      -1.616484723854228e-13,
+      7.105427357601002e-14
+    ],
+    "acid_dissociation_fraction": 0.0016834601961124437,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      },
+      {
+        "reaction_index": 1,
+        "source_pressure_Pa": 100000.0,
+        "contraction": -391.48243914124134,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "measurement_row": 10,
+    "elapsed_s": 0.01650031900499016
+  },
+  {
+    "x_water": 0.6703250000000001,
+    "variant": "primary",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 1.4210854715202004e-14,
+    "iterations": 15,
+    "P_Pa": 12231.400758423999,
+    "compositions": [
+      0.6702497318171886,
+      0.32952569597437087,
+      0.00011228610422027278,
+      0.00011228610422025104,
+      2.1560833528474034e-17,
+      0.7411897328379305,
+      0.2588102671620695,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      33094.665584768256,
+      4.656145410335982
+    ],
+    "phase_amounts_mol": [
+      1.0001122987138054,
+      0.0
+    ],
+    "charge_error_mol": 1.7499877598650925e-19,
+    "acid_inventory_error_mol": 0.0,
+    "water_inventory_error_mol": 0.0,
+    "hydrogen_inventory_error_mol": 1.7499877598650925e-19,
+    "pressure_closure_relative": 1.2391199177841372e-11,
+    "neutral_log_fugacity_difference": [
+      1.2068714083657284e-11,
+      1.2071774135868907e-11
+    ],
+    "reaction_log_residuals": [
+      -1.1901590823981678e-13,
+      1.1013412404281553e-13
+    ],
+    "acid_dissociation_fraction": 0.000340634606219256,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      },
+      {
+        "reaction_index": 1,
+        "source_pressure_Pa": 100000.0,
+        "contraction": -391.48243914124134,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "pressure_actions": [
+      {
+        "order": 1,
+        "value": 12231.400758423999,
+        "action": 2709.325500183631,
+        "status": "SolvedStateActionStatus.Available",
+        "cause": null
+      }
+    ],
+    "numerical_estimate": {
+      "pressure": {
+        "absolute": 6.016467696020489e-08,
+        "available": true,
+        "resolved": true,
+        "cause": ""
+      },
+      "source_reference_method": "local higher-precision re-evaluation plus first-order pressure/site propagation; can underestimate shared errors and internal cancellation; fixed-input arithmetic excludes supplied operand uncertainty; reference replay precision: 64 bits",
+      "cause": "",
+      "row_inner": [
+        2.410476371270913e-12,
+        2.0246464260584687e-12,
+        2.2093552548402137e-12,
+        2.018990791591482e-12,
+        2.4210100623722148e-12,
+        2.543203662368907e-15,
+        2.4085373120757236e-12,
+        2.021001849199765e-12,
+        3.6854880902942493e-17,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rank": 14,
+      "dimension": 14,
+      "condition": 204578.57899995887,
+      "backward_error": 5.1531400738953756e-18
+    },
+    "measurement_row": 10,
+    "elapsed_s": 0.023729883003397845
+  },
+  {
+    "x_water": 0.6703250000000001,
+    "variant": "acid-only",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 1.4210854715202004e-14,
+    "iterations": 9,
+    "P_Pa": 12231.400758423984,
+    "compositions": [
+      0.6702497318171886,
+      0.32952569597437087,
+      0.00011228610422026221,
+      0.00011228610422026221,
+      0.7411897328379307,
+      0.2588102671620693,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      33094.66558476826,
+      4.656145410335975
+    ],
+    "phase_amounts_mol": [
+      1.0001122987138054,
+      0.0
+    ],
+    "charge_error_mol": 0.0,
+    "acid_inventory_error_mol": 0.0,
+    "water_inventory_error_mol": 0.0,
+    "hydrogen_inventory_error_mol": 0.0,
+    "pressure_closure_relative": 6.789457884792682e-12,
+    "neutral_log_fugacity_difference": [
+      -7.30260296677443e-12,
+      -7.302353166593889e-12
+    ],
+    "reaction_log_residuals": [
+      -7.993605777301127e-14
+    ],
+    "acid_dissociation_fraction": 0.00034063460621928986,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "measurement_row": 10,
+    "elapsed_s": 0.012278249996597879
+  },
+  {
+    "x_water": 0.6703250000000001,
+    "variant": "water-only-permittivity",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 5.684341886080802e-14,
+    "iterations": 15,
+    "P_Pa": 12222.206734752202,
+    "compositions": [
+      0.6699500150288168,
+      0.32893116955721907,
+      0.0005594077069819975,
+      0.0005594077069815528,
+      4.4428812294304865e-16,
+      0.7414650700621012,
+      0.25853492993789895,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      33095.051543196285,
+      4.652457138446811
+    ],
+    "phase_amounts_mol": [
+      1.000559720819122,
+      0.0
+    ],
+    "charge_error_mol": 4.197713329025331e-19,
+    "acid_inventory_error_mol": -5.551115123125783e-17,
+    "water_inventory_error_mol": -1.1102230246251565e-16,
+    "hydrogen_inventory_error_mol": 4.197713329025331e-19,
+    "pressure_closure_relative": 2.897349027364271e-12,
+    "neutral_log_fugacity_difference": [
+      3.219133293264065e-12,
+      3.2125690996309686e-12
+    ],
+    "reaction_log_residuals": [
+      -1.438849039914203e-13,
+      4.618527782440651e-14
+    ],
+    "acid_dissociation_fraction": 0.001697795765895284,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      },
+      {
+        "reaction_index": 1,
+        "source_pressure_Pa": 100000.0,
+        "contraction": -391.48243914124134,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "measurement_row": 10,
+    "elapsed_s": 0.01686802699987311
+  },
+  {
+    "x_water": 0.67335,
+    "variant": "primary",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 1.1368683772161603e-13,
+    "iterations": 15,
+    "P_Pa": 12239.545608835895,
+    "compositions": [
+      0.6732730665415749,
+      0.32649842389155764,
+      0.00011425478343376363,
+      0.00011425478343374009,
+      2.3414003305778013e-17,
+      0.7430129497794429,
+      0.2569870502205572,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      33222.557541661234,
+      4.658565663566798
+    ],
+    "phase_amounts_mol": [
+      1.0001142678390809,
+      0.0
+    ],
+    "charge_error_mol": 1.240608967515179e-19,
+    "acid_inventory_error_mol": 0.0,
+    "water_inventory_error_mol": 0.0,
+    "hydrogen_inventory_error_mol": 1.240608967515179e-19,
+    "pressure_closure_relative": 1.6984480488702047e-10,
+    "neutral_log_fugacity_difference": [
+      1.6963507334932793e-10,
+      1.6961829163442133e-10
+    ],
+    "reaction_log_residuals": [
+      -2.2737367544323206e-13,
+      -9.947598300641403e-14
+    ],
+    "acid_dissociation_fraction": 0.0003498173552149019,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      },
+      {
+        "reaction_index": 1,
+        "source_pressure_Pa": 100000.0,
+        "contraction": -391.48243914124134,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "pressure_actions": [
+      {
+        "order": 1,
+        "value": 12239.545608835895,
+        "action": 2675.6892575905654,
+        "status": "SolvedStateActionStatus.Available",
+        "cause": null
+      }
+    ],
+    "numerical_estimate": {
+      "pressure": {
+        "absolute": 6.014932489359835e-08,
+        "available": true,
+        "resolved": true,
+        "cause": ""
+      },
+      "source_reference_method": "local higher-precision re-evaluation plus first-order pressure/site propagation; can underestimate shared errors and internal cancellation; fixed-input arithmetic excludes supplied operand uncertainty; reference replay precision: 64 bits",
+      "cause": "",
+      "row_inner": [
+        2.4104808046308973e-12,
+        2.0246575173612324e-12,
+        2.2093616670209944e-12,
+        2.018999882586131e-12,
+        2.4210115560422055e-12,
+        2.5444231244126416e-15,
+        2.4085372624366878e-12,
+        2.021001601364969e-12,
+        3.6618465260561475e-17,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rank": 14,
+      "dimension": 14,
+      "condition": 201813.28970616456,
+      "backward_error": 3.0409390673832154e-18
+    },
+    "measurement_row": 10,
+    "elapsed_s": 0.022981406000326388
+  },
+  {
+    "x_water": 0.67335,
+    "variant": "acid-only",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 3.552713678800501e-14,
+    "iterations": 9,
+    "P_Pa": 12239.545608835835,
+    "compositions": [
+      0.6732730665415749,
+      0.32649842389155764,
+      0.00011425478343375389,
+      0.00011425478343375389,
+      0.7430129497794412,
+      0.2569870502205588,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      33222.55754166123,
+      4.658565663566772
+    ],
+    "phase_amounts_mol": [
+      1.0001142678390809,
+      0.0
+    ],
+    "charge_error_mol": 0.0,
+    "acid_inventory_error_mol": 0.0,
+    "water_inventory_error_mol": 0.0,
+    "hydrogen_inventory_error_mol": 0.0,
+    "pressure_closure_relative": 2.6594282331871e-12,
+    "neutral_log_fugacity_difference": [
+      -2.8080281155862252e-12,
+      -2.8051033718057283e-12
+    ],
+    "reaction_log_residuals": [
+      -1.2434497875801753e-13
+    ],
+    "acid_dissociation_fraction": 0.0003498173552149442,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "measurement_row": 10,
+    "elapsed_s": 0.012692097996477969
+  },
+  {
+    "x_water": 0.67335,
+    "variant": "water-only-permittivity",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 4.263256414560601e-14,
+    "iterations": 15,
+    "P_Pa": 12230.444610259903,
+    "compositions": [
+      0.6729736501923281,
+      0.32590850676119854,
+      0.000558921523236635,
+      0.0005589215232361684,
+      4.666279885937658e-16,
+      0.743301754667727,
+      0.25669824533227303,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      33222.90567364204,
+      4.654909323159092
+    ],
+    "phase_amounts_mol": [
+      1.0005592340912068,
+      0.0
+    ],
+    "charge_error_mol": -3.148740064055399e-20,
+    "acid_inventory_error_mol": 0.0,
+    "water_inventory_error_mol": 0.0,
+    "hydrogen_inventory_error_mol": -3.148740064055399e-20,
+    "pressure_closure_relative": 1.6038725902944861e-10,
+    "neutral_log_fugacity_difference": [
+      1.5962033084182536e-10,
+      1.595845122714934e-10
+    ],
+    "reaction_log_residuals": [
+      -9.947598300641403e-14,
+      1.7053025658242404e-13
+    ],
+    "acid_dissociation_fraction": 0.0017120284439193978,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      },
+      {
+        "reaction_index": 1,
+        "source_pressure_Pa": 100000.0,
+        "contraction": -391.48243914124134,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "measurement_row": 10,
+    "elapsed_s": 0.016904087009606883
+  },
+  {
+    "x_water": 0.676375,
+    "variant": "primary",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 5.684341886080802e-14,
+    "iterations": 15,
+    "P_Pa": 12247.588613557129,
+    "compositions": [
+      0.6762963881808995,
+      0.32347116142072546,
+      0.00011622519918752133,
+      0.00011622519918749593,
+      2.5421500043963234e-17,
+      0.7448352777772006,
+      0.2551647222227994,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      33351.29784750963,
+      4.660947599287316
+    ],
+    "phase_amounts_mol": [
+      1.0001162387090548,
+      0.0
+    ],
+    "charge_error_mol": -2.7019115837638694e-20,
+    "acid_inventory_error_mol": 0.0,
+    "water_inventory_error_mol": 1.1102230246251565e-16,
+    "hydrogen_inventory_error_mol": -2.7019115837638694e-20,
+    "pressure_closure_relative": 9.846590209861006e-11,
+    "neutral_log_fugacity_difference": [
+      9.855401217340187e-11,
+      9.853676208315676e-11
+    ],
+    "reaction_log_residuals": [
+      -1.4210854715202004e-13,
+      4.973799150320701e-14
+    ],
+    "acid_dissociation_fraction": 0.0003591771620072896,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      },
+      {
+        "reaction_index": 1,
+        "source_pressure_Pa": 100000.0,
+        "contraction": -391.48243914124134,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "pressure_actions": [
+      {
+        "order": 1,
+        "value": 12247.588613557129,
+        "action": 2641.9886711429435,
+        "status": "SolvedStateActionStatus.Available",
+        "cause": null
+      }
+    ],
+    "numerical_estimate": {
+      "pressure": {
+        "absolute": 6.022277621666171e-08,
+        "available": true,
+        "resolved": true,
+        "cause": ""
+      },
+      "source_reference_method": "local higher-precision re-evaluation plus first-order pressure/site propagation; can underestimate shared errors and internal cancellation; fixed-input arithmetic excludes supplied operand uncertainty; reference replay precision: 64 bits",
+      "cause": "",
+      "row_inner": [
+        2.410485265983265e-12,
+        2.0246686827950065e-12,
+        2.209368122453789e-12,
+        2.0190090351137355e-12,
+        2.421013059614851e-12,
+        2.5456452417465624e-15,
+        2.4085372125913095e-12,
+        2.021001352427591e-12,
+        3.6382403175665206e-17,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rank": 14,
+      "dimension": 14,
+      "condition": 199145.92229563146,
+      "backward_error": 2.1613504929119074e-18
+    },
+    "measurement_row": 10,
+    "elapsed_s": 0.02612424200924579
+  },
+  {
+    "x_water": 0.676375,
+    "variant": "acid-only",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 2.842170943040401e-14,
+    "iterations": 9,
+    "P_Pa": 12247.588613557204,
+    "compositions": [
+      0.6762963881808995,
+      0.3234711614207255,
+      0.0001162251991875106,
+      0.0001162251991875106,
+      0.7448352777772023,
+      0.25516472222279774,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      33351.29784750963,
+      4.66094759928735
+    ],
+    "phase_amounts_mol": [
+      1.0001162387090545,
+      0.0
+    ],
+    "charge_error_mol": 0.0,
+    "acid_inventory_error_mol": 0.0,
+    "water_inventory_error_mol": 0.0,
+    "hydrogen_inventory_error_mol": 0.0,
+    "pressure_closure_relative": 7.612566133019527e-11,
+    "neutral_log_fugacity_difference": [
+      7.662449841294716e-11,
+      7.661485335042073e-11
+    ],
+    "reaction_log_residuals": [
+      -1.1013412404281553e-13
+    ],
+    "acid_dissociation_fraction": 0.0003591771620073348,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "measurement_row": 10,
+    "elapsed_s": 0.01304951599740889
+  },
+  {
+    "x_water": 0.676375,
+    "variant": "water-only-permittivity",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 2.842170943040401e-14,
+    "iterations": 15,
+    "P_Pa": 12238.580587435888,
+    "compositions": [
+      0.6759973691554492,
+      0.32288599925837347,
+      0.0005583157930887082,
+      0.0005583157930882182,
+      4.900460801075795e-16,
+      0.7451372185455271,
+      0.254862781454473,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      33351.60793530351,
+      4.6573233119239115
+    ],
+    "phase_amounts_mol": [
+      1.000558627683747,
+      0.0
+    ],
+    "charge_error_mol": -4.3611016294175764e-20,
+    "acid_inventory_error_mol": 0.0,
+    "water_inventory_error_mol": 1.1102230246251565e-16,
+    "hydrogen_inventory_error_mol": -4.3611016294175764e-20,
+    "pressure_closure_relative": 1.7756907055854754e-12,
+    "neutral_log_fugacity_difference": [
+      -2.285383687850029e-12,
+      -2.291208889282359e-12
+    ],
+    "reaction_log_residuals": [
+      -9.237055564881302e-14,
+      9.947598300641403e-14
+    ],
+    "acid_dissociation_fraction": 0.0017261573850799858,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      },
+      {
+        "reaction_index": 1,
+        "source_pressure_Pa": 100000.0,
+        "contraction": -391.48243914124134,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "measurement_row": 10,
+    "elapsed_s": 0.017159016002551652
+  },
+  {
+    "x_water": 0.6794,
+    "variant": "primary",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 5.684341886080802e-14,
+    "iterations": 15,
+    "P_Pa": 12255.529570291494,
+    "compositions": [
+      0.6793196974534977,
+      0.3204439100045466,
+      0.00011819627097790974,
+      0.00011819627097788224,
+      2.759586908612136e-17,
+      0.746656865066488,
+      0.2533431349335121,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      33480.89509004858,
+      4.6632911163476285
+    ],
+    "phase_amounts_mol": [
+      1.0001182102429877,
+      0.0
+    ],
+    "charge_error_mol": -1.0105360084788314e-19,
+    "acid_inventory_error_mol": 0.0,
+    "water_inventory_error_mol": 1.1102230246251565e-16,
+    "hydrogen_inventory_error_mol": -1.0105360084788314e-19,
+    "pressure_closure_relative": 1.3835932399786088e-10,
+    "neutral_log_fugacity_difference": [
+      1.3841296511718504e-10,
+      1.3839764056999826e-10
+    ],
+    "reaction_log_residuals": [
+      -1.7763568394002505e-13,
+      7.815970093361102e-14
+    ],
+    "acid_dissociation_fraction": 0.00036871566746037054,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      },
+      {
+        "reaction_index": 1,
+        "source_pressure_Pa": 100000.0,
+        "contraction": -391.48243914124134,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "pressure_actions": [
+      {
+        "order": 1,
+        "value": 12255.529570291494,
+        "action": 2608.2186534720527,
+        "status": "SolvedStateActionStatus.Available",
+        "cause": null
+      }
+    ],
+    "numerical_estimate": {
+      "pressure": {
+        "absolute": 6.025372622554974e-08,
+        "available": true,
+        "resolved": true,
+        "cause": ""
+      },
+      "source_reference_method": "local higher-precision re-evaluation plus first-order pressure/site propagation; can underestimate shared errors and internal cancellation; fixed-input arithmetic excludes supplied operand uncertainty; reference replay precision: 64 bits",
+      "cause": "",
+      "row_inner": [
+        2.4104897556142154e-12,
+        2.024679923117833e-12,
+        2.2093746215781902e-12,
+        2.0190182498012955e-12,
+        2.421014573189485e-12,
+        2.5468700358122328e-15,
+        2.4085371625355766e-12,
+        2.021001102366714e-12,
+        3.6146679765197036e-17,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rank": 14,
+      "dimension": 14,
+      "condition": 196573.56939311218,
+      "backward_error": 5.862129112491556e-18
+    },
+    "measurement_row": 10,
+    "elapsed_s": 0.025604454000131227
+  },
+  {
+    "x_water": 0.6794,
+    "variant": "acid-only",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 2.842170943040401e-14,
+    "iterations": 9,
+    "P_Pa": 12255.52957029144,
+    "compositions": [
+      0.6793196974534976,
+      0.3204439100045466,
+      0.00011819627097789903,
+      0.00011819627097789903,
+      0.7466568650664871,
+      0.25334313493351296,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      33480.8950900486,
+      4.663291116347606
+    ],
+    "phase_amounts_mol": [
+      1.0001182102429877,
+      0.0
+    ],
+    "charge_error_mol": 0.0,
+    "acid_inventory_error_mol": 0.0,
+    "water_inventory_error_mol": 0.0,
+    "hydrogen_inventory_error_mol": 0.0,
+    "pressure_closure_relative": 5.221800769561469e-11,
+    "neutral_log_fugacity_difference": [
+      5.203868239100906e-11,
+      5.2027465669013395e-11
+    ],
+    "reaction_log_residuals": [
+      -1.2434497875801753e-13
+    ],
+    "acid_dissociation_fraction": 0.0003687156674604229,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "measurement_row": 10,
+    "elapsed_s": 0.013878462006687187
+  },
+  {
+    "x_water": 0.6794,
+    "variant": "water-only-permittivity",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 6.394884621840902e-14,
+    "iterations": 15,
+    "P_Pa": 12246.614433539924,
+    "compositions": [
+      0.6790211725282621,
+      0.3198636450409537,
+      0.0005575912153920858,
+      0.0005575912153915706,
+      5.145949184056042e-16,
+      0.7469716033043687,
+      0.2530283966956313,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      33481.16694788574,
+      4.659698993979064
+    ],
+    "phase_amounts_mol": [
+      1.0005579022968119,
+      0.0
+    ],
+    "charge_error_mol": 4.392804898498792e-19,
+    "acid_inventory_error_mol": 0.0,
+    "water_inventory_error_mol": 0.0,
+    "hydrogen_inventory_error_mol": 4.392804898498792e-19,
+    "pressure_closure_relative": 8.153600017379858e-11,
+    "neutral_log_fugacity_difference": [
+      8.113643090723599e-11,
+      8.11074957196567e-11
+    ],
+    "reaction_log_residuals": [
+      -7.815970093361102e-14,
+      1.5276668818842154e-13
+    ],
+    "acid_dissociation_fraction": 0.0017401818365917645,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      },
+      {
+        "reaction_index": 1,
+        "source_pressure_Pa": 100000.0,
+        "contraction": -391.48243914124134,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "measurement_row": 10,
+    "elapsed_s": 0.016261079988908023
+  },
+  {
+    "x_water": 0.6673,
+    "variant": "no-dissociation",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "NEWTON_CONVERGED",
+    "row_residual": 3.552713678800501e-15,
+    "iterations": 0,
+    "P_Pa": 12226.799776931442,
+    "compositions": [
+      0.6673,
+      0.3327,
+      0.739600778810113,
+      0.26039922118988695
+    ],
+    "densities_mol_m3": [
+      32967.5096830652,
+      4.655008335899551
+    ],
+    "phase_amounts_mol": [
+      1.0,
+      0.0
+    ],
+    "charge_error_mol": 0.0,
+    "acid_inventory_error_mol": 0.0,
+    "water_inventory_error_mol": 0.0,
+    "hydrogen_inventory_error_mol": 0.0,
+    "pressure_closure_relative": 9.985123838873733e-12,
+    "neutral_log_fugacity_difference": [
+      -1.0548333040372171e-11,
+      -1.0552392293305957e-11
+    ],
+    "reaction_log_residuals": [],
+    "acid_dissociation_fraction": 0.0,
+    "checks_met": true,
+    "reaction_references": [],
+    "measurement_row": 10
+  },
+  {
+    "x_water": 0.6673,
+    "variant": "primary",
+    "tighter": true,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 3.552713678800501e-14,
+    "iterations": 16,
+    "P_Pa": 12223.154249453142,
+    "compositions": [
+      0.6672263833177782,
+      0.3325529762439726,
+      0.00011032021912467976,
+      0.00011032021912465977,
+      1.9850377041446676e-17,
+      0.7393654804455486,
+      0.26063451955445144,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      32967.61350334771,
+      4.65368693464253
+    ],
+    "phase_amounts_mol": [
+      1.0001103323910183,
+      0.0
+    ],
+    "charge_error_mol": 1.3741037419321396e-19,
+    "acid_inventory_error_mol": 1.1102230246251565e-16,
+    "water_inventory_error_mol": 1.1102230246251565e-16,
+    "hydrogen_inventory_error_mol": 1.3741037419321396e-19,
+    "pressure_closure_relative": 5.711364714500178e-11,
+    "neutral_log_fugacity_difference": [
+      -5.7163121458536637e-11,
+      -5.715501683045687e-11
+    ],
+    "reaction_log_residuals": [
+      -9.947598300641403e-14,
+      7.815970093361102e-14
+    ],
+    "acid_dissociation_fraction": 0.00033162726485787026,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      },
+      {
+        "reaction_index": 1,
+        "source_pressure_Pa": 100000.0,
+        "contraction": -391.48243914124134,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "measurement_row": 10
+  },
+  {
+    "x_water": 0.7578,
+    "variant": "primary",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 2.842170943040401e-14,
+    "iterations": 14,
+    "P_Pa": 12424.653752391587,
+    "compositions": [
+      0.7576745514391559,
+      0.24199436236173089,
+      0.00016554309955666582,
+      0.00016554309955644586,
+      2.2015223103069534e-16,
+      0.7941439718742591,
+      0.20585602812574097,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      37169.47886358086,
+      4.710126167450206
+    ],
+    "phase_amounts_mol": [
+      1.0001655705086119,
+      0.0
+    ],
+    "charge_error_mol": -2.040609502502768e-19,
+    "acid_inventory_error_mol": -2.7755575615628914e-17,
+    "water_inventory_error_mol": 1.1102230246251565e-16,
+    "hydrogen_inventory_error_mol": -2.040609502502768e-19,
+    "pressure_closure_relative": 8.10433942177724e-11,
+    "neutral_log_fugacity_difference": [
+      -8.143487273404304e-11,
+      -8.143050123088358e-11
+    ],
+    "reaction_log_residuals": [
+      -8.171241461241152e-14,
+      1.1368683772161603e-13
+    ],
+    "acid_dissociation_fraction": 0.0006836106879093173,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      },
+      {
+        "reaction_index": 1,
+        "source_pressure_Pa": 100000.0,
+        "contraction": -391.48243914124134,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "pressure_actions": [
+      {
+        "order": 1,
+        "value": 12424.653752391587,
+        "action": 1687.7928136938797,
+        "status": "SolvedStateActionStatus.Available",
+        "cause": null
+      }
+    ],
+    "numerical_estimate": {
+      "pressure": {
+        "absolute": 7.186704996345909e-08,
+        "available": true,
+        "resolved": true,
+        "cause": ""
+      },
+      "source_reference_method": "local higher-precision re-evaluation plus first-order pressure/site propagation; can underestimate shared errors and internal cancellation; fixed-input arithmetic excludes supplied operand uncertainty; reference replay precision: 64 bits",
+      "cause": "",
+      "row_inner": [
+        2.7860276513276405e-12,
+        2.757167065805051e-12,
+        2.5435491325529243e-12,
+        2.488497554039407e-12,
+        2.502368240290946e-12,
+        4.643319598070911e-13,
+        2.4085357760708323e-12,
+        2.020994147157423e-12,
+        3.010408582799946e-17,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rank": 14,
+      "dimension": 14,
+      "condition": 159724.63831324814,
+      "backward_error": 2.2214246566083103e-18
+    },
+    "measurement_row": 11,
+    "elapsed_s": 0.021059527003671974
+  },
+  {
+    "x_water": 0.7578,
+    "variant": "acid-only",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 2.842170943040401e-14,
+    "iterations": 8,
+    "P_Pa": 12424.653752391569,
+    "compositions": [
+      0.7576745514391561,
+      0.24199436236173083,
+      0.00016554309955654702,
+      0.00016554309955654702,
+      0.7941439718742593,
+      0.2058560281257406,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      37169.47886358091,
+      4.710126167450202
+    ],
+    "phase_amounts_mol": [
+      1.0001655705086119,
+      0.0
+    ],
+    "charge_error_mol": 0.0,
+    "acid_inventory_error_mol": 2.7755575615628914e-17,
+    "water_inventory_error_mol": 1.1102230246251565e-16,
+    "hydrogen_inventory_error_mol": 0.0,
+    "pressure_closure_relative": 4.48563408639302e-11,
+    "neutral_log_fugacity_difference": [
+      -4.575143389140557e-11,
+      -4.574218781527861e-11
+    ],
+    "reaction_log_residuals": [
+      -5.3290705182007514e-14
+    ],
+    "acid_dissociation_fraction": 0.0006836106879097348,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "measurement_row": 11,
+    "elapsed_s": 0.009777501996723004
+  },
+  {
+    "x_water": 0.7578,
+    "variant": "water-only-permittivity",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 3.552713678800501e-14,
+    "iterations": 14,
+    "P_Pa": 12418.065097636872,
+    "compositions": [
+      0.7574207804846141,
+      0.24157837624438003,
+      0.0005004216355029334,
+      0.0005004216355011297,
+      1.80381304084467e-15,
+      0.7946580883882934,
+      0.20534191161170653,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      37168.80422714381,
+      4.70739010680582
+    ],
+    "phase_amounts_mol": [
+      1.0005006721826954,
+      0.0
+    ],
+    "charge_error_mol": -1.70063972130559e-19,
+    "acid_inventory_error_mol": 0.0,
+    "water_inventory_error_mol": 0.0,
+    "hydrogen_inventory_error_mol": -1.70063972130559e-19,
+    "pressure_closure_relative": 1.1657252940722174e-10,
+    "neutral_log_fugacity_difference": [
+      -1.168705306142659e-10,
+      -1.1686290823931245e-10
+    ],
+    "reaction_log_residuals": [
+      -1.1368683772161603e-13,
+      7.105427357601002e-14
+    ],
+    "acid_dissociation_fraction": 0.0020671848996434523,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      },
+      {
+        "reaction_index": 1,
+        "source_pressure_Pa": 100000.0,
+        "contraction": -391.48243914124134,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "measurement_row": 11,
+    "elapsed_s": 0.013322964005055837
+  },
+  {
+    "x_water": 0.760425,
+    "variant": "primary",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 4.618527782440651e-14,
+    "iterations": 14,
+    "P_Pa": 12429.040669304626,
+    "compositions": [
+      0.7602981153984948,
+      0.23936816437530267,
+      0.0001668601131012947,
+      0.00016686011310105905,
+      2.35740417831355e-16,
+      0.7957631683744961,
+      0.20423683162550396,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      37305.09999962157,
+      4.711207502873429
+    ],
+    "phase_amounts_mol": [
+      1.0001668879600454,
+      0.0
+    ],
+    "charge_error_mol": -1.0131282475056805e-19,
+    "acid_inventory_error_mol": 2.7755575615628914e-17,
+    "water_inventory_error_mol": 2.220446049250313e-16,
+    "hydrogen_inventory_error_mol": -1.0131282475056805e-19,
+    "pressure_closure_relative": 1.394444559821295e-10,
+    "neutral_log_fugacity_difference": [
+      -1.4003121232009086e-10,
+      -1.400207033652734e-10
+    ],
+    "reaction_log_residuals": [
+      -5.684341886080802e-14,
+      1.3855583347321954e-13
+    ],
+    "acid_dissociation_fraction": 0.0006966000627984866,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      },
+      {
+        "reaction_index": 1,
+        "source_pressure_Pa": 100000.0,
+        "contraction": -391.48243914124134,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "pressure_actions": [
+      {
+        "order": 1,
+        "value": 12429.040669304626,
+        "action": 1654.5827934954534,
+        "status": "SolvedStateActionStatus.Available",
+        "cause": null
+      }
+    ],
+    "numerical_estimate": {
+      "pressure": {
+        "absolute": 7.075524647511339e-08,
+        "available": true,
+        "resolved": true,
+        "cause": ""
+      },
+      "source_reference_method": "local higher-precision re-evaluation plus first-order pressure/site propagation; can underestimate shared errors and internal cancellation; fixed-input arithmetic excludes supplied operand uncertainty; reference replay precision: 64 bits",
+      "cause": "",
+      "row_inner": [
+        2.7490319745613867e-12,
+        2.685449833012067e-12,
+        2.5110686538408126e-12,
+        2.442881560543933e-12,
+        2.4944482580876106e-12,
+        4.180822853949816e-13,
+        2.408535726044505e-12,
+        2.020993895161263e-12,
+        2.990215198583618e-17,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rank": 14,
+      "dimension": 14,
+      "condition": 159235.61364206616,
+      "backward_error": 2.3170951059091367e-18
+    },
+    "measurement_row": 11,
+    "elapsed_s": 0.019336375000420958
+  },
+  {
+    "x_water": 0.760425,
+    "variant": "acid-only",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 4.263256414560601e-14,
+    "iterations": 8,
+    "P_Pa": 12429.040669304572,
+    "compositions": [
+      0.760298115398495,
+      0.23936816437530262,
+      0.0001668601131011619,
+      0.0001668601131011619,
+      0.7957631683744966,
+      0.20423683162550355,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      37305.099999621554,
+      4.711207502873405
+    ],
+    "phase_amounts_mol": [
+      1.0001668879600452,
+      0.0
+    ],
+    "charge_error_mol": 0.0,
+    "acid_inventory_error_mol": 2.7755575615628914e-17,
+    "water_inventory_error_mol": 0.0,
+    "hydrogen_inventory_error_mol": 0.0,
+    "pressure_closure_relative": 1.6618750819930028e-10,
+    "neutral_log_fugacity_difference": [
+      -1.6599283753082616e-10,
+      -1.6597534457929441e-10
+    ],
+    "reaction_log_residuals": [
+      -1.0302869668521453e-13
+    ],
+    "acid_dissociation_fraction": 0.0006966000627989158,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "measurement_row": 11,
+    "elapsed_s": 0.009551073002512567
+  },
+  {
+    "x_water": 0.760425,
+    "variant": "water-only-permittivity",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 2.4868995751603507e-14,
+    "iterations": 14,
+    "P_Pa": 12422.526881069149,
+    "compositions": [
+      0.7600468010790564,
+      0.2389584948516619,
+      0.0004973520346408431,
+      0.0004973520346389617,
+      1.8814979863264387e-15,
+      0.7962793184452329,
+      0.2037206815547671,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      37304.39881437167,
+      4.708500723657614
+    ],
+    "phase_amounts_mol": [
+      1.0004975995167729,
+      0.0
+    ],
+    "charge_error_mol": -4.2406945911059e-20,
+    "acid_inventory_error_mol": -5.551115123125783e-17,
+    "water_inventory_error_mol": 0.0,
+    "hydrogen_inventory_error_mol": -4.2406945911059e-20,
+    "pressure_closure_relative": 1.4567014261501754e-11,
+    "neutral_log_fugacity_difference": [
+      1.533400489917014e-11,
+      1.5327669689035872e-11
+    ],
+    "reaction_log_residuals": [
+      -1.2789769243681803e-13,
+      8.171241461241152e-14
+    ],
+    "acid_dissociation_fraction": 0.002077009357282956,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      },
+      {
+        "reaction_index": 1,
+        "source_pressure_Pa": 100000.0,
+        "contraction": -391.48243914124134,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "measurement_row": 11,
+    "elapsed_s": 0.013104435012792237
+  },
+  {
+    "x_water": 0.76305,
+    "variant": "primary",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 6.750155989720952e-14,
+    "iterations": 14,
+    "P_Pa": 12433.340112591704,
+    "compositions": [
+      0.7629216932119637,
+      0.23674200697010556,
+      0.0001681499089653033,
+      0.0001681499089650506,
+      2.5242386659069227e-16,
+      0.7973857361884414,
+      0.2026142638115586,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      37441.58722979709,
+      4.712255230012467
+    ],
+    "phase_amounts_mol": [
+      1.0001681781881124,
+      0.0
+    ],
+    "charge_error_mol": 2.6120762715925803e-19,
+    "acid_inventory_error_mol": -2.7755575615628914e-17,
+    "water_inventory_error_mol": 0.0,
+    "hydrogen_inventory_error_mol": 2.6120762715925803e-19,
+    "pressure_closure_relative": 3.3990588121923793e-12,
+    "neutral_log_fugacity_difference": [
+      -3.2629662860550468e-12,
+      -3.249858715470566e-12
+    ],
+    "reaction_log_residuals": [
+      -1.1013412404281553e-13,
+      1.0658141036401503e-13
+    ],
+    "acid_dissociation_fraction": 0.0007097623469595765,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      },
+      {
+        "reaction_index": 1,
+        "source_pressure_Pa": 100000.0,
+        "contraction": -391.48243914124134,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "pressure_actions": [
+      {
+        "order": 1,
+        "value": 12433.340112591704,
+        "action": 1621.144802811267,
+        "status": "SolvedStateActionStatus.Available",
+        "cause": null
+      }
+    ],
+    "numerical_estimate": {
+      "pressure": {
+        "absolute": 6.985675486104894e-08,
+        "available": true,
+        "resolved": true,
+        "cause": ""
+      },
+      "source_reference_method": "local higher-precision re-evaluation plus first-order pressure/site propagation; can underestimate shared errors and internal cancellation; fixed-input arithmetic excludes supplied operand uncertainty; reference replay precision: 64 bits",
+      "cause": "",
+      "row_inner": [
+        2.715559198878282e-12,
+        2.6205188386747806e-12,
+        2.4816381856599784e-12,
+        2.4015475241466564e-12,
+        2.487273221769595e-12,
+        3.7631050030188647e-13,
+        2.4085356757350248e-12,
+        2.0209936416661254e-12,
+        2.9700113667068636e-17,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rank": 14,
+      "dimension": 14,
+      "condition": 158784.50277103717,
+      "backward_error": 4.020843591738936e-18
+    },
+    "measurement_row": 11,
+    "elapsed_s": 0.019162444994435646
+  },
+  {
+    "x_water": 0.76305,
+    "variant": "acid-only",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 2.842170943040401e-14,
+    "iterations": 8,
+    "P_Pa": 12433.340112591575,
+    "compositions": [
+      0.7629216932119641,
+      0.23674200697010553,
+      0.00016814990896516535,
+      0.00016814990896516535,
+      0.7973857361884419,
+      0.20261426381155812,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      37441.58722979711,
+      4.712255230012419
+    ],
+    "phase_amounts_mol": [
+      1.0001681781881122,
+      0.0
+    ],
+    "charge_error_mol": 0.0,
+    "acid_inventory_error_mol": 0.0,
+    "water_inventory_error_mol": 0.0,
+    "hydrogen_inventory_error_mol": 0.0,
+    "pressure_closure_relative": 4.743427872710981e-11,
+    "neutral_log_fugacity_difference": [
+      -4.7279194448357487e-11,
+      -4.7257753266194413e-11
+    ],
+    "reaction_log_residuals": [
+      -1.1546319456101628e-13
+    ],
+    "acid_dissociation_fraction": 0.0007097623469600606,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "measurement_row": 11,
+    "elapsed_s": 0.009436742999241687
+  },
+  {
+    "x_water": 0.76305,
+    "variant": "water-only-permittivity",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 2.842170943040401e-14,
+    "iterations": 14,
+    "P_Pa": 12426.901049188838,
+    "compositions": [
+      0.762672887958377,
+      0.23633867867127753,
+      0.0004942166851727325,
+      0.00049421668517077,
+      1.9626271336691367e-15,
+      0.7979036189799988,
+      0.2020963810200011,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      37440.86005938009,
+      4.70957778613756
+    ],
+    "phase_amounts_mol": [
+      1.0004944610560769,
+      0.0
+    ],
+    "charge_error_mol": -1.0744198308743638e-19,
+    "acid_inventory_error_mol": 0.0,
+    "water_inventory_error_mol": 0.0,
+    "hydrogen_inventory_error_mol": -1.0744198308743638e-19,
+    "pressure_closure_relative": 7.472933383212421e-11,
+    "neutral_log_fugacity_difference": [
+      7.421025252640767e-11,
+      7.418396452685272e-11
+    ],
+    "reaction_log_residuals": [
+      -1.1723955140041653e-13,
+      7.815970093361102e-14
+    ],
+    "acid_dissociation_fraction": 0.0020867738175769164,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      },
+      {
+        "reaction_index": 1,
+        "source_pressure_Pa": 100000.0,
+        "contraction": -391.48243914124134,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "measurement_row": 11,
+    "elapsed_s": 0.01289422700938303
+  },
+  {
+    "x_water": 0.765675,
+    "variant": "primary",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 3.552713678800501e-14,
+    "iterations": 14,
+    "P_Pa": 12437.551472374333,
+    "compositions": [
+      0.7655452858275017,
+      0.2341158911144174,
+      0.0001694115290404533,
+      0.00016941152904018306,
+      2.7028000892286297e-16,
+      0.7990118364321509,
+      0.2009881635678491,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      37578.94897325648,
+      4.713269092063043
+    ],
+    "phase_amounts_mol": [
+      1.0001694402341696,
+      0.0
+    ],
+    "charge_error_mol": -3.420363022996536e-20,
+    "acid_inventory_error_mol": 0.0,
+    "water_inventory_error_mol": 0.0,
+    "hydrogen_inventory_error_mol": -3.420363022996536e-20,
+    "pressure_closure_relative": 1.283506634308651e-11,
+    "neutral_log_fugacity_difference": [
+      -1.3034098106379233e-11,
+      -1.3021639322374767e-11
+    ],
+    "reaction_log_residuals": [
+      -1.474376176702208e-13,
+      3.907985046680551e-14
+    ],
+    "acid_dissociation_fraction": 0.0007230992602980248,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      },
+      {
+        "reaction_index": 1,
+        "source_pressure_Pa": 100000.0,
+        "contraction": -391.48243914124134,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "pressure_actions": [
+      {
+        "order": 1,
+        "value": 12437.551472374333,
+        "action": 1587.470064875558,
+        "status": "SolvedStateActionStatus.Available",
+        "cause": null
+      }
+    ],
+    "numerical_estimate": {
+      "pressure": {
+        "absolute": 6.887430948246758e-08,
+        "available": true,
+        "resolved": true,
+        "cause": ""
+      },
+      "source_reference_method": "local higher-precision re-evaluation plus first-order pressure/site propagation; can underestimate shared errors and internal cancellation; fixed-input arithmetic excludes supplied operand uncertainty; reference replay precision: 64 bits",
+      "cause": "",
+      "row_inner": [
+        2.6840490844194485e-12,
+        2.5593383120864825e-12,
+        2.4538768295210964e-12,
+        2.3625556882969105e-12,
+        2.4805067461305865e-12,
+        3.3708517323056214e-13,
+        2.408535625136726e-12,
+        2.020993386642252e-12,
+        2.9497957424421304e-17,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rank": 14,
+      "dimension": 14,
+      "condition": 158371.160784266,
+      "backward_error": 1.929999601995128e-18
+    },
+    "measurement_row": 11,
+    "elapsed_s": 0.019058495992794633
+  },
+  {
+    "x_water": 0.765675,
+    "variant": "acid-only",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 4.263256414560601e-14,
+    "iterations": 8,
+    "P_Pa": 12437.551472374284,
+    "compositions": [
+      0.7655452858275021,
+      0.23411589111441736,
+      0.00016941152904031037,
+      0.00016941152904031037,
+      0.7990118364321522,
+      0.2009881635678477,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      37578.94897325649,
+      4.713269092063026
+    ],
+    "phase_amounts_mol": [
+      1.0001694402341692,
+      0.0
+    ],
+    "charge_error_mol": 0.0,
+    "acid_inventory_error_mol": -2.7755575615628914e-17,
+    "water_inventory_error_mol": -1.1102230246251565e-16,
+    "hydrogen_inventory_error_mol": 0.0,
+    "pressure_closure_relative": 1.49584344910636e-10,
+    "neutral_log_fugacity_difference": [
+      -1.4911658366423275e-10,
+      -1.4907898526761443e-10
+    ],
+    "reaction_log_residuals": [
+      -6.750155989720952e-14
+    ],
+    "acid_dissociation_fraction": 0.0007230992602985679,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "measurement_row": 11,
+    "elapsed_s": 0.009437863001949154
+  },
+  {
+    "x_water": 0.765675,
+    "variant": "water-only-permittivity",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 2.842170943040401e-14,
+    "iterations": 14,
+    "P_Pa": 12431.187002816723,
+    "compositions": [
+      0.7652990409196233,
+      0.2337189260235974,
+      0.0004910165283897228,
+      0.0004910165283876751,
+      2.0473653233133294e-15,
+      0.7995311524709806,
+      0.20046884752901947,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      37578.196401595414,
+      4.710621040246045
+    ],
+    "phase_amounts_mol": [
+      1.0004912577440617,
+      0.0
+    ],
+    "charge_error_mol": 2.288975280300099e-19,
+    "acid_inventory_error_mol": -5.551115123125783e-17,
+    "water_inventory_error_mol": 0.0,
+    "hydrogen_inventory_error_mol": 2.288975280300099e-19,
+    "pressure_closure_relative": 1.2344125721597266e-11,
+    "neutral_log_fugacity_difference": [
+      1.2103210794700558e-11,
+      1.2127646109583168e-11
+    ],
+    "reaction_log_residuals": [
+      -1.3855583347321954e-13,
+      7.815970093361102e-14
+    ],
+    "acid_dissociation_fraction": 0.00209648029045005,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      },
+      {
+        "reaction_index": 1,
+        "source_pressure_Pa": 100000.0,
+        "contraction": -391.48243914124134,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "measurement_row": 11,
+    "elapsed_s": 0.012579828005982563
+  },
+  {
+    "x_water": 0.7683,
+    "variant": "primary",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 4.263256414560601e-14,
+    "iterations": 14,
+    "P_Pa": 12441.674115347258,
+    "compositions": [
+      0.7681688942041064,
+      0.2314898177680573,
+      0.00017064401391816002,
+      0.00017064401391787083,
+      2.893918770312312e-16,
+      0.8006416335636175,
+      0.19935836643638252,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      37717.193758731344,
+      4.714248822945414
+    ],
+    "phase_amounts_mol": [
+      1.0001706731382676,
+      0.0
+    ],
+    "charge_error_mol": -2.0323388625283738e-19,
+    "acid_inventory_error_mol": -2.7755575615628914e-17,
+    "water_inventory_error_mol": 1.1102230246251565e-16,
+    "hydrogen_inventory_error_mol": -2.0323388625283738e-19,
+    "pressure_closure_relative": 2.4887092386904897e-11,
+    "neutral_log_fugacity_difference": [
+      2.4656842539938495e-11,
+      2.4644647433902378e-11
+    ],
+    "reaction_log_residuals": [
+      -9.414691248821327e-14,
+      1.2434497875801753e-13
+    ],
+    "acid_dissociation_fraction": 0.0007366125950248286,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      },
+      {
+        "reaction_index": 1,
+        "source_pressure_Pa": 100000.0,
+        "contraction": -391.48243914124134,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "pressure_actions": [
+      {
+        "order": 1,
+        "value": 12441.674115347258,
+        "action": 1553.5495051966434,
+        "status": "SolvedStateActionStatus.Available",
+        "cause": null
+      }
+    ],
+    "numerical_estimate": {
+      "pressure": {
+        "absolute": 6.806029575756029e-08,
+        "available": true,
+        "resolved": true,
+        "cause": ""
+      },
+      "source_reference_method": "local higher-precision re-evaluation plus first-order pressure/site propagation; can underestimate shared errors and internal cancellation; fixed-input arithmetic excludes supplied operand uncertainty; reference replay precision: 64 bits",
+      "cause": "",
+      "row_inner": [
+        2.655572539253717e-12,
+        2.504009585310817e-12,
+        2.4287500312333667e-12,
+        2.3272628372751203e-12,
+        2.4743835095870247e-12,
+        3.0170168787034213e-13,
+        2.4085355742437954e-12,
+        2.020993130059098e-12,
+        2.9295669624243345e-17,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rank": 14,
+      "dimension": 14,
+      "condition": 157995.4767192377,
+      "backward_error": 5.261237423033522e-18
+    },
+    "measurement_row": 11,
+    "elapsed_s": 0.01871244799986016
+  },
+  {
+    "x_water": 0.7683,
+    "variant": "acid-only",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 1.4210854715202004e-14,
+    "iterations": 8,
+    "P_Pa": 12441.67411534734,
+    "compositions": [
+      0.7681688942041068,
+      0.23148981776805722,
+      0.0001706440139180024,
+      0.0001706440139180024,
+      0.8006416335636216,
+      0.19935836643637836,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      37717.19375873131,
+      4.71424882294544
+    ],
+    "phase_amounts_mol": [
+      1.0001706731382674,
+      0.0
+    ],
+    "charge_error_mol": 0.0,
+    "acid_inventory_error_mol": 0.0,
+    "water_inventory_error_mol": 0.0,
+    "hydrogen_inventory_error_mol": 0.0,
+    "pressure_closure_relative": 7.831668646929302e-11,
+    "neutral_log_fugacity_difference": [
+      7.891856265707098e-11,
+      7.890434139401492e-11
+    ],
+    "reaction_log_residuals": [
+      -9.947598300641403e-14
+    ],
+    "acid_dissociation_fraction": 0.0007366125950253962,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "measurement_row": 11,
+    "elapsed_s": 0.009573393006576225
+  },
+  {
+    "x_water": 0.7683,
+    "variant": "water-only-permittivity",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 5.3290705182007514e-14,
+    "iterations": 14,
+    "P_Pa": 12435.384119799248,
+    "compositions": [
+      0.7679252597444515,
+      0.23109923523004708,
+      0.0004877525127506513,
+      0.00048775251274851513,
+      2.1358861882316996e-15,
+      0.8011620848978508,
+      0.1988379151021492,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      37716.4163897432,
+      4.711630222809663
+    ],
+    "phase_amounts_mol": [
+      1.0004879905313586,
+      0.0
+    ],
+    "charge_error_mol": 2.5084193581003353e-19,
+    "acid_inventory_error_mol": -8.326672684688674e-17,
+    "water_inventory_error_mol": 0.0,
+    "hydrogen_inventory_error_mol": 2.5084193581003353e-19,
+    "pressure_closure_relative": 5.069211717056987e-11,
+    "neutral_log_fugacity_difference": [
+      5.092520155569602e-11,
+      5.093196697725233e-11
+    ],
+    "reaction_log_residuals": [
+      -6.039613253960852e-14,
+      2.1316282072803006e-13
+    ],
+    "acid_dissociation_fraction": 0.002106130907882533,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      },
+      {
+        "reaction_index": 1,
+        "source_pressure_Pa": 100000.0,
+        "contraction": -391.48243914124134,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "measurement_row": 11,
+    "elapsed_s": 0.013628713000798598
+  },
+  {
+    "x_water": 0.7709250000000001,
+    "variant": "primary",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 5.684341886080802e-14,
+    "iterations": 14,
+    "P_Pa": 12445.707383980543,
+    "compositions": [
+      0.7707925193115617,
+      0.2288637878819056,
+      0.00017184640326642486,
+      0.00017184640326611502,
+      3.098485255943383e-16,
+      0.8022752955014134,
+      0.19772470449858665,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      37856.3302263271,
+      4.715194146995628
+    ],
+    "phase_amounts_mol": [
+      1.0001718759395284,
+      0.0
+    ],
+    "charge_error_mol": -9.695150117054953e-21,
+    "acid_inventory_error_mol": 2.7755575615628914e-17,
+    "water_inventory_error_mol": 0.0,
+    "hydrogen_inventory_error_mol": -9.695150117054953e-21,
+    "pressure_closure_relative": 7.255940293049434e-11,
+    "neutral_log_fugacity_difference": [
+      7.239205068731991e-11,
+      7.238531996023312e-11
+    ],
+    "reaction_log_residuals": [
+      -9.947598300641403e-14,
+      1.1368683772161603e-13
+    ],
+    "acid_dissociation_fraction": 0.0007503042214476961,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      },
+      {
+        "reaction_index": 1,
+        "source_pressure_Pa": 100000.0,
+        "contraction": -391.48243914124134,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "pressure_actions": [
+      {
+        "order": 1,
+        "value": 12445.707383980543,
+        "action": 1519.373739310977,
+        "status": "SolvedStateActionStatus.Available",
+        "cause": null
+      }
+    ],
+    "numerical_estimate": {
+      "pressure": {
+        "absolute": 6.731391259301932e-08,
+        "available": true,
+        "resolved": true,
+        "cause": ""
+      },
+      "source_reference_method": "local higher-precision re-evaluation plus first-order pressure/site propagation; can underestimate shared errors and internal cancellation; fixed-input arithmetic excludes supplied operand uncertainty; reference replay precision: 64 bits",
+      "cause": "",
+      "row_inner": [
+        2.6301497545553268e-12,
+        2.4545835945896466e-12,
+        2.40628727600406e-12,
+        2.29571079795349e-12,
+        2.4689103612129983e-12,
+        2.701650725353268e-13,
+        2.408535523050267e-12,
+        2.02099287188531e-12,
+        2.909323644114242e-17,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rank": 14,
+      "dimension": 14,
+      "condition": 157657.37389895078,
+      "backward_error": 7.624854675167593e-18
+    },
+    "measurement_row": 11,
+    "elapsed_s": 0.02025076099380385
+  },
+  {
+    "x_water": 0.7709250000000001,
+    "variant": "acid-only",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 2.1316282072803006e-14,
+    "iterations": 8,
+    "P_Pa": 12445.707383980465,
+    "compositions": [
+      0.7707925193115621,
+      0.22886378788190545,
+      0.00017184640326624778,
+      0.00017184640326624778,
+      0.8022752955014142,
+      0.1977247044985859,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      37856.33022632711,
+      4.715194146995599
+    ],
+    "phase_amounts_mol": [
+      1.0001718759395282,
+      0.0
+    ],
+    "charge_error_mol": 0.0,
+    "acid_inventory_error_mol": 0.0,
+    "water_inventory_error_mol": 0.0,
+    "hydrogen_inventory_error_mol": 0.0,
+    "pressure_closure_relative": 6.881495373534108e-11,
+    "neutral_log_fugacity_difference": [
+      -6.823210746409458e-11,
+      -6.82145590014116e-11
+    ],
+    "reaction_log_residuals": [
+      -1.2079226507921703e-13
+    ],
+    "acid_dissociation_fraction": 0.0007503042214482758,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "measurement_row": 11,
+    "elapsed_s": 0.009538272992358543
+  },
+  {
+    "x_water": 0.7709250000000001,
+    "variant": "water-only-permittivity",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 4.973799150320701e-14,
+    "iterations": 14,
+    "P_Pa": 12439.491754175442,
+    "compositions": [
+      0.7705515441993684,
+      0.2284796046137343,
+      0.0004844255934485995,
+      0.0004844255934463708,
+      2.228372682860898e-15,
+      0.8027965858589179,
+      0.1972034141410821,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      37855.528683622324,
+      4.712605061159916
+    ],
+    "phase_amounts_mol": [
+      1.0004846603753388,
+      0.0
+    ],
+    "charge_error_mol": 3.1750113192037057e-19,
+    "acid_inventory_error_mol": 2.7755575615628914e-17,
+    "water_inventory_error_mol": 1.1102230246251565e-16,
+    "hydrogen_inventory_error_mol": 3.1750113192037057e-19,
+    "pressure_closure_relative": 6.415201703191542e-11,
+    "neutral_log_fugacity_difference": [
+      6.42138738016218e-11,
+      6.419448306260733e-11
+    ],
+    "reaction_log_residuals": [
+      -1.3322676295501878e-13,
+      2.842170943040401e-14
+    ],
+    "acid_dissociation_fraction": 0.002115727929002791,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      },
+      {
+        "reaction_index": 1,
+        "source_pressure_Pa": 100000.0,
+        "contraction": -391.48243914124134,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "measurement_row": 11,
+    "elapsed_s": 0.0132388939964585
+  },
+  {
+    "x_water": 0.7735500000000001,
+    "variant": "primary",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 2.842170943040401e-14,
+    "iterations": 14,
+    "P_Pa": 12449.650595689038,
+    "compositions": [
+      0.7734161621301607,
+      0.22623780239743535,
+      0.00017301773620195026,
+      0.00017301773620161833,
+      3.317454873061231e-16,
+      0.803912993747631,
+      0.19608700625236894,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      37996.367129348975,
+      4.7161047786446595
+    ],
+    "phase_amounts_mol": [
+      1.0001730476765192,
+      0.0
+    ],
+    "charge_error_mol": 1.7981012316433017e-19,
+    "acid_inventory_error_mol": -2.7755575615628914e-17,
+    "water_inventory_error_mol": 0.0,
+    "hydrogen_inventory_error_mol": 1.7981012316433017e-19,
+    "pressure_closure_relative": 2.911417773532321e-10,
+    "neutral_log_fugacity_difference": [
+      -2.91110083955326e-10,
+      -2.910925805954534e-10
+    ],
+    "reaction_log_residuals": [
+      -8.348877145181177e-14,
+      1.1723955140041653e-13
+    ],
+    "acid_dissociation_fraction": 0.0007641760941438053,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      },
+      {
+        "reaction_index": 1,
+        "source_pressure_Pa": 100000.0,
+        "contraction": -391.48243914124134,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "pressure_actions": [
+      {
+        "order": 1,
+        "value": 12449.650595689038,
+        "action": 1484.9330599778314,
+        "status": "SolvedStateActionStatus.Available",
+        "cause": null
+      }
+    ],
+    "numerical_estimate": {
+      "pressure": {
+        "absolute": 6.654449565263166e-08,
+        "available": true,
+        "resolved": true,
+        "cause": ""
+      },
+      "source_reference_method": "local higher-precision re-evaluation plus first-order pressure/site propagation; can underestimate shared errors and internal cancellation; fixed-input arithmetic excludes supplied operand uncertainty; reference replay precision: 64 bits",
+      "cause": "",
+      "row_inner": [
+        2.60620692088796e-12,
+        2.4079903233194977e-12,
+        2.3850878408045383e-12,
+        2.2659316902020565e-12,
+        2.463746311650208e-12,
+        2.4054053482701514e-13,
+        2.408535471550017e-12,
+        2.020992612088695e-12,
+        2.889064385253606e-17,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rank": 14,
+      "dimension": 14,
+      "condition": 157356.81033889882,
+      "backward_error": 1.779319459715849e-18
+    },
+    "measurement_row": 11,
+    "elapsed_s": 0.019995971000753343
+  },
+  {
+    "x_water": 0.7735500000000001,
+    "variant": "acid-only",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 2.842170943040401e-14,
+    "iterations": 8,
+    "P_Pa": 12449.650595689178,
+    "compositions": [
+      0.7734161621301612,
+      0.22623780239743524,
+      0.0001730177362017788,
+      0.0001730177362017788,
+      0.8039129937476365,
+      0.19608700625236347,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      37996.36712934893,
+      4.71610477864471
+    ],
+    "phase_amounts_mol": [
+      1.0001730476765192,
+      0.0
+    ],
+    "charge_error_mol": 0.0,
+    "acid_inventory_error_mol": 0.0,
+    "water_inventory_error_mol": 1.1102230246251565e-16,
+    "hydrogen_inventory_error_mol": 0.0,
+    "pressure_closure_relative": 2.506088669917972e-10,
+    "neutral_log_fugacity_difference": [
+      2.505196432245338e-10,
+      2.50487422470691e-10
+    ],
+    "reaction_log_residuals": [
+      -3.907985046680551e-14
+    ],
+    "acid_dissociation_fraction": 0.0007641760941445138,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "measurement_row": 11,
+    "elapsed_s": 0.009630402986658737
+  },
+  {
+    "x_water": 0.7735500000000001,
+    "variant": "water-only-permittivity",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 5.684341886080802e-14,
+    "iterations": 14,
+    "P_Pa": 12443.50923530795,
+    "compositions": [
+      0.7731778940359783,
+      0.22586003250007114,
+      0.0004810367319753381,
+      0.000481036731973013,
+      2.325017647992161e-15,
+      0.8044348286927769,
+      0.19556517130722306,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      37995.54205591405,
+      4.713545272798457
+    ],
+    "phase_amounts_mol": [
+      1.0004812682396766,
+      0.0
+    ],
+    "charge_error_mol": 1.915592482236671e-20,
+    "acid_inventory_error_mol": 5.551115123125783e-17,
+    "water_inventory_error_mol": 1.1102230246251565e-16,
+    "hydrogen_inventory_error_mol": 1.915592482236671e-20,
+    "pressure_closure_relative": 1.0751011192411397e-10,
+    "neutral_log_fugacity_difference": [
+      1.0763246890976852e-10,
+      1.0763098745592004e-10
+    ],
+    "reaction_log_residuals": [
+      -8.526512829121202e-14,
+      1.8474111129762605e-13
+    ],
+    "acid_dissociation_fraction": 0.002125273745525412,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      },
+      {
+        "reaction_index": 1,
+        "source_pressure_Pa": 100000.0,
+        "contraction": -391.48243914124134,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "measurement_row": 11,
+    "elapsed_s": 0.013370653992751613
+  },
+  {
+    "x_water": 0.7761750000000001,
+    "variant": "primary",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 2.842170943040401e-14,
+    "iterations": 14,
+    "P_Pa": 12453.503041968406,
+    "compositions": [
+      0.77603982365043,
+      0.2236118622462564,
+      0.00017415705165682886,
+      0.0001741570516564737,
+      3.5518526495300955e-16,
+      0.8055549035154385,
+      0.1944450964845616,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      38137.31333616396,
+      4.716980422084834
+    ],
+    "phase_amounts_mol": [
+      1.0001741873876187,
+      0.0
+    ],
+    "charge_error_mol": -3.5396985868964103e-20,
+    "acid_inventory_error_mol": 2.7755575615628914e-17,
+    "water_inventory_error_mol": 0.0,
+    "hydrogen_inventory_error_mol": -3.5396985868964103e-20,
+    "pressure_closure_relative": 2.8455904299562462e-11,
+    "neutral_log_fugacity_difference": [
+      -2.8504865134948432e-11,
+      -2.8504823501585008e-11
+    ],
+    "reaction_log_residuals": [
+      -1.3145040611561853e-13,
+      1.2789769243681803e-13
+    ],
+    "acid_dissociation_fraction": 0.0007782302585427774,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      },
+      {
+        "reaction_index": 1,
+        "source_pressure_Pa": 100000.0,
+        "contraction": -391.48243914124134,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "pressure_actions": [
+      {
+        "order": 1,
+        "value": 12453.503041968406,
+        "action": 1450.2174238038147,
+        "status": "SolvedStateActionStatus.Available",
+        "cause": null
+      }
+    ],
+    "numerical_estimate": {
+      "pressure": {
+        "absolute": 6.596952522016426e-08,
+        "available": true,
+        "resolved": true,
+        "cause": ""
+      },
+      "source_reference_method": "local higher-precision re-evaluation plus first-order pressure/site propagation; can underestimate shared errors and internal cancellation; fixed-input arithmetic excludes supplied operand uncertainty; reference replay precision: 64 bits",
+      "cause": "",
+      "row_inner": [
+        2.5853517307520394e-12,
+        2.367385293989362e-12,
+        2.3666019473754124e-12,
+        2.239963613361341e-12,
+        2.459243846808008e-12,
+        2.1477126854377896e-13,
+        2.4085354197367596e-12,
+        2.0209923506361976e-12,
+        2.868787763310562e-17,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rank": 14,
+      "dimension": 14,
+      "condition": 157093.77923210544,
+      "backward_error": 2.7394261793274492e-18
+    },
+    "measurement_row": 11,
+    "elapsed_s": 0.019476784000289626
+  },
+  {
+    "x_water": 0.7761750000000001,
+    "variant": "acid-only",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 2.842170943040401e-14,
+    "iterations": 8,
+    "P_Pa": 12453.503041968384,
+    "compositions": [
+      0.7760398236504304,
+      0.22361186224625623,
+      0.0001741570516566383,
+      0.0001741570516566383,
+      0.8055549035154407,
+      0.19444509648455927,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      38137.31333616399,
+      4.716980422084824
+    ],
+    "phase_amounts_mol": [
+      1.0001741873876187,
+      0.0
+    ],
+    "charge_error_mol": 0.0,
+    "acid_inventory_error_mol": 2.7755575615628914e-17,
+    "water_inventory_error_mol": 1.1102230246251565e-16,
+    "hydrogen_inventory_error_mol": 0.0,
+    "pressure_closure_relative": 1.2892331646696675e-10,
+    "neutral_log_fugacity_difference": [
+      -1.2898496160040906e-10,
+      -1.2895957912650857e-10
+    ],
+    "reaction_log_residuals": [
+      -6.039613253960852e-14
+    ],
+    "acid_dissociation_fraction": 0.000778230258543513,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "measurement_row": 11,
+    "elapsed_s": 0.010184149999986403
+  },
+  {
+    "x_water": 0.7761750000000001,
+    "variant": "water-only-permittivity",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 8.526512829121202e-14,
+    "iterations": 14,
+    "P_Pa": 12447.435866979193,
+    "compositions": [
+      0.7758043089912408,
+      0.22324051721739288,
+      0.0004775868956831786,
+      0.0004775868956807523,
+      2.426024414377108e-15,
+      0.8060769906044485,
+      0.19392300939555157,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      38136.46539402637,
+      4.714450565049303
+    ],
+    "phase_amounts_mol": [
+      1.0004778150939106,
+      0.0
+    ],
+    "charge_error_mol": 2.9084862592706523e-19,
+    "acid_inventory_error_mol": -2.7755575615628914e-17,
+    "water_inventory_error_mol": 1.1102230246251565e-16,
+    "hydrogen_inventory_error_mol": 2.9084862592706523e-19,
+    "pressure_closure_relative": 1.2182499453672335e-10,
+    "neutral_log_fugacity_difference": [
+      -1.2215179909236262e-10,
+      -1.2212898747865353e-10
+    ],
+    "reaction_log_residuals": [
+      -1.1368683772161603e-13,
+      1.5631940186722204e-13
+    ],
+    "acid_dissociation_fraction": 0.002134770887560204,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      },
+      {
+        "reaction_index": 1,
+        "source_pressure_Pa": 100000.0,
+        "contraction": -391.48243914124134,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "measurement_row": 11,
+    "elapsed_s": 0.013319284000317566
+  },
+  {
+    "x_water": 0.7788,
+    "variant": "primary",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 1.4210854715202004e-14,
+    "iterations": 14,
+    "P_Pa": 12457.263987493274,
+    "compositions": [
+      0.7786635048728501,
+      0.2209859683496727,
+      0.00017526338873865362,
+      0.00017526338873827347,
+      3.8027786317715857e-16,
+      0.8072012038612706,
+      0.1927987961387295,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      38279.17783209965,
+      4.717820770922135
+    ],
+    "phase_amounts_mol": [
+      1.0001752941113786,
+      0.0
+    ],
+    "charge_error_mol": -1.4192681090691167e-19,
+    "acid_inventory_error_mol": 2.7755575615628914e-17,
+    "water_inventory_error_mol": 0.0,
+    "hydrogen_inventory_error_mol": -1.4192681090691167e-19,
+    "pressure_closure_relative": 5.977529582423813e-11,
+    "neutral_log_fugacity_difference": [
+      -5.967509472681876e-11,
+      -5.965931915152822e-11
+    ],
+    "reaction_log_residuals": [
+      -1.0658141036401503e-13,
+      1.4210854715202004e-13
+    ],
+    "acid_dissociation_fraction": 0.0007924688579487323,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      },
+      {
+        "reaction_index": 1,
+        "source_pressure_Pa": 100000.0,
+        "contraction": -391.48243914124134,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "pressure_actions": [
+      {
+        "order": 1,
+        "value": 12457.263987493274,
+        "action": 1415.216437265952,
+        "status": "SolvedStateActionStatus.Available",
+        "cause": null
+      }
+    ],
+    "numerical_estimate": {
+      "pressure": {
+        "absolute": 6.542745689332782e-08,
+        "available": true,
+        "resolved": true,
+        "cause": ""
+      },
+      "source_reference_method": "local higher-precision re-evaluation plus first-order pressure/site propagation; can underestimate shared errors and internal cancellation; fixed-input arithmetic excludes supplied operand uncertainty; reference replay precision: 64 bits",
+      "cause": "",
+      "row_inner": [
+        2.5660035418156163e-12,
+        2.329681239623815e-12,
+        2.349418886157827e-12,
+        2.215824519809373e-12,
+        2.455059658294629e-12,
+        1.909207963727952e-13,
+        2.40853536760404e-12,
+        2.020992087493866e-12,
+        2.8484923349170533e-17,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rank": 14,
+      "dimension": 14,
+      "condition": 156868.3095162698,
+      "backward_error": 6.328152803423673e-18
+    },
+    "measurement_row": 11,
+    "elapsed_s": 0.019464844997855835
+  },
+  {
+    "x_water": 0.7788,
+    "variant": "acid-only",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 3.552713678800501e-14,
+    "iterations": 8,
+    "P_Pa": 12457.263987493194,
+    "compositions": [
+      0.7786635048728506,
+      0.22098596834967255,
+      0.00017526338873845125,
+      0.00017526338873845125,
+      0.8072012038612697,
+      0.19279879613873036,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      38279.17783209963,
+      4.717820770922096
+    ],
+    "phase_amounts_mol": [
+      1.0001752941113784,
+      0.0
+    ],
+    "charge_error_mol": 0.0,
+    "acid_inventory_error_mol": -2.7755575615628914e-17,
+    "water_inventory_error_mol": 1.1102230246251565e-16,
+    "hydrogen_inventory_error_mol": 0.0,
+    "pressure_closure_relative": 5.4777182789678136e-11,
+    "neutral_log_fugacity_difference": [
+      5.397987612454358e-11,
+      5.396495750265018e-11
+    ],
+    "reaction_log_residuals": [
+      -4.618527782440651e-14
+    ],
+    "acid_dissociation_fraction": 0.0007924688579495361,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "measurement_row": 11,
+    "elapsed_s": 0.009822231004363857
+  },
+  {
+    "x_water": 0.7788,
+    "variant": "water-only-permittivity",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 2.842170943040401e-14,
+    "iterations": 14,
+    "P_Pa": 12451.270926452235,
+    "compositions": [
+      0.7784307887877381,
+      0.22062105709757393,
+      0.00047407705734405306,
+      0.0004740770573415212,
+      2.5316074480585902e-15,
+      0.8077232527962415,
+      0.19227674720375848,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      38278.307701975835,
+      4.715320634697824
+    ],
+    "phase_amounts_mol": [
+      1.0004743019129991,
+      0.0
+    ],
+    "charge_error_mol": 2.675513723410354e-19,
+    "acid_inventory_error_mol": -2.7755575615628914e-17,
+    "water_inventory_error_mol": 0.0,
+    "hydrogen_inventory_error_mol": 2.675513723410354e-19,
+    "pressure_closure_relative": 3.735234344048877e-12,
+    "neutral_log_fugacity_difference": [
+      -3.7121312967958175e-12,
+      -3.728684028203588e-12
+    ],
+    "reaction_log_residuals": [
+      -1.2789769243681803e-13,
+      8.526512829121202e-14
+    ],
+    "acid_dissociation_fraction": 0.002144222029822457,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      },
+      {
+        "reaction_index": 1,
+        "source_pressure_Pa": 100000.0,
+        "contraction": -391.48243914124134,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "measurement_row": 11,
+    "elapsed_s": 0.013262113992823288
+  },
+  {
+    "x_water": 0.7683,
+    "variant": "no-dissociation",
+    "tighter": false,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "NEWTON_CONVERGED",
+    "row_residual": 4.829470157119431e-15,
+    "iterations": 0,
+    "P_Pa": 12446.079717789433,
+    "compositions": [
+      0.7683000000000001,
+      0.2317,
+      0.8007855774451608,
+      0.19921442255483923
+    ],
+    "densities_mol_m3": [
+      37717.60637747038,
+      4.715893244442033
+    ],
+    "phase_amounts_mol": [
+      1.0,
+      0.0
+    ],
+    "charge_error_mol": 0.0,
+    "acid_inventory_error_mol": -2.7755575615628914e-17,
+    "water_inventory_error_mol": 1.1102230246251565e-16,
+    "hydrogen_inventory_error_mol": 0.0,
+    "pressure_closure_relative": 7.2097883219157666e-12,
+    "neutral_log_fugacity_difference": [
+      -7.84841289180882e-12,
+      -7.853565020532471e-12
+    ],
+    "reaction_log_residuals": [],
+    "acid_dissociation_fraction": 0.0,
+    "checks_met": true,
+    "reaction_references": [],
+    "measurement_row": 11
+  },
+  {
+    "x_water": 0.7683,
+    "variant": "primary",
+    "tighter": true,
+    "success": true,
+    "requested_tolerance_met": true,
+    "solver": "SUCCESS",
+    "row_residual": 2.842170943040401e-14,
+    "iterations": 16,
+    "P_Pa": 12441.674115347238,
+    "compositions": [
+      0.7681688942041064,
+      0.2314898177680573,
+      0.000170644013918157,
+      0.0001706440139178675,
+      2.893918770312189e-16,
+      0.8006416335636181,
+      0.19935836643638197,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "densities_mol_m3": [
+      37717.19375873134,
+      4.7142488229454
+    ],
+    "phase_amounts_mol": [
+      1.0001706731382676,
+      0.0
+    ],
+    "charge_error_mol": 1.220267655051399e-19,
+    "acid_inventory_error_mol": -2.7755575615628914e-17,
+    "water_inventory_error_mol": 1.1102230246251565e-16,
+    "hydrogen_inventory_error_mol": 1.220267655051399e-19,
+    "pressure_closure_relative": 5.945333114709683e-11,
+    "neutral_log_fugacity_difference": [
+      5.992578655522607e-11,
+      5.99079119645296e-11
+    ],
+    "reaction_log_residuals": [
+      -1.1191048088221578e-13,
+      1.1723955140041653e-13
+    ],
+    "acid_dissociation_fraction": 0.0007366125950248141,
+    "checks_met": true,
+    "reaction_references": [
+      {
+        "reaction_index": 0,
+        "source_pressure_Pa": 101325.0,
+        "contraction": -256.4161470396817,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      },
+      {
+        "reaction_index": 1,
+        "source_pressure_Pa": 100000.0,
+        "contraction": -391.48243914124134,
+        "status": "NeutralReferenceStatus.Available",
+        "cause": ""
+      }
+    ],
+    "measurement_row": 11
+  }
+]

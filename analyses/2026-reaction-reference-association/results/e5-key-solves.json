@@ -1,0 +1,338 @@
+{
+  "environments": {
+    "A": {
+      "path": ".venv",
+      "asl_library": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-922-reference-state-reaction-consistency-4/build/engine-meson/shared/libepcsaft_asl.so",
+      "asl_library_sha256": "1c2ca317ca8d82077fcca15e455affcffa6089d34237861f6e6c4478616ad4be",
+      "build_configuration": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-922-reference-state-reaction-consistency-4/build/engine-meson/shared/meson-info/intro-buildoptions.json",
+      "build_configuration_sha256": "d13fcde077ef0668aa4419fbba63f0ff9b444c8acf010174b0ffe607d29812a6",
+      "direct_url": {
+        "dir_info": {
+          "editable": true
+        },
+        "url": "file:///home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-922-reference-state-reaction-consistency-4/engine"
+      },
+      "epcsaft": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-922-reference-state-reaction-consistency-4/engine/src/epcsaft/__init__.py",
+      "epcsaft_sha256": "984ad28616d1eeb7fbb51cecf366ece0b79a29624306b2995da8f137e55bc873",
+      "extension": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-922-reference-state-reaction-consistency-4/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so",
+      "extension_sha256": "6d194fb5835ce0143def1cd1370e121bab9b2546ae74e182a1b601ea120026df",
+      "interpreter": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-922-reference-state-reaction-consistency-4/.venv/bin/python",
+      "lock_sha256": "73c3756a1ffb929301c49c00cf6d2ded67e8d4c159bb810ea8653d88a2014d9b",
+      "meson_build_dir": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-922-reference-state-reaction-consistency-4/build/engine-meson/shared",
+      "meson_configuration_sha256": "757f0fb725eff0870fab3dfd930ddc568cdd3b21e4f92787b27e348b6aac5452",
+      "native_library": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-922-reference-state-reaction-consistency-4/build/engine-meson/shared/libepcsaft_native.so",
+      "native_library_sha256": "b9e09f6e66bff640f08f796b3067f05474af560ab2333e1f30df98b9f27f27dc",
+      "prepared_stage": "editable",
+      "python": "3.13.14 (main, Jun 23 2026, 15:18:27) [Clang 22.1.3 ]",
+      "source_diff_sha256": "650759b3e391d2310a0f90bd341ffab8e59aea26bea905ebac88b1b6c7ee7425",
+      "source_revision": "48b23a091f0a030570f9841556383f47f47b04ab",
+      "source_root": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-922-reference-state-reaction-consistency-4",
+      "version": "1.0.0",
+      "wheel": null,
+      "wheel_sha256": null
+    },
+    "B": {
+      "path": ".venv",
+      "asl_library": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-922-reference-state-reaction-consistency-4/build/engine-meson/shared/libepcsaft_asl.so",
+      "asl_library_sha256": "1c2ca317ca8d82077fcca15e455affcffa6089d34237861f6e6c4478616ad4be",
+      "build_configuration": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-922-reference-state-reaction-consistency-4/build/engine-meson/shared/meson-info/intro-buildoptions.json",
+      "build_configuration_sha256": "d13fcde077ef0668aa4419fbba63f0ff9b444c8acf010174b0ffe607d29812a6",
+      "direct_url": {
+        "dir_info": {
+          "editable": true
+        },
+        "url": "file:///home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-922-reference-state-reaction-consistency-4/engine"
+      },
+      "epcsaft": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-922-reference-state-reaction-consistency-4/engine/src/epcsaft/__init__.py",
+      "epcsaft_sha256": "984ad28616d1eeb7fbb51cecf366ece0b79a29624306b2995da8f137e55bc873",
+      "extension": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-922-reference-state-reaction-consistency-4/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so",
+      "extension_sha256": "6d194fb5835ce0143def1cd1370e121bab9b2546ae74e182a1b601ea120026df",
+      "interpreter": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-922-reference-state-reaction-consistency-4/.venv/bin/python",
+      "lock_sha256": "73c3756a1ffb929301c49c00cf6d2ded67e8d4c159bb810ea8653d88a2014d9b",
+      "meson_build_dir": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-922-reference-state-reaction-consistency-4/build/engine-meson/shared",
+      "meson_configuration_sha256": "757f0fb725eff0870fab3dfd930ddc568cdd3b21e4f92787b27e348b6aac5452",
+      "native_library": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-922-reference-state-reaction-consistency-4/build/engine-meson/shared/libepcsaft_native.so",
+      "native_library_sha256": "b9e09f6e66bff640f08f796b3067f05474af560ab2333e1f30df98b9f27f27dc",
+      "prepared_stage": "editable",
+      "python": "3.13.14 (main, Jun 23 2026, 15:18:27) [Clang 22.1.3 ]",
+      "source_diff_sha256": "650759b3e391d2310a0f90bd341ffab8e59aea26bea905ebac88b1b6c7ee7425",
+      "source_revision": "48b23a091f0a030570f9841556383f47f47b04ab",
+      "source_root": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-922-reference-state-reaction-consistency-4",
+      "version": "1.0.0",
+      "wheel": null,
+      "wheel_sha256": null
+    }
+  },
+  "source_commit": "48b23a091f0a030570f9841556383f47f47b04ab",
+  "cpu": 0,
+  "nice": 10,
+  "threads": 1,
+  "host": "tnnrpolley21-MS-7C95",
+  "pairs": 3,
+  "warmups": 1,
+  "time_boundary": "sum of equilibrium call wall times; preparation, imports and result reading excluded",
+  "change_percent": "100*(B_seconds/A_seconds-1)",
+  "state_difference": "abs(A-B)/largest magnitude of that quantity in the returned state; gate 1e-10; declared phase order",
+  "evaluation_meaning": "native Engine evaluations, including exact polish; not every EOS evaluation",
+  "limits": "shared-host timing; declared local states only; no physical validation or global stability",
+  "serial_attempts": {
+    "mea-f1/residual-jacobian": [
+      {
+        "A": 4.474692322,
+        "B": 4.450539276
+      }
+    ],
+    "mea-cp/hilliard-353.15-K-0.358": [
+      {
+        "A": 0.6119013710000001,
+        "B": 0.6111685410000005
+      }
+    ]
+  },
+  "same_prepared_environment": true,
+  "cases": {
+    "case-6/figure-2-point-7/cold": {
+      "work_A": {
+        "iterations": 10,
+        "evaluations": 15,
+        "hessian_calls": 11
+      },
+      "work_B": {
+        "iterations": 10,
+        "evaluations": 15,
+        "hessian_calls": 11
+      },
+      "work_identical": true,
+      "max_state_difference": 0.0,
+      "median_change_percent": 3.6322689947931472,
+      "range_percent": [
+        -14.003415207103425,
+        49.39149686913393
+      ],
+      "mad_percent": 17.635684201896574,
+      "median_A_seconds": 0.0078507305,
+      "median_B_seconds": 0.007786536,
+      "zero_within_spread": true
+    },
+    "case-6/figure-2-point-7/accepted": {
+      "work_A": {
+        "iterations": 7,
+        "evaluations": 11,
+        "hessian_calls": 8
+      },
+      "work_B": {
+        "iterations": 7,
+        "evaluations": 11,
+        "hessian_calls": 8
+      },
+      "work_identical": true,
+      "max_state_difference": 0.0,
+      "median_change_percent": 1.0721546568292162,
+      "range_percent": [
+        -2.934535733594268,
+        92.79358985239142
+      ],
+      "mad_percent": 4.0066903904234845,
+      "median_A_seconds": 0.0055406705,
+      "median_B_seconds": 0.0057313445,
+      "zero_within_spread": true
+    },
+    "case-7/flash-5918.5286-Pa/cold": {
+      "work_A": {
+        "iterations": 19,
+        "evaluations": 35,
+        "hessian_calls": 20
+      },
+      "work_B": {
+        "iterations": 19,
+        "evaluations": 35,
+        "hessian_calls": 20
+      },
+      "work_identical": true,
+      "max_state_difference": 0.0,
+      "median_change_percent": -0.2628667611428215,
+      "range_percent": [
+        -0.7868206118289589,
+        16.622013558004735
+      ],
+      "mad_percent": 0.5239538506861374,
+      "median_A_seconds": 0.019306151,
+      "median_B_seconds": 0.019253431,
+      "zero_within_spread": true
+    },
+    "case-7/flash-5918.5286-Pa/accepted": {
+      "work_A": {
+        "iterations": 17,
+        "evaluations": 22,
+        "hessian_calls": 18
+      },
+      "work_B": {
+        "iterations": 17,
+        "evaluations": 22,
+        "hessian_calls": 18
+      },
+      "work_identical": true,
+      "max_state_difference": 0.0,
+      "median_change_percent": 0.42018929158518237,
+      "range_percent": [
+        -1.1065216969547709,
+        2.704663828857912
+      ],
+      "mad_percent": 1.5267109885399532,
+      "median_A_seconds": 0.013598631,
+      "median_B_seconds": 0.013311911499999999,
+      "zero_within_spread": true
+    },
+    "khudaida/sequential-8": {
+      "work_A": {
+        "iterations": 46,
+        "evaluations": 70,
+        "hessian_calls": 54
+      },
+      "work_B": {
+        "iterations": 46,
+        "evaluations": 70,
+        "hessian_calls": 54
+      },
+      "work_identical": true,
+      "max_state_difference": 0.0,
+      "median_change_percent": -0.8579736363371726,
+      "range_percent": [
+        -11.788610313170526,
+        23.769004917329006
+      ],
+      "mad_percent": 10.930636676833354,
+      "median_A_seconds": 0.039358612,
+      "median_B_seconds": 0.038719606,
+      "zero_within_spread": true
+    },
+    "mea-nominally-unloaded/353.15-K": {
+      "work_A": {
+        "iterations": 13,
+        "evaluations": 19,
+        "hessian_calls": 14
+      },
+      "work_B": {
+        "iterations": 13,
+        "evaluations": 19,
+        "hessian_calls": 14
+      },
+      "work_identical": true,
+      "max_state_difference": 0.0,
+      "median_change_percent": 0.14980373581816586,
+      "range_percent": [
+        -9.07350461450967,
+        4.856501225635091
+      ],
+      "mad_percent": 4.706697489816925,
+      "median_A_seconds": 0.0126815595,
+      "median_B_seconds": 0.011962493,
+      "zero_within_spread": true
+    },
+    "mea-f1/residual-jacobian": {
+      "work_A": {
+        "reference_computations": 295,
+        "reference_columns": 3388,
+        "density_solves": 1223,
+        "equilibrium_iterations": 1426
+      },
+      "work_B": {
+        "reference_computations": 295,
+        "reference_columns": 3388,
+        "density_solves": 1223,
+        "equilibrium_iterations": 1426
+      },
+      "work_identical": true,
+      "max_state_difference": 0.0,
+      "median_A_seconds": 4.475537684003939,
+      "median_B_seconds": 4.451437188996351,
+      "evaluations": {
+        "A": {
+          "work": {
+            "reference_computations": 295,
+            "reference_columns": 3388,
+            "density_solves": 1223,
+            "equilibrium_iterations": 1426
+          },
+          "seconds": 4.475537684003939,
+          "cpu_seconds": 4.474692322,
+          "reference_taylor_evaluations": 0
+        },
+        "B": {
+          "work": {
+            "reference_computations": 295,
+            "reference_columns": 3388,
+            "density_solves": 1223,
+            "equilibrium_iterations": 1426
+          },
+          "seconds": 4.451437188996351,
+          "cpu_seconds": 4.450539276,
+          "reference_taylor_evaluations": 0
+        }
+      }
+    },
+    "mea-cp/hilliard-353.15-K-0.358": {
+      "work_A": {
+        "reference_computations": 3,
+        "reference_columns": 280,
+        "density_solves": 11,
+        "equilibrium_iterations": 13
+      },
+      "work_B": {
+        "reference_computations": 3,
+        "reference_columns": 280,
+        "density_solves": 11,
+        "equilibrium_iterations": 13
+      },
+      "work_identical": true,
+      "max_state_difference": 0.0,
+      "median_A_seconds": 0.6168380149902077,
+      "median_B_seconds": 0.6115151379926829,
+      "evaluations": {
+        "A": {
+          "work": {
+            "reference_computations": 3,
+            "reference_columns": 280,
+            "density_solves": 11,
+            "equilibrium_iterations": 13
+          },
+          "seconds": 0.6168380149902077,
+          "cpu_seconds": 0.6119013710000001,
+          "reference_taylor_evaluations": 0
+        },
+        "B": {
+          "work": {
+            "reference_computations": 3,
+            "reference_columns": 280,
+            "density_solves": 11,
+            "equilibrium_iterations": 13
+          },
+          "seconds": 0.6115151379926829,
+          "cpu_seconds": 0.6111685410000005,
+          "reference_taylor_evaluations": 0
+        }
+      }
+    }
+  },
+  "identical_engine_images": true,
+  "expect_change": false,
+  "gate_failures": [],
+  "f1_packet_sha256": "862ecf1e5d2756b7639493ea9d08444e890c66af6f427e5d9ee436910783a8db",
+  "runtime_seconds": 18.473362614997313,
+  "input_sha256": {
+    "tools/time-key-solves": "f8a4240abee5402156a99a935d360d09f8d1b6908b614dd0ef3fce14c304e721",
+    "tools/fixtures/mea-f1.json.gz": "3bdb146a7b8d6b449b829fc40bf08aaeef3616b71409ce0bb22c837bdc97be4c",
+    "tools/fixtures/mea-f1-identity.json": "f034a3faca19633d12b336b660c44c6f4fe7fea4236e2352d29fc3bffdd4c2e2",
+    "tools/fixtures/mea-cp.json.gz": "c0cc5235ac63078cd3a653abf66bd85fa70ebb445d48cb509f151fe5f61b3b08",
+    "tools/fixtures/mea-cp-identity.json": "5f5a191b699569e3a3973572273c7c6789ca32b1887abd48419040d4cfba44b2",
+    "analyses/2026-tpd-phase-discovery/scripts/baseline.py": "aab4c8de340158479fd4d30bffc5793b3cf96c48a4edb0c113b5b4cebdc62a10",
+    "analyses/2026-khudaida-idaes-settler/scripts/run_fixed_settler.py": "86b3508b682c8a47fdb1f05c322f384dd93e40afe0ad754ab032baab0f1f1b95",
+    "analyses/reproduction/2026-khudaida/figures/figure-02/source/source-points.csv": "21cf58a5373b2e2c337b6baf5a0423d0ab5d7cea9639bb727b061f5844ef78d7",
+    "analyses/2026-khudaida-idaes-settler/inputs/data/khudaida-2026-figure-2-electrolyte-lle/7/parameters/parameters.json": "8babed899e7347e58c403c7aff24a7fdd6d60411af3b4d81eb6aa90c2431dfa4",
+    "data/packets/mea-co2-h2o-nine-species-estimation/3/parameters/parameters.json": "2ea3b41485a98d2cf49add620b87bb05fc5a275cdd132c1cdbb0cfc5f07f2ca4",
+    "engine/tests/equilibrium/test_trace_reliability.py": "0d8443ba7bdbc0f4e6ad214134c0558addb89399c40a18c0508c5fa198b90853",
+    "engine/data/reference/mea-nominally-unloaded/request.json": "bc8a03e13efab9a9675a63121c12538dbb9f42a18dbe4ddc7fe6742b6ab6da61",
+    "engine/data/reference/mea-nominally-unloaded/parameters.json": "756fec502d3a1433d538abb073c4caeabf91902013ab7e27d5459ce70396543b",
+    "engine/data/reference/mea-zero-inventory/ideal-calorics.json": "c94d504e68c6dc6e85d3d950cc51422499846729b1a06994b362040be991924a"
+  }
+}

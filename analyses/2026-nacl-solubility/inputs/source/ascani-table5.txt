@@ -1,0 +1,9 @@
+| Table 5. Relative dielectric constants for solvents and salts used in this work. T in Kelvin. |  |  |
+| :--- | :--- | :--- |
+| Component | Relative dielectric constant | Ref. |
+| Water | $-105.2 \ln T+677.480$ | [75] |
+| 1-Butanol | $-0.1077 T+49.723$ | This work ${ }^{[76-78]}$ |
+| 1-Pentanol | $73.397-0.28165 T+2.8427-10^{-4} \mathrm{~T}^{2}$ | [79] |
+| MEK | $18.389-0.1025(T-298.15)$ | This work ${ }^{[80]}$ |
+| MIBK | $36.341-0.09712 T+6.1896-10^{-5} T^{2}$ | [79] |
+| PPG (298.15 K) | $92.483\left(M_{w}\right)^{-0.347}$ | This work ${ }^{[81]}$ |

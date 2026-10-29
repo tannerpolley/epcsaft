@@ -1,0 +1,93 @@
+[
+  {
+    "case": "equal",
+    "success": false,
+    "has_state": false,
+    "iterations": 0,
+    "evaluations": 1,
+    "cause": "one-component two-density density ordering",
+    "driver_iterations": 0,
+    "driver_evaluations": 1,
+    "driver_hessian_calls": 0
+  },
+  {
+    "case": "swapped",
+    "success": false,
+    "has_state": false,
+    "iterations": 0,
+    "evaluations": 1,
+    "cause": "one-component two-density density ordering",
+    "driver_iterations": 0,
+    "driver_evaluations": 1,
+    "driver_hessian_calls": 0
+  },
+  {
+    "case": "iterations",
+    "success": false,
+    "has_state": false,
+    "iterations": 0,
+    "evaluations": 0,
+    "cause": "elapsed work budget exhausted",
+    "driver_iterations": 0,
+    "driver_evaluations": 0,
+    "driver_hessian_calls": 0
+  },
+  {
+    "case": "evaluations",
+    "success": false,
+    "has_state": false,
+    "iterations": 1,
+    "evaluations": 1,
+    "cause": "one-component two-density evaluation budget",
+    "driver_iterations": 1,
+    "driver_evaluations": 1,
+    "driver_hessian_calls": 0
+  },
+  {
+    "case": "elapsed",
+    "success": false,
+    "has_state": false,
+    "iterations": 0,
+    "evaluations": 0,
+    "cause": "elapsed work budget exhausted",
+    "driver_iterations": 0,
+    "driver_evaluations": 0,
+    "driver_hessian_calls": 0
+  },
+  {
+    "case": "solve,375.14999999999998",
+    "cause": "boundary seed has no coexisting density roots and no positive mechanical-loop witness pressure at T = 375.14999999999998 K; T may exceed the model critical temperature"
+  },
+  {
+    "case": "singular central defining rows",
+    "maximum_abs_residual": 8.881784197001252e-15
+  },
+  {
+    "case": "singular action",
+    "cause": "rank_deficient",
+    "central_value": 998660.8957399128,
+    "action": null
+  },
+  {
+    "case": "singular action",
+    "cause": "rank_deficient",
+    "central_value": 11100.25123320961,
+    "action": null
+  },
+  {
+    "case": "singular action",
+    "cause": "rank_deficient",
+    "central_value": 300.0,
+    "action": null
+  },
+  {
+    "case": "association interruption through prediction",
+    "status": 4,
+    "has_value": false,
+    "cause": "nonfinite: residual inf against ASSOCIATION_RESIDUAL 2.0000000000000001e-13 after 1 iterations, contraction absent, floor 4.4408920985006262e-16, amplification absent"
+  },
+  {
+    "case": "invalid,temperature",
+    "cause": "invalid temperature"
+  }
+]

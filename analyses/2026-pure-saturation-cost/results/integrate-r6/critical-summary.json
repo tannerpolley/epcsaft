@@ -1,0 +1,26 @@
+[
+  {
+    "temperature_K": 375.13,
+    "arm": "B",
+    "correction": 3.5660414473122904e-14,
+    "estimate": 1.552043638705378e-13
+  },
+  {
+    "temperature_K": 375.139,
+    "arm": "B",
+    "correction": 3.9995706012090776e-13,
+    "estimate": 1.0211263518029053e-11
+  },
+  {
+    "temperature_K": 375.13,
+    "arm": "A",
+    "correction": 3.5660414473122904e-14,
+    "estimate": 1.552043638705378e-13
+  },
+  {
+    "temperature_K": 375.139,
+    "arm": "A",
+    "correction": 3.9995706012090776e-13,
+    "estimate": 1.0211263518029053e-11
+  }
+]

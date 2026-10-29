@@ -1,0 +1,112 @@
+{
+  "temperature_K": 323.15,
+  "raw_sha256": "6dad6011d8aca7f1c48d02fcb499105d5280b2be4109ec10fbf9b71ca890b4a7",
+  "measurements": [
+    {
+      "row": 1,
+      "x_water": 0.0093,
+      "y_water_reported": 0.019,
+      "P_Pa": 7800.0,
+      "U95_P_Pa": 140.0,
+      "U95_x": 0.0063
+    },
+    {
+      "row": 2,
+      "x_water": 0.0351,
+      "y_water_reported": 0.073,
+      "P_Pa": 8200.0,
+      "U95_P_Pa": 140.0,
+      "U95_x": 0.0066
+    },
+    {
+      "row": 3,
+      "x_water": 0.0992,
+      "y_water_reported": 0.1638,
+      "P_Pa": 8850.0,
+      "U95_P_Pa": 150.0,
+      "U95_x": 0.0069
+    },
+    {
+      "row": 4,
+      "x_water": 0.1033,
+      "y_water_reported": 0.1717,
+      "P_Pa": 8910.0,
+      "U95_P_Pa": 150.0,
+      "U95_x": 0.007
+    },
+    {
+      "row": 5,
+      "x_water": 0.1845,
+      "y_water_reported": 0.272,
+      "P_Pa": 9440.0,
+      "U95_P_Pa": 150.0,
+      "U95_x": 0.0087
+    },
+    {
+      "row": 6,
+      "x_water": 0.278,
+      "y_water_reported": 0.3722,
+      "P_Pa": 9920.0,
+      "U95_P_Pa": 160.0,
+      "U95_x": 0.0107
+    },
+    {
+      "row": 7,
+      "x_water": 0.3859,
+      "y_water_reported": 0.4754,
+      "P_Pa": 10330.0,
+      "U95_P_Pa": 160.0,
+      "U95_x": 0.0131
+    },
+    {
+      "row": 8,
+      "x_water": 0.4815,
+      "y_water_reported": 0.5744,
+      "P_Pa": 10690.0,
+      "U95_P_Pa": 160.0,
+      "U95_x": 0.0155
+    },
+    {
+      "row": 9,
+      "x_water": 0.5781,
+      "y_water_reported": 0.6626,
+      "P_Pa": 11010.0,
+      "U95_P_Pa": 160.0,
+      "U95_x": 0.014
+    },
+    {
+      "row": 10,
+      "x_water": 0.6673,
+      "y_water_reported": 0.7565,
+      "P_Pa": 11310.0,
+      "U95_P_Pa": 170.0,
+      "U95_x": 0.0121
+    },
+    {
+      "row": 11,
+      "x_water": 0.7683,
+      "y_water_reported": 0.8285,
+      "P_Pa": 11580.0,
+      "U95_P_Pa": 170.0,
+      "U95_x": 0.0105
+    }
+  ],
+  "retained_measurement_csv_check": {
+    "rows": 11,
+    "mismatches": [],
+    "gas_fraction_used_only_as_join_key": true,
+    "pressure_unit": "kPa in group 13; multiplied by 1000 to Pa"
+  },
+  "pure_endpoints": [
+    {
+      "reported_y_water": 0,
+      "P_Pa": 7720.0,
+      "U95_P_Pa": 140.0
+    },
+    {
+      "reported_y_water": 1,
+      "P_Pa": 12350.0,
+      "U95_P_Pa": 170.0
+    }
+  ]
+}

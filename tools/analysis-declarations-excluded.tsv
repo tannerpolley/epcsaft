@@ -5,3 +5,5 @@ analysis	reason
 2026-reactive-liquid-cold-start	frozen e522dc4 and 4f2d12e9 application clones, outside this checkout
 reproduction/2015-uyan/scripts/species-reference	frozen species-reference wheel snapshot; solves at import
 2026-head-to-head-comparisons/scripts/h2h-probes	point-1 term probes evaluate Engine states at import (main 026b3031 wheel); outputs retained in results/h2h-probes
+2026-audit-timing-campaign	frozen 2026-10-15 audit probe scripts under build/audit-2026-10-15, lost with build/ on 2026-10-28; retained results stand, declarations cannot be replayed
+2026-lithium-chloride-refit/scripts/stage_b.py	frozen stage-B evidence and source PDFs under build/issue-640, lost with build/ on 2026-10-28; retained results stand, declarations cannot be replayed

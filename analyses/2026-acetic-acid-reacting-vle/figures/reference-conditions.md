@@ -1,0 +1,1 @@
+The independent neutral dilution ladder uses molalities **1e-08, 1e-10, 1e-12, 1e-14 mol kg⁻¹**. Successive square-root terminal-pair extrapolations perturb both reaction references in native bubble re-solves. The resulting pressure differences quantify this refinement check; they are not a rigorous truncation enclosure.

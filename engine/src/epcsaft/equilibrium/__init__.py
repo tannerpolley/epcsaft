@@ -17,6 +17,7 @@ Examples
 
 from .. import _core
 from .problem import (
+    _Model,
     Amounts,
     IdealMoleFraction,
     effective_water_amounts,
@@ -78,7 +79,23 @@ cooling_onset = _core.cooling_onset
 stability_test = _core.stability_test
 StabilityOptions = _core.StabilityOptions
 
+Quantity = _core.Quantity
+ComparisonMode = _core.ComparisonMode
+NumericalEstimate = _core.NumericalEstimate
+ComparisonEligibility = _core.ComparisonEligibility
+EquilibriumComparison = _core.EquilibriumComparison
+EquilibriumNumericalEstimates = _core.EquilibriumNumericalEstimates
+compare_equilibrium_quantity = _core.compare_equilibrium_quantity
+project_numerical_estimate = _core.project_numerical_estimate
+
+
+def equilibrium_numerical_estimates(model: _Model | IdealMoleFraction, result: EquilibriumResult) -> EquilibriumNumericalEstimates:
+    return _core.equilibrium_numerical_estimates(model._model, result)
+
+
 __all__ = (
+    "Quantity", "ComparisonMode", "NumericalEstimate", "ComparisonEligibility", "EquilibriumComparison",
+    "EquilibriumNumericalEstimates", "compare_equilibrium_quantity", "equilibrium_numerical_estimates", "project_numerical_estimate",
     "Amounts",
     "IdealMoleFraction",
     "effective_water_amounts",

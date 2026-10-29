@@ -1,0 +1,60 @@
+{
+  "rows": 985,
+  "failures": 0,
+  "cases": {
+    "propane-110.000000": {
+      "rows": 150,
+      "max_A1": 9.298368903607924e-15,
+      "max_higher": 1.053244441920027e-14,
+      "max_fit": 9.142312649134236e-15
+    },
+    "propane-250.000000": {
+      "rows": 151,
+      "max_A1": 4.037527295861495e-15,
+      "max_higher": 5.078771273056793e-15,
+      "max_fit": 5.0426189471391605e-15
+    },
+    "propane-300.000000": {
+      "rows": 151,
+      "max_A1": 1.0075790454558132e-14,
+      "max_higher": 5.530004006064818e-14,
+      "max_fit": 1.5646273218631573e-14
+    },
+    "propane-350.000000": {
+      "rows": 151,
+      "max_A1": 7.302166073890248e-15,
+      "max_higher": 4.663933737062548e-13,
+      "max_fit": 7.324393191221308e-15
+    },
+    "acetone-300.000000": {
+      "rows": 150,
+      "max_A1": 6.988605510471649e-15,
+      "max_higher": 1.3448052772310205e-14,
+      "max_fit": 7.0046858903259106e-15
+    },
+    "methanol-300.000000": {
+      "rows": 232,
+      "max_A1": 2.3128765336429266e-15,
+      "max_higher": 4.132290000926687e-15,
+      "max_fit": 2.3128765336429266e-15
+    }
+  },
+  "categories": [
+    "A1",
+    "A2",
+    "A3",
+    "Clapeyron",
+    "central",
+    "chart",
+    "independent_physical_column",
+    "independent_prediction",
+    "independent_prediction_column",
+    "independent_residual",
+    "independent_residual_column",
+    "tied_physical_column",
+    "tied_prediction",
+    "tied_prediction_column",
+    "tied_residual",
+    "tied_residual_column"
+  ]
+}

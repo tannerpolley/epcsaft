@@ -1,26 +1,14 @@
 # ePC-SAFT
 
-Private scientific monorepo for the unified ePC-SAFT engine, canonical data,
+Scientific source distribution of the ePC-SAFT Engine, canonical data,
 compact numerical evidence, and retained scientific analyses.
 
-The independent repository is
-[tannerpolley/ePC-SAFT](https://github.com/tannerpolley/ePC-SAFT).
-Its `main` baseline preserves the accepted Core history from `cea695f`.
-The earlier repository is archived as
-[tannerpolley/ePC-SAFT-legacy-2](https://github.com/tannerpolley/ePC-SAFT-legacy-2)
-for its historical issues and reviews.
-
+Public source releases are available at
+[tannerpolley/epcsaft](https://github.com/tannerpolley/epcsaft/releases).
 Start with the [project map](docs/scientific/CONTEXT.md) for the purpose,
-scientific owners and one equilibrium driver. The
-[GitHub issue roadmap](https://github.com/tannerpolley/ePC-SAFT/milestones)
-owns implementation plans, dependencies and delivery status. Each leaf issue
-records its reuse decision, acceptance and evidence links. Repository scientific
-records distinguish required capability from implemented and numerically
-qualified behavior.
-
-`build/report.html` shows the latest test results, key-solve work and wall-time trend per
-main commit, and the analysis index, each with the commit and time of its data. `check-all`
-writes it, `tools/report` rewrites it on demand, and `xdg-open build/report.html` opens it.
+scientific owners and equilibrium formulation. Retained analyses document
+numerical verification and its limits; they do not establish experimental
+validation for other systems or conditions.
 
 ## Prerequisites
 
@@ -40,8 +28,8 @@ before them.
 Public releases are source releases from the public release repository. Download
 and unpack the release source archive, then run these commands from its root.
 The archive includes the Engine, documentation, retained analyses and paper
-source; it contains no Git history. No public package-index or binary-wheel
-installation route is provided.
+source; it contains no Git history. The conda-forge recipe is in `packaging/conda-forge/`; its submission and
+binary availability are separate from this source release.
 
 Use Linux, Python 3.13, `uv`, a C/C++ compiler, Ninja, CMake and pkg-config.
 Install the native development packages listed in

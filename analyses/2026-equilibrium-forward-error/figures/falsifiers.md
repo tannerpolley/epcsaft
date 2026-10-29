@@ -1,0 +1,19 @@
+| case | rows_run | outcome | evidence |
+|---|---|---|---|
+| row_and_column_rescaling | 9 | pass | F=y-1; identical 4.4408920985006262e-16 radius under all retained scales |
+| independent_diagonal_perturbations | 3 | pass | zero residual; independent 1e-15 row errors covered at slopes 1,1e-8,1e-12 |
+| singular_matrix | 1 | pass | rank 1; no finite full-state radius |
+| nonnormal_and_rescalings | 3 | pass | known amplified error 9.3132257461547852e-10 covered |
+| compensated_cancellation | 1 | pass | unit defect retained |
+| comparison_boundaries | 31 | pass | all native comparison boundary and refusal cases |
+| association_achieved_site_floor | 8 | pass | all previously uncovered named derivative contributions now covered |
+| chemical_pressure_caloric_critical_transport | 17 | pass | controlled site perturbation; exact named row transport, not independent physical validation |
+| one_endpoint_radius_1e100 | 36 | pass | all exact-equality composition and amount comparisons remain ordinary |
+| capture_and_posthoc | 3 | pass | EOS capture equals post-hoc; ideal mole fraction and molarity also equal compiled snapshots at the same frozen point |
+| diagnostics_off_A_vs_B | 3 | pass | all retained values and solve work bit-identical; EOS model sweep counts identical |
+| default_rank_failure | 1 | pass | all-pinned declaration: rank 5/6, NOT_RUN, zero iterations/evaluations/Hessians, no full-state estimate |
+| diagnostics_off_key_state_bits | 7272 | pass | all stored key-state rows bit-identical; all 42 work rows identical |
+| source_reference_unavailability | 1 | pass | reactive source reference: explicit cause, nonfinite inner error, no conditional pass; diagnostics-off A/B values and solve work identical |
+| production_reader_admission | 36 | pass | production corpus operand mapping retains exact equalities as ordinary with unresolved estimates |
+| production_853_reader | 98 | pass | original installed/development operands: 65 ordinary and 33 within estimated error, zero failures |
+| production_854_reader | 10135 | pass | native judgments from independent reduced estimates; all original value, work, availability and preservation checks pass |

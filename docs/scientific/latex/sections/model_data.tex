@@ -20,12 +20,12 @@ The per-population conditions, parameters and errors are given in Table~\ref{tab
 \end{figure}
 
 % P:physical-02
-For positive properties, the average absolute relative deviation is
+For positive properties, the average absolute relative deviation (AARD) is
 \begin{equation}
 \mathrm{AARD}=\frac{100}{n}\sum_{k=1}^{n}\left|\frac{y_k^{\mathrm{model}}}{y_k^{\mathrm{ref}}}-1\right|.
 \label{eq:aard}
 \end{equation}
-Absolute mole-fraction and pH errors instead use the mean absolute error, and dimensional residuals or dimensionless coefficients can be summarized by a root-mean-square difference.
+Absolute mole-fraction and pH errors instead use the mean absolute error (MAE), and dimensional residuals or dimensionless coefficients can be summarized by a root-mean-square difference.
 The table names the metric and unit because a pressure percentage, a pH-unit difference and an osmotic-coefficient residual cannot share a common accuracy scale.
 Unavailable predictions remain identified, with statistics taken over the available comparisons rather than assigning a fictitious value to a failed solve.
 Counts of repeated parameter variants or thermodynamically linked coordinates do not increase the number of independent measurements.
@@ -34,7 +34,7 @@ Counts of repeated parameter variants or thermodynamically linked coordinates do
 Table~\ref{tab:physical-summary} gives the result by fluid class, and the subsections below explain each entry.
 With published parameters, pure-fluid saturation pressures and liquid densities deviate from measurements or reference correlations by 0.281--2.70\,\% on average, and the zero-interaction methane/ethane prediction places both phase compositions within 0.008 mole fraction on average.
 For aqueous 1:1 salts at 298.15~K the osmotic and mean ionic activity coefficients deviate by 1.72\,\% and 4.36\,\% from evaluated data that overlap the original parameter fit, and salted water/ethanol/isobutanol tie lines computed with the source parameters differ from the measurements by a mean 0.0111 mole fraction.
-Accuracy is lost where parameters are carried beyond the data they were fitted to: unchanged published parameters fail every comparison range for NaCl--MgCl$_2$ and NaCl--CaCl$_2$ brines, NaCl activity coefficients deviate more in ethanol-rich than in water-rich solvents, the acetic acid partition coefficient deviates by 47.8\,\% although the aqueous pH is predicted within 0.146 unit, and MDEA parameters fitted to osmotic coefficients give total pressures with 96.2\,\% and 89.6\,\% AARD.
+Accuracy is lost where parameters are carried beyond the data they were fitted to: unchanged published parameters fail every comparison range for NaCl--MgCl$_2$ and NaCl--CaCl$_2$ brines, NaCl activity coefficients deviate more in ethanol-rich than in water-rich solvents, the acetic acid partition coefficient deviates by 47.8\,\% although the aqueous pH is predicted within 0.146 unit, and methyldiethanolamine (MDEA) parameters fitted to osmotic coefficients give total pressures with 96.2\,\% and 89.6\,\% AARD.
 Refitting recovers a description within the fitted domain: a joint chloride fit predicts two withheld mixed-brine sources with RMS residuals of 0.00825 in osmotic coefficient and 0.00121 in water activity.
 Section~\ref{sec:verification} shows that independent codes with matched models reproduce the package's state values to better than $10^{-8}$, so deviations of the size reported here belong to the model and its parameters, not to the numerical solution.
 
@@ -42,7 +42,7 @@ Section~\ref{sec:verification} shows that independent codes with matched models 
 
 \begin{table}[pos=htbp]
 \centering\footnotesize
-\caption{Representative populations from the full comparison table. $N$ counts the displayed source rows; the methane/ethane comparison includes one unavailable state, and each aqueous 1:1-salt population includes 23 unavailable LiI rows. Their error means use 16 and 184 available comparisons, respectively. PRED denotes fixed-parameter prediction, CAL calibration and REPRO published-model reproduction. Original fitting overlap can remain unknown for inherited parameters. Pressure ranges are reference values; ``sat.'' denotes saturation with no separately reported density-row pressure.}
+\caption{Representative populations from the full comparison table, supplied as a spreadsheet file with the supporting information. $N$ counts the displayed source rows; the methane/ethane comparison includes one unavailable state, and each aqueous 1:1-salt population includes 23 unavailable LiI rows. Their error means use 16 and 184 available comparisons, respectively. PRED denotes fixed-parameter prediction, CAL calibration and REPRO published-model reproduction. Original fitting overlap can remain unknown for inherited parameters. Pressure ranges are reference values; ``sat.'' denotes saturation with no separately reported density-row pressure.}
 \label{tab:physical-summary}
 \begin{tabularx}{\linewidth}{@{}p{0.19\linewidth}p{0.13\linewidth}p{0.13\linewidth}rX@{}}
 \toprule
@@ -94,7 +94,7 @@ The references for acetone, dimethyl ether and diethyl ether are the reference e
 For acetone, the polar refit gives withheld pressure and liquid-density AARDs of 1.30\,\% and 0.669\,\%, compared with 0.936\,\% and 2.43\,\% for the nonpolar refit.
 The example shows a property tradeoff: a smaller pressure error alone does not rank the overall formulation.
 Because each formulation has its own fitted parameters, the difference cannot be attributed solely to switching on a dipole term at fixed parameters.
-The DMSO measurements~\citep{Fulem2011,DePablo2018,Zhang2013,Paknejad2019} provide a separate source role and are not pooled with the evaluated reference equations as equivalent independent experiments.
+The dimethyl sulfoxide (DMSO) measurements~\citep{Fulem2011,DePablo2018,Zhang2013,Paknejad2019} provide a separate source role and are not pooled with the evaluated reference equations as equivalent independent experiments.
 
 \begin{figure}[pos=H]
 \centering
@@ -147,7 +147,7 @@ The methane/ethane zero-interaction prediction is in Supporting Information Fig.
 \end{figure}
 
 % P:physical-09
-Carbon dioxide/THF uses the fixed published parameters of Schick et al.~\citep{Schick2023}, Tables~1 and~6 and Supporting Information S3, against their tabulated experimental and model values.
+Carbon dioxide/tetrahydrofuran (THF) uses the fixed published parameters of Schick et al.~\citep{Schick2023}, Tables~1 and~6 and Supporting Information S3, against their tabulated experimental and model values.
 The 34 liquid carbon-dioxide fractions span 313.2--353.2~K and 0.47--10.29~MPa, with an experimental AARD of 6.94\,\%.
 Only five of the 34 calculated fractions reproduce the printed paper-model values; the remaining 29 discrepancies have no established source-side cause.
 All 34 experimental comparisons lie outside the retained printed-resolution criterion, which is not a measurement-uncertainty interval.
@@ -241,7 +241,7 @@ The failure applies to these published parameter sets; it does not show that the
 
 \begin{figure}[pos=H]
 \centering
-\includegraphics[width=0.91\linewidth,height=19cm,keepaspectratio]{F12-mixed-brines}
+\includegraphics[width=0.91\linewidth,height=18cm,keepaspectratio]{F12-mixed-brines}
 \caption{Residuals of mixed chloride brines at 298.15~K and 100~kPa against ionic strength.
 Joint Figiel-form fit: (a) osmotic-coefficient training data, (b) withheld Robinson--Bower NaCl--CaCl$_2$ osmotic coefficients and (c) withheld Dinane--Mounir NaCl--MgCl$_2$ water activities.
 Shaded bands in (a)--(e) show the corresponding RMS comparison limits, not pointwise measurement uncertainties; (c) uses the nominal source-agreement limit.

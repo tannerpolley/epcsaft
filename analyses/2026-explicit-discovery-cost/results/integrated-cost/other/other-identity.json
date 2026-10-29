@@ -1,0 +1,194 @@
+{
+  "selected_blocks": 84,
+  "excluded_blocks": 0,
+  "timed_samples": 2100,
+  "scalar_comparisons": 142692,
+  "maximum_error_over_allowance": 0.0,
+  "raws": [
+    {
+      "path": "results/raw/other-0.jsonl.gz",
+      "sha256": "fcee1647025765dd67bd994b9dddc3ea0d24e630a8254f61c21a2ab0b90bfa03",
+      "identities": {
+        "kind": "identities",
+        "section": "other-discovery",
+        "utc": "2026-10-27T10:44:54.415651+00:00",
+        "cpu": 31,
+        "scripts": {
+          "engine_worker.py": "4af3d459ab1860040b7cfda358c3afa8b85641a76fa85382993b2bdee4fde5bc"
+        },
+        "identities": {
+          "Engine-A": {
+            "pid": 2300838,
+            "ppid": 2300476,
+            "interpreter": "/home/tnnrpolley21/.local/share/uv/python/cpython-3.13.14-linux-x86_64-gnu",
+            "executable": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-855-cheaper-explicit-phase-discovery/build/issue-855/build-r4/A-src/.venv/bin/python",
+            "guard_sha256": "1a5af64518663d6f3bfae10c38331d97d4636c75a293add89b6895a1d6aef173",
+            "image_sha256": "9fa6beebed53b0ebd9d933f24f35107e0cd2ccc18ba9275ae3707003374d1655",
+            "epcsaft": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-855-cheaper-explicit-phase-discovery/build/issue-855/build-r4/A-src/engine/src/epcsaft/__init__.py",
+            "extension": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-855-cheaper-explicit-phase-discovery/build/issue-855/build-r4/A-src/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so",
+            "maps": {
+              "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-855-cheaper-explicit-phase-discovery/build/issue-855/build-r4/A-src/build/engine-meson/shared/libepcsaft_native.so": [
+                66306,
+                59691434
+              ],
+              "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-855-cheaper-explicit-phase-discovery/build/issue-855/build-r4/A-src/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so": [
+                66306,
+                59691436
+              ]
+            },
+            "affinity": [
+              31
+            ],
+            "nice": 10
+          },
+          "Engine-B": {
+            "pid": 2300841,
+            "ppid": 2300476,
+            "interpreter": "/home/tnnrpolley21/.local/share/uv/python/cpython-3.13.14-linux-x86_64-gnu",
+            "executable": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-855-cheaper-explicit-phase-discovery/.venv/bin/python",
+            "guard_sha256": "1a5af64518663d6f3bfae10c38331d97d4636c75a293add89b6895a1d6aef173",
+            "image_sha256": "3be9c57d0cfdeb17a8eed664f65531bdf3da455cc5adc331cc73eb765c257478",
+            "epcsaft": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-855-cheaper-explicit-phase-discovery/engine/src/epcsaft/__init__.py",
+            "extension": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-855-cheaper-explicit-phase-discovery/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so",
+            "maps": {
+              "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-855-cheaper-explicit-phase-discovery/build/engine-meson/shared/libepcsaft_native.so": [
+                66306,
+                59640237
+              ],
+              "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-855-cheaper-explicit-phase-discovery/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so": [
+                66306,
+                59640246
+              ]
+            },
+            "affinity": [
+              31
+            ],
+            "nice": 10
+          },
+          "Engine-B-control": {
+            "pid": 2300842,
+            "ppid": 2300476,
+            "interpreter": "/home/tnnrpolley21/.local/share/uv/python/cpython-3.13.14-linux-x86_64-gnu",
+            "executable": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-855-cheaper-explicit-phase-discovery/.venv/bin/python",
+            "guard_sha256": "1a5af64518663d6f3bfae10c38331d97d4636c75a293add89b6895a1d6aef173",
+            "image_sha256": "3be9c57d0cfdeb17a8eed664f65531bdf3da455cc5adc331cc73eb765c257478",
+            "epcsaft": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-855-cheaper-explicit-phase-discovery/engine/src/epcsaft/__init__.py",
+            "extension": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-855-cheaper-explicit-phase-discovery/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so",
+            "maps": {
+              "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-855-cheaper-explicit-phase-discovery/build/engine-meson/shared/libepcsaft_native.so": [
+                66306,
+                59640237
+              ],
+              "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-855-cheaper-explicit-phase-discovery/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so": [
+                66306,
+                59640246
+              ]
+            },
+            "affinity": [
+              31
+            ],
+            "nice": 10
+          },
+          "Engine-control": {
+            "pid": 2300843,
+            "ppid": 2300476,
+            "interpreter": "/home/tnnrpolley21/.local/share/uv/python/cpython-3.13.14-linux-x86_64-gnu",
+            "executable": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-855-cheaper-explicit-phase-discovery/build/issue-855/build-r4/A-src/.venv/bin/python",
+            "guard_sha256": "1a5af64518663d6f3bfae10c38331d97d4636c75a293add89b6895a1d6aef173",
+            "image_sha256": "9fa6beebed53b0ebd9d933f24f35107e0cd2ccc18ba9275ae3707003374d1655",
+            "epcsaft": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-855-cheaper-explicit-phase-discovery/build/issue-855/build-r4/A-src/engine/src/epcsaft/__init__.py",
+            "extension": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-855-cheaper-explicit-phase-discovery/build/issue-855/build-r4/A-src/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so",
+            "maps": {
+              "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-855-cheaper-explicit-phase-discovery/build/issue-855/build-r4/A-src/build/engine-meson/shared/libepcsaft_native.so": [
+                66306,
+                59691434
+              ],
+              "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-855-cheaper-explicit-phase-discovery/build/issue-855/build-r4/A-src/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so": [
+                66306,
+                59691436
+              ]
+            },
+            "affinity": [
+              31
+            ],
+            "nice": 10
+          }
+        }
+      },
+      "rechecks": [
+        {
+          "kind": "recheck",
+          "section": "other-discovery",
+          "arm": "Engine-A",
+          "reply": {
+            "maps": {
+              "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-855-cheaper-explicit-phase-discovery/build/issue-855/build-r4/A-src/build/engine-meson/shared/libepcsaft_native.so": [
+                66306,
+                59691434
+              ],
+              "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-855-cheaper-explicit-phase-discovery/build/issue-855/build-r4/A-src/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so": [
+                66306,
+                59691436
+              ]
+            }
+          }
+        },
+        {
+          "kind": "recheck",
+          "section": "other-discovery",
+          "arm": "Engine-B",
+          "reply": {
+            "maps": {
+              "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-855-cheaper-explicit-phase-discovery/build/engine-meson/shared/libepcsaft_native.so": [
+                66306,
+                59640237
+              ],
+              "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-855-cheaper-explicit-phase-discovery/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so": [
+                66306,
+                59640246
+              ]
+            }
+          }
+        },
+        {
+          "kind": "recheck",
+          "section": "other-discovery",
+          "arm": "Engine-B-control",
+          "reply": {
+            "maps": {
+              "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-855-cheaper-explicit-phase-discovery/build/engine-meson/shared/libepcsaft_native.so": [
+                66306,
+                59640237
+              ],
+              "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-855-cheaper-explicit-phase-discovery/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so": [
+                66306,
+                59640246
+              ]
+            }
+          }
+        },
+        {
+          "kind": "recheck",
+          "section": "other-discovery",
+          "arm": "Engine-control",
+          "reply": {
+            "maps": {
+              "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-855-cheaper-explicit-phase-discovery/build/issue-855/build-r4/A-src/build/engine-meson/shared/libepcsaft_native.so": [
+                66306,
+                59691434
+              ],
+              "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-855-cheaper-explicit-phase-discovery/build/issue-855/build-r4/A-src/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so": [
+                66306,
+                59691436
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "load_range": [
+    3.41,
+    3.85
+  ]
+}

@@ -1,0 +1,152 @@
+{
+  "gate_failures": [],
+  "cases": {
+    "case-6/figure-2-point-7/cold": {
+      "work_A": {
+        "iterations": 10,
+        "evaluations": 15,
+        "hessian_calls": 11
+      },
+      "work_B": {
+        "iterations": 10,
+        "evaluations": 15,
+        "hessian_calls": 11
+      },
+      "work_identical": true,
+      "max_state_difference": 0.0
+    },
+    "case-6/figure-2-point-7/accepted": {
+      "work_A": {
+        "iterations": 7,
+        "evaluations": 11,
+        "hessian_calls": 8
+      },
+      "work_B": {
+        "iterations": 7,
+        "evaluations": 11,
+        "hessian_calls": 8
+      },
+      "work_identical": true,
+      "max_state_difference": 0.0
+    },
+    "case-7/flash-5918.5286-Pa/cold": {
+      "work_A": {
+        "iterations": 19,
+        "evaluations": 35,
+        "hessian_calls": 20
+      },
+      "work_B": {
+        "iterations": 19,
+        "evaluations": 35,
+        "hessian_calls": 20
+      },
+      "work_identical": true,
+      "max_state_difference": 0.0
+    },
+    "case-7/flash-5918.5286-Pa/accepted": {
+      "work_A": {
+        "iterations": 17,
+        "evaluations": 22,
+        "hessian_calls": 18
+      },
+      "work_B": {
+        "iterations": 17,
+        "evaluations": 22,
+        "hessian_calls": 18
+      },
+      "work_identical": true,
+      "max_state_difference": 0.0
+    },
+    "khudaida/sequential-8": {
+      "work_A": {
+        "iterations": 46,
+        "evaluations": 70,
+        "hessian_calls": 54
+      },
+      "work_B": {
+        "iterations": 46,
+        "evaluations": 70,
+        "hessian_calls": 54
+      },
+      "work_identical": true,
+      "max_state_difference": 0.0
+    },
+    "mea-nominally-unloaded/353.15-K": {
+      "work_A": {
+        "iterations": 13,
+        "evaluations": 19,
+        "hessian_calls": 14
+      },
+      "work_B": {
+        "iterations": 13,
+        "evaluations": 19,
+        "hessian_calls": 14
+      },
+      "work_identical": true,
+      "max_state_difference": 0.0
+    },
+    "mea-f1/residual-jacobian": {
+      "work_A": {
+        "reference_computations": 295,
+        "reference_columns": 3388,
+        "density_solves": 1223,
+        "equilibrium_iterations": 1426
+      },
+      "work_B": {
+        "reference_computations": 295,
+        "reference_columns": 3388,
+        "density_solves": 1223,
+        "equilibrium_iterations": 1426
+      },
+      "work_identical": true,
+      "max_state_difference": 0.0,
+      "fit_max_state_difference": 0.0,
+      "control_wall_seconds": [
+        13.583821209999769,
+        11.632580658000734
+      ],
+      "evaluations": {
+        "A": {
+          "seconds": 4.746392197000205
+        },
+        "B": {
+          "seconds": 4.703491029000361
+        }
+      },
+      "fits": {
+        "A": {
+          "seconds": 10.233665188000487,
+          "critical_cpu_seconds": 6.397949774
+        },
+        "B": {
+          "seconds": 10.527231288000621,
+          "critical_cpu_seconds": 6.472377921
+        }
+      }
+    },
+    "mea-cp/hilliard-353.15-K-0.358": {
+      "work_A": {
+        "reference_computations": 3,
+        "reference_columns": 280,
+        "density_solves": 11,
+        "equilibrium_iterations": 13
+      },
+      "work_B": {
+        "reference_computations": 3,
+        "reference_columns": 280,
+        "density_solves": 11,
+        "equilibrium_iterations": 13
+      },
+      "work_identical": true,
+      "max_state_difference": 0.0,
+      "evaluations": {
+        "A": {
+          "seconds": 0.6372649289996843
+        },
+        "B": {
+          "seconds": 0.6223855010002808
+        }
+      }
+    }
+  }
+}

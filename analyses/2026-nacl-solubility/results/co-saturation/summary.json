@@ -1,0 +1,103 @@
+{
+  "comparison": [
+    {
+      "salt": "NaCl",
+      "measured": 5.3,
+      "predicted": 5.758944176956172,
+      "signed_error": 0.4589441769561722,
+      "relative_error_percent": 8.659324093512687,
+      "sampled_range": [
+        5.750729139289132,
+        5.767136498168168
+      ],
+      "direct_intervals": {
+        "measured": [
+          4.9744,
+          5.6255999999999995
+        ],
+        "separation_mol_kg": 0.1251291392891325,
+        "verdict": "disjoint"
+      },
+      "mass_fraction_intervals": {
+        "measured": [
+          4.888414911429986,
+          5.724399668894212
+        ],
+        "separation_mol_kg": 0.02632947039491995,
+        "verdict": "disjoint"
+      }
+    },
+    {
+      "salt": "KCl",
+      "measured": 1.75,
+      "predicted": 1.7451613867549634,
+      "signed_error": -0.004838613245036649,
+      "relative_error_percent": -0.27649218543066567,
+      "sampled_range": [
+        1.735151795773929,
+        1.7552248704940416
+      ],
+      "direct_intervals": {
+        "measured": [
+          1.7275,
+          1.7725
+        ],
+        "separation_mol_kg": 0.0,
+        "verdict": "overlapping"
+      },
+      "mass_fraction_intervals": {
+        "measured": [
+          1.6978508546398479,
+          1.8038201116956956
+        ],
+        "separation_mol_kg": 0.0,
+        "verdict": "overlapping"
+      }
+    }
+  ],
+  "excess_feed_relative_error": [
+    1.4432899320127035e-15,
+    5.551115123125783e-15
+  ],
+  "thermochemistry": {
+    "T_K": 293.2,
+    "G_J_mol": [
+      -8818.880191618075,
+      -4802.4209945220255
+    ],
+    "K_source": [
+      37.246435155362605,
+      7.170541560517657
+    ],
+    "G_halfwidth_J_mol": [
+      3.551853487936651,
+      12.707899999999999
+    ],
+    "aqueous_G_increment_J_mol": 786.6791417347164,
+    "crystal_G_increment_J_mol": 407.29013625674213,
+    "nominal_mass_fractions": [
+      0.21507027992978273,
+      0.09058723596210583
+    ],
+    "direct_intervals": [
+      [
+        4.9744,
+        5.6255999999999995
+      ],
+      [
+        1.7275,
+        1.7725
+      ]
+    ],
+    "mass_fraction_intervals": [
+      [
+        4.888414911429986,
+        5.724399668894212
+      ],
+      [
+        1.6978508546398479,
+        1.8038201116956956
+      ]
+    ]
+  }
+}

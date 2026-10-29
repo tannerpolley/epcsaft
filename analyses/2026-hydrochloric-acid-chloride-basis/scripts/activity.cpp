@@ -34,7 +34,9 @@ std::string quote(std::string value) {
     return out + "\"";
 }
 int main(int argc, char** argv) try {
-    if (argc != 3 && argc != 4) return 2;
+    if (argc != 3 && argc != 4 && argc != 6) return 2;
+    const bool supplied_endpoint = argc == 6;
+    if (supplied_endpoint) argc = 4;
     const std::filesystem::path leaf(argv[1]), inputs = leaf / "inputs", results(argv[2]);
     std::ifstream maps("/proc/self/maps"); std::string mapping; bool loaded = false;
     std::ofstream identity(results / "native-mappings.txt");
@@ -48,11 +50,137 @@ int main(int argc, char** argv) try {
     const bool replacement_reference = mixture_reference == "Hamer-Wu1972";
     const bool trace_required = verify_lengths || replacement_reference;
     const std::size_t count = p.component_count(), H = ion, Cl = chloride;
+    if (supplied_endpoint) {
+        const double u = std::stod(argv[4]), c = std::stod(argv[5]);
+        if (!std::isfinite(u) || !std::isfinite(c)) throw std::runtime_error("nonfinite endpoint");
+        p.k_ij[H*count+water] = p.k_ij[water*count+H] = u;
+        p.k_ij[H*count+Cl] = p.k_ij[Cl*count+H] = c;
+    }
     const double k = pair_correction(temperature_K, p, temperature_law_values(temperature_K, p), TemperatureLaw::Kij, H, Cl);
     const double energy = std::sqrt(p.dispersion_energy_over_k[H] * p.dispersion_energy_over_k[Cl]) * (1 - k);
     if (k == 1 && energy != 0) throw std::runtime_error("nonzero H-Cl cross dispersion energy at k=1");
     if (!sulfate_training) std::ofstream(results / (ion_label + "-Cl-dispersion.csv")) << "k_ion_Cl,cross_energy_over_k_K\n" << std::setprecision(17) << k << ',' << energy << '\n';
     std::vector<double> solvent(count, 0.0); solvent[water] = 1.0;
+    if (argc == 4 && std::string(argv[3]) == "binary-water") {
+        if (!supplied_endpoint && !packet_readback) p.k_ij[H*count+water] = p.k_ij[water*count+H] = -1.0706252324767123;
+        if (!supplied_endpoint && !packet_readback && k != 0) throw std::runtime_error("selected H-Cl convention");
+        HelmholtzModel model(p);
+        const auto reference = solvent_reference(model, temperature_K, pressure_Pa, solvent);
+        std::ofstream out(results / "water.csv");
+        out << std::setprecision(17) << "molality,K_measured,K_adjusted,aw_unadjusted,phi_unadjusted,aw_adjusted,phi_adjusted,aw_prediction,error,status,cause,density_mol_m3,pressure_slope\n";
+        const auto rows = read(inputs / "messnaoui2020-hcl.csv");
+        if (rows.size() != 14) throw std::runtime_error("Messnaoui inventory");
+        for (const auto& row : rows) {
+            const double m = std::stod(row.at("molality"));
+            auto x = solvent; x[water] = 1/p.molar_mass_kg_per_mol[water]; x[H] = x[Cl] = m;
+            const double total = std::accumulate(x.begin(), x.end(), 0.0); for (auto& v : x) v /= total;
+            const auto value = solvent_activity(model, temperature_K, pressure_Pa, x, reference);
+            const double aw = value.solvent_activity.value_or(NAN);
+            for (const auto& field : {"molality","K_measured","K_adjusted","aw_unadjusted","phi_unadjusted","aw_adjusted","phi_adjusted"}) out << row.at(field) << ',';
+            out << aw << ',' << aw-std::stod(row.at("aw_adjusted")) << ',' << int(value.status) << ',' << quote(value.cause) << ',' << value.state.molar_density << ',' << value.state.pressure_density_derivative << '\n';
+        }
+        return 0;
+    }
+    if (argc == 4 && std::string(argv[3]) == "numerical") {
+        if (!supplied_endpoint && !packet_readback) p.k_ij[H*count+water] = p.k_ij[water*count+H] = -1.0706252324767123;
+        HelmholtzModel model(p);
+        const auto reference = infinite_dilution_reference(model, temperature_K, pressure_Pa, solvent, {H,Cl}, {1,1});
+        const auto wr = solvent_reference(model, temperature_K, pressure_Pa, solvent);
+        std::ofstream out(results / "numerical.csv");
+        out << std::setprecision(17) << "background,m_HCl,m_background,log_gamma,expected,error,phi,aw,density,pressure_slope,density_residual,reference_density,reference_residual,reference_status,reference_cause,passes\n";
+        bool complete = true;
+        for (std::size_t background : {std::size_t(water),std::size_t(lithium),std::size_t(magnesium),std::size_t(4)})
+            for (const auto& a : background == std::size_t(water) ? std::vector<std::array<double,2>>{{.001,0},{.2,0},{1,0},{3,0},{7,0}} : std::vector<std::array<double,2>>{{.2,.4},{.7,1.1},{1e-15,.4}}) {
+                std::vector<double> m(count,0); m[H]=a[0]; if (background != std::size_t(water)) m[background]=a[1];
+                m[Cl]=a[0]+p.charge_number[background]*a[1];
+                const auto full = electrolyte_activity(model,temperature_K,pressure_Pa,solvent,{H,Cl},{1,1},a[0],reference,std::nullopt,m);
+                const auto scalar = electrolyte_activity(model,temperature_K,pressure_Pa,solvent,{H,Cl},{1,1},a[0],reference);
+                const auto& logs = *full.state.log_fugacity_coefficient;
+                const double total = std::accumulate(m.begin(),m.end(),0.0), mass=p.molar_mass_kg_per_mol[water];
+                const double expected = background == std::size_t(water) ? scalar.mean_ionic_log_molality_scale : .5*(require_component_property(logs[H])-reference.log_fugacity[0]+require_component_property(logs[Cl])-reference.log_fugacity[1])-std::log(1+mass*total);
+                auto x=m; x[water]=1/mass; for(auto& v:x) v /= 1/mass+total;
+                const auto aw=solvent_activity(model,temperature_K,pressure_Pa,x,wr,full.state);
+                const double phi=full.osmotic_coefficient && std::holds_alternative<double>(*full.osmotic_coefficient) ? std::get<double>(*full.osmotic_coefficient) : NAN;
+                const double error=std::abs(full.mean_ionic_log_molality_scale-expected);
+                const bool ok=std::isfinite(phi) && aw.solvent_activity && error<=1e-10 && std::abs(std::inner_product(m.begin(),m.end(),p.charge_number.begin(),0.0))<=1e-10 && reference.solvent_state && reference.solvent_state->density_convergence && full.state.density_convergence && full.state.pressure_density_derivative>0;
+                out << background << ',' << a[0] << ',' << a[1] << ',' << full.mean_ionic_log_molality_scale << ',' << expected << ',' << error << ',' << phi << ',' << aw.solvent_activity.value_or(NAN) << ',' << full.state.molar_density << ',' << full.state.pressure_density_derivative << ',' << (full.state.density_convergence ? full.state.density_convergence->residual : NAN) << ',' << (reference.solvent_state ? reference.solvent_state->molar_density : NAN) << ',' << (reference.solvent_state->density_convergence ? reference.solvent_state->density_convergence->residual : NAN) << ',' << int(reference.solvent_status) << ',' << quote(reference.solvent_cause) << ',' << ok << '\n';
+                complete=complete && ok;
+            }
+        std::ofstream training_out(results / "training.csv"); training_out << std::setprecision(17) << "molality,phi,gamma\n";
+        for (const auto& row:read(inputs / training)) if(std::stod(row.at("molality"))<=7) {
+            const double m=std::stod(row.at("molality")); const auto a=electrolyte_activity(model,temperature_K,pressure_Pa,solvent,{H,Cl},{1,1},m,reference);
+            training_out << m << ',' << std::get<double>(*a.osmotic_coefficient) << ',' << a.mean_ionic_molality_scale << '\n';
+        }
+        return complete ? 0 : 1;
+    }
+    if (argc == 4 && std::string(argv[3]) == "report-binary") {
+        if (!supplied_endpoint && !packet_readback) p.k_ij[H*count+water] = p.k_ij[water*count+H] = -1.0706252324767123;
+        HelmholtzModel model(p); const auto ref=solvent_reference(model,temperature_K,pressure_Pa,solvent);
+        std::ofstream out(results / "report.csv"); out << std::setprecision(17) << "source,molality,aw,phi,cause\n";
+        for (const auto& file:{"el-guendouzi2001-hcl.csv","hamer-wu-hcl.csv"}) for(const auto& row:read(inputs/file)) {
+            const double m=std::stod(row.at("molality")); if(std::string(file)==training && m<=7) continue;
+            auto x=solvent; x[water]=1/p.molar_mass_kg_per_mol[water]; x[H]=x[Cl]=m; const double sum=std::accumulate(x.begin(),x.end(),0.0); for(auto& v:x) v/=sum;
+            const auto a=solvent_activity(model,temperature_K,pressure_Pa,x,ref);
+            out << file << ',' << m << ',' << a.solvent_activity.value_or(NAN) << ',' << (a.osmotic_coefficient && std::holds_alternative<double>(*a.osmotic_coefficient) ? std::get<double>(*a.osmotic_coefficient) : NAN) << ',' << quote(a.cause) << '\n';
+        }
+        return 0;
+    }
+    if (argc == 4 && std::string(argv[3]).rfind("source-",0)==0) {
+        const std::string mode(argv[3]), name=mode.substr(7,mode.rfind(':')-7);
+        const double pressure=std::stod(mode.substr(mode.rfind(':')+1));
+        const std::size_t background=name=="jiang1996-hcl-li" ? lithium : name=="khoo1977-hcl-ca" ? 4 : magnesium;
+        if (!supplied_endpoint && !packet_readback) p.k_ij[H*count+water] = p.k_ij[water*count+H] = -1.0706252324767123;
+        std::optional<r::EvaluatedCoordinates> source_chart;
+        if (supplied_endpoint) {
+            r::CoordinateSet coordinates; coordinates.coordinates=coordinate_declarations;
+            source_chart=r::evaluate_coordinates(p,coordinates,{std::stod(argv[4]),std::stod(argv[5])},{});
+        }
+        HelmholtzModel model(p,source_chart ? source_chart->active : std::vector<ActiveParameter>{}); const auto ref=infinite_dilution_reference(model,temperature_K,pressure,solvent,{H,Cl},{1,1});
+        std::ofstream out(results / "source.csv");
+        out << std::setprecision(17) << "ionic_strength,y_background,m_HCl,m_background,gamma_prediction,log_gamma,phi,density,pressure_slope,reference_density,density_residual,reference_residual,density_stop,reference_stop,reference_status,reference_cause,identity_error,passes,locator,gamma_observed,status,cause,density_convergence,reference_convergence,reference_log_H,reference_log_Cl\n";
+        std::ofstream derivatives(results/"source-columns.csv");
+        derivatives << std::setprecision(17) << "row,coordinate,prediction_partial,log_partial,status,cause\n";
+        bool complete=true; std::size_t source_row=0;
+        for(const auto& row:read(inputs / (name+".csv"))) {
+            const double I=std::stod(row.at("ionic_strength")), acid=background==lithium ? std::stod(row.at("m_HCl")) : I*(1-std::stod(row.at("y_background"))), salt=background==lithium ? std::stod(row.at("m_LiCl")) : I*std::stod(row.at("y_background"))/3;
+            std::vector<double> m(count,0); m[H]=acid; m[background]=salt; m[Cl]=acid+p.charge_number[background]*salt;
+            double charge=0, strength=0;
+            for (std::size_t i=0; i<count; ++i) { charge += m[i]*p.charge_number[i]; strength += .5*m[i]*p.charge_number[i]*p.charge_number[i]; }
+            if (std::abs(charge)>1e-10 || std::abs(strength-I)>1e-10) throw std::runtime_error("source composition balance");
+            r::Observation observation; observation.kind=r::ObservationKind::MeanIonicActivityCoefficient;
+            observation.temperature=temperature_K; observation.pressure=pressure; observation.composition=solvent;
+            observation.branch=DensityBranch::Liquid; observation.ion_indices={H,Cl}; observation.stoichiometry={1,1};
+            observation.molality=acid; observation.finite_solute_molalities=m;
+            observation.observed=std::pow(10.0, std::stod(row.at(background==lithium ? "log10_gamma" : "negative_log10_gamma"))*(background==lithium ? 1 : -1));
+            const auto prediction=r::predict(model,observation);
+            const auto state=prediction.activity ? std::optional<State>(prediction.activity->state) : prediction.state; const auto& rs=ref.solvent_state;
+            const auto dc=state ? state->density_convergence : std::nullopt;
+            const auto rc=rs ? rs->density_convergence : std::nullopt;
+            const double gamma=prediction.value.value_or(NAN), log_gamma=gamma>0 ? std::log(gamma) : NAN;
+            double expected=NAN;
+            if (state && state->log_fugacity_coefficient && state->log_fugacity_coefficient->size()>std::max(H,Cl)) {
+                const auto& logs=*state->log_fugacity_coefficient;
+                if (logs[H] && logs[Cl]) expected=.5*(*logs[H]-ref.log_fugacity[0]+*logs[Cl]-ref.log_fugacity[1])-std::log(1+p.molar_mass_kg_per_mol[water]*std::accumulate(m.begin(),m.end(),0.0));
+            }
+            const double phi=prediction.activity && prediction.activity->osmotic_coefficient && std::holds_alternative<double>(*prediction.activity->osmotic_coefficient) ? std::get<double>(*prediction.activity->osmotic_coefficient) : NAN;
+            const auto converged=[](const auto& c) { return c && c->criterion && std::isfinite(c->residual) && std::abs(c->residual)<=c->criterion->value && c->stop==core::Stop::converged; };
+            const double error=std::abs(log_gamma-expected);
+            const bool ok=prediction.status==r::ObservationStatus::Available && std::isfinite(gamma) && gamma>0 && state && state->molar_density>0 && state->pressure_density_derivative>0 && ref.solvent_cause.empty() && rs && rs->molar_density>0 && rs->pressure_density_derivative>0 && converged(dc) && converged(rc) && error<=1e-10;
+            out << I << ',' << (I-acid)/I << ',' << acid << ',' << salt << ',' << gamma << ',' << log_gamma << ',' << phi << ',' << (state ? state->molar_density : NAN) << ',' << (state ? state->pressure_density_derivative : NAN) << ',' << (rs ? rs->molar_density : NAN) << ',' << (dc ? dc->residual : NAN) << ',' << (rc ? rc->residual : NAN) << ',' << quote(dc ? core::stop_name(dc->stop) : "absent") << ',' << quote(rc ? core::stop_name(rc->stop) : "absent") << ',' << int(ref.solvent_status) << ',' << quote(ref.solvent_cause) << ',' << error << ',' << ok;
+            out << ',' << quote(row.at("locator")) << ',' << observation.observed << ',' << r::observation_status_name(prediction.status) << ',' << quote(prediction.message) << ',' << quote(dc ? core::describe(*dc) : "absent") << ',' << quote(rc ? core::describe(*rc) : "absent") << ',' << ref.log_fugacity[0] << ',' << ref.log_fugacity[1] << '\n';
+            if (source_chart) {
+                const auto gradient=r::differentiate(model,observation,prediction);
+                for(std::size_t a=0;a<2;++a) {
+                    double partial=0;
+                    if(gradient.value.size()==source_chart->active.size()) for(std::size_t b=0;b<gradient.value.size();++b) partial+=gradient.value[b]*source_chart->map.at(2*b+a);
+                    else partial=NAN;
+                    derivatives << source_row << ',' << a << ',' << partial << ',' << partial/gamma << ',' << r::observation_status_name(gradient.status) << ',' << quote(gradient.message) << '\n';
+                }
+            }
+            ++source_row; complete=complete && ok;
+        }
+        return complete ? 0 : 1;
+    }
     std::ofstream status(results / "fit-status.csv"), values(results / "fit-values.csv"), failures(results / "trial-failures.csv");
     status << "stage,start,status,usable,cost,iterations,residual_evaluations,jacobian_evaluations,covariance,rank,message\n";
     values << std::setprecision(17) << "stage,start,field,index,value\n";
@@ -176,6 +304,237 @@ int main(int argc, char** argv) try {
         }
         if (mixtures.size() != std::size_t(mixture_states) || (!replacement_reference && counts != std::vector<int>{17, 18, 14})) throw std::runtime_error("mixture occupied-cell counts");
     }
+    }
+    if (hcl_mixture_training) {
+        const auto roy = read(inputs / "roy1980-hcl-mg.csv");
+        std::map<double, int> counts;
+        for (const auto& row : roy) if (std::stod(row.at("y_background")) > 0) ++counts[std::stod(row.at("ionic_strength"))];
+        if (roy.size() != 58 || counts.size() != 11) throw std::runtime_error("Roy inventory");
+        for (const auto& row : roy) {
+            const double I = std::stod(row.at("ionic_strength")), y = std::stod(row.at("y_background"));
+            const double acid = I*(1-y), salt = I*y/3;
+            r::Observation o; o.temperature = temperature_K; o.pressure = pressure_Pa; o.composition = solvent;
+            o.branch = DensityBranch::Liquid; o.ion_indices = {H,Cl}; o.stoichiometry = {1,1}; o.molality = acid;
+            o.kind = r::ObservationKind::MeanIonicActivityCoefficient; o.form = r::ResidualForm::LogRatio;
+            o.observed = std::pow(10., -std::stod(row.at("negative_log10_gamma")));
+            o.finite_solute_molalities = std::vector<double>(count, 0);
+            auto& m = *o.finite_solute_molalities; m[H] = acid; m[magnesium] = salt; m[Cl] = acid+2*salt;
+            request.observations.push_back(o);
+            request.weights.push_back(y > 0 ? 1/(11.*counts.at(I)*std::pow(std::log(1.05),2)) : 0);
+            metadata.push_back({"Roy", row.at("locator"), "gamma", salt, acid});
+        }
+    }
+    if (profile_enabled && argc == 4 && (std::string(argv[3]) == "profile" || std::string(argv[3]) == "profile-replay")) {
+        for (auto& weight : request.weights) weight *= .8;
+        for (const auto& row : read(inputs / "jiang1996-hcl-li.csv")) if (std::stod(row.at("ionic_strength")) == 5) {
+            const double acid=std::stod(row.at("m_HCl")), salt=std::stod(row.at("m_LiCl"));
+            if (std::abs(acid+salt-5)>1e-10) throw std::runtime_error("Jiang I=5 inventory");
+            auto o=request.observations[1]; o.molality=acid;
+            o.observed=std::pow(10.0,std::stod(row.at("log10_gamma")));
+            o.finite_solute_molalities=std::vector<double>(count,0);
+            (*o.finite_solute_molalities)[H]=acid; (*o.finite_solute_molalities)[lithium]=salt; (*o.finite_solute_molalities)[Cl]=acid+salt;
+            request.observations.push_back(o); request.weights.push_back(1/(50*std::pow(std::log(1.05),2)));
+            metadata.push_back({"Jiang-I5",row.at("locator"),"gamma",salt,acid});
+        }
+        if (request.observations.size()!=70) throw std::runtime_error("profile observation count");
+        std::ofstream rows(results/"training.csv"), states(results/"states.csv"), attempts(results/"attempts.csv"), columns(results/"columns.csv");
+        rows << std::setprecision(17) << "point,start,c,u,row,source,locator,molality,background,observable,observed,prediction,residual,weight,weighted_residual,status,cause,verified\n";
+        states << std::setprecision(17) << "point,start,row,role,density,pressure,slope,branch,convergence,cause,log_H,log_Cl,identity_error\n";
+        attempts << std::setprecision(17) << "point,start,c,u,converged,verified,cost,B,V,mean_I5,worst_I5,sequence_wall_seconds\n";
+        std::ofstream column_summary(results/"column-summary.csv"); column_summary << std::setprecision(17) << "point,start,norm_u,norm_c,inverse_normal_correlation\n";
+        columns << std::setprecision(17) << "point,start,row,coordinate,prediction_partial,log_partial,residual_partial,objective_partial,status,cause\n";
+        struct Endpoint { double c,u,J,B,V,mean,worst; bool verified,converged; std::size_t point,start; };
+        std::vector<Endpoint> endpoints;
+        const auto trace=[&](std::size_t point,std::size_t start,std::size_t row,const std::string& role,const auto& state,const std::string& cause) {
+            states << point << ',' << start << ',' << row << ',' << role << ',' << (state ? state->molar_density : NAN) << ',' << (state ? state->pressure : NAN) << ',' << (state ? state->pressure_density_derivative : NAN) << ',' << (state ? int(state->density_branch) : -1) << ',' << quote(state && state->density_convergence ? core::describe(*state->density_convergence) : "absent") << ',' << quote(cause) << ",nan,nan,nan\n";
+            return state && state->molar_density>0 && std::isfinite(state->molar_density) && state->pressure_density_derivative>0 && state->density_convergence && state->density_convergence->stop==core::Stop::converged && state->density_convergence->criterion && std::isfinite(state->density_convergence->residual) && std::abs(state->density_convergence->residual)<=state->density_convergence->criterion->value;
+        };
+        const auto evaluate=[&](std::size_t point,std::size_t start,double c,double u,bool converged,double J,double wall) {
+            r::CoordinateSet coordinates; coordinates.coordinates=coordinate_declarations;
+            auto chart=r::evaluate_coordinates(p,coordinates,{u,c},{});
+            if (packet_readback) chart.parameters=p;
+            HelmholtzModel model(chart.parameters,chart.active); r::ReferenceCache references;
+            Endpoint e{c,u,J,0,0,0,0,true,converged,point,start};
+            double gram[3]{};
+            double errors[2][3]{}, maxima[2][3]{}; std::size_t counts[2][3]{};
+            for (std::size_t i=0; i<request.observations.size(); ++i) {
+                const auto& o=request.observations[i]; const auto prediction=r::predict(model,o,std::nullopt,std::nullopt,&references);
+                const auto state=prediction.activity ? std::optional<State>(prediction.activity->state) : prediction.state;
+                const double y=prediction.value.value_or(NAN); const auto gradient=r::differentiate(model,o,prediction);
+                bool verified=prediction.status==r::ObservationStatus::Available && std::isfinite(y) && trace(point,start,i,"state",state,prediction.message);
+                double identity_error=NAN;
+                if (prediction.reference) {
+                    const auto& ref=*prediction.reference;
+                    verified=trace(point,start,i,"reference",ref.solvent_state,ref.solvent_cause) && ref.solvent_cause.empty() && verified;
+                    if (prediction.activity && state && state->log_fugacity_coefficient) {
+                        const auto& logs=*state->log_fugacity_coefficient;
+                        const double solutes=o.finite_solute_molalities ? std::accumulate(o.finite_solute_molalities->begin(),o.finite_solute_molalities->end(),0.0) : 2*o.molality;
+                        if (logs.size()>std::max(H,Cl) && logs[H] && logs[Cl]) identity_error=std::abs(prediction.activity->mean_ionic_log_molality_scale-(.5*(*logs[H]-ref.log_fugacity[0]+*logs[Cl]-ref.log_fugacity[1])-std::log(1+p.molar_mass_kg_per_mol[water]*solutes)));
+                        states << point << ',' << start << ',' << i << ",ionic-reference,nan,nan,nan,-1," << quote(ref.solvent_convergence ? core::describe(*ref.solvent_convergence) : "absent") << ',' << quote(ref.solvent_cause) << ',' << ref.log_fugacity[0] << ',' << ref.log_fugacity[1] << ',' << identity_error << '\n';
+                    }
+                    verified=verified && std::isfinite(identity_error) && identity_error<=1e-10;
+                } else verified=false;
+                const bool gamma=o.kind==r::ObservationKind::MeanIonicActivityCoefficient;
+                verified=verified && (!gamma || y>0) && gradient.status==r::ObservationStatus::Available;
+                double A[2]{NAN,NAN};
+                for (std::size_t a=0; a<2; ++a) {
+                    double partial=0;
+                    if (gradient.value.size()==chart.active.size()) for (std::size_t b=0; b<gradient.value.size(); ++b) partial+=gradient.value[b]*chart.map.at(2*b+a);
+                    else partial=NAN;
+                    const double residual_partial=gamma ? partial/y : partial/o.scale;
+                    verified=verified && std::isfinite(partial); A[a]=std::sqrt(request.weights[i])*residual_partial;
+                    columns << point << ',' << start << ',' << i << ',' << a << ',' << partial << ',' << (gamma ? partial/y : NAN) << ',' << residual_partial << ',' << std::sqrt(request.weights[i])*residual_partial << ',' << r::observation_status_name(gradient.status) << ',' << quote(gradient.message) << '\n';
+                }
+                gram[0]+=A[0]*A[0]; gram[1]+=A[0]*A[1]; gram[2]+=A[1]*A[1];
+                const auto& m=metadata[i]; const double residual=prediction.residual.value_or(NAN);
+                rows << point << ',' << start << ',' << c << ',' << u << ',' << i << ',' << m.source << ',' << quote(m.cell) << ',' << o.molality << ',' << m.mNa << ',' << m.observable << ',' << o.observed << ',' << y << ',' << residual << ',' << request.weights[i] << ',' << std::sqrt(request.weights[i])*residual << ',' << r::observation_status_name(prediction.status) << ',' << quote(prediction.message) << ',' << verified << '\n';
+                e.verified=e.verified && verified;
+                const double error=gamma ? 100*(y/o.observed-1) : y-o.observed;
+                if (i<60) {
+                    const auto bucket=o.molality>3 ? 1 : 0, quantity=gamma ? 1 : 0;
+                    errors[bucket][quantity]+=gamma ? std::abs(error) : error*error;
+                    maxima[bucket][quantity]=std::max(maxima[bucket][quantity],std::abs(error)); ++counts[bucket][quantity];
+                } else if (m.mNa>0) { e.mean+=std::abs(error)/9; e.worst=std::max(e.worst,std::abs(error)); }
+            }
+            const auto ref=solvent_reference(model,temperature_K,pressure_Pa,solvent);
+            std::size_t water_row=70;
+            for (const auto& row:read(inputs/"messnaoui2020-hcl.csv")) {
+                const double m=std::stod(row.at("molality")); auto x=solvent;
+                x[water]=1/p.molar_mass_kg_per_mol[water]; x[H]=x[Cl]=m;
+                const double total=std::accumulate(x.begin(),x.end(),0.0); for(auto& v:x) v/=total;
+                const auto value=solvent_activity(model,temperature_K,pressure_Pa,x,ref);
+                const double y=value.solvent_activity.value_or(NAN), observed=std::stod(row.at("aw_adjusted")), error=y-observed;
+                const bool verified=std::isfinite(y) && value.cause.empty() && trace(point,start,water_row,"water",std::optional<State>(value.state),value.cause) && trace(point,start,water_row,"water-reference",ref.pure_solvent_state,ref.solvent_cause);
+                rows << point << ',' << start << ',' << c << ',' << u << ',' << water_row << ",Messnaoui," << quote("Messnaoui Table 2 m="+row.at("molality")) << ',' << m << ",0,aw," << observed << ',' << y << ',' << error << ",0,0," << int(value.status) << ',' << quote(value.cause) << ',' << verified << '\n';
+                for (std::size_t a=0; a<2; ++a) {
+                    double partial=0; bool available=value.solvent_activity_parameter_derivative.size()==chart.active.size();
+                    for (std::size_t b=0; b<value.solvent_activity_parameter_derivative.size(); ++b) {
+                        available=available && value.solvent_activity_parameter_derivative[b].has_value();
+                        partial+=value.solvent_activity_parameter_derivative[b].value_or(NAN)*chart.map.at(2*b+a);
+                    }
+                    columns << point << ',' << start << ',' << water_row << ',' << a << ',' << (available ? partial : NAN) << ",nan,nan,0," << int(value.status) << ',' << quote(value.cause) << '\n';
+                }
+                const auto bucket=m>3 ? 1 : 0; errors[bucket][2]+=error*error;
+                maxima[bucket][2]=std::max(maxima[bucket][2],std::abs(error)); ++counts[bucket][2]; e.verified=e.verified && verified; ++water_row;
+            }
+            const auto& mean_limits=profile_mean_limits; const auto& max_limits=profile_max_limits;
+            for (int b=0; b<2; ++b) for (int q=0; q<3; ++q) {
+                const double mean=errors[b][q]/counts[b][q];
+                e.B=std::max({e.B,(q==1 ? mean : std::sqrt(mean))/mean_limits[q],maxima[b][q]/max_limits[q]});
+            }
+            column_summary << point << ',' << start << ',' << std::sqrt(gram[0]) << ',' << std::sqrt(gram[2]) << ',' << -gram[1]/std::sqrt(gram[0]*gram[2]) << '\n'; column_summary.flush();
+            e.V=std::max(e.mean/profile_target_mean,e.worst/profile_target_max);
+            attempts << point << ',' << start << ',' << c << ',' << u << ',' << converged << ',' << e.verified << ',' << J << ',' << e.B << ',' << e.V << ',' << e.mean << ',' << e.worst << ',' << wall << '\n'; attempts.flush(); rows.flush(); states.flush(); columns.flush();
+            return e;
+        };
+        if (supplied_endpoint || packet_readback) {
+            const auto replay=evaluate(0,0,packet_readback ? p.k_ij[H*count+Cl] : std::stod(argv[5]),packet_readback ? p.k_ij[H*count+water] : std::stod(argv[4]),true,0,0);
+            return replay.verified ? 0 : 1;
+        }
+        const auto baseline=evaluate(0,0,0,profile_anchor,true,0,0);
+        if (!baseline.verified) throw std::runtime_error("baseline numerical admission failed");
+        std::vector<double> previous;
+        for(const auto& row:read(leaf/"results/issue-798-r2/fit-values.csv")) if(row.at("stage")=="1" && row.at("start")=="3" && row.at("field")=="predictions") previous.push_back(std::stod(row.at("value")));
+        const auto baseline_rows=read(results/"training.csv");
+        if(previous.size()!=60 || baseline_rows.size()!=84) throw std::runtime_error("baseline replay inventory");
+        for(std::size_t i=0;i<60;++i) {
+            const double now=std::stod(baseline_rows[i].at("prediction")), old=previous[i], m=std::stod(baseline_rows[i].at("molality"));
+            const double tolerance=std::max(1e-10*std::abs(old),i%2==0 ? 1e-12/(2*p.molar_mass_kg_per_mol[water]*m) : 1e-12);
+            if(std::abs(now-old)>tolerance) throw std::runtime_error("binary baseline replay mismatch at "+std::to_string(i));
+        }
+        const auto water_baseline=read(leaf/"results/binary-water-qualification/native/water.csv");
+        if(water_baseline.size()!=14) throw std::runtime_error("water baseline inventory");
+        for(std::size_t i=0;i<14;++i) if(std::abs(std::stod(baseline_rows[i+70].at("prediction"))-std::stod(water_baseline[i].at("aw_prediction")))>1e-10) throw std::runtime_error("water baseline replay mismatch");
+        const auto jiang_baseline=read(inputs/"issue-901-jiang-baseline.csv");
+        if(jiang_baseline.size()!=10) throw std::runtime_error("Jiang baseline inventory");
+        for(const auto& row:jiang_baseline) {
+            const double y=std::stod(row.at("y")), old=std::stod(row.at("baseline"));
+            const auto found=std::find_if(baseline_rows.begin()+60,baseline_rows.begin()+70,[&](const auto& r){return std::abs(std::stod(r.at("background"))/5-y)<1e-12;});
+            if(found==baseline_rows.begin()+70 || std::abs(std::stod(found->at("prediction"))-old)>std::max(1e-12,1e-10*std::abs(old))) throw std::runtime_error("Jiang baseline replay mismatch");
+        }
+        std::ofstream policies(results/"solver-policy.csv"); policies << std::setprecision(17) << "name,value,unit\n";
+        for(std::size_t i=0;i<policy::SOLVER_POLICIES.size();++i) policies << policy::SOLVER_POLICIES[i]->name << ',' << request.controls.solver_options.value(i) << ',' << policy::SOLVER_UNITS[i] << '\n';
+        std::vector<double> grid=profile_coarse;
+        std::vector<Endpoint> ordinary;
+        const auto best_point=[&]() {
+            std::vector<Endpoint> complete;
+            for(const auto& e:ordinary) {
+                bool ok=e.verified && e.converged;
+                std::size_t count_starts=0;
+                for(const auto& a:endpoints) if(a.point==e.point) {
+                    ++count_starts; ok=ok && a.verified && a.converged && a.u>coordinate_declarations[0].lower+1e-6 && a.u<coordinate_declarations[0].upper-1e-6;
+                    if(a.J<=e.J+std::max(1e-10,1e-4*std::abs(e.J))) ok=ok && std::abs(a.u-e.u)<=1e-6;
+                }
+                if(ok && count_starts==3) complete.push_back(e);
+            }
+            if(complete.empty()) throw std::runtime_error("no numerically complete coarse point");
+            const bool eligible=std::any_of(complete.begin(),complete.end(),[](const auto& e){return e.B<=1;});
+            std::stable_sort(complete.begin(),complete.end(),[&](const auto& a,const auto& b) {
+                return std::make_tuple(eligible && a.B>1,eligible ? a.V : a.B,a.V,a.J,std::abs(a.c),a.point)<std::make_tuple(eligible && b.B>1,eligible ? b.V : b.B,b.V,b.J,std::abs(b.c),b.point);
+            });
+            return complete.front();
+        };
+        for(std::size_t point=0;point<grid.size();++point) {
+            const double c=grid[point];
+            std::cout << "profile point " << point+1 << " c=" << c << std::endl;
+            request.parameters=p; request.parameters.k_ij[H*count+Cl]=request.parameters.k_ij[Cl*count+H]=c;
+            request.coordinates.coordinates={coordinate_declarations[0]};
+            const std::vector<std::vector<double>> allocated{{profile_anchor+profile_compensation*c},{profile_starts[0]},{profile_starts[1]}};
+            const auto began=std::chrono::steady_clock::now();
+            const auto fits=r::fit_sequence(request,allocated,total_maximum_iterations,total_maximum_seconds);
+            const double seconds=std::chrono::duration<double>(std::chrono::steady_clock::now()-began).count();
+            std::optional<Endpoint> best;
+            for(std::size_t j=0;j<3;++j) {
+                if(j>=fits.size()) {
+                    attempts << point+1 << ',' << j+1 << ',' << c << ",nan,0,0,nan,nan,nan,nan,nan," << seconds << '\n';
+                    continue;
+                }
+                dump(point+1,j+1,"start",allocated[j]);
+                const auto& f=fits[j]; const auto& covariance=f.covariance;
+                status << std::setprecision(17) << point+1 << ',' << j+1 << ',' << f.status << ',' << f.usable << ',' << f.final_cost << ',' << f.iterations << ',' << f.residual_evaluations << ',' << f.jacobian_evaluations << ',' << covariance.status << ',' << covariance.rank << ',' << quote(f.message) << '\n';
+                for(const auto& item:std::vector<std::pair<std::string,std::vector<double>>>{{"optimizer",f.optimizer},{"physical",f.physical},{"predictions",f.predictions},{"residuals",f.residuals},{"weighted_residuals",f.weighted_residuals},{"optimizer_jacobian",f.optimizer_jacobian},{"physical_jacobian",f.physical_jacobian},{"singular_values",covariance.singular_values},{"right_vectors",covariance.right_vectors},{"left_vectors",covariance.left_vectors},{"C",covariance.optimizer},{"iteration_seconds",f.iteration_seconds},{"iteration_costs",f.iteration_costs},{"projected_gradient",{covariance.projected_gradient_norm}},{"initial_cost",{f.initial_cost}},{"chart_physical",f.chart.physical},{"chart_map",f.chart.map}}) dump(point+1,j+1,item.first,item.second);
+                dump(point+1,j+1,"active_bounds",covariance.active_bounds);
+                for(std::size_t i=0;i<f.statuses.size();++i) values << point+1 << ',' << j+1 << ",observation_status," << i << ',' << int(f.statuses[i]) << '\n';
+                for(const auto& failure:f.failures) {
+                    std::ostringstream optimizer; optimizer << std::setprecision(17); for(double v:failure.optimizer) optimizer << v << ' ';
+                    failures << point+1 << ',' << j+1 << ',' << failure.trial << ',' << failure.observation << ',' << r::observation_status_name(failure.status) << ',' << failure.jacobian << ',' << quote(optimizer.str()) << ',' << quote(failure.message+(failure.first_numerical_failure ? "; "+core::describe(*failure.first_numerical_failure) : "")) << '\n';
+                }
+                std::ofstream detail(results/("fit-"+std::to_string(point+1)+"-"+std::to_string(j+1)+".txt"));
+                detail << f.termination << '\n' << (f.first_numerical_failure ? core::describe(*f.first_numerical_failure) : "no first numerical failure") << '\n';
+                for(const auto& rank:f.rank_records) detail << rank.basis << ',' << rank.dimension << ',' << rank.rank << ',' << rank.threshold << '\n';
+                const bool converged=f.status=="converged" && f.usable && std::isfinite(f.final_cost) && f.optimizer.size()==1 && std::isfinite(f.optimizer[0]);
+                if(!converged) {
+                    attempts << point+1 << ',' << j+1 << ',' << c << ",nan,0,0,nan,nan,nan,nan,nan," << seconds << '\n';
+                    continue;
+                }
+                auto e=evaluate(point+1,j+1,c,f.optimizer[0],converged,f.final_cost,seconds); endpoints.push_back(e);
+                dump(point+1,j+1,"bound_distances",std::vector<double>{e.u-coordinate_declarations[0].lower,coordinate_declarations[0].upper-e.u});
+                if(!best || e.J<best->J) best=e;
+            }
+            if(best) ordinary.push_back(*best);
+            values.flush(); failures.flush(); status.flush();
+            if(point+1==profile_coarse.size()) {
+                const auto center=best_point();
+                for(double offset:profile_refinement_offsets) {
+                    const double c=std::clamp(center.c+offset,profile_bounds[0],profile_bounds[1]);
+                    if(std::none_of(grid.begin(),grid.end(),[&](double old){return std::abs(c-old)<1e-12;})) grid.push_back(c);
+                }
+            }
+        }
+        const auto diagnostic=best_point();
+        std::vector<Endpoint> successful;
+        for(const auto& e:endpoints) if(e.converged && e.verified && e.B<=1 && e.V<=1) successful.push_back(e);
+        auto frozen=diagnostic;
+        if(!successful.empty()) {
+            const double minimum=std::min_element(successful.begin(),successful.end(),[](const auto& a,const auto& b){return a.J<b.J;})->J;
+            successful.erase(std::remove_if(successful.begin(),successful.end(),[&](const auto& e){return e.J>minimum+std::max(1e-10,1e-4*std::abs(minimum));}),successful.end());
+            std::stable_sort(successful.begin(),successful.end(),[](const auto& a,const auto& b){return std::make_tuple(std::abs(a.c),a.worst,a.point,a.start)<std::make_tuple(std::abs(b.c),b.worst,b.point,b.start);});
+            frozen=successful.front();
+        }
+        std::ofstream frozen_out(results/"frozen.csv");
+        frozen_out << std::setprecision(17) << "point,start,c,u,cost,B,V,success\n" << frozen.point << ',' << frozen.start << ',' << frozen.c << ',' << frozen.u << ',' << frozen.J << ',' << frozen.B << ',' << frozen.V << ',' << !successful.empty() << '\n';
+        std::ofstream(results/"outcome.txt") << (successful.empty() ? "Profile evaluated; completeness and interval edge require scoring." : "Successful diagnostic candidate; transfer remains unevaluated.") << '\n';
+        return 0;
     }
     if (request.observations.size() != std::size_t(training_observations)) throw std::runtime_error("total observation count");
     if (argc == 4 && std::string(argv[3]) == "prepare") return 0;

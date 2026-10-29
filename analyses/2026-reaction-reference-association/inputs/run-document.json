@@ -1,0 +1,1431 @@
+{
+  "schema": "epcsaft.parameters",
+  "schema_version": 1,
+  "document_id": "mdea-bulow-2021-issue-223",
+  "document_version": 1,
+  "purpose": "Fixed published parameters; issue 223 D1\u2013D5; pending Engine 896 grammar",
+  "components": [
+    {
+      "component_id": "water",
+      "provenance": "B\u00fclow Tables 1\u20132; ion packing Held 2014 Eq.21 via ref.26",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 0.01801528,
+            "unit": "kilogram / mole"
+          }
+        },
+        "charge_number": {
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "family": "segment_count",
+          "identity": "component/water/segment_count",
+          "value": {
+            "magnitude": 1.2046,
+            "unit": "dimensionless"
+          }
+        },
+        {
+          "family": "dispersion_energy_over_k",
+          "identity": "component/water/dispersion_energy_over_k",
+          "value": {
+            "magnitude": 353.94,
+            "unit": "kelvin"
+          }
+        },
+        {
+          "family": "solvation_factor",
+          "identity": "component/water/solvation_factor",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "methyldiethanolamine",
+      "provenance": "B\u00fclow Tables 1\u20132; ion packing Held 2014 Eq.21 via ref.26",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 0.1191622,
+            "unit": "kilogram / mole"
+          }
+        },
+        "charge_number": {
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "family": "segment_count",
+          "identity": "component/methyldiethanolamine/segment_count",
+          "value": {
+            "magnitude": 3.675,
+            "unit": "dimensionless"
+          }
+        },
+        {
+          "family": "dispersion_energy_over_k",
+          "identity": "component/methyldiethanolamine/dispersion_energy_over_k",
+          "value": {
+            "magnitude": 228.71,
+            "unit": "kelvin"
+          }
+        },
+        {
+          "family": "solvation_factor",
+          "identity": "component/methyldiethanolamine/solvation_factor",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          }
+        },
+        {
+          "family": "segment_diameter",
+          "identity": "component/methyldiethanolamine/segment_diameter",
+          "value": {
+            "magnitude": 3.563,
+            "unit": "angstrom"
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "carbon-dioxide",
+      "provenance": "B\u00fclow Tables 1\u20132; ion packing Held 2014 Eq.21 via ref.26",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 0.0440095,
+            "unit": "kilogram / mole"
+          }
+        },
+        "charge_number": {
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "family": "segment_count",
+          "identity": "component/carbon-dioxide/segment_count",
+          "value": {
+            "magnitude": 2.0729,
+            "unit": "dimensionless"
+          }
+        },
+        {
+          "family": "dispersion_energy_over_k",
+          "identity": "component/carbon-dioxide/dispersion_energy_over_k",
+          "value": {
+            "magnitude": 169.21,
+            "unit": "kelvin"
+          }
+        },
+        {
+          "family": "solvation_factor",
+          "identity": "component/carbon-dioxide/solvation_factor",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          }
+        },
+        {
+          "family": "segment_diameter",
+          "identity": "component/carbon-dioxide/segment_diameter",
+          "value": {
+            "magnitude": 2.7852,
+            "unit": "angstrom"
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "protonated-methyldiethanolamine",
+      "provenance": "B\u00fclow Tables 1\u20132; ion packing Held 2014 Eq.21 via ref.26",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 0.12017014,
+            "unit": "kilogram / mole"
+          }
+        },
+        "charge_number": {
+          "value": {
+            "magnitude": 1,
+            "unit": "elementary-charge"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "family": "segment_count",
+          "identity": "component/protonated-methyldiethanolamine/segment_count",
+          "value": {
+            "magnitude": 1,
+            "unit": "dimensionless"
+          }
+        },
+        {
+          "family": "dispersion_energy_over_k",
+          "identity": "component/protonated-methyldiethanolamine/dispersion_energy_over_k",
+          "value": {
+            "magnitude": 228.71,
+            "unit": "kelvin"
+          }
+        },
+        {
+          "family": "solvation_factor",
+          "identity": "component/protonated-methyldiethanolamine/solvation_factor",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          }
+        },
+        {
+          "family": "segment_diameter",
+          "identity": "component/protonated-methyldiethanolamine/segment_diameter",
+          "value": {
+            "magnitude": 3.563,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "family": "packing_diameter",
+          "identity": "component/protonated-methyldiethanolamine/packing_diameter",
+          "value": {
+            "magnitude": 3.13544,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "family": "debye_huckel_diameter",
+          "identity": "component/protonated-methyldiethanolamine/debye_huckel_diameter",
+          "value": {
+            "magnitude": 3.563,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "family": "born_diameter",
+          "identity": "component/protonated-methyldiethanolamine/born_diameter",
+          "value": {
+            "magnitude": 3.563,
+            "unit": "angstrom"
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "bicarbonate-anion",
+      "provenance": "B\u00fclow Tables 1\u20132; ion packing Held 2014 Eq.21 via ref.26",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 0.06101684,
+            "unit": "kilogram / mole"
+          }
+        },
+        "charge_number": {
+          "value": {
+            "magnitude": -1,
+            "unit": "elementary-charge"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "family": "segment_count",
+          "identity": "component/bicarbonate-anion/segment_count",
+          "value": {
+            "magnitude": 1,
+            "unit": "dimensionless"
+          }
+        },
+        {
+          "family": "dispersion_energy_over_k",
+          "identity": "component/bicarbonate-anion/dispersion_energy_over_k",
+          "value": {
+            "magnitude": 70.0,
+            "unit": "kelvin"
+          }
+        },
+        {
+          "family": "solvation_factor",
+          "identity": "component/bicarbonate-anion/solvation_factor",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          }
+        },
+        {
+          "family": "segment_diameter",
+          "identity": "component/bicarbonate-anion/segment_diameter",
+          "value": {
+            "magnitude": 2.9296,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "family": "packing_diameter",
+          "identity": "component/bicarbonate-anion/packing_diameter",
+          "value": {
+            "magnitude": 2.5780480000000003,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "family": "debye_huckel_diameter",
+          "identity": "component/bicarbonate-anion/debye_huckel_diameter",
+          "value": {
+            "magnitude": 2.9296,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "family": "born_diameter",
+          "identity": "component/bicarbonate-anion/born_diameter",
+          "value": {
+            "magnitude": 2.9296,
+            "unit": "angstrom"
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "carbonate-anion",
+      "provenance": "B\u00fclow Tables 1\u20132; ion packing Held 2014 Eq.21 via ref.26",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 0.0600089,
+            "unit": "kilogram / mole"
+          }
+        },
+        "charge_number": {
+          "value": {
+            "magnitude": -2,
+            "unit": "elementary-charge"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "family": "segment_count",
+          "identity": "component/carbonate-anion/segment_count",
+          "value": {
+            "magnitude": 1,
+            "unit": "dimensionless"
+          }
+        },
+        {
+          "family": "dispersion_energy_over_k",
+          "identity": "component/carbonate-anion/dispersion_energy_over_k",
+          "value": {
+            "magnitude": 249.26,
+            "unit": "kelvin"
+          }
+        },
+        {
+          "family": "solvation_factor",
+          "identity": "component/carbonate-anion/solvation_factor",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          }
+        },
+        {
+          "family": "segment_diameter",
+          "identity": "component/carbonate-anion/segment_diameter",
+          "value": {
+            "magnitude": 2.4422,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "family": "packing_diameter",
+          "identity": "component/carbonate-anion/packing_diameter",
+          "value": {
+            "magnitude": 2.149136,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "family": "debye_huckel_diameter",
+          "identity": "component/carbonate-anion/debye_huckel_diameter",
+          "value": {
+            "magnitude": 2.4422,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "family": "born_diameter",
+          "identity": "component/carbonate-anion/born_diameter",
+          "value": {
+            "magnitude": 2.4422,
+            "unit": "angstrom"
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "proton",
+      "provenance": "B\u00fclow Tables 1\u20132; ion packing Held 2014 Eq.21 via ref.26",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 0.00100794,
+            "unit": "kilogram / mole"
+          }
+        },
+        "charge_number": {
+          "value": {
+            "magnitude": 1,
+            "unit": "elementary-charge"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "family": "segment_count",
+          "identity": "component/proton/segment_count",
+          "value": {
+            "magnitude": 1,
+            "unit": "dimensionless"
+          }
+        },
+        {
+          "family": "dispersion_energy_over_k",
+          "identity": "component/proton/dispersion_energy_over_k",
+          "value": {
+            "magnitude": 500.0,
+            "unit": "kelvin"
+          }
+        },
+        {
+          "family": "solvation_factor",
+          "identity": "component/proton/solvation_factor",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          }
+        },
+        {
+          "family": "segment_diameter",
+          "identity": "component/proton/segment_diameter",
+          "value": {
+            "magnitude": 3.4654,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "family": "packing_diameter",
+          "identity": "component/proton/packing_diameter",
+          "value": {
+            "magnitude": 3.049552,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "family": "debye_huckel_diameter",
+          "identity": "component/proton/debye_huckel_diameter",
+          "value": {
+            "magnitude": 3.4654,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "family": "born_diameter",
+          "identity": "component/proton/born_diameter",
+          "value": {
+            "magnitude": 3.4654,
+            "unit": "angstrom"
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "hydroxide-anion",
+      "provenance": "B\u00fclow Tables 1\u20132; ion packing Held 2014 Eq.21 via ref.26",
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 0.01700734,
+            "unit": "kilogram / mole"
+          }
+        },
+        "charge_number": {
+          "value": {
+            "magnitude": -1,
+            "unit": "elementary-charge"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "family": "segment_count",
+          "identity": "component/hydroxide-anion/segment_count",
+          "value": {
+            "magnitude": 1,
+            "unit": "dimensionless"
+          }
+        },
+        {
+          "family": "dispersion_energy_over_k",
+          "identity": "component/hydroxide-anion/dispersion_energy_over_k",
+          "value": {
+            "magnitude": 650.0,
+            "unit": "kelvin"
+          }
+        },
+        {
+          "family": "solvation_factor",
+          "identity": "component/hydroxide-anion/solvation_factor",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          }
+        },
+        {
+          "family": "segment_diameter",
+          "identity": "component/hydroxide-anion/segment_diameter",
+          "value": {
+            "magnitude": 2.0177,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "family": "packing_diameter",
+          "identity": "component/hydroxide-anion/packing_diameter",
+          "value": {
+            "magnitude": 1.775576,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "family": "debye_huckel_diameter",
+          "identity": "component/hydroxide-anion/debye_huckel_diameter",
+          "value": {
+            "magnitude": 2.0177,
+            "unit": "angstrom"
+          }
+        },
+        {
+          "family": "born_diameter",
+          "identity": "component/hydroxide-anion/born_diameter",
+          "value": {
+            "magnitude": 2.0177,
+            "unit": "angstrom"
+          }
+        }
+      ]
+    }
+  ],
+  "correlations": [
+    {
+      "component_id": "water",
+      "correlation_id": "component/water/segment_diameter",
+      "family": "segment_diameter",
+      "form": "constant-plus-sum-of-exponentials",
+      "constant": {
+        "identity": "component/water/segment_diameter/constant",
+        "value": {
+          "magnitude": 2.7927,
+          "unit": "angstrom"
+        }
+      },
+      "terms": [
+        {
+          "amplitude": {
+            "identity": "component/water/segment_diameter/0/amplitude",
+            "value": {
+              "magnitude": 10.11,
+              "unit": "angstrom"
+            }
+          },
+          "exponent_coefficient": {
+            "identity": "component/water/segment_diameter/0/exponent",
+            "value": {
+              "magnitude": -0.01775,
+              "unit": "1 / kelvin"
+            }
+          }
+        },
+        {
+          "amplitude": {
+            "identity": "component/water/segment_diameter/1/amplitude",
+            "value": {
+              "magnitude": -1.417,
+              "unit": "angstrom"
+            }
+          },
+          "exponent_coefficient": {
+            "identity": "component/water/segment_diameter/1/exponent",
+            "value": {
+              "magnitude": -0.01146,
+              "unit": "1 / kelvin"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "water",
+      "correlation_id": "component/water/relative_permittivity",
+      "family": "relative_permittivity",
+      "form": "constant-plus-polynomial-in-temperature",
+      "reference_temperature": {
+        "magnitude": 0.0,
+        "unit": "kelvin"
+      },
+      "constant": {
+        "identity": "component/water/relative_permittivity/constant",
+        "value": {
+          "magnitude": 249.21,
+          "unit": "dimensionless"
+        }
+      },
+      "terms": [
+        {
+          "power": 1,
+          "coefficient": {
+            "identity": "component/water/relative_permittivity/a1",
+            "value": {
+              "magnitude": -0.79069,
+              "unit": "1 / kelvin"
+            }
+          }
+        },
+        {
+          "power": 2,
+          "coefficient": {
+            "identity": "component/water/relative_permittivity/a2",
+            "value": {
+              "magnitude": 0.00072997,
+              "unit": "1 / kelvin ** 2"
+            }
+          }
+        }
+      ],
+      "provenance": "Hsieh 2007 Eq.3/Table 3; MDEA 303.15\u2013328.15 K; water 273.15\u2013373.15 K"
+    },
+    {
+      "component_id": "methyldiethanolamine",
+      "correlation_id": "component/methyldiethanolamine/relative_permittivity",
+      "family": "relative_permittivity",
+      "form": "constant-plus-polynomial-in-temperature",
+      "reference_temperature": {
+        "magnitude": 0.0,
+        "unit": "kelvin"
+      },
+      "constant": {
+        "identity": "component/methyldiethanolamine/relative_permittivity/constant",
+        "value": {
+          "magnitude": 44.1399,
+          "unit": "dimensionless"
+        }
+      },
+      "terms": [
+        {
+          "power": 1,
+          "coefficient": {
+            "identity": "component/methyldiethanolamine/relative_permittivity/a1",
+            "value": {
+              "magnitude": -0.046824,
+              "unit": "1 / kelvin"
+            }
+          }
+        },
+        {
+          "power": 2,
+          "coefficient": {
+            "identity": "component/methyldiethanolamine/relative_permittivity/a2",
+            "value": {
+              "magnitude": -8.82158e-05,
+              "unit": "1 / kelvin ** 2"
+            }
+          }
+        }
+      ],
+      "provenance": "Hsieh 2007 Eq.3/Table 3; MDEA 303.15\u2013328.15 K; water 273.15\u2013373.15 K"
+    }
+  ],
+  "pairs": [
+    {
+      "component_id_a": "water",
+      "component_id_b": "methyldiethanolamine",
+      "provenance": "B\u00fclow Table 3/Eq.26; all other unlike pairs zero",
+      "coefficients": [
+        {
+          "family": "k_ij",
+          "identity": "pair/water/methyldiethanolamine/k_ij",
+          "temperature_law": {
+            "form": "polynomial-plus-reciprocal-temperature",
+            "reference_temperature": {
+              "magnitude": 298.15,
+              "unit": "kelvin"
+            },
+            "terms": [
+              {
+                "power": 0,
+                "coefficient": {
+                  "identity": "pair/water/methyldiethanolamine/k_ij/a0",
+                  "value": {
+                    "magnitude": -0.118,
+                    "unit": "dimensionless"
+                  }
+                }
+              },
+              {
+                "power": 1,
+                "coefficient": {
+                  "identity": "pair/water/methyldiethanolamine/k_ij/a1",
+                  "value": {
+                    "magnitude": -0.000759,
+                    "unit": "1 / kelvin"
+                  }
+                }
+              },
+              {
+                "power": 2,
+                "coefficient": {
+                  "identity": "pair/water/methyldiethanolamine/k_ij/a2",
+                  "value": {
+                    "magnitude": -1.32e-05,
+                    "unit": "1 / kelvin ** 2"
+                  }
+                }
+              },
+              {
+                "power": 3,
+                "coefficient": {
+                  "identity": "pair/water/methyldiethanolamine/k_ij/a3",
+                  "value": {
+                    "magnitude": 1.25e-07,
+                    "unit": "1 / kelvin ** 3"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "water",
+      "component_id_b": "carbon-dioxide",
+      "provenance": "B\u00fclow Table 3/Eq.26; all other unlike pairs zero",
+      "coefficients": [
+        {
+          "family": "k_ij",
+          "identity": "pair/water/carbon-dioxide/k_ij",
+          "temperature_law": {
+            "form": "polynomial-plus-reciprocal-temperature",
+            "reference_temperature": {
+              "magnitude": 298.15,
+              "unit": "kelvin"
+            },
+            "terms": [
+              {
+                "power": 0,
+                "coefficient": {
+                  "identity": "pair/water/carbon-dioxide/k_ij/a0",
+                  "value": {
+                    "magnitude": -0.0021,
+                    "unit": "dimensionless"
+                  }
+                }
+              },
+              {
+                "power": 1,
+                "coefficient": {
+                  "identity": "pair/water/carbon-dioxide/k_ij/a1",
+                  "value": {
+                    "magnitude": 0.000453,
+                    "unit": "1 / kelvin"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "water",
+      "component_id_b": "protonated-methyldiethanolamine",
+      "provenance": "B\u00fclow Table 3/Eq.26; all other unlike pairs zero",
+      "coefficients": [
+        {
+          "family": "k_ij",
+          "identity": "pair/water/protonated-methyldiethanolamine/k_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "water",
+      "component_id_b": "bicarbonate-anion",
+      "provenance": "B\u00fclow Table 3/Eq.26; all other unlike pairs zero",
+      "coefficients": [
+        {
+          "family": "k_ij",
+          "identity": "pair/water/bicarbonate-anion/k_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "water",
+      "component_id_b": "carbonate-anion",
+      "provenance": "B\u00fclow Table 3/Eq.26; all other unlike pairs zero",
+      "coefficients": [
+        {
+          "family": "k_ij",
+          "identity": "pair/water/carbonate-anion/k_ij",
+          "value": {
+            "magnitude": -0.25,
+            "unit": "dimensionless"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "water",
+      "component_id_b": "proton",
+      "provenance": "B\u00fclow Table 3/Eq.26; all other unlike pairs zero",
+      "coefficients": [
+        {
+          "family": "k_ij",
+          "identity": "pair/water/proton/k_ij",
+          "value": {
+            "magnitude": 0.25,
+            "unit": "dimensionless"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "water",
+      "component_id_b": "hydroxide-anion",
+      "provenance": "B\u00fclow Table 3/Eq.26; all other unlike pairs zero",
+      "coefficients": [
+        {
+          "family": "k_ij",
+          "identity": "pair/water/hydroxide-anion/k_ij",
+          "value": {
+            "magnitude": -0.25,
+            "unit": "dimensionless"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "methyldiethanolamine",
+      "component_id_b": "carbon-dioxide",
+      "provenance": "B\u00fclow Table 3/Eq.26; all other unlike pairs zero",
+      "coefficients": [
+        {
+          "family": "k_ij",
+          "identity": "pair/methyldiethanolamine/carbon-dioxide/k_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "methyldiethanolamine",
+      "component_id_b": "protonated-methyldiethanolamine",
+      "provenance": "B\u00fclow Table 3/Eq.26; all other unlike pairs zero",
+      "coefficients": [
+        {
+          "family": "k_ij",
+          "identity": "pair/methyldiethanolamine/protonated-methyldiethanolamine/k_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "methyldiethanolamine",
+      "component_id_b": "bicarbonate-anion",
+      "provenance": "B\u00fclow Table 3/Eq.26; all other unlike pairs zero",
+      "coefficients": [
+        {
+          "family": "k_ij",
+          "identity": "pair/methyldiethanolamine/bicarbonate-anion/k_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "methyldiethanolamine",
+      "component_id_b": "carbonate-anion",
+      "provenance": "B\u00fclow Table 3/Eq.26; all other unlike pairs zero",
+      "coefficients": [
+        {
+          "family": "k_ij",
+          "identity": "pair/methyldiethanolamine/carbonate-anion/k_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "methyldiethanolamine",
+      "component_id_b": "proton",
+      "provenance": "B\u00fclow Table 3/Eq.26; all other unlike pairs zero",
+      "coefficients": [
+        {
+          "family": "k_ij",
+          "identity": "pair/methyldiethanolamine/proton/k_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "methyldiethanolamine",
+      "component_id_b": "hydroxide-anion",
+      "provenance": "B\u00fclow Table 3/Eq.26; all other unlike pairs zero",
+      "coefficients": [
+        {
+          "family": "k_ij",
+          "identity": "pair/methyldiethanolamine/hydroxide-anion/k_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "carbon-dioxide",
+      "component_id_b": "protonated-methyldiethanolamine",
+      "provenance": "B\u00fclow Table 3/Eq.26; all other unlike pairs zero",
+      "coefficients": [
+        {
+          "family": "k_ij",
+          "identity": "pair/carbon-dioxide/protonated-methyldiethanolamine/k_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "carbon-dioxide",
+      "component_id_b": "bicarbonate-anion",
+      "provenance": "B\u00fclow Table 3/Eq.26; all other unlike pairs zero",
+      "coefficients": [
+        {
+          "family": "k_ij",
+          "identity": "pair/carbon-dioxide/bicarbonate-anion/k_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "carbon-dioxide",
+      "component_id_b": "carbonate-anion",
+      "provenance": "B\u00fclow Table 3/Eq.26; all other unlike pairs zero",
+      "coefficients": [
+        {
+          "family": "k_ij",
+          "identity": "pair/carbon-dioxide/carbonate-anion/k_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "carbon-dioxide",
+      "component_id_b": "proton",
+      "provenance": "B\u00fclow Table 3/Eq.26; all other unlike pairs zero",
+      "coefficients": [
+        {
+          "family": "k_ij",
+          "identity": "pair/carbon-dioxide/proton/k_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "carbon-dioxide",
+      "component_id_b": "hydroxide-anion",
+      "provenance": "B\u00fclow Table 3/Eq.26; all other unlike pairs zero",
+      "coefficients": [
+        {
+          "family": "k_ij",
+          "identity": "pair/carbon-dioxide/hydroxide-anion/k_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "protonated-methyldiethanolamine",
+      "component_id_b": "bicarbonate-anion",
+      "provenance": "B\u00fclow Table 3/Eq.26; all other unlike pairs zero",
+      "coefficients": [
+        {
+          "family": "k_ij",
+          "identity": "pair/protonated-methyldiethanolamine/bicarbonate-anion/k_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "protonated-methyldiethanolamine",
+      "component_id_b": "carbonate-anion",
+      "provenance": "B\u00fclow Table 3/Eq.26; all other unlike pairs zero",
+      "coefficients": [
+        {
+          "family": "k_ij",
+          "identity": "pair/protonated-methyldiethanolamine/carbonate-anion/k_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "protonated-methyldiethanolamine",
+      "component_id_b": "hydroxide-anion",
+      "provenance": "B\u00fclow Table 3/Eq.26; all other unlike pairs zero",
+      "coefficients": [
+        {
+          "family": "k_ij",
+          "identity": "pair/protonated-methyldiethanolamine/hydroxide-anion/k_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "bicarbonate-anion",
+      "component_id_b": "proton",
+      "provenance": "B\u00fclow Table 3/Eq.26; all other unlike pairs zero",
+      "coefficients": [
+        {
+          "family": "k_ij",
+          "identity": "pair/bicarbonate-anion/proton/k_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "carbonate-anion",
+      "component_id_b": "proton",
+      "provenance": "B\u00fclow Table 3/Eq.26; all other unlike pairs zero",
+      "coefficients": [
+        {
+          "family": "k_ij",
+          "identity": "pair/carbonate-anion/proton/k_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "proton",
+      "component_id_b": "hydroxide-anion",
+      "provenance": "B\u00fclow Table 3/Eq.26; all other unlike pairs zero",
+      "coefficients": [
+        {
+          "family": "k_ij",
+          "identity": "pair/proton/hydroxide-anion/k_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          }
+        }
+      ]
+    }
+  ],
+  "model_families": [
+    {
+      "kind": "base",
+      "choice": "pc-saft"
+    },
+    {
+      "kind": "association",
+      "choice": "general-site"
+    },
+    {
+      "kind": "electrolyte",
+      "choice": "born",
+      "c_shell": 0.0,
+      "c_dielectric": 0.0,
+      "ionic_dispersion": "exclude-same-sign-ion-pairs"
+    },
+    {
+      "kind": "permittivity",
+      "choice": "solvent-mole-weighting",
+      "normalization": "unnormalized",
+      "solvents": [
+        "water",
+        "methyldiethanolamine"
+      ],
+      "provenance": "D1 literal Eq.19; D3 Hsieh Eq.3/Table 3"
+    }
+  ],
+  "model_coefficients": [
+    {
+      "family": "ionic_region_relative_permittivity",
+      "identity": "model/ionic_region_relative_permittivity",
+      "value": {
+        "magnitude": 1.0,
+        "unit": "dimensionless"
+      }
+    }
+  ],
+  "topology": {
+    "sites": [
+      {
+        "component_id": "water",
+        "site_id": "a",
+        "site_role": "donor",
+        "multiplicity": 1
+      },
+      {
+        "component_id": "water",
+        "site_id": "b",
+        "site_role": "acceptor",
+        "multiplicity": 1
+      },
+      {
+        "component_id": "methyldiethanolamine",
+        "site_id": "a",
+        "site_role": "donor",
+        "multiplicity": 2
+      },
+      {
+        "component_id": "methyldiethanolamine",
+        "site_id": "b",
+        "site_role": "acceptor",
+        "multiplicity": 2
+      },
+      {
+        "component_id": "carbon-dioxide",
+        "site_id": "a",
+        "site_role": "donor",
+        "multiplicity": 1
+      },
+      {
+        "component_id": "carbon-dioxide",
+        "site_id": "b",
+        "site_role": "acceptor",
+        "multiplicity": 1
+      }
+    ],
+    "edges": [
+      {
+        "endpoint_a": {
+          "component_id": "water",
+          "site_id": "a"
+        },
+        "endpoint_b": {
+          "component_id": "water",
+          "site_id": "b"
+        },
+        "source": {
+          "kind": "explicit",
+          "provenance": "B\u00fclow Table 1 printed volume"
+        },
+        "energy_over_k": {
+          "identity": "association/water/energy",
+          "value": {
+            "magnitude": 2425.6,
+            "unit": "kelvin"
+          }
+        },
+        "volume": {
+          "identity": "association/water/volume",
+          "value": {
+            "magnitude": 0.045,
+            "unit": "dimensionless"
+          }
+        }
+      },
+      {
+        "endpoint_a": {
+          "component_id": "methyldiethanolamine",
+          "site_id": "a"
+        },
+        "endpoint_b": {
+          "component_id": "methyldiethanolamine",
+          "site_id": "b"
+        },
+        "source": {
+          "kind": "explicit",
+          "provenance": "B\u00fclow Table 1 printed volume"
+        },
+        "energy_over_k": {
+          "identity": "association/methyldiethanolamine/energy",
+          "value": {
+            "magnitude": 2046.6,
+            "unit": "kelvin"
+          }
+        },
+        "volume": {
+          "identity": "association/methyldiethanolamine/volume",
+          "value": {
+            "magnitude": 0.1238,
+            "unit": "dimensionless"
+          }
+        }
+      },
+      {
+        "endpoint_a": {
+          "component_id": "carbon-dioxide",
+          "site_id": "a"
+        },
+        "endpoint_b": {
+          "component_id": "carbon-dioxide",
+          "site_id": "b"
+        },
+        "source": {
+          "kind": "explicit",
+          "provenance": "B\u00fclow Table 1 printed volume"
+        },
+        "energy_over_k": {
+          "identity": "association/carbon-dioxide/energy",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "kelvin"
+          }
+        },
+        "volume": {
+          "identity": "association/carbon-dioxide/volume",
+          "value": {
+            "magnitude": 0.045,
+            "unit": "dimensionless"
+          }
+        }
+      },
+      {
+        "endpoint_a": {
+          "component_id": "water",
+          "site_id": "a"
+        },
+        "endpoint_b": {
+          "component_id": "methyldiethanolamine",
+          "site_id": "b"
+        },
+        "source": {
+          "kind": "combining-rule",
+          "rule_id": "wolbach-sandler",
+          "provenance": "B\u00fclow Eqs. 23 and 25",
+          "inputs": {
+            "energy_over_k": [
+              "association/water/energy",
+              "association/methyldiethanolamine/energy"
+            ],
+            "volume": [
+              "association/water/volume",
+              "association/methyldiethanolamine/volume"
+            ]
+          }
+        }
+      },
+      {
+        "endpoint_a": {
+          "component_id": "methyldiethanolamine",
+          "site_id": "a"
+        },
+        "endpoint_b": {
+          "component_id": "water",
+          "site_id": "b"
+        },
+        "source": {
+          "kind": "combining-rule",
+          "rule_id": "wolbach-sandler",
+          "provenance": "B\u00fclow Eqs. 23 and 25",
+          "inputs": {
+            "energy_over_k": [
+              "association/water/energy",
+              "association/methyldiethanolamine/energy"
+            ],
+            "volume": [
+              "association/water/volume",
+              "association/methyldiethanolamine/volume"
+            ]
+          }
+        }
+      },
+      {
+        "endpoint_a": {
+          "component_id": "water",
+          "site_id": "a"
+        },
+        "endpoint_b": {
+          "component_id": "carbon-dioxide",
+          "site_id": "b"
+        },
+        "source": {
+          "kind": "combining-rule",
+          "rule_id": "wolbach-sandler",
+          "provenance": "B\u00fclow Eqs. 23 and 25",
+          "inputs": {
+            "energy_over_k": [
+              "association/water/energy",
+              "association/carbon-dioxide/energy"
+            ],
+            "volume": [
+              "association/water/volume",
+              "association/carbon-dioxide/volume"
+            ]
+          }
+        }
+      },
+      {
+        "endpoint_a": {
+          "component_id": "carbon-dioxide",
+          "site_id": "a"
+        },
+        "endpoint_b": {
+          "component_id": "water",
+          "site_id": "b"
+        },
+        "source": {
+          "kind": "combining-rule",
+          "rule_id": "wolbach-sandler",
+          "provenance": "B\u00fclow Eqs. 23 and 25",
+          "inputs": {
+            "energy_over_k": [
+              "association/water/energy",
+              "association/carbon-dioxide/energy"
+            ],
+            "volume": [
+              "association/water/volume",
+              "association/carbon-dioxide/volume"
+            ]
+          }
+        }
+      }
+    ],
+    "no_cross_association": [
+      {
+        "component_id_a": "methyldiethanolamine",
+        "component_id_b": "carbon-dioxide",
+        "provenance": "Issue 223 water-only induced association interpretation"
+      }
+    ]
+  },
+  "reaction_correlations": [
+    {
+      "reaction_id": "water-dissociation",
+      "stoichiometry": {
+        "water": -1,
+        "proton": 1,
+        "hydroxide-anion": 1
+      },
+      "c1_c2_c3_c4": [
+        132.899,
+        -13445.9,
+        -22.4773,
+        0.0
+      ],
+      "basis": "aqueous-mole-fraction-infinite-dilution-water-v1"
+    },
+    {
+      "reaction_id": "MDEAH-dissociation",
+      "stoichiometry": {
+        "protonated-methyldiethanolamine": -1,
+        "methyldiethanolamine": 1,
+        "proton": 1
+      },
+      "c1_c2_c3_c4": [
+        -83.491,
+        -819.7,
+        10.9756,
+        0.0
+      ],
+      "basis": "aqueous-mole-fraction-infinite-dilution-water-v1"
+    },
+    {
+      "reaction_id": "CO2-hydration",
+      "stoichiometry": {
+        "carbon-dioxide": -1,
+        "water": -1,
+        "bicarbonate-anion": 1,
+        "proton": 1
+      },
+      "c1_c2_c3_c4": [
+        231.465,
+        -12092.1,
+        -36.7816,
+        0.0
+      ],
+      "basis": "aqueous-mole-fraction-infinite-dilution-water-v1"
+    },
+    {
+      "reaction_id": "bicarbonate-dissociation",
+      "stoichiometry": {
+        "bicarbonate-anion": -1,
+        "carbonate-anion": 1,
+        "proton": 1
+      },
+      "c1_c2_c3_c4": [
+        216.049,
+        -12431.7,
+        -35.4819,
+        0.0
+      ],
+      "basis": "aqueous-mole-fraction-infinite-dilution-water-v1"
+    }
+  ]
+}

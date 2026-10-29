@@ -2,7 +2,7 @@ project(
   'epcsaft',
   'c',
   'cpp',
-  version: '1.0.0',
+  version: '1.1.0',
   meson_version: '>=1.8',
   subproject_dir: 'build/subprojects',
   default_options: [
@@ -26,7 +26,7 @@ release_link_args = get_option('buildtype') == 'release' \
 threads_dep = dependency('threads')
 # Exact: gibbs_minimizer.cpp static_asserts Ipopt 3.11.9 internals.
 ipopt_dep = dependency('ipopt', method: 'pkg-config', version: '==3.11.9', include_type: 'system')
-eigen_dep = dependency('eigen3', method: 'pkg-config', version: '>=3.4', include_type: 'system')
+eigen_dep = dependency('eigen3', method: 'pkg-config', version: ['>=3.4', '<3.5'], include_type: 'system')
 ceres_dep = dependency(
   'Ceres',
   method: 'cmake',
@@ -112,6 +112,7 @@ equilibrium_sources = files(
   'native/equilibrium/stoichiometry.cpp',
   'native/equilibrium/request_compile.cpp',
   'native/equilibrium/gibbs_minimizer.cpp',
+  'native/equilibrium/one_component_two_density.cpp',
   'native/equilibrium/phase_stability.cpp',
   'native/equilibrium/phase_boundary.cpp',
   'native/equilibrium/implicit_sensitivity.cpp',
@@ -248,7 +249,7 @@ diagnostics_checks = executable(
   'tests/native/diagnostics_checks.cpp',
   cpp_args: native_warnings,
   gnu_symbol_visibility: 'inlineshidden',
-  dependencies: [eigen_dep, cppad_headers_dep],
+  dependencies: [ipopt_dep, eigen_dep, cppad_headers_dep],
   include_directories: native_inc,
   link_with: epcsaft_native,
   build_rpath: '$ORIGIN',
@@ -372,3 +373,11 @@ install_subdir(
   ],
   install_dir: py.get_install_dir(),
 )
+
+executable('reaction_reference_e3', '../analyses/2026-reaction-reference-association/scripts/e3.cpp',
+  dependencies: [ipopt_dep, eigen_dep, cppad_headers_dep], include_directories: native_inc,
+  link_with: epcsaft_native, build_rpath: '$ORIGIN', install: false, build_by_default: false)
+
+executable('wu_chloride_coverage', '../analyses/2026-mixed-chloride-water-activity/scripts/wu_coverage.cpp',
+  dependencies: [ipopt_dep, eigen_dep, cppad_headers_dep], include_directories: native_inc,
+  link_with: epcsaft_native, build_rpath: '$ORIGIN', install: false, build_by_default: false)

@@ -1,0 +1,10 @@
+{
+  "admission-A.csv": {
+    "path": "analyses/2026-pure-saturation-cost/results/issue-865/admission-A.csv",
+    "sha256_decompressed": "c58933254ec1a5f8ee5766d72918d38bb1d5bde1161755375f95e1ff1ea14cba"
+  },
+  "admission-B.csv": {
+    "path": "analyses/2026-pure-saturation-cost/results/issue-865/admission-B.csv",
+    "sha256_decompressed": "e956f9743b45191b329bea207cb100db22f0e80a6f610056fb9c82b206b6e687"
+  }
+}

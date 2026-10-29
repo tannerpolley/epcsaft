@@ -1,0 +1,394 @@
+Nov., 1952                   Physical Properties op Diacetone Alcohol                                    and           Mesityl Oxide                                   1013
+
+SOME PHYSICAL PROPERTIES OF DIACETONE ALCOHOL, MESITYL
+           OXIDE AND METHYL ISOBUTYL KETONE
+                                    By E. T. J. Fuge, S. T. Bowden and W. J. Jones
+                                    Department of Chemistry, University College, Cardiff, Wales
+                                                            Received March 20, 1952
+
+
+  The density, refractive index, vapor pressure and surface tension of diacetone alcohol, mesityl oxide and methyl isobutyl
+ketone have been measured at various temperatures. Good agreement is found between the experimental values of the
+molecular refractions, lyoparachors and parachors of the substances and those calculated by the summation of standard
+atomic and bond constants. The solubility of some of the halides of the alkali and alkaline earth metals has been determined
+at various temperatures, and the composition of the addition compounds has been ascertained.
+
+                    Introduction                                         with the standard procedure with special precautions to
+
+
+
+
+                                                                                                                                                                                Downloaded from pubs.​acs.​org/​jpchax/​article-pdf/​56/​8/​1013/​10961463/​j150500a022.​pdf by BRIGHAM YOUNG UNIV user on 29 October 2026
+                                                                         ensure the removal of traces of grease and dissolved air.
+   The present work was undertaken because little
+is known of the physical properties of the struc-                                                                       Density
+turally related substances, diacetone alcohol, mesi-                       The densities of mesityl oxide and methyl isobutyl ke-
+tyl oxide, methyl isobutyl ketone, no measurements                       tone were determined between 20° and the boiling point,
+                                                                         but those of diacetone alcohol only up to 120°, because above
+of the solubilities of salts in these media are re-
+                                                                         130° they were found to decrease with rise of temperature
+corded, and the only salt solvates described are                         at an accelerated rate, an effect attributable to the thermal
+those of mesityl oxide with platinous chloride,                          instability of that substance, which became evident also
+PtCl2· (CH3)2C=CHCOCH3,1 and with mercuric                               in the measurements of its vapor pressure. A glass dila-
+                                                    2                    tometer was employed for the density determinations, and
+chloride, HgCl2·(CH3)2C=CHCOCH3.1                                        correction was made for the thermal expansion of the glass.
+           Standardizations and Controls                                    The densities determined experimentally are given in
+   The barometer and the thermometers employed in the                    grams per cm.8 under the heading d in Table I for the corre-
+work had been tested at the National Physical Laboratory,                sponding temperature t°, C.
+Teddington, the weights were calibrated by the method of                                               Table I
+Richards,8 and the volumetric vessels by weighing empty
+and filled with distilled water. All readings were corrected                             Densities at Various Temperatures
+for known errors.    Before the substances were examined by               Temperature Diacetone alcohol                       Mesityl oxide               Methyl isobutyl
+their means, the pycnometer, refractometer, isoteniscope,                                                                                                        ketone
+and apparatus for measuring surface tension were tested                       t°, c.                 d         denied·          d               dealed.      d        dcalcd·
+with specially purified standard liquids to ensure that they                      20.0             0.9387      0.9386       0.8584              0.8582    0.8007     0.8008
+were   giving correct and accurate values. The thermostat                         40.0              .9207        .9206       .8390               .8390      .7823      .7823
+used in the measurements of density, surface tension and                       60.0                 .9019        .9023       .8194               .8196      .7642      .7636
+solubility was a bath filled either with water, or, for those                  80.0                 .8834        .8838       .7997               .7999      .7442      .7445
+above 70°, with castor oil, provided with a motor-driven                      100.0                 .8652        .8649       .7801               .7801     .7249       .7251
+stirrer and maintained constantly within 0.02° at each tem-                   120.0                 .8460       .8457        .7602               .7600
+perature by means of a mercury-toluene regulator in circuit                The variation of density with temperature is represented
+with a hot wire vacuum switch relay.
+                                                                         by the equations
+                Purification of Substances                                 Diacetone alcohol
+   Diacetone Alcohol.—The purest obtainable substance was                                d =       0.9562      -
+
+                                                                                                                        0.000875Z   -
+                                                                                                                                                0.00000038Z2
+three times fractionally distilled under low pressure. The
+purified liquid had boiling point, b.p. 61.7° (13 mm.),                     Mesityl oxide
+density at 20°, d204 0.9387. Bauer4 gives b.p. 63-64° (11                                d     =
+                                                                                                    0.8772         -
+                                                                                                                        0.000943Z       -
+                                                                                                                                                 0.00000028Z2
+mm.).
+   Mesityl Oxide and Methyl Isobutyl Ketone.—The best                      Methyl isobutyl ketone
+commercial products were fractionally distilled several times                      d = 0.8189      0.000900Z   -
+                                                                                                                0.00000038Z2        -
+
+
+
+
+through a Young column. The purified mesityl oxide had                   Densities so calculated are given in Table I under the head-
+b.p. 129.9° (760 mm.),         0.8584, n2sn 1.4414, and the
+                                                                         ing deled*
+methyl isobutyl ketone b.p. 116.2° (760 mm.), d204 0.8007                                       Refractive Index
+and n25n 1.3943. For the former compound Lecat5 gives
+b.p. 129.4° (760 mm.), Brühl6 d204 0.8578 and nwO 1.4440,                   The refractive index of each liquid for the D light of so-
+while for the latter Timmermans7 gives b.p. 116.9° (760                  dium was determined by means of an Abbe refractometer.
+mm.), Varón8 d204 0.801 and nwD 1.396, and Vogel9 d204                   The temperature of the prisms was maintained at 25.0° by
+0.7978 and rA> 1.39562.                                                  the passage of water from a flask provided with an electric
+   Benzene and Water.—These were used as standard liquids                immersion heater in series with a sliding resistance. The
+for testing the experimental methods adopted. High quality               accuracy of the refractometer was tested by the use of speci-
+benzene was purified further by repeated partial freezing                mens of water and benzene of known refractive index.        In
+and removal of the liquid phase until the freezing point                 Table II the values of the refractive indices obtained experi-
+reached 5.5°, after which it was dried with calcium chloride             mentally are given in the first line, and those of the Lorenz-
+and distilled from sodium wire: it had b.p. 80.2° (760 mm.),             Lorentz molecular refractions, ( 2        1 )M/(n2 + 2)d de-       —
+
+
+
+
+d204 0.8788, which are almost identical with the values re-              rived from them, the molecular weights M, and the densities
+corded by Young.10 Water was purified in accordance                      d, at 25° given by the equations of the last section are en-
+                                                                         tered in the second line, as Rl found by the authors. The
+  (1) Prandtl and Hofmann, Ber., 33, 2982 (1900).                        molecular refraction of mesityl oxide derived from the data
+  (2) Erdmann, ibid., 37, 4571 (1904).                                   of Brühl, already quoted in the third section of this paper,
+  (3) Richards, J. Am. Chem. Soc., 22, 144 (1900).                       and that of methyl isobutyl ketone from the data of Varón,
+  (4) Bauer, Compt. rend., 154, 1093 (1912),                             also that found by Vogel, are given in the third line, as Rl
+  (5) Lecat, Ann. Soc. sci. Bruxelles, 47, I, 25 (1927).                 found by others, while the molecular refractions calculated
+  (6) Brühl, Ann., 235, 7 (1886).                                        by using Eisenlohr’s atomic and bond refractions11 for the
+  (7) Timmermans, Bull. soc. chim. Belg., 25, 300 (1911).                keto and enol forms of the substances are given in the last
+  (8) Varón, Compt. rend., 155, 287 (1912).                              two lines of Table II.
+  (9) Vogel, J. Chem. Soc., 171 (1940); 611 (1948).
+  (10) Young, Proc. Roy. Soc. Dublin, 12, 431 (1910).                      (11) Eisenlohr, Z. physik. Chem., 75, 585 (1910); 79, 129 (1912).
+1014                                                      E. T. J. Fuge, S. T. Bowden and W. J. Jones                                                               Vol. 56
+
+                                   Table II                                                            Values of p calculated from these equations are listed under
+                                                                                                       Pcaiod- in Table III.
+Refractive            Indices at 25° and Molecular                                   Refractions
+                                 for d Light                                                                           Latent Heat of Vaporization
+                         Diacetone                             Mesityl           Methyl isobutyl          The latent heats were calculated from the variation of
+        Property          alcohol                                oxide                  ketone
+                                                                                                       vapor pressure with temperature by means of the Clapey-
+n2Bn                       1.4219                               1.4414                1.3943           ron-Clausius equation, the latent heat, l, in calories per
+Rt, found by the authors 31.58                                 30.37                 30.09             gram at an absolute temperature T being given by {CRT              —
+
+
+
+
+72l found by others                                            30.37                 30.03, 30.15      BR logJOyM, where M denotes the molecular weight,
+Rl caled, for keto form   31.56                                29.45                 29.92             R the gas constant, and B and C the constants in the vapor
+Rh caled, for enol form   32.73                                30.62                 31.08             pressure equation
+  These substances are of complex structure, being tauto-                                                                      A + B/T + C logic T
+                                                                                                                         logic p =
+meric, while mesityl oxide has two conjugated double bonds,                                            of the form given in the preceding section. The latent heat
+giving optical exaltation, and diacetone alcohol has been                                              thus calculated for diacetone alcohol between 30 and 110°
+shown by Badger and Bauer12 to consist partly of molecules                                             was 97.8 cal. per g., for mesityl oxide 105.4 at 20° and
+containing internal hydrogen bonds.                                                                    90.0 at its boiling point, and for methyl isobutyl ketone
+
+
+
+
+                                                                                                                                                                              Downloaded from pubs.​acs.​org/​jpchax/​article-pdf/​56/​8/​1013/​10961463/​j150500a022.​pdf by BRIGHAM YOUNG UNIV user on 29 October 2026
+                                                                                                       99.8 cal. at 20° and 84.9 at its boiling point.
+                      Vapor Pressure                                                                      Table IV gives the result of testing both the constancy,
+   The isoteniscope described by Smith and Menzies13 was                                               with variation of temperature between 20° and the boiling
+employed for the determination of the vapor pressures of                                               point of the normal lyoparachor, [L], defined by the equa-
+the liquids. The heating bath consisted of a 5-liter beaker                                            tion
+charged with castor oil and controlled at the required tem-
+perature by means of a micro bunsen burner, the bath being
+vigorously agitated by means of a motor-driven stirrer with
+a slightly bent rod which set up the vibration necessary to                                            and its additivity15; in this expression D and d denote the
+agitate the surface of the liquid inside the isoteniscope.                                             densities of the liquid and its saturated vapor, respectively,
+The vapor pressure of the liquid was given by the difference                                           at the temperature for which the value of l is given, while
+in level between the mercury columns in the limbs of the                                               the additive atomic and bond constants are C, —1193.6;
+manometer connected to the isoteniscope. After satisfac-                                               H, 844.8; O in ketone, 2092.1; a double bond between two
+tory checks had been obtained, the temperature of the bath                                             carbon atoms in a chain 1470, and a branch in a carbon
+was raised by about 10°, and another set of readings taken.                                            chain, —132.7. The expression holds true only for sub-
+In this way vapor pressure measurements were made be-                                                  stances that are not molecularly associated, and that have
+tween room temperature and the boiling point of the liquid                                             their boiling points between —100 and 200°. Since it is
+under investigation. To prevent prolonged heating, when                                                not applicable to alcohols, the data for diacetone alcohol
+the substance was thermally unstable, the isoteniscope was                                             are not included in Table IV.
+placed in the bath only when conditions had become sta-
+bilized. The readings are given in Table III in which 1°, C.                                                               Table IV
+represents the temperature and p the vapor pressure of the                                              Lyoparachors and Molar Entropies              of   Vaporization
+liquid in mm.                                                                                                                                               Methyl isobutyl
+   A plot of log p against 1/(273.1 + t) for diacetone alcohol                                                                              Meshy I
+                                                                                                                     Property                                   ketone
+showed, when t exceeded 130°, a sharp divergence from the
+curve for lower temperatures, with more rapid increase of                                              M                                    98.14              100.16
+pressure with rising temperature, thus revealing the in-                                               D at boiling point                    0.7500              0.7092
+cipience of the thermal decomposition of diacetone alcohol                                             d at boiling point                    0.0030              0.0031
+into mesityl oxide and water during the course of the meas-
+urement, a reaction already shown by Koelichen14 to occur                                              l at boiling point                   90.0                84.9
+at 164°                                                                                                 [L] at boiling point              4810               4950
+                                                       (CH3)2O=CHC0CH3 + h2o                           D at 20°                              0.8584              0.8007
+(CH3)2C(OH)CH2COCH3                          =
+
+
+                                                                                                       d at 20°                              0.0000              0.0001
+                                         Table III                                                     l at 20°                            105.4                99.8
+         Vapor Pressures                  at Various Temperatures                                       [L] at 20°                        4750               4970
+         Diacetone
+          alcohol
+                                             Mesityl                      Methyl isobutyl
+                                                                                     ketone
+                                                                                                       [L] calculated from constants 4720                    4940
+t°, c.          p     Pealed.       t°, C.            P      PcaLctl   t°, C.          p      Pealed   Molar entropy of vaporization,
+ 28.1           2.2      2.1         14.0              5.7     5.7       21,7          16.5     16.2     Mla/Tb                        21.9                     21.8
+ 41.4           4.5      4.6         23.2             10.0    10.0       32.7          29.5     29.7
+ 51.2           7.9      7.9         31.8             16.0    16.2       41.5          47.0     46.6                          Surface Tension
+ 61.7          13.0     13.8         44.0             30.2    30.8       50.2          69.5     70.2      The surface tension of the freshly distilled liquids was
+ 71.9          22.5     22.8         56.5             55.5    55.9       60.8         112.5    112.1   measured at 20° using the modification of Sugden’s maxi-
+ 81.7      35.7         36.1         65.8             84.5    84.3       70.0         162.0    163.1   mum    bubble pressure apparatus described by Bowden and
+ 91.1      55.5         54.7         79.6            145.5   148.3       80.1         240.0   239.4    Butler.16 The apparatus was calibrated by means of ben-
+102.0      86.0         86.3         94.5            257.5   254.6       90.9         348.0   349.7    zene of known surface tension, and thermostatic control of
+114.7     145.0        142.6        103.1            344.0   339.9       116.2        760.0   764.8    the bath to 0.02° was obtained by a mercury-toluene regu-
+                                    129,9            760,0   760.8                                     lator in conjunction with a vacuum      switch to operate the
+                                                                                                       electric heater. The values of the surface tensions are
+   The variation of vapor pressure with temperature is repre-
+sented by the equations                                                                                given in the first line of Table V, the parachors, [P]             =
+
+
+                                                                                                       Myi/*/{D      —
+
+                                                                                                                      d), derived from them in the third line, the
+   Diacetone alcohol up to 115°                                                                        value of the parachor of mesityl oxide given by Doeuvre17
+           logic p   8.5552=
+                                2482.93/(273.1 + l)
+                                                 -                                                     and of that of methyl isobutyl ketone by Vogel9 in the fourth
+                                                                                                       line, while in the last line are entered the values calculated
+   Mesityl  oxide                                                                                      from the following atomic and bond constants based on the
+logu p     28.7503
+           =          6.9350 log,„ (273.1 + t)
+                                -                                                -
+
+                                                                                                       work of Sugden18: C, 4.8; , 17.1; 0,20.0; double bond,
+                                          3144.43/(273.1 + t)                                          23.2; OH group correction, —5.0.
+   Methyl isobutyl ketone                                                                                (15) Bowden and Jones, Phil. Mag., [7] 37, 485 (1940); 39, 155
+log,» p    31.1616
+           =           7.7701 log,» (273.1 + 1}
+                                -                                                -
+                                                                                                       (1048).
+                                          3173.11/(273.1 + t)                                            (16) Bowden and Butler, J. Chem. Soc., 75 (1939).
+                                                                                                         (17) Doeuvre, Bull. soc. chim., [4] 39, 1594 (1926).
+  (12) Badger and Bauer, J. Chem. Phys., 5, 839 (1937).                                                  (18) Sugden, J. Chem. Soc., 1Z5, 27, 1177 (1924). "The Parachor
+  (13) Smith and Menzies, J. Am. Chem. Soc., 32, 1412 (1910).                                          and Valency,” Routledge, London, 1939. "Thorpe’s Dictionary of
+  (14) Koelichen, Z. physik. Chem.r 33, 136 (1900).                                                    Chemistry,” Vol. 9, Longmans, London, 1949, p. 225.
+Nov., 1952                Physical Properties          of   Diacetone Alcohol and Mesityl Oxide                                         1015
+
+                          Table V                                   Results.—In Table VI and In the following equa-
+               Surface Tensions and Parachors                    tions the solubility, s, represents the weight of an-
+                            Diacetone       Mesityl
+                                                      Methyl
+                                                      isobutyl
+                                                                 hydrous salt dissolved at f, in one gram of solvent
+         Property            alcohol         oxide    ketone     in the presence of the solid phase indicated. The
+ 7 at 20°                   31.0            28.4     23.9        solubility at these temperatures calculated from
+ (D-d)        at 20°         0.9387          0.8584   0.8006     the following equations are listed under the head-
+ [P]                       292.0           263.9    276.6        ing Scaled-
+ [P] found by others           .   .   .   261.7    276.5                            In diacetone alcohol
+ [P ] caled, for keto form 292.4           266.2    273.8        For lithium chloride,
+                                                                                        s   =    0.06683   -
+                                                                                                                0.000395Í + 0.00001636Í2
+   In view of the presence of the hydroxyl group, diacetone      For lithium bromide,
+alcohol might be expected to exhibit association in the liquid                          s   =    0.11286   -
+                                                                                                                0.001239Í + 0.00006130Í2
+state but, in this connection, Badger and Bauer18 have           For calcium bromide,
+found that while the substance may consist extensively of                               s   =    0.03703   -
+
+                                                                                                                0.001188< + 0.00004128Í2
+molecules containing internal hydrogen bonds, there is no        For strontium bromide,
+
+
+
+
+                                                                                                                                                 Downloaded from pubs.​acs.​org/​jpchax/​article-pdf/​56/​8/​1013/​10961463/​j150500a022.​pdf by BRIGHAM YOUNG UNIV user on 29 October 2026
+evidence of hydrogen bonding between the separate mole-                                 s   =    0.05507   -
+                                                                                                                0.000991Í + 0.00007305P
+cules. From the present work it is evident that there is a
+close correspondence between the observed parachor and the                                      In mesityl oxide
+theoretical value calculated from the atomic and bond con-       For lithium bromide,
+stants, but it is not possible to decide unambiguously                                  s' =     0.31950 + 0.0005601 + 0.000023471=
+whether this agreement arises from the balancing of a finite     For strontium iodide,
+negative anomaly by a positive contribution due to intra-                               s   =    0.43324   -
+                                                                                                                0.0061391 + 0.000131501=
+molecular hydrogen bonding or from the circumstance that                         In methyl isobutyl ketone
+each of these factors is negligible. The value of the surface
+tension of mesityl oxide is found to be slightly higher than     For calcium bromide,
+that obtained by Doeuvre,17 and since the corresponding                                 s   =    0.13002   -
+
+                                                                                                                0.0007171 + 0.000046391=
+parachor is closer to the theoretical value, it may be con-      For strontium iodide,
+cluded that the system of conjugate double linkages in mesi-                            s   =    0.54750 + 0.0005051 + 0.000009121=
+tyl oxide does not materially affect the parachor. The                                              Table VI
+parachor of methyl isobutyl ketone has been determined
+by Vogel,9 and on the basis of his most recent values for the                    Solubilities         and Solid Phases
+group constants is computed to be 276.0, which is close to          t, °C.        8             Scaled.           °C,        s         Scaled.
+the value obtained in the present work.
+                                                                        Lithium chloride in                      Lithium bromide in
+                                                                        diacetone alcohol:                        diacetone alcohol:
+   Solubility of Salts and Composition of Solid                             solid phase                               solid phase
+                       Phases                                             LiCl,                                           LiBr,
+  A survey was made of the solubility of the halides               (CHA;C(OH)CH2iCOCHs                         2(CHa;i2C(OH)CH:2coch8
+of the alkali and alkaline earth metals in these                    20.0       0.0655           0.0655          20.0      0.1126      0.1126
+                                                                    35.0         .0732           .0730          35.0        .1452      .1446
+organic liquids, and the compositions of the addition
+                                                                    50.0         .0879           .0879          50.0        .2039      .2042
+compounds formed by certain of these salts with
+the solvents were ascertained.                                      65.0         .1103           .1103          65.0        .2916      .2914
+
+  Drying of Salts.—Several of the salts were extremely hy-              Calcium bromide in                       Strontium bromide in
+groscopic, and precautions for the rigorous exclusion of ex-             diacetone alcohol:                       diacetone alcohol:
+traneous moisture were taken in the desiccation of the salts                 solid phase                              solid phase
+and in the solubility determinations. The salts were of high                   CaBr2,                                     SrBr2,
+analytical quality, and were dried by heating and shaking the     4(CH3)2C(OH)CH2COCH3                         4(CH8)2C(OH)CH2COCH,
+powdered material at 120-130° (15 mm.) for 4-8 hours in a           20.0   0.0290 0.0298                         20.0  0.0647 0.0645
+round bottomed flask (provided with a 3-way stopcock)
+until analysis showed that the removal of water was com-            35.0     .0484  .0460                        35.0    .1092  .1098
+plete. When the original substance was a hydrate with a             50.0     .0784  .0808                        50.0    .1888  .1881
+transition temperature below 130°, the material was main-           65.0     .1350  .1342                        65.0    .2990  .2992
+tained at a temperature about 5° below the transition point
+for 4 hours before the normal drying procedure was applied.         Lithium bromide in                         Strontium iodide in
+This method served to prevent caking of the solid during the            mesityl oxide:                              mesityl oxide:
+dehydration process.                                                         solid phase                                solid phase
+   Solubility Determinations.—Each system was examined                         LiBr,                                        Srl2,
+in duplicate so that the equilibrium between salt and solu-          (CH3)2C=CHCOCH3                            4(CH3)2C=CHCOCH3
+tion could be established by approaching the bath tempera-          20.0   0.3401 0.3401                        20.0   0.3618 0.3631
+ture from above and below the temperature at which the
+                                                                    35.0         .3677           .3684          35.0    .3832  .3795
+solubility was to be determined. The salt/liquid systems
+were mechanically agitated in 150-ml. glass-stoppered bottles       50.0         .4063           .4062          50.0     .4514 .4550
+(protected by plastic caps) in an electrically heated thermo-       65.0         .4550           .4551          65.0    .5910  .5898
+stat whose temperature was controlled by a bimetallic ther-
+moregulator. It was found in most cases that equilibration          Calcium bromide in                           Strontium iodide in
+between the solid and liquid phase was established after           methyl isobutyl ketone:                      methyl isobutyl ketone:
+agitating the system for 2 hours and allowing it to stand in          solid phase CaBr2,                           solid phase Srl2,
+the thermostat for 3 hours to allow for complete settling of        2(CH3)2CHCH2COCH3                           2(CH8)2CHCH2COCH3
+the solid phase. Samples of the clear solution were drawn           20.0     0.1334 0.1342                      20.0     0.5610 0.5612
+into a glass tube fitted with a small filter cap, the whole         35.0       .1642   .1617                    35.0.      .5771    .5763
+being preheated to the bath temperature before insertion            50.0
+into the solution. With several systems the filtration was                     .2077   .2101                    50.0       .5948    .5955
+very slow owing to the high viscosity of the solution. A            65.0       .2802   .2794                    65.0       .6191    .6189
+portion of the filtered solution was weighed and analysed
+for halide by Volhard’s method.                                     Sodium chloride, potassium chloride and stron-
+   Samples of the solid phase in contact, with the solution at   tium chloride are sparingly soluble, while barium
+the temperature of the experiment were also removed,
+quickly dried between filter papers, and analyzed in the         chloride is practically insoluble in diacetone alcohol
+same   way.                                                      over     the temperature range examined.                             Iodides
+1016                                         Robert R. Mod and Evald L. Skau                                                         Vol. 56
+
+catalyze the decomposition of diacetone alcohol                           haves similarly and forms the compound SrBr2,
+into mesityl oxide and water. In mesityl oxide                            2(CH3)2C=CHCOCH3. The bromides of sodium,
+calcium bromide is very sparingly soluble (s being                        potassium and barium are practically insoluble in
+of the order of 0.0001 at 65°) but the salt swells,                       mesityl oxide. The chlorides of lithium, sodium
+with liberation of heat and formation of needle-                          and potassium are very sparingly soluble in methyl
+shaped crystals of the addition compound, CaBr2,                          isobutyl ketone, while those of calcium and barium
+3(CH3)2C=CHCOCH3. Strontium bromide be-                                   are   practically insoluble.
+
+
+BINARY FREEZING-POINT DIAGRAMS FOR ACETAMIDE                                                                         WITH OLEIC
+                    AND ELAIDIC ACIDS
+                                        By Robert R. Mod and Evald L. Skau
+
+
+
+
+                                                                                                                                                  Downloaded from pubs.​acs.​org/​jpchax/​article-pdf/​56/​8/​1013/​10961463/​j150500a022.​pdf by BRIGHAM YOUNG UNIV user on 29 October 2026
+                                   Southern Regional Research Laboratory,* New Orleans, Louisiana
+                                                            Received, March 24, 19 2
+
+
+  Complete binary freezing-point data have been obtained for the stable and unstable forms of acetamide with elaidic acid
+and with the stable and unstable forms of oleic acid. The freezing-point diagrams show conclusively that acetamide forms
+a molecular compound with both elaidic (trans) and oleic (cis) acid. Each of these compounds exhibits two incongruent
+melting points, the one stable and the other metastable. It can also be concluded from the diagrams that the oleic acid
+compound tends to dissociate to a lesser degree than the elaidic acid compound.
+
+  It has recently been demonstrated by means of                           pounds with oleic and elaidic acids, i.e., with both
+binary freezing-point determinations that aceta-                          the cis and the trans forms of A9il0-octadecenoic
+mide forms' molecular compounds with various                              acid.
+long-chain saturated fatty acids.'2 The present                                                    Experimental
+report shows that acetamide forms similar corn-                              Binary freezing-point data were obtained for acetamide
+                                                                          with oleic and with elaidic acid. The oleic acid was purified
+                                                                          by vacuum fractional distillation of its methyl ester followed
+                                                                          by fractional low-temperature crystallization of the acid
+                                                                          from acetone, f.p. of stable form 16.3°, f.p. of unstable form
+                                                                          13.5°. The elaidic acid was obtained by elaidinization of
+                                                                          oleic acid followed by fractional crystallization from acetone,
+                                                                          fm. 43.8°. The acetamide was the best grade of Eastman
+                                                                          Kodak product.3 All sample material was dried in vacuum
+                                                                          over phosphorus pentoxide.      The freezing points were de-
+                                                                          termined by the sealed tube (static) method previously de-
+                                                                          scribed,2 which gives the true equilibrium temperature be-
+                                                                          tween the crystals and the liquid mixture of the given com-
+                                                                          position, with an accuracy of ±0.2° after correction for
+                                                                          thermometer calibration and emergent stem.
+                                                                                         Results and Discussion
+                                                                             The data obtained are given in Table I and are
+                                                                          plotted in Fig. 1. As can be seen from the diagram
+                                                                          it was possible to obtain the freezing-point curves
+                                                                          for both the stable (solid curves) and the unstable
+                                                                          (dotted curves) forms of acetamide and also of oleic
+                                                                          acid. It is apparent that both oleic and elaidic
+                                                                          acids form a crystalline molecular compound with
+                                                                          acetamide and that each of these molecular com-
+                                                                          pounds exhibits two incongruent melting points,
+                                                                          the one stable and the other metastable.
+                                                                             For the acetamide side of the diagram the stable
+                                                                          or unstable forms could be obtained at will by
+                                                                          proper manipulation of the temperature. The higher
+                                                                          freezing point was always obtained on the initial
+                                                                          melting of the samples, as would be expected since
+                                                                          they contained the stable modification. After the
+                                                                          samples had been heated some degrees above this
+                                                                          temperature, however, the freezing points invari-
+                                                                          ably fell on the lower (dotted) curves and in order to
+                                                                          obtain the higher freezing point again it was nec-
+                                                                          essary to shock-chill the molten sample to —78° in
+sent metastable equilibria.                                               in a Dry Ice-alcohol mixture. Subsequent heat-
+   (1) One of the laboratories of the Bureau of Agricultural and Indus-   ing of the solid resulted in momentary local melting
+trial Chemistry, Agricultural Research Administration, U. S. Depart-         (3) The mention of names of firms or trade products does not imply
+ment of Agriculture. Article not copyrighted.                             that they are endorsed or recommended by the Department of Agri-
+    (2) F. C. Magne and E, L. Skau, J. Am. Chem. Soc., 74, 2628 (1952).   culture-over other firms or similar products not mentioned.
+

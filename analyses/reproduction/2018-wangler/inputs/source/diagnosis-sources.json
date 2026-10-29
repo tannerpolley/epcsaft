@@ -1,0 +1,54 @@
+{
+  "source_pdfs": {
+    "/home/tnnrpolley21/Zotero/storage/G7ZTAJZS/Wangler et al. - 2018 - Prediction of CO2 and H2S solubility and enthalpy of absorption in reacting N-methyldiethanolamine .pdf": "8061821b67933655cc482199b149e1f61a042f06c561efd74db0295646b075fb",
+    "/home/tnnrpolley21/Zotero/storage/YAUNIZGX/Pahlavanzadeh and Fakouri Baygi - 2013 - Modeling CO2 solubility in Aqueous Methyldiethanolamine Solutions by Perturbed Chain-SAFT Equation o.pdf": "b737d0b83a13c5bb868d36459d1c0474eccb40e7ef700bde50fdaa77de31673a",
+    "/home/tnnrpolley21/Zotero/storage/4SMCK4SC/Kim et al. - 2008 - Ebulliometric Determination of Vapor\u2212Liquid Equilibria for Pure Water, Monoethanolamine, N-Methyldie.pdf": "76084d83956da30832ef6eb0ef1d2a911c31305fef0d7f944735915fe207c1a6"
+  },
+  "FeOs_version": "0.10.1",
+  "neutral_graph": {
+    "source": "Wangler p. 20 Figure 1",
+    "x_pixels": [
+      171,
+      955
+    ],
+    "x_values": [
+      0,
+      0.4
+    ],
+    "y_pixels": [
+      438,
+      44
+    ],
+    "p_bar": [
+      0,
+      1
+    ],
+    "thresholds": [
+      110,
+      170
+    ],
+    "allowance_bar": 0.01
+  },
+  "pure_correlations": {
+    "source": "Kim p. 2523 Table 5; Riedel B/T interpretation",
+    "Riedel_MDEA": [
+      82.8943,
+      -11011.8,
+      -8.03383,
+      1.68146e-18,
+      6
+    ],
+    "Antoine_MDEA": [
+      10.182,
+      3578.6,
+      264.24
+    ],
+    "Riedel_MEA_and_Pahlav_Table1": [
+      92.624,
+      -10367,
+      -9.4699,
+      1.9e-18,
+      6
+    ]
+  }
+}

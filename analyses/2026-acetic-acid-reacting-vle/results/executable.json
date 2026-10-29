@@ -1,0 +1,60 @@
+{
+  "source_revision": "e810617a94df43bbcca4e7fa50490dfa7e83cd45",
+  "wheel": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-856/build-r1/wheel/epcsaft-1.0.0-cp313-cp313-manylinux_2_39_x86_64.whl",
+  "wheel_sha256": "78c9581a9105a122939865273bf0da03af7160871de1d76db1aa0be304ade658",
+  "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-856/build-r1/environment/bin/python",
+  "package": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-856/build-r1/environment/lib/python3.13/site-packages/epcsaft/__init__.py",
+  "extension": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-856/build-r1/environment/lib/python3.13/site-packages/epcsaft/_core.cpython-313-x86_64-linux-gnu.so",
+  "build_source_record": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-856/build-r1/build-source.json",
+  "build_source_record_sha256": "aae120347dee9e35574a36397b4cd1e4dbfad629ad7c5347282ec3538cfe0059",
+  "build_command": "nice -n 10 bash tools/build-engine.sh --wheel /home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-856/build-r1/wheel",
+  "compiler": "c++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+  "script_sha256": {
+    "extract_measurements.py": "3c416a5aed64b0abcfb8669424cbc07f1e29459658484b764380d898e6bc8ece",
+    "present.py": "3c40c0bcdc35cf3072788dbcaab7f6b7315cca5fceaae53e2be53b3cb7fe683e",
+    "reference_ladder.cpp": "20a5f6b4ad3f97a19c4199b6cc2d57302b65c2874c9ccf0d7f23d0f0f99d5df5",
+    "reference_refinement.py": "c56f772daf29470c22143237e8963ee9b8b00fc95583969827b120e816abe2d2",
+    "run.py": "2cfb52b6dbe8cc522e7e16e0542ac37d62630fa12733a8a5c72807670f4d41e5",
+    "summarize.py": "6f252266903764240e638a6655082631d2fef3ba6008976016e74245bdcbafa1"
+  },
+  "input_sha256": {
+    "inputs/bernatova-2006.json": "6dad6011d8aca7f1c48d02fcb499105d5280b2be4109ec10fbf9b71ca890b4a7",
+    "inputs/measurement-lineage.json": "86d83d2683d20c00149c333a4fc2434ff7fed9565ff474e462b653b80ee831a4",
+    "inputs/measurements.csv": "25dcfe07fa5c056f46554a8fe9223191729c0d605a811c329ad5227c5b2cd4aa",
+    "inputs/parameters.json": "26a380d490f690f2dbb23a51727ea4f586b6b45ef0a3fb22d39ed5b00fa0fed6",
+    "inputs/reactions.json": "dbba7c166e8a23664e07172cf5a2dd40b2b2c9e3e5691c6bbb07193f29b3d142",
+    "inputs/source-notes.md": "cfd23e6aea2d3a494fee1d7af51abb7a90906587a637d5925263b21909289ced"
+  },
+  "loaded_sha256": {
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-856/build-r1/environment/lib/python3.13/site-packages/epcsaft/libepcsaft_asl.so": "527f04a83455a517494d686f98c175aaeb062ba8feace15bb147614ba6dc7f24",
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-856/build-r1/environment/lib/python3.13/site-packages/epcsaft/libepcsaft_native.so": "108fe316caf0305c1e02258e1e16aeffe7d371ac5a4db7f3b91034f355b01a9d",
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-856/build-r1/environment/lib/python3.13/site-packages/epcsaft/_core.cpython-313-x86_64-linux-gnu.so": "579a686e88a05114e33fff8be91952dc844863d3a6aba619551d9e92fc8e94e8"
+  },
+  "loaded_native_maps": [
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-856/build-r1/environment/lib/python3.13/site-packages/epcsaft.libs/libamd-242ddc8b.so.3.3.1",
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-856/build-r1/environment/lib/python3.13/site-packages/epcsaft.libs/libblas-e748efca.so.3.12.0",
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-856/build-r1/environment/lib/python3.13/site-packages/epcsaft.libs/libbz2-cc08c9f5.so.1.0.4",
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-856/build-r1/environment/lib/python3.13/site-packages/epcsaft.libs/libcamd-5324f425.so.3.3.1",
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-856/build-r1/environment/lib/python3.13/site-packages/epcsaft.libs/libccolamd-722311b0.so.3.3.2",
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-856/build-r1/environment/lib/python3.13/site-packages/epcsaft.libs/libceres-1ed9f2aa.so.2.2.0",
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-856/build-r1/environment/lib/python3.13/site-packages/epcsaft.libs/libcholmod-f72594b8.so.5.2.0",
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-856/build-r1/environment/lib/python3.13/site-packages/epcsaft.libs/libcolamd-2c50410c.so.3.3.2",
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-856/build-r1/environment/lib/python3.13/site-packages/epcsaft.libs/libdmumps_seq-5-5b90da60.6.1.so",
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-856/build-r1/environment/lib/python3.13/site-packages/epcsaft.libs/libesmumps-7-0dbaffee.0.4.so",
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-856/build-r1/environment/lib/python3.13/site-packages/epcsaft.libs/libgflags-288df2ca.so.2.2.2",
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-856/build-r1/environment/lib/python3.13/site-packages/epcsaft.libs/libgfortran-342618cc.so.5.0.0",
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-856/build-r1/environment/lib/python3.13/site-packages/epcsaft.libs/libglog-cc080fc1.so.0.6.0",
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-856/build-r1/environment/lib/python3.13/site-packages/epcsaft.libs/libgomp-135f3c8f.so.1.0.0",
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-856/build-r1/environment/lib/python3.13/site-packages/epcsaft.libs/libipopt-da040c79.so.1.9.9",
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-856/build-r1/environment/lib/python3.13/site-packages/epcsaft.libs/liblapack-851bb1fc.so.3.12.0",
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-856/build-r1/environment/lib/python3.13/site-packages/epcsaft.libs/liblzma-26b37d25.so.5.4.5",
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-856/build-r1/environment/lib/python3.13/site-packages/epcsaft.libs/libmumps_common_seq-5-0a3cf080.6.1.so",
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-856/build-r1/environment/lib/python3.13/site-packages/epcsaft.libs/libscotch-7-f56acad3.0.4.so",
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-856/build-r1/environment/lib/python3.13/site-packages/epcsaft.libs/libscotcherr-7-ba530aac.0.4.so",
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-856/build-r1/environment/lib/python3.13/site-packages/epcsaft.libs/libspqr-cf255ac7.so.4.3.2",
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-856/build-r1/environment/lib/python3.13/site-packages/epcsaft.libs/libsuitesparseconfig-e1619265.so.7.6.1",
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-856/build-r1/environment/lib/python3.13/site-packages/epcsaft.libs/libunwind-28e77a49.so.8.0.1",
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-856/build-r1/environment/lib/python3.13/site-packages/epcsaft/_core.cpython-313-x86_64-linux-gnu.so",
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-856/build-r1/environment/lib/python3.13/site-packages/epcsaft/libepcsaft_native.so"
+  ]
+}

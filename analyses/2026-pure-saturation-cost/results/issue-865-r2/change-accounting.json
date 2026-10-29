@@ -1,0 +1,302 @@
+{
+  "categories": {
+    "documents": {
+      "additions": 50,
+      "binary_files": 0,
+      "files": 4,
+      "removals": 5
+    },
+    "executable": {
+      "additions": 74,
+      "binary_files": 0,
+      "files": 5,
+      "removals": 29
+    },
+    "generated": {
+      "additions": 0,
+      "binary_files": 0,
+      "files": 0,
+      "removals": 0
+    },
+    "other": {
+      "additions": 739,
+      "binary_files": 6,
+      "files": 23,
+      "removals": 0
+    },
+    "tests": {
+      "additions": 0,
+      "binary_files": 0,
+      "files": 0,
+      "removals": 0
+    }
+  },
+  "files": [
+    {
+      "additions": 7,
+      "binary": false,
+      "category": "documents",
+      "path": "analyses/2026-pure-saturation-cost/README.md",
+      "removals": 2,
+      "untracked": false
+    },
+    {
+      "additions": 17,
+      "binary": false,
+      "category": "documents",
+      "path": "analyses/2026-pure-saturation-cost/figures/issue-865-daytime.md",
+      "removals": 0,
+      "untracked": true
+    },
+    {
+      "additions": 1,
+      "binary": false,
+      "category": "documents",
+      "path": "analyses/2026-pure-saturation-cost/figures/issue-865-merged.md",
+      "removals": 0,
+      "untracked": true
+    },
+    {
+      "additions": 25,
+      "binary": false,
+      "category": "documents",
+      "path": "analyses/2026-pure-saturation-cost/notebook.qmd",
+      "removals": 3,
+      "untracked": false
+    },
+    {
+      "additions": 5,
+      "binary": false,
+      "category": "other",
+      "path": "analyses/2026-pure-saturation-cost/results/issue-865/actions-summary.json",
+      "removals": 0,
+      "untracked": false
+    },
+    {
+      "additions": 27,
+      "binary": false,
+      "category": "other",
+      "path": "analyses/2026-pure-saturation-cost/results/issue-865/admission-A.csv",
+      "removals": 0,
+      "untracked": false
+    },
+    {
+      "additions": 27,
+      "binary": false,
+      "category": "other",
+      "path": "analyses/2026-pure-saturation-cost/results/issue-865/admission-B.csv",
+      "removals": 0,
+      "untracked": false
+    },
+    {
+      "additions": 26,
+      "binary": false,
+      "category": "other",
+      "path": "analyses/2026-pure-saturation-cost/results/issue-865/binary128-summary.json",
+      "removals": 0,
+      "untracked": false
+    },
+    {
+      "additions": 37,
+      "binary": false,
+      "category": "other",
+      "path": "analyses/2026-pure-saturation-cost/results/issue-865/blocks.csv",
+      "removals": 0,
+      "untracked": false
+    },
+    {
+      "additions": 12,
+      "binary": false,
+      "category": "other",
+      "path": "analyses/2026-pure-saturation-cost/results/issue-865/campaign-additions.json",
+      "removals": 0,
+      "untracked": false
+    },
+    {
+      "additions": null,
+      "binary": true,
+      "category": "other",
+      "path": "analyses/2026-pure-saturation-cost/results/issue-865/checks.csv.gz",
+      "removals": null,
+      "untracked": false
+    },
+    {
+      "additions": 11,
+      "binary": false,
+      "category": "other",
+      "path": "analyses/2026-pure-saturation-cost/results/issue-865/equivalence-summary.json",
+      "removals": 0,
+      "untracked": false
+    },
+    {
+      "additions": 318,
+      "binary": false,
+      "category": "other",
+      "path": "analyses/2026-pure-saturation-cost/results/issue-865/gates.json",
+      "removals": 0,
+      "untracked": false
+    },
+    {
+      "additions": 45,
+      "binary": false,
+      "category": "other",
+      "path": "analyses/2026-pure-saturation-cost/results/issue-865/host.json",
+      "removals": 0,
+      "untracked": false
+    },
+    {
+      "additions": 32,
+      "binary": false,
+      "category": "other",
+      "path": "analyses/2026-pure-saturation-cost/results/issue-865/image-A.json",
+      "removals": 0,
+      "untracked": false
+    },
+    {
+      "additions": 32,
+      "binary": false,
+      "category": "other",
+      "path": "analyses/2026-pure-saturation-cost/results/issue-865/image-B.json",
+      "removals": 0,
+      "untracked": false
+    },
+    {
+      "additions": 62,
+      "binary": false,
+      "category": "other",
+      "path": "analyses/2026-pure-saturation-cost/results/issue-865/interim-summary.json",
+      "removals": 0,
+      "untracked": false
+    },
+    {
+      "additions": null,
+      "binary": true,
+      "category": "other",
+      "path": "analyses/2026-pure-saturation-cost/results/issue-865/key-comparison-states.csv.gz",
+      "removals": null,
+      "untracked": false
+    },
+    {
+      "additions": null,
+      "binary": true,
+      "category": "other",
+      "path": "analyses/2026-pure-saturation-cost/results/issue-865/key-comparison-summary.json.gz",
+      "removals": null,
+      "untracked": false
+    },
+    {
+      "additions": null,
+      "binary": true,
+      "category": "other",
+      "path": "analyses/2026-pure-saturation-cost/results/issue-865/key-comparison-work.csv.gz",
+      "removals": null,
+      "untracked": false
+    },
+    {
+      "additions": null,
+      "binary": true,
+      "category": "other",
+      "path": "analyses/2026-pure-saturation-cost/results/issue-865/key-control-summary.json.gz",
+      "removals": null,
+      "untracked": false
+    },
+    {
+      "additions": 49,
+      "binary": false,
+      "category": "other",
+      "path": "analyses/2026-pure-saturation-cost/results/issue-865/paired-ratios.csv",
+      "removals": 0,
+      "untracked": false
+    },
+    {
+      "additions": null,
+      "binary": true,
+      "category": "other",
+      "path": "analyses/2026-pure-saturation-cost/results/issue-865/preflight.json.gz",
+      "removals": null,
+      "untracked": false
+    },
+    {
+      "additions": 12,
+      "binary": false,
+      "category": "other",
+      "path": "analyses/2026-pure-saturation-cost/results/issue-865/roots-A.csv",
+      "removals": 0,
+      "untracked": false
+    },
+    {
+      "additions": 12,
+      "binary": false,
+      "category": "other",
+      "path": "analyses/2026-pure-saturation-cost/results/issue-865/roots-B.csv",
+      "removals": 0,
+      "untracked": false
+    },
+    {
+      "additions": 29,
+      "binary": false,
+      "category": "other",
+      "path": "analyses/2026-pure-saturation-cost/results/issue-865/runtime-additions.json",
+      "removals": 0,
+      "untracked": false
+    },
+    {
+      "additions": 3,
+      "binary": false,
+      "category": "other",
+      "path": "analyses/2026-pure-saturation-cost/results/issue-865/selection.csv",
+      "removals": 0,
+      "untracked": false
+    },
+    {
+      "additions": 7,
+      "binary": false,
+      "category": "executable",
+      "path": "analyses/2026-pure-saturation-cost/scripts/reduce.py",
+      "removals": 8,
+      "untracked": false
+    },
+    {
+      "additions": 4,
+      "binary": false,
+      "category": "executable",
+      "path": "analyses/2026-pure-saturation-cost/scripts/run.py",
+      "removals": 6,
+      "untracked": false
+    },
+    {
+      "additions": 3,
+      "binary": false,
+      "category": "executable",
+      "path": "engine/native/equilibrium/gibbs_minimizer.cpp",
+      "removals": 2,
+      "untracked": false
+    },
+    {
+      "additions": 5,
+      "binary": false,
+      "category": "executable",
+      "path": "engine/native/equilibrium/one_component_two_density.cpp",
+      "removals": 3,
+      "untracked": false
+    },
+    {
+      "additions": 55,
+      "binary": false,
+      "category": "executable",
+      "path": "engine/native/equilibrium/phase_boundary.cpp",
+      "removals": 10,
+      "untracked": false
+    }
+  ],
+  "merge_base": "3cf744eed72b9b896c5a77150cf4ed0a96b8fb3d",
+  "repository": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-865-reduce-the-prepared-call-cost-of-pure",
+  "requested_base": "origin/main",
+  "scope": "merge base through HEAD, index, working tree, and untracked files",
+  "totals": {
+    "additions": 863,
+    "binary_files": 6,
+    "files": 32,
+    "removals": 34
+  }
+}

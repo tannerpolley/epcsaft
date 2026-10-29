@@ -10,6 +10,7 @@
 #include <nanobind/stl/map.h>
 #include <nanobind/stl/optional.h>
 #include <nanobind/stl/pair.h>
+#include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/vector.h>
 #include <numeric>
@@ -48,7 +49,7 @@ FitRequest point_request(const Parameters& parameters, std::vector<Coordinate> c
 void register_regression(nb::module_& module) {
     FitHost host;
     if (const nb::object python = nb::module_::import_("sys").attr("executable"); !python.is_none() && nb::len(python) > 0)
-        // The native library loads by its installed path, so its $ORIGIN RUNPATH finds bundled libraries; a path that no
+        // The native library loads by its installed path, so its $ORIGIN search path finds bundled libraries; a path that no
         // longer names the held file (an editable relink replaced it) refuses the worker.
         host.worker = {nb::cast<std::string>(python), "-I", "-c", "import ctypes, os, importlib.machinery as i, importlib.util as u; "
             "p = os.readlink('/proc/self/fd/4'); s, f = os.stat(p), os.fstat(4); "
@@ -80,7 +81,7 @@ void register_regression(nb::module_& module) {
         EPCSAFT_VALUES(ObservationKind, MeanIonicActivityCoefficient, OsmoticCoefficient, MixtureOsmoticCoefficient, SolvationGibbsEnergy,
             TransferGibbsEnergy, BulkRelativePermittivity, IsobaricHeatCapacity, EquilibriumIsobaricHeatCapacity,
             LogEquilibriumConstant, Density, PhaseDensity, EquilibriumPressure, EquilibriumTemperature,
-            PhaseMoleFraction, PhaseFraction, PartialPressure, PhaseAmountRatio, AdditionEnthalpy);
+            PhaseMoleFraction, PhaseFraction, PartialPressure, PhaseAmountRatio, AdditionEnthalpy, SaturationCappedAdditionEnthalpy);
     nb::enum_<ResidualForm>(module, "ResidualForm")
         EPCSAFT_VALUES(ResidualForm, Difference, LogRatio);
     nb::enum_<ObservationStatus>(module, "ObservationStatus")
@@ -89,8 +90,8 @@ void register_regression(nb::module_& module) {
             ActionUnavailable, Nonfinite, InadmissibleTrial);
     nb::class_<Observation>(module, "Observation")
         .def(nb::init<>())
-        EPCSAFT_READWRITE(Observation, kind, temperature, pressure, composition, ion_indices, stoichiometry, molality,
-            reference_composition, branch, problem, final_problem, feed_amount, reaction, phase, species,
+        EPCSAFT_READWRITE(Observation, kind, temperature, pressure, composition, ion_indices, stoichiometry, molality, finite_solute_molalities,
+            reference_composition, branch, problem, final_problem, feed_amount, basis_amount, loading_cap, loading_bounds, loading_grid, reaction, phase, species,
             denominator_phase, denominator_species, mass_basis, observed, form, scale);
     nb::enum_<CheckMetric>(module, "CheckMetric")
         EPCSAFT_VALUES(CheckMetric, AbsoluteDifference, AbsoluteLog10Ratio);
@@ -100,7 +101,7 @@ void register_regression(nb::module_& module) {
             maximum_iterations);
     nb::class_<HoldResult>(module, "HoldResult")
         EPCSAFT_READONLY(HoldResult, energy_error, correction, uncertainty, derivative, parameter_derivative,
-            iterations);
+            iterations, rank);
     nb::class_<EvaluatedCoordinates>(module, "EvaluatedCoordinates")
         EPCSAFT_READONLY(EvaluatedCoordinates, parameters, active, physical, map, holds, reaction_laws);
     module.def("reaction_log10_reciprocal", &reaction_log10_reciprocal, nb::arg("law"));
@@ -110,12 +111,25 @@ void register_regression(nb::module_& module) {
     nb::class_<CheckResult>(module, "CheckResult")
         EPCSAFT_READONLY(CheckResult, name, unit, status, rows, failed_rows, errors, slopes, maximum, mean, argmax,
             maximum_threshold, mean_threshold, baseline_maximum, baseline_mean, report_only);
+    nb::class_<equilibrium::AffineLoading>(module, "AffineLoading")
+        EPCSAFT_READONLY(equilibrium::AffineLoading, initial, direction, lower, upper, seed, pressure);
+    nb::class_<equilibrium::SaturationOperand>(module, "SaturationOperand")
+        EPCSAFT_READONLY(equilibrium::SaturationOperand, quantity, value, error);
+    nb::class_<equilibrium::SaturationCandidate>(module, "SaturationCandidate")
+        EPCSAFT_READONLY(equilibrium::SaturationCandidate, state, operands);
+    nb::class_<equilibrium::SaturationComparison>(module, "SaturationComparison")
+        EPCSAFT_READONLY(equilibrium::SaturationComparison, left, right, identity, operands);
+    nb::class_<equilibrium::SaturationNode>(module, "SaturationNode")
+        EPCSAFT_READONLY(equilibrium::SaturationNode, loading, mismatch, slope, state, estimates, action_cause, action_seconds, estimate_seconds, local_estimates, action_diagnostics);
+    nb::class_<equilibrium::SaturationSearch>(module, "SaturationSearch")
+        EPCSAFT_READONLY(equilibrium::SaturationSearch, grid, nodes, events, candidates, comparisons, causes, groups,
+            accepted, first_numerical_failure, brackets, iterations, evaluations, hessian_calls, attempts, complete, declaration, work_at_entry, uniqueness_scope, detection_limits);
     nb::class_<Prediction>(module, "Prediction")
         EPCSAFT_SOLVER_OPTIONS(Prediction, 7)
         EPCSAFT_READONLY(Prediction, value, unit, status, message, residual, convergence, branch, stable_root_count,
-            requested_tolerance_met);
+            requested_tolerance_met, first_numerical_failure, saturation, saturation_loading, endpoint_loading, added_amount, cap_branch, saturation_loading_gradient, endpoint_loading_gradient);
     nb::class_<PredictionGradient>(module, "PredictionGradient")
-        EPCSAFT_READONLY(PredictionGradient, value, status, message, parameter_actions);
+        EPCSAFT_READONLY(PredictionGradient, value, status, message, parameter_actions, first_numerical_failure, saturation_loading_gradient, endpoint_loading_gradient);
     nb::enum_<ReactionCoefficient>(module, "ReactionCoefficient")
         EPCSAFT_VALUES(ReactionCoefficient, A, B, C, D, EnthalpyShift);
     nb::class_<ReactionCoordinate>(module, "ReactionCoordinate")
@@ -152,7 +166,7 @@ void register_regression(nb::module_& module) {
             bindings::solver_option(c.solver_options, policy::SOLVER_POLICIES[i]->name, v, 63, true);
         }, nb::for_setter(nb::arg("v").none()));
     nb::class_<TrialFailure>(module, "TrialFailure")
-        EPCSAFT_READONLY(TrialFailure, trial, observation, optimizer, status, message, jacobian, parameter_actions);
+        EPCSAFT_READONLY(TrialFailure, trial, observation, optimizer, status, message, jacobian, parameter_actions, first_numerical_failure);
     nb::class_<FitCovariance>(module, "FitCovariance")
         EPCSAFT_READONLY(FitCovariance, status, assumption, rank, singular_values, left_vectors, right_vectors,
             projected_gradient_norm, objective_rows, active_bounds, optimizer, physical, variance_factor);
@@ -176,13 +190,13 @@ void register_regression(nb::module_& module) {
             target_maximum, gap, primal, stationarity, dual_sign, complementarity, point, lower, upper, values,
             physical_values, jacobian, multipliers, physical_multipliers, z_lower, z_upper, physical_z_lower,
             physical_z_upper, lower_distances, upper_distances, hold_multipliers, full_stationarity, root_errors,
-            slack_groups, slack_rows, active_lower, active_upper, hold_causes, rows, frozen_checks);
+            slack_groups, slack_rows, active_lower, active_upper, hold_causes, rows, frozen_checks, ipopt_diagnostics);
     nb::class_<FitResult>(module, "FitResult")
         EPCSAFT_SOLVER_OPTIONS(FitResult, 63)
-        EPCSAFT_READONLY(FitResult, minimax, status, chart, checks, acceptance, optimizer, message, usable, physical,
+        EPCSAFT_READONLY(FitResult, saturation_predictions, minimax, status, chart, checks, acceptance, optimizer, message, usable, physical,
             parameters, predictions, residuals, weighted_residuals, physical_jacobian, optimizer_jacobian, statuses,
             failures, iterations, residual_evaluations, jacobian_evaluations, trial_failures, iteration_seconds,
-            iteration_costs, initial_cost, final_cost, covariance, reconciliation);
+            iteration_costs, initial_cost, final_cost, covariance, reconciliation, rank_records, first_numerical_failure);
     module.def("predict", [](const HelmholtzModel& model, const Observation& observation) {
         core::Scope scope("predict");
         validate(observation, model);
@@ -220,8 +234,8 @@ void register_regression(nb::module_& module) {
        nb::arg("errors"), nb::arg("thermochemistry") = std::nullopt, nb::arg("solver_options") = nb::none());
     nb::class_<ObservationEvaluation>(module, "ObservationEvaluation")
         EPCSAFT_SOLVER_OPTIONS(ObservationEvaluation, 63)
-        EPCSAFT_READONLY(ObservationEvaluation, predictions, gradient, optimizer_gradient, chart,
-            residual_optimizer_gradient, statuses, reconciliation, state_densities, reference_values);
+        EPCSAFT_READONLY(ObservationEvaluation, saturation_predictions, predictions, gradient, optimizer_gradient, chart,
+            residual_optimizer_gradient, statuses, reconciliation, state_densities, reference_values, first_numerical_failure, first_numerical_failure_observation);
     module.def("evaluate_observations", [](const Parameters& parameters, std::vector<Coordinate> coordinates,
         const std::vector<double>& optimizer, std::vector<HydrationHold> holds, std::vector<Observation> observations,
         std::optional<ThermochemistryRecord> thermochemistry, std::optional<MeasurementUncertainty> uncertainty, nb::object solver_options) {

@@ -1,0 +1,11 @@
+{
+  "states": 256,
+  "regular_states": 251,
+  "values": 10135,
+  "regular_values": 10040,
+  "bit_differences": [],
+  "quantity_failures": [],
+  "diagnostic_changes": [],
+  "admission_cases": 26,
+  "admission_differences": []
+}

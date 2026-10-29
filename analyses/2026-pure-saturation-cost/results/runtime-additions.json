@@ -1,0 +1,81 @@
+{
+  "base": "37c58923e82a57460518bc01f8afcf61484fc2d1",
+  "method": "diff of pinned formatter lines occupied by retained C++ tokens; moves count as additions",
+  "layers": {
+    "bindings": {
+      "added": 8,
+      "removed": 2
+    },
+    "core": {
+      "added": 37,
+      "removed": 33
+    },
+    "equilibrium": {
+      "added": 613,
+      "removed": 213
+    },
+    "properties": {
+      "added": 200,
+      "removed": 58
+    }
+  },
+  "files": [
+    {
+      "file": "engine/native/bindings/equilibrium_bindings.cpp",
+      "added": 8,
+      "removed": 2
+    },
+    {
+      "file": "engine/native/core/numerical_policy.hpp",
+      "added": 4,
+      "removed": 0
+    },
+    {
+      "file": "engine/native/core/scalar.hpp",
+      "added": 33,
+      "removed": 33
+    },
+    {
+      "file": "engine/native/equilibrium/gibbs_minimizer.cpp",
+      "added": 232,
+      "removed": 204
+    },
+    {
+      "file": "engine/native/equilibrium/gibbs_minimizer.hpp",
+      "added": 12,
+      "removed": 1
+    },
+    {
+      "file": "engine/native/equilibrium/one_component_two_density.cpp",
+      "added": 339,
+      "removed": 0
+    },
+    {
+      "file": "engine/native/equilibrium/phase_boundary.cpp",
+      "added": 14,
+      "removed": 7
+    },
+    {
+      "file": "engine/native/equilibrium/problem.hpp",
+      "added": 11,
+      "removed": 0
+    },
+    {
+      "file": "engine/native/equilibrium/request_compile.cpp",
+      "added": 5,
+      "removed": 1
+    },
+    {
+      "file": "engine/native/properties/density.cpp",
+      "added": 185,
+      "removed": 51
+    },
+    {
+      "file": "engine/native/properties/helmholtz_model.hpp",
+      "added": 15,
+      "removed": 7
+    }
+  ],
+  "total_added": 858,
+  "within_allowance": true
+}

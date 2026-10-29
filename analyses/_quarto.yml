@@ -17,7 +17,14 @@
       "2026-dielectric-alternatives/notebook.qmd",
       "reproduction/2018-wangler/notebook.qmd",
       "reproduction/2020-cleeton/notebook.qmd",
-      "2026-release-computational-cost/notebook.qmd"
+      "2026-release-computational-cost/notebook.qmd",
+      "2026-mea-flash-family-seed/notebook.qmd",
+      "2026-pure-saturation-cost/notebook.qmd",
+      "2026-equilibrium-forward-error/notebook.qmd",
+      "2026-acetic-acid-reacting-vle/notebook.qmd",
+      "2026-nacl-solubility/notebook.qmd",
+      "2026-nacl-dilution-enthalpy/notebook.qmd",
+      "2026-explicit-discovery-cost/notebook.qmd"
     ]
   },
   "website": {
@@ -83,6 +90,34 @@
         {
           "href": "2026-release-computational-cost/notebook.qmd",
           "text": "Release computational cost"
+        },
+        {
+          "href": "2026-mea-flash-family-seed/notebook.qmd",
+          "text": "MEA flash family on v1.0.0"
+        },
+        {
+          "href": "2026-pure-saturation-cost/notebook.qmd",
+          "text": "Pure-fluid saturation cost"
+        },
+        {
+          "text": "Equilibrium numerical-error estimates",
+          "href": "2026-equilibrium-forward-error/notebook.qmd"
+        },
+        {
+          "href": "2026-acetic-acid-reacting-vle/notebook.qmd",
+          "text": "Aqueous acetic-acid bubble pressure"
+        },
+        {
+          "href": "2026-nacl-solubility/notebook.qmd",
+          "text": "Measured NaCl solubility"
+        },
+        {
+          "href": "2026-nacl-dilution-enthalpy/notebook.qmd",
+          "text": "Measured NaCl dilution enthalpy"
+        },
+        {
+          "href": "2026-explicit-discovery-cost/notebook.qmd",
+          "text": "Explicit phase discovery cost"
         }
       ]
     }

@@ -1,0 +1,117 @@
+{
+  "equation": "reference_limit_terminal_pair",
+  "references": [
+    {
+      "reaction_index": 0,
+      "source_pressure_Pa": 101325.0,
+      "molalities_mol_kg": [
+        1e-08,
+        1e-10,
+        1e-12,
+        1e-14
+      ],
+      "finite_contractions": [
+        -256.41649699420645,
+        -256.41618204111506,
+        -256.4161505398848,
+        -256.4161473897026
+      ],
+      "terminal_pair_contractions": [
+        -256.4161470463271,
+        -256.4161470397481,
+        -256.4161470396823
+      ],
+      "analytic_contraction": -256.4161470396817
+    },
+    {
+      "reaction_index": 1,
+      "source_pressure_Pa": 100000.0,
+      "molalities_mol_kg": [
+        1e-08,
+        1e-10,
+        1e-12,
+        1e-14
+      ],
+      "finite_contractions": [
+        -391.4827890881553,
+        -391.4824741425938,
+        -391.4824426414433,
+        -391.48243949126237
+      ],
+      "terminal_pair_contractions": [
+        -391.48243914864247,
+        -391.4824391413155,
+        -391.48243914124225
+      ],
+      "analytic_contraction": -391.48243914124134
+    }
+  ],
+  "comparisons": [
+    {
+      "row": 9,
+      "pressures_Pa": [
+        11934.68512015019,
+        11934.68512014108,
+        11934.68512014108
+      ],
+      "pressure_minus_analytic_Pa": [
+        9.12223185878247e-09,
+        1.0913936421275139e-11,
+        1.0913936421275139e-11
+      ],
+      "consecutive_pressure_changes_Pa": [
+        -9.111317922361195e-09,
+        0.0
+      ],
+      "maximum_absolute_pressure_effect_Pa": 9.12223185878247e-09
+    },
+    {
+      "row": 10,
+      "pressures_Pa": [
+        12223.154249466295,
+        12223.154249453357,
+        12223.154249453179
+      ],
+      "pressure_minus_analytic_Pa": [
+        1.3074895832687616e-08,
+        1.3642420526593924e-10,
+        -4.18367562815547e-11
+      ],
+      "consecutive_pressure_changes_Pa": [
+        -1.2938471627421677e-08,
+        -1.7826096154749393e-10
+      ],
+      "maximum_absolute_pressure_effect_Pa": 1.3074895832687616e-08
+    },
+    {
+      "row": 11,
+      "pressures_Pa": [
+        12441.674115362885,
+        12441.674115347443,
+        12441.67411534717
+      ],
+      "pressure_minus_analytic_Pa": [
+        1.5626937965862453e-08,
+        1.8553691916167736e-10,
+        -8.731149137020111e-11
+      ],
+      "consecutive_pressure_changes_Pa": [
+        -1.5441401046700776e-08,
+        -2.7284841053187847e-10
+      ],
+      "maximum_absolute_pressure_effect_Pa": 1.5626937965862453e-08
+    }
+  ],
+  "attempted": 9,
+  "failures": [],
+  "native_diagnostic": {
+    "binary": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-856/build-r1/reference_ladder",
+    "sha256": "d6d42db3366de41a853013b8183498f7add33eac25dc0ba86ab096342427af7c",
+    "source_sha256": "20a5f6b4ad3f97a19c4199b6cc2d57302b65c2874c9ccf0d7f23d0f0f99d5df5",
+    "loaded_library_sha256": {
+      "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-856/build-r1/environment/lib/python3.13/site-packages/epcsaft/libepcsaft_native.so": "108fe316caf0305c1e02258e1e16aeffe7d371ac5a4db7f3b91034f355b01a9d"
+    },
+    "build_command_file": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-856/build-r1/reference-build-command.json"
+  },
+  "meaning": "Numerical refinement comparison on a fixed neutral dilution path, not a rigorous truncation bound or an uncertainty for supplied parameters."
+}

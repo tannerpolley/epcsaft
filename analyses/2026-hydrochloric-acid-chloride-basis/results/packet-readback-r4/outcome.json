@@ -1,0 +1,12 @@
+{
+  "published": true,
+  "replay_rows": 84,
+  "comparison_rows": 148,
+  "numerical_cases": 14,
+  "preservation_result_files": 25,
+  "binary64_equal": true,
+  "byte_identical": true,
+  "temperature_K": 298.15,
+  "pressure_Pa": 100000,
+  "accuracy_basis": "Retained accuracy table; all source predictions verified by loaded-packet replay"
+}

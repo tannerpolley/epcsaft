@@ -1,0 +1,129 @@
+[
+  {
+    "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-899/sources-r2/el-guendouzi2001-mg-ca.csv",
+    "sha256": "6d62252019062ad3a6fe48f50dc5100d858e705e5669c582f14b4c7960478651",
+    "retained": "el-guendouzi2001-mg-ca.csv"
+  },
+  {
+    "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-899/sources-r2/el-guendouzi2005-table1.csv",
+    "sha256": "93d2e14a9dac98a8bfda3bf5ee9b6d784b9de597d47adc37e3bc083a40be086a",
+    "retained": "el-guendouzi2005-table1.csv"
+  },
+  {
+    "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-899/sources-r2/azougen2010-mixtures.csv",
+    "sha256": "eacbdb2088e4805261b20b01e26576af0fc371a365ae0fa76c21dc53afc4de5a",
+    "retained": "azougen2010-mixtures.csv"
+  },
+  {
+    "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-899/sources-r2/azougen2010-binary-Ca.csv",
+    "sha256": "db51eab6b8fd5c91b4a3979bd85c5b72bb1025884d822c427d3c6e8d23a6b70b",
+    "retained": "azougen2010-binary-Ca.csv"
+  },
+  {
+    "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-899/sources-r2/goldberg-high-m.csv",
+    "sha256": "37f8251ed0efa6573d99945c3c48ebeff72ac6de917dbfeb9bae2635d4e8b372",
+    "retained": "goldberg-high-m.csv"
+  },
+  {
+    "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-899/sources-r2/rard1981-tableIX.csv",
+    "sha256": "40a9437d19a26a2a674f4fc4ada7538790bc8dda42d965a4bb0da52c5a44a095",
+    "retained": "rard1981-tableIX.csv"
+  },
+  {
+    "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-899/sources-r4/rard-reconstructed.csv",
+    "sha256": "cbe8e587d25b833a8739112ce5c0eee69b16dae613566f74dabde5f96def2a5e",
+    "retained": "rard-reconstructed.csv"
+  },
+  {
+    "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-899/sources-r4/rard-reference-paths.csv",
+    "sha256": "a7644ffbbeb3ebf44f841a472ab5e106488ac37d22f3ea0cfd0381fa12ff465c",
+    "retained": "rard-reference-paths.csv"
+  },
+  {
+    "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-899/sources-r4/robinson-reconstructed.csv",
+    "sha256": "1e831e67ea23a46d14995dd7c8b8c4dfa291da2886c01d7e3387a5d4e54af946",
+    "retained": "robinson-reconstructed.csv"
+  },
+  {
+    "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-899/sources-r4/robinson-reference-reconstructed.csv",
+    "sha256": "2509e165675f120ae4489cc44a33264eb0d4ab9254f44300a1cdcdedcded1dae",
+    "retained": "robinson-reference-reconstructed.csv"
+  },
+  {
+    "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-902-establish-the-four-thermodynamic-input/analyses/2026-hydrochloric-acid-chloride-basis/inputs/el-guendouzi2001-hcl.csv",
+    "sha256": "6f918fedfbf353474f23daff27dfbcaa2111dee7cf408ed7dde541c52ab2e34c",
+    "retained": "el-guendouzi2001-hcl.csv"
+  },
+  {
+    "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-902-establish-the-four-thermodynamic-input/analyses/2026-hydrochloric-acid-chloride-basis/inputs/hamer-wu-hcl.csv",
+    "sha256": "04371336304c9ddc5625c314adcaee453bcce72c859be651999f831ef62233c2",
+    "retained": "hamer-wu-hcl.csv"
+  },
+  {
+    "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-902-establish-the-four-thermodynamic-input/analyses/2026-hydrochloric-acid-chloride-basis/inputs/jiang1996-hcl-li.csv",
+    "sha256": "7906e1604cd646f2907122d4a0050ac60edcee949e04f3dee0f38db7051aa934",
+    "retained": "jiang1996-hcl-li.csv"
+  },
+  {
+    "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-902-establish-the-four-thermodynamic-input/analyses/2026-hydrochloric-acid-chloride-basis/inputs/khoo1977-hcl-ca.csv",
+    "sha256": "19dbb71c6a3e860150b0487f1f8d77d007373805bf2ccacc9cd3ce4c5e2ad938",
+    "retained": "khoo1977-hcl-ca.csv"
+  },
+  {
+    "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-902-establish-the-four-thermodynamic-input/analyses/2026-hydrochloric-acid-chloride-basis/inputs/khoo1977-hcl-mg.csv",
+    "sha256": "07966ab4640a68d558ea20d5f5ed86dd4b4a2a635d54db80f684cff19cdc3dd2",
+    "retained": "khoo1977-hcl-mg.csv"
+  },
+  {
+    "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-902-establish-the-four-thermodynamic-input/analyses/2026-hydrochloric-acid-chloride-basis/inputs/messnaoui2020-hcl.csv",
+    "sha256": "997d571aa6a39eb424da686d2eb27fc864061a633f5ad3aaf28a7313776cc659",
+    "retained": "messnaoui2020-hcl.csv"
+  },
+  {
+    "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-902-establish-the-four-thermodynamic-input/analyses/2026-hydrochloric-acid-chloride-basis/inputs/roy1980-hcl-mg.csv",
+    "sha256": "c321d5135c207407565c74ab82875328539b21a211f7fa365b34600a5a5daedc",
+    "retained": "roy1980-hcl-mg.csv"
+  },
+  {
+    "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-902-establish-the-four-thermodynamic-input/data/packets/yao-1992-licl-mgcl2-observations/1/observations/yao1992-licl-mgcl2-table1.csv",
+    "sha256": "edbae25ae607f9c22cd4a34dad93bb9c622165737b5691e109ed2363660d4f8b",
+    "retained": "yao1992-licl-mgcl2-table1.csv"
+  },
+  {
+    "path": "/home/tnnrpolley21/Workspaces/Engineering/Lithium_Extraction/data/reference/extraction_models/top_fecl3/wu2025/printed_values.csv",
+    "sha256": "9e8095dd8d88d2ed313cdb43625524a9deab27e15861e6e9b378e535d62d260c",
+    "retained": "printed_values.csv"
+  },
+  {
+    "path": "/home/tnnrpolley21/Workspaces/Engineering/Lithium_Extraction/data/reference/extraction_models/top_fecl3/wu2025/states.csv",
+    "sha256": "37fccf6db21c2aff39489a74f4c3b5c73b0be69f31611bf676038f97a985341e",
+    "retained": "states.csv"
+  },
+  {
+    "path": "/home/tnnrpolley21/Workspaces/Engineering/Lithium_Extraction/data/reference/extraction_models/top_fecl3/wu2025/sources.json",
+    "sha256": "41e05348d0eebe027f2d14824f5877ac09eeffefa82e5d3fcc15efb716bb2a6d",
+    "retained": "sources.json"
+  },
+  {
+    "path": "/home/tnnrpolley21/Workspaces/Engineering/Lithium_Extraction/data/reference/extraction_models/top_fecl3/wu2025/source_conflicts.csv",
+    "sha256": "2e191535cf724b3855a2ac6398a1a803b8e8ff2b1755945ae5239e428c23dd5b",
+    "retained": "source_conflicts.csv"
+  },
+  {
+    "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-902-establish-the-four-thermodynamic-input/analyses/2026-lithium-chloride-refit/inputs/frozen-realizations.csv",
+    "sha256": "3028cf12973644b15481c2db749a0059b22ded1971181d1181d44aa11b1d9338",
+    "retained": "frozen-realizations.csv"
+  },
+  {
+    "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-902-establish-the-four-thermodynamic-input/data/packets/figiel-2025-chloride-mixture-refit/3/packet.toml",
+    "sha256": "f584d19246aa99100a56982d26ad2449746bdd421bab5a898306f9843db105eb"
+  },
+  {
+    "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-902-establish-the-four-thermodynamic-input/data/packets/figiel-2025-chloride-mixture-refit/3/parameters/parameters.json",
+    "sha256": "639cd57328e274c829bfa44dfda42527e4bfda1cb068a87c231c7a88b4b4c5b2"
+  },
+  {
+    "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-902-establish-the-four-thermodynamic-input/data/packets/figiel-2025-chloride-mixture-refit/3/provenance/source-origin.toml",
+    "sha256": "f40ab2bf2d6577dc6bcd35373794dfda15d914b305dfa9b1329e1991cc37eef7"
+  }
+]

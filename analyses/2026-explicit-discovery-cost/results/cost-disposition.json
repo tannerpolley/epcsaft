@@ -1,0 +1,99 @@
+{
+  "disposition": "complete quiet matched measurements",
+  "selected_blocks": 36,
+  "samples_per_block": 25,
+  "checked_timed_samples": 900,
+  "fresh_measured_blocks": 54,
+  "prior_blocks_excluded": 11,
+  "prior_block_exclusion": "A environment reconstructed; all earlier blocks excluded even though rebuilt libraries reproduce baseline hashes",
+  "disturbed_blocks": 1,
+  "disturbed_operation_blocks_excluded": 18,
+  "disturbance": {
+    "operation": "ordinary",
+    "arm": "Engine-B",
+    "repetition": 1,
+    "load_before": 3.95,
+    "load_after": 4.03
+  },
+  "new_deferred_admissions": 2,
+  "all_retained_deferred_admissions": 25,
+  "new_deferred_loads": [
+    4.78,
+    4.03
+  ],
+  "admission_wait_seconds": 64.31621944095241,
+  "selected_load1_minimum": 3.81,
+  "selected_load1_maximum": 3.95,
+  "compiler_processes_during_admission_or_blocks": [],
+  "niceness": 0,
+  "measurement_cpu": 31,
+  "numerical_threads": 1,
+  "repetitions": 3,
+  "warmups_per_block": 5,
+  "interval_meaning": "full observed paired range; not a confidence interval",
+  "saving": {
+    "ordinary": {
+      "median_percent": 24.904372723354562,
+      "minimum_percent": 23.005910792141105,
+      "maximum_percent": 26.394131936476782,
+      "B_over_A_median": 0.7509562727664544,
+      "B_over_A_maximum": 0.769940892078589,
+      "A_control_lower_edge": 0.9840194969100878,
+      "pairs": 6,
+      "target_met": true
+    },
+    "prepared": {
+      "median_percent": 23.63009706379846,
+      "minimum_percent": 22.13409065112436,
+      "maximum_percent": 24.082798673987714,
+      "B_over_A_median": 0.7636990293620154,
+      "B_over_A_maximum": 0.7786590934887564,
+      "A_control_lower_edge": 0.9995938226730757,
+      "pairs": 6,
+      "target_met": true
+    }
+  },
+  "target_passed": true,
+  "selection": [
+    {
+      "path": "results/raw/measurement-0.jsonl.gz",
+      "operation": "ordinary",
+      "quiet": "True",
+      "blocks": "6",
+      "matched_images": "False"
+    },
+    {
+      "path": "results/raw/measurement-0.jsonl.gz",
+      "operation": "prepared",
+      "quiet": "False",
+      "blocks": "5",
+      "matched_images": "False"
+    },
+    {
+      "path": "results/raw/measurement-1.jsonl.gz",
+      "operation": "ordinary",
+      "quiet": "False",
+      "blocks": "18",
+      "matched_images": "True"
+    },
+    {
+      "path": "results/raw/measurement-1.jsonl.gz",
+      "operation": "prepared",
+      "quiet": "True",
+      "blocks": "18",
+      "matched_images": "True"
+    },
+    {
+      "path": "results/raw/measurement-2.jsonl.gz",
+      "operation": "ordinary",
+      "quiet": "True",
+      "blocks": "18",
+      "matched_images": "True"
+    }
+  ],
+  "raw_sha256": {
+    "measurement-0.jsonl.gz": "1ff8cfa3258fb29d73e7ef384973d3a0c2d0121daafee7ec671b95c0d8d80816",
+    "measurement-1.jsonl.gz": "470827cb83a3ee4a427f152ce07be900c2f255dc1f8811d4d57afb579e96092d",
+    "measurement-2.jsonl.gz": "bc63daa7ad87d9825f835001b59309e8aceeef3ec13953302469b066820f0339"
+  }
+}

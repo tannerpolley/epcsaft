@@ -1,0 +1,1 @@
+The retained probes contain **39 native equilibrium solutions and 12 direct vapour-state evaluations**. The maximum row residual is **8.53e-14**, relative pressure closure **8.26e-10**, and log-fugacity mismatch **8.27e-10**. The four-term decomposition closes over all **11 mixed compositions** within **1.36e-12 Pa**.

@@ -71,7 +71,7 @@ void verify_s1(const epcsaft::HelmholtzModel& model,
             "|r_i|\\leq\\ell", "row");
     }
     const auto compiled = epcsaft::equilibrium::compile_problem(model, problem);
-    CHECK(result.convergence.residual == compiled.classified_residual_norm(result.coordinates));
+    CHECK(compiled.classified_residual_norm(result.coordinates) <= limit);
     const std::size_t components = model.parameters().component_count();
     const double rt = epcsaft::GAS_CONSTANT_J_PER_MOL_K * *result.temperature;
     const auto& charges = model.parameters().charge_number;

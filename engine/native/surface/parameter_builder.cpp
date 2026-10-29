@@ -231,6 +231,9 @@ Parameters build_parameters(const ParameterDocument& document) {
         || document.permittivity_choice == "ion-fraction-suppression"
         || document.permittivity_choice == "ion-specific-suppression") {
         result.permittivity_form = PermittivityForm::IonSuppression;
+    } else if (document.permittivity_choice == "solvent-mole-weighting") {
+        result.permittivity_form = PermittivityForm::SolventMoleWeighting;
+        result.permittivity_solvent.assign(components, 0);
     } else if (document.permittivity_choice == "component-permittivity-mixing") {
         result.permittivity_form = PermittivityForm::ComponentMixing;
     } else if (document.permittivity_choice == "solvent-density-temperature") {
@@ -329,6 +332,19 @@ Parameters build_parameters(const ParameterDocument& document) {
                 reject("charge " + where(entry) + " is not integral");
             }
             result.charge_number[i] = static_cast<int>(entry.magnitude * factor);
+        } else if (entry.field == "permittivity_solvent" || entry.field == "permittivity_normalization") {
+            if (!result.permittivity_form.is(PermittivityForm::SolventMoleWeighting)) reject("unconsumed " + where(entry));
+            const double value = entry.magnitude * unit_factor(entry, "dimensionless");
+            if (entry.field == "permittivity_solvent") {
+                const auto i = component_index(entry, components);
+                if (value != 1.0) reject("invalid permittivity solvent membership");
+                result.permittivity_solvent[i] = 1;
+            } else {
+                require_index(entry, 0, "permittivity normalization");
+                if (value != 0.0 && value != 1.0) reject("invalid permittivity normalization");
+                scalar_fields.insert(entry.field);
+                result.permittivity_solvent_normalized = value == 1.0;
+            }
         } else if (entry.field == "charged_molecule_ion") {
             const auto i = component_index(entry, components);
             if (entry.magnitude * unit_factor(entry, "dimensionless") != 1.0) reject("charged_molecule_ion is not 1: " + where(entry));
@@ -522,6 +538,14 @@ Parameters build_parameters(const ParameterDocument& document) {
     if (sigma_amplitude != sigma_exponent || sigma_amplitude.size() != sigma_terms) reject("incomplete sigma term");
     if (permittivity_coefficients.size() != permittivity_terms) reject("incomplete permittivity term");
 
+    if (result.permittivity_form.is(PermittivityForm::SolventMoleWeighting)) {
+        if (!scalar_fields.count("permittivity_normalization")) reject("missing permittivity normalization");
+        for (std::size_t i = 0; i < components; ++i) {
+            const bool law = component_fields.count({"relative_permittivity", i})
+                || std::find(result.permittivity_term_component.begin(), result.permittivity_term_component.end(), i) != result.permittivity_term_component.end();
+            if (law != bool(result.permittivity_solvent[i])) reject("missing or unconsumed solvent dielectric law");
+        }
+    }
     for (std::size_t i = 0; i < components; ++i) {
         if (component_fields.find({"charge_number", i}) == component_fields.end()) reject("missing component/" + document.component_ids[i] + "/charge_number");
         if (result.charge_number[i] == 0 && (component_fields.find({"molar_mass", i}) == component_fields.end()
@@ -640,6 +664,8 @@ Parameters build_parameters(const ParameterDocument& document) {
         result.electrolyte_form = {};
         result.ionic_dispersion = {};
         result.permittivity_form = {};
+        result.permittivity_solvent.clear();
+        result.permittivity_solvent_normalized = false;
     }
     validate_cation_mixing(result);
     return result;

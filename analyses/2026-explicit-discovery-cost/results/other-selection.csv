@@ -1,0 +1,16 @@
+path,case,blocks,quiet,complete
+results/raw/other-0.jsonl.gz,case-1/two-liquid,12,True,True
+results/raw/other-0.jsonl.gz,case-3/VLLE,12,True,True
+results/raw/other-0.jsonl.gz,case-6/figure-2-point-7,12,False,True
+results/raw/other-0.jsonl.gz,water-ethanol,12,True,True
+results/raw/other-0.jsonl.gz,dilute-isobutanol,12,True,True
+results/raw/other-0.jsonl.gz,three-liquid,12,False,True
+results/raw/other-0.jsonl.gz,water-hexane,12,True,True
+results/raw/other-1.jsonl.gz,case-6/figure-2-point-7,12,False,True
+results/raw/other-1.jsonl.gz,three-liquid,12,True,True
+results/raw/other-2.jsonl.gz,case-6/figure-2-point-7,12,False,True
+results/raw/other-3.jsonl.gz,case-6/figure-2-point-7,12,False,True
+results/raw/other-4.jsonl.gz,case-6/figure-2-point-7,12,False,True
+results/raw/other-5.jsonl.gz,case-6/figure-2-point-7,12,False,True
+results/raw/other-6.jsonl.gz,case-6/figure-2-point-7,12,False,True
+results/raw/other-7.jsonl.gz,case-6/figure-2-point-7,12,True,True

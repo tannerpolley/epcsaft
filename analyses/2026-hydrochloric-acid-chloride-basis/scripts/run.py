@@ -20,8 +20,10 @@ LEAF = DECLARATION.resolve().parents[1]
 INPUTS = LEAF / 'inputs'
 
 def declarations():
+    if '--packet' in sys.argv:
+        return Parameters.from_json(sys.argv[sys.argv.index('--packet') + 1])
     document = json.loads((INPUTS / C['candidate']).read_text())
-    if 'trial' in D:
+    if 'trial' in D and not D.get('hcl_mixture_training'):
         return Parameters.from_mapping(document)
     document['sources'].append({'source_id': 'issue-798-declaration', 'citation': 'Issue 798 frozen design r2, section 1; Held 2008 Table 2 and explicit diameter assumptions'})
     hydrogen = document['components'][7]
@@ -37,16 +39,36 @@ def declarations():
 
 def main():
     began = time.monotonic()
+    if '--profile' in sys.argv:
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+        now = datetime.now(ZoneInfo('America/Denver'))
+        allowed = now <= datetime(2026,10,28,22,tzinfo=now.tzinfo) or now >= datetime(2026,10,29,8,tzinfo=now.tzinfo)
+        if '--owned' not in sys.argv:
+            assert allowed, 'profile launch outside accepted window'
+            command = ['systemd-run','--user','--unit=issue-901-profile','--collect','--wait','--pipe',
+                       '-p','RuntimeMaxSec=3h','-p','TimeoutStopSec=10s','-p','KillMode=control-group',
+                       '--working-directory='+str(ROOT),'env','-u','EPCSAFT_HSL_LIBRARY',
+                       'EPCSAFT_BUILD_JOBS=6','PYTHONDONTWRITEBYTECODE=1','nice','-n','10',
+                       sys.executable,str(Path(__file__).resolve()),*sys.argv[1:],'--owned']
+            subprocess.run(command,check=True)
+            return
+        destination = Path(sys.argv[2])
+        destination.mkdir(parents=True,exist_ok=False)
+        (destination/'activation.json').write_text(json.dumps(dict(clock=now.isoformat(),allowed=allowed,RuntimeMaxSec=10800))+'\n')
+        if not allowed:
+            raise SystemExit('profile activation refused outside accepted window')
     assert 'EPCSAFT_HSL_LIBRARY' not in os.environ
     for name, digest in D['input_hashes'].items():
         assert hashlib.sha256((INPUTS / name).read_bytes()).hexdigest() == digest, name
     results = Path(sys.argv[2]).resolve() if len(sys.argv) > 2 else LEAF / 'results/issue-798-r2'
     results.mkdir(parents=True, exist_ok=True)
-    assert not any(results.iterdir()), 'retain the first frozen execution'
+    assert not any(p.name != 'activation.json' for p in results.iterdir()), 'retain the first frozen execution'
     p = declarations()._document
-    build = ROOT / C['build']
+    build = ROOT / ('build/issue-901' if D.get('profile') else C['build'])
     build.mkdir(parents=True, exist_ok=True)
     with (build / 'inputs.hpp').open('w') as f:
+        f.write('const bool packet_readback = ' + str('--packet' in sys.argv).lower() + ';\n')
         f.write('#include "surface/parameter_builder.hpp"\nepcsaft::Parameters declared_parameters() { epcsaft::ParameterDocument d;\n')
         for attr in ['component_ids', 'site_component', 'site_multiplicity']:
             f.write(f'd.{attr} = ' + json.dumps(list(getattr(p, attr))).replace('[', '{').replace(']', '}') + ';\n')
@@ -69,6 +91,7 @@ def main():
                 f.write('{epcsaft::ParameterFamily::' + t['family'] + ',{' + ','.join(map(str, indices)) + '},' + str(t['coefficient']) + '},')
             f.write('},' + ','.join(map(str, [c['origin'], c['scale'], *c['bounds']])) + ',std::nullopt},\n')
         f.write('};\nconst std::vector<std::string> coordinate_names = ' + json.dumps([c.get('name', C['label'] + ('-water' if 'water' in c.get('pair', []) else '-Cl')) for c in coordinates]).replace('[', '{').replace(']', '}') + ';\n')
+        f.write(f"const bool hcl_mixture_training = {str(D.get('hcl_mixture_training', False)).lower()};\n")
         f.write(f"const bool sulfate_training = {str(D.get('sulfate', False)).lower()};\n")
         f.write(f"const bool verify_lengths = {'true' if 'verification' in D else 'false'};\n")
         for name, value in D.get('verification', dict(equivalence=1e-10, difference_tolerance=1e-5, steps=[1e-4, 5e-5], point=6)).items():
@@ -81,6 +104,12 @@ def main():
         f.write('const std::string training = ' + json.dumps(C['training']) + ', ion_label = ' + json.dumps(C['label']) + ';\n')
         f.write('const std::string mixture_training = ' + json.dumps(D.get('mixture', {}).get('training', '')) + ';\n')
         f.write('const std::string mixture_reference = ' + json.dumps(D.get('mixture', {}).get('reference', '')) + ';\n')
+        f.write('const bool profile_enabled = ' + str(bool(D.get('profile'))).lower() + ';\n')
+        for name, value in {**dict(coarse=[],refinement_offsets=[],starts=[],bounds=[],mean_limits=[],max_limits=[],target_mean=0,target_max=0,anchor=0,compensation=0),**D.get('profile', {})}.items():
+            if isinstance(value, list):
+                f.write('const std::vector<double> profile_' + name + ' = ' + json.dumps(value).replace('[','{').replace(']','}') + ';\n')
+            elif isinstance(value, (int,float)):
+                f.write('const double profile_' + name + ' = ' + str(value) + ';\n')
     shared = Path(__file__).resolve().parent
     (build / 'activity.cpp').write_text(f'#include "inputs.hpp"\n#include "{shared / "activity.cpp"}"\n')
     executable = subprocess.check_output(['tools/native-driver', 'regression_checks', str(build / 'activity.cpp')], text=True).strip()
@@ -94,6 +123,17 @@ def main():
     identity['source_commit'] = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip()
     (results / 'native-identity.json').write_text(json.dumps(identity, default=str, indent=2) + '\n')
     environment = {**os.environ, 'LD_LIBRARY_PATH': str(library.parent)}
+    if D.get('profile') and '--profile' in sys.argv:
+        identity.update(base='1bb4c744c3ff67a0b6c4dc0d95c718f318e18055', inputs=D['input_hashes'], component_order=list(p.component_ids), command=sys.argv)
+        (results/'native-identity.json').write_text(json.dumps(identity,default=str,indent=2)+'\n')
+        profile_began=time.monotonic()
+        try:
+            subprocess.run([executable,str(LEAF),str(results),'profile'],env=environment,check=True)
+        finally:
+            (results/'wall-time.json').write_text(json.dumps(dict(preparation_seconds=profile_began-began,profile_process_seconds=time.monotonic()-profile_began))+'\n')
+        return
+    if '--packet' in sys.argv:
+        return
     admission = results / D.get('mixture', {}).get('retained_admission', 'mixture-admission.csv')
     if 'mixture' in D:
         subprocess.run([executable, str(LEAF), str(results), 'prepare'], env=environment, check=True)
@@ -145,7 +185,7 @@ def main():
             assert prefit.returncode == 1
             return
         prefit.check_returncode()
-    subprocess.run([executable, str(LEAF), str(results)], env=environment, check=True)
+    subprocess.run([executable, str(LEAF), str(results)] + ([sys.argv[3][2:]] if len(sys.argv) > 3 else []), env=environment, check=True)
     assert hashlib.sha256(library.read_bytes()).hexdigest() == identity['native_library_sha256']
 
 if __name__ == '__main__':

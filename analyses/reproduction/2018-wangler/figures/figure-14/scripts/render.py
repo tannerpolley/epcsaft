@@ -24,9 +24,11 @@ def main() -> None:
                 markerfacecolor="white", linestyle="none", markeredgewidth=1.4, capsize=2,
                 label="Wangler Table 10", zorder=3)
     for lane, (color, marker, label) in LANES.items():
-        group = data[data["lane"] == lane]
+        group = data[(data["lane"] == lane) & data["success"]]
+        if group.empty:
+            continue
         ax.plot(group["co2_loading_mol_per_mol_mdea"], group["native_pressure_bar"], color=color,
-                marker=marker, linewidth=1.8, label=label)
+                marker=marker, linestyle="none", label=label)
         if lane.startswith("fitted"):
             low = data[data["lane"] == f"{lane}-minus"]["native_pressure_bar"].to_numpy()
             high = data[data["lane"] == f"{lane}-plus"]["native_pressure_bar"].to_numpy()

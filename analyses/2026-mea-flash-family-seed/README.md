@@ -51,3 +51,14 @@ wheel, its verified hash, the actual installed Engine identity and the declared
 producer. Unavailable portions retain their stopping states and causes.
 Independent delivered review and owner promotion remain open; the manuscript
 is unchanged.
+
+## Public release v1.0.0 rerun (#845)
+
+The [notebook](notebook.qmd) reports the current-method family on the public
+release and compares it with the earlier recovery and the unpromoted
+`main-8298c602` run. [Retained results](results/v1.0.0/summary.json) own the counts,
+state comparisons and numerical checks; [provenance](results/v1.0.0/provenance.json)
+and [source identity](results/v1.0.0/source-identity.json) identify the detached
+release image, DOI and public tree. No Engine or criterion changed.
+Independent delivered review and owner promotion remain open. The manuscript
+is unchanged.

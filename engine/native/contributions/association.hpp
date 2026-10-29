@@ -6,6 +6,7 @@
 #include "core/physical_constants.hpp"
 #include "core/scalar.hpp"
 #include "core/trace.hpp"
+#include "core/linear_error.hpp"
 #include "contributions/helmholtz.hpp"
 
 #include <cppad/cppad.hpp>
@@ -176,11 +177,24 @@ inline std::optional<double> admitted_pivot_ratio(const Eigen::FullPivLU<Eigen::
 inline std::vector<double> solve_linear(
     const Eigen::MatrixXd& matrix,
     const std::vector<double>& right_hand_side,
-    double* pivot_ratio = nullptr
+    double* pivot_ratio = nullptr, std::optional<core::Convergence>* first = nullptr
 ) {
     const Eigen::FullPivLU<Eigen::MatrixXd> factorization(matrix);
     const auto ratio = admitted_pivot_ratio(factorization);
-    if (!ratio) throw std::runtime_error("association Jacobian is ill-conditioned");
+    if (!ratio) {
+        if (first) core::retain_first(*first, [&] {
+            core::Convergence r;
+            const auto pivots = factorization.matrixLU().diagonal().cwiseAbs();
+            r.residual = Eigen::Map<const Eigen::VectorXd>(right_hand_side.data(), right_hand_side.size()).cwiseAbs().maxCoeff();
+            r.amplification = pivots.maxCoeff() / pivots.minCoeff();
+            r.rank = core::numerical_rank(factorization, "mass_action_site_fractions");
+            r.cause = "association Jacobian is ill-conditioned; largest " + core::optional_number(pivots.maxCoeff())
+                + "; smallest " + core::optional_number(pivots.minCoeff()) + "; relative pivot cutoff "
+                + core::optional_number(policy::ASSOCIATION_JACOBIAN_CONDITION.value);
+            return r;
+        });
+        throw std::runtime_error("association Jacobian is ill-conditioned");
+    }
     if (pivot_ratio != nullptr) *pivot_ratio = *ratio;
     const auto size = static_cast<Eigen::Index>(right_hand_side.size());
     const Eigen::VectorXd solution = factorization.solve(
@@ -204,8 +218,10 @@ inline std::vector<double> solve_site_fractions(
     const std::vector<double>* start = nullptr,
     const std::vector<double>* strength = nullptr,
     bool pair_start = false,
-    const policy::SolverOptions& options = {}
+    const policy::SolverOptions& options = {}, std::optional<core::Convergence>* first_numerical_failure = nullptr
 ) {
+    std::optional<core::Convergence> local_first;
+    auto& first = first_numerical_failure ? *first_numerical_failure : local_first;
     const std::size_t sites = parameters.site_component.size();
     if (sites == 0) {
         if (record != nullptr) {
@@ -322,7 +338,7 @@ inline std::vector<double> solve_site_fractions(
             if (next.empty()) try {
                 double pivot_ratio = 0.0;
                 const auto step = solve_linear(mass_action_jacobian(mole_fractions, parameters, fractions,
-                    number_density, delta, bonded), negative_residual, &pivot_ratio);
+                    number_density, delta, bonded), negative_residual, &pivot_ratio, &first);
                 // Damped Newton: cap the step inside (0, 1], then halve until the residual decreases.
                 double alpha = 1.0;
                 for (std::size_t a = 0; a < sites; ++a) {
@@ -380,14 +396,14 @@ inline std::vector<double> solve_site_fractions(
                 residual_norm, iteration + 1, core::Stop::left_domain, false
             );
             scope.finish(failure);
-            throw core::ConvergenceFailure(failure);
+            throw core::ConvergenceFailure(failure, first);
         }
         if (!finite_residual) {
             const auto failure = make_record(
                 residual_norm, iteration + 1, core::Stop::nonfinite, false
             );
             scope.finish(failure);
-            throw core::ConvergenceFailure(failure);
+            throw core::ConvergenceFailure(failure, first);
         }
         fractions = std::move(next);
         if (residual_norm <= tolerance) {
@@ -410,7 +426,7 @@ inline std::vector<double> solve_site_fractions(
         residual_norm, max_iterations, core::Stop::budget_exhausted, true
     );
     scope.finish(failure);
-    throw core::ConvergenceFailure(failure);
+    throw core::ConvergenceFailure(failure, first);
 }
 
 

@@ -1,0 +1,1191 @@
+{
+  "schema": "epcsaft.parameters",
+  "schema_version": 1,
+  "document_id": "acetic-acid-water-323-15-k",
+  "document_version": 1,
+  "purpose": "Fixed published-parameter coupled bubble-pressure comparison; historical calibration overlap unresolved.",
+  "sources": [
+    {
+      "source_id": "ascani-et-al-2022-esi",
+      "citation": "Ascani, M.; Pabsch, D.; Klinksiek, M.; Gajardo-Parra, N.; Sadowski, G.; Held, C. Prediction of pH in multiphase multicomponent systems with ePC-SAFT advanced. Chem. Commun. 2022, 58, 8436; ESI.",
+      "doi": "10.1039/D2CC02943J",
+      "use_basis": "Ascani 2022 ESI Tables 1-3 and 5; adopted at 323.15 K, not an asserted published fit range."
+    },
+    {
+      "source_id": "iupac-atomic-weights",
+      "citation": "IUPAC standard atomic weights",
+      "use_basis": "molar masses"
+    },
+    {
+      "source_id": "gross-sadowski-2002",
+      "doi": "10.1021/ie010954d",
+      "zotero_parent": "2AJYEZS6",
+      "zotero_child": "FZVTDKXU",
+      "citation": "Gross and Sadowski (2002), Table 1 HAc row and Eqs. (2)-(3)."
+    },
+    {
+      "source_id": "ascani-2023",
+      "doi": "10.3390/molecules28041768",
+      "zotero_parent": "YHTZTEAR",
+      "zotero_child": "VGBSV5AU",
+      "citation": "Ascani et al. (2023), Table 1 footnote for the water diameter law; Table 2 and reference 107 for binary-fit lineage. Do not adopt its inconsistent acid energy."
+    },
+    {
+      "source_id": "crc-wohlfarth-permittivity",
+      "citation": "Wohlfarth, C. Permittivity (Dielectric Constant) of Liquids. In CRC Handbook of Chemistry and Physics, 82nd edition, Lide, D. R., Ed., CRC Press (2001), pp. 6-139 and 6-142; C2H4O2 acetic-acid row.",
+      "url": "https://rushim.ru/books/spravochniki/handbook-chemistry-and-physics.pdf",
+      "source_sha256": "b22f885358c743540a85aecb05a2545238bef5fddb58445537659c0df4b48384",
+      "use_basis": "epsilon_r=a+bT+cT^2; a=-15.731, b=0.12662 K^-1, c=-0.00017738 K^-2; range 293-363 K; nominal atmospheric pressure."
+    }
+  ],
+  "domains": [
+    {
+      "domain_id": "acetic-acid-water-323-15-k",
+      "kind": "analysis-conditions",
+      "temperature_min": {
+        "magnitude": 323.15,
+        "unit": "kelvin"
+      },
+      "temperature_max": {
+        "magnitude": 323.15,
+        "unit": "kelvin"
+      }
+    }
+  ],
+  "components": [
+    {
+      "component_id": "water",
+      "aliases": [],
+      "fixed": {
+        "charge_number": {
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022-esi",
+            "locator": "Table 1 water row",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        },
+        "molar_mass": {
+          "value": {
+            "magnitude": 18.01528,
+            "unit": "gram / mole"
+          },
+          "provenance": {
+            "source_id": "iupac-atomic-weights",
+            "locator": "IUPAC atomic weights",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/water/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 1.2047,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022-esi",
+            "locator": "Table 1 water row",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        },
+        {
+          "identity": "component/water/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 353.95,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022-esi",
+            "locator": "Table 1 water row",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        },
+        {
+          "identity": "component/water/solvation_factor",
+          "family": "solvation_factor",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022-esi",
+            "locator": "ESI Eq. 11 uncorrected Born term",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        },
+        {
+          "identity": "component/water/relative_permittivity",
+          "family": "relative_permittivity",
+          "value": {
+            "magnitude": 69.62213244822328,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022-esi",
+            "locator": "Table 5 water law -105.2 ln(T/K)+677.480, evaluated at 323.15 K.",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "acetic-acid",
+      "aliases": [],
+      "fixed": {
+        "charge_number": {
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022-esi",
+            "locator": "Table 1 acetic acid row",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        },
+        "molar_mass": {
+          "value": {
+            "magnitude": 60.05196,
+            "unit": "gram / mole"
+          },
+          "provenance": {
+            "source_id": "iupac-atomic-weights",
+            "locator": "IUPAC atomic weights",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/acetic-acid/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 1.3403,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022-esi",
+            "locator": "Table 1 acetic acid row",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        },
+        {
+          "identity": "component/acetic-acid/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 211.59,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022-esi",
+            "locator": "Table 1 acetic acid row",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        },
+        {
+          "identity": "component/acetic-acid/solvation_factor",
+          "family": "solvation_factor",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022-esi",
+            "locator": "ESI Eq. 11 uncorrected Born term",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        },
+        {
+          "identity": "component/acetic-acid/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 3.8582,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022-esi",
+            "locator": "Table 1 acetic acid row",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        },
+        {
+          "identity": "component/acetic-acid/relative_permittivity",
+          "family": "relative_permittivity",
+          "value": {
+            "magnitude": 6.663182866950002,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "crc-wohlfarth-permittivity",
+            "locator": "pp. 6-139 and 6-142, quadratic law and C2H4O2 row; evaluated at 323.15 K.",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "hydrogen-cation",
+      "aliases": [],
+      "fixed": {
+        "charge_number": {
+          "value": {
+            "magnitude": 1,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022-esi",
+            "locator": "Table 2 H+ row",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/hydrogen-cation/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022-esi",
+            "locator": "Table 2 H+ row",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        },
+        {
+          "identity": "component/hydrogen-cation/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 500.0,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022-esi",
+            "locator": "Table 2 H+ row",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        },
+        {
+          "identity": "component/hydrogen-cation/solvation_factor",
+          "family": "solvation_factor",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022-esi",
+            "locator": "ESI Eq. 11 uncorrected Born term",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        },
+        {
+          "identity": "component/hydrogen-cation/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 3.4656,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022-esi",
+            "locator": "Table 2 H+ row",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        },
+        {
+          "identity": "component/hydrogen-cation/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 3.4656,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022-esi",
+            "locator": "Table 2 H+ row; ESI Eq. 11 Born a_i = ion diameter sigma_i",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        },
+        {
+          "identity": "component/hydrogen-cation/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 3.4656,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022-esi",
+            "locator": "Table 2 H+ row; ESI Eq. 11 Born a_i = ion diameter sigma_i",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        },
+        {
+          "identity": "component/hydrogen-cation/born_diameter",
+          "family": "born_diameter",
+          "value": {
+            "magnitude": 3.4656,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022-esi",
+            "locator": "Table 2 H+ row; ESI Eq. 11 Born a_i = ion diameter sigma_i",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        },
+        {
+          "identity": "component/hydrogen-cation/relative_permittivity",
+          "family": "relative_permittivity",
+          "value": {
+            "magnitude": 8.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022-esi",
+            "locator": "Table 5 salts",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "acetate-anion",
+      "aliases": [],
+      "fixed": {
+        "charge_number": {
+          "value": {
+            "magnitude": -1,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022-esi",
+            "locator": "Table 2 Ac- row",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/acetate-anion/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022-esi",
+            "locator": "Table 2 Ac- row",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        },
+        {
+          "identity": "component/acetate-anion/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 150.0,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022-esi",
+            "locator": "Table 2 Ac- row",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        },
+        {
+          "identity": "component/acetate-anion/solvation_factor",
+          "family": "solvation_factor",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022-esi",
+            "locator": "ESI Eq. 11 uncorrected Born term",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        },
+        {
+          "identity": "component/acetate-anion/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 3.9328,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022-esi",
+            "locator": "Table 2 Ac- row",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        },
+        {
+          "identity": "component/acetate-anion/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 3.9328,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022-esi",
+            "locator": "Table 2 Ac- row; ESI Eq. 11 Born a_i = ion diameter sigma_i",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        },
+        {
+          "identity": "component/acetate-anion/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 3.9328,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022-esi",
+            "locator": "Table 2 Ac- row; ESI Eq. 11 Born a_i = ion diameter sigma_i",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        },
+        {
+          "identity": "component/acetate-anion/born_diameter",
+          "family": "born_diameter",
+          "value": {
+            "magnitude": 3.9328,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022-esi",
+            "locator": "Table 2 Ac- row; ESI Eq. 11 Born a_i = ion diameter sigma_i",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        },
+        {
+          "identity": "component/acetate-anion/relative_permittivity",
+          "family": "relative_permittivity",
+          "value": {
+            "magnitude": 8.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022-esi",
+            "locator": "Table 5 salts",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "hydroxide-anion",
+      "aliases": [],
+      "fixed": {
+        "charge_number": {
+          "value": {
+            "magnitude": -1,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022-esi",
+            "locator": "Table 2 OH- row",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/hydroxide-anion/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022-esi",
+            "locator": "Table 2 OH- row",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        },
+        {
+          "identity": "component/hydroxide-anion/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 650.0,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022-esi",
+            "locator": "Table 2 OH- row",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        },
+        {
+          "identity": "component/hydroxide-anion/solvation_factor",
+          "family": "solvation_factor",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022-esi",
+            "locator": "ESI Eq. 11 uncorrected Born term",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        },
+        {
+          "identity": "component/hydroxide-anion/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 2.0177,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022-esi",
+            "locator": "Table 2 OH- row",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        },
+        {
+          "identity": "component/hydroxide-anion/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 2.0177,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022-esi",
+            "locator": "Table 2 OH- row; ESI Eq. 11 Born a_i = ion diameter sigma_i",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        },
+        {
+          "identity": "component/hydroxide-anion/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 2.0177,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022-esi",
+            "locator": "Table 2 OH- row; ESI Eq. 11 Born a_i = ion diameter sigma_i",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        },
+        {
+          "identity": "component/hydroxide-anion/born_diameter",
+          "family": "born_diameter",
+          "value": {
+            "magnitude": 2.0177,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022-esi",
+            "locator": "Table 2 OH- row; ESI Eq. 11 Born a_i = ion diameter sigma_i",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        },
+        {
+          "identity": "component/hydroxide-anion/relative_permittivity",
+          "family": "relative_permittivity",
+          "value": {
+            "magnitude": 8.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022-esi",
+            "locator": "Table 5 salts",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        }
+      ]
+    }
+  ],
+  "pairs": [
+    {
+      "component_id_a": "water",
+      "component_id_b": "acetic-acid",
+      "coefficients": [
+        {
+          "identity": "pair/water/acetic-acid/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": -0.1247,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022-esi",
+            "locator": "Table 3 (k_ij,T term zero at 323.15 K)",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        },
+        {
+          "identity": "pair/water/acetic-acid/l_ij",
+          "family": "l_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022-esi",
+            "locator": "ESI uses no l_ij",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "water",
+      "component_id_b": "hydrogen-cation",
+      "coefficients": [
+        {
+          "identity": "pair/water/hydrogen-cation/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022-esi",
+            "locator": "Table 2 caption and main text: k_ij = 0 for every pair with an ion (k_ij,T term zero at 323.15 K)",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        },
+        {
+          "identity": "pair/water/hydrogen-cation/l_ij",
+          "family": "l_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022-esi",
+            "locator": "ESI uses no l_ij",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "water",
+      "component_id_b": "acetate-anion",
+      "coefficients": [
+        {
+          "identity": "pair/water/acetate-anion/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022-esi",
+            "locator": "Table 2 caption and main text: k_ij = 0 for every pair with an ion (k_ij,T term zero at 323.15 K)",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        },
+        {
+          "identity": "pair/water/acetate-anion/l_ij",
+          "family": "l_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022-esi",
+            "locator": "ESI uses no l_ij",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "water",
+      "component_id_b": "hydroxide-anion",
+      "coefficients": [
+        {
+          "identity": "pair/water/hydroxide-anion/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022-esi",
+            "locator": "Table 2 caption and main text: k_ij = 0 for every pair with an ion (k_ij,T term zero at 323.15 K)",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        },
+        {
+          "identity": "pair/water/hydroxide-anion/l_ij",
+          "family": "l_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022-esi",
+            "locator": "ESI uses no l_ij",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "acetic-acid",
+      "component_id_b": "hydrogen-cation",
+      "coefficients": [
+        {
+          "identity": "pair/acetic-acid/hydrogen-cation/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022-esi",
+            "locator": "Table 2 caption and main text: k_ij = 0 for every pair with an ion (k_ij,T term zero at 323.15 K)",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        },
+        {
+          "identity": "pair/acetic-acid/hydrogen-cation/l_ij",
+          "family": "l_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022-esi",
+            "locator": "ESI uses no l_ij",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "acetic-acid",
+      "component_id_b": "acetate-anion",
+      "coefficients": [
+        {
+          "identity": "pair/acetic-acid/acetate-anion/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022-esi",
+            "locator": "Table 2 caption and main text: k_ij = 0 for every pair with an ion (k_ij,T term zero at 323.15 K)",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        },
+        {
+          "identity": "pair/acetic-acid/acetate-anion/l_ij",
+          "family": "l_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022-esi",
+            "locator": "ESI uses no l_ij",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "acetic-acid",
+      "component_id_b": "hydroxide-anion",
+      "coefficients": [
+        {
+          "identity": "pair/acetic-acid/hydroxide-anion/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022-esi",
+            "locator": "Table 2 caption and main text: k_ij = 0 for every pair with an ion (k_ij,T term zero at 323.15 K)",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        },
+        {
+          "identity": "pair/acetic-acid/hydroxide-anion/l_ij",
+          "family": "l_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022-esi",
+            "locator": "ESI uses no l_ij",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "hydrogen-cation",
+      "component_id_b": "acetate-anion",
+      "coefficients": [
+        {
+          "identity": "pair/hydrogen-cation/acetate-anion/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022-esi",
+            "locator": "Table 2 caption and main text: k_ij = 0 for every pair with an ion (k_ij,T term zero at 323.15 K)",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        },
+        {
+          "identity": "pair/hydrogen-cation/acetate-anion/l_ij",
+          "family": "l_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022-esi",
+            "locator": "ESI uses no l_ij",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        }
+      ]
+    },
+    {
+      "component_id_a": "hydrogen-cation",
+      "component_id_b": "hydroxide-anion",
+      "coefficients": [
+        {
+          "identity": "pair/hydrogen-cation/hydroxide-anion/k_ij",
+          "family": "k_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022-esi",
+            "locator": "Table 2 caption and main text: k_ij = 0 for every pair with an ion (k_ij,T term zero at 323.15 K)",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        },
+        {
+          "identity": "pair/hydrogen-cation/hydroxide-anion/l_ij",
+          "family": "l_ij",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022-esi",
+            "locator": "ESI uses no l_ij",
+            "domain_id": "acetic-acid-water-323-15-k"
+          }
+        }
+      ]
+    }
+  ],
+  "model_families": [
+    {
+      "family_id": "model/association",
+      "kind": "association",
+      "choice": "general-site",
+      "provenance": {
+        "source_id": "ascani-et-al-2022-esi",
+        "locator": "Table 1 association schemes",
+        "domain_id": "acetic-acid-water-323-15-k"
+      }
+    },
+    {
+      "family_id": "model/base",
+      "kind": "base",
+      "choice": "pc-saft",
+      "provenance": {
+        "source_id": "ascani-et-al-2022-esi",
+        "locator": "ESI Eq. 9",
+        "domain_id": "acetic-acid-water-323-15-k"
+      }
+    },
+    {
+      "family_id": "model/electrolyte",
+      "kind": "electrolyte",
+      "choice": "born",
+      "ionic_dispersion": "exclude-same-sign-ion-pairs",
+      "c_shell": 0.0,
+      "c_dielectric": 0.0,
+      "provenance": {
+        "source_id": "ascani-et-al-2022-esi",
+        "locator": "ESI Eqs. 10-11; Held 2014 like-ion rule retained by ePC-SAFT advanced",
+        "domain_id": "acetic-acid-water-323-15-k"
+      }
+    },
+    {
+      "family_id": "model/relative_permittivity",
+      "kind": "permittivity",
+      "choice": "component-permittivity-mixing",
+      "provenance": {
+        "source_id": "ascani-et-al-2022-esi",
+        "locator": "ESI ref. 7 concentration-dependent dielectric constant; Ascani-Held 2021 Eq. 13",
+        "domain_id": "acetic-acid-water-323-15-k"
+      }
+    }
+  ],
+  "model_coefficients": [
+    {
+      "identity": "model/relative_permittivity/ionic_region_relative_permittivity",
+      "family": "ionic_region_relative_permittivity",
+      "value": {
+        "magnitude": 1.0,
+        "unit": "dimensionless"
+      },
+      "provenance": {
+        "source_id": "ascani-et-al-2022-esi",
+        "locator": "uncorrected Born term, ESI Eq. 11",
+        "domain_id": "acetic-acid-water-323-15-k"
+      }
+    }
+  ],
+  "correlations": [
+    {
+      "correlation_id": "component/water/segment_diameter/constant-plus-sum-of-exponentials",
+      "component_id": "water",
+      "family": "segment_diameter",
+      "form": "constant-plus-sum-of-exponentials",
+      "independent_variables": [
+        "temperature"
+      ],
+      "constant": {
+        "identity": "component/water/segment_diameter/constant-plus-sum-of-exponentials/constant",
+        "value": {
+          "magnitude": 2.7927,
+          "unit": "angstrom"
+        }
+      },
+      "provenance": {
+        "source_id": "ascani-2023",
+        "locator": "Table 1 footnote, Fuchs temperature-dependent water segment diameter.",
+        "domain_id": "acetic-acid-water-323-15-k"
+      },
+      "terms": [
+        {
+          "amplitude": {
+            "identity": "component/water/segment_diameter/constant-plus-sum-of-exponentials/term-0/amplitude",
+            "value": {
+              "magnitude": 10.11,
+              "unit": "angstrom"
+            }
+          },
+          "exponent_coefficient": {
+            "identity": "component/water/segment_diameter/constant-plus-sum-of-exponentials/term-0/exponent_coefficient",
+            "value": {
+              "magnitude": -0.01775,
+              "unit": "1 / kelvin"
+            }
+          }
+        },
+        {
+          "amplitude": {
+            "identity": "component/water/segment_diameter/constant-plus-sum-of-exponentials/term-1/amplitude",
+            "value": {
+              "magnitude": -1.417,
+              "unit": "angstrom"
+            }
+          },
+          "exponent_coefficient": {
+            "identity": "component/water/segment_diameter/constant-plus-sum-of-exponentials/term-1/exponent_coefficient",
+            "value": {
+              "magnitude": -0.01146,
+              "unit": "1 / kelvin"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "topology": {
+    "presets": [],
+    "sites": [
+      {
+        "component_id": "water",
+        "site_id": "a",
+        "site_role": "donor",
+        "multiplicity": 1,
+        "provenance": {
+          "source_id": "ascani-et-al-2022-esi",
+          "locator": "Table 1 water N:N = 1:1",
+          "domain_id": "acetic-acid-water-323-15-k"
+        }
+      },
+      {
+        "component_id": "water",
+        "site_id": "b",
+        "site_role": "acceptor",
+        "multiplicity": 1,
+        "provenance": {
+          "source_id": "ascani-et-al-2022-esi",
+          "locator": "Table 1 water N:N = 1:1",
+          "domain_id": "acetic-acid-water-323-15-k"
+        }
+      },
+      {
+        "component_id": "acetic-acid",
+        "site_id": "a",
+        "site_role": "donor",
+        "multiplicity": 1,
+        "provenance": {
+          "source_id": "ascani-et-al-2022-esi",
+          "locator": "Table 1 acetic-acid N:N = 1:1",
+          "domain_id": "acetic-acid-water-323-15-k"
+        }
+      },
+      {
+        "component_id": "acetic-acid",
+        "site_id": "b",
+        "site_role": "acceptor",
+        "multiplicity": 1,
+        "provenance": {
+          "source_id": "ascani-et-al-2022-esi",
+          "locator": "Table 1 acetic-acid N:N = 1:1",
+          "domain_id": "acetic-acid-water-323-15-k"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "endpoint_a": {
+          "component_id": "water",
+          "site_id": "a"
+        },
+        "endpoint_b": {
+          "component_id": "water",
+          "site_id": "b"
+        },
+        "energy_over_k": {
+          "identity": "association/water/a/water/b/energy_over_k",
+          "value": {
+            "magnitude": 2425.7,
+            "unit": "kelvin"
+          }
+        },
+        "volume": {
+          "identity": "association/water/a/water/b/volume",
+          "value": {
+            "magnitude": 0.0451,
+            "unit": "dimensionless"
+          }
+        },
+        "source": {
+          "kind": "explicit",
+          "provenance": [
+            {
+              "source_id": "ascani-et-al-2022-esi",
+              "locator": "Table 1 water association",
+              "domain_id": "acetic-acid-water-323-15-k"
+            }
+          ]
+        }
+      },
+      {
+        "endpoint_a": {
+          "component_id": "acetic-acid",
+          "site_id": "a"
+        },
+        "endpoint_b": {
+          "component_id": "acetic-acid",
+          "site_id": "b"
+        },
+        "energy_over_k": {
+          "identity": "association/acetic-acid/a/acetic-acid/b/energy_over_k",
+          "value": {
+            "magnitude": 3044.4,
+            "unit": "kelvin"
+          }
+        },
+        "volume": {
+          "identity": "association/acetic-acid/a/acetic-acid/b/volume",
+          "value": {
+            "magnitude": 0.07555,
+            "unit": "dimensionless"
+          }
+        },
+        "source": {
+          "kind": "explicit",
+          "provenance": [
+            {
+              "source_id": "ascani-et-al-2022-esi",
+              "locator": "Table 1 acetic-acid association",
+              "domain_id": "acetic-acid-water-323-15-k"
+            }
+          ]
+        }
+      },
+      {
+        "endpoint_a": {
+          "component_id": "water",
+          "site_id": "a"
+        },
+        "endpoint_b": {
+          "component_id": "acetic-acid",
+          "site_id": "b"
+        },
+        "source": {
+          "kind": "combining-rule",
+          "rule_id": "wolbach-sandler",
+          "inputs": {
+            "energy_over_k": [
+              "association/water/a/water/b/energy_over_k",
+              "association/acetic-acid/a/acetic-acid/b/energy_over_k"
+            ],
+            "volume": [
+              "association/water/a/water/b/volume",
+              "association/acetic-acid/a/acetic-acid/b/volume"
+            ]
+          },
+          "provenance": [
+            {
+              "source_id": "gross-sadowski-2002",
+              "locator": "Eqs. (2)-(3), Wolbach-Sandler cross energy average and volume with cubed segment-size factor; adopted interpretation of Ascani ESI.",
+              "domain_id": "acetic-acid-water-323-15-k"
+            }
+          ]
+        }
+      },
+      {
+        "endpoint_a": {
+          "component_id": "water",
+          "site_id": "b"
+        },
+        "endpoint_b": {
+          "component_id": "acetic-acid",
+          "site_id": "a"
+        },
+        "source": {
+          "kind": "combining-rule",
+          "rule_id": "wolbach-sandler",
+          "inputs": {
+            "energy_over_k": [
+              "association/water/a/water/b/energy_over_k",
+              "association/acetic-acid/a/acetic-acid/b/energy_over_k"
+            ],
+            "volume": [
+              "association/water/a/water/b/volume",
+              "association/acetic-acid/a/acetic-acid/b/volume"
+            ]
+          },
+          "provenance": [
+            {
+              "source_id": "gross-sadowski-2002",
+              "locator": "Eqs. (2)-(3), Wolbach-Sandler cross energy average and volume with cubed segment-size factor; adopted interpretation of Ascani ESI.",
+              "domain_id": "acetic-acid-water-323-15-k"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

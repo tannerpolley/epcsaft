@@ -1,0 +1,285 @@
+{
+  "W1": {
+    "citation": "Wu H., Zhang J., Dong T., Cheng Y., Hu X., Liu H., Yang L., Direct and highly efficient lithium extraction from real oilfield brine via a selective TOP-FeCl3 system, Sep. Purif. Technol. 363 (2025) 132086",
+    "doi": "10.1016/j.seppur.2025.132086",
+    "zotero_parent": "VTBQWHZ9",
+    "zotero_attachment": "MYSFEQSS",
+    "path": "/home/tnnrpolley21/Zotero/storage/MYSFEQSS/Wu et al. - 2025 - Direct and highly efficient lithium extraction from real oilfield brine via a selective TOP-FeCl3 sy.pdf",
+    "sha256": "c9dbfba90e238f4bb7c4b0539da05a0b700f22e3317537110d25b16328ce5070",
+    "pdf_metadata_subject": "Separation and Purification Technology, 363 (2025) 132086. doi:10.1016/j.seppur.2025.132086",
+    "pages": 13,
+    "page_size_pt": [
+      595.276,
+      793.701
+    ],
+    "figure_format": "every Figs.1-15 panel is an embedded raster image (about 300 dpi); the PDF has no vector plot paths, so values are read from pixels",
+    "images": {
+      "fig1": {
+        "page": 2,
+        "xref": 4,
+        "rect_pt": [
+          99.04,
+          55.42,
+          496.19,
+          330.75
+        ],
+        "px": [
+          1655,
+          1147
+        ],
+        "sha256": "56423d7e448922405896792531f6c47100fa069d67684ab29458aae7dfbc7f62"
+      },
+      "fig2": {
+        "page": 3,
+        "xref": 31,
+        "rect_pt": [
+          127.22,
+          455.52,
+          468.07,
+          726.24
+        ],
+        "px": [
+          1420,
+          1128
+        ],
+        "sha256": "c36991afa794f02eef6942717defaeb591091e26e23bc28cbaa39fa75e2b68ec"
+      },
+      "fig3": {
+        "page": 4,
+        "xref": 39,
+        "rect_pt": [
+          85.04,
+          55.4,
+          510.27,
+          223.6
+        ],
+        "px": [
+          1772,
+          701
+        ],
+        "sha256": "f49b7cc6b7de7e15472d0b2cf57a3c96b5cf286f960675cce5e27a5e4b5f03e3"
+      },
+      "fig4": {
+        "page": 4,
+        "xref": 41,
+        "rect_pt": [
+          99.21,
+          558.83,
+          496.08,
+          716.66
+        ],
+        "px": [
+          1654,
+          658
+        ],
+        "sha256": "ac6e835bf040dd6446e0e9f4b4e224852d0f409a664199105f6ea07faa545aa8"
+      },
+      "fig5": {
+        "page": 5,
+        "xref": 46,
+        "rect_pt": [
+          85.04,
+          55.45,
+          510.27,
+          213.85
+        ],
+        "px": [
+          1772,
+          660
+        ],
+        "sha256": "6e61decaa6e4ecbe9a92e75ed1af2383770d5b7d3574727c3173bad5d8b3a5f4"
+      },
+      "fig6": {
+        "page": 5,
+        "xref": 48,
+        "rect_pt": [
+          85.04,
+          553.94,
+          510.27,
+          716.66
+        ],
+        "px": [
+          1772,
+          678
+        ],
+        "sha256": "91ef99a914c9e1bbf8291ee9a9f03eade89f45f52c232bf350e2808efa79c250"
+      },
+      "fig7": {
+        "page": 6,
+        "xref": 63,
+        "rect_pt": [
+          85.04,
+          55.39,
+          510.27,
+          215.38
+        ],
+        "px": [
+          1772,
+          667
+        ],
+        "sha256": "2b54bfe680b30cd6f75b7429bc55b534dc87590f488288cc7304cd1ef63e3c47"
+      },
+      "fig8": {
+        "page": 6,
+        "xref": 65,
+        "rect_pt": [
+          85.04,
+          333.23,
+          510.27,
+          697.55
+        ],
+        "px": [
+          1772,
+          1518
+        ],
+        "sha256": "6cd698bfc03bf22da0a4f19da3298bd243c97439d2ad6420d679dc5513bdb0ca"
+      },
+      "fig9": {
+        "page": 7,
+        "xref": 70,
+        "rect_pt": [
+          85.04,
+          55.4,
+          510.27,
+          423.61
+        ],
+        "px": [
+          1772,
+          1534
+        ],
+        "sha256": "c0931af0d01181eae94f6dafb5a3206f74e94fb329574b3b7a6d8203e8e42a85"
+      },
+      "fig10": {
+        "page": 8,
+        "xref": 83,
+        "rect_pt": [
+          85.04,
+          55.43,
+          510.27,
+          227.22
+        ],
+        "px": [
+          1772,
+          716
+        ],
+        "sha256": "eae859d26b50512d4a08f0854cf12d8de0783e56ab93242c618d8a4f7b3873c8"
+      },
+      "fig11": {
+        "page": 9,
+        "xref": 97,
+        "rect_pt": [
+          85.04,
+          55.41,
+          510.27,
+          226.77
+        ],
+        "px": [
+          1772,
+          714
+        ],
+        "sha256": "17c1038ee8373c26812c429dda217192158a6631cee0735f5120037913a1f194"
+      },
+      "fig12": {
+        "page": 9,
+        "xref": 99,
+        "rect_pt": [
+          85.04,
+          538.3,
+          510.27,
+          716.71
+        ],
+        "px": [
+          1772,
+          743
+        ],
+        "sha256": "4fe2a00cbcc71babadee4c2c7db839bca572068362cd2d922fa2ccac74b6c71b"
+      },
+      "fig13": {
+        "page": 10,
+        "xref": 107,
+        "rect_pt": [
+          85.04,
+          55.4,
+          510.27,
+          236.41
+        ],
+        "px": [
+          1772,
+          754
+        ],
+        "sha256": "71ef1cc565c9bf58aedf49208f080ee2c34e6fe2ff40b2c9e75b4d07caf1bb15"
+      },
+      "fig14": {
+        "page": 10,
+        "xref": 109,
+        "rect_pt": [
+          85.04,
+          545.08,
+          510.27,
+          726.24
+        ],
+        "px": [
+          1772,
+          755
+        ],
+        "sha256": "19da2733fff96c57c86e0362624a6089a6b623fe5faa4f93f75d171bb0f68eca"
+      },
+      "fig15": {
+        "page": 11,
+        "xref": 122,
+        "rect_pt": [
+          85.04,
+          55.4,
+          510.27,
+          222.01
+        ],
+        "px": [
+          1772,
+          694
+        ],
+        "sha256": "2c0d360eb2e33dba63b69949def05afa7fc0a2ef5778d6c44eb76b66426018f6"
+      }
+    }
+  },
+  "W1_text": {
+    "path": "/tmp/wu/wu.txt",
+    "sha256": "5d700f7e511173494b231f07e66622c644ccedb1fa3762465f54304307adcfd9",
+    "use": "issue-supplied layout text used for reading; every transcribed text token is re-checked against the PDF text layer by digitize.py"
+  },
+  "W1_SI": {
+    "title": "Wu 2025 Supplementary Information (publisher mmc1)",
+    "zotero_parent": "VTBQWHZ9",
+    "zotero_attachment": "BXCW9JZT",
+    "link_mode": "linked file (Zotero linkMode 2)",
+    "path": "/home/tnnrpolley21/.local/share/zotero-companion/attachments/Wu et al. - 2025 - Direct and highly efficient lithium extraction from real oilfield brine via a selective TOP-FeCl3 sy.docx",
+    "sha256": "689bedd9ca93247623ca1d7aabfcef2e6736e4c85bc442719b949e32cf105463",
+    "bytes": 1759207,
+    "acquisition_authority": "Lithium #193 D1, inherited by #255",
+    "identity": "verified 2026-10-28: heading 'Supplementary Information'; title, seven authors and affiliations match W1; captions Figure S1(a,b)-S11 match every W1 main-text citation (S1 sec.2.1 p.3; S2 sec.3.5.1 p.10; S3 sec.3.5.2 p.10; S4-S8 and S9-S11 sec.3.6.2 p.11); 12 embedded images map one-to-one to S1a, S1b, S2-S11; no data table (both Word tables are figure layout frames). The file does not state the DOI; the publisher-file label mmc1 comes from the Zotero attachment title.",
+    "media": {
+      "S1a": "word/media/image1.tiff",
+      "S1b": "word/media/image2.tiff",
+      "S2": "word/media/image3.png",
+      "S3": "word/media/image4.png",
+      "S4": "word/media/image5.png",
+      "S5": "word/media/image6.wmf",
+      "S6": "word/media/image7.wmf",
+      "S7": "word/media/image8.wmf",
+      "S8": "word/media/image9.wmf",
+      "S9": "word/media/image10.png",
+      "S10": "word/media/image11.wmf",
+      "S11": "word/media/image12.wmf"
+    }
+  },
+  "issue255": {
+    "url": "https://github.com/tannerpolley/Lithium_Extraction/issues/255",
+    "body_sha256": "2d43edd21390e74e6a5aaffca99451cc4f3a891b47431ff533a41f8ed71b7936",
+    "base_commit": "2e62fd5690d7f94178ec6fa131181f503d3a1834",
+    "line_ceiling": "owner approved 2026-10-28: 220 gross added executable lines (120 digitization, 100 balances)"
+  },
+  "digitization_software": {
+    "pymupdf": "1.28.2",
+    "pillow": "12.2.0",
+    "numpy": "2.4.4"
+  }
+}

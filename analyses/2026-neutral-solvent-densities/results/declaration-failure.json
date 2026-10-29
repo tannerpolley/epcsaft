@@ -1,0 +1,6 @@
+{
+  "stage": "input declaration; no thermodynamic calculation",
+  "cause": "missing component/78-42-2/charge_number",
+  "correction": "explicit zero elementary-charge entry",
+  "numerical_result_available": false
+}

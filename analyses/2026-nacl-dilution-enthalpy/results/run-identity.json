@@ -1,0 +1,173 @@
+{
+  "started_UTC": "2026-10-27T06:22:39.420227+00:00",
+  "finished_UTC": "2026-10-27T06:22:39.704598+00:00",
+  "checkout": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-859-case-study-measured-caloric-accuracy-of",
+  "checkout_head": "3a97eb9301daad14ea5a08525b2905de6dddadd3",
+  "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-859-case-study-measured-caloric-accuracy-of/.venv/bin/python",
+  "native_module": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-859-case-study-measured-caloric-accuracy-of/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so",
+  "native_sha256": "df77c126d7350535c0ef889705bed080729f1678a13c15ac0b4dad9ddfebb79b",
+  "native_library_sha256": "3170d5d0f218bd61b19f4b9d31dcccc28d9989ceab2d7afd8763ae57d6470133",
+  "packet_sha256": "cd2412073d306b89193da263f8207d96f8c50e5a710f2ca177be7d1d21f54297",
+  "input_sha256": {
+    "inputs/measurement-candidates.csv": "f9fa31b9afed75fe24b1c95b4202d1a5dd06dcbaa91d90d1d7b02b44afe6a4b8",
+    "inputs/parameters.json": "83acaf12b536c913039b855f0af8b6807ee228e68672a88d6ab6e9638200686e",
+    "inputs/source-records.json": "1068fc3b03505e28bd44a9a718d442b56c53e98a3f20377165d1fe5b1b75297d",
+    "inputs/sources/cameretti2005-evidence.json": "e465c095867a5b77733c6ea0622e55d3ec455abbf5ba34d7c908c07fcd23f661",
+    "inputs/sources/held2008-evidence.json": "4149ee2e5c220e5f2a08722466fa8ccc42acc9ca21458015613a454336ad49d2",
+    "inputs/sources/held2014-evidence.json": "481bb65959929e3e093616fe7d5de7d22d637f2e2cbc9b64d22bff5c23184fcc",
+    "inputs/sources/malmberg-maryott-1956.txt": "cf67c937475470078178efc84002f8990f2d121b63f2733cd147b879df1f23ba",
+    "inputs/sources/partanen2023-tables-s19-s21.txt": "d5c64102d268cab7f7cfbc62faf6dcc66b5cd60cc00cc7cfbfe67344d7d078b9",
+    "inputs/sources/pitzer1984-pages4-6.txt": "8e45e0cebbcdb66a08ef09b179f604e2aa216287ce86bebbf27938f38c5bf646",
+    "inputs/sources.md": "7891604ffa54fc241f207570a5fda2ca7d02b1aa74f1ac4cb762469c8828d333",
+    "scripts/run.py": "be7ec5ff4112032da6280f4ea48d193e737f12b2130b211ebc32a04e9f19aa42"
+  },
+  "R_J_mol_K": 8.31446261815324,
+  "MW_kg_mol": 0.01801528,
+  "P_Pa": 101325.0,
+  "gamma16": 1.7763568394002536e-15,
+  "criteria": {
+    "pressure_closure_Pa": 0.001,
+    "density_relative_spread": 1e-08,
+    "benchmark_coefficient": 0.003,
+    "refinement_relative_to_benchmark": 0.0001,
+    "numerical_relative_to_benchmark": 0.01,
+    "H_identity_J_mol": 1e-07,
+    "H_T_Cp_identity_J_mol_K": 1e-07,
+    "ideal_Cp_identity_J_mol_K": 1e-08,
+    "FD_J_mol_K": 1e-05
+  },
+  "settings": {
+    "ordinary": {
+      "ASSOCIATION_RESIDUAL": 2e-13,
+      "DENSITY_ROOT_RESIDUAL": 1e-12
+    },
+    "tight": {
+      "ASSOCIATION_RESIDUAL": 2e-14,
+      "DENSITY_ROOT_RESIDUAL": 1e-13
+    }
+  },
+  "grids": [
+    2,
+    4,
+    8,
+    16,
+    32,
+    64
+  ],
+  "solution_seed_delta_K": -0.1,
+  "water_seed_delta_K": -1.0,
+  "heat_capacity_reference_m_mol_kg": 1.0,
+  "finite_difference_steps_K": [
+    0.1,
+    0.05
+  ],
+  "manufactured_thermal_interval_K": [
+    270.0,
+    375.0
+  ],
+  "effective_solver_options": {
+    "ordinary": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-13,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-12,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ],
+    "tight": [
+      {
+        "name": "ASSOCIATION_RESIDUAL",
+        "value": 2e-14,
+        "unit": "1 (mass action)",
+        "default": 2e-13
+      },
+      {
+        "name": "DENSITY_ROOT_RESIDUAL",
+        "value": 1e-13,
+        "unit": "1 (reduced pressure)",
+        "default": 1e-12
+      },
+      {
+        "name": "EQUILIBRIUM_ROW_RESIDUAL",
+        "value": 1e-10,
+        "unit": "1 (classified rows)",
+        "default": 1e-10
+      }
+    ]
+  },
+  "native_defaults": {
+    "EQUILIBRIUM_WARM_PUSH": 1e-06,
+    "EQUILIBRIUM_WARM_MU": 1e-06,
+    "CLOSE_PACKING_FRACTION": 0.7404804896930609,
+    "SITE_FRACTION_FLOOR": 0.0,
+    "SITE_FRACTION_CEILING": 1.0,
+    "ASSOCIATION_RESIDUAL": 2e-13,
+    "ASSOCIATION_ACTION_RESIDUAL": 1e-10,
+    "ASSOCIATION_MAX_ITERATIONS": 50.0,
+    "ASSOCIATION_BOUNDARY_FRACTION": 0.9,
+    "ASSOCIATION_JACOBIAN_CONDITION": 1e-13,
+    "ASSOCIATION_JACOBIAN_RANK": 2.220446049250313e-16,
+    "DENSITY_ROOT_RESIDUAL": 1e-12,
+    "DENSITY_MAX_ITERATIONS": 60.0,
+    "DENSITY_BRACKET_INTERVALS": 40.0,
+    "DENSITY_LOWER_FRACTION": 1e-08,
+    "DENSITY_UPPER_FRACTION": 0.999,
+    "DENSITY_BISECTION_FRACTION": 0.5,
+    "DENSITY_ANCHOR_LOG_WINDOW": 0.009950330853168083,
+    "DENSITY_ANCHOR_SCAN_INTERVALS": 5.0,
+    "DENSITY_ANCHOR_REGULARITY": 9.950330853168083e-05,
+    "DENSITY_SLOPE_SEPARATION": 1e-06,
+    "DENSITY_STRUCTURE_ROUNDOFF": 3.5527136788005136e-15,
+    "COMPOSITION_SUM_TOLERANCE": 1e-12,
+    "OSMOTIC_MOLALITY_FLOOR": 1e-08,
+    "EQUILIBRIUM_COMPOSITION_BOX": 1e-08,
+    "EQUILIBRIUM_BOX_INVENTORY_FRACTION": 0.01,
+    "EQUILIBRIUM_BOX_FLOOR": 1e-20,
+    "PHASE_DISAPPEARANCE_AMOUNT": 1e-08,
+    "EQUILIBRIUM_AMOUNT_STEP_RETENTION": 0.1,
+    "FIT_FUNCTION_TOLERANCE": 1e-12,
+    "FIT_GRADIENT_TOLERANCE": 1e-12,
+    "FIT_PARAMETER_TOLERANCE": 1e-10,
+    "FIT_ACTIVE_BOUND_DISTANCE": 0.0001,
+    "LOG_RATIO_NEAR_UNITY": 0.5,
+    "FIT_RANK_RECIPROCAL_CONDITION": 1e-14,
+    "FIT_DENSITY_PARAMETER_FRACTION": 0.1,
+    "ADDITION_MATERIAL_BALANCE": 1e-12,
+    "EQUILIBRIUM_ROW_RESIDUAL": 1e-10,
+    "EQUILIBRIUM_TRIAL_LOG_STEP": 4.61512051684126,
+    "EQUILIBRIUM_ACTION_BACKWARD_ERROR": 1e-10,
+    "EQUILIBRIUM_ACTION_FORWARD_ERROR": 1e-06,
+    "EQUILIBRIUM_INNER_TOLERANCE_FACTOR": 0.1,
+    "EQUILIBRIUM_POLISH_STEPS": 3.0,
+    "TWO_DENSITY_FORWARD_ERROR": 1e-10,
+    "EQUILIBRIUM_POLISH_CORRECTION": 1e-12,
+    "EQUILIBRIUM_TRACE_MOIETY_FRACTION": 1e-06,
+    "EQUILIBRIUM_START_SPECIATION_STEP": 1e-06,
+    "EQUILIBRIUM_START_PRESSURE_STEP": 0.001,
+    "EQUILIBRIUM_START_PRESSURE_PASSES": 8.0,
+    "EQUILIBRIUM_MAX_ITERATIONS": 200.0,
+    "TANGENT_PLANE_SUBSTITUTIONS": 5.0,
+    "EQUILIBRIUM_CALORIC_SEED_ITERATIONS": 20.0,
+    "COOLING_RATIO": 0.95,
+    "EQUILIBRIUM_RECOVERY_SOURCES": 8.0,
+    "EQUILIBRIUM_RECOVERY_WORK": 512.0,
+    "PHASE_COINCIDENCE_DISTANCE": 1e-06,
+    "PACKING_FRACTION_CEILING": 0.74,
+    "PACKING_FRACTION_FLOOR": 1e-12,
+    "SCREENING_SERIES_SWITCH": 0.2,
+    "FLOOR_MARGIN": 10.0,
+    "STALL_WINDOW": 5.0
+  }
+}

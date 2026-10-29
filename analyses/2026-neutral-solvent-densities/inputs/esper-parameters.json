@@ -1,0 +1,220 @@
+{
+  "source_path": "data/packets/feos-esper-2023/1/parameters/parameters.json",
+  "source_sha256": "06ce938221db4f0dd7954bfcea728f2f411daec84f71f43cfe1c9662e93580fe",
+  "sources": [
+    {
+      "source_id": "esper-2023",
+      "citation": "Esper, T.; Bauer, G.; Rehner, P.; Gross, J. (2023) PCP-SAFT Parameters of Pure Substances Using Large Experimental Databases. Ind. Eng. Chem. Res., DOI 10.1021/acs.iecr.3c02255; Supporting Information DOI 10.1021/acs.iecr.3c02255.s001.",
+      "use_basis": "Pure PCP-SAFT parameters; Supporting Information 10.1021/acs.iecr.3c02255.s001 is CC BY-NC 4.0 (https://creativecommons.org/licenses/by-nc/4.0/); the article and SI files are linked, not copied."
+    },
+    {
+      "source_id": "feos-distribution",
+      "citation": "FeOs contributors, feos-org/feos commit af84e3f9da2fac2d102d449cd07cbbb48237617b, parameters/pcsaft/esper2023.json",
+      "use_basis": "Copied numerical distribution under the FeOs MIT licence, notice retained verbatim: Copyright (c) 2021-2026 feos-org and Contributors.  https://github.com/feos-org/feos\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. The Apache-2.0 alternative at the same commit is not combined with it."
+    }
+  ],
+  "components": [
+    {
+      "component_id": "dodecane",
+      "identifier": {
+        "cas": "112-40-3",
+        "name": "dodecane",
+        "iupac_name": "dodecane",
+        "smiles": "CCCCCCCCCCCC",
+        "inchi": "InChI=1S/C12H26/c1-3-5-7-9-11-12-10-8-6-4-2/h3-12H2,1-2H3"
+      },
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 0.170203,
+            "unit": "kg / mol"
+          },
+          "provenance": {
+            "source_id": "feos-esper-2023",
+            "locator": "parameters/pcsaft/esper2023.json[809].molarweight",
+            "domain_id": "feos-esper-2023"
+          }
+        },
+        "charge_number": {
+          "value": {
+            "magnitude": 0.0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "feos-esper-2023",
+            "locator": "parameters/pcsaft/esper2023.json[809].identifier",
+            "domain_id": "feos-esper-2023"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/dodecane/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 5.49496,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "feos-esper-2023",
+            "locator": "parameters/pcsaft/esper2023.json[809].m",
+            "domain_id": "feos-esper-2023"
+          }
+        },
+        {
+          "identity": "component/dodecane/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 3.83291,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "feos-esper-2023",
+            "locator": "parameters/pcsaft/esper2023.json[809].sigma",
+            "domain_id": "feos-esper-2023"
+          }
+        },
+        {
+          "identity": "component/dodecane/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 244.83939,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "feos-esper-2023",
+            "locator": "parameters/pcsaft/esper2023.json[809].epsilon_k",
+            "domain_id": "feos-esper-2023"
+          }
+        },
+        {
+          "identity": "component/dodecane/dipole_moment",
+          "family": "dipole_moment",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "debye"
+          },
+          "provenance": {
+            "source_id": "feos-esper-2023",
+            "locator": "parameters/pcsaft/esper2023.json[809].mu",
+            "domain_id": "feos-esper-2023"
+          }
+        },
+        {
+          "identity": "component/dodecane/dipole_count",
+          "family": "dipole_count",
+          "value": {
+            "magnitude": 0.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "feos-esper-2023",
+            "locator": "parameters/pcsaft/esper2023.json[809].mu",
+            "domain_id": "feos-esper-2023"
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "4-methyl-2-pentanone",
+      "identifier": {
+        "cas": "108-10-1",
+        "name": "4-methyl-2-pentanone",
+        "iupac_name": "4-methylpentan-2-one",
+        "smiles": "CC(=O)CC(C)C",
+        "inchi": "InChI=1S/C6H12O/c1-5(2)4-6(3)7/h5H,4H2,1-3H3"
+      },
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 0.100089,
+            "unit": "kg / mol"
+          },
+          "provenance": {
+            "source_id": "feos-esper-2023",
+            "locator": "parameters/pcsaft/esper2023.json[875].molarweight",
+            "domain_id": "feos-esper-2023"
+          }
+        },
+        "charge_number": {
+          "value": {
+            "magnitude": 0.0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "feos-esper-2023",
+            "locator": "parameters/pcsaft/esper2023.json[875].identifier",
+            "domain_id": "feos-esper-2023"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/4-methyl-2-pentanone/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 3.51266,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "feos-esper-2023",
+            "locator": "parameters/pcsaft/esper2023.json[875].m",
+            "domain_id": "feos-esper-2023"
+          }
+        },
+        {
+          "identity": "component/4-methyl-2-pentanone/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 3.6135,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "feos-esper-2023",
+            "locator": "parameters/pcsaft/esper2023.json[875].sigma",
+            "domain_id": "feos-esper-2023"
+          }
+        },
+        {
+          "identity": "component/4-methyl-2-pentanone/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 248.15792,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "feos-esper-2023",
+            "locator": "parameters/pcsaft/esper2023.json[875].epsilon_k",
+            "domain_id": "feos-esper-2023"
+          }
+        },
+        {
+          "identity": "component/4-methyl-2-pentanone/dipole_moment",
+          "family": "dipole_moment",
+          "value": {
+            "magnitude": 2.8,
+            "unit": "debye"
+          },
+          "provenance": {
+            "source_id": "feos-esper-2023",
+            "locator": "parameters/pcsaft/esper2023.json[875].mu",
+            "domain_id": "feos-esper-2023"
+          }
+        },
+        {
+          "identity": "component/4-methyl-2-pentanone/dipole_count",
+          "family": "dipole_count",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "feos-esper-2023",
+            "locator": "parameters/pcsaft/esper2023.json[875].mu",
+            "domain_id": "feos-esper-2023"
+          }
+        }
+      ]
+    }
+  ]
+}

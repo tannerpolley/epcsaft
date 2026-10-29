@@ -1,0 +1,502 @@
+{
+  "identities": {
+    "Engine-A": {
+      "pid": 402793,
+      "ppid": 401629,
+      "interpreter": "/home/tnnrpolley21/.local/share/uv/python/cpython-3.13.14-linux-x86_64-gnu",
+      "executable": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-886-dedicated-native-pure-fluid-saturation-2/build/issue-886/baseline-r4/.venv/bin/python",
+      "guard_sha256": "1a5af64518663d6f3bfae10c38331d97d4636c75a293add89b6895a1d6aef173",
+      "image_sha256": "59ea1ad383df39fd7858d3005baa7ee7fcac1b6ddaa3aeb3e543bd5ad0a32fe7",
+      "epcsaft": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-886-dedicated-native-pure-fluid-saturation-2/build/issue-886/baseline-r4/engine/src/epcsaft/__init__.py",
+      "extension": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-886-dedicated-native-pure-fluid-saturation-2/build/issue-886/baseline-r4/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so",
+      "maps": {
+        "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-886-dedicated-native-pure-fluid-saturation-2/build/issue-886/baseline-r4/build/engine-meson/shared/libepcsaft_native.so": [
+          66306,
+          60056674
+        ],
+        "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-886-dedicated-native-pure-fluid-saturation-2/build/issue-886/baseline-r4/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so": [
+          66306,
+          60056677
+        ]
+      },
+      "affinity": [
+        31
+      ],
+      "nice": 10
+    },
+    "Engine-control": {
+      "pid": 402794,
+      "ppid": 401629,
+      "interpreter": "/home/tnnrpolley21/.local/share/uv/python/cpython-3.13.14-linux-x86_64-gnu",
+      "executable": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-886-dedicated-native-pure-fluid-saturation-2/build/issue-886/baseline-r4/.venv/bin/python",
+      "guard_sha256": "1a5af64518663d6f3bfae10c38331d97d4636c75a293add89b6895a1d6aef173",
+      "image_sha256": "59ea1ad383df39fd7858d3005baa7ee7fcac1b6ddaa3aeb3e543bd5ad0a32fe7",
+      "epcsaft": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-886-dedicated-native-pure-fluid-saturation-2/build/issue-886/baseline-r4/engine/src/epcsaft/__init__.py",
+      "extension": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-886-dedicated-native-pure-fluid-saturation-2/build/issue-886/baseline-r4/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so",
+      "maps": {
+        "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-886-dedicated-native-pure-fluid-saturation-2/build/issue-886/baseline-r4/build/engine-meson/shared/libepcsaft_native.so": [
+          66306,
+          60056674
+        ],
+        "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-886-dedicated-native-pure-fluid-saturation-2/build/issue-886/baseline-r4/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so": [
+          66306,
+          60056677
+        ]
+      },
+      "affinity": [
+        31
+      ],
+      "nice": 10
+    },
+    "Engine-B": {
+      "pid": 402795,
+      "ppid": 401629,
+      "interpreter": "/home/tnnrpolley21/.local/share/uv/python/cpython-3.13.14-linux-x86_64-gnu",
+      "executable": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-886-dedicated-native-pure-fluid-saturation-2/.venv/bin/python",
+      "guard_sha256": "1a5af64518663d6f3bfae10c38331d97d4636c75a293add89b6895a1d6aef173",
+      "image_sha256": "40d127e43176dba4db69bb6ea7298f1859bea85c8cf0f0816dc53b14e71431d9",
+      "epcsaft": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-886-dedicated-native-pure-fluid-saturation-2/engine/src/epcsaft/__init__.py",
+      "extension": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-886-dedicated-native-pure-fluid-saturation-2/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so",
+      "maps": {
+        "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-886-dedicated-native-pure-fluid-saturation-2/build/engine-meson/shared/libepcsaft_native.so": [
+          66306,
+          58620401
+        ],
+        "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-886-dedicated-native-pure-fluid-saturation-2/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so": [
+          66306,
+          58589356
+        ]
+      },
+      "affinity": [
+        31
+      ],
+      "nice": 10
+    },
+    "Engine-B-control": {
+      "pid": 402798,
+      "ppid": 401629,
+      "interpreter": "/home/tnnrpolley21/.local/share/uv/python/cpython-3.13.14-linux-x86_64-gnu",
+      "executable": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-886-dedicated-native-pure-fluid-saturation-2/.venv/bin/python",
+      "guard_sha256": "1a5af64518663d6f3bfae10c38331d97d4636c75a293add89b6895a1d6aef173",
+      "image_sha256": "40d127e43176dba4db69bb6ea7298f1859bea85c8cf0f0816dc53b14e71431d9",
+      "epcsaft": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-886-dedicated-native-pure-fluid-saturation-2/engine/src/epcsaft/__init__.py",
+      "extension": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-886-dedicated-native-pure-fluid-saturation-2/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so",
+      "maps": {
+        "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-886-dedicated-native-pure-fluid-saturation-2/build/engine-meson/shared/libepcsaft_native.so": [
+          66306,
+          58620401
+        ],
+        "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-886-dedicated-native-pure-fluid-saturation-2/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so": [
+          66306,
+          58589356
+        ]
+      },
+      "affinity": [
+        31
+      ],
+      "nice": 10
+    },
+    "FeOs": {
+      "pid": 402799,
+      "library": "FeOs",
+      "version": "0.10.1",
+      "python": "/home/tnnrpolley21/.cache/epcsaft-comparators/222/feos/bin/python",
+      "affinity": [
+        31
+      ],
+      "nice": 10
+    },
+    "Clapeyron": {
+      "blas_threads": 1,
+      "julia": "1.13.1",
+      "pid": 401631,
+      "threads": 1,
+      "version": "0.6.29"
+    }
+  },
+  "operations": {
+    "prepared": {
+      "Engine-A": {
+        "samples": [
+          {
+            "value": {
+              "success": true,
+              "requested_tolerance_met": true,
+              "message": "converged: residual 4.4408920985006262e-15 against EQUILIBRIUM_ROW_RESIDUAL 9.9999999999999998e-13 after 1 iterations, contraction absent, floor absent, amplification absent",
+              "solver_status": "NEWTON_CONVERGED",
+              "P": 998660.8957399128,
+              "T": 300.0,
+              "phases": [
+                {
+                  "phase": "liquid",
+                  "rho": 11100.25123320961,
+                  "x": [
+                    1.0
+                  ],
+                  "P": 998660.8957398143
+                },
+                {
+                  "phase": "vapor",
+                  "rho": 482.5121268150347,
+                  "x": [
+                    1.0
+                  ],
+                  "P": 998660.8957399128
+                }
+              ],
+              "convergence": {
+                "residual": 4.440892098500626e-15,
+                "floor": null,
+                "amplification": null,
+                "contraction": null,
+                "iterations": 1,
+                "evaluations": 2,
+                "stop": "converged",
+                "criterion": 1e-12
+              },
+              "max_residual": 4.440892098500626e-15,
+              "iterations": 1,
+              "evaluations": 2,
+              "hessian_calls": 0,
+              "linear": {
+                "method": "one_component_two_density_reduction",
+                "reason": "",
+                "residual": 3.000421092136385e-15,
+                "evaluation_floor": 1.5456264227826464e-15,
+                "inverse_norm": 3.1302809547658565,
+                "condition_estimate": 18.25978333324076,
+                "forward_error_estimate": 1.4230405955411697e-14,
+                "working_precision_bits": 53,
+                "refinement_iterations": 0
+              },
+              "rank": {
+                "basis": "reduced",
+                "rank": 2,
+                "dimension": 2,
+                "threshold": 4.440892098500626e-16
+              },
+              "first_numerical_failure": null,
+              "terminal_numerical_failure": null,
+              "rejected_reduction": null,
+              "last_full_evaluation": {
+                "residual": 4.440892098500626e-15,
+                "floor": null,
+                "amplification": null,
+                "contraction": null,
+                "iterations": 1,
+                "evaluations": 2,
+                "stop": "converged",
+                "criterion": 1e-12,
+                "cause": "",
+                "rank": null,
+                "backward_error": null
+              }
+            },
+            "seconds": 5.464e-05,
+            "cpu_seconds": 5.391e-05
+          }
+        ],
+        "prepare_seconds": 0.006556884
+      },
+      "Engine-control": {
+        "samples": [
+          {
+            "value": {
+              "success": true,
+              "requested_tolerance_met": true,
+              "message": "converged: residual 4.4408920985006262e-15 against EQUILIBRIUM_ROW_RESIDUAL 9.9999999999999998e-13 after 1 iterations, contraction absent, floor absent, amplification absent",
+              "solver_status": "NEWTON_CONVERGED",
+              "P": 998660.8957399128,
+              "T": 300.0,
+              "phases": [
+                {
+                  "phase": "liquid",
+                  "rho": 11100.25123320961,
+                  "x": [
+                    1.0
+                  ],
+                  "P": 998660.8957398143
+                },
+                {
+                  "phase": "vapor",
+                  "rho": 482.5121268150347,
+                  "x": [
+                    1.0
+                  ],
+                  "P": 998660.8957399128
+                }
+              ],
+              "convergence": {
+                "residual": 4.440892098500626e-15,
+                "floor": null,
+                "amplification": null,
+                "contraction": null,
+                "iterations": 1,
+                "evaluations": 2,
+                "stop": "converged",
+                "criterion": 1e-12
+              },
+              "max_residual": 4.440892098500626e-15,
+              "iterations": 1,
+              "evaluations": 2,
+              "hessian_calls": 0,
+              "linear": {
+                "method": "one_component_two_density_reduction",
+                "reason": "",
+                "residual": 3.000421092136385e-15,
+                "evaluation_floor": 1.5456264227826464e-15,
+                "inverse_norm": 3.1302809547658565,
+                "condition_estimate": 18.25978333324076,
+                "forward_error_estimate": 1.4230405955411697e-14,
+                "working_precision_bits": 53,
+                "refinement_iterations": 0
+              },
+              "rank": {
+                "basis": "reduced",
+                "rank": 2,
+                "dimension": 2,
+                "threshold": 4.440892098500626e-16
+              },
+              "first_numerical_failure": null,
+              "terminal_numerical_failure": null,
+              "rejected_reduction": null,
+              "last_full_evaluation": {
+                "residual": 4.440892098500626e-15,
+                "floor": null,
+                "amplification": null,
+                "contraction": null,
+                "iterations": 1,
+                "evaluations": 2,
+                "stop": "converged",
+                "criterion": 1e-12,
+                "cause": "",
+                "rank": null,
+                "backward_error": null
+              }
+            },
+            "seconds": 5.527e-05,
+            "cpu_seconds": 5.447e-05
+          }
+        ],
+        "prepare_seconds": 0.004374784
+      },
+      "Engine-B": {
+        "samples": [
+          {
+            "value": {
+              "convergence": {
+                "residual": 4.440892098500626e-15,
+                "floor": null,
+                "amplification": null,
+                "contraction": null,
+                "iterations": 1,
+                "evaluations": 2,
+                "stop": "converged",
+                "criterion": 1e-12
+              },
+              "P": 998660.8957399128,
+              "T": 300.0,
+              "success": true,
+              "requested_tolerance_met": true,
+              "message": "converged: residual 4.4408920985006262e-15 against EQUILIBRIUM_ROW_RESIDUAL 9.9999999999999998e-13 after 1 iterations, contraction absent, floor absent, amplification absent",
+              "solver_status": "NEWTON_CONVERGED",
+              "max_residual": 4.440892098500626e-15,
+              "iterations": 1,
+              "evaluations": 2,
+              "hessian_calls": 0,
+              "first_numerical_failure": null,
+              "terminal_numerical_failure": null,
+              "last_full_evaluation": {
+                "residual": 4.440892098500626e-15,
+                "floor": null,
+                "amplification": null,
+                "contraction": null,
+                "iterations": 1,
+                "evaluations": 2,
+                "stop": "converged",
+                "criterion": 1e-12,
+                "cause": "",
+                "rank": null,
+                "backward_error": null
+              },
+              "rank": {
+                "basis": "reduced",
+                "dimension": 2,
+                "rank": 2,
+                "threshold": 4.440892098500626e-16
+              },
+              "linear": {
+                "method": "one_component_two_density_reduction",
+                "reason": "",
+                "residual": 3.000421092136385e-15,
+                "evaluation_floor": 1.5456264227826464e-15,
+                "inverse_norm": 3.1302809547658565,
+                "condition_estimate": 18.25978333324076,
+                "forward_error_estimate": 1.4230405955411697e-14,
+                "working_precision_bits": 53,
+                "refinement_iterations": 0
+              },
+              "phases": [
+                {
+                  "phase": "liquid",
+                  "rho": 11100.25123320961,
+                  "x": [
+                    1.0
+                  ],
+                  "P": 998660.8957398143
+                },
+                {
+                  "phase": "vapor",
+                  "rho": 482.5121268150347,
+                  "x": [
+                    1.0
+                  ],
+                  "P": 998660.8957399128
+                }
+              ],
+              "rejected_reduction": null
+            },
+            "seconds": 4.463e-05,
+            "cpu_seconds": 4.423e-05
+          }
+        ],
+        "prepare_seconds": 0.004177704
+      },
+      "Engine-B-control": {
+        "samples": [
+          {
+            "value": {
+              "convergence": {
+                "residual": 4.440892098500626e-15,
+                "floor": null,
+                "amplification": null,
+                "contraction": null,
+                "iterations": 1,
+                "evaluations": 2,
+                "stop": "converged",
+                "criterion": 1e-12
+              },
+              "P": 998660.8957399128,
+              "T": 300.0,
+              "success": true,
+              "requested_tolerance_met": true,
+              "message": "converged: residual 4.4408920985006262e-15 against EQUILIBRIUM_ROW_RESIDUAL 9.9999999999999998e-13 after 1 iterations, contraction absent, floor absent, amplification absent",
+              "solver_status": "NEWTON_CONVERGED",
+              "max_residual": 4.440892098500626e-15,
+              "iterations": 1,
+              "evaluations": 2,
+              "hessian_calls": 0,
+              "first_numerical_failure": null,
+              "terminal_numerical_failure": null,
+              "last_full_evaluation": {
+                "residual": 4.440892098500626e-15,
+                "floor": null,
+                "amplification": null,
+                "contraction": null,
+                "iterations": 1,
+                "evaluations": 2,
+                "stop": "converged",
+                "criterion": 1e-12,
+                "cause": "",
+                "rank": null,
+                "backward_error": null
+              },
+              "rank": {
+                "basis": "reduced",
+                "dimension": 2,
+                "rank": 2,
+                "threshold": 4.440892098500626e-16
+              },
+              "linear": {
+                "method": "one_component_two_density_reduction",
+                "reason": "",
+                "residual": 3.000421092136385e-15,
+                "evaluation_floor": 1.5456264227826464e-15,
+                "inverse_norm": 3.1302809547658565,
+                "condition_estimate": 18.25978333324076,
+                "forward_error_estimate": 1.4230405955411697e-14,
+                "working_precision_bits": 53,
+                "refinement_iterations": 0
+              },
+              "phases": [
+                {
+                  "phase": "liquid",
+                  "rho": 11100.25123320961,
+                  "x": [
+                    1.0
+                  ],
+                  "P": 998660.8957398143
+                },
+                {
+                  "phase": "vapor",
+                  "rho": 482.5121268150347,
+                  "x": [
+                    1.0
+                  ],
+                  "P": 998660.8957399128
+                }
+              ],
+              "rejected_reduction": null
+            },
+            "seconds": 4.551e-05,
+            "cpu_seconds": 4.478e-05
+          }
+        ],
+        "prepare_seconds": 0.004243574
+      },
+      "FeOs": {
+        "samples": [
+          {
+            "value": {
+              "P": 998660.8955479692,
+              "phases": [
+                {
+                  "phase": "liquid",
+                  "rho": 11100.251234176576,
+                  "x": [
+                    1.0
+                  ],
+                  "pressure": 998660.8955481574
+                },
+                {
+                  "phase": "vapor",
+                  "rho": 482.51212670173845,
+                  "x": [
+                    1.0
+                  ],
+                  "pressure": 998660.8955479692
+                }
+              ]
+            },
+            "seconds": 4.162e-05,
+            "cpu_seconds": 4.176e-05
+          }
+        ],
+        "prepare_seconds": 0.010201481
+      },
+      "Clapeyron": {
+        "prepare_seconds": 3.118059849,
+        "samples": [
+          {
+            "seconds": 0.0001017,
+            "value": {
+              "P": 998660.895739916,
+              "compositions": [
+                [
+                  1.0
+                ],
+                [
+                  1.0
+                ]
+              ],
+              "densities": [
+                11100.251233209623,
+                482.51212681503665
+              ]
+            }
+          }
+        ]
+      }
+    }
+  }
+}

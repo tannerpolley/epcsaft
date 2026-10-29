@@ -1,0 +1,36 @@
+{
+  "commit": "3a97eb9301daad14ea5a08525b2905de6dddadd3",
+  "engine_tree": "e93684944e473898487a4a4c93180c8e04c1892b",
+  "native_extension": "../../build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so",
+  "native_sha256": "df77c126d7350535c0ef889705bed080729f1678a13c15ac0b4dad9ddfebb79b",
+  "native_library_sha256": "3170d5d0f218bd61b19f4b9d31dcccc28d9989ceab2d7afd8763ae57d6470133",
+  "input_sha256": "3c6cfefd6e23b41a1ca5c343ed85c1e8ef9b955ad360d7fc7e06ee13a4009480",
+  "finished": "2026-10-27T00:17:38.515863-06:00",
+  "threads": 1,
+  "diagnostic_script_sha256": {
+    "decompose.py": "db20b9b67da663636ea36eaeccd89d37df0589c8c26c2ca39938d245d3518b68",
+    "load_engine.py": "964c8a7d654fe4368d384bd73548868c0c00836b5b9e7a0574ab2e6bbdec1206",
+    "present.py": "fffdd764b6543bee407f170d6ad1aecc7bc56c9cc55cf2e20644e0f2a19d08ca",
+    "probe.py": "8b0587dd0198812cc924f017aab5b2d8f0cdbd20f3d2730e250de58b52597419",
+    "reference.py": "9347ca5ef71985295762f7709d9891d88ab3ad6cc0a8670a0b77eafaba0f97de",
+    "run.py": "1a00e3367ae69d6984e1cfdfb43a5141242fa8081b9925372c0f5953d1d9c095",
+    "verify.py": "5a9f1c1a83e6cf764cbdd81ae9bfe17a36520cf533b64c2e3f2d1e5fb70b7cb8"
+  },
+  "source_input_sha256": {
+    "inputs/clarke-glew-1985-table34.csv": "6e3d15d3fee6e3f5c69be8cfb4ad36d5a1dfddd156f8fb820fab9689420a5e46",
+    "inputs/held-1-malmberg-maryott.json": "48f8955b3f72b8794b89c098d450523fdeb0187d3160177a2d66ff64264c23da",
+    "inputs/held-2-malmberg-maryott.json": "3c6cfefd6e23b41a1ca5c343ed85c1e8ef9b955ad360d7fc7e06ee13a4009480",
+    "inputs/pinho-macedo-2005.csv": "9654adf97c0631cde4b9532ec3c25f803c1cb440f95aed313d6b520be748ee02",
+    "inputs/source/ascani-table5.txt": "e8e287e5286f70bab5d8da109d7d06cc3541d67bbe79115aee3b682e8e88f204",
+    "inputs/source/diagnosis-sources.json": "9a8785e2457aa025cb84cb130b5766955659c7808f4cfc31158d67b1b3cc2cf9",
+    "inputs/source/held-page6.txt": "129016f49c8be7317a3f7a4e8b17142c4714f85943bafb520a2b017c09efce84",
+    "inputs/source/held-table2.png": "57ef389f6f94512f4e8d7daa0dc6c899b7e7698dea21ca35afd66ef58708039c",
+    "inputs/source/pitzer-1984.csv": "33e70752cee311f1bdcb0f75d4ea1b11bce11d438c9a7cc55aab5e3a7edc6558",
+    "inputs/source/pitzer-page26.png": "d1ba7263de8a733323cb658e301392d17882224399f47562d7286129579709e8",
+    "inputs/source/pitzer-page4.png": "31c201fa5e4e72fae6c4b90124aee316de75d27192ff8256eaee83b4823297e8",
+    "inputs/source/pitzer-page5.png": "205600e73a5722584bd6c018285c9eb743f7ae6118ec033c9dc231de6c103be9",
+    "inputs/source/pitzer-page72.png": "622f1a593eefb9d1d64831123b4ab5758aee4e51ffaa7aee4d545ab1334a5d72",
+    "inputs/source-hashes.json": "dbc8ee53c01e22793827ce7cd4354ffab3e76f7c75e4166325cc4378e403d1b2",
+    "inputs/sources.md": "234c48e41ebe4c3ff518a14f2949fdd45697daecc4da67e7b0b2c8bbdcc15430"
+  }
+}

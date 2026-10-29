@@ -1,0 +1,14 @@
+{
+  "base": "f8e8e47370686caa620a50a9ec93e1005e027849",
+  "k_H_water": -1.0706252324767123,
+  "k_H_Cl": 0,
+  "sha256": {
+    "build/native-drivers/activity/driver": "76cdd4122593fcdb478453cde1fa2187cb7479df8386c293a5d1f6032d207cf1",
+    "build/engine-meson/shared/libepcsaft_native.so": "31ef187921b56a070b715c1763f009b445396a4af735e90f10d3c22a9a220e72",
+    "build/issue-798/inputs.hpp": "2bf5f960c3aeedaf7cd1efefcab6405e3fa91870dd334fa9f4ff781dbe1d1c58",
+    "analyses/2026-hydrochloric-acid-chloride-basis/scripts/activity.cpp": "ea54e9f2759dfa2f7c54747756ea0fd82998804f276b8d4d465cbf199488d3ea",
+    "analyses/2026-hydrochloric-acid-chloride-basis/scripts/qualify.py": "65623fe25aa18a666230162abaa8e8c95305ceb251909697f7ce1f64bcc16d4b"
+  },
+  "reference": "Analytic insertion; convergence record is the reference solvent state density closure, not a dilution sequence.",
+  "historical_scalar_evidence": "../r3/activity-verification.csv"
+}

@@ -1,0 +1,18 @@
+gate,outcome,log
+frozen inventory,passed,/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-855/build-r1/inventory-comparison.log
+native A inventory,passed,/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-855/build-r1/native-A.log
+native B and 811 inventory,passed,/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-855/build-r1/affected-B.log
+standard corpus,passed,/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-855/build-r1/corpora.log
+original qualification A,passed,/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-855/build-r1/qualification-A-r2.log
+original qualification B,passed,/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-855/build-r1/qualification-B-r2.log
+refined FeOs qualification A,passed,/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-855/build-r1/qualification-feos-A-r2.log
+refined FeOs qualification B,passed,/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-855/build-r1/qualification-feos-B-r2.log
+647 original invariants,passed,/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-855/build-r1/qualification-647-comparison.log
+check-affected,passed,/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-855/build-r1/check-affected-final.log
+check-all,passed,/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-855/build-r1/check-all-final.log
+explicit native cases,passed,/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-855/build-r1/native-explicit.log
+key solves A=A with fit,passed,/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-855/build-r1/key-AA.log
+key solves A/B with fit and control,passed,/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-855/build-r1/key-AB-r2.log
+check-pr-native,pending PR number,
+independent delivered review,pending lead,
+quiet release-worker cost,deferred; target unjudged,/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-855/build-r1/cost-r3.log

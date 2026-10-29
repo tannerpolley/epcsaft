@@ -1,0 +1,3 @@
+convergence
+no first numerical failure
+weighted optimizer observation Jacobian,1,1,9.74604e-13

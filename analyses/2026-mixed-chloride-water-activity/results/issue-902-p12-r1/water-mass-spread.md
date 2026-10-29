@@ -1,0 +1,10 @@
+| state | observable | min_prediction | max_prediction |
+| --- | --- | --- | --- |
+| feed | aw | 0.4257543 | 0.640913 |
+| feed | phi | 2.122684 | 2.716267 |
+| scrub | aw | 0.3968002 | 0.6229184 |
+| scrub | phi | 2.33204 | 3.035955 |
+| regeneration | aw | 0.4669167 | 0.6786472 |
+| regeneration | phi | 2.151803 | 2.818362 |
+| strip | aw | 0.5714404 | 0.7382071 |
+| strip | phi | 1.684851 | 2.070814 |

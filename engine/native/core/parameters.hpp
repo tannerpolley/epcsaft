@@ -12,11 +12,12 @@
 
 namespace epcsaft {
 
-// Four published forms. Ion suppression eps_sf / (1 + sum_i alpha_i x_i) covers
+// Published forms. Ion suppression eps_sf / (1 + sum_i alpha_i x_i) covers
 // ion-specific suppression directly, ion-fraction suppression with alpha_i equal
 // for every ion, and solvent-only with alpha_i = 0; the model layer fills
 // ion_suppression_coefficient accordingly.
 enum class PermittivityForm {
+    SolventMoleWeighting = 5, // declared solvent mole fractions
     IonSuppression = 1,      // eps_sf / (1 + sum alpha_i x_i)
     ComponentMixing = 2,     // linear mixing over components
     DensityTemperature = 3,  // density and temperature correlation
@@ -83,6 +84,8 @@ struct FixedParameters {
 
     // Permittivity
     core::Declared<PermittivityForm> permittivity_form;
+    std::vector<int> permittivity_solvent;
+    bool permittivity_solvent_normalized = false;
     std::vector<double> relative_permittivity;
     std::vector<int> permittivity_term_component;
     std::vector<double> permittivity_term_coefficient;
@@ -103,6 +106,10 @@ struct FixedParameters {
                 ionic_dispersion.declared() ? static_cast<int>(ionic_dispersion.require("dispersion")) : 0,
                 permittivity_form.declared() ? static_cast<int>(permittivity_form.require("permittivity")) : 0};
         for (const auto& record : cation_mixing) result.insert(result.end(), record.begin(), record.end());
+        if (permittivity_form.is(PermittivityForm::SolventMoleWeighting)) {
+            result.push_back(permittivity_solvent_normalized);
+            result.insert(result.end(), permittivity_solvent.begin(), permittivity_solvent.end());
+        }
         return result;
     }
 

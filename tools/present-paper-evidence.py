@@ -178,46 +178,8 @@ def dielectric():
 
 
 def wangler():
-    leaf = ROOT / "reproduction/2018-wangler"
-    osmotic = json.loads((leaf / "figures/figure-10/output/wangler-2018-mdeah-osmotic-summary.json").read_text())
-    pressure = json.loads((leaf / "figures/figure-14/output/wangler-2018-table-10-native-summary.json").read_text())
-    rows = pd.read_csv(leaf / "figures/figure-14/output/wangler-2018-table-10-native.csv")
-    osmotic_rows = pd.read_csv(leaf / "figures/figure-10/output/wangler-2018-mdeah-osmotic-plotted-data.csv")
-    domain = osmotic_rows[osmotic_rows.lane == "S0"].groupby("temperature_k").agg(
-        observations=("molality_mol_per_kg", "size"),
-        minimum_molality=("molality_mol_per_kg", "min"), maximum_molality=("molality_mol_per_kg", "max"))
-    table(leaf, "domain", domain.reset_index(),
-          "Osmotic calibration observations shared by both lanes, from the Figure 10 plotted-data CSV; "
-          "temperature is in K, molality in mol/kg water, at the pressure specified in the osmotic summary limits.")
-    values = []
-    for lane in ("S0", "S1"):
-        fit, pred = osmotic["lanes"][lane], pressure["lanes"][f"fitted-{lane}"]
-        values.append([lane, fit["ard_percent"], fit["F1"]["ard_limit_percent"], fit["k_ij_303_k"],
-                       fit["k_ij_303_k_allowance"], pred["native_ard_percent"],
-                       pred["solved_row_count"], 100 * pred["F3"]["maximum_relative_pressure_change"]])
-    table(leaf, "metrics", pd.DataFrame(values, columns=["Lane", "Osmotic calibration AARD / %",
-          "Calibration limit / %", "Transferred k", "k allowance", "Pressure prediction AARD / %",
-          "Solved pressure states", "Maximum pressure change from k allowance / %"]),
-          "Calibration, transfer and failed prediction from the Figure 10 and Table 10 native summaries. "
-          "The pressure change is the retained allowance probe, not a full uncertainty interval.")
-    selected = rows[rows.lane.isin(["fitted-S0", "fitted-S1", "printed-S0"])]
-    assert selected.success.all()
-    table(leaf, "pressure", selected[["lane", "temperature_k", "co2_loading_mol_per_mol_mdea",
-          "experimental_total_pressure_bar", "pressure_standard_uncertainty_bar", "native_pressure_bar",
-          "reaction_affinity_max", "matching_k_ij_303_k"]],
-          "Table 10 pressure states from the retained native CSV. Row-matching interactions are diagnostic fits "
-          "and are never used for the pressure predictions.")
-    fig, ax = plt.subplots(figsize=(8, 4.5), layout="constrained")
-    measured = rows[rows.lane == "fitted-S0"]
-    ax.errorbar(measured.co2_loading_mol_per_mol_mdea, measured.experimental_total_pressure_bar,
-                yerr=measured.pressure_standard_uncertainty_bar, fmt="o", mfc="none", color="black", label="withheld Table 10")
-    for lane, color, marker in zip(["fitted-S0", "fitted-S1", "printed-S0"], COLORS, ["s", "^", "x"]):
-        group = rows[rows.lane == lane]
-        ax.plot(group.co2_loading_mol_per_mol_mdea, group.native_pressure_bar, marker, color=color, label=lane)
-    ax.set(yscale="log", xlabel="CO₂ loading / mol mol⁻¹ MDEA", ylabel="Total pressure / bar")
-    ax.legend(fontsize=8, loc="upper left", bbox_to_anchor=(1.01, 1))
-    ax.grid(alpha=.2, which="both")
-    figure(leaf, fig)
+    import runpy
+    runpy.run_path(str(ROOT / "reproduction/2018-wangler/scripts/present.py"), run_name="__main__")
 
 
 def cleeton():

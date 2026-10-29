@@ -1,0 +1,479 @@
+{
+  "identities": {
+    "Engine-A": {
+      "pid": 3400458,
+      "ppid": 3400272,
+      "interpreter": "/home/tnnrpolley21/.local/share/uv/python/cpython-3.13.14-linux-x86_64-gnu",
+      "executable": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-854-dedicated-pure-fluid-saturation-path/build/issue-854/baseline-a/.venv/bin/python",
+      "guard_sha256": "1a5af64518663d6f3bfae10c38331d97d4636c75a293add89b6895a1d6aef173",
+      "image_sha256": "46a7ca3c88371c2c05795d1883d472ea43db30815b741d3335aaf4ee068c8e4c",
+      "epcsaft": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-854-dedicated-pure-fluid-saturation-path/build/issue-854/baseline-a/engine/src/epcsaft/__init__.py",
+      "extension": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-854-dedicated-pure-fluid-saturation-path/build/issue-854/baseline-a/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so",
+      "maps": {
+        "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-854-dedicated-pure-fluid-saturation-path/build/issue-854/baseline-a/build/engine-meson/shared/libepcsaft_native.so": [
+          66306,
+          58626197
+        ],
+        "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-854-dedicated-pure-fluid-saturation-path/build/issue-854/baseline-a/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so": [
+          66306,
+          58626199
+        ]
+      },
+      "affinity": [
+        31
+      ],
+      "nice": 10
+    },
+    "Engine-control": {
+      "pid": 3400459,
+      "ppid": 3400272,
+      "interpreter": "/home/tnnrpolley21/.local/share/uv/python/cpython-3.13.14-linux-x86_64-gnu",
+      "executable": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-854-dedicated-pure-fluid-saturation-path/build/issue-854/baseline-a/.venv/bin/python",
+      "guard_sha256": "1a5af64518663d6f3bfae10c38331d97d4636c75a293add89b6895a1d6aef173",
+      "image_sha256": "46a7ca3c88371c2c05795d1883d472ea43db30815b741d3335aaf4ee068c8e4c",
+      "epcsaft": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-854-dedicated-pure-fluid-saturation-path/build/issue-854/baseline-a/engine/src/epcsaft/__init__.py",
+      "extension": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-854-dedicated-pure-fluid-saturation-path/build/issue-854/baseline-a/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so",
+      "maps": {
+        "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-854-dedicated-pure-fluid-saturation-path/build/issue-854/baseline-a/build/engine-meson/shared/libepcsaft_native.so": [
+          66306,
+          58626197
+        ],
+        "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-854-dedicated-pure-fluid-saturation-path/build/issue-854/baseline-a/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so": [
+          66306,
+          58626199
+        ]
+      },
+      "affinity": [
+        31
+      ],
+      "nice": 10
+    },
+    "Engine-B": {
+      "pid": 3400460,
+      "ppid": 3400272,
+      "interpreter": "/home/tnnrpolley21/.local/share/uv/python/cpython-3.13.14-linux-x86_64-gnu",
+      "executable": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-854-dedicated-pure-fluid-saturation-path-4/.venv/bin/python",
+      "guard_sha256": "1a5af64518663d6f3bfae10c38331d97d4636c75a293add89b6895a1d6aef173",
+      "image_sha256": "7364d1612f40ca906e4c0cd7116b1e331247f1789f6a3bf1cb94b743c00fe1a3",
+      "epcsaft": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-854-dedicated-pure-fluid-saturation-path-4/engine/src/epcsaft/__init__.py",
+      "extension": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-854-dedicated-pure-fluid-saturation-path-4/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so",
+      "maps": {
+        "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-854-dedicated-pure-fluid-saturation-path-4/build/engine-meson/shared/libepcsaft_native.so": [
+          66306,
+          58092006
+        ],
+        "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-854-dedicated-pure-fluid-saturation-path-4/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so": [
+          66306,
+          58092009
+        ]
+      },
+      "affinity": [
+        31
+      ],
+      "nice": 10
+    },
+    "Engine-B-control": {
+      "pid": 3400461,
+      "ppid": 3400272,
+      "interpreter": "/home/tnnrpolley21/.local/share/uv/python/cpython-3.13.14-linux-x86_64-gnu",
+      "executable": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-854-dedicated-pure-fluid-saturation-path-4/.venv/bin/python",
+      "guard_sha256": "1a5af64518663d6f3bfae10c38331d97d4636c75a293add89b6895a1d6aef173",
+      "image_sha256": "7364d1612f40ca906e4c0cd7116b1e331247f1789f6a3bf1cb94b743c00fe1a3",
+      "epcsaft": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-854-dedicated-pure-fluid-saturation-path-4/engine/src/epcsaft/__init__.py",
+      "extension": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-854-dedicated-pure-fluid-saturation-path-4/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so",
+      "maps": {
+        "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-854-dedicated-pure-fluid-saturation-path-4/build/engine-meson/shared/libepcsaft_native.so": [
+          66306,
+          58092006
+        ],
+        "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-854-dedicated-pure-fluid-saturation-path-4/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so": [
+          66306,
+          58092009
+        ]
+      },
+      "affinity": [
+        31
+      ],
+      "nice": 10
+    },
+    "FeOs": {
+      "pid": 3400462,
+      "library": "FeOs",
+      "version": "0.10.1",
+      "python": "/home/tnnrpolley21/.cache/epcsaft-comparators/222/feos/bin/python",
+      "affinity": [
+        31
+      ],
+      "nice": 10
+    },
+    "Clapeyron": {
+      "blas_threads": 1,
+      "julia": "1.13.1",
+      "pid": 3400274,
+      "threads": 1,
+      "version": "0.6.29"
+    }
+  },
+  "operations": {
+    "ordinary": {
+      "Engine-A": {
+        "samples": [
+          {
+            "value": {
+              "P": 998660.8957399072,
+              "phases": [
+                {
+                  "phase": "liquid",
+                  "rho": 11100.251233209618,
+                  "x": [
+                    1.0
+                  ]
+                },
+                {
+                  "phase": "vapor",
+                  "rho": 482.5121268150313,
+                  "x": [
+                    1.0
+                  ]
+                }
+              ],
+              "beta": 1.0,
+              "convergence": {
+                "residual": 4.440892098500626e-15,
+                "floor": null,
+                "amplification": 0.0,
+                "contraction": null,
+                "iterations": 0,
+                "evaluations": 3,
+                "stop": "converged",
+                "criterion": 1e-12
+              },
+              "max_residual": 4.440892098500626e-15,
+              "iterations": 0,
+              "evaluations": 3
+            },
+            "seconds": 0.000217379,
+            "cpu_seconds": 0.00021658
+          }
+        ],
+        "prepare_seconds": 0.004049614
+      },
+      "Engine-control": {
+        "samples": [
+          {
+            "value": {
+              "P": 998660.8957399072,
+              "phases": [
+                {
+                  "phase": "liquid",
+                  "rho": 11100.251233209618,
+                  "x": [
+                    1.0
+                  ]
+                },
+                {
+                  "phase": "vapor",
+                  "rho": 482.5121268150313,
+                  "x": [
+                    1.0
+                  ]
+                }
+              ],
+              "beta": 1.0,
+              "convergence": {
+                "residual": 4.440892098500626e-15,
+                "floor": null,
+                "amplification": 0.0,
+                "contraction": null,
+                "iterations": 0,
+                "evaluations": 3,
+                "stop": "converged",
+                "criterion": 1e-12
+              },
+              "max_residual": 4.440892098500626e-15,
+              "iterations": 0,
+              "evaluations": 3
+            },
+            "seconds": 0.000204999,
+            "cpu_seconds": 0.0002046
+          }
+        ],
+        "prepare_seconds": 0.004262252
+      },
+      "Engine-B": {
+        "samples": [
+          {
+            "value": {
+              "P": 998660.8957399128,
+              "phases": [
+                {
+                  "phase": "liquid",
+                  "rho": 11100.25123320961,
+                  "x": [
+                    1.0
+                  ]
+                },
+                {
+                  "phase": "vapor",
+                  "rho": 482.5121268150347,
+                  "x": [
+                    1.0
+                  ]
+                }
+              ],
+              "beta": 1.0,
+              "convergence": {
+                "residual": 4.440892098500626e-15,
+                "floor": null,
+                "amplification": null,
+                "contraction": null,
+                "iterations": 1,
+                "evaluations": 2,
+                "stop": "converged",
+                "criterion": 1e-12
+              },
+              "max_residual": 4.440892098500626e-15,
+              "iterations": 1,
+              "evaluations": 2
+            },
+            "seconds": 0.00012285,
+            "cpu_seconds": 0.00012202
+          }
+        ],
+        "prepare_seconds": 0.003879115
+      },
+      "Engine-B-control": {
+        "samples": [
+          {
+            "value": {
+              "P": 998660.8957399128,
+              "phases": [
+                {
+                  "phase": "liquid",
+                  "rho": 11100.25123320961,
+                  "x": [
+                    1.0
+                  ]
+                },
+                {
+                  "phase": "vapor",
+                  "rho": 482.5121268150347,
+                  "x": [
+                    1.0
+                  ]
+                }
+              ],
+              "beta": 1.0,
+              "convergence": {
+                "residual": 4.440892098500626e-15,
+                "floor": null,
+                "amplification": null,
+                "contraction": null,
+                "iterations": 1,
+                "evaluations": 2,
+                "stop": "converged",
+                "criterion": 1e-12
+              },
+              "max_residual": 4.440892098500626e-15,
+              "iterations": 1,
+              "evaluations": 2
+            },
+            "seconds": 0.00011004,
+            "cpu_seconds": 0.000109841
+          }
+        ],
+        "prepare_seconds": 0.003981903
+      },
+      "FeOs": {
+        "samples": [
+          {
+            "value": {
+              "P": 998660.8955479692,
+              "phases": [
+                {
+                  "phase": "liquid",
+                  "rho": 11100.251234176576,
+                  "x": [
+                    1.0
+                  ],
+                  "pressure": 998660.8955481574
+                },
+                {
+                  "phase": "vapor",
+                  "rho": 482.51212670173845,
+                  "x": [
+                    1.0
+                  ],
+                  "pressure": 998660.8955479692
+                }
+              ]
+            },
+            "seconds": 3.757e-05,
+            "cpu_seconds": 3.713e-05
+          }
+        ],
+        "prepare_seconds": 0.000202389
+      },
+      "Clapeyron": {
+        "prepare_seconds": 3.122049282,
+        "samples": [
+          {
+            "seconds": 0.000108219,
+            "value": {
+              "P": 998660.895739916,
+              "compositions": [
+                [
+                  1.0
+                ],
+                [
+                  1.0
+                ]
+              ],
+              "densities": [
+                11100.251233209623,
+                482.51212681503665
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "prepared": {
+      "Engine-B": {
+        "samples": [
+          {
+            "value": {
+              "P": 998660.8957399128,
+              "phases": [
+                {
+                  "phase": "liquid",
+                  "rho": 11100.25123320961,
+                  "x": [
+                    1.0
+                  ]
+                },
+                {
+                  "phase": "vapor",
+                  "rho": 482.5121268150347,
+                  "x": [
+                    1.0
+                  ]
+                }
+              ],
+              "convergence": {
+                "residual": 4.440892098500626e-15,
+                "floor": null,
+                "amplification": null,
+                "contraction": null,
+                "iterations": 1,
+                "evaluations": 2,
+                "stop": "converged",
+                "criterion": 1e-12
+              },
+              "max_residual": 4.440892098500626e-15,
+              "iterations": 1,
+              "evaluations": 2
+            },
+            "seconds": 4.6749e-05,
+            "cpu_seconds": 4.563e-05
+          }
+        ],
+        "prepare_seconds": 0.000688477
+      },
+      "Engine-B-control": {
+        "samples": [
+          {
+            "value": {
+              "P": 998660.8957399128,
+              "phases": [
+                {
+                  "phase": "liquid",
+                  "rho": 11100.25123320961,
+                  "x": [
+                    1.0
+                  ]
+                },
+                {
+                  "phase": "vapor",
+                  "rho": 482.5121268150347,
+                  "x": [
+                    1.0
+                  ]
+                }
+              ],
+              "convergence": {
+                "residual": 4.440892098500626e-15,
+                "floor": null,
+                "amplification": null,
+                "contraction": null,
+                "iterations": 1,
+                "evaluations": 2,
+                "stop": "converged",
+                "criterion": 1e-12
+              },
+              "max_residual": 4.440892098500626e-15,
+              "iterations": 1,
+              "evaluations": 2
+            },
+            "seconds": 4.666e-05,
+            "cpu_seconds": 4.548e-05
+          }
+        ],
+        "prepare_seconds": 0.000661557
+      },
+      "FeOs": {
+        "samples": [
+          {
+            "value": {
+              "P": 998660.8955479692,
+              "phases": [
+                {
+                  "phase": "liquid",
+                  "rho": 11100.251234176576,
+                  "x": [
+                    1.0
+                  ],
+                  "pressure": 998660.8955481574
+                },
+                {
+                  "phase": "vapor",
+                  "rho": 482.51212670173845,
+                  "x": [
+                    1.0
+                  ],
+                  "pressure": 998660.8955479692
+                }
+              ]
+            },
+            "seconds": 3.163e-05,
+            "cpu_seconds": 3.153e-05
+          }
+        ],
+        "prepare_seconds": null
+      },
+      "Clapeyron": {
+        "prepare_seconds": null,
+        "samples": [
+          {
+            "seconds": 3.104e-05,
+            "value": {
+              "P": 998660.895739916,
+              "compositions": [
+                [
+                  1.0
+                ],
+                [
+                  1.0
+                ]
+              ],
+              "densities": [
+                11100.251233209623,
+                482.51212681503665
+              ]
+            }
+          }
+        ]
+      }
+    }
+  }
+}

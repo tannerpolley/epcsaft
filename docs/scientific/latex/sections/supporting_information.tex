@@ -1,7 +1,4 @@
-\section{Supporting information}
-\label{sec:si}
-
-\subsection{Contributions and nomenclature}
+\section{Contributions and nomenclature}
 \begin{table}[pos=htbp]
 \centering
 \caption{Contributions and permittivity relations of Eqs.~\eqref{eq:residual} and~\eqref{eq:permittivity}, their source equations and the parameters each consumes. All entries are taken from the cited sources; the column on the right lists the state dependences that every derivative carries.}
@@ -94,7 +91,7 @@ Finite-addition enthalpy & Five binary interaction coordinates and one reaction'
 \end{tabularx}
 \end{table}
 
-\subsection{Sources of the capability comparison}
+\section{Sources of the capability comparison}
 \label{sec:si-sources}
 % P:si-sources-01
 Table~\ref{tab:si-sources} lists the source examined for each package in Table~\ref{tab:software}.
@@ -118,7 +115,7 @@ ThermoPack & Development source following release 2.2.4; the framework paper~\ci
 \end{tabularx}
 \end{table}
 
-\subsection{Native derivative checks}
+\section{Native derivative checks}
 \label{sec:si-derivatives}
 % P:si-derivatives-01
 Native checks complement the public comparisons of Section~\ref{sec:derivative-verification}.
@@ -127,7 +124,7 @@ Residual enthalpy, entropy and isobaric heat-capacity actions of orders one to t
 Third- and fourth-order contractions of the extensive residual energy in temperature, volume, amounts and parameters agree within $9.3\times10^{-11}$ relative, against a criterion of $10^{-6}$.
 The parameter directions in these checks use synthetic inputs, and derivatives along the insertion of an absent association site are not established.
 
-\subsection{Debye--H\"uckel derivative difference with composition-dependent permittivity}
+\section{Debye--H\"uckel derivative difference with composition-dependent permittivity}
 \label{sec:si-probe}
 % P:si-probe-01
 At the package's two solved liquids of the first water/ethanol/isobutanol/NaCl feed of Section~\ref{sec:cross-code}, each Helmholtz contribution was evaluated in both codes, and Clapeyron.jl's automatic chemical potentials of each contribution at constant volume and temperature were compared with central differences of the package's contribution values.
@@ -137,11 +134,11 @@ The Debye--H\"uckel contributions for the three solvents differ by up to 0.0594 
 Clapeyron.jl's permittivity gradient agrees with central differences within $4.71\times10^{-10}$ relative, so the difference arises in the composition derivative of the inverse Debye length: along solvent amounts the ionic charge sum does not change, but $\kappa$ still depends on them through $\epsilon_r(\mathbf{x})$, and that dependence is absent from Clapeyron.jl~0.6.29's automatic derivative.
 With constant permittivity this dependence vanishes, which is why the matched comparison of Fig.~\ref{fig:electrolyte-lle}a agrees.
 
-\subsection{Conventions of the published-case recalculations}
+\section{Conventions of the published-case recalculations}
 \label{sec:si-reproductions}
 % P:si-reproductions-01
 The neutral PC-SAFT comparisons with Gross and Sadowski~\citep{Gross2001} omit association and polar terms, include carbon dioxide, use a figure-specific $k_{ij}$ where a caption gives one, and start each comparison from one declared state.
-The figures were digitized sparsely and manually; the three binary misses are labelled raster-curve differences, the paper's aggregate deviation tables cannot be recomputed because the experimental rows are not available, and the ternary at the printed 48~bar is unresolved.
+The figures were digitized sparsely and manually; the three binary misses are labeled raster-curve differences, the paper's aggregate deviation tables cannot be recomputed because the experimental rows are not available, and the ternary at the printed 48~bar is unresolved.
 For the retained declarations, teqp reproduces the package's returned pure-liquid densities (105 rows) within $2.0\times10^{-13}$, binary bubble pressures (85 rows) within $3.6\times10^{-13}$ and isobar temperatures (9 rows) within $4.5\times10^{-16}$ relative.
 Cold propylene is excluded from this density comparison because that record contains no returned Engine density for it.
 Cold diethyl ether is included as a diagnostic state whose pressure closure fails, so its density agreement does not establish a pressure-closed saturation state.
@@ -169,13 +166,13 @@ The paper prints no model compositions, so the 86 solves are verified only throu
 Near the edges of the miscibility gap one feed uses declared liquids.
 Against the measurements of Senina et al.~\citep{Senina2022}, homogeneous points 9 and 10 miss by more than 0.01 in mole fraction and measured one-liquid points 13 and 15 are predicted to split; on the tie lines, fed at their midpoints, the model places on average 0.078 more mole fraction of acetic acid in the water-rich liquid, and the Wolbach--Sandler rule gives $\sigma_{\mathrm{S}}=8.21\,\%$.
 
-\subsection{Numerical check values}
+\section{Numerical check values}
 \label{sec:si-checks}
 % P:si-checks-01
 Table~\ref{tab:check-values} gives representative values from the independent-code comparisons, on their stated model and unit basis.
 These values are implementation checks rather than physical reference standards.
 Reproducing their digits requires the same parameters and constants, and does not establish accuracy at another state.
-The other verification populations are summarized in Table~\ref{tab:verification} and the complete comparison table below.
+The other verification populations are summarized in Table~\ref{tab:verification} and the complete comparison file of Section~\ref{sec:si-comparisons}.
 
 \begin{table}[pos=htbp]
 \centering\small
@@ -193,14 +190,16 @@ Same & Pressure / MPa & 4.60773 \\
 \end{tabularx}
 \end{table}
 
-\subsection{Complete scientific comparisons}
+\section{Complete scientific comparisons}
 \label{sec:si-comparisons}
 % P:si-comparisons-01
-The following table contains 356 comparison populations, including parameter variants and numerical illustrations.
+The complete comparison table is provided with this Supporting Information as the separate spreadsheet file \path{supplementary-comparisons.csv}.
+Its 356 rows are comparison populations, including parameter variants and numerical illustrations; each row gives the figure group, system, property, temperature and pressure ranges, number of data points, parameter source, relation to fitted data, error metric, value and evidence class.
 A row is not an independent dataset: source-model curves, measured symbols, multiple parameterizations, fitted and withheld populations can describe the same physical system.
-CAL denotes calibration, PRED fixed-parameter prediction, REPRO published-model reproduction and NV numerical verification.
+The evidence class is calibration, fixed-parameter prediction, published-model reproduction or numerical verification.
 The parameter-source and fitted-data columns must be read together with the class.
 A prediction made without a new fit can still overlap the original literature calibration.
+AARD is the mean absolute relative difference in percent, MAE the mean absolute difference and RMS the root-mean-square difference; values are rounded to four significant figures.
 
 % P:si-comparisons-02
 Temperature and pressure ranges describe the selected comparison population; they are not certified applicability bounds.
@@ -210,15 +209,7 @@ Elsewhere, ``unreported'' likewise means that the selected source table does not
 An error against a digitized model line is bounded by reading precision; an error against measured centers needs measurement uncertainty before it can support a physical-validation decision.
 Repeated source pixels and closure-related phase coordinates do not supply independent observations.
 
-\clearpage
-\begingroup
-\let\scriptsize\footnotesize
-\makeatletter\let\NC@find@L\relax\makeatother
-\input{figures/generated/T10-master-table}
-\endgroup
-\clearpage
-
-\subsection{Complete galleries and their evidence limits}
+\section{Complete galleries and their evidence limits}
 \label{sec:si-galleries}
 % P:si-galleries-01
 The galleries below preserve the complete source populations used in the main-text selections.

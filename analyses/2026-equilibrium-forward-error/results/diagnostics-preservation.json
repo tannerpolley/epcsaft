@@ -1,0 +1,53 @@
+{
+  "eos": {
+    "off": {
+      "values_identical": true,
+      "work_identical": true,
+      "counters_identical": true
+    },
+    "ordinary": {
+      "values_identical": true,
+      "work_identical": true,
+      "counters_identical": true
+    },
+    "detailed": {
+      "values_identical": true,
+      "work_identical": true,
+      "counters_identical": true
+    }
+  },
+  "mole_fraction": {
+    "off": {
+      "values_identical": true,
+      "work_identical": true,
+      "counters_identical": true
+    },
+    "ordinary": {
+      "values_identical": true,
+      "work_identical": true,
+      "counters_identical": true
+    },
+    "detailed": {
+      "values_identical": true,
+      "work_identical": true,
+      "counters_identical": true
+    }
+  },
+  "molarity": {
+    "off": {
+      "values_identical": true,
+      "work_identical": true,
+      "counters_identical": true
+    },
+    "ordinary": {
+      "values_identical": true,
+      "work_identical": true,
+      "counters_identical": true
+    },
+    "detailed": {
+      "values_identical": true,
+      "work_identical": true,
+      "counters_identical": true
+    }
+  }
+}

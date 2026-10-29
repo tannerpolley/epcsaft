@@ -248,3 +248,32 @@ def test_dielectric_tangent_at_a_solved_ionic_state() -> None:
             assert abs(sum(jacobian[row * width + j] * tangent[j] for j in range(width)) + r_theta) <= 1e-8 * max(map(abs, rows))
         resolved = _rebuilt_column(solved, column)
         assert max(abs(a - b) for a, b in zip(tangent, resolved)) <= 1e-8 * max(map(abs, tangent))
+
+
+@pytest.mark.parametrize("mode", ["unnormalized", "solvent-normalized"])
+def test_solvent_mole_weighting_declaration(mode: str) -> None:
+    document = _document("density-temperature")
+    choice = next(f for f in document["model_families"] if f["kind"] == "permittivity")
+    choice.update(choice="solvent-mole-weighting", solvents=["water"], normalization=mode)
+    for component in document["components"]:
+        component["coefficients"] = [r for r in component["coefficients"]
+                                     if r["family"] not in ("dielectric_volume", "dielectric_temperature")]
+    water = next(c for c in document["components"] if c["component_id"] == "water")
+    water["coefficients"].append({"identity": "water/permittivity", "family": "relative_permittivity",
+                                  "value": {"magnitude": 80.0, "unit": "dimensionless"}})
+    for order in (COMPONENTS, tuple(reversed(COMPONENTS))):
+        parameters = Parameters.from_mapping(document, components=order)
+        model = Mixture(parameters)
+        x = [0.8 if name == "water" else 0.1 for name in order]
+        assert abs(model.state(T, rho=1000.0, x=x).bulk_relative_permittivity
+                   - (80.0 if mode == "solvent-normalized" else 64.0)) <= 1e-12
+        if mode == "solvent-normalized":
+            with pytest.raises(ValueError, match="solvent denominator"):
+                model.state(T, rho=1000.0, x=[0.0 if name == "water" else 0.5 for name in order])
+    for solvents, normalization in (([], mode), (["water", "water"], mode),
+                                    (["sodium-cation"], mode), (["unknown"], mode), (["water"], "unknown")):
+        bad = copy.deepcopy(document)
+        next(f for f in bad["model_families"] if f["kind"] == "permittivity").update(
+            solvents=solvents, normalization=normalization)
+        with pytest.raises(ValueError):
+            Parameters.from_mapping(bad)

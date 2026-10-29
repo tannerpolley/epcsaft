@@ -3,6 +3,7 @@
 #include "core/physical_constants.hpp"
 #include "properties/helmholtz_model.hpp"
 #include "properties_support.hpp"
+#include "equilibrium_support.hpp"
 #include "contributions/association.hpp"
 #include "recording_support.hpp"
 
@@ -484,6 +485,50 @@ void producer_boundaries() {
         domain = error.record.stop == Stop::left_domain;
     }
 
+    // ALG-ASSOCIATION: a full-rank rejected pivot is distinct from final site convergence.
+    auto recovered = properties_support::ethane();
+    recovered.site_component = {0, 0, 0}; recovered.site_multiplicity = {1, 1, 1};
+    recovered.association_active.assign(9, 0); recovered.association_energy_over_k.assign(9, 0.0);
+    recovered.association_volume.assign(9, 0.0);
+    recovered.association_active[1] = recovered.association_active[3] = 1;
+    recovered.association_energy_over_k[1] = recovered.association_energy_over_k[3] = 3000.0;
+    recovered.association_volume[1] = recovered.association_volume[3] = 953099165.27749503;
+    const auto rs = epcsaft::segment_sigma(300.0, recovered);
+    const auto rd = epcsaft::segment_diameter(300.0, recovered, rs);
+    epcsaft::core::Convergence final_sites;
+    std::optional<epcsaft::core::Convergence> first;
+    const auto sites = epcsaft::solve_site_fractions(300.0, 1.0e4, {1.0}, recovered, rs, rd,
+        &final_sites, nullptr, nullptr, false, {}, &first);
+    const epcsaft::HelmholtzModel recovered_model(recovered);
+    const auto derivative = recovered_model.evaluate(300.0, 1.0e-4, {1.0}, epcsaft::DerivativeOrder::IsothermalPhaseHessian);
+    const bool preserved = first && first->rank && first->rank->rank == 3 && first->rank->dimension == 3
+        && first->residual == 9999999999999.5 && final_sites.stop == Stop::converged
+        && final_sites.iterations == 26 && final_sites.evaluations == 51
+        && derivative.first_numerical_failure && derivative.first_numerical_failure->cause == first->cause;
+    recording_support::compare("association-recovery", "first-and-final", "1", preserved ? 1.0 : 0.0, 1.0,
+        recording_support::fields({recording_support::field("first_residual", first ? first->residual : NAN),
+            recording_support::field("final_residual", final_sites.residual),
+            recording_support::field("gradient_floor", derivative.gradient_floor)}),
+        "Relationship", "mass-action", "recovered factor refusal retains its operands", "absolute", 0.0, 0.0,
+        preserved, "native.diagnostics.c3", "C3", "association", "site-fractions", "T,rho,parameters", "separate final convergence");
+    epcsaft::HelmholtzModel callback_model(properties_support::neutral_binary());
+    const auto callback_system = epcsaft::equilibrium::compile_problem(callback_model, equilibrium_support::flash(2));
+    const auto initial = epcsaft::equilibrium::boundary_start(callback_system);
+    epcsaft::equilibrium::GibbsMinimizer callback(callback_system, initial);
+    Ipopt::Index n, m, j, h; Ipopt::TNLP::IndexStyleEnum style;
+    callback.get_nlp_info(n, m, j, h, style);
+    auto refused = initial; refused[0] = 10000.0;
+    std::vector<double> rows(m);
+    const bool rejected = !callback.eval_g(n, refused.data(), true, m, rows.data());
+    const bool recovered_callback = callback.eval_g(n, initial.data(), true, m, rows.data());
+    epcsaft::equilibrium::EquilibriumResult observed;
+    callback.publish_observations(observed);
+    const bool unavailable = rejected && recovered_callback && observed.first_numerical_failure
+        && std::isnan(observed.first_numerical_failure->residual)
+        && observed.first_numerical_failure->cause.find("invalid composition") != std::string::npos;
+    recording_support::compare("callback-refusal", "unmeasured-residual", "1", unavailable ? 1.0 : 0.0, 1.0, {},
+        "Relationship", "constraint-callback", "an unmeasured refusal residual is unavailable", "absolute", 0.0, 0.0,
+        unavailable, "native.diagnostics.c3", "C3", "callback", "residual", "trial-coordinates", "no fabricated zero");
     const bool verdict = nonfinite && domain
         && !std::isfinite(nonfinite_record.residual)
         && std::isinf(domain_record.residual);

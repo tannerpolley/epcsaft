@@ -1,0 +1,28 @@
+{
+  "native": {
+    "states": 14,
+    "availability_and_causes_equal": true,
+    "retained": "../native/water.csv",
+    "sha256": "c62684de20a932254f1bc89a72641073034d63c39bf1defc5e99ae21488e8a5b",
+    "replay_sha256": "c62684de20a932254f1bc89a72641073034d63c39bf1defc5e99ae21488e8a5b"
+  },
+  "report-only": {
+    "states": 23,
+    "availability_and_causes_equal": true,
+    "retained": "../report-only/report.csv",
+    "sha256": "79fce3bb7328ba4047b25ff2fd5ce46d6d745e2d8efc299f7583de3adce7c181",
+    "replay_sha256": "79fce3bb7328ba4047b25ff2fd5ce46d6d745e2d8efc299f7583de3adce7c181"
+  },
+  "H-Cl-dispersion.csv": {
+    "retained": "../numerical/H-Cl-dispersion.csv",
+    "sha256": "8637526d39edb3c6161185dc0581da63f5f8448ea43fbb0ebb5ea4ab12d5378c"
+  },
+  "numerical.csv": {
+    "retained": "../numerical/numerical.csv",
+    "sha256": "2da8411e80923a2055313ecaa944fa092a1d2825f866ab6aab59bfecbbe78173"
+  },
+  "training.csv": {
+    "retained": "../numerical/training.csv",
+    "sha256": "698d30dc18fd7052d1f932c1c17e1dbb2a899c5e6535e723dbef13cc87edc6b7"
+  }
+}

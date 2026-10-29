@@ -1,0 +1,129 @@
+[
+  {
+    "row": 1,
+    "x_water": 0.0093,
+    "measured_P_Pa": 7800.0,
+    "neutral_P_Pa": 7626.032071031306,
+    "water_endpoint_error_Pa": -1.1157979872351176,
+    "acid_endpoint_error_Pa": -209.7856586264304,
+    "model_chord_residual_Pa": 73.87452764497175,
+    "measured_chord_residual_Pa": 36.9409999999998,
+    "mixing_error_Pa": 36.933527644971946
+  },
+  {
+    "row": 2,
+    "x_water": 0.0351,
+    "measured_P_Pa": 8200.0,
+    "neutral_P_Pa": 7942.379812229692,
+    "water_endpoint_error_Pa": -4.211237564726089,
+    "acid_endpoint_error_Pa": -204.32238014398172,
+    "model_chord_residual_Pa": 268.4004299383996,
+    "measured_chord_residual_Pa": 317.4870000000001,
+    "mixing_error_Pa": -49.08657006160047
+  },
+  {
+    "row": 3,
+    "x_water": 0.0992,
+    "measured_P_Pa": 8850.0,
+    "neutral_P_Pa": 8665.721165158577,
+    "water_endpoint_error_Pa": -11.901845197174588,
+    "acid_endpoint_error_Pa": -190.74888592983598,
+    "model_chord_residual_Pa": 689.0758962855871,
+    "measured_chord_residual_Pa": 670.7039999999997,
+    "mixing_error_Pa": 18.371896285587354
+  },
+  {
+    "row": 4,
+    "x_water": 0.1033,
+    "measured_P_Pa": 8910.0,
+    "neutral_P_Pa": 8709.108414585644,
+    "water_endpoint_error_Pa": -12.393756137783619,
+    "acid_endpoint_error_Pa": -189.8806905120825,
+    "model_chord_residual_Pa": 713.1038612355096,
+    "measured_chord_residual_Pa": 711.7209999999995,
+    "mixing_error_Pa": 1.3828612355100631
+  },
+  {
+    "row": 5,
+    "x_water": 0.1845,
+    "measured_P_Pa": 9440.0,
+    "neutral_P_Pa": 9502.74889396319,
+    "water_endpoint_error_Pa": -22.135992327406363,
+    "acid_endpoint_error_Pa": -172.68618614096496,
+    "model_chord_residual_Pa": 1123.3360724315608,
+    "measured_chord_residual_Pa": 865.7649999999994,
+    "mixing_error_Pa": 257.57107243156133
+  },
+  {
+    "row": 6,
+    "x_water": 0.278,
+    "measured_P_Pa": 9920.0,
+    "neutral_P_Pa": 10275.77030285647,
+    "water_endpoint_error_Pa": -33.35396133885621,
+    "acid_endpoint_error_Pa": -152.88709551658698,
+    "model_chord_residual_Pa": 1454.871359711913,
+    "measured_chord_residual_Pa": 912.8600000000006,
+    "mixing_error_Pa": 542.0113597119125
+  },
+  {
+    "row": 7,
+    "x_water": 0.3859,
+    "measured_P_Pa": 10330.0,
+    "neutral_P_Pa": 11005.098829270415,
+    "water_endpoint_error_Pa": -46.29961755634751,
+    "acid_endpoint_error_Pa": -130.0387331810749,
+    "model_chord_residual_Pa": 1674.7201800078383,
+    "measured_chord_residual_Pa": 823.2829999999994,
+    "mixing_error_Pa": 851.4371800078388
+  },
+  {
+    "row": 8,
+    "x_water": 0.4815,
+    "measured_P_Pa": 10690.0,
+    "neutral_P_Pa": 11523.400515090989,
+    "water_endpoint_error_Pa": -57.76954095201173,
+    "acid_endpoint_error_Pa": -109.7949570988232,
+    "model_chord_residual_Pa": 1741.6200131418245,
+    "measured_chord_residual_Pa": 740.6550000000007,
+    "mixing_error_Pa": 1000.9650131418239
+  },
+  {
+    "row": 9,
+    "x_water": 0.5781,
+    "measured_P_Pa": 11010.0,
+    "neutral_P_Pa": 11937.204616334751,
+    "water_endpoint_error_Pa": -69.35944262587327,
+    "acid_endpoint_error_Pa": -89.33942603663166,
+    "model_chord_residual_Pa": 1699.3004849972567,
+    "measured_chord_residual_Pa": 613.3970000000008,
+    "mixing_error_Pa": 1085.9034849972559,
+    "primary_P_Pa": 11934.685120141068,
+    "reacting_minus_neutral_Pa": -2.5194961936831533
+  },
+  {
+    "row": 10,
+    "x_water": 0.6673,
+    "measured_P_Pa": 11310.0,
+    "neutral_P_Pa": 12226.799776931442,
+    "water_endpoint_error_Pa": -80.06150504107462,
+    "acid_endpoint_error_Pa": -70.45088182599514,
+    "model_chord_residual_Pa": 1567.7131637985112,
+    "measured_chord_residual_Pa": 500.40099999999984,
+    "mixing_error_Pa": 1067.3121637985114,
+    "primary_P_Pa": 12223.15424945322,
+    "reacting_minus_neutral_Pa": -3.645527478221993
+  },
+  {
+    "row": 11,
+    "x_water": 0.7683,
+    "measured_P_Pa": 11580.0,
+    "neutral_P_Pa": 12446.079717789433,
+    "water_endpoint_error_Pa": -92.17931113900438,
+    "acid_endpoint_error_Pa": -49.063628852068156,
+    "model_chord_residual_Pa": 1310.093657780506,
+    "measured_chord_residual_Pa": 302.77100000000064,
+    "mixing_error_Pa": 1007.3226577805053,
+    "primary_P_Pa": 12441.674115347258,
+    "reacting_minus_neutral_Pa": -4.405602442175223
+  }
+]

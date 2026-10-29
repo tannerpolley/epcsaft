@@ -1,0 +1,74 @@
+{
+  "basis": "Native interposition controls use actual #883 association observations; transport verification, not physical validation",
+  "controls": {
+    "both_failed_control": [
+      4,
+      6,
+      5
+    ],
+    "fallback_control": [
+      4,
+      6,
+      5
+    ]
+  },
+  "producer_records": "first_record,stalled: residual 9999999999999.5 against absent 0 after 0 iterations, contraction absent, floor absent, amplification 10000000000000.5; association Jacobian is ill-conditioned; largest 10000000000000.5; smallest 1; relative pivot cutoff 1e-13; mass_action_site_fractions rank 3/3; threshold 6.6613381477509392e-16\nterminal_record,nonfinite: residual inf against ASSOCIATION_RESIDUAL 2.0000000000000001e-13 after 1 iterations, contraction absent, floor 4.4408920985006262e-16, amplification absent\n",
+  "cases": {
+    "1": {
+      "success": true,
+      "first_observation_retained": true,
+      "rejected_record": false,
+      "iterations": 1,
+      "evaluations": 2,
+      "message": "converged: residual 4.4408920985006262e-15 against EQUILIBRIUM_ROW_RESIDUAL 9.9999999999999998e-13 after 1 iterations, contraction absent, floor absent, amplification absent"
+    },
+    "2": {
+      "success": true,
+      "first_observation_retained": true,
+      "rejected_record": true,
+      "iterations": 4,
+      "evaluations": 7,
+      "message": "converged: residual 3.5527136788005009e-15 against EQUILIBRIUM_ROW_RESIDUAL 9.9999999999999998e-13 after 4 iterations, contraction absent, floor absent, amplification 0"
+    },
+    "3": {
+      "success": false,
+      "first_observation_retained": true,
+      "rejected_record": true,
+      "iterations": 4,
+      "evaluations": 7,
+      "message": "nonfinite: residual inf against ASSOCIATION_RESIDUAL 2.0000000000000001e-13 after 1 iterations, contraction absent, floor 4.4408920985006262e-16, amplification absent"
+    },
+    "4": {
+      "success": true,
+      "first_observation_retained": true,
+      "rejected_record": true,
+      "iterations": 5,
+      "evaluations": 8,
+      "message": "converged: residual 3.5527136788005009e-15 against EQUILIBRIUM_ROW_RESIDUAL 9.9999999999999998e-13 after 4 iterations, contraction absent, floor absent, amplification 0"
+    }
+  },
+  "allocation_failure_propagated": true,
+  "recovered_damping_trial": [
+    "damping",
+    "1",
+    "5",
+    "7",
+    "15"
+  ],
+  "correction_refusals": [
+    [
+      "correction",
+      "8",
+      "1",
+      "1",
+      "1"
+    ],
+    [
+      "correction",
+      "9",
+      "1",
+      "1",
+      "7"
+    ]
+  ]
+}

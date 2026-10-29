@@ -1,0 +1,73 @@
+{
+  "measurements": {
+    "path": "measurement-candidates.csv",
+    "rows": 60,
+    "selected_rows": 54,
+    "source": "Partanen2023 supplement TablesS19-S21",
+    "original_sha256": "1faed78633e5008b6b647dd346e7d5c9429a4a78810e6c285a431890670f9cb0",
+    "sha256": "f9fa31b9afed75fe24b1c95b4202d1a5dd06dcbaa91d90d1d7b02b44afe6a4b8",
+    "transformation": "CRLF normalized to LF for Git; measured values and original source strings unchanged"
+  },
+  "parameter_source": {
+    "path": "data/packets/held-2014-strategy2/2/parameters/parameters.json",
+    "sha256": "cd2412073d306b89193da263f8207d96f8c50e5a710f2ca177be7d1d21f54297"
+  },
+  "retained_sources": [
+    {
+      "path": "sources/held2008-evidence.json",
+      "sha256": "4149ee2e5c220e5f2a08722466fa8ccc42acc9ca21458015613a454336ad49d2",
+      "original_file": "held2008-evidence.json",
+      "original_sha256": "4149ee2e5c220e5f2a08722466fa8ccc42acc9ca21458015613a454336ad49d2",
+      "doi": null,
+      "locator": null,
+      "transformation": "Unchanged retained source evidence"
+    },
+    {
+      "path": "sources/cameretti2005-evidence.json",
+      "sha256": "e465c095867a5b77733c6ea0622e55d3ec455abbf5ba34d7c908c07fcd23f661",
+      "original_file": "cameretti2005-evidence.json",
+      "original_sha256": "e465c095867a5b77733c6ea0622e55d3ec455abbf5ba34d7c908c07fcd23f661",
+      "doi": null,
+      "locator": null,
+      "transformation": "Unchanged retained source evidence"
+    },
+    {
+      "path": "sources/pitzer1984-pages4-6.txt",
+      "sha256": "8e45e0cebbcdb66a08ef09b179f604e2aa216287ce86bebbf27938f38c5bf646",
+      "original_file": "pitzer1984.txt",
+      "original_sha256": "2bb6f37d92d5cb25a00f94303f1f7bff677629455f7054f6d63956f18abbb969",
+      "doi": null,
+      "locator": null,
+      "transformation": "Exact selected text pages"
+    },
+    {
+      "path": "sources/partanen2023-tables-s19-s21.txt",
+      "sha256": "d5c64102d268cab7f7cfbc62faf6dcc66b5cd60cc00cc7cfbfe67344d7d078b9",
+      "original_file": "partanen2023-supplement.txt",
+      "original_sha256": "30445d0c856d42742caf3c8c81ff814992366d9143edb44a4162bc11b5ec1fdf",
+      "doi": null,
+      "locator": null,
+      "transformation": "Exact selected text pages"
+    },
+    {
+      "path": "sources/held2014-evidence.json",
+      "sha256": "481bb65959929e3e093616fe7d5de7d22d637f2e2cbc9b64d22bff5c23184fcc",
+      "original_file": "held2014-evidence.json",
+      "original_sha256": "481bb65959929e3e093616fe7d5de7d22d637f2e2cbc9b64d22bff5c23184fcc",
+      "doi": null,
+      "locator": null,
+      "transformation": "Unchanged retained source evidence"
+    },
+    {
+      "path": "sources/malmberg-maryott-1956.txt",
+      "sha256": "cf67c937475470078178efc84002f8990f2d121b63f2733cd147b879df1f23ba",
+      "original_file": "malmberg-maryott-1956.txt",
+      "original_sha256": "cf67c937475470078178efc84002f8990f2d121b63f2733cd147b879df1f23ba",
+      "doi": "10.6028/jres.056.001",
+      "locator": "Eq.(5) p.5; accuracy discussion p.6",
+      "transformation": "Unchanged retained source evidence"
+    }
+  ],
+  "supplement_DOI": "10.1007/s10953-023-01322-y",
+  "primary_measurement_DOI": "10.1016/0021-9614(75)90259-1"
+}

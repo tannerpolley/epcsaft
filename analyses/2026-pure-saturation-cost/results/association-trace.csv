@@ -1,0 +1,11 @@
+phase,event,coefficient,normalized_residual,scale,iteration
+0,association_refinement_residual,0,8.69530142333374556073977e-17,1,1
+0,association_refinement_residual,0,0,1,2
+0,association_refinement_residual,1,2.50513912440126684799679,1,2
+0,association_refinement_residual,1,4.88493115066516166767963e-16,1.27307716529597980681388,3
+0,association_refinement_residual,1,7.21448995815265319998084e-20,1.27307716529597869659085,4
+1,association_refinement_residual,0,1.77158634984131424516818e-16,1,1
+1,association_refinement_residual,0,5.42101086242752217003726e-20,1,2
+1,association_refinement_residual,1,0.0753336694820454372267804,1,2
+1,association_refinement_residual,1,2.14653785323770913146082e-18,1,3
+1,association_refinement_residual,1,6.92431565560551313314681e-21,1,4

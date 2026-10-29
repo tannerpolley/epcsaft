@@ -1,0 +1,15 @@
+| quantity | value |
+| --- | --- |
+| reference_temperature | 298.15 |
+| reference_pressure | 101325 |
+| dG | -9038.7 |
+| dH | 3858.4 |
+| dCp | -134.03 |
+| g_se | 3.6 |
+| measured_m | 6.1476 |
+| measured_m_se | 0.0015 |
+| pinho_pressure | 101300 |
+| measured_w | 0.26483 |
+| measured_w_u | 0.00084 |
+| salt_mass | 0.05844277 |
+| solid_volume | 2.71e-05 |

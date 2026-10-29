@@ -1,0 +1,11 @@
+{
+  "engine": "356556f3",
+  "converged": 73,
+  "total": 73,
+  "source": "https://github.com/tannerpolley/ePC-SAFT/issues/501#issuecomment-6298376260",
+  "owner_decision_date": "2026-10-20",
+  "basis": "Owner-reported merged-main recovery count; independently supported by the delivered review of #692.",
+  "delivered_review_source": "https://github.com/tannerpolley/ePC-SAFT/issues/692",
+  "retained_review": "build/issue-692/delivered-review-r1.md in the main checkout",
+  "comparison_limit": "The earlier recovery row arrays are not retained in this analysis. Compare its reported convergence count only; do not infer state identity or identical work against v1.0.0."
+}

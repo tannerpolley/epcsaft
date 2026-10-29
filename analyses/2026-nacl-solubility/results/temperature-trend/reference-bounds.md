@@ -1,0 +1,1 @@
+The largest printed-coefficient derivative rounding bound at 6 mol/kg is ±6.148007e-05 K⁻¹. Changing the pressure from 100000 to 101325 Pa changes ln γ± by at most 3.608e-07 over the nine selected activity states. This pressure check bounds changes in activity values, without supplying a physical uncertainty in their temperature derivatives.

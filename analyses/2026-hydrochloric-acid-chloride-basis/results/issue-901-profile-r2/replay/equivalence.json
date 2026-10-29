@@ -1,0 +1,50 @@
+{
+  "roy1980-hcl-mg/H-Cl-dispersion.csv": {
+    "retained": "point-11/roy1980-hcl-mg/H-Cl-dispersion.csv",
+    "sha256": "1301b8e08a2115ae812edd8f1807dbd8e38bfc2052b34f091191103faea6bbaa"
+  },
+  "roy1980-hcl-mg/source.csv": {
+    "retained": "point-11/roy1980-hcl-mg/source.csv",
+    "sha256": "78e4a07de04a02c614eb3db650df5ffdffe50c7780ea792edc6395fb63a3b5e7"
+  },
+  "roy1980-hcl-mg/source-columns.csv": {
+    "retained": "point-11/roy1980-hcl-mg/source-columns.csv",
+    "sha256": "dc6a4a4b99f9a00ae13629bc68aed3832870ca0098d4512a111ce2af409ac956"
+  },
+  "khoo1977-hcl-mg/H-Cl-dispersion.csv": {
+    "retained": "point-11/khoo1977-hcl-mg/H-Cl-dispersion.csv",
+    "sha256": "1301b8e08a2115ae812edd8f1807dbd8e38bfc2052b34f091191103faea6bbaa"
+  },
+  "khoo1977-hcl-mg/source.csv": {
+    "retained": "point-11/khoo1977-hcl-mg/source.csv",
+    "sha256": "7a9ceafd08a707977e885e5912ccc9e076c001b2fd077d4e0fe38efd30b1d014"
+  },
+  "khoo1977-hcl-mg/source-columns.csv": {
+    "retained": "point-11/khoo1977-hcl-mg/source-columns.csv",
+    "sha256": "0aec876e6ac5e4ab4a4d3db1df27825af89f1dcedae30894e2dbbea4d698620e"
+  },
+  "jiang1996-hcl-li/H-Cl-dispersion.csv": {
+    "retained": "point-11/jiang1996-hcl-li/H-Cl-dispersion.csv",
+    "sha256": "1301b8e08a2115ae812edd8f1807dbd8e38bfc2052b34f091191103faea6bbaa"
+  },
+  "jiang1996-hcl-li/source.csv": {
+    "retained": "point-11/jiang1996-hcl-li/source.csv",
+    "sha256": "dff01ff8ff0137bc018e550426c5c435423ef736c2b931be192a510ab5ed9a58"
+  },
+  "jiang1996-hcl-li/source-columns.csv": {
+    "retained": "point-11/jiang1996-hcl-li/source-columns.csv",
+    "sha256": "fef531383a109aa963287d4a3e1eca86a7a7d95e5e2fabe3cb0805866aa7744a"
+  },
+  "khoo1977-hcl-ca/H-Cl-dispersion.csv": {
+    "retained": "point-11/khoo1977-hcl-ca/H-Cl-dispersion.csv",
+    "sha256": "1301b8e08a2115ae812edd8f1807dbd8e38bfc2052b34f091191103faea6bbaa"
+  },
+  "khoo1977-hcl-ca/source.csv": {
+    "retained": "point-11/khoo1977-hcl-ca/source.csv",
+    "sha256": "fb44e907f6d7ff58de49ac96775a1d333641749ed9bd9df4de83e76a0f8c9a91"
+  },
+  "khoo1977-hcl-ca/source-columns.csv": {
+    "retained": "point-11/khoo1977-hcl-ca/source-columns.csv",
+    "sha256": "7750a294e5467a168f00809f0cb3f92cd8a84cc81e5db3b2748a9365b588e1f4"
+  }
+}

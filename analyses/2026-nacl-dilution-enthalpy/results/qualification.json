@@ -1,0 +1,110 @@
+{
+  "identities": [
+    {
+      "T_K": 298.15,
+      "mi_mol_kg": 0.0744,
+      "mf_mol_kg": 0.0371,
+      "total_minus_residual_J_mol": 0.0,
+      "changed_record_H_J_mol": 0.0,
+      "changed_record_Cp_J_mol_K": -7.275957614183426e-12,
+      "thermal_identity_J_mol_K": -1.597072696313262e-09,
+      "delta_Cp_J_mol_K": -1.7372271479616757,
+      "exact_dH_dT_J_mol_K": -1.7372271495587484,
+      "passed": true
+    },
+    {
+      "T_K": 298.15,
+      "mi_mol_kg": 3.222,
+      "mf_mol_kg": 2.1,
+      "total_minus_residual_J_mol": 0.0,
+      "changed_record_H_J_mol": 1.1641532182693481e-10,
+      "changed_record_Cp_J_mol_K": 2.2737367544323206e-13,
+      "thermal_identity_J_mol_K": 7.617018127348274e-12,
+      "delta_Cp_J_mol_K": -3.7341988610044154,
+      "exact_dH_dT_J_mol_K": -3.7341988609967984,
+      "passed": true
+    },
+    {
+      "T_K": 323.15,
+      "mi_mol_kg": 0.0744,
+      "mf_mol_kg": 0.0371,
+      "total_minus_residual_J_mol": -3.725290298461914e-09,
+      "changed_record_H_J_mol": -1.1175870895385742e-08,
+      "changed_record_Cp_J_mol_K": -1.4551915228366852e-11,
+      "thermal_identity_J_mol_K": -1.1350493878126144e-09,
+      "delta_Cp_J_mol_K": -2.286648649867857,
+      "exact_dH_dT_J_mol_K": -2.2866486510029063,
+      "passed": true
+    },
+    {
+      "T_K": 323.15,
+      "mi_mol_kg": 3.222,
+      "mf_mol_kg": 2.1,
+      "total_minus_residual_J_mol": -2.3283064365386963e-10,
+      "changed_record_H_J_mol": -2.3283064365386963e-10,
+      "changed_record_Cp_J_mol_K": -3.410605131648481e-13,
+      "thermal_identity_J_mol_K": -5.5706550483591855e-12,
+      "delta_Cp_J_mol_K": -5.455050985746652,
+      "exact_dH_dT_J_mol_K": -5.455050985752223,
+      "passed": true
+    },
+    {
+      "T_K": 348.15,
+      "mi_mol_kg": 0.0744,
+      "mf_mol_kg": 0.0371,
+      "total_minus_residual_J_mol": -1.4901161193847656e-08,
+      "changed_record_H_J_mol": 3.725290298461914e-09,
+      "changed_record_Cp_J_mol_K": 1.8189894035458565e-11,
+      "thermal_identity_J_mol_K": -9.313225746154785e-10,
+      "delta_Cp_J_mol_K": -3.0175555023051857,
+      "exact_dH_dT_J_mol_K": -3.0175555032365082,
+      "passed": true
+    },
+    {
+      "T_K": 348.15,
+      "mi_mol_kg": 3.222,
+      "mf_mol_kg": 2.1,
+      "total_minus_residual_J_mol": 1.1641532182693481e-10,
+      "changed_record_H_J_mol": -1.1641532182693481e-10,
+      "changed_record_Cp_J_mol_K": -1.1368683772161603e-13,
+      "thermal_identity_J_mol_K": 1.318767317570746e-11,
+      "delta_Cp_J_mol_K": -7.22791530060465,
+      "exact_dH_dT_J_mol_K": -7.227915300591462,
+      "passed": true
+    }
+  ],
+  "thermal_ladder": [
+    {
+      "T_K": 298.15,
+      "mi_mol_kg": 1.5,
+      "mf_mol_kg": 0.0204,
+      "plus_h_0.1_J_mol": 494.764973574318,
+      "minus_h_0.1_J_mol": 498.2734210425988,
+      "plus_h_0.05_J_mol": 495.64295834535733,
+      "minus_h_0.05_J_mol": 497.39718190347776,
+      "exact_J_mol_K": -17.54223701006481,
+      "FD_h_0_1_K": -17.54223734140396,
+      "FD_h_0_05_K": -17.542235581204295,
+      "Richardson_J_mol_K": -17.542234994471073,
+      "fine_minus_coarse_J_mol_K": 1.7601996660232544e-06,
+      "exact_minus_Richardson_J_mol_K": -2.015593736359733e-06,
+      "passed": true
+    },
+    {
+      "T_K": 298.15,
+      "mi_mol_kg": 3.222,
+      "mf_mol_kg": 2.1,
+      "plus_h_0.1_J_mol": 894.6470205547521,
+      "minus_h_0.1_J_mol": 895.3938601465197,
+      "plus_h_0.05_J_mol": 894.8340042731725,
+      "minus_h_0.05_J_mol": 895.2074241342489,
+      "exact_J_mol_K": -3.7341988609967984,
+      "FD_h_0_1_K": -3.7341979588381946,
+      "FD_h_0_05_K": -3.734198610763997,
+      "Richardson_J_mol_K": -3.7341988280725977,
+      "fine_minus_coarse_J_mol_K": -6.51925802230835e-07,
+      "exact_minus_Richardson_J_mol_K": -3.2924200699113726e-08,
+      "passed": true
+    }
+  ]
+}

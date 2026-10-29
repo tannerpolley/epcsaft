@@ -1,0 +1,171 @@
+{
+  "cases": [
+    {
+      "case": "case-6/figure-2-point-7/cold",
+      "maximum_relative_difference": 0.0,
+      "work": {
+        "iterations": [
+          10,
+          10
+        ],
+        "evaluations": [
+          15,
+          15
+        ],
+        "hessian_calls": [
+          11,
+          11
+        ]
+      }
+    },
+    {
+      "case": "case-6/figure-2-point-7/accepted",
+      "maximum_relative_difference": 0.0,
+      "work": {
+        "iterations": [
+          7,
+          7
+        ],
+        "evaluations": [
+          11,
+          11
+        ],
+        "hessian_calls": [
+          8,
+          8
+        ]
+      }
+    },
+    {
+      "case": "case-7/flash-5918.5286-Pa/cold",
+      "maximum_relative_difference": 0.0,
+      "work": {
+        "iterations": [
+          19,
+          19
+        ],
+        "evaluations": [
+          35,
+          35
+        ],
+        "hessian_calls": [
+          20,
+          20
+        ]
+      }
+    },
+    {
+      "case": "case-7/flash-5918.5286-Pa/accepted",
+      "maximum_relative_difference": 0.0,
+      "work": {
+        "iterations": [
+          17,
+          17
+        ],
+        "evaluations": [
+          22,
+          22
+        ],
+        "hessian_calls": [
+          18,
+          18
+        ]
+      }
+    },
+    {
+      "case": "khudaida/sequential-8",
+      "maximum_relative_difference": 0.0,
+      "work": {
+        "iterations": [
+          46,
+          46
+        ],
+        "evaluations": [
+          70,
+          70
+        ],
+        "hessian_calls": [
+          54,
+          54
+        ]
+      }
+    },
+    {
+      "case": "mea-nominally-unloaded/353.15-K",
+      "maximum_relative_difference": 0.0,
+      "work": {
+        "iterations": [
+          13,
+          13
+        ],
+        "evaluations": [
+          19,
+          19
+        ],
+        "hessian_calls": [
+          14,
+          14
+        ]
+      }
+    },
+    {
+      "case": "mea-f1/residual-jacobian",
+      "maximum_relative_difference": 0.0,
+      "work": {
+        "reference_computations": [
+          295,
+          295
+        ],
+        "reference_columns": [
+          3388,
+          3388
+        ],
+        "density_solves": [
+          1223,
+          1223
+        ],
+        "equilibrium_iterations": [
+          1426,
+          1426
+        ]
+      }
+    },
+    {
+      "case": "mea-cp/hilliard-353.15-K-0.358",
+      "maximum_relative_difference": 0.0,
+      "work": {
+        "reference_computations": [
+          3,
+          3
+        ],
+        "reference_columns": [
+          280,
+          280
+        ],
+        "density_solves": [
+          11,
+          11
+        ],
+        "equilibrium_iterations": [
+          13,
+          13
+        ]
+      }
+    }
+  ],
+  "fit_maximum_relative_difference": 0.0,
+  "fit_work": {
+    "iterations": [
+      14,
+      14
+    ],
+    "residual_evaluations": [
+      15,
+      15
+    ],
+    "jacobian_evaluations": [
+      12,
+      12
+    ]
+  }
+}

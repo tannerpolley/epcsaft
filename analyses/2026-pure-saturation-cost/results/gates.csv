@@ -1,0 +1,16 @@
+check,outcome,log
+state equivalence and regular work,pass,/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-854-dedicated-pure-fluid-saturation-path-4/build/issue-854/build-r4/equivalence.log
+runtime budget,pass,/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-854-dedicated-pure-fluid-saturation-path-4/build/issue-854/build-r4/budgets.txt
+check-affected origin/main,pass,/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-854-dedicated-pure-fluid-saturation-path-4/build/issue-854/build-r4/check-affected.log
+check-all,pass,/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-854-dedicated-pure-fluid-saturation-path-4/build/issue-854/build-r4/check-all.log
+equilibrium corpora A/B,pass,/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-854-dedicated-pure-fluid-saturation-path-4/build/issue-854/build-r4/corpora.log
+explicit native cases,pass,/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-854-dedicated-pure-fluid-saturation-path-4/build/issue-854/build-r4/explicit-native.log
+key solves A/B --fit --control,pass,/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-854-dedicated-pure-fluid-saturation-path-4/build/issue-854/build-r4/key-comparison.log
+key solves A=A --fit (reused),pass,/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-854-dedicated-pure-fluid-saturation-path-4/build/issue-854/build-r4/key-control.log
+ancillary,pass,/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-854-dedicated-pure-fluid-saturation-path-4/build/issue-854/build-r4/ancillary.log
+actions and fitting columns,pass,/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-854-dedicated-pure-fluid-saturation-path-4/build/issue-854/build-r4/actions-summary.json
+failure and singular action qualification,pass,/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-854-dedicated-pure-fluid-saturation-path-4/build/issue-854/build-r4/failures.log
+check-pr-native,pending PR number and lead frozen-state gate,
+independent delivered review,pending lead; sole writer has no review delegation authority,
+prepared B/Clapeyron,missed median target,/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-854-dedicated-pure-fluid-saturation-path-4/analyses/2026-pure-saturation-cost/results/ratios.csv
+prepared B/FeOs,missed median target,/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-854-dedicated-pure-fluid-saturation-path-4/analyses/2026-pure-saturation-cost/results/ratios.csv

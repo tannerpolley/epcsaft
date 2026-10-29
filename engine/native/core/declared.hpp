@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/convergence.hpp"
 #include <optional>
 #include <stdexcept>
 #include <string>
@@ -9,6 +10,9 @@ namespace epcsaft::core {
 // A missing or physically inadmissible declaration.
 struct __attribute__((visibility("default"))) DeclarationError final : std::invalid_argument {
     using std::invalid_argument::invalid_argument;
+    DeclarationError(const std::string& message, const Convergence& value)
+        : std::invalid_argument(message), record(value) {}
+    std::optional<Convergence> record;
 };
 
 template <typename T>

@@ -1,0 +1,51 @@
+{
+  "pabsch_SI": {
+    "url": "https://ars.els-cdn.com/content/image/1-s2.0-S0009250922006303-mmc1.docx",
+    "doi": "10.1016/j.ces.2022.118046",
+    "sha256": "49476f0113f4bee2c4db97f9768a1ee3e7126222f650160030683287a53b68dd",
+    "locator": "Table S1; Table S4 water/HAc row; Figure S1; reference 9",
+    "kij": -0.1247,
+    "fit_temperature_range_printed_K": [
+      339.65,
+      389.65
+    ],
+    "reported_ARD_T_percent": 2.26,
+    "pressure_ARD": null,
+    "figure_S1_pressure_bar": 1.01325,
+    "fit_source": "Ito and Yoshida (1963), DOI 10.1021/je60018a012",
+    "limit": "Table S4 does not inventory individual fitted rows or pressures. Figure S1 shows an atmospheric-pressure comparison, not proof that every fitted row was at that pressure. The low end of the printed temperature range is outside the plotted range."
+  },
+  "NIST_Antoine_acid": {
+    "url": "https://webbook.nist.gov/cgi/cbook.cgi?ID=C64197&Mask=1F&Plot=on&Type=ANTOINE",
+    "reference_doi": "10.1021/je60004a009",
+    "source": "McDonald, Shrader and Stull (1959), as compiled by NIST",
+    "A": 4.68206,
+    "B_K": 1642.54,
+    "C_K": -39.764,
+    "logarithm": "base 10",
+    "pressure_unit": "bar",
+    "temperature_unit": "K",
+    "range_K": [
+      290.26,
+      391.01
+    ],
+    "P_Pa_at_323_15_K": 7690.195789333862,
+    "correlation_uncertainty": null
+  },
+  "association_at_323_15_K": {
+    "water_sigma_angstrom": 2.790416575446942,
+    "acid_sigma_angstrom": 3.8582,
+    "cross_energy_over_k_K": 2735.05,
+    "size_ratio": 0.9870191924291287,
+    "WS_cube_factor": 0.9615608940991651,
+    "Ascani2023_printed_square_factor": 0.9742068862234494,
+    "geometric_self_volume": 0.058372125196878004,
+    "source_disagreement": "Gross2002 Eq 3 has cube; Ascani2023 Eq A7 prints square; original Pabsch implementation not recovered."
+  },
+  "cyclic_dimer_source": {
+    "doi": "10.1021/jp4012125",
+    "primary_abstract_url": "https://pubmed.ncbi.nlm.nih.gov/23806104/",
+    "authors": "Janecek and Paricaud (2013)",
+    "evidence": "Abstract distinguishes doubly bonded dimers from classical 2B and reports competition with cross-association in water and alcohol mixtures. Full equations and parameters were not acquired in this task."
+  }
+}

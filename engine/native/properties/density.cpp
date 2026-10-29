@@ -49,10 +49,10 @@ struct DensityPartition final {
     std::map<double, PressurePoint> samples;
     std::size_t evaluations = 0, intervals = 0, stable = 0;
     bool active = false;
-    DensityStructureError refused(const std::string& cause_now) const {
+    DensityStructureError refused(const std::string& cause_now, const std::optional<core::Convergence>& first) const {
         return DensityStructureError(cause + "; enumeration interval=[" + core::optional_number(lower) + "," + core::optional_number(upper)
             + "] mol/m3; cells=" + std::to_string(intervals) + "; stable=" + std::to_string(stable)
-            + "; evaluations=" + std::to_string(evaluations) + "; unresolved: " + cause_now);
+            + "; evaluations=" + std::to_string(evaluations) + "; unresolved: " + cause_now, first);
     }
 
 };
@@ -63,18 +63,40 @@ struct DensityPartition final {
 // temperature and composition terms stay double. The solved site fractions enter with their implicit volume
 // coefficients from the factorized mass action, so the series is the stationary association potential's.
 // It reads no tape and takes no lock.
+template <typename Base = double>
 class PressureSeries final {
 public:
-    PressureSeries(const HelmholtzModel& model, double temperature, const std::vector<double>& amounts)
-        : model_(model), parameters_(model.parameters()), temperature_(temperature) {
-        for (double amount : amounts) total_ += amount;
-        for (double amount : amounts) composition_.push_back(amount / total_);
+    PressureSeries(const HelmholtzModel& model, Base temperature, const std::vector<Base>& amounts)
+        : model_(model), parameters_([&]() -> decltype(auto) {
+            if constexpr (std::is_same_v<Base, double>) return model.parameters();
+            else {
+                ParameterRecord<Base> mapped;
+                static_cast<FixedParameters&>(mapped) = model.parameters();
+                for (std::size_t f = 0; f < detail::PARAMETER_FAMILY_COUNT; ++f) {
+                    const auto family = static_cast<detail::ParameterFamily>(f);
+                    const auto source = detail::family_values(model.parameters(), family);
+                    const auto target = detail::family_values(mapped, family, source.second);
+                    std::copy_n(source.first, source.second, target.first);
+                }
+                return mapped;
+            }
+        }()), temperature_(temperature) {
+        for (Base amount : amounts) total_ += amount;
+        for (Base amount : amounts) composition_.push_back(amount / total_);
         sigma_ = segment_sigma(temperature, parameters_);
-        if (!std::all_of(sigma_.begin(), sigma_.end(), [](double v) { return std::isfinite(v) && v > 0.0; }))
+        if (!std::all_of(sigma_.begin(), sigma_.end(), [](Base v) { return std::isfinite(v) && v > 0.0; }))
             throw std::invalid_argument("invalid sigma correlation");
         diameter_ = segment_diameter(temperature, parameters_, sigma_);
-        if (!std::all_of(diameter_.begin(), diameter_.end(), [](double v) { return std::isfinite(v) && v > 0.0; }))
+        if (!std::all_of(diameter_.begin(), diameter_.end(), [](Base v) { return std::isfinite(v) && v > 0.0; }))
             throw std::invalid_argument("invalid segment diameter");
+        if constexpr (!std::is_same_v<Base, double>) {
+            const auto laws = temperature_law_values(temperature_, parameters_);
+            const std::vector<double> checked(laws.begin(), laws.end());
+            for (const auto& [target, slot, law] : parameters_.temperature_law_slot)
+                (void)temperature_law_value(static_cast<double>(temperature_), model.parameters(), checked,
+                    static_cast<TemperatureLaw>(target), static_cast<std::size_t>(slot),
+                    target <= int(TemperatureLaw::Lij) ? parameters_.component_count() : parameters_.site_component.size());
+        }
         // With one partner per site the mass action's pair step is its exact solution at every density.
         const std::size_t sites = parameters_.site_component.size();
         for (std::size_t a = 0; a < sites; ++a)
@@ -82,21 +104,25 @@ public:
                 parameters_.association_active.begin() + static_cast<std::ptrdiff_t>((a + 1) * sites), [](int v) { return v != 0; }) == 1;
     }
     mutable std::optional<DensityPartition> partition;
+    mutable std::optional<core::Convergence> first_numerical_failure;
     const policy::SolverOptions& solver_options() const { return model_.solver_options(); }
     const HelmholtzModel& model() const { return model_; }
 
     // Coefficients of A_res/(RT) in t at V = 1/density + t, and the association gradient floor. `start` begins the
     // site solve from a neighbouring solution; `sites` receives the site fractions' coefficients in t (N per site).
     template <std::size_t N>
-    Taylor<N> residual(double density, double& floor, const std::vector<double>* start = nullptr,
-                       std::vector<double>* sites_out = nullptr) const {
-        using Series = Taylor<N>;
+    Taylor<N, Base> residual(Base density, Base& floor, const std::vector<double>* start = nullptr,
+                       std::vector<Base>* sites_out = nullptr) const {
+        using Series = Taylor<N, Base>;
         core::Scope entry("pressure_series_residual"), scope("evaluate");
         entry.probe("requested_order", static_cast<double>(N - 1));
-        const double volume = 1.0 / density, rho0 = total_ / volume;
+        const Base volume = 1.0 / density, rho0 = total_ / volume;
         Series v(volume);
         v.c[1] = 1.0;
         const Series rho = total_ / v;
+        if constexpr (!std::is_same_v<Base, double>)
+            if (packing_moments(rho, composition_, parameters_, diameter_)[3].c[0] >= policy::CLOSE_PACKING_FRACTION.value)
+                throw std::invalid_argument("packing fraction is at or above close packing");
         // Per-thread scratch: the closure evaluates in a tight loop, so its small buffers are reused.
         static thread_local std::vector<Series> delta, site_series, residuals;
         static thread_local std::vector<double> strength;
@@ -105,19 +131,77 @@ public:
         if (!parameters_.site_component.empty()) {
             delta = association_delta_values(temperature_, rho, composition_, parameters_, sigma_, diameter_,
                                              parameters_.association_energy_over_k, parameters_.association_volume);
-            for (const auto& d : delta) strength.push_back(d.c[0]);
+            for (const auto& d : delta) {
+                if constexpr (!std::is_same_v<Base, double>)
+                    if (!(d.c[0] >= 0) || !std::isfinite(d.c[0])) throw std::invalid_argument("invalid extended association strength");
+                strength.push_back(static_cast<double>(d.c[0]));
+            }
         }
         core::Convergence record;
-        const auto sites = strength.empty() ? std::vector<double>{}
-            : solve_site_fractions(temperature_, rho0, composition_, parameters_, sigma_, diameter_, &record,
-                !pairs_ && start != nullptr && start->size() == parameters_.site_component.size() ? start : nullptr, &strength, true, solver_options());
+        const auto sites = [&]() -> std::vector<double> { try {
+            if (strength.empty()) return std::vector<double>{};
+            const auto* seed = !pairs_ && start != nullptr && start->size() == parameters_.site_component.size() ? start : nullptr;
+            if constexpr (std::is_same_v<Base, double>)
+                return solve_site_fractions(temperature_, rho0, composition_, parameters_, sigma_, diameter_, &record, seed, &strength, true, solver_options(), &first_numerical_failure);
+            else return solve_site_fractions(static_cast<double>(temperature_), static_cast<double>(rho0),
+                {composition_.begin(), composition_.end()}, model_.parameters(), {sigma_.begin(), sigma_.end()},
+                {diameter_.begin(), diameter_.end()}, &record, seed, &strength, true, solver_options(), &first_numerical_failure);
+        } catch (const std::exception& error) { core::retain_failure(first_numerical_failure, error, "density association"); throw; }
+        }();
         site_series.assign(sites.begin(), sites.end());
         floor = 0.0;
         if (!sites.empty()) {
             static thread_local Eigen::FullPivLU<Eigen::MatrixXd> factorization;
-            properties::site_factorization(factorization, sites, composition_, parameters_, rho0 * NUMBER_DENSITY_PER_ANGSTROM3, strength);
+            if constexpr (std::is_same_v<Base, double>)
+                properties::site_factorization(factorization, sites, composition_, parameters_, rho0 * NUMBER_DENSITY_PER_ANGSTROM3, strength);
+            else properties::site_factorization(factorization, sites, {composition_.begin(), composition_.end()}, model_.parameters(),
+                static_cast<double>(rho0 * NUMBER_DENSITY_PER_ANGSTROM3), strength);
             const auto count = static_cast<Eigen::Index>(sites.size());
             rows.resize(count); cross.resize(count);
+            if constexpr (!std::is_same_v<Base, double>) {
+                std::size_t used = record.iterations;
+                for (std::size_t k = 0; k < N; ++k) {
+                    Base normalization = 1.0;
+                    for (std::size_t j = 0; j < k; ++j) normalization *= volume;
+                    for (;;) {
+                        residuals = association_residuals(rho, composition_, parameters_, site_series, delta);
+                        Base norm = 0.0, scale = 1.0;
+                        for (Eigen::Index i = 0; i < count; ++i) {
+                            const auto site = static_cast<std::size_t>(i);
+                            norm = std::max(norm, std::abs(residuals[site].c[k] * normalization));
+                            scale = std::max(scale, std::abs(site_series[site].c[k] * normalization / site_series[site].c[0]));
+                            rows(i) = static_cast<double>(-residuals[site].c[k]);
+                        }
+                        entry.probe("association_refinement_residual", {static_cast<double>(k), static_cast<double>(norm), static_cast<double>(scale)}, used);
+                        if (norm <= std::numeric_limits<Base>::epsilon() * scale) break;
+                        if (used++ >= static_cast<std::size_t>(policy::ASSOCIATION_MAX_ITERATIONS.value))
+                            throw std::runtime_error("extended association residual/implicit-coefficient floor unresolved");
+                        coefficient = factorization.solve(rows);
+                        bool changed = false;
+                        for (Eigen::Index i = 0; i < count; ++i) {
+                            auto& x = site_series[static_cast<std::size_t>(i)].c[k];
+                            const Base next = x + Base(coefficient(i));
+                            if (!std::isfinite(next) || (k == 0 && !(next > 0.0 && next <= 1.0)))
+                                throw std::runtime_error("extended association site domain");
+                            changed = changed || next != x; x = next;
+                        }
+                        if (!changed) throw std::runtime_error("extended association residual cannot be refined");
+                    }
+                }
+                // Stationary energy has no first-order site error; retain both value and coefficient defects in E_V.
+                residuals = association_residuals(rho, composition_, parameters_, site_series, delta);
+                for (Eigen::Index i = 0; i < count; ++i) rows(i) = static_cast<double>(-residuals[static_cast<std::size_t>(i)].c[0]);
+                coefficient = factorization.solve(rows);
+                for (Eigen::Index i = 0; i < count; ++i) rows(i) = static_cast<double>(-residuals[static_cast<std::size_t>(i)].c[1]);
+                cross = factorization.solve(rows);
+                for (Eigen::Index i = 0; i < count; ++i) {
+                    const auto site = static_cast<std::size_t>(i);
+                    const auto& x = site_series[site]; const auto& r = residuals[site];
+                    const Base weight = total_ * composition_[static_cast<std::size_t>(parameters_.site_component[site])] * parameters_.site_multiplicity[site] / x.c[0];
+                    floor += std::abs(weight) * (std::abs((r.c[1] - r.c[0] * x.c[1] / x.c[0]) * Base(coefficient(i)))
+                        + std::abs(r.c[0] * Base(cross(i))));
+                }
+            } else {
             // Order k of F(V(t), X(t)) = 0 is F_X X_k + (the residual with X_k = 0): one solve per order.
             for (std::size_t k = 1; k < N; ++k) {
                 residuals = association_residuals(rho, composition_, parameters_, site_series, delta);
@@ -133,9 +217,13 @@ public:
                 unit = factorization.solve(Eigen::VectorXd::Ones(count));
                 floor = std::abs(cross.dot(unit)) * std::max(record.residual, record.floor.value_or(0.0));
             }
+            }
             residuals = association_residuals(rho, composition_, parameters_, site_series, delta);
         }
-        const auto [electrolyte, born] = detail::supported_electrostatics(temperature_, rho, composition_, composition_, parameters_);
+        const auto [electrolyte, born] = [&] {
+            if constexpr (std::is_same_v<Base, double>) return detail::supported_electrostatics(temperature_, rho, composition_, composition_, parameters_);
+            else return detail::supported_electrostatics(temperature_, rho, composition_, {composition_.begin(), composition_.end()}, parameters_);
+        }();
         const auto contributions = residual_helmholtz(temperature_, rho, composition_, parameters_, sigma_,
                                                       diameter_, site_series, electrolyte.debye_huckel, born);
         if (sites_out != nullptr) {
@@ -151,13 +239,13 @@ public:
 
 private:
     const HelmholtzModel& model_;
-    const Parameters& parameters_;
-    double temperature_, total_ = 0.0;
+    std::conditional_t<std::is_same_v<Base, double>, const Parameters&, ParameterRecord<Base>> parameters_;
+    Base temperature_, total_ = 0.0;
     bool pairs_ = true;
-    std::vector<double> composition_, sigma_, diameter_;
+    std::vector<Base> composition_, sigma_, diameter_;
 };
 
-PressurePoint at_density(const PressureSeries& series, double temperature, double pressure,
+PressurePoint at_density(const PressureSeries<>& series, double temperature, double pressure,
                          const std::vector<double>& composition, double density,
                          std::size_t& evaluations, DerivativeOrder order) {
     auto* partition = series.partition ? &*series.partition : nullptr;
@@ -216,7 +304,7 @@ bool association_failure(const std::exception& error) {
 // Both endpoint evaluations enclose one crossing in [lower, upper]. The caller
 // isolates a mechanically stable interval, or supplies an exact scan-node root.
 DensityRoot refine(
-    const PressureSeries& model, double temperature, double pressure,
+    const PressureSeries<>& model, double temperature, double pressure,
     const std::vector<double>& composition, double lower, PressurePoint low,
     double upper, PressurePoint high, core::Scope& parent_scope, std::size_t& evaluations
 ) {
@@ -293,7 +381,7 @@ DensityRoot refine(
 // (mean value theorem): bisect toward the crossing until a stable sample splits the cell into
 // two fold cells, or fail. An exact stable root at that sample is this cell's one root.
 void scan_cell(
-    const PressureSeries& model, double temperature, double pressure,
+    const PressureSeries<>& model, double temperature, double pressure,
     const std::vector<double>& composition, double lower, PressurePoint low,
     double upper, PressurePoint high, core::Scope& scope, std::size_t& evaluations,
     std::vector<DensityRoot>& roots, std::vector<std::pair<std::size_t, int>>* pattern = nullptr, std::size_t owner = 0
@@ -372,7 +460,7 @@ void scan_cell(
 
 
 void search_slope(
-    const PressureSeries& model, double temperature, double pressure,
+    const PressureSeries<>& model, double temperature, double pressure,
     const std::vector<double>& composition, std::vector<ScanPoint>& points,
     core::Scope& scope, std::size_t& evaluations,
     const std::function<PressurePoint(double)>& evaluate = {},
@@ -426,7 +514,7 @@ void search_slope(
 }
 
 std::vector<DensityRoot> partition_roots(
-    const PressureSeries& model, double temperature, double pressure, const std::vector<double>& composition,
+    const PressureSeries<>& model, double temperature, double pressure, const std::vector<double>& composition,
     const std::vector<ScanPoint>& points, core::Scope& scope, std::size_t& evaluations,
     std::vector<std::pair<std::size_t, int>>* events = nullptr
 ) {
@@ -470,7 +558,7 @@ std::vector<double> log_nodes(double log_lower, double log_upper, std::size_t in
 // section in log density until a negative slope exposes the loop or the quadratic slope model
 // estimates its minimum positive; this finite search is not a completeness certificate.
 std::vector<DensityRoot> scan_roots(
-    const PressureSeries& model, double temperature, double pressure,
+    const PressureSeries<>& model, double temperature, double pressure,
     const std::vector<double>& composition, double log_lower, double log_upper,
     std::size_t intervals, core::Scope& scope, std::size_t& evaluations
 ) try {
@@ -537,7 +625,7 @@ std::vector<DensityRoot> scan_roots(
             interruptions += "node " + std::to_string(index) + " rho "
                 + core::optional_number(density) + ": " + error.what() + "\n";
             if (!association)
-                throw std::runtime_error("density scan interrupted by association: " + interruptions);
+                throw DensityStructureError("density scan interrupted by association: " + interruptions, model.first_numerical_failure);
             linked = false;
             continue;
         }
@@ -546,7 +634,7 @@ std::vector<DensityRoot> scan_roots(
         linked = true;
     }
     if (!interruptions.empty())
-        throw std::runtime_error("density scan interrupted by association: " + interruptions);
+        throw DensityStructureError("density scan interrupted by association: " + interruptions, model.first_numerical_failure);
     if (!model.partition) search_slope(model, temperature, pressure, composition, points, scope, evaluations);
     auto roots = partition_roots(model, temperature, pressure, composition, points, scope, evaluations);
     if (model.partition) {
@@ -559,7 +647,7 @@ std::vector<DensityRoot> scan_roots(
     }
     return roots;
 } catch (const std::exception& error) {
-    if (model.partition && dynamic_cast<const DensityStructureError*>(&error) == nullptr) throw model.partition->refused(error.what());
+    if (model.partition && dynamic_cast<const DensityStructureError*>(&error) == nullptr) throw model.partition->refused(error.what(), model.first_numerical_failure);
     throw;
 }
 
@@ -583,7 +671,7 @@ struct StructureBroken final {};
 // below on the convex side.
 class Isotherm final {
 public:
-    Isotherm(const PressureSeries& series, double temperature, double pressure, double lower, double upper,
+    Isotherm(const PressureSeries<>& series, double temperature, double pressure, double lower, double upper,
              std::size_t& evaluations, core::Scope& scope)
         : series_(series), temperature_(temperature), pressure_(pressure), lower_(lower), upper_(upper),
           evaluations_(evaluations), scope_(scope) {}
@@ -726,7 +814,7 @@ private:
         throw StructureBroken{};
     }
 
-    const PressureSeries& series_;
+    const PressureSeries<>& series_;
     double temperature_, pressure_, lower_, upper_;
     std::size_t& evaluations_;
     core::Scope& scope_;
@@ -977,7 +1065,7 @@ std::optional<Structure> structured_roots(Isotherm& iso, DensityBranch branch, b
 }
 
 DensityRoot anchor(
-    const PressureSeries& model, double temperature, double pressure,
+    const PressureSeries<>& model, double temperature, double pressure,
     const std::vector<double>& composition, DensityBranch branch, double lower, double upper,
     double density, std::size_t& evaluations
 ) try {
@@ -1085,10 +1173,13 @@ DensityRoot anchor(
         anchor_record.stop = core::classify(anchor_record.residual, *anchor_record.criterion,
             anchor_record.floor, anchor_record.contraction, true, anchor_record.amplification);
     }
+    anchor_record.cause = "density anchor branch " + std::to_string(static_cast<int>(branch))
+        + "; anchor " + core::optional_number(std::exp(log_anchor)) + "; window [" + core::optional_number(local_lower)
+        + "," + core::optional_number(local_upper) + "] mol/m3";
     anchor_scope.finish(anchor_record);
-    throw core::ConvergenceFailure(anchor_record);
+    throw core::ConvergenceFailure(anchor_record, model.first_numerical_failure);
 } catch (const std::exception& error) {
-    if (model.partition && dynamic_cast<const DensityStructureError*>(&error) == nullptr) throw model.partition->refused(error.what());
+    if (model.partition && dynamic_cast<const DensityStructureError*>(&error) == nullptr) throw model.partition->refused(error.what(), model.first_numerical_failure);
     throw;
 }
 
@@ -1122,7 +1213,7 @@ DensityDiagnostics HelmholtzModel::density_diagnostics(
         && evaluation_order != DerivativeOrder::Hessian)
         throw std::invalid_argument("finite-domain evaluation requires Gradient, PressureSlope or Hessian");
     const auto started = std::chrono::steady_clock::now();
-    const PressureSeries series(*this, temperature, composition);
+    const PressureSeries<> series(*this, temperature, composition);
     auto evaluate = [&](double rho, DerivativeOrder order = DerivativeOrder::PressureSlope) {
         if (result.evaluations >= max_evaluations
             || std::chrono::duration<double>(std::chrono::steady_clock::now() - started).count() >= max_seconds)
@@ -1294,12 +1385,46 @@ DensityDiagnostics HelmholtzModel::density_diagnostics(
     }
     for (auto* roots : {&result.pressure_roots, &result.spinodals})
         std::sort(roots->begin(), roots->end(), [](const auto& a, const auto& b) { return a.molar_density < b.molar_density; });
+    core::retain_first(result.first_numerical_failure, series.first_numerical_failure);
     return result;
 }
 
+template <typename Base>
+PureIsothermalValues<Base> HelmholtzModel::pure_isothermal(Base temperature, Base volume, Base amount) const {
+    validate_point(static_cast<double>(temperature), static_cast<double>(volume), {static_cast<double>(amount)});
+    if (parameters_.component_count() != 1 || parameters_.ideal_gas || parameters_.charge_number[0] != 0.0)
+        throw std::invalid_argument("pure isothermal projection requires one neutral nonideal component");
+    PureIsothermalValues<Base> result;
+    auto& d = result.derivative;
+    std::vector<Base> sites;
+    const PressureSeries<Base> series(*this, temperature, {amount});
+    const auto energy = series.template residual<2>(1.0 / volume, d.gradient_floor, nullptr, &sites);
+    core::retain_first(d.first_numerical_failure, series.first_numerical_failure);
+    if (!std::all_of(energy.c.begin(), energy.c.end(), [](Base v) { return std::isfinite(v); }))
+        throw std::runtime_error("nonfinite pure isothermal derivatives");
+    const std::size_t width = 3 + active_.size();
+    d.value = energy.c[0];
+    d.gradient.assign(width, 0.0); d.hessian.assign(width * width, 0.0);
+    d.gradient[1] = energy.c[1];
+    d.gradient[2] = (d.value - volume * d.gradient[1]) / amount;
+    d.volume_second_derivative = 2.0 * energy.c[2];
+    d.hessian[width + 1] = d.volume_second_derivative;
+    d.hessian[width + 2] = d.hessian[2 * width + 1] = -volume * d.volume_second_derivative / amount;
+    d.hessian[2 * width + 2] = volume * volume * d.volume_second_derivative / (amount * amount);
+    for (std::size_t i = 0; i < sites.size(); i += 2) d.site_fractions.push_back(sites[i]);
+    const Base rt = GAS_CONSTANT_J_PER_MOL_K * temperature;
+    result.pressure = rt * (amount / volume - d.gradient[1]);
+    result.chemical_potential_over_rt = std::log(amount / volume) + d.gradient[2];
+    result.pressure_density_derivative = rt * (1.0 + volume * volume * d.volume_second_derivative / amount);
+    return result;
+}
+
+template PureIsothermalValues<double> HelmholtzModel::pure_isothermal(double, double, double) const;
+template PureIsothermalValues<long double> HelmholtzModel::pure_isothermal(long double, long double, long double) const;
+
 Taylor<3> properties::density_volume_taylor(const HelmholtzModel& model, double temperature, double density,
     const std::vector<double>& composition, double& gradient_floor) {
-    return PressureSeries(model, temperature, composition).residual<3>(density, gradient_floor);
+    return PressureSeries<>(model, temperature, composition).residual<3>(density, gradient_floor);
 }
 
 bool properties::regular_density(double density, double slope, const std::optional<core::Convergence>& record) {
@@ -1362,7 +1487,7 @@ DensityRoot solve_density(
     if (!(lower > 0.0) || !(lower < upper)) throw std::runtime_error("density domain is empty");
     std::size_t evaluations = 0;
     DensityRoot result;
-    const PressureSeries series(model, temperature, mole_fractions);
+    const PressureSeries<> series(model, temperature, mole_fractions);
     if (anchor_density.has_value()) {
         try {
             if (branch == DensityBranch::Unspecified) throw std::invalid_argument("density anchor requires explicit branch");
@@ -1372,6 +1497,9 @@ DensityRoot solve_density(
             if (!(*anchor_density > lower && *anchor_density < upper)) {
                 core::Convergence record{0.0, model.solver_options().criterion(policy::density), std::nullopt,
                     std::nullopt, std::nullopt, 0, evaluations, core::Stop::left_domain, model.solver_options().owners[policy::density]};
+                record.cause = "density anchor outside " + std::to_string(static_cast<int>(branch))
+                    + " domain; anchor=" + core::optional_number(*anchor_density) + "; lower=" + core::optional_number(lower)
+                    + "; upper=" + core::optional_number(upper);
                 throw core::ConvergenceFailure(record);
             }
             result = anchor(series, temperature, pressure, mole_fractions, branch, lower, upper,
@@ -1436,7 +1564,7 @@ DensityRoot solve_density(
         }
         scope.probe("stable_root_count", static_cast<double>(count));
         if (series.partition && (stable.empty() || (count > 1 && branch == DensityBranch::Unspecified)))
-            throw series.partition->refused("branch ambiguous or not established by finite search; stable=" + std::to_string(count));
+            throw series.partition->refused("branch ambiguous or not established by finite search; stable=" + std::to_string(count), series.first_numerical_failure);
         if (count > 1 && branch == DensityBranch::Unspecified)
             throw std::runtime_error("density root is ambiguous (stable count "
                                      + std::to_string(count) + ")");
@@ -1460,6 +1588,8 @@ DensityRoot solve_density(
         if (sibling_root) sibling_root->convergence.evaluations = evaluations;
     }
     scope.probe("density_root", result.molar_density);
+    core::retain_first(result.first_numerical_failure, series.first_numerical_failure);
+    if (sibling_root) core::retain_first(sibling_root->first_numerical_failure, series.first_numerical_failure);
     scope.finish(result.convergence);
     return result;
 

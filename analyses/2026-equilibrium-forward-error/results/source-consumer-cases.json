@@ -1,0 +1,225 @@
+[
+  {
+    "case": "mixed-False-source-None",
+    "values": {
+      "temperature": 260.0,
+      "pressure": 100000.0,
+      "amounts": [
+        2.0090398349558893
+      ],
+      "mole_fractions": [
+        0.8053994956985537,
+        0.19460050430144632
+      ],
+      "molar_densities": [
+        14127.335199349358
+      ],
+      "coordinates": [
+        -0.21641685671527264,
+        -1.6368065177564766,
+        2.0090398349558893,
+        -1.2034212622808638,
+        3.151959081868201
+      ],
+      "residuals": [
+        1.7763568394002505e-15,
+        8.881784197001252e-16,
+        1.1708814617251356e-15,
+        2.0185873175002846e-16,
+        0.0
+      ]
+    },
+    "row_inner": [
+      4.2314630116293286e-14,
+      2.1146784072013028e-14,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "condition": 27.74452006111984,
+    "method": "local higher-precision re-evaluation plus first-order pressure/site propagation; can underestimate shared errors and internal cancellation; fixed-input arithmetic excludes supplied operand uncertainty; reference replay precision: 64 bits",
+    "physical_bits_identical": true,
+    "work_identical": true
+  },
+  {
+    "case": "mixed-True-source-None",
+    "values": {
+      "temperature": 260.0,
+      "pressure": 100000.0,
+      "amounts": [
+        2.3495450086576133
+      ],
+      "mole_fractions": [
+        0.9785256331943122,
+        0.02147436680568782
+      ],
+      "molar_densities": [
+        14127.335199349358
+      ],
+      "coordinates": [
+        -0.02170829607184246,
+        -3.8408952967298524,
+        2.3495450086576133,
+        -1.2034212622808638,
+        2.3092652824075377
+      ],
+      "residuals": [
+        2.220446049250313e-15,
+        8.881784197001252e-16,
+        1.4283949103519698e-15,
+        0.0,
+        0.0
+      ]
+    },
+    "row_inner": [
+      8.768707027476887e-14,
+      4.4004126479318844e-14,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "condition": 38.75476464519823,
+    "method": "local higher-precision re-evaluation plus first-order pressure/site propagation; can underestimate shared errors and internal cancellation; fixed-input arithmetic excludes supplied operand uncertainty; reference replay precision: 64 bits",
+    "physical_bits_identical": true,
+    "work_identical": true
+  },
+  {
+    "case": "mixed-False-source-200000.0",
+    "values": {
+      "temperature": 260.0,
+      "pressure": 100000.0,
+      "amounts": [
+        2.0097616775088887
+      ],
+      "mole_fractions": [
+        0.8058285582523328,
+        0.19417144174766718
+      ],
+      "molar_densities": [
+        14127.335199349352
+      ],
+      "coordinates": [
+        -0.21588426598378804,
+        -1.6390137898209383,
+        2.0097616775088887,
+        -1.2034212622808642,
+        3.1511826911887124
+      ],
+      "residuals": [
+        8.881784197001252e-16,
+        8.881784197001252e-16,
+        1.4082766721779986e-16,
+        0.0,
+        0.0
+      ]
+    },
+    "row_inner": [
+      4.6905631298343695e-14,
+      2.344237549186956e-14,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "condition": 27.767364464112475,
+    "method": "local higher-precision re-evaluation plus first-order pressure/site propagation; can underestimate shared errors and internal cancellation; fixed-input arithmetic excludes supplied operand uncertainty; reference replay precision: 64 bits",
+    "physical_bits_identical": true,
+    "work_identical": true
+  },
+  {
+    "case": "mixed-True-source-200000.0",
+    "values": {
+      "temperature": 260.0,
+      "pressure": 100000.0,
+      "amounts": [
+        2.306446319298324
+      ],
+      "mole_fractions": [
+        0.9594381712165158,
+        0.04056182878348431
+      ],
+      "molar_densities": [
+        14127.335199349349
+      ],
+      "coordinates": [
+        -0.04140740415517274,
+        -3.2049278323654535,
+        2.306446319298324,
+        -1.2034212622808644,
+        2.55971244653663
+      ],
+      "residuals": [
+        -8.881784197001252e-16,
+        -3.552713678800501e-15,
+        -1.4042530245432047e-15,
+        2.0185873175002846e-16,
+        0.0
+      ]
+    },
+    "row_inner": [
+      9.773632194210653e-14,
+      4.8828892027606455e-14,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "condition": 37.33856251714923,
+    "method": "local higher-precision re-evaluation plus first-order pressure/site propagation; can underestimate shared errors and internal cancellation; fixed-input arithmetic excludes supplied operand uncertainty; reference replay precision: 64 bits",
+    "physical_bits_identical": true,
+    "work_identical": true
+  },
+  {
+    "case": "present-halite",
+    "values": {
+      "temperature": 298.15,
+      "pressure": 101325.0,
+      "amounts": [
+        68.1062442800043
+      ],
+      "mole_fractions": [
+        0.8150271043221953,
+        0.09248644783890239,
+        0.09248644783890239
+      ],
+      "molar_densities": [
+        59045.756164170874
+      ],
+      "coordinates": [
+        -0.2045339094572213,
+        -2.380693155047078,
+        -2.380693155047078,
+        68.1062442800043,
+        -0.8053633082209596,
+        0.2010953908938374,
+        -0.04685845686567524,
+        5.6072066802238325,
+        4.793674575075938
+      ],
+      "residuals": [
+        -4.558853294867049e-15,
+        0.0,
+        -3.552713678800501e-15,
+        -8.914612884075234e-16,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        -0.0
+      ]
+    },
+    "row_inner": [
+      1.2549890047632385e-15,
+      5.027914843475236e-16,
+      4.719327867251004e-16,
+      1.1129988399622466e-15,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "condition": 1495.8364831597967,
+    "method": "local higher-precision re-evaluation plus first-order pressure/site propagation; can underestimate shared errors and internal cancellation; fixed-input arithmetic excludes supplied operand uncertainty; reference replay precision: 64 bits",
+    "physical_bits_identical": true,
+    "work_identical": true
+  }
+]

@@ -1,0 +1,13 @@
+{
+  "Native actions and fitting columns": "985 rows; maximum scaled difference zero",
+  "Regular states": "251 states; 10040 bitwise equal values; no availability differences",
+  "Equilibrium corpora": "Zero differing values in all six inventories",
+  "Explicit native cases": "19 passed; zero failed",
+  "Key solves and frozen work": "Identical states and work; no gate failures",
+  "F1 serial CPU / s": "A 8.636359; B 5.915056; ceiling 20.349267",
+  "Reacting heat-capacity serial CPU / s": "A 0.729559; B 0.701602; ceiling 2.473741",
+  "Full fit wall / s": "A 10.027686; B 10.557869; ceiling 120",
+  "Same-host full-fit control / s": "[9.075746299989987, 9.558330710977316]",
+  "Affected and full checks": "Passed; final delivery logs retained",
+  "Native lint and sanitizers": "Passed on the frozen integrated Engine image; independent delivered review pending"
+}

@@ -74,6 +74,8 @@ def main():
         raise RuntimeError('uncovered Engine declarations; define declarations() or add an exclusion row: ' + ', '.join(uncovered))
     for path in built:
         name = str(path.relative_to(ROOT / 'analyses'))
+        if any(name == row or name.startswith(row + '/') for row in HISTORICAL):
+            continue
         try:
             check(path)
         except Exception as error:

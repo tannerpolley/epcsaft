@@ -1,0 +1,858 @@
+{
+ "ordinary": {
+  "Engine-A": {
+   "samples": [
+    {
+     "seconds": 0.003342498,
+     "per_call": 1,
+     "value": [
+      {
+       "T": 190.0,
+       "P": 1000000.0,
+       "success": true,
+       "criterion_met": true,
+       "phases": 2,
+       "amounts": [
+        0.5617149328889464,
+        0.4382850671110536
+       ],
+       "mole_fractions": [
+        0.21537559277379345,
+        0.7846244072262065,
+        0.8647803491400143,
+        0.13521965085998572
+       ],
+       "molar_densities": [
+        18534.052764709064,
+        704.5546642306404
+       ],
+       "pressure": [
+        1000000.0
+       ],
+       "temperature": [
+        190.0
+       ],
+       "iterations": 0,
+       "evaluations": 7,
+       "hessian_calls": 0,
+       "max_residual": 2.5823903324552586e-15,
+       "message": "converged: residual 1.4505672122881695e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor absent, amplification 0",
+       "discovery": {
+        "work": {
+         "declaration_newton_attempts": 3.0,
+         "energy_evaluations": 1439.0,
+         "evaluations": 13.0,
+         "finite_split_evaluations": 5.0,
+         "hessian_calls": 0.0,
+         "iterations": 0.0,
+         "reconstruction_evaluations": 28.0,
+         "root_calls": 122.0,
+         "root_evaluations": 1279.0,
+         "trial_invocations": 14.0,
+         "trial_tangent_plane_invocations": 14.0,
+         "trial_tangent_plane_iterations": 77.0,
+         "trial_tangent_plane_newton_steps": 11.0
+        },
+        "rounds": [
+         {
+          "energy_evaluations": 706.0,
+          "finite_split_evaluations": 5.0,
+          "reconstruction_evaluations": 14.0,
+          "root_calls": 52.0,
+          "root_evaluations": 652.0,
+          "trial_invocations": 7.0,
+          "trial_tangent_plane_invocations": 7.0,
+          "trial_tangent_plane_iterations": 33.0,
+          "trial_tangent_plane_newton_steps": 3.0
+         },
+         {
+          "energy_evaluations": 615.0,
+          "reconstruction_evaluations": 14.0,
+          "root_calls": 59.0,
+          "root_evaluations": 552.0,
+          "trial_invocations": 7.0,
+          "trial_tangent_plane_invocations": 7.0,
+          "trial_tangent_plane_iterations": 44.0,
+          "trial_tangent_plane_newton_steps": 8.0
+         }
+        ],
+        "declarations": 3,
+        "roles": [
+         "initial",
+         "initial",
+         "addition"
+        ],
+        "attempts": 3
+       }
+      }
+     ],
+     "cpu_seconds": 0.003374292
+    }
+   ],
+   "prepare_seconds": 0.000336438
+  },
+  "Engine-control": {
+   "samples": [
+    {
+     "seconds": 0.003338018,
+     "per_call": 1,
+     "value": [
+      {
+       "T": 190.0,
+       "P": 1000000.0,
+       "success": true,
+       "criterion_met": true,
+       "phases": 2,
+       "amounts": [
+        0.5617149328889464,
+        0.4382850671110536
+       ],
+       "mole_fractions": [
+        0.21537559277379345,
+        0.7846244072262065,
+        0.8647803491400143,
+        0.13521965085998572
+       ],
+       "molar_densities": [
+        18534.052764709064,
+        704.5546642306404
+       ],
+       "pressure": [
+        1000000.0
+       ],
+       "temperature": [
+        190.0
+       ],
+       "iterations": 0,
+       "evaluations": 7,
+       "hessian_calls": 0,
+       "max_residual": 2.5823903324552586e-15,
+       "message": "converged: residual 1.4505672122881695e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor absent, amplification 0",
+       "discovery": {
+        "work": {
+         "declaration_newton_attempts": 3.0,
+         "energy_evaluations": 1439.0,
+         "evaluations": 13.0,
+         "finite_split_evaluations": 5.0,
+         "hessian_calls": 0.0,
+         "iterations": 0.0,
+         "reconstruction_evaluations": 28.0,
+         "root_calls": 122.0,
+         "root_evaluations": 1279.0,
+         "trial_invocations": 14.0,
+         "trial_tangent_plane_invocations": 14.0,
+         "trial_tangent_plane_iterations": 77.0,
+         "trial_tangent_plane_newton_steps": 11.0
+        },
+        "rounds": [
+         {
+          "energy_evaluations": 706.0,
+          "finite_split_evaluations": 5.0,
+          "reconstruction_evaluations": 14.0,
+          "root_calls": 52.0,
+          "root_evaluations": 652.0,
+          "trial_invocations": 7.0,
+          "trial_tangent_plane_invocations": 7.0,
+          "trial_tangent_plane_iterations": 33.0,
+          "trial_tangent_plane_newton_steps": 3.0
+         },
+         {
+          "energy_evaluations": 615.0,
+          "reconstruction_evaluations": 14.0,
+          "root_calls": 59.0,
+          "root_evaluations": 552.0,
+          "trial_invocations": 7.0,
+          "trial_tangent_plane_invocations": 7.0,
+          "trial_tangent_plane_iterations": 44.0,
+          "trial_tangent_plane_newton_steps": 8.0
+         }
+        ],
+        "declarations": 3,
+        "roles": [
+         "initial",
+         "initial",
+         "addition"
+        ],
+        "attempts": 3
+       }
+      }
+     ],
+     "cpu_seconds": 0.003371552
+    }
+   ],
+   "prepare_seconds": 0.000302418
+  },
+  "Engine-B": {
+   "samples": [
+    {
+     "seconds": 0.002540793,
+     "per_call": 1,
+     "value": [
+      {
+       "T": 190.0,
+       "P": 1000000.0,
+       "success": true,
+       "criterion_met": true,
+       "phases": 2,
+       "amounts": [
+        0.5617149328889464,
+        0.4382850671110536
+       ],
+       "mole_fractions": [
+        0.21537559277379345,
+        0.7846244072262065,
+        0.8647803491400143,
+        0.13521965085998572
+       ],
+       "molar_densities": [
+        18534.052764709064,
+        704.5546642306404
+       ],
+       "pressure": [
+        1000000.0
+       ],
+       "temperature": [
+        190.0
+       ],
+       "iterations": 0,
+       "evaluations": 7,
+       "hessian_calls": 0,
+       "max_residual": 2.5823903324552586e-15,
+       "message": "converged: residual 1.4505672122881695e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor absent, amplification 0",
+       "discovery": {
+        "work": {
+         "declaration_newton_attempts": 3.0,
+         "energy_evaluations": 1299.0,
+         "evaluations": 13.0,
+         "finite_split_evaluations": 5.0,
+         "hessian_calls": 0.0,
+         "iterations": 0.0,
+         "reconstruction_evaluations": 28.0,
+         "root_calls": 108.0,
+         "root_evaluations": 1128.0,
+         "trial_invocations": 14.0,
+         "trial_tangent_plane_hessian_evaluations": 12.0,
+         "trial_tangent_plane_invocations": 14.0,
+         "trial_tangent_plane_iterations": 77.0,
+         "trial_tangent_plane_newton_steps": 11.0
+        },
+        "rounds": [
+         {
+          "energy_evaluations": 634.0,
+          "finite_split_evaluations": 5.0,
+          "reconstruction_evaluations": 14.0,
+          "root_calls": 45.0,
+          "root_evaluations": 577.0,
+          "trial_invocations": 7.0,
+          "trial_tangent_plane_hessian_evaluations": 3.0,
+          "trial_tangent_plane_invocations": 7.0,
+          "trial_tangent_plane_iterations": 33.0,
+          "trial_tangent_plane_newton_steps": 3.0
+         },
+         {
+          "energy_evaluations": 548.0,
+          "reconstruction_evaluations": 14.0,
+          "root_calls": 52.0,
+          "root_evaluations": 476.0,
+          "trial_invocations": 7.0,
+          "trial_tangent_plane_hessian_evaluations": 9.0,
+          "trial_tangent_plane_invocations": 7.0,
+          "trial_tangent_plane_iterations": 44.0,
+          "trial_tangent_plane_newton_steps": 8.0
+         }
+        ],
+        "declarations": 3,
+        "roles": [
+         "initial",
+         "initial",
+         "addition"
+        ],
+        "attempts": 3
+       }
+      }
+     ],
+     "cpu_seconds": 0.002580052
+    }
+   ],
+   "prepare_seconds": 0.000305008
+  },
+  "Engine-B-control": {
+   "samples": [
+    {
+     "seconds": 0.002562623,
+     "per_call": 1,
+     "value": [
+      {
+       "T": 190.0,
+       "P": 1000000.0,
+       "success": true,
+       "criterion_met": true,
+       "phases": 2,
+       "amounts": [
+        0.5617149328889464,
+        0.4382850671110536
+       ],
+       "mole_fractions": [
+        0.21537559277379345,
+        0.7846244072262065,
+        0.8647803491400143,
+        0.13521965085998572
+       ],
+       "molar_densities": [
+        18534.052764709064,
+        704.5546642306404
+       ],
+       "pressure": [
+        1000000.0
+       ],
+       "temperature": [
+        190.0
+       ],
+       "iterations": 0,
+       "evaluations": 7,
+       "hessian_calls": 0,
+       "max_residual": 2.5823903324552586e-15,
+       "message": "converged: residual 1.4505672122881695e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor absent, amplification 0",
+       "discovery": {
+        "work": {
+         "declaration_newton_attempts": 3.0,
+         "energy_evaluations": 1299.0,
+         "evaluations": 13.0,
+         "finite_split_evaluations": 5.0,
+         "hessian_calls": 0.0,
+         "iterations": 0.0,
+         "reconstruction_evaluations": 28.0,
+         "root_calls": 108.0,
+         "root_evaluations": 1128.0,
+         "trial_invocations": 14.0,
+         "trial_tangent_plane_hessian_evaluations": 12.0,
+         "trial_tangent_plane_invocations": 14.0,
+         "trial_tangent_plane_iterations": 77.0,
+         "trial_tangent_plane_newton_steps": 11.0
+        },
+        "rounds": [
+         {
+          "energy_evaluations": 634.0,
+          "finite_split_evaluations": 5.0,
+          "reconstruction_evaluations": 14.0,
+          "root_calls": 45.0,
+          "root_evaluations": 577.0,
+          "trial_invocations": 7.0,
+          "trial_tangent_plane_hessian_evaluations": 3.0,
+          "trial_tangent_plane_invocations": 7.0,
+          "trial_tangent_plane_iterations": 33.0,
+          "trial_tangent_plane_newton_steps": 3.0
+         },
+         {
+          "energy_evaluations": 548.0,
+          "reconstruction_evaluations": 14.0,
+          "root_calls": 52.0,
+          "root_evaluations": 476.0,
+          "trial_invocations": 7.0,
+          "trial_tangent_plane_hessian_evaluations": 9.0,
+          "trial_tangent_plane_invocations": 7.0,
+          "trial_tangent_plane_iterations": 44.0,
+          "trial_tangent_plane_newton_steps": 8.0
+         }
+        ],
+        "declarations": 3,
+        "roles": [
+         "initial",
+         "initial",
+         "addition"
+        ],
+        "attempts": 3
+       }
+      }
+     ],
+     "cpu_seconds": 0.002602561
+    }
+   ],
+   "prepare_seconds": 0.000289668
+  },
+  "FeOs": {
+   "samples": [
+    {
+     "value": {
+      "phases": 2,
+      "compositions": [
+       [
+        0.2153755927785505,
+        0.7846244072214494
+       ],
+       [
+        0.8647803491880447,
+        0.13521965081195533
+       ]
+      ],
+      "densities": [
+       18534.052766171197,
+       704.5546642269405
+      ],
+      "vapor_fraction": 0.43828506707452314
+     },
+     "seconds": 0.000222769,
+     "cpu_seconds": 0.00022292
+    }
+   ],
+   "prepare_seconds": 0.000180299
+  },
+  "Clapeyron": {
+   "prepare_seconds": 2.901129013,
+   "samples": [
+    {
+     "seconds": 0.000275308,
+     "value": {
+      "compositions": [
+       [
+        0.21537559276304116,
+        0.7846244072369588
+       ],
+       [
+        0.8647803491399874,
+        0.13521965086001272
+       ]
+      ],
+      "fractions": [
+       0.5617149328796277,
+       0.4382850671203723
+      ],
+      "phases": 2,
+      "volumes": [
+       5.395474010495138e-05,
+       0.0014193362854132213
+      ]
+     }
+    }
+   ]
+  }
+ },
+ "prepared": {
+  "Engine-A": {
+   "samples": [
+    {
+     "seconds": 0.006241891,
+     "per_call": 1,
+     "value": [
+      {
+       "T": 190.0,
+       "P": 1000000.0,
+       "success": true,
+       "criterion_met": true,
+       "phases": 2,
+       "amounts": [
+        0.5617149328889464,
+        0.4382850671110536
+       ],
+       "mole_fractions": [
+        0.21537559277379345,
+        0.7846244072262065,
+        0.8647803491400143,
+        0.13521965085998572
+       ],
+       "molar_densities": [
+        18534.052764709064,
+        704.5546642306404
+       ],
+       "pressure": [
+        1000000.0
+       ],
+       "temperature": [
+        190.0
+       ],
+       "iterations": 0,
+       "evaluations": 7,
+       "hessian_calls": 0,
+       "max_residual": 2.5823903324552586e-15,
+       "message": "converged: residual 1.4505672122881695e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor absent, amplification 0",
+       "discovery": {
+        "work": {
+         "declaration_newton_attempts": 3.0,
+         "energy_evaluations": 1439.0,
+         "evaluations": 13.0,
+         "finite_split_evaluations": 5.0,
+         "hessian_calls": 0.0,
+         "iterations": 0.0,
+         "reconstruction_evaluations": 28.0,
+         "root_calls": 122.0,
+         "root_evaluations": 1279.0,
+         "trial_invocations": 14.0,
+         "trial_tangent_plane_invocations": 14.0,
+         "trial_tangent_plane_iterations": 77.0,
+         "trial_tangent_plane_newton_steps": 11.0
+        },
+        "rounds": [
+         {
+          "energy_evaluations": 706.0,
+          "finite_split_evaluations": 5.0,
+          "reconstruction_evaluations": 14.0,
+          "root_calls": 52.0,
+          "root_evaluations": 652.0,
+          "trial_invocations": 7.0,
+          "trial_tangent_plane_invocations": 7.0,
+          "trial_tangent_plane_iterations": 33.0,
+          "trial_tangent_plane_newton_steps": 3.0
+         },
+         {
+          "energy_evaluations": 615.0,
+          "reconstruction_evaluations": 14.0,
+          "root_calls": 59.0,
+          "root_evaluations": 552.0,
+          "trial_invocations": 7.0,
+          "trial_tangent_plane_invocations": 7.0,
+          "trial_tangent_plane_iterations": 44.0,
+          "trial_tangent_plane_newton_steps": 8.0
+         }
+        ],
+        "declarations": 3,
+        "roles": [
+         "initial",
+         "initial",
+         "addition"
+        ],
+        "attempts": 3
+       }
+      }
+     ],
+     "cpu_seconds": 0.003289472
+    }
+   ],
+   "prepare_seconds": 7.392e-05
+  },
+  "Engine-control": {
+   "samples": [
+    {
+     "seconds": 0.00627194,
+     "per_call": 1,
+     "value": [
+      {
+       "T": 190.0,
+       "P": 1000000.0,
+       "success": true,
+       "criterion_met": true,
+       "phases": 2,
+       "amounts": [
+        0.5617149328889464,
+        0.4382850671110536
+       ],
+       "mole_fractions": [
+        0.21537559277379345,
+        0.7846244072262065,
+        0.8647803491400143,
+        0.13521965085998572
+       ],
+       "molar_densities": [
+        18534.052764709064,
+        704.5546642306404
+       ],
+       "pressure": [
+        1000000.0
+       ],
+       "temperature": [
+        190.0
+       ],
+       "iterations": 0,
+       "evaluations": 7,
+       "hessian_calls": 0,
+       "max_residual": 2.5823903324552586e-15,
+       "message": "converged: residual 1.4505672122881695e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor absent, amplification 0",
+       "discovery": {
+        "work": {
+         "declaration_newton_attempts": 3.0,
+         "energy_evaluations": 1439.0,
+         "evaluations": 13.0,
+         "finite_split_evaluations": 5.0,
+         "hessian_calls": 0.0,
+         "iterations": 0.0,
+         "reconstruction_evaluations": 28.0,
+         "root_calls": 122.0,
+         "root_evaluations": 1279.0,
+         "trial_invocations": 14.0,
+         "trial_tangent_plane_invocations": 14.0,
+         "trial_tangent_plane_iterations": 77.0,
+         "trial_tangent_plane_newton_steps": 11.0
+        },
+        "rounds": [
+         {
+          "energy_evaluations": 706.0,
+          "finite_split_evaluations": 5.0,
+          "reconstruction_evaluations": 14.0,
+          "root_calls": 52.0,
+          "root_evaluations": 652.0,
+          "trial_invocations": 7.0,
+          "trial_tangent_plane_invocations": 7.0,
+          "trial_tangent_plane_iterations": 33.0,
+          "trial_tangent_plane_newton_steps": 3.0
+         },
+         {
+          "energy_evaluations": 615.0,
+          "reconstruction_evaluations": 14.0,
+          "root_calls": 59.0,
+          "root_evaluations": 552.0,
+          "trial_invocations": 7.0,
+          "trial_tangent_plane_invocations": 7.0,
+          "trial_tangent_plane_iterations": 44.0,
+          "trial_tangent_plane_newton_steps": 8.0
+         }
+        ],
+        "declarations": 3,
+        "roles": [
+         "initial",
+         "initial",
+         "addition"
+        ],
+        "attempts": 3
+       }
+      }
+     ],
+     "cpu_seconds": 0.003313672
+    }
+   ],
+   "prepare_seconds": 5.582e-05
+  },
+  "Engine-B": {
+   "samples": [
+    {
+     "seconds": 0.003954985,
+     "per_call": 1,
+     "value": [
+      {
+       "T": 190.0,
+       "P": 1000000.0,
+       "success": true,
+       "criterion_met": true,
+       "phases": 2,
+       "amounts": [
+        0.5617149328889464,
+        0.4382850671110536
+       ],
+       "mole_fractions": [
+        0.21537559277379345,
+        0.7846244072262065,
+        0.8647803491400143,
+        0.13521965085998572
+       ],
+       "molar_densities": [
+        18534.052764709064,
+        704.5546642306404
+       ],
+       "pressure": [
+        1000000.0
+       ],
+       "temperature": [
+        190.0
+       ],
+       "iterations": 0,
+       "evaluations": 7,
+       "hessian_calls": 0,
+       "max_residual": 2.5823903324552586e-15,
+       "message": "converged: residual 1.4505672122881695e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor absent, amplification 0",
+       "discovery": {
+        "work": {
+         "declaration_newton_attempts": 3.0,
+         "energy_evaluations": 1299.0,
+         "evaluations": 13.0,
+         "finite_split_evaluations": 5.0,
+         "hessian_calls": 0.0,
+         "iterations": 0.0,
+         "reconstruction_evaluations": 28.0,
+         "root_calls": 108.0,
+         "root_evaluations": 1128.0,
+         "trial_invocations": 14.0,
+         "trial_tangent_plane_hessian_evaluations": 12.0,
+         "trial_tangent_plane_invocations": 14.0,
+         "trial_tangent_plane_iterations": 77.0,
+         "trial_tangent_plane_newton_steps": 11.0
+        },
+        "rounds": [
+         {
+          "energy_evaluations": 634.0,
+          "finite_split_evaluations": 5.0,
+          "reconstruction_evaluations": 14.0,
+          "root_calls": 45.0,
+          "root_evaluations": 577.0,
+          "trial_invocations": 7.0,
+          "trial_tangent_plane_hessian_evaluations": 3.0,
+          "trial_tangent_plane_invocations": 7.0,
+          "trial_tangent_plane_iterations": 33.0,
+          "trial_tangent_plane_newton_steps": 3.0
+         },
+         {
+          "energy_evaluations": 548.0,
+          "reconstruction_evaluations": 14.0,
+          "root_calls": 52.0,
+          "root_evaluations": 476.0,
+          "trial_invocations": 7.0,
+          "trial_tangent_plane_hessian_evaluations": 9.0,
+          "trial_tangent_plane_invocations": 7.0,
+          "trial_tangent_plane_iterations": 44.0,
+          "trial_tangent_plane_newton_steps": 8.0
+         }
+        ],
+        "declarations": 3,
+        "roles": [
+         "initial",
+         "initial",
+         "addition"
+        ],
+        "attempts": 3
+       }
+      }
+     ],
+     "cpu_seconds": 0.002563281
+    }
+   ],
+   "prepare_seconds": 5.726e-05
+  },
+  "Engine-B-control": {
+   "samples": [
+    {
+     "seconds": 0.002448364,
+     "per_call": 1,
+     "value": [
+      {
+       "T": 190.0,
+       "P": 1000000.0,
+       "success": true,
+       "criterion_met": true,
+       "phases": 2,
+       "amounts": [
+        0.5617149328889464,
+        0.4382850671110536
+       ],
+       "mole_fractions": [
+        0.21537559277379345,
+        0.7846244072262065,
+        0.8647803491400143,
+        0.13521965085998572
+       ],
+       "molar_densities": [
+        18534.052764709064,
+        704.5546642306404
+       ],
+       "pressure": [
+        1000000.0
+       ],
+       "temperature": [
+        190.0
+       ],
+       "iterations": 0,
+       "evaluations": 7,
+       "hessian_calls": 0,
+       "max_residual": 2.5823903324552586e-15,
+       "message": "converged: residual 1.4505672122881695e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor absent, amplification 0",
+       "discovery": {
+        "work": {
+         "declaration_newton_attempts": 3.0,
+         "energy_evaluations": 1299.0,
+         "evaluations": 13.0,
+         "finite_split_evaluations": 5.0,
+         "hessian_calls": 0.0,
+         "iterations": 0.0,
+         "reconstruction_evaluations": 28.0,
+         "root_calls": 108.0,
+         "root_evaluations": 1128.0,
+         "trial_invocations": 14.0,
+         "trial_tangent_plane_hessian_evaluations": 12.0,
+         "trial_tangent_plane_invocations": 14.0,
+         "trial_tangent_plane_iterations": 77.0,
+         "trial_tangent_plane_newton_steps": 11.0
+        },
+        "rounds": [
+         {
+          "energy_evaluations": 634.0,
+          "finite_split_evaluations": 5.0,
+          "reconstruction_evaluations": 14.0,
+          "root_calls": 45.0,
+          "root_evaluations": 577.0,
+          "trial_invocations": 7.0,
+          "trial_tangent_plane_hessian_evaluations": 3.0,
+          "trial_tangent_plane_invocations": 7.0,
+          "trial_tangent_plane_iterations": 33.0,
+          "trial_tangent_plane_newton_steps": 3.0
+         },
+         {
+          "energy_evaluations": 548.0,
+          "reconstruction_evaluations": 14.0,
+          "root_calls": 52.0,
+          "root_evaluations": 476.0,
+          "trial_invocations": 7.0,
+          "trial_tangent_plane_hessian_evaluations": 9.0,
+          "trial_tangent_plane_invocations": 7.0,
+          "trial_tangent_plane_iterations": 44.0,
+          "trial_tangent_plane_newton_steps": 8.0
+         }
+        ],
+        "declarations": 3,
+        "roles": [
+         "initial",
+         "initial",
+         "addition"
+        ],
+        "attempts": 3
+       }
+      }
+     ],
+     "cpu_seconds": 0.002481802
+    }
+   ],
+   "prepare_seconds": 4.936e-05
+  },
+  "FeOs": {
+   "samples": [
+    {
+     "value": {
+      "phases": 2,
+      "compositions": [
+       [
+        0.2153755927785505,
+        0.7846244072214494
+       ],
+       [
+        0.8647803491880447,
+        0.13521965081195533
+       ]
+      ],
+      "densities": [
+       18534.052766171197,
+       704.5546642269405
+      ],
+      "vapor_fraction": 0.43828506707452314
+     },
+     "seconds": 0.000216009,
+     "cpu_seconds": 0.00021616
+    }
+   ],
+   "prepare_seconds": null
+  },
+  "Clapeyron": {
+   "prepare_seconds": null,
+   "samples": [
+    {
+     "seconds": 0.000107389,
+     "value": {
+      "compositions": [
+       [
+        0.21537559276304116,
+        0.7846244072369588
+       ],
+       [
+        0.8647803491399874,
+        0.13521965086001272
+       ]
+      ],
+      "fractions": [
+       0.5617149328796277,
+       0.4382850671203723
+      ],
+      "phases": 2,
+      "volumes": [
+       5.395474010495138e-05,
+       0.0014193362854132213
+      ]
+     }
+    }
+   ]
+  }
+ }
+}

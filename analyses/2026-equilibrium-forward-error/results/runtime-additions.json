@@ -1,0 +1,92 @@
+{
+  "core": {
+    "added": 200,
+    "removed": 0,
+    "net": 200,
+    "files": [
+      {
+        "path": "engine/native/core/linear_error.hpp",
+        "added": 200,
+        "removed": 0
+      }
+    ]
+  },
+  "properties": {
+    "added": 125,
+    "removed": 0,
+    "net": 125,
+    "files": [
+      {
+        "path": "engine/native/properties/helmholtz_model.hpp",
+        "added": 2,
+        "removed": 0
+      },
+      {
+        "path": "engine/native/properties/helmholtz_model.cpp",
+        "added": 123,
+        "removed": 0
+      }
+    ]
+  },
+  "equilibrium": {
+    "added": 408,
+    "removed": 59,
+    "net": 349,
+    "files": [
+      {
+        "path": "engine/native/equilibrium/gibbs_minimizer.hpp",
+        "added": 1,
+        "removed": 1
+      },
+      {
+        "path": "engine/native/equilibrium/problem.hpp",
+        "added": 24,
+        "removed": 0
+      },
+      {
+        "path": "engine/native/equilibrium/implicit_sensitivity.cpp",
+        "added": 159,
+        "removed": 18
+      },
+      {
+        "path": "engine/native/equilibrium/request_compile.cpp",
+        "added": 178,
+        "removed": 1
+      },
+      {
+        "path": "engine/native/equilibrium/one_component_two_density.cpp",
+        "added": 13,
+        "removed": 15
+      },
+      {
+        "path": "engine/native/equilibrium/gibbs_minimizer.cpp",
+        "added": 33,
+        "removed": 24
+      }
+    ]
+  },
+  "bindings": {
+    "added": 64,
+    "removed": 6,
+    "net": 58,
+    "files": [
+      {
+        "path": "engine/native/bindings/equilibrium_bindings.cpp",
+        "added": 64,
+        "removed": 6
+      }
+    ]
+  },
+  "python": {
+    "added": 22,
+    "removed": 0,
+    "net": 22,
+    "files": [
+      {
+        "path": "engine/src/epcsaft/equilibrium/__init__.py",
+        "added": 22,
+        "removed": 0
+      }
+    ]
+  }
+}

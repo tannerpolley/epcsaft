@@ -1,0 +1,114 @@
+{
+  "convergence": {
+    "residual": 4.440892098500626e-15,
+    "floor": null,
+    "amplification": null,
+    "contraction": null,
+    "iterations": 1,
+    "evaluations": 2,
+    "stop": "converged",
+    "criterion": 1e-12
+  },
+  "P": 998660.8957399128,
+  "T": 300.0,
+  "success": true,
+  "requested_tolerance_met": true,
+  "message": "converged: residual 4.4408920985006262e-15 against EQUILIBRIUM_ROW_RESIDUAL 9.9999999999999998e-13 after 1 iterations, contraction absent, floor absent, amplification absent",
+  "solver_status": "NEWTON_CONVERGED",
+  "max_residual": 4.440892098500626e-15,
+  "iterations": 1,
+  "evaluations": 2,
+  "hessian_calls": 0,
+  "first_numerical_failure": null,
+  "terminal_numerical_failure": null,
+  "last_full_evaluation": {
+    "residual": 4.440892098500626e-15,
+    "floor": null,
+    "amplification": null,
+    "contraction": null,
+    "iterations": 1,
+    "evaluations": 2,
+    "stop": "converged",
+    "criterion": 1e-12,
+    "cause": "",
+    "rank": null,
+    "backward_error": null
+  },
+  "rank": {
+    "basis": "reduced",
+    "dimension": 2,
+    "rank": 2,
+    "threshold": 4.440892098500626e-16
+  },
+  "linear": {
+    "method": "one_component_two_density_reduction",
+    "reason": "",
+    "residual": 3.000421092136385e-15,
+    "evaluation_floor": 1.5456264227826464e-15,
+    "inverse_norm": 3.1302809547658565,
+    "condition_estimate": 18.25978333324076,
+    "forward_error_estimate": 1.4230405955411697e-14,
+    "working_precision_bits": 53,
+    "refinement_iterations": 0
+  },
+  "phases": [
+    {
+      "phase": "liquid",
+      "rho": 11100.25123320961,
+      "x": [
+        1.0
+      ],
+      "P": 998660.8957398143
+    },
+    {
+      "phase": "vapor",
+      "rho": 482.5121268150347,
+      "x": [
+        1.0
+      ],
+      "P": 998660.8957399128
+    }
+  ],
+  "rejected_reduction": null,
+  "reversed_phases": [
+    {
+      "phase": "vapor",
+      "rho": 482.5121268150347,
+      "x": [
+        1.0
+      ],
+      "P": 998660.8957399128
+    },
+    {
+      "phase": "liquid",
+      "rho": 11100.25123320961,
+      "x": [
+        1.0
+      ],
+      "P": 998660.8957398143
+    }
+  ],
+  "failed_fallback": {
+    "message": "phase L has no locally unique anchored root: infeasible: residual 1.4988010832439613e-15 against DENSITY_ROOT_RESIDUAL 9.9999999999999998e-13 after 1 iterations, contraction absent, floor 0, amplification 2192363112.3169513; density anchor branch 2; anchor 4741.0853209111683; window [4694.1438820902622,4788.4961741202833] mol/m3",
+    "convergence": {
+      "residual": 8.881784197001252e-16,
+      "floor": null,
+      "amplification": 0.0,
+      "contraction": null,
+      "iterations": 4,
+      "evaluations": 6,
+      "stop": "converged",
+      "criterion": 1e-12
+    },
+    "total_work": [
+      11,
+      17
+    ],
+    "rejected_work": [
+      7,
+      11
+    ],
+    "rejected_error": 2.9892646044572655e-10
+  },
+  "seed_refusal": "boundary seed has no coexisting density roots and no positive mechanical-loop witness pressure at T = 375.14999999999998 K; T may exceed the model critical temperature"
+}

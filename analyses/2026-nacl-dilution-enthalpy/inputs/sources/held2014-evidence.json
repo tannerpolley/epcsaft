@@ -1,0 +1,272 @@
+{
+  "citation_key": "Held2014",
+  "conversion": {
+    "converter": "none",
+    "mode": "existing-zotero-companions",
+    "pdf_conversion": "forbidden-when-companion-exists"
+  },
+  "doi": "10.1016/j.cherd.2014.05.017",
+  "evidence_path": "wiki/evidence/3DIW87Q5",
+  "files": [
+    {
+      "format": "markdown",
+      "hash_matches": true,
+      "passages": [
+        {
+          "line_end": 597,
+          "line_start": 593,
+          "locator": "wiki/evidence/3DIW87Q5/Held2014.md:L593-L597",
+          "match_score": 3,
+          "matched_terms": [
+            "densities",
+            "osmotic",
+            "temperature"
+          ],
+          "path": "wiki/evidence/3DIW87Q5/Held2014.md",
+          "role": "main_article",
+          "section": "4. Conclusion",
+          "text": "Original ePC-SAFT from Held et al. (2008) has been applied to many electrolyte systems until now. However, the model accuracy was still not satisfying for modeling thermodynamic properties at high salt concentrations and for modeling weak electrolyte solutions (containing e.g. phosphates, sulfates, or acetates). The aim of this work was to quantitatively describe densities and phase equilibria of electrolyte solutions at high salt concentrations and weak-electrolyte solutions applying ePC-SAFT with a new modeling strategy for ions. Compared to original ePC-SAFT (strategy 1), this new strategy (strategy 2) explicitly accounts for dispersion interactions between anions and cations. The new strategy allowed modeling densities and osmotic coefficients of aqueous electrolyte solutions with ARD values of $0.6 \\%$ and $1.57 \\%$ at 298.15 K for more than 100 electrolyte solutions with molalities up to 5 m , including weak electrolyte solutions. These results are much better than those with strategy 1 (ARDs of $0.71 \\%$ and $5.04 \\%$ for solution densities and osmotic coefficients, respectively).\n\nBased on the ion-parameter sets determined from binary salt/water solutions, ternary aqueous electrolyte solutions were modeled with both, strategy 1 and strategy 2 . These include systems containing water, salts, amino acids, and organic solvents. Modeling results were compared with experimental osmotic coefficients, solubility data and LLE data. Strategy 1 allowed for modeling the salt influence on osmotic coefficients and solubility in good agreement to the experimental data. However, the modeling results with strategy 1 did not show agreement to experimental salt/water/organic solvent LLE data. In contrast, modeling the salt influence on LLEs with strategy 2 did allow for quantitative results.\n\nThe results with strategy 2 were satisfactory at low and high electrolyte concentrations, for strong and weak electrolyte solutions, at different temperatures, for systems containing more than one solvent and more than one solute. Thus, the new strategy developed in this work can be applied to model different types of phase equilibria of electrolyte solutions in a broad range of components and conditions.",
+          "zotero_attachment_key": "TZJJENHW"
+        },
+        {
+          "line_end": 77,
+          "line_start": 73,
+          "locator": "wiki/evidence/3DIW87Q5/Held2014.md:L73-L77",
+          "match_score": 2,
+          "matched_terms": [
+            "osmotic",
+            "temperature"
+          ],
+          "path": "wiki/evidence/3DIW87Q5/Held2014.md",
+          "role": "main_article",
+          "section": "Nomenclature",
+          "text": "\\hline $\\kappa^{A_{i} B_{i}}$ & association-volume parameter [-] \\\\\n\\hline $\\phi$ & osmotic coefficient [-] \\\\\n\\hline $\\rho$ & density [ $\\mathrm{kg} / \\mathrm{m}^{3}$ ] \\\\\n\\hline $\\nu$ & stoichiometric factor [-] \\\\\n\\hline $\\sigma_{\\mathrm{i}}$ & temperature-independent segment diameter of molecule $i[\\AA]$ \\\\",
+          "zotero_attachment_key": "TZJJENHW"
+        },
+        {
+          "line_end": 105,
+          "line_start": 101,
+          "locator": "wiki/evidence/3DIW87Q5/Held2014.md:L101-L105",
+          "match_score": 2,
+          "matched_terms": [
+            "osmotic",
+            "temperature"
+          ],
+          "path": "wiki/evidence/3DIW87Q5/Held2014.md",
+          "role": "main_article",
+          "section": "Superscripts",
+          "text": "\nOne model that has been shown to fulfill these criteria is ePC-SAFT (Cameretti et al., 2005). Within ePC-SAFT, the SR\nforces are described by PC-SAFT (Gross et al., 2001). The LR forces among ions are described using the approach of Debye and H\u00fcckel (Held et al., 2008). Accounting for the formation of ion pairs, also weak electrolyte solutions could be modeled successfully (Held and Sadowski, 2009). Applying ePC-SAFT, 120 aqueous electrolyte solutions composed of 24 ions were described requiring 48 ion parameters only. Based on this, the salt influence on the phase behavior of biomolecule/water (Held et al., 2010, 2014; Sadeghi et al., 2012) systems could be predicted in reasonable agreement with experimental data.\n\nAlthough ePC-SAFT has successfully been applied to many electrolyte systems, there are cases for which the model accuracy is still not satisfying. Especially solutions at high salt concentrations and solutions containing weakly-hydrated ions like phosphates or sulfates could not be described accurately with original ePC-SAFT (Held et al., 2008). The average relative deviation (ARD) between experimental and osmotic coefficients modeled using ePC-SAFT is larger than $6 \\%$ (Held et al., 2008). Further, to describe weak electrolyte solutions, a chemical approach had to be combined with ePC-SAFT for an accurate data description (Held and Sadowski, 2009). Moreover, temperature effects described with original ePC-SAFT are only in poor agreement with experimental data (Held et al., 2008).",
+          "zotero_attachment_key": "TZJJENHW"
+        },
+        {
+          "line_end": 146,
+          "line_start": 142,
+          "locator": "wiki/evidence/3DIW87Q5/Held2014.md:L142-L146",
+          "match_score": 2,
+          "matched_terms": [
+            "osmotic",
+            "temperature"
+          ],
+          "path": "wiki/evidence/3DIW87Q5/Held2014.md",
+          "role": "main_article",
+          "section": "2.2 Calculation of thermodynamic properties with ePC-SAFT",
+          "text": "\\end{equation*}\n$$\nwhere the subscript $0 i$ denotes the reference state pure component at same temperature $T$ and pressure $p$ as the actual solution of composition $\\vec{x}$.\n\nAnother possibility for the characterization of solutions containing (various) solutes is using the osmotic coefficient $\\phi$. This property applies to single-solvent solutions and is used in this work for the description of electrolyte solutions. Whereas water activity coefficients in such solutions often only marginally deviate from unity, osmotic coefficients describe the thermodynamic non-ideality of aqueous solutions with considerably higher sensitivity. The molal osmotic coefficient used in this work relates to the water activity coefficient $\\gamma_{\\mathrm{w}}$ according to",
+          "zotero_attachment_key": "TZJJENHW"
+        },
+        {
+          "line_end": 221,
+          "line_start": 217,
+          "locator": "wiki/evidence/3DIW87Q5/Held2014.md:L217-L221",
+          "match_score": 2,
+          "matched_terms": [
+            "osmotic",
+            "temperature"
+          ],
+          "path": "wiki/evidence/3DIW87Q5/Held2014.md",
+          "role": "main_article",
+          "section": "2.3 Modeling strategies",
+          "text": "\nThe reason for establishing strategy 2 was the higher deviation between ePC-SAFT (strategy 1) modeled and experimental osmotic coefficients at high electrolyte concentrations as well as for weak electrolyte solutions. These deviations can be explained by the fact that LR interactions among ions can be physically-meaningful described by the Debye-H\u00fcckel approach only at low electrolyte concentrations. At high electrolyte concentrations, ions cannot be\nassumed to be completely solvated any more. SR interactions among ions become more important. A similar effect is present in weak-electrolyte solutions, in which ions do not dissociate completely but interact strongly with each other and even form ion pairs. For both applications (high electrolyte concentrations and weak electrolyte solutions) anion-cation interactions can obviously neither be neglected nor be described with Debye-H\u00fcckel alone. Considering additional SR anion-cation attractive forces should correct for this shortcoming and thus should allow for improving the modeling results for electrolyte solutions at high electrolyte concentrations and also for weak electrolyte solutions.\n\nIn both strategies, hard-chain repulsion, dispersive attraction, and association are considered for solvents. Further, in both strategies, the considered salts and acids are assumed to be completely dissociated into their ions. Both strategies consider repulsion among ions as well as between solvents and ions. The diameters of solvated ions are assumed to be temperature independent. In both strategies, dispersion interactions between ions and solvents are accounted for and the LR interactions among ions are described by a Debye-H\u00fcckel contribution $a^{\\text {ion }}$ to the residual Helmholtz energy. The application of the Debye-H\u00fcckel contribution requires the use of the solvent's dielectric constant, which is assumed to depend only on the solvent and temperature, i.e. being independent of salt or acid for both strategies.",
+          "zotero_attachment_key": "TZJJENHW"
+        },
+        {
+          "line_end": 255,
+          "line_start": 251,
+          "locator": "wiki/evidence/3DIW87Q5/Held2014.md:L251-L255",
+          "match_score": 2,
+          "matched_terms": [
+            "densities",
+            "osmotic"
+          ],
+          "path": "wiki/evidence/3DIW87Q5/Held2014.md",
+          "role": "main_article",
+          "section": "2.4. Pure-component and binary ePC-SAFT parameters",
+          "text": "\\subsection*{2.4. Pure-component and binary ePC-SAFT parameters}\n\nModeling electrolyte solutions with ePC-SAFT requires pure-component parameters for solvents and ions. The purecomponent parameters for the solvents and the $k_{i j}$ interaction parameters between an organic solvent and water are listed in Table 1. Table 1 further contains the pure-component parameters and $k_{i j} \\mathrm{~s}$ with water for glycine and alanine, which were also considered in this work.\n\nThe pure-component parameters of the ions were fitted to solution densities and osmotic coefficients of single-solute aqueous electrolyte solutions in both strategies (strategy 1 (Held et al., 2008) and strategy 2 [this work]). Although solution-density data and osmotic-coefficient data are not the most important properties for biological and biopharmaceutical applications, such data has been shown to be very suitable for the pure-component parameter estimation of ions (Held et al., 2008) and other solutes (Held et al., 2014, 2013; Nann et al., 2013b; Grosse Daldrup et al., 2011; Passos et al., 2014; Hoffmann et al., 2013). The data used for the parameter estimation was generally limited to atmospheric pressure, 298.15 K , and only data with salt concentrations up to 5 m were considered. The objective function for the density OF ${ }^{\\text {density }}$ and the osmotic coefficients $\\mathrm{OF}^{\\circ \\mathrm{C}}$ in the parameter-estimation procedure used in this work were:",
+          "zotero_attachment_key": "TZJJENHW"
+        },
+        {
+          "line_end": 332,
+          "line_start": 328,
+          "locator": "wiki/evidence/3DIW87Q5/Held2014.md:L328-L332",
+          "match_score": 2,
+          "matched_terms": [
+            "osmotic",
+            "temperature"
+          ],
+          "path": "wiki/evidence/3DIW87Q5/Held2014.md",
+          "role": "main_article",
+          "section": "2.4. Pure-component and binary ePC-SAFT parameters",
+          "text": "\\end{tabular}\n\\end{table}\n${ }^{\\mathrm{a}}$ For water $/ \\mathrm{Na}^{+}$, a temperature-dependent $k_{\\mathrm{ij}}$ was applied: $k_{\\mathrm{ij}}=-0.007981 \\mathrm{~T} / \\mathrm{K}+2.37999$.\n${ }^{\\mathrm{b}}$ For water $/ \\mathrm{K}^{+}$, a temperature-dependent $\\mathrm{k}_{\\mathrm{ij}}$ was applied: $\\mathrm{k}_{\\mathrm{ij}}=-0.004012 \\mathrm{~T} / \\mathrm{K}+1.3959$.\nstrategy 2). Table 3 contains $k_{i j}$ parameters between two ions (only required for strategy 2 ). The $k_{i j}$ parameters between ion and water and among two ions (Tables 2 and 3) were fitted together with $\\sigma_{\\text {ion }}$ and $u_{\\text {ion }} / k_{\\mathrm{B}}$ simultaneously to solutiondensity data and osmotic-coefficient data. It might appear that",
+          "zotero_attachment_key": "TZJJENHW"
+        },
+        {
+          "line_end": 414,
+          "line_start": 410,
+          "locator": "wiki/evidence/3DIW87Q5/Held2014.md:L410-L414",
+          "match_score": 2,
+          "matched_terms": [
+            "densities",
+            "osmotic"
+          ],
+          "path": "wiki/evidence/3DIW87Q5/Held2014.md",
+          "role": "main_article",
+          "section": "3. Results and discussion",
+          "text": "Note, that the ion parameters (fitted to solution-density data and osmotic-coefficient data) allow modeling the thermodynamic properties of the ions, such as the mean ionic activity coefficients of salts in water (e.g. shown also in (Held et al., 2008)) as well as salt solubility in water. These results are not shown in this work.\n\n\\section*{3. Results and discussion}\n\nThe main focus of this work was to accurately model phase equilibria of ternary electrolyte solutions with ePC-SAFT with strategy 2. In a first step, solution densities and osmotic coefficients of binary single-solute aqueous electrolyte systems were modeled. Based on this, the ternary mixtures biomolecule/salt/water and organic solvent/salt/water were modeled. For these mixtures, liquid-liquid equilibria (LLE), solid-liquid equilibria (SLE), and vapor-liquid equilibria (VLE) were considered.",
+          "zotero_attachment_key": "TZJJENHW"
+        }
+      ],
+      "path": "wiki/evidence/3DIW87Q5/Held2014.md",
+      "role": "main_article",
+      "searchable": true,
+      "sha256": "b8b1e46bf870224de5de68b5989f9cb377d17445d87109a5462a94f1efaafbda",
+      "source_filename": "Held et al. - 2014 - ePC-SAFT Revised.md",
+      "zotero_attachment_key": "TZJJENHW"
+    }
+  ],
+  "passages": [
+    {
+      "line_end": 597,
+      "line_start": 593,
+      "locator": "wiki/evidence/3DIW87Q5/Held2014.md:L593-L597",
+      "match_score": 3,
+      "matched_terms": [
+        "densities",
+        "osmotic",
+        "temperature"
+      ],
+      "path": "wiki/evidence/3DIW87Q5/Held2014.md",
+      "role": "main_article",
+      "section": "4. Conclusion",
+      "text": "Original ePC-SAFT from Held et al. (2008) has been applied to many electrolyte systems until now. However, the model accuracy was still not satisfying for modeling thermodynamic properties at high salt concentrations and for modeling weak electrolyte solutions (containing e.g. phosphates, sulfates, or acetates). The aim of this work was to quantitatively describe densities and phase equilibria of electrolyte solutions at high salt concentrations and weak-electrolyte solutions applying ePC-SAFT with a new modeling strategy for ions. Compared to original ePC-SAFT (strategy 1), this new strategy (strategy 2) explicitly accounts for dispersion interactions between anions and cations. The new strategy allowed modeling densities and osmotic coefficients of aqueous electrolyte solutions with ARD values of $0.6 \\%$ and $1.57 \\%$ at 298.15 K for more than 100 electrolyte solutions with molalities up to 5 m , including weak electrolyte solutions. These results are much better than those with strategy 1 (ARDs of $0.71 \\%$ and $5.04 \\%$ for solution densities and osmotic coefficients, respectively).\n\nBased on the ion-parameter sets determined from binary salt/water solutions, ternary aqueous electrolyte solutions were modeled with both, strategy 1 and strategy 2 . These include systems containing water, salts, amino acids, and organic solvents. Modeling results were compared with experimental osmotic coefficients, solubility data and LLE data. Strategy 1 allowed for modeling the salt influence on osmotic coefficients and solubility in good agreement to the experimental data. However, the modeling results with strategy 1 did not show agreement to experimental salt/water/organic solvent LLE data. In contrast, modeling the salt influence on LLEs with strategy 2 did allow for quantitative results.\n\nThe results with strategy 2 were satisfactory at low and high electrolyte concentrations, for strong and weak electrolyte solutions, at different temperatures, for systems containing more than one solvent and more than one solute. Thus, the new strategy developed in this work can be applied to model different types of phase equilibria of electrolyte solutions in a broad range of components and conditions.",
+      "zotero_attachment_key": "TZJJENHW"
+    },
+    {
+      "line_end": 77,
+      "line_start": 73,
+      "locator": "wiki/evidence/3DIW87Q5/Held2014.md:L73-L77",
+      "match_score": 2,
+      "matched_terms": [
+        "osmotic",
+        "temperature"
+      ],
+      "path": "wiki/evidence/3DIW87Q5/Held2014.md",
+      "role": "main_article",
+      "section": "Nomenclature",
+      "text": "\\hline $\\kappa^{A_{i} B_{i}}$ & association-volume parameter [-] \\\\\n\\hline $\\phi$ & osmotic coefficient [-] \\\\\n\\hline $\\rho$ & density [ $\\mathrm{kg} / \\mathrm{m}^{3}$ ] \\\\\n\\hline $\\nu$ & stoichiometric factor [-] \\\\\n\\hline $\\sigma_{\\mathrm{i}}$ & temperature-independent segment diameter of molecule $i[\\AA]$ \\\\",
+      "zotero_attachment_key": "TZJJENHW"
+    },
+    {
+      "line_end": 105,
+      "line_start": 101,
+      "locator": "wiki/evidence/3DIW87Q5/Held2014.md:L101-L105",
+      "match_score": 2,
+      "matched_terms": [
+        "osmotic",
+        "temperature"
+      ],
+      "path": "wiki/evidence/3DIW87Q5/Held2014.md",
+      "role": "main_article",
+      "section": "Superscripts",
+      "text": "\nOne model that has been shown to fulfill these criteria is ePC-SAFT (Cameretti et al., 2005). Within ePC-SAFT, the SR\nforces are described by PC-SAFT (Gross et al., 2001). The LR forces among ions are described using the approach of Debye and H\u00fcckel (Held et al., 2008). Accounting for the formation of ion pairs, also weak electrolyte solutions could be modeled successfully (Held and Sadowski, 2009). Applying ePC-SAFT, 120 aqueous electrolyte solutions composed of 24 ions were described requiring 48 ion parameters only. Based on this, the salt influence on the phase behavior of biomolecule/water (Held et al., 2010, 2014; Sadeghi et al., 2012) systems could be predicted in reasonable agreement with experimental data.\n\nAlthough ePC-SAFT has successfully been applied to many electrolyte systems, there are cases for which the model accuracy is still not satisfying. Especially solutions at high salt concentrations and solutions containing weakly-hydrated ions like phosphates or sulfates could not be described accurately with original ePC-SAFT (Held et al., 2008). The average relative deviation (ARD) between experimental and osmotic coefficients modeled using ePC-SAFT is larger than $6 \\%$ (Held et al., 2008). Further, to describe weak electrolyte solutions, a chemical approach had to be combined with ePC-SAFT for an accurate data description (Held and Sadowski, 2009). Moreover, temperature effects described with original ePC-SAFT are only in poor agreement with experimental data (Held et al., 2008).",
+      "zotero_attachment_key": "TZJJENHW"
+    },
+    {
+      "line_end": 146,
+      "line_start": 142,
+      "locator": "wiki/evidence/3DIW87Q5/Held2014.md:L142-L146",
+      "match_score": 2,
+      "matched_terms": [
+        "osmotic",
+        "temperature"
+      ],
+      "path": "wiki/evidence/3DIW87Q5/Held2014.md",
+      "role": "main_article",
+      "section": "2.2 Calculation of thermodynamic properties with ePC-SAFT",
+      "text": "\\end{equation*}\n$$\nwhere the subscript $0 i$ denotes the reference state pure component at same temperature $T$ and pressure $p$ as the actual solution of composition $\\vec{x}$.\n\nAnother possibility for the characterization of solutions containing (various) solutes is using the osmotic coefficient $\\phi$. This property applies to single-solvent solutions and is used in this work for the description of electrolyte solutions. Whereas water activity coefficients in such solutions often only marginally deviate from unity, osmotic coefficients describe the thermodynamic non-ideality of aqueous solutions with considerably higher sensitivity. The molal osmotic coefficient used in this work relates to the water activity coefficient $\\gamma_{\\mathrm{w}}$ according to",
+      "zotero_attachment_key": "TZJJENHW"
+    },
+    {
+      "line_end": 221,
+      "line_start": 217,
+      "locator": "wiki/evidence/3DIW87Q5/Held2014.md:L217-L221",
+      "match_score": 2,
+      "matched_terms": [
+        "osmotic",
+        "temperature"
+      ],
+      "path": "wiki/evidence/3DIW87Q5/Held2014.md",
+      "role": "main_article",
+      "section": "2.3 Modeling strategies",
+      "text": "\nThe reason for establishing strategy 2 was the higher deviation between ePC-SAFT (strategy 1) modeled and experimental osmotic coefficients at high electrolyte concentrations as well as for weak electrolyte solutions. These deviations can be explained by the fact that LR interactions among ions can be physically-meaningful described by the Debye-H\u00fcckel approach only at low electrolyte concentrations. At high electrolyte concentrations, ions cannot be\nassumed to be completely solvated any more. SR interactions among ions become more important. A similar effect is present in weak-electrolyte solutions, in which ions do not dissociate completely but interact strongly with each other and even form ion pairs. For both applications (high electrolyte concentrations and weak electrolyte solutions) anion-cation interactions can obviously neither be neglected nor be described with Debye-H\u00fcckel alone. Considering additional SR anion-cation attractive forces should correct for this shortcoming and thus should allow for improving the modeling results for electrolyte solutions at high electrolyte concentrations and also for weak electrolyte solutions.\n\nIn both strategies, hard-chain repulsion, dispersive attraction, and association are considered for solvents. Further, in both strategies, the considered salts and acids are assumed to be completely dissociated into their ions. Both strategies consider repulsion among ions as well as between solvents and ions. The diameters of solvated ions are assumed to be temperature independent. In both strategies, dispersion interactions between ions and solvents are accounted for and the LR interactions among ions are described by a Debye-H\u00fcckel contribution $a^{\\text {ion }}$ to the residual Helmholtz energy. The application of the Debye-H\u00fcckel contribution requires the use of the solvent's dielectric constant, which is assumed to depend only on the solvent and temperature, i.e. being independent of salt or acid for both strategies.",
+      "zotero_attachment_key": "TZJJENHW"
+    },
+    {
+      "line_end": 255,
+      "line_start": 251,
+      "locator": "wiki/evidence/3DIW87Q5/Held2014.md:L251-L255",
+      "match_score": 2,
+      "matched_terms": [
+        "densities",
+        "osmotic"
+      ],
+      "path": "wiki/evidence/3DIW87Q5/Held2014.md",
+      "role": "main_article",
+      "section": "2.4. Pure-component and binary ePC-SAFT parameters",
+      "text": "\\subsection*{2.4. Pure-component and binary ePC-SAFT parameters}\n\nModeling electrolyte solutions with ePC-SAFT requires pure-component parameters for solvents and ions. The purecomponent parameters for the solvents and the $k_{i j}$ interaction parameters between an organic solvent and water are listed in Table 1. Table 1 further contains the pure-component parameters and $k_{i j} \\mathrm{~s}$ with water for glycine and alanine, which were also considered in this work.\n\nThe pure-component parameters of the ions were fitted to solution densities and osmotic coefficients of single-solute aqueous electrolyte solutions in both strategies (strategy 1 (Held et al., 2008) and strategy 2 [this work]). Although solution-density data and osmotic-coefficient data are not the most important properties for biological and biopharmaceutical applications, such data has been shown to be very suitable for the pure-component parameter estimation of ions (Held et al., 2008) and other solutes (Held et al., 2014, 2013; Nann et al., 2013b; Grosse Daldrup et al., 2011; Passos et al., 2014; Hoffmann et al., 2013). The data used for the parameter estimation was generally limited to atmospheric pressure, 298.15 K , and only data with salt concentrations up to 5 m were considered. The objective function for the density OF ${ }^{\\text {density }}$ and the osmotic coefficients $\\mathrm{OF}^{\\circ \\mathrm{C}}$ in the parameter-estimation procedure used in this work were:",
+      "zotero_attachment_key": "TZJJENHW"
+    },
+    {
+      "line_end": 332,
+      "line_start": 328,
+      "locator": "wiki/evidence/3DIW87Q5/Held2014.md:L328-L332",
+      "match_score": 2,
+      "matched_terms": [
+        "osmotic",
+        "temperature"
+      ],
+      "path": "wiki/evidence/3DIW87Q5/Held2014.md",
+      "role": "main_article",
+      "section": "2.4. Pure-component and binary ePC-SAFT parameters",
+      "text": "\\end{tabular}\n\\end{table}\n${ }^{\\mathrm{a}}$ For water $/ \\mathrm{Na}^{+}$, a temperature-dependent $k_{\\mathrm{ij}}$ was applied: $k_{\\mathrm{ij}}=-0.007981 \\mathrm{~T} / \\mathrm{K}+2.37999$.\n${ }^{\\mathrm{b}}$ For water $/ \\mathrm{K}^{+}$, a temperature-dependent $\\mathrm{k}_{\\mathrm{ij}}$ was applied: $\\mathrm{k}_{\\mathrm{ij}}=-0.004012 \\mathrm{~T} / \\mathrm{K}+1.3959$.\nstrategy 2). Table 3 contains $k_{i j}$ parameters between two ions (only required for strategy 2 ). The $k_{i j}$ parameters between ion and water and among two ions (Tables 2 and 3) were fitted together with $\\sigma_{\\text {ion }}$ and $u_{\\text {ion }} / k_{\\mathrm{B}}$ simultaneously to solutiondensity data and osmotic-coefficient data. It might appear that",
+      "zotero_attachment_key": "TZJJENHW"
+    },
+    {
+      "line_end": 414,
+      "line_start": 410,
+      "locator": "wiki/evidence/3DIW87Q5/Held2014.md:L410-L414",
+      "match_score": 2,
+      "matched_terms": [
+        "densities",
+        "osmotic"
+      ],
+      "path": "wiki/evidence/3DIW87Q5/Held2014.md",
+      "role": "main_article",
+      "section": "3. Results and discussion",
+      "text": "Note, that the ion parameters (fitted to solution-density data and osmotic-coefficient data) allow modeling the thermodynamic properties of the ions, such as the mean ionic activity coefficients of salts in water (e.g. shown also in (Held et al., 2008)) as well as salt solubility in water. These results are not shown in this work.\n\n\\section*{3. Results and discussion}\n\nThe main focus of this work was to accurately model phase equilibria of ternary electrolyte solutions with ePC-SAFT with strategy 2. In a first step, solution densities and osmotic coefficients of binary single-solute aqueous electrolyte systems were modeled. Based on this, the ternary mixtures biomolecule/salt/water and organic solvent/salt/water were modeled. For these mixtures, liquid-liquid equilibria (LLE), solid-liquid equilibria (SLE), and vapor-liquid equilibria (VLE) were considered.",
+      "zotero_attachment_key": "TZJJENHW"
+    }
+  ],
+  "query": "densities osmotic temperature",
+  "title": "EPC-SAFT revised",
+  "warnings": [],
+  "zotero_key": "3DIW87Q5"
+}

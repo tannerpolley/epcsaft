@@ -1,0 +1,15 @@
+row,T,comparisons,ordinary,within_estimated_error,failed,max_difference_over_radius_sum,pressure,density,composition,amount
+49,265.5,9,8,1,0,0.016105727394767542,0: ordinary,0: ordinary; 1: estimated_error,0: ordinary; 1: ordinary; 2: ordinary; 3: ordinary,0: ordinary; 1: ordinary
+50,265.5,9,8,1,0,0.016105727394767542,0: ordinary,0: ordinary; 1: estimated_error,0: ordinary; 1: ordinary; 2: ordinary; 3: ordinary,0: ordinary; 1: ordinary
+51,265.5,9,8,1,0,0.016105727394767542,0: ordinary,0: ordinary; 1: estimated_error,0: ordinary; 1: ordinary; 2: ordinary; 3: ordinary,0: ordinary; 1: ordinary
+52,265.5,9,8,1,0,0.016105727394767542,0: ordinary,0: ordinary; 1: estimated_error,0: ordinary; 1: ordinary; 2: ordinary; 3: ordinary,0: ordinary; 1: ordinary
+53,265.5,9,8,1,0,0.016105727394767542,0: ordinary,0: ordinary; 1: estimated_error,0: ordinary; 1: ordinary; 2: ordinary; 3: ordinary,0: ordinary; 1: ordinary
+54,265.5,9,6,3,0,0.030332934339188957,0: ordinary,0: ordinary; 1: estimated_error,0: ordinary; 1: ordinary; 2: estimated_error; 3: estimated_error,0: ordinary; 1: ordinary
+55,265.5,9,9,0,0,0.0005088016084342649,0: ordinary,0: ordinary; 1: ordinary,0: ordinary; 1: ordinary; 2: ordinary; 3: ordinary,0: ordinary; 1: ordinary
+56,265.94999999999999,9,6,3,0,0.023529365917587485,0: ordinary,0: ordinary; 1: estimated_error,0: ordinary; 1: ordinary; 2: estimated_error; 3: estimated_error,0: ordinary; 1: ordinary
+57,265.94999999999999,9,6,3,0,0.023529365917587485,0: ordinary,0: ordinary; 1: estimated_error,0: ordinary; 1: ordinary; 2: estimated_error; 3: estimated_error,0: ordinary; 1: ordinary
+58,265.94999999999999,9,6,3,0,0.023529365917587485,0: ordinary,0: ordinary; 1: estimated_error,0: ordinary; 1: ordinary; 2: estimated_error; 3: estimated_error,0: ordinary; 1: ordinary
+59,265.94999999999999,9,6,3,0,0.023529365917587485,0: ordinary,0: ordinary; 1: estimated_error,0: ordinary; 1: ordinary; 2: estimated_error; 3: estimated_error,0: ordinary; 1: ordinary
+60,265.94999999999999,9,6,3,0,0.023529365917587485,0: ordinary,0: ordinary; 1: estimated_error,0: ordinary; 1: ordinary; 2: estimated_error; 3: estimated_error,0: ordinary; 1: ordinary
+61,265.94999999999999,9,4,5,0,0.7663543140717161,0: estimated_error,0: estimated_error; 1: estimated_error,0: ordinary; 1: ordinary; 2: estimated_error; 3: estimated_error,0: ordinary; 1: ordinary
+62,265.94999999999999,9,4,5,0,0.6170817235554399,0: estimated_error,0: estimated_error; 1: estimated_error,0: ordinary; 1: ordinary; 2: estimated_error; 3: estimated_error,0: ordinary; 1: ordinary

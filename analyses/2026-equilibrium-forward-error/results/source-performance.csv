@@ -1,0 +1,5 @@
+Case,Arm,Serial CPU / s,Full-fit wall / s,Reference Taylor evaluations,Work identical,State difference,Fit state difference
+mea-f1/residual-jacobian,A,4.474038512,7.251460070,0,True,0.0,0.0
+mea-f1/residual-jacobian,B,4.617727648,7.386492483,0,True,0.0,0.0
+mea-cp/hilliard-353.15-K-0.358,A,0.606550607,not requested,0,True,0.0,not requested
+mea-cp/hilliard-353.15-K-0.358,B,0.617545855,not requested,0,True,0.0,not requested

@@ -21,13 +21,13 @@ std::vector<double> resolve_feed(
 std::vector<double> resolve_feed(const IdealMoleFraction& model, const FeedSpec& feed);
 
 std::vector<std::vector<double>> balance_basis(
-    std::size_t components, const std::vector<ReactionSpec>& reactions
+    std::size_t components, const std::vector<ReactionSpec>& reactions, CompiledSystem* observations = nullptr
 );
 
 std::vector<double> standard_state(
     double temperature, std::size_t components,
     const std::vector<ReactionSpec>& reactions,
-    const std::vector<double>& supplied, const ThermochemistryRecord* thermochemistry = nullptr
+    const std::vector<double>& supplied, const ThermochemistryRecord* thermochemistry = nullptr, CompiledSystem* observations = nullptr
 );
 
 // series[k][i] is d^k g_i / dT^k of the minimum-norm standard state (one gauge for every
@@ -36,7 +36,8 @@ std::vector<double> standard_state(
 std::vector<std::vector<double>> standard_state_series(
     double temperature, std::size_t components,
     const std::vector<ReactionSpec>& reactions,
-    const std::vector<double>& supplied, std::size_t order, const ThermochemistryRecord* thermochemistry = nullptr
+    const std::vector<double>& supplied, std::size_t order, const ThermochemistryRecord* thermochemistry = nullptr,
+    std::vector<std::vector<double>>* inverse_map = nullptr, CompiledSystem* observations = nullptr
 );
 
 // series[k][r] is d^k t_r / dT^k of the reaction target t_r = nu_r . g in J/mol:

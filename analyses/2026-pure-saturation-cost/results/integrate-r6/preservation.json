@@ -1,0 +1,50 @@
+{
+  "base": "94b4de3815ef14328e518f5afc297aa0c3b3376b",
+  "regular_states": 251,
+  "regular_values": 10040,
+  "bitwise_differences": 0,
+  "availability_differences": 0,
+  "actions": {
+    "rows": 985,
+    "cases": 6,
+    "maximum_scaled_difference": 0.0,
+    "failures": []
+  },
+  "critical": [
+    {
+      "temperature_K": 375.13,
+      "arm": "B",
+      "correction": 3.5660414473122904e-14,
+      "estimate": 1.552043638705378e-13
+    },
+    {
+      "temperature_K": 375.139,
+      "arm": "B",
+      "correction": 3.9995706012090776e-13,
+      "estimate": 1.0211263518029053e-11
+    },
+    {
+      "temperature_K": 375.13,
+      "arm": "A",
+      "correction": 3.5660414473122904e-14,
+      "estimate": 1.552043638705378e-13
+    },
+    {
+      "temperature_K": 375.139,
+      "arm": "A",
+      "correction": 3.9995706012090776e-13,
+      "estimate": 1.0211263518029053e-11
+    }
+  ],
+  "corpora": {
+    "Cameretti 2005 default start": [],
+    "Gross 2002 default start": [],
+    "neutral methane/ethane sweep": [],
+    "#243 matrix": [],
+    "replay rows (4 sections)": [],
+    "MEA flash family": []
+  },
+  "allocation_failure_propagated": true,
+  "routing": "eligible, ineligible, options file, reversed phases, optional absence and snapshot ownership passed",
+  "basis": "Numerical verification of fixed declarations; no physical validation or parameter uncertainty claim"
+}

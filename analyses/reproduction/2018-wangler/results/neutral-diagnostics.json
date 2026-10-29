@@ -1,0 +1,12 @@
+{
+  "bubble_relative_difference": 4.101655681765237e-10,
+  "maximum_term_mu_difference": 8.388454375563015e-09,
+  "term_sum_error": 2.396749465560788e-11,
+  "term_step_change": 1.7466561530454783e-10,
+  "common_density_pressure_difference_Pa": -0.1871163809337304,
+  "Engine_bubble_residual": 4.440892098500626e-15,
+  "FeOs_pressure_closure_Pa": 3.1508170650340617e-06,
+  "FeOs_association_residual": "not exposed by FeOs Python interface",
+  "Kim_neat_measurement_AARD_percent": 17.9389116334495,
+  "claim_limits": "Numerical verification at declared neutral states; no temperature derivatives, ionic model or global stability qualification."
+}

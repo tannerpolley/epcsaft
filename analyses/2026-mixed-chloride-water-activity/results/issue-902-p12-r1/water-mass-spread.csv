@@ -1,0 +1,9 @@
+state,observable,min_prediction,max_prediction,meaning
+feed,aw,0.42575432105659922,0.64091295244752899,discrete predictions; not measurement uncertainty
+feed,phi,2.1226840116338779,2.7162672465535329,discrete predictions; not measurement uncertainty
+scrub,aw,0.39680017254484556,0.62291837957649543,discrete predictions; not measurement uncertainty
+scrub,phi,2.3320403529447313,3.035954838553808,discrete predictions; not measurement uncertainty
+regeneration,aw,0.46691665461791393,0.67864724675773103,discrete predictions; not measurement uncertainty
+regeneration,phi,2.1518032182994506,2.8183618258176288,discrete predictions; not measurement uncertainty
+strip,aw,0.57144040459419809,0.73820709818903485,discrete predictions; not measurement uncertainty
+strip,phi,1.6848505042712618,2.0708141787258034,discrete predictions; not measurement uncertainty

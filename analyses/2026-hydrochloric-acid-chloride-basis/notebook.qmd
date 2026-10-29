@@ -1,5 +1,5 @@
 ---
-title: "HCl on a frozen chloride basis: identified trials fail binary accuracy"
+title: "HCl on a frozen chloride basis: a conditional profile meets the Jiang target"
 format:
   html:
     embed-resources: true
@@ -9,247 +9,315 @@ execute:
   warning: false
 ---
 
-## Both one-coordinate trials fail binary accuracy
+## Packet read-back preserves the inherited chloride results
 
-Both one-coordinate trials, with $k_{H,Cl}=0$ and $k_{H,Cl}=1$, identify
-their sole fitted H–water dispersion correction under the frozen numerical
-rule, then fail the frozen 2a Hamer–Wu osmotic-coefficient
-root mean square error in both molality buckets. The retrial also fails the
-upper-bucket osmotic maximum and activity mean absolute relative deviation.
-The table places each trial's two buckets alongside the other trial; activity
-errors are percentages and osmotic errors are dimensionless.
+The frozen hydrogen endpoint reproduced its retained predictions when loaded
+from a staged parameter packet. All 25 compared result files were exactly
+equal across the inherited chloride control, hydrogen extension and read-back
+arms. The [preservation comparison](results/packet-readback-r4/preservation.json)
+retains the file inventory. Copied input packets are excluded from this result
+comparison; a separate document check verifies the inherited component, pair
+and source prefixes and all other unchanged top-level fields.
+The [admission record](results/packet-readback-r4/admission.json) confirms the
+published parameter bytes equal the staged bytes. The
+[outcome](results/packet-readback-r4/outcome.json) records the reached quantities.
 
-{{< include results/issue-798-retrial/comparison-table.md >}}
+All calculations used the declared temperature and pressure reported below. The loaded staged packet supplied
+the parameters. Its [replay](results/packet-readback-r4/replay.json) matched all
+70 fitted observations plus 14 adjusted-water guards of zero fitting weight,
+and all 148 comparison rows, within the declared relative and absolute tolerances,
+with matching availability and causes. The ten Jiang calibration rows were
+also evaluated by the source evaluator and were kept separate from the
+148 comparison rows. Fresh-process evaluations matched the reached values.
+Every independent [binary and water bucket](results/packet-readback-r4/binary-guards.json)
+passed with the metrics and limits reported below. The [14 numerical cases](results/packet-readback-r4/numerical.json)
+passed; the largest log-activity identity error is reported below.
 
-The H–Cl coefficient in each column is a **modelling assumption**. Stage one's
-zero correction retains geometric-mean H–Cl attraction. The retrial's unit
-correction removes H–Cl dispersion: the native combining-rule check returns
-exactly zero cross energy. The Engine admits that coefficient without a code
-change. Both trials use the same fixed hydrogen sizes and energy, fully
-dissociated aqueous HCl, temperature, pressure, evaluated Hamer–Wu training
-states, weights, transforms, starts, bounds, fit budgets and identification
-rule. The [fresh retrial declaration](inputs/fit-declaration-issue-798-retrial.json)
-changes only the H–Cl assumption and its description.
+{{< include results/packet-readback-r4/checks.md >}}
 
-Binary accuracy is calibration evidence, not physical validation. These
-locally identified endpoints do not demonstrate microscopic proton structure,
-global uniqueness, mixture accuracy, physical model failure or global
-infeasibility. The local excursion $h$ describes discrepancy resolution rather
-than a confidence interval; shared evaluated-data lineage and discrepancy
-weights do not establish measurement uncertainty.
+The following errors are calculated from the staged packet's read-back values.
+HCl–water through 7 mol/kg and HCl–LiCl at ionic strength 5 are calibration.
+The other mixture lines are report-only comparisons, with no accuracy pass/fail
+rule. [Complete per-source and per-line errors](results/packet-readback-r4/accuracy.csv)
+retain mean, worst and signed-mean errors, including pure-HCl endpoints scored
+separately from mixtures.
 
-H⁺ is unavailable on the chloride basis, and there is no `/3` parameter packet.
-Reserved sources remain unopened for scientific scoring; no later mixture
-checks or historical chloride-basis replay follows. Independent delivered review confirmed both trials' identification and binary
-scores; neither has investigator promotion for manuscript use.
+{{< include results/packet-readback-r4/accuracy.md >}}
 
-The [binary metrics](results/issue-798-retrial/binary-metrics.csv) and
-[signed retrial errors](results/issue-798-retrial/issue-798-retrial-binary-errors.csv)
-come from one scorer using the selected, finite, available retained predictions
-in declared observation order. The same scorer reproduces the original
-[stage-one signed errors](results/issue-798-retrial/issue-798-r2-binary-errors.csv).
-The retrial's [fit statuses](results/issue-798-retrial/fit-status.csv),
-[identification](results/issue-798-retrial/identification.csv),
-[local resolution](results/issue-798-retrial/local-resolution.csv),
-[native values](results/issue-798-retrial/fit-values.csv),
-[trial failures](results/issue-798-retrial/trial-failures.csv),
-[cross energy](results/issue-798-retrial/H-Cl-dispersion.csv), and
-[execution identity](results/issue-798-retrial/native-identity.json) retain
-all starts and the native calculation evidence. Presentation reads these files
-without rerunning the fit.
+The MgCl₂ mixtures are overpredicted on average: Roy's signed mean is about
++15.7%, with a worst absolute error about 52%. Some dilute lines have negative
+signed means. HCl–LiCl underprediction grows with ionic strength, reaching
+about −10% mean at 7 mol/kg. The two dispersion coordinates are one point
+on a strongly correlated ridge, not a uniquely identified pair. These results
+apply only at the declared temperature and do not support brines above the measured mixture
+range, including 12.8–14.6 mol/kg. They provide calibration, comparisons with
+measurements and numerical verification, without propagated measurement or
+model uncertainty or independent physical validation. The read-back result
+has not been independently reviewed or promoted for manuscript use.
 
-## Stage-one identification details
+Each arm executed the complete mixed-chloride realization inventory and the lithium
+preservation calculations, including all 455 Yao realizations. The result files preserve
+inherited predictions, metrics, failures and causes exactly. The staged
+byte-identity admission passed and the hydrogen extension was published.
+The exact physical-result comparison is numerical verification; it does not
+revalidate inherited measurements or expand their scientific domain.
 
-The following native output was recorded at identification, before the binary
-scoring reported above. The retrial
-[native outcome](results/issue-798-retrial/outcome.txt) has the same limited
-timing; both preserved native outcomes precede binary scoring.
+## The two existing H dispersion coordinates can meet the Jiang target
 
-{{< include results/issue-798-r2/outcome.md >}}
+The declared profile found a **successful diagnostic candidate** under the
+conditions below. All binary osmotic, binary activity and adjusted-water guards
+pass, and the nine Jiang mixtures at $I=5$ meet the declared 5% mean and 10%
+worst error targets. The selected guard table below also reports the pure-HCl
+endpoint error separately. These values come from the retained profile,
+not from the earlier two-coordinate identification screen.
 
-{{< include results/issue-798-r2/selected.md >}}
+{{< include results/issue-901-profile-r2/conditions-profile.md >}}
 
-This trial fixes the H–Cl dispersion correction to zero as an explicit
-modelling assumption: it retains geometric-mean H–Cl attraction. Only the
-H–water dispersion correction is fitted. The segment diameter and dispersion
-energy use Held et al. (2008), Table 2; packing and Debye–Hückel diameters use
-the frozen fraction of the segment diameter, and the Born diameter equals the
-segment diameter. Their transfer to the chloride basis is an assumption.
+{{< include results/issue-901-profile-r2/frozen.md >}}
 
-{{< include results/issue-798-r2/fixed-table.md >}}
+This point changes only reciprocal H–water and H–Cl dispersion coefficients.
+The inherited chloride basis and all H sizes and energy remain fixed. Native
+Ceres fits the H–water coordinate conditionally at each fixed H–Cl value.
+The five equal objective blocks are Hamer–Wu activity and osmotic coefficients
+in two molality buckets plus the ten Jiang $I=5$ rows. The adjusted-water
+comparison supplies guards and depends on Hamer–Wu; it is not independent
+validation. The [frozen declaration](inputs/fit-declaration-issue-901.json)
+identifies the accepted design, amendments and readiness by hash.
+
+{{< include results/issue-901-profile-r2/selected-guards.md >}}
+
+![All sampled points have complete training evaluations. The selected region passes both the binary/water guard ratio B and the mixture target ratio V.](results/issue-901-profile-r2/profile.png)
+
+The [profile table](results/issue-901-profile-r2/profile.csv) contains 42 coarse
+points and eight new refinement points. Every one of the three starts at each
+point converged; all training and guard evaluations were available, finite and
+numerically verified. No failed native trial was returned. The profile retained
+both exact coordinate columns, density and reference diagnostics, fit costs,
+conditional covariance, bound distances and iteration times. Fresh-process
+[selected-point replay](results/issue-901-profile-r2/replay/training-comparison.csv)
+and [source replay](results/issue-901-profile-r2/replay/summary.csv) agree within
+the declared value allowances, with matching availability and causes.
+
+![Source observations are points; the selected native model is connected in composition order.](results/issue-901-profile-r2/jiang-I5.png)
+
+Transfer accuracy remains limited. The selected point was frozen before any
+comparison evaluation; repeating selection with comparison summaries unavailable
+preserved it in the [invariance check](results/issue-901-profile-r2/selection-invariance.json).
+The table reports mixtures separately from pure-HCl endpoints. Errors are
+percent; each source's individual ionic-strength groups and endpoint rows remain
+in the [transfer table](results/issue-901-profile-r2/transfer.csv). All comparison
+rows passed numerical admission. Poor accuracy did not reject or replace the
+candidate. These previously opened sources are report-only comparisons.
+
+{{< include results/issue-901-profile-r2/selected-transfer.md >}}
+
+The [wall-time record](results/issue-901-profile-r2/wall-time.json) separates
+native profile-process duration from preparation. Whole three-start call times
+are retained in the [attempt table](results/issue-901-profile-r2/attempts.csv).
+Individual-start wall times are unavailable; native per-iteration times are not
+substituted for them. The optional pressure comparison was not run.
+
+{{< include results/issue-901-profile-r2/timing-profile.md >}}
+
+The signed objective-column correlation is the negative of the inverse-normal-matrix
+correlation reported in the selected-point diagnostics below. Its absolute
+magnitude is the same. Both exact columns remain strongly correlated:
+
+{{< include results/issue-901-profile-r2/selected-columns.md >}}
+
+This is a selected point on a ridge, not an identified parameter pair. Conditional
+one-coordinate covariance gives no uncertainty in the fixed H–Cl coordinate;
+no joint confidence interval or propagated measurement/model uncertainty is
+reported. The finding is calibration and numerical verification with transfer
+comparisons to measurements. It concerns the declared effective-H model at this
+temperature, binary molality through 7 mol/kg and source ionic strengths through
+7 mol/kg water. It does not establish arbitrary-mixture validity, global phase
+stability, continuous-domain infeasibility, or a microscopic proton model.
+It makes no concentrated TOP–FeCl₃ brine claim and changes no cation-mixing
+record. No inherited coefficient was refitted. This profile selected the endpoint;
+the subsequent read-back and preservation work published the parameter packet.
+Independent delivered review and investigator promotion remain pending.
+
+## Earlier joint trial: the sensitivity screen stopped optimization
+
+
+The earlier joint calibration of $k_{H,w}$ and $k_{H,Cl}$ stopped before optimization:
+the exact weighted residual columns fail the declared absolute-correlation
+limit of **0.99** at every start. All predictions and exact columns are
+available and finite; both column norms are positive. This is a numerical
+information-screen result, rather than an optimized fit or physical validation.
+The added mixture data do not separate these two interactions sufficiently
+under the frozen objective and starting-point rule. No new hydrogen packet
+is published.
+
+{{< include results/issue-894/screen.md >}}
+
+Training now consists of 60 Hamer–Wu scalar targets (30 osmotic and 30 mean
+ionic activity coefficients) and all 47 corrected Roy mixtures. Roy is
+**training**, with equal total weight per ionic-strength line; its eleven
+pure-HCl endpoints have zero fitting weight and remain required checks.
+The four Hamer–Wu property/concentration groups retain their original weights.
+The native observation path carries the complete fixed mixture inventory,
+with pure-water references evaluated separately and exact parameter derivatives.
+
+No optimizer was run, so there is no fitted endpoint, endpoint identification,
+training-accuracy result or confidence interval for this joint trial.
+Khoo–Mg, Jiang–Li and Khoo–Ca remain unopened, in that frozen qualification
+order. Their predictions, the full preservation replay and staged packet
+read-back were not reached. The first failed rule is the pre-fit correlation
+screen; later checks cannot change that disposition.
+
+The owner's osmotic accuracy RMS limit remains **0.011** in each binary
+bucket, with maximum absolute error **0.03**. The fitted osmotic residual
+scale remains **0.01**. All other declared limits remain unchanged.
+The earlier single-coordinate calibration and Roy failure below are historical
+comparisons; Roy no longer supplies held-out qualification for this joint trial.
+
+The retained conditions and previously evaluated Roy inventories give the
+training domains below. Analytical molalities are per kilogram of water;
+all states are fully dissociated.
+
+{{< include results/issue-894/conditions.md >}}
+
+These bounds do not qualify arbitrary mixtures throughout that range.
+The screen supplies local numerical information, not parameter uncertainty or
+proof of global non-identifiability. TOP–FeCl₃ brines at 12.8–14.6 mol/kg,
+other temperatures and additional ions are not covered.
+
+## Earlier binary calibration and reserved Roy comparison
+
+The selected effective hydrogen-ion model passes the binary comparisons under
+the owner's relaxed osmotic root mean square (RMS) error limit of **0.011**, up
+from **0.010**. All other limits are unchanged. It fails the first held-out
+mixture source: Roy et al.'s HCl–MgCl₂ measurements. Across 47 true mixtures,
+activity-coefficient mean and maximum absolute relative errors are
+reported as the values in the source table below, against limits of **5%** and **10%**.
+The chloride basis therefore has no adopted hydrogen records or `/3` packet.
+
+The calculation uses the selected H–water endpoint and $k_{H,Cl}=0$, with the
+fixed hydrogen dimensions and energy in the
+[parameter declaration](inputs/fit-declaration-issue-798-r2.json).
+The endpoint was selected by the lowest binary fitting cost before mixture
+qualification. It was reused without fitting again or adding starts.
+The zero H–Cl correction is a modelling assumption that retains geometric-mean
+cross attraction; it does not identify a microscopic proton interaction.
+
+The retained conditions below give temperature and liquid pressure; the
+source table gives both liquid pressures used for the comparison.
 
 {{< include results/issue-798-r2/conditions.md >}}
+ The calibration domain is at most
+**7 mol/kg water**. The held-out Roy source reaches ionic strength 5 mol/kg.
+These results do not cover concentrated extraction brines or other temperatures.
 
-The [fresh declaration](inputs/fit-declaration-issue-798-r2.json) retains the
-ordered starts, fixed quantities, objective and identification limits.
-Native Ceres performs the fits and returns exact weighted sensitivities,
-singular values and unscaled inverse information. Lowest binary cost selects
-the diagnostic endpoint; qualification data play no part in that selection.
+## Binary calibration and adjusted water activity
 
-{{< include results/issue-798-r2/fit-table.md >}}
+The 60 retained Hamer–Wu predictions cover 30 binary states. The two RMS
+comparisons pass under the relaxed limit; they failed under the former 0.010
+limit. The fitted objective and its 0.01 osmotic residual scale were unchanged.
+The activity-coefficient errors below are percentages; osmotic errors are
+dimensionless. Maximum osmotic error remains limited to 0.03, and activity
+mean/maximum absolute relative errors remain limited to 2%/5%.
 
-{{< include results/issue-798-r2/identification-table.md >}}
+{{< include results/binary-water-qualification/binary-metrics.md >}}
 
-{{< include results/issue-798-r2/diagnostics-table.md >}}
+The 14 adjusted Messnaoui water-activity rows also pass, separately in both
+buckets. RMS and maximum absolute error limits remain 0.003 and 0.006.
 
-{{< include results/issue-798-r2/sensitivity-table.md >}}
+{{< include results/binary-water-qualification/water-metrics.md >}}
 
-{{< include results/issue-798-r2/limits-table.md >}}
+The [water rows](results/binary-water-qualification/native/water.csv) preserve
+measured and adjusted $K$, original and adjusted water activity and osmotic
+coefficient, predictions, signed errors and liquid-density evidence.
+The correction uses the retained adjusted water activity directly; it was
+neither reconstructed nor fitted. Its lineage includes the Hamer–Wu evaluation,
+so this is not independent physical validation. The source's uncertainty
+footnote assigns about 0.0005 above water activity 0.95 and 0.002 below it;
+molality and temperature standard uncertainties are 0.01 mol/kg and 0.02 K.
+These were not propagated into parameter or prediction intervals.
 
-The local excursion $h$ is computed from the declared cost increment and
-native inverse information. It is a discrepancy resolution measure, not a
-confidence interval. Endpoint distance is measured from the selected endpoint
-in the fitted coordinate. Bound distances are ordered lower then upper.
-The Hamer–Wu states are an evaluated binary reference with shared lineage;
-the weights describe model discrepancy rather than measurement variances.
-Identification is a numerical requirement, not physical validation or evidence
-of microscopic proton structure, global uniqueness or mixture accuracy.
+Original Messnaoui water errors can be obtained from the same predictions and
+preserved original targets. The
+[report-only water predictions](results/binary-water-qualification/report-only/report.csv)
+cover the 14 El Guendouzi rows and nine Hamer–Wu extrapolation states at 8–16
+mol/kg. Those extrapolations do not extend the qualified domain. Parenthesized
+source $K$ values were not parsed as numbers. These report-only comparisons
+supply no rejection rule and cannot rescue a failed required comparison.
 
-This trial originally stopped at identification. The retained predictions are
-now scored above; reserved mixture scoring and the historical chloride-basis
-replay remain unperformed.
-No parameter packet is created. The [native values](results/issue-798-r2/fit-values.csv),
-[trial failures](results/issue-798-r2/trial-failures.csv),
-[execution identity](results/issue-798-r2/native-identity.json) and
-[library mappings](results/issue-798-r2/native-mappings.txt) retain diagnostics
-and the actual calculation identities. The presentation computes the tables
-from retained files without repeating the fit. Stage-one identification has
-received independent delivered review; manuscript use has not been promoted.
+## Numerical verification before qualification
 
-## Earlier multi-coordinate diameter and dispersion trials (#676)
+The [numerical cases](results/binary-water-qualification/numerical/numerical.csv)
+compare scalar and full-solute binary log activity coefficients at molality
+0.001, 0.2, 1, 3 and 7 mol/kg, then finite and trace HCl in LiCl, MgCl₂ and
+CaCl₂ backgrounds. Every log-activity identity difference is below the declared numerical limit;
+the numerical summary below gives the largest difference and its limit.
 
-{{< include results/r2/outcome.md >}}
+{{< include results/binary-water-qualification/numerical-summary.md >}}
+The mixed-solution comparison uses the finite fugacity/reference identity
+only for verification; native full-solute activity supplies predictions.
+The analytical inventory retains common chloride and electroneutrality,
+with total solute-species molality for normalization.
+Required densities and pressure slopes are finite and positive. Density
+closure residuals and reference-solvent density residuals are retained.
+The reference uses analytic insertion, with no dilution-sequence convergence
+error. The native owner supplies the solvent-state density closure record.
 
-The unrestricted model completed its starts at numerical bounds. The
-Born–Debye–Hückel diameter restriction produced interior endpoints, but an
-allocated original-seed start exhausted the amended iteration allowance.
-The prescribed sequence therefore stops before the remaining restrictions.
-There is no adopted hydrogen parameter set or new parameter packet. This is
-incomplete numerical estimation, with no conclusion about physical model
-failure or global infeasibility.
+A [fresh-process replay](results/binary-water-qualification/cold/equivalence.json)
+returns identical numerical-case values and identical values, availability and causes for
+all 14 adjusted-water states and 23 report-only binary states. These binary
+replays now run before the Roy source read; the first delivery omitted them.
+The per-value differences and frozen allowances are retained in the
+[adjusted-water comparison](results/binary-water-qualification/cold/native/comparison.csv)
+and [report-only comparison](results/binary-water-qualification/cold/report-only/comparison.csv). All 60 direct selected-parameter
+training predictions agree with their retained counterparts within the
+ALG-FIT relative/absolute allowances, including the dilute osmotic allowance.
+The [training comparison](results/binary-water-qualification/cold/training-comparison.csv)
+retains each difference and its allowance. This is numerical verification,
+not a measurement comparison. Historical old/new scalar evidence remains
+separate in [the earlier comparison](results/r3/activity-verification.csv).
 
-The question is whether an effective hydrogen ion on the
-[frozen chloride basis](../../data/packets/figiel-2025-chloride-mixture-refit/2/packet.toml)
-can represent evaluated binary acid properties and predict reserved common-ion
-mixtures. The hydronium identity introduces neither hydration equilibrium nor
-a change in solvent inventory. The [new declaration](inputs/fit-declaration-r2.json)
-freezes the accepted amendment, original seeds, unchanged input hashes,
-objective, full identification rule, committed calculation sources and built
-library. The executable checked its actual loaded library path before fitting;
-[execution identity](results/r2/native-identity.json) and
-[library mappings](results/r2/native-mappings.txt) retain that verification.
-No endpoint from the [first declaration](inputs/fit-declaration.json) entered
-this fresh decision. Its declaration and result files remain unchanged;
-the historical source/library discrepancy does not establish their equivalence
-to this execution.
+## First held-out source and stopping point
 
-The [source record](inputs/source-provenance.json) identifies tables, evidence
-classes, corrections, pressure conventions and missing uncertainties.
+Roy et al., Table I, pp. 912–913, supplies 47 true mixtures and 11 separately
+scored pure-HCl endpoints. Its ionic-strength fraction is
+$y_B=3m_{MgCl_2}/I$, with $m_{HCl}=I(1-y_B)$.
+Source-reported derived HCl activity coefficients are used directly. All 58 rows
+were rechecked visually against the printed 25 °C columns; eight fields in
+five rows were corrected, including the last background fraction at
+ionic strength 2.5 mol/kg. The [transcription record](results/binary-water-qualification/roy-transcription.json)
+identifies every correction and the source PDF hash. Predictions at both
+pressures were regenerated without refitting.
+The retained rows preserve cell potential, source locator, standard potential
+at the stated temperature (retained in the source rows), and the one-atmosphere hydrogen-gas convention.
+Liquid pressure is compared separately, reconstructing references at each
+pressure. No electrode offset was fitted.
 
-{{< include results/r2/conditions.md >}}
+{{< include results/binary-water-qualification/roy/pressure-metrics.md >}}
 
-{{< include results/r2/stage-table.md >}}
+Neither whole-source nor fixed-ionic-strength decisions change with liquid
+pressure. The pressure differences are retained for every source row. The eleven
+pure-HCl endpoints pass the pooled 2% mean / 5% maximum limits. The
+largest endpoint error (at ionic strength 3 mol/kg) is below the 5% maximum; no
+per-endpoint 2% rejection applies.
+The true-mixture whole-source failure already rejects qualification.
 
-{{< include results/r2/fit-table.md >}}
+[Signed source errors](results/binary-water-qualification/roy/100000/errors.csv),
+[pressure differences](results/binary-water-qualification/roy/pressure-differences.csv)
+and the [source hash](results/binary-water-qualification/roy-open.sha256)
+retain the reached comparison. Roy quotes approximately 0.0006 uncertainty
+in $\log_{10}\gamma$; no row-specific uncertainty model or uncertainty
+propagation was added. The model error here is much larger than that scale.
 
-The training curve is the Hamer–Wu evaluation, rather than independent new
-experiments. Its property columns share lineage and thermodynamic constraints.
-The discrepancy weights are model comparison scales, not experimental
-variances. The corrected water comparison also depends on that evaluation.
+Execution stopped at this failure. The subsequent Khoo HCl–MgCl₂, Jiang
+HCl–LiCl and Khoo HCl–CaCl₂ sources remain unopened. A matched Roy cold
+comparison, historical chloride preservation replay, staged packet writing,
+read-back and promotion were not reached. No packet was written.
+The [outcome](results/binary-water-qualification/outcome.txt) and
+[execution identities](results/binary-water-qualification/execution-identity.json)
+identify the retained calculation.
 
-### Identification evidence for the earlier multi-coordinate trials
-
-Full numerical rank does not establish practical parameter identification.
-The unrestricted endpoints have active bounds and unavailable inverse
-information. In the tied-diameter stage the converged endpoints exceed the
-free-coordinate correlation and local-resolution limits. Their small separation
-cannot override the incomplete original-seed start, which prevents a completed
-stage decision. Later restrictions remain unattempted, as required by the
-amendment's stopping rule.
-
-{{< include results/r2/identification-table.md >}}
-
-{{< include results/r2/resolution-table.md >}}
-
-Local excursions use the unscaled native inverse-information matrix and the
-declared discrepancy increment. They are sensitivity quantities, not confidence
-intervals or measured proton-size uncertainties. Missing matrices are
-unavailable, not zero uncertainties. The [complete correlation matrices](results/r2/correlation.csv)
-are native scalar readouts of the retained inverse-information matrices;
-the presentation verifies their maxima against the native identification rows.
-
-{{< include results/r2/parameter-table.md >}}
-
-These vectors are diagnostic endpoints only. They are neither accepted
-parameters nor estimates of microscopic proton structure.
-
-![Native objective histories for both reached model sizes. Each point is a retained Ceres iteration.](figures/r2-convergence.png)
-
-{{< include results/r2/plot-note.md >}}
-
-The histories show objective progress within the allowance, not equivalence of
-minima. Every trial failure remains available through the
-[retained file reference](results/r2/trial-failures.json): this fresh execution
-returned byte-identical failure rows to the historical file, so their shared
-bytes have one storage owner. No historical endpoint was reused. The complete
-[native values](results/r2/fit-values.csv) retain physical vectors, predictions,
-residuals, exact Jacobians, singular spectra and vectors, bounds and costs.
-
-### Qualification and claim limits for the earlier multi-coordinate trials
-
-{{< include results/r2/qualification-table.md >}}
-
-For those earlier multi-coordinate trials, no endpoint was identified, so
-binary accuracy acceptance, held-out mixture qualification and the full
-historical chloride-basis replay were not opened.
-No qualified packet was created. The requested concentrated lithium application
-state remains outside verified measurement coverage. Inherited concentrated
-magnesium limits and evidence roles of the earlier chloride basis remain.
-
-{{< include results/r3/coverage.md >}}
-
-The optional full-solute activity calculation has separate numerical verification
-in [the retained HCl comparisons](results/r3/activity-verification.csv); it does not
-validate the unaccepted hydrogen parameters against measurements. Computational
-comparison gates check preservation of prior numerical behavior, not acid-mixture
-accuracy. The [delivery evidence](results/r3/delivery.json) identifies those checks
-and their retained outputs.
-
-The binary comparison uses the same HCl declaration in both calls. Its old
-scalar values come from the retained pre-extension Engine image, and the native
-reader requires bitwise equality with the current scalar call. The full-solute
-values agree within the design tolerance. Trace HCl in each background salt
-also agrees with the verification-only fugacity identity and returns a finite
-osmotic coefficient. A scalar HCl call omits background salt and therefore
-represents a different solution; its trace value is retained for comparison,
-not used as the mixed-solution reference. Background names come from the retained candidate declaration; no background
-denotes binary HCl. Molalities are moles per kilogram of water. Logarithms and
-osmotic coefficients are dimensionless.
-
-{{< include results/r3/activity-table.md >}}
-
-[The verification identity](results/r3/activity-identity.json) records both
-Engine images and the unchanged fit-calculation bytes.
-[Temporary result perturbations](results/r3/falsification.json) made the binary,
-trace and old/new scalar checks fail; the source was restored before the
-passing run. These are numerical verification cases, with no new measurement
-comparison or parameter adoption. The fit, key-solve and corpus evidence is
-retained without a rerun because runtime arithmetic and fit calculations are
-unchanged.
-
-{{< include results/r3/gates-table.md >}}
-
-{{< include results/r2/counters-table.md >}}
-
-{{< include results/r2/timing-table.md >}}
-
-{{< include results/r2/corpora-table.md >}}
-
-The corpus rows preserve prior successes and documented refusals; zero
-comparator failures does not mean every historical solve succeeded.
-
-The presentation reads retained files and computes every displayed number;
-the notebook never calls the Engine. The earlier multi-coordinate evidence
-has not received independent delivered review or investigator promotion for
-manuscript use. The earlier multi-coordinate sequence ended at its amended
-work limit.
+Binary agreement is calibration evidence; Roy is held-out qualification that
+fails the declared model-accuracy limits. The result supports rejection of
+this endpoint for the declared mixture use. It does not establish global
+infeasibility, physical model failure, parameter confidence intervals,
+microscopic proton structure or measured mixture water-property accuracy.

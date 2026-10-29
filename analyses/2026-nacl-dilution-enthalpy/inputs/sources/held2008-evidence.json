@@ -1,0 +1,142 @@
+{
+  "citation_key": "Held2008",
+  "conversion": {
+    "converter": "none",
+    "mode": "existing-zotero-companions",
+    "pdf_conversion": "forbidden-when-companion-exists"
+  },
+  "doi": "10.1016/j.fluid.2008.06.010",
+  "evidence_path": "wiki/evidence/D6FBI6FG",
+  "files": [
+    {
+      "format": "markdown",
+      "hash_matches": true,
+      "passages": [
+        {
+          "line_end": 109,
+          "line_start": 105,
+          "locator": "wiki/evidence/D6FBI6FG/Held, Cameretti, Sadowski - 2008 - Modeling aqueous electrolyte solutions. Part 1. Fully dissociated.md:L105-L109",
+          "match_score": 1,
+          "matched_terms": [
+            "fitted"
+          ],
+          "path": "wiki/evidence/D6FBI6FG/Held, Cameretti, Sadowski - 2008 - Modeling aqueous electrolyte solutions. Part 1. Fully dissociated.md",
+          "role": "main_article",
+          "section": "2. ePC-SAFT equation of state",
+          "text": "u_{i j}=\\sqrt{u_{i} u_{j}} \\tag{6}\n\\end{equation*}\n$$\n\nEq. (6) is applied for interactions between water and ions only. Dispersion between two ions is neglected in this work. Often, a binary interaction parameter $k_{i j}$ is introduced for the dispersive-energy parameter to account for deviations from the geometric-mean rule in the mixture. This parameter is usually fitted to the respective binary mixture's properties. However, since the parameter $u_{j} / k_{\\mathrm{B}}$ had already been fitted to salt/water systems, a $k_{i j}$ is not applied here.",
+          "zotero_attachment_key": "NG7QD2QZ"
+        },
+        {
+          "line_end": 358,
+          "line_start": 354,
+          "locator": "wiki/evidence/D6FBI6FG/Held, Cameretti, Sadowski - 2008 - Modeling aqueous electrolyte solutions. Part 1. Fully dissociated.md:L354-L358",
+          "match_score": 1,
+          "matched_terms": [
+            "fitted"
+          ],
+          "path": "wiki/evidence/D6FBI6FG/Held, Cameretti, Sadowski - 2008 - Modeling aqueous electrolyte solutions. Part 1. Fully dissociated.md",
+          "role": "main_article",
+          "section": "3. Parameter estimation",
+          "text": "\nObtaining such a universal set of parameters requires a simultaneous regression of several electrolyte solutions. For that purpose, 14 electrolytes AnCat were selected with $\\mathrm{Cat}^{+}=\\left\\{\\mathrm{Na}^{+}, \\mathrm{Li}^{+}, \\mathrm{K}^{+}\\right\\}$and $\\mathrm{An}^{-}=\\left\\{\\mathrm{F}^{-}, \\mathrm{Cl}^{-}, \\mathrm{Br}^{-}, \\mathrm{I}^{-}, \\mathrm{OH}^{-}\\right\\}$. The ion parameters were adjusted to\nthe respective electrolyte solutions except to LiF where no values for activity coefficients were available. After having adjusted the segment diameter and dispersion energy of these eight ions, the parameters of other ions (e.g. $\\mathrm{Mg}^{2+}$ ) were determined from fitting to the respective solution data (e.g. $\\mathrm{MgCl}_{2}, \\mathrm{MgBr}_{2}$, and $\\mathrm{MgI}_{2}$ ). All parameters obtained this way are listed in Table 2. (Note that due to the parameter estimation using aqueous-solution data, these ion parameters are linked to the water parameters as listed in Table 1.)\n\nFor the cations $\\mathrm{Li}^{+}, \\mathrm{Na}^{+}$, and $\\mathrm{K}^{+}$Collins et al. [26] reported X-ray and neutron diffraction measurements of aqueous salt solutions providing the distance between a central cation and the nearest water oxygen. This directly compares to the ePC-SAFT parameter $\\sigma_{j}$, since this in fact is the size of the hydrated cation. Comparing the experimental values to the $\\sigma_{j}$ parameters given in Table 2 shows an excellent agreement of experimental data and fitted parameters. This can be seen in Table 3.",
+          "zotero_attachment_key": "NG7QD2QZ"
+        },
+        {
+          "line_end": 412,
+          "line_start": 408,
+          "locator": "wiki/evidence/D6FBI6FG/Held, Cameretti, Sadowski - 2008 - Modeling aqueous electrolyte solutions. Part 1. Fully dissociated.md:L408-L412",
+          "match_score": 1,
+          "matched_terms": [
+            "fitted"
+          ],
+          "path": "wiki/evidence/D6FBI6FG/Held, Cameretti, Sadowski - 2008 - Modeling aqueous electrolyte solutions. Part 1. Fully dissociated.md",
+          "role": "main_article",
+          "section": "4.1. Solution densities and vapor pressures",
+          "text": "\n\nThe smallest cation as well as the smallest anion correspond to the $100 \\%$ value.\n\nAs it can be seen from Table 2, also the ePC-SAFT diameters for the halide anions as well as for the alkali cations follow the same trend as the Pauling diameters. The size of $\\mathrm{H}^{+}$is found between the lithium and sodium ion. This can be explained by the fact that $\\mathrm{H}^{+}$always exists as hydronium ion in water. As already mentioned above, the size parameter $\\sigma_{j}$ represent the diameter of the hydrated ions rather than the diameter of the bare ions. That's why all cation parameters are considerably larger than the Pauling radii. In contrast, the rather weakly hydrated anions possess more or less the same fitted diameter as the Pauling ones. Besides by their lower charge density, this can be explained by the structure of the water molecules: the hydrogen atoms of water can approach the anions about $0.85 \\AA$ more closely than the oxygen atoms approaching the cations [26].",
+          "zotero_attachment_key": "NG7QD2QZ"
+        },
+        {
+          "line_end": 450,
+          "line_start": 446,
+          "locator": "wiki/evidence/D6FBI6FG/Held, Cameretti, Sadowski - 2008 - Modeling aqueous electrolyte solutions. Part 1. Fully dissociated.md:L446-L450",
+          "match_score": 1,
+          "matched_terms": [
+            "fitted"
+          ],
+          "path": "wiki/evidence/D6FBI6FG/Held, Cameretti, Sadowski - 2008 - Modeling aqueous electrolyte solutions. Part 1. Fully dissociated.md",
+          "role": "main_article",
+          "section": "4.2. Mean ionic activity coefficients",
+          "text": "Fig. 8. Thermodynamic properties of aqueous RbCl solutions predicted by ePC-SAFT without parameter fitting to RbCl . (a) Vapor pressures at $40^{\\circ} \\mathrm{C}$ (squares) and at $30^{\\circ} \\mathrm{C}$ (circles). Data from Ref. [30]. (b) Mean ionic activity coefficient at $25^{\\circ} \\mathrm{C}$. Data from Lobo et al. [25]. (c) Solution densities at $20^{\\circ} \\mathrm{C}$. Data from Ref. [29].\n\nthe cation has a high charge density and the anion is a strong proton acceptor. Thus, if the anion is a weak proton acceptor, as e.g. the bromide ion, the lithium salt will be found to have the highest activity coefficient compared to the other bromides (Fig. 6) because it is the most strongly hydrated cation. However, if the anion is a strong proton acceptor, e.g., the hydroxyl ion, the extent of localized hydrolysis increases in the order $\\mathrm{Rb}^{+}<\\mathrm{Cs}^{+}<\\mathrm{K}^{+}<\\mathrm{Na}^{+}<\\mathrm{Li}^{+}$. This effect is large enough to reverse the order of the activity-coefficient values. It is worth mentioning, that ePC-SAFT can even describe this effect for the hydroxides and fluorides using the parameters given in Table 2. The description of the acetate systems requires accounting for ion pairing and will be considered in a subsequent publication [28].\n\nTo demonstrate the predictive power of ePC-SAFT, the parameters for the $\\mathrm{Rb}^{+}$ion were adjusted to six rubidium salts except to RbCl . The parameters for the chloride ion had already been adjusted before to $\\mathrm{LiCl}, \\mathrm{NaCl}$, and KCl . In Fig. 8, thermodynamic properties of RbCl solutions are presented without explicitly having fitted the $\\mathrm{Rb}^{+}$parameters to this salt. As it can be seen, vapor pressures, activity coefficients as well as solution densities of RbCl can be predicted precisely although these experimental data were not included in the parameter estimation.",
+          "zotero_attachment_key": "NG7QD2QZ"
+        }
+      ],
+      "path": "wiki/evidence/D6FBI6FG/Held, Cameretti, Sadowski - 2008 - Modeling aqueous electrolyte solutions. Part 1. Fully dissociated.md",
+      "role": "main_article",
+      "searchable": true,
+      "sha256": "dfcac60a91d6b0ec5de23dfb171c276ee75d290f331a047e7789f971b5043ff6",
+      "source_filename": "Held, Cameretti, Sadowski - 2008 - Modeling aqueous electrolyte solutions. Part 1. Fully dissociated.md",
+      "zotero_attachment_key": "NG7QD2QZ"
+    }
+  ],
+  "passages": [
+    {
+      "line_end": 109,
+      "line_start": 105,
+      "locator": "wiki/evidence/D6FBI6FG/Held, Cameretti, Sadowski - 2008 - Modeling aqueous electrolyte solutions. Part 1. Fully dissociated.md:L105-L109",
+      "match_score": 1,
+      "matched_terms": [
+        "fitted"
+      ],
+      "path": "wiki/evidence/D6FBI6FG/Held, Cameretti, Sadowski - 2008 - Modeling aqueous electrolyte solutions. Part 1. Fully dissociated.md",
+      "role": "main_article",
+      "section": "2. ePC-SAFT equation of state",
+      "text": "u_{i j}=\\sqrt{u_{i} u_{j}} \\tag{6}\n\\end{equation*}\n$$\n\nEq. (6) is applied for interactions between water and ions only. Dispersion between two ions is neglected in this work. Often, a binary interaction parameter $k_{i j}$ is introduced for the dispersive-energy parameter to account for deviations from the geometric-mean rule in the mixture. This parameter is usually fitted to the respective binary mixture's properties. However, since the parameter $u_{j} / k_{\\mathrm{B}}$ had already been fitted to salt/water systems, a $k_{i j}$ is not applied here.",
+      "zotero_attachment_key": "NG7QD2QZ"
+    },
+    {
+      "line_end": 358,
+      "line_start": 354,
+      "locator": "wiki/evidence/D6FBI6FG/Held, Cameretti, Sadowski - 2008 - Modeling aqueous electrolyte solutions. Part 1. Fully dissociated.md:L354-L358",
+      "match_score": 1,
+      "matched_terms": [
+        "fitted"
+      ],
+      "path": "wiki/evidence/D6FBI6FG/Held, Cameretti, Sadowski - 2008 - Modeling aqueous electrolyte solutions. Part 1. Fully dissociated.md",
+      "role": "main_article",
+      "section": "3. Parameter estimation",
+      "text": "\nObtaining such a universal set of parameters requires a simultaneous regression of several electrolyte solutions. For that purpose, 14 electrolytes AnCat were selected with $\\mathrm{Cat}^{+}=\\left\\{\\mathrm{Na}^{+}, \\mathrm{Li}^{+}, \\mathrm{K}^{+}\\right\\}$and $\\mathrm{An}^{-}=\\left\\{\\mathrm{F}^{-}, \\mathrm{Cl}^{-}, \\mathrm{Br}^{-}, \\mathrm{I}^{-}, \\mathrm{OH}^{-}\\right\\}$. The ion parameters were adjusted to\nthe respective electrolyte solutions except to LiF where no values for activity coefficients were available. After having adjusted the segment diameter and dispersion energy of these eight ions, the parameters of other ions (e.g. $\\mathrm{Mg}^{2+}$ ) were determined from fitting to the respective solution data (e.g. $\\mathrm{MgCl}_{2}, \\mathrm{MgBr}_{2}$, and $\\mathrm{MgI}_{2}$ ). All parameters obtained this way are listed in Table 2. (Note that due to the parameter estimation using aqueous-solution data, these ion parameters are linked to the water parameters as listed in Table 1.)\n\nFor the cations $\\mathrm{Li}^{+}, \\mathrm{Na}^{+}$, and $\\mathrm{K}^{+}$Collins et al. [26] reported X-ray and neutron diffraction measurements of aqueous salt solutions providing the distance between a central cation and the nearest water oxygen. This directly compares to the ePC-SAFT parameter $\\sigma_{j}$, since this in fact is the size of the hydrated cation. Comparing the experimental values to the $\\sigma_{j}$ parameters given in Table 2 shows an excellent agreement of experimental data and fitted parameters. This can be seen in Table 3.",
+      "zotero_attachment_key": "NG7QD2QZ"
+    },
+    {
+      "line_end": 412,
+      "line_start": 408,
+      "locator": "wiki/evidence/D6FBI6FG/Held, Cameretti, Sadowski - 2008 - Modeling aqueous electrolyte solutions. Part 1. Fully dissociated.md:L408-L412",
+      "match_score": 1,
+      "matched_terms": [
+        "fitted"
+      ],
+      "path": "wiki/evidence/D6FBI6FG/Held, Cameretti, Sadowski - 2008 - Modeling aqueous electrolyte solutions. Part 1. Fully dissociated.md",
+      "role": "main_article",
+      "section": "4.1. Solution densities and vapor pressures",
+      "text": "\n\nThe smallest cation as well as the smallest anion correspond to the $100 \\%$ value.\n\nAs it can be seen from Table 2, also the ePC-SAFT diameters for the halide anions as well as for the alkali cations follow the same trend as the Pauling diameters. The size of $\\mathrm{H}^{+}$is found between the lithium and sodium ion. This can be explained by the fact that $\\mathrm{H}^{+}$always exists as hydronium ion in water. As already mentioned above, the size parameter $\\sigma_{j}$ represent the diameter of the hydrated ions rather than the diameter of the bare ions. That's why all cation parameters are considerably larger than the Pauling radii. In contrast, the rather weakly hydrated anions possess more or less the same fitted diameter as the Pauling ones. Besides by their lower charge density, this can be explained by the structure of the water molecules: the hydrogen atoms of water can approach the anions about $0.85 \\AA$ more closely than the oxygen atoms approaching the cations [26].",
+      "zotero_attachment_key": "NG7QD2QZ"
+    },
+    {
+      "line_end": 450,
+      "line_start": 446,
+      "locator": "wiki/evidence/D6FBI6FG/Held, Cameretti, Sadowski - 2008 - Modeling aqueous electrolyte solutions. Part 1. Fully dissociated.md:L446-L450",
+      "match_score": 1,
+      "matched_terms": [
+        "fitted"
+      ],
+      "path": "wiki/evidence/D6FBI6FG/Held, Cameretti, Sadowski - 2008 - Modeling aqueous electrolyte solutions. Part 1. Fully dissociated.md",
+      "role": "main_article",
+      "section": "4.2. Mean ionic activity coefficients",
+      "text": "Fig. 8. Thermodynamic properties of aqueous RbCl solutions predicted by ePC-SAFT without parameter fitting to RbCl . (a) Vapor pressures at $40^{\\circ} \\mathrm{C}$ (squares) and at $30^{\\circ} \\mathrm{C}$ (circles). Data from Ref. [30]. (b) Mean ionic activity coefficient at $25^{\\circ} \\mathrm{C}$. Data from Lobo et al. [25]. (c) Solution densities at $20^{\\circ} \\mathrm{C}$. Data from Ref. [29].\n\nthe cation has a high charge density and the anion is a strong proton acceptor. Thus, if the anion is a weak proton acceptor, as e.g. the bromide ion, the lithium salt will be found to have the highest activity coefficient compared to the other bromides (Fig. 6) because it is the most strongly hydrated cation. However, if the anion is a strong proton acceptor, e.g., the hydroxyl ion, the extent of localized hydrolysis increases in the order $\\mathrm{Rb}^{+}<\\mathrm{Cs}^{+}<\\mathrm{K}^{+}<\\mathrm{Na}^{+}<\\mathrm{Li}^{+}$. This effect is large enough to reverse the order of the activity-coefficient values. It is worth mentioning, that ePC-SAFT can even describe this effect for the hydroxides and fluorides using the parameters given in Table 2. The description of the acetate systems requires accounting for ion pairing and will be considered in a subsequent publication [28].\n\nTo demonstrate the predictive power of ePC-SAFT, the parameters for the $\\mathrm{Rb}^{+}$ion were adjusted to six rubidium salts except to RbCl . The parameters for the chloride ion had already been adjusted before to $\\mathrm{LiCl}, \\mathrm{NaCl}$, and KCl . In Fig. 8, thermodynamic properties of RbCl solutions are presented without explicitly having fitted the $\\mathrm{Rb}^{+}$parameters to this salt. As it can be seen, vapor pressures, activity coefficients as well as solution densities of RbCl can be predicted precisely although these experimental data were not included in the parameter estimation.",
+      "zotero_attachment_key": "NG7QD2QZ"
+    }
+  ],
+  "query": "fitted",
+  "title": "Modeling aqueous electrolyte solutions. Part 1. Fully dissociated electrolytes",
+  "warnings": [],
+  "zotero_key": "D6FBI6FG"
+}

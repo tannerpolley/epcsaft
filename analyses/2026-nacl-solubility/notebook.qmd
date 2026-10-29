@@ -1,0 +1,614 @@
+---
+title: "NaCl solubility: numerical closure and disagreement with measurements"
+resources:
+  - inputs/**
+  - results/**
+  - scripts/**
+execute:
+  enabled: false
+---
+
+The declared Held screening convention plus Malmberg–Maryott water permittivity
+predicts a decreasing halite saturation molality as the measured solubility rises.
+Every binary propagated dissolution-constant interval is disjoint from its measured interval.
+Native saturation, inventory and reference-state equations close separately from
+this physical discrepancy.
+The results describe a prediction comparison for an explicit model variant;
+they do not establish physical validation over the measured temperature range.
+
+## Fixed Figiel chloride basis at room temperature
+
+The fixed Figiel chloride-mixture packet and Clarke–Glew thermochemistry predict
+halite saturation within the engineering discrepancy screen against both sources.
+The prediction remains above both source uncertainty intervals, including every
+separate Gibbs-energy and temperature perturbation. Numerical closure therefore
+supports the declared solution, while the physical discrepancy remains.
+These results are separate from the historical Held/Malmberg calculations below.
+They have not been independently reviewed or promoted for manuscript use.
+
+[Input and source notes](inputs/figiel-902/sources.md) identify the fixed packet,
+water and salt mass conventions, reference pressure and frozen source rows.
+The source thermochemical and concentration inputs are read directly from those rows:
+
+{{< include results/figiel-902/inputs.md >}}
+
+One aqueous liquid and free halite conserve one kilogram of initial water and
+an excess salt inventory. Two liquid composition starts and the doubled salt
+feed test the same native driver. No input is fitted. The final molality uses
+remaining liquid water; activity contraction includes the independently requested
+source-pressure and system-pressure reference difference and solid pressure work.
+
+The molality errors below are relative to the pressure-specific source:
+Clarke–Glew evaluated molality at its reference pressure, and Pinho–Macedo
+mass fraction converted natively using the declared NaCl molar mass. Mass-fraction
+errors are against Pinho–Macedo; their reference-pressure row is informational.
+A physical pass means the accepted three-percent concentration screen.
+The source comparison uses Clarke–Glew's printed standard error and Pinho's
+reported expanded interval separately; their confidence meanings differ.
+
+{{< include results/figiel-902/comparison.md >}}
+
+![Discrete source comparisons. Left: Clarke–Glew evaluated molality with one printed standard error. Right: independent Pinho–Macedo mass fraction with reported expanded uncertainty. Separate thermochemical and temperature realizations are points, not a joint interval.](figures/figiel-halite.png)
+
+{{< include results/figiel-902/closure.md >}}
+
+All attempts meet the declared material, charge, classified residual, solid
+saturation-index, positive-density and pressure-slope requirements. Independent
+native activity contraction agrees with returned affinity, and doubled-feed
+changes meet the specified relative tolerance. Halite remains present and
+nonnegative at every endpoint; the absent-solid inequality is conditional and
+has no absent endpoint in this comparison.
+
+{{< include results/figiel-902/perturbations.md >}}
+
+Increasing dissolution Gibbs energy lowers saturation molality. Increasing
+temperature raises it over this small neighborhood. Neither separate sensitivity
+reaches a source interval; this is a fixed-input physical discrepancy despite
+passing the engineering screen. Parameter covariance, liquid model uncertainty
+and a joint uncertainty distribution remain unknown.
+
+[All attempts](results/figiel-902/attempts.tsv),
+[raw native diagnostics](results/figiel-902/diagnostics.tsv),
+[all closure values](results/figiel-902/all-closure.md),
+[failures](results/figiel-902/failures.json) and
+[execution identity](results/figiel-902/run-identity.json) retain the complete finite set.
+No numerical attempt failed. This is numerical verification and physical
+comparison at the binary saturation state, outside the packet's pure-NaCl
+training range. It does not qualify mixed brines, hydrates, phase discovery,
+continuous temperature behavior or evaporation processes.
+
+## Physical question and basis
+
+How accurately does the published liquid parameter declaration, combined with
+independent dissolution thermochemistry, predict measured NaCl solubility in water?
+The [source notes](inputs/sources.md) identify the primary tables and exact locators.
+The [measured rows](inputs/pinho-macedo-2005.csv) are the later Pinho–Macedo NaCl–water
+observations, with compiler-assessed expanded uncertainties from NIST ThermoML.
+The [Clarke–Glew rows](inputs/clarke-glew-1985-table34.csv) retain the dissolution
+Gibbs energy, enthalpy and heat capacity and their distinct standard errors.
+The source evaluation incorporates earlier equilibrium and calorimetric evidence;
+its own evaluated solubility is not a second independent validation dataset.
+
+The primary declaration uses Held strategy 2, packet `/2`, with the project's
+inferred screening diameter convention.
+Packet `/1` appears only as a sensitivity calculation.
+Held fitted solution density and osmotic data; no new liquid parameter or solid
+term was fitted to the observations in this study.
+The observed solubility is therefore a separate predicted observable, although
+both the published liquid model and the thermochemical source have calibration histories.
+
+Each independent request fixes temperature and pressure, and declares one liquid
+plus pure halite with excess salt and fully dissociated sodium and chloride.
+[Retained native states](results/native-states.json) contain the exact conditions,
+solid amounts, failures and diagnostics.
+
+{{< include results/conditions.md >}}
+
+All equation-of-state properties, infinite-dilution references and equilibrium
+solves run through native C++.
+Python declares inputs and reads the returned quantities; notebook rendering performs no calculation.
+
+## Dissolution law, reference state and uncertainty
+
+At each tabulated temperature $T_i$, the native law uses
+
+$$
+\ln K_s(T)=a_i+b_i/T+c_i\ln(T/T_i),\qquad
+c_i=\Delta C_{p,i}^\circ/R,\qquad
+b_i=-(\Delta H_i^\circ-T_i\Delta C_{p,i}^\circ)/R,
+$$
+
+$$
+a_i=-\Delta G_i^\circ/(RT_i)-b_i/T_i.
+$$
+
+These coefficients reproduce that Table 34 row's central value and local temperature slope.
+Each local law is used only at its tabulated temperature and for the author-reported
+temperature perturbation; it is not extended as a constant-heat-capacity law across the study.
+No continuous prediction curve between source rows is claimed.
+The source standard is molality at infinite dilution, with unit molality
+$m^\circ=1\,\mathrm{mol\,kg^{-1}}$ and unit pure-solid activity.
+
+The [solid formulation](../../engine/docs/equilibrium/formulation.md#pure-stoichiometric-solids)
+owns the native standard-state transfer.
+For $C(T,P)=L_{\rm Na}^{\infty}(T,P)+L_{\rm Cl}^{\infty}(T,P)$,
+where $L_i^\infty$ is the native density-basis insertion limit, the independently
+requested molal activity obeys
+
+$$
+\ln(10)\,SI=
+2\ln\!\left(\frac{m\gamma_\pm(T,P,m)}{m^\circ}\right)
+-\ln K_s(T,P^\circ)+C(T,P)-C(T,P^\circ)
+-\frac{V_s(P-P^\circ)}{RT}.
+$$
+
+The pressure difference matters to numerical verification even though it is negligible
+relative to the measured uncertainty.
+The analysis evaluates both native reference states and retains their contraction difference.
+It never reconstructs the source constant without this correction.
+The native relation $L_i^\infty=\ln\phi_i^\infty+\ln[P/(RT\rho^\circ)]$
+gives the contraction difference from the returned infinite-dilution fugacity coefficients.
+
+Measured mass fraction is converted to formula molality as
+
+$$
+m=\frac{w}{M_{\rm NaCl}(1-w)}.
+$$
+
+The measured interval is the exact monotone conversion of $w\pm U_{95}(w)$.
+The retained linearized expanded molality uncertainty is also reported in the CSV.
+For the prediction interval, the source's Gibbs-energy standard error gives
+$u(\ln K_s)=u(\Delta G_i^\circ)/(RT_i)$.
+Native equilibrium solves at the two Gibbs-energy endpoints provide the propagated
+one-standard-error input interval, with liquid parameters held fixed.
+The interval-disjointness falsifier is true when this interval and the measured
+95% interval have no common molality.
+It is a conditional comparison of the documented input uncertainties, without
+an assigned statistical significance or an engineering accuracy cutoff.
+The source standard-error interval has no asserted 95% coverage.
+
+The enthalpy and heat-capacity standard errors are retained with each source row.
+At its central temperature they do not change $\ln K_s$ when $\Delta G_i^\circ$ is fixed.
+The separate temperature perturbation table uses the nominal local source slopes,
+not a joint confidence region of Gibbs energy, enthalpy and heat capacity.
+No source covariance matrix or ion-parameter covariance was recovered.
+These intervals exclude unknown liquid-model and parameter uncertainty and are
+not complete predictive uncertainty bounds.
+
+## Predicted and measured solubilities
+
+![Measured NaCl molalities and discrete predictions at the observed temperatures. Circles carry the NIST 95% expanded intervals transformed from mass fraction. Crosses carry the propagated one-standard-error dissolution-constant input intervals. The intervals have different uncertainty conventions; no connecting line or continuous thermochemical model is implied.](figures/solubility.png)
+
+{{< include results/comparison-table.md >}}
+
+The signed error is predicted minus measured molality.
+The prediction lies above the observations at lower temperatures and below them
+at higher temperatures.
+At saturation the source constant fixes the activity product.
+The disagreement therefore concerns the combination of the declared concentrated-liquid
+activities, supplemental dielectric relation and source thermochemistry.
+It does not identify a unique defective parameter or justify changing the screening
+convention after seeing these measurements.
+No refit or empirical solid offset was applied.
+
+The aggregate errors and attempted counts follow.
+AARD is the unweighted mean absolute relative molality deviation, expressed as percent.
+Every selected temperature remains in the attempted denominator; no failed state is dropped.
+If any primary prediction is unavailable, the producer leaves the full-study AARD unavailable.
+
+{{< include results/metrics.md >}}
+
+## Numerical closure on the declared branch
+
+The following diagnostics verify the saturation equations and conserved inventories.
+They do not measure agreement with experiment.
+The fixed numerical tolerances from the accepted design govern classified residuals,
+scaled conservation, present-solid saturation index and corrected activity identity.
+The [producer](scripts/run.py) enforces each of these separate numerical checks.
+The liquid density and pressure slope must be positive and solid inventory must remain positive.
+Scaled inventory is the maximum water-mass deviation on the initial kilogram basis
+and the sodium/chloride inventory deviations divided by initial salt moles.
+
+{{< include results/closure-table.md >}}
+
+Charge balance, unscaled residuals and direct equation-of-state pressure residuals
+are retained for every native evaluation in the JSON.
+Doubling the initial salt inventory leaves saturation molality unchanged within
+the specified relative tolerance; the metric table reports the achieved difference.
+The native analytic insertion limit has no terminal dilution-sequence error estimate.
+That missing terminal-sequence estimate is retained as unavailable.
+The current native source-reference calculation also returns local higher-precision
+re-evaluation with first-order pressure/site propagation; its method, inner row
+errors and row floors are retained for every evaluation.
+Those local estimates can underestimate shared errors and cancellation, and
+exclude supplied-operand uncertainty; they are not rigorous enclosures.
+Positive pressure slope establishes mechanical regularity only.
+A saturated declared branch and small residuals do not establish global phase stability.
+
+## Sensitivity calculations
+
+The single packet `/1` row uses the same water dielectric law and thermochemical inputs.
+Its screening diameter follows the printed sigma convention.
+The primary `/2` declaration remains fixed independently of which result is closer.
+
+{{< include results/sensitivity.md >}}
+
+The next table separates the author-reported temperature perturbation from a
+constant-permittivity control using the historical packet's scalar water value.
+The control suppresses dielectric temperature dependence; it does not identify
+which dielectric law Held used during fitting.
+
+{{< include results/temperature-sensitivity.md >}}
+
+## Why the predicted temperature trend is reversed
+
+The sodium–water interaction law generates an excessive positive temperature
+response of concentrated-solution mean ionic activity in this declaration.
+Its contribution is larger than the net response because all other terms,
+taken together, oppose it.
+The following diagnosis keeps the dissolution thermochemistry unchanged.
+It compares evaluated thermodynamic data and isolates temperature responses
+within the declared liquid model; it does not establish physical validation.
+
+The diagnostic pressure equals the dissolution source pressure, as specified
+with the temperatures, molalities and source locators in the
+[diagnostic inputs](inputs/source/diagnosis-sources.json).
+This pressure differs slightly from the original solubility comparison.
+For $g=\ln\gamma_\pm$ on the molality scale and saturation molality $m_s$,
+the pure-solid equilibrium relation at that common pressure gives
+
+$$
+2[\ln(m_s/m^\circ)+g(T,m_s)]=\ln K_s(T),
+\qquad
+\frac{dm_s}{dT}=
+\frac{\tfrac12 d\ln K_s/dT-(\partial g/\partial T)_{P,m}}
+{1/m_s+(\partial g/\partial m)_{T,P}}.
+$$
+
+Here $m^\circ$ is the unit standard molality.
+The source enthalpy gives $d\ln K_s/dT=\Delta_{\rm sol}H^\circ/(RT^2)$.
+Native solved-state and pressure-chart actions supply the derivatives,
+including the liquid density and infinite-dilution reference responses.
+The denominator is positive at every primary saturation state.
+Holding only the interaction parameter at its current value preserves that
+central state and reverses the local saturation slope at every diagnostic temperature.
+The same-state comparison directly connects the interaction law's thermal
+response to the decreasing solubility.
+
+{{< include results/temperature-trend/saturation-slope-table.md >}}
+
+### Contribution and parameter-law decompositions
+
+At fixed formula molality of 6.2 mol/kg, the additive contribution decomposition
+follows the primary liquid's common pressure-closed density path.
+The density and molality conversion is needed to relate residual chemical
+potentials to molality-scale activities.
+These rows are not separately equilibrated liquids with individual contributions removed.
+A positive hard-chain row therefore does not identify a separate hard-chain defect.
+
+{{< include results/temperature-trend/contribution-table.md >}}
+
+The [decomposition calculation](scripts/decompose.py) evaluates native residual
+chemical-potential actions at common density and composition for each contribution mask.
+Its zero-dispersion declaration preserves the water packing diameter and its
+first temperature derivative.
+The positive dilute-reference sequence and its convergence are retained in the
+[contribution CSV](results/temperature-trend/contribution-decomposition.csv).
+The total uses the analytic insertion reference; separately resolved contribution
+limits retain the demonstrated dilute-sequence error reported below.
+
+Freezing each temperature law at its value at the current temperature preserves
+the central activity while isolating its first thermal action.
+Those differences add to the exact total derivative.
+The remaining explicit dependence includes energy/temperature factors,
+association, electrostatic factors and the neutral soft-repulsion factor
+in Held Eq. (22); it is separate from the water segment-diameter correlation.
+
+{{< include results/temperature-trend/law-table.md >}}
+
+The sodium–water law's positive contribution must be read against the negative
+net of all other terms.
+Its ratio to the total exceeds unity because of cancellation; it is not a
+fraction of an unexplained prediction error.
+
+{{< include results/temperature-trend/cancellation-table.md >}}
+
+The law acts through both dispersion and the pressure-closed density response.
+
+{{< include results/temperature-trend/density-coupling.md >}}
+
+The [interaction-law isolation](results/temperature-trend/k-contribution-isolation.csv)
+retains the redistribution among all contributions.
+Assigning the whole causal response to dispersion alone would omit that coupling.
+
+### Evaluated activity and its temperature derivative
+
+Pitzer, Peiper and Busey (1984),
+[Table A-8, printed p.53](https://srd.nist.gov/jpcrdreprint/1.555709.pdf),
+provides the evaluated mean ionic activities at one bar.
+The [transcribed inputs](inputs/source/pitzer-1984.csv) retain those activities
+and the thermal coefficients from Table A-3, printed p.26.
+For a fully dissociated 1:1 electrolyte, the relative partial molar salt enthalpy
+$L_2=\bar H_2-\bar H_2^\circ$ from Eq. (27), printed p.5, gives
+
+$$
+\left(\frac{\partial\ln\gamma_\pm}{\partial T}\right)_{P,m}
+=-\frac{L_2}{2RT^2}.
+$$
+
+The Table A-3 Debye coefficient is used in that equation's convention.
+The apparent relative enthalpy in Table A-13, printed p.72, is a different quantity.
+As an independent convention check, Eqs. (14)–(16) reproduce the selected apparent
+enthalpy entries within the combined printed-digit rounding bounds.
+The [reference calculation](scripts/reference.py) performs this published algebra;
+it does not fit or interpolate a new temperature law.
+
+At 6 mol/kg, the prediction has a positive activity-temperature derivative at
+the two higher temperatures where the evaluated derivative is negative.
+The activities and their derivatives disagree by much more than the printed-digit bounds.
+
+{{< include results/temperature-trend/reference-table.md >}}
+
+![At 6 mol/kg, discrete predicted activities and derivatives disagree with evaluated NaCl values. Intervals cover printed-digit rounding only; they do not represent experimental confidence intervals or complete model uncertainty. The evaluated pressure is one bar and the Engine pressure equals the dissolution source pressure. No interpolation between the retained temperatures is implied.](figures/activity-temperature-trend.png)
+
+For activity rounding by its half-last-digit $\delta\gamma$, the conservative
+absolute bound in logarithmic activity is
+$-\ln[1-\delta\gamma/\gamma_\pm]$.
+The derivative bounds propagate the thermal coefficients' half-last-digits.
+Neither is an evaluated-model confidence interval; the evaluated-model
+covariance and physical uncertainty were not reconstructed.
+
+{{< include results/temperature-trend/reference-bounds.md >}}
+
+The [nine reference comparisons](results/temperature-trend/reference-comparison.csv)
+include the lower molalities.
+The discrepancy increases with concentration, distinguishing the response
+from a uniform standard-state temperature offset.
+The comparison stops at the evaluation's tabulated upper molality;
+no evaluated activity at 6.2 mol/kg is asserted.
+
+### Four discriminating probes
+
+The four probes hold the dissolution law fixed and change the sodium–water
+interaction temperature law, water segment-diameter temperature law, or water permittivity.
+The global freezes use the lowest diagnostic temperature as their reference.
+They are sensitivities of the specified model, not alternative fitted predictions.
+
+{{< include results/temperature-trend/probe-table.md >}}
+
+Freezing the sodium–water interaction reverses the trend but overshoots the
+measured hot-solubility value substantially.
+That result supports the causal attribution without supporting a replacement law.
+Freezing water segment diameter changes the endpoint only slightly and leaves
+the separate neutral soft-repulsion temperature factor active.
+The constant-permittivity control steepens the decline: the primary permittivity
+thermal response opposes the excessive positive activity response.
+Its different initial permittivity slightly changes the initial saturation state;
+the local permittivity freeze supplies the same-state isolation.
+
+The alternative logarithmic water permittivity comes from
+[Ascani and Held (2021), Table 5, p.1309](https://doi.org/10.1002/zaac.202100032).
+The [checked table excerpt](inputs/source/ascani-table5.txt) and source record
+identify that article, rather than the later multiphase article.
+Each native local polynomial matches the logarithmic law's value and first
+slope at the evaluated temperature; no higher thermal derivative is claimed.
+This alternative also retains the declining saturation trend.
+
+An ionic-diameter temperature law is absent from this declaration.
+Held Eq. (21), with the constant ionic segment diameters of Table 2,
+already fixes the ionic packing diameters; the selected screening convention is
+specified by the parameter input.
+Their temperature-law contribution is zero.
+This excludes an implemented ionic thermal law as the cause in this model,
+without proving that a different physical diameter law could not improve predictions.
+
+### Numerical evidence and correction boundary
+
+The [native saturation results](results/temperature-trend/saturation.csv),
+[fixed-molality actions](results/temperature-trend/fixed-molality.csv) and
+[finite-difference verification](results/temperature-trend/temperature-verification.csv)
+retain the values and diagnostics independently of presentation.
+Centered differences and Richardson extrapolation verify exact native derivatives
+only; they do not supply the reported derivatives.
+
+{{< include results/temperature-trend/verification.md >}}
+
+Held Table 2 footnote a prints the sodium–water law with the declared sign and
+coefficient; the [retained source record](inputs/source/diagnosis-sources.json)
+identifies the inspected evidence.
+No transcription or native derivative defect was established.
+The solubility states extend beyond the density/osmotic fit's concentration range
+and above the temperatures motivating its sodium–water law.
+Compensation among that law and the constant ion parameters remains unresolved.
+Replacement temperature laws cannot be uniquely determined from these probes.
+No source-backed correction was established, and the globally frozen interaction
+is a sensitivity, not a fix.
+
+## Transfer to NaCl–KCl–water co-saturation
+
+At the selected Farelo state, the predicted NaCl molality exceeds both
+conditional measured intervals; KCl overlaps both. Simultaneous absolute
+co-saturation accuracy is therefore not supported for this declared comparison.
+This is a prediction compared with one measured liquid composition, accompanied
+by numerical verification of the declared branch. KCl overlap alone does not
+validate its prediction or establish joint agreement.
+
+### Observation, model and thermochemical basis
+
+[Farelo (2006), Table 1, printed p.166](https://scholar.tecnico.ulisboa.pt/api/records/1abe35b8-c5cc-4b86-b1ca-7da06ebb0493/file/1aaf85bd434bce3eddbd18a819f6ab4b20f551895ae506cbf74881c2f24b38af.pdf),
+left block, first row of the lowest-temperature group, reports the liquid
+coexisting with NaCl and KCl crystals, with zero ammonium chloride.
+The table reports formula-unit molalities directly. Full dissociation equates
+each cation molality with its salt molality; chloride is their sum.
+The [selected inputs](inputs/co-saturation.json) retain the temperature,
+measurements, uncertainty labels, printed-digit allowances and source locators.
+The verification table below gives the calculation conditions and source constants.
+
+Farelo's Experimental section, p.165, assigns salt-content uncertainties of
+±5.2% NaCl and ±1% KCl, with **unspecified confidence**. The separate triplicate
+reproducibilities do not replace these uncertainties. The thermometer resolution
+is not a measured-state uncertainty, and the uncertainties of other experimental
+procedures are not assigned to this row. The source gives no numerical pressure;
+the ambient pressure used here is an assumption. The separate one-bar solve
+checks sensitivity and does not supply the missing experimental pressure uncertainty.
+
+The liquid uses the binary study's Held strategy-2 `/2` parameters,
+Malmberg–Maryott water permittivity, water association, fully dissociated ions
+and no Born term. The potassium–water temperature law is restored from
+[Held et al. (2014), Table 2 footnote b, p.2889](https://doi.org/10.1016/j.cherd.2014.05.017),
+alongside the existing sodium–water law. No ternary coefficient is introduced
+and no parameter is fitted. The [calculation](scripts/co_saturation.py) loads
+the shared parameter input and the existing `load_engine.py` helper.
+One liquid and the pure solids halite and sylvite are declared, with both
+solid amounts free. The neutral infinite-dilution ratios Na:K:Cl = 1:1:2 define
+a charge-neutral reference path; they do not constrain the finite liquid ratio.
+The feed basis is one kilogram of water, with excess of both salts.
+
+Both dissolution constants use the neutral molality infinite-dilution standard,
+unit pure-crystal activity, and standard molality $m^\circ=1$ mol/kg:
+
+$$
+K_s=\exp[-\Delta_{sol}G^\circ/(RT)],\qquad
+Q_s=\frac{m_{cation}m_{Cl^-}}{(m^\circ)^2}\gamma_{cation}\gamma_{Cl^-}.
+$$
+
+NaCl uses [Clarke–Glew (1985), Table 34, p.608](https://doi.org/10.1063/1.555730),
+the 20 °C Gibbs energy, enthalpy and heat-capacity row. The same local
+constant-heat-capacity mapping as the binary study transfers that row to the
+selected temperature, a displacement of only 0.05 K. Its input half-width sums
+the separately mapped source standard-error endpoints and displayed rounding;
+missing covariance prevents interpreting this sum as a joint standard error.
+
+KCl uses [Archer (1999), Eq.(18), p.7](https://doi.org/10.1063/1.556034):
+the Table 4 fitted dissolution Gibbs energy plus the aqueous Gibbs increment,
+minus the crystal Gibbs increment. The [source conversion](scripts/co_saturation_reference.py)
+interpolates the Table 6 aqueous increments with quintic Hermite polynomials,
+using $G'=-S$ and $G''=-C_p/T$ at each endpoint. The crystal uses the actual
+Eqs.(1)–(3) spline, Table 1 knots and boundary conditions, integrated with the
+Table 2 entropy anchor. This approximates Archer's thermal evaluation; it does
+not execute the complete aqueous representation. Table 4 supplies a 95%
+Gibbs-energy half-width and the entropy half-width discussed on p.15.
+An additional empirical ±2 J/mol mapping allowance exceeds the spread of the
+interpolation alternatives retained in the source investigation. It is neither
+a proved interpolation-error bound nor a confidence interval.
+
+Each constant retains its own source pressure. Native reference conversion
+and the solid-volume correction put the two saturation equations on the
+calculation-pressure basis without applying a second correction in Python.
+The halite and sylvite volumes follow the
+[USGS PHREEQC `pitzer.dat` entries](https://github.com/usgs-coupled/phreeqc3/blob/master/database/pitzer.dat);
+their uncertainties and thermal dependence are unavailable.
+All equation-of-state properties, reference calculations and equilibrium solves
+run in the unchanged native Engine. Python converts source tables, declares
+inputs and checks returned quantities.
+
+### Conditional measured intervals and sampled calculated ranges
+
+Two explicit constructions retain the ambiguity of the analytical uncertainty
+basis. `direct_intervals` applies the reported percentages to molality and
+adds half a printed last digit outward. `mass_fraction_intervals` treats them
+as relative salt mass-fraction bounds and converts a rectangular box through
+its shared water denominator:
+
+$$
+m_i=\frac{w_i}{M_i(1-w_{NaCl}-w_{KCl})}.
+$$
+
+Both molalities increase with either salt fraction, so the lower endpoints
+use both lower fractions and the upper endpoints both upper fractions.
+Molality rounding is added outward after this conversion. The wider
+mass-fraction construction is the primary comparison. Neither construction is
+an author-reported molality confidence interval or has established joint coverage.
+Their water-content uncertainty and composition covariance remain unknown.
+
+Four native solves sample all corners of the declared two-salt Gibbs-energy
+input box. For sampled calculated range $C_i=[C_i^-,C_i^+]$ and conditional
+measured interval $M_i=[M_i^-,M_i^+]$, disjointness means
+
+$$
+C_i^+<M_i^-\quad\text{or}\quad C_i^->M_i^+,\qquad
+ d_i=\max(M_i^--C_i^+,C_i^--M_i^+,0).
+$$
+
+{{< include results/co-saturation/comparison.md >}}
+
+The positive NaCl separation persists for both measurement mappings. KCl
+remains overlapping. The four corners are a **sampled sensitivity range**;
+they are not proved extrema over the continuous input box. A formal enclosure
+would require justified extremum bounds or verified monotonicity. Statistical
+significance and complete predictive uncertainty are not inferred.
+These are two scalar salt comparisons at one state; the table displays their
+central errors, endpoints and verdicts directly, so a plot would add no
+resolved temperature or composition relationship.
+
+### Numerical closure, pressure and excess feed
+
+All seven requests retain positive amounts of both solids, positive liquid
+density and a positive pressure-density derivative. The checks require classified
+residuals and absolute component-balance and charge errors within the tolerances
+reported in the [source notes](inputs/sources.md). Saturation indices and an
+independent contraction of native fugacities with the source-pressure references
+satisfy their separate tolerances. These checks verify the declared branch;
+they do not prove global phase stability.
+
+In the table, `dp_drho` is the pressure-density derivative in Pa m³ mol⁻¹;
+`solid_amounts` lists halite then sylvite in mol, and `molar_densities` is in mol/m³.
+Gibbs energies and their half-widths are in J/mol.
+
+{{< include results/co-saturation/verification.md >}}
+
+The doubled-feed request retains both solids and preserves both liquid
+molalities. The feed is therefore excess for this tested pair of amounts.
+The one-bar sensitivity changes each molality by only a few millionths of a
+mol/kg; that pressure change cannot explain the NaCl separation in the tested
+comparison. The [seven native records](results/co-saturation/native-states.json)
+retain individual balances, charge, saturation indices, density slopes and
+reference-contraction errors; the [summary](results/co-saturation/summary.json)
+owns both interval constructions and all verdicts. The
+[run identity](results/co-saturation/run-identity.json) records the Engine source
+tree, loaded native files, scripts and input hashes.
+
+### Limits of the transfer conclusion
+
+There is one measured co-saturation state. Measurement confidence is unspecified,
+the KCl dissolution constant uses an interpolation approximation, and pressure
+is assumed. The empirical mapping allowance, missing source covariance,
+unknown liquid-parameter covariance, and liquid-model uncertainty prevent a
+complete predictive interval. Pure crystals and one liquid are declared;
+other solids, solid solutions, hydrates and global fluid stability are untested.
+Historical overlap between Farelo's measurements and Held's calibration evidence
+has not been fully established.
+
+The known binary NaCl temperature-trend error remains: predicted binary
+solubility decreases while measurements increase, with the sodium–water law
+providing the dominant positive activity-temperature response. This nearby
+mixture calculation does not qualify that temperature law. The binary error
+warns of a possible absolute bias but does not determine either ternary
+molality, its sign of error, or the interval verdicts. Common chloride and
+composition-dependent activities couple the two saturation equations.
+No binary-error subtraction, error attribution or refit follows from this
+one-state comparison. The explicit ternary result supports conditional NaCl
+disagreement and leaves KCl accuracy unresolved.
+
+## Binary comparison claim limits
+
+All saturation concentrations extrapolate beyond the up-to-five-molal
+Held density/osmotic activity-fit range.
+The ion parameters extrapolate in temperature above the source calibration temperature;
+the published sodium–water law was motivated at the source's two lower temperatures.
+The [source notes](inputs/sources.md) give those exact temperature bounds.
+
+The prediction is restricted to the declared one-liquid/halite topology.
+No fluid phase discovery with solids, hydrate search or other solid phases were considered.
+Malmberg–Maryott water permittivity is a declared variant and is not proven to
+match Held's fitting relation.
+Unknown parameter covariance and model-form uncertainty prevent a full uncertainty assessment.
+The interval discrepancy supports a negative finding for this explicit variant
+under the stated input sensitivities, without a pass/fail engineering-accuracy claim.
+
+The binary comparison and diagnosis alone do not establish common-ion or mixed-solvent transfer.
+[Run identity](results/run-identity.json) binds the numerical values to the loaded
+native module and exact input bytes.
+
+[Diagnostic run identity](results/temperature-trend/run-identity.json) records the
+checkout commit, Engine source tree, loaded native files and diagnostic input hashes.

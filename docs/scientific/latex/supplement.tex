@@ -1,0 +1,49 @@
+\RequirePackage{xr-hyper}
+\PassOptionsToPackage{hyperfootnotes=false}{hyperref}
+\documentclass[a4paper,fleqn]{cas-sc}
+\input{preamble}
+\externaldocument[][nocite]{builds/main}
+% Supporting information carries no abstract: drop the class's abstract block.
+\RenewDocumentEnvironment{Abstract}{o}{\setbox0\vbox\bgroup}{\egroup}
+\renewcommand{\thesection}{S\arabic{section}}
+\renewcommand{\thetable}{S\arabic{table}}
+\renewcommand{\thefigure}{S\arabic{figure}}
+\renewcommand{\theequation}{S\arabic{equation}}
+
+\begin{document}
+
+\shorttitle{ePC-SAFT: supporting information}
+\shortauthors{Polley}
+
+\title[mode = title]{Supporting information for ``ePC-SAFT: an electrolyte equation-of-state engine with exact derivatives for phase and reaction equilibrium and parameter estimation''}
+
+\author[1]{Tanner W. Polley}[orcid=0009-0008-5957-4152]
+\cormark[1]
+\ead{tpolley3@byu.edu}
+
+\affiliation[1]{
+    organization={Department of Chemical Engineering, Brigham Young University},
+    city={Provo},
+    state={UT},
+    postcode={84602},
+    country={United States}
+}
+
+\cortext[cor1]{Corresponding author.}
+
+\maketitle
+
+\hypersetup{
+    pdftitle={Supporting information: ePC-SAFT, an electrolyte equation-of-state engine with exact derivatives},
+    pdfauthor={Tanner W. Polley}
+}
+
+\noindent Sections, equations, tables and figures numbered with the prefix S are in this document; numbers without it refer to the main article.
+
+\input{sections/supporting_information}
+
+\clearpage
+\bibliographystyle{styles/model1-num-names}
+\bibliography{references}
+
+\end{document}

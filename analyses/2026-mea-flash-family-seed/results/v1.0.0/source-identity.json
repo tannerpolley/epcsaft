@@ -1,0 +1,24 @@
+{
+  "release": "v1.0.0",
+  "repository": "https://github.com/tannerpolley/epcsaft",
+  "doi": "10.5281/zenodo.23634229",
+  "public_commit": "b8503fe66499e3f7830f64bd8aeb7a1fc1d28b85",
+  "public_tree": "11a4cae564770791046b1f613a1d54587b6d4bdc",
+  "private_commit": "98fa6de00f8e759e4efd890e817902a88bdbd54d",
+  "private_tree": "f2620bc1b4f96e872beaf0cdd02df40f77269c68",
+  "matching_public_blobs": 6474,
+  "blob_or_mode_differences": 0,
+  "excluded_private_paths": [
+    "analyses/2026-errors-in-variables/figures/requalification.html",
+    "analyses/2026-errors-in-variables/scripts/diagnosis/conditional-allowances.html",
+    "analyses/2026-errors-in-variables/scripts/diagnosis/quantities.html",
+    "build/issue-821/ipopt.json"
+  ],
+  "excluded_paths_used_by_family": false,
+  "verification": "Every public path has the same Git blob and mode in the detached private image; the four excluded private paths are outside the family producer, its inputs and Engine build.",
+  "private_tree_after_release_exclusions": "11a4cae564770791046b1f613a1d54587b6d4bdc",
+  "verification_commands": [
+    "gh api repos/tannerpolley/epcsaft/git/trees/<public_tree>?recursive=1; compare every blob SHA and mode with git ls-tree -r <private_commit>",
+    "Using a task-local temporary GIT_INDEX_FILE: git read-tree <private_commit>; git update-index --force-remove -- <four excluded paths>; git write-tree; assert result == public_tree; remove the temporary index"
+  ]
+}

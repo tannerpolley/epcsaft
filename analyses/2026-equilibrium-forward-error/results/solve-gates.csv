@@ -1,0 +1,5 @@
+check,result,measured_evidence
+selected falsifiers,pass,24 non-allocation rows; full operands and consumer comparisons retained
+key solves and no-slowdown,pass,"Runtime candidate A=A then A/B with --fit --control: identical work, zero state difference, no gate failures; final-head repetition is retained in build-r9/report.md"
+runtime allowance,pass,959 gross; 300 removed; +659 net; allowance 1100/+860
+final-head delivery gates,separate evidence,"Final-head A=A/A-B, corpora, affected/all, explicit native, lint and sanitizers: build/issue-862/build-r9/report.md in the main checkout"

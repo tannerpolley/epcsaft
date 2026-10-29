@@ -1,0 +1,239 @@
+---
+title: "NaCl dilution enthalpy: measured comparison and caloric derivative checks"
+resources:
+  - inputs/**
+  - results/**
+  - scripts/**
+execute:
+  enabled: false
+---
+
+## Measured comparison
+
+The declared NaCl model exceeds the **study-chosen $0.003RT$ benchmark** for most measured dilution enthalpies.
+The signed discrepancy becomes predominantly positive at the higher temperatures.
+At the highest temperature, the concentrated dilution prediction is endothermic while the reproduced measurements are exothermic.
+The calculated values are caloric predictions relative to the published noncaloric fitting objectives, with historical caloric overlap only partly audited.
+They support a conditional physical comparison and numerical verification of the caloric identities, without establishing uncertainty-complete physical validation.
+
+{{< include figures/summary.md >}}
+
+Errors are prediction minus observation, in joules per mole NaCl.
+MAE is the mean absolute error; RMSE is the root-mean-square error.
+The aggregate statistics weight every retained replicate equally, without treating replicates as independent experiments.
+A chord is one temperature-specific initial/final molality pair.
+A chord exceeds the study-chosen benchmark when at least one associated replicate has a resolved disjoint interval.
+A chord overlaps only when every associated replicate overlaps; any unresolved replicate leaves the chord unresolved.
+
+{{< include figures/signs.md >}}
+
+The observation-centred intervals add the printed enthalpy rounding radius to the uniform benchmark.
+This benchmark has no assigned confidence level and is not the experiment's complete measurement uncertainty.
+The calculated intervals expand sampled extrema by empirical numerical and refinement allowances.
+They are not proven continuous-input bounds.
+Overlap only means that this benchmark comparison did not establish disagreement for that row.
+
+![NaCl dilution enthalpy at the three measured temperatures. Circles show the secondary transcription of measured values with the study-chosen benchmark and printed enthalpy rounding. Squares show discrete predictions with expanded sampled molality ranges. Initial molality identifies each chord; final molalities appear in the comparison table. No connecting curve or statistical confidence interval is implied.](figures/dilution-enthalpy.png)
+
+## System, sources and model declaration
+
+The liquid contains fully dissociated sodium and chloride in water at fixed nominal temperature and atmospheric pressure.
+The [source notes](inputs/sources.md) identify the source pages, parameter history, selection and unavailable uncertainties.
+The [measurement CSV](inputs/measurement-candidates.csv) retains all transcribed rows, original strings and exclusions.
+Only the first three measured columns of Partanen–Partanen's supplementary dilution tables are observations; adjacent calculated error and adiabatic-temperature columns are excluded.
+These are Messikomer–Wood measurements reproduced by later authors.
+The original experimental numerical tables were unavailable, so the **secondary-transcription limit** remains material.
+Rows above the declared molality fit domain remain in the retained inputs and exclusion list.
+
+{{< include figures/conditions.md >}}
+
+The [parameter declaration](inputs/parameters.json) derives from Held strategy 2, packet `/2`.
+Its published objectives use density differences and osmotic behavior, including lower-temperature information for the sodium–water interaction.
+No direct caloric objective is documented in those selected fits.
+The complete water-parameter ancestry and possible calorimetric dependencies in compiled osmotic inputs were not reconstructed.
+Consequently, **caloric overlap is only partly audited**.
+No parameter, thermal function, uncertainty or source offset is fitted to the dilution measurements.
+
+The native declaration includes the published temperature-dependent water diameter and sodium–water interaction.
+The project's inferred ionic screening convention, Debye–Hückel term, unlike-ion dispersion and exclusion of same-sign ionic dispersion remain fixed.
+The Born term is absent.
+Malmberg–Maryott supplies a salt-independent water permittivity law.
+**Its identity with the permittivity law used in the historical fit is unverified.**
+The source locators and exact coefficient values are retained in the input notes and declaration.
+
+The upper two study temperatures are a **temperature extrapolation** beyond the osmotic temperature information documented for the sodium–water law.
+Temperature-dependent activity fitting constrains caloric derivatives indirectly and does not guarantee accurate second temperature derivatives.
+Parameter covariance, model-form uncertainty and permittivity-derivative uncertainty are unavailable.
+
+## Conserved-inventory caloric observables
+
+Let $m$ be formula-unit NaCl molality and choose one mole of conserved salt, $n_s$.
+The Engine counts the two ionic species separately.
+With water molar mass $M_w$, the reporting inventories are
+
+$$
+n_w(m)=\frac{n_s}{M_wm},\qquad N(m)=n_w(m)+2n_s,\qquad
+\mathbf x(m)=\frac{(n_w,n_s,n_s)}{N}.
+$$
+
+For native molar residual enthalpy $h^r$ or residual isobaric heat capacity $c_p^r$, define
+
+$$
+B_q(m)=\frac{N(m)q^r(m)-n_w(m)q_w^{r,*}}{n_s}.
+$$
+
+The pure-water value $q_w^{r,*}$ uses the same temperature, pressure, water parameters and liquid branch.
+The apparent molar quantity also contains the ideal-gas salt-species thermal record.
+Thus $B_q$ is a residual reporting combination, rather than an absolute measured apparent property.
+
+Dilution adds pure water at the same temperature and pressure, holding salt inventory fixed:
+
+$$
+\Delta_{\rm dil}H_m
+=\frac{N_fh_f-N_ih_i-(n_{w,f}-n_{w,i})h_w^*}{n_s}
+=B_h(m_f)-B_h(m_i).
+$$
+
+The sign is final minus initial apparent molar enthalpy, following Pitzer–Peiper–Busey, Sec. 2, Eq. (17), printed page 4, cited in the [source notes](inputs/sources.md).
+Positive dilution enthalpy is endothermic and negative is exothermic.
+The two ion thermal records cancel because ion inventories are unchanged; water's ideal term cancels through the added-water balance.
+The manufactured ideal records therefore supply no physical gas-ion assumption to this comparison.
+Changing their full temperature functions separately verifies that cancellation.
+
+The selected heat-capacity observable uses a finite reference molality, $m_*$:
+
+$$
+\Delta C_{p,\phi}(m,m_*)=B_{c_p}(m)-B_{c_p}(m_*),\qquad
+\left(\frac{\partial\Delta_{\rm dil}H_m}{\partial T}\right)_{P,m_i,m_f}
+=B_{c_p}(m_f)-B_{c_p}(m_i).
+$$
+
+This concentration difference avoids an unknown aqueous infinite-dilution heat capacity.
+It does not establish absolute apparent heat capacity or measured heat-capacity accuracy.
+Native pressure-closed actions include the temperature dependence of the interaction and permittivity laws.
+All equation-of-state properties, association calculations and density solves run in C++; Python performs the displayed inventory combinations.
+
+## Empirical input intervals and benchmark comparison
+
+Each endpoint molality spans its half-last-printed-digit interval.
+Temperature, pressure, parameters and the permittivity law stay fixed.
+The source does not establish preparation, temperature or pressure uncertainties here; their absence is not evidence that they vanish.
+The study chooses a uniform benchmark motivated by PPB's tabulated precision coefficient, without importing its unresolved concentration-dependent uncertainty prescription.
+Replicates never reduce the benchmark.
+
+For each composition, the interval calculation evaluates ordinary and tight settings with both cold and anchored starts.
+The anchored seed is a cold state at the same composition and a nearby lower temperature; the pure-water seed uses its separately declared lower temperature.
+All reported target properties use the target temperature and pressure.
+Every request must return finite values, positive mechanical pressure slope, acceptable state/action pressure closure, available enthalpy composition actions and association diagnostics within the prescribed criterion.
+The four densities must agree within the declared relative spread.
+These conditions qualify the declared liquid roots, without proving global phase stability.
+
+{{< include figures/procedure.md >}}
+
+On each nested Cartesian grid, the tight/cold dilution values give the sampled minimum $L$ and maximum $U$.
+Every sample includes all four solver/start combinations.
+The empirical numerical expansion is
+
+$$
+b_{\rm num}=2E+F,\qquad
+E=\max_{z,v}|D_v(z)-D_{\rm tight,cold}(z)|,
+$$
+
+$$
+F=\max_{z,v}\gamma_{16}
+\left(|N_fh^r_{f,v}|+|n_{w,f}h^{r,*}_{w,v}|+
+      |N_ih^r_{i,v}|+|n_{w,i}h^{r,*}_{w,v}|\right).
+$$
+
+The binary64 operation allowance $γ_{16}$ uses the extensive operands before cancellation.
+It does not bound internal equation-of-state error, composition-map sensitivity, or a common error shared by all four variants.
+Each $B$ is evaluated as the extensive solution term minus its water term; dilution is then final $B$ minus initial $B$.
+
+Exact native enthalpy composition actions supply the gradient of the reported dilution balance:
+
+$$
+B_h'(m)=-\frac{n_w}{m}(h^r-h_w^{r,*})+N\,\mathrm{action}_{\mathbf x'(m)}h^r,
+\qquad \nabla D=(-B_h'(m_i),B_h'(m_f)).
+$$
+
+Each gradient component must keep a strict sampled sign across every variant.
+Refinement stops only after two consecutive sampled-extrema changes are below the prescribed threshold, the signs agree, and the numerical expansion is small enough relative to the benchmark.
+The sampling allowance is twice the larger of the last two changes.
+No failed setting is replaced by a looser solve, and no further unprescribed retry occurs.
+
+The compared intervals and nonnegative gap are
+
+$$
+I_{\rm calc}^{\rm sample}=[L-b_{\rm num}-b_{\rm sample},\ U+b_{\rm num}+b_{\rm sample}],
+\qquad I_{\rm bench}=[H_{\rm obs}-u_{\rm bench}-r_H,\ H_{\rm obs}+u_{\rm bench}+r_H],
+$$
+
+$$
+g=\max\{\inf I_{\rm calc}^{\rm sample}-\sup I_{\rm bench},\
+\inf I_{\rm bench}-\sup I_{\rm calc}^{\rm sample},0\},\qquad
+u_{\rm bench}=0.003RT.
+$$
+
+The gap has no sign and vanishes during overlap.
+The separately retained signed nominal error is tight/cold prediction minus observation.
+A gap exceeding twice the refinement threshold is classified as exceeding the study-chosen benchmark.
+Overlap requires the signed overlap depth to exceed the same threshold.
+Near-contact comparisons, failed diagnostics and unfinished sampling remain unresolved.
+Finite sampling and unchanged extrema cannot prove absence of an unsampled extremum or certify the whole input rectangle.
+
+## Individual dilution comparisons
+
+Every selected replicate remains in the table, including any failure or unresolved comparison.
+The [row CSV](results/comparison.csv) retains benchmark-normalized signed errors and both interval endpoints at full precision.
+The normalization is descriptive and is not a standardized measurement residual or probability statistic.
+
+{{< include figures/comparison.md >}}
+
+The chord table gives the final sampled interval and the accompanying native thermal action.
+All quantities use the one-mole-salt basis.
+
+{{< include figures/intervals.md >}}
+
+## Heat-capacity predictions
+
+The following finite-concentration differences and their exact temperature actions are predictions relative to the declared reference molality.
+Original measured heat-capacity tables were unavailable; evaluated correlations and abstracts are not counted as experimental heat-capacity rows.
+
+{{< include figures/heat-capacity.md >}}
+
+## Numerical verification and failures
+
+The numerical checks address conserved-inventory cancellation and exact thermal actions separately from measured agreement.
+The ideal-record check changes heat-capacity coefficients and enthalpy anchors, rather than only constant offsets.
+The representative dilute and concentrated chords are checked at every study temperature.
+
+{{< include figures/identities.md >}}
+
+The temperature finite-difference ladder only verifies the exact native action.
+Its coarse and fine steps and Richardson combination are retained with the actual off-temperature balances.
+They do not provide the numerical interval used for the measured comparison.
+Cancellation can obscure asymptotic convergence of an already small finite-difference error.
+
+{{< include figures/thermal-ladder.md >}}
+
+Interval qualification requests enthalpy composition actions only.
+The separate nominal enthalpy and heat-capacity temperature actions use ordinary settings.
+Their higher-order association diagnostic is retained and checked against that request's criterion.
+The maximum temperature-action diagnostic below includes the dilute-state derivative-coefficient value; it is not substituted into the tighter interval calculation.
+
+{{< include figures/numerics.md >}}
+
+The [failure records](results/failures.json), [native operands and diagnostics](results/native-states.json), [sampled values](results/samples.json), [refinement histories](results/chords.json) and [numerical identity checks](results/qualification.json) preserve the calculation's stopping points and returned values.
+The [run identity](results/run-identity.json) identifies the source revision, own-checkout environment, loaded extension, native library and input hashes.
+
+## Interpretation and claim limits
+
+The increasing positive discrepancy at higher temperatures shows that the selected model's caloric concentration dependence does not reproduce most observed dilution chords to the chosen benchmark.
+The endothermic concentrated prediction at the highest temperature has the same final-minus-initial sign convention as the exothermic observations.
+It is not a reversed calorimeter-heat convention.
+The comparisons do not isolate a unique faulty parameter, establish an Engine defect, or authorize a refit.
+
+The result is conditional on the fully dissociated liquid, the Held strategy-2 `/2` declaration and supplemental permittivity law.
+Historical caloric overlap is only partly audited, the historical permittivity law's identity is unverified, observations are a secondary transcription, and the upper two temperatures extrapolate beyond the documented sodium–water temperature calibration.
+Unknown measurement and parameter uncertainties prevent a rejection claim within complete experimental uncertainty.
+No inference extends to absolute ion calorics, absolute apparent heat capacities, crystal solution enthalpies, reacting liquids, other salts or mixed solvents.

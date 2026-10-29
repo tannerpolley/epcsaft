@@ -1,0 +1,5 @@
+case,arm,serial_cpu_s,fit_wall_s,fit_critical_path_cpu_s,control_wall_min_s,control_wall_max_s,reference_computations,reference_columns,density_solves,equilibrium_iterations
+mea-f1/residual-jacobian,A,4.569743,7.21702237300633,5.811683078,6.956326978004654,7.037191156996414,295,3388,1223,1426
+mea-f1/residual-jacobian,B,4.65347824,7.212367130996427,5.9057648700000005,6.956326978004654,7.037191156996414,295,3388,1223,1426
+mea-cp/hilliard-353.15-K-0.358,A,0.6214553970000001,,,,,3,280,11,13
+mea-cp/hilliard-353.15-K-0.358,B,0.6314960430000003,,,,,3,280,11,13

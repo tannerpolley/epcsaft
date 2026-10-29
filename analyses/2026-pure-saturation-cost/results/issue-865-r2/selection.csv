@@ -1,0 +1,3 @@
+path,operation,quiet,blocks
+results/raw/measurement-0.jsonl.gz,ordinary,True,18
+results/raw/measurement-0.jsonl.gz,prepared,True,18

@@ -6,14 +6,23 @@ mixture measurements while preserving the existing chloride parameter basis.
 The approved design and its readiness review are identified by hash in
 [the retained source identities](inputs/source-identities.json).
 
+[The conditional profile](inputs/fit-declaration-issue-901.json) finds a
+binary/water-guard-preserving diagnostic point meeting the Jiang I = 5 target.
+The [notebook](notebook.qmd) presents its retained values, transfer limitations
+and pending independent delivered review. No packet is published. Earlier
+trials below remain historical records.
+
 [The one-coordinate declaration](inputs/fit-declaration-issue-798-r2.json)
 fixes the hydrogen sizes and energy and treats zero H–Cl correction as a
 modelling assumption. Only the H–water correction is fitted. This trial retains every start under `results/issue-798-r2/`. The
 [predeclared retrial](inputs/fit-declaration-issue-798-retrial.json) changes only
 the fixed H–Cl correction to one, removing H–Cl dispersion as a second
 modelling assumption, and retains all starts under `results/issue-798-retrial/`.
-Both trials identify and then fail the frozen binary accuracy limits. Earlier
-declarations and result files are preserved.
+Both trials identify and fail the original binary accuracy limits. With the
+owner's osmotic RMS limit relaxed to 0.011, the zero H–Cl endpoint passes
+binary checks but fails Roy held-out mixture qualification: mean/maximum
+relative errors 19.963996%/50.374497% against 5%/10%. No packet is written.
+Earlier declarations and result files are preserved.
 
 The native producer is `scripts/activity.cpp`; `scripts/run.py` declares the
 parameter document and transports it to that producer. Native Ceres owns all
@@ -49,3 +58,8 @@ then render the registered notebook:
 .venv/bin/python analyses/2026-hydrochloric-acid-chloride-basis/scripts/present.py
 quarto render analyses/2026-hydrochloric-acid-chloride-basis/notebook.qmd
 ```
+
+The evaluation-only continuation is `scripts/qualify.py`; it refuses an existing
+`results/binary-water-qualification` destination. It reuses the selected endpoint
+without fitting and stops at the first required failure. Its retained tables
+and the notebook distinguish calibration from held-out qualification.

@@ -1,0 +1,1 @@
+At 353 K, the Engine gives 89.087 Pa, bracketed by Kim's Antoine and Riedel values of 80.671 and 96.78 Pa. Against the seven neat measurements, the AARD is 17.938912%. Pahlavanzadeh Table 1's printed pressure correlation gives 2218.39 Pa at that temperature; its printed density correlation gives 1890.94 kg/m³ when assigned MDEA's molar mass.

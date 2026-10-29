@@ -1,0 +1,25 @@
+[
+  {
+    "url": "https://api.elsevier.com/content/article/pii/S0009250922006303?httpAccept=text/xml",
+    "status": 200,
+    "path": "pabsch-retrieval.xml",
+    "size": 1839,
+    "prefix": "<full-text-retrieval-response "
+  },
+  {
+    "url": "https://www.sciencedirect.com/science/article/pii/S0009250922006303/pdfft?isDTMRedir=true&download=true",
+    "error": "HTTP Error 403: Forbidden"
+  },
+  {
+    "url": "https://ars.els-cdn.com/content/image/1-s2.0-S0009250922006303-main.pdf",
+    "error": "HTTP Error 403: Forbidden"
+  },
+  {
+    "url": "https://trc.nist.gov/ThermoML/10.1016/j.fluid.2006.06.005.json",
+    "error": "HTTP Error 403: Forbidden"
+  },
+  {
+    "url": "https://webbook.nist.gov/cgi/cbook.cgi?ID=C64197&Mask=4&Type=ANTOINE",
+    "error": "HTTP Error 403: Forbidden"
+  }
+]

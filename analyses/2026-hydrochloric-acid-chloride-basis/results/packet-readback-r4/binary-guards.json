@@ -1,0 +1,80 @@
+[
+  {
+    "point": 0,
+    "start": 0,
+    "quantity": "phi",
+    "bucket": "low",
+    "states": 23,
+    "mean": 0.008913538884816401,
+    "worst": 0.01835039932387872,
+    "mean_limit": 0.011,
+    "worst_limit": 0.03,
+    "verified": true,
+    "signed_mean": ""
+  },
+  {
+    "point": 0,
+    "start": 0,
+    "quantity": "phi",
+    "bucket": "high",
+    "states": 7,
+    "mean": 0.01060424938035922,
+    "worst": 0.015928065130462077,
+    "mean_limit": 0.011,
+    "worst_limit": 0.03,
+    "verified": true,
+    "signed_mean": ""
+  },
+  {
+    "point": 0,
+    "start": 0,
+    "quantity": "gamma",
+    "bucket": "low",
+    "states": 23,
+    "mean": 1.2255599386275715,
+    "worst": 2.507883131381694,
+    "mean_limit": 2.0,
+    "worst_limit": 5.0,
+    "verified": true,
+    "signed_mean": ""
+  },
+  {
+    "point": 0,
+    "start": 0,
+    "quantity": "gamma",
+    "bucket": "high",
+    "states": 7,
+    "mean": 0.8809534150553188,
+    "worst": 1.8151107468158512,
+    "mean_limit": 2.0,
+    "worst_limit": 5.0,
+    "verified": true,
+    "signed_mean": ""
+  },
+  {
+    "point": 0,
+    "start": 0,
+    "quantity": "aw",
+    "bucket": "low",
+    "states": 8,
+    "mean": 0.0027571930796153306,
+    "worst": 0.005401721780206703,
+    "mean_limit": 0.003,
+    "worst_limit": 0.006,
+    "verified": true,
+    "signed_mean": ""
+  },
+  {
+    "point": 0,
+    "start": 0,
+    "quantity": "aw",
+    "bucket": "high",
+    "states": 6,
+    "mean": 0.0029022507506517616,
+    "worst": 0.00347843800330061,
+    "mean_limit": 0.003,
+    "worst_limit": 0.006,
+    "verified": true,
+    "signed_mean": ""
+  }
+]

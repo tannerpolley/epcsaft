@@ -1,0 +1,5 @@
+{
+  "boundary-checks.json": "analyses/2026-pure-saturation-cost/results/issue-886/boundary-checks.json",
+  "failure-checks.json": "analyses/2026-pure-saturation-cost/results/issue-886/failure-checks.json",
+  "state-comparison.json": "analyses/2026-pure-saturation-cost/results/issue-886/state-comparison.json"
+}

@@ -1,0 +1,803 @@
+Supporting Information
+Influence of solvent and salt on kinetics and equilibrium of esterification reactions
+
+Daniel Pabsch, Johanna Lindfeld, Janika Schwalm, Alexander Strangmann, Paul Figiel, Gabriele Sadowski, and Christoph Held*
+Laboratory of Thermodynamics, Department of Biochemical and Chemical Engineering, TU Dortmund, Emil-Figge Str. 70, 44277 Dortmund, Germany
+*Christoph.held@tu-dortmund.de
+
+| Acetic acid HAc+EtOH⇌ Ethyl acetate (EtOAc)+Water | E1 |
+| Propionic acid HProp+EtOH⇌Ethyl propionate (EtOProp)+Water | E2 |
+
+| xEsterNorm=xEsterExperiment1 - xsalt or solvent | (1) |
+| RSD=1N-1iNxiexp-xiexp,mean2xiexp,mean | (2) |
+| ARSD=100NP∙iNPRSDi | (3) |
+| AARD=100NP∙iNP1-xiePC-SAFTxiexp,mean | (4) |
+
+
+Table S1: ePC-SAFT binary interaction parameters kij between the reactants present in E1 inherited from literature or determined in this work.
+| ki,j | HAc | EtOH | EtOAc | Water |
+| EtOH | -0.031 | - | - | - |
+| EtOAc | -0.122 | -0.0182 | - | - |
+| Water | -0.1247a | -0.04453 | -0.0474 | - |
+| NMP | -0.43a | -0.135a | -0.0228a | -0.158a |
+aDetermined in this work by fitting to VLE data from literature, cf. Table S4.
+
+
+Table S2: ePC-SAFT binary interaction parameters kij between ions and organic solvents inherited from literature and determined in this work for the esterification reaction E1.
+| ki,j | Li+ | Na+ | K+ | Cs+ | Cl- |
+| Cl- | 0.6695 | 0.317 | 0.064 | -0.417 | - |
+| MeOH | -0.7a | -0.316 | 0.476 | 0.3157 | -0.216 |
+| EtOH | -0.7a | -0.206 | 0.426 | 0.3457 | -0.156 |
+| NMP | - | -0.077 | 0.507 | 0.587 | 0.78a |
+| HAc | -0.7b | - | - | - | - |
+aDetermined in this work by fitting to SLE data form literature using the approach proposed by Pabsch et al.7, cf. Table S8. bBased on previously determined binary interaction parameters between Li+ - methanol/ethanol, cf. Figure S10, a binary interaction parameter of -0.7 between HAc and Li+ is assumed.
+
+Table S3: ePC-SAFT binary interaction parameters kij between the reactants present in E2 inherited from literature or determined in this work.
+| ki,j | HProp | EtOH | EtOProp | Water |
+| EtOH | 01 | - | - | - |
+| EtOProp | -0.0354a | -0.0088 | - | - |
+| Water | -0.0038a | -0.04453 | -0.0219+0.0003 x (T – 298.15)a | - |
+| NMP | - | -0.135a | -0.022b | -0.158a |
+aDetermined in this work by fitting to VLE or LLE data from literature with T in K, cf. Table S4. bDetermined in this work by fitting to VLE data obtained with UNIFAC.
+
+Table S4: Binary interaction parameters kij fitted to VLE or LLE data in this work.
+| Substance i | Substance j | kij | ARDT / % | ARDp / % | T-range / K | Ref. for VLE data |
+| Water | HAc | -0.1247 | 2.26 | - | 339.65-389.65 | 9 |
+| Water | HProp | -0.0038 | 3.50 | - | 317.65-404.95 | 9 |
+| Water | NMP | -0.158 | 0.84 | - | 374.95-433.15 | 10 |
+| Water | EtOProp | -0.0219+0.0003*(T / K – 298.15 K) | 2.27 | - | 273.15-363.65 | 11 |
+| NMP | HAc | -0.43 | 1.22 | - | 390.85-477.01 | 12 |
+| NMP | EtOH | -0.135 | - | 19.62 | 313.15-333.15 | 13 |
+| NMP | EtOAc | -0.0228 | 1.07 | - | 350.25-464.72 | 14 |
+| NMP | EtOProp | -0.022 | - | 6.52 | 370 | UNIFACa |
+| HProp | EtOProp | -0.0354 | - | 3.15 | 323.2-368 | 15 |
+aCalculated via UNIFAC using parameters from Table S5, Table S6, and Table S7.
+
+
+
+Figure S1: VLE of acetic acid (HAc) and water at p = 1.01325 bar. Symbols: Data taken from ref.9; Lines represent modeling results obtained with ePCSAFT using the parameters from Table S4.
+
+
+Figure S2: VLE of NMP and acetic acid at p = 1.01325 bar. Symbols: Data taken from ref.12; Lines represent modeling results obtained with ePCSAFT using the parameters from Table S4.
+
+
+Figure S3: VLE of NMP and ethanol (EtOH) at T = 333.15 K. Symbols: Data taken from ref.13; Lines represent modeling results with ePCSAFT using the parameters from Table S4.
+
+
+
+Figure S4: VLE of NMP and ethyl acetate (EtOAc) at p = 1.01325 bar. Symbols: Data taken from ref.14; Lines represent modeling results obtained with ePCSAFT using the parameters from Table S4.
+
+
+Figure S5: VLE of NMP and water at p = 1.01325 bar. Symbols: Data taken from ref.10; Lines represent modeling results obtained with ePCSAFT using the parameters from Table S4.
+
+
+Figure S6: VLE of propionic acid and ethyl propionate (EtOProp) at T = 368 K. Symbols: Data taken from ref.15; Lines represent modeling results obtained with ePCSAFT using the parameters from Table S4.
+
+
+
+Figure S7: VLE of propionic acid (HProp) and water at p = 1.01325 bar. Symbols: Data taken from ref.9; Lines represent modeling results obtained with ePCSAFT using the parameters from Table S4.
+
+
+Figure S8: LLE of ethyl propionate (EtOProp) and water at p = 1.01325 bar. Symbols: Data taken from ref.11; Lines represent modeling results obtained with ePCSAFT using the parameters from Table S4.
+
+
+Table S5: UNIFAC parameters: group volume Rk and group surface area Qk used to calculate the VLE of EtOProp and NMP in this work, cf. Figure S9.
+| Group | Rk | Qk |
+| CH3 | 0.901116 | 0.84816 |
+| CH2 | 0.674416 | 0.5416 |
+| CH2COO | 1.676417 | 1.4217 |
+| CH3N | 1.18718 | 0.9418 |
+| CH2CO | 1.445718 | 1.1818 |
+
+Table S6: UNIFAC group interaction parameters aij used to calculate the VLE of EtOProp and NMP in this work, cf. Figure S9.
+| Group j\ Group i | CH3 | CH2 | CH2COO | CH3COO | CH3N | CH2CO |
+| CH3 | - | 016 | 114.817 | 114.817 | -83.9818 | 26.7618 |
+| CH2 | 016 | - | 114.817 | 114.817 | -83.9818 | 26.7618 |
+| CH2COO | 232.117 | 232.117 | - | - | 288919 | -213.717 |
+| CH3N | 206.618 | 206.618 | -196.719 | -196.719 | - | -16920 |
+| CH2CO | 476.418 | 476.418 | 372.217 | 372.217 | 225.320 | - |
+
+Table S7: Antoine parameters for different substances used to calculate the VLE of EtOProp and NMP with UNIFAC parameters in this work, cf. Figure S9.
+| Substance | A | B | C | T range / K | Source |
+| EtOProp* | 7.009966 | 1268.942 | 208.301 | 307-371 | 21 |
+| NMP* | 7.54826 | 1979.68 | 222.2 | 279.15-479.15 | 22 |
+*logp=A- Bϑ+C with p in mmHg and ϑ in °C
+
+
+Figure S9: VLE of NMP and ethyl propionate (EtOProp) at T = 370 K. Dotted line: VLE determined using UNIFAC with the parameters from Table S5, Table S6, and Table S7; Lines represent modeling results obtained with ePCSAFT using the parameters from Table S4.
+
+
+Table S8: Comparison of experimental LiCl solubilities in ethanol and methanol at T = 298.15 K and p = 1.01325 bar obtained from the literature. In addition, modeling results obtained with ePCSAFT are presented together with the corresponding RSD and ARD value.
+| Salt | Solvent | xliterature / mol mol-1 |  | xexp / mol mol-1 | xePC-SAFT / mol mol-1 | RSDliterature / % | ARDePC-SAFT /% |
+| LiCl | MeOH | 0.247423 |  | 0.2474 | 0.2478 | - | 0.16 |
+| LiCl | EtOH | 0.21223 | 0.21224 | 0.212 | 0.212 | 0.00 | 0.00 |
+
+
+
+Figure S10: Mole fraction solubility of LiCl in methanol and ethanol at T = 298.15 K and p = 1.01325 bar. Striped bars represent data from the literature from Table S8. Solid bars show modeling results obtained with ePC-SAFT.
+
+
+Figure S11: MIAC of LiCl as a function of the salt molality msalt in ethanol at T = 298.15 K and p = 1.01325 bar. Symbols represent experimental data obtained from the literature25. Solid line represents the modeling results obtained with ePC-SAFT.
+
+
+Table S9: Composition of the preliminary homogeneity experiments for the esterification reaction E1 with LiCl at T = 323.15 K and p = 1.01325 bar at the start and at equilibrium of E1. In addition, the visually obtained phase behavior and the ePC-SAFT predicted phase behavior results are given.
+|  | xEtOH/ mol ∙ mol-1 | xHAc/ mol ∙ mol-1 | xEtOAc/ mol ∙ mol-1 | xH2O/ mol ∙ mol-1 | xLiCl/ mol ∙ mol-1 | Visually obtained phase behavior | ePC-SAFT predicted phase behavior |
+| Start | 0.366 | 0.365 | 0.000 | 0.163 | 0.105 | LLE | LLE |
+| End | 0.154 | 0.141 | 0.221 | 0.378 | 0.107 | LLE | LLE |
+
+Table S10: Composition of the preliminary homogeneity experiments for the esterification reaction E2 with LiCl at T = 323.15 K and p = 1.01325 bar at the start and at equilibrium of E2. In addition, the visually obtained phase behavior data and the ePC-SAFT predicted phase behavior results are given.
+|  | xEtOH/ mol ∙ mol-1 | xHProp/ mol ∙ mol-1 | xEtOProp/ mol ∙ mol-1 | xH2O/ mol ∙ mol-1 | xLiCl/ mol ∙ mol-1 | Visually obtained phase behavior | ePC-SAFT predicted phase behavior |
+| Start | 0.390 | 0.389 | 0.000 | 0.173 | 0.048 | LLE | LLE |
+| End | 0.158 | 0.158 | 0.248 | 0.426 | 0.010 | LLE | LLE |
+
+Table S11: Composition of the preliminary homogeneity experiments for the esterification reaction E1 with NaCl at T = 323.15 K and p = 1.01325 bar at the start and at equilibrium of E1. In addition, the visually obtained phase behavior data and the ePC-SAFT predicted phase behavior results are given.
+|  | xEtOH/ mol ∙ mol-1 | xHAc/ mol ∙ mol-1 | xEtOAc/ mol ∙ mol-1 | xH2O/ mol ∙ mol-1 | xNaCl/ mol ∙ mol-1 | Visually obtained phase behavior | ePC-SAFT predicted phase behavior |
+| Start | 0.403 | 0.406 | 0.000 | 0.181 | 0.010 | SLE | - |
+| End | 0.165 | 0.157 | 0.246 | 0.423 | 0.010 | LLE | LLE |
+
+Table S12: Composition of the preliminary homogeneity experiments for the esterification reaction E2 with NaCl at T = 323.15 K and p = 1.01325 bar at the start and at equilibrium of E2. In addition, the visually obtained phase behavior data and the ePC-SAFT predicted phase behavior results are given.
+|  | xEtOH/ mol ∙ mol-1 | xHProp/ mol ∙ mol-1 | xEtOProp/ mol ∙ mol-1 | xH2O/ mol ∙ mol-1 | xNaCl/ mol ∙ mol-1 | Visually obtained phase behavior | ePC-SAFT predicted phase behavior |
+| Start | 0.411 | 0.400 | 0.000 | 0.179 | 0.010 | SLE | - |
+| End | 0.158 | 0.158 | 0.247 | 0.427 | 0.010 | LLE | LLE |
+
+Table S13: Composition of the preliminary homogeneity experiments for the esterification reaction E1 with KCl at T = 323.15 K and p = 1.01325 bar at the start and at equilibrium of E1. In addition, the visually obtained phase behavior data and the ePC-SAFT predicted phase behavior results are given.
+|  | xEtOH/ mol ∙ mol-1 | xHAc/ mol ∙ mol-1 | xEtOAc/ mol ∙ mol-1 | xH2O/ mol ∙ mol-1 | xKCl/ mol ∙ mol-1 | Visually obtained phase behavior | ePC-SAFT predicted phase behavior |
+| Start | 0.417 | 0.397 | 0.000 | 0.176 | 0.010 | SLE | - |
+| End | 0.158 | 0.158 | 0.247 | 0.427 | 0.010 | SLE | - |
+
+Table S14: Composition of the preliminary homogeneity experiments for the esterification reaction E2 with KCl at T = 323.15 K and p = 1.01325 bar at the start and at equilibrium of E2. In addition, the visually obtained phase behavior data and the ePC-SAFT predicted phase behavior results are given.
+|  | xEtOH/ mol ∙ mol-1 | xHProp/ mol ∙ mol-1 | xEtOProp/ mol ∙ mol-1 | xH2O/ mol ∙ mol-1 | xKCl/ mol ∙ mol-1 | Visually obtained phase behavior | ePC-SAFT predicted phase behavior |
+| Start | 0.415 | 0.400 | 0.000 | 0.176 | 0.010 | LLE | LLE |
+| End | 0.158 | 0.159 | 0.247 | 0.426 | 0.010 | LLE | LLE |
+
+
+Table S15: Composition of the preliminary homogeneity experiments for the esterification reaction E1 with CsCl at T = 323.15 K and p = 1.01325 bar at the start and at equilibrium of E1. In addition, the visually obtained phase behavior data and the ePC-SAFT predicted phase behavior results are given.
+|  | xEtOH/ mol ∙ mol-1 | xHAc/ mol ∙ mol-1 | xEtOAc/ mol ∙ mol-1 | xH2O/ mol ∙ mol-1 | xCsCl/ mol ∙ mol-1 | Visually obtained phase behavior | ePC-SAFT predicted phase behavior |
+| Start | 0.403 | 0.406 | 0.000 | 0.181 | 0.010 | - | LLE |
+| End | 0.165 | 0.157 | 0.246 | 0.423 | 0.010 | LLE | LLE |
+
+Table S16: Composition of the preliminary homogeneity experiments for the esterification reaction E2 with CsCl at T = 323.15 K and p = 1.01325 bar at the start and at equilibrium of E2. In addition, the visually obtained phase behavior data and the ePC-SAFT predicted phase behavior results are given.
+|  | xEtOH/ mol ∙ mol-1 | xHProp/ mol ∙ mol-1 | xEtOProp/ mol ∙ mol-1 | xH2O/ mol ∙ mol-1 | xCsCl/ mol ∙ mol-1 | Visually obtained phase behavior | ePC-SAFT predicted phase behavior |
+| Start | 0.405 | 0.404 | 0.000 | 0.181 | 0.010 | SLE | - |
+| End | 0.158 | 0.154 | 0.262 | 0.416 | 0.010 | LLE | LLE |
+
+Table S17: Initial compositions of the esterification reaction E1 obtained via weighing at T = 323.15 K and p = 1.01325 bar. The values are the average of at least two reactions and were used as starting values for the modeling with ePCSAFT. In addition, the visually obtained phase behavior data and the ePC-SAFT predicted phase behavior results are given.
+| nEtOHnHAc | xLiCl0/ mol ∙ mol-1 | xEtOH0/ mol ∙ mol-1 | xHAc0/ mol ∙ mol-1 | xH2O0/ mol ∙ mol-1 | xEtOAc0/ mol ∙ mol-1 | Visually obtained phase behavior | ePC-SAFT predicted phase behavior |
+| 1:1 | 0.000 | 0.425 | 0.425 | 0.149 | 0.000 | - | - |
+| 3:1 | 0.000 | 0.637 | 0.212 | 0.150 | 0.000 | - | - |
+| 9:1 | 0.000 | 0.765 | 0.085 | 0.150 | 0.000 | - | - |
+| 3:1 | 0.050 | 0.582 | 0.194 | 0.174 | 0.000 | - | - |
+| 3:1 | 0.100 | 0.544 | 0.182 | 0.174 | 0.000 | - | - |
+| 9:1 | 0.100 | 0.653 | 0.073 | 0.174 | 0.000 | - | - |
+
+Table S18: Initial compositions of the esterification reaction E1 obtained via weighing at T = 323.15 K and p = 1.01325 bar. The values are the average of at least two reactions and were used as starting values for the modeling with ePCSAFT. In addition, the visually obtained phase behavior data and the ePC-SAFT predicted phase behavior results are given.
+| nEtOHnHAc | xNMP0/ mol ∙ mol-1 | xEtOH0/ mol ∙ mol-1 | xHAc0/ mol ∙ mol-1 | xH2O0/ mol ∙ mol-1 | xEtOAc0/ mol ∙ mol-1 | Visually obtained phase behavior | ePC-SAFT predicted phase behavior |
+| 1:1 | 0.085 | 0.382 | 0.383 | 0.150 | 0.000 | - | - |
+| 1:1 | 0.189 | 0.331 | 0.331 | 0.148 | 0.000 | - | - |
+
+Table S19: Initial compositions of the esterification reaction E2 obtained via weighing at T = 323.15 K and p = 1.01325 bar. The values are the average of at least two reactions were used as starting values for the modeling with ePCSAFT. In addition, the visually obtained phase behavior data and the ePC-SAFT predicted phase behavior results are given.
+| nEtOHnHProp | xNMP0/ mol ∙ mol-1 | xEtOH0/ mol ∙ mol-1 | xHProp0/ mol ∙ mol-1 | xH2O0/ mol ∙ mol-1 | xEtOProp0/ mol ∙ mol-1 | Visually obtained phase behavior | ePC-SAFT predicted phase behavior |
+| 1:1 | 0.000 | 0.418 | 0.418 | 0.164 | 0.000 | - | - |
+| 3:1 | 0.000 | 0.632 | 0.211 | 0.157 | 0.000 | - | - |
+| 9:1 | 0.000 | 0.762 | 0.085 | 0.153 | 0.000 | - | - |
+| 1:1 | 0.100 | 0.363 | 0.363 | 0.174 | 0.000 | - | - |
+| 1:1 | 0.201 | 0.310 | 0.310 | 0.179 | 0.000 | - | - |
+
+
+Table S20: Equilibrium compositions of the esterification reaction E1 obtained via in situ FTIR measurements at T = 323.15 K and p = 1.01325 bar. In addition, the visually obtained phase behavior data and the ePC-SAFT predicted phase behavior results are given.
+| nEtOHnHAc | xLiClGGW/ mol ∙ mol-1 | xEtOHGGW/ mol ∙ mol-1 | xHAcGGW/ mol ∙ mol-1 | xH2OGGW/ mol ∙ mol-1 | xEtOAcGGW/ mol ∙ mol-1 | Visually obtained phase behavior | ePC-SAFT predicted phase behavior |
+| 1:1 | 0.000 | 0.173 | 0.172 | 0.402 | 0.253 | - | - |
+| 3:1 | 0.000 | 0.467 | 0.042 | 0.321 | 0.170 | - | - |
+| 9:1 | 0.000 | 0.699 | 0.019 | 0.216 | 0.066 | - | - |
+| 3:1 | 0.050 | 0.421 | 0.033 | 0.335 | 0.161 | - | LLE |
+| 3:1 | 0.100 | 0.398 | 0.035 | 0.320 | 0.146 | - | LLE |
+| 9:1 | 0.100 | 0.598 | 0.017 | 0.229 | 0.055 | - | LLE |
+
+Table S21: Equilibrium compositions of the esterification reaction E1 obtained via in situ FTIR measurements at T = 323.15 K and p = 1.01325 bar. In addition, the visually obtained phase behavior data and the ePC-SAFT predicted phase behavior results are given.
+| nEtOHnHAc | xNMPGGW/ mol ∙ mol-1 | xEtOHGGW/ mol ∙ mol-1 | xHAcGGW/ mol ∙ mol-1 | xH2OGGW/ mol ∙ mol-1 | xEtOAcGGW/ mol ∙ mol-1 | Visually obtained phase behavior | ePC-SAFT predicted phase behavior |
+| 1:1 | 0.085 | 0.196 | 0.196 | 0.336 | 0.186 | - | - |
+| 1:1 | 0.189 | 0.175 | 0.175 | 0.305 | 0.157 | - | - |
+
+Table S22: Equilibrium compositions of the esterification reaction E2 obtained via FTIR measurements at T = 323.15 K and p = 1.01325 bar. In addition, the visually obtained phase behavior data and the ePC-SAFT predicted phase behavior results are given.
+| nEtOHnHProp | xNMPGGW/ mol ∙ mol-1 | xEtOHGGW/ mol ∙ mol-1 | xHPropGGW/ mol ∙ mol-1 | xH2OGGW/ mol ∙ mol-1 | xEtOPropGGW/ mol ∙ mol-1 | Visually obtained phase behavior | ePC-SAFT predicted phase behavior |
+| 1:1 | 0.000 | 0.166 | 0.166 | 0.416 | 0.252 | - | - |
+| 3:1 | 0.000 | 0.463 | 0.042 | 0.326 | 0.169 | - | - |
+| 9:1 | 0.000 | 0.695 | 0.018 | 0.220 | 0.067 | - | - |
+| 1:1 | 0.100 | 0.157 | 0.157 | 0.380 | 0.206 | - | - |
+| 1:1 | 0.201 | 0.150 | 0.150 | 0.339 | 0.160 | - | - |
+
+Table S23: Water content of different LiCl solutions determined by Karl Fischer (KF) measurements at T = 298.15 K and p = 1.01325 bar. The value of the water content is the average of three measurements.
+| mSolventmLiCl | Solvent | mSolvent/ g | mLiCl/ g | wSolvent/ g ∙ g-1 | wLiCl/ g ∙ g-1 | wH2OKF/ g ∙ g-1 |
+| 2:1 | Ethanol | 4.686 | 2.166 | 0.684 | 0.316 | 0.009 |
+| 2:1 | Water | 3.078 | 1.506 | 0.672 | 0.328 | 0.671 |
+| 5:4 | Water | 4.044 | 3.224 | 0.556 | 0.444 | 0.558 |
+| 3:2 | Water | 4.275 | 2.811 | 0.603 | 0.397 | 0.602 |
+
+Table S24: Initial and equilibrium composition of two reaction systems with HAc, EtOH and LiCl at T = 323.15 K and p = 1.01325 bar. The equilibrium composition was determined using two methods. The first method uses Karl Fischer (KF) measurements to determine the water content of the system. The mole fractions of the other substances were calculated from the water content obtained by KF measurements. The second values (end experiment) are taken from the in situ FTIR measurements.
+| nEtOHnHAc |  | xEtOH/ g ∙ g-1 | xLiCl/ g ∙ g-1 | xH2O/ g ∙ g-1 | xHAc/ g ∙ g-1 | xEtOAc/ g ∙ g-1 |
+| 3:1 | Equilibrium KF | 0.397 | 0.099 | 0.323 | 0.038 | 0.143 |
+|  | Equilibrium experiment | 0.407 | 0.1 | 0.297 | 0.044 | 0.153 |
+| 9:1 | End KF | 0.589 | 0.098 | 0.241 | 0.017 | 0.054 |
+|  | Equilibrium experiment | 0.600 | 0.102 | 0.230 | 0.015 | 0.053 |
+
+
+
+Table S25: Course of EtOAc over the reaction time determined experimentally (M1 and M2) at T = 323.15 K and p = 1.01325 bar for the system with EtOH and HAc (1:1) without salt or NMP. In addition, predictions with ePC-SAFT are listed together with the corresponding RSD and ARD values at T = 323.15 K and p = 1.01325 bar for the system with EtOH and HAc (1:1) without salt or NMP. RSD, ARSD, and AARD were calculated according to Eq. (2) – Eq. (4).
+|  | Experimental | ePC-SAFT |  |
+| t / min | xEtOAcM1/ mol ∙ mol-1 | xEtOAcM2/ mol ∙ mol-1 | xEtOAcaverage/ mol ∙ mol-1 | xError/ mol ∙ mol-1 | xEtOAc/ mol ∙ mol-1 | RSD / - | ARD / - |
+| 5.000 | 0.037 | 0.044 | 0.041 | 0.005 | 0.044 | 0.122 | 0.067 |
+| 10.000 | 0.077 | 0.080 | 0.078 | 0.002 | 0.079 | 0.027 | 0.004 |
+| 20.000 | 0.132 | 0.129 | 0.131 | 0.002 | 0.129 | 0.016 | 0.010 |
+| 25.000 | 0.153 | 0.153 | 0.153 | 0.001 | 0.148 | 0.003 | 0.034 |
+| 30.000 | 0.169 | 0.160 | 0.164 | 0.006 | 0.187 | 0.039 | 0.138 |
+| 35.000 | 0.172 | 0.171 | 0.172 | 0.001 | 0.196 | 0.003 | 0.144 |
+| 40.000 | 0.184 | 0.183 | 0.184 | 0.000 | 0.204 | 0.002 | 0.114 |
+| 45.000 | 0.190 | 0.189 | 0.189 | 0.001 | 0.211 | 0.004 | 0.114 |
+| 50.000 | 0.199 | 0.202 | 0.200 | 0.002 | 0.217 | 0.008 | 0.082 |
+| 55.000 | 0.207 | 0.201 | 0.204 | 0.005 | 0.222 | 0.023 | 0.087 |
+| 60.000 | 0.209 | 0.207 | 0.208 | 0.002 | 0.226 | 0.008 | 0.085 |
+| 65.000 | 0.207 | 0.210 | 0.209 | 0.002 | 0.230 | 0.011 | 0.102 |
+| 70.000 | 0.212 | 0.219 | 0.215 | 0.005 | 0.233 | 0.023 | 0.082 |
+| 75.000 | 0.213 | 0.224 | 0.219 | 0.007 | 0.236 | 0.034 | 0.080 |
+| 80.000 | 0.215 | 0.226 | 0.220 | 0.008 | 0.238 | 0.037 | 0.081 |
+| 85.000 | 0.217 | 0.229 | 0.223 | 0.008 | 0.241 | 0.036 | 0.079 |
+| 90.000 | 0.227 | 0.230 | 0.229 | 0.002 | 0.242 | 0.009 | 0.060 |
+| 95.000 | 0.226 | 0.224 | 0.225 | 0.001 | 0.244 | 0.006 | 0.084 |
+| 100.000 | 0.229 | 0.234 | 0.232 | 0.003 | 0.246 | 0.014 | 0.060 |
+| 105.000 | 0.230 | 0.237 | 0.234 | 0.005 | 0.247 | 0.019 | 0.056 |
+| 110.000 | 0.237 | 0.241 | 0.239 | 0.003 | 0.248 | 0.011 | 0.037 |
+| 115.000 | 0.241 | 0.238 | 0.239 | 0.002 | 0.249 | 0.009 | 0.041 |
+| 120.000 | 0.244 | 0.237 | 0.241 | 0.005 | 0.250 | 0.022 | 0.039 |
+| 125.000 | 0.239 | 0.242 | 0.240 | 0.002 | 0.251 | 0.009 | 0.042 |
+| 130.000 | 0.242 | 0.249 | 0.245 | 0.005 | 0.251 | 0.020 | 0.024 |
+| 135.000 | 0.234 | 0.253 | 0.244 | 0.013 | 0.252 | 0.053 | 0.034 |
+| 140.000 | 0.242 | 0.244 | 0.243 | 0.001 | 0.252 | 0.004 | 0.037 |
+| 145.000 | 0.243 | 0.252 | 0.247 | 0.006 | 0.253 | 0.026 | 0.023 |
+| 150.000 | 0.241 | 0.247 | 0.244 | 0.004 | 0.253 | 0.018 | 0.038 |
+| 155.000 | 0.238 | 0.251 | 0.245 | 0.009 | 0.253 | 0.038 | 0.037 |
+| 160.000 | 0.242 | 0.253 | 0.248 | 0.008 | 0.254 | 0.032 | 0.025 |
+| 165.000 | 0.244 | 0.255 | 0.249 | 0.008 | 0.254 | 0.031 | 0.019 |
+| 170.000 | 0.251 | 0.250 | 0.251 | 0.000 | 0.254 | 0.000 | 0.016 |
+| 175.000 | 0.246 | 0.252 | 0.249 | 0.004 | 0.255 | 0.017 | 0.023 |
+| 180.000 | 0.253 | 0.257 | 0.255 | 0.003 | 0.255 | 0.011 | 0.000 |
+| 185.000 | 0.243 | 0.255 | 0.249 | 0.009 | 0.255 | 0.034 | 0.023 |
+| 190.000 | 0.252 | 0.253 | 0.252 | 0.001 | 0.255 | 0.003 | 0.013 |
+| 195.000 | 0.254 | 0.257 | 0.255 | 0.002 | 0.255 | 0.008 | 0.000 |
+| 200.000 | 0.247 | 0.260 | 0.253 | 0.009 | 0.256 | 0.037 | 0.008 |
+ARSD = 2.15 %; AARD = 5.13%
+
+Table S26: Course of EtOAc over the reaction time determined experimentally (M1 and M2) at T = 323.15 K and p = 1.01325 bar for the system with EtOH and HAc (3:1) without salt or NMP. In addition, predictions with ePC-SAFT are listed together with the corresponding RSD and ARD values at T = 323.15 K and p = 1.01325 bar for the system with EtOH and HAc (3:1) without salt or NMP. RSD, ARSD, and AARD were calculated according to Eq. (2) – Eq. (4).
+|  | Experimental | ePC-SAFT |  |
+| t / min | xEtOAcM1/ mol ∙ mol-1 | xEtOAcM2/ mol ∙ mol-1 | xEtOAcaverage/ mol ∙ mol-1 | xError/ mol ∙ mol-1 | xEtOAc/ mol ∙ mol-1 | RSD / - | ARD / - |
+| 5.000 | 0.018 | 0.013 | 0.016 | 0.003 | 0.031 | 0.221 | 0.967 |
+| 10.000 | 0.047 | 0.037 | 0.042 | 0.007 | 0.055 | 0.166 | 0.321 |
+| 15.000 | 0.067 | 0.054 | 0.061 | 0.010 | 0.074 | 0.162 | 0.219 |
+| 20.000 | 0.082 | 0.067 | 0.074 | 0.010 | 0.089 | 0.141 | 0.206 |
+| 25.000 | 0.096 | 0.081 | 0.088 | 0.011 | 0.103 | 0.124 | 0.160 |
+| 30.000 | 0.109 | 0.089 | 0.099 | 0.014 | 0.113 | 0.146 | 0.139 |
+| 35.000 | 0.120 | 0.099 | 0.110 | 0.015 | 0.122 | 0.138 | 0.110 |
+| 40.000 | 0.122 | 0.106 | 0.114 | 0.012 | 0.129 | 0.102 | 0.133 |
+| 45.000 | 0.129 | 0.112 | 0.120 | 0.012 | 0.136 | 0.102 | 0.128 |
+| 50.000 | 0.138 | 0.116 | 0.127 | 0.016 | 0.141 | 0.124 | 0.107 |
+| 55.000 | 0.145 | 0.121 | 0.133 | 0.017 | 0.145 | 0.130 | 0.089 |
+| 60.000 | 0.147 | 0.126 | 0.137 | 0.014 | 0.149 | 0.106 | 0.092 |
+| 65.000 | 0.150 | 0.132 | 0.141 | 0.012 | 0.152 | 0.087 | 0.079 |
+| 70.000 | 0.153 | 0.137 | 0.145 | 0.011 | 0.155 | 0.076 | 0.073 |
+| 75.000 | 0.157 | 0.140 | 0.149 | 0.013 | 0.158 | 0.085 | 0.061 |
+| 80.000 | 0.159 | 0.141 | 0.150 | 0.012 | 0.160 | 0.082 | 0.065 |
+| 85.000 | 0.162 | 0.145 | 0.154 | 0.013 | 0.162 | 0.082 | 0.054 |
+| 90.000 | 0.165 | 0.147 | 0.156 | 0.012 | 0.163 | 0.080 | 0.044 |
+| 95.000 | 0.166 | 0.150 | 0.158 | 0.011 | 0.165 | 0.072 | 0.042 |
+| 100.000 | 0.168 | 0.153 | 0.160 | 0.011 | 0.166 | 0.066 | 0.035 |
+| 105.000 | 0.172 | 0.154 | 0.163 | 0.013 | 0.167 | 0.080 | 0.026 |
+| 110.000 | 0.172 | 0.156 | 0.164 | 0.011 | 0.168 | 0.069 | 0.023 |
+| 115.000 | 0.170 | 0.159 | 0.164 | 0.008 | 0.169 | 0.046 | 0.026 |
+| 120.000 | 0.173 | 0.159 | 0.166 | 0.010 | 0.169 | 0.060 | 0.019 |
+| 125.000 | 0.172 | 0.158 | 0.165 | 0.010 | 0.170 | 0.058 | 0.031 |
+| 130.000 | 0.174 | 0.162 | 0.168 | 0.008 | 0.170 | 0.050 | 0.017 |
+| 135.000 | 0.175 | 0.162 | 0.168 | 0.009 | 0.171 | 0.054 | 0.016 |
+| 140.000 | 0.175 | 0.164 | 0.170 | 0.008 | 0.171 | 0.048 | 0.010 |
+| 145.000 | 0.177 | 0.164 | 0.170 | 0.010 | 0.172 | 0.056 | 0.007 |
+| 150.000 | 0.177 | 0.163 | 0.170 | 0.010 | 0.172 | 0.057 | 0.010 |
+ARSD = 9.57 %; AARD = 11.03 %
+
+Table S27: Course of EtOAc over the reaction time determined experimentally (M1 and M2) at T = 323.15 K and p = 1.01325 bar for the system with EtOH and HAc (9:1) without salt or NMP. In addition, predictions with ePC-SAFT are listed together with the corresponding RSD and ARD values at T = 323.15 K and p = 1.01325 bar for the system with EtOH and HAc (9:1) without salt or NMP. RSD, ARSD, and AARD were calculated according to Eq. (2) – Eq. (4).
+|  | Experimental | ePC-SAFT |  |
+| t / min | xEtOAcM1/ mol ∙ mol-1 | xEtOAcM2/ mol ∙ mol-1 | xEtOAcaverage/ mol ∙ mol-1 | xError/ mol ∙ mol-1 | xEtOAc/ mol ∙ mol-1 | RSD / - | ARD / - |
+| 10.000 | 0.006 | 0.011 | 0.009 | 0.003 | 0.025 | 0.372 | 1.943 |
+| 15.000 | 0.015 | 0.019 | 0.017 | 0.003 | 0.034 | 0.170 | 1.009 |
+| 20.000 | 0.022 | 0.027 | 0.024 | 0.003 | 0.042 | 0.123 | 0.712 |
+| 30.000 | 0.033 | 0.039 | 0.036 | 0.004 | 0.053 | 0.120 | 0.456 |
+| 35.000 | 0.035 | 0.043 | 0.039 | 0.006 | 0.057 | 0.141 | 0.454 |
+| 40.000 | 0.038 | 0.045 | 0.042 | 0.005 | 0.061 | 0.126 | 0.452 |
+| 45.000 | 0.041 | 0.049 | 0.045 | 0.006 | 0.063 | 0.132 | 0.411 |
+| 50.000 | 0.048 | 0.052 | 0.050 | 0.003 | 0.066 | 0.066 | 0.318 |
+| 55.000 | 0.048 | 0.054 | 0.051 | 0.005 | 0.068 | 0.091 | 0.329 |
+| 60.000 | 0.048 | 0.055 | 0.052 | 0.005 | 0.069 | 0.096 | 0.339 |
+| 65.000 | 0.050 | 0.061 | 0.055 | 0.008 | 0.071 | 0.138 | 0.284 |
+| 70.000 | 0.054 | 0.060 | 0.057 | 0.005 | 0.072 | 0.081 | 0.260 |
+| 75.000 | 0.051 | 0.062 | 0.056 | 0.008 | 0.073 | 0.134 | 0.297 |
+| 80.000 | 0.054 | 0.066 | 0.060 | 0.008 | 0.074 | 0.136 | 0.236 |
+| 85.000 | 0.057 | 0.066 | 0.061 | 0.007 | 0.075 | 0.109 | 0.219 |
+| 90.000 | 0.055 | 0.067 | 0.061 | 0.009 | 0.075 | 0.140 | 0.234 |
+| 95.000 | 0.058 | 0.068 | 0.063 | 0.007 | 0.076 | 0.112 | 0.203 |
+| 100.000 | 0.058 | 0.069 | 0.063 | 0.008 | 0.076 | 0.126 | 0.201 |
+| 105.000 | 0.059 | 0.068 | 0.064 | 0.006 | 0.077 | 0.099 | 0.197 |
+| 110.000 | 0.061 | 0.068 | 0.065 | 0.005 | 0.077 | 0.085 | 0.190 |
+| 115.000 | 0.061 | 0.069 | 0.065 | 0.005 | 0.077 | 0.081 | 0.190 |
+| 120.000 | 0.062 | 0.070 | 0.066 | 0.006 | 0.077 | 0.093 | 0.172 |
+ARSD = 12.60 %; AARD = 41.40 %
+
+Table S28: Course of EtOAc over the reaction time determined experimentally (M1 and M2) at T = 323.15 K and p = 1.01325 bar for the system with EtOH and HAc (3:1) with xLiCl=0.05 and without NMP. In addition, predictions with ePC-SAFT are listed together with the corresponding RSD and ARD values at T = 323.15 K and p = 1.01325 bar for the system with EtOH and HAc (3:1) with xLiCl=0.05 and without NMP. RSD, ARSD, and AARD were calculated according to Eq. (2) – Eq. (4).
+|  | Experimental | ePC-SAFT |  |
+| t / min | xEtOAcM1/ mol ∙ mol-1 | xEtOAcM2/ mol ∙ mol-1 | xEtOAcaverage/ mol ∙ mol-1 | xError/ mol ∙ mol-1 | xEtOAc/ mol ∙ mol-1 | RSD / - | ARD / - |
+| 5.000 | 0.020 | 0.034 | 0.027 | 0.010 | 0.046 | 0.380 | 0.708 |
+| 10.000 | 0.050 | 0.057 | 0.054 | 0.005 | 0.074 | 0.092 | 0.382 |
+| 15.000 | 0.072 | 0.077 | 0.075 | 0.003 | 0.094 | 0.046 | 0.255 |
+| 20.000 | 0.091 | 0.097 | 0.094 | 0.004 | 0.108 | 0.042 | 0.150 |
+| 25.000 | 0.106 | 0.102 | 0.104 | 0.003 | 0.118 | 0.029 | 0.132 |
+| 30.000 | 0.120 | 0.110 | 0.115 | 0.007 | 0.126 | 0.065 | 0.093 |
+| 35.000 | 0.126 | 0.116 | 0.121 | 0.007 | 0.131 | 0.061 | 0.081 |
+| 40.000 | 0.133 | 0.125 | 0.129 | 0.006 | 0.136 | 0.044 | 0.053 |
+| 45.000 | 0.137 | 0.130 | 0.134 | 0.005 | 0.139 | 0.039 | 0.040 |
+| 50.000 | 0.142 | 0.131 | 0.137 | 0.008 | 0.141 | 0.057 | 0.034 |
+| 55.000 | 0.150 | 0.134 | 0.142 | 0.012 | 0.143 | 0.081 | 0.009 |
+| 60.000 | 0.149 | 0.132 | 0.140 | 0.012 | 0.145 | 0.088 | 0.033 |
+| 65.000 | 0.151 | 0.138 | 0.145 | 0.009 | 0.146 | 0.062 | 0.009 |
+| 70.000 | 0.153 | 0.139 | 0.146 | 0.010 | 0.147 | 0.068 | 0.011 |
+| 75.000 | 0.155 | 0.141 | 0.148 | 0.010 | 0.148 | 0.064 | 0.001 |
+| 80.000 | 0.159 | 0.142 | 0.150 | 0.012 | 0.148 | 0.078 | 0.014 |
+| 85.000 | 0.157 | 0.149 | 0.153 | 0.005 | 0.149 | 0.036 | 0.028 |
+| 90.000 | 0.161 | 0.144 | 0.153 | 0.012 | 0.149 | 0.078 | 0.022 |
+| 95.000 | 0.159 | 0.146 | 0.152 | 0.009 | 0.150 | 0.058 | 0.019 |
+| 100.000 | 0.159 | 0.148 | 0.153 | 0.007 | 0.150 | 0.048 | 0.023 |
+| 105.000 | 0.161 | 0.152 | 0.156 | 0.006 | 0.150 | 0.037 | 0.042 |
+| 110.000 | 0.164 | 0.148 | 0.156 | 0.011 | 0.150 | 0.069 | 0.038 |
+| 115.000 | 0.166 | 0.152 | 0.159 | 0.010 | 0.150 | 0.063 | 0.056 |
+| 120.000 | 0.166 | 0.152 | 0.159 | 0.010 | 0.150 | 0.061 | 0.057 |
+| 125.000 | 0.162 | 0.145 | 0.153 | 0.012 | 0.150 | 0.076 | 0.021 |
+| 130.000 | 0.159 | 0.148 | 0.153 | 0.008 | 0.150 | 0.052 | 0.019 |
+| 135.000 | 0.168 | 0.153 | 0.161 | 0.011 | 0.150 | 0.069 | 0.064 |
+ARSD = 7.20 %; AARD = 8.86 %
+
+Table S29: Course of EtOAc over the reaction time determined experimentally (M1 and M2) at T = 323.15 K and p = 1.01325 bar for the system with EtOH and HAc (3:1) with xLiCl=0.1 and without NMP. In addition, predictions with ePC-SAFT are listed together with the corresponding RSD and ARD values at T = 323.15 K and p = 1.01325 bar for the system with EtOH and HAc (3:1) with xLiCl=0.1 and without NMP. RSD, ARSD, and AARD were calculated according to Eq. (2) – Eq. (4).
+|  | Experimental | ePC-SAFT |  |
+| t / min | xEtOAcM1/ mol ∙ mol-1 | xEtOAcM2/ mol ∙ mol-1 | xEtOAcaverage/ mol ∙ mol-1 | xError/ mol ∙ mol-1 | xEtOAc/ mol ∙ mol-1 | RSD / - | ARD / - |
+| 5.000 | 0.019 | 0.036 | 0.028 | 0.012 | 0.056 | 0.418 | 1.022 |
+| 10.000 | 0.054 | 0.055 | 0.054 | 0.001 | 0.084 | 0.009 | 0.548 |
+| 15.000 | 0.071 | 0.074 | 0.073 | 0.002 | 0.101 | 0.030 | 0.391 |
+| 20.000 | 0.087 | 0.089 | 0.088 | 0.002 | 0.112 | 0.018 | 0.272 |
+| 25.000 | 0.104 | 0.107 | 0.105 | 0.002 | 0.119 | 0.017 | 0.125 |
+| 30.000 | 0.111 | 0.111 | 0.111 | 0.001 | 0.123 | 0.006 | 0.109 |
+| 35.000 | 0.119 | 0.119 | 0.119 | 0.000 | 0.126 | 0.001 | 0.062 |
+| 40.000 | 0.123 | 0.120 | 0.121 | 0.002 | 0.128 | 0.018 | 0.059 |
+| 45.000 | 0.128 | 0.128 | 0.128 | 0.000 | 0.130 | 0.001 | 0.012 |
+| 50.000 | 0.126 | 0.135 | 0.131 | 0.006 | 0.131 | 0.049 | 0.001 |
+| 55.000 | 0.137 | 0.136 | 0.137 | 0.000 | 0.132 | 0.002 | 0.037 |
+| 60.000 | 0.141 | 0.136 | 0.139 | 0.004 | 0.132 | 0.030 | 0.047 |
+| 65.000 | 0.138 | 0.139 | 0.138 | 0.000 | 0.132 | 0.001 | 0.044 |
+| 70.000 | 0.141 | 0.140 | 0.141 | 0.001 | 0.133 | 0.008 | 0.057 |
+| 75.000 | 0.144 | 0.145 | 0.145 | 0.001 | 0.133 | 0.004 | 0.083 |
+| 80.000 | 0.143 | 0.145 | 0.144 | 0.001 | 0.133 | 0.010 | 0.074 |
+| 85.000 | 0.147 | 0.141 | 0.144 | 0.004 | 0.133 | 0.026 | 0.077 |
+| 90.000 | 0.146 | 0.142 | 0.144 | 0.002 | 0.133 | 0.015 | 0.077 |
+| 95.000 | 0.146 | 0.147 | 0.147 | 0.001 | 0.133 | 0.004 | 0.093 |
+| 100.000 | 0.146 | 0.146 | 0.146 | 0.000 | 0.133 | 0.002 | 0.089 |
+| 105.000 | 0.146 | 0.147 | 0.146 | 0.000 | 0.133 | 0.002 | 0.091 |
+ARSD = 3.19 %; AARD = 16.05 %
+
+Table S30: Course of EtOAc over the reaction time determined experimentally (M1 and M2) at T = 323.15 K and p = 1.01325 barfor the system with EtOH and HAc (9:1) with xLiCl=0.1 and without NMP. In addition, predictions with ePC-SAFT are listed together with the corresponding RSD and ARD values at T = 323.15 K and p = 1.01325 bar for the system with EtOH and HAc (9:1) with xLiCl=0.1 and without NMP. RSD, ARSD, and AARD were calculated according to Eq. (2) – Eq. (4).
+|  | Experimental | ePC-SAFT |  |
+| t / min | xEtOAcM1/ mol ∙ mol-1 | xEtOAcM2/ mol ∙ mol-1 | xEtOAcaverage/ mol ∙ mol-1 | xError/ mol ∙ mol-1 | xEtOAc/ mol ∙ mol-1 | RSD / - | ARD / - |
+| 5.000 | 0.007 | 0.002 | 0.005 | 0.003 | 0.030 | 0.702 | 0.836 |
+| 10.000 | 0.016 | 0.014 | 0.015 | 0.001 | 0.045 | 0.084 | 0.662 |
+| 15.000 | 0.025 | 0.024 | 0.024 | 0.001 | 0.052 | 0.027 | 0.533 |
+| 20.000 | 0.031 | 0.025 | 0.028 | 0.004 | 0.056 | 0.132 | 0.502 |
+| 25.000 | 0.040 | 0.031 | 0.035 | 0.007 | 0.058 | 0.186 | 0.395 |
+| 30.000 | 0.040 | 0.036 | 0.038 | 0.003 | 0.060 | 0.067 | 0.357 |
+| 35.000 | 0.043 | 0.041 | 0.042 | 0.001 | 0.060 | 0.034 | 0.301 |
+| 40.000 | 0.047 | 0.044 | 0.045 | 0.002 | 0.061 | 0.051 | 0.252 |
+| 45.000 | 0.048 | 0.042 | 0.045 | 0.004 | 0.061 | 0.098 | 0.259 |
+| 50.000 | 0.052 | 0.046 | 0.049 | 0.004 | 0.061 | 0.091 | 0.199 |
+| 55.000 | 0.049 | 0.049 | 0.049 | 0.000 | 0.061 | 0.007 | 0.200 |
+| 60.000 | 0.048 | 0.052 | 0.050 | 0.003 | 0.061 | 0.057 | 0.179 |
+| 65.000 | 0.053 | 0.044 | 0.048 | 0.006 | 0.061 | 0.134 | 0.211 |
+| 70.000 | 0.050 | 0.052 | 0.051 | 0.002 | 0.061 | 0.032 | 0.162 |
+| 75.000 | 0.052 | 0.047 | 0.050 | 0.004 | 0.061 | 0.078 | 0.188 |
+| 80.000 | 0.050 | 0.047 | 0.049 | 0.002 | 0.061 | 0.032 | 0.207 |
+| 85.000 | 0.055 | 0.053 | 0.054 | 0.002 | 0.061 | 0.029 | 0.119 |
+| 90.000 | 0.051 | 0.055 | 0.053 | 0.003 | 0.061 | 0.061 | 0.133 |
+| 95.000 | 0.054 | 0.049 | 0.052 | 0.003 | 0.061 | 0.062 | 0.154 |
+| 100.000 | 0.054 | 0.054 | 0.054 | 0.000 | 0.061 | 0.005 | 0.121 |
+| 105.000 | 0.053 | 0.054 | 0.054 | 0.001 | 0.061 | 0.013 | 0.123 |
+| 110.000 | 0.056 | 0.052 | 0.054 | 0.003 | 0.061 | 0.053 | 0.124 |
+| 115.000 | 0.058 | 0.050 | 0.054 | 0.006 | 0.061 | 0.105 | 0.119 |
+| 120.000 | 0.057 | 0.053 | 0.055 | 0.003 | 0.061 | 0.060 | 0.101 |
+| 125.000 | 0.053 | 0.053 | 0.053 | 0.000 | 0.061 | 0.001 | 0.133 |
+| 130.000 | 0.058 | 0.052 | 0.055 | 0.004 | 0.061 | 0.078 | 0.098 |
+ARSD = 8.75 %; AARD = 25.64 %
+
+Table S31: Course of EtOAc over the reaction time determined experimentally (M1 and M2) at T = 323.15 K and p = 1.01325 bar for the system with EtOH and HAc (1:1) with xNMP = 0.1 and without salt. In addition, predictions with ePC-SAFT are listed together with the corresponding RSD and ARD values at T = 323.15 K and p = 1.01325 bar for the system with EtOH and HAc (1:1) with xNMP = 0.1 and without salt. RSD, ARSD, and AARD were calculated according to Eq. (2) – Eq. (4).
+|  | Experimental | ePC-SAFT |  |
+| t / min | xEtOAcM1/ mol ∙ mol-1 | xEtOAcM2/ mol ∙ mol-1 | xEtOAcaverage/ mol ∙ mol-1 | xError/ mol ∙ mol-1 | xEtOAc/ mol ∙ mol-1 | RSD / - | ARD / - |
+| 5 | 0.004 | 0.007 | 0.006 | 0.002 | 0.033 | 0.368 | 0.818 |
+| 10 | 0.024 | 0.044 | 0.034 | 0.014 | 0.058 | 0.417 | 0.413 |
+| 25 | 0.067 | 0.066 | 0.067 | 0.000 | 0.109 | 0.005 | 0.387 |
+| 30 | 0.078 | 0.074 | 0.076 | 0.003 | 0.120 | 0.040 | 0.365 |
+| 35 | 0.086 | 0.092 | 0.089 | 0.004 | 0.130 | 0.048 | 0.315 |
+| 40 | 0.103 | 0.094 | 0.098 | 0.006 | 0.139 | 0.064 | 0.291 |
+| 45 | 0.108 | 0.102 | 0.105 | 0.005 | 0.145 | 0.045 | 0.278 |
+| 50 | 0.114 | 0.110 | 0.112 | 0.003 | 0.152 | 0.026 | 0.263 |
+| 55 | 0.122 | 0.116 | 0.119 | 0.004 | 0.157 | 0.036 | 0.240 |
+| 60 | 0.128 | 0.121 | 0.125 | 0.005 | 0.162 | 0.042 | 0.230 |
+| 65 | 0.133 | 0.128 | 0.131 | 0.003 | 0.166 | 0.027 | 0.214 |
+| 70 | 0.139 | 0.134 | 0.137 | 0.003 | 0.170 | 0.025 | 0.193 |
+| 75 | 0.141 | 0.140 | 0.141 | 0.001 | 0.173 | 0.004 | 0.185 |
+| 80 | 0.148 | 0.139 | 0.143 | 0.006 | 0.175 | 0.041 | 0.182 |
+| 85 | 0.149 | 0.147 | 0.148 | 0.002 | 0.178 | 0.010 | 0.170 |
+| 90 | 0.156 | 0.149 | 0.153 | 0.005 | 0.180 | 0.031 | 0.152 |
+| 95 | 0.159 | 0.154 | 0.157 | 0.004 | 0.182 | 0.026 | 0.140 |
+| 100 | 0.162 | 0.156 | 0.159 | 0.004 | 0.184 | 0.024 | 0.134 |
+| 105 | 0.165 | 0.159 | 0.162 | 0.004 | 0.186 | 0.028 | 0.128 |
+| 110 | 0.167 | 0.161 | 0.164 | 0.005 | 0.187 | 0.028 | 0.123 |
+| 115 | 0.171 | 0.167 | 0.169 | 0.003 | 0.188 | 0.016 | 0.101 |
+| 120 | 0.173 | 0.168 | 0.171 | 0.003 | 0.189 | 0.019 | 0.098 |
+| 125 | 0.176 | 0.169 | 0.173 | 0.005 | 0.190 | 0.028 | 0.092 |
+| 130 | 0.176 | 0.172 | 0.174 | 0.003 | 0.191 | 0.017 | 0.087 |
+| 135 | 0.177 | 0.173 | 0.175 | 0.003 | 0.192 | 0.019 | 0.086 |
+| 140 | 0.181 | 0.176 | 0.178 | 0.004 | 0.192 | 0.022 | 0.072 |
+| 145 | 0.181 | 0.177 | 0.179 | 0.002 | 0.193 | 0.013 | 0.072 |
+| 150 | 0.185 | 0.180 | 0.183 | 0.004 | 0.193 | 0.019 | 0.055 |
+| 155 | 0.188 | 0.182 | 0.185 | 0.004 | 0.194 | 0.023 | 0.047 |
+| 160 | 0.189 | 0.184 | 0.186 | 0.004 | 0.194 | 0.019 | 0.042 |
+ARSD = 5.10 %; AARD = 19.91 %
+
+Table S32: Course of EtOAc over the reaction time determined experimentally (M1 and M2) at T = 323.15 K and p = 1.01325 bar for the system with EtOH and HAc (1:1) with xNMP = 0.2 and without salt. In addition, predictions with ePC-SAFT are listed together with the corresponding RSD and ARD values at T = 323.15 K and p = 1.01325 bar for the system with EtOH and HAc (1:1) with xNMP = 0.2 and without salt. RSD, ARSD, and AARD were calculated according to Eq. (2) – Eq. (4).
+|  | Experimental | ePC-SAFT |  |
+| t / min | xEtOAcM1/ mol ∙ mol-1 | xEtOAcM2/ mol ∙ mol-1 | xEtOAcaverage/ mol ∙ mol-1 | xError/ mol ∙ mol-1 | xEtOAc/ mol ∙ mol-1 | RSD / - | ARD / - |
+| 5.000 | 0.003 | 0.005 | 0.004 | 0.001 | 0.017 | 0.284 | 3.124 |
+| 10.000 | 0.010 | 0.012 | 0.011 | 0.001 | 0.031 | 0.132 | 1.990 |
+| 15.000 | 0.017 | 0.019 | 0.018 | 0.002 | 0.044 | 0.091 | 1.438 |
+| 20.000 | 0.023 | 0.025 | 0.024 | 0.001 | 0.054 | 0.057 | 1.237 |
+| 25.000 | 0.029 | 0.033 | 0.031 | 0.003 | 0.063 | 0.086 | 1.053 |
+| 30.000 | 0.031 | 0.040 | 0.035 | 0.006 | 0.071 | 0.170 | 0.999 |
+| 35.000 | 0.038 | 0.044 | 0.041 | 0.004 | 0.078 | 0.100 | 0.918 |
+| 40.000 | 0.041 | 0.046 | 0.044 | 0.003 | 0.084 | 0.075 | 0.922 |
+| 45.000 | 0.045 | 0.054 | 0.049 | 0.006 | 0.089 | 0.130 | 0.804 |
+| 50.000 | 0.049 | 0.059 | 0.054 | 0.007 | 0.094 | 0.126 | 0.736 |
+| 55.000 | 0.054 | 0.063 | 0.059 | 0.006 | 0.099 | 0.110 | 0.685 |
+| 60.000 | 0.058 | 0.065 | 0.062 | 0.005 | 0.102 | 0.084 | 0.652 |
+| 65.000 | 0.062 | 0.070 | 0.066 | 0.006 | 0.105 | 0.086 | 0.592 |
+| 70.000 | 0.065 | 0.075 | 0.070 | 0.007 | 0.108 | 0.101 | 0.554 |
+| 75.000 | 0.067 | 0.078 | 0.073 | 0.008 | 0.111 | 0.110 | 0.527 |
+| 80.000 | 0.072 | 0.081 | 0.076 | 0.007 | 0.114 | 0.087 | 0.488 |
+| 85.000 | 0.075 | 0.085 | 0.080 | 0.007 | 0.116 | 0.085 | 0.444 |
+| 90.000 | 0.078 | 0.089 | 0.083 | 0.008 | 0.117 | 0.098 | 0.410 |
+| 95.000 | 0.081 | 0.094 | 0.087 | 0.009 | 0.120 | 0.101 | 0.372 |
+| 100.000 | 0.085 | 0.095 | 0.090 | 0.008 | 0.121 | 0.086 | 0.350 |
+| 105.000 | 0.087 | 0.099 | 0.093 | 0.009 | 0.123 | 0.097 | 0.320 |
+| 110.000 | 0.090 | 0.101 | 0.095 | 0.008 | 0.124 | 0.082 | 0.302 |
+| 115.000 | 0.093 | 0.103 | 0.098 | 0.007 | 0.125 | 0.076 | 0.282 |
+| 120.000 | 0.095 | 0.107 | 0.101 | 0.008 | 0.127 | 0.083 | 0.256 |
+| 125.000 | 0.096 | 0.108 | 0.102 | 0.009 | 0.128 | 0.086 | 0.249 |
+| 130.000 | 0.100 | 0.112 | 0.106 | 0.009 | 0.128 | 0.081 | 0.216 |
+| 135.000 | 0.103 | 0.113 | 0.108 | 0.007 | 0.129 | 0.068 | 0.197 |
+| 155.000 | 0.109 | 0.122 | 0.115 | 0.009 | 0.132 | 0.079 | 0.146 |
+| 160.000 | 0.110 | 0.122 | 0.116 | 0.009 | 0.133 | 0.074 | 0.143 |
+| 165.000 | 0.114 | 0.124 | 0.119 | 0.007 | 0.133 | 0.055 | 0.117 |
+| 170.000 | 0.114 | 0.123 | 0.119 | 0.006 | 0.133 | 0.054 | 0.122 |
+| 175.000 | 0.117 | 0.127 | 0.122 | 0.007 | 0.134 | 0.055 | 0.099 |
+| 180.000 | 0.117 | 0.129 | 0.123 | 0.009 | 0.134 | 0.070 | 0.089 |
+| 185.000 | 0.119 | 0.131 | 0.125 | 0.008 | 0.135 | 0.064 | 0.076 |
+| 190.000 | 0.120 | 0.132 | 0.126 | 0.009 | 0.135 | 0.069 | 0.069 |
+| 195.000 | 0.121 | 0.134 | 0.128 | 0.009 | 0.135 | 0.071 | 0.059 |
+| 200.000 | 0.123 | 0.134 | 0.129 | 0.008 | 0.135 | 0.059 | 0.053 |
+| 205.000 | 0.126 | 0.136 | 0.131 | 0.007 | 0.136 | 0.051 | 0.036 |
+| 210.000 | 0.126 | 0.137 | 0.131 | 0.008 | 0.136 | 0.061 | 0.033 |
+| 215.000 | 0.127 | 0.136 | 0.131 | 0.006 | 0.136 | 0.049 | 0.037 |
+| 220.000 | 0.129 | 0.138 | 0.134 | 0.007 | 0.136 | 0.052 | 0.019 |
+| 225.000 | 0.130 | 0.140 | 0.135 | 0.007 | 0.136 | 0.054 | 0.011 |
+| 230.000 | 0.130 | 0.139 | 0.134 | 0.006 | 0.137 | 0.048 | 0.018 |
+| 235.000 | 0.133 | 0.140 | 0.137 | 0.005 | 0.137 | 0.034 | 0.001 |
+| 240.000 | 0.134 | 0.141 | 0.137 | 0.005 | 0.137 | 0.038 | 0.004 |
+| 245.000 | 0.133 | 0.143 | 0.138 | 0.008 | 0.137 | 0.055 | 0.009 |
+| 250.000 | 0.133 | 0.144 | 0.139 | 0.007 | 0.137 | 0.054 | 0.014 |
+| 255.000 | 0.135 | 0.145 | 0.140 | 0.007 | 0.137 | 0.051 | 0.024 |
+| 260.000 | 0.137 | 0.145 | 0.141 | 0.006 | 0.137 | 0.041 | 0.031 |
+| 265.000 | 0.137 | 0.146 | 0.141 | 0.006 | 0.137 | 0.044 | 0.033 |
+| 270.000 | 0.139 | 0.146 | 0.142 | 0.005 | 0.137 | 0.035 | 0.039 |
+| 275.000 | 0.140 | 0.148 | 0.144 | 0.006 | 0.137 | 0.041 | 0.050 |
+| 280.000 | 0.141 | 0.148 | 0.145 | 0.005 | 0.137 | 0.033 | 0.054 |
+| 285.000 | 0.140 | 0.149 | 0.145 | 0.007 | 0.137 | 0.045 | 0.056 |
+| 290.000 | 0.142 | 0.150 | 0.146 | 0.006 | 0.137 | 0.040 | 0.063 |
+| 295.000 | 0.141 | 0.150 | 0.146 | 0.007 | 0.137 | 0.047 | 0.062 |
+| 300.000 | 0.143 | 0.150 | 0.147 | 0.005 | 0.137 | 0.034 | 0.069 |
+| 305.000 | 0.143 | 0.152 | 0.148 | 0.006 | 0.137 | 0.042 | 0.075 |
+| 310.000 | 0.144 | 0.152 | 0.148 | 0.005 | 0.137 | 0.036 | 0.076 |
+| 315.000 | 0.145 | 0.152 | 0.149 | 0.005 | 0.137 | 0.031 | 0.080 |
+| 320.000 | 0.146 | 0.153 | 0.149 | 0.005 | 0.137 | 0.035 | 0.085 |
+| 325.000 | 0.145 | 0.155 | 0.150 | 0.007 | 0.137 | 0.043 | 0.089 |
+| 330.000 | 0.147 | 0.155 | 0.151 | 0.005 | 0.137 | 0.034 | 0.095 |
+| 335.000 | 0.147 | 0.155 | 0.151 | 0.006 | 0.137 | 0.038 | 0.095 |
+| 340.000 | 0.148 | 0.156 | 0.152 | 0.006 | 0.137 | 0.038 | 0.100 |
+| 345.000 | 0.147 | 0.155 | 0.151 | 0.006 | 0.137 | 0.037 | 0.097 |
+| 350.000 | 0.150 | 0.154 | 0.152 | 0.003 | 0.137 | 0.019 | 0.101 |
+| 355.000 | 0.149 | 0.159 | 0.154 | 0.007 | 0.137 | 0.043 | 0.111 |
+| 360.000 | 0.150 | 0.159 | 0.155 | 0.006 | 0.137 | 0.040 | 0.116 |
+| 365.000 | 0.150 | 0.155 | 0.152 | 0.004 | 0.137 | 0.026 | 0.103 |
+| 370.000 | 0.152 | 0.157 | 0.155 | 0.004 | 0.137 | 0.025 | 0.116 |
+| 375.000 | 0.152 | 0.157 | 0.155 | 0.003 | 0.137 | 0.021 | 0.116 |
+| 380.000 | 0.151 | 0.159 | 0.155 | 0.006 | 0.137 | 0.038 | 0.119 |
+| 385.000 | 0.153 | 0.157 | 0.155 | 0.003 | 0.137 | 0.020 | 0.119 |
+| 390.000 | 0.154 | 0.160 | 0.157 | 0.004 | 0.137 | 0.025 | 0.128 |
+| 395.000 | 0.153 | 0.160 | 0.157 | 0.004 | 0.137 | 0.027 | 0.127 |
+ARSD = 5.33 %; AARD = 28.16 %
+Table S33: Course of EtOProp over the reaction time determined experimentally (M1, M2 and M3) at T = 323.15 K and p = 1.01325 bar for the system with EtOH and HProp (1:1) without salt or NMP. In addition, predictions with ePC-SAFT are listed together with the corresponding RSD and ARD values at T = 323.15 K and p = 1.01325 bar for the system with EtOH and HProp (1:1) without salt or NMP. RSD, ARSD, and AARD were calculated according to Eq. (2) – Eq. (4).
+|  | Experimental | ePC-SAFT |  |  |
+| t / min | xEtOPropM1/ mol ∙ mol-1 | xEtOPropM2/ mol ∙ mol-1 | xEtOPropM3/ mol ∙ mol-1 | xEtOPropaverage/ mol ∙ mol- | xError/ mol ∙ mol-1 | xEtOProp/ mol ∙ mol-1 | RSD / - | ARD / - |
+| 5 | 0.029 | 0.025 | 0.027 | 0.027 | 0.002 | 0.036 | 0.075 | 0.350 |
+| 10 | 0.059 | 0.050 | 0.064 | 0.058 | 0.007 | 0.066 | 0.148 | 0.147 |
+| 20 | 0.099 | 0.094 | 0.115 | 0.103 | 0.011 | 0.111 | 0.134 | 0.084 |
+| 25 | 0.122 | 0.125 | 0.138 | 0.128 | 0.008 | 0.130 | 0.082 | 0.014 |
+| 30 | 0.139 | 0.137 | 0.148 | 0.141 | 0.006 | 0.145 | 0.052 | 0.026 |
+| 35 | 0.141 | 0.154 | 0.163 | 0.153 | 0.011 | 0.158 | 0.085 | 0.030 |
+| 40 | 0.160 | 0.167 | 0.169 | 0.165 | 0.005 | 0.168 | 0.035 | 0.016 |
+| 45 | 0.168 | 0.172 | 0.188 | 0.176 | 0.010 | 0.178 | 0.075 | 0.014 |
+| 50 | 0.182 | 0.184 | 0.195 | 0.187 | 0.007 | 0.187 | 0.048 | 0.002 |
+| 55 | 0.186 | 0.195 | 0.201 | 0.194 | 0.007 | 0.194 | 0.045 | 0.000 |
+| 60 | 0.189 | 0.204 | 0.215 | 0.203 | 0.013 | 0.200 | 0.077 | 0.013 |
+| 65 | 0.197 | 0.206 | 0.216 | 0.206 | 0.009 | 0.206 | 0.056 | 0.002 |
+| 70 | 0.199 | 0.211 | 0.218 | 0.209 | 0.010 | 0.211 | 0.054 | 0.005 |
+| 75 | 0.202 | 0.218 | 0.221 | 0.214 | 0.010 | 0.215 | 0.053 | 0.005 |
+| 80 | 0.208 | 0.221 | 0.227 | 0.219 | 0.010 | 0.219 | 0.052 | 0.003 |
+| 85 | 0.213 | 0.226 | 0.229 | 0.223 | 0.008 | 0.223 | 0.043 | 0.001 |
+| 90 | 0.216 | 0.233 | 0.235 | 0.228 | 0.010 | 0.226 | 0.050 | 0.010 |
+| 95 | 0.211 | 0.225 | 0.231 | 0.222 | 0.010 | 0.229 | 0.054 | 0.028 |
+| 100 | 0.220 | 0.230 | 0.236 | 0.229 | 0.008 | 0.231 | 0.040 | 0.011 |
+| 105 | 0.220 | 0.234 | 0.237 | 0.230 | 0.009 | 0.233 | 0.044 | 0.011 |
+| 110 | 0.227 | 0.235 | 0.235 | 0.232 | 0.004 | 0.235 | 0.021 | 0.012 |
+| 115 | 0.228 | 0.240 | 0.243 | 0.237 | 0.008 | 0.237 | 0.038 | 0.001 |
+| 120 | 0.226 | 0.239 | 0.242 | 0.236 | 0.008 | 0.238 | 0.040 | 0.012 |
+| 125 | 0.228 | 0.239 | 0.248 | 0.238 | 0.010 | 0.240 | 0.050 | 0.007 |
+| 130 | 0.231 | 0.242 | 0.254 | 0.242 | 0.012 | 0.241 | 0.059 | 0.004 |
+| 135 | 0.234 | 0.237 | 0.247 | 0.239 | 0.007 | 0.242 | 0.036 | 0.013 |
+| 140 | 0.237 | 0.244 | 0.242 | 0.241 | 0.004 | 0.243 | 0.016 | 0.009 |
+| 145 | 0.231 | 0.239 | 0.250 | 0.240 | 0.010 | 0.244 | 0.051 | 0.018 |
+| 150 | 0.232 | 0.245 | 0.251 | 0.242 | 0.010 | 0.245 | 0.046 | 0.011 |
+| 155 | 0.238 | 0.245 | 0.249 | 0.244 | 0.006 | 0.246 | 0.027 | 0.008 |
+| 160 | 0.232 | 0.240 | 0.254 | 0.242 | 0.011 | 0.246 | 0.057 | 0.019 |
+| 165 | 0.234 | 0.244 | 0.250 | 0.243 | 0.008 | 0.247 | 0.039 | 0.017 |
+| 170 | 0.237 | 0.244 | 0.252 | 0.244 | 0.007 | 0.248 | 0.037 | 0.013 |
+| 175 | 0.238 | 0.250 | 0.255 | 0.248 | 0.008 | 0.248 | 0.039 | 0.001 |
+| 180 | 0.231 | 0.247 | 0.254 | 0.244 | 0.012 | 0.248 | 0.055 | 0.018 |
+| 185 | 0.239 | 0.247 | 0.260 | 0.248 | 0.011 | 0.249 | 0.054 | 0.002 |
+| 190 | 0.239 | 0.247 | 0.256 | 0.247 | 0.009 | 0.249 | 0.043 | 0.007 |
+| 195 | 0.233 | 0.252 | 0.251 | 0.245 | 0.010 | 0.250 | 0.046 | 0.018 |
+| 200 | 0.239 | 0.249 | 0.258 | 0.249 | 0.010 | 0.250 | 0.047 | 0.006 |
+| 205 | 0.242 | 0.249 | 0.259 | 0.250 | 0.009 | 0.250 | 0.042 | 0.003 |
+| 210 | 0.243 | 0.252 | 0.261 | 0.252 | 0.009 | 0.250 | 0.042 | 0.006 |
+ARSD = 5.33 %; AARD = 1.53 %
+Table S34: Course of EtOProp over the reaction time determined experimentally (M1, M2 and M3) at T = 323.15 K and p = 1.01325 bar for the system with EtOH and HProp (3:1) without salt or NMP. In addition, predictions with ePC-SAFT are listed together with the corresponding RSD and ARD values at T = 323.15 K and p = 1.01325 bar for the system with EtOH and HProp (3:1) without salt or NMP. RSD, ARSD, and AARD were calculated according to Eq. (2) – Eq. (4).
+|  | Experimental | ePC-SAFT |  |
+| t / min | xEtOPropM1/ mol ∙ mol-1 | xEtOPropM2/ mol ∙ mol-1 | xEtOPropaverage/ mol ∙ mol-1 | xError/ mol ∙ mol-1 | xEtOProp/ mol ∙ mol-1 | RSD / - | ARD / - |
+| 5.000 | 0.043 | 0.043 | 0.043 | 0.000 | 0.028 | 0.002 | 0.344 |
+| 10.000 | 0.064 | 0.067 | 0.065 | 0.002 | 0.051 | 0.027 | 0.221 |
+| 15.000 | 0.083 | 0.084 | 0.083 | 0.000 | 0.070 | 0.001 | 0.165 |
+| 20.000 | 0.092 | 0.094 | 0.093 | 0.002 | 0.085 | 0.017 | 0.084 |
+| 25.000 | 0.104 | 0.100 | 0.102 | 0.002 | 0.097 | 0.023 | 0.045 |
+| 30.000 | 0.113 | 0.110 | 0.111 | 0.002 | 0.108 | 0.019 | 0.030 |
+| 35.000 | 0.120 | 0.117 | 0.118 | 0.002 | 0.117 | 0.018 | 0.008 |
+| 40.000 | 0.133 | 0.119 | 0.126 | 0.010 | 0.125 | 0.077 | 0.006 |
+| 45.000 | 0.138 | 0.125 | 0.131 | 0.009 | 0.132 | 0.069 | 0.006 |
+| 50.000 | 0.140 | 0.133 | 0.137 | 0.005 | 0.137 | 0.037 | 0.006 |
+| 55.000 | 0.141 | 0.135 | 0.138 | 0.005 | 0.142 | 0.034 | 0.032 |
+| 60.000 | 0.138 | 0.137 | 0.137 | 0.000 | 0.147 | 0.003 | 0.068 |
+| 65.000 | 0.149 | 0.139 | 0.144 | 0.007 | 0.150 | 0.051 | 0.044 |
+| 70.000 | 0.153 | 0.144 | 0.149 | 0.006 | 0.154 | 0.043 | 0.031 |
+| 75.000 | 0.153 | 0.147 | 0.150 | 0.004 | 0.156 | 0.024 | 0.042 |
+| 80.000 | 0.153 | 0.149 | 0.151 | 0.003 | 0.159 | 0.020 | 0.050 |
+| 85.000 | 0.158 | 0.149 | 0.153 | 0.007 | 0.161 | 0.043 | 0.050 |
+| 90.000 | 0.159 | 0.152 | 0.156 | 0.005 | 0.163 | 0.031 | 0.044 |
+| 95.000 | 0.160 | 0.155 | 0.158 | 0.003 | 0.164 | 0.022 | 0.041 |
+| 100.000 | 0.164 | 0.156 | 0.160 | 0.006 | 0.166 | 0.037 | 0.037 |
+| 105.000 | 0.160 | 0.160 | 0.160 | 0.000 | 0.167 | 0.002 | 0.042 |
+| 110.000 | 0.165 | 0.155 | 0.160 | 0.007 | 0.168 | 0.045 | 0.048 |
+| 115.000 | 0.166 | 0.159 | 0.163 | 0.005 | 0.169 | 0.028 | 0.039 |
+| 120.000 | 0.167 | 0.160 | 0.164 | 0.005 | 0.170 | 0.029 | 0.037 |
+| 125.000 | 0.165 | 0.161 | 0.163 | 0.003 | 0.171 | 0.019 | 0.045 |
+| 130.000 | 0.169 | 0.161 | 0.165 | 0.006 | 0.171 | 0.034 | 0.035 |
+| 135.000 | 0.166 | 0.163 | 0.164 | 0.002 | 0.172 | 0.015 | 0.044 |
+| 140.000 | 0.171 | 0.166 | 0.168 | 0.004 | 0.172 | 0.022 | 0.024 |
+| 145.000 | 0.169 | 0.165 | 0.167 | 0.003 | 0.173 | 0.019 | 0.035 |
+| 150.000 | 0.174 | 0.167 | 0.171 | 0.005 | 0.173 | 0.027 | 0.014 |
+| 155.000 | 0.171 | 0.163 | 0.167 | 0.006 | 0.173 | 0.036 | 0.038 |
+| 160.000 | 0.173 | 0.167 | 0.170 | 0.004 | 0.174 | 0.024 | 0.021 |
+| 165.000 | 0.170 | 0.166 | 0.168 | 0.003 | 0.174 | 0.017 | 0.037 |
+| 170.000 | 0.174 | 0.166 | 0.170 | 0.006 | 0.174 | 0.034 | 0.027 |
+| 175.000 | 0.173 | 0.165 | 0.169 | 0.006 | 0.175 | 0.033 | 0.032 |
+ARSD = 3.17 %; AARD = 6.04 %
+
+Table S35: Course of EtOProp over the reaction time determined experimentally (M1, M2 and M3) at T = 323.15 K and p = 1.01325 bar for the system with EtOH and HProp (9:1) without salt or NMP. In addition, predictions with ePC-SAFT are listed together with the corresponding RSD and ARD values at T = 323.15 K and p = 1.01325 bar for the system with EtOH and HProp (9:1) without salt or NMP. RSD, ARSD, and AARD were calculated according to Eq. (2) – Eq. (4).
+|  | Experimental | ePC-SAFT |  |
+| t / min | xEtOPropM1/ mol ∙ mol-1 | xEtOPropM2/ mol ∙ mol-1 | xEtOPropaverage/ mol ∙ mol-1 | xError/ mol ∙ mol-1 | xEtOProp/ mol ∙ mol-1 | RSD / - | ARD / - |
+| 5.000 | 0.013 | 0.002 | 0.008 | 0.008 | 0.014 | 0.978 | 0.758 |
+| 10.000 | 0.025 | 0.008 | 0.016 | 0.012 | 0.025 | 0.730 | 0.543 |
+| 15.000 | 0.034 | 0.019 | 0.027 | 0.011 | 0.034 | 0.401 | 0.285 |
+| 20.000 | 0.044 | 0.025 | 0.035 | 0.013 | 0.042 | 0.379 | 0.203 |
+| 25.000 | 0.046 | 0.027 | 0.036 | 0.013 | 0.048 | 0.365 | 0.312 |
+| 30.000 | 0.054 | 0.030 | 0.042 | 0.017 | 0.053 | 0.403 | 0.249 |
+| 35.000 | 0.059 | 0.035 | 0.047 | 0.017 | 0.057 | 0.365 | 0.233 |
+| 40.000 | 0.057 | 0.035 | 0.046 | 0.016 | 0.061 | 0.343 | 0.324 |
+| 45.000 | 0.063 | 0.041 | 0.052 | 0.015 | 0.064 | 0.286 | 0.224 |
+| 50.000 | 0.063 | 0.042 | 0.052 | 0.015 | 0.066 | 0.284 | 0.263 |
+| 55.000 | 0.065 | 0.044 | 0.055 | 0.015 | 0.068 | 0.274 | 0.249 |
+| 60.000 | 0.063 | 0.048 | 0.056 | 0.011 | 0.070 | 0.199 | 0.254 |
+| 65.000 | 0.067 | 0.053 | 0.060 | 0.010 | 0.071 | 0.165 | 0.178 |
+| 70.000 | 0.068 | 0.046 | 0.057 | 0.015 | 0.072 | 0.269 | 0.264 |
+| 75.000 | 0.070 | 0.050 | 0.060 | 0.014 | 0.073 | 0.238 | 0.227 |
+| 80.000 | 0.065 | 0.051 | 0.058 | 0.010 | 0.074 | 0.179 | 0.283 |
+| 85.000 | 0.069 | 0.055 | 0.062 | 0.010 | 0.075 | 0.165 | 0.205 |
+| 90.000 | 0.075 | 0.059 | 0.067 | 0.012 | 0.076 | 0.174 | 0.127 |
+| 95.000 | 0.071 | 0.051 | 0.061 | 0.014 | 0.076 | 0.233 | 0.248 |
+| 100.000 | 0.069 | 0.056 | 0.062 | 0.010 | 0.076 | 0.154 | 0.226 |
+| 105.000 | 0.069 | 0.053 | 0.061 | 0.011 | 0.077 | 0.187 | 0.263 |
+| 110.000 | 0.072 | 0.057 | 0.064 | 0.011 | 0.077 | 0.167 | 0.203 |
+| 115.000 | 0.076 | 0.055 | 0.065 | 0.015 | 0.077 | 0.228 | 0.185 |
+| 120.000 | 0.072 | 0.060 | 0.066 | 0.008 | 0.078 | 0.127 | 0.178 |
+| 125.000 | 0.073 | 0.061 | 0.067 | 0.009 | 0.078 | 0.128 | 0.161 |
+| 130.000 | 0.073 | 0.059 | 0.066 | 0.010 | 0.078 | 0.159 | 0.182 |
+| 135.000 | 0.074 | 0.059 | 0.067 | 0.010 | 0.078 | 0.153 | 0.173 |
+ARSD = 28.63 %; AARD = 25.92 %
+
+Table S36: Course of EtOProp over the reaction time determined experimentally (M1, M2 and M3) at T = 323.15 K and p = 1.01325 bar for the system with EtOH and HProp (1:1) xNMP = 0.1 and without salt. In addition, predictions with ePC-SAFT are listed together with the corresponding RSD and ARD values at T = 323.15 K and p = 1.01325 bar for the system with EtOH and HProp (1:1) xNMP = 0.1 and without salt. RSD, ARSD, and AARD were calculated according to Eq. (2) – Eq. (4).
+|  | Experimental | ePC-SAFT |  |  |
+| t / min | xEtOPropM1/ mol ∙ mol-1 | xEtOPropM2/ mol ∙ mol-1 | xEtOPropM3/ mol ∙ mol-1 | xEtOPropaverage/ mol ∙ mol- | xError/ mol ∙ mol-1 | xEtOProp/ mol ∙ mol-1 | RSD / - | ARD / - |
+| 5.000 | 0.011 | 0.004 | 0.015 | 0.010 | 0.005 | 0.031 | 0.629 | 2.122 |
+| 10.000 | 0.021 | 0.019 | 0.031 | 0.024 | 0.006 | 0.056 | 0.347 | 1.336 |
+| 15.000 | 0.036 | 0.033 | 0.048 | 0.039 | 0.008 | 0.077 | 0.265 | 1.002 |
+| 20.000 | 0.050 | 0.046 | 0.065 | 0.054 | 0.010 | 0.095 | 0.235 | 0.767 |
+| 25.000 | 0.061 | 0.060 | 0.078 | 0.066 | 0.010 | 0.110 | 0.192 | 0.661 |
+| 30.000 | 0.074 | 0.066 | 0.088 | 0.076 | 0.011 | 0.123 | 0.189 | 0.615 |
+| 35.000 | 0.082 | 0.078 | 0.099 | 0.087 | 0.011 | 0.134 | 0.166 | 0.549 |
+| 40.000 | 0.094 | 0.087 | 0.109 | 0.097 | 0.012 | 0.144 | 0.151 | 0.489 |
+| 45.000 | 0.101 | 0.093 | 0.120 | 0.105 | 0.014 | 0.152 | 0.164 | 0.452 |
+| 50.000 | 0.113 | 0.104 | 0.125 | 0.114 | 0.011 | 0.160 | 0.116 | 0.402 |
+| 55.000 | 0.115 | 0.112 | 0.134 | 0.120 | 0.012 | 0.166 | 0.125 | 0.380 |
+| 60.000 | 0.124 | 0.115 | 0.139 | 0.126 | 0.012 | 0.172 | 0.119 | 0.368 |
+| 65.000 | 0.133 | 0.121 | 0.146 | 0.133 | 0.012 | 0.177 | 0.114 | 0.327 |
+| 70.000 | 0.134 | 0.127 | 0.153 | 0.138 | 0.014 | 0.182 | 0.125 | 0.317 |
+| 75.000 | 0.141 | 0.132 | 0.157 | 0.143 | 0.013 | 0.186 | 0.111 | 0.296 |
+| 80.000 | 0.146 | 0.135 | 0.160 | 0.147 | 0.012 | 0.189 | 0.105 | 0.289 |
+| 85.000 | 0.150 | 0.142 | 0.167 | 0.153 | 0.013 | 0.193 | 0.106 | 0.262 |
+| 90.000 | 0.155 | 0.148 | 0.169 | 0.157 | 0.011 | 0.195 | 0.085 | 0.243 |
+| 950.000 | 0.159 | 0.150 | 0.170 | 0.160 | 0.010 | 0.198 | 0.078 | 0.239 |
+| 100.000 | 0.161 | 0.151 | 0.176 | 0.163 | 0.012 | 0.200 | 0.095 | 0.231 |
+| 105.000 | 0.167 | 0.154 | 0.176 | 0.166 | 0.011 | 0.202 | 0.081 | 0.221 |
+| 110.000 | 0.169 | 0.156 | 0.182 | 0.169 | 0.013 | 0.204 | 0.093 | 0.206 |
+| 115.000 | 0.172 | 0.162 | 0.182 | 0.172 | 0.010 | 0.206 | 0.072 | 0.196 |
+| 120.000 | 0.174 | 0.167 | 0.186 | 0.176 | 0.010 | 0.207 | 0.070 | 0.179 |
+| 125.000 | 0.176 | 0.168 | 0.188 | 0.177 | 0.010 | 0.208 | 0.071 | 0.176 |
+| 130.000 | 0.176 | 0.170 | 0.189 | 0.178 | 0.010 | 0.210 | 0.068 | 0.176 |
+| 135.000 | 0.181 | 0.174 | 0.195 | 0.183 | 0.011 | 0.211 | 0.073 | 0.150 |
+| 140.000 | 0.181 | 0.175 | 0.191 | 0.182 | 0.008 | 0.212 | 0.053 | 0.161 |
+| 145.000 | 0.185 | 0.178 | 0.196 | 0.187 | 0.009 | 0.213 | 0.061 | 0.140 |
+| 150.000 | 0.184 | 0.180 | 0.197 | 0.187 | 0.009 | 0.213 | 0.061 | 0.140 |
+| 155.000 | 0.187 | 0.183 | 0.199 | 0.190 | 0.008 | 0.215 | 0.056 | 0.133 |
+| 160.000 | 0.188 | 0.182 | 0.200 | 0.190 | 0.009 | 0.215 | 0.060 | 0.134 |
+| 165.000 | 0.191 | 0.186 | 0.200 | 0.192 | 0.007 | 0.216 | 0.048 | 0.124 |
+| 170.000 | 0.190 | 0.185 | 0.201 | 0.192 | 0.008 | 0.217 | 0.055 | 0.129 |
+| 175.000 | 0.193 | 0.188 | 0.204 | 0.195 | 0.008 | 0.217 | 0.053 | 0.112 |
+| 180.000 | 0.194 | 0.189 | 0.204 | 0.196 | 0.007 | 0.217 | 0.048 | 0.110 |
+| 185.000 | 0.194 | 0.191 | 0.204 | 0.196 | 0.007 | 0.218 | 0.043 | 0.109 |
+| 190.000 | 0.196 | 0.192 | 0.204 | 0.197 | 0.006 | 0.218 | 0.038 | 0.104 |
+| 195.000 | 0.196 | 0.193 | 0.208 | 0.199 | 0.008 | 0.218 | 0.053 | 0.097 |
+| 200.000 | 0.196 | 0.192 | 0.206 | 0.198 | 0.007 | 0.219 | 0.044 | 0.104 |
+| 205.000 | 0.200 | 0.193 | 0.207 | 0.200 | 0.007 | 0.219 | 0.041 | 0.093 |
+| 210.000 | 0.199 | 0.196 | 0.209 | 0.202 | 0.007 | 0.219 | 0.042 | 0.086 |
+| 215.000 | 0.200 | 0.196 | 0.210 | 0.202 | 0.007 | 0.219 | 0.046 | 0.084 |
+| 220.000 | 0.200 | 0.195 | 0.209 | 0.201 | 0.007 | 0.219 | 0.045 | 0.091 |
+| 225.000 | 0.201 | 0.200 | 0.209 | 0.203 | 0.005 | 0.219 | 0.032 | 0.078 |
+| 230.000 | 0.204 | 0.201 | 0.212 | 0.206 | 0.005 | 0.219 | 0.033 | 0.066 |
+| 235.000 | 0.205 | 0.203 | 0.211 | 0.206 | 0.004 | 0.219 | 0.026 | 0.064 |
+| 240.000 | 0.203 | 0.201 | 0.213 | 0.205 | 0.006 | 0.219 | 0.040 | 0.069 |
+| 245.000 | 0.203 | 0.203 | 0.215 | 0.207 | 0.007 | 0.219 | 0.044 | 0.061 |
+| 250.000 | 0.204 | 0.202 | 0.213 | 0.206 | 0.006 | 0.219 | 0.038 | 0.062 |
+ARSD = 8.67 %; AARD = 26.72 %
+
+Table S37: Course of EtOProp over the reaction time determined experimentally (M1, M2 and M3) at T = 323.15 K and p = 1.01325 bar for the system with EtOH and HProp (1:1) xNMP = 0.2 and without salt. In addition, predictions with ePC-SAFT are listed together with the corresponding RSD and ARD values at T = 323.15 K and p = 1.01325 bar for the system with EtOH and HProp (1:1) xNMP = 0.2 and without salt. RSD, ARSD, and AARD were calculated according to Eq. (2) – Eq. (4).
+|  | Experimental | ePC-SAFT |  |  |
+| t / min | xEtOPropM1/ mol ∙ mol-1 | xEtOPropM2/ mol ∙ mol-1 | xEtOPropM3/ mol ∙ mol-1 | xEtOPropaverage/ mol ∙ mol- | xError/ mol ∙ mol-1 | xEtOProp/ mol ∙ mol-1 | RSD / - | ARD / - |
+| 5.000 | 0.004 | 0.002 | 0.001 | 0.002 | 0.001 | 0.024 | 0.428 | 8.811 |
+| 10.000 | 0.005 | 0.010 | 0.011 | 0.009 | 0.003 | 0.045 | 0.354 | 4.103 |
+| 15.000 | 0.020 | 0.019 | 0.019 | 0.020 | 0.001 | 0.062 | 0.033 | 2.133 |
+| 20.000 | 0.028 | 0.026 | 0.026 | 0.027 | 0.001 | 0.077 | 0.032 | 1.898 |
+| 25.000 | 0.039 | 0.038 | 0.037 | 0.038 | 0.001 | 0.089 | 0.020 | 1.352 |
+| 30.000 | 0.041 | 0.044 | 0.040 | 0.042 | 0.002 | 0.100 | 0.054 | 1.410 |
+| 35.000 | 0.049 | 0.052 | 0.048 | 0.050 | 0.002 | 0.110 | 0.043 | 1.209 |
+| 40.000 | 0.060 | 0.055 | 0.055 | 0.057 | 0.003 | 0.118 | 0.050 | 1.089 |
+| 45.000 | 0.067 | 0.061 | 0.064 | 0.064 | 0.003 | 0.126 | 0.047 | 0.976 |
+| 50.000 | 0.071 | 0.070 | 0.067 | 0.069 | 0.002 | 0.132 | 0.031 | 0.912 |
+| 55.000 | 0.079 | 0.071 | 0.072 | 0.074 | 0.004 | 0.138 | 0.054 | 0.865 |
+| 60.000 | 0.082 | 0.080 | 0.074 | 0.079 | 0.004 | 0.144 | 0.051 | 0.827 |
+| 65.000 | 0.089 | 0.081 | 0.078 | 0.083 | 0.005 | 0.148 | 0.066 | 0.782 |
+| 70.000 | 0.091 | 0.089 | 0.087 | 0.089 | 0.002 | 0.152 | 0.024 | 0.704 |
+| 75.000 | 0.098 | 0.094 | 0.088 | 0.093 | 0.005 | 0.156 | 0.054 | 0.670 |
+| 80.000 | 0.103 | 0.092 | 0.094 | 0.096 | 0.006 | 0.159 | 0.059 | 0.656 |
+| 85.000 | 0.105 | 0.096 | 0.096 | 0.099 | 0.006 | 0.162 | 0.056 | 0.639 |
+| 90.000 | 0.107 | 0.099 | 0.098 | 0.101 | 0.005 | 0.165 | 0.047 | 0.625 |
+| 95.000 | 0.108 | 0.106 | 0.102 | 0.105 | 0.003 | 0.167 | 0.029 | 0.587 |
+| 100.000 | 0.116 | 0.110 | 0.105 | 0.110 | 0.006 | 0.169 | 0.051 | 0.528 |
+| 105.000 | 0.118 | 0.113 | 0.106 | 0.113 | 0.006 | 0.171 | 0.053 | 0.519 |
+| 110.000 | 0.122 | 0.118 | 0.112 | 0.117 | 0.005 | 0.173 | 0.043 | 0.472 |
+| 115.000 | 0.124 | 0.117 | 0.115 | 0.119 | 0.004 | 0.174 | 0.037 | 0.466 |
+| 120.000 | 0.128 | 0.121 | 0.112 | 0.120 | 0.008 | 0.176 | 0.063 | 0.462 |
+| 125.000 | 0.129 | 0.125 | 0.121 | 0.125 | 0.004 | 0.177 | 0.034 | 0.419 |
+| 130.000 | 0.131 | 0.126 | 0.125 | 0.127 | 0.003 | 0.178 | 0.023 | 0.399 |
+| 135.000 | 0.133 | 0.126 | 0.121 | 0.127 | 0.006 | 0.179 | 0.049 | 0.415 |
+| 140.000 | 0.137 | 0.132 | 0.126 | 0.132 | 0.005 | 0.180 | 0.040 | 0.367 |
+| 145.000 | 0.136 | 0.132 | 0.128 | 0.132 | 0.004 | 0.181 | 0.029 | 0.372 |
+| 150.000 | 0.138 | 0.134 | 0.129 | 0.134 | 0.005 | 0.182 | 0.036 | 0.360 |
+| 155.000 | 0.145 | 0.138 | 0.131 | 0.138 | 0.007 | 0.183 | 0.049 | 0.327 |
+| 160.000 | 0.144 | 0.139 | 0.131 | 0.138 | 0.007 | 0.183 | 0.047 | 0.324 |
+| 165.000 | 0.144 | 0.139 | 0.138 | 0.140 | 0.004 | 0.184 | 0.026 | 0.311 |
+| 170.000 | 0.148 | 0.139 | 0.135 | 0.140 | 0.007 | 0.185 | 0.047 | 0.315 |
+| 175.000 | 0.147 | 0.141 | 0.138 | 0.142 | 0.004 | 0.185 | 0.030 | 0.303 |
+| 180.000 | 0.145 | 0.144 | 0.137 | 0.142 | 0.004 | 0.185 | 0.028 | 0.306 |
+| 185.000 | 0.150 | 0.145 | 0.147 | 0.147 | 0.003 | 0.186 | 0.019 | 0.261 |
+| 190.000 | 0.150 | 0.148 | 0.143 | 0.147 | 0.004 | 0.186 | 0.027 | 0.266 |
+| 195.000 | 0.153 | 0.148 | 0.142 | 0.148 | 0.005 | 0.187 | 0.036 | 0.263 |
+| 200.000 | 0.153 | 0.151 | 0.145 | 0.150 | 0.004 | 0.187 | 0.030 | 0.247 |
+| 205.000 | 0.153 | 0.150 | 0.148 | 0.150 | 0.003 | 0.187 | 0.018 | 0.244 |
+| 210.000 | 0.154 | 0.152 | 0.147 | 0.151 | 0.004 | 0.187 | 0.026 | 0.239 |
+| 215.000 | 0.159 | 0.154 | 0.147 | 0.153 | 0.006 | 0.187 | 0.038 | 0.223 |
+| 220.000 | 0.158 | 0.152 | 0.149 | 0.153 | 0.005 | 0.188 | 0.030 | 0.226 |
+| 225.000 | 0.158 | 0.152 | 0.150 | 0.153 | 0.004 | 0.188 | 0.025 | 0.224 |
+| 230.000 | 0.161 | 0.157 | 0.154 | 0.158 | 0.004 | 0.188 | 0.023 | 0.192 |
+| 235.000 | 0.163 | 0.156 | 0.156 | 0.158 | 0.004 | 0.188 | 0.025 | 0.187 |
+| 240.000 | 0.159 | 0.160 | 0.157 | 0.159 | 0.002 | 0.188 | 0.011 | 0.183 |
+| 245.000 | 0.162 | 0.158 | 0.155 | 0.159 | 0.004 | 0.188 | 0.025 | 0.185 |
+| 250.000 | 0.158 | 0.158 | 0.152 | 0.156 | 0.004 | 0.188 | 0.023 | 0.202 |
+| 255.000 | 0.160 | 0.160 | 0.157 | 0.159 | 0.002 | 0.188 | 0.010 | 0.178 |
+| 260.000 | 0.161 | 0.158 | 0.158 | 0.159 | 0.002 | 0.188 | 0.011 | 0.181 |
+| 265.000 | 0.165 | 0.165 | 0.156 | 0.162 | 0.005 | 0.188 | 0.031 | 0.157 |
+| 270.000 | 0.163 | 0.160 | 0.157 | 0.160 | 0.003 | 0.188 | 0.018 | 0.171 |
+ARSD = 4.89 %; AARD = 75.45 %
+
+
+Table S38: Overview of the ARSD and AARD values of all investigated E1 systems.
+| E1 | ARSD / % | AARD / % |
+| 1:1 | 2.15 | 5.13 |
+| 3:1 | 9.57 | 11.03 |
+| 9:1 | 12.60 | 41.40 |
+| 3:1 LiCl 0.05 | 7.20 | 8.86 |
+| 3:1 LiCl 0.1 | 3.20 | 16.05 |
+| 9:1 LiCl 0.1 | 8.75 | 25.63 |
+| 1:1 NMP 0.1 | 5.10 | 19.91 |
+| 1:1 NMP 0.2 | 5.33 | 28.16 |
+
+Table S39: Overview of the ARSD and AARD values of all investigated E2 systems.
+| E2 | ARSD / % | AARD / % |
+| 1:1 | 5.34 | 1.53 |
+| 3:1 | 3.17 | 6.04 |
+| 9:1 | 28.63 | 25.92 |
+| 1:1 NMP 0.1 | 8.67 | 26.72 |
+| 1:1 NMP 0.2 | 4.89 | 75.45 |
+
+
+
+
+Figure S12: Mole fraction of EtOAc plotted against the reaction time at T = 323.15 K and p = 1.01325 bar. Symbols represent experimental data (triangles: 1:1 (nAcid:nEtOH), diamonds: 1:3, and circles: 1:9) obtained with in situ FTIR measurements. Lines are modeling results (solid line: 1:1, dashed line: 1:3, and dash-dotted line: 1:9) obtained with ePC-SAFT.
+
+
+Figure S13: Normalized mole fraction of EtOProp plotted against the reaction time at T = 323.15 K and p = 1.01325 bar. Symbols note the experimental concentration (triangles: 1:1 (nAcid:nEtOH) without NMP, diamonds: 1:1 with xNMP = 0.1, and circles: 1:1 with xNMP = 0.2) obtained with in situ FTIR measurements. Concentrations were normalized according to Eq. (1), cf. main text in the paper. Lines are modeling results (solid line: 1:1 without NMP, dashed line: 1:1 with xNMP = 0.1, and dash-dotted line: 1:1 with xNMP = 0.2) obtained with ePC-SAFT.
+
+
+Figure S14: Normalized mole fraction of EtOAc plotted against the reaction time at T = 323.15 K and p = 1.01325 bar. Symbols note the experimental concentration (diamonds: 1:3 (nAcid:nEtOH) without LiCl, triangles: 1:3 with xLiCl = 0.05, and circles: 1:3 with xLiCl = 0.1) obtained with in situ FTIR measurements. Concentrations were normalized according to Eq. (1), cf. main text in the paper. Lines are modeling results (dashed line: 1:3 without LiCl, solid line: 1:3 with xLiCl = 0.05, and dash-dotted line: 1:3 with xLiCl = 0.1) obtained with ePC-SAFT.
+
+
+
+Figure S15: Normalized mole fraction of EtOAc plotted against the reaction time at T = 323.15 K and p = 1.01325 bar. Symbols note the experimental concentration (circles: 1:9 (nAcid:nEtOH) without LiCl, and diamonds: 1:9 with xLiCl = 0.1) obtained with in situ FTIR measurements. Concentrations were normalized according to Eq. (1), cf. main text in the paper. Lines are modeling results (dash-dotted line: 1:9 without LiCl, and dashed line: 1:9 with xLiCl = 0.1) obtained with ePC-SAFT.
+
+
+References(1) Riechert, O.; Husham, M.; Sadowski, G.; Zeiner, T. Solvent effects on esterification equilibria. AIChE J. 2015, 61 (9), 3000–3011. DOI: 10.1002/aic.14873.(2) Caßens, J. Modellierung thermodynamischer Eigenschaften pharmazeutischer Substanzen in Lösungsmitteln und Lösungsmittelgemischen. Zugl.: Dortmund, Techn. Univ., Diss., 2013, 1. Aufl.; Thermodynamik; Hut, 2013.(3) Dohrn, S.; Reimer, P.; Luebbert, C.; Lehmkemper, K.; Kyeremateng, S. O.; Degenhardt, M.; Sadowski, G. Thermodynamic Modeling of Solvent-Impact on Phase Separation in Amorphous Solid Dispersions during Drying. Molecular pharmaceutics 2020, 17 (7), 2721–2733. DOI: 10.1021/acs.molpharmaceut.0c00418. Published Online: Jun. 16, 2020.(4) Laube, F. S.; Sadowski, G. Predicting the Extraction Behavior of Pharmaceuticals. Ind. Eng. Chem. Res. 2014, 53 (2), 865–870. DOI: 10.1021/ie403284y.(5) Held, C.; Reschke, T.; Mohammad, S.; Luza, A.; Sadowski, G. ePC-SAFT revised. Chemical Engineering Research and Design 2014, 92 (12), 2884–2897. DOI: 10.1016/j.cherd.2014.05.017.(6) Bülow, M.; Ascani, M.; Held, C. ePC-SAFT advanced – Part II: Application to Salt Solubility in Ionic and Organic Solvents and the Impact of Ion Pairing. Fluid Phase Equilibria 2021, 537, 112989. DOI: 10.1016/j.fluid.2021.112989.(7) Pabsch, D.; Figiel, P.; Sadowski, G.; Held, C. Solubility of electrolytes in organic solvents: Solvent-specific effects and ion-specific effects. J. Chem. Eng. Data 2022, 2022. Published Online: accepted.(8) Samarov, A.; Prikhodko, I.; Shner, N.; Sadowski, G.; Held, C.; Toikka, A. Liquid–Liquid Equilibria for Separation of Alcohols from Esters Using Deep Eutectic Solvents Based on Choline Chloride: Experimental Study and Thermodynamic Modeling. J. Chem. Eng. Data 2019, 64 (12), 6049–6059. DOI: 10.1021/acs.jced.9b00884.(9) Tetsuo Ito/Fumitake Yoshida. Vapor-Liquid Equilibria of Water-Lower Fatty Acid Systems: Water-Formic Acid, Water Acetic Acid and Water-Propionic Acid.(10) Golubkov, Y. V.; Repneva, T. G.; Raginskaya, L. M. N-Methyl-2-Pyrrolidon - Wasser. Prom.Sint.Kaucuka 1975 (1-3).(11) Stephenson, R.; Stuart, J. Mutual binary solubilities: water-alcohols and water-esters. J. Chem. Eng. Data 1986, 31 (1), 56–70. DOI: 10.1021/je00043a019.(12) Chang, W.; Wan, H.; Guan, G.; Yao, H. Isobaric vapor–liquid equilibria for water+acetic acid+(N-methyl pyrrolidone or N-methyl acetamide). Fluid Phase Equilibria 2006, 242 (2), 204–209. DOI: 10.1016/j.fluid.2006.02.002.(13) Bittrich, H. J.; Eckert, R. Vapor-liquid phase equilibria of binary mixtures with methanol or ethanol. Das Dampf/Fluessigkeits-Phasengleichgewicht binaerer Mischungen mit Methanol oder Ethanol als einer Komponente. Zeitschrift fuer Physikalische Chemie (Wiesbaden); (Germany) 1992, 175:2.(14) Yang, J.; Pan, X.; Yu, M.; Cui, P.; Ma, Y.; Wang, Y.; Gao, J. Vapor–liquid equilibrium for binary and ternary systems of tetrahydrofuran, ethyl acetate and N-methyl pyrrolidone at pressure 101.3 kPa. Journal of Molecular Liquids 2018, 268, 19–25. DOI: 10.1016/j.molliq.2018.07.038.(15) Miyamoto, S.; Nakamura, S.; Iwai, Y.; Arai, Y. Measurement of Isothermal Vapor−Liquid Equilibria for Binary and Ternary Systems Containing Monocarboxylic Acid. J. Chem. Eng. Data 2001, 46 (5), 1225–1230. DOI: 10.1021/je0003849.(16) Fredenslund, A.; Jones, R. L.; Prausnitz, J. M. Group-contribution estimation of activity coefficients in nonideal liquid mixtures. AIChE J. 1975, 21 (6), 1086–1099. DOI: 10.1002/aic.690210607.(17) Fredenslund, A.; Gmehling, J.; Michelsen, M. L.; Rasmussen, P.; Prausnitz, J. M. Computerized Design of Multicomponent Distillation Columns Using the UNIFAC Group Contribution Method for Calculation of Activity Coefficients. Ind. Eng. Chem. Proc. Des. Dev. 1977, 16 (4), 450–462. DOI: 10.1021/i260064a004.(18) Skjold-Jorgensen, S.; Kolbe, B.; Gmehling, J.; Rasmussen, P. Vapor-Liquid Equilibria by UNIFAC Group Contribution. Revision and Extension. Ind. Eng. Chem. Proc. Des. Dev. 1979, 18 (4), 714–722. DOI: 10.1021/i260072a024.(19) Hansen, H. K.; Rasmussen, P.; Fredenslund, A.; Schiller, M.; Gmehling, J. Vapor-liquid equilibria by UNIFAC group contribution. 5. Revision and extension. Ind. Eng. Chem. Res. 1991, 30 (10), 2352–2355. DOI: 10.1021/ie00058a017.(20) Tiegs, D.; Rasmussen, P.; Gmehling, J.; Fredenslund, A. Vapor-liquid equilibria by UNIFAC group contribution. 4. Revision and extension. Ind. Eng. Chem. Res. 1987, 26 (1), 159–161. DOI: 10.1021/ie00061a030.(21) Polák, J.; Mertl, I. Saturated vapour pressure of methyl acetate, ethyl acetate, n-propyl acetate, methyl propionate, and ethyl propionate. Collect. Czech. Chem. Commun. 1965, 30 (10), 3526–3528. DOI: 10.1135/cccc19653526.(22) Palczewska-Tulińska, M.; Oracz, P. Vapor Pressures of 1-Methyl-2-pyrrolidone, 1-Methyl-azepan-2-one, and 1,2-Epoxy-3-chloropropane. J. Chem. Eng. Data 2007, 52 (6), 2468–2471. DOI: 10.1021/je700398k.(23) Li, M.; Constantinescu, D.; Wang, L.; Mohs, A.; Gmehling, J. Solubilities of NaCl, KCl, LiCl, and LiBr in Methanol, Ethanol, Acetone, and Mixed Solvents and Correlation Using the LIQUAC Model. Ind. Eng. Chem. Res. 2010, 49 (10), 4981–4988. DOI: 10.1021/ie100027c.(24) Xin, N.; Sun, Y.; He, M.; Radke, C. J.; Prausnitz, J. M. Solubilities of six lithium salts in five non-aqueous solvents and in a few of their binary mixtures. Fluid Phase Equilibria 2018, 461, 1–7. DOI: 10.1016/j.fluid.2017.12.034.(25) Held, C.; Prinz, A.; Wallmeyer, V.; Sadowski, G. Measuring and modeling alcohol/salt systems. Chemical Engineering Science 2012, 68 (1), 328–339. DOI: 10.1016/j.ces.2011.09.040.
+

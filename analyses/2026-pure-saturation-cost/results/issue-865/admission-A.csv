@@ -1,0 +1,27 @@
+order,case,T_K,P_Pa,accepted,terminal,message,cold,shared,anchored,exhausted,consumed,evaluations,hessians
+LV,success,300,998660.89573991275,1,0,"",2,0,2,0,0,0,0
+LV,sole-vapour,360,100,0,0,"phase L has no locally unique anchored root: liquid branch not admitted by the finite search: the sole stable root 0.033409282777247161 mol/m3 lies below the negative-slope sample 5325.3115826716949 mol/m3",1,0,0,0,0,0,0
+LV,sole-liquid,360,20000000,0,0,"one-component two-density requires two distinct stable density branches",1,0,0,0,0,0,0
+LV,unspecified,400,1000000,0,0,"one-component two-density requires two distinct stable density branches",1,0,0,0,0,0,0
+LV,unresolved,300,998660.89573991275,0,0,"phase L has no locally unique anchored root: unresolved injected refinement failure",1,0,0,0,0,0,0
+LV,corrected-window,300,998660.89573991275,0,1,"phase L corrected density left the anchored branch window",1,0,1,0,0,0,0
+LV,selected-window,300,998660.89573991275,0,1,"phase L corrected density left the anchored branch window",1,0,1,0,0,0,0
+LV,vapour,300,998660.89573991275,0,0,"phase V has no locally unique anchored root: vapour injected refinement failure",2,0,1,0,0,0,0
+LV,precedence,300,998660.89573991275,0,1,"phase L corrected density left the anchored branch window",1,0,1,0,0,0,0
+LV,entry-deadline,300,998660.89573991275,0,0,"propagated: elapsed work budget exhausted",0,0,0,0,0,0,0
+LV,recovery,300,998660.89573991275,0,0,"propagated: elapsed work budget exhausted",0,0,0,1,100,0,0
+LV,inside-deadline,300,998660.89573991275,0,0,"phase L has no locally unique anchored root: elapsed work budget exhausted",1,0,0,0,0,0,0
+LV,bounded,300,998660.89573991275,1,0,"",2,0,2,0,0,0,0
+VL,success,300,998660.89573991275,1,0,"",2,0,2,0,0,0,0
+VL,sole-vapour,360,100,0,0,"one-component two-density requires two distinct stable density branches",1,0,0,0,0,0,0
+VL,sole-liquid,360,20000000,0,0,"phase V has no locally unique anchored root: vapor branch not admitted by the finite search: the sole stable root 10522.573831434936 mol/m3 lies above the negative-slope sample 3644.0184275833208 mol/m3",1,0,0,0,0,0,0
+VL,unspecified,400,1000000,0,0,"one-component two-density requires two distinct stable density branches",1,0,0,0,0,0,0
+VL,unresolved,300,998660.89573991275,0,0,"phase V has no locally unique anchored root: unresolved injected refinement failure",1,0,0,0,0,0,0
+VL,corrected-window,300,998660.89573991275,0,1,"phase L corrected density left the anchored branch window",2,0,2,0,0,0,0
+VL,selected-window,300,998660.89573991275,0,1,"phase L corrected density left the anchored branch window",2,0,2,0,0,0,0
+VL,vapour,300,998660.89573991275,0,0,"phase V has no locally unique anchored root: vapour injected refinement failure",1,0,0,0,0,0,0
+VL,precedence,300,998660.89573991275,0,0,"phase V has no locally unique anchored root: vapour injected refinement failure",1,0,0,0,0,0,0
+VL,entry-deadline,300,998660.89573991275,0,0,"propagated: elapsed work budget exhausted",0,0,0,0,0,0,0
+VL,recovery,300,998660.89573991275,0,0,"propagated: elapsed work budget exhausted",0,0,0,1,100,0,0
+VL,inside-deadline,300,998660.89573991275,0,0,"phase V has no locally unique anchored root: elapsed work budget exhausted",1,0,0,0,0,0,0
+VL,bounded,300,998660.89573991275,1,0,"",2,0,2,0,0,0,0

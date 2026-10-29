@@ -1,0 +1,15 @@
+{
+  "checkout_base": "3b463059eeba47edba759f4a67e4c659919a8a22",
+  "accounting_base": "94b4de3815ef14328e518f5afc297aa0c3b3376b",
+  "command": "EPCSAFT_BUILD_JOBS=6 nice -n 10 agent-heavy tools/native-run wu_chloride_coverage",
+  "environment": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-902-establish-the-four-thermodynamic-input-2/.venv",
+  "inputs_unchanged_after_run": true,
+  "files": {
+    "build/engine-meson/shared/libepcsaft_native.so": "b71f5f1cf9bcc9a0da7f1321889f61d5ac5d8a4494f074e273bc05e05f64f3ba",
+    "build/engine-meson/shared/wu_chloride_coverage": "25ed13ad6d040ad85de2c055eff913fdccbc98528f149e891ce13f16cf7688cb",
+    "analyses/2026-mixed-chloride-water-activity/scripts/wu_inputs.py": "0017a7d3876c41dec0b799d2728faa72b19bc88b100fcf9a68a5242f4336e4e8",
+    "analyses/2026-mixed-chloride-water-activity/scripts/wu_present.py": "c4f2f9c3b783ec24b5598a656468f9fda978cf74a61bdfde821d4068aa552d31",
+    "analyses/2026-mixed-chloride-water-activity/scripts/wu_coverage.cpp": "8056570ae198418889b3dd89905c358be082709f39b6ac80bbfefeda3340747d"
+  },
+  "reviewed_head": "9e6b795149b761db6b59ea468ffbaf116c43c287"
+}

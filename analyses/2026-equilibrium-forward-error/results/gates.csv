@@ -1,0 +1,20 @@
+check,outcome,log
+rebuild,passed,rebuild.log
+qualify,passed,qualify.log
+reader-854,passed,reader-854.log
+853-production-reader,passed,853-production-reader.log
+admission,passed,admission.log
+diagnostics-A,passed,diagnostics-A.log
+diagnostics-B,passed,diagnostics-B.log
+source-reference-A,passed,source-reference-A.log
+source-reference-B,passed,source-reference-B.log
+default-rank-failure,passed,default-rank-failure.log
+source-reference-test,passed,source-reference-test.log
+check-affected,passed,check-affected.log
+check-all,passed,check-all.log
+corpora-AB,passed,corpora-AB.log
+explicit-native,passed,explicit-native.log
+key-AB-fit,passed,key-AB-fit.log
+key-byte-comparison,passed,key-byte-comparison.log
+key-AA-fit,reused; identical A image,baseline-control-identity.json
+check-pr-native,lead responsibility; pending final head and PR number,

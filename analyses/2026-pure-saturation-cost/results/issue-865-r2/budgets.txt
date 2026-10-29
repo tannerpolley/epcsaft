@@ -1,0 +1,10 @@
+runtime formatted lines: count / ceiling (band = 1% of count, rounded up)
+ 1310 /  1323 (band  14)  core          ok
+ 1260 /  1273 (band  13)  contributions ok
+ 6342 /  6346 (band  64)  properties    ok
+11884 / 11950 (band 119)  equilibrium   ok
+ 3945 /  3955 (band  40)  regression    ok
+  777 /   785 (band   8)  surface       ok
+ 2318 /  2325 (band  24)  bindings      ok
+ 2223 /  2246 (band  23)  python        ok
+30059 / 30025 (band 301)  total         FAIL over the ceiling by 34

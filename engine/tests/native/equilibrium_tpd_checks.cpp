@@ -482,6 +482,24 @@ void check_tangent_plane_admission() {
     CHECK(std::isfinite(aqueous_q.at("donor_slope_over_rt")) && std::isfinite(aqueous_q.at("descent_error_estimate_over_rt")));
     CHECK(aqueous_q.at("descent_error_estimate_over_rt") >= 0.0
         && aqueous_q.at("donor_slope_over_rt") >= -aqueous_q.at("descent_error_estimate_over_rt"));
+    // #904: A1 fit:2:0, Kuranov 313.13 K, loading 0.9746714815929381, near-pure-0.
+    const std::vector<double> trace_weights{0x1.f64f82d00935bp-1, 0x1.360fa26622b49p-6,
+        0x1.c32c20f6c1dc0p-46, 0x1.fb7b5e721a2fbp-638, 0x1.231142a8bdf31p-801,
+        0x1.cb0b445880391p-90, 0x1.cc5a6916e3290p-29, 0x1.b7e638a5bc3abp-296};
+    const std::vector<int> charges{0, 0, -1, -2, 1, -1, 0, 1};
+    const auto repaired = reconstruct_trial_composition(trace_weights, {0, 1, 2, 3, 4, 5, 6, 7}, charges);
+    double trace_sum = 0.0, trace_charge = 0.0;
+    for (std::size_t i = 0; i < repaired.size(); ++i) {
+        CHECK(std::isfinite(repaired[i]) && repaired[i] > 0.0);
+        trace_sum += repaired[i]; trace_charge += charges[i] * repaired[i];
+    }
+    const auto trace_inputs = recording_support::fields({recording_support::field("raw", trace_weights),
+        recording_support::field("reconstructed", repaired)});
+    tpd_compare("trace-ion/normalization", trace_sum, 1.0, epcsaft::policy::COMPOSITION_SUM_TOLERANCE.value, trace_inputs);
+    tpd_compare("trace-ion/charge", trace_charge, 0.0, 0.0, trace_inputs);
+    const auto ion_only = reconstruct_trial_composition({1.0, 2.0, 3.0}, {0, 1, 2}, {1, -2, 3});
+    tpd_compare("ion-only/normalization", ion_only[0] + ion_only[1] + ion_only[2], 1.0, 1e-12);
+    tpd_compare("ion-only/charge", ion_only[0] - 2.0 * ion_only[1] + 3.0 * ion_only[2], 0.0, 1e-12);
     const std::vector<double> raw{0.98, 0.0100000001, 0.0099999999};
     const auto rebuilt = reconstruct_trial_composition(raw, {0, 1, 2}, parameters.charge_number);
     auto off_normalized = raw; for (double& amount : off_normalized) amount *= 1.001;

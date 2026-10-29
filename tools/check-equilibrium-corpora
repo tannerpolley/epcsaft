@@ -38,7 +38,7 @@ TPD = ROOT / 'analyses/2026-tpd-phase-discovery/scripts'
 SECTIONS = ('declared', 'continuation', 'fitting', 'asl')
 REPORTED = {'seconds', 'iterations', 'evaluations', 'hessians', 'message', 'residual', 'raw', 'classified',
             'default_iterations', 'default_residual', 'declared_iterations', 'declared_residual',
-            'wall_seconds', 'parallel_solve_seconds'}
+            'wall_seconds', 'parallel_solve_seconds', 'numerical_operands'}
 # value - reference, 100|value/reference - 1| and, for liquid volume, 100|reference/value - 1|
 # (2002-gross calculate.py:217-223); `value` itself is compared.
 GROSS_REPORTED = REPORTED | {'deviation', 'absolute_relative_percent', 'pressure_aad_percent',
@@ -83,8 +83,12 @@ def values(text):
     return None
 
 
-def differences(a_rows, b_rows, reported=REPORTED):
+def differences(a_rows, b_rows, reported=REPORTED, operands=None, comparisons=None):
     """Rows of B that differ from A outside the comparison above."""
+    from epcsaft.equilibrium import (ComparisonEligibility, ComparisonMode, NumericalEstimate, Quantity,
+                                      compare_equilibrium_quantity)
+    estimate, eligibility = NumericalEstimate(), ComparisonEligibility()
+    operands = operands or {}
     found = [dict(row=i, reason='row missing') for i in range(min(len(a_rows), len(b_rows)), max(len(a_rows), len(b_rows)))]
     for i, (a, b) in enumerate(zip(a_rows, b_rows)):
         for key in sorted((set(a) | set(b)) - reported):
@@ -96,12 +100,69 @@ def differences(a_rows, b_rows, reported=REPORTED):
             if type(x) is not type(y):
                 found.append(dict(row=i, key=key, a=x, b=y, reason='kind changed'))
                 continue
-            if x == y:
-                continue
-            if u is None or v is None or len(u) != len(v) or not all(
-                    math.isclose(p, q, rel_tol=1e-10, abs_tol=1e-12) for p, q in zip(u, v)):
-                found.append(dict(row=i, key=key, a=x, b=y))
+            if u is None or v is None:
+                if x != y:
+                    found.append(dict(row=i, key=key, a=x, b=y))
+            elif len(u) != len(v):
+                found.append(dict(row=i, key=key, a=x, b=y, reason='shape changed'))
+            else:
+                for j, (p, q) in enumerate(zip(u, v)):
+                    quantity, ea, eb, admitted, mode = operands.get(
+                        (i, key, j), (Quantity.Linear, estimate, estimate, eligibility, ComparisonMode.Strict))
+                    allowance = max(1e-12, 1e-10 * max(abs(p), abs(q)))
+                    result = compare_equilibrium_quantity(quantity, p, q, allowance, ea, eb, admitted, mode)
+                    if comparisons is not None:
+                        comparisons.append(dict(row=i, key=key, index=j, a=p, b=q, allowance=allowance,
+                            error_a=ea.absolute, error_b=eb.absolute, chart_a=ea.chart, chart_b=eb.chart,
+                            available_a=ea.available, available_b=eb.available, resolved_a=ea.resolved, resolved_b=eb.resolved,
+                            cause_a=ea.cause, cause_b=eb.cause,
+                            prerequisites={k:getattr(admitted,k) for k in ('declaration','branch','phase_matching','inventory',
+                                'residual_a','residual_b','admission_a','admission_b')},
+                            judgment=result.judgment, cause=result.cause, difference=result.difference,
+                            chart_difference=result.chart_difference, radius_sum=result.radius_sum))
+                    if result.judgment == 'failed':
+                        found.append(dict(row=i, key=key, entry=j, a=p, b=q, reason=result.cause))
     return found
+
+
+def neutral_comparison_operands(a_rows, b_rows):
+    from epcsaft.equilibrium import ComparisonEligibility, ComparisonMode, NumericalEstimate, Quantity, compile_problem
+    declaration = runpy.run_path(str(TPD / 'neutral.py'))
+    model, problem = declaration['model'], declaration['problem']
+    operands = {}
+    # #861 authority covers the original #853 rows 49-62; other comparisons remain strict.
+    for i in range(49, min(63, len(a_rows), len(b_rows))):
+        a, b = a_rows[i], b_rows[i]
+        estimates = []
+        for r in (a, b):
+            frozen = r.get('numerical_operands')
+            estimates.append(compile_problem(model, problem(r['T'], r['P0'])).numerical_estimates(
+                frozen['coordinates'], r['T'], r['P'][0], frozen['amounts'], r['x'], r['rho'], frozen['packing'])
+                if frozen and r['success'] else None)
+        eligibility = ComparisonEligibility()
+        eligibility.declaration = all(a[k] == b[k] for k in ('T', 'P0'))
+        eligibility.phase_matching = len(a.get('rho', [])) == len(b.get('rho', [])) == 2 and len(a.get('x', [])) == len(b.get('x', [])) == 4
+        eligibility.inventory = len(a_rows) == len(b_rows) == ACCEPTED['neutral']['rows']
+        for label, r in (('a', a), ('b', b)):
+            setattr(eligibility, 'admission_' + label, r['success'] is True)
+            residual, criterion = r.get('residual'), r.get('criterion')
+            setattr(eligibility, 'residual_' + label, isinstance(residual, (int, float)) and isinstance(criterion, (int, float))
+                    and math.isfinite(criterion) and criterion > 0 and 0 <= residual <= criterion)
+        for key, field, quantity in (('P','pressure',Quantity.Linear),('rho','densities',Quantity.Positive),('x','composition',Quantity.Linear)):
+            for j in range(len(a[key])):
+                errors = []
+                for e in estimates:
+                    error = NumericalEstimate()
+                    if e is not None:
+                        error.cause = e.cause
+                        values = getattr(e, field)
+                        if key == 'P':
+                            error = values
+                        elif j < len(values):
+                            error = values[j]
+                    errors.append(error)
+                operands[i,key,j] = quantity, *errors, eligibility, ComparisonMode.EstimatedError
+    return operands
 
 
 def table(path):
@@ -110,6 +171,9 @@ def table(path):
 
 def family_differences(a_rows, b_rows):
     """The declared 73-state MEA family: row criterion and its frozen entrywise metric."""
+    from epcsaft.equilibrium import (ComparisonEligibility, ComparisonMode, NumericalEstimate, Quantity,
+                                      compare_equilibrium_quantity)
+    estimate, eligibility = NumericalEstimate(), ComparisonEligibility()
     found = []
     quantities = {'amounts': 2, 'mole_fractions': 18, 'molar_densities': 2}
     for label, rows in (('A', a_rows), ('B', b_rows)):
@@ -130,7 +194,8 @@ def family_differences(a_rows, b_rows):
         for key in quantities:
             for j, (p, q) in enumerate(zip(a[key], b[key])):
                 metric = abs(p - q) / max(abs(p), abs(q), 1e-14)
-                if not math.isfinite(metric) or metric > 1e-10:
+                if compare_equilibrium_quantity(Quantity.Linear, p, q, 1e-10 * max(abs(p), abs(q), 1e-14),
+                        estimate, estimate, eligibility, ComparisonMode.Strict).judgment == 'failed':
                     found.append(dict(row=a['index'], key=key, entry=j, a=p, b=q, metric=metric))
     return found
 
@@ -162,6 +227,9 @@ def main():
     parser.add_argument('prepared_b')
     parser.add_argument('--out', type=Path, default=ROOT / f'build/equilibrium-corpora/{time.strftime("%Y%m%dT%H%M%S")}')
     args = parser.parse_args()
+    comparison_python, comparison_env = prepared_python(args.prepared_b)
+    if Path(os.path.abspath(sys.executable)) != comparison_python:
+        os.execve(str(comparison_python), [str(comparison_python), str(Path(__file__).resolve()), *sys.argv[1:]], comparison_env)
     out = args.out.resolve()
     if out.is_relative_to(ROOT) and not out.is_relative_to(ROOT / 'build'):
         parser.error('--out must be outside the tracked tree (use build/)')
@@ -277,7 +345,11 @@ def main():
                     successes[r['T']].append(r['P0'])
             found += accepted(f'{label} neutral', dict(rows=len(neutral(out / label)), successes=successes), ACCEPTED['neutral'])
             found += unmet(f'{label} neutral', neutral(out / label), 'success', 'residual', lambda r: r['criterion'])
-        return found + differences(neutral(out / 'A'), neutral(out / 'B'))
+        a_rows, b_rows = neutral(out / 'A'), neutral(out / 'B')
+        operands, comparisons = neutral_comparison_operands(a_rows, b_rows), []
+        found += differences(a_rows, b_rows, operands=operands, comparisons=comparisons)
+        (out / 'neutral-comparisons.json').write_text(json.dumps(comparisons, indent=2) + '\n')
+        return found
     corpus('neutral methane/ethane sweep', lambda d: f"{sum(r['success'] for r in neutral(d))}/{len(neutral(d))}",
            neutral_problems)
 

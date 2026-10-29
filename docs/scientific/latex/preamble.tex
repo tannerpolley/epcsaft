@@ -1,0 +1,42 @@
+% Shared preamble of main.tex and supplement.tex.
+\renewcommand{\sfdefault}{lmss}
+\renewcommand{\ttdefault}{lmtt}
+\usepackage[numbers]{natbib}
+\usepackage[version=4]{mhchem}
+\usepackage{cleveref}
+\usepackage{mathtools}
+\usepackage{amssymb}
+\usepackage{tabularx}
+\usepackage{makecell}
+\usepackage{booktabs}
+\let\articlecaption\caption
+\usepackage{algorithm}
+\let\algorithmcaption\caption
+\let\caption\articlecaption
+\AtBeginEnvironment{algorithm}{\small\let\caption\algorithmcaption}
+\usepackage{algpseudocode}
+\usepackage{xspace}
+\usepackage{xcolor}
+\usepackage{siunitx}
+\usepackage{xurl}
+\usepackage{listings}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit,backgrounds,calc}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\input{figures/styles}
+\graphicspath{{figures/generated/}}
+
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\COtwo}{\ce{CO2}\xspace}
+\newcommand{\ares}{a^{\mathrm{res}}}
+\newcommand{\figplaceholder}[2]{\begin{center}\fbox{\parbox[c][#1][c]{0.9\linewidth}{\centering\textcolor{black!65}{\textit{Planned figure:} #2}}}\end{center}}
+\lstset{language=Python,basicstyle=\ttfamily\footnotesize,columns=fullflexible,keepspaces=true,frame=lines,commentstyle=\color{black!60},showstringspaces=false}
+\AtBeginDocument{%
+\let\WriteBookmarks\relax%
+\renewcommand{\lastpage}{\csname @abspage@last\endcsname}%
+\renewcommand{\topfraction}{0.95}%
+\renewcommand{\bottomfraction}{0.8}%
+\renewcommand{\textfraction}{0.07}%
+\renewcommand{\floatpagefraction}{0.8}%
+}

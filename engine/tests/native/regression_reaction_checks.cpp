@@ -304,6 +304,30 @@ void check_b1_minimax(const std::string& id, const FitRequest& request, const Fi
 }
 
 void check_d7_minimax() {
+    for (bool typed : {false, true}) {
+        const auto p = analytic_minimax_problem(false, 0.02, 0.02);
+        const auto real = analytic_minimax_evaluator(p.request);
+        int calls = 0;
+        core::Convergence record; record.stop = core::Stop::left_domain; record.residual = 0.25;
+        record.criterion = &policy::DENSITY_ROOT_RESIDUAL; record.cause = "R2-D7 observation action refused";
+        const ObservationFunction refused = [&](const auto& x, bool columns, auto& out) {
+            if (calls++ == 0) return real(x, columns, out);
+            if (typed) throw core::ConvergenceFailure(record);
+            return false;
+        };
+        const auto result = solve_minimax(p.request, {0.5}, p.frozen, refused);
+        CHECK(result.first_numerical_failure && result.minimax && result.minimax->ipopt_diagnostics);
+        CHECK(result.minimax->ipopt_diagnostics->initialization_return == int(Ipopt::Solve_Succeeded));
+        CHECK(result.minimax->ipopt_diagnostics->application_return.has_value());
+        if (typed) {
+            CHECK(result.first_numerical_failure->stop == record.stop && result.first_numerical_failure->residual == record.residual);
+            CHECK(result.first_numerical_failure->criterion == record.criterion && result.first_numerical_failure->cause == record.cause);
+        } else CHECK(result.first_numerical_failure->cause.find("observation callback returned false") != std::string::npos);
+    }
+    std::optional<equilibrium::IpoptDiagnostics> observed(std::in_place);
+    for (int mode : {0, 1, 0}) equilibrium::observe_ipopt(*observed, nullptr, {mode, 7, 3, 1, 2, 3, 4, 5, 6, 7, 8});
+    CHECK(observed->callbacks == 3 && observed->restoration_entries == 1 && observed->first_restoration_iteration == 7);
+    CHECK(observed->last->mode == 0 && observed->last->alpha_pr == 8 && observed->last->line_search_trials == 3);
     for (const auto& start : std::vector<std::vector<double>>{{0.25, 0.25}, {1.0, 1.0}}) {
         const auto problem = analytic_minimax_problem(true, 0.02, 0.02);
         const auto evaluate = analytic_minimax_evaluator(problem.request);

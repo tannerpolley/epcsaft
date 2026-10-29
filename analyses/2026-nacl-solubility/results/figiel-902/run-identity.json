@@ -1,0 +1,38 @@
+{
+  "base": "7f2a1d7d24b79970ab5fe8b0bbc159ede553de31",
+  "commit": "7f2a1d7d24b79970ab5fe8b0bbc159ede553de31",
+  "timestamp": "2026-10-28T22:34:59.554668-06:00",
+  "fixed": {
+    "reference_temperature": 298.15,
+    "reference_pressure": 101325,
+    "dG": -9038.7,
+    "dH": 3858.4,
+    "dCp": -134.03,
+    "g_se": 3.6,
+    "measured_m": 6.1476,
+    "measured_m_se": 0.0015,
+    "pinho_pressure": 101300,
+    "measured_w": 0.26483,
+    "measured_w_u": 0.00084,
+    "salt_mass": 0.05844277,
+    "solid_volume": 2.71e-05
+  },
+  "species": [
+    "water",
+    "sodium-cation",
+    "chloride-anion"
+  ],
+  "returncode": 0,
+  "hashes": {
+    "data/packets/figiel-2025-chloride-mixture-refit/2/parameters/parameters.json": "7e32db55f77fe437bc8f918685b6287899e658810ebb575a10e31fcc61e63bf7",
+    "analyses/2026-nacl-solubility/inputs/figiel-902/frozen-observations.json": "f74f985e9e016c85c8c1686aeb404cd14941fb80d47d6ee69db75d9db808d0fe",
+    "analyses/2026-nacl-solubility/inputs/figiel-902/source-hashes.json": "246c09f17634348c0827f3dbb50519c4b042852fd36b037c2fc9bbe880ee01b7",
+    "build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so": "6d194fb5835ce0143def1cd1370e121bab9b2546ae74e182a1b601ea120026df",
+    "build/engine-meson/shared/libepcsaft_native.so": "b9e09f6e66bff640f08f796b3067f05474af560ab2333e1f30df98b9f27f27dc",
+    "analyses/2026-nacl-solubility/scripts/figiel_halite.cpp": "9ad91d6af2fe5f08723a7f305f66e013fe1cb673f34587e24045da0d40987980",
+    "analyses/2026-nacl-solubility/scripts/figiel_halite.py": "e2e189746d56ae5f32b60587de2d62e6e377cb82f24c52337090b779d6c4a3b0",
+    "build/issue-902/halite-build-r1/figiel_inputs.hpp": "9c28ed3222c51cce623076ac660dc18faaf7eae42f4931ccdf1eb0328be7da77"
+  },
+  "attempts": 24,
+  "failures": []
+}

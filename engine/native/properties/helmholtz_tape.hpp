@@ -108,12 +108,13 @@ struct ActiveParameter final {
 
 using PredicateSignature = std::vector<unsigned char>;
 
-inline TapeParameters make_tape_parameters(
+template<typename Scalar = AD>
+inline ParameterRecord<Scalar> make_tape_parameters(
     const Parameters& parameters,
     const std::vector<ActiveParameter>& active,
-    const std::vector<AD>& coordinates
+    const std::vector<Scalar>& coordinates
 ) {
-    TapeParameters result;
+    ParameterRecord<Scalar> result;
     for (std::size_t family = 0; family < PARAMETER_FAMILY_COUNT; ++family) {
         const auto item = static_cast<ParameterFamily>(family);
         const auto source = family_values(parameters, item);
@@ -256,13 +257,16 @@ struct HelmholtzTape final {
         std::size_t* solve_count = nullptr,
         std::size_t* forward_count = nullptr,
         double* coefficient_residual = nullptr,
-        std::vector<std::vector<double>>* output_prefix = nullptr
+        std::vector<std::vector<double>>* output_prefix = nullptr,
+        std::vector<double>* site_coefficients = nullptr, std::vector<double>* right_coefficients = nullptr
     ) {
         core::Scope scope("implicit_taylor"), evaluation("evaluate");
         scope.probe("derivative_order", static_cast<double>(order));
         const std::size_t input_count = regular_count + site_count;
         std::vector<double> input(input_count), output;
         if (output_prefix != nullptr) output_prefix->clear();
+        if (site_coefficients) site_coefficients->clear();
+        if (right_coefficients) right_coefficients->clear();
         // Without U, callers may consume only the site-independent Ideal outputs.
         for (std::size_t current = 0; current <= order; ++current) {
             input.assign(input_count, 0.0);
@@ -271,6 +275,8 @@ struct HelmholtzTape final {
                 std::copy(site_values.begin(), site_values.end(), input.begin() + regular_count);
                 output = forward_zero(input, forward_count);
                 if (output_prefix != nullptr) output_prefix->push_back(output);
+                if (site_coefficients) site_coefficients->insert(site_coefficients->end(), input.begin() + regular_count, input.end());
+                if (right_coefficients) for (std::size_t a = 0; a < site_count; ++a) right_coefficients->push_back(-output[1+a]);
                 continue;
             }
             const auto known = function.Forward(current, input);
@@ -292,6 +298,8 @@ struct HelmholtzTape final {
                 if (forward_count != nullptr) ++*forward_count;
             }
             if (output_prefix != nullptr) output_prefix->push_back(output);
+            if (site_coefficients) site_coefficients->insert(site_coefficients->end(), input.begin() + regular_count, input.end());
+            if (right_coefficients) for (std::size_t a = 0; a < site_count; ++a) right_coefficients->push_back(-known[1+a]);
             if (coefficient_residual != nullptr && site_count != 0 && factorization != nullptr) {
                 double scale = 1.0;
                 for (std::size_t site = 0; site < site_count; ++site)

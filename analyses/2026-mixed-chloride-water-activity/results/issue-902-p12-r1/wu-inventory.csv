@@ -1,0 +1,13 @@
+state,b,molarity_basis,MgCO3_dose_g_L,dissolved_carbonate,acidity,Fe,water_mass_basis
+feed,0.80000000000000004,"Li Na K Mg Ca g/L = 1.36 5.75 6.24 52.1 84.4",0,unreported,unreported; feed projection H=0 only,unreported; Fe-free projection,assumed sensitivity; kg water/L
+feed,1,"Li Na K Mg Ca g/L = 1.36 5.75 6.24 52.1 84.4",0,unreported,unreported; feed projection H=0 only,unreported; Fe-free projection,assumed sensitivity; kg water/L
+feed,1.2,"Li Na K Mg Ca g/L = 1.36 5.75 6.24 52.1 84.4",0,unreported,unreported; feed projection H=0 only,unreported; Fe-free projection,assumed sensitivity; kg water/L
+scrub,0.80000000000000004,"MgCl2 4.5 M plus LiCl 0.01 M",0,unreported,unreported; feed projection H=0 only,unreported; Fe-free projection,assumed sensitivity; kg water/L
+scrub,1,"MgCl2 4.5 M plus LiCl 0.01 M",0,unreported,unreported; feed projection H=0 only,unreported; Fe-free projection,assumed sensitivity; kg water/L
+scrub,1.2,"MgCl2 4.5 M plus LiCl 0.01 M",0,unreported,unreported; feed projection H=0 only,unreported; Fe-free projection,assumed sensitivity; kg water/L
+regeneration,0.80000000000000004,"MgCl2 4 M",15,unreported,unreported; feed projection H=0 only,unreported; Fe-free projection,assumed sensitivity; kg water/L
+regeneration,1,"MgCl2 4 M",15,unreported,unreported; feed projection H=0 only,unreported; Fe-free projection,assumed sensitivity; kg water/L
+regeneration,1.2,"MgCl2 4 M",15,unreported,unreported; feed projection H=0 only,unreported; Fe-free projection,assumed sensitivity; kg water/L
+strip,0.80000000000000004,"HCl 6 M",0,unreported,analytical HCl input,unreported; Fe-free projection,assumed sensitivity; kg water/L
+strip,1,"HCl 6 M",0,unreported,analytical HCl input,unreported; Fe-free projection,assumed sensitivity; kg water/L
+strip,1.2,"HCl 6 M",0,unreported,analytical HCl input,unreported; Fe-free projection,assumed sensitivity; kg water/L

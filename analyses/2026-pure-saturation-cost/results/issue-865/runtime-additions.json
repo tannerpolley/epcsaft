@@ -1,0 +1,29 @@
+{
+  "base": "bd81c3ea49baba15147b785e042a3b2aab1f77ad",
+  "method": "diff of pinned formatter lines occupied by retained C++ tokens; moves count as additions",
+  "layers": {
+    "equilibrium": {
+      "added": 57,
+      "removed": 17
+    }
+  },
+  "files": [
+    {
+      "file": "engine/native/equilibrium/gibbs_minimizer.cpp",
+      "added": 3,
+      "removed": 2
+    },
+    {
+      "file": "engine/native/equilibrium/one_component_two_density.cpp",
+      "added": 6,
+      "removed": 3
+    },
+    {
+      "file": "engine/native/equilibrium/phase_boundary.cpp",
+      "added": 48,
+      "removed": 12
+    }
+  ],
+  "total_added": 57,
+  "within_allowance": true
+}

@@ -63,3 +63,31 @@ The [named-release computational cost study](2026-release-computational-cost/not
 compares value-matched serial operations against FeOs and Clapeyron on the owner-defined quiet host,
 and reports marginal first-order actions separately from equilibrium solves.
 Independent delivered review and owner promotion remain outstanding.
+
+The [MEA flash family on v1.0.0](2026-mea-flash-family-seed/notebook.qmd)
+reports the release's local reacting-equilibrium convergence, the recovered
+states and preservation against the earlier retained run. This is numerical
+verification; independent delivered review and owner promotion remain open.
+
+The [pure-fluid saturation comparison](2026-pure-saturation-cost/notebook.qmd)
+reports retained coexistence and action agreement, double-polish work,
+and ordinary and prepared-call cost against the existing comparator workers.
+
+The [explicit discovery comparison](2026-explicit-discovery-cost/notebook.qmd)
+checks the same finite searches after removing unused derivative and repeated
+root work. Its numerical comparisons, categorical work counts and separately
+admitted cost results preserve the measured control spreads and finite-search
+limits. Independent delivered review remains outstanding.
+
+The [equilibrium numerical-error study](2026-equilibrium-forward-error/notebook.qmd)
+checks local error coverage for the retained pure-fluid and neutral-mixture
+comparisons. Source-reference estimates remain unavailable with their explicit
+cause. This is numerical verification; delivered review and investigator
+promotion remain outstanding.
+
+The [measured halite-solubility comparison](2026-nacl-solubility/notebook.qmd)
+finds a decreasing saturation molality for the declared Held/Malmberg–Maryott
+variant while the measurements rise.
+The notebook separates the physical discrepancy from native numerical closure
+and retains the thermochemical and measured uncertainty conventions.
+Independent delivered review remains pending.

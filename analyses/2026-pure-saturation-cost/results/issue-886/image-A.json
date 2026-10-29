@@ -1,0 +1,32 @@
+{
+ "commit": "7929f13be4ff9f6b97d72fea023543fa107ff52e",
+ "engine_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+ "build_dir": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-886-dedicated-native-pure-fluid-saturation-2/build/issue-886/baseline-a/build/engine-meson/shared",
+ "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-886-dedicated-native-pure-fluid-saturation-2/build/issue-886/baseline-a/.venv/bin/python",
+ "loader": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-886-dedicated-native-pure-fluid-saturation-2/build/issue-886/baseline-a/.venv/lib/python3.13/site-packages/_epcsaft_editable_loader.py",
+ "loader_sha256": "5625f0cc18f50a1a458a40a2e35f3a2214de1468c23808ee4751f6fd85c0522b",
+ "install_plan_sha256": "6d84c96249969e69061f7e9435ffa1a4239b02d635f7eb2d72ecb35ba3432f6b",
+ "buildoptions_sha256": "36d193040f06ada7ebd7413a22a0a184a2d8937be4463e20ada277d6d7c29661",
+ "build_ninja_sha256": "1c10e37b299beab31c8d516e01857585aa25fe5d774fa9afc9cf700b01bc7c23",
+ "uv_lock_sha256": "8ecc21b40b9acfc6ea8a1325bb109419679275533cea2770f788e0098b5d9f02",
+ "extension": "_core.cpython-313-x86_64-linux-gnu.so",
+ "libraries_sha256": {
+  "_core.cpython-313-x86_64-linux-gnu.so": "d2124a01f17d4d7beeead574e474320034642d91876cd089be985bf8719a9257",
+  "libepcsaft_native.so": "7f94a2caeb8c067250358c69953e0ef2bae9436b9e15c081074dca6b36d195b4",
+  "libepcsaft_asl.so": "08602e771e279018e6bc8f5d57d413ff5d7787ea7d07cd6319231dc8ac955679"
+ },
+ "package_sha256": {
+  "__init__.py": "984ad28616d1eeb7fbb51cecf366ece0b79a29624306b2995da8f137e55bc873",
+  "_core.cpython-313-x86_64-linux-gnu.so": "d2124a01f17d4d7beeead574e474320034642d91876cd089be985bf8719a9257",
+  "_core.pyi": "8bde79726091ffa7b31587442c273aba2899c48328675ce520dcc97f480943da",
+  "eos.py": "5387d2eb3d2ea609119ff314bf68d5690fbc60ef3429cd3ce0ba2dfe36bdb357",
+  "equilibrium/__init__.py": "b58ac4a487f36cd695559f93c1c873efe226ec329bf0f44db2a1ab2d11d2bc15",
+  "equilibrium/problem.py": "e018429a699d944b35783b5ecf1ba08e5885d7f8790d09e802a414a4d92b239f",
+  "libepcsaft_asl.so": "08602e771e279018e6bc8f5d57d413ff5d7787ea7d07cd6319231dc8ac955679",
+  "libepcsaft_native.so": "7f94a2caeb8c067250358c69953e0ef2bae9436b9e15c081074dca6b36d195b4",
+  "parameters.py": "d49053836b9b17bae681d10efffbdccebd91a188f476126cc67f64c98d4ac9dc",
+  "py.typed": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "reference.py": "89d1386ac707bb4205b8bd1ccc6a060e83bd7f29432a343d394d896b0b4f49b0",
+  "regression.py": "0be33177fe14a92baa82086b30ddbe2a760d30455fc26a4e725dc3c7827f15c1"
+ }
+}

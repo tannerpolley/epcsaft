@@ -1,0 +1,896 @@
+{
+  "control": {
+    "environments": {
+      "A": {
+        "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/issue-862/baseline-r9/.venv",
+        "asl_library": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/issue-862/baseline-r9/build/engine-meson/shared/libepcsaft_asl.so",
+        "asl_library_sha256": "e7f7a3170e9ceb24fb33339e3e7162beb0ec6bdfcf86e87ebdddb555ee68e7d6",
+        "build_configuration": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/issue-862/baseline-r9/build/engine-meson/shared/meson-info/intro-buildoptions.json",
+        "build_configuration_sha256": "ccbfc86ebcb227283df98dc4dc6b9b16db2ddde044a03668613106ac9a44dd01",
+        "direct_url": {
+          "dir_info": {
+            "editable": true
+          },
+          "url": "file:///home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/issue-862/baseline-r9/engine"
+        },
+        "epcsaft": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/issue-862/baseline-r9/engine/src/epcsaft/__init__.py",
+        "epcsaft_sha256": "984ad28616d1eeb7fbb51cecf366ece0b79a29624306b2995da8f137e55bc873",
+        "extension": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/issue-862/baseline-r9/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so",
+        "extension_sha256": "df77c126d7350535c0ef889705bed080729f1678a13c15ac0b4dad9ddfebb79b",
+        "interpreter": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/issue-862/baseline-r9/.venv/bin/python",
+        "lock_sha256": "73c3756a1ffb929301c49c00cf6d2ded67e8d4c159bb810ea8653d88a2014d9b",
+        "meson_build_dir": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/issue-862/baseline-r9/build/engine-meson/shared",
+        "meson_configuration_sha256": "5f5624f372019c20f801238e0b8d192f0fbbccce73e4d5954bbf5acdb572c5a5",
+        "native_library": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/issue-862/baseline-r9/build/engine-meson/shared/libepcsaft_native.so",
+        "native_library_sha256": "7a7b9d90466b1a13cd8ba15b1db9109cdc1c3053526ad6b538b5c515c76277d6",
+        "prepared_stage": "editable",
+        "python": "3.13.14 (main, Jun 23 2026, 15:18:27) [Clang 22.1.3 ]",
+        "source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "source_revision": "bd81c3ea49baba15147b785e042a3b2aab1f77ad",
+        "source_root": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/issue-862/baseline-r9",
+        "version": "1.0.0",
+        "wheel": null,
+        "wheel_sha256": null
+      },
+      "B": {
+        "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/issue-862/baseline-r9/.venv",
+        "asl_library": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/issue-862/baseline-r9/build/engine-meson/shared/libepcsaft_asl.so",
+        "asl_library_sha256": "e7f7a3170e9ceb24fb33339e3e7162beb0ec6bdfcf86e87ebdddb555ee68e7d6",
+        "build_configuration": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/issue-862/baseline-r9/build/engine-meson/shared/meson-info/intro-buildoptions.json",
+        "build_configuration_sha256": "ccbfc86ebcb227283df98dc4dc6b9b16db2ddde044a03668613106ac9a44dd01",
+        "direct_url": {
+          "dir_info": {
+            "editable": true
+          },
+          "url": "file:///home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/issue-862/baseline-r9/engine"
+        },
+        "epcsaft": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/issue-862/baseline-r9/engine/src/epcsaft/__init__.py",
+        "epcsaft_sha256": "984ad28616d1eeb7fbb51cecf366ece0b79a29624306b2995da8f137e55bc873",
+        "extension": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/issue-862/baseline-r9/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so",
+        "extension_sha256": "df77c126d7350535c0ef889705bed080729f1678a13c15ac0b4dad9ddfebb79b",
+        "interpreter": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/issue-862/baseline-r9/.venv/bin/python",
+        "lock_sha256": "73c3756a1ffb929301c49c00cf6d2ded67e8d4c159bb810ea8653d88a2014d9b",
+        "meson_build_dir": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/issue-862/baseline-r9/build/engine-meson/shared",
+        "meson_configuration_sha256": "5f5624f372019c20f801238e0b8d192f0fbbccce73e4d5954bbf5acdb572c5a5",
+        "native_library": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/issue-862/baseline-r9/build/engine-meson/shared/libepcsaft_native.so",
+        "native_library_sha256": "7a7b9d90466b1a13cd8ba15b1db9109cdc1c3053526ad6b538b5c515c76277d6",
+        "prepared_stage": "editable",
+        "python": "3.13.14 (main, Jun 23 2026, 15:18:27) [Clang 22.1.3 ]",
+        "source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "source_revision": "bd81c3ea49baba15147b785e042a3b2aab1f77ad",
+        "source_root": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/issue-862/baseline-r9",
+        "version": "1.0.0",
+        "wheel": null,
+        "wheel_sha256": null
+      }
+    },
+    "source_commit": "a134f21d241d3199bf5a1853abcfb813d695aeb1",
+    "cpu": 0,
+    "nice": 10,
+    "threads": 1,
+    "host": "tnnrpolley21-MS-7C95",
+    "pairs": 1,
+    "warmups": 1,
+    "time_boundary": "sum of equilibrium call wall times; preparation, imports and result reading excluded",
+    "change_percent": "100*(B_seconds/A_seconds-1)",
+    "state_difference": "abs(A-B)/largest magnitude of that quantity in the returned state; gate 1e-10; declared phase order",
+    "evaluation_meaning": "native Engine evaluations, including exact polish; not every EOS evaluation",
+    "limits": "shared-host timing; declared local states only; no physical validation or global stability",
+    "serial_attempts": {
+      "mea-f1/residual-jacobian": [
+        {
+          "A": 5.008841435999999,
+          "B": 4.705716792
+        }
+      ],
+      "mea-cp/hilliard-353.15-K-0.358": [
+        {
+          "A": 0.6743942389999997,
+          "B": 0.8413752999999993
+        }
+      ]
+    },
+    "same_prepared_environment": true,
+    "cases": {
+      "case-6/figure-2-point-7/cold": {
+        "work_A": {
+          "iterations": 10,
+          "evaluations": 15,
+          "hessian_calls": 11
+        },
+        "work_B": {
+          "iterations": 10,
+          "evaluations": 15,
+          "hessian_calls": 11
+        },
+        "work_identical": true,
+        "max_state_difference": 0.0,
+        "median_change_percent": -1.7047873257198365,
+        "range_percent": [
+          -1.7047873257198365,
+          -1.7047873257198365
+        ],
+        "mad_percent": 0.0,
+        "median_A_seconds": 0.007467929,
+        "median_B_seconds": 0.007335115,
+        "zero_within_spread": false
+      },
+      "case-6/figure-2-point-7/accepted": {
+        "work_A": {
+          "iterations": 7,
+          "evaluations": 11,
+          "hessian_calls": 8
+        },
+        "work_B": {
+          "iterations": 7,
+          "evaluations": 11,
+          "hessian_calls": 8
+        },
+        "work_identical": true,
+        "max_state_difference": 0.0,
+        "median_change_percent": -2.5144850660222207,
+        "range_percent": [
+          -2.5144850660222207,
+          -2.5144850660222207
+        ],
+        "mad_percent": 0.0,
+        "median_A_seconds": 0.0059019645,
+        "median_B_seconds": 0.005748395,
+        "zero_within_spread": false
+      },
+      "case-7/flash-5918.5286-Pa/cold": {
+        "work_A": {
+          "iterations": 19,
+          "evaluations": 35,
+          "hessian_calls": 20
+        },
+        "work_B": {
+          "iterations": 19,
+          "evaluations": 35,
+          "hessian_calls": 20
+        },
+        "work_identical": true,
+        "max_state_difference": 0.0,
+        "median_change_percent": -2.2662386957342076,
+        "range_percent": [
+          -2.2662386957342076,
+          -2.2662386957342076
+        ],
+        "mad_percent": 0.0,
+        "median_A_seconds": 0.0188048595,
+        "median_B_seconds": 0.018377856,
+        "zero_within_spread": false
+      },
+      "case-7/flash-5918.5286-Pa/accepted": {
+        "work_A": {
+          "iterations": 17,
+          "evaluations": 22,
+          "hessian_calls": 18
+        },
+        "work_B": {
+          "iterations": 17,
+          "evaluations": 22,
+          "hessian_calls": 18
+        },
+        "work_identical": true,
+        "max_state_difference": 0.0,
+        "median_change_percent": 20.094082669898818,
+        "range_percent": [
+          20.094082669898818,
+          20.094082669898818
+        ],
+        "mad_percent": 0.0,
+        "median_A_seconds": 0.013182279,
+        "median_B_seconds": 0.0158535595,
+        "zero_within_spread": false
+      },
+      "khudaida/sequential-8": {
+        "work_A": {
+          "iterations": 46,
+          "evaluations": 70,
+          "hessian_calls": 54
+        },
+        "work_B": {
+          "iterations": 46,
+          "evaluations": 70,
+          "hessian_calls": 54
+        },
+        "work_identical": true,
+        "max_state_difference": 0.0,
+        "median_change_percent": 0.45004964846014905,
+        "range_percent": [
+          0.45004964846014905,
+          0.45004964846014905
+        ],
+        "mad_percent": 0.0,
+        "median_A_seconds": 0.0389912385,
+        "median_B_seconds": 0.039167113,
+        "zero_within_spread": false
+      },
+      "mea-nominally-unloaded/353.15-K": {
+        "work_A": {
+          "iterations": 13,
+          "evaluations": 19,
+          "hessian_calls": 14
+        },
+        "work_B": {
+          "iterations": 13,
+          "evaluations": 19,
+          "hessian_calls": 14
+        },
+        "work_identical": true,
+        "max_state_difference": 0.0,
+        "median_change_percent": 0.37769535651283603,
+        "range_percent": [
+          0.37769535651283603,
+          0.37769535651283603
+        ],
+        "mad_percent": 0.0,
+        "median_A_seconds": 0.010243149,
+        "median_B_seconds": 0.010279634,
+        "zero_within_spread": false
+      },
+      "mea-f1/residual-jacobian": {
+        "work_A": {
+          "reference_computations": 295,
+          "reference_columns": 3388,
+          "density_solves": 1223,
+          "equilibrium_iterations": 1426
+        },
+        "work_B": {
+          "reference_computations": 295,
+          "reference_columns": 3388,
+          "density_solves": 1223,
+          "equilibrium_iterations": 1426
+        },
+        "work_identical": true,
+        "max_state_difference": 0.0,
+        "median_A_seconds": 5.009647722996306,
+        "median_B_seconds": 4.7064320749777835,
+        "evaluations": {
+          "A": {
+            "work": {
+              "reference_computations": 295,
+              "reference_columns": 3388,
+              "density_solves": 1223,
+              "equilibrium_iterations": 1426
+            },
+            "seconds": 5.009647722996306,
+            "cpu_seconds": 5.008841435999999,
+            "reference_taylor_evaluations": 0
+          },
+          "B": {
+            "work": {
+              "reference_computations": 295,
+              "reference_columns": 3388,
+              "density_solves": 1223,
+              "equilibrium_iterations": 1426
+            },
+            "seconds": 4.7064320749777835,
+            "cpu_seconds": 4.705716792,
+            "reference_taylor_evaluations": 0
+          }
+        },
+        "fits": {
+          "A": {
+            "iterations": 14,
+            "residual_evaluations": 15,
+            "jacobian_evaluations": 12,
+            "initial_cost": 230.90624790128786,
+            "final_cost": 31.1237269986244,
+            "status": "converged",
+            "message": "Function tolerance reached. |cost_change|/cost: 8.218662e-15 <= 1.000000e-12",
+            "seconds": 7.4846766180126,
+            "cpu_seconds": 139.23848977499998,
+            "workers": 32,
+            "nice": 10,
+            "affinity": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18,
+              19,
+              20,
+              21,
+              22,
+              23,
+              24,
+              25,
+              26,
+              27,
+              28,
+              29,
+              30,
+              31
+            ],
+            "critical_cpu_seconds": 5.927166195000001,
+            "total_compute_cpu_seconds": 135.51805337800002
+          },
+          "B": {
+            "iterations": 14,
+            "residual_evaluations": 15,
+            "jacobian_evaluations": 12,
+            "initial_cost": 230.90624790128786,
+            "final_cost": 31.1237269986244,
+            "status": "converged",
+            "message": "Function tolerance reached. |cost_change|/cost: 8.218662e-15 <= 1.000000e-12",
+            "seconds": 7.860225990007166,
+            "cpu_seconds": 139.48878665,
+            "workers": 32,
+            "nice": 10,
+            "affinity": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18,
+              19,
+              20,
+              21,
+              22,
+              23,
+              24,
+              25,
+              26,
+              27,
+              28,
+              29,
+              30,
+              31
+            ],
+            "critical_cpu_seconds": 6.0443893950000005,
+            "total_compute_cpu_seconds": 135.5941601
+          }
+        },
+        "control_wall_seconds": [
+          7.4846766180126,
+          7.860225990007166
+        ],
+        "fit_max_state_difference": 0.0
+      },
+      "mea-cp/hilliard-353.15-K-0.358": {
+        "work_A": {
+          "reference_computations": 3,
+          "reference_columns": 280,
+          "density_solves": 11,
+          "equilibrium_iterations": 13
+        },
+        "work_B": {
+          "reference_computations": 3,
+          "reference_columns": 280,
+          "density_solves": 11,
+          "equilibrium_iterations": 13
+        },
+        "work_identical": true,
+        "max_state_difference": 0.0,
+        "median_A_seconds": 0.6746184020012151,
+        "median_B_seconds": 0.8416702690010425,
+        "evaluations": {
+          "A": {
+            "work": {
+              "reference_computations": 3,
+              "reference_columns": 280,
+              "density_solves": 11,
+              "equilibrium_iterations": 13
+            },
+            "seconds": 0.6746184020012151,
+            "cpu_seconds": 0.6743942389999997,
+            "reference_taylor_evaluations": 0
+          },
+          "B": {
+            "work": {
+              "reference_computations": 3,
+              "reference_columns": 280,
+              "density_solves": 11,
+              "equilibrium_iterations": 13
+            },
+            "seconds": 0.8416702690010425,
+            "cpu_seconds": 0.8413752999999993,
+            "reference_taylor_evaluations": 0
+          }
+        }
+      }
+    },
+    "identical_engine_images": true,
+    "expect_change": false,
+    "gate_failures": [],
+    "f1_packet_sha256": "862ecf1e5d2756b7639493ea9d08444e890c66af6f427e5d9ee436910783a8db",
+    "runtime_seconds": 60.808776084013516,
+    "input_sha256": {
+      "tools/time-key-solves": "f8a4240abee5402156a99a935d360d09f8d1b6908b614dd0ef3fce14c304e721",
+      "tools/fixtures/mea-f1.json.gz": "3bdb146a7b8d6b449b829fc40bf08aaeef3616b71409ce0bb22c837bdc97be4c",
+      "tools/fixtures/mea-f1-identity.json": "f034a3faca19633d12b336b660c44c6f4fe7fea4236e2352d29fc3bffdd4c2e2",
+      "tools/fixtures/mea-cp.json.gz": "c0cc5235ac63078cd3a653abf66bd85fa70ebb445d48cb509f151fe5f61b3b08",
+      "tools/fixtures/mea-cp-identity.json": "5f5a191b699569e3a3973572273c7c6789ca32b1887abd48419040d4cfba44b2",
+      "analyses/2026-tpd-phase-discovery/scripts/baseline.py": "aab4c8de340158479fd4d30bffc5793b3cf96c48a4edb0c113b5b4cebdc62a10",
+      "analyses/2026-khudaida-idaes-settler/scripts/run_fixed_settler.py": "86b3508b682c8a47fdb1f05c322f384dd93e40afe0ad754ab032baab0f1f1b95",
+      "analyses/reproduction/2026-khudaida/figures/figure-02/source/source-points.csv": "21cf58a5373b2e2c337b6baf5a0423d0ab5d7cea9639bb727b061f5844ef78d7",
+      "analyses/2026-khudaida-idaes-settler/inputs/data/khudaida-2026-figure-2-electrolyte-lle/7/parameters/parameters.json": "8babed899e7347e58c403c7aff24a7fdd6d60411af3b4d81eb6aa90c2431dfa4",
+      "data/packets/mea-co2-h2o-nine-species-estimation/3/parameters/parameters.json": "2ea3b41485a98d2cf49add620b87bb05fc5a275cdd132c1cdbb0cfc5f07f2ca4",
+      "engine/tests/equilibrium/test_trace_reliability.py": "0d8443ba7bdbc0f4e6ad214134c0558addb89399c40a18c0508c5fa198b90853",
+      "engine/data/reference/mea-nominally-unloaded/request.json": "bc8a03e13efab9a9675a63121c12538dbb9f42a18dbe4ddc7fe6742b6ab6da61",
+      "engine/data/reference/mea-nominally-unloaded/parameters.json": "756fec502d3a1433d538abb073c4caeabf91902013ab7e27d5459ce70396543b",
+      "engine/data/reference/mea-zero-inventory/ideal-calorics.json": "c94d504e68c6dc6e85d3d950cc51422499846729b1a06994b362040be991924a"
+    },
+    "full_record": {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/issue-862/build-r9/key-aa/summary.json",
+      "sha256": "77fd26e4d4d7ccc395371fe498564419efd6b6263d2af0354be9285b569ed693"
+    }
+  },
+  "candidate": {
+    "environments": {
+      "A": {
+        "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/issue-862/baseline-r9/.venv",
+        "asl_library": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/issue-862/baseline-r9/build/engine-meson/shared/libepcsaft_asl.so",
+        "asl_library_sha256": "e7f7a3170e9ceb24fb33339e3e7162beb0ec6bdfcf86e87ebdddb555ee68e7d6",
+        "build_configuration": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/issue-862/baseline-r9/build/engine-meson/shared/meson-info/intro-buildoptions.json",
+        "build_configuration_sha256": "ccbfc86ebcb227283df98dc4dc6b9b16db2ddde044a03668613106ac9a44dd01",
+        "direct_url": {
+          "dir_info": {
+            "editable": true
+          },
+          "url": "file:///home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/issue-862/baseline-r9/engine"
+        },
+        "epcsaft": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/issue-862/baseline-r9/engine/src/epcsaft/__init__.py",
+        "epcsaft_sha256": "984ad28616d1eeb7fbb51cecf366ece0b79a29624306b2995da8f137e55bc873",
+        "extension": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/issue-862/baseline-r9/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so",
+        "extension_sha256": "df77c126d7350535c0ef889705bed080729f1678a13c15ac0b4dad9ddfebb79b",
+        "interpreter": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/issue-862/baseline-r9/.venv/bin/python",
+        "lock_sha256": "73c3756a1ffb929301c49c00cf6d2ded67e8d4c159bb810ea8653d88a2014d9b",
+        "meson_build_dir": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/issue-862/baseline-r9/build/engine-meson/shared",
+        "meson_configuration_sha256": "5f5624f372019c20f801238e0b8d192f0fbbccce73e4d5954bbf5acdb572c5a5",
+        "native_library": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/issue-862/baseline-r9/build/engine-meson/shared/libepcsaft_native.so",
+        "native_library_sha256": "7a7b9d90466b1a13cd8ba15b1db9109cdc1c3053526ad6b538b5c515c76277d6",
+        "prepared_stage": "editable",
+        "python": "3.13.14 (main, Jun 23 2026, 15:18:27) [Clang 22.1.3 ]",
+        "source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "source_revision": "bd81c3ea49baba15147b785e042a3b2aab1f77ad",
+        "source_root": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/issue-862/baseline-r9",
+        "version": "1.0.0",
+        "wheel": null,
+        "wheel_sha256": null
+      },
+      "B": {
+        "path": ".venv",
+        "asl_library": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/engine-meson/shared/libepcsaft_asl.so",
+        "asl_library_sha256": "08602e771e279018e6bc8f5d57d413ff5d7787ea7d07cd6319231dc8ac955679",
+        "build_configuration": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/engine-meson/shared/meson-info/intro-buildoptions.json",
+        "build_configuration_sha256": "5f0d595322b12572c737783cce83b12e2696e9632d410674c63e1d9eb61ddfac",
+        "direct_url": {
+          "dir_info": {
+            "editable": true
+          },
+          "url": "file:///home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/engine"
+        },
+        "epcsaft": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/engine/src/epcsaft/__init__.py",
+        "epcsaft_sha256": "984ad28616d1eeb7fbb51cecf366ece0b79a29624306b2995da8f137e55bc873",
+        "extension": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so",
+        "extension_sha256": "d2124a01f17d4d7beeead574e474320034642d91876cd089be985bf8719a9257",
+        "interpreter": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/.venv/bin/python",
+        "lock_sha256": "73c3756a1ffb929301c49c00cf6d2ded67e8d4c159bb810ea8653d88a2014d9b",
+        "meson_build_dir": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/engine-meson/shared",
+        "meson_configuration_sha256": "665c6683c6d2e59b6c887c87a55ad16120c92a310d6a2500a9913de1cf562c39",
+        "native_library": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/engine-meson/shared/libepcsaft_native.so",
+        "native_library_sha256": "7f94a2caeb8c067250358c69953e0ef2bae9436b9e15c081074dca6b36d195b4",
+        "prepared_stage": "editable",
+        "python": "3.13.14 (main, Jun 23 2026, 15:18:27) [Clang 22.1.3 ]",
+        "source_diff_sha256": "efccc3560e9e9fd1b02f3dc5cdd819fa4dce873157f77e29da95ba3b1d45e491",
+        "source_revision": "a134f21d241d3199bf5a1853abcfb813d695aeb1",
+        "source_root": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial",
+        "version": "1.0.0",
+        "wheel": null,
+        "wheel_sha256": null
+      }
+    },
+    "source_commit": "a134f21d241d3199bf5a1853abcfb813d695aeb1",
+    "cpu": 0,
+    "nice": 10,
+    "threads": 1,
+    "host": "tnnrpolley21-MS-7C95",
+    "pairs": 1,
+    "warmups": 1,
+    "time_boundary": "sum of equilibrium call wall times; preparation, imports and result reading excluded",
+    "change_percent": "100*(B_seconds/A_seconds-1)",
+    "state_difference": "abs(A-B)/largest magnitude of that quantity in the returned state; gate 1e-10; declared phase order",
+    "evaluation_meaning": "native Engine evaluations, including exact polish; not every EOS evaluation",
+    "limits": "shared-host timing; declared local states only; no physical validation or global stability",
+    "serial_attempts": {
+      "mea-f1/residual-jacobian": [
+        {
+          "A": 4.825108698000001,
+          "B": 4.880434289
+        }
+      ],
+      "mea-cp/hilliard-353.15-K-0.358": [
+        {
+          "A": 0.6146449119999993,
+          "B": 0.65938651
+        }
+      ]
+    },
+    "same_prepared_environment": false,
+    "cases": {
+      "case-6/figure-2-point-7/cold": {
+        "work_A": {
+          "iterations": 10,
+          "evaluations": 15,
+          "hessian_calls": 11
+        },
+        "work_B": {
+          "iterations": 10,
+          "evaluations": 15,
+          "hessian_calls": 11
+        },
+        "work_identical": true,
+        "max_state_difference": 0.0,
+        "median_change_percent": -6.7494864199054705,
+        "range_percent": [
+          -6.7494864199054705,
+          -6.7494864199054705
+        ],
+        "mad_percent": 0.0,
+        "median_A_seconds": 0.009433522,
+        "median_B_seconds": 0.0086154495,
+        "zero_within_spread": false
+      },
+      "case-6/figure-2-point-7/accepted": {
+        "work_A": {
+          "iterations": 7,
+          "evaluations": 11,
+          "hessian_calls": 8
+        },
+        "work_B": {
+          "iterations": 7,
+          "evaluations": 11,
+          "hessian_calls": 8
+        },
+        "work_identical": true,
+        "max_state_difference": 0.0,
+        "median_change_percent": 5.0857135932803565,
+        "range_percent": [
+          5.0857135932803565,
+          5.0857135932803565
+        ],
+        "mad_percent": 0.0,
+        "median_A_seconds": 0.0070153255,
+        "median_B_seconds": 0.007131445,
+        "zero_within_spread": false
+      },
+      "case-7/flash-5918.5286-Pa/cold": {
+        "work_A": {
+          "iterations": 19,
+          "evaluations": 35,
+          "hessian_calls": 20
+        },
+        "work_B": {
+          "iterations": 19,
+          "evaluations": 35,
+          "hessian_calls": 20
+        },
+        "work_identical": true,
+        "max_state_difference": 0.0,
+        "median_change_percent": -9.304629294782185,
+        "range_percent": [
+          -9.304629294782185,
+          -9.304629294782185
+        ],
+        "mad_percent": 0.0,
+        "median_A_seconds": 0.0242204845,
+        "median_B_seconds": 0.021954072999999998,
+        "zero_within_spread": false
+      },
+      "case-7/flash-5918.5286-Pa/accepted": {
+        "work_A": {
+          "iterations": 17,
+          "evaluations": 22,
+          "hessian_calls": 18
+        },
+        "work_B": {
+          "iterations": 17,
+          "evaluations": 22,
+          "hessian_calls": 18
+        },
+        "work_identical": true,
+        "max_state_difference": 0.0,
+        "median_change_percent": -2.0462858877220103,
+        "range_percent": [
+          -2.0462858877220103,
+          -2.0462858877220103
+        ],
+        "mad_percent": 0.0,
+        "median_A_seconds": 0.0157815845,
+        "median_B_seconds": 0.0154608855,
+        "zero_within_spread": false
+      },
+      "khudaida/sequential-8": {
+        "work_A": {
+          "iterations": 46,
+          "evaluations": 70,
+          "hessian_calls": 54
+        },
+        "work_B": {
+          "iterations": 46,
+          "evaluations": 70,
+          "hessian_calls": 54
+        },
+        "work_identical": true,
+        "max_state_difference": 0.0,
+        "median_change_percent": -2.66948003010215,
+        "range_percent": [
+          -2.66948003010215,
+          -2.66948003010215
+        ],
+        "mad_percent": 0.0,
+        "median_A_seconds": 0.047861171,
+        "median_B_seconds": 0.046583292,
+        "zero_within_spread": false
+      },
+      "mea-nominally-unloaded/353.15-K": {
+        "work_A": {
+          "iterations": 13,
+          "evaluations": 19,
+          "hessian_calls": 14
+        },
+        "work_B": {
+          "iterations": 13,
+          "evaluations": 19,
+          "hessian_calls": 14
+        },
+        "work_identical": true,
+        "max_state_difference": 0.0,
+        "median_change_percent": -6.275749613144149,
+        "range_percent": [
+          -6.275749613144149,
+          -6.275749613144149
+        ],
+        "mad_percent": 0.0,
+        "median_A_seconds": 0.012237982,
+        "median_B_seconds": 0.0114852355,
+        "zero_within_spread": false
+      },
+      "mea-f1/residual-jacobian": {
+        "work_A": {
+          "reference_computations": 295,
+          "reference_columns": 3388,
+          "density_solves": 1223,
+          "equilibrium_iterations": 1426
+        },
+        "work_B": {
+          "reference_computations": 295,
+          "reference_columns": 3388,
+          "density_solves": 1223,
+          "equilibrium_iterations": 1426
+        },
+        "work_identical": true,
+        "max_state_difference": 0.0,
+        "median_A_seconds": 4.858909957983997,
+        "median_B_seconds": 4.912497743003769,
+        "evaluations": {
+          "A": {
+            "work": {
+              "reference_computations": 295,
+              "reference_columns": 3388,
+              "density_solves": 1223,
+              "equilibrium_iterations": 1426
+            },
+            "seconds": 4.858909957983997,
+            "cpu_seconds": 4.825108698000001,
+            "reference_taylor_evaluations": 0
+          },
+          "B": {
+            "work": {
+              "reference_computations": 295,
+              "reference_columns": 3388,
+              "density_solves": 1223,
+              "equilibrium_iterations": 1426
+            },
+            "seconds": 4.912497743003769,
+            "cpu_seconds": 4.880434289,
+            "reference_taylor_evaluations": 0
+          }
+        },
+        "fits": {
+          "A": {
+            "iterations": 14,
+            "residual_evaluations": 15,
+            "jacobian_evaluations": 12,
+            "initial_cost": 230.90624790128786,
+            "final_cost": 31.1237269986244,
+            "status": "converged",
+            "message": "Function tolerance reached. |cost_change|/cost: 8.218662e-15 <= 1.000000e-12",
+            "seconds": 7.60826290998375,
+            "cpu_seconds": 138.36883200399998,
+            "workers": 32,
+            "nice": 10,
+            "affinity": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18,
+              19,
+              20,
+              21,
+              22,
+              23,
+              24,
+              25,
+              26,
+              27,
+              28,
+              29,
+              30,
+              31
+            ],
+            "critical_cpu_seconds": 5.945191848000002,
+            "total_compute_cpu_seconds": 134.597614898
+          },
+          "B": {
+            "iterations": 14,
+            "residual_evaluations": 15,
+            "jacobian_evaluations": 12,
+            "initial_cost": 230.90624790128786,
+            "final_cost": 31.1237269986244,
+            "status": "converged",
+            "message": "Function tolerance reached. |cost_change|/cost: 8.218662e-15 <= 1.000000e-12",
+            "seconds": 7.595870338001987,
+            "cpu_seconds": 137.644808625,
+            "workers": 32,
+            "nice": 10,
+            "affinity": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18,
+              19,
+              20,
+              21,
+              22,
+              23,
+              24,
+              25,
+              26,
+              27,
+              28,
+              29,
+              30,
+              31
+            ],
+            "critical_cpu_seconds": 5.834938011999998,
+            "total_compute_cpu_seconds": 133.668725916
+          }
+        },
+        "control_wall_seconds": [
+          7.4846766180126,
+          7.860225990007166
+        ],
+        "fit_max_state_difference": 0.0
+      },
+      "mea-cp/hilliard-353.15-K-0.358": {
+        "work_A": {
+          "reference_computations": 3,
+          "reference_columns": 280,
+          "density_solves": 11,
+          "equilibrium_iterations": 13
+        },
+        "work_B": {
+          "reference_computations": 3,
+          "reference_columns": 280,
+          "density_solves": 11,
+          "equilibrium_iterations": 13
+        },
+        "work_identical": true,
+        "max_state_difference": 0.0,
+        "median_A_seconds": 0.61830947000999,
+        "median_B_seconds": 0.6631069429859053,
+        "evaluations": {
+          "A": {
+            "work": {
+              "reference_computations": 3,
+              "reference_columns": 280,
+              "density_solves": 11,
+              "equilibrium_iterations": 13
+            },
+            "seconds": 0.61830947000999,
+            "cpu_seconds": 0.6146449119999993,
+            "reference_taylor_evaluations": 0
+          },
+          "B": {
+            "work": {
+              "reference_computations": 3,
+              "reference_columns": 280,
+              "density_solves": 11,
+              "equilibrium_iterations": 13
+            },
+            "seconds": 0.6631069429859053,
+            "cpu_seconds": 0.65938651,
+            "reference_taylor_evaluations": 0
+          }
+        }
+      }
+    },
+    "identical_engine_images": false,
+    "expect_change": false,
+    "gate_failures": [],
+    "f1_packet_sha256": "862ecf1e5d2756b7639493ea9d08444e890c66af6f427e5d9ee436910783a8db",
+    "runtime_seconds": 53.83532712198212,
+    "input_sha256": {
+      "tools/time-key-solves": "f8a4240abee5402156a99a935d360d09f8d1b6908b614dd0ef3fce14c304e721",
+      "tools/fixtures/mea-f1.json.gz": "3bdb146a7b8d6b449b829fc40bf08aaeef3616b71409ce0bb22c837bdc97be4c",
+      "tools/fixtures/mea-f1-identity.json": "f034a3faca19633d12b336b660c44c6f4fe7fea4236e2352d29fc3bffdd4c2e2",
+      "tools/fixtures/mea-cp.json.gz": "c0cc5235ac63078cd3a653abf66bd85fa70ebb445d48cb509f151fe5f61b3b08",
+      "tools/fixtures/mea-cp-identity.json": "5f5a191b699569e3a3973572273c7c6789ca32b1887abd48419040d4cfba44b2",
+      "analyses/2026-tpd-phase-discovery/scripts/baseline.py": "aab4c8de340158479fd4d30bffc5793b3cf96c48a4edb0c113b5b4cebdc62a10",
+      "analyses/2026-khudaida-idaes-settler/scripts/run_fixed_settler.py": "86b3508b682c8a47fdb1f05c322f384dd93e40afe0ad754ab032baab0f1f1b95",
+      "analyses/reproduction/2026-khudaida/figures/figure-02/source/source-points.csv": "21cf58a5373b2e2c337b6baf5a0423d0ab5d7cea9639bb727b061f5844ef78d7",
+      "analyses/2026-khudaida-idaes-settler/inputs/data/khudaida-2026-figure-2-electrolyte-lle/7/parameters/parameters.json": "8babed899e7347e58c403c7aff24a7fdd6d60411af3b4d81eb6aa90c2431dfa4",
+      "data/packets/mea-co2-h2o-nine-species-estimation/3/parameters/parameters.json": "2ea3b41485a98d2cf49add620b87bb05fc5a275cdd132c1cdbb0cfc5f07f2ca4",
+      "engine/tests/equilibrium/test_trace_reliability.py": "0d8443ba7bdbc0f4e6ad214134c0558addb89399c40a18c0508c5fa198b90853",
+      "engine/data/reference/mea-nominally-unloaded/request.json": "bc8a03e13efab9a9675a63121c12538dbb9f42a18dbe4ddc7fe6742b6ab6da61",
+      "engine/data/reference/mea-nominally-unloaded/parameters.json": "756fec502d3a1433d538abb073c4caeabf91902013ab7e27d5459ce70396543b",
+      "engine/data/reference/mea-zero-inventory/ideal-calorics.json": "c94d504e68c6dc6e85d3d950cc51422499846729b1a06994b362040be991924a"
+    },
+    "full_record": {
+      "path": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-862-preserve-native-solve-and-phase-trial/build/issue-862/build-r9/key-ab/summary.json",
+      "sha256": "008036b9c3f56d47b6ab62f36ef76cdbf7e6c139f0ba4b7d4bf709ea5851db3c"
+    }
+  }
+}

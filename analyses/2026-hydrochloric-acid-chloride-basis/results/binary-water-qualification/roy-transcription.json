@@ -1,0 +1,66 @@
+{
+  "pdf_child": "3J9XG9FK",
+  "pdf_sha256": "30b8ec3066dff4fcdd9a0bee7a1c27ff3d44e98d39112131e0afe42a41f9c991",
+  "locator": "Table I pp.912\u2013913, 25 \u00b0C",
+  "method": "All 58 rows visually checked against rendered printed pages: I, y_B, E_corr and negative log10 gamma. OCR was used only for navigation; printed digits govern.",
+  "rows_checked": 58,
+  "fields_corrected": [
+    {
+      "ionic_strength": 2.5,
+      "original_y": 0.29667,
+      "field": "E_V",
+      "original": ".18462",
+      "corrected": ".18406"
+    },
+    {
+      "ionic_strength": 2.5,
+      "original_y": 0.29667,
+      "field": "negative_log10_gamma",
+      "original": "-.02673",
+      "corrected": "-.02675"
+    },
+    {
+      "ionic_strength": 2.5,
+      "original_y": 0.50865,
+      "field": "E_V",
+      "original": ".19620",
+      "corrected": ".19821"
+    },
+    {
+      "ionic_strength": 2.5,
+      "original_y": 0.50865,
+      "field": "negative_log10_gamma",
+      "original": "-.00204",
+      "corrected": "-.00277"
+    },
+    {
+      "ionic_strength": 2.5,
+      "original_y": 0.71253,
+      "field": "negative_log10_gamma",
+      "original": ".01846",
+      "corrected": ".01840"
+    },
+    {
+      "ionic_strength": 2.5,
+      "original_y": 0.83868,
+      "field": "y_background",
+      "original": ".83868",
+      "corrected": ".88868"
+    },
+    {
+      "ionic_strength": 2.5,
+      "original_y": 0.83868,
+      "field": "E_V",
+      "original": ".24540",
+      "corrected": ".24580"
+    },
+    {
+      "ionic_strength": 5.0,
+      "original_y": 0.51973,
+      "field": "y_background",
+      "original": ".51973",
+      "corrected": ".51972"
+    }
+  ],
+  "corrected_csv_sha256": "c321d5135c207407565c74ab82875328539b21a211f7fa365b34600a5a5daedc"
+}

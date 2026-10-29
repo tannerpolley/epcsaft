@@ -1,0 +1,54 @@
+2 4 41
+"methyldiethanolamine" "water"
+1 1
+1 1
+0 2
+0 2
+"pc-saft" "general-site" "born" "exclude-same-sign-ion-pairs" "solvent-mole-weighting" "none"
+"component/methyldiethanolamine/molar_mass" "molar_mass" 1 0 0.1191622 "kilogram / mole"
+"component/methyldiethanolamine/charge_number" "charge_number" 1 0 0 "elementary-charge"
+"component/methyldiethanolamine/segment_count" "segment_count" 1 0 3.6749999999999998 "dimensionless"
+"component/methyldiethanolamine/dispersion_energy_over_k" "dispersion_energy_over_k" 1 0 228.71000000000001 "kelvin"
+"component/methyldiethanolamine/solvation_factor" "solvation_factor" 1 0 1 "dimensionless"
+"component/methyldiethanolamine/segment_diameter" "sigma_constant" 1 0 3.5630000000000002 "angstrom"
+"component/water/molar_mass" "molar_mass" 1 1 0.018015280000000002 "kilogram / mole"
+"component/water/charge_number" "charge_number" 1 1 0 "elementary-charge"
+"component/water/segment_count" "segment_count" 1 1 1.2045999999999999 "dimensionless"
+"component/water/dispersion_energy_over_k" "dispersion_energy_over_k" 1 1 353.94 "kelvin"
+"component/water/solvation_factor" "solvation_factor" 1 1 1 "dimensionless"
+"component/water/segment_diameter/constant" "sigma_constant" 1 1 2.7927 "angstrom"
+"component/water/segment_diameter/0/amplitude" "sigma_term_amplitude" 2 0 1 10.109999999999999 "angstrom"
+"component/water/segment_diameter/0/exponent" "sigma_term_exponent" 2 0 1 -0.017749999999999998 "1 / kelvin"
+"component/water/segment_diameter/1/amplitude" "sigma_term_amplitude" 2 1 1 -1.417 "angstrom"
+"component/water/segment_diameter/1/exponent" "sigma_term_exponent" 2 1 1 -0.01146 "1 / kelvin"
+"component/water/relative_permittivity/constant" "relative_permittivity" 1 1 249.21000000000001 "dimensionless"
+"component/water/relative_permittivity/reference_temperature" "permittivity_reference_temperature" 1 1 0 "kelvin"
+"component/water/relative_permittivity/a1" "permittivity_term_coefficient" 3 0 1 1 -0.79069 "1 / kelvin"
+"component/water/relative_permittivity/a2" "permittivity_term_coefficient" 3 1 1 2 0.00072997000000000003 "1 / kelvin ** 2"
+"component/methyldiethanolamine/relative_permittivity/constant" "relative_permittivity" 1 0 44.139899999999997 "dimensionless"
+"component/methyldiethanolamine/relative_permittivity/reference_temperature" "permittivity_reference_temperature" 1 0 0 "kelvin"
+"component/methyldiethanolamine/relative_permittivity/a1" "permittivity_term_coefficient" 3 2 0 1 -0.046823999999999998 "1 / kelvin"
+"component/methyldiethanolamine/relative_permittivity/a2" "permittivity_term_coefficient" 3 3 0 2 -8.8215799999999997e-05 "1 / kelvin ** 2"
+"pair/water/methyldiethanolamine/k_ij" "k_ij_temperature_law" 3 0 1 0 298.14999999999998 "kelvin"
+"pair/water/methyldiethanolamine/k_ij/a0" "temperature_law_coefficient" 2 0 0 -0.11799999999999999 "dimensionless"
+"pair/water/methyldiethanolamine/k_ij/a1" "temperature_law_coefficient" 2 0 1 -0.00075900000000000002 "1 / kelvin"
+"pair/water/methyldiethanolamine/k_ij/a2" "temperature_law_coefficient" 2 0 2 -1.3200000000000001e-05 "1 / kelvin ** 2"
+"pair/water/methyldiethanolamine/k_ij/a3" "temperature_law_coefficient" 2 0 3 1.2499999999999999e-07 "1 / kelvin ** 3"
+"permittivity/solvent/methyldiethanolamine" "permittivity_solvent" 1 0 1 "dimensionless"
+"permittivity/solvent/water" "permittivity_solvent" 1 1 1 "dimensionless"
+"permittivity/normalization" "permittivity_normalization" 0  0 "dimensionless"
+"model/electrolyte/c_shell" "born_c_shell" 0  0 "dimensionless"
+"model/electrolyte/c_dielectric" "born_c_dielectric" 0  0 "dimensionless"
+"model/ionic_region_relative_permittivity" "ionic_region_relative_permittivity" 0  1 "dimensionless"
+"association/water/energy" "association_energy_over_k" 2 0 1 2425.5999999999999 "kelvin"
+"association/water/volume" "association_volume" 2 0 1 0.044999999999999998 "dimensionless"
+"association/methyldiethanolamine/energy" "association_energy_over_k" 2 2 3 2046.5999999999999 "kelvin"
+"association/methyldiethanolamine/volume" "association_volume" 2 2 3 0.12379999999999999 "dimensionless"
+"wolbach-sandler" "association_combining_rule" 6 0 3 0 1 2 3 0 "dimensionless"
+"wolbach-sandler" "association_combining_rule" 6 2 1 0 1 2 3 0 "dimensionless"
+0 358.9873417721519 0.34154688569472963 0 40000 0 0 0 0 0
+1 370.1898734177215 0.5578370978781656 0 40000 0 0 0 0 0
+2 394.873417721519 0.7967145790554415 0 40000 0 0 0 0 0
+3 365.79617834394907 0.3517006802721088 0 53300 0 0 0 0 0
+4 379.04458598726114 0.5836734693877551 0 53300 0 0 0 0 0
+5 386.5180467091295 0.746938775510204 0 53300 0 0 0 0 0

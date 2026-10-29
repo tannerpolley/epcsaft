@@ -1,0 +1,9 @@
+case,A_points,A_hessians,A_roots,A_helmholtz,B_points,B_hessians,B_roots,B_helmholtz
+methane-ethane,92,92,122,1439,92,12,108,1299
+case-1/two-liquid,111,111,137,1165,111,25,123,1096
+case-3/VLLE,251,251,320,2787,251,70,293,2681
+case-6/figure-2-point-7,555,shared driver,48,1471,555,shared driver,48,1470
+water-ethanol,45,45,58,499,45,8,51,457
+dilute-isobutanol,54,54,67,561,54,11,60,524
+three-liquid,418,418,477,5205,418,239,450,5134
+water-hexane,95,95,122,1057,95,16,108,982

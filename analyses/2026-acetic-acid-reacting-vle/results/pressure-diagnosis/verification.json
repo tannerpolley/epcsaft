@@ -1,0 +1,9 @@
+{
+  "equilibrium_solutions": 39,
+  "direct_state_evaluations": 12,
+  "decomposition_rows_verified": 11,
+  "decomposition_max_absolute_error_Pa": 1.3642420526593924e-12,
+  "max_row_residual": 8.526512829121202e-14,
+  "max_relative_pressure_closure": 8.263869588631678e-10,
+  "max_log_fugacity_mismatch": 8.272227867978099e-10
+}

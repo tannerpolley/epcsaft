@@ -1,0 +1,8 @@
+operation,arm,blocks,wall_median_us,wall_min_us,wall_max_us,cpu_median_us
+ordinary,A,6,177.98900000000003,175.169,179.539,178.4855
+ordinary,B,6,84.3695,83.91,86.059,84.81
+ordinary,FeOs,3,32.47,25.55,37.31,32.631
+ordinary,Clapeyron,3,28.699,26.07,34.46,
+prepared,B,6,33.845,32.7,40.98,34.05500000000001
+prepared,FeOs,3,24.52,24.41,32.14,24.57
+prepared,Clapeyron,3,34.3,26.698999999999998,34.589999999999996,

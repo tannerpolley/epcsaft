@@ -1,0 +1,26 @@
+[
+  {
+    "T_K": 370.0,
+    "estimate": 8.03627847601519e-14,
+    "binary128_remaining_correction": 2.4726459734154167e-15,
+    "passed": true
+  },
+  {
+    "T_K": 375.0,
+    "estimate": 1.7824376690347564e-11,
+    "binary128_remaining_correction": 2.4009935366911873e-12,
+    "passed": true
+  },
+  {
+    "T_K": 375.13,
+    "estimate": 1.552043638705378e-13,
+    "binary128_remaining_correction": 3.5660414473122904e-14,
+    "passed": true
+  },
+  {
+    "T_K": 375.139,
+    "estimate": 1.0211263518029053e-11,
+    "binary128_remaining_correction": 3.9995706012090776e-13,
+    "passed": true
+  }
+]

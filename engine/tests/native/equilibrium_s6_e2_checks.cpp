@@ -1,5 +1,6 @@
 // S6-S16, C1, C3, F5 and E2: solve, reuse, availability and thermal-solve checks.
 #include "equilibrium_checks_shared.hpp"
+#include "one_component_two_density_inputs.hpp"
 
 namespace equilibrium_checks {
 
@@ -1137,7 +1138,91 @@ void check_e2_thermal() {
     CHECK(isomerisation_ok);
 }
 
+// Exact elimination and extensive homogeneity, checked against complete Helmholtz derivatives.
+void check_pure_saturation() {
+    using namespace epcsaft;
+    using namespace epcsaft::equilibrium;
+    const auto compare = [](const std::string& id, double actual, double reference, double scale) {
+        const double error = std::abs(actual - reference) / std::max({scale, std::abs(actual), std::abs(reference)});
+        recording_support::compare_custom(id.c_str(), "pure_saturation_identity", "scaled", actual, reference,
+            recording_support::fields({recording_support::field("scale", scale), recording_support::field("error", error)}),
+            "Relationship", "pure_isothermal_projection", "exact reduction, lift or homogeneity", "quantity scale",
+            std::isfinite(error) && error <= 1e-10, "pure-saturation");
+    };
+    for (const auto& [name, parameters, temperature] : std::vector<std::tuple<std::string, Parameters, double>>{
+        {"propane", caloric_specification_checks::propane_parameters(), 300},
+        {"propane-low-pressure", caloric_specification_checks::propane_parameters(), 110},
+        {"propane-packing-conversion", caloric_specification_checks::propane_parameters(), 216.4},
+        {"acetone", pure_saturation_checks::acetone(), 300}, {"methanol", pure_saturation_checks::methanol(), 300}}) {
+        HelmholtzModel model(parameters);
+        const auto p = pure_saturation_checks::saturation(temperature);
+        const auto c = compile_problem(model, p); const auto result = solve_compiled(c);
+        const auto dedicated = solve_saturation(c);
+        CHECK(dedicated.success && dedicated.requested_tolerance_met.value_or(false));
+        CHECK(dedicated.residuals == result.residuals && dedicated.molar_densities == result.molar_densities);
+        CHECK(dedicated.pressure == result.pressure && dedicated.phase_pressures.size() == 2);
+        for (std::size_t i = 0; i < 2; ++i)
+            CHECK(dedicated.phase_pressures[i] == model.pure_isothermal(temperature, 1 / dedicated.molar_densities[i]).pressure);
+        if (!result.has_state()) throw std::runtime_error(name + ": " + result.message);
+        for (double shift : {0.0, -0.01}) {
+            const std::vector<double> u{std::log(result.molar_densities[0]) + shift, std::log(result.molar_densities[1]) - shift};
+            const auto reduced = one_component_two_density_point(c, u); const auto& limited = reduced.phase;
+            const auto repeated = one_component_two_density_point(c, u, nullptr, &limited,
+                std::log(model.packing_fraction_coefficient(temperature, {1.0})));
+            CHECK(repeated.phase.point == limited.point && repeated.rows == reduced.rows);
+            const auto full = c.prepare(limited.point); const auto rows = c.evaluate_at(full).values;
+            const auto jacobian = c.jacobian_at(full), limited_jacobian = c.jacobian_at(limited);
+            const std::string id = name + "/" + std::to_string(shift);
+            for (std::size_t phase = 0; phase < 2; ++phase) {
+                for (double amount : {1.0, 100.0}) {
+                    const double volume = amount * full.volume[phase];
+                    const auto a = model.pure_isothermal(temperature, volume, amount).derivative;
+                    const auto b = model.evaluate(temperature, volume, {amount}, DerivativeOrder::Hessian); const auto width = a.gradient.size();
+                    const std::string key = id + "/" + std::to_string(phase) + "/" + std::to_string(amount);
+                    compare(key + "/energy", a.value, b.value, amount);
+                    for (std::size_t i : {1U, 2U}) {
+                        const double si = i == 1 ? volume : amount;
+                        compare(key + "/gradient" + std::to_string(i), a.gradient[i] * si, b.gradient[i] * si, amount);
+                        for (std::size_t j : {1U, 2U}) {
+                            const double sj = j == 1 ? volume : amount;
+                            compare(key + "/hessian" + std::to_string(i) + std::to_string(j), a.hessian[i * width + j] * si * sj,
+                                b.hessian[i * width + j] * si * sj, amount);
+                        }
+                    }
+                    CHECK(a.gradient_floor >= 0 && std::isfinite(a.gradient_floor));
+                    CHECK(a.site_fractions.size() == b.site_fractions.size());
+                }
+            }
+            for (std::size_t i = 0; i < jacobian.size(); ++i) compare(id + "/full-J" + std::to_string(i), limited_jacobian[i], jacobian[i], 1);
+            Eigen::MatrixXd lift = Eigen::MatrixXd::Zero(c.unknown_count(), 2);
+            const auto offsets = c.phase_offsets();
+            for (std::size_t phase = 0; phase < 2; ++phase) lift(offsets[phase] + 1 + (p.phases[phase].is_free() ? 1 : 0), phase) = 1;
+            const auto& vapor = limited.pure[1]; const double kv = vapor.pressure_density_derivative / (GAS_CONSTANT_J_PER_MOL_K * temperature);
+            lift(c.primal_size - 1, 1) = vapor.pressure_density_derivative / limited.volume[1]; lift(c.primal_size, 1) = kv;
+            const auto n = static_cast<Eigen::Index>(c.unknown_count());
+            const Eigen::MatrixXd projected = Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(jacobian.data(), n, n) * lift;
+            for (std::size_t row = 0; row < c.rows.size(); ++row) {
+                const auto kind = c.rows[row].kind; const auto phase = c.rows[row].phase;
+                const int equation = phase == 0 && kind == RowKind::Pressure ? 0 : phase == 0 && kind == RowKind::Chemical ? 1 : -1;
+                compare(id + "/row" + std::to_string(row), equation < 0 ? 0 : reduced.rows[equation], rows[row], 1);
+                for (std::size_t col = 0; col < 2; ++col)
+                    compare(id + "/J" + std::to_string(row) + std::to_string(col), equation < 0 ? 0 : reduced.jacobian[2 * equation + col], projected(row, col), 1);
+            }
+        }
+        auto changed = p; std::reverse(changed.phases.begin(), changed.phases.end());
+        changed.phases[0].amount = AmountSpec::free(); changed.phases[1].amount = AmountSpec::pinned(0);
+        changed.phases[0].name = "gas"; changed.phases[1].name = "condensed"; changed.feed.values = {100};
+        const auto lifted = solve_saturation(compile_problem(model, changed));
+        if (!lifted.has_state()) throw std::runtime_error(name + " reversed: " + lifted.message);
+        compare(name + "/feed-pressure", *lifted.pressure, *result.pressure, *result.pressure);
+        compare(name + "/extensive-objective", lifted.objective, 100 * result.objective, 100);
+        for (std::size_t phase = 0; phase < 2; ++phase) compare(name + "/phase-order" + std::to_string(phase), lifted.molar_densities[phase], result.molar_densities[1 - phase], result.molar_densities[1 - phase]);
+        compare(name + "/free-amount", lifted.amounts[0], 100, 100);
+    }
+}
+
 void check_e2_solve() {
+    check_pure_saturation();
     using namespace e2;
     epcsaft::HelmholtzModel model(properties_support::neutral_binary());
     auto one = equilibrium_support::flash(2);

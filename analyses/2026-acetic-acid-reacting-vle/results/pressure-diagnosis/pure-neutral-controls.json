@@ -1,0 +1,64 @@
+{
+  "loaded_package": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-875-diagnose-the-8-bubble-pressure/engine/src/epcsaft/__init__.py",
+  "loaded_extension": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-875-diagnose-the-8-bubble-pressure/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so",
+  "solves": [
+    {
+      "name": "water",
+      "success": true,
+      "pressure": 12230.021721802676,
+      "row_residual": 1.8207657603852567e-14,
+      "densities": [
+        54832.09966319276,
+        4.5768812138890995
+      ],
+      "termination": "NEWTON_CONVERGED"
+    },
+    {
+      "name": "acetic-acid",
+      "success": true,
+      "pressure": 7508.245020060129,
+      "row_residual": 2.1389569639068144e-15,
+      "densities": [
+        16681.812881293354,
+        3.0483728216110917
+      ],
+      "termination": "NEWTON_CONVERGED"
+    },
+    {
+      "x_water": 0.5781,
+      "success": true,
+      "pressure": 11937.20461633474,
+      "row_residual": 1.3850032232198828e-14,
+      "densities": [
+        29562.47287594846,
+        4.565163889289625
+      ],
+      "termination": "NEWTON_CONVERGED"
+    },
+    {
+      "x_water": 0.6673,
+      "success": true,
+      "pressure": 12226.799776931444,
+      "row_residual": 3.552713678800501e-15,
+      "densities": [
+        32967.5096830652,
+        4.655008335899551
+      ],
+      "termination": "NEWTON_CONVERGED"
+    },
+    {
+      "x_water": 0.7683,
+      "success": true,
+      "pressure": 12446.079717789446,
+      "row_residual": 1.709743457922741e-14,
+      "densities": [
+        37717.60637747035,
+        4.715893244442032
+      ],
+      "termination": "NEWTON_CONVERGED"
+    }
+  ],
+  "loaded_binary_sha256": {
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-875-diagnose-the-8-bubble-pressure/build/engine-meson/shared/libepcsaft_native.so": "31ef187921b56a070b715c1763f009b445396a4af735e90f10d3c22a9a220e72"
+  }
+}

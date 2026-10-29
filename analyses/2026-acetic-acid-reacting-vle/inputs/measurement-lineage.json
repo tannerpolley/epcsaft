@@ -1,0 +1,17 @@
+{
+  "doi": "10.1016/j.fluid.2006.06.005",
+  "source_url": "https://trc.nist.gov/ThermoML/10.1016/j.fluid.2006.06.005.json",
+  "source_sha256": "6dad6011d8aca7f1c48d02fcb499105d5280b2be4109ec10fbf9b71ca890b4a7",
+  "groups": [
+    13,
+    14
+  ],
+  "join_key": "Gas-water mole fraction, compound 1",
+  "pressure_conversion": "kPa to Pa, multiply pressure and its uncertainty by 1000",
+  "uncertainty_authority": "Data-file compiler; combined expanded uncertainty, 95 percent",
+  "uncertainty_method": "Propagation of evaluated standard uncertainties",
+  "temperature_uncertainty": null,
+  "covariance": null,
+  "calibration_label": "Fixed-parameter comparison; historical calibration overlap unresolved",
+  "output_sha256": "25dcfe07fa5c056f46554a8fe9223191729c0d605a811c329ad5227c5b2cd4aa"
+}

@@ -1,0 +1,10 @@
+| Gate | Outcome | Log in build/issue-869/build-r1 |
+|---|---|---|
+| check-affected | passed | check-affected-final.log |
+| check-all | passed | check-all-final.log |
+| Corpora A/B | passed; A frozen at merge base | corpora-final.log |
+| Explicit native tests | passed | explicit-native.log |
+| Key solves A=A with fit | passed | key-AA-fit.log |
+| Key solves A/B with fit and control | passed | key-AB-fit.log |
+| Layout and notebook | passed | layout-notebook.log |
+| Native pull-request check | pending PR number | not run |

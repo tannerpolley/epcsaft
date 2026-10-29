@@ -86,7 +86,7 @@ Native dependencies run downward in `ARCHITECTURE.yaml`; the root
 | core | Common constants, parameter coordinates, numerical policy and diagnostics | Small shared foundations; no phase or application selection |
 | Contributions | Ideal-gas Helmholtz formulation and individual residual contributions, including association and electrolyte terms | Own thermal correlations and ideal mixing as physical inputs; preserve all derivative dependencies |
 | Properties | Ideal, Residual and Total quantities derived from Contributions; state evaluation, density closure and reference conversions | One native calculation; governing definitions determine assembly and derivative chains |
-| equilibrium | Specification compilation, shared rows, one equilibrium driver, continuation, local checks, explicit tangent-plane testing/discovery and solved-state actions (qualified cases in the retained analysis) | All equilibrium specifications use the same driver; no independent bubble, dew, reactive or paper-specific solvers |
+| equilibrium | Specification compilation, shared rows, one equilibrium driver, continuation, local checks, explicit tangent-plane testing/discovery and solved-state actions (qualified cases in the retained analysis) | All equilibrium specifications share numerical owners; the general and prepared pure-fluid entries call one two-density reduction, with original-start general fallback; no independent bubble, dew, reactive or paper-specific solvers |
 | `regression` | Observation composition, weighted fitting and fit diagnostics | Consumes model/equilibrium values and actions; does not implement them again |
 | surface | Physical input resolution and admission | Explicit parameters, units, choices and applicability |
 | bindings | The Python/native boundary | One extension; follow the [native calculation rule](../../AGENTS.md#native-calculation-rule) |
@@ -143,6 +143,13 @@ numerical kernels. Continuation and phase discovery control sequences of
 problems and reuse the same equilibrium driver where equilibrium is solved;
 their search operations do not duplicate it. The [ADR 0009 amendment](decisions/0009-general-platform-one-driver.md)
 defines the Newton attempt inside that driver.
+For the eligible fixed-temperature one-component two-density declaration,
+the #854 amendment replaces that attempt with its exact log-density
+reduction. Properties retains the shared isothermal projection, and the
+driver retains starts, full-row publication, branch admission and the
+original-start fallback. Complete preparation still owns derivative actions.
+Conditional wider arithmetic reports its actual precision and a first-order
+log-density error estimate; #860 is the future shared owner of that estimate.
 
 The rule governs equilibrium specifications implemented inside the Engine
 (owner decision, 2026-09-16). An external process model, such as an IDAES

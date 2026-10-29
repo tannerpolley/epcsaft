@@ -1,13 +1,71 @@
-Table 10 pressure states from the retained native CSV. Row-matching interactions are diagnostic fits and are never used for the pressure predictions.
+Table 10 at 303 K, apparent solvent mass fraction w(MDEA) = 0.6. Pressures and standard pressure uncertainties are in bar; residuals are dimensionless.
 
-| lane       |   temperature_k |   co2_loading_mol_per_mol_mdea |   experimental_total_pressure_bar |   pressure_standard_uncertainty_bar |   native_pressure_bar |   reaction_affinity_max |    matching_k_ij_303_k |
-|:-----------|----------------:|-------------------------------:|----------------------------------:|------------------------------------:|----------------------:|------------------------:|-----------------------:|
-| printed-S0 |             303 |                         0.9374 |                               9.2 |                                 0.3 |            196.863    |             1.43589e-14 | not applicable         |
-| printed-S0 |             303 |                         0.9973 |                              14.2 |                                 0.3 |            265.915    |             3.25665e-15 | not applicable         |
-| printed-S0 |             303 |                         1.0448 |                              24.5 |                                 0.3 |            322.799    |             9.76996e-15 | not applicable         |
-| fitted-S0  |             303 |                         0.9374 |                               9.2 |                                 0.3 |              0.463847 |             1.12503e-14 |              0.106351  |
-| fitted-S0  |             303 |                         0.9973 |                              14.2 |                                 0.3 |              0.539055 |             4.88498e-15 |              0.0686856 |
-| fitted-S0  |             303 |                         1.0448 |                              24.5 |                                 0.3 |              0.59271  |             8.88178e-15 |              0.0105226 |
-| fitted-S1  |             303 |                         0.9374 |                               9.2 |                                 0.3 |              0.714203 |             4.66641e-15 |             -0.141077  |
-| fitted-S1  |             303 |                         0.9973 |                              14.2 |                                 0.3 |              1.56583  |             8.25266e-15 |             -0.147055  |
-| fitted-S1  |             303 |                         1.0448 |                              24.5 |                                 0.3 |              3.0752   |             1.27306e-14 |             -0.163856  |
+<table class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>lane</th>
+      <th>co2_loading_mol_per_mol_mdea</th>
+      <th>experimental_total_pressure_bar</th>
+      <th>pressure_standard_uncertainty_bar</th>
+      <th>native_pressure_bar</th>
+      <th>maximum_original_row</th>
+      <th>reaction_affinity_max</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>fitted-S0</td>
+      <td>0.9374</td>
+      <td>9.2</td>
+      <td>0.3</td>
+      <td>0.46366498</td>
+      <td>3.4638958e-14</td>
+      <td>1.4802974e-14</td>
+    </tr>
+    <tr>
+      <td>fitted-S0</td>
+      <td>0.9973</td>
+      <td>14.2</td>
+      <td>0.3</td>
+      <td>0.53888502</td>
+      <td>5.1514348e-14</td>
+      <td>2.4276877e-14</td>
+    </tr>
+    <tr>
+      <td>fitted-S0</td>
+      <td>1.0448</td>
+      <td>24.5</td>
+      <td>0.3</td>
+      <td>0.59255233</td>
+      <td>6.1284311e-14</td>
+      <td>3.9671969e-14</td>
+    </tr>
+    <tr>
+      <td>fitted-S1</td>
+      <td>0.9374</td>
+      <td>9.2</td>
+      <td>0.3</td>
+      <td>0.71401539</td>
+      <td>9.4146912e-14</td>
+      <td>4.5947042e-15</td>
+    </tr>
+    <tr>
+      <td>fitted-S1</td>
+      <td>0.9973</td>
+      <td>14.2</td>
+      <td>0.3</td>
+      <td>1.5663484</td>
+      <td>9.4146912e-14</td>
+      <td>3.2122453e-14</td>
+    </tr>
+    <tr>
+      <td>fitted-S1</td>
+      <td>1.0448</td>
+      <td>24.5</td>
+      <td>0.3</td>
+      <td>3.0767474</td>
+      <td>1.214822e-13</td>
+      <td>3.8043642e-14</td>
+    </tr>
+  </tbody>
+</table>

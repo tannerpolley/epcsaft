@@ -64,6 +64,7 @@ struct MinimaxResult final {
     std::vector<std::string> hold_causes;
     std::vector<MinimaxRow> rows;
     std::vector<CheckResult> frozen_checks;
+    std::optional<equilibrium::IpoptDiagnostics> ipopt_diagnostics;
 };
 enum class MeasuredInputKind { Temperature, Pressure, MoleFraction, Molality };
 struct MeasuredInput final {
@@ -119,6 +120,7 @@ struct TrialFailure final {
     std::string message;
     bool jacobian = false;
     std::vector<ResidualEnergyAction> parameter_actions{};
+    std::optional<core::Convergence> first_numerical_failure;
 };
 
 // (J^T J)^-1 of the weighted (whitened, under a declared matrix) optimizer Jacobian, mapped to physical rows by the evaluated D.
@@ -147,6 +149,7 @@ struct FitResult final {
     std::vector<double> optimizer;
     std::vector<double> physical;  // one value per physical row of the coordinate set
     Parameters parameters;
+    std::vector<std::optional<Prediction>> saturation_predictions;
     std::vector<double> predictions;
     std::vector<double> residuals;           // declared form, unweighted
     std::vector<double> weighted_residuals;  // sqrt(w) r, the optimizer residual; whitened under a declared matrix
@@ -164,6 +167,8 @@ struct FitResult final {
     double initial_cost = 0.0;
     double final_cost = 0.0;
     FitCovariance covariance;
+    std::vector<core::NumericalRank> rank_records;
+    std::optional<core::Convergence> first_numerical_failure;
     EvaluatedCoordinates chart;
     std::vector<CheckResult> checks;
     std::string acceptance = "not_evaluated";
@@ -173,12 +178,15 @@ struct FitResult final {
 
 struct ObservationEvaluation final {
     policy::SolverOptions solver_options;
+    std::vector<std::optional<Prediction>> saturation_predictions;
     std::vector<double> predictions, residuals, gradient, weighted, optimizer_gradient;
     // Public point columns: optimizer_gradient is dy/dv; this field is dr/dv at unit weight (with uncertainty, the
     // complete standardized and, under a declared matrix, whitened objective columns).
     std::vector<double> residual_optimizer_gradient;
     std::vector<ObservationStatus> statuses;
     double cost = 0.0;
+    std::optional<core::Convergence> first_numerical_failure;
+    std::size_t first_numerical_failure_observation = 0;
     EvaluatedCoordinates chart;
     std::optional<InputReconciliation> reconciliation;
     std::vector<double> input_gradient;

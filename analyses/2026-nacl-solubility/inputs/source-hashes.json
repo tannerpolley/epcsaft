@@ -1,0 +1,23 @@
+{
+  "build/issue-858/pinho-2005-thermoml.json": {
+    "sha256": "f82f5add71ea32010dda26943d1891560c420d5d409ab85c3fa15114f7c3b412"
+  },
+  "build/issue-858/pinho-macedo-2005.pdf": {
+    "sha256": "eae19319849c7031691fcc181399878c60def7f3d79237d7219f7c14f9ad21f2"
+  },
+  "build/issue-858/clarke-glew-1985.pdf": {
+    "sha256": "c4220ae817bdc3ff536bb314b9603dde94f69eb06cb567a981f31015b806981f"
+  },
+  "build/issue-858/malmberg-maryott-1956.pdf": {
+    "sha256": "c3e1038e0b635fd802352ee00c2f310b36f659a00efcbeff029e341a77b97ccb"
+  },
+  "build/issue-858/design.md": {
+    "sha256": "fc534c26f7a8d72e2e45d311f9e4d0f5dfbaacf4df4295c1bf78872023f6a1c6"
+  },
+  "build/issue-858/design-amendment-r1.md": {
+    "sha256": "0966508eff6b727597ea8602469971dabe5c24c06b5e84448d2928f2f737f2b9"
+  },
+  "build/issue-858/readiness-r1.md": {
+    "sha256": "16f27aaec78453de218a0db497e6c698ad1da0e09ef7b1c8c5ddf91949a939bd"
+  }
+}

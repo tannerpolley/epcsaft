@@ -1,0 +1,185 @@
+9 6 126
+"carbon-dioxide" "monoethanolamine" "water" "protonated-monoethanolamine" "carbamate-anion" "bicarbonate-anion" "carbonate-anion" "hydronium-cation" "hydroxide-anion"
+1 1
+1 1
+2 1
+2 1
+0 1
+0 1
+"pc-saft" "general-site" "born" "exclude-same-sign-ion-pairs" "solvent-only" "none"
+"component/carbon-dioxide/molar_mass" "molar_mass" 1 0 0.044010000000000001 "kilogram / mole"
+"component/carbon-dioxide/charge_number" "charge_number" 1 0 0 "elementary-charge"
+"component/carbon-dioxide/dispersion_energy_over_k" "dispersion_energy_over_k" 1 0 173.44024999999999 "kelvin"
+"component/carbon-dioxide/segment_count" "segment_count" 1 0 2.0729000000000002 "dimensionless"
+"component/carbon-dioxide/segment_diameter" "sigma_constant" 1 0 2.7852000000000001 "angstrom"
+"component/carbon-dioxide/solvation_factor" "solvation_factor" 1 0 1 "dimensionless"
+"component/monoethanolamine/molar_mass" "molar_mass" 1 1 0.061080000000000002 "kilogram / mole"
+"component/monoethanolamine/charge_number" "charge_number" 1 1 0 "elementary-charge"
+"component/monoethanolamine/dispersion_energy_over_k" "dispersion_energy_over_k" 1 1 277.17399999999998 "kelvin"
+"component/monoethanolamine/relative_permittivity" "relative_permittivity" 1 1 32 "dimensionless"
+"component/monoethanolamine/segment_count" "segment_count" 1 1 3.0352999999999999 "dimensionless"
+"component/monoethanolamine/segment_diameter" "sigma_constant" 1 1 3.0434999999999999 "angstrom"
+"component/monoethanolamine/solvation_factor" "solvation_factor" 1 1 1 "dimensionless"
+"component/water/molar_mass" "molar_mass" 1 2 0.018015280000000002 "kilogram / mole"
+"component/water/charge_number" "charge_number" 1 2 0 "elementary-charge"
+"component/water/dispersion_energy_over_k" "dispersion_energy_over_k" 1 2 353.94999999999999 "kelvin"
+"component/water/segment_count" "segment_count" 1 2 1.2047000000000001 "dimensionless"
+"component/water/solvation_factor" "solvation_factor" 1 2 1.5 "dimensionless"
+"component/protonated-monoethanolamine/molar_mass" "molar_mass" 1 3 0.062089999999999999 "kilogram / mole"
+"component/protonated-monoethanolamine/charge_number" "charge_number" 1 3 1 "elementary-charge"
+"component/protonated-monoethanolamine/born_diameter" "born_diameter" 1 3 3.5332292714600002 "angstrom"
+"component/protonated-monoethanolamine/debye_huckel_diameter" "debye_huckel_diameter" 1 3 3.0668752979568001 "angstrom"
+"component/protonated-monoethanolamine/dispersion_energy_over_k" "dispersion_energy_over_k" 1 3 232.68720164499999 "kelvin"
+"component/protonated-monoethanolamine/packing_diameter" "packing_diameter" 1 3 3.0668752979568001 "angstrom"
+"component/protonated-monoethanolamine/segment_count" "segment_count" 1 3 1 "dimensionless"
+"component/protonated-monoethanolamine/segment_diameter" "sigma_constant" 1 3 3.48508556586 "angstrom"
+"component/protonated-monoethanolamine/solvation_factor" "solvation_factor" 1 3 1 "dimensionless"
+"component/carbamate-anion/molar_mass" "molar_mass" 1 4 0.10408000000000001 "kilogram / mole"
+"component/carbamate-anion/charge_number" "charge_number" 1 4 -1 "elementary-charge"
+"component/carbamate-anion/born_diameter" "born_diameter" 1 4 3.5410703082200001 "angstrom"
+"component/carbamate-anion/debye_huckel_diameter" "debye_huckel_diameter" 1 4 3.1111830263448002 "angstrom"
+"component/carbamate-anion/dispersion_energy_over_k" "dispersion_energy_over_k" 1 4 453.26524438400003 "kelvin"
+"component/carbamate-anion/packing_diameter" "packing_diameter" 1 4 3.1111830263448002 "angstrom"
+"component/carbamate-anion/segment_count" "segment_count" 1 4 1 "dimensionless"
+"component/carbamate-anion/segment_diameter" "sigma_constant" 1 4 3.5354352572100001 "angstrom"
+"component/carbamate-anion/solvation_factor" "solvation_factor" 1 4 1 "dimensionless"
+"component/bicarbonate-anion/molar_mass" "molar_mass" 1 5 0.061016800000000003 "kilogram / mole"
+"component/bicarbonate-anion/charge_number" "charge_number" 1 5 -1 "elementary-charge"
+"component/bicarbonate-anion/born_diameter" "born_diameter" 1 5 3 "angstrom"
+"component/bicarbonate-anion/debye_huckel_diameter" "debye_huckel_diameter" 1 5 2.5780480000000003 "angstrom"
+"component/bicarbonate-anion/dispersion_energy_over_k" "dispersion_energy_over_k" 1 5 70 "kelvin"
+"component/bicarbonate-anion/packing_diameter" "packing_diameter" 1 5 2.5780480000000003 "angstrom"
+"component/bicarbonate-anion/segment_count" "segment_count" 1 5 1 "dimensionless"
+"component/bicarbonate-anion/segment_diameter" "sigma_constant" 1 5 2.9296000000000002 "angstrom"
+"component/bicarbonate-anion/solvation_factor" "solvation_factor" 1 5 1 "dimensionless"
+"component/carbonate-anion/molar_mass" "molar_mass" 1 6 0.060010000000000001 "kilogram / mole"
+"component/carbonate-anion/charge_number" "charge_number" 1 6 -2 "elementary-charge"
+"component/carbonate-anion/born_diameter" "born_diameter" 1 6 3 "angstrom"
+"component/carbonate-anion/debye_huckel_diameter" "debye_huckel_diameter" 1 6 2.1491359999999999 "angstrom"
+"component/carbonate-anion/dispersion_energy_over_k" "dispersion_energy_over_k" 1 6 249.25999999999999 "kelvin"
+"component/carbonate-anion/packing_diameter" "packing_diameter" 1 6 2.1491359999999999 "angstrom"
+"component/carbonate-anion/segment_count" "segment_count" 1 6 1 "dimensionless"
+"component/carbonate-anion/segment_diameter" "sigma_constant" 1 6 2.4422000000000001 "angstrom"
+"component/carbonate-anion/solvation_factor" "solvation_factor" 1 6 1 "dimensionless"
+"component/hydronium-cation/molar_mass" "molar_mass" 1 7 0.019019999999999999 "kilogram / mole"
+"component/hydronium-cation/charge_number" "charge_number" 1 7 1 "elementary-charge"
+"component/hydronium-cation/born_diameter" "born_diameter" 1 7 1.218 "angstrom"
+"component/hydronium-cation/debye_huckel_diameter" "debye_huckel_diameter" 1 7 3.0495519999999998 "angstrom"
+"component/hydronium-cation/dispersion_energy_over_k" "dispersion_energy_over_k" 1 7 500 "kelvin"
+"component/hydronium-cation/packing_diameter" "packing_diameter" 1 7 3.0495519999999998 "angstrom"
+"component/hydronium-cation/segment_count" "segment_count" 1 7 1 "dimensionless"
+"component/hydronium-cation/segment_diameter" "sigma_constant" 1 7 3.4653999999999998 "angstrom"
+"component/hydronium-cation/solvation_factor" "solvation_factor" 1 7 1 "dimensionless"
+"component/hydroxide-anion/molar_mass" "molar_mass" 1 8 0.017010000000000001 "kilogram / mole"
+"component/hydroxide-anion/charge_number" "charge_number" 1 8 -1 "elementary-charge"
+"component/hydroxide-anion/born_diameter" "born_diameter" 1 8 3.0810768940040401 "angstrom"
+"component/hydroxide-anion/debye_huckel_diameter" "debye_huckel_diameter" 1 8 1.775576 "angstrom"
+"component/hydroxide-anion/dispersion_energy_over_k" "dispersion_energy_over_k" 1 8 650 "kelvin"
+"component/hydroxide-anion/packing_diameter" "packing_diameter" 1 8 1.775576 "angstrom"
+"component/hydroxide-anion/segment_count" "segment_count" 1 8 1 "dimensionless"
+"component/hydroxide-anion/segment_diameter" "sigma_constant" 1 8 2.0177 "angstrom"
+"component/hydroxide-anion/solvation_factor" "solvation_factor" 1 8 1 "dimensionless"
+"component/water/segment_diameter/constant-plus-sum-of-exponentials/constant" "sigma_constant" 1 2 2.7927 "angstrom"
+"component/water/segment_diameter/constant-plus-sum-of-exponentials/term-0/amplitude" "sigma_term_amplitude" 2 0 2 10.109999999999999 "angstrom"
+"component/water/segment_diameter/constant-plus-sum-of-exponentials/term-0/exponent_coefficient" "sigma_term_exponent" 2 0 2 -0.017749999999999998 "1 / kelvin"
+"component/water/segment_diameter/constant-plus-sum-of-exponentials/term-1/amplitude" "sigma_term_amplitude" 2 1 2 -1.417 "angstrom"
+"component/water/segment_diameter/constant-plus-sum-of-exponentials/term-1/exponent_coefficient" "sigma_term_exponent" 2 1 2 -0.01146 "1 / kelvin"
+"component/water/relative_permittivity/constant-plus-polynomial-in-temperature/constant" "relative_permittivity" 1 2 78.410434785787146 "dimensionless"
+"component/water/relative_permittivity/constant-plus-polynomial-in-temperature/reference_temperature" "permittivity_reference_temperature" 1 2 298.14999999999998 "kelvin"
+"component/water/relative_permittivity/constant-plus-polynomial-in-temperature/term-0/coefficient" "permittivity_term_coefficient" 3 0 2 1 -0.36133766233691506 "1 / kelvin"
+"component/water/relative_permittivity/constant-plus-polynomial-in-temperature/term-1/coefficient" "permittivity_term_coefficient" 3 1 2 2 0.00076555618295000001 "1 / kelvin ** 2"
+"pair/bicarbonate-anion/hydronium-cation/k_ij" "k_ij" 2 5 7 0 "dimensionless"
+"pair/carbamate-anion/hydronium-cation/k_ij" "k_ij" 2 4 7 0 "dimensionless"
+"pair/bicarbonate-anion/carbon-dioxide/k_ij" "k_ij" 2 5 0 0 "dimensionless"
+"pair/carbamate-anion/carbon-dioxide/k_ij" "k_ij" 2 4 0 0 "dimensionless"
+"pair/carbon-dioxide/carbonate-anion/k_ij" "k_ij" 2 0 6 0 "dimensionless"
+"pair/carbon-dioxide/hydronium-cation/k_ij" "k_ij" 2 0 7 0 "dimensionless"
+"pair/carbon-dioxide/hydroxide-anion/k_ij" "k_ij" 2 0 8 0 "dimensionless"
+"pair/carbon-dioxide/monoethanolamine/k_ij" "k_ij" 2 0 1 0 "dimensionless"
+"pair/carbon-dioxide/monoethanolamine/k_ij/reciprocal_temperature_slope" "k_ij_reciprocal_temperature_slope" 2 0 1 0 "kelvin"
+"pair/carbon-dioxide/monoethanolamine/k_ij/reciprocal_temperature_slope/reference_temperature" "k_ij_reference_temperature" 2 0 1 313.14999999999998 "kelvin"
+"pair/carbon-dioxide/protonated-monoethanolamine/k_ij" "k_ij" 2 0 3 0 "dimensionless"
+"pair/carbon-dioxide/water/k_ij" "k_ij" 2 0 2 0.013262879176919628 "dimensionless"
+"pair/carbonate-anion/hydronium-cation/k_ij" "k_ij" 2 6 7 0 "dimensionless"
+"pair/hydronium-cation/hydroxide-anion/k_ij" "k_ij" 2 7 8 0 "dimensionless"
+"pair/bicarbonate-anion/monoethanolamine/k_ij" "k_ij" 2 5 1 0 "dimensionless"
+"pair/carbamate-anion/monoethanolamine/k_ij" "k_ij" 2 4 1 0 "dimensionless"
+"pair/carbonate-anion/monoethanolamine/k_ij" "k_ij" 2 6 1 0 "dimensionless"
+"pair/hydronium-cation/monoethanolamine/k_ij" "k_ij" 2 7 1 0 "dimensionless"
+"pair/hydroxide-anion/monoethanolamine/k_ij" "k_ij" 2 8 1 0 "dimensionless"
+"pair/monoethanolamine/protonated-monoethanolamine/k_ij" "k_ij" 2 1 3 0 "dimensionless"
+"pair/monoethanolamine/water/k_ij" "k_ij" 2 1 2 -0.073527498749850179 "dimensionless"
+"pair/bicarbonate-anion/protonated-monoethanolamine/k_ij" "k_ij" 2 5 3 0 "dimensionless"
+"pair/carbamate-anion/protonated-monoethanolamine/k_ij" "k_ij" 2 4 3 -0.0020181345764399999 "dimensionless"
+"pair/carbonate-anion/protonated-monoethanolamine/k_ij" "k_ij" 2 6 3 0 "dimensionless"
+"pair/hydroxide-anion/protonated-monoethanolamine/k_ij" "k_ij" 2 8 3 0 "dimensionless"
+"pair/bicarbonate-anion/water/k_ij" "k_ij" 2 5 2 0 "dimensionless"
+"pair/carbamate-anion/water/k_ij" "k_ij" 2 4 2 0 "dimensionless"
+"pair/carbonate-anion/water/k_ij" "k_ij" 2 6 2 -0.25 "dimensionless"
+"pair/hydronium-cation/water/k_ij" "k_ij" 2 7 2 0.25 "dimensionless"
+"pair/hydroxide-anion/water/k_ij" "k_ij" 2 8 2 -0.25 "dimensionless"
+"pair/protonated-monoethanolamine/water/k_ij" "k_ij" 2 3 2 0 "dimensionless"
+"model/electrolyte/c_shell" "born_c_shell" 0  0 "dimensionless"
+"model/electrolyte/c_dielectric" "born_c_dielectric" 0  0 "dimensionless"
+"model/relative_permittivity/ionic_region_relative_permittivity" "ionic_region_relative_permittivity" 0  8 "dimensionless"
+"association/monoethanolamine/a/monoethanolamine/b/energy_over_k" "association_energy_over_k" 2 0 1 2586.3000000000002 "kelvin"
+"association/monoethanolamine/a/monoethanolamine/b/volume" "association_volume" 2 0 1 0.036287 "dimensionless"
+"association/water/a/water/b/energy_over_k" "association_energy_over_k" 2 2 3 2425.6999999999998 "kelvin"
+"association/water/a/water/b/volume" "association_volume" 2 2 3 0.045089999999999998 "dimensionless"
+"association/carbon-dioxide/a/water/b/energy_over_k" "association_energy_over_k" 2 4 3 1212.8499999999999 "kelvin"
+"association/carbon-dioxide/a/water/b/volume" "association_volume" 2 4 3 0.045089999999999998 "dimensionless"
+"association/carbon-dioxide/b/water/a/energy_over_k" "association_energy_over_k" 2 5 2 1212.8499999999999 "kelvin"
+"association/carbon-dioxide/b/water/a/volume" "association_volume" 2 5 2 0.045089999999999998 "dimensionless"
+"wolbach-sandler" "association_combining_rule" 6 0 3 0 1 2 3 0 "dimensionless"
+"wolbach-sandler" "association_combining_rule" 6 1 2 0 1 2 3 0 "dimensionless"
+"no_cross_association/carbon-dioxide/monoethanolamine" "no_cross_association" 2 0 1 0 "dimensionless"
+0 313.15 0.7514734774066797 0.75126104560555 6612.28 0.153 1e-12 3.409069264390114 38.85590454325439 0.75126104560555 0.75126104560355 0.0 1e-12 1e-12 1e-12 -1 7.247048678579655 6268.25818719684 -1 -1 -1 -1 -1 -1
+1 313.15 0.7514734774066797 0.75126104560555 6612.28 0.153 1e-12 3.409069264390114 38.85590454325439 0.75126104560555 0.75126104560355 0.0 1e-12 1e-12 1e-12 -1 7.247048678579655 6268.25818719684 -1 -1 -1 -1 -1 -1
+2 313.15 0.8005893909626719 0.8005056078971751 6703.0 0.163 1e-12 3.3105801398068633 38.85590454325439 0.8005056078971751 0.8005056078951751 0.0 1e-12 1e-12 1e-12 -1 7.035005250818309 6268.54902712368 -1 -1 -1 -1 -1 -1
+3 313.15 0.8005893909626719 0.8005056078971751 6703.0 0.163 1e-12 3.3105801398068633 38.85590454325439 0.8005056078971751 0.8005056078951751 0.0 1e-12 1e-12 1e-12 -1 7.035005250818309 6268.54902712368 -1 -1 -1 -1 -1 -1
+4 313.15 0.8349705304518664 0.8349768015013126 6663.57 0.17 1e-12 3.2416377525985887 38.85590454325439 0.8349768015013126 0.8349768014993126 0.0 1e-12 1e-12 1e-12 -1 6.886048153483775 6268.6745414203515 -1 -1 -1 -1 -1 -1
+5 313.15 0.8349705304518664 0.8349768015013126 6663.57 0.17 1e-12 3.2416377525985887 38.85590454325439 0.8349768015013126 0.8349768014993126 0.0 1e-12 1e-12 1e-12 -1 6.886048153483775 6268.6745414203515 -1 -1 -1 -1 -1 -1
+6 313.15 0.9381139489194498 0.9383903823137251 6626.179999999999 0.191 1e-12 3.0348105909737635 38.85590454325439 0.9383903823137251 0.9383903823117251 0.0 1e-12 1e-12 1e-12 -1 6.4369746004218005 6268.665656031872 -1 -1 -1 -1 -1 -1
+7 313.15 0.9381139489194498 0.9383903823137251 6626.179999999999 0.191 1e-12 3.0348105909737635 38.85590454325439 0.9383903823137251 0.9383903823117251 0.0 1e-12 1e-12 1e-12 -1 6.4369746004218005 6268.665656031872 -1 -1 -1 -1 -1 -1
+8 313.15 0.9528487229862476 0.9531637510012125 6726.3 0.194 1e-12 3.0052638535987883 38.85590454325439 0.9531637510012125 0.9531637509992126 0.0 1e-12 1e-12 1e-12 -1 6.372595884571262 6268.618825733182 -1 -1 -1 -1 -1 -1
+9 313.15 0.9528487229862476 0.9531637510012125 6726.3 0.194 1e-12 3.0052638535987883 38.85590454325439 0.9531637510012125 0.9531637509992126 0.0 1e-12 1e-12 1e-12 -1 6.372595884571262 6268.618825733182 -1 -1 -1 -1 -1 -1
+10 313.15 1.1394891944990175 1.1406306307752259 6650.23 0.232 1e-12 2.6303300940507617 38.85590454325439 1.1406306307752259 1.140630630773226 0.0 1e-12 1e-12 1e-12 -1 5.551576242286706 6266.772282613198 -1 -1 -1 -1 -1 -1
+11 313.15 1.1394891944990175 1.1406306307752259 6650.23 0.232 1e-12 2.6303300940507617 38.85590454325439 1.1406306307752259 1.140630630773226 0.0 1e-12 1e-12 1e-12 -1 5.551576242286706 6266.772282613198 -1 -1 -1 -1 -1 -1
+12 313.15 1.2082514734774066 1.2094209828083635 6674.629999999999 0.246 1e-12 2.4927493899844864 38.85590454325439 1.2094209828083635 1.2094209828063636 0.0 1e-12 1e-12 1e-12 -1 5.249077916606195 6265.500029006229 -1 -1 -1 -1 -1 -1
+13 313.15 1.2082514734774066 1.2094209828083635 6674.629999999999 0.246 1e-12 2.4927493899844864 38.85590454325439 1.2094209828083635 1.2094209828063636 0.0 1e-12 1e-12 1e-12 -1 5.249077916606195 6265.500029006229 -1 -1 -1 -1 -1 -1
+14 313.15 1.3212180746561888 1.3222187805019998 6658.26 0.269 1e-12 2.267153794597214 38.85590454325439 1.3222187805019998 1.3222187804999999 0.0 1e-12 1e-12 1e-12 -1 4.75255648382808 6262.651813287677 -1 -1 -1 -1 -1 -1
+15 313.15 1.3212180746561888 1.3222187805019998 6658.26 0.269 1e-12 2.267153794597214 38.85590454325439 1.3222187805019998 1.3222187804999999 0.0 1e-12 1e-12 1e-12 -1 4.75255648382808 6262.651813287677 -1 -1 -1 -1 -1 -1
+16 313.15 1.3359528487229864 1.3369315367229089 6677.51 0.272 1e-12 2.2377282821553957 38.85590454325439 1.3369315367229089 1.336931536720909 0.0 1e-12 1e-12 1e-12 -1 4.687796986261229 6262.208442335654 -1 -1 -1 -1 -1 -1
+17 313.15 1.3359528487229864 1.3369315367229089 6677.51 0.272 1e-12 2.2377282821553957 38.85590454325439 1.3369315367229089 1.336931536720909 0.0 1e-12 1e-12 1e-12 -1 4.687796986261229 6262.208442335654 -1 -1 -1 -1 -1 -1
+18 313.15 1.6011787819253438 1.6018996062100952 6653.08 0.326 1e-12 1.7077921431810232 38.85590454325439 1.6018996062100952 1.6018996062080952 0.0 1e-12 1e-12 1e-12 -1 3.525487246671442 6251.071548499433 -1 -1 -1 -1 -1 -1
+19 313.15 1.6011787819253438 1.6018996062100952 6653.08 0.326 1e-12 1.7077921431810232 38.85590454325439 1.6018996062100952 1.6018996062080952 0.0 1e-12 1e-12 1e-12 -1 3.525487246671442 6251.071548499433 -1 -1 -1 -1 -1 -1
+20 313.15 1.7092337917485263 1.708984195092 6670.429999999999 0.348 1e-12 1.4936229654172135 38.85590454325439 1.708984195092 1.70898419509 0.0 1e-12 1e-12 1e-12 -1 3.0601147169382834 6244.743369835812 -1 -1 -1 -1 -1 -1
+21 313.15 1.7092337917485263 1.708984195092 6670.429999999999 0.348 1e-12 1.4936229654172135 38.85590454325439 1.708984195092 1.70898419509 0.0 1e-12 1e-12 1e-12 -1 3.0601147169382834 6244.743369835812 -1 -1 -1 -1 -1 -1
+22 313.15 1.7190569744597248 1.7184486489119999 6826.33 0.35 1e-12 1.4746940577772139 38.85590454325439 1.7184486489119999 1.71844864891 0.0 1e-12 1e-12 1e-12 -1 3.019178265708384 6244.136129085879 -1 -1 -1 -1 -1 -1
+23 313.15 1.7190569744597248 1.7184486489119999 6826.33 0.35 1e-12 1.4746940577772139 38.85590454325439 1.7184486489119999 1.71844864891 0.0 1e-12 1e-12 1e-12 -1 3.019178265708384 6244.136129085879 -1 -1 -1 -1 -1 -1
+24 313.15 1.768172888015717 1.7588027062104905 6850.150000000001 0.36 1e-12 1.3939859431802326 38.85590454325439 1.7588027062104905 1.7588027062084906 0.0 1e-12 1e-12 1e-12 -1 2.8449742324501486 6241.416405020064 -1 -1 -1 -1 -1 -1
+25 313.15 1.768172888015717 1.7588027062104905 6850.150000000001 0.36 1e-12 1.3939859431802326 38.85590454325439 1.7588027062104905 1.7588027062084906 0.0 1e-12 1e-12 1e-12 -1 2.8449742324501486 6241.416405020064 -1 -1 -1 -1 -1 -1
+26 313.15 1.8762278978388995 1.8373615882916228 6854.320000000001 0.382 1e-12 1.236868179017968 38.85590454325439 1.8373615882916228 1.8373615882896228 0.0 1e-12 1e-12 1e-12 -1 2.5078197699336253 6235.630381852635 -1 -1 -1 -1 -1 -1
+27 313.15 1.8762278978388995 1.8373615882916228 6854.320000000001 0.382 1e-12 1.236868179017968 38.85590454325439 1.8373615882916228 1.8373615882896228 0.0 1e-12 1e-12 1e-12 -1 2.5078197699336253 6235.630381852635 -1 -1 -1 -1 -1 -1
+28 313.15 1.8958742632612966 1.851645021397283 6783.62 0.386 1e-12 1.2083013128066473 38.85590454325439 1.851645021397283 1.851645021395283 0.0 1e-12 1e-12 1e-12 -1 2.4468245847986045 6234.503950245362 -1 -1 -1 -1 -1 -1
+29 313.15 1.8958742632612966 1.851645021397283 6783.62 0.386 1e-12 1.2083013128066473 38.85590454325439 1.851645021397283 1.851645021395283 0.0 1e-12 1e-12 1e-12 -1 2.4468245847986045 6234.503950245362 -1 -1 -1 -1 -1 -1
+30 313.15 1.9106090373280942 1.8623575962265284 6706.38 0.389 1e-12 1.1868761631481566 38.85590454325439 1.8623575962265284 1.8623575962245285 0.0 1e-12 1e-12 1e-12 -1 2.4011441021006923 6233.643380540798 -1 -1 -1 -1 -1 -1
+31 313.15 1.9106090373280942 1.8623575962265284 6706.38 0.389 1e-12 1.1868761631481566 38.85590454325439 1.8623575962265284 1.8623575962245285 0.0 1e-12 1e-12 1e-12 -1 2.4011441021006923 6233.643380540798 -1 -1 -1 -1 -1 -1
+32 313.15 1.9646365422396854 1.9016370372670945 6841.5 0.4 1e-12 1.1083172810670245 38.85590454325439 1.9016370372670945 1.9016370372650946 0.0 1e-12 1e-12 1e-12 -1 2.2341855249199543 6230.397012365158 -1 -1 -1 -1 -1 -1
+33 313.15 1.9646365422396854 1.9016370372670945 6841.5 0.4 1e-12 1.1083172810670245 38.85590454325439 1.9016370372670945 1.9016370372650946 0.0 1e-12 1e-12 1e-12 -1 2.2341855249199543 6230.397012365158 -1 -1 -1 -1 -1 -1
+34 313.15 2.278978388998035 2.228562668366667 7422.66 0.464 1e-12 0.5668842100425464 38.74348635207972 2.228562668366667 2.11614447719 0.11241819117466667 1e-12 1e-12 1e-12 -1 1.0999773034266531 6189.038982164856 -1 -1 -1 -1 -1 -1
+35 313.15 2.278978388998035 2.228562668366667 7422.66 0.464 1e-12 0.5668842100425464 38.74348635207972 2.228562668366667 2.11614447719 0.11241819117466667 1e-12 1e-12 1e-12 -1 1.0999773034266531 6189.038982164856 -1 -1 -1 -1 -1 -1
+36 313.15 2.288801571709234 2.284899735624 7326.7 0.466 1e-12 0.5104191711152133 38.687277256492386 2.284899735624 2.11627244886 0.168627286762 1e-12 1e-12 1e-12 -1 0.9823066000320638 6178.589158870761 -1 -1 -1 -1 -1 -1
+37 313.15 2.288801571709234 2.284899735624 7326.7 0.466 1e-12 0.5104191711152133 38.687277256492386 2.284899735624 2.11627244886 0.168627286762 1e-12 1e-12 1e-12 -1 0.9823066000320638 6178.589158870761 -1 -1 -1 -1 -1 -1
+38 313.15 2.3624754420432215 2.3598570526668574 7615.47 0.481 1e-12 0.39772163482949896 38.65006015869239 2.3598570526668574 2.1540126681028573 0.20584438456199994 1e-12 1e-12 1e-12 -1 0.7572808432144319 6166.680023334303 -1 -1 -1 -1 -1 -1
+39 313.15 2.3624754420432215 2.3598570526668574 7615.47 0.481 1e-12 0.39772163482949896 38.65006015869239 2.3598570526668574 2.1540126681028573 0.20584438456199994 1e-12 1e-12 1e-12 -1 0.7572808432144319 6166.680023334303 -1 -1 -1 -1 -1 -1
+40 313.15 2.4115913555992137 2.4098230635868574 7781.93 0.491 1e-12 0.3459675203590229 38.60188225132286 2.4098230635868574 2.1558007716533334 0.2540222919315238 1e-12 1e-12 1e-12 -1 0.6536653194758348 6157.142509621869 -1 -1 -1 -1 -1 -1
+41 313.15 2.4115913555992137 2.4098230635868574 7781.93 0.491 1e-12 0.3459675203590229 38.60188225132286 2.4098230635868574 2.1558007716533334 0.2540222919315238 1e-12 1e-12 1e-12 -1 0.6536653194758348 6157.142509621869 -1 -1 -1 -1 -1 -1
+42 333.15 0.9381139489194498 0.9395735946836666 16777.5 0.191 1e-12 3.0324441662338804 38.85590454325439 0.9395735946836666 0.9395735946816667 0.0 1e-12 1e-12 1e-12 -1 26.27464112554012 16923.017961733658 -1 -1 -1 -1 -1 -1
+43 333.15 0.9381139489194498 0.9395735946836666 16777.5 0.191 1e-12 3.0324441662338804 38.85590454325439 0.9395735946836666 0.9395735946816667 0.0 1e-12 1e-12 1e-12 -1 26.27464112554012 16923.017961733658 -1 -1 -1 -1 -1 -1
+44 333.15 1.429273084479371 1.4264860262199708 16823.1 0.291 1e-12 2.077574266663156 38.836949579752506 1.4264860262199708 1.4075310627160869 0.018954963501884005 1e-12 1e-12 1e-12 -1 17.632131986896358 16904.466490646355 -1 -1 -1 -1 -1 -1
+45 333.15 1.429273084479371 1.4264860262199708 16823.1 0.291 1e-12 2.077574266663156 38.836949579752506 1.4264860262199708 1.4075310627160869 0.018954963501884005 1e-12 1e-12 1e-12 -1 17.632131986896358 16904.466490646355 -1 -1 -1 -1 -1 -1
+46 333.15 1.8958742632612966 1.8979830897812031 17473.0 0.386 1e-12 1.263203106160619 38.70832661313258 1.8979830897812031 1.7504051596573915 0.1475779301218116 1e-12 1e-12 1e-12 -1 10.310985035232472 16813.759974173696 -1 -1 -1 -1 -1 -1
+47 333.15 1.8958742632612966 1.8979830897812031 17473.0 0.386 1e-12 1.263203106160619 38.70832661313258 1.8979830897812031 1.7504051596573915 0.1475779301218116 1e-12 1e-12 1e-12 -1 10.310985035232472 16813.759974173696 -1 -1 -1 -1 -1 -1
+48 333.15 2.3821218074656185 2.197615258248892 21664.940000000002 0.485 1e-12 0.8294470702273489 38.54281831213047 2.197615258248892 1.8845290271229729 0.31308623112391887 1e-12 1e-12 1e-12 -1 6.53682904602636 16715.002019784984 -1 -1 -1 -1 -1 -1
+49 333.15 2.3821218074656185 2.197615258248892 21664.940000000002 0.485 1e-12 0.8294470702273489 38.54281831213047 2.197615258248892 1.8845290271229729 0.31308623112391887 1e-12 1e-12 1e-12 -1 6.53682904602636 16715.002019784984 -1 -1 -1 -1 -1 -1

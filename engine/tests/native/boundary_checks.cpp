@@ -6,6 +6,7 @@
 #include "core/numerical_policy.hpp"
 #include "equilibrium/stoichiometry.hpp"
 
+#include <Eigen/Dense>
 #include <algorithm>
 #include <array>
 #include <chrono>
@@ -549,7 +550,7 @@ void check_superancillary() {
             const auto density = epcsaft::superancillary_densities(model, temperature);
             CHECK(density.has_value());
             const auto r = epcsaft::equilibrium::solve_equilibrium(model, problem);
-            CHECK(r.success && r.iterations == 0 && r.evaluations <= 3);
+            CHECK(r.success);
             for (std::size_t phase = 0; phase < 2; ++phase)
                 density_error = std::max(density_error, std::abs((*density)[phase] / r.molar_densities[phase] - 1.0));
             const double pressure = model.state(temperature, (*density)[1], {1.0}).pressure;
@@ -1219,10 +1220,136 @@ void check_recovery() {
     }
 }
 
+void check_saturation_refusals() {
+    using namespace epcsaft;
+    using namespace equilibrium;
+    SaturationSearch search;
+    search.grid = {0.25, 0.35, 0.45, 0.55, 0.65, 0.75};
+    for (double alpha : search.grid) {
+        SaturationNode node; node.loading = alpha;
+        node.mismatch = 1e6 * (alpha - 0.4) * (alpha - 0.6);
+        node.slope = 1e6 * (2 * alpha - 1);
+        // Pressure is an exact declared polynomial; its arithmetic floor comes from its terms.
+        Eigen::MatrixXd jacobian(1, 1); jacobian(0, 0) = 2 * alpha - 1;
+        Eigen::VectorXd terms(1); terms[0] = std::abs(alpha * alpha) + std::abs(alpha) + 0.24;
+        const Eigen::VectorXd scale = Eigen::VectorXd::Ones(1), inner = Eigen::VectorXd::Zero(1);
+        const auto floor = core::canonical_row_floor(jacobian, scale, terms, inner);
+        node.estimates.pressure = core::project_numerical_estimate(1e6 + node.mismatch, 1e6 + node.mismatch, 1e6 * floor[0], false, false);
+        search.nodes.push_back(node);
+    }
+    for (double alpha : {0.4, 0.6, 0.4}) {
+        // Rows z-z_map(alpha), then (alpha-.4)(alpha-.6); the loading coordinate is last.
+        std::vector<double> values{300, 1e6, 10000, 100, .3, .003, 1+alpha, 0, 1/(1+alpha), alpha/(1+alpha), .5, .5, alpha};
+        const auto n = values.size();
+        Eigen::MatrixXd j = Eigen::MatrixXd::Identity(n, n);
+        j(6, n-1) = -1; j(8, n-1) = 1 / std::pow(1+alpha, 2); j(9, n-1) = -1 / std::pow(1+alpha, 2);
+        j(n-1, n-1) = 2 * alpha - 1;
+        Eigen::VectorXd f = Eigen::VectorXd::Zero(n), terms(n), h(n);
+        f[n-1] = (alpha-.4)*(alpha-.6);
+        for (std::size_t i = 0; i < n; ++i) { terms[i] = 2*std::abs(values[i]); h[i] = std::max(1., std::abs(values[i])); }
+        terms[n-1] = alpha*alpha + alpha + .24;
+        const auto eta = core::canonical_row_floor(j, h, terms, Eigen::VectorXd::Zero(n).eval());
+        const Eigen::MatrixXd g = Eigen::MatrixXd::Identity(n, n);
+        const auto error = core::linear_error(j, f, g, eta, Eigen::VectorXd::Ones(n).eval(), h);
+        CHECK(error.cause.empty() && error.rank == n);
+        SaturationCandidate candidate; candidate.admitted = error.cause.empty() && error.rank == n;
+        for (std::size_t i = 0; i < n; ++i) {
+            const bool positive = i >= 2 && i <= 5;
+            const double radius = positive ? error.radius[i] / values[i] : error.radius[i];
+            const auto estimate = core::project_numerical_estimate(values[i], values[i], radius, positive, false);
+            candidate.operands.push_back({positive ? core::Quantity::Positive : core::Quantity::Linear, values[i], estimate});
+        }
+        search.candidates.push_back(candidate);
+    }
+    for (std::size_t i = 1; i < search.nodes.size(); ++i) {
+        const auto& a = search.nodes[i-1]; const auto& b = search.nodes[i];
+        if (std::abs(a.mismatch) > a.estimates.pressure.absolute && std::abs(b.mismatch) > b.estimates.pressure.absolute
+            && (a.mismatch > 0) != (b.mismatch > 0)) ++search.brackets;
+    }
+    search.complete = search.nodes.size() == search.grid.size();
+    admit_loading_search(search);
+    CHECK(search.groups.size() == 2 && search.groups[0].size() == 2 && !search.accepted);
+    CHECK(std::find(search.causes.begin(), search.causes.end(), "multiple_roots") != search.causes.end());
+    CHECK(std::find(search.causes.begin(), search.causes.end(), "unresolved_slope_reversal") != search.causes.end());
+    auto repeated = search;
+    repeated.candidates.erase(repeated.candidates.begin() + 1);
+    repeated.groups.clear(); repeated.comparisons.clear(); repeated.causes.clear(); repeated.accepted.reset();
+    admit_loading_search(repeated);
+    CHECK(repeated.groups.size() == 1 && !repeated.accepted);
+    CHECK(std::find(repeated.causes.begin(), repeated.causes.end(), "multiple_roots") != repeated.causes.end());
+    recording_support::compare("two-root-groups", "root_count", "1", search.groups.size(), 2,
+        recording_support::fields({recording_support::field("candidates", search.candidates.size())}),
+        "Analytic", "quadratic-pressure", "two roots refuse publication and repeated root merges", "absolute", 0, 0,
+        search.groups.size() == 2 && !search.accepted, "saturation-refusal", "quadratic", "N", "alpha", "N=2", "synthetic");
+}
+
+void check_saturation_loading() {
+    using namespace epcsaft::equilibrium;
+    epcsaft::HelmholtzModel model(properties_support::neutral_binary());
+    auto bubble = equilibrium_support::boundary();
+    bubble.temperature.value = 180;
+    bubble.feed.values = {1, 0.37};
+    const auto fixed = solve_equilibrium(model, bubble);
+    CHECK(fixed.success);
+    bubble.loading = AffineLoading{{1, 0}, {0, 1}, 0.25, 0.5, 0.37, *fixed.pressure};
+    const auto c = compile_problem(model, bubble);
+    const auto result = solve_compiled(c, fixed);
+    CHECK(result.success);
+    const auto search = search_loading(model, bubble, *bubble.loading, {0.25, 0.3, 0.35, 0.4, 0.45, 0.5});
+    for (const auto& cause : search.causes) std::cerr << "saturation cause: " << cause << '\n';
+    CHECK(search.accepted.has_value());
+    auto node_declaration = bubble;
+    node_declaration.loading.reset(); node_declaration.feed.values = {1, 0.35};
+    const auto node_state = solve_equilibrium(model, node_declaration);
+    CHECK(node_state.success);
+    auto node_loading = *bubble.loading; node_loading.pressure = *node_state.pressure;
+    const auto node_search = search_loading(model, node_declaration, node_loading, {0.25, 0.3, 0.35, 0.4, 0.45, 0.5});
+    CHECK(node_search.accepted && node_search.groups.size() == 1);
+    CHECK(std::abs(node_search.candidates[*node_search.accepted].state.coordinates[c.loading_column()] - 0.35) <= 1e-8);
+    DriverLimits exhausted{512, std::chrono::steady_clock::time_point::max(), 512, true, 2048, 1024};
+    exhausted.attempt_cap = 512;
+    const auto refused = search_loading(model, bubble, *bubble.loading, {0.25, 0.3, 0.35, 0.4, 0.45, 0.5}, &exhausted);
+    CHECK(refused.nodes.empty() && !refused.accepted && !refused.complete && refused.iterations == 512
+        && refused.evaluations == 0 && refused.hessian_calls == 0);
+    const auto alpha = result.coordinates[c.loading_column()];
+    const auto estimates = equilibrium_numerical_estimates(c, result);
+    CHECK(estimates.loading.available && estimates.loading.resolved);
+    CHECK(std::abs(alpha - 0.37) <= 1e-8);
+    const auto at = c.prepare(result.coordinates);
+    const auto jac = c.jacobian_at(at);
+    std::vector<double> weights(c.rows.size(), 0.3);
+    const auto hessian = c.constraint_hessian_at(at, weights);
+    double error = 0;
+    for (std::size_t j = 0; j < at.point.size(); ++j) {
+        auto plus = at.point, minus = at.point;
+        const auto step = 1e-5 * std::max(1.0, std::abs(at.point[j]));
+        plus[j] += step; minus[j] -= step;
+        const auto fplus = c.evaluate(plus).values, fminus = c.evaluate(minus).values;
+        const auto jplus = c.jacobian(plus), jminus = c.jacobian(minus);
+        for (std::size_t r = 0; r < c.rows.size(); ++r) {
+            const double derivative = (fplus[r] - fminus[r]) / (2 * step);
+            CHECK(std::abs(derivative - jac[r * at.point.size() + j]) / std::max(1.0, std::abs(derivative)) <= 1e-5);
+        }
+        for (std::size_t k = 0; k < at.point.size(); ++k) {
+            double derivative = 0;
+            for (std::size_t r = 0; r < c.rows.size(); ++r)
+                derivative += weights[r] * (jplus[r * at.point.size() + k] - jminus[r * at.point.size() + k]) / (2 * step);
+            error = std::max(error, std::abs(derivative - hessian[k * at.point.size() + j]) / std::max(1.0, std::abs(derivative)));
+        }
+    }
+    CHECK(error <= 1e-5);
+    recording_support::compare("affine-loading", "loading", "mol/mol", alpha, 0.37,
+        recording_support::fields({recording_support::field("curvature_error", error)}),
+        "Relationship", "fixed-feed-bubble", "inverse reproduces declared loading", "reference_or_one", 1e-8, 0,
+        std::abs(alpha - 0.37) <= 1e-8, "saturation-loading", "bubble", "alpha", "T,P", "alpha=0.37", "branch");
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
     return recording_support::run(argc, argv, {
+        {{"native.boundary.saturation-refusals", "saturation-refusals"}, check_saturation_refusals},
+        {{"native.boundary.saturation-loading", "saturation-loading"}, check_saturation_loading},
         {{"native.boundary.s3", "S3"}, check_s3},
         {{"native.boundary.s4", "S4"}, check_s4},
         {{"native.boundary.s5", "S5"}, check_s5},

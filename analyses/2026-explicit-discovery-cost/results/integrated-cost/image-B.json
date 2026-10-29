@@ -1,0 +1,32 @@
+{
+  "commit": "e4174b7d16b60aa460d609d25b021ded46f9293f",
+  "engine_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "build_dir": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-855-cheaper-explicit-phase-discovery/build/engine-meson/shared",
+  "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-855-cheaper-explicit-phase-discovery/.venv/bin/python",
+  "loader": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-855-cheaper-explicit-phase-discovery/.venv/lib/python3.13/site-packages/_epcsaft_editable_loader.py",
+  "loader_sha256": "67a0de7f110988cfe40448a5fde551c5bfa8b3b1f414f17a2c65ccdaa7b99bb1",
+  "install_plan_sha256": "6665975dc0c94ffb632d8478ae44990dc68e749954cd088100fb7b26cb73ed10",
+  "buildoptions_sha256": "f71d9e5c46ed9e0394eac3312365b5ae4d12719e5f7f818207021fdb19f14a1a",
+  "build_ninja_sha256": "73b9f9f78dc0f247085dec6c57f440a6cbb8c0677dc5820cad7d1adc8ad84eb6",
+  "uv_lock_sha256": "8ecc21b40b9acfc6ea8a1325bb109419679275533cea2770f788e0098b5d9f02",
+  "extension": "_core.cpython-313-x86_64-linux-gnu.so",
+  "libraries_sha256": {
+    "_core.cpython-313-x86_64-linux-gnu.so": "df77c126d7350535c0ef889705bed080729f1678a13c15ac0b4dad9ddfebb79b",
+    "libepcsaft_native.so": "7a7b9d90466b1a13cd8ba15b1db9109cdc1c3053526ad6b538b5c515c76277d6",
+    "libepcsaft_asl.so": "e7f7a3170e9ceb24fb33339e3e7162beb0ec6bdfcf86e87ebdddb555ee68e7d6"
+  },
+  "package_sha256": {
+    "__init__.py": "984ad28616d1eeb7fbb51cecf366ece0b79a29624306b2995da8f137e55bc873",
+    "_core.cpython-313-x86_64-linux-gnu.so": "df77c126d7350535c0ef889705bed080729f1678a13c15ac0b4dad9ddfebb79b",
+    "_core.pyi": "16eb7a6379efaabf57ab08d002fa602b3c33cc9d8e409db0d4d9d2c2ca25d2ce",
+    "eos.py": "5387d2eb3d2ea609119ff314bf68d5690fbc60ef3429cd3ce0ba2dfe36bdb357",
+    "equilibrium/__init__.py": "b58ac4a487f36cd695559f93c1c873efe226ec329bf0f44db2a1ab2d11d2bc15",
+    "equilibrium/problem.py": "e018429a699d944b35783b5ecf1ba08e5885d7f8790d09e802a414a4d92b239f",
+    "libepcsaft_asl.so": "e7f7a3170e9ceb24fb33339e3e7162beb0ec6bdfcf86e87ebdddb555ee68e7d6",
+    "libepcsaft_native.so": "7a7b9d90466b1a13cd8ba15b1db9109cdc1c3053526ad6b538b5c515c76277d6",
+    "parameters.py": "d49053836b9b17bae681d10efffbdccebd91a188f476126cc67f64c98d4ac9dc",
+    "py.typed": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "reference.py": "89d1386ac707bb4205b8bd1ccc6a060e83bd7f29432a343d394d896b0b4f49b0",
+    "regression.py": "0be33177fe14a92baa82086b30ddbe2a760d30455fc26a4e725dc3c7827f15c1"
+  }
+}

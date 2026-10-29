@@ -1,0 +1,19 @@
+{
+  "cause": "",
+  "condition": 25.456159816850764,
+  "row_inner": [
+    9.708108520618461e-14,
+    4.852297272536518e-14,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "pressure_available": true,
+  "pressure_radius": 0.0,
+  "method": "local higher-precision re-evaluation plus first-order pressure/site propagation; can underestimate shared errors and internal cancellation; fixed-input arithmetic excludes supplied operand uncertainty; reference replay precision: 64 bits",
+  "precision": 53,
+  "values_identical": true,
+  "work_identical": true,
+  "ordinary_counters_identical": true,
+  "after_diagnostics_identical": true
+}

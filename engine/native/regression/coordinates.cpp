@@ -83,7 +83,7 @@ std::vector<double> CoordinateSet::start(const Parameters& parameters, const std
             for (const auto& observation : observations) {
                 if (pressure_closed(observation.kind) || electrolyte_observation(observation.kind)) continue;
                 problems.push_back(&observation.problem);
-                if (observation.kind == ObservationKind::AdditionEnthalpy) problems.push_back(&observation.final_problem);
+                if (addition(observation.kind)) problems.push_back(&observation.final_problem);
             }
             for (const auto* problem_pointer : problems) {
                 const auto& problem = *problem_pointer;
@@ -221,7 +221,7 @@ std::map<std::string, ReactionLogPolynomial> CoordinateSet::apply(std::vector<Ob
     std::vector<equilibrium::EquilibriumProblem*> problems;
     for (auto& observation : observations) {
         problems.push_back(&observation.problem);
-        if (observation.kind == ObservationKind::AdditionEnthalpy) problems.push_back(&observation.final_problem);
+        if (addition(observation.kind)) problems.push_back(&observation.final_problem);
     }
     // Assign absolute coefficients before adding shifts, independent of declaration order.
     for (const bool shift : {false, true}) for (std::size_t row = 0; row < order.size(); ++row) {
@@ -292,30 +292,42 @@ EvaluatedCoordinates evaluate_coordinates(const Parameters& parameters, const Co
         const auto ion = hold.reference.species[0];
         for (std::size_t j = 0; j < holds.size(); ++j) if (j != h)
             require(holds[j].reference.ion_indices[0] != ion && holds[j].reference.ion_indices[1] != ion, "coupled hydration holds");
-        const auto admit = [ion](bool ok, const char* cause) {
-            if (!ok) throw std::invalid_argument("hydration ion " + std::to_string(ion) + ": " + cause);
+        core::Convergence record; record.residual = NAN;
+        const auto admit = [&](bool ok, core::Stop stop, const char* cause) {
+            if (ok) return;
+            record.stop = stop; record.cause = "hydration ion " + std::to_string(ion) + ": " + cause + (record.cause.empty() ? "" : "; " + record.cause);
+            scope.finish(record); throw core::DeclarationError(record.cause, record);
         };
         const std::size_t row = independent + h, active_row = set.active_parameters().size() + h;
         const auto evaluate = [&](double diameter) {
+            ++record.evaluations;
             out.parameters.born_diameter_angstrom.at(ion) = diameter;
             HelmholtzModel model(out.parameters, out.active, thermochemistry, solver_options);
             validate(hold.reference, model);
             const auto prediction = predict(model, hold.reference);
             const auto gradient = differentiate(model, hold.reference, prediction);
-            admit(prediction.value && gradient.status == ObservationStatus::Available, "hydration reference/action unavailable");
+            if (!prediction.value || gradient.status != ObservationStatus::Available) {
+                record = prediction.first_numerical_failure.value_or(gradient.first_numerical_failure.value_or(record));
+                admit(false, record.stop, "hydration reference/action unavailable");
+            }
             return std::pair{*prediction.value - hold.reference.observed, gradient.value};
         };
         double lower = hold.lower, upper = hold.upper;
         auto low = evaluate(lower), high = evaluate(upper);
-        admit(low.first == 0.0 || high.first == 0.0 || std::signbit(low.first) != std::signbit(high.first), "hydration root outside bracket");
+        scope.probe("hydration_bracket", {lower, upper, low.first, high.first, hold.energy_tolerance, hold.diameter_tolerance});
+        admit(low.first == 0.0 || high.first == 0.0 || std::signbit(low.first) != std::signbit(high.first), core::Stop::left_domain, "hydration root outside bracket");
         double diameter = std::clamp(parameters.born_diameter_angstrom.at(ion), lower, upper);
         HoldResult result;
         bool converged = false;
         for (int iteration = 0; iteration < hold.maximum_iterations; ++iteration) {
             const auto [error, gradient] = evaluate(diameter);
             const double hd = gradient.at(active_row);
-            admit(std::isfinite(hd) && std::abs(hd) > std::numeric_limits<double>::epsilon()
-                * std::max(1.0, std::abs(hold.reference.observed)) / std::max(1.0, std::abs(diameter)), "singular hydration derivative");
+            const double cutoff = std::numeric_limits<double>::epsilon()
+                * std::max(1.0, std::abs(hold.reference.observed)) / std::max(1.0, std::abs(diameter));
+            result.rank = {"hydration energy derivative with respect to Born diameter", 1, std::size_t(std::isfinite(hd) && std::abs(hd) > cutoff), cutoff};
+            record.residual = std::abs(error); record.iterations = iteration + 1; record.rank = result.rank;
+            scope.probe("hydration_iteration", {diameter, error, hd, lower, upper, hold.energy_tolerance, hold.diameter_tolerance}, iteration);
+            admit(std::isfinite(hd) && std::abs(hd) > cutoff, core::Stop::singular, "singular hydration derivative");
             result.energy_error = error; result.correction = std::abs(error / hd);
             result.uncertainty = std::min(result.correction, upper - lower); result.derivative = hd;
             result.parameter_derivative = gradient; result.iterations = iteration + 1;
@@ -332,7 +344,7 @@ EvaluatedCoordinates evaluate_coordinates(const Parameters& parameters, const Co
             const double next = diameter - error / hd;
             diameter = next > lower && next < upper ? next : 0.5 * (lower + upper);
         }
-        admit(converged, "hydration hold exhausted");
+        admit(converged, core::Stop::budget_exhausted, "hydration hold exhausted");
         out.physical.push_back(out.parameters.born_diameter_angstrom.at(ion));
         out.holds.push_back(std::move(result));
     }

@@ -1,0 +1,452 @@
+{
+  "untransformed_K_signed": {
+    "count": 16,
+    "max_error": 2.646771690706373e-13,
+    "failures": 0,
+    "limit": 1e-09
+  },
+  "untransformed_K_trips": {
+    "count": 16,
+    "max_error": 0.0,
+    "failures": 0,
+    "limit": 0.0
+  },
+  "compiled_x_m": {
+    "count": 16,
+    "max_error": 0.0,
+    "failures": 0,
+    "limit": 1e-10
+  },
+  "solved_P_relative": {
+    "count": 4,
+    "max_error": 3.3084646133829665e-14,
+    "failures": 0,
+    "limit": 1e-08
+  },
+  "retained_P_relative": {
+    "count": 4,
+    "max_error": 4.3520742565306136e-14,
+    "failures": 0,
+    "limit": 1e-08
+  },
+  "solved_x": {
+    "count": 64,
+    "max_error": 3.3306690738754696e-16,
+    "failures": 0,
+    "limit": 1e-09
+  },
+  "solved_rho_relative": {
+    "count": 8,
+    "max_error": 3.68594044175552e-14,
+    "failures": 0,
+    "limit": 1e-08
+  },
+  "classified_rows": {
+    "count": 76,
+    "max_error": 3.126388037344441e-13,
+    "failures": 0,
+    "limit": 1e-10
+  },
+  "phase_amount_relative": {
+    "count": 4,
+    "max_error": 3.3306690738754696e-16,
+    "failures": 0,
+    "limit": 1e-07
+  },
+  "feed_m_roundtrip": {
+    "count": 32,
+    "max_error": 4.440892098500626e-16,
+    "failures": 0,
+    "limit": 6.407413506179199e-11
+  },
+  "feed_x_roundtrip": {
+    "count": 32,
+    "max_error": 2.220446049250313e-16,
+    "failures": 0,
+    "limit": 6.407413506179199e-11
+  },
+  "species_amount_relative": {
+    "count": 24,
+    "max_error": 2.19824158875781e-13,
+    "failures": 0,
+    "limit": 1e-07
+  },
+  "initial_water_kg": {
+    "count": 4,
+    "max_error": 0.0,
+    "failures": 0,
+    "limit": 6.407413506179199e-11
+  },
+  "analytical_loading": {
+    "count": 4,
+    "max_error": 0.0,
+    "failures": 0,
+    "limit": 6.407413506179199e-11
+  },
+  "bubble_fugacity": {
+    "count": 12,
+    "max_error": 1.5528689445432065e-12,
+    "failures": 0,
+    "limit": 1e-08
+  },
+  "phase_sum": {
+    "count": 8,
+    "max_error": 1.1102230246251565e-16,
+    "failures": 0,
+    "limit": 1e-10
+  },
+  "species_amount_perturbed_signed": {
+    "count": 4,
+    "max_error": 1.565333827184892e-16,
+    "failures": 0,
+    "limit": 1e-09
+  },
+  "species_amount_perturbed_trips": {
+    "count": 4,
+    "max_error": 0.0,
+    "failures": 0,
+    "limit": 0.0
+  },
+  "incipient_vapor_amount": {
+    "count": 8,
+    "max_error": 0.0,
+    "failures": 0,
+    "limit": 1e-10
+  },
+  "inventory_balance": {
+    "count": 32,
+    "max_error": 9.68573370013108e-15,
+    "failures": 0,
+    "limit": 6.4074135061792e-09
+  },
+  "inventory_perturbed_signed": {
+    "count": 16,
+    "max_error": 6.243269790040529e-15,
+    "failures": 0,
+    "limit": 1e-09
+  },
+  "inventory_perturbed_trips": {
+    "count": 4,
+    "max_error": 0.0,
+    "failures": 0,
+    "limit": 0.0
+  },
+  "compiled_pointwise_moving": {
+    "count": 48,
+    "max_error": 1.5063505998114124e-12,
+    "failures": 0,
+    "limit": 1e-10
+  },
+  "compiled_pointwise_fixed": {
+    "count": 48,
+    "max_error": 3.410605131648481e-13,
+    "failures": 0,
+    "limit": 1e-10
+  },
+  "compiler_row_TP": {
+    "count": 48,
+    "max_error": 9.648705445730599e-14,
+    "failures": 0,
+    "limit": 1e-08
+  },
+  "Gibbs_fixed_pressure": {
+    "count": 192,
+    "max_error": 5.745404152435185e-15,
+    "failures": 0,
+    "limit": 1e-08
+  },
+  "Gibbs_same_pressure": {
+    "count": 192,
+    "max_error": 5.750825163297613e-15,
+    "failures": 0,
+    "limit": 1e-08
+  },
+  "fugacity_density_identity": {
+    "count": 312,
+    "max_error": 0.0,
+    "failures": 0,
+    "limit": 1e-10
+  },
+  "finite_Q_fugacity": {
+    "count": 96,
+    "max_error": 2.2737367544323206e-13,
+    "failures": 0,
+    "limit": 1e-10
+  },
+  "inherited_transport_affinity": {
+    "count": 96,
+    "max_error": 5.684341886080802e-14,
+    "failures": 0,
+    "limit": 1e-09
+  },
+  "fixed_transport_affinity": {
+    "count": 96,
+    "max_error": 5.684341886080802e-14,
+    "failures": 0,
+    "limit": 1e-09
+  },
+  "molal_affinity": {
+    "count": 96,
+    "max_error": 2.0961010704922955e-13,
+    "failures": 0,
+    "limit": 1e-09
+  },
+  "molarity_affinity": {
+    "count": 96,
+    "max_error": 2.1316282072803006e-13,
+    "failures": 0,
+    "limit": 1e-09
+  },
+  "c_density_target": {
+    "count": 96,
+    "max_error": 1.5134560271690134e-12,
+    "failures": 0,
+    "limit": 1e-10
+  },
+  "missing_c_standard_density_signed": {
+    "count": 96,
+    "max_error": 1.5134560271690134e-12,
+    "failures": 0,
+    "limit": 1e-09
+  },
+  "missing_c_standard_density_trips": {
+    "count": 96,
+    "max_error": 0.0,
+    "failures": 0,
+    "limit": 0.0
+  },
+  "missing_c_density_ratio_signed": {
+    "count": 96,
+    "max_error": 2.143944743959736e-13,
+    "failures": 0,
+    "limit": 1e-09
+  },
+  "missing_c_density_ratio_trips": {
+    "count": 96,
+    "max_error": 0.0,
+    "failures": 0,
+    "limit": 0.0
+  },
+  "missing_pressure_factor": {
+    "count": 96,
+    "max_error": 2.686739719592879e-13,
+    "failures": 0,
+    "limit": 1e-09
+  },
+  "old_minus_fixed": {
+    "count": 96,
+    "max_error": 1.1368683772161603e-13,
+    "failures": 0,
+    "limit": 1e-10
+  },
+  "equilibrium_affinity": {
+    "count": 16,
+    "max_error": 3.083755473198835e-12,
+    "failures": 0,
+    "limit": 1e-08
+  },
+  "feed_c_roundtrip": {
+    "count": 768,
+    "max_error": 7.105427357601002e-15,
+    "failures": 0,
+    "limit": 6.407413506179199e-11
+  },
+  "c_density_derivative_0": {
+    "count": 24,
+    "max_error": 3.136428679842429e-06,
+    "failures": 0,
+    "limit": 2e-05
+  },
+  "c_density_refinement": {
+    "count": 48,
+    "max_error": 0.0,
+    "failures": 0,
+    "limit": 0.0
+  },
+  "missing_c_density_derivative_signed": {
+    "count": 36,
+    "max_error": 0.0,
+    "failures": 0,
+    "limit": 1e-09
+  },
+  "missing_c_density_derivative_trips": {
+    "count": 36,
+    "max_error": 0.0,
+    "failures": 0,
+    "limit": 0.0
+  },
+  "c_density_derivative_1": {
+    "count": 24,
+    "max_error": 5.900500357411409e-13,
+    "failures": 0,
+    "limit": 2e-05
+  },
+  "c_density_derivative_2": {
+    "count": 24,
+    "max_error": 3.141198186687455e-06,
+    "failures": 0,
+    "limit": 2e-05
+  },
+  "species_reference_00": {
+    "count": 48,
+    "max_error": 2.2737367544323206e-13,
+    "failures": 0,
+    "limit": 1e-10
+  },
+  "fixed_reference_00": {
+    "count": 48,
+    "max_error": 1.1368683772161603e-13,
+    "failures": 0,
+    "limit": 1e-10
+  },
+  "species_reference_10": {
+    "count": 48,
+    "max_error": 2.2737367544323206e-13,
+    "failures": 0,
+    "limit": 1e-08
+  },
+  "fixed_reference_10": {
+    "count": 48,
+    "max_error": 2.2737367544323206e-13,
+    "failures": 0,
+    "limit": 1e-08
+  },
+  "species_reference_20": {
+    "count": 48,
+    "max_error": 6.59383658785373e-12,
+    "failures": 0,
+    "limit": 1e-08
+  },
+  "fixed_reference_20": {
+    "count": 48,
+    "max_error": 6.59383658785373e-12,
+    "failures": 0,
+    "limit": 1e-08
+  },
+  "species_reference_01": {
+    "count": 48,
+    "max_error": 6.938893903907228e-17,
+    "failures": 0,
+    "limit": 1e-08
+  },
+  "fixed_reference_01": {
+    "count": 48,
+    "max_error": 0.0,
+    "failures": 0,
+    "limit": 1e-08
+  },
+  "compiler_P1": {
+    "count": 48,
+    "max_error": 1.6653345369377348e-15,
+    "failures": 0,
+    "limit": 1e-08
+  },
+  "compiler_fixed_P1": {
+    "count": 48,
+    "max_error": 0.0,
+    "failures": 0,
+    "limit": 1e-08
+  },
+  "fixed_system_P": {
+    "count": 144,
+    "max_error": 0.0,
+    "failures": 0,
+    "limit": 1e-10
+  },
+  "inherited_transport_derivative": {
+    "count": 144,
+    "max_error": 1.2177758801357186e-15,
+    "failures": 0,
+    "limit": 1e-08
+  },
+  "manufactured_transport_derivative": {
+    "count": 144,
+    "max_error": 1.2185916571329164e-15,
+    "failures": 0,
+    "limit": 1e-08
+  },
+  "missing_C_derivative": {
+    "count": 144,
+    "max_error": 1.2177758801357186e-15,
+    "failures": 0,
+    "limit": 1e-08
+  },
+  "species_reference_02": {
+    "count": 48,
+    "max_error": 2.707117299424744e-18,
+    "failures": 0,
+    "limit": 1e-08
+  },
+  "fixed_reference_02": {
+    "count": 48,
+    "max_error": 0.0,
+    "failures": 0,
+    "limit": 1e-08
+  },
+  "compiler_P2": {
+    "count": 48,
+    "max_error": 1.5693826446727677e-17,
+    "failures": 0,
+    "limit": 1e-08
+  },
+  "compiler_fixed_P2": {
+    "count": 48,
+    "max_error": 0.0,
+    "failures": 0,
+    "limit": 1e-08
+  },
+  "species_reference_11": {
+    "count": 48,
+    "max_error": 1.2177758801357186e-15,
+    "failures": 0,
+    "limit": 1e-08
+  },
+  "fixed_reference_11": {
+    "count": 48,
+    "max_error": 0.0,
+    "failures": 0,
+    "limit": 1e-08
+  },
+  "MEA_m_amount": {
+    "count": 450,
+    "max_error": 1.4210854715202004e-14,
+    "failures": 0,
+    "limit": 4.376749589885761e-11
+  },
+  "MEA_c_amount": {
+    "count": 450,
+    "max_error": 7.105427357601002e-15,
+    "failures": 0,
+    "limit": 4.376749589885761e-11
+  },
+  "MEA_mu_fugacity": {
+    "count": 414,
+    "max_error": 1.1368683772161603e-13,
+    "failures": 0,
+    "limit": 1e-10
+  },
+  "MEA_fugacity_Pa": {
+    "count": 100,
+    "max_error": 3.394883697183104e-05,
+    "failures": 0,
+    "limit": 0.00016715002019784985
+  },
+  "MEA_amine_closure": {
+    "count": 50,
+    "max_error": 8.881784197001252e-16,
+    "failures": 0,
+    "limit": 4.376749589885761e-11
+  },
+  "MEA_charge_closure": {
+    "count": 50,
+    "max_error": 3.8449455561156593e-16,
+    "failures": 0,
+    "limit": 4.376749589885761e-09
+  },
+  "MEA_initial_water": {
+    "count": 50,
+    "max_error": 1.1102230246251565e-16,
+    "failures": 0,
+    "limit": 4.376749589885761e-11
+  }
+}

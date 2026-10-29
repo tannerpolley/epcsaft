@@ -1,0 +1,73 @@
+{
+  "temperature_K": 323.15,
+  "source_revision": "e810617a94df43bbcca4e7fa50490dfa7e83cd45",
+  "species": [
+    "water",
+    "acetic-acid",
+    "hydrogen-cation",
+    "acetate-anion",
+    "hydroxide-anion"
+  ],
+  "Ka": 1.633e-05,
+  "acid_reference_pressure_Pa": 101325.0,
+  "acid_reference_pressure_authority": "Adopted reference-pressure convention, not a measured liquid pressure dependence; H2 electrode standard does not determine liquid Ka pressure dependence.",
+  "acid_source": {
+    "citation": "Harned, H. S.; Ehlers, R. W. The Dissociation Constant of Acetic Acid from 0 to 60 Degrees Centigrade. J. Am. Chem. Soc. 1933, 55(2), 652-656.",
+    "doi": "10.1021/ja01329a027",
+    "zotero_parent": "2BZC7C6J",
+    "locator": "p. 652 Eq. (1) and zero-ionic-strength extrapolation; p. 655 final Table II, 50 C row, observed K x 10^5 = 1.633 (third column), calculated K x 10^5 = 1.633 (fourth column).",
+    "verification": "Indexed primary-PDF text inspected; direct PDF retrieval failed (No route to host / web fetch timeout); no visual page verification or PDF attachment claimed.",
+    "table_II_50C": {
+      "temperature_C": 50,
+      "E0_V": 0.20436,
+      "K_observed_times_1e5": 1.633,
+      "difference_times_1e5": 0.0,
+      "heat_of_ionization_cal_per_mol": -982,
+      "delta_Cp_cal_per_mol_K": -35.66,
+      "K_calculated_times_1e5": 1.633
+    }
+  },
+  "standard_molality_mol_per_kg": 1.0,
+  "water_molar_mass_kg_per_mol": 0.01801528,
+  "pKw": 13.26,
+  "water_reference_pressure_Pa": 100000.0,
+  "water_source": {
+    "citation": "IAPWS R11-24, Revised Release on the Ionization Constant of H2O (2024).",
+    "url": "https://iapws.org/documents/release/Ionization.download",
+    "sha256": "7e0dc09f7ed9e1927c904d44644a9f6664440d0e5e1f58799e683bcb341a278c",
+    "locator": "p. 2 nomenclature; p. 3 Eq. (1) and activity standards; p. 6 Table 3, 50 C, psat row with footnote b (liquid at 0.1 MPa below 100 C).",
+    "basis": "Ion molality standard m0=1 mol/kg, pure-liquid water activity. Source is 2 H2O <-> H3O+ + OH-. Formal H+ := H3O+ - H2O gives H2O <-> H+ + OH- and a_H3O=a_H*a_water, retaining Kw and one explicit water activity. Adopted formal-species convention; no hydronium parameters substituted.",
+    "rounding": "pKw is the published table value, rounded to 0.01; no falsely precise recomputation."
+  },
+  "acid_permittivity": {
+    "adopted": true,
+    "value": 6.663182866950002,
+    "coefficients": [
+      -15.731,
+      0.12662,
+      -0.00017738
+    ],
+    "range_K": [
+      293,
+      363
+    ],
+    "basis": "CRC nominal atmospheric-pressure static relative permittivity, adopted at fixed 323.15 K; pressure dependence unquantified."
+  },
+  "row_tolerance": 1e-10,
+  "tighter_row_tolerance": 1e-12,
+  "numerical_pressure_criterion_Pa": 1.0,
+  "charge_tolerance_mol": 1e-12,
+  "inventory_tolerance_mol": 1e-10,
+  "log_fugacity_tolerance": 1e-08,
+  "log_reaction_tolerance": 1e-08,
+  "relative_pressure_tolerance": 1e-08,
+  "interval_grid_points": 9,
+  "calibration_label": "fixed-parameter comparison; historical calibration overlap unresolved",
+  "local_fit": false,
+  "reference_molalities_mol_kg": [
+    1e-08,
+    1e-10,
+    1e-12,
+    1e-14
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "source_revision": "2e3a1440d5d2a823b6507bde97dba5eea51bdff7",
+  "engine_source_tree": "f0578e1028754a1a7f4ee665c1f0e271d4ab9de4",
+  "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-875-diagnose-the-8-bubble-pressure/analyses/2026-acetic-acid-reacting-vle/../../.venv/bin/python",
+  "package": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-875-diagnose-the-8-bubble-pressure/engine/src/epcsaft/__init__.py",
+  "extension": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-875-diagnose-the-8-bubble-pressure/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so",
+  "input_sha256": {
+    "inputs/measurement-lineage.json": "86d83d2683d20c00149c333a4fc2434ff7fed9565ff474e462b653b80ee831a4",
+    "inputs/reactions.json": "dbba7c166e8a23664e07172cf5a2dd40b2b2c9e3e5691c6bbb07193f29b3d142",
+    "inputs/source-notes.md": "ba2f790dd28c558f75c4e64af4f8128b2fed9a6759982047bad23cd0af9cdb62",
+    "inputs/parameters.json": "26a380d490f690f2dbb23a51727ea4f586b6b45ef0a3fb22d39ed5b00fa0fed6",
+    "inputs/bernatova-2006.json": "6dad6011d8aca7f1c48d02fcb499105d5280b2be4109ec10fbf9b71ca890b4a7",
+    "inputs/measurements.csv": "25dcfe07fa5c056f46554a8fe9223191729c0d605a811c329ad5227c5b2cd4aa"
+  },
+  "probe_sha256": "173ef3041efcca941b4cd761dce05b5e108f0f9b9d741bcb87a69077aa701745",
+  "temperature_K": 323.15,
+  "loaded_binary_sha256": {
+    "/home/tnnrpolley21/.cache/epcsaft-hsl/coinhsl-2023.11.17/lib/x86_64-linux-gnu/libcoinhsl.so": "88932e19f923f7129bd502f24e7203c768d0e95bd9093c852554389dfe5c363f",
+    "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-875-diagnose-the-8-bubble-pressure/build/engine-meson/shared/libepcsaft_native.so": "31ef187921b56a070b715c1763f009b445396a4af735e90f10d3c22a9a220e72"
+  }
+}

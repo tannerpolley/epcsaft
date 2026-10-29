@@ -1,0 +1,50 @@
+{
+  "jiang1996-hcl-li/source.csv": {
+    "retained": "results/issue-901-profile-r2/point-11/jiang1996-hcl-li/source.csv",
+    "sha256": "dff01ff8ff0137bc018e550426c5c435423ef736c2b931be192a510ab5ed9a58"
+  },
+  "khoo1977-hcl-ca/native-mappings.txt": {
+    "retained": "results/packet-readback-r4/jiang1996-hcl-li/native-mappings.txt",
+    "sha256": "3b14ba52d81ad9c541491ddb96931cea69597adc3ab650e38f7bf3100aa64ea1"
+  },
+  "khoo1977-hcl-ca/source.csv": {
+    "retained": "results/issue-901-profile-r2/point-11/khoo1977-hcl-ca/source.csv",
+    "sha256": "fb44e907f6d7ff58de49ac96775a1d333641749ed9bd9df4de83e76a0f8c9a91"
+  },
+  "khoo1977-hcl-mg/native-mappings.txt": {
+    "retained": "results/packet-readback-r4/jiang1996-hcl-li/native-mappings.txt",
+    "sha256": "3b14ba52d81ad9c541491ddb96931cea69597adc3ab650e38f7bf3100aa64ea1"
+  },
+  "khoo1977-hcl-mg/source.csv": {
+    "retained": "results/issue-901-profile-r2/point-11/khoo1977-hcl-mg/source.csv",
+    "sha256": "7a9ceafd08a707977e885e5912ccc9e076c001b2fd077d4e0fe38efd30b1d014"
+  },
+  "numerical/native-mappings.txt": {
+    "retained": "results/packet-readback-r4/jiang1996-hcl-li/native-mappings.txt",
+    "sha256": "3b14ba52d81ad9c541491ddb96931cea69597adc3ab650e38f7bf3100aa64ea1"
+  },
+  "roy1980-hcl-mg/native-mappings.txt": {
+    "retained": "results/packet-readback-r4/jiang1996-hcl-li/native-mappings.txt",
+    "sha256": "3b14ba52d81ad9c541491ddb96931cea69597adc3ab650e38f7bf3100aa64ea1"
+  },
+  "roy1980-hcl-mg/source.csv": {
+    "retained": "results/issue-901-profile-r2/point-11/roy1980-hcl-mg/source.csv",
+    "sha256": "78e4a07de04a02c614eb3db650df5ffdffe50c7780ea792edc6395fb63a3b5e7"
+  },
+  "training/columns.csv": {
+    "retained": "results/issue-901-profile-r2/replay/columns.csv",
+    "sha256": "de75ff9c485606bc15c2cdad7a2c0f25286a00e37ab09f3fb52cf9eff8c24434"
+  },
+  "training/native-mappings.txt": {
+    "retained": "results/packet-readback-r4/jiang1996-hcl-li/native-mappings.txt",
+    "sha256": "3b14ba52d81ad9c541491ddb96931cea69597adc3ab650e38f7bf3100aa64ea1"
+  },
+  "training/states.csv": {
+    "retained": "results/issue-901-profile-r2/replay/states.csv",
+    "sha256": "2ce718f0359d08d3d6e8d02040ff0c3094c25ada6259797fe83d88e66cf85dfd"
+  },
+  "training/training.csv": {
+    "retained": "results/issue-901-profile-r2/replay/training.csv",
+    "sha256": "7ab4553ffd66c980573ae2305b9257d2cf77780956391b0b03a8e5fd855fde2a"
+  }
+}

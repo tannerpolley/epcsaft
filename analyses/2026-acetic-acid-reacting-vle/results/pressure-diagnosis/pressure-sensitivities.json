@@ -1,0 +1,128 @@
+[
+  {
+    "probe": "kij-delta--0.01",
+    "x_water": 0.5781,
+    "pressure_Pa": 11539.13373743079,
+    "change_from_neutral_Pa": -398.0708789039618
+  },
+  {
+    "probe": "kij-delta-+0.01",
+    "x_water": 0.5781,
+    "pressure_Pa": 12349.231846981469,
+    "change_from_neutral_Pa": 412.0272306467177
+  },
+  {
+    "probe": "cross-no-size-factor",
+    "x_water": 0.5781,
+    "pressure_Pa": 11732.825490811518,
+    "change_from_neutral_Pa": -204.3791255232336
+  },
+  {
+    "probe": "cross-size-factor-square",
+    "x_water": 0.5781,
+    "pressure_Pa": 11869.067644031946,
+    "change_from_neutral_Pa": -68.13697230280559
+  },
+  {
+    "probe": "cross-volume-correction--0.01",
+    "x_water": 0.5781,
+    "pressure_Pa": 11885.313980176805,
+    "change_from_neutral_Pa": -51.890636157946574
+  },
+  {
+    "probe": "cross-volume-correction-+0.01",
+    "x_water": 0.5781,
+    "pressure_Pa": 11989.61804259462,
+    "change_from_neutral_Pa": 52.413426259869084
+  },
+  {
+    "probe": "kij-delta--0.01",
+    "x_water": 0.6673,
+    "pressure_Pa": 11843.301444203948,
+    "change_from_neutral_Pa": -383.4983327274949
+  },
+  {
+    "probe": "kij-delta-+0.01",
+    "x_water": 0.6673,
+    "pressure_Pa": 12622.692386297982,
+    "change_from_neutral_Pa": 395.89260936653955
+  },
+  {
+    "probe": "cross-no-size-factor",
+    "x_water": 0.6673,
+    "pressure_Pa": 12045.104022158184,
+    "change_from_neutral_Pa": -181.69575477325816
+  },
+  {
+    "probe": "cross-size-factor-square",
+    "x_water": 0.6673,
+    "pressure_Pa": 12166.094386718332,
+    "change_from_neutral_Pa": -60.70539021311015
+  },
+  {
+    "probe": "cross-volume-correction--0.01",
+    "x_water": 0.6673,
+    "pressure_Pa": 12180.55701082787,
+    "change_from_neutral_Pa": -46.24276610357265
+  },
+  {
+    "probe": "cross-volume-correction-+0.01",
+    "x_water": 0.6673,
+    "pressure_Pa": 12273.584043637977,
+    "change_from_neutral_Pa": 46.784266706534254
+  },
+  {
+    "probe": "kij-delta--0.01",
+    "x_water": 0.7683,
+    "pressure_Pa": 12104.125934855385,
+    "change_from_neutral_Pa": -341.9537829340479
+  },
+  {
+    "probe": "kij-delta-+0.01",
+    "x_water": 0.7683,
+    "pressure_Pa": 12802.589373392113,
+    "change_from_neutral_Pa": 356.50965560268014
+  },
+  {
+    "probe": "cross-no-size-factor",
+    "x_water": 0.7683,
+    "pressure_Pa": 12296.94147686715,
+    "change_from_neutral_Pa": -149.13824092228242
+  },
+  {
+    "probe": "cross-size-factor-square",
+    "x_water": 0.7683,
+    "pressure_Pa": 12396.024628226633,
+    "change_from_neutral_Pa": -50.055089562800276
+  },
+  {
+    "probe": "cross-volume-correction--0.01",
+    "x_water": 0.7683,
+    "pressure_Pa": 12407.929316082622,
+    "change_from_neutral_Pa": -38.15040170681095
+  },
+  {
+    "probe": "cross-volume-correction-+0.01",
+    "x_water": 0.7683,
+    "pressure_Pa": 12484.810156696085,
+    "change_from_neutral_Pa": 38.730438906652125
+  },
+  {
+    "probe": "water-volume-0.04509",
+    "x_water": 0.5781,
+    "pressure_Pa": 11938.894574448825,
+    "change_from_neutral_Pa": 1.6899581140733062
+  },
+  {
+    "probe": "water-volume-0.04509",
+    "x_water": 0.6673,
+    "pressure_Pa": 12228.671689962737,
+    "change_from_neutral_Pa": 1.8719130312947527
+  },
+  {
+    "probe": "water-volume-0.04509",
+    "x_water": 0.7683,
+    "pressure_Pa": 12448.145486194368,
+    "change_from_neutral_Pa": 2.0657684049347154
+  }
+]

@@ -1,0 +1,15 @@
+{
+  "Native actions and fitting columns": "985 rows; maximum A/B scaled difference zero",
+  "Equilibrium corpora": "Zero differing values; baseline admission and refusal inventories preserved",
+  "Explicit native cases": "19 passed, zero failures",
+  "Key solves and frozen work": "All work counts identical; maximum state difference zero",
+  "F1 reference work": "295 computations; 3388 columns; 1223 density solves; 1426 equilibrium iterations",
+  "Reacting heat-capacity work": "3 computations; 280 columns; 11 density solves; 13 equilibrium iterations",
+  "F1 serial CPU / s": "A 4.880778; B 4.749343; ceiling 20.349267",
+  "Reacting heat-capacity serial CPU / s": "A 0.633522; B 0.647181; ceiling 2.473741",
+  "Full fit wall / s": "A 7.858261; B 7.909250; ceiling 120",
+  "Full fit critical-path CPU / s": "A 6.015962; B 6.033381",
+  "Same-host full-fit control / s": "9.161995\u20139.269454",
+  "Affected and full checks": "Passed",
+  "Native lint and sanitizers": "Passed for the implementation; frozen-head records retained with PR evidence"
+}

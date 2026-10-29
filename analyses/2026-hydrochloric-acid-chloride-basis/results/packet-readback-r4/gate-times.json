@@ -1,0 +1,18 @@
+{
+  "binary-guards.json": {
+    "wall_seconds": 37.51050467700043,
+    "elapsed_seconds": 37.51050467700043
+  },
+  "numerical.json": {
+    "wall_seconds": 0.02695995199974277,
+    "elapsed_seconds": 37.53746462900017
+  },
+  "preservation.json": {
+    "wall_seconds": 74.46830308100107,
+    "elapsed_seconds": 112.00576771000124
+  },
+  "admission.json": {
+    "wall_seconds": 0.00829906199942343,
+    "elapsed_seconds": 112.01406677200066
+  }
+}

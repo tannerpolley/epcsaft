@@ -1,6 +1,10 @@
 #pragma once
 #include "core/convergence.hpp"
+#include "equilibrium/problem.hpp"
+#include "core/trace.hpp"
+#if __has_include(<HSLLoader.h>)
 #include <HSLLoader.h>
+#endif
 #include <IpIpoptApplication.hpp>
 #include <IpTNLP.hpp>
 #include <algorithm>
@@ -74,6 +78,7 @@ inline const std::string& linear_solver() {
         if (!name.empty() && name != "mumps" && name != "ma57")
             throw std::invalid_argument("EPCSAFT_IPOPT_LINEAR_SOLVER must be mumps or ma57, not " + name);
         if (name == "mumps") return name;
+#if __has_include(<HSLLoader.h>)
         const char* path = std::getenv("EPCSAFT_HSL_LIBRARY");
         char message[512] = "loaded library has no MA57";
         const bool ma57 = LSL_loadHSL(path && *path ? path : nullptr, message, sizeof message) == 0
@@ -81,8 +86,25 @@ inline const std::string& linear_solver() {
         if (name == "ma57" && !ma57)
             throw std::invalid_argument(std::string("EPCSAFT_IPOPT_LINEAR_SOLVER=ma57 is unavailable: ") + message);
         return std::string(ma57 ? "ma57" : "mumps");
+#else
+        if (name == "ma57")
+            throw std::invalid_argument("MA57 is unavailable: Ipopt was built without its linear-solver loader");
+        return std::string("mumps");
+#endif
     }();
     return chosen;
+}
+
+inline void observe_ipopt(IpoptDiagnostics& d, core::Scope* scope, const IpoptIteration& iteration) {
+    ++d.callbacks;
+    if (iteration.mode == int(Ipopt::RestorationPhaseMode) && (!d.last || d.last->mode != iteration.mode)) {
+        ++d.restoration_entries;
+        if (!d.first_restoration_iteration) d.first_restoration_iteration = iteration.iteration;
+    }
+    d.last = iteration;
+    if (scope) scope->probe("ipopt_iteration",
+        {double(iteration.mode), iteration.objective, iteration.inf_pr, iteration.inf_du, iteration.mu, iteration.step_norm, iteration.regularization,
+         iteration.alpha_pr, iteration.alpha_du, double(iteration.line_search_trials)}, iteration.iteration);
 }
 
 // One checked option/lifecycle owner for exact curvature and estimation's BFGS.
@@ -98,7 +120,25 @@ inline std::pair<Ipopt::ApplicationReturnStatus, Ipopt::ApplicationReturnStatus>
     const char* options_file = std::getenv("EPCSAFT_IPOPT_OPTIONS_FILE");
     // Clones share this thread's option registry and journalist (#646); an options file's output_file must not.
     thread_local const Ipopt::SmartPtr<Ipopt::IpoptApplication> base = ::IpoptApplicationFactory();
-    const Ipopt::SmartPtr<Ipopt::IpoptApplication> app = options_file && *options_file ? ::IpoptApplicationFactory() : base->clone();
+    Ipopt::SmartPtr<Ipopt::IpoptApplication> logged;
+    if (auto* trace = core::current_trace(); trace && trace->ipopt_log) {
+        auto& request = *trace->ipopt_log;
+        using Application = Ipopt::SmartPtr<Ipopt::IpoptApplication>;
+        if (!request.attempted) {
+            request.attempted = true;
+            auto holder = std::make_shared<Application>(::IpoptApplicationFactory());
+            if ((*holder)->OpenOutputFile(request.destination, Ipopt::J_ALL)) {
+                (*holder)->Jnlst()->GetJournal("OutputFile:" + request.destination)->SetPrintLevel(Ipopt::J_MAIN, Ipopt::J_ITERSUMMARY);
+                request.application = std::move(holder);
+            } else {
+                request.error = "Ipopt log could not be opened";
+                trace->incomplete = true;
+            }
+        }
+        if (request.application) logged = *std::static_pointer_cast<Application>(request.application);
+    }
+    const Ipopt::SmartPtr<Ipopt::IpoptApplication> app = options_file && *options_file ? ::IpoptApplicationFactory()
+        : Ipopt::IsValid(logged) ? logged->clone() : base->clone();
     const auto options = app->Options();
     const auto admit = [](bool ok) { if (!ok) throw std::invalid_argument("Ipopt option rejected"); };
     admit(options->SetIntegerValue("print_level", 0));
@@ -119,8 +159,10 @@ inline std::pair<Ipopt::ApplicationReturnStatus, Ipopt::ApplicationReturnStatus>
         admit(options->SetNumericValue("bound_relax_factor", 0.0));
     }
     admit(options->SetStringValue("linear_solver", linear_solver()));
+#if __has_include(<HSLLoader.h>)
     admit(options->SetIntegerValue("ma57_pivot_order", 2));          // AMD, as measured in #509
     admit(options->SetStringValue("ma57_automatic_scaling", "yes")); // unscaled, a trace moiety row reads as dependent
+#endif
     if (options_file && *options_file) {
         std::error_code error;
         if (!std::filesystem::is_regular_file(options_file, error) || !std::ifstream(options_file).good())

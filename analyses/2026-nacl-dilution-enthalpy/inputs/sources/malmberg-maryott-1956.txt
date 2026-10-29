@@ -1,0 +1,498 @@
+Journal of Research of the National Bureau of Standards                                       Vol. 56, No. I, January 1956             Research Paper 2641
+
+
+                 Dielectric Constant of Water from 0 to 100 C                                                           0                0
+
+
+
+                                                     C. G . Malmberg and A. A. Maryott
+                             An equal ratio arm, capacitance-conductance bridge, operated at frequencies below 100
+                       kilocycles per second, was med to measure the dielectric constant of water with an accuracy
+                       of better than 0.1 percent at 5-degree intervals over the range .0° to 100° C. At 25° C the
+                       dielectric constant was found to have the value 78.30, which is about 0.3 percent lower than
+                       t hat usually accepted. The data fit the equation
+                                              E=   87. 740 - 0.400081+ 9.398(10- 4)t L           1.410 (10- 6)13,
+                       with a maximum deviation of 0.01 unit in dielectric constant.                            The experimental method
+                       and sources of error are considered in some detail.
+
+                            1. Introduction                                                 shielding, either eliminates or fixes the influence of
+                                                                                            ground admittances and interhranch couplings. A
+   Numerous determinations of the dielectric con-                                           schematic diagram of the circuit is shown in figure 1.
+stant of water have been r eported in the literature                                        The basic network and its components, with the
+during the past half century. 1 However, much of                                            exception of the unknown arm and standard capaci-
+this work was not conducted with sufficient accuracy                                        tor, are substantially the same as those described
+to provide data adequate for reference purposes.                                            previously [7] .
+Several of the more recent investigators [1 ,2,3,4,5],2                                        The unknown arm contains a shielded 3,OOO-ohm
+employing varicd experimental techniques in which                                           resistor, R, and a small capacitor, 0, in parfllel with
+the accuracy was stated or has been inferred to b e                                         the guarded capacitance, Ox, of the test cell in order
+of the order of 0.1 percent, report values that are in                                      to provide convenient "zero" settings for the stand-
+close agreement at room temperature but not at                                              ards, Om and R 4 , of the measuring arm. Th e capaci-
+higher and lower temperatures. Discrepancies                                                tance of the test cell is m easured in terms of Om by
+amounting to a percent or more exist at higher                                              connecting the cell in parvUel first with 0 and then
+tempera tures.                                                                              with Z5 of the Wagner earth by means of the switch,
+   This investigation was undertaken to r edetermine                                        K . Tn the latter case the cell is effectively removed
+the dielectric constant of water over the range 0 0 to                                      from the main bridge circuit because its eartb-
+100 0 C with an accuracy better than 0.1 percent . A                                        potential electrode is connected to ground, and
+low-frequency bridge method with a Wagner earth                                             admittances from any corner of the bridge to ground
+to permit the use of three-terminal dielectric cells                                        do not affect the condition s of balance.
+was employed. The various methods of measure-
+ment, generally some form of bridge or resonance
+method, are all more or less subject to errors assoc-
+iated with the residual impedances of the network
+that are enhanced when the medium possesses
+appreciable conductivity. The present assembly
+has the advantage of facilitating the minimization,
+ready control, and accurate evaluation of these
+residual errors, and of simplifying certain problems
+regarding the design of cells suitable for accurate
+absolute measurements.
+   The values of dielectric constant reported in this
+investigation are significantly lower than previously
+assigned values l6], about 0.3 percent at 25 °, but the
+variation of dielectric constant with temperature is
+substantially the same as reported by Wyman and
+Ingalls [5] except at the lowest temperatures.
+
+                             2 . Apparatus
+    The a-c bridge is of the equal-ratio arm, capaci-
+. tance-conductance type, with a Wagner earth.
+ The Wagner earth permits use of either two- or
+  three-terminal cells, and in conjunction with proper
+  1 :For jan extensive compilation and comparison of data prior to 1937, see N. E
+Dorsey, Properties of ordinary water substance, AOS Monograph, (Reinhold
+Publishing 00., New York, N . Y., 1940).
+  2 Figures in brackets ind icate the Iiteratnre references at the end of this]paper.           FIGURE    1.   Schematic diagram of the bridge circuit.
+
+         369131-56--1                                                                   1
+   The three cells used were designed for "absolu te"           extendin g from the bottom of the cell, as shown at
+measurements, th e insulating supports being lo cated           th e left of figure 3, to facilitate the introduction and
+where they should not affect the desired interelec-             manipulation of fluids. Coaxial cable , with the
+trode capacitances. Intercomparisons between the                outer conductor grounded, connects the cell to the
+three cells, using media of various dielectric con-             appropria te bridge terminals. Couplin g between
+stants, indicated that these capacitances varied                the exposed, ear th-po tential electrode and other com-
+linearly with the dielectric constant of the medium.            ponents of the network is prevented by proper
+Because accurate measurements become increas-                   shielding. As lead, shield, and guard capacitances
+ingly difficult as the conductivity of the medium               are all effective directly to ground, only the capaci-
+increases, the materials of construction of the two             tance between the test electrodes, D an d H, is
+cells, A and B, used with water, were selected to               measured. This capacitance in air is about 34 fJ./-d .
+minimize electrolytic contamination. Cell C was                      Cell H, shown at the right in figure 3, is of the
+used only for intercomparisons with liquids of lower            differential type. It was constructed from a Gen-
+dielectric constant and conductivity .                          eral Radio type 568- D variable a ir capacitor modified
+   Cell A is a fixed, three-terminal, cylindrical capaci-       in several respects. The number of plates was re-
+tor. A schematic drawing is shown in figure 2.                  duced to give a replaceable capacitance of about 28
+The base material is copper, with the electrode                 fJ.fJ.f, and all metal surfaces were tinn ed. The steatite
+surfaces coated with pure tin. The central, or high-            insula tors were replaced with Pyrex glass and par-
+potential, electrode, H, is supported by th e grounded           tially shielded to minimize any effect of the insulation
+guard electrode, G. Electrical insulation and a                 on the differential capacitance. The unit was
+liquid-tight seal are provided by O.Ol-in. T eflon              mounted in a gold-plated brass case. The rotor
+gaskets on each side of the silvered copper spacer,             control handle is variable between fixed stops
+F , and by a Bakelite bushing on the upper sid e.               mounted on the cover. The high-potential stator
+The high-potential terminal is electrostatically iso-           plates bracket th e earth-po tential rotor plates when
+lated from the case by the removabl e shield , S.               interleaved to avoid varying the stray fields through
+The guard electrode is supported on the outer case,             the insulating supports . Both arc isolated from
+which, in part, serves as the earth-po tential electrode        the case except when the cell is used as a two-
+D, by means of a Pyrex-glass ring and O.Ol-inch                  terminal capacitor. Then the rotor plates and the
+Teflon gaskets, and held by six bolts insulated from            case are connected together. A comparison (table 1)
+the guard electrode by Bakelite bushings. To prc-               of the values of dielectric constant obtained for a
+vent the trapping of gas in the annular space between
+the guard and the earth potential electrodes when               given medium when th e cell is used as both a two-
+the cell is being filled with liquid, four l-mm holes           and a three-terminal capacitor provides a check of
+were drilled through G at level E . .A Pyrex-glass               the linearity of its replaceable in terval of capacitance
+reservoir is attached to a silvered copper t ube                with respect to dielectric constant. Any nonlinear
+                                                                effects associated with the insulatin g supports should
+                                                                differ in the two cases.
+
+
+
+
+           1--------1
+           I INCH
+
+            "FI GURE    2.   S ectional view of cell A.                  F I GU RE   3.   Cell A (left) and cell B (right).
+
+                                                            2
+   Cell C is also of the diO'e l'enLi al type, and similar                           4. Procedure a n d Errors
+in design to cell B. It co nsists of a Ge neral Radio
+type 539- J variable ail' capacitor, mounted in a                     If Ox is the true in terclectrod e capacitance of, t he
+brass con tainer, and has a replaceable capacitance                fixed , guarded cell, A , when filled with a m edium of
+of abou t 500 /lpf. Both electrodes are insulated                  dielectric constan t, €x, then
+from th e case to p ermit usc as either a three- or a
+two-termin al capacitor.                                                                                                            (1)
+    The standard capacitor, Om, is a General Radio
+type 722- D variable precision capacitor wi th the                 where 0. is the capacitance in vacuum, Ok the capaci-
+following modifications: The original wood case,                   tance in air', and € k the dielectric constant of air. If
+lined with sh eet copper , was replaced by a m etal                the residual impedances associa ted with the bridge
+case to improve the stability of capacitance ; in                  network are n egligibJy small , the inter electrode
+addition, an ex ternal worm and gear drivc was                     capacita nce is obtained chrectly as t he difference in
+mounted on th e panel to expand the scale anel to                  capacitance of the standard capacitor, Om - O~,
+allow a preeision of setting of 0.01 /l/lf on the 100 to           wher e Om and C~ ar e the capacitances m easured
+1,100 p/lf range. The capacity of this in terval was               with the cell co nnected to the appropr iate bridge
+assumed to be exact and was calibrated internally                  termin als and with the ear th-potential electrode
+in th e con lTentional stepwise m anner , using th e re-           connected directly to ground , respectiHly. In prac-
+placeable air capacitances of cells A and R a nd other             tice, errors tha t may seriously limit Lbe accuracy of
+larger anel smaller fixeel increments. Calibrations                Lhe measureme nts of dielectric co nsta nt can arise
+malte several times during th e course of the measure-             from th e efl"ects of residual impedances associated
+m ents on water and with th e differen t increme nts               wi Lh the leads and components of the bridge circui t.
+were consiste nt to 0.05 /l/lf or b etter Lhroughou t the          Although tb ese elTor s ca n be minimized by car eful
+range of the precision capacitor. The total backla~h               design of the n etwork and the selecLion of com-
+associated with the settin g of this capn.citor amoun ts           ponents, by opLimum choice of fr eq uency and cell
+ to abou t 0.005 /l/lf on th e 100 to 1,100 /l/lf range and        capacitance, and by avoiding excessively high con-
+about one-ten th of this value on th e 25 to 110 /l/lf             du ctivities r e ulting from eleetroly tie contamination
+range. :M ica capacitors, General Radio type 505,                  of th e medium, it is often not feasible Lo reduce these
+were plugged to the terminals of th e precision                    errors to n egligible propor tions, and procedures
+capaci tor to extend its range as needed . These were              must be devised for the ir evaluaLion.
+calibra ted in terms of th e standard capacitor at th e               If the admiLtances between each test elecLrode
+r equired frequencies, and over a period of a year                 and th e guard electrode of the cell arc neglected for
+ th eir capacitan ccs were found to remain co nstant to            the moment, the actual network can be simulated
+ beLter Lh an 0.01 percent.                                        by that shown in figure 4. The effective capacitances
+    The apparatus was con tain ed in a co nsLant-tem-              of the ratio arms are represented by Ol a nd O2 , the
+perature room maintained at 23° C. The cells were                  self-inductan ce of the standard condenser and its
+placed in a grounded oil ba th co n trolled to b etter th an       leads by lm, the effective series inductance of tho
+0.01 deg and the temperatures ele tennill ed with a
+platinum resistance thermometer. Cell A was im-
+merseel to within 1 inch of th e top and th e exposed
+portion provided with adequate thermal shielding.
+Experimental evidence showed th at withou t such
+shielding, significan t thermal g ra dients existed within
+ th e cell at th e higher temperatures. Cells Rand C
+ were immersed so that the oil just covered th e lids
+and were used only for m eas urements at 25 ° C.
+                       3. Water
+   Distilled water was obtained as r equired from th e                                                                          B
+regular supply piped to th e labora tory . This supply
+i free of ammonia and has an average conductivity
+of 0.5 micromho/cm at 25°, due mainly to dissolved
+CO2 • Each sample was boiled in the test cell prior
+to m easurement. This procedure was effective in
+removing dissolved air in order both to eliminate th e
+te ndency for bubbles to form between th e electrodes
+and to r educe th e CO 2 content, thereby decreasing
+conductivity . An atmosphere of hydrogen was
+th ereafter maintained in the cell. After thorough
+cloaning and leaching of th e cell, it was possible to
+keep the co nductivity of th e water in the range 0.1
+Lo 1.7 micromho Jcm at all temperatures and to avoid
+rapid drifts, which would interfere with th e precision               FIG U R E     4. Schematic circuit showing the distribution 0/
+of capacitance balance.                                                           residual im pedances in the bridge network.
+
+                                                               3
+resistance box by l4' the cell resistance by R x , and              1.2 J.'h,. was determined experimentally and the
+the inductance and resistance of the leads to the                   appropn~te     correction made, as indicated by the
+cell by land r. The residual impedances associated                  broken Ime of figure 5. Extrapolation of this latter
+with the fixed 3,000-ohm r esistor, R, and small con-               curve to infinite frequency then gives the cell capaci-
+denser, C, of the unknown arm are neglected, as they                tance, corrected for the frequency-dependent errors.
+do not alter the error analysis to follow. The cell                 D eterminations of lm - l were made both during the
+capacitance is given by                                             normal course of the measurements on water at the
+                                                                    lowest temperatures, where electrode polarization was
+                                                                    negli~ible at a~ but the lowest frequencies, and by
+                                                                    plUgglllg suffiCIent capacitance in the form of the
+where, neglecting terms of higher order,                            mica standards across the emp ty cell and standard
+                                                                    condenser to cause a readily measurable change of
+                                                                    capacitance balance with frequency. The uncer-
+           Ca = (Ol - C2) (R d R 4- R 1/R D,                        tainty in the value of the dielectric constant of water
+           Ob        l/R; + l~/R~2 - l4/m,                          associated with these corrections is defini tely less
+                                                                    than 0.01 unit.
+           Oc= - 2rOx/Rx,                                           . Of t.he remaining terms in eq (2) , Cc is not signif-
+           Od = w 2lm (0~ - 0~2) - w 2lC; ~w 2 (lm -l)0; .          lCant III th e present case as long as good electric
+                                                                    contacts are main tained. The sum of the errors
+Ce , the capacitance due to electrode polarization,                 Ca + C b , which depend upon the r esistance balance
+varies approximately as w- n , where w is the angular               was obtained by a modification of the pro cedUl'~
+frequency and n generally lies between 1.5 and 2 but                previously described [7]. The dielectric cell was
+is virtually constant for a given experiment and                    replaced by a conductivity cell of negligible capaci-
+temperature. The unprimed symbols refer to the                      ta~ce , 'w ith l kept very nearly the same.         The
+case where the cell is connected in the normal man-                 reSIstance of the cell filled with distilled water was
+ner, and the primed symbols to the case where the                   then .decreased in small steps by the addition of a
+earth-po tential electrode is connected directly to                 solutlOn of K Cl. The change in Cm required to
+ground.                                                             rebalance the bridge was observed at about la-ohm
+   The errors attributable to Cd and Ce, b eing func-               intervals. The entire range of R 4 required for the
+tions of th e frequency , were eliminated in the fol-               measurements on water, namely, 1,000 to 3 000
+lowing manner. In each instance values of Om were                   ohms, was calibrated in this manner, using a 'fre-
+obtained at 3, 6, 12, 24, 48, and 96 kc. A representa-              quency sufficiently high to avoid any effects of
+tive plot of such data is shown by the solid line of                electrode polarization. The range 1 000 to 2 600
+figure 5. At the lower frequencies the variation of                 ohms. was also ca.librated directly, ~sing cell' A .
+Om is due predominately to electrode polarization,                  In thIS case the r eSIstance was changed by the addi-
+and the error associated with the lead inductances                  tion or r emoval of small amounts of CO2 • Both
+is negligible or greatly minimized , whereas t he con-              calibrations were in satisfactory agreement. The
+verse is true at the higher frequencies. The unbal-                 correction for Oa+ C b , which , in the extreme case,
+ance in lead inductances, lm- l, which amounted to                  amounted to about 0.07 uni t in dielectric constant,
+                                                                    should not lead to an uncertainty greater than
+                                                                    0.005 unit.
+                                                                       D etermination of the replaceable capacitance of
+                                                                    the cell when filled with dry air, Ok, was made as
+         2524
+                                                                    part of the procedure employed for calibrating the
+                                                                    standard capacitor. Thus, Ok was equal to the total
+                                                                    interval of capacitance that could be covered in
+         2523
+                                                                    integral step~ of .ok divided by the number of steps.
+                                                                    Four determlllatlOns of Ok, made at various times
+   ";i .2522                                                        dur~ng. the measurements on water, gave an average
+   ::L
+    E-                                                              deVIatlOn of 0.007 percent. The variation of OJ
+   o                                                                with temperature was obtained from measurements
+                                                                    at.a number of temperatures in the range 0 to 100 0 ,
+                                                                    USlllg the low range of the standard condenser, where
+         2520                                                       a precisio~ of setting of 0.001 J.'J.'f was possible.
+                                                                    When Ok IS corr~cted ~o vacuum, using adequate
+         2519                                                       values for the dlelectn c constant of air [8] the
+                                                                    vacuum capacitance, 0., is given by               ,
+         2518 L..-L.....I._-'-_ _--'-_ _ _ _ _ _..L.._ _..J
+                     9648   24       12               6
+                                    FRE QU ENCY. kc
+
+
+ FIGURE         5.
+              Capacitance Cm plotted on an inverse f requency         The change .with temperature is very nearly the
+                               scale.                               same as predIcted from the linear coefficient of
+           _ _ measured values, ____ after correction for a•.       expansion of copper.
+                                                                4
+
+
+                                                                                                                              J
+   Determinations of the dielectric constant of water                     o                                                      B
+were made in cell A at 5-deg intervals, using two
+or more samples of water at each temperature. As
+a further check on the correction for Oa+ Ob, the use
+of sample of corresponding conductivity was avoid-
+ed. Without exception, t he value of dielectric
+constant obtained at each temperature agreed to
+0.01 unit or better with respect to their m ean.
+   As an over-all ch eck on the accuracy of the m eas-
+urements with cell A, some additional experiments
+were made at 25° 0, using auxiliary cells Band 0
+both as two- and as three-terminal cells. The na-
+ture of the residual errors and th e procedures u sed
+in their evaluation are similar to those discussed
+above for cell A. However, as these cells are of the
+differential type, they r equire twice as many meas-
+Ul'ements of capacitance and associated corrections.
+The dielectric constant of water was redetermined
+in cell B , whereas ethylene chloride and 2-ethyl-                                                    G
+hexanol were m easured in cell O. The latter ma-
+terials were of technical grade. The degree of purity                   FIGUl~E   6.   Schematic cil'cuit fo r the three-terminal cell.
+was immaterial as the sample was used for inter-
+compari on in cell A. The values of dielectric con-
+stant obtained with th e three cells are listed in table
+1. The differences are quite negligible except in                    Op= Ox   [1+w2l2(023 +Ox)+w2l1(013+ Ox) r2(~2233t~x)
+thc case of water, where cell B gives a value about
+0.03 percent larger than cell A. However, a the
+experimental uncertainties associated with cell Bare
+                                                                        r1(R13+ R x)]      l2(R23+ R x) ll(R13+ R x) r2(023 Ox)      +
+at least twice those of cell A, this difference is hardly                  R1 3~              R 23R:       R u R:        ~
+ ignifican t.
+                                                                       rl(013+ 0 X)+r3(01 3R13+ 0 23R 23)+ l3(1 - w20130 23R 13R23).
+                                                                           Rx                           R 13 R 23
+TA BLE 1.   Jntercomparison of values of dielectric constants
+            measured at 25° C with the different cells                                                                                    (4)
+                                         Dielcctric constant                 It is evident from this relation that ignifican t lead
+               Cell
+                                                                             impedances can seriously limit the utility of a three-
+                                                                             terminal cell unles th e admi ttances from each of
+    A .....................................  78. 30,      6.8316     10. 376  th e test electrodes to the guard electrode are kept
+     B{2-termin aL ........................  78. 32,                         small compared to the direct admittance between
+       3·termlllaL ........................  78. 32, ..................... .
+                                                                             th e test electrodes. The procedures described pre-
+     cg:~:~:~~l:::::::::::::::::::::::::: ::::::::::
+                                                          6.831,     10. 377
+                                                          6.831,     10. 378 viously for evalua ting the residual errors arc not en-
+                                                                             tirely valid when the effective capacitance is calcu-
+  • T echnical grade, unpurified.
+                                                                             lated by eq (4) rather than eq (3 ). In th e present
+                                                                             measurements, however, where the admittances to
+    I t was assumed in th e previous analysis that th e . the guard electrode were comparatively small, com-
+te t cell and its leads are adequately represented by putations indicate that the u se of eq (3) should not
+th e series-parallel combination of r, l, and Ox, and lead to an error in dielectric constant greater than
+R x , shown in figure 4, for which the equivalent 0.01 unit in any case. In fact, if any difficulty had
+parallel capacitance is given to a sufficient approxi- arisen from this simplification, it would have be-
+mation by                                                                    come evident at various stages during the course of
+                                                                             th e measurements, as, for example, in a discrepancy
+                                                                             in the calibrations for Oa+ Ob when the conductivity
+                                                                             and dielectric cells were used.
+A more rigorous consideration of its properties as a
+three-terminal impedance with associated leads re-                                             5. Results
+sults in the equivalent circuit of figure 6. D , B, and
+G are the points of connection to the bridge and to
+ground, and D' , B' , and G' are the corresponding
+electrodes of the cell. Analysis of this circuit was
+                                                                                                                   °
+                                                                      The values of the dielectric constant of water
+                                                                     measured over the range 0.1° to 99° fit the equation
+
+made by using the star-mesh transformation [9].
+The equivalent parallel capacitance is given to a
+ ufficient approximation by                                          where t is the temperature in degrees Oelsius.                  The
+                                                                 5
+values computed from this equation are listed in                                                  0.60 -
+table 2, together with the differ en ces b etween t h ese
+values and t hose actually m easured at each of the                                               0 .50 -
+sp ecified temperatures. The maximum difference
+docs not exceed 0.01 unit. The last two column s
+                                                                                                  0.40
+list the values of df /elt and th e temperature coefficien t
+ (l /f) (df/dt). It is int eresting to note that the tem-
+                                                                                                  0.30
+p erature coefficient is remarkably constant ov er
+the entire range. In fact, the al ternative relation
+                                                                                                  0.20
+
+                10g\Of = ] .943 15 -        0.0019720t,                         (6 )        UJ
+                                                                                                   0. 10
+                                                                                            <J
+fits the data n early as w ell as eq (5 ). In this case
+the maximum deviation is 0.02 and the average                                                     0.00
+d eviation 0.01 unit in dielectric constant.
+   It is estimated that the over-all accmacy of the                                              -0. 10
+tabulated values of dielectric constant is ± 0.05 unit
+or b etter , and that the temp erature coefficient is                                            -0.20
+determined to 1 p er cent or b etter at all temperatures.
+                                                                                                 -0.3 0
+TABLE 2 .     Dielectl'ic constant of water and related data at
+                         va rio us temperatures                                                  -0.40
+                                                                                                           0        10       20       30         40      50         60        70      80      90   100
+                                                                    1 d.
+                 • cq (5)    • cq (5) - . obs. 1   - d.jlit                                                                                TEMPER AT URE .oC
+                                                                    • dt
+                                                                                           FJ G URJ,} 7 . Comparison of the di.fIer ences 1: n the values of the
+      °C                                                                                        d-ielectl'ic constant of water obtained by v(!1'io!ls workers .
+       0         87.740       ------------         0.4001      4. 560 X 10- 3
+       0. 1      87 . 700       + 0. 004                                                   fiE = Eliwraturc -E presen t work.
+                                                              ------------                 _ _ _ _ _ _ _ Drake, .Pierce, a nd Dow ( 19aO) .
+       5         85. 763         -. 001             .3908      4.557
+      10         83. 832         -.002              . 3817     4.553                       _     _ _      W yman a nd Ingalls (1938) .
+      15         81. 946         -. 004             . 3729     4.550
+                                                                                           _ _ _ _ Wyma n (1930) .
+                                                                                           _ _ _ _ 1l.kerl o[ a nd Oshr y (1950) . [Ill.
+      20         80. 103         +. 003             . 3642     4. 547                      _ _ _ __ LaLLey, Gatt y, and Da"ies (1931 ) .
+      25         78. 304         +. 003             . 3557     4. 543                             +       AI brigh t (1937) .
+      30         76.546          +. 006             . 347.0    4.539                              •       Albright and Gosting (1946) .
+      35         74 .828         -. 004             . 3395     4.537                                o     '1' . T . Jones a nd R. M. Davies ( 1939) .
+      40         73. 151         +. 002             . 3317     4.534                               o      1vroan of 17 values select ed from literature, L a tlc~r , Gatty , and
+                                                                                                              D a vies (1931) .
+      45         71. 512         +. 004             . 3241     4. 532
+      50         69. 910         - .007             . 3167     4.530
+      55         68. 345           . 000            . 3095     4. 529                         Variou s reported values of the dielectric constant
+      60         66.815          - . 005            . 3025     4.528
+      65         65.3 19         +. 002             . 2958     4.528                       at 25° 0 are compared in table 3. The value of
+      70         63 .857         -. 002             . 2892     4.529                       Lattey, Gatty, and Davies [10) resulted from a sur-
+      75         62. 427         +. 009             .2829      4.531                       vey of the literature prior to ] 930. Although this
+      80         61.027          +. 008             . 2768     4.535
+      8;;        59. 659         +. 001             .2709      4. 54J                      value is closest to t hat obtained h er e, the agreement
+      90         58.3 19         + . 005            . 2652     4. 547
+                                                                                           is not significant b ecause of the wide scatter in the
+      95         57.007          -. 001             . 2597     4.555                       individual results (mea n deviation ± 0.4 u nit) . Th e
+      99         55. 977         - .008                       ------------
+     100         55. 720      -------- - ---        .2544      4.566                       r emaining values, each obtained by a differ ent ex-
+                                                                                           perimental procedure and considered to h ave an
+                                                                                           accuracy of the order of 0.1 p er cent, are roughly 0.3
+                            6. Discussion                                                  p er cent higher than that reported in this investiga-
+                                                                                           tio n. The close agreement between th ese earlier
+   A comparison of the present data witlt those re-                                        values at 25 ° C would appear to b e rather fortuitious
+ported, over a wide range of temperature, by certain                                       in view of the sizable discrepancies exis ting at other
+investigators in the last quarter century is shown in                                      temperatures, as shown by figure 7.
+figure 7. The differ ences b etween the values of di-
+electric constant obtained in the earlier work and the                                     TABLE 3.                Comparison of values of the dielectric constani of
+present investigation are plotted as a function of the                                                                        water at 25° C
+temperature. Smooth curves are shown wher e the
+data were fitted to empirical relations. With re-                                                  ' 25                  M eth od                     Freq ue ncy                    Au t hor s
+spect to the variation of dielectric constant with
+temperature, only the data of Wyman and Ingalls [5],                                              78. 25       Mean of 17 rcported -----.-------.-.-- L a ttey , Gatty. Da ·
+                                                                                                                 va lues prior to 1930.                                         v ios ( 193 1) .
+which were obtained in terms of l'Vyman's [1) value                                              "78. 54       Hesona tors suspcnd ed            4 to 8 1     ~{ c __ _ __
+                                                                                                                                                                             " ' yma n (1930).
+                                                                                                                 in m edium .
+at 25° 0, are in satisfactory agreement with the                                                  78. 57       Standin g \\-a ves in co-     12 to Ti M c. ___ . Dra ke, P i(' rce, Dow
+present m easurem ents over an exten d ed in terval of                                                           axial linc.                                          (1 930) .
+                                                                                                                                             570 kc. __________ Albrigbt (1937) .
+                                                                                                 "78.48        Brid ge ..
+temperature. Although their values are consistently                                              "78.49        Vol t age I'eso~a~;ce ~ ~ ~ ~ ~
+                                                                                                                                             670 k c ______ . __ ._ Jones and D av ies
+higher, the temperature coefficient derived from the                                                                                                                  (1939) .
+                                                                                                  78.30        Br id gc _._. ___ . _________ 3 to 96 kc. _______ Present work.
+two sets of data agrees to better than 1 percent at
+all temperatures above 20° O.                                                                a Values a pparent ly            relative to a il' rath er t han to vacuum .
+
+                                                                                       6
+    Althoug h t he work of Jones an d Davies [4] was                resonators, estimates baserl upon simple U-loops,
+of high precision a nd conducted with unusual care                  which simula te th e form of inducLanee in some of the
+and atte llt ioll Lo possible sources of eJ'l'or , the method       resonators , indicate thaL an errOl" of the order of
+wa a com pa rat.ive olle in which benzene was em-                   several tenths of 1 percen L is plausible. From a
+ployed as t he primary stan dard. Conseq uently, any                study of the b ehavior of se \Teralresonators when the
+error in the assumed value for t he dielectric constant             ionic conductivity of th e water was increased by the
+of benzene \\ ould result in a percen tage error nearly             addition of small amounts of K CI, Wyman showed
+twice as large i n the value for water. Furthermore,                that the resulting error al 0 gave high values for
+direct compari sons of water and b enzene in t he sam e             the dieleetric constant, but concluded that the error
+ cell werr not feasible , so that adeli tional cells and            was not significan t in th e case of pure water. How-
+liquids of intermediat e di electric constant were re-              ever, estimates based upon the data presented, after
+ quired . 1'110 number of operations upon which the                 making allowance for th e small but significant con-
+value fo r watcr was dep en dent was th er eby inereased            tribu tion to th e cond uctiviLy arising from dielectric
+ and Lbe over-all uncertai nties of the method somewh at            loss, indicate a remaining error of th e order of 0.1
+ en itancecl. In view of th ese limi tation s t he difference       percent in m ost instances.
+ beLween t hi s an d the present work does not appear                   The procedure of Drake, Pierce, and Dow in-
+ to be excessively large. I n fact, if the data of Jones            vol ved , in essence, the determination of th e half
+ and Davies are corr ected for th e value of benzene                wavelength of the standin g waves set up by a source
+recently recommended [6], this difference is re-                    of known frequency in a 4-m, ver tical, eo axial pipe
+ duced to abou t 0.1 percent.                                       filled with water. Except for factors compu ted
+    The remaining values in table 3 were obtained by                 to be of negligible proportions, the dielectric co n-
+methods essentially absolu te in that no standard                   sta nt was given by e= c2/ (f2 Am2) , where f is the
+m edium other than air was needed. Beeause of the                   frequency, Am th e wavelength in the medium, and c
+laek of experimental detail pertinent to the possible                the velocity of ligh t. The preei ion obtained in
+ sources of error in the report of Albrigh t [3], no de-            determining the values of dielectric constant was
+ tailed comment on this work is possible. The ex-                   governed primarily by th e limi tations in m easuring
+ perimenLal methods of Wyman [1] and of Drake,                      half wavelength and temperature, about 0.2 mm
+ Pierce, and Dow [2] were eomparatively direet and                  a nd 0.2 ° C, respectively, a nd varied from 0.3 to 0.15
+ simple in principle. Although the experimenta.! pre-               p ercent, d epending upon th e frequency. Inasmuch
+ cision was less than that obtainable with conven-                  as the presen ce of systematic errors of comparable
+ tional bridge and resonance m ethods, this disad-                  m agnitude would hardly be d etecLed , the difference
+ vantage was seemingly offset by the reduction or                   noted beLween t h eir value a nd the prese n t value i
+ avoidance of troublesome residual elTors. In both                  not unreasonable .
+ cases the value reported at 25° C was the mean of a                    The magniLucle of Lh e disagreemen Lshown in figure
+ number of values obtained at various frequencies                    7 indicates tllaL, in general, Lhe accmaey of these
+ which had a spread of more than 0.3 p ercent..                     data can hardly app roach 0.1 percent. This is not
+    The method of Wyman involves the d etermination                 too su rpri ing as the reproducib ili ty obLained wa
+ of the resonant frequencies of fixed , m etallic reso-             only ra rely betLer than 0.1 pereent.
+ nators suspended in the medium. Seven resonators
+ of several different design and of varying frequencies                 For the prese n t in vesLiga tion, t h e uncertainty due
+ were employed. Exclu sive of the value obtained                     to any known source of err or seem s Lo be limiLecl to
+ wiLh the resonator of lowest frequency, which was                   ± 0.01 unit. Summation, without regard to s ign ,
+ about 5 percent too high, the values of dielectrie                 of Lhe individual uncerta in ties associaLed with the
+ constall t, when corrected to 25 ° , ranged from 78.42             recognized sources of er1"or, leads to a possible un-
+ to 78.70. It was assumed that these resonators                     cer tain ty of ± 0.05 in the valu es of ~ or ± O.l per cent
+ behaved as idealized lump ed circ uits of inductance               at th e 'highest temperature. The over-all r epro-
+ L and capacitance C, so that the resonant frequency                ducibili ty of separate determinations at any single
+j = 1/[27r (L C)1/2]. Then ~ =f6 W, where f o is the                 temperature, ranging in number from 2 to 10, was
+ r esonant frequency in vacuum, and j is the corre-                 such that the largest deviation from the mean for
+ spon ding frequeney in the medium. The strict                      any given temperatul"C was 11e \' er worse than ± 0.015
+ validity of this relation is questionable because of the           unit, which occurred with both cells at 25° C
+ effect of conductance of the medium on th e properties              (4 + 6= 10 observations) ; and the average of all 69
+ of resonant cir euits and the dependence of the in-                deviations from the ind ividual means for 21 temper-
+ duetance a nd resistan ce of metallic condu ctors upon             atures was ± 0.005 unit. This agreement indicates
+ frequeney through the "skin effect." A change in                   the absen ce of signifi ca nt cumulative error and
+ inductance due to the skin effect would lead to a high             should provide a reasonable basis for an estimation
+ value for the dielectric constant. Although the mag-               of the accuracy attain ed. As a consequ ence, the
+ nitude of this error is difficult to evaluate without              assignment of an accuracy of ± 0.05 unit to all these
+ more speciflc details r egarding the eonstruction of the           data seem s entirely justified.
+
+
+
+
+                                                                7
+                     7. References                                       [8] A. A. Maryott a nd F. Buckley, Tables of dielectric con-
+                                                                                stants and electric dipole moments of substances in
+[1] J . Wyman, Phys. R ev. 35, 623 (1930).                                      the gaseous state, NBS Circular 537 (1953).
+[2] F . H . Drake, G. W . Pierce, and M . T . Dow, Phys. R ev.           [9] B . Hague, Alternating current bridge methods, 5th ed.
+        35, 613 (1930).                                                         (Sir I saac Pitman & Sons, Ltd., London, 1943).
+[3] P . S. Albright, J . Am. Chem . Soc. 59, 2098 (1937); P . S.       [1 0] R. T . Lattey, O. Gatty, and W. G. Davies, Phil. Mag.
+        Albright and L . J . Gosting, 68, 1061 (1946).                          12, 1019 (1931).
+[4] T . T . Jones and R . M . Davies, Phil. Mag. 28, 307 (1939).       [11] G. C. AkerlOf a nd H . 1. Oshry, J . Am. Chern. Soc. 72,
+[5] J . Wyman and E. N . Ingalls, J . Am. Chem. Soc. 60 1182                    2844 (1950).
+        (1938).                                           '
+[6] A. A. Maryott and E . R. Smith, Table of dielectric con-
+        stants of pure liquids, NBS Circular 514 (1951).
+[7] C. G. Malmberg an d A. A. Maryott, J . Research NBS
+        405, 299 (1950) RP2137.                                          W ASHING'l' ON , October 6, 1955.
+
+
+
+
+                                                                   8
+

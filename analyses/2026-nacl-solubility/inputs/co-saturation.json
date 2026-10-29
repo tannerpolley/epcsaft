@@ -1,0 +1,123 @@
+{
+  "temperature_K": 293.2,
+  "assumed_pressure_Pa": 101325.0,
+  "sensitivity_pressure_Pa": 100000.0,
+  "measurement": {
+    "salts": [
+      "NaCl",
+      "KCl"
+    ],
+    "molality_mol_kg": [
+      5.3,
+      1.75
+    ],
+    "relative_content_uncertainty": [
+      0.052,
+      0.01
+    ],
+    "half_last_digit_mol_kg": [
+      0.05,
+      0.005
+    ],
+    "molar_mass_kg_mol": [
+      0.05844277,
+      0.0745513
+    ],
+    "confidence": "unspecified",
+    "source_locator": "Farelo (2006), Table 1 p.166, left block, first 293.2 K row, NH4Cl=0; Experimental p.165"
+  },
+  "NaCl": {
+    "temperature_K": 293.15,
+    "g_J_mol": -8816.6,
+    "g_se_J_mol": 3.5,
+    "h_J_mol": 4555.8,
+    "h_se_J_mol": 1.5,
+    "cp_J_mol_K": -145.47,
+    "cp_se_J_mol_K": 0.16,
+    "rounding_J_mol": 0.051,
+    "source_pressure_Pa": 101325.0,
+    "source_locator": "Clarke-Glew (1985), Table 34 p.608, 20 C; standard errors; DOI 10.1063/1.555730"
+  },
+  "KCl": {
+    "reference_temperature_K": 298.15,
+    "g_reference_J_mol": -5181.81,
+    "g_halfwidth_J_mol": 10.5,
+    "aqueous_entropy_J_mol_K": 157.9349,
+    "entropy_halfwidth_J_mol_K": 0.042,
+    "crystal_entropy_J_mol_K": 82.71,
+    "mapping_allowance_J_mol": 2.0,
+    "source_pressure_Pa": 100000.0,
+    "aqueous_T_K": [
+      273.15,
+      298.15,
+      323.15,
+      348.15,
+      373.15
+    ],
+    "aqueous_G_increment_J_mol": [
+      4094.0,
+      0.0,
+      -3839.0,
+      -7487.0,
+      -10959.0
+    ],
+    "aqueous_entropy_increment_J_mol_K": [
+      13.156,
+      0.0,
+      -8.406,
+      -15.537,
+      -22.578
+    ],
+    "aqueous_Cp_J_mol_K": [
+      -210.0,
+      -116.2,
+      -96.9,
+      -96.7,
+      -108.4
+    ],
+    "crystal_T_K": [
+      0.0,
+      7.0,
+      15.0,
+      30.0,
+      60.0,
+      90.0,
+      190.0,
+      400.0,
+      600.0,
+      800.0,
+      1200.0
+    ],
+    "crystal_spline_values": [
+      14.9521,
+      12.94,
+      10.1587,
+      7.2736,
+      5.1115,
+      4.4994,
+      4.7481,
+      6.3371,
+      6.7672,
+      4.0478,
+      -14.2204
+    ],
+    "crystal_b": 0.25,
+    "source_locator": "Archer (1999), Eqs.(1)-(3) pp.2-3, Table 1 p.3, Table 2 p.4, Eqs.(17)-(18) pp.5,7, Tables 4 and 6 p.8, uncertainty discussion p.15; DOI 10.1063/1.556034",
+    "uncertainty": "Table 4: 95% half-widths; mapping allowance empirical, no confidence or proven error bound"
+  },
+  "solid_volume_m3_mol": [
+    2.71e-05,
+    3.75e-05
+  ],
+  "solid_volume_source": "USGS PHREEQC pitzer.dat, Halite lines 336-340 and Sylvite lines 433-437; uncertainty and thermal dependence unavailable",
+  "K_water_law": {
+    "intercept": 1.3959,
+    "slope_per_K": -0.004012,
+    "source_locator": "Held (2014) Table 2 footnote b p.2889; DOI 10.1016/j.cherd.2014.05.017"
+  },
+  "source_sha256": {
+    "farelo-2006.pdf": "1aaf85bd434bce3eddbd18a819f6ab4b20f551895ae506cbf74881c2f24b38af",
+    "archer-1999.pdf": "c303071cb92489f36ffe88da78ed526045a6d0f7f1aec5a6a8ed438f0611b669",
+    "pitzer-r1.dat": "3640e62aee63a118f800b115b46a2760576e63e05e1792022315a28f75dbe9bb"
+  }
+}

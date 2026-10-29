@@ -1,0 +1,68 @@
+{
+  "inventories": {
+    "catalogue": {
+      "states": 78,
+      "values": 3120,
+      "preservation_values": 3120,
+      "preservation_differences": 0,
+      "extended_evaluations": 0,
+      "work_differences": 0,
+      "max_scaled_difference": 5.5844218138645374e-14,
+      "max_pressure_relative": 6.193610410150095e-15,
+      "max_density_relative": 7.0354044773213485e-15,
+      "failures": 0
+    },
+    "polar": {
+      "states": 72,
+      "values": 2880,
+      "preservation_values": 2880,
+      "preservation_differences": 0,
+      "extended_evaluations": 0,
+      "work_differences": 0,
+      "max_scaled_difference": 6.927791673660977e-14,
+      "max_pressure_relative": 7.261559400838773e-15,
+      "max_density_relative": 1.1600701278268784e-14,
+      "failures": 0
+    },
+    "dmso": {
+      "states": 42,
+      "values": 1680,
+      "preservation_values": 1680,
+      "preservation_differences": 0,
+      "extended_evaluations": 0,
+      "work_differences": 0,
+      "max_scaled_difference": 6.416025273372362e-14,
+      "max_pressure_relative": 1.0444906993769872e-14,
+      "max_density_relative": 1.068625645994749e-14,
+      "failures": 0
+    },
+    "associating": {
+      "states": 53,
+      "values": 2120,
+      "preservation_values": 2120,
+      "preservation_differences": 0,
+      "extended_evaluations": 0,
+      "work_differences": 0,
+      "max_scaled_difference": 6.659437148294014e-14,
+      "max_pressure_relative": 8.441020800449467e-15,
+      "max_density_relative": 2.1330315003699337e-14,
+      "failures": 0
+    },
+    "boundary": {
+      "states": 9,
+      "values": 335,
+      "preservation_values": 240,
+      "preservation_differences": 17,
+      "extended_evaluations": 0,
+      "work_differences": 1,
+      "max_scaled_difference": 8.744236274304223e-09,
+      "max_pressure_relative": 4.830794114633638e-13,
+      "max_density_relative": 8.744236274304223e-09,
+      "failures": 0
+    }
+  },
+  "preservation_changes": [],
+  "availability_changes": [],
+  "regular_state_count": 251,
+  "note": "The regular input set was fixed before trigger implementation. Near-critical packing/log-packing use only the accepted propagated density allowance."
+}

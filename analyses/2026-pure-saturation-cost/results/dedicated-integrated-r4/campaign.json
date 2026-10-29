@@ -1,0 +1,33 @@
+{
+  "pairs_completed": 30,
+  "repetitions": 15,
+  "warmups": 5,
+  "samples": 25,
+  "cpu": 31,
+  "nice": 10,
+  "quantity_checks": 6750,
+  "rejected_blocks": 90,
+  "accepted_blocks": 90,
+  "deferred_snapshots": 26,
+  "accepted_load_ranges": {
+    "1": [
+      3.87,
+      3.95
+    ],
+    "5": [
+      9.18,
+      9.47
+    ],
+    "15": [
+      14.37,
+      14.55
+    ]
+  },
+  "compilers_observed": 0,
+  "first_timing_utc": "2026-10-28T17:22:01.805719+00:00",
+  "last_timing_utc": "2026-10-28T17:22:16.612856+00:00",
+  "baseline": "f0e0de987707928e2eec58ea2da113993f45bbc9",
+  "measured_head": "7441a73d4f05227cf2d576c22fd456d4835be2e8",
+  "same_native_images_as_r3": true,
+  "independent_review": "pending with lead"
+}

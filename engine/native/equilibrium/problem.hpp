@@ -1,16 +1,20 @@
 #pragma once
 
 #include "core/convergence.hpp"
+#include "core/linear_error.hpp"
 #include "properties/helmholtz_model.hpp"
 
 #include <cstddef>
+#include <chrono>
 #include <algorithm>
 #include <cmath>
 #include <limits>
 #include <optional>
+#include <numeric>
 #include <map>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -161,6 +165,12 @@ struct EnvelopeCondition final {
     double target = 0.0;
 };
 
+// EqID finite_addition_enthalpy: n(alpha) = n0 + alpha * direction, at target bubble pressure.
+struct AffineLoading final {
+    std::vector<double> initial, direction;
+    double lower = 0, upper = 0, seed = 0, pressure = 0;
+};
+
 struct EquilibriumProblem final {
     std::vector<PhaseSpec> phases;
     FreeValue temperature;
@@ -175,6 +185,7 @@ struct EquilibriumProblem final {
     std::optional<double> entropy_j_per_k;
     std::optional<CriticalDeclaration> critical;  // one free neutral phase, T and P free
     std::optional<EnvelopeCondition> envelope;    // feed plus a zero-pinned incipient phase
+    std::optional<AffineLoading> loading;
     bool azeotrope = false;  // EqID azeotrope_condition: a binary bubble/dew cell whose feed composition is the seed
     // Caller row criterion for the solve; the named policy value is the only default.
     policy::SolverOptions solver_options;
@@ -183,7 +194,7 @@ struct EquilibriumProblem final {
 
 enum class RowKind {
     Chemical, Pressure, Moiety, Electro, Normalization, Enthalpy, Entropy, ReactionMassAction,
-    CriticalMode, CriticalNormalization, CriticalCubic, EnvelopeCondition, AzeotropeCondition, SolidAffinity, ReactionMolarity
+    CriticalMode, CriticalNormalization, CriticalCubic, EnvelopeCondition, AzeotropeCondition, SolidAffinity, ReactionMolarity, SaturationPressure
 };
 
 // Rows a Gibbs cell classifies at its minimum; they are never optimizer constraints there.
@@ -193,6 +204,7 @@ inline bool stationarity_row(RowKind kind) noexcept {
 
 inline const char* row_kind_name(RowKind kind) noexcept {
     switch (kind) {
+    case RowKind::SaturationPressure: return "saturation_pressure";
     case RowKind::ReactionMassAction: return "ideal_mole_fraction_reaction";
     case RowKind::ReactionMolarity: return "ideal_molarity_reaction";
     case RowKind::Chemical: return "chemical_potential_stationarity";
@@ -228,6 +240,11 @@ inline double maximum_abs(const std::vector<double>& values) noexcept {
     return result;
 }
 
+struct RowUncertainty final {
+    std::vector<double> terms, inner;
+    std::string cause;
+};
+
 struct PointEvaluation final {
     std::vector<double> values;
     double objective = 0.0;
@@ -255,6 +272,10 @@ struct PackingTerms final {
 // derivative[k][i] is d^k (g_i / RT) / dT^k at the prepared temperature.  The
 // pressure fields are the matching first and second derivatives at fixed T.
 struct StandardTerm final {
+    struct NumericalError final {
+        std::array<std::vector<double>, 2> absolute;
+        std::string cause;
+    };
     std::vector<std::vector<double>> derivative;
     std::vector<double> pressure_derivative;
     std::vector<double> pressure_second_derivative;
@@ -277,6 +298,7 @@ struct PhasePoint final {
     std::vector<double> eta;
     std::vector<PackingTerms> packing;
     std::vector<HelmholtzDerivatives> derivative;
+    std::vector<PureIsothermal> pure;
     StandardTerm standard;
     // A referenced problem's standard term with jets along every active parameter, built on the
     // first parameter-driven row series at this point and reused by every later direction.
@@ -298,7 +320,7 @@ struct PhaseSeries final {
 // dq is unused. `energy` is the worst status of the model's residual contractions.
 struct RowSeries final {
     std::vector<std::vector<double>> rows;
-    std::vector<double> temperature, pressure;
+    std::vector<double> temperature, pressure, loading;
     std::vector<PhaseSeries> phase;
     std::array<std::vector<std::vector<double>>, 3> reaction_shift; // L, L_T, L_TT Taylor coefficients
     std::vector<std::vector<double>> solid_amount, solid_affinity;  // [solid][k]: n_s and A_s/RT
@@ -317,9 +339,13 @@ struct CompiledSolid final {
     double log_k = 0.0;
     std::optional<double> log_k_slope;
     bool present = false;
+    std::optional<NeutralReferenceReactionDiagnostic> reference;
 };
 
 struct CompiledSystem final {
+    std::optional<core::Convergence> first_numerical_failure;
+    std::vector<core::NumericalRank> rank_records;
+    std::optional<core::NumericalRank> last_rank;
     std::vector<double> optimizer_identity() const;
     const HelmholtzModel* model = nullptr;
     const IdealMoleFraction* ideal = nullptr;
@@ -360,7 +386,8 @@ struct CompiledSystem final {
 
     // State-only preparation differentiates V, support amounts and T when free (phase Hessians);
     // fixed controls and active parameters are padding. Sensitivity and lever callers need full.
-    PhasePoint prepare(const std::vector<double>& point, bool state_only = false) const;
+    PhasePoint prepare(const std::vector<double>& point, bool state_only = false,
+        std::optional<core::Convergence>* first_numerical_failure = nullptr) const;
     PointEvaluation evaluate(const std::vector<double>& point) const;
     // Residuals that classify a solve: for a free-amount (Gibbs) cell the chemical and
     // pressure rows are scaled by N_p x_i / N_feed and N_p / N_feed, the first-order
@@ -374,6 +401,7 @@ struct CompiledSystem final {
                                               std::size_t width = 1) const;
     std::vector<double> numerical_rows(const PhasePoint&, std::vector<double>, std::size_t width = 1) const;
     double classified_residual_norm(const std::vector<double>& point) const;
+    RowUncertainty row_uncertainty(const PhasePoint&) const;
     PointEvaluation evaluate_at(const PhasePoint& prepared) const;
     std::vector<double> generic_point() const;
     // First solved-chart coordinate of each declared phase: its log compositions, then a free amount and log packing.
@@ -400,6 +428,18 @@ struct CompiledSystem final {
         const PhasePoint& prepared, const std::vector<std::vector<double>>& state,
         const std::vector<double>& control, std::size_t order
     ) const;
+
+    std::size_t loading_column() const noexcept { return primal_size - free_intensive_count - 1; }
+    template<class Scalar> std::vector<Scalar> feed_at(const std::vector<Scalar>& point) const {
+        std::vector<Scalar> feed(n_feed.begin(), n_feed.end());
+        if (problem.loading) for (std::size_t i = 0; i < feed.size(); ++i)
+            feed[i] = problem.loading->initial[i] + point[loading_column()] * problem.loading->direction[i];
+        return feed;
+    }
+    double feed_total_at(const PhasePoint& at) const {
+        const auto feed = feed_at(at.point);
+        return std::accumulate(feed.begin(), feed.end(), 0.0);
+    }
 
     std::size_t unknown_count() const noexcept {
         return ideal ? primal_size : primal_size + rank + charge_row_count;
@@ -473,8 +513,51 @@ struct CriticalRecord final {
     std::size_t rank = 0;
 };
 
+struct EquilibriumNumericalEstimates final {
+    std::string basis = "canonical_defining_rows", cause = "not_evaluated";
+    std::string source_reference_method;
+    std::size_t rank = 0, dimension = 0, precision_bits = std::numeric_limits<double>::digits;
+    double threshold = 0, condition = INFINITY, inverse_norm = INFINITY, backward_error = INFINITY;
+    std::vector<double> residuals, row_terms, row_inner, row_floor, physical_scale;
+    core::NumericalEstimate temperature, pressure, loading;
+    std::vector<core::NumericalEstimate> densities, packing, composition, amounts;
+};
+
 struct OptimizerState;
+struct LinearSolveDiagnostics final {
+    std::string system = "one_component_two_density_reduction", reason;
+    double residual_norm = std::numeric_limits<double>::infinity(), evaluation_floor = std::numeric_limits<double>::infinity();
+    double jacobian_inverse_norm = std::numeric_limits<double>::infinity(), condition_estimate = std::numeric_limits<double>::infinity();
+    double forward_error_estimate = std::numeric_limits<double>::infinity();
+    std::size_t precision_bits = std::numeric_limits<double>::digits, refinement_iterations = 0;
+};
+
+struct IpoptIteration final {
+    int mode = 0, iteration = 0, line_search_trials = 0;
+    double objective = 0, inf_pr = 0, inf_du = 0, mu = 0, step_norm = 0, regularization = 0, alpha_du = 0, alpha_pr = 0;
+};
+struct IpoptPoint final {
+    std::vector<double> tnlp_coordinates, coordinate_scale, tnlp_lower_multipliers, tnlp_upper_multipliers, tnlp_constraint_multipliers;
+    std::shared_ptr<const EquilibriumProblem> declaration;
+    std::vector<Row> rows;
+    std::vector<std::size_t> constraint_rows;
+    double objective_factor = 0;
+};
+struct IpoptDiagnostics final {
+    std::optional<IpoptIteration> last;
+    std::optional<int> first_restoration_iteration, initialization_return, application_return;
+    std::size_t restoration_entries = 0, callbacks = 0;
+    bool warm_initialized = false, predicted = false, physical_amounts = false;
+    std::optional<IpoptPoint> failed_point;
+};
 struct EquilibriumResult final {
+    std::shared_ptr<const EquilibriumResult> rejected_reduction;
+    std::optional<core::Convergence> terminal_numerical_failure, last_full_evaluation;
+    std::vector<double> phase_pressures;
+    std::optional<core::Convergence> first_numerical_failure;
+    std::vector<core::NumericalRank> rank_records;
+    std::optional<IpoptDiagnostics> ipopt_diagnostics, recovered_ipopt_diagnostics;
+    std::optional<core::NumericalRank> last_rank;
     std::map<std::string, double> solver_settings;
     std::string diagnostic_options_file, linear_solver;  // linear_solver: empty when no Ipopt solve ran
     std::shared_ptr<const OptimizerState> optimizer_state;
@@ -504,6 +587,8 @@ struct EquilibriumResult final {
     double objective = 0.0;
     double reduced_hessian_minimum = 0.0;
     core::Convergence convergence;
+    std::optional<LinearSolveDiagnostics> linear_solve_diagnostics;
+    std::optional<EquilibriumNumericalEstimates> numerical_estimates;
     std::vector<Row> rows;
     std::size_t unknown_count = 0;
     std::size_t jacobian_rank = 0;
@@ -524,6 +609,10 @@ struct EquilibriumResult final {
 
     double residual_norm() const noexcept { return maximum_abs(residuals); }
 };
+
+EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSystem&, const EquilibriumResult&);
+EquilibriumNumericalEstimates equilibrium_numerical_estimates(const HelmholtzModel&, const EquilibriumResult&);
+EquilibriumNumericalEstimates equilibrium_numerical_estimates(const IdealMoleFraction&, const EquilibriumResult&);
 
 // EqID reaction_activity_quotient; per declared phase/reaction, in component order.
 struct ReactionActivities final {
@@ -548,6 +637,8 @@ struct StabilityTrial final {
     bool resolved_descent = false;
 };
 struct StabilityReport final {
+    std::optional<core::Convergence> first_numerical_failure;
+    std::optional<core::NumericalRank> last_rank;
     bool completed = false;
     std::string message;
     std::vector<StabilityTrial> trials;
@@ -591,7 +682,57 @@ std::map<std::string, double> effective_water_amounts(const IdealMoleFraction&, 
 struct DriverLimits;
 EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::optional<EquilibriumResult>& start = std::nullopt,
                                  core::Scope* outer = nullptr, const DriverLimits* limits = nullptr,
-                                 std::shared_ptr<const OptimizerState> warm = {}, bool recover = false);
+                                 std::shared_ptr<const OptimizerState> warm = {}, bool recover = false, EquilibriumResult* audit = nullptr);
+
+EquilibriumResult solve_saturation(const CompiledSystem&);
+struct SolvedStateActionDiagnostics;
+// All operands are generated from one exact trial declaration in declared phase order.
+struct SaturationOperand final {
+    core::Quantity quantity = core::Quantity::Linear;
+    double value = NAN;
+    core::NumericalEstimate error;
+};
+struct SaturationCandidate final {
+    EquilibriumResult state;
+    std::vector<SaturationOperand> operands;
+    bool admitted = false;
+};
+struct SaturationComparison final {
+    std::size_t left = 0, right = 0;
+    std::vector<core::EquilibriumComparison> operands;
+    std::string identity;
+};
+struct SaturationNode final {
+    double loading = 0, mismatch = NAN, slope = NAN;
+    EquilibriumResult state;
+    EquilibriumNumericalEstimates estimates;
+    std::string action_cause;
+    double action_seconds = 0, estimate_seconds = 0;
+    EquilibriumNumericalEstimates local_estimates;
+    std::shared_ptr<SolvedStateActionDiagnostics> action_diagnostics;
+};
+struct SaturationSearch final {
+    std::vector<double> grid;
+    std::vector<SaturationNode> nodes;
+    std::vector<std::array<std::size_t, 2>> events;
+    std::vector<SaturationCandidate> candidates;
+    std::vector<SaturationComparison> comparisons;
+    std::vector<std::string> causes;
+    std::vector<std::vector<std::size_t>> groups;
+    std::optional<std::size_t> accepted;
+    std::optional<core::Convergence> first_numerical_failure;
+    std::size_t brackets = 0, iterations = 0, evaluations = 0, hessian_calls = 0, attempts = 0;
+    bool complete = false;
+    AffineLoading declaration;
+    std::array<std::size_t, 4> work_at_entry{};
+    std::string uniqueness_scope = "unique within the declared search";
+    std::string detection_limits = "unsampled tangencies, paired crossings or multiple roots in a cell, turns between nodes and undiscovered branches can escape detection";
+};
+void compare_loading_candidates(SaturationSearch&, core::ComparisonEligibility);
+void admit_loading_search(SaturationSearch&);
+SaturationSearch search_loading(const HelmholtzModel&, EquilibriumProblem, const AffineLoading&,
+    const std::vector<double>&, const DriverLimits* = nullptr,
+    std::chrono::steady_clock::time_point = std::chrono::steady_clock::time_point::max());
 
 // ---- Solved-state derivative actions: native records, no public promise.
 
@@ -614,7 +755,8 @@ enum class SolvedStateObservableKind {
     SystemEnthalpy,
     EquilibriumIsobaricHeatCapacity,
     SolidAmount,  // `phase` is the solid ordinal
-    SolidSaturationIndex
+    SolidSaturationIndex,
+    Loading
 };
 
 struct SolvedStateObservable final {
@@ -653,8 +795,9 @@ enum class SolvedStateActionStatus {
 // Per-species ideal-gas h (J/mol) and, on request, cp (J/(mol K)) at the standard pressure
 // of a referenced problem (EqID: reference_species_calorics); a refusal clears both.
 struct ReferenceCalorics final {
+    std::string numerical_error_cause;
     struct Column final {
-        std::vector<double> values;
+        std::vector<double> values, numerical_error;
         SolvedStateActionStatus status = SolvedStateActionStatus::Available;
         std::string message;
     };
@@ -672,7 +815,7 @@ struct ReferenceCalorics final {
 };
 ReferenceCalorics reference_calorics(const CompiledSystem &compiled, double temperature, double pressure,
                                      bool heat_capacity, bool pressure_slope = false,
-                                     bool parameter_slopes = false, std::size_t derivative_order = 2);
+                                     bool parameter_slopes = false, std::size_t derivative_order = 2, bool numerical_errors = false);
 
 struct SolvedStateActionResult final {
     SolvedStateObservable observable;
