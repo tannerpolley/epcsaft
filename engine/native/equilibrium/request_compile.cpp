@@ -2031,6 +2031,8 @@ RowUncertainty CompiledSystem::row_uncertainty(const PhasePoint& at) const {
 template <typename Base>
 RowUncertaintyValues<Base> CompiledSystem::row_uncertainty_at(const PhasePointValues<Base>& at,
     const std::vector<std::vector<Base>>& gradient_error) const {
+    const auto balance = [&] { if constexpr (std::is_same_v<Base, double>) return matvec(B, feed_at(at.point)); else return this->balance; }();
+    const double feed_total = [&] { if constexpr (std::is_same_v<Base, double>) return feed_total_at(at); else return this->feed_total; }();
     RowUncertaintyValues<Base> out;
     out.terms.assign(rows.size(), 0); out.inner = out.terms;
     const auto components = model->parameters().component_count();
