@@ -23,8 +23,10 @@ export F77="$FC"
 build_library_prefix=$(cygpath -m "$BUILD_PREFIX")/Library/lib
 export FLIBS="-L$build_library_prefix -lflang -lflangrti -lompstub"
 export FFLAGS="-O2 $FLIBS -lflangmain -lmsvcrt -Xlinker /subsystem:console"
-export CFLAGS="$CFLAGS -DIPOPT_BUILD"
-export CXXFLAGS="$CXXFLAGS -DIPOPT_BUILD -Wno-reserved-user-defined-literal"
+export CFLAGS="$CFLAGS -DIPOPT_BUILD -fno-fast-math -ffp-contract=off"
+export CXXFLAGS="$CXXFLAGS -DIPOPT_BUILD -fno-fast-math -ffp-contract=off -Wno-reserved-user-defined-literal"
+# Preserve forward slashes in configure-generated include flags.
+export CYGPATH_W="cygpath -m"
 export CPPFLAGS="$CPPFLAGS -I$library_prefix/include"
 export LDFLAGS="$LDFLAGS -L$library_prefix/lib"
 {
