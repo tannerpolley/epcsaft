@@ -674,32 +674,50 @@ The estimate is local and first order, with no rigorous global-error claim.
 
 The double association path retains its admitted site solve, factorization and
 existing gradient floor. The extended instantiation refines values and implicit
-volume coefficients against the shared wide mass-action residual. It reuses
-the admitted double full-pivot factorization as a preconditioner; residual
-re-evaluation supplies the linear defect before another update. Values and
-coefficients stay wide. For coefficient k, the normalized residual is
-$\max_s|R_{s,k}v^k|$ and its arithmetic scale is
-$\max\{1,\max_s|X_{s,k}v^k/X_{s,0}|\}$. Refinement ends at working epsilon times
-that scale, within the existing association iteration limit including its
-starting solve. Nonfinite or out-of-domain sites, unchanged coefficients above
-that floor, or exhausted work refuse the calculation with their cause.
+coefficients in affine volume and amount directions against the shared wide
+mass-action residual. It reuses the admitted double full-pivot factorization as
+a preconditioner and retains the achieved linear defect. Values and coefficients
+stay wide. Each coefficient must meet working epsilon times its coefficient
+scale within the cumulative association budget, including the starting solve.
+Nonfinite or out-of-domain sites, rank loss, unchanged coefficients above that
+floor, or exhausted work refuse the calculation with their cause.
 
-After refinement, let $\delta X_k$ be the preconditioned correction of the
-remaining wide coefficient residual, $w_s=n x_{c(s)}m_s$, and $R_{s,k}$ the
-remaining mass-action coefficients. The retained volume-gradient error estimate is
+For $q=(V,n_1,\ldots,n_c)$, use dimensionless affine paths
+$q(t)=q_0+t s_i e_i$ and sums of two such directions, with $s_V=V_0$ and
+$s_{n_i}=1$ mol. Let $w_a=n_{i(a)}\nu_a$, $r_k=[t^k]F(q(t),\widetilde X(t))$
+be freshly evaluated achieved residuals after the last coefficient update,
+and $J_k=[t^k]F_X(q(t),\widetilde X(t))$. The coupled remaining correction is
 $$
-g=\sum_s\left|\frac{w_s}{X_{s,0}}\right|
-\left(
-\left|\left[R_{s,1}-R_{s,0}\frac{X_{s,1}}{X_{s,0}}\right]\delta X_{s,0}\right|
-+|R_{s,0}\delta X_{s,1}|
-\right).
+J_0e_0=-r_0,\qquad J_0e_1=-r_1-J_1e_0,\qquad
+J_0e_2=-r_2-J_1e_1-J_2e_0.
 $$
-The stationary association potential removes first-order site-value error in
-the energy; no separate first-order energy-error term is added to the chemical
-row. Terms beyond that order are outside this estimate. No starting double
-residual floor is relabeled as an extended result. Remaining arithmetic error
-in energy and gradient enters the explicit $\epsilon_q$ term above. The outer
-density estimate retains any unresolved propagated inner error.
+The stationary association potential has derivative
+$\mathcal A_{X_a}=-w_a r_a/\widetilde X_a$. For
+$b_a=w_a r_a/\widetilde X_a$, the local gradient estimate is
+$$
+E_1=\sum_a\left(|b_{a,1}e_{a,0}|+|b_{a,0}e_{a,1}|\right),\qquad
+b_{a,1}=\frac{w_{a,1}r_{a,0}+w_{a,0}r_{a,1}
+-w_{a,0}r_{a,0}\widetilde X_{a,1}/\widetilde X_{a,0}}{\widetilde X_{a,0}}.
+$$
+Here $w_{a,1}=\nu_a s_{n_i}\mathbf1_{i(a)=i}$ on an amount path and zero on
+a volume path; $w_{a,2}=0$. The gradient error is $E_1/|s_i|$. Second-coefficient
+verification uses $E_2=\sum_a\sum_{k=0}^2|b_{a,k}e_{a,2-k}|$,
+$2E_2/s_i^2$ for a diagonal Hessian entry and
+$(E_2^{i+j}+E_2^i+E_2^j)/|s_i s_j|$ for a polarized mixed entry.
+These are local linearized-defect estimates, excluding higher correction terms
+and parameter/source uncertainty; they are not rigorous enclosures.
+
+Properties retains each achieved direction-specific gradient error beside its
+matching derivative. Chemical defining rows consume $e_{\mathcal A_{n_i}}$;
+pressure rows consume $|V|e_{\mathcal A_V}$; balance and normalization rows have
+zero association inner error. No separate first-order energy-value error is
+added to these rows. The cheap double precision decision instead consumes the
+existing cached double gradient floor, with the same pressure factor $|V|$,
+without coefficient replay, another site solve, EOS evaluation or density work.
+The shared row floor remains the componentwise
+$\max\{\gamma_n|J|h,\eta_{\rm inner}+\epsilon S\}$, with its existing row scaling
+and physical projection. Arithmetic error remains separate from achieved inner
+error; a tiny inner estimate is not the total floating-point error.
 
 Refinement engages once when the double estimate or its actual correction
 exceeds `TWO_DENSITY_FORWARD_ERROR`, the 1e-10 log-density target. It repeats the shared Helmholtz,
@@ -727,10 +745,58 @@ double, the admitted double result remains, with its actual estimate, 53 bits,
 zero extended corrections and the reason additional precision was unavailable.
 An estimate above 1e-10 does not claim that density accuracy.
 
+For neutral, nonreacting mixtures, the selected ordinary target endpoint has a
+separate precision decision (issue #864, amendment r2). Eligibility requires a
+square two-phase liquid/vapor feasibility cell at fixed temperature and free
+pressure, one free phase amount and one exactly zero-pinned phase, more than
+one component, and no caloric, critical, envelope, azeotrope, discovery, source
+reference, ionic, reaction or solid equations. Association is admitted through
+the shared coefficient/error owner above. Ordered starts and external coordinate
+correctors retain their methods. Ordinary previous-result starts are included;
+permission to search for a recovery source is a separate decision. A terminal
+recovery result is included because it supplies the ordinary target endpoint.
+Intermediate Newton, Ipopt, source-search and continuation candidates cannot
+activate this mixture correction.
+
+At the selected point, use its retained prepared derivatives and matching rows
+and Jacobian. The shared physical error radius is the maximum of pressure error
+relative to $\max(|P|,1\,\mathrm{Pa})$, log-density and log-packing errors,
+absolute composition errors, and phase-amount errors relative to feed amount.
+An available finite radius above `MIXTURE_FORWARD_ERROR` ($10^{-7}$), with more
+long-double significand bits than double, triggers the shared correction body
+once. Singular or nonfinite estimates retain their cause and cannot trigger as
+finite estimates. Without extra precision, retain the admitted double endpoint,
+its own estimate and actual working bits with the unavailable-precision reason.
+The pure-fluid `TWO_DENSITY_FORWARD_ERROR` target above remains $10^{-10}$.
+
+Wide coordinates remain wide through all corrections. Use full-pivot rank and
+finite-row/Jacobian/direction checks independently of the free-amount Newton
+predicate; require every trial to stay in the finite admitted box. The ordinary
+double damping fractions remain $(1,1/2,1/4)$; only wide correction also tries
+$1/8$. Above the caller's row criterion, require strict raw-row contraction,
+including the existing decreasing-ratio rule during extension. Below the
+criterion, the bounded full-correction exception does not establish convergence:
+fresh rows, the physical-radius target, and either a sufficiently small scaled
+correction or the achieved-floor correction condition must all pass. Rank loss,
+nonfinite data, unavailable estimates, no representable progress, no admitted
+trial or spent iteration/evaluation/deadline limits retain their specific cause
+and attempted work.
+
+Export once to double. Re-evaluate the actually exported point in wide arithmetic
+and include internal-to-export coordinate displacement and output rounding in
+its estimate. Repeat the ordinary raw/classified-row, finite-bound, feed/zero-pin,
+phase-order/topology, local-stability and density-branch admission. Replacement
+requires all these checks and the returned physical-radius target; otherwise
+retain the already admitted original endpoint with its own estimate and all
+attempted work and first failures. Optional observation preserves a stored wide
+returned-point estimate. A rejected attempt's estimate cannot describe the
+retained original endpoint.
+
 Untriggered states retain pre-refinement arithmetic, outputs, iteration count
 and thermodynamic/density work. The fixed preservation inventory is independent
-of the trigger. Issue #860 owns the later shared conditioning implementation
-and must absorb and retire this local producer when that work is delivered.
+of the trigger. The forward-error notebook retains numerical verification on
+fixed inputs; it establishes neither physical validation nor a complete-call
+speed claim.
 
 Repeated public solves and accepted continuation/envelope correctors may reuse the
 previous Ipopt endpoint's primal coordinates and equality/bound multipliers when

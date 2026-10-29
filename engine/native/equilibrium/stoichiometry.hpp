@@ -4,6 +4,7 @@
 
 #include <cstddef>
 #include <optional>
+#include <numeric>
 #include <string>
 #include <vector>
 
@@ -71,7 +72,10 @@ std::vector<double> matvec(
     const std::vector<double>& vector
 );
 
-double sum(const std::vector<double>& values);
+template <typename Base>
+Base sum(const std::vector<Base>& values) {
+    return std::accumulate(values.begin(), values.end(), Base(0));
+}
 
 std::size_t reaction_rank(
     std::size_t components, const std::vector<ReactionSpec>& reactions

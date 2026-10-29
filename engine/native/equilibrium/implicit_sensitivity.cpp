@@ -138,17 +138,19 @@ namespace {
 
 using Series = std::vector<double>;
 
-Series product(const Series& left, const Series& right) {
-    Series result(left.size(), 0.0);
+template <typename Base>
+std::vector<Base> product(const std::vector<Base>& left, const std::vector<Base>& right) {
+    std::vector<Base> result(left.size(), 0.0);
     for (std::size_t i = 0; i < result.size(); ++i)
         for (std::size_t j = 0; j <= i; ++j) result[i] += left[j] * right[i - j];
     return result;
 }
 
-Series inverse(const Series& value) {
+template <typename Base>
+std::vector<Base> inverse(const std::vector<Base>& value) {
     if (value.empty() || !std::isfinite(value.front()) || value.front() == 0.0)
         throw std::domain_error("series inverse has a zero or nonfinite center");
-    Series result(value.size(), 0.0);
+    std::vector<Base> result(value.size(), 0.0);
     result.front() = 1.0 / value.front();
     for (std::size_t i = 1; i < value.size(); ++i) {
         for (std::size_t j = 1; j <= i; ++j) result[i] -= value[j] * result[i - j];
@@ -157,8 +159,9 @@ Series inverse(const Series& value) {
     return result;
 }
 
-Series combine(const Series& left, const Series& right, double sign) {
-    Series result(left.size());
+template <typename Base>
+std::vector<Base> combine(const std::vector<Base>& left, const std::vector<Base>& right, double sign) {
+    std::vector<Base> result(left.size());
     for (std::size_t i = 0; i < result.size(); ++i) result[i] = left[i] + sign * right[i];
     return result;
 }
@@ -424,18 +427,21 @@ Path follow(const CompiledSystem& compiled, const Center& center, const std::vec
 }
 
 // Physical map of one phase along a path: normalised composition, density and pressure.
-struct PhaseMap final {
-    Series amount, volume, density, packing, pressure;
-    std::vector<Series> mole_fraction, potential;
+template <typename Base>
+struct PhaseMapValues final {
+    std::vector<Base> amount, volume, density, packing, pressure;
+    std::vector<std::vector<Base>> mole_fraction, potential;
 };
 
-PhaseMap phase_map(const HelmholtzModel& model, const RowSeries& series, std::size_t phase, std::size_t components) {
-    const auto& item = series.phase[phase];
+using PhaseMap = PhaseMapValues<double>;
+template <typename Base>
+PhaseMapValues<Base> phase_map(const HelmholtzModel& model, const PhaseSeriesValues<Base>& item,
+    const std::vector<Base>& temperature, std::size_t components) {
     const std::size_t order = item.point.size();
-    PhaseMap result;
+    PhaseMapValues<Base> result;
     result.amount = item.amount;
     result.packing = item.packing;
-    Series volume(order), total(order, 0.0), potential_v(order);
+    std::vector<Base> volume(order), total(order, 0.0), potential_v(order);
     for (std::size_t k = 0; k < order; ++k) {
         volume[k] = item.point[k][1];
         potential_v[k] = item.gradient[k][1];
@@ -445,13 +451,13 @@ PhaseMap phase_map(const HelmholtzModel& model, const RowSeries& series, std::si
     result.density = model.parameters().ideal_gas ? product(total, inverse(volume)) : inverse(volume);
     const auto inverse_total = inverse(total);
     for (std::size_t i = 0; i < components; ++i) {
-        Series x(order), mu(order);
+        std::vector<Base> x(order), mu(order);
         for (std::size_t k = 0; k < order; ++k) { x[k] = item.point[k][2 + i]; mu[k] = item.gradient[k][2 + i]; }
         result.mole_fraction.push_back(product(x, inverse_total));
         result.potential.push_back(mu);
     }
-    Series pressure = product(series.temperature, combine(result.density, potential_v, -1.0));
-    for (double& value : pressure) value *= GAS_CONSTANT_J_PER_MOL_K;
+    std::vector<Base> pressure = product(temperature, combine(result.density, potential_v, -1.0));
+    for (Base& value : pressure) value *= GAS_CONSTANT_J_PER_MOL_K;
     result.pressure = pressure;
     return result;
 }
@@ -1055,7 +1061,7 @@ static SolvedStateActionBatch evaluate_action(
         const auto base = compiled.row_series(center.prepared, {center.prepared.point}, no_control, 0);
         std::vector<PhaseMap> base_maps;
         for (std::size_t phase = 0; phase < problem.phases.size(); ++phase)
-            base_maps.push_back(phase_map(model, base, phase, components));
+            base_maps.push_back(phase_map(model, base.phase[phase], base.temperature, components));
         for (auto& item : batch.results) {
             if (item.observable.kind == SolvedStateObservableKind::PhaseProperty) continue;
             try {
@@ -1214,7 +1220,7 @@ static SolvedStateActionBatch evaluate_action(
         if (path.status != SolvedStateActionStatus::Available)
             return apply_state_gate(path.status, path.diagnostic_message);
         std::vector<PhaseMap> maps;
-        for (std::size_t phase = 0; phase < problem.phases.size(); ++phase) maps.push_back(phase_map(model, path.series, phase, components));
+        for (std::size_t phase = 0; phase < problem.phases.size(); ++phase) maps.push_back(phase_map(model, path.series.phase[phase], path.series.temperature, components));
         for (std::size_t i = 0; i < batch.results.size(); ++i) {
             auto& item = batch.results[i];
             if (item.observable.kind == SolvedStateObservableKind::PhaseProperty || !state_dependent(item.observable, problem)) continue;
@@ -1293,16 +1299,77 @@ std::vector<SolvedStateActionBatch> solved_state_first_actions(
     return batches;
 }
 
-EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSystem& c, const EquilibriumResult& result) {
+template <typename Base>
+PhysicalProjection<Base> physical_projection(const CompiledSystem& c, const PhasePointValues<Base>& at) {
+    const auto n = at.point.size(), components = c.n_feed.size(), per_phase = 3 + components;
+    const auto outputs = 2 + at.amount.size() * per_phase + c.problem.loading.has_value();
+    PhysicalProjection<Base> out;
+    out.gradient = decltype(out.gradient)::Zero(outputs, n);
+    out.values = decltype(out.values)::Zero(outputs); out.scale = decltype(out.scale)::Ones(n);
+    const auto pressure = c.primal_size - 1, temperature = c.primal_size - c.free_intensive_count;
+    out.values[0] = at.temperature; out.values[1] = at.pressure;
+    if (c.problem.loading) { out.values[outputs - 1] = at.point[c.loading_column()]; out.gradient(outputs - 1, c.loading_column()) = 1; }
+    if (c.problem.pressure.free) { out.gradient(1, pressure) = 1; out.scale[pressure] = std::max(std::abs(at.pressure), Base(1)); }
+    if (c.problem.temperature.free) { out.gradient(0, temperature) = 1; out.scale[temperature] = std::max(std::abs(at.temperature), Base(1)); }
+    for (const auto& solid : c.solids) if (solid.column) out.scale[*solid.column] = c.feed_total;
+    for (std::size_t p = 0; p < at.shape.size(); ++p) {
+        const auto& shape = at.shape[p]; const auto o = 2 + p * per_phase;
+        if (shape.amount) out.scale[*shape.amount] = c.feed_total;
+        for (std::size_t j = 0; j < n; ++j) {
+            PhaseSeriesValues<Base> path;
+            path.point.assign(2, std::vector<Base>(2 + components, 0)); path.gradient = path.point;
+            path.amount = {at.amount[p], Base(shape.amount && j == *shape.amount)};
+            path.packing = {at.eta[p], j == shape.volume ? at.eta[p] : Base(0)};
+            path.point[0][1] = at.volume[p];
+            path.gradient[0] = at.derivative[p].gradient;
+            for (std::size_t i = 0; i < components; ++i) path.point[0][2 + i] = at.composition[p][i];
+            for (std::size_t i = 0; i < shape.x.size(); ++i) if (j == shape.x[i]) {
+                const auto species = c.problem.phases[p].support[i];
+                path.point[1][2 + species] = at.composition[p][species];
+                path.point[1][1] = at.packing[p].component[species] / at.eta[p];
+            }
+            if (j == shape.volume) path.point[1][1] = -at.volume[p];
+            if (c.problem.temperature.free && j == temperature) path.point[1][1] = at.packing[p].temperature_derivative / at.eta[p];
+            const auto map = phase_map(*c.model, path, std::vector<Base>{at.temperature, Base(c.problem.temperature.free && j == temperature)}, components);
+            out.gradient(o, j) = map.density[1] / map.density[0];
+            out.gradient(o + 1, j) = c.model->parameters().ideal_gas ? map.packing[1] : map.packing[1] / map.packing[0];
+            out.gradient(o + 2, j) = map.amount[1];
+            out.values[o] = map.density[0]; out.values[o + 1] = map.packing[0]; out.values[o + 2] = map.amount[0];
+            for (std::size_t i = 0; i < components; ++i) {
+                out.gradient(o + 3 + i, j) = map.mole_fraction[i][1]; out.values[o + 3 + i] = map.mole_fraction[i][0];
+            }
+        }
+    }
+    return out;
+}
+template PhysicalProjection<double> physical_projection(const CompiledSystem&, const PhasePoint&);
+template PhysicalProjection<long double> physical_projection(const CompiledSystem&, const PhasePointValues<long double>&);
+
+template <typename Base>
+EquilibriumNumericalEstimates numerical_estimates(const CompiledSystem& c, const EquilibriumResult& result, const std::vector<Base>& internal, const PhasePointValues<Base>* prepared = nullptr, bool replay = true, const DriverLimits* limits = nullptr) {
     core::Capture isolated(false);
     EquilibriumNumericalEstimates out;
-    out.dimension = result.coordinates.size();
+    out.dimension = result.coordinates.size(); out.precision_bits = std::numeric_limits<Base>::digits;
+    using Vector = Eigen::Matrix<Base, Eigen::Dynamic, 1>;
+    using Matrix = Eigen::Matrix<Base, Eigen::Dynamic, Eigen::Dynamic>;
     if (!result.has_state() || !result.declaration) { out.cause = "original_state_unavailable"; return out; }
     try {
-        const auto at = c.prepare(result.coordinates);
+        const auto prepare = [&](const std::vector<Base>& point, bool state_only) {
+            if (limits && (!limits->spend(limits->evaluations, limits->evaluation_cap) || limits->expired()))
+                throw std::runtime_error("work budget exhausted during returned-point estimate");
+            return c.prepare_values(point, state_only);
+        };
+        const auto at = prepared ? *prepared : prepare(std::vector<Base>(result.coordinates.begin(), result.coordinates.end()), false);
         const auto evaluation = c.evaluate_at(at);
-        const auto uncertainty = c.row_uncertainty(at);
-        out.residuals = evaluation.values; out.row_terms = uncertainty.terms; out.row_inner = uncertainty.inner;
+        const auto uncertainty = [&] {
+            if constexpr (std::is_same_v<Base, double>) if (replay) return c.row_uncertainty(at);
+            std::vector<std::vector<Base>> errors;
+            for (const auto& d : at.derivative) errors.push_back(d.gradient_error.empty()
+                ? std::vector<Base>(d.gradient.size(), d.gradient_floor) : d.gradient_error);
+            return c.row_uncertainty_at(at, errors);
+        }();
+        out.residuals.assign(evaluation.values.begin(), evaluation.values.end());
+        out.row_terms.assign(uncertainty.terms.begin(), uncertainty.terms.end()); out.row_inner.assign(uncertainty.inner.begin(), uncertainty.inner.end());
         if (!c.reference_diagnostics.empty() || !c.solids.empty()) out.source_reference_method =
             "local higher-precision re-evaluation plus first-order pressure/site propagation; "
             "can underestimate shared errors and internal cancellation; fixed-input arithmetic excludes supplied operand uncertainty; "
@@ -1312,8 +1379,8 @@ EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSyst
         }
         const auto n = out.dimension, phases = at.amount.size(), components = c.n_feed.size();
         const auto per_phase = 3 + components, outputs = 2 + phases * per_phase + c.problem.loading.has_value();
-        Eigen::MatrixXd g = Eigen::MatrixXd::Zero(outputs, n);
-        Eigen::VectorXd values = Eigen::VectorXd::Zero(outputs), h = Eigen::VectorXd::Ones(n);
+        Matrix g = Matrix::Zero(outputs, n);
+        Vector values = Vector::Zero(outputs), h = Vector::Ones(n);
         values[0] = *result.temperature; values[1] = *result.pressure;
         if (c.problem.loading) {
             values[outputs - 1] = at.point[c.loading_column()];
@@ -1324,13 +1391,9 @@ EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSyst
             if (!c.ideal) { values[o] = result.molar_densities[p]; values[o + 1] = result.packing_fractions[p]; }
             values[o + 2] = result.amounts[p];
             for (std::size_t j = 0; j < components; ++j) values[o + 3 + j] = result.mole_fractions[p * components + j];
-            if (!c.ideal && at.shape[p].amount) h[*at.shape[p].amount] = c.feed_total;
         }
-        for (const auto& solid : c.solids) if (solid.column) h[*solid.column] = c.feed_total;
-        if (c.problem.pressure.free) h[c.primal_size - 1] = std::max(std::abs(at.pressure), 1.0);
-        if (c.problem.temperature.free) h[c.primal_size - c.free_intensive_count] = std::max(std::abs(at.temperature), 1.0);
         // Reuse the actions' exact physical map; no chart is reconstructed in a reader.
-        std::vector<double> mapped(outputs, 0.0);
+        std::vector<Base> mapped(outputs, 0.0);
         if (c.ideal) {
             mapped[0] = at.temperature; mapped[1] = at.pressure; mapped[4] = at.amount[0];
             for (std::size_t i = 0; i < components; ++i) mapped[5 + i] = at.composition[0][i];
@@ -1341,34 +1404,35 @@ EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSyst
                 for (std::size_t i = 0; i < components; ++i)
                     g(5 + i, j) = at.composition[0][i] * (double(i == species) - x);
             }
-        } else for (std::size_t j = 0; j < n; ++j) {
-            std::vector<double> unit(n, 0.0); unit[j] = 1.0;
-            const auto series = c.row_series(at, {at.point, unit}, std::vector<double>(c.control_width(), 0.0), 1);
-            if (series.energy != PropertyActionStatus::Available) { out.cause = "projection_derivative_unavailable"; return out; }
-            g(0, j) = series.temperature[1]; g(1, j) = series.pressure[1];
-            mapped[0] = series.temperature[0]; mapped[1] = series.pressure[0];
-            for (std::size_t p = 0; p < phases; ++p) {
-                const auto map = phase_map(*c.model, series, p, components); const auto o = 2 + p * per_phase;
-                g(o, j) = logarithm(map.density)[1]; g(o + 1, j) = c.model->parameters().ideal_gas ? 0.0 : logarithm(map.packing)[1]; g(o + 2, j) = map.amount[1];
-                mapped[o] = map.density[0]; mapped[o + 1] = map.packing[0]; mapped[o + 2] = map.amount[0];
-                for (std::size_t i = 0; i < components; ++i) {
-                    g(o + 3 + i, j) = map.mole_fraction[i][1]; mapped[o + 3 + i] = map.mole_fraction[i][0];
-                }
-            }
+        } else {
+            const auto projection = physical_projection(c, at);
+            g = projection.gradient; h = projection.scale;
+            mapped.assign(projection.values.data(), projection.values.data() + projection.values.size());
         }
-        const auto j = dense_matrix(c.jacobian_at(at), c.rows.size(), n);
-        const Eigen::VectorXd f = Eigen::Map<const Eigen::VectorXd>(evaluation.values.data(), n);
-        const Eigen::VectorXd terms = Eigen::Map<const Eigen::VectorXd>(uncertainty.terms.data(), n);
-        const Eigen::VectorXd inner = Eigen::Map<const Eigen::VectorXd>(uncertainty.inner.data(), n);
-        const Eigen::VectorXd eta = core::canonical_row_floor(j, h, terms, inner);
+
+        const auto entries = c.jacobian_at(at);
+        const Matrix j = Eigen::Map<const Eigen::Matrix<Base, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(entries.data(), n, n);
+        const Vector f = Eigen::Map<const Vector>(evaluation.values.data(), n);
+        const Vector terms = Eigen::Map<const Vector>(uncertainty.terms.data(), n);
+        const Vector inner = Eigen::Map<const Vector>(uncertainty.inner.data(), n);
+        const Vector eta = core::canonical_row_floor(j, h, terms, inner);
         out.physical_scale = {h.data(), h.data() + n}; out.row_floor = {eta.data(), eta.data() + n};
-        const auto e = core::linear_error(j, f, g, eta, Eigen::VectorXd::Ones(n), h);
+        const auto e = core::linear_error(j, f, g, eta, Vector::Ones(n), h);
         out.rank = e.rank; out.threshold = e.threshold; out.condition = e.condition;
         out.inverse_norm = e.inverse_norm; out.backward_error = e.backward;
         if (!e.cause.empty()) { out.cause = e.cause; return out; }
         if (c.problem.loading) mapped.back() = values[outputs - 1];
+        const auto internal_map = internal.empty() ? std::vector<Base>{} : [&] {
+            const auto projection = physical_projection(c, prepare(internal, true));
+            return std::vector<Base>(projection.values.data(), projection.values.data() + projection.values.size());
+        }();
+        Vector radius = e.radius;
         const auto project = [&](std::size_t i, bool positive) {
-            return core::project_numerical_estimate(values[i], mapped[i], e.radius[i], positive, g.row(i).isZero(0.0));
+            const Base displacement = internal.empty() ? Base(0) : positive
+                ? std::abs(std::log1p((mapped[i] - internal_map[i]) / internal_map[i])) : std::abs(mapped[i] - internal_map[i]);
+            const auto estimate = core::project_numerical_estimate(double(values[i]), mapped[i], e.radius[i] + displacement, positive, g.row(i).isZero(0.0));
+            radius[i] = positive ? estimate.chart : estimate.absolute;
+            return estimate;
         };
         out.temperature = project(0, false); out.pressure = project(1, false);
         if (c.problem.loading) out.loading = project(outputs - 1, false);
@@ -1390,14 +1454,24 @@ EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSyst
             if (c.problem.phases[p].kind != c.problem.phases[q].kind)
                 domain = domain && std::abs(result.molar_densities[p] - result.molar_densities[q])
                     > out.densities[p].absolute + out.densities[q].absolute;
+        if (limits) limits->check();
+        out.physical_radius = physical_radius(c, at, radius);
         out.cause = domain ? "" : "unresolved_domain";
         if (!domain) {
             out.loading.resolved = out.temperature.resolved = out.pressure.resolved = false;
             for (auto* entries : {&out.densities, &out.packing, &out.composition, &out.amounts})
                 for (auto& estimate : *entries) { estimate.resolved = false; estimate.cause = out.cause; }
         }
-    } catch (const std::exception& error) { out.cause = error.what(); }
+    } catch (const std::bad_alloc&) { throw; } catch (const std::exception& error) { out.cause = error.what(); }
     return out;
+}
+
+EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSystem& c, const EquilibriumResult& result, const PhasePoint* prepared) {
+    if (result.numerical_estimates && result.numerical_estimates->precision_bits > std::numeric_limits<double>::digits) return *result.numerical_estimates;
+    return numerical_estimates<double>(c, result, {}, prepared, !prepared);
+}
+EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSystem& c, const EquilibriumResult& result, const std::vector<long double>& internal, const DriverLimits* limits) {
+    return numerical_estimates(c, result, internal, static_cast<const PhasePointValues<long double>*>(nullptr), false, limits);
 }
 
 EquilibriumNumericalEstimates equilibrium_numerical_estimates(const HelmholtzModel& model, const EquilibriumResult& result) {

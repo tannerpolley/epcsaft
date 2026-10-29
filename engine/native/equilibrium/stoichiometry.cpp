@@ -632,9 +632,7 @@ std::vector<double> matvec(
     return result;
 }
 
-double sum(const std::vector<double>& values) {
-    return std::accumulate(values.begin(), values.end(), 0.0);
-}
+
 
 std::string reaction_name(const ReactionSpec& reaction, std::size_t index) {
     return reaction.name.empty() ? std::to_string(index) : reaction.name;

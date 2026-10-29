@@ -54,7 +54,7 @@ struct StageWork final {  // the work of the sub-solves that seed a solve, faile
 EquilibriumResult continue_compiled(const CompiledSystem&, const std::optional<EquilibriumResult>&,
     core::Scope&, const DriverLimits*, std::shared_ptr<const OptimizerState>, bool recover, EquilibriumResult* audit,
     const EquilibriumResult& structural, StageWork stages = {}, std::optional<std::vector<double>> original = std::nullopt,
-    std::shared_ptr<const EquilibriumResult> rejected = {});
+    std::shared_ptr<const EquilibriumResult> rejected = {}, bool select_endpoint = false);
 // `speciate` false: a supplied composition replaces the start's, so a reacting phase is not speciated.
 // A `packed` phase's packing guess is supplied by the caller and replaces its density root.
 std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate = true, const DriverLimits* limits = nullptr,
@@ -134,6 +134,7 @@ struct DriverLimits final {
 // ALG-EQUILIBRIUM neutral recovery (#565) of an eligible failed target from the first admitted lower-temperature
 // source and the straight controller; spends `limits`. A refusal has no state and its message is the recovery cause.
 EquilibriumResult recover_from_source(const CompiledSystem& target, const DriverLimits& limits);
+EquilibriumResult refine_selected_endpoint(const CompiledSystem&, EquilibriumResult, core::Scope&, const DriverLimits* = nullptr);
 // The driver internals the stability search (phase_stability.cpp) shares.
 void clear_state(EquilibriumResult& result);
 double largest_difference(const std::vector<double>& left, const std::vector<double>& right);

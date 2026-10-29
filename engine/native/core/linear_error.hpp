@@ -23,8 +23,9 @@ void retain_rank(std::vector<NumericalRank>& records, const Factor& factor, cons
 }
 
 // Rigal-Gaches normwise backward error; the zero right-hand side needs no unit floor.
-inline double backward_error(double residual, double jacobian_norm, double solution, double right) {
-    const double denominator = jacobian_norm * solution + right;
+template <typename Real>
+Real backward_error(Real residual, Real jacobian_norm, Real solution, Real right) {
+    const Real denominator = jacobian_norm * solution + right;
     return residual == 0.0 ? 0.0 : denominator > 0.0 ? residual / denominator : std::numeric_limits<double>::infinity();
 }
 
@@ -33,9 +34,10 @@ template <typename Matrix, typename Solution, typename Right>
 typename Right::PlainObject compensated_defect(const Matrix& matrix, const Solution& solution, const Right& right) {
     typename Right::PlainObject result(right.size());
     for (std::ptrdiff_t row = 0; row < right.size(); ++row) {
-        double sum = right(row), error = 0.0;
+        using Real = typename Right::Scalar;
+        Real sum = right(row), error = 0.0;
         for (std::ptrdiff_t column = 0; column < solution.size(); ++column) {
-            const double term = -matrix(row, column) * solution(column), next = sum + term, part = next - sum;
+            const Real term = -matrix(row, column) * solution(column), next = sum + term, part = next - sum;
             error += (sum - (next - part)) + (term - part) + std::fma(-matrix(row, column), solution(column), -term);
             sum = next;
         }
@@ -73,33 +75,38 @@ Real reduced_error_envelope(Real inverse, Real residual, Real floor, Real displa
 template <typename Matrix, typename Scale, typename Terms, typename Inner>
 typename Scale::PlainObject canonical_row_floor(const Matrix& j, const Scale& physical_scale,
     const Terms& terms, const Inner& inner) {
-    const double epsilon = std::numeric_limits<double>::epsilon();
-    const double gamma = j.cols() * epsilon / (1 - j.cols() * epsilon);
+    using Real = typename Matrix::Scalar;
+    const Real epsilon = std::numeric_limits<Real>::epsilon();
+    const Real gamma = j.cols() * epsilon / (1 - j.cols() * epsilon);
     return (gamma * (j.cwiseAbs() * physical_scale)).cwiseMax(inner + epsilon * terms);
 }
 
 template <typename Vector>
 struct LinearError final {
-    Vector correction, floor, defect, radius;
+    Vector correction, floor, defect, radius, row_floor;
     std::size_t rank = 0;
-    double threshold = 0, matrix_norm = 0, inverse_norm = INFINITY, condition = INFINITY, backward = INFINITY;
+    typename Vector::Scalar threshold = 0, matrix_norm = 0, inverse_norm = INFINITY, condition = INFINITY, backward = INFINITY;
     std::string cause;
 };
 
-template <typename Jacobian, typename Residual, typename Projection, typename Floor, typename RowScale, typename ColumnScale>
+template <typename Jacobian, typename Residual, typename Projection, typename Floor, typename RowScale, typename ColumnScale,
+    typename Factor = std::decay_t<decltype(std::declval<typename Jacobian::PlainObject>().fullPivLu())>>
 LinearError<typename Residual::PlainObject> linear_error(const Jacobian& j, const Residual& f, const Projection& g,
-    const Floor& eta, const RowScale& row, const ColumnScale& column) {
+    const Floor& eta, const RowScale& row, const ColumnScale& column,
+    const Factor* supplied = nullptr,
+    const typename Residual::PlainObject* correction = nullptr) {
     using Matrix = typename Jacobian::PlainObject;
     using Vector = typename Residual::PlainObject;
-    LinearError<Vector> out;
+    LinearError<Vector> out; out.row_floor = eta;
     const Matrix a = row.asDiagonal() * j * column.asDiagonal();
     if (a.rows() != a.cols() || !a.allFinite() || !f.allFinite() || !eta.allFinite()
         || !g.allFinite() || (eta.array() < 0).any()) { out.cause = "nonfinite_or_unavailable_rows"; return out; }
-    const auto lu = a.fullPivLu();
+    std::optional<Factor> owned;
+    const auto& lu = supplied ? *supplied : owned.emplace(a);
     out.rank = static_cast<std::size_t>(lu.rank()); out.threshold = lu.threshold();
     out.matrix_norm = a.cwiseAbs().rowwise().sum().maxCoeff();
     if (out.rank != static_cast<std::size_t>(a.cols())) { out.cause = "rank_deficient"; return out; }
-    const Vector right = -row.cwiseProduct(f), d = lu.solve(right);
+    const Vector right = -row.cwiseProduct(f), d = correction ? *correction : Vector(lu.solve(right));
     const Vector defect = compensated_defect(a, d, right);
     const Matrix gc = g * column.asDiagonal();
     out.correction = gc * d;
@@ -135,14 +142,16 @@ struct EquilibriumComparison final {
     std::string judgment = "failed", cause;
     double difference = 0, chart_difference = 0, radius_sum = 0;
 };
-inline double log_difference(double a, double b) {
-    const double relative = (a - b) / b;
+template <typename Base>
+Base log_difference(Base a, Base b) {
+    const Base relative = (a - b) / b;
     return std::abs(std::isfinite(relative) && std::abs(relative) < policy::LOG_RATIO_NEAR_UNITY.value ? std::log1p(relative) : std::log(a) - std::log(b));
 }
-inline NumericalEstimate project_numerical_estimate(double value, double mapped, double radius, bool positive, bool constant) {
+template <typename Base>
+NumericalEstimate project_numerical_estimate(double value, Base mapped, Base radius, bool positive, bool constant) {
     core::Scope scope("project_numerical_estimate");
     const double rounding = constant ? 0.0 : std::numeric_limits<double>::epsilon() * (positive ? 1.0 : std::abs(value));
-    const double displacement = positive ? log_difference(value, mapped) : std::abs(value - mapped);
+    const Base displacement = positive ? log_difference(Base(value), mapped) : std::abs(Base(value) - mapped);
     const double chart = radius + displacement + rounding;
     const double absolute = positive ? value * std::expm1(chart) : chart;
     const bool available = std::isfinite(absolute) && std::isfinite(chart);

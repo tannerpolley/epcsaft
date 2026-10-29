@@ -1306,6 +1306,13 @@ void check_saturation_loading() {
     const auto node_search = search_loading(model, node_declaration, node_loading, {0.25, 0.3, 0.35, 0.4, 0.45, 0.5});
     CHECK(node_search.accepted && node_search.groups.size() == 1);
     CHECK(std::abs(node_search.candidates[*node_search.accepted].state.coordinates[c.loading_column()] - 0.35) <= 1e-8);
+    // #864: conservation uncertainty follows the solved loading, not its 0.37 seed.
+    auto node_problem = bubble; node_problem.loading = node_loading;
+    const auto node_compiled = compile_problem(model, node_problem);
+    const auto& node_result = node_search.candidates[*node_search.accepted].state;
+    const auto node_terms = node_compiled.row_uncertainty(node_compiled.prepare(node_result.coordinates));
+    CHECK(std::abs(node_terms.terms[6] - 1.4814814814814785) <= 1e-14);
+    CHECK(std::abs(node_terms.terms[7] - 0.51851851851852171) <= 1e-14);
     DriverLimits exhausted{512, std::chrono::steady_clock::time_point::max(), 512, true, 2048, 1024};
     exhausted.attempt_cap = 512;
     const auto refused = search_loading(model, bubble, *bubble.loading, {0.25, 0.3, 0.35, 0.4, 0.45, 0.5}, &exhausted);
