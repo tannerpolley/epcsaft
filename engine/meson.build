@@ -377,3 +377,7 @@ install_subdir(
 executable('reaction_reference_e3', '../analyses/2026-reaction-reference-association/scripts/e3.cpp',
   dependencies: [ipopt_dep, eigen_dep, cppad_headers_dep], include_directories: native_inc,
   link_with: epcsaft_native, build_rpath: '$ORIGIN', install: false, build_by_default: false)
+
+executable('wu_chloride_coverage', '../analyses/2026-mixed-chloride-water-activity/scripts/wu_coverage.cpp',
+  dependencies: [ipopt_dep, eigen_dep, cppad_headers_dep], include_directories: native_inc,
+  link_with: epcsaft_native, build_rpath: '$ORIGIN', install: false, build_by_default: false)
