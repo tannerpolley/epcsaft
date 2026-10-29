@@ -1,0 +1,25 @@
+provenance_kind = "derived-record-provenance-v1"
+schema_version = 1
+transformations = ["Unchanged chloride basis plus the frozen hydrogen calibration endpoint; no refit."]
+
+[[records]]
+retained_path = "parameters/parameters.json"
+sha256 = "639cd57328e274c829bfa44dfda42527e4bfda1cb068a87c231c7a88b4b4c5b2"
+
+[[sources]]
+source_id = "input-0"
+role = "Retained fit input or numerical result"
+retained_path = "data/packets/figiel-2025-chloride-mixture-refit/2/parameters/parameters.json"
+sha256 = "7e32db55f77fe437bc8f918685b6287899e658810ebb575a10e31fcc61e63bf7"
+
+[[sources]]
+source_id = "input-1"
+role = "Retained fit input or numerical result"
+retained_path = "analyses/2026-hydrochloric-acid-chloride-basis/results/issue-901-profile-r2/frozen.csv"
+sha256 = "2477798a8c51abc1f547db20050e6513193a3ba60af5393b2947bc21e1d2c135"
+
+[[sources]]
+source_id = "input-2"
+role = "Retained fit input or numerical result"
+retained_path = "analyses/2026-hydrochloric-acid-chloride-basis/inputs/fit-declaration-issue-901.json"
+sha256 = "4d01194beb37d80291fe24215f9d2998ad95f8ff9f129341362b0b64e4cb4e1f"

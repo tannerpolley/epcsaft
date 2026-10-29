@@ -182,3 +182,16 @@ first order, not a certified interval; #860 will absorb its local owner.
 ALG-EQUILIBRIUM defines its quantities and failure meanings. No new physical
 model, start correlation or independently callable equilibrium solver is
 authorized.
+
+**Amendment 2026-10-27 (#886, owner).** A prepared `CompiledSystem.solve_saturation()`
+entry and the general driver call the same one-component two-density reduction
+and refinement. The eligibility predicate remains shared. Each call constructs
+its declaration-derived start and complete first point; subsequent double
+trials reuse that call's layout with the original packing-coordinate conversion.
+The shared full rows, bounds, publication and density-branch admission remain.
+A rejected reduction enters the existing general continuation once from the
+original coordinates. Its owned result retains first and terminal observations,
+available full-row and linear records, and actual work separately from the
+fallback's endpoint diagnostics. Allocation failure propagates. One native bulk
+snapshot transports the result and actual returned-density phase pressures;
+its owning diagnostic reference survives caller-name deletion.

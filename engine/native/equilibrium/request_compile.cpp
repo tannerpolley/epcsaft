@@ -552,6 +552,9 @@ std::vector<double> pinned_hessian(
             / CppAD::exp(q[shape[phase].volume]);
         const AD amount = shape[phase].amount.has_value() ? q[*shape[phase].amount]
             : AD(compiled.phase_amount(problem.phases[phase]));
+        const auto feed = compiled.feed_at(q);
+        AD total = 0.0;
+        for (const auto& value : feed) total += value;
         AD simple = pressure_weight * (AD(1.0) - P * volume / (GAS_CONSTANT_J_PER_MOL_K * T));
         for (std::size_t local = 0; local < shape[phase].x.size(); ++local) {
             const std::size_t species = problem.phases[phase].support[local];
@@ -571,7 +574,10 @@ std::vector<double> pinned_hessian(
             if (descriptor.kind == RowKind::Moiety) {
                 for (std::size_t species = 0; species < components; ++species)
                     simple += multipliers[row] * amount * compiled.B[descriptor.index][species]
-                        * x[species] / compiled.feed_total;
+                        * x[species] / (problem.loading ? total : AD(compiled.feed_total));
+                if (problem.loading && phase == 0)
+                    for (std::size_t species = 0; species < components; ++species)
+                        simple -= multipliers[row] * compiled.B[descriptor.index][species] * feed[species] / total;
             } else if (descriptor.phase == phase && descriptor.kind == RowKind::Electro) {
                 for (std::size_t species = 0; species < components; ++species)
                     simple += multipliers[row] * charges[species] * x[species];
@@ -685,7 +691,11 @@ CppAD::ADFun<double> record_geometry(
     const AD T = problem.temperature.free ? u[compiled.primal_size - compiled.free_intensive_count] : u[n];
     const AD P = problem.pressure.free ? u[compiled.primal_size - 1] : u[n + 1];
     AD feed_total = AD(0.0);
-    for (std::size_t i = 0; i < components; ++i) feed_total += u[n + 2 + i];
+    auto feed = compiled.feed_at(u);
+    for (std::size_t i = 0; i < components; ++i) {
+        feed[i] += u[n + 2 + i] - compiled.n_feed[i];
+        feed_total += feed[i];
+    }
     const std::vector<AD> theta(u.begin() + static_cast<std::ptrdiff_t>(n + 2 + components), u.begin() + static_cast<std::ptrdiff_t>(n + 2 + components + theta_center.size()));
     const auto tape_parameters = detail::make_tape_parameters(parameters, model.active_parameters(), theta);
     const auto sigma = segment_sigma(T, tape_parameters);
@@ -806,11 +816,12 @@ CppAD::ADFun<double> record_geometry(
             row_values[row] = compiled.solids[item.index].present ? -solid_output[2 * item.index + 1] : solid_output[2 * item.index];
         if (item.kind != RowKind::Moiety) continue;
         for (std::size_t species = 0; species < components; ++species)
-            row_values[row] -= compiled.B[item.index][species] * u[n + 2 + species];
+            row_values[row] -= compiled.B[item.index][species] * feed[species];
         for (std::size_t s = 0; s < compiled.solids.size(); ++s)
             row_values[row] += compiled.solids[s].balance[item.index] * solid_output[2 * s];
-        row_values[row] /= AD(compiled.feed_total);
+        row_values[row] /= problem.loading ? feed_total : AD(compiled.feed_total);
     }
+    if (problem.loading) row_values.back() = (P - problem.loading->pressure) / problem.loading->pressure;
     if (compiled.has_caloric_condition()) {
         const bool h = problem.enthalpy_j.has_value();
         row_values.back() -= u[n + 2 + components + theta_center.size() + (h ? 0 : 1)]
@@ -1465,6 +1476,28 @@ static CompiledSystem compile_with_basis(
     for (std::size_t s = 0; s < compiled.solids.size(); ++s)  // free solid amounts follow the phase coordinates
         if (request.solids[s].amount.kind == AmountKind::Free) compiled.solids[s].column = compiled.primal_size++;
     compiled.primal_size += compiled.mode_count + compiled.free_intensive_count;
+    if (request.loading) {
+        const auto& a = *request.loading;
+        if (request.temperature.free || !request.pressure.free || compiled.pinned_count != 1
+            || request.phases.size() != 2
+            || std::count_if(request.phases.begin(), request.phases.end(), [](const auto& p) { return p.is_zero_pinned() && p.kind == PhaseKind::Vapor; }) != 1
+            || std::count_if(request.phases.begin(), request.phases.end(), [](const auto& p) { return p.is_free() && p.kind == PhaseKind::Liquid; }) != 1
+            || !request.solids.empty() || request.critical || request.envelope
+            || request.azeotrope || compiled.has_caloric_condition() || request.feed.kind != FeedKind::Amounts
+            || a.initial.size() != components || a.direction.size() != components
+            || !(std::isfinite(a.lower) && std::isfinite(a.upper) && std::isfinite(a.seed)
+                 && a.lower > 0 && a.upper > a.lower && a.seed >= a.lower && a.seed <= a.upper
+                 && std::isfinite(a.pressure) && a.pressure > 0))
+            throw std::invalid_argument("invalid affine saturation loading declaration");
+        for (std::size_t i = 0; i < components; ++i)
+            if (!std::isfinite(a.initial[i]) || a.initial[i] < 0 || !std::isfinite(a.direction[i])
+                || a.direction[i] < 0 || compiled.n_feed[i] != a.initial[i] + a.seed * a.direction[i])
+                throw std::invalid_argument("affine saturation feed seed mismatch");
+        if (!exact_zero_dot(std::vector<double>(z.begin(), z.end()), a.direction) || sum(a.direction) <= 0)
+            throw std::invalid_argument("affine saturation requires neutral positive addition");
+        ++compiled.primal_size;
+        compiled.rows.push_back({RowKind::SaturationPressure, 0, 0});
+    }
     const auto point = compiled.generic_point();
     const auto jacobian = compiled.jacobian(point);
     Eigen::MatrixXd matrix = Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(
@@ -1683,6 +1716,7 @@ std::vector<double> CompiledSystem::generic_point() const {
     }
     for (std::size_t i = 0; i < mode_count; ++i)  // a generic mode direction, aligned with no axis
         point[mode_offset() + i] = (1.0 + 0.29 * static_cast<double>(i)) / static_cast<double>(mode_count + 1);
+    if (problem.loading) point[loading_column()] = problem.loading->seed;
     std::size_t offset = primal_size - free_intensive_count;
     if (problem.temperature.free) point[offset++] = seed_temperature();
     if (problem.pressure.free) point[offset++] = seed_pressure();
@@ -1780,6 +1814,8 @@ PointEvaluationValues<Base> CompiledSystem::evaluate_at(const PhasePointValues<B
     core::Scope scope("equilibrium_evaluate");
     if constexpr (std::is_same_v<Base, double>) if (ideal) return {ideal_rows(*this, prepared).Forward(0, prepared.point), 0.0, 0.0};
     const auto& point = prepared.point;
+    const auto balance = [&] { if constexpr (std::is_same_v<Base, double>) return matvec(B, feed_at(point)); else return this->balance; }();
+    const double feed_total = [&] { if constexpr (std::is_same_v<Base, double>) return feed_total_at(prepared); else return this->feed_total; }();
     const auto& shape = prepared.shape;
     const std::size_t components = model->parameters().component_count();
     const auto& z = model->parameters().charge_number;
@@ -1865,6 +1901,8 @@ PointEvaluationValues<Base> CompiledSystem::evaluate_at(const PhasePointValues<B
 template PointEvaluationValues<long double> CompiledSystem::evaluate_at(const PhasePointValues<long double>&) const;
 
 RowUncertainty CompiledSystem::row_uncertainty(const PhasePoint& at) const {
+    const auto balance = matvec(B, feed_at(at.point));
+    const double feed_total = feed_total_at(at);
     RowUncertainty out;
     out.terms.assign(rows.size(), 0.0); out.inner = out.terms;
     if (ideal) {
@@ -1918,6 +1956,8 @@ RowUncertainty CompiledSystem::row_uncertainty(const PhasePoint& at) const {
         } else if (row.kind == RowKind::AzeotropeCondition) {
             const auto local = problem.phases[0].support[species];
             terms = std::abs(std::log(at.composition[0][local])) + std::abs(std::log(at.composition[1][local]));
+        } else if (row.kind == RowKind::SaturationPressure) {
+            terms = (std::abs(at.pressure) + problem.loading->pressure) / problem.loading->pressure;
         } else if (row.kind == RowKind::EnvelopeCondition) {
             const auto& e = *problem.envelope;
             terms = std::abs(e.target);
@@ -2075,6 +2115,8 @@ template <typename Base>
 std::vector<Base> CompiledSystem::trace_moiety_relative(
     const PhasePointValues<Base>& prepared, std::vector<Base> values, std::size_t width
 ) const {
+    const auto n_feed = feed_at(prepared.point);
+    const double feed_total = [&] { if constexpr (std::is_same_v<Base, double>) return feed_total_at(prepared); else return this->feed_total; }();
     const Base trace = policy::EQUILIBRIUM_TRACE_MOIETY_FRACTION.value;
     if (values.size() != rows.size() * width) return values;
     for (std::size_t row = 0; row < rows.size(); ++row) {
@@ -2143,7 +2185,21 @@ std::vector<double> CompiledSystem::jacobian_at(const PhasePoint& at) const { re
 template <typename Base>
 std::vector<Base> CompiledSystem::jacobian_at(const PhasePointValues<Base>& prepared) const {
     core::Scope scope("equilibrium_jacobian");
-    if constexpr (std::is_same_v<Base, double>) if (ideal) return ideal_rows(*this, prepared).Jacobian(prepared.point);
+    if constexpr (std::is_same_v<Base, double>) {
+    if (problem.loading) {
+        const auto n = prepared.point.size();
+        std::vector<double> out(rows.size() * n), unit(n);
+        for (std::size_t j = 0; j < n; ++j) {
+            unit[j] = 1;
+            const auto series = row_series(prepared, {prepared.point, unit}, std::vector<double>(control_width()), 1);
+            if (series.energy != PropertyActionStatus::Available) throw std::runtime_error("affine row action unavailable");
+            for (std::size_t i = 0; i < rows.size(); ++i) out[i * n + j] = series.rows[1][i];
+            unit[j] = 0;
+        }
+        return out;
+    }
+    if (ideal) return ideal_rows(*this, prepared).Jacobian(prepared.point);
+    }
     const auto& point = prepared.point;
     const std::size_t n = point.size();
     const auto& compositions = prepared.composition;
@@ -2491,6 +2547,7 @@ RowSeries CompiledSystem::row_series(
     result.rows.assign(order + 1, std::vector<double>(rows.size(), 0.0));
     result.temperature.assign(order + 1, 0.0);
     result.pressure.assign(order + 1, 0.0);
+    if (problem.loading) for (const auto& coefficient : state) result.loading.push_back(coefficient[loading_column()]);
     result.phase.resize(problem.phases.size());
     const std::size_t row_offset = problem.phases.size() * stride;
     const std::size_t temperature_index = primal_size - free_intensive_count;

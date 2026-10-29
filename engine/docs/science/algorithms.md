@@ -620,6 +620,20 @@ separate mechanical branches and the unchanged raw/classified residual criteria.
 
 ### One-component two-density reduction
 
+The general driver and native prepared `CompiledSystem.solve_saturation()` entry
+reuse this single reduction/refinement owner. The prepared entry uses the same
+eligibility predicate and falls back to the general entry for an explicit
+options file or an ineligible declaration. Previous-result, optimizer-transfer
+and bounded calls retain their existing general entry points. Rejection retains
+an owned failed result and continues once from the original start, adding its
+work once without replacing the fallback's own endpoint or linear diagnostics.
+The bulk snapshot retains optional absence until a record is evaluated and an
+owning reference to the complete result. Phase pressures are evaluated natively
+at the actually exported densities. Direct pure-state evaluations retain inner
+first observations in evaluation order, including rejected trials and wider
+arithmetic; typed exceptions also retain their terminal record. Allocation
+failure propagates.
+
 An ordinary compiled declaration with one neutral nonideal component, fixed
 positive T, free P, two liquid/vapor supports {0}, one free amount and one
 zero-pinned amount uses the exact two-density reduction inside the existing
@@ -1535,6 +1549,27 @@ See the specification appendix for [cooling-onset dew](#cooling-onset-dew),
 [critical-equation candidates and phase envelopes](#critical-equation-candidates-and-phase-envelopes),
 and [pure stoichiometric solids](#pure-stoichiometric-solids).
 
+The #906 saturation-loading search declares a positive increasing grid with
+both interval endpoints. It solves ordinary free-pressure bubble nodes in order,
+starting cold and then mapping the preceding admitted current-vector state.
+Native pressure estimates resolve signs; native exact feed actions and the
+augmented defining-row loading projection establish sampled local regularity.
+Each strict sign bracket or pressure-uncertain node event receives one bounded
+affine-loading correction through the same driver. A bracket uses its midpoint
+and lower-node state; a node event uses that node and its adjacent-node span.
+There is no scalar inversion, grid refinement or outer retry.
+
+One existing recovery work envelope covers all grid, seed, fallback and
+correction calls, including driver attempts. Candidate comparison uses all
+loading, T/P and declared-order phase/state operands with their own native
+estimates and zero comparison allowance. Every pair in a duplicate group must
+agree; multiple strict brackets refuse independently of candidate deduplication.
+Candidate corrections/comparisons precede the sampled slope audit. All nodes
+and required events must be examined, with one admitted root group and no
+refusal, before publication. “Unique within the declared search” excludes
+between-node and undiscovered-branch claims. EqID `finite_addition_enthalpy`
+owns the heat, moving denominator and switch derivative.
+
 ## ALG-STABILITY
 
 The explicit native tangent-plane test and fixed-T/P discovery adopted in
@@ -1748,7 +1783,8 @@ optimizer attempt, including a nonconverged attempt. Failed initialization has
 no optimizer point. A Michelsen trial retains its converged primal chart [ln wᵢ, 1, ln η] as raw coordinates and has no raw
 residuals, basis or row transformation. Keep raw residuals separate from reconstructed composition,
 displacement and reevaluated energy. Normalize neutral trials; ionic rescaling
-and the Liquid largest-entry positive/negative pivot correction follow EqID:
+and the Liquid charge-only increase of the largest opposite-sign pivot followed
+by common multiplicative normalization follow EqID:
 `electroneutral_trial_reconstruction` with ties by index. Newly admitted charged
 Vapor trials retain common normalization and multiplicative charge repair in
 log arithmetic, without adding normalization roundoff to ionic coordinates. Recompute molar volume

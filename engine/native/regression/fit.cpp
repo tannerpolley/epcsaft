@@ -112,7 +112,7 @@ struct MeasurementChart final {
                 require(row < membership.size() && membership[row] == membership.size(), "overlapping measurement groups");
                 membership[row] = g;
                 const auto& item = request.observations[row];
-                require(item.kind != ObservationKind::AdditionEnthalpy && item.kind != ObservationKind::SolvationGibbsEnergy
+                require(!addition(item.kind) && item.kind != ObservationKind::SolvationGibbsEnergy
                     && item.kind != ObservationKind::TransferGibbsEnergy && item.kind != ObservationKind::BulkRelativePermittivity
                     && item.kind != ObservationKind::FeedEnthalpy && item.kind != ObservationKind::SystemEnthalpy
                     && !item.problem.critical && !item.problem.envelope, "uncertain inputs unsupported for this observation kind");
@@ -353,7 +353,8 @@ FIELDS(ReactionLogPolynomial, a, b, c, d, e, f, g, h, i, j)
 FIELDS(equilibrium::ReactionSpec, a, b, c, d, e, f)
 FIELDS(NeutralReferenceDeclaration, a, b, c, d)
 FIELDS(equilibrium::CriticalDeclaration, a, b)
-FIELDS(Observation, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v)
+FIELDS(equilibrium::AffineLoading, a, b, c, d, e, f)
+FIELDS(Observation, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z)
 FIELDS(HydrationHold, a, b, c, d, e, f)
 FIELDS(Failure, a, b, c, d, e, f, first_numerical_failure)
 FIELDS(MeasuredInput, a, b, c, d, e, f)
@@ -362,8 +363,30 @@ FIELDS(MeasurementUncertainty, a, b, c, d)
 FIELDS(MeasurementChart, a, b, c, d, e, f, g, h, i, j)
 // Observation validation refuses discovery options (a fit declares its phases) and solids, so neither is sent.
 auto fields(equilibrium::EquilibriumProblem& item) {
-    auto& [a, b, c, d, e, f, g, h, discovery, j, k, l, m, n, o, solids] = item;
-    return std::tie(a, b, c, d, e, f, g, h, j, k, l, m, n, o);
+    auto& [a, b, c, d, e, f, g, h, discovery, j, k, l, m, loading, n, o, solids] = item;
+    return std::tie(a, b, c, d, e, f, g, h, j, k, l, m, loading, n, o);
+}
+// Saturation replies carry physical records and estimates; compiled caches and optimizer memory stay in the worker.
+FIELDS(core::NumericalEstimate, a, b, c, d, e)
+FIELDS(core::EquilibriumComparison, a, b, c, d, e)
+FIELDS(equilibrium::EquilibriumNumericalEstimates, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w)
+FIELDS(equilibrium::SaturationOperand, a, b, c)
+FIELDS(equilibrium::SaturationCandidate, a, b, c)
+FIELDS(equilibrium::SaturationComparison, a, b, c, d)
+FIELDS(equilibrium::SolvedStateActionDiagnostics, a, b, c, d, e, f, g, h, i, j)
+FIELDS(equilibrium::SaturationNode, a, b, c, d, e, f, g, h, i, j)
+FIELDS(equilibrium::SaturationSearch, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s)
+auto fields(equilibrium::EquilibriumResult& v) {
+    return std::tie(v.declaration, v.success, v.message, v.solver_status, v.temperature, v.pressure,
+        v.amounts, v.mole_fractions, v.molar_densities, v.packing_fractions, v.residuals, v.classified_residuals,
+        v.coordinates, v.phase_count, v.iterations, v.evaluations, v.hessian_calls, v.convergence,
+        v.first_numerical_failure, v.last_rank, v.rank_records, v.requested_tolerance_met,
+        v.topology_event, v.topology_phase, v.topology_pair, v.solver_settings, v.numerical_estimates);
+}
+auto fields(Prediction& v) {
+    return std::tie(v.solver_options, v.value, v.unit, v.status, v.message, v.residual, v.first_numerical_failure,
+        v.saturation, v.saturation_loading, v.endpoint_loading, v.added_amount, v.cap_branch,
+        v.saturation_loading_gradient, v.endpoint_loading_gradient);
 }
 // A derived record cannot be bound as a whole; its size pins the scalar and vector members listed here.
 auto fields(Parameters& v) {
@@ -404,6 +427,21 @@ struct Wire final {
     }
     void one(policy::SolverOptions& options) { for (auto& v : options.values) one(v); }
     template <class T, std::size_t N> void one(std::array<T, N>& values) { for (auto& v : values) one(v); }
+    template <class T> void one(std::shared_ptr<T>& value) {
+        bool present = static_cast<bool>(value); one(present);
+        if (present) {
+            using Value = std::remove_const_t<T>;
+            if (!out) { auto owned = std::make_shared<Value>(); one(*owned); value = std::move(owned); }
+            else if constexpr (std::is_const_v<T>) { auto copy = *value; one(copy); }
+            else one(*value);
+        } else if (!out) value.reset();
+    }
+    template <class A, class B> void one(std::pair<A, B>& value) { (*this)(value.first, value.second); }
+    template <class K, class V> void one(std::map<K, V>& value) {
+        std::size_t size = value.size(); one(size);
+        if (out) for (const auto& entry : value) { auto key = entry.first; auto item = entry.second; (*this)(key, item); }
+        else { value.clear(); for (std::size_t i = 0; i < size; ++i) { K key; V item; (*this)(key, item); value.emplace(std::move(key), std::move(item)); } }
+    }
     template <class T> void one(std::optional<T>& value) {
         bool present = value.has_value();
         one(present);
@@ -581,7 +619,7 @@ struct ObservationEvaluator::Impl final {
         for (std::size_t k = 1; k <= workers_.sockets.size(); ++k) {
             put(workers_.sockets[k - 1], request_.parameters, request_.thermochemistry, request_.coordinates.coordinates,
                 request_.observations, request_.holds, request_.uncertainty, request_.controls.solver_options.values, measurement_, sqrt_weights_);
-            put(workers_.sockets[k - 1], owner_, k);
+            put(workers_.sockets[k - 1], owner_, k, deadline_);
         }
     }
 
@@ -609,7 +647,7 @@ struct ObservationEvaluator::Impl final {
             std::optional<Failure> theirs;
             ObservationEvaluation part;
             get(workers_.sockets[k - 1], theirs, part.predictions, part.residuals, part.statuses, part.gradient, part.input_gradient,
-                part.state_densities, part.reference_values, part.first_numerical_failure, part.first_numerical_failure_observation);
+                part.state_densities, part.reference_values, part.saturation_predictions, part.first_numerical_failure, part.first_numerical_failure_observation);
             // A trial refused before its rows sends none; any other reply carries every row.
             const bool rows = part.statuses.size() == n && part.predictions.size() == n && part.residuals.size() == n
                 && part.gradient.size() == (jacobian ? n * width : 0)
@@ -619,6 +657,7 @@ struct ObservationEvaluator::Impl final {
                 out.predictions[i] = part.predictions[i];
                 out.residuals[i] = part.residuals[i];
                 out.statuses[i] = part.statuses[i];
+                if (!part.saturation_predictions.empty()) out.saturation_predictions[i] = std::move(part.saturation_predictions[i]);
                 if (request_.uncertainty) { out.state_densities[i] = part.state_densities.at(i); out.reference_values[i] = part.reference_values.at(i); }
                 if (jacobian) std::copy_n(part.gradient.begin() + i * width, width, out.gradient.begin() + i * width);
                 if (jacobian && !measurement_.groups.empty()) std::copy_n(part.input_gradient.begin() + i * measurement_.groups.size(),
@@ -639,10 +678,12 @@ struct ObservationEvaluator::Impl final {
         for (std::size_t i = failure ? failure->row + 1 : n; i < out.statuses.size(); ++i) {
             out.predictions[i] = out.residuals[i] = 0.0;
             out.statuses[i] = ObservationStatus::NotEvaluated;
+            if (!out.saturation_predictions.empty()) out.saturation_predictions[i].reset();
             if (jacobian) std::fill_n(out.gradient.begin() + i * width, width, 0.0);
         }
         const auto reject = [&](std::size_t index, ObservationStatus status, std::string message, bool flagged, std::vector<ResidualEnergyAction> actions = {}) {
             for (const int fd : workers_.sockets) put(fd, false);
+            if (!out.saturation_predictions.empty()) result_.saturation_predictions = out.saturation_predictions;
             return fail(index, optimizer, status, std::move(message), flagged, std::move(actions), out.first_numerical_failure);
         };
         if (failure) return reject(failure->observation, failure->status, std::move(failure->message), failure->jacobian, std::move(failure->parameter_actions));
@@ -741,7 +782,7 @@ struct ObservationEvaluator::Impl final {
             ObservationEvaluation out;
             const auto failure = compute(optimizer, jacobian, out, trial, same_point, scope);
             put(fd, failure, out.predictions, out.residuals, out.statuses, out.gradient, out.input_gradient,
-                out.state_densities, out.reference_values, out.first_numerical_failure, out.first_numerical_failure_observation);
+                out.state_densities, out.reference_values, out.saturation_predictions, out.first_numerical_failure, out.first_numerical_failure_observation);
             get(fd, commit);
             if (commit) publish(optimizer, jacobian, out, trial, fresh, same_point);
         }
@@ -824,6 +865,9 @@ struct ObservationEvaluator::Impl final {
             scope.probe("density_seed_chart", seed ? 1.0 : 0.0);
             const auto& model = *trial.model;
             out.predictions.assign(n, 0.0);
+            const bool capped = std::any_of(trial.observations.begin(), trial.observations.end(),
+                [](const auto& o) { return o.kind == ObservationKind::SaturationCappedAdditionEnthalpy; });
+            if (capped) out.saturation_predictions.resize(n);
             out.residuals.assign(n, 0.0);
             out.statuses.assign(n, ObservationStatus::NotEvaluated);
             if (request_.uncertainty) { out.state_densities.resize(n); out.reference_values.resize(n); }
@@ -849,14 +893,15 @@ struct ObservationEvaluator::Impl final {
                         : same_state(observation, prior));
                     prediction = predict(model, observation, starts_[g], std::move(prediction.compiled), &trial.references,
                         seed && unchanged ? &seed->centers[g] : nullptr, seed && unchanged ? seed->model.get() : nullptr,
-                        seed && unchanged && trial.chart.physical == seed->chart.physical);
-                    if (prediction.status != ObservationStatus::Available && starts_[g]) {
+                        seed && unchanged && trial.chart.physical == seed->chart.physical, deadline_);
+                    if (prediction.status != ObservationStatus::Available && starts_[g] && observation.kind != ObservationKind::SaturationCappedAdditionEnthalpy) {
                         auto retry = predict(model, observation, std::nullopt, std::move(prediction.compiled), &trial.references);
                         core::retain_first(retry.first_numerical_failure, prediction.first_numerical_failure, true);
                         prediction = std::move(retry);
                     }
                 } else if (!pressure_closed(observation.kind)) project_prediction(model, observation, prediction);
                 retain(prediction.first_numerical_failure);
+                if (prediction.saturation) out.saturation_predictions[i] = prediction;
                 out.statuses[i] = prediction.status;
                 if (prediction.status != ObservationStatus::Available)
                     return Failure{i, i, prediction.status, jacobian, prediction.message, {}, prediction.first_numerical_failure};
@@ -885,6 +930,15 @@ struct ObservationEvaluator::Impl final {
                         : differentiate_group(model, rows, prediction, request_.coordinates, directions);
                 }
                 const auto& gradient = gradients[g][position[g]++];
+                if (prediction.saturation) {
+                    auto& detail = *out.saturation_predictions[i];
+                    const auto map_loading = [&](const auto& physical, auto& mapped) {
+                        if (physical.empty()) return;
+                        mapped.resize(this->width()); chain(request_, trial.chart.map, 1, physical.data(), mapped.data());
+                    };
+                    map_loading(gradient.saturation_loading_gradient, detail.saturation_loading_gradient);
+                    map_loading(gradient.endpoint_loading_gradient, detail.endpoint_loading_gradient);
+                }
                 retain(gradient.first_numerical_failure);
                 if (gradient.status != ObservationStatus::Available)
                     return Failure{i, i, gradient.status, true, gradient.message, gradient.parameter_actions, gradient.first_numerical_failure};
@@ -919,6 +973,10 @@ struct ObservationEvaluator::Impl final {
     }
 
     const FitRequest request_;
+    std::chrono::steady_clock::time_point deadline_ = request_.controls.maximum_elapsed_time_seconds > 0
+        ? std::chrono::steady_clock::now() + std::chrono::duration_cast<std::chrono::steady_clock::duration>(
+            std::chrono::duration<double>(request_.controls.maximum_elapsed_time_seconds))
+        : std::chrono::steady_clock::time_point::max();
     FitResult& result_;
     const MeasurementChart measurement_;
     const std::vector<std::size_t> groups_;
@@ -949,7 +1007,7 @@ void serve_fit(int fd) {
     const auto groups = state_groups(request.observations);
     FitResult result; result.solver_options = request.controls.solver_options.resolved({});
     ObservationEvaluator::Impl evaluator(request, result, groups, sqrt_weights, std::move(measurement));
-    get(fd, evaluator.owner_, evaluator.process_);
+    get(fd, evaluator.owner_, evaluator.process_, evaluator.deadline_);
     evaluator.serve(fd);
 }
 
@@ -1314,6 +1372,7 @@ void publish_candidate(FitResult& result, ObservationEvaluation final, const std
     result.chart = std::move(final.chart);
     result.physical = result.chart.physical;
     result.parameters = result.chart.parameters;
+    result.saturation_predictions = std::move(final.saturation_predictions);
     result.predictions = std::move(final.predictions);
     result.residuals = std::move(final.residuals);
     result.statuses = std::move(final.statuses);

@@ -2495,19 +2495,19 @@ $$
 
 - Section: Equilibrium / Tangent-plane testing
 - Status: Implementation convention
-- Source: Normalization and two linear charge/amount equations; #223 adopted numerical admission
-- Description: Reconstruct finite positive supported u=exp(y). Ionic supports require both charge signs. Rescale charge groups and normalize; structural zeros remain zero. Liquid trials then correct arithmetic residuals on the largest positive and negative entries (ties by index). Charged Vapor trials use multiplicative log rescaling and omit the additive ionic correction to preserve trace coordinates.
-- Change note: Reject loss of positivity/support or domain. Neutral supports normalize directly; a singleton is exactly one. Reevaluate energy at v=c(T,w)/η. This is numerical admission, not exact-real feasibility.
+- Source: Charge equality and common normalization; #223 adopted numerical admission, #904 positive charge repair
+- Description: Reconstruct finite positive supported u=exp(y). Ionic supports require both charge signs. Rescale charge groups and normalize; unsupported entries retain their input values. Liquid trials increase the largest opposite-sign entry to correct charge roundoff (ties by index), then normalize by common division. Charged Vapor trials use multiplicative log rescaling and omit the additive ionic correction to preserve trace coordinates.
+- Change note: Reject loss of positivity/support or domain. Neutral supports normalize directly; a singleton is exactly one. Reevaluate energy at v=c(T,w)/η. This is numerical admission, not exact-real feasibility. For $q=0$, use $v=w$ and the same common normalization. Stored fractions must remain finite and strictly positive; both absolute sum and charge defects must be at most $10^{-12}$. Overflow or underflow is not repaired.
 
 $$
 \begin{aligned}
 Q_+&=\sum_{z_i>0}z_i u_i,\quad Q_-=\sum_{z_i<0}|z_i|u_i,\\
 \widehat u_i&=\begin{cases}u_i\sqrt{Q_-/Q_+},&z_i>0,\\u_i\sqrt{Q_+/Q_-},&z_i<0,\\u_i,&z_i=0,\end{cases}
 \qquad w_i=\frac{\widehat u_i}{\sum_{j\in S}\widehat u_j},\\
-\begin{pmatrix}1&1\\z_+&z_-\end{pmatrix}
-\begin{pmatrix}\delta w_+\\\delta w_-\end{pmatrix}
-&=\begin{pmatrix}1-\sum_i w_i\\-\sum_i z_iw_i\end{pmatrix},\qquad
-(w_+,w_-)\leftarrow(w_++\delta w_+,w_-+\delta w_-).
+q&=\sum_{i\in S}z_iw_i,\qquad
+k=\begin{cases}-,&q>0,\\+,&q<0,\end{cases}\\
+v_i&=w_i+\mathbf1_{i=k}\frac{|q|}{|z_k|},\qquad
+w_i^{\mathrm{new}}=\frac{v_i}{\sum_{j\in S}v_j}\quad(q\ne0).
 \end{aligned}
 $$
 
@@ -2762,7 +2762,7 @@ $$
 - Status: Exact derivation
 - Source: Closed-system enthalpy balance for a declared finite feed addition, using EqIDs `total_enthalpy`, `ideal_enthalpy` and `residual_enthalpy`; accepted observation definition in issue #210
 - Description: Signed total-system enthalpy increment per mole of total feed added between two declared equilibrium states, less the ideal-plus-residual feed enthalpy at its declared temperature, pressure, composition and branch. Each phase enthalpy uses EqID `total_enthalpy` on the declared thermochemistry's $P^{\circ}$ basis. Exothermic absorption is negative. A zero-pinned phase contributes zero and is not evaluated.
-- Change note: Both endpoint problems share parameters, thermochemistry, ordered reactions and source reference. Their feed amounts differ by $n_{add}\mathbf y$ within the admission tolerance. Each endpoint may have its own specification and temperature, with referenced free-temperature endpoints consuming the shared native first caloric actions at their solved temperatures. Every feed species needs an ideal-gas record. The exact first action holds feed state and amount fixed, differentiates both endpoint phase amounts and enthalpies, and subtracts the feed residual action; ideal feed enthalpy is independent of fitted parameters. The observation is an enthalpy increment for free-pressure endpoints; interpreting it as measured heat is an energy-balance choice unless endpoints and feed are isobaric at one pressure.
+- Change note: Both endpoint problems share parameters, thermochemistry, ordered reactions and source reference. Their feed amounts differ by $n_{add}\mathbf y$ within the admission tolerance. Each endpoint may have its own specification and temperature, with referenced free-temperature endpoints consuming the shared native first caloric actions at their solved temperatures. Every feed species needs an ideal-gas record. The exact first action holds feed state and amount fixed, differentiates both endpoint phase amounts and enthalpies, and subtracts the feed residual action; ideal feed enthalpy is independent of fitted parameters. The observation is an enthalpy increment for free-pressure endpoints; interpreting it as measured heat is an energy-balance choice unless endpoints and feed are isobaric at one pressure. For the fixed-T/P saturation-capped declaration in #906, the fixed analytical basis is N_b mol and source loading cap is alpha_LP mol/mol. The existing bubble rows compose n(alpha)=n0+N_b alpha y with (p_b-P)/P=0 through the same driver; ALG-EQUILIBRIUM owns the search and its limits. The endpoint enthalpy action includes movement of its feed. The source branch has zero endpoint-loading action; the saturation branch uses the loading coordinate action from EqID `implicit_sensitivity`. The eliminated ordinary-bubble check is alpha_s,v=-p_b,v/p_b,alpha at fixed physical P. Exact equality preserves heat but refuses its classical gradient, with one-sided loading action min(0,D alpha_s); unresolved nearby branches also refuse the gradient without changing the exact minimum. EqID `affine_parameter_coordinate_map` applies the coordinate map once.
 
 $$
 \Delta h_{add}=\frac{H^{(2)}-H^{(1)}}{n_{add}}-h_{feed},\qquad
@@ -2772,7 +2772,13 @@ h_{feed}=h^{id}(T_f,\mathbf y)+h^{res}(T_f,P_f,\mathbf y;\theta),\\
 \left(\dot n_p^{(k)}h_p^{(k)}+n_p^{(k)}\dot h_p^{(k)}\right)
 -\left.\frac{\partial h^{res}}{\partial\theta}\right|_{T_f,P_f,\mathbf y},\qquad
 \sigma_1=-1,\quad\sigma_2=1.
+\\
+\alpha_e=\min(\alpha_{LP},\alpha_s),\quad n_{add}=N_b\alpha_e,\quad
+Q=\frac{H_e-H_0}{N_b\alpha_e}-h_{feed},\\
+Q_{v_j}=\frac{H_{e,v_j}-H_{0,v_j}}{N_b\alpha_e}-h_{feed,v_j}
+-\frac{H_e-H_0}{N_b\alpha_e^2}\alpha_{e,v_j}.
 $$
+
 
 ## `total_entropy`
 

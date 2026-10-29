@@ -149,6 +149,7 @@ struct FitResult final {
     std::vector<double> optimizer;
     std::vector<double> physical;  // one value per physical row of the coordinate set
     Parameters parameters;
+    std::vector<std::optional<Prediction>> saturation_predictions;
     std::vector<double> predictions;
     std::vector<double> residuals;           // declared form, unweighted
     std::vector<double> weighted_residuals;  // sqrt(w) r, the optimizer residual; whitened under a declared matrix
@@ -177,6 +178,7 @@ struct FitResult final {
 
 struct ObservationEvaluation final {
     policy::SolverOptions solver_options;
+    std::vector<std::optional<Prediction>> saturation_predictions;
     std::vector<double> predictions, residuals, gradient, weighted, optimizer_gradient;
     // Public point columns: optimizer_gradient is dy/dv; this field is dr/dv at unit weight (with uncertainty, the
     // complete standardized and, under a declared matrix, whitened objective columns).

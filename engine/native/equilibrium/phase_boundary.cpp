@@ -1627,4 +1627,200 @@ EquilibriumResult recover_from_source(const CompiledSystem& target, const Driver
     }
 }
 
+
+void compare_loading_candidates(SaturationSearch& out, core::ComparisonEligibility eligibility) {
+    const auto usable = [](const core::NumericalEstimate& e) {
+        return e.available && e.resolved && std::isfinite(e.absolute) && e.absolute >= 0
+            && std::isfinite(e.chart) && e.chart >= 0;
+    };
+    for (std::size_t i = 0; i < out.candidates.size(); ++i) {
+        if (!out.candidates[i].admitted) continue;
+        for (std::size_t j = 0; j < i; ++j) {
+            if (!out.candidates[j].admitted) continue;
+            SaturationComparison comparison{i, j, {}, "duplicate"};
+            const auto& a = out.candidates[i].operands;
+            const auto& b = out.candidates[j].operands;
+            if (!eligibility.valid() || a.empty() || a.size() != b.size()) comparison.identity = "unresolved";
+            for (std::size_t k = 0; k < a.size() && k < b.size(); ++k) {
+                auto e = eligibility;
+                e.admission_a = e.admission_a && usable(a[k].error) && a[k].quantity == b[k].quantity;
+                e.admission_b = e.admission_b && usable(b[k].error);
+                const auto c = core::compare_equilibrium_quantity(a[k].quantity, a[k].value, b[k].value, 0,
+                    a[k].error, b[k].error, e, core::ComparisonMode::EstimatedError);
+                comparison.operands.push_back(c);
+                if (c.judgment == "failed") {
+                    if (e.valid() && (c.cause == "outside_estimates" || c.cause == "ordinary_achievable")) {
+                        if (comparison.identity != "unresolved") comparison.identity = "distinct";
+                    } else comparison.identity = "unresolved";
+                }
+            }
+            out.comparisons.push_back(std::move(comparison));
+        }
+        std::vector<std::size_t> duplicates;
+        for (std::size_t g = 0; g < out.groups.size(); ++g) {
+            std::size_t count = 0;
+            for (auto member : out.groups[g]) for (const auto& c : out.comparisons)
+                if (c.left == i && c.right == member) count += c.identity == "duplicate";
+            if (count && count != out.groups[g].size()) out.causes.push_back("root_comparison_unresolved");
+            if (count) duplicates.push_back(g);
+        }
+        if (duplicates.empty()) out.groups.push_back({i});
+        else if (duplicates.size() == 1) out.groups[duplicates[0]].push_back(i);
+        else out.causes.push_back("root_comparison_unresolved");
+    }
+    for (const auto& c : out.comparisons)
+        if (c.identity == "unresolved") out.causes.push_back("root_comparison_unresolved");
+    if (out.groups.size() > 1 || out.brackets > 1) out.causes.push_back("multiple_roots");
+}
+
+void admit_loading_search(SaturationSearch& out) {
+    const auto sign = [](double value) { return (value > 0) - (value < 0); };
+    compare_loading_candidates(out, {});
+    for (std::size_t i = 0; i < out.nodes.size(); ++i) {
+        const auto& a = out.nodes[i];
+        if (!std::isfinite(a.slope) || a.slope == 0) out.causes.push_back("unresolved_slope_reversal");
+        if (!i) continue;
+        const auto& b = out.nodes[i - 1]; const auto delta = a.mismatch - b.mismatch;
+        if (sign(a.slope) != sign(b.slope) || (std::abs(delta) > a.estimates.pressure.absolute + b.estimates.pressure.absolute
+            && sign(delta) != sign(a.slope))) out.causes.push_back("unresolved_slope_reversal");
+    }
+
+    if (out.groups.empty() && out.causes.empty()) out.causes.push_back("no_resolved_root");
+    if (out.complete && out.causes.empty() && out.groups.size() == 1) out.accepted = out.groups[0][0];
+}
+
+SaturationSearch search_loading(const HelmholtzModel& model, EquilibriumProblem declaration, const AffineLoading& affine,
+    const std::vector<double>& grid, const DriverLimits* supplied, std::chrono::steady_clock::time_point deadline) {
+    using Clock = std::chrono::steady_clock;
+    if (grid.size() < 2 || grid.front() != affine.lower || grid.back() != affine.upper)
+        throw std::invalid_argument("saturation grid must include both declared bounds");
+    for (std::size_t i = 0; i < grid.size(); ++i)
+        if (!std::isfinite(grid[i]) || grid[i] <= 0 || (i && grid[i] <= grid[i - 1]))
+            throw std::invalid_argument("saturation grid must be positive and strictly increasing");
+    const auto cap = static_cast<std::size_t>(policy::EQUILIBRIUM_RECOVERY_WORK.value);
+    DriverLimits own{cap, deadline, 0, true, 4 * cap, 2 * cap};
+    own.attempt_cap = cap;
+    const auto& work = supplied ? *supplied : own;
+    SaturationSearch out; out.grid = grid; out.declaration = affine;
+    out.work_at_entry = {work.consumed, work.evaluations, work.hessian_calls, work.attempts};
+    const auto fail = [&](const std::string& cause) { out.causes.push_back(cause); };
+    const auto solve = [&](double loading, double lower, double upper, double target,
+                           const std::optional<EquilibriumResult>& start, bool composed) {
+        if (work.attempt_cap && work.attempts >= work.attempt_cap) work.exhausted = true;
+        work.check();
+        auto problem = declaration;
+        problem.feed.kind = FeedKind::Amounts;
+        problem.feed.values = affine.initial;
+        for (std::size_t i = 0; i < problem.feed.values.size(); ++i)
+            problem.feed.values[i] += loading * affine.direction[i];
+        problem.loading.reset();
+        if (composed) { problem.loading = affine; problem.loading->seed = loading;
+            problem.loading->lower = lower; problem.loading->upper = upper; problem.loading->pressure = target; }
+        auto compiled = compile_problem(model, problem);
+        auto state = solve_compiled(compiled, start, nullptr, &work);
+        if (!out.first_numerical_failure) out.first_numerical_failure = state.first_numerical_failure;
+        return std::make_pair(std::move(compiled), std::move(state));
+    };
+    const auto usable = [](const core::NumericalEstimate& e) {
+        return e.available && e.resolved && std::isfinite(e.absolute) && e.absolute >= 0;
+    };
+    const auto sign = [](double value) { return (value > 0) - (value < 0); };
+    try {
+        for (double alpha : grid) {
+            auto [c, state] = solve(alpha, affine.lower, affine.upper, affine.pressure,
+                out.nodes.empty() ? std::nullopt : std::make_optional(out.nodes.back().state), false);
+            SaturationNode node; node.loading = alpha; node.state = std::move(state);
+            out.nodes.push_back(std::move(node)); auto& n = out.nodes.back();
+            if (!n.state.success || !n.state.has_state()) { fail(n.state.message); fail("unexamined_gap"); break; }
+            n.mismatch = *n.state.pressure - affine.pressure;
+            auto begun = Clock::now();
+            n.estimates = equilibrium_numerical_estimates(c, n.state);
+            n.estimate_seconds = std::chrono::duration<double>(Clock::now() - begun).count();
+            SolvedStateActionDirection direction; direction.feed_amounts_mol = affine.direction;
+            direction.active_parameters.resize(model.active_parameters().size());
+            begun = Clock::now();
+            const auto action = solved_state_first_actions(c, n.state,
+                {{SolvedStateObservableKind::Pressure}}, {direction});
+            n.action_seconds = std::chrono::duration<double>(Clock::now() - begun).count();
+            if (!action.empty()) n.action_diagnostics = std::make_shared<SolvedStateActionDiagnostics>(action[0].diagnostics);
+            if (action.empty() || action[0].results.empty() || !action[0].results[0].action || action[0].results[0].status != SolvedStateActionStatus::Available) {
+                n.action_cause = action.empty() || action[0].results.empty() ? "action_unavailable" : solved_state_status_name(action[0].results[0].status);
+                if (!action.empty() && !action[0].results.empty())
+                    n.action_cause += ":" + action[0].results[0].diagnostic_message.value_or("");
+                fail(n.action_cause); fail("unexamined_gap"); break;
+            }
+            n.slope = *action[0].results[0].action;
+            auto local = c.problem;
+            local.loading = affine; local.loading->seed = alpha; local.loading->pressure = *n.state.pressure;
+            const auto augmented = compile_problem(model, local);
+            auto mapped = n.state;
+            mapped.coordinates.insert(mapped.coordinates.begin() + augmented.loading_column(), alpha);
+            mapped.declaration = std::make_shared<EquilibriumProblem>(augmented.problem);
+            const auto local_errors = equilibrium_numerical_estimates(augmented, mapped);
+            n.estimates.loading = local_errors.loading;
+            n.local_estimates = local_errors;
+            if (!usable(local_errors.loading)) { fail(local_errors.cause); fail("unexamined_gap"); break; }
+            if (!usable(n.estimates.pressure)) { fail(n.estimates.cause); fail("unexamined_gap"); break; }
+        }
+        if (out.nodes.size() == grid.size() && out.causes.empty()) {
+            for (std::size_t i = 0; i < out.nodes.size(); ++i) {
+                const auto& a = out.nodes[i];
+                const bool event = std::abs(a.mismatch) <= a.estimates.pressure.absolute;
+                if (event) out.events.push_back({i ? i - 1 : i, std::min(i + 1, grid.size() - 1)});
+                if (!i || event) continue;
+                const auto& b = out.nodes[i - 1];
+                if (std::abs(b.mismatch) > b.estimates.pressure.absolute && sign(a.mismatch) != sign(b.mismatch)) {
+                    ++out.brackets; out.events.push_back({i - 1, i});
+                }
+            }
+            for (const auto& event : out.events) {
+                const auto lo = grid[event[0]], hi = grid[event[1]];
+                double seed = (lo + hi) / 2;
+                auto start_node = event[0];
+                for (std::size_t i = event[0]; i <= event[1]; ++i)
+                    if (std::abs(out.nodes[i].mismatch) <= out.nodes[i].estimates.pressure.absolute) { seed = grid[i]; start_node = i; }
+                auto [c, state] = solve(seed, lo, hi, affine.pressure, out.nodes[start_node].state, true);
+                SaturationCandidate candidate; candidate.state = std::move(state);
+                if (!candidate.state.success || !candidate.state.has_state()) {
+                    fail(candidate.state.message); fail("unexamined_gap"); out.candidates.push_back(std::move(candidate)); continue;
+                }
+                const auto estimates = equilibrium_numerical_estimates(c, candidate.state);
+                candidate.state.numerical_estimates = estimates;
+                const auto alpha = candidate.state.coordinates[c.loading_column()];
+                if (!usable(estimates.loading) || estimates.densities.size() != candidate.state.phase_count
+                    || estimates.composition.size() != candidate.state.mole_fractions.size()) {
+                    fail(estimates.cause); fail("unexamined_gap"); out.candidates.push_back(std::move(candidate)); continue;
+                }
+                candidate.admitted = true;
+                const auto append = [&](double value, const core::NumericalEstimate& error, bool positive = false) {
+                    candidate.operands.push_back({positive ? core::Quantity::Positive : core::Quantity::Linear, value, error});
+                    if (!usable(error)) { candidate.admitted = false; fail("root_comparison_unresolved"); }
+                };
+                append(alpha, estimates.loading); append(*candidate.state.temperature, estimates.temperature);
+                append(*candidate.state.pressure, estimates.pressure);
+                for (std::size_t p = 0; p < candidate.state.phase_count; ++p) {
+                    append(candidate.state.molar_densities[p], estimates.densities[p], true);
+                    append(candidate.state.packing_fractions[p], estimates.packing[p], true);
+                    append(candidate.state.amounts[p], estimates.amounts[p]);
+                    for (std::size_t j = 0; j < c.n_feed.size(); ++j)
+                        append(candidate.state.mole_fractions[p * c.n_feed.size() + j], estimates.composition[p * c.n_feed.size() + j]);
+                }
+                if (alpha < lo || alpha > hi || c.classified_residual_norm(candidate.state.coordinates) > policy::EQUILIBRIUM_ROW_RESIDUAL.value
+                    || std::abs(*candidate.state.pressure / affine.pressure - 1) > policy::EQUILIBRIUM_ROW_RESIDUAL.value)
+                    { candidate.admitted = false; fail("central_residual_refused"); fail("unexamined_gap"); }
+                out.candidates.push_back(std::move(candidate));
+            }
+            out.complete = out.candidates.size() == out.events.size()
+                && std::find(out.causes.begin(), out.causes.end(), "unexamined_gap") == out.causes.end();
+        }
+    } catch (const std::exception& error) {
+        core::retain_failure(out.first_numerical_failure, error, "saturation search");
+        fail(work.expired() ? "budget_exhausted" : error.what()); fail("unexamined_gap");
+    }
+    admit_loading_search(out);
+    out.iterations = work.consumed; out.evaluations = work.evaluations;
+    out.hessian_calls = work.hessian_calls; out.attempts = work.attempts;
+    return out;
+}
+
 }  // namespace epcsaft::equilibrium
