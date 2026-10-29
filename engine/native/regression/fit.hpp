@@ -192,11 +192,11 @@ struct ObservationEvaluation final {
     std::vector<double> input_gradient;
     std::vector<std::vector<double>> state_densities, reference_values;
 };
-class EPC_API ObservationEvaluator final {
+class ObservationEvaluator final {
 public:
     struct Impl;
-    ObservationEvaluator(const FitRequest& request, FitResult& failures, const std::vector<std::size_t>& rows);
-    bool evaluate(const std::vector<double>& optimizer, bool columns, ObservationEvaluation& out);
+    EPC_API ObservationEvaluator(const FitRequest& request, FitResult& failures, const std::vector<std::size_t>& rows);
+    EPC_API bool evaluate(const std::vector<double>& optimizer, bool columns, ObservationEvaluation& out);
 private:
     std::shared_ptr<Impl> impl_;
 };
@@ -212,7 +212,7 @@ struct FitHost final {
 };
 EPC_API void set_fit_host(FitHost host, const void* extension);
 struct EPC_EXCEPTION FitInterrupted final {};
-EPC_API [[noreturn]] void serve_fit(int fd);  // a worker process: its rows of every evaluation, over fd
+[[noreturn]] EPC_API void serve_fit(int fd);  // a worker process: its rows of every evaluation, over fd
 EPC_API FitResult fit(const FitRequest& request);
 EPC_API std::vector<FitResult> fit_sequence(FitRequest request, const std::vector<std::vector<double>>& starts,
     int iterations, double seconds);  // shared budgets, ordered results; unstarted points are absent

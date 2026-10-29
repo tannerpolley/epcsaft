@@ -183,7 +183,7 @@ inline double require_component_property(const std::optional<double>& value) {
     if (!value) throw std::invalid_argument("ionic_insertion: absent charged component property");
     return *value;
 }
-struct EPC_API State final {
+struct State final {
     policy::SolverOptions solver_options;
     double hard_chain = 0.0;
     double dispersion = 0.0;
@@ -223,8 +223,8 @@ struct EPC_API State final {
     std::optional<core::Convergence> density_convergence;
     DensityBranch density_branch = DensityBranch::Unspecified;
     DensityBranch requested_density_branch = DensityBranch::Unspecified;
-    DensityBranch returned_density_branch() const;
-    bool density_branch_mismatch() const;
+    EPC_API DensityBranch returned_density_branch() const;
+    EPC_API bool density_branch_mismatch() const;
     std::optional<std::size_t> stable_root_count;
     std::optional<double> negative_slope_density;  // mol/m3, sampled cold mechanical-loop witness
     // Set only by state(..., derived_properties = true); fixed composition, SI molar units.
@@ -380,18 +380,18 @@ struct NeutralReferenceReactionDiagnostic final {
     }
 };
 
-class EPC_API HelmholtzModel final {
+class HelmholtzModel final {
 public:
-    explicit HelmholtzModel(
+    EPC_API explicit HelmholtzModel(
         Parameters parameters,
         std::vector<ActiveParameter> active = {},
         std::optional<ThermochemistryRecord> thermochemistry = std::nullopt,
         policy::SolverOptions solver_options = {}
     );
 
-    ~HelmholtzModel();
+    EPC_API ~HelmholtzModel();
 
-    HelmholtzDerivatives evaluate(
+    EPC_API HelmholtzDerivatives evaluate(
         double temperature,
         double volume,
         const std::vector<double>& amounts,
@@ -400,25 +400,25 @@ public:
     // Mixed contraction of the extensive residual Helmholtz scalar with three to five
     // directions of width 2 + C + A in [T, V, n, active parameters]: E3, E4 or E5.
     // Errors of E's ordinary Taylor coefficients on a requested path, including the site recurrence.
-    std::vector<double> residual_coefficient_errors(const std::vector<std::vector<double>>& regular,
+    EPC_API std::vector<double> residual_coefficient_errors(const std::vector<std::vector<double>>& regular,
         const std::vector<double>& sites) const;
-    ResidualEnergyAction residual_energy_action(double, double, const std::vector<double>&, const std::vector<std::vector<double>>&) const;
+    EPC_API ResidualEnergyAction residual_energy_action(double, double, const std::vector<double>&, const std::vector<std::vector<double>>&) const;
     ReferenceTaylor reference_taylor(double temperature, double volume,
         const std::vector<double>& composition, const std::vector<double>& stoichiometry,
         const PressureActionDirection& direction, std::size_t order, bool infinite_dilution = false, ReferenceTaylorError* error = nullptr) const;
-    NeutralPropertyDerivatives neutral_property(
+    EPC_API NeutralPropertyDerivatives neutral_property(
         double temperature,
         double molar_density,
         NeutralProperty property,
         DerivativeOrder order
     ) const;
-    State state(
+    EPC_API State state(
         double temperature,
         double molar_density,
         const std::vector<double>& mole_fractions,
         bool derived_properties = false
     ) const;
-    State state_at_pressure(
+    EPC_API State state_at_pressure(
         double temperature,
         double pressure,
         const std::vector<double>& mole_fractions,
@@ -426,26 +426,26 @@ public:
         std::optional<double> anchor_density = std::nullopt,
         bool derived_properties = false
     ) const;
-    PropertyActionBatch density_actions(
+    EPC_API PropertyActionBatch density_actions(
         double, double, const std::vector<double>&,
         const std::vector<PropertyObservable>&,
         const std::vector<DensityActionDirection>&
     ) const;
-    PropertyActionBatch pressure_actions(
+    EPC_API PropertyActionBatch pressure_actions(
         double, double, const std::vector<double>&, DensityBranch,
         const std::vector<PropertyObservable>&,
         const std::vector<PressureActionDirection>&,
         std::optional<double> = std::nullopt
     ) const;
-    double packing_fraction_coefficient(
+    EPC_API double packing_fraction_coefficient(
         double temperature,
         const std::vector<double>& mole_fractions
     ) const;
-    double molar_density_upper_bound(
+    EPC_API double molar_density_upper_bound(
         double temperature,
         const std::vector<double>& mole_fractions
     ) const;
-    DensityDiagnostics density_diagnostics(
+    EPC_API DensityDiagnostics density_diagnostics(
         double temperature, double pressure, const std::vector<double>& composition,
         const std::vector<double>& nodes, double density_tolerance, double log_tolerance,
         std::size_t max_evaluations, double max_seconds, bool adaptive,
@@ -453,14 +453,14 @@ public:
     ) const;
     // Physical-state admission (full-eos.md §12): |sum z_i x_i| <= COMPOSITION_SUM_TOLERANCE (absolute).
     // Public state requests and equilibrium feeds only; internal iterates use the unconstrained extension.
-    void validate_electroneutrality(const std::vector<double>& mole_fractions) const;
-    SweepCounters counters() const;
+    EPC_API void validate_electroneutrality(const std::vector<double>& mole_fractions) const;
+    EPC_API SweepCounters counters() const;
     // reaction_references results of this immutable model by exact inputs: a short FIFO (#380).
     // Inputs [first, last) only add columns: a stored result covers smaller ones there (#595).
     std::optional<std::vector<NeutralReferenceReactionDiagnostic>> stored_references(const std::vector<double>& inputs,
         std::size_t first, std::size_t last) const;
     void store_references(std::vector<double> inputs, const std::vector<NeutralReferenceReactionDiagnostic>& result) const;
-    void reset_counters() const;
+    EPC_API void reset_counters() const;
     const policy::SolverOptions& solver_options() const { return solver_options_; }
     template <typename Base>
     PureIsothermalValues<Base> pure_isothermal(Base temperature, Base volume, Base amount = 1.0) const;
@@ -508,6 +508,10 @@ private:
     mutable std::deque<std::pair<std::vector<double>, HelmholtzDerivatives>> centrals_;
     mutable std::mutex mutex_;
 };
+#if defined(_WIN32) && !defined(EPCSAFT_NATIVE_BUILD) && !defined(EPCSAFT_NATIVE_STATIC)
+extern template EPC_API PureIsothermalValues<double> HelmholtzModel::pure_isothermal(double, double, double) const;
+#endif
+
 
 EPC_API DensityRoot solve_density(
     const HelmholtzModel& model,

@@ -441,7 +441,12 @@ inline constexpr Tolerance EQUILIBRIUM_WARM_PUSH{"EQUILIBRIUM_WARM_PUSH", 1.0e-6
 inline constexpr Tolerance EQUILIBRIUM_WARM_MU{"EQUILIBRIUM_WARM_MU", 1.0e-6,
     Category::AlgorithmTolerance, "Ipopt 3.11.9 manual, monotone initial barrier for similar active sets; #505"};
 // Every entry, readable as epcsaft.tolerances(); the architecture check requires listing and a consumer.
-inline constexpr const Tolerance* ENTRIES[] = {
+#if defined(_WIN32)
+#define EPC_POLICY_TABLE(...) inline __VA_ARGS__ const
+#else
+#define EPC_POLICY_TABLE(...) inline constexpr __VA_ARGS__
+#endif
+EPC_POLICY_TABLE(const Tolerance*) ENTRIES[] = {
     &EQUILIBRIUM_WARM_PUSH, &EQUILIBRIUM_WARM_MU,
     &CLOSE_PACKING_FRACTION, &SITE_FRACTION_FLOOR, &SITE_FRACTION_CEILING, &ASSOCIATION_RESIDUAL,
     &ASSOCIATION_ACTION_RESIDUAL, &ASSOCIATION_MAX_ITERATIONS, &ASSOCIATION_BOUNDARY_FRACTION,
@@ -460,9 +465,10 @@ inline constexpr const Tolerance* ENTRIES[] = {
 
 // Six stopping controls; defaults remain the policies above. Presence survives inheritance.
 enum SolverOption : std::size_t { association, density, row, function, gradient, parameter };
-inline constexpr std::array<const Tolerance*, 6> SOLVER_POLICIES = {&ASSOCIATION_RESIDUAL,
+EPC_POLICY_TABLE(std::array<const Tolerance*, 6>) SOLVER_POLICIES = {&ASSOCIATION_RESIDUAL,
     &DENSITY_ROOT_RESIDUAL, &EQUILIBRIUM_ROW_RESIDUAL, &FIT_FUNCTION_TOLERANCE,
     &FIT_GRADIENT_TOLERANCE, &FIT_PARAMETER_TOLERANCE};
+#undef EPC_POLICY_TABLE
 inline constexpr std::array<const char*, 6> SOLVER_UNITS = {"1 (mass action)", "1 (reduced pressure)",
     "1 (classified rows)", "1 (relative cost)", "scaled objective / optimizer coordinate", "1 (relative step)"};
 

@@ -81,7 +81,7 @@ inline constexpr const char* EOS_STANDARD_STATE_ID = "eos-helmholtz-coordinate-b
 
 inline constexpr const char* IDEAL_MOLE_FRACTION_STANDARD_STATE_ID = "ideal-mole-fraction";
 inline constexpr const char* IDEAL_MOLARITY_STANDARD_STATE_ID = "ideal-molarity-1-mol-per-litre";
-struct EPC_API IdealMoleFraction final {
+struct IdealMoleFraction final {
     std::vector<std::string> component_ids;
     std::vector<int> charge_number;
     policy::SolverOptions solver_options;
@@ -89,7 +89,7 @@ struct EPC_API IdealMoleFraction final {
     std::optional<double> solution_volume_m3;
     std::optional<std::string> unit_activity_solvent;
     std::optional<std::size_t> solvent_index;
-    IdealMoleFraction(std::vector<std::string> ids, std::vector<int> charges,
+    EPC_API IdealMoleFraction(std::vector<std::string> ids, std::vector<int> charges,
                       policy::SolverOptions options = {}, std::optional<std::string> basis = {},
                       std::optional<double> volume = {}, std::optional<std::string> solvent = {});
     const char* standard_state_id() const {
@@ -354,7 +354,7 @@ struct CompiledSolid final {
     std::optional<NeutralReferenceReactionDiagnostic> reference;
 };
 
-struct EPC_API CompiledSystem final {
+struct CompiledSystem final {
     std::optional<core::Convergence> first_numerical_failure;
     std::vector<core::NumericalRank> rank_records;
     std::optional<core::NumericalRank> last_rank;
@@ -398,7 +398,7 @@ struct EPC_API CompiledSystem final {
 
     // State-only preparation differentiates V, support amounts and T when free (phase Hessians);
     // fixed controls and active parameters are padding. Sensitivity and lever callers need full.
-    PhasePoint prepare(const std::vector<double>& point, bool state_only = false,
+    EPC_API PhasePoint prepare(const std::vector<double>& point, bool state_only = false,
         std::optional<core::Convergence>* first_numerical_failure = nullptr) const;
     template <typename Base>
     PhasePointValues<Base> prepare_values(const std::vector<Base>&, bool,
@@ -407,7 +407,7 @@ struct EPC_API CompiledSystem final {
     template <typename Base> std::vector<Base> jacobian_at(const PhasePointValues<Base>&) const;
     template <typename Base> RowUncertaintyValues<Base> row_uncertainty_at(const PhasePointValues<Base>&,
         const std::vector<std::vector<Base>>&) const;
-    PointEvaluation evaluate(const std::vector<double>& point) const;
+    EPC_API PointEvaluation evaluate(const std::vector<double>& point) const;
     // Residuals that classify a solve: for a free-amount (Gibbs) cell the chemical and
     // pressure rows are scaled by N_p x_i / N_feed and N_p / N_feed, the first-order
     // conditions of the constrained Gibbs minimum in the solved chart; a pinned
@@ -419,19 +419,19 @@ struct EPC_API CompiledSystem final {
     template <typename Base> std::vector<Base> trace_moiety_relative(const PhasePointValues<Base>&, std::vector<Base>, std::size_t = 1) const;
     std::vector<double> trace_moiety_relative(const PhasePoint& prepared, std::vector<double> values,
                                               std::size_t width = 1) const;
-    std::vector<double> numerical_rows(const PhasePoint&, std::vector<double>, std::size_t width = 1) const;
-    double classified_residual_norm(const std::vector<double>& point) const;
-    RowUncertainty row_uncertainty(const PhasePoint&) const;
-    PointEvaluation evaluate_at(const PhasePoint& prepared) const;
-    std::vector<double> generic_point() const;
+    EPC_API std::vector<double> numerical_rows(const PhasePoint&, std::vector<double>, std::size_t width = 1) const;
+    EPC_API double classified_residual_norm(const std::vector<double>& point) const;
+    EPC_API RowUncertainty row_uncertainty(const PhasePoint&) const;
+    EPC_API PointEvaluation evaluate_at(const PhasePoint& prepared) const;
+    EPC_API std::vector<double> generic_point() const;
     // First solved-chart coordinate of each declared phase: its log compositions, then a free amount and log packing.
-    std::vector<std::size_t> phase_offsets() const;
-    std::vector<double> jacobian(const std::vector<double>& point) const;
-    std::vector<double> jacobian_at(const PhasePoint& prepared) const;
-    std::vector<double> lever_jacobian(const std::vector<double>& point) const;
-    std::vector<double> objective_gradient(const std::vector<double>& point) const;
+    EPC_API std::vector<std::size_t> phase_offsets() const;
+    EPC_API std::vector<double> jacobian(const std::vector<double>& point) const;
+    EPC_API std::vector<double> jacobian_at(const PhasePoint& prepared) const;
+    EPC_API std::vector<double> lever_jacobian(const std::vector<double>& point) const;
+    EPC_API std::vector<double> objective_gradient(const std::vector<double>& point) const;
     std::vector<double> objective_gradient_at(const PhasePoint& prepared) const;
-    std::vector<double> hessian(
+    EPC_API std::vector<double> hessian(
         const std::vector<double>& point,
         const std::vector<double>& constraint_multipliers = {}
     ) const;
@@ -439,12 +439,12 @@ struct EPC_API CompiledSystem final {
         const PhasePoint& prepared, const std::vector<double>& constraint_multipliers
     ) const;
     // Multiplier-weighted constraint curvature only; the objective curvature is separate.
-    std::vector<double> constraint_hessian_at(
+    EPC_API std::vector<double> constraint_hessian_at(
         const PhasePoint& prepared, const std::vector<double>& constraint_multipliers
     ) const;
     // Row and physical Taylor coefficients through `order` (at most 3; 2 in a critical cell) along the state
     // coefficients `state` (state[0] is the prepared point) and the control direction.
-    RowSeries row_series(
+    EPC_API RowSeries row_series(
         const PhasePoint& prepared, const std::vector<std::vector<double>>& state,
         const std::vector<double>& control, std::size_t order
     ) const;
@@ -946,7 +946,7 @@ inline SolvedStateActionStatus solved_state_status(PropertyActionStatus status) 
     return SolvedStateActionStatus::Nonfinite;
 }
 
-std::string solved_state_observable_id(const SolvedStateObservable& observable);
+EPC_API std::string solved_state_observable_id(const SolvedStateObservable& observable);
 
 // Exact first-, second- or third-order mixed directional actions of physical solved-state
 // observables at one accepted result; no nonlinear solve, no compilation, no mutation.

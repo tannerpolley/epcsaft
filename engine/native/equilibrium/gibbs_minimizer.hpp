@@ -272,12 +272,12 @@ EPC_API SensitivityInfo inspect_sensitivity(
     const std::vector<double>& point
 );
 
-class EPC_API GibbsMinimizer final : public Ipopt::TNLP {
+class GibbsMinimizer final : public Ipopt::TNLP {
 public:
-    GibbsMinimizer(const CompiledSystem& compiled, std::vector<double> start,
+    EPC_API GibbsMinimizer(const CompiledSystem& compiled, std::vector<double> start,
                    core::Scope* scope = nullptr, const DriverLimits* limits = nullptr, bool physical_amounts = false);
-    ~GibbsMinimizer() override;
-    bool get_nlp_info(Ipopt::Index& n, Ipopt::Index& m,
+    EPC_API ~GibbsMinimizer() override;
+    EPC_API bool get_nlp_info(Ipopt::Index& n, Ipopt::Index& m,
                       Ipopt::Index& nnz_jac_g, Ipopt::Index& nnz_h_lag,
                       IndexStyleEnum& index_style) override;
     bool get_bounds_info(Ipopt::Index n, Ipopt::Number* x_l, Ipopt::Number* x_u,
@@ -285,16 +285,16 @@ public:
     bool get_starting_point(Ipopt::Index n, bool init_x, Ipopt::Number* x,
                             bool init_z, Ipopt::Number* z_L, Ipopt::Number* z_U,
                             Ipopt::Index m, bool init_lambda, Ipopt::Number* lambda) override;
-    bool eval_f(Ipopt::Index n, const Ipopt::Number* x, bool new_x,
+    EPC_API bool eval_f(Ipopt::Index n, const Ipopt::Number* x, bool new_x,
                 Ipopt::Number& value) override;
-    bool eval_grad_f(Ipopt::Index n, const Ipopt::Number* x, bool new_x,
+    EPC_API bool eval_grad_f(Ipopt::Index n, const Ipopt::Number* x, bool new_x,
                      Ipopt::Number* grad_f) override;
-    bool eval_g(Ipopt::Index n, const Ipopt::Number* x, bool new_x,
+    EPC_API bool eval_g(Ipopt::Index n, const Ipopt::Number* x, bool new_x,
                 Ipopt::Index m, Ipopt::Number* g) override;
-    bool eval_jac_g(Ipopt::Index n, const Ipopt::Number* x, bool new_x,
+    EPC_API bool eval_jac_g(Ipopt::Index n, const Ipopt::Number* x, bool new_x,
                     Ipopt::Index m, Ipopt::Index nele_jac, Ipopt::Index* iRow,
                     Ipopt::Index* jCol, Ipopt::Number* values) override;
-    bool eval_h(Ipopt::Index n, const Ipopt::Number* x, bool new_x,
+    EPC_API bool eval_h(Ipopt::Index n, const Ipopt::Number* x, bool new_x,
                 Ipopt::Number obj_factor, Ipopt::Index m, const Ipopt::Number* lambda,
                 bool new_lambda, Ipopt::Index nele_hess, Ipopt::Index* iRow,
                 Ipopt::Index* jCol, Ipopt::Number* values) override;
