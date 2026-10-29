@@ -765,9 +765,10 @@ def document_mapping(parameters: Parameters) -> Mapping[str, object]:
         raise ValueError("parameters have no retained source document")
     document, values, scalars = deepcopy(parameters._source)
     for entry, declarations in zip(parameters._document.entries, values, strict=True):
+        if float(declarations[0]["magnitude"]).hex() == entry.magnitude.hex():
+            continue
         for value in declarations:
-            if float(value["magnitude"]).hex() != entry.magnitude.hex():
-                value["magnitude"] = entry.magnitude
+            value["magnitude"] = entry.magnitude
             if value["unit"] != entry.unit:
                 value["unit"] = entry.unit
     for index, record, key in scalars:

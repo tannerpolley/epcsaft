@@ -127,11 +127,14 @@ def test_document_mapping_round_trip() -> None:
 
 
 @pytest.mark.parametrize("fitted", [False, True])
-def test_repeated_temperature_law_preserves_unfitted_json(fitted: bool) -> None:
+@pytest.mark.parametrize("signed_zero", [False, True])
+def test_repeated_temperature_law_preserves_unfitted_json(fitted: bool, signed_zero: bool) -> None:
     source = _document()
     edges = cast(dict[str, Any], source["topology"])["edges"]
     repeated = edges[3]["volume_correction"]["temperature_law"]
-    repeated["reciprocal_temperature_slope"]["value"]["magnitude"] = 3
+    repeated["reciprocal_temperature_slope"]["value"]["magnitude"] = -0.0 if signed_zero else 3
+    if signed_zero:
+        edges[2]["volume_correction"]["temperature_law"]["reciprocal_temperature_slope"]["value"]["magnitude"] = 0.0
     edges[3]["volume_correction"]["temperature_law"] = dict(reversed(list(repeated.items())))
     parameters = Parameters.from_mapping(source)
     expected = deepcopy(source)
