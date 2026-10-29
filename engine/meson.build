@@ -160,23 +160,23 @@ epcsaft_native = shared_library(
   gnu_symbol_visibility: 'default',
 )
 
+private_sources = []
 if windows
-  epcsaft_private = static_library(
-    'epcsaft_native_private',
-    'native/core/trace.cpp', properties_sources, superancillary_table,
-    surface_sources, equilibrium_sources, regression_sources, cppad_temp_file, highs_conf_file,
-    cpp_args: native_warnings + ['-DEPCSAFT_NATIVE_STATIC'],
-    dependencies: [threads_dep, ipopt_dep, eigen_dep, ceres_dep, highs_dep, cppad_headers_dep],
-    include_directories: native_inc,
-    install: false,
-  )
+  private_sources = ['native/core/trace.cpp', properties_sources, superancillary_table,
+    surface_sources, equilibrium_sources, regression_sources, cppad_temp_file, highs_conf_file]
+  private_options = {
+    'cpp_args': native_warnings + ['-DEPCSAFT_NATIVE_STATIC'],
+    'dependencies': [threads_dep, ipopt_dep, eigen_dep, ceres_dep, highs_dep, cppad_headers_dep],
+    'include_directories': native_inc,
+  }
 else
-  epcsaft_private = static_library(
-    'epcsaft_native',
-    objects: epcsaft_native.extract_all_objects(recursive: true),
-    install: false,
-  )
+  private_options = {'objects': epcsaft_native.extract_all_objects(recursive: true)}
 endif
+epcsaft_private = static_library(
+  'epcsaft_native', private_sources,
+  kwargs: private_options,
+  install: false,
+)
 
 asl_export_options = windows ? {'vs_module_defs': files('build/subprojects/packagefiles/asl/asl.def')[0]} : {}
 asl_library = shared_library(
