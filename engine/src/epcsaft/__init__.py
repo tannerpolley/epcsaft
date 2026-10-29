@@ -9,7 +9,15 @@ phase and reaction problems, and ``regression`` declares parameter estimation.
 Native result types and exceptions are re-exported from ``_core``.
 """
 
+import os
+import sys
 from pathlib import Path
+
+_dll_directories: list[object] = []
+if sys.platform == "win32":
+    for _directory in (Path(__file__).resolve().parent, Path(sys.prefix) / "Library" / "bin"):
+        if _directory.is_dir():
+            _dll_directories.append(os.add_dll_directory(str(_directory)))
 
 from . import _core
 from .eos import (

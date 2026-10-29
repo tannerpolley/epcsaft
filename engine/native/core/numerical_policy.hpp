@@ -1,4 +1,5 @@
 #pragma once
+#include "core/export.hpp"
 
 #include "core/physical_constants.hpp"
 
@@ -283,12 +284,21 @@ inline constexpr Tolerance FIT_DENSITY_PARAMETER_FRACTION{"FIT_DENSITY_PARAMETER
 
 // ------------------------------------------------------------- equilibrium
 
-__attribute__((visibility("default"))) inline constexpr Tolerance EQUILIBRIUM_ROW_RESIDUAL{"EQUILIBRIUM_ROW_RESIDUAL",
+#if defined(_WIN32) && !defined(EPC_DEFINE_POLICY)
+extern EPC_API const Tolerance EQUILIBRIUM_ROW_RESIDUAL;
+#else
+#if defined(_WIN32)
+EPC_API extern const Tolerance
+#else
+EPC_EXCEPTION inline constexpr Tolerance
+#endif
+EQUILIBRIUM_ROW_RESIDUAL{"EQUILIBRIUM_ROW_RESIDUAL",
     1.0e-10,
     Category::AlgorithmTolerance,
     "dimensionless equilibrium-row infinity norm; two decades above the "
     "association residual entering the assembly floor",
 };
+#endif
 // #811: empirical retention policy for trial polish; ln(1 + COMPOSITION_BOX / ROW_RESIDUAL) = ln 101.
 inline constexpr Tolerance EQUILIBRIUM_TRIAL_LOG_STEP{"EQUILIBRIUM_TRIAL_LOG_STEP",
     4.61512051684126, Category::AlgorithmTolerance,

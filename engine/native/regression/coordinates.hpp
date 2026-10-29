@@ -1,4 +1,5 @@
 #pragma once
+#include "core/export.hpp"
 
 #include "properties/helmholtz_model.hpp"
 
@@ -20,9 +21,9 @@ struct ReactionCoordinate final {
     ReactionCoefficient coefficient = ReactionCoefficient::A;
     double pivot_temperature = 0.0;  // K, required for EnthalpyShift
 };
-std::array<double, 4> reaction_direction(const ReactionCoordinate& coordinate);
+EPC_API std::array<double, 4> reaction_direction(const ReactionCoordinate& coordinate);
 // -log10 K = A/T + B + C*T; refuses a nonzero logarithmic coefficient.
-std::array<double, 3> reaction_log10_reciprocal(const ReactionLogPolynomial& law);
+EPC_API std::array<double, 3> reaction_log10_reciprocal(const ReactionLogPolynomial& law);
 
 struct CoordinateTarget final {
     ParameterFamily family;
@@ -41,7 +42,7 @@ struct Coordinate final {
     std::optional<ReactionCoordinate> reaction;
 };
 
-struct CoordinateSet final {
+struct EPC_API CoordinateSet final {
     std::vector<Coordinate> coordinates;
 
     // Physical rows: EOS slots in coordinate order, then reaction coordinates in order.
@@ -62,7 +63,7 @@ struct CoordinateSet final {
 };
 
 // Reject invalid charts, conflicting named reaction declarations and constants fixed by other inputs.
-void validate(const CoordinateSet& set, const Parameters& parameters, const std::vector<Observation>& observations = {},
+EPC_API void validate(const CoordinateSet& set, const Parameters& parameters, const std::vector<Observation>& observations = {},
               const std::optional<ThermochemistryRecord>& thermochemistry = {});
 
 }  // namespace epcsaft::regression

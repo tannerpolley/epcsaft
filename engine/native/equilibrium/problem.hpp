@@ -1,4 +1,5 @@
 #pragma once
+#include "core/export.hpp"
 
 #include "core/convergence.hpp"
 #include "core/linear_error.hpp"
@@ -23,7 +24,7 @@ namespace epcsaft::core { class Scope; }
 namespace epcsaft::equilibrium {
 
 // ALG-EQUILIBRIUM: scaled fresh-Newton solve admission, infinity if unresolved.
-double polish_forward_bound(const std::vector<double>& jacobian, const std::vector<double>& rows,
+EPC_API double polish_forward_bound(const std::vector<double>& jacobian, const std::vector<double>& rows,
     const std::vector<double>& delta, const std::vector<double>& scale);
 
 enum class PhaseKind { Liquid, Vapor };
@@ -80,7 +81,7 @@ inline constexpr const char* EOS_STANDARD_STATE_ID = "eos-helmholtz-coordinate-b
 
 inline constexpr const char* IDEAL_MOLE_FRACTION_STANDARD_STATE_ID = "ideal-mole-fraction";
 inline constexpr const char* IDEAL_MOLARITY_STANDARD_STATE_ID = "ideal-molarity-1-mol-per-litre";
-struct IdealMoleFraction final {
+struct EPC_API IdealMoleFraction final {
     std::vector<std::string> component_ids;
     std::vector<int> charge_number;
     policy::SolverOptions solver_options;
@@ -353,7 +354,7 @@ struct CompiledSolid final {
     std::optional<NeutralReferenceReactionDiagnostic> reference;
 };
 
-struct CompiledSystem final {
+struct EPC_API CompiledSystem final {
     std::optional<core::Convergence> first_numerical_failure;
     std::vector<core::NumericalRank> rank_records;
     std::optional<core::NumericalRank> last_rank;
@@ -496,10 +497,10 @@ struct CompiledSystem final {
 
 };
 
-CompiledSystem compile_problem(
+EPC_API CompiledSystem compile_problem(
     const HelmholtzModel& model, const EquilibriumProblem& problem
 );
-CompiledSystem compile_problem(const IdealMoleFraction&, const EquilibriumProblem&);
+EPC_API CompiledSystem compile_problem(const IdealMoleFraction&, const EquilibriumProblem&);
 // The classified declaration of a solved point: a free solid is present exactly when its amount is positive.
 CompiledSystem classify_solids(CompiledSystem compiled, const std::vector<double>& point);
 
@@ -517,7 +518,7 @@ struct InventoryBound final {
     std::string feasibility_termination;
     std::vector<double> conserved_functional;
 };
-std::vector<InventoryBound> inventory_bounds(const CompiledSystem& compiled,
+EPC_API std::vector<InventoryBound> inventory_bounds(const CompiledSystem& compiled,
     const std::vector<std::size_t>& species, bool fraction, double floor);
 
 // Candidate-topology outcome of the existing producer loop: the first vanished free phase
@@ -659,11 +660,11 @@ struct EquilibriumResult final {
     double residual_norm() const noexcept { return maximum_abs(residuals); }
 };
 
-EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSystem&, const EquilibriumResult&, const PhasePoint* = nullptr);
+EPC_API EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSystem&, const EquilibriumResult&, const PhasePoint* = nullptr);
 struct DriverLimits;
-EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSystem&, const EquilibriumResult&, const std::vector<long double>&, const DriverLimits* = nullptr);
-EquilibriumNumericalEstimates equilibrium_numerical_estimates(const HelmholtzModel&, const EquilibriumResult&);
-EquilibriumNumericalEstimates equilibrium_numerical_estimates(const IdealMoleFraction&, const EquilibriumResult&);
+EPC_API EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSystem&, const EquilibriumResult&, const std::vector<long double>&, const DriverLimits* = nullptr);
+EPC_API EquilibriumNumericalEstimates equilibrium_numerical_estimates(const HelmholtzModel&, const EquilibriumResult&);
+EPC_API EquilibriumNumericalEstimates equilibrium_numerical_estimates(const IdealMoleFraction&, const EquilibriumResult&);
 
 // EqID reaction_activity_quotient; per declared phase/reaction, in component order.
 struct ReactionActivities final {
@@ -672,8 +673,8 @@ struct ReactionActivities final {
     std::optional<double> reference_pressure_pa, log_quotient;
     SpeciesActivities species;
 };
-std::vector<ReactionActivities> reaction_activities(const HelmholtzModel&, const EquilibriumResult&);
-std::vector<ReactionActivities> reaction_activities(const IdealMoleFraction&, const EquilibriumResult&);
+EPC_API std::vector<ReactionActivities> reaction_activities(const HelmholtzModel&, const EquilibriumResult&);
+EPC_API std::vector<ReactionActivities> reaction_activities(const IdealMoleFraction&, const EquilibriumResult&);
 
 struct StabilityTrial final {
     PhaseSpec phase;
@@ -706,36 +707,36 @@ struct DiscoveryRecord final {
     std::vector<std::vector<double>> declaration_attempt_coordinates;
     std::map<std::string, double> work;
 };
-CompiledSystem compile_stability_trial(const HelmholtzModel&, double, double, const PhaseSpec&,
+EPC_API CompiledSystem compile_stability_trial(const HelmholtzModel&, double, double, const PhaseSpec&,
     const std::vector<double>&, const std::vector<double>&, std::vector<std::vector<double>>&);
-double present_phase_residual_distance(double, double);
-bool descent_resolved(double, double, double);
-std::vector<double> reconstruct_trial_composition(std::vector<double>, const std::vector<std::size_t>&, const std::vector<int>&, PhaseKind = PhaseKind::Liquid);
+EPC_API double present_phase_residual_distance(double, double);
+EPC_API bool descent_resolved(double, double, double);
+EPC_API std::vector<double> reconstruct_trial_composition(std::vector<double>, const std::vector<std::size_t>&, const std::vector<int>&, PhaseKind = PhaseKind::Liquid);
 // n dln(phi_i)/dn_j at fixed T, P on the support (row-major), from an IsothermalPhaseHessian evaluation at unit amount and v.
-std::vector<double> tangent_plane_jacobian(const HelmholtzDerivatives&, double, const std::vector<std::size_t>&);
-std::pair<EquilibriumProblem, std::vector<double>> remove_discovery_phase(const CompiledSystem&,
+EPC_API std::vector<double> tangent_plane_jacobian(const HelmholtzDerivatives&, double, const std::vector<std::size_t>&);
+EPC_API std::pair<EquilibriumProblem, std::vector<double>> remove_discovery_phase(const CompiledSystem&,
     const std::vector<double>&, std::map<std::string, double>* = nullptr);
-StabilityReport stability_test(const CompiledSystem&, const EquilibriumResult&, const StabilityOptions& = {});
-std::pair<EquilibriumResult, std::vector<StabilityReport>> cooling_onset(const CompiledSystem&);
-EquilibriumResult discover_phases(const HelmholtzModel&, const EquilibriumProblem&);
+EPC_API StabilityReport stability_test(const CompiledSystem&, const EquilibriumResult&, const StabilityOptions& = {});
+EPC_API std::pair<EquilibriumResult, std::vector<StabilityReport>> cooling_onset(const CompiledSystem&);
+EPC_API EquilibriumResult discover_phases(const HelmholtzModel&, const EquilibriumProblem&);
 
-EquilibriumResult solve_equilibrium(
+EPC_API EquilibriumResult solve_equilibrium(
     const HelmholtzModel& model,
     const EquilibriumProblem& problem,
     const std::optional<EquilibriumResult>& start = std::nullopt
 );
-EquilibriumResult solve_equilibrium(const IdealMoleFraction&, const EquilibriumProblem&,
+EPC_API EquilibriumResult solve_equilibrium(const IdealMoleFraction&, const EquilibriumProblem&,
     const std::optional<EquilibriumResult>& start = std::nullopt);
-std::map<std::string, double> effective_water_amounts(const IdealMoleFraction&, const EquilibriumResult&,
+EPC_API std::map<std::string, double> effective_water_amounts(const IdealMoleFraction&, const EquilibriumResult&,
     const std::string& water, const std::vector<std::string>& ions, const std::vector<std::string>& molecular_species);
 // The same solve of a compiled problem (its model must outlive it), inside the caller's open span if given.
 // `recover`: the public no-start solve and cooling onset only (ALG-EQUILIBRIUM neutral recovery, #565).
 struct DriverLimits;
-EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::optional<EquilibriumResult>& start = std::nullopt,
+EPC_API EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::optional<EquilibriumResult>& start = std::nullopt,
                                  core::Scope* outer = nullptr, const DriverLimits* limits = nullptr,
                                  std::shared_ptr<const OptimizerState> warm = {}, bool recover = false, EquilibriumResult* audit = nullptr, bool select_endpoint = false);
 
-EquilibriumResult solve_saturation(const CompiledSystem&);
+EPC_API EquilibriumResult solve_saturation(const CompiledSystem&);
 struct SolvedStateActionDiagnostics;
 // All operands are generated from one exact trial declaration in declared phase order.
 struct SaturationOperand final {
@@ -780,8 +781,8 @@ struct SaturationSearch final {
     std::string detection_limits = "unsampled tangencies, paired crossings or multiple roots in a cell, turns between nodes and undiscovered branches can escape detection";
 };
 void compare_loading_candidates(SaturationSearch&, core::ComparisonEligibility);
-void admit_loading_search(SaturationSearch&);
-SaturationSearch search_loading(const HelmholtzModel&, EquilibriumProblem, const AffineLoading&,
+EPC_API void admit_loading_search(SaturationSearch&);
+EPC_API SaturationSearch search_loading(const HelmholtzModel&, EquilibriumProblem, const AffineLoading&,
     const std::vector<double>&, const DriverLimits* = nullptr,
     std::chrono::steady_clock::time_point = std::chrono::steady_clock::time_point::max());
 
@@ -864,7 +865,7 @@ struct ReferenceCalorics final {
     SolvedStateActionStatus status = SolvedStateActionStatus::Available;
     std::string message;
 };
-ReferenceCalorics reference_calorics(const CompiledSystem &compiled, double temperature, double pressure,
+EPC_API ReferenceCalorics reference_calorics(const CompiledSystem &compiled, double temperature, double pressure,
                                      bool heat_capacity, bool pressure_slope = false,
                                      bool parameter_slopes = false, std::size_t derivative_order = 2, bool numerical_errors = false);
 
@@ -949,13 +950,13 @@ std::string solved_state_observable_id(const SolvedStateObservable& observable);
 
 // Exact first-, second- or third-order mixed directional actions of physical solved-state
 // observables at one accepted result; no nonlinear solve, no compilation, no mutation.
-SolvedStateActionBatch solved_state_actions(
+EPC_API SolvedStateActionBatch solved_state_actions(
     const CompiledSystem& compiled,
     const EquilibriumResult& central,
     const SolvedStateActionRequest& request
 );
 // Independent first-order directions at one accepted center; each response retains its own status.
-std::vector<SolvedStateActionBatch> solved_state_first_actions(
+EPC_API std::vector<SolvedStateActionBatch> solved_state_first_actions(
     const CompiledSystem& compiled, const EquilibriumResult& central,
     const std::vector<SolvedStateObservable>& observables,
     const std::vector<SolvedStateActionDirection>& directions

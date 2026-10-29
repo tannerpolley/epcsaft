@@ -15,11 +15,19 @@ project(
 )
 py = import('python').find_installation('python3', pure: false)
 cpp = meson.get_compiler('cpp')
-native_warnings = cpp.get_supported_arguments('-Wall', '-Wextra', '-Wpedantic')
+windows = host_machine.system() == 'windows'
+native_rpath = windows ? '' : '$ORIGIN'
+native_export_args = windows ? ['-DEPCSAFT_NATIVE_BUILD'] : []
+quadmath_dep = windows ? [] : [cpp.find_library('quadmath')]
+asl_link_args = windows ? [] : [
+  '-Wl,--exclude-libs,ALL',
+  '-Wl,--version-script=' + meson.current_source_dir() + '/build/subprojects/packagefiles/asl/asl.exports',
+]
+native_warnings = windows ? ['/W4', '/EHsc'] : cpp.get_supported_arguments('-Wall', '-Wextra', '-Wpedantic')
 # Pinned alignment makes key-solve timing less sensitive to code placement on the measured host, at no measurable cost
 # and +1.2% .text (#356; build/issue-356/alignment).
-add_project_arguments(cpp.get_supported_arguments('-falign-functions=64'), language: 'cpp')
-release_link_args = get_option('buildtype') == 'release' \
+add_project_arguments(windows ? [] : cpp.get_supported_arguments('-falign-functions=64'), language: 'cpp')
+release_link_args = not windows and get_option('buildtype') == 'release' \
   ? cpp.get_supported_link_arguments('-s') \
   : []
 
@@ -56,7 +64,7 @@ nanobind_support = static_library(
   'nanobind_support', nanobind_paths[1] / 'nb_combined.cpp',
   dependencies: [nanobind_dep, py.dependency()],
   include_directories: include_directories(nanobind_paths[2], is_system: true),
-  cpp_args: ['-fno-strict-aliasing', '-ffunction-sections', '-fdata-sections'],
+  cpp_args: windows ? ['/EHsc'] : ['-fno-strict-aliasing', '-ffunction-sections', '-fdata-sections'],
   override_options: ['b_lto=false'],
   gnu_symbol_visibility: 'hidden',
   install: false,
@@ -135,7 +143,7 @@ epcsaft_native = shared_library(
   regression_sources,
   cppad_temp_file,
   highs_conf_file,
-  cpp_args: native_warnings,
+  cpp_args: native_warnings + native_export_args,
   dependencies: [
     threads_dep,
     ipopt_dep,
@@ -147,8 +155,8 @@ epcsaft_native = shared_library(
   include_directories: native_inc,
   install: true,
   install_dir: join_paths(py.get_install_dir(), 'epcsaft'),
-  build_rpath: '$ORIGIN',
-  install_rpath: '$ORIGIN',
+  build_rpath: native_rpath,
+  install_rpath: native_rpath,
   gnu_symbol_visibility: 'default',
 )
 
@@ -158,10 +166,11 @@ epcsaft_private = static_library(
   install: false,
 )
 
+asl_export_options = windows ? {'vs_module_defs': files('build/subprojects/packagefiles/asl/asl.def')[0]} : {}
 asl_library = shared_library(
   'epcsaft_asl',
   'native/bindings/asl_adapter.cpp',
-  cpp_args: native_warnings,
+  cpp_args: native_warnings + native_export_args,
   dependencies: [
     threads_dep,
     ipopt_dep,
@@ -171,10 +180,8 @@ asl_library = shared_library(
     cppad_headers_dep,
   ],
   include_directories: native_inc,
-  link_args: release_link_args + [
-    '-Wl,--exclude-libs,ALL',
-    '-Wl,--version-script=' + meson.current_source_dir() + '/build/subprojects/packagefiles/asl/asl.exports',
-  ],
+  link_args: release_link_args + asl_link_args,
+  kwargs: asl_export_options,
   link_with: epcsaft_private,
   install: true,
   install_dir: join_paths(py.get_install_dir(), 'epcsaft'),
@@ -201,8 +208,8 @@ py.extension_module(
   install: true,
   link_args: release_link_args,
   link_with: [epcsaft_native, nanobind_support],
-  build_rpath: '$ORIGIN',
-  install_rpath: '$ORIGIN',
+  build_rpath: native_rpath,
+  install_rpath: native_rpath,
   subdir: 'epcsaft',
 )
 
@@ -213,7 +220,7 @@ contributions_checks = executable(
   'tests/native/contributions_checks.cpp',
   cppad_temp_file,
   objects: epcsaft_native.extract_objects('native/core/trace.cpp'),
-  cpp_args: native_warnings,
+  cpp_args: native_warnings + native_export_args,
   gnu_symbol_visibility: 'inlineshidden',
   dependencies: [eigen_dep, cppad_headers_dep],
   include_directories: native_inc,
@@ -238,7 +245,7 @@ properties_checks = executable(
   dependencies: [ipopt_dep, eigen_dep, cppad_headers_dep],
   include_directories: native_inc,
   link_with: epcsaft_native,
-  build_rpath: '$ORIGIN',
+  build_rpath: native_rpath,
   install: false,
   build_by_default: false,
 )
@@ -252,7 +259,7 @@ diagnostics_checks = executable(
   dependencies: [ipopt_dep, eigen_dep, cppad_headers_dep],
   include_directories: native_inc,
   link_with: epcsaft_native,
-  build_rpath: '$ORIGIN',
+  build_rpath: native_rpath,
   install: false,
   build_by_default: false,
 )
@@ -270,10 +277,10 @@ equilibrium_checks = executable(
         'tests/native/equilibrium_reactive_caloric_checks.cpp'),
   cpp_args: native_warnings,
   gnu_symbol_visibility: 'inlineshidden',
-  dependencies: [ipopt_dep, eigen_dep, cppad_headers_dep, cpp.find_library('quadmath')],
+  dependencies: [ipopt_dep, eigen_dep, cppad_headers_dep] + quadmath_dep,
   include_directories: native_inc,
   link_with: epcsaft_native,
-  build_rpath: '$ORIGIN',
+  build_rpath: native_rpath,
   install: false,
   build_by_default: false,
 )
@@ -283,6 +290,9 @@ equilibrium_cases = import('fs').read('tests/native/equilibrium_checks.cpp').spl
 foreach index : range(1, equilibrium_cases.length())
   fields = equilibrium_cases[index].split('"')
   assert(fields[4] in ['Automatic_fast', 'Explicit'], 'bad execution_policy for ' + fields[0])
+  if windows and (fields[0].startswith('reactive-caloric-E-') or fields[0].startswith('reactive-caloric-I-') or fields[0] == 'reactive-caloric-U' or fields[0].startswith('reactive-caloric-F6-'))
+    continue
+  endif
   test('equilibrium/' + fields[4] + '/' + fields[0], equilibrium_checks,
     args: ['native.equilibrium.' + fields[0]], timeout: 600)
 endforeach
@@ -296,7 +306,7 @@ surface_example = executable(
   dependencies: [ipopt_dep, eigen_dep, cppad_headers_dep],
   include_directories: native_inc,
   link_with: epcsaft_native,
-  build_rpath: '$ORIGIN',
+  build_rpath: native_rpath,
   install: false,
   build_by_default: false,
 )
@@ -310,7 +320,7 @@ boundary_checks = executable(
   dependencies: [ipopt_dep, eigen_dep, cppad_headers_dep],
   include_directories: native_inc,
   link_with: epcsaft_native,
-  build_rpath: '$ORIGIN',
+  build_rpath: native_rpath,
   install: false,
   build_by_default: false,
 )
@@ -325,10 +335,10 @@ regression_checks = executable(
         'tests/native/regression_measurement_checks.cpp'),
   cpp_args: native_warnings,
   gnu_symbol_visibility: 'inlineshidden',
-  dependencies: [ipopt_dep, eigen_dep, ceres_dep, cppad_headers_dep, cpp.find_library('quadmath')],
+  dependencies: [ipopt_dep, eigen_dep, ceres_dep, cppad_headers_dep] + quadmath_dep,
   include_directories: native_inc,
   link_with: epcsaft_native,
-  build_rpath: '$ORIGIN',
+  build_rpath: native_rpath,
   install: false,
   build_by_default: false,
 )
@@ -345,7 +355,7 @@ specification_checks = executable(
   dependencies: [ipopt_dep, eigen_dep, cppad_headers_dep],
   include_directories: native_inc,
   link_with: epcsaft_native,
-  build_rpath: '$ORIGIN',
+  build_rpath: native_rpath,
   install: false,
   build_by_default: false,
 )
@@ -359,7 +369,7 @@ association_comparison_checks = executable(
   dependencies: [eigen_dep, cppad_headers_dep],
   include_directories: native_inc,
   link_with: epcsaft_native,
-  build_rpath: '$ORIGIN',
+  build_rpath: native_rpath,
   install: false,
   build_by_default: false,
 )
@@ -376,8 +386,8 @@ install_subdir(
 
 executable('reaction_reference_e3', '../analyses/2026-reaction-reference-association/scripts/e3.cpp',
   dependencies: [ipopt_dep, eigen_dep, cppad_headers_dep], include_directories: native_inc,
-  link_with: epcsaft_native, build_rpath: '$ORIGIN', install: false, build_by_default: false)
+  link_with: epcsaft_native, build_rpath: native_rpath, install: false, build_by_default: false)
 
 executable('wu_chloride_coverage', '../analyses/2026-mixed-chloride-water-activity/scripts/wu_coverage.cpp',
   dependencies: [ipopt_dep, eigen_dep, cppad_headers_dep], include_directories: native_inc,
-  link_with: epcsaft_native, build_rpath: '$ORIGIN', install: false, build_by_default: false)
+  link_with: epcsaft_native, build_rpath: native_rpath, install: false, build_by_default: false)

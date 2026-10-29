@@ -1,4 +1,5 @@
 #pragma once
+#include "core/export.hpp"
 #include "core/trace.hpp"
 
 #include "core/convergence.hpp"
@@ -129,7 +130,7 @@ struct PropertyActionResult final {
 };
 
 enum class DensityBranch { Unspecified, Vapor, Liquid };
-struct DensityStructureError final : std::runtime_error {
+struct EPC_API DensityStructureError final : std::runtime_error {
     using std::runtime_error::runtime_error;
     DensityStructureError(const std::string& message, const std::optional<core::Convergence>& first)
         : std::runtime_error(message) { core::retain_first(first_numerical_failure, first); }
@@ -182,7 +183,7 @@ inline double require_component_property(const std::optional<double>& value) {
     if (!value) throw std::invalid_argument("ionic_insertion: absent charged component property");
     return *value;
 }
-struct State final {
+struct EPC_API State final {
     policy::SolverOptions solver_options;
     double hard_chain = 0.0;
     double dispersion = 0.0;
@@ -234,7 +235,7 @@ struct State final {
     std::optional<core::Convergence> first_numerical_failure;
 };
 
-std::optional<std::array<double, 2>> superancillary_densities(const class HelmholtzModel&, double temperature);
+EPC_API std::optional<std::array<double, 2>> superancillary_densities(const class HelmholtzModel&, double temperature);
 
 struct DensityRoot final {
     double molar_density = 0.0;
@@ -379,7 +380,7 @@ struct NeutralReferenceReactionDiagnostic final {
     }
 };
 
-class HelmholtzModel final {
+class EPC_API HelmholtzModel final {
 public:
     explicit HelmholtzModel(
         Parameters parameters,
@@ -508,7 +509,7 @@ private:
     mutable std::mutex mutex_;
 };
 
-DensityRoot solve_density(
+EPC_API DensityRoot solve_density(
     const HelmholtzModel& model,
     double temperature,
     double pressure,
@@ -524,7 +525,7 @@ double reaction_reference_log_scale(
     const std::vector<double>& stoichiometry
 );
 
-NeutralReferenceReactionDiagnostic reaction_reference(
+EPC_API NeutralReferenceReactionDiagnostic reaction_reference(
     const HelmholtzModel& model,
     double temperature,
     double system_pressure,
@@ -535,7 +536,7 @@ NeutralReferenceReactionDiagnostic reaction_reference(
 
 // Raw source-pressure partial; infinite_dilution selects the ion-free first-insertion limit.
 void reference_errors(const HelmholtzModel&, double, const std::vector<double>&, NeutralReferenceReactionDiagnostic&);
-ResidualEnergyAction reference_partial_from_state(const HelmholtzModel&, double temperature,
+EPC_API ResidualEnergyAction reference_partial_from_state(const HelmholtzModel&, double temperature,
     const std::vector<double>& composition, const std::vector<double>& stoichiometry,
     std::size_t temperature_order, std::size_t pressure_order,
     std::optional<std::size_t> parameter, const State& state, bool infinite_dilution = false);
@@ -547,7 +548,7 @@ struct SpeciesActivities final {
     std::vector<std::string> causes;
 };
 // EqID reaction_activity_quotient; a null state selects ideal mole fractions.
-SpeciesActivities species_activities(const std::vector<double>&, const State*,
+EPC_API SpeciesActivities species_activities(const std::vector<double>&, const State*,
     const std::vector<NeutralReferenceReactionDiagnostic::Derivative>& = {},
     const Parameters* = nullptr, const NeutralReferenceDeclaration* = nullptr,
     ReferenceSourceBasis = ReferenceSourceBasis::RawMoleFractionInfiniteDilution);
@@ -555,7 +556,7 @@ SpeciesActivities species_activities(const std::vector<double>&, const State*,
 // Evaluate multiple reaction references while reusing one solvent closure per
 // resolved source pressure within the call.  This remains a native owner; the
 // Python surface exposes only the established singular diagnostic/result path.
-std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
+EPC_API std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
     const HelmholtzModel& model,
     double temperature,
     double system_pressure,
@@ -580,10 +581,10 @@ struct HenryConstant final {
     NeutralReferenceStatus status = NeutralReferenceStatus::Nonfinite;
     std::string message;
 };
-std::vector<HenryConstant> henry_constants(const HelmholtzModel& model, double temperature, double pressure,
+EPC_API std::vector<HenryConstant> henry_constants(const HelmholtzModel& model, double temperature, double pressure,
     const std::vector<double>& solvent_fractions, const std::vector<std::size_t>& solute_indices);
 
-struct __attribute__((visibility("default"))) IonicReferenceBackground final : std::invalid_argument {
+struct EPC_EXCEPTION IonicReferenceBackground final : std::invalid_argument {
     using std::invalid_argument::invalid_argument;
 };
 
@@ -615,9 +616,9 @@ struct SolventActivity final {
     std::string cause, osmotic_cause;
     State state;
 };
-InfiniteDilutionReference solvent_reference(const HelmholtzModel&, double, double, const std::vector<double>&,
+EPC_API InfiniteDilutionReference solvent_reference(const HelmholtzModel&, double, double, const std::vector<double>&,
     std::optional<double> density = std::nullopt);
-SolventActivity solvent_activity(const HelmholtzModel&, double, double, const std::vector<double>&,
+EPC_API SolventActivity solvent_activity(const HelmholtzModel&, double, double, const std::vector<double>&,
     const InfiniteDilutionReference&, std::optional<State> state = std::nullopt,
     std::optional<double> formula_solute_ratio = std::nullopt);
 
@@ -649,7 +650,7 @@ ElectrolyteInputAction electrolyte_input_action(const HelmholtzModel&, double te
     double molality, const InfiniteDilutionReference&, const ElectrolyteActivity&,
     const ElectrolyteInputDirection&);
 
-std::vector<double> formula_composition(
+EPC_API std::vector<double> formula_composition(
     const std::vector<double>& solvent_fractions,
     const Parameters& parameters,
     const std::array<std::size_t, 2>& ion_indices,
@@ -658,7 +659,7 @@ std::vector<double> formula_composition(
     double* declared_solute_ratio = nullptr
 );
 
-InfiniteDilutionReference infinite_dilution_reference(
+EPC_API InfiniteDilutionReference infinite_dilution_reference(
     const HelmholtzModel& model,
     double temperature,
     double pressure,
@@ -668,7 +669,7 @@ InfiniteDilutionReference infinite_dilution_reference(
     std::optional<double> solvent_density = std::nullopt
 );
 
-ElectrolyteActivity electrolyte_activity(
+EPC_API ElectrolyteActivity electrolyte_activity(
     const HelmholtzModel& model,
     double temperature,
     double pressure,
@@ -683,7 +684,7 @@ ElectrolyteActivity electrolyte_activity(
 
 namespace properties {
 // Unit-amount residual Helmholtz coefficients in V+t, used by density pressure closure.
-Taylor<3> density_volume_taylor(const HelmholtzModel& model, double temperature, double density,
+EPC_API Taylor<3> density_volume_taylor(const HelmholtzModel& model, double temperature, double density,
     const std::vector<double>& composition, double& gradient_floor);
 
 // The factorized mass-action Jacobian of the solved site fractions; a singular or ill-conditioned one
