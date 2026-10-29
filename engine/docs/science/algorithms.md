@@ -3056,6 +3056,21 @@ with $y_i=x_i\phi_i^L/\phi_i^V\,P_0/P_1$; a failed state keeps $P_0$ and the
 guesses. Pure fluids keep the existing mechanical-loop witness when positive.
 The shared rows, Newton polish, Ipopt and admission still decide the result.
 
+An ordinary automatic reactive bubble start may correct a sole resolved liquid-side
+vapor trial: `stable_root_count == 1 && liquid_feed(state)`, using the cold density
+search's negative-slope witness (ALG-DENSITY). At fixed temperature and both trial
+compositions, halve pressure at most `EQUILIBRIUM_START_PRESSURE_PASSES` times.
+Require an established vapor-side root, refresh the liquid fugacities at that
+pressure, and use the same single fugacity step with that pressure multiplying
+$S$. The final vapor closure uses `declared_root`; a known liquid-side root is
+never accepted as vapor. Unavailable or ambiguous roots, missing fugacities,
+invalid pressure or exhausted work refuse this initializer with their cause;
+the existing caller fallback remains. This correction adds no speciation solve.
+It excludes ideal models, solids, discovery, caloric, critical, envelope,
+azeotrope and loading declarations, and all supplied starts (including incomplete
+ordered starts). A `Free(P0)` problem estimate is still an automatic start.
+The unchanged driver and final admission establish the solved result.
+
 #### Reacting boundary and speciation
 
 A cold reactive declaration at fixed temperature and free pressure with a phase pinned at

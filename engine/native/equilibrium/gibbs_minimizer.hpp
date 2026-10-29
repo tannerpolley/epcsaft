@@ -58,7 +58,7 @@ EquilibriumResult continue_compiled(const CompiledSystem&, const std::optional<E
 // `speciate` false: a supplied composition replaces the start's, so a reacting phase is not speciated.
 // A `packed` phase's packing guess is supplied by the caller and replaces its density root.
 std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate = true, const DriverLimits* limits = nullptr,
-                                   StageWork* stages = nullptr, const std::vector<bool>& packed = {});
+                                   StageWork* stages = nullptr, const std::vector<bool>& packed = {}, bool correct_dense = false);
 struct OneComponentTwoDensityPoint final {
     PhasePoint phase;
     std::vector<double> rows, jacobian;
