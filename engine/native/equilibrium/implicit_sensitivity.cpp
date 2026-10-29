@@ -183,7 +183,7 @@ bool is_solid_kind(SolvedStateObservableKind kind) {
 
 bool is_phase_kind(SolvedStateObservableKind kind) {
     return kind != SolvedStateObservableKind::Temperature && kind != SolvedStateObservableKind::Pressure
-        && kind != SolvedStateObservableKind::SystemEnthalpy
+        && kind != SolvedStateObservableKind::Loading && kind != SolvedStateObservableKind::SystemEnthalpy
         && kind != SolvedStateObservableKind::EquilibriumIsobaricHeatCapacity && !is_solid_kind(kind);
 }
 
@@ -203,6 +203,7 @@ bool same_observable(const SolvedStateObservable& a, const SolvedStateObservable
 
 const char* observable_unit(const SolvedStateObservable& observable) {
     switch (observable.kind) {
+    case SolvedStateObservableKind::Loading: return "mol/mol";
     case SolvedStateObservableKind::SystemEnthalpy: return "J";
     case SolvedStateObservableKind::EquilibriumIsobaricHeatCapacity: return "J/(mol-feed K)";
     case SolvedStateObservableKind::Temperature: return "K";
@@ -228,6 +229,7 @@ std::string property_name(PropertyObservable observable) {
 
 // Every observable except a fixed T or P input depends on the solved state.
 bool state_dependent(const SolvedStateObservable& observable, const EquilibriumProblem& problem) {
+    if (observable.kind == SolvedStateObservableKind::Loading) return problem.loading.has_value();
     if (observable.kind == SolvedStateObservableKind::Temperature) return problem.temperature.free;
     if (observable.kind == SolvedStateObservableKind::Pressure) return problem.pressure.free;
     return true;
@@ -270,6 +272,9 @@ void validate_request(const CompiledSystem& compiled, const EquilibriumResult& c
     }
     if (request.directions.empty() || request.directions.size() > 3)
         throw std::invalid_argument("solved-state action order");
+    for (const auto& item : request.observables)
+        if (item.kind == SolvedStateObservableKind::Loading && !problem.loading)
+            throw std::invalid_argument("loading action requires a declared affine coordinate");
     for (const auto& direction : request.directions) {
         if (!std::isfinite(direction.temperature_k) || !std::isfinite(direction.pressure_pa)
             || direction.feed_amounts_mol.size() != components || direction.active_parameters.size() != actives
@@ -464,6 +469,7 @@ Series observable_series(const HelmholtzModel &model, const SolvedStateObservabl
     case SolvedStateObservableKind::SystemEnthalpy:
         return system_enthalpy_series(model, series, maps, calorics, result, diagnostics);
     case SolvedStateObservableKind::Temperature: return series.temperature;
+    case SolvedStateObservableKind::Loading: return series.loading;
     case SolvedStateObservableKind::Pressure: return series.pressure;
     case SolvedStateObservableKind::PhaseAmount: return maps[observable.phase].amount;
     case SolvedStateObservableKind::PhaseComponentAmount:
@@ -845,6 +851,7 @@ std::string solved_state_observable_id(const SolvedStateObservable& observable) 
     case SolvedStateObservableKind::SystemEnthalpy: return "system.enthalpy";
     case SolvedStateObservableKind::EquilibriumIsobaricHeatCapacity: return "system.isobaric_heat_capacity";
     case SolvedStateObservableKind::Temperature: return "temperature";
+    case SolvedStateObservableKind::Loading: return "loading";
     case SolvedStateObservableKind::Pressure: return "pressure";
     case SolvedStateObservableKind::PhaseAmount: return phase + ".amount";
     case SolvedStateObservableKind::PhaseComponentAmount: return phase + ".amount" + component;
@@ -1304,10 +1311,14 @@ EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSyst
             out.temperature.cause = out.pressure.cause = out.cause = uncertainty.cause; return out;
         }
         const auto n = out.dimension, phases = at.amount.size(), components = c.n_feed.size();
-        const auto per_phase = 3 + components, outputs = 2 + phases * per_phase;
+        const auto per_phase = 3 + components, outputs = 2 + phases * per_phase + c.problem.loading.has_value();
         Eigen::MatrixXd g = Eigen::MatrixXd::Zero(outputs, n);
         Eigen::VectorXd values = Eigen::VectorXd::Zero(outputs), h = Eigen::VectorXd::Ones(n);
         values[0] = *result.temperature; values[1] = *result.pressure;
+        if (c.problem.loading) {
+            values[outputs - 1] = at.point[c.loading_column()];
+            g(outputs - 1, c.loading_column()) = 1;
+        }
         for (std::size_t p = 0; p < phases; ++p) {
             const auto o = 2 + p * per_phase;
             if (!c.ideal) { values[o] = result.molar_densities[p]; values[o + 1] = result.packing_fractions[p]; }
@@ -1355,10 +1366,12 @@ EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSyst
         out.rank = e.rank; out.threshold = e.threshold; out.condition = e.condition;
         out.inverse_norm = e.inverse_norm; out.backward_error = e.backward;
         if (!e.cause.empty()) { out.cause = e.cause; return out; }
+        if (c.problem.loading) mapped.back() = values[outputs - 1];
         const auto project = [&](std::size_t i, bool positive) {
             return core::project_numerical_estimate(values[i], mapped[i], e.radius[i], positive, g.row(i).isZero(0.0));
         };
         out.temperature = project(0, false); out.pressure = project(1, false);
+        if (c.problem.loading) out.loading = project(outputs - 1, false);
         bool domain = true;
         for (std::size_t p = 0; p < phases; ++p) {
             const auto o = 2 + p * per_phase;
@@ -1379,7 +1392,7 @@ EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSyst
                     > out.densities[p].absolute + out.densities[q].absolute;
         out.cause = domain ? "" : "unresolved_domain";
         if (!domain) {
-            out.temperature.resolved = out.pressure.resolved = false;
+            out.loading.resolved = out.temperature.resolved = out.pressure.resolved = false;
             for (auto* entries : {&out.densities, &out.packing, &out.composition, &out.amounts})
                 for (auto& estimate : *entries) { estimate.resolved = false; estimate.cause = out.cause; }
         }

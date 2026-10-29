@@ -442,6 +442,11 @@ bool GibbsMinimizer::get_bounds_info(
     const double infinity = bound_infinity;
     std::fill(x_l, x_l + n, -infinity);
     std::fill(x_u, x_u + n, infinity);
+    if (compiled_.problem.loading) {
+        const auto i = compiled_.loading_column();
+        x_l[i] = compiled_.problem.loading->lower;
+        x_u[i] = compiled_.problem.loading->upper;
+    }
     lower_.assign(static_cast<std::size_t>(n), -infinity);  // the amount step rule's bounds, read at each callback
     // Feasibility cells impose chemical equality, so their box is the representability limit. Other
     // cells cap the box at a fraction of each species' attainable inventory u_i/N_feed, the LP
@@ -473,6 +478,7 @@ bool GibbsMinimizer::get_bounds_info(
     }
     for (const auto& solid : compiled_.solids)
         if (solid.column) x_l[offset++] = 0.0;  // EqID solid_amount_complementarity: n_s >= 0, no upper bound
+    offset += compiled_.problem.loading.has_value();
     offset += compiled_.mode_count;  // the critical mode u is unbounded
     if (compiled_.problem.temperature.free) x_l[offset++] = std::numeric_limits<double>::epsilon();
     if (compiled_.problem.pressure.free) x_l[offset++] = std::numeric_limits<double>::epsilon();
@@ -1055,10 +1061,12 @@ static EquilibriumResult run_driver_once(
     // A feasibility cell has a constant objective and is Newton-polished below, so it stops there.
     const double inner_tolerance = row_tolerance
         * (declared.feasibility_cell() ? 1.0 : policy::EQUILIBRIUM_INNER_TOLERANCE_FACTOR.value);
+    if (limits && limits->attempt_cap && limits->attempts >= limits->attempt_cap) limits->exhausted = true;
     const auto expired = [&] { return limits && limits->expired(); };
     if (expired()) { result.message = "elapsed work budget exhausted before driver";
         result.convergence.residual = std::numeric_limits<double>::quiet_NaN();
         reject_elapsed(result, scope); return result; }
+    if (limits) ++limits->attempts;
     std::optional<EquilibriumResult> limit_audit;
     if (limits && !audit) audit = &limit_audit.emplace(result);
     auto fallback = limits || newton ? initial : std::vector<double>{};

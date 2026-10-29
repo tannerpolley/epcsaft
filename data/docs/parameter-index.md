@@ -18,7 +18,7 @@ observations (for example `hamer-wu-1972-aqueous-alkali-halides`) for the intend
 | `feos-rehner-2023` | 1 | 1 | Rehner 2023 binary k_ij and induced-association parameters with their Esper 2023 pure records (FeOs); non-commercial use (CC BY-NC 4.0). |
 | `figiel-2025-aqueous-iodides` | 3 | 2, 3 | Figiel 2025 aqueous NaI and KI at 298.15 K and 1 bar. |
 | `figiel-2025-chloride-activity-refit` | 2 | 2 | Provisional (relaxed target): aqueous MgCl2 and CaCl2 refit on the Figiel 2025 set; the packet description states its measured errors. |
-| `figiel-2025-chloride-mixture-refit` | 2 | 1, 2 | Aqueous chloride brines at 298.15 K: /2 adds the issue-658 Li calibration and opt-in Li-Mg term under owner-amended limits; Yao is calibration, covariance is withheld at the Born bound. The unchanged /1 Na/Mg/Ca basis retains its r1408 exception. See each packet's domain and claim limits. |
+| `figiel-2025-chloride-mixture-refit` | 3 | 1, 2, 3 | Aqueous chloride brines at 298.15 K: /2 adds the issue-658 Li calibration and opt-in Li-Mg term under owner-amended limits; Yao is calibration, covariance is withheld at the Born bound. The unchanged /1 Na/Mg/Ca basis retains its r1408 exception. See each packet's domain and claim limits. |
 | `figiel-2025-reference-electrolytes` | 4 | 2, 3, 4 | Figiel 2025 alkali halides in water, methanol and ethanol (modified Born term). |
 | `figiel-2025-validation-parameters` | 3 | 2, 3 | Figiel 2025 validation-side transcription, including the iodide; for validation, not a separate model. |
 | `figiel-yu-held-2025` | 4 | 2, 3, 4 | Figiel, Yu and Held 2025 full solvent and ion set, including H+, sulfate and vanadium ions. |
@@ -974,7 +974,7 @@ Current packet versions whose parameter files hold the component.
 | `butyraldehyde` | `feos-esper-2023/1`, `feos-rehner-2023/1` |
 | `butyric acid` | `feos-esper-2023/1`, `feos-rehner-2023/1` |
 | `butyric anhydride` | `feos-esper-2023/1`, `feos-rehner-2023/1` |
-| `calcium-cation` | `figiel-2025-chloride-activity-refit/2`, `figiel-2025-chloride-mixture-refit/2`, `held-2014-chloride-mixture-refit/1`, `held-2014-strategy2/2`, `held-cameretti-sadowski-2008/4`, `zuber-2014-electrolyte-permittivity/1` |
+| `calcium-cation` | `figiel-2025-chloride-activity-refit/2`, `figiel-2025-chloride-mixture-refit/3`, `held-2014-chloride-mixture-refit/1`, `held-2014-strategy2/2`, `held-cameretti-sadowski-2008/4`, `zuber-2014-electrolyte-permittivity/1` |
 | `capric acid` | `feos-esper-2023/1`, `feos-rehner-2023/1` |
 | `caprylic acid` | `feos-esper-2023/1`, `feos-rehner-2023/1` |
 | `carbamate-anion` | `mea-co2-h2o-nine-species-estimation/5` |
@@ -990,7 +990,7 @@ Current packet versions whose parameter files hold the component.
 | `carbonyl sulfide` | `feos-esper-2023/1`, `feos-rehner-2023/1` |
 | `cesium-cation` | `held-cameretti-sadowski-2008/4`, `zuber-2014-electrolyte-permittivity/1` |
 | `chlorate-anion` | `held-cameretti-sadowski-2008/4` |
-| `chloride-anion` | `ascani-2022-case-study-2-electrolyte-lle/3`, `dielectric-response-records/1`, `figiel-2025-chloride-activity-refit/2`, `figiel-2025-chloride-mixture-refit/2`, `figiel-2025-reference-electrolytes/4`, `figiel-2025-validation-parameters/3`, `figiel-yu-held-2025/4`, `held-2012-alcohols/1`, `held-2014-chloride-mixture-refit/1`, `held-2014-strategy2/2`, `held-cameretti-sadowski-2008/4`, `khudaida-2026-figure-2-electrolyte-lle/7`, `zuber-2014-electrolyte-permittivity/1` |
+| `chloride-anion` | `ascani-2022-case-study-2-electrolyte-lle/3`, `dielectric-response-records/1`, `figiel-2025-chloride-activity-refit/2`, `figiel-2025-chloride-mixture-refit/3`, `figiel-2025-reference-electrolytes/4`, `figiel-2025-validation-parameters/3`, `figiel-yu-held-2025/4`, `held-2012-alcohols/1`, `held-2014-chloride-mixture-refit/1`, `held-2014-strategy2/2`, `held-cameretti-sadowski-2008/4`, `khudaida-2026-figure-2-electrolyte-lle/7`, `zuber-2014-electrolyte-permittivity/1` |
 | `chlorine` | `feos-esper-2023/1`, `feos-gross-sadowski-2001/1`, `gross-sadowski-2001/3` |
 | `chlorine dioxide` | `feos-esper-2023/1` |
 | `chloro cyclopentane` | `feos-esper-2023/1` |
@@ -1388,7 +1388,7 @@ Current packet versions whose parameter files hold the component.
 | `hydrogen-cation` | `figiel-yu-held-2025/4`, `zuber-2014-electrolyte-permittivity/1` |
 | `hydrogen-chloride` | `gross-vrabec-2006/1` |
 | `hydrogen-phosphate-anion` | `held-cameretti-sadowski-2008/4` |
-| `hydronium-cation` | `held-cameretti-sadowski-2008/4`, `mea-co2-h2o-nine-species-estimation/5` |
+| `hydronium-cation` | `figiel-2025-chloride-mixture-refit/3`, `held-cameretti-sadowski-2008/4`, `mea-co2-h2o-nine-species-estimation/5` |
 | `hydroxide-anion` | `held-cameretti-sadowski-2008/4`, `mea-co2-h2o-nine-species-estimation/5`, `zuber-2014-electrolyte-permittivity/1` |
 | `hydroxy acetonitrile` | `feos-esper-2023/1` |
 | `icosamethylnonasiloxane` | `feos-esper-2023/1` |
@@ -1445,7 +1445,7 @@ Current packet versions whose parameter files hold the component.
 | `linalool (racemic mixture)` | `feos-esper-2023/1`, `feos-rehner-2023/1` |
 | `linoleic acid` | `feos-esper-2023/1`, `feos-rehner-2023/1` |
 | `linolenic acid` | `feos-esper-2023/1` |
-| `lithium-cation` | `figiel-2025-chloride-activity-refit/2`, `figiel-2025-chloride-mixture-refit/2`, `figiel-2025-reference-electrolytes/4`, `figiel-2025-validation-parameters/3`, `figiel-yu-held-2025/4`, `held-2012-alcohols/1`, `held-2014-chloride-mixture-refit/1`, `held-2014-strategy2/2`, `held-cameretti-sadowski-2008/4`, `zuber-2014-electrolyte-permittivity/1` |
+| `lithium-cation` | `figiel-2025-chloride-activity-refit/2`, `figiel-2025-chloride-mixture-refit/3`, `figiel-2025-reference-electrolytes/4`, `figiel-2025-validation-parameters/3`, `figiel-yu-held-2025/4`, `held-2012-alcohols/1`, `held-2014-chloride-mixture-refit/1`, `held-2014-strategy2/2`, `held-cameretti-sadowski-2008/4`, `zuber-2014-electrolyte-permittivity/1` |
 | `m-bromonitrobenzene` | `feos-esper-2023/1` |
 | `m-chloroaniline` | `feos-esper-2023/1`, `feos-rehner-2023/1` |
 | `m-chlorophenol` | `feos-esper-2023/1` |
@@ -1458,7 +1458,7 @@ Current packet versions whose parameter files hold the component.
 | `m-propyltoluene` | `feos-esper-2023/1` |
 | `m-terphenyl` | `feos-esper-2023/1`, `feos-rehner-2023/1` |
 | `m-xylene` | `feos-esper-2023/1`, `feos-gross-sadowski-2001/1`, `feos-rehner-2023/1`, `gross-sadowski-2001/3` |
-| `magnesium-cation` | `figiel-2025-chloride-activity-refit/2`, `figiel-2025-chloride-mixture-refit/2`, `held-2014-chloride-mixture-refit/1`, `held-2014-strategy2/2`, `held-cameretti-sadowski-2008/4`, `zuber-2014-electrolyte-permittivity/1` |
+| `magnesium-cation` | `figiel-2025-chloride-activity-refit/2`, `figiel-2025-chloride-mixture-refit/3`, `held-2014-chloride-mixture-refit/1`, `held-2014-strategy2/2`, `held-cameretti-sadowski-2008/4`, `zuber-2014-electrolyte-permittivity/1` |
 | `maleic anhydride` | `feos-esper-2023/1`, `feos-rehner-2023/1` |
 | `margarinic acid` | `feos-esper-2023/1` |
 | `methacrolein` | `feos-esper-2023/1`, `feos-rehner-2023/1` |
@@ -1759,7 +1759,7 @@ Current packet versions whose parameter files hold the component.
 | `phthaloyl chloride` | `feos-esper-2023/1` |
 | `piperidine` | `feos-esper-2023/1` |
 | `pivalic acid` | `feos-esper-2023/1`, `feos-rehner-2023/1` |
-| `potassium-cation` | `ascani-2022-case-study-2-electrolyte-lle/3`, `figiel-2025-aqueous-iodides/3`, `figiel-2025-chloride-activity-refit/2`, `figiel-2025-chloride-mixture-refit/2`, `figiel-2025-reference-electrolytes/4`, `figiel-2025-validation-parameters/3`, `figiel-yu-held-2025/4`, `held-2012-alcohols/1`, `held-2014-chloride-mixture-refit/1`, `held-2014-strategy2/2`, `held-cameretti-sadowski-2008/4`, `zuber-2014-electrolyte-permittivity/1` |
+| `potassium-cation` | `ascani-2022-case-study-2-electrolyte-lle/3`, `figiel-2025-aqueous-iodides/3`, `figiel-2025-chloride-activity-refit/2`, `figiel-2025-chloride-mixture-refit/3`, `figiel-2025-reference-electrolytes/4`, `figiel-2025-validation-parameters/3`, `figiel-yu-held-2025/4`, `held-2012-alcohols/1`, `held-2014-chloride-mixture-refit/1`, `held-2014-strategy2/2`, `held-cameretti-sadowski-2008/4`, `zuber-2014-electrolyte-permittivity/1` |
 | `propadiene` | `feos-esper-2023/1`, `feos-rehner-2023/1` |
 | `propanal` | `feos-esper-2023/1`, `feos-rehner-2023/1`, `gross-vrabec-2006/1` |
 | `propane` | `feos-esper-2023/1`, `feos-gross-sadowski-2001/1`, `feos-rehner-2023/1`, `gross-2001-propane/3`, `gross-sadowski-2001/3` |
@@ -1812,7 +1812,7 @@ Current packet versions whose parameter files hold the component.
 | `selenium hydride` | `feos-esper-2023/1` |
 | `silane` | `feos-esper-2023/1` |
 | `silicon tetrafluoride` | `feos-esper-2023/1` |
-| `sodium-cation` | `ascani-2022-case-study-2-electrolyte-lle/3`, `dielectric-response-records/1`, `figiel-2025-aqueous-iodides/3`, `figiel-2025-chloride-activity-refit/2`, `figiel-2025-chloride-mixture-refit/2`, `figiel-2025-reference-electrolytes/4`, `figiel-2025-validation-parameters/3`, `figiel-yu-held-2025/4`, `held-2012-alcohols/1`, `held-2014-chloride-mixture-refit/1`, `held-2014-strategy2/2`, `held-cameretti-sadowski-2008/4`, `khudaida-2026-figure-2-electrolyte-lle/7`, `zuber-2014-electrolyte-permittivity/1` |
+| `sodium-cation` | `ascani-2022-case-study-2-electrolyte-lle/3`, `dielectric-response-records/1`, `figiel-2025-aqueous-iodides/3`, `figiel-2025-chloride-activity-refit/2`, `figiel-2025-chloride-mixture-refit/3`, `figiel-2025-reference-electrolytes/4`, `figiel-2025-validation-parameters/3`, `figiel-yu-held-2025/4`, `held-2012-alcohols/1`, `held-2014-chloride-mixture-refit/1`, `held-2014-strategy2/2`, `held-cameretti-sadowski-2008/4`, `khudaida-2026-figure-2-electrolyte-lle/7`, `zuber-2014-electrolyte-permittivity/1` |
 | `squalane` | `feos-esper-2023/1`, `feos-rehner-2023/1` |
 | `stearic acid` | `feos-esper-2023/1`, `feos-rehner-2023/1` |
 | `stibine` | `feos-esper-2023/1` |
@@ -1991,7 +1991,7 @@ Current packet versions whose parameter files hold the component.
 | `vinyl triethoxy silane` | `feos-esper-2023/1` |
 | `vinylethylene carbonate` | `feos-esper-2023/1` |
 | `vinyltrimethoxysilane` | `feos-esper-2023/1` |
-| `water` | `ascani-2022-case-study-2-electrolyte-lle/3`, `dielectric-response-records/1`, `feos-esper-2023/1`, `feos-gross-sadowski-2002/1`, `feos-rehner-2023/1`, `figiel-2025-aqueous-iodides/3`, `figiel-2025-chloride-activity-refit/2`, `figiel-2025-chloride-mixture-refit/2`, `figiel-2025-reference-electrolytes/4`, `figiel-2025-validation-parameters/3`, `figiel-yu-held-2025/4`, `held-2012-alcohols/1`, `held-2014-chloride-mixture-refit/1`, `held-2014-strategy2/2`, `held-cameretti-sadowski-2008/4`, `khudaida-2026-figure-2-electrolyte-lle/7`, `mea-co2-h2o-nine-species-estimation/5`, `nasrifar-2010-mdea/1` |
+| `water` | `ascani-2022-case-study-2-electrolyte-lle/3`, `dielectric-response-records/1`, `feos-esper-2023/1`, `feos-gross-sadowski-2002/1`, `feos-rehner-2023/1`, `figiel-2025-aqueous-iodides/3`, `figiel-2025-chloride-activity-refit/2`, `figiel-2025-chloride-mixture-refit/3`, `figiel-2025-reference-electrolytes/4`, `figiel-2025-validation-parameters/3`, `figiel-yu-held-2025/4`, `held-2012-alcohols/1`, `held-2014-chloride-mixture-refit/1`, `held-2014-strategy2/2`, `held-cameretti-sadowski-2008/4`, `khudaida-2026-figure-2-electrolyte-lle/7`, `mea-co2-h2o-nine-species-estimation/5`, `nasrifar-2010-mdea/1` |
 | `water_2B` | `pahlavanzadeh-2013-mdea/1` |
 | `water_4C` | `pahlavanzadeh-2013-mdea/1` |
 | `xenon` | `feos-esper-2023/1` |

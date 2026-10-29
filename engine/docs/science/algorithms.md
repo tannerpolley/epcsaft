@@ -1483,6 +1483,27 @@ See the specification appendix for [cooling-onset dew](#cooling-onset-dew),
 [critical-equation candidates and phase envelopes](#critical-equation-candidates-and-phase-envelopes),
 and [pure stoichiometric solids](#pure-stoichiometric-solids).
 
+The #906 saturation-loading search declares a positive increasing grid with
+both interval endpoints. It solves ordinary free-pressure bubble nodes in order,
+starting cold and then mapping the preceding admitted current-vector state.
+Native pressure estimates resolve signs; native exact feed actions and the
+augmented defining-row loading projection establish sampled local regularity.
+Each strict sign bracket or pressure-uncertain node event receives one bounded
+affine-loading correction through the same driver. A bracket uses its midpoint
+and lower-node state; a node event uses that node and its adjacent-node span.
+There is no scalar inversion, grid refinement or outer retry.
+
+One existing recovery work envelope covers all grid, seed, fallback and
+correction calls, including driver attempts. Candidate comparison uses all
+loading, T/P and declared-order phase/state operands with their own native
+estimates and zero comparison allowance. Every pair in a duplicate group must
+agree; multiple strict brackets refuse independently of candidate deduplication.
+Candidate corrections/comparisons precede the sampled slope audit. All nodes
+and required events must be examined, with one admitted root group and no
+refusal, before publication. “Unique within the declared search” excludes
+between-node and undiscovered-branch claims. EqID `finite_addition_enthalpy`
+owns the heat, moving denominator and switch derivative.
+
 ## ALG-STABILITY
 
 The explicit native tangent-plane test and fixed-T/P discovery adopted in
@@ -1696,7 +1717,8 @@ optimizer attempt, including a nonconverged attempt. Failed initialization has
 no optimizer point. A Michelsen trial retains its converged primal chart [ln wᵢ, 1, ln η] as raw coordinates and has no raw
 residuals, basis or row transformation. Keep raw residuals separate from reconstructed composition,
 displacement and reevaluated energy. Normalize neutral trials; ionic rescaling
-and the Liquid largest-entry positive/negative pivot correction follow EqID:
+and the Liquid charge-only increase of the largest opposite-sign pivot followed
+by common multiplicative normalization follow EqID:
 `electroneutral_trial_reconstruction` with ties by index. Newly admitted charged
 Vapor trials retain common normalization and multiplicative charge repair in
 log arithmetic, without adding normalization roundoff to ionic coordinates. Recompute molar volume
