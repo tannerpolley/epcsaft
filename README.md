@@ -46,33 +46,21 @@ uv pip install --python .venv/bin/python --no-build-isolation ./engine
 The code uses GPLv3 with an additional permission under section 7 for linking
 with EPL-licensed Ipopt; see [LICENSE](LICENSE). Retained third-party data have
 separate terms, including non-commercial restrictions; see [NOTICE](NOTICE).
-`tools/refresh-main-wheel` distributes private development wheels and requires
-a private repository. Public source releases do not use that tool.
-
-Maintainers prepare a local snapshot with `python3 tools/release-snapshot` after
-committing the candidate. It writes a new tree and a JSON manifest under
-`build/release/`, excludes ignored files and `build/`, and replaces files larger
-than 50 MiB with SHA-256 notes. The manifest records the HSL and journal-PDF
-path checks and personal-path counts. Complete the secret scan before any
-publication; snapshot generation does not publish or tag a release.
 
 ## Setup and installation
 
-Run commands from the repository root:
+For an editable development installation, run from the repository root after
+installing the prerequisites above:
 
 ```bash
-bash .codex/environments/setup.sh
+uv sync --python 3.13 --locked --all-packages --no-install-workspace
+nice -n 10 bash tools/build-engine.sh
 bash tools/status.sh
 ```
 
-Setup syncs the locked root `.venv` and installs `engine/` editable through
-meson-python, building into `build/engine-meson/shared` with `ccache` and the
-shared HiGHS.
-`import epcsaft` then rebuilds whatever native sources changed (Ninja's incremental
-build, printed to stderr when there is work); a Python edit needs no rebuild and no setup.
-Re-run setup after a lock change. Setup rebuilds the tree from scratch after a compiler
-or HiGHS change; after another system library upgrade, delete `build/engine-meson/shared`
-and re-run setup.
+`tools/build-engine.sh` installs `engine/` editable through meson-python into
+`build/engine-meson/shared`. Imports rebuild changed native sources with Ninja;
+Python edits need no rebuild. Repeat the commands after a lock change.
 
 ```python
 import epcsaft
@@ -83,7 +71,7 @@ from epcsaft import equilibrium
 `tools/check-pr-native` owns frozen instrumented preparation. Wheels exist only where an exact
 wheel file and its SHA-256 are recorded: `tools/build-engine.sh --wheel <dir>` for application pins
 and merged-main delivery, and `tools/build-engine.sh --install-wheel` for an analysis that
-records an installed wheel (re-run setup afterwards to return to the editable
+records an installed wheel (repeat the installation commands afterwards to return to the editable
 install). `epcsaft.provenance()` identifies the running Engine: the commit and
 whether `engine/` is clean for the editable install, the wheel path and SHA-256
 for a wheel. Downstream applications install an explicitly identified wheel and
@@ -91,9 +79,7 @@ record its SHA-256.
 
 ## Checks
 
-Which checks a delivery runs, and when, is listed only in
-[`docs/agents/workflow.md` "Gates"](docs/agents/workflow.md#gates); this section
-describes the commands. Run the affected-area gate during normal development:
+Run the affected-area checks during normal development:
 
 ```bash
 bash tools/check-affected.sh [base]
@@ -154,7 +140,7 @@ main checkout's `build/pr-gates/pr-N/<head>/`, including GCC's binary128 headers
 Both consume the prepared tree. Identical inputs reuse passing evidence without
 compiling; toolchain/header/environment changes replace stale objects, while a
 changed base or check selection reruns the checks. Logs and test records stay
-beside that frozen source. See the [development method](docs/agents/workflow.md#development-method).
+beside that frozen source.
 
 Each checkout has its own `.venv` from setup with an editable Engine install.
 `tools/check-equilibrium-corpora <A> <B>` and `tools/time-key-solves <A> <B>` select
@@ -173,24 +159,7 @@ at most 1.25 times its frozen value. Add `--fit` for the 120 s full-fit wall
 ceiling and slowest-worker critical-path CPU; an A/B full fit needs the same-host
 A=A `--fit` summary via `--control <summary.json>`. Full fits use native default
 workers (32 on the reference host); the default command runs one serial F1
-evaluation per environment. The Gates table owns when the full fit is required.
-After merges, `tools/refresh-main-wheel` compares retained previous/candidate
-prepared environments before packaging main. Select the retained baseline with
-`EPCSAFT_PREVIOUS_PREPARED`; the candidate defaults to main’s prepared build tree.
-Set `EPCSAFT_NUMERICAL_EVIDENCE` to space-separated existing evidence paths.
-Wheels are `auditwheel`-repaired `manylinux_2_39` wheels carrying Ipopt, MUMPS and
-Ceres; before retaining one it runs `tools/check-wheel-container.sh`, which refuses
-any HSL member and runs `verify-installed-wheel.py` and the Python suite in a
-digest-pinned `python:3.13-slim` container without those host libraries.
-It retains the wheel in `build/wheels/main-<short-commit>/`, verifies a draft's
-uploaded bytes and full commit tag, then publishes the private prerelease
-`main-<full-commit>` with `latest=false`. Retries reuse the retained wheel and
-resume missing assets in the same draft. An interruption before an upload can
-resume; a failed transfer may leave an incomplete `starter` asset. Incomplete,
-unequal or unreadable existing assets stop for owner diagnosis; the tool never
-deletes or replaces them. A different identity also stops without replacement.
-`build/wheels/main-current/` is updated after confirmed publication. The
-[downstream guide](downstream/README.md) owns authenticated download and file pins.
+evaluation per environment. 
 The documentation workflow builds the site and its examples; it does not run
 the scientific delivery gates. `bash tools/check-all-container.sh` runs
 `check-all.sh` on HEAD from a cold build in a digest-pinned `ubuntu:24.04`
@@ -234,6 +203,6 @@ Run a canonical end-to-end workflow with:
 bash tools/run-slice.sh khudaida
 ```
 
-See `AGENTS.md`, `ARCHITECTURE.yaml`, and
+See `ARCHITECTURE.yaml` and
 `docs/scientific/CONTEXT.md` for execution, architecture, and scientific
 ownership.

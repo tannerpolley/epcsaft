@@ -68,35 +68,55 @@ Cost, engineering use and limitations follow in Sections~\ref{sec:performance}--
 
 \begin{table}[pos=htbp]
 \centering
-\caption{Equilibrium and derivative capabilities of five PC-SAFT implementations, from their source code and documentation.
-G, one general formulation shared with other specifications; S, a dedicated routine; P, partial or restricted scope; U, assembled by the user from lower-level outputs; X, excluded by the source or documentation; ?, not shown in the sources checked, which is unknown rather than absent.
-The codes describe how a capability is provided, not its accuracy or cost.
-An asterisk marks a class in which a comparison in Section~\ref{sec:verification} computes the same case with that code and this package.
-Versions: FeOs~0.9.5 source, with 0.10.1 for the derivative, pressure--enthalpy and pressure--entropy flash and fitting classes; Clapeyron.jl development source following release~0.6.20, with the 0.6.29 documentation for implicit derivatives and the generalized flash; teqp~0.23.2; ThermoPack development source.
-Supporting Information Section~\ref{sec:si-sources} gives the source of each cell.
-\textsuperscript{a}Ions confined to the aqueous liquid or at trace amounts in the organic liquid.
-\textsuperscript{b}Internal-energy--volume specifications and pressure--enthalpy or pressure--entropy specifications with charged species are not available.
-\textsuperscript{c}Phase envelopes are verified for neutral vapor--liquid systems.
-\textsuperscript{d}Derivative orders depend on the case and the input direction (Section~\ref{sec:derivatives}).
-\textsuperscript{e}No physical comparison is reported in this work.}
+\caption{Equilibrium and derivative capabilities of five PC-SAFT implementations, as documented in the surveyed sources.
+The entries describe how each capability is provided; they do not rank accuracy or computational cost.
+Surveyed versions and sources are listed in Supporting Information Section~\ref{sec:si-sources}.}
 \label{tab:software}
 \small
-\begin{tabularx}{\linewidth}{@{}Xccccc@{}}
+\newcommand{\capgeneral}{\tikz[baseline=-0.45ex]{\fill (0,0) circle[radius=0.8mm];}}
+\newcommand{\capdedicated}{\tikz[baseline=-0.45ex]{\draw (0,0) circle[radius=0.8mm];}}
+\newcommand{\caplimited}{\tikz[baseline=-0.45ex]{\fill (0,0.8mm) arc[start angle=90,end angle=270,radius=0.8mm] -- cycle;\draw (0,0) circle[radius=0.8mm];}}
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}X*{5}{>{\centering\arraybackslash}p{0.12\linewidth}}@{}}
 \toprule
 Problem class & This work & Clapeyron.jl & FeOs & teqp & ThermoPack \\
 \midrule
-Phase envelopes and critical points & G\textsuperscript{c} & S & S* & S* & S \\
-Tangent-plane stability analysis & G & S & S* & ? & S \\
-Neutral liquid--liquid and three-phase equilibrium & G & S* & S* & S & P \\
-Electrolyte activity and osmotic coefficients & S & S* & U* & ? & X \\
-Born solvation and composition-dependent permittivity & S & S* & S* & ? & X \\
-Electrolyte vapor--liquid equilibrium with speciation & G\textsuperscript{e} & X & ? & ? & X \\
-Electrolyte liquid--liquid equilibrium, ions in both liquids & G & S* & ? & ? & X \\
-Simultaneous reaction and phase equilibrium & G & X & ? & ? & ? \\
-Reactive electrolyte liquid--liquid equilibrium & G\textsuperscript{a} & X & ? & ? & X \\
-Caloric properties and pressure--enthalpy flash & G\textsuperscript{b} & G & S* & G & S \\
-Exact derivatives of equilibrium results & G\textsuperscript{d} & P* & P* & P & P \\
-Electrolyte and reactive parameter estimation & S & P & ? & ? & ? \\
+Phase envelopes and critical points & \capgeneral & \capdedicated & [\capdedicated] & [\capdedicated] & \capdedicated \\
+Tangent-plane stability analysis & \capgeneral & \capdedicated & [\capdedicated] & ? & \capdedicated \\
+Neutral liquid--liquid and three-phase equilibrium & \capgeneral & [\capdedicated] & [\capdedicated] & \capdedicated & \caplimited \\
+Electrolyte activity and osmotic coefficients & \capdedicated & [\capdedicated] & [$\Diamond$] & ? & $\times$ \\
+Born solvation and composition-dependent permittivity & \capdedicated & [\capdedicated] & [\capdedicated] & ? & $\times$ \\
+Electrolyte vapor--liquid equilibrium with speciation & \capgeneral & $\times$ & ? & ? & $\times$ \\
+Electrolyte liquid--liquid equilibrium, ions in both liquids & \capgeneral & [\capdedicated] & ? & ? & $\times$ \\
+Simultaneous reaction and phase equilibrium & \capgeneral & $\times$ & ? & ? & ? \\
+Reactive electrolyte liquid--liquid equilibrium & \capgeneral & $\times$ & ? & ? & $\times$ \\
+Caloric properties and pressure--enthalpy flash & \capgeneral & \capgeneral & [\capdedicated] & \capgeneral & \capdedicated \\
+Exact derivatives of equilibrium results & \capgeneral & [\caplimited] & [\caplimited] & \caplimited & \caplimited \\
+Electrolyte and reactive parameter estimation & \capdedicated & \caplimited & ? & ? & ? \\
 \bottomrule
 \end{tabularx}
+
+\medskip
+\begin{minipage}{\linewidth}
+\footnotesize\raggedright
+\textbf{Legend}\par\smallskip
+\begin{tabularx}{\linewidth}{@{}lXlX@{}}
+\capgeneral\ General & One formulation shared with other specifications. & \capdedicated\ Dedicated & A routine for this problem class. \\
+\caplimited\ Limited & Partial or restricted scope. & $\Diamond$ User-assembled & Assembled by the user from lower-level outputs. \\
+$\times$ Excluded & Ruled out by the source or documentation. & ? Unknown & Not shown in the sources checked; absence is not established. \\
+\end{tabularx}
+\smallskip
+\textbf{Square brackets around a symbol}: a comparison in Section~\ref{sec:verification} computes the same case with that code and this package.
+
+\medskip
+\textbf{Scope of this work}\par\smallskip
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.27\linewidth}X@{}}
+Phase envelopes & Verified for neutral vapor--liquid systems. \\
+Reactive electrolyte liquid splits & Ions are confined to the aqueous liquid or present only at trace amounts in the organic liquid. \\
+Caloric specifications & Internal-energy--volume specifications and pressure--enthalpy or pressure--entropy specifications with charged species are unavailable. \\
+Equilibrium derivatives & Available orders depend on the case and input direction (Section~\ref{sec:derivatives}). \\
+Electrolyte vapor--liquid equilibrium with speciation & No physical comparison is reported here. \\
+\end{tabularx}
+\end{minipage}
 \end{table}

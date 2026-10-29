@@ -9,7 +9,7 @@
     }
   ],
   "license": "GPL-3.0",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "GPL version 3 with the additional permission under section 7 for linking with EPL-licensed Ipopt; see LICENSE. Retained third-party data have separate terms in NOTICE.",
   "doi": "10.5281/zenodo.23634228",
   "related_identifiers": [

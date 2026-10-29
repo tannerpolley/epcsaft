@@ -19,6 +19,13 @@ def git(root, *args, **kwargs):
     return subprocess.check_output(["git", "-C", str(root), *args], **kwargs)
 
 
+def agent_path(path):
+    parts = Path(path).parts
+    return (parts[-1] in {"AGENTS.md", "CLAUDE.md"}
+            or any(p in {".agents", ".claude", ".codex", ".serena"} for p in parts)
+            or parts[:2] == ("docs", "agents"))
+
+
 def write_blob(tree, path, mode, content):
     target = tree / path
     target.parent.mkdir(parents=True, exist_ok=True)
@@ -46,6 +53,10 @@ def self_test(parent):
         else:
             raise AssertionError("External symlink accepted")
         assert all(HSL.search(path) for path in ("lib/coinhsl/ma57.f", "libcoinhsl.so", "ma57d.f"))
+        assert all(agent_path(p) for p in ("AGENTS.md", "data/CLAUDE.md",
+                   ".codex/environments/setup.sh", "nested/.serena/project.yml",
+                   "docs/agents/workflow.md"))
+        assert not agent_path("docs/scientific/CONTEXT.md")
         assert not HSL.search("normal/calculation.csv")
         assert JOURNAL.search("inputs/source/example.pdf")
     print("snapshot self-check passed")
@@ -91,6 +102,9 @@ def main():
     with subprocess.Popen(["git", "-C", str(root), "cat-file", "--batch"],
                           stdin=subprocess.PIPE, stdout=subprocess.PIPE) as objects:
         for path, mode, kind, oid, size in entries:
+            if agent_path(path):
+                excluded.append({"path": path, "reason": "agent configuration"})
+                continue
             if path.startswith("build/") or path in ignored_paths:
                 excluded.append({"path": path, "reason": "build/" if path.startswith("build/") else "ignored"})
                 continue
@@ -138,7 +152,7 @@ def main():
             raise ValueError(f"Symlink chain leaves snapshot: {item['path']}")
     manifest = {"head": head, "tree": str(tree), "file_count": len(files),
                 "size_bytes": sum(item["bytes"] for item in files), "threshold_bytes": LIMIT,
-                "policy": "HEAD only; no Git history or refs; build/ and every ignored path excluded",
+                "policy": "HEAD only; no Git history or refs; agent configuration, build/ and every ignored path excluded",
                 "excluded": excluded, "replaced": replacements, "checks": checks, "files": files}
     (output / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
     print(json.dumps({key: manifest[key] for key in ("head", "tree", "file_count", "size_bytes", "checks")}, indent=2))

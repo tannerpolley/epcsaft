@@ -1,6 +1,6 @@
 [project]
 name = "epcsaft-workspace"
-version = "1.1.0"
+version = "1.1.1"
 description = "Private development workspace for the unified ePC-SAFT project"
 license = { file = "LICENSE" } # GPLv3 with the Ipopt section 7 permission
 requires-python = ">=3.13"
