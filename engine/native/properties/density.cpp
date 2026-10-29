@@ -1498,7 +1498,7 @@ HelmholtzDerivativeValues<long double> HelmholtzModel::isothermal(long double te
     return out;
 }
 
-template PureIsothermalValues<double> HelmholtzModel::pure_isothermal(double, double, double) const;
+template EPC_API PureIsothermalValues<double> HelmholtzModel::pure_isothermal(double, double, double) const;
 template PureIsothermalValues<long double> HelmholtzModel::pure_isothermal(long double, long double, long double) const;
 
 Taylor<3> properties::density_volume_taylor(const HelmholtzModel& model, double temperature, double density,

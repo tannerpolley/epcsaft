@@ -50,7 +50,7 @@ struct Trace final {
     std::shared_ptr<IpoptLog> ipopt_log;
 };
 
-Trace*& current_trace() noexcept;
+EPC_API Trace*& current_trace() noexcept;
 
 inline void retain_first(std::optional<Convergence>& first, const std::optional<Convergence>& next, bool earlier = false) {
     if (next && (!first || earlier)) first = next;

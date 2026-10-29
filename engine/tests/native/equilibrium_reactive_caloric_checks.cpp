@@ -18,8 +18,10 @@ using Observable = SolvedStateObservable;
 constexpr double R = GAS_CONSTANT_J_PER_MOL_K;
 using binary128_support::NamedDirection;
 using binary128_support::Quantity;
+#ifndef _WIN32
 using binary128_support::Wide;
 using binary128_support::WideIonic;
+#endif
 
 struct Case {
     std::string name;
@@ -363,6 +365,7 @@ inline Sample shifted(const Case& c,const Direction& delta,const std::vector<Qua
     if(first_action) {Actions actions(compiled,solved,q);sample.values=actions.get({*first_action});}
     return sample;
 }
+#ifndef _WIN32
 #include "reactive_caloric_wide.hpp"
 struct Difference {
     std::vector<Wide> value;
@@ -491,6 +494,8 @@ inline void ladder(const Case& c,Actions& actions,const std::vector<NamedDirecti
             "abs(exact-R)<=atol+1e-6*max(abs(R),sigma) && refinement<=target/4",good,"reactive-caloric",id.c_str());
     }
 }
+
+#endif
 
 // Frozen-composition oracle: P4 with complete declared A records supplies only
 // the EOS/ideal mixing chain. Subtract those density standards and insert the
@@ -713,6 +718,7 @@ inline std::vector<std::vector<NamedDirection>> requests(const Case& c,const std
     return result;
 }
 
+#ifndef _WIN32
 void run(bool ionic,bool fixed) {
     const auto c=input(ionic,fixed);HelmholtzModel model(c.parameters,c.active,c.records);
     const auto compiled=compile_problem(model,c.problem);const auto solved=solve_compiled(compiled);
@@ -824,6 +830,8 @@ void unreactive() {
     const auto& base=actions.get({});
     compare("F3/U/v_G",q[index(q,"v_G")],base[index(q,"v_G")],1/center.phase.rho,inputs,1e-10);
 }
+#endif
+
 inline void dependency_checks() {
     auto c = input(false, true);
     HelmholtzModel model(c.parameters, c.active, c.records);
@@ -964,6 +972,7 @@ inline void isothermal_row_columns() {
         }
     }
 }
+#ifndef _WIN32
 inline Case boundary_input(bool nonidentical,bool free_temperature,bool fixed) {
     auto c=input(false,fixed);
     c.name=std::string(nonidentical?"N":"E")+"-bubble-"+(free_temperature?"T":"P")+(fixed?"-fix":"-sys");
@@ -1112,6 +1121,8 @@ void boundary(bool nonidentical,bool free_temperature,bool fixed) {
             fixed_values.values[k],inputs,1e-10,"same-liquid-state-on-fixed-chart");
     }
 }
+
+#endif
 
 void cheap() {
     dependency_checks();

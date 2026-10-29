@@ -30,9 +30,9 @@ struct ParameterDocument final {
     std::vector<ParameterEntry> entries;
 };
 
-Parameters build_parameters(const ParameterDocument& document);
-ThermochemistryRecord prepare_thermochemistry(ThermochemistryRecord record, double source_gas_constant);
+EPC_API Parameters build_parameters(const ParameterDocument& document);
+EPC_API ThermochemistryRecord prepare_thermochemistry(ThermochemistryRecord record, double source_gas_constant);
 // The start document with each fitted slot's entry magnitude replaced; refuses unless it rebuilds `fitted` bitwise.
-ParameterDocument fitted_document(const ParameterDocument& start, const Parameters& fitted);
+EPC_API ParameterDocument fitted_document(const ParameterDocument& start, const Parameters& fitted);
 
 }  // namespace epcsaft
