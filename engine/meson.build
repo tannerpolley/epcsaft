@@ -133,6 +133,11 @@ regression_sources = files(
   'native/regression/minimax.cpp',
 )
 
+worker_platform_dep = []
+if windows
+  worker_platform_dep = [cpp.find_library('advapi32')]
+endif
+
 epcsaft_native = shared_library(
   'epcsaft_native',
   'native/core/trace.cpp',
@@ -151,6 +156,7 @@ epcsaft_native = shared_library(
     ceres_dep,
     highs_dep,
     cppad_headers_dep,
+    worker_platform_dep,
   ],
   include_directories: native_inc,
   install: true,
@@ -166,7 +172,7 @@ if windows
     surface_sources, equilibrium_sources, regression_sources, cppad_temp_file, highs_conf_file]
   private_options = {
     'cpp_args': native_warnings + ['-DEPCSAFT_NATIVE_STATIC'],
-    'dependencies': [threads_dep, ipopt_dep, eigen_dep, ceres_dep, highs_dep, cppad_headers_dep],
+    'dependencies': [threads_dep, ipopt_dep, eigen_dep, ceres_dep, highs_dep, cppad_headers_dep, worker_platform_dep],
     'include_directories': native_inc,
   }
 else

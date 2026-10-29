@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 #include "regression/coordinates.hpp"
 #include "regression/observations.hpp"
 
@@ -212,7 +214,11 @@ struct FitHost final {
 };
 EPC_API void set_fit_host(FitHost host, const void* extension);
 struct EPC_EXCEPTION FitInterrupted final {};
-[[noreturn]] EPC_API void serve_fit(int fd);  // a worker process: its rows of every evaluation, over fd
+#ifdef _WIN32
+[[noreturn]] EPC_API void serve_fit(std::uintptr_t channel);
+#else
+[[noreturn]] EPC_API void serve_fit(int fd);
+#endif  // a worker process: its rows of every evaluation, over fd
 EPC_API FitResult fit(const FitRequest& request);
 EPC_API std::vector<FitResult> fit_sequence(FitRequest request, const std::vector<std::vector<double>>& starts,
     int iterations, double seconds);  // shared budgets, ordered results; unstarted points are absent
