@@ -18,6 +18,11 @@ FC="$(cygpath -u "$BUILD_PREFIX")/Library/bin/flang.exe"
 export FC
 test -x "$FC"
 export F77="$FC"
+# Autoconf 2.59 misreads Flang's MSVC verbose link output as GNU libraries.
+# Supply real libraries, while leaving its mixed-language link probes enabled.
+build_library_prefix=$(cygpath -m "$BUILD_PREFIX")/Library/lib
+export FLIBS="-L$build_library_prefix -lflang -lflangrti -lompstub"
+export FFLAGS="-O2 $FLIBS -lflangmain -Xlinker /subsystem:console"
 export CFLAGS="$CFLAGS -DIPOPT_BUILD"
 export CXXFLAGS="$CXXFLAGS -DIPOPT_BUILD -Wno-reserved-user-defined-literal"
 export CPPFLAGS="$CPPFLAGS -I$library_prefix/include"
