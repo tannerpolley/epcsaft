@@ -119,7 +119,7 @@ print(*{m.resolve(p, rules)[0] for p in sys.stdin.read().splitlines()})')"
     fi
 fi
 
-if grep -Eq '^(pyproject\.toml|uv\.lock|\.codex/|tools/check-all\.sh)' <<<"$paths"; then
+if grep -Eq '^(pyproject\.toml|uv\.lock|\.codex/|tools/(check-all|setup)\.sh)' <<<"$paths"; then
     timed check-all bash tools/check-all.sh
     check_declarations
     check_tools
@@ -131,7 +131,7 @@ if grep -Eq '^(pyproject\.toml|uv\.lock|\.codex/|tools/check-all\.sh)' <<<"$path
 fi
 
 if [[ "$declarations_affected" == true ]] || grep -Eq '^(ARCHITECTURE\.yaml|engine/(meson\.build|build/subprojects/|LICENSE|pyproject\.toml|native/|src/|data/|tests/)|docs/scientific/|pyproject\.toml$|uv\.lock$|\.codex/|tools/(check-engine-architecture\.py|build-engine\.sh))' <<<"$paths"; then
-    timed setup bash .codex/environments/setup.sh
+    timed setup bash tools/setup.sh
 fi
 timed budgets python3 tools/diffstat.py --budgets
 

@@ -8,7 +8,7 @@ if [[ "${1:-}" != "khudaida" ]]; then
     echo "usage: $0 khudaida" >&2
     exit 2
 fi
-bash .codex/environments/setup.sh
+bash tools/setup.sh
 .venv/bin/python data/tools/validate_packets.py
 candidate_dir="$(mktemp -d /tmp/epcsaft-khudaida.XXXXXX)"
 qualification_dir="$(mktemp -d /tmp/epcsaft-khudaida-qualification.XXXXXX)"
