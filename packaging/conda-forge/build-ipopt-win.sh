@@ -46,13 +46,19 @@ trap 'find "$build_dir" -name config.log -exec cp --parents {} "$evidence" \;' E
     --with-blas=-lopenblas --with-lapack=-lopenblas \
     --with-mumps-incdir="$library_prefix/include/mumps_seq" \
     --with-mumps-lib=-ldmumps 2>&1 | tee "$evidence/configure.txt"
+# Verify the COFF command before enabling the old libtool's unrecognized linker.
+printf '%s\n' 'extern "C" __declspec(dllexport) int link_probe() { return 0; }' > "$evidence/link-probe.cpp"
+# shellcheck disable=SC2086
+nice -n 10 "$CXX" $CXXFLAGS "$evidence/link-probe.cpp" -o "$evidence/link-probe.dll" -Wl,-DLL 2>&1 | tee "$evidence/link-probe.txt"
+test -s "$evidence/link-probe.dll"
 # The conda wrapper supplies COFF C++ exports. Rename the DLL before linking:
 # renaming an installed DLL alone leaves its old identity in the import library.
 while IFS= read -r libtool; do
     (
         cd "$(dirname "$libtool")"
         patch_libtool
-        sed -i 's/^soname_spec=.*/soname_spec="epcsaft_ipopt_3119.dll"/; s/^library_names_spec=.*/library_names_spec="epcsaft_ipopt_3119.dll"/' libtool
+        # shellcheck disable=SC2016
+        sed -i 's/^build_libtool_libs=.*/build_libtool_libs=yes/; s/^build_old_libs=.*/build_old_libs=no/; s/^always_export_symbols=.*/always_export_symbols=yes/; s/\$tool_output_objdir/\$output_objdir\//g; s/^soname_spec=.*/soname_spec="epcsaft_ipopt_3119.dll"/; s/^library_names_spec=.*/library_names_spec="epcsaft_ipopt_3119.dll"/' libtool
     )
 done < <(find "$PWD" -name libtool -type f)
 nice -n 10 make -j"$EPCSAFT_BUILD_JOBS" 2>&1 | tee "$evidence/make.txt"
