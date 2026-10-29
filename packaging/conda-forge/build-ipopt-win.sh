@@ -58,18 +58,18 @@ while IFS= read -r libtool; do
         cd "$(dirname "$libtool")"
         patch_libtool
         # shellcheck disable=SC2016
-        sed -i 's/^build_libtool_libs=.*/build_libtool_libs=yes/; s/^build_old_libs=.*/build_old_libs=no/; s/^always_export_symbols=.*/always_export_symbols=yes/; s/\$tool_output_objdir/\$output_objdir\//g; s/^soname_spec=.*/soname_spec="epcsaft_ipopt_3119.dll"/; s/^library_names_spec=.*/library_names_spec="epcsaft_ipopt_3119.dll"/' libtool
+        sed -i '3s/; echo/ \&\& echo/; s/\$CC -o/\$CC -fuse-ld=lld -nostdlib -Xclang --dependent-lib=msvcrt -o/; s/^build_libtool_libs=.*/build_libtool_libs=yes/; s/^build_old_libs=.*/build_old_libs=no/; s/^always_export_symbols=.*/always_export_symbols=yes/; s/\$tool_output_objdir/\$output_objdir\//g; s/^soname_spec=.*/soname_spec="epcsaft_ipopt_3119.dll"/; s/^library_names_spec=.*/library_names_spec="epcsaft_ipopt_3119.dll"/' libtool
     )
 done < <(find "$PWD" -name libtool -type f)
 nice -n 10 make -j"$EPCSAFT_BUILD_JOBS" 2>&1 | tee "$evidence/make.txt"
 # The MSYS pkg-config search path cannot contain a Windows drive colon.
 make install PKG_CONFIG="env PKG_CONFIG_PATH=$(cygpath -u "$private_prefix")/lib/pkgconfig pkg-config" 2>&1 | tee "$evidence/install.txt"
 mkdir -p "$private_prefix/lib/pkgconfig" "$private_prefix/bin"
-dll=$(find "$private_prefix" -name epcsaft_ipopt_3119.dll -type f -print -quit)
-test -n "$dll"
-[[ $dll == "$private_prefix/bin/epcsaft_ipopt_3119.dll" ]] || cp "$dll" "$private_prefix/bin/"
-implib=$(find "$PWD/Ipopt" -name '*ipopt.dll.lib' -type f -print -quit)
-test -n "$implib"
+dll="$PWD/Ipopt/src/Interfaces/.libs/epcsaft_ipopt_3119.dll"
+test -f "$dll"
+cp "$dll" "$private_prefix/bin/"
+implib="$PWD/Ipopt/src/Interfaces/.libs/libipopt.dll.lib"
+test -f "$implib"
 cp "$implib" "$private_prefix/lib/epcsaft_ipopt_3119.lib"
 cat > "$private_prefix/lib/pkgconfig/ipopt.pc" <<PC
 prefix=$private_prefix
