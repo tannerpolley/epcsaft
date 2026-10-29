@@ -34,6 +34,9 @@ export LDFLAGS="$LDFLAGS -L$library_prefix/lib"
 } > "$evidence/compilers.txt" 2>&1
 cd "$source_dir/../ipopt-build"
 build_dir=$PWD
+# Extraction timestamps must not regenerate the archive's shipped Autotools files.
+find "$source_dir" -name aclocal.m4 -exec touch {} +
+find "$source_dir" \( -name configure -o -name Makefile.in -o -name '*config*.h.in' \) -exec touch {} +
 # Keep failed configure/link probes as well as successful configuration headers.
 trap 'find "$build_dir" -name config.log -exec cp --parents {} "$evidence" \;' EXIT
 "$source_dir/configure" --prefix="$private_prefix" \
