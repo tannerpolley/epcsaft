@@ -14,7 +14,8 @@ for library in dmumps blas lapack; do
     test -f "$library_prefix/lib/$library.lib"
     printf '%s\n' "$library_prefix/lib/$library.lib"
 done | tee "$evidence/link-inputs.txt"
-export FC="$(cygpath -u "$BUILD_PREFIX")/Library/bin/flang.exe"
+FC="$(cygpath -u "$BUILD_PREFIX")/Library/bin/flang.exe"
+export FC
 test -x "$FC"
 export F77="$FC"
 export CFLAGS="$CFLAGS -DIPOPT_BUILD"
