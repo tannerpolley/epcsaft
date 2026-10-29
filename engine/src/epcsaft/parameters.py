@@ -62,13 +62,16 @@ class _Entries(list[_core.ParameterEntry]):
 
     def __init__(self) -> None:
         super().__init__()
-        self.values: list[Any] = []
-        self.aliases: list[tuple[Any, Any]] = []
+        self.values: list[list[Any]] = []
         self.scalars: list[tuple[int, Any, str]] = []
 
-    def add(self, identity: object, field: str, index: Sequence[int], value: object, name: str) -> None:
-        self.append(_entry(identity, field, index, value, name))
-        self.values.append(value)
+    def add(self, identity: object, field: str, index: Sequence[int], value: object, name: str, *, repeat_of: str | None = None) -> None:
+        if repeat_of is not None:
+            slot = next(i for i, entry in enumerate(self) if entry.identity == repeat_of and entry.field == field)
+            self.values[slot].append(value)
+        else:
+            self.append(_entry(identity, field, index, value, name))
+            self.values.append([value])
 
 
 def _scalar(item: Mapping[str, object], field: str, index: Sequence[int], laws: dict[str, tuple[int, Mapping[str, object]]],
@@ -92,18 +95,15 @@ def _scalar(item: Mapping[str, object], field: str, index: Sequence[int], laws: 
     if law.get("form") != "polynomial-plus-reciprocal-temperature":
         raise _core.ParameterError(f"unknown temperature law form {law.get('form')} for {identity}")
     entries.add(identity, f"{field}_temperature_law", (number, *index), law.get("reference_temperature"), identity)
-    if first is not item:
-        entries.aliases.append((item, first))
-        return
     for term_value in _array(law.get("terms", ()), f"{identity} terms"):
         term = _mapping(term_value, f"{identity} term")
         power, coefficient = term.get("power"), _mapping(term.get("coefficient"), f"{identity} coefficient")
         if not isinstance(power, int) or isinstance(power, bool) or not 0 <= power <= 3:
             raise _core.ParameterError(f"invalid temperature law power {power} for {identity}")
-        entries.add(coefficient.get("identity"), "temperature_law_coefficient", (number, power), coefficient.get("value"), identity)
+        entries.add(coefficient.get("identity"), "temperature_law_coefficient", (number, power), coefficient.get("value"), identity, repeat_of=cast(str, coefficient.get("identity")) if first is not item else None)
     if "reciprocal_temperature_slope" in law:
         slope = _mapping(law["reciprocal_temperature_slope"], f"{identity} reciprocal slope")
-        entries.add(slope.get("identity"), "temperature_law_reciprocal_slope", (number,), slope.get("value"), identity)
+        entries.add(slope.get("identity"), "temperature_law_reciprocal_slope", (number,), slope.get("value"), identity, repeat_of=cast(str, slope.get("identity")) if first is not item else None)
 
 
 def _choice(families: Sequence[object], kind: str, default: str | None = None) -> str:
@@ -300,7 +300,7 @@ class Parameters:
         """
         self._native = native
         self._document: _core.ParameterDocument | str | None = None
-        self._source: tuple[Mapping[str, object], list[Any], list[tuple[Any, Any]], list[tuple[int, Any, str]]] | None = None
+        self._source: tuple[Mapping[str, object], list[list[Any]], list[tuple[int, Any, str]]] | None = None
         self.component_ids = component_ids
         self.site_ids = site_ids
 
@@ -731,7 +731,7 @@ class Parameters:
         native_document.entries = entries
         result = cls(_core.build_parameters(native_document), selected_ids, tuple(site_ids))
         result._document = native_document
-        result._source = (document, entries.values, entries.aliases, entries.scalars)
+        result._source = (document, entries.values, entries.scalars)
         return result
 
 
@@ -740,7 +740,9 @@ def document_mapping(parameters: Parameters) -> Mapping[str, object]:
 
     Source units, metadata and unfitted values are preserved. Fitted magnitudes
     come from the native retained document, whose rebuild is checked by
-    ``fitted_document``. Component selections must be reapplied on reload.
+    ``fitted_document``. Component selections are not part of the document: they
+    travel as an ordered species list and must be reapplied with ``components=``
+    on reload.
 
     Parameters
     ----------
@@ -761,15 +763,13 @@ def document_mapping(parameters: Parameters) -> Mapping[str, object]:
         raise ValueError(parameters._document)
     if parameters._document is None or parameters._source is None:
         raise ValueError("parameters have no retained source document")
-    document, values, aliases, scalars = deepcopy(parameters._source)
-    for entry, value in zip(parameters._document.entries, values, strict=True):
-        if float(value["magnitude"]).hex() != entry.magnitude.hex():
-            value["magnitude"] = entry.magnitude
-        if value["unit"] != entry.unit:
-            value["unit"] = entry.unit
+    document, values, scalars = deepcopy(parameters._source)
+    for entry, declarations in zip(parameters._document.entries, values, strict=True):
+        for value in declarations:
+            if float(value["magnitude"]).hex() != entry.magnitude.hex():
+                value["magnitude"] = entry.magnitude
+            if value["unit"] != entry.unit:
+                value["unit"] = entry.unit
     for index, record, key in scalars:
-        record[key] = values[index]["magnitude"]
-    for alias, original in aliases:
-        alias.clear()
-        alias.update(deepcopy(original))
+        record[key] = values[index][0]["magnitude"]
     return document
