@@ -1,15 +1,15 @@
 schema_version: 1
 
 context:
-  version: OWNER_SELECTED_RELEASE_VERSION
-  release_sha256: OWNER_PUBLIC_SOURCE_ARCHIVE_SHA256
+  version: 1.1.0
+  release_sha256: 743bda9bd5850e39c688526f84d43f2e68d725a19333600ca73356a0caa634f2
 
 package:
   name: epcsaft
   version: ${{ version }}
 
 source:
-  - url: https://github.com/tannerpolley/epcsaft/archive/refs/tags/v${{ version }}.tar.gz
+  - url: https://github.com/tannerpolley/epcsaft/releases/download/v${{ version }}/epcsaft-${{ version }}.tar.gz
     sha256: ${{ release_sha256 }}
   - url: https://github.com/coin-or/Ipopt/archive/refs/tags/releases/3.11.9.tar.gz
     sha256: c092093baceec820fb917f28059b87e48831d9a7f98f312b981efda02dc7a09a
