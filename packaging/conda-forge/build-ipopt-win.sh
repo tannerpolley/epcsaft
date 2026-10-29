@@ -56,7 +56,8 @@ while IFS= read -r libtool; do
     )
 done < <(find "$PWD" -name libtool -type f)
 nice -n 10 make -j"$EPCSAFT_BUILD_JOBS" 2>&1 | tee "$evidence/make.txt"
-make install 2>&1 | tee "$evidence/install.txt"
+# The MSYS pkg-config search path cannot contain a Windows drive colon.
+make install PKG_CONFIG="env PKG_CONFIG_PATH=$(cygpath -u "$private_prefix")/lib/pkgconfig pkg-config" 2>&1 | tee "$evidence/install.txt"
 mkdir -p "$private_prefix/lib/pkgconfig" "$private_prefix/bin"
 dll=$(find "$private_prefix" -name epcsaft_ipopt_3119.dll -type f -print -quit)
 test -n "$dll"
