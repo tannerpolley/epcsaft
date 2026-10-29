@@ -3,7 +3,7 @@
 [The notebook](notebook.qmd) records numerical determination and comparison
 coverage for the retained pure-fluid and neutral-mixture endpoints, the
 source-reference chemical and first-thermal estimates, falsifiers and delivery
-checks. Results are numerical verification, with an independent pure-fluid density reference;
+checks. Results are numerical verification, with independent pure-fluid and fixed-input mixture density references;
 independent delivered review and investigator promotion remain outstanding.
 
 `results/` owns the displayed values and judgments; `inputs/` owns the frozen
@@ -43,3 +43,12 @@ physical accuracy or validation claim.
 Diagnostic retention uses ordinary copies. Out-of-memory failure during record
 construction or retention propagates normally; allocation-failure controls and
 incomplete-record fallbacks are outside this qualification.
+
+The selected-endpoint mixture refinement for [#864](https://github.com/tannerpolley/ePC-SAFT/issues/864)
+is retained in `results/mixture-*`, with the original binary64 declarations in
+`inputs/mixture-refinement.txt`. The production association reference isolates
+the existing contribution at the declared four-site mathematical input and
+compares its amount/volume derivatives with binary128 differentiation. Native
+probe sources, instrumentation, compile commands, trace rows and full delivery
+logs remain in the main checkout's `build/issue-864/build-r3/`. The notebook
+states the unmeasured complete-call cost and the remaining review boundary.

@@ -2,7 +2,7 @@ project(
   'epcsaft',
   'c',
   'cpp',
-  version: '1.1.1',
+  version: '1.1.2',
   meson_version: '>=1.8',
   subproject_dir: 'build/subprojects',
   default_options: [

@@ -27,6 +27,26 @@ def number(value):
 
 def main():
     FIGURES.mkdir(exist_ok=True)
+    mixture = json.loads((RESULTS / 'mixture-refinement-summary.json').read_text())
+    table('mixture-refinement.md', ['Calculation', 'Calls', 'Admitted', 'Maximum relative pressure error', 'Maximum relative liquid-density error', 'Maximum relative vapor-density error', 'Within own estimates'],
+          [[name, r['rows'], r['successes'], *[number(r['max_relative_errors'][q]) for q in ('P', 'rhoL', 'rhoV')], r['inside_estimates']] for name, r in ((name, mixture[name]) for name in ('complete', 'frozen'))])
+    previous = read('mixture-previous-result.csv')
+    reference_vapor = float(mixture['reference']['rhoV'])
+    table('mixture-previous-result.md', ['Detailed diagnostics', 'Pressure / Pa', 'Vapor density / mol m⁻³', 'Relative vapor-density error', 'Vapor log-density radius', 'Working bits', 'Iterations / evaluations'],
+          [[r['capture'], number(r['P']), number(r['rhoV']), number(abs(float(r['rhoV']) / reference_vapor - 1)), number(r['radiusV']), r['bits'], r['iterations'] + ' / ' + r['evaluations']] for r in previous])
+    association = json.loads((RESULTS / 'mixture-association-summary.json').read_text())
+    table('mixture-association.md', ['Quantity', 'Maximum normalized error', 'Fixed-case allowance'],
+          [[q, number(association[key]), number(association['tolerance'])] for q, key in [('Three gradients', 'production_gradient_max_normalized_error'), ('Six Hessian entries', 'production_hessian_max_normalized_error')]])
+    rows = [r for r in read('mixture-refinement-complete.csv') if float(r['T']) == 265.95]
+    fig, ax = plt.subplots(figsize=(8, 4))
+    for q, label, marker, color in [('rhoL', 'Liquid density', 'o', '#0072B2'), ('rhoV', 'Vapor density', 'x', '#D55E00')]:
+        reference = float(mixture['reference'][q])
+        ax.scatter(range(1, len(rows) + 1), [abs(float(r[q]) / reference - 1) for r in rows], label=label, marker=marker, color=color)
+    ax.axhline(mixture['density_relative_target'], color='black', linestyle='--', label='Approved density target')
+    ax.set(xlabel='Original declaration and start ordinal', ylabel='Relative density error against binary128', yscale='log', xticks=range(1, len(rows) + 1))
+    ax.legend(); ax.grid(axis='y', alpha=.2); fig.tight_layout()
+    fig.savefig(FIGURES / 'mixture-refinement.png', dpi=180); plt.close(fig)
+
     table('solve-observations.md', ['Falsifier', 'Returned numerical behavior', 'Values and work'],
           [[r['falsifier'], r['final_outcome'], r['unchanged_work_or_values']] for r in read('solve-observations.csv')])
     table('solve-gates.md', ['Check', 'Result', 'Measured evidence'],

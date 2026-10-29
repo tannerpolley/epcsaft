@@ -116,7 +116,7 @@ void register_equilibrium(nb::module_& module) {
     module.def("compare_equilibrium_quantity", &compare_equilibrium_quantity,
         nb::arg("quantity"), nb::arg("a"), nb::arg("b"), nb::arg("ordinary_allowance"),
         nb::arg("estimate_a"), nb::arg("estimate_b"), nb::arg("eligibility"), nb::arg("mode"));
-    module.def("project_numerical_estimate", &project_numerical_estimate,
+    module.def("project_numerical_estimate", &project_numerical_estimate<double>,
         nb::arg("value"), nb::arg("mapped"), nb::arg("radius"), nb::arg("positive"), nb::arg("constant"));
     nb::class_<EquilibriumNumericalEstimates>(module, "EquilibriumNumericalEstimates")
         EPCSAFT_READONLY(EquilibriumNumericalEstimates, basis, cause, source_reference_method, rank, dimension, precision_bits, threshold,

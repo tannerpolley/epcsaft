@@ -1,0 +1,58 @@
+{
+  "basis": "Fixed binary64 input declarations, independent binary128 equilibrium reference; numerical verification only.",
+  "base": "2e3a1440d5d2a823b6507bde97dba5eea51bdff7",
+  "complete": {
+    "rows": 18,
+    "successes": 18,
+    "activations": 18,
+    "max_relative_errors": {
+      "P": "1.4333361152959191E-12",
+      "rhoL": "2.8213656349780855E-12",
+      "rhoV": "3.0257528333637595814E-9"
+    },
+    "max_liquid_radius": 4.149020176852733e-11,
+    "max_vapor_radius": 4.44737037803286e-08,
+    "max_pressure_relative_radius": 2.1075060635338624e-11,
+    "inside_estimates": true
+  },
+  "frozen": {
+    "rows": 18,
+    "successes": 18,
+    "activations": 18,
+    "max_relative_errors": {
+      "P": "7.380714103696232E-13",
+      "rhoL": "1.4527922101509899E-12",
+      "rhoV": "1.5576142853636848403E-9"
+    },
+    "max_liquid_radius": 4.3377885415189954e-11,
+    "max_vapor_radius": 4.649617792057073e-08,
+    "max_pressure_relative_radius": 2.203420227440723e-11,
+    "inside_estimates": true
+  },
+  "regular": {
+    "calls": 114,
+    "activations": 0,
+    "bitwise_output_work_mismatches": [],
+    "compared_quantities": [
+      "success",
+      "T",
+      "P",
+      "rhoL",
+      "rhoV",
+      "x0",
+      "x1",
+      "x2",
+      "x3",
+      "evaluations",
+      "iterations",
+      "hessians"
+    ]
+  },
+  "reference": {
+    "P": "6842279.8774235262480592736744",
+    "rhoL": "8676.4528556443341908204224",
+    "rhoV": "8665.1463344039600528343775"
+  },
+  "density_relative_target": 1e-07,
+  "pressure_relative_target": 1e-10
+}

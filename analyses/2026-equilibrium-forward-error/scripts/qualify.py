@@ -20,14 +20,14 @@ for value in shlex.split(entry['command']):
     if value in ('-o','-MF','-MQ'):skip=True;continue
     if 'ccache' in value or value in ('-c','-MD') or value.endswith('gibbs_minimizer.cpp'):continue
     command.append(value)
-for name in ('forward-error','association-floor','row-producers','compare'):
+for name in ('forward-error','association-floor','row-producers','compare','previous-result'):
     subprocess.run(command+['-O2','-I'+str(ROOT/'engine/tests/native'),str(HERE/(name+'.cpp')),
         '-L'+str(build),'-lepcsaft_native','-Wl,-rpath,'+str(build),'-lquadmath','-o',str(out/name)],cwd=entry['directory'],check=True)
 for name in ('original-criteria.csv','binary128-roots.csv'):
     shutil.copy2(HERE.parent/'inputs'/name,out/name)
 with (HERE.parent/'inputs/endpoints.txt').open() as inputs,(out/'estimates.csv').open('w') as values:
     subprocess.run([str(out/'forward-error'),str(out/'row-floors.csv'),str(out/'packing.csv'),str(out/'snapshot-coordinates.csv')],stdin=inputs,stdout=values,check=True)
-for name in ('association-floor','row-producers'):
+for name in ('association-floor','row-producers','previous-result'):
     with (out/(name+'.csv')).open('w') as values:
         subprocess.run([str(out/name)],stdout=values,check=True)
 subprocess.run([str(out/'compare'),str(out)],check=True)

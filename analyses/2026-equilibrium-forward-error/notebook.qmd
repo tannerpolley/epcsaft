@@ -77,9 +77,93 @@ own endpoint's estimate, independent of the paired difference.
 
 {{< include figures/absolute-coverage.md >}}
 
-The mixture comparisons have no independent wider root reference. They
-therefore do not establish mixture-root accuracy; that question belongs to
-[#864](https://github.com/tannerpolley/ePC-SAFT/issues/864).
+The original paired mixture comparisons above have no independent wider root
+reference. The fixed-input wider-reference qualification below addresses a
+separate mixture-root accuracy question.
+
+## Conditioning-triggered mixture refinement
+
+For the equimolar methane/ethane declarations in
+[the fixed input table](inputs/mixture-refinement.txt), the shared driver refines
+its selected ordinary endpoint when the existing row and physical-output
+error estimate exceeds the approved mixture target. The eligibility is the
+neutral, nonreacting, fixed-temperature/free-pressure two-fluid row domain
+with one free amount and one zero-pinned amount. Temperature or fluid names
+do not select precision. The existing defining rows, damped correction,
+association contribution and local error estimator each retain one shared
+owner. Ordinary row, density-branch and phase admission still apply after
+export to binary64.
+
+The [independent reference](results/mixture-refinement-summary.json) solves
+pressure closure and chemical-potential equality in binary128, with a
+separate automatic-differentiation calculation. All parameters and the
+binary64 temperature are promoted exactly. Shared equations and parameters
+limit independence to arithmetic, differentiation and the reduced root
+system. Pressure is in Pa and density in mol/m³. The original declarations
+and starts, including both retained arms, produce the complete-call rows;
+the frozen calculation begins at the retained ordinary endpoint.
+
+{{< include figures/mixture-refinement.md >}}
+
+![All retained complete calls meet the approved relative-density target. Each marker is one fixed declaration/start, with no continuous relationship implied by the ordinal. The errors compare the actual exported state with the independent binary128 root; local numerical-error estimates are reported separately in the retained rows.](figures/mixture-refinement.png)
+
+[The complete-call rows](results/mixture-refinement-complete.csv) and
+[frozen rows](results/mixture-refinement-frozen.csv) retain returned physical
+values, row residuals, precision, work and pressure/log-density estimates.
+Every near-critical pressure and density difference is covered by that
+endpoint's own estimate. This is local numerical verification at fixed
+inputs; it provides no parameter uncertainty, physical validation, general
+convergence guarantee or rigorous nonlinear enclosure.
+
+Ordinary previous-result starts use the same endpoint decision. The
+[previous-result replay](results/mixture-previous-result.csv) starts the same
+declaration from its first refined result and compares the returned density
+with the same binary128 root. Diagnostics off/on/off preserve the returned
+coordinates, estimates and attempted work.
+
+{{< include figures/mixture-previous-result.md >}}
+
+[The wide refusal checks](results/mixture-refinement-refusals.csv) inject
+nonfinite rows, a singular Jacobian, a nonfinite Jacobian/direction, unavailable
+row errors and excluded trial coordinates at the corresponding operands of
+the production correction body. Iteration, evaluation and elapsed limits use
+the existing work controls. Every refusal retains the admitted original
+state and its own estimate; a pre-existing first cause remains first.
+Each case repeats with diagnostics off/on/off. These controlled failures
+verify refusal behavior; they are not additional physical equilibrium cases.
+The exact source transformations and compile commands remain in the main
+checkout's `build/issue-864/build-r4/` for inspection.
+
+[The fixed regular inventory](results/mixture-regular-preservation.json)
+retains exact equality of all physical values and recorded work, with zero
+extended evaluations. The separate ordinary mixture calls also retain
+bitwise equality and zero wide activations. Wider working precision was
+available on this host; the no-wider-platform branch was not exercised.
+
+For the declared four-site associating binary at fixed temperature, volume
+and unconstrained amounts, the production association calculation is checked
+against independent binary128 differentiation and implicit site tangents.
+The native probe isolates the existing association contribution for this
+comparison; its source and exact compile command are retained under the main
+checkout's `build/issue-864/build-r3/`. It does not replace a runtime equation
+or association solve. The full residual Helmholtz derivatives, which include
+other contributions, are outside this association-specific allowance.
+
+{{< include figures/mixture-association.md >}}
+
+[The reference rows](results/mixture-association-reference.csv) retain the
+fixed input, coefficient convergence and deliberate site/coefficient
+perturbations. [The perturbation summary](results/mixture-association-summary.json)
+shows coverage by the local inner-error estimate plus the arithmetic
+allowance and the expected quadratic reduction when each perturbation is
+halved. These checks do not qualify an associating equilibrium root. They
+use tables because the few derivative maxima and fixed-case perturbation
+ratios are scalar checks, with no physical trend to plot.
+
+Complete-call cost remains unmeasured and is deferred to the lead’s scheduled
+run under the approved host conditions. No timing claim follows from the
+numerical results. Independent delivered review and investigator
+promotion remain outstanding.
 
 ## Original installed/development mixture rows
 

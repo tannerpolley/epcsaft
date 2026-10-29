@@ -230,26 +230,31 @@ struct Row final {
 };
 
 // max |v_i|, infinite if any entry is nonfinite.
-inline double maximum_abs(const std::vector<double>& values) noexcept {
-    double result = 0.0;
-    for (const double value : values) {
-        const double magnitude = std::abs(value);
-        if (!std::isfinite(magnitude)) return std::numeric_limits<double>::infinity();
+template <typename Base>
+Base maximum_abs(const std::vector<Base>& values) noexcept {
+    Base result = 0.0;
+    for (const Base value : values) {
+        const Base magnitude = std::abs(value);
+        if (!std::isfinite(magnitude)) return std::numeric_limits<Base>::infinity();
         result = std::max(result, magnitude);
     }
     return result;
 }
 
-struct RowUncertainty final {
-    std::vector<double> terms, inner;
+template <typename Base>
+struct RowUncertaintyValues final {
+    std::vector<Base> terms, inner;
     std::string cause;
 };
+using RowUncertainty = RowUncertaintyValues<double>;
 
-struct PointEvaluation final {
-    std::vector<double> values;
-    double objective = 0.0;
-    double floor = 0.0;
+template <typename Base>
+struct PointEvaluationValues final {
+    std::vector<Base> values;
+    Base objective = 0.0;
+    Base floor = 0.0;
 };
+using PointEvaluation = PointEvaluationValues<double>;
 
 struct Layout final {
     std::vector<std::size_t> x;
@@ -263,11 +268,13 @@ inline bool admitted_packing_fraction(double eta) {
         && eta <= policy::PACKING_FRACTION_CEILING.value;
 }
 
-struct PackingTerms final {
-    double coefficient = 0.0;
-    double temperature_derivative = 0.0;
-    std::vector<double> component;
+template <typename Base>
+struct PackingTermsValues final {
+    Base coefficient = 0.0;
+    Base temperature_derivative = 0.0;
+    std::vector<Base> component;
 };
+using PackingTerms = PackingTermsValues<double>;
 
 // derivative[k][i] is d^k (g_i / RT) / dT^k at the prepared temperature.  The
 // pressure fields are the matching first and second derivatives at fixed T.
@@ -287,33 +294,37 @@ struct StandardTerm final {
 };
 
 // One latest-point phase evaluation shared by rows, Jacobian, gradient and curvature.
-struct PhasePoint final {
-    std::vector<double> point;
+template <typename Base>
+struct PhasePointValues final {
+    std::vector<Base> point;
     std::vector<Layout> shape;
-    double temperature = 0.0;
-    double pressure = 0.0;
-    std::vector<std::vector<double>> composition;
-    std::vector<double> amount;
-    std::vector<double> volume;
-    std::vector<double> eta;
-    std::vector<PackingTerms> packing;
-    std::vector<HelmholtzDerivatives> derivative;
-    std::vector<PureIsothermal> pure;
+    Base temperature = 0.0;
+    Base pressure = 0.0;
+    std::vector<std::vector<Base>> composition;
+    std::vector<Base> amount;
+    std::vector<Base> volume;
+    std::vector<Base> eta;
+    std::vector<PackingTermsValues<Base>> packing;
+    std::vector<HelmholtzDerivativeValues<Base>> derivative;
+    std::vector<PureIsothermalValues<Base>> pure;
     StandardTerm standard;
     // A referenced problem's standard term with jets along every active parameter, built on the
     // first parameter-driven row series at this point and reused by every later direction.
     mutable std::optional<StandardTerm> parameter_standard;
     mutable std::map<std::string, ResidualEnergyAction> energy_actions;
 };
+using PhasePoint = PhasePointValues<double>;
 
 // Taylor series of one phase along a path: point[k] is the k-th coefficient of the phase as
 // the model sees it, (T, v, x, active parameters); gradient[k] the matching coefficient of
 // the extensive residual Helmholtz gradient; amount[k] and packing[k] the phase amount and
 // packing fraction.
-struct PhaseSeries final {
-    std::vector<std::vector<double>> point, gradient;
-    std::vector<double> amount, packing;
+template <typename Base>
+struct PhaseSeriesValues final {
+    std::vector<std::vector<Base>> point, gradient;
+    std::vector<Base> amount, packing;
 };
+using PhaseSeries = PhaseSeriesValues<double>;
 
 // Defining rows and physical state along y(t) = sum_k y_k t^k with controls
 // q(t) = q0 + t dq, dq = [T, P, n_feed (C), active parameters (A)]; a free T or P entry of
@@ -388,6 +399,13 @@ struct CompiledSystem final {
     // fixed controls and active parameters are padding. Sensitivity and lever callers need full.
     PhasePoint prepare(const std::vector<double>& point, bool state_only = false,
         std::optional<core::Convergence>* first_numerical_failure = nullptr) const;
+    template <typename Base>
+    PhasePointValues<Base> prepare_values(const std::vector<Base>&, bool,
+        std::optional<core::Convergence>* = nullptr) const;
+    template <typename Base> PointEvaluationValues<Base> evaluate_at(const PhasePointValues<Base>&) const;
+    template <typename Base> std::vector<Base> jacobian_at(const PhasePointValues<Base>&) const;
+    template <typename Base> RowUncertaintyValues<Base> row_uncertainty_at(const PhasePointValues<Base>&,
+        const std::vector<std::vector<Base>>&) const;
     PointEvaluation evaluate(const std::vector<double>& point) const;
     // Residuals that classify a solve: for a free-amount (Gibbs) cell the chemical and
     // pressure rows are scaled by N_p x_i / N_feed and N_p / N_feed, the first-order
@@ -397,6 +415,7 @@ struct CompiledSystem final {
     std::vector<double> classified_residuals(const PhasePoint& prepared, const std::vector<double>& rows) const;
     // Moiety rows (Jacobian rows for width n) divided by their size, the larger of the feed inventory and the
     // row's term magnitude per mol of feed, when it is at most EQUILIBRIUM_TRACE_MOIETY_FRACTION (#633).
+    template <typename Base> std::vector<Base> trace_moiety_relative(const PhasePointValues<Base>&, std::vector<Base>, std::size_t = 1) const;
     std::vector<double> trace_moiety_relative(const PhasePoint& prepared, std::vector<double> values,
                                               std::size_t width = 1) const;
     std::vector<double> numerical_rows(const PhasePoint&, std::vector<double>, std::size_t width = 1) const;
@@ -517,11 +536,40 @@ struct EquilibriumNumericalEstimates final {
     std::string basis = "canonical_defining_rows", cause = "not_evaluated";
     std::string source_reference_method;
     std::size_t rank = 0, dimension = 0, precision_bits = std::numeric_limits<double>::digits;
-    double threshold = 0, condition = INFINITY, inverse_norm = INFINITY, backward_error = INFINITY;
+    double threshold = 0, condition = INFINITY, inverse_norm = INFINITY, backward_error = INFINITY, physical_radius = INFINITY;
     std::vector<double> residuals, row_terms, row_inner, row_floor, physical_scale;
     core::NumericalEstimate temperature, pressure, loading;
     std::vector<core::NumericalEstimate> densities, packing, composition, amounts;
 };
+
+template <typename Base>
+struct PhysicalProjection final {
+    using Vector = Eigen::Matrix<Base, Eigen::Dynamic, 1>;
+    Eigen::Matrix<Base, Eigen::Dynamic, Eigen::Dynamic> gradient;
+    Vector values, scale;
+};
+template <typename Base> PhysicalProjection<Base> physical_projection(const CompiledSystem&, const PhasePointValues<Base>&);
+template <typename Base, typename Vector>
+Base physical_radius(const CompiledSystem& c, const PhasePointValues<Base>& at, const Vector& error) {
+    Base radius = error[1] / std::max(std::abs(at.pressure), Base(1));
+    for (Eigen::Index i = 2; i < error.size(); ++i)
+        radius = std::max(radius, error[i] / ((i - 2) % (3 + c.n_feed.size()) == 2 ? Base(c.feed_total) : Base(1)));
+    return radius;
+}
+template <typename Base, typename Jacobian, typename Factor, typename Correction>
+auto physical_error(const CompiledSystem& c, const PhasePointValues<Base>& at,
+    const Jacobian& j, const Eigen::Matrix<Base, Eigen::Dynamic, 1>& f,
+    const Factor& lu, const Correction& d, const Eigen::Matrix<Base, Eigen::Dynamic, 1>& column) {
+    using Vector = Eigen::Matrix<Base, Eigen::Dynamic, 1>;
+    const auto projection = physical_projection(c, at);
+    std::vector<std::vector<Base>> inner;
+    for (const auto& derivative : at.derivative) inner.push_back(derivative.gradient_error.empty()
+        ? std::vector<Base>(derivative.gradient.size(), derivative.gradient_floor) : derivative.gradient_error);
+    const auto u = c.row_uncertainty_at(at, inner);
+    const Vector terms = Eigen::Map<const Vector>(u.terms.data(), f.size()), errors = Eigen::Map<const Vector>(u.inner.data(), f.size());
+    const Vector eta = core::canonical_row_floor(j, projection.scale, terms, errors), row = Vector::Ones(f.size());
+    return core::linear_error(j, f, projection.gradient, eta, row, column, &lu, &d);
+}
 
 struct OptimizerState;
 struct LinearSolveDiagnostics final {
@@ -589,6 +637,7 @@ struct EquilibriumResult final {
     core::Convergence convergence;
     std::optional<LinearSolveDiagnostics> linear_solve_diagnostics;
     std::optional<EquilibriumNumericalEstimates> numerical_estimates;
+    std::shared_ptr<const PhasePoint> prepared_endpoint;
     std::vector<Row> rows;
     std::size_t unknown_count = 0;
     std::size_t jacobian_rank = 0;
@@ -610,7 +659,9 @@ struct EquilibriumResult final {
     double residual_norm() const noexcept { return maximum_abs(residuals); }
 };
 
-EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSystem&, const EquilibriumResult&);
+EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSystem&, const EquilibriumResult&, const PhasePoint* = nullptr);
+struct DriverLimits;
+EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSystem&, const EquilibriumResult&, const std::vector<long double>&, const DriverLimits* = nullptr);
 EquilibriumNumericalEstimates equilibrium_numerical_estimates(const HelmholtzModel&, const EquilibriumResult&);
 EquilibriumNumericalEstimates equilibrium_numerical_estimates(const IdealMoleFraction&, const EquilibriumResult&);
 
@@ -682,7 +733,7 @@ std::map<std::string, double> effective_water_amounts(const IdealMoleFraction&, 
 struct DriverLimits;
 EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::optional<EquilibriumResult>& start = std::nullopt,
                                  core::Scope* outer = nullptr, const DriverLimits* limits = nullptr,
-                                 std::shared_ptr<const OptimizerState> warm = {}, bool recover = false, EquilibriumResult* audit = nullptr);
+                                 std::shared_ptr<const OptimizerState> warm = {}, bool recover = false, EquilibriumResult* audit = nullptr, bool select_endpoint = false);
 
 EquilibriumResult solve_saturation(const CompiledSystem&);
 struct SolvedStateActionDiagnostics;

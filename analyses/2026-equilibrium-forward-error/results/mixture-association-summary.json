@@ -1,0 +1,100 @@
+{
+  "tolerance": "6.938893903907228377647697926E-18",
+  "production_gradient_max_normalized_error": "2.14731049256047371747621584107677234E-19",
+  "production_hessian_max_normalized_error": "2.7164711332590908334246255644182064E-19",
+  "perturbations": [
+    {
+      "quantity": "production_gradient0",
+      "h": 1e-07,
+      "error_over_inner": "0.5000008426943278868189285612",
+      "covered": true
+    },
+    {
+      "quantity": "production_hessian00",
+      "h": 1e-07,
+      "error_over_inner": "0.5000015250861352830123207550",
+      "covered": true
+    },
+    {
+      "quantity": "production_gradient1",
+      "h": 1e-07,
+      "error_over_inner": "0.4235112727414233620546001505",
+      "covered": true
+    },
+    {
+      "quantity": "production_hessian11",
+      "h": 1e-07,
+      "error_over_inner": "0.3980986059728976014016064856",
+      "covered": true
+    },
+    {
+      "quantity": "production_gradient2",
+      "h": 1e-07,
+      "error_over_inner": "0.3184753888641497439286387212",
+      "covered": true
+    },
+    {
+      "quantity": "production_hessian22",
+      "h": 1e-07,
+      "error_over_inner": "0.3244236451262733318970389879",
+      "covered": true
+    },
+    {
+      "quantity": "production_gradient0",
+      "h": 5e-08,
+      "error_over_inner": "0.5000004151753584131958761504",
+      "covered": true
+    },
+    {
+      "quantity": "production_hessian00",
+      "h": 5e-08,
+      "error_over_inner": "0.5000007617310277144428766148",
+      "covered": true
+    },
+    {
+      "quantity": "production_gradient1",
+      "h": 5e-08,
+      "error_over_inner": "0.4235115398653622432762456963",
+      "covered": true
+    },
+    {
+      "quantity": "production_hessian11",
+      "h": 5e-08,
+      "error_over_inner": "0.3980989731210079860508572855",
+      "covered": true
+    },
+    {
+      "quantity": "production_gradient2",
+      "h": 5e-08,
+      "error_over_inner": "0.3184757244899444291570650396",
+      "covered": true
+    },
+    {
+      "quantity": "production_hessian22",
+      "h": 5e-08,
+      "error_over_inner": "0.3244241260384593793828761833",
+      "covered": true
+    }
+  ],
+  "gradient_error_halving_ratios": {
+    "production_gradient0": "3.999994191481039180278896347",
+    "production_gradient1": "3.999991444217253986270522241",
+    "production_gradient2": "3.999994709470132761431810296"
+  },
+  "inputs": {
+    "temperature_K": 300.0,
+    "volume_m3_binary64_hex": "0x1.df5959efbba7cp-16",
+    "amounts_mol_binary64_hex": [
+      "0x1.999999999999ap-4",
+      "0x1.ccccccccccccdp-1"
+    ],
+    "parameter_fixture": "engine/tests/native/properties_support.hpp: properties_support::associating_binary()",
+    "basis": "Unconstrained amount derivatives at fixed temperature and volume; exact promotion of binary64 inputs."
+  },
+  "qualification": {
+    "method": "Production PressureSeries/isothermal source with association-only output selection and deliberate coefficient injection; separate binary128 CppAD differentiation and implicit site tangent reference.",
+    "source_sha256": "55a89c11586e6617d26ae06c26aa866cdf01f68443d2564a65623b5c8f603bef",
+    "instrumented_source_sha256": "360df3f1f34360b254a54b05ea5f3309f5b3f385a2faddfe72f468fd1f447991",
+    "reference_source_sha256": "3b9a077272c1d27e390768478d844d92f98da9f772612b9019c9c28fe1ed0e81"
+  }
+}

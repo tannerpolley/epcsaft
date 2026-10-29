@@ -369,7 +369,7 @@ auto fields(equilibrium::EquilibriumProblem& item) {
 // Saturation replies carry physical records and estimates; compiled caches and optimizer memory stay in the worker.
 FIELDS(core::NumericalEstimate, a, b, c, d, e)
 FIELDS(core::EquilibriumComparison, a, b, c, d, e)
-FIELDS(equilibrium::EquilibriumNumericalEstimates, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v)
+FIELDS(equilibrium::EquilibriumNumericalEstimates, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w)
 FIELDS(equilibrium::SaturationOperand, a, b, c)
 FIELDS(equilibrium::SaturationCandidate, a, b, c)
 FIELDS(equilibrium::SaturationComparison, a, b, c, d)

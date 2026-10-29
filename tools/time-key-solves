@@ -451,6 +451,7 @@ def main():
                         help='new or empty result directory (default: timestamped under build/time-key-solves)')
     parser.add_argument('--expect-change', action='store_true',
                         help='report intended work changes without failing; numerical values and ceilings still gate')
+    parser.add_argument('--cpu', type=int, help='serial-sample CPU; full fits retain controller affinity')
     parser.add_argument('--fit', action='store_true', help='also run one F1 fit per environment with native default workers')
     parser.add_argument('--control', type=Path, help='passing A=A --fit summary from this host and prepared A image')
     args = parser.parse_args()
@@ -463,7 +464,9 @@ def main():
     begun = time.perf_counter()
     if os.getpriority(os.PRIO_PROCESS, 0) > 10:
         parser.error('inherited niceness exceeds 10; cannot lower it without new authority')
-    cpu = min(os.sched_getaffinity(0))
+    cpu = args.cpu if args.cpu is not None else min(os.sched_getaffinity(0))
+    if cpu not in os.sched_getaffinity(0):
+        parser.error('--cpu must be in the controller affinity')
     env = {**os.environ, 'OMP_NUM_THREADS': '1', 'OPENBLAS_NUM_THREADS': '1', 'MKL_NUM_THREADS': '1',
            'PYTHONNOUSERSITE': '1', 'PYTHONPATH': ''}
     processes, environments, identities = {}, {}, {}

@@ -46,6 +46,7 @@ struct HelmholtzDerivativeValues final {
     Base volume_second_derivative = 0.0;
     // Per-order association residual floor; zero when no association sites are present.
     Base gradient_floor = 0.0;
+    std::vector<Base> gradient_error;
     std::vector<Base> site_fractions;
     std::optional<core::Convergence> first_numerical_failure;
 };
@@ -462,6 +463,8 @@ public:
     const policy::SolverOptions& solver_options() const { return solver_options_; }
     template <typename Base>
     PureIsothermalValues<Base> pure_isothermal(Base temperature, Base volume, Base amount = 1.0) const;
+    HelmholtzDerivativeValues<long double> isothermal(long double temperature, long double volume,
+        const std::vector<long double>& amounts) const;
     const Parameters& parameters() const { return parameters_; }
     const std::vector<ActiveParameter>& active_parameters() const { return active_; }
     std::vector<double> active_parameter_values() const;
