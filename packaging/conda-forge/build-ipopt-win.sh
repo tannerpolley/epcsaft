@@ -22,7 +22,7 @@ export F77="$FC"
 # Supply real libraries, while leaving its mixed-language link probes enabled.
 build_library_prefix=$(cygpath -m "$BUILD_PREFIX")/Library/lib
 export FLIBS="-L$build_library_prefix -lflang -lflangrti -lompstub"
-export FFLAGS="-O2 $FLIBS -lflangmain -Xlinker /subsystem:console"
+export FFLAGS="-O2 $FLIBS -lflangmain -lmsvcrt -Xlinker /subsystem:console"
 export CFLAGS="$CFLAGS -DIPOPT_BUILD"
 export CXXFLAGS="$CXXFLAGS -DIPOPT_BUILD -Wno-reserved-user-defined-literal"
 export CPPFLAGS="$CPPFLAGS -I$library_prefix/include"
@@ -34,12 +34,10 @@ export LDFLAGS="$LDFLAGS -L$library_prefix/lib"
 } > "$evidence/compilers.txt" 2>&1
 cd "$source_dir/../ipopt-build"
 build_dir=$PWD
-# Extraction timestamps must not regenerate the archive's shipped Autotools files.
-find "$source_dir" -name aclocal.m4 -exec touch {} +
-find "$source_dir" \( -name configure -o -name Makefile.in -o -name '*config*.h.in' \) -exec touch {} +
 # Keep failed configure/link probes as well as successful configuration headers.
 trap 'find "$build_dir" -name config.log -exec cp --parents {} "$evidence" \;' EXIT
-"$source_dir/configure" --prefix="$private_prefix" \
+# Native Windows make cannot resolve MSYS absolute /d source paths.
+../ipopt-source/configure --prefix="$private_prefix" \
     --disable-static --enable-dependency-linking \
     --disable-linear-solver-loader --without-hsl --without-asl \
     --without-pardiso --without-wsmp \
