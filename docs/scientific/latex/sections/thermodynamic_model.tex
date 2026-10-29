@@ -9,7 +9,9 @@ Its mechanical Helmholtz energy is the ideal density and mixing term plus the re
 \end{equation}
 where $\rho_0=1$~\si{\mol\per\cubic\metre} is a fixed reference molar density and $\ares$ is the reduced residual molar Helmholtz energy at temperature $T$, molar density $\rho$ and mole fractions $\mathbf{x}$.
 Ions are counted as separate species, so $\mathbf{x}$ of an electrolyte solution is a species, not a formula-unit, composition.
-Every property, equilibrium row and derivative below is a derivative of Eq.~\eqref{eq:phase-helmholtz} or of the reference terms added to it in Section~\ref{sec:references}; Supporting Information Table~\ref{tab:nomenclature} lists the symbols.
+Thermodynamic properties and the chemical and mechanical equilibrium equations follow from derivatives of Eq.~\eqref{eq:phase-helmholtz} and the reference terms added in Section~\ref{sec:references}.
+Conservation, electroneutrality and normalization supply the remaining equilibrium constraints (Section~\ref{sec:equilibrium}).
+Supporting Information Table~\ref{tab:nomenclature} lists the symbols.
 
 % P:model-02
 The residual energy is a sum of contributions,
@@ -29,7 +31,8 @@ a^{\mathrm{assoc}}=\sum_A x_{i(A)}\nu_A\left(\ln X_A-\frac{X_A}{2}+\frac12\right
 X_A\Bigl[1+\hat\rho\sum_B x_{i(B)}\nu_B X_B\Delta_{AB}\Bigr]-1=0,
 \label{eq:mass-action}
 \end{equation}
-where $X_A$ is the fraction of sites of type $A$ not bonded, $\nu_A$ the number of such sites on species $i(A)$, $\hat\rho$ the number density and $\Delta_{AB}$ the association strength.
+where $X_A$ is the fraction of sites of type $A$ not bonded and $\nu_A$ the number of such sites on species $i(A)$.
+With $\rho$ in \si{\mol\per\cubic\metre}, the number density is $\hat\rho=10^{-30}N_A\rho$ in \AA$^{-3}$ and the association strength $\Delta_{AB}$ is in \AA$^3$, so $\hat\rho\Delta_{AB}$ is dimensionless.
 Cross-association parameters follow the combining rule of Gross and Sadowski~\citep{Gross2002} or, when declared, that of Wolbach and Sandler~\citep{wolbachUsingMolecularOrbital1998}.
 The site fractions are implicit functions of $(T,\rho,\mathbf{x})$ and of the parameters; Section~\ref{sec:derivatives} differentiates them through the mass-action system.
 
@@ -61,14 +64,17 @@ Four relations are available:
 \begin{equation}
 \epsilon_r=
 \begin{cases}
-\epsilon_{\mathrm{sf}}\big/\bigl(1+\sum_i\alpha_ix_i\bigr) & \text{ion suppression~\citep{Zuber2014,Figiel2025}},\\[2pt]
-\epsilon_{\mathrm{sf}}\sum_s x_s+\sum_i x_i\epsilon_{r,i} & \text{component mixing~\citep{AscaniHeld2021,Bulow2019}},\\[2pt]
+\epsilon_{\mathrm{sf}}\big/\bigl(1+\sum_{i\in\mathcal I}\alpha_ix_i\bigr) & \text{ion suppression~\citep{Zuber2014,Figiel2025}},\\[2pt]
+\epsilon_{\mathrm{sf}}\sum_{s\in\mathcal S}x_s+\sum_{i\in\mathcal I}x_i\epsilon_{r,i} & \text{component mixing~\citep{AscaniHeld2021,Bulow2019}},\\[2pt]
 1+\rho\,x_{\mathrm{solv}}\,d_{V}\bigl(d_{T}/T-1\bigr) & \text{density--temperature~\citep{Yang2024}},\\[2pt]
 1+3y\bigl\{1+y+\bigl[\tfrac{17}{16}I-1\bigr]y^2\bigr\} & \text{dipolar perturbation~\citep{Rueben2024}},
 \end{cases}
 \label{eq:permittivity}
 \end{equation}
-where $\epsilon_{\mathrm{sf}}$ is the permittivity of the salt-free solvent mixture, $\alpha_i$ an ion suppression coefficient, $x_s$ a solvent mole fraction, $d_V$ and $d_T$ mixed solvent coefficients, $y$ a reduced dipole density and $I$ a correlation integral.
+Here $\mathcal S$ is the set of neutral solvent species, $\mathcal I$ the set of ions, and $x_{\mathrm{solv}}=\sum_{s\in\mathcal S}x_s$ the total solvent mole fraction.
+The salt-free solvent mixture has relative permittivity $\epsilon_{\mathrm{sf}}$; $\alpha_i$ is a dimensionless ion suppression coefficient and $\epsilon_{r,i}$ the relative permittivity assigned to ion $i$ in the component-mixing relation.
+The coefficients $d_V$ and $d_T$ are averages of the solvent coefficients weighted by $x_s/x_{\mathrm{solv}}$, in \si{\cubic\metre\per\mol} and K, respectively, so $\rho x_{\mathrm{solv}}d_V$ and $d_T/T$ are dimensionless.
+In the dipolar-perturbation relation, $y$ is a reduced dipole density and $I$ a dimensionless correlation integral.
 The first two relations do not depend on density and describe condensed phases only; the last two tend to $\epsilon_r=1$ as $\rho\to0$.
 Pressure, chemical potentials and caloric properties retain $\partial\epsilon_r/\partial\rho$, $\partial\epsilon_r/\partial T$ and $\partial\epsilon_r/\partial\mathbf{x}$ wherever the selected relation depends on them.
 The density dependence also decides where a charged trial phase can be evaluated during a phase search (Section~\ref{sec:stability}).
@@ -77,7 +83,9 @@ The density dependence also decides where a charged trial phase can be evaluated
 \label{sec:references}
 % P:model-06
 Nonreactive phase equilibrium at fixed temperature needs only Eq.~\eqref{eq:phase-helmholtz}.
-Reaction equilibrium and total caloric properties also need each species' standard Gibbs energy on the density basis of Eq.~\eqref{eq:phase-helmholtz}, built from caller-supplied ideal-gas thermal records,
+Reaction equilibrium also requires the combinations of standard Gibbs energies constrained by the declared reaction targets (see below); a supplied reaction constant does not require a separate ideal-gas thermal record for every species.
+Total caloric properties additionally require sufficient species thermal data to determine the reference contributions to enthalpy, entropy and heat capacity.
+For a species with a supplied ideal-gas thermal record, the standard Gibbs energy on the density basis of Eq.~\eqref{eq:phase-helmholtz} is
 \begin{equation}
 \frac{g^{\circ}_{i,\rho}}{RT}=\frac{h^{\circ}_i(T)}{RT}-\frac{s^{\circ}_i(T,P_0)}{R}+\ln\frac{RT\rho_0}{P_0},\qquad
 h^{\circ}_i(T)=\Delta_fh^{\circ}_i(T_{\mathrm{ref}})+\int_{T_{\mathrm{ref}}}^{T}C^{\circ}_{p,i}\,\mathrm{d}\tau,
@@ -85,7 +93,8 @@ h^{\circ}_i(T)=\Delta_fh^{\circ}_i(T_{\mathrm{ref}})+\int_{T_{\mathrm{ref}}}^{T}
 \end{equation}
 with the entropy integrated likewise from $s^{\circ}_i(T_{\mathrm{ref}},P_0)$.
 The ideal-gas heat capacities $C^{\circ}_{p,i}$ are given as constant, polynomial, Shomate~\citep{shomateMethodEvaluatingCorrelating1954} in the convention of the NIST Chemistry WebBook~\citep{linstromNISTChemistryWebBook1997}, NASA seven- and nine-coefficient~\citep{gordonComputerProgramCalculation1994} or DIPPR~107~\citep{alySelfconsistentEquationsCalculating1981} correlations over declared temperature intervals.
-Without these records the residual properties remain available and total enthalpy, entropy and heat capacity are reported as unavailable.
+Reaction targets and supplied thermal records can together determine reference contributions for species without their own records, provided no undetermined neutral combination remains.
+Insufficient thermal data make the affected total caloric quantities unavailable; residual properties and reaction-equilibrium calculations remain available when their own input requirements are met.
 
 % P:model-07
 A reaction declares its stoichiometry and exactly one target: a constant affinity, a constant equilibrium constant, or the correlation
@@ -97,7 +106,7 @@ on the density basis, for which the activity of species $i$ is $(\rho x_i/\rho_0
 A constant on an ideal-gas pressure basis, or one shifted by a standard state with constant reaction enthalpy and entropy, converts exactly into another correlation of the form of Eq.~\eqref{eq:lnK}.
 A constant on a molality, infinite-dilution or pure-liquid basis is converted through the residual chemical potentials of the reference state, computed for one pure neutral solvent and a charge-neutral dilution path at each temperature and pressure of the solve; this conversion is called reference completion below.
 Only charge-neutral combinations of ionic reference potentials are determined, so single-ion standard states remain a gauge choice.
-A reaction constant constrains the standard Gibbs energies only along the reaction subspace; it does not supply the absolute caloric properties of each species, which come from Eq.~\eqref{eq:reference}.
+A reaction constant constrains the standard Gibbs energies only along the reaction subspace; it does not by itself fix the absolute caloric properties of each species, which also require thermal anchors from Eq.~\eqref{eq:reference}.
 Thermochemistry that is supplied together with a reaction target is checked against it in Gibbs energy, enthalpy and heat capacity, and an inconsistency is reported as an error rather than resolved in favor of either input.
 
 % P:model-08
