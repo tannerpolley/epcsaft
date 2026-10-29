@@ -873,6 +873,7 @@ def fitted_parameters(start: Parameters, result: FitResult) -> Parameters:
     cause. No absent source document is invented.
     """
     fitted = Parameters(result.parameters, start.component_ids, start.site_ids)
+    fitted._source = start._source
     if isinstance(start._document, _core.ParameterDocument):
         try:
             fitted._document = _core.fitted_document(start._document, result.parameters)
