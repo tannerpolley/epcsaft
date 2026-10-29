@@ -7,7 +7,7 @@ cd "$repo_root"
 trap 'python3 tools/report.py || true' EXIT
 
 # Setup first: the budget count formats Python with the locked .venv Ruff.
-/usr/bin/time -f 'engine-build: %e s' bash .codex/environments/setup.sh
+/usr/bin/time -f 'engine-build: %e s' bash tools/setup.sh
 build_dir="$(<build/environment-wheel/meson-build-dir)"
 
 /usr/bin/time -f 'readiness: %e s' bash -e -c '

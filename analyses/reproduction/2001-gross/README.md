@@ -67,7 +67,7 @@ The retained tables are [pure predictions and published AAD values](results/pure
 Run from the checkout root after its editable Engine environment is prepared:
 
 ```bash
-bash .codex/environments/setup.sh
+bash tools/setup.sh
 .venv/bin/python analyses/reproduction/2001-gross/scripts/digitize.py
 .venv/bin/python analyses/reproduction/2001-gross/scripts/run.py
 .venv/bin/python analyses/reproduction/2001-gross/scripts/ternary.py

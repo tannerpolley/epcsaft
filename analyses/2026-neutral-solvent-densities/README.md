@@ -17,7 +17,7 @@ source-scale disagreement and failed numerical attempts remain visible.
 From this checkout's root, prepare its own editable environment and reproduce:
 
 ```bash
-EPCSAFT_BUILD_JOBS=6 nice -n 10 bash .codex/environments/setup.sh
+EPCSAFT_BUILD_JOBS=6 nice -n 10 bash tools/setup.sh
 EPCSAFT_BUILD_JOBS=6 nice -n 10 .venv/bin/python analyses/2026-neutral-solvent-densities/scripts/run.py
 EPCSAFT_BUILD_JOBS=6 nice -n 10 .venv/bin/python analyses/2026-neutral-solvent-densities/scripts/present.py
 EPCSAFT_BUILD_JOBS=6 nice -n 10 quarto render analyses/2026-neutral-solvent-densities/notebook.qmd

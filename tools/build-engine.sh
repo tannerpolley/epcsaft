@@ -11,7 +11,7 @@
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 python="$PWD/.venv/bin/python"
-[[ -x "$python" ]] || { echo "missing root environment: run bash .codex/environments/setup.sh" >&2; exit 1; }
+[[ -x "$python" ]] || { echo "missing root environment: run bash tools/setup.sh" >&2; exit 1; }
 export PATH="$PWD/.venv/bin:$PATH" NINJA="$PWD/tools/locked-ninja"
 # locked-ninja locks build/engine-meson/ninja.lock, so the directory must exist before any Ninja run.
 mkdir -p build/engine-meson

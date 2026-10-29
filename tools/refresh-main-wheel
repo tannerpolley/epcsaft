@@ -64,7 +64,7 @@ if record_path.exists():
 else:
     if wheels:
         raise SystemExit(f'unrecorded retained wheel; inspect before reuse: {wheels}')
-    subprocess.run(['bash', '.codex/environments/setup.sh'], check=True)
+    subprocess.run(['bash', 'tools/setup.sh'], check=True)
     evidence = os.environ.get('EPCSAFT_NUMERICAL_EVIDENCE', '').split()
     if not evidence or any(not Path(path).exists() for path in evidence):
         raise SystemExit('set EPCSAFT_NUMERICAL_EVIDENCE to existing numerical evidence paths')

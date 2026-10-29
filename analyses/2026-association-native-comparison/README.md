@@ -18,7 +18,7 @@ boundary regime labels.
 Prepare the canonical environment and rerun the retained campaign with:
 
 ```bash
-bash .codex/environments/setup.sh
+bash tools/setup.sh
 .venv/bin/python analyses/2026-association-native-comparison/scripts/run.py
 ```
 

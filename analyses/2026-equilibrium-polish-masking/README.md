@@ -143,7 +143,7 @@ checkout's `.venv` and leave `EPCSAFT_HSL_LIBRARY` unset. The output override ke
 the historical directories frozen; it changes no input or solve operation:
 
 ```bash
-nice -n 10 env -u EPCSAFT_HSL_LIBRARY EPCSAFT_BUILD_JOBS=6 agent-heavy bash .codex/environments/setup.sh
+nice -n 10 env -u EPCSAFT_HSL_LIBRARY EPCSAFT_BUILD_JOBS=6 agent-heavy bash tools/setup.sh
 nice -n 10 env -u EPCSAFT_HSL_LIBRARY EPCSAFT_BUILD_JOBS=6 agent-heavy bash tools/build-engine.sh --install-wheel
 nice -n 10 env -u EPCSAFT_HSL_LIBRARY EPCSAFT_BUILD_JOBS=6 PYTHONDONTWRITEBYTECODE=1 agent-heavy .venv/bin/python - <<'PY'
 from pathlib import Path

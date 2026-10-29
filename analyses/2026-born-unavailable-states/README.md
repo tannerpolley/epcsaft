@@ -56,7 +56,7 @@ controller span. This demonstrates measured finite-search failures, **not**
 nonexistence or a completed fix-before-negative diagnosis.
 
 `starts.py` records the SHA-256 of the wheel in `build/environment-wheel/`, so install the
-checkout's wheel first; rerunning `bash .codex/environments/setup.sh` restores the editable install.
+checkout's wheel first; rerunning `bash tools/setup.sh` restores the editable install.
 
 ```bash
 bash tools/build-engine.sh --install-wheel

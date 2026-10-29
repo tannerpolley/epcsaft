@@ -24,7 +24,7 @@ first temperature, pressure and EOS-coordinate actions.
 Run from the checkout root with its own non-editable wheel:
 
 ```bash
-bash .codex/environments/setup.sh
+bash tools/setup.sh
 bash analyses/reproduction/2015-uyan/scripts/species-reference/qualify.sh
 .venv/bin/python analyses/reproduction/2015-uyan/scripts/qualify_species_reference.py
 .venv/bin/python -m pytest -q engine/tests/equilibrium/test_neutral_reference.py

@@ -171,7 +171,7 @@ input/script hashes in their `run-identity.json` files. The historical σ
 files are preserved. To replay from the repository root:
 
 ```bash
-bash .codex/environments/setup.sh
+bash tools/setup.sh
 .venv/bin/python analyses/2026-held-2014-chlorides/scripts/run.py
 .venv/bin/python analyses/2026-held-2014-chlorides/scripts/run.py --dh-088
 .venv/bin/python analyses/2026-held-2014-chlorides/scripts/plot-errors.py

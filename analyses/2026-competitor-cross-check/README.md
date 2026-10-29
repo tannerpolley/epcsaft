@@ -98,7 +98,7 @@ Comparator environments are task-local, not Engine dependencies:
 - Install FeOs under `${XDG_CACHE_HOME:-~/.cache}/epcsaft-comparators/222/feos/`; extract the verified Julia archive as `julia-1.13.1/` and instantiate the locked project with `JULIA_DEPOT_PATH` pointing to this cache's `depot/`.
 - `systemd-run --user --scope` supplies Julia's 6 GB resident-memory cap. Do not use a virtual-memory `ulimit`.
 
-The historical a0 replay used wheel SHA-256 `398bcf8b90185b68cc796b5db258a9bfa3e919b9fb74bbb29171e003a03b3cc7`. The density correction uses the wheel and reference identities above. For current reproduction, install this checkout's non-editable wheel first (the first command below): the collector records its `build/environment-wheel/preparation.json`. Rerunning `bash .codex/environments/setup.sh` restores the editable install.
+The historical a0 replay used wheel SHA-256 `398bcf8b90185b68cc796b5db258a9bfa3e919b9fb74bbb29171e003a03b3cc7`. The density correction uses the wheel and reference identities above. For current reproduction, install this checkout's non-editable wheel first (the first command below): the collector records its `build/environment-wheel/preparation.json`. Rerunning `bash tools/setup.sh` restores the editable install.
 
 Within that lease and heavy scope, the existing Engine collector declares the full 99-request grid (including the 26 C3 states); a repetition argument selects the unchanged timing blocks. Write new output names to preserve previous campaigns.
 

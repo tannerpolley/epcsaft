@@ -92,7 +92,7 @@ From the repository root, prepare the checkout's environment and install its whe
 (the existing Figure 10 generator records the wheel hash):
 
 ```bash
-nice -n 10 bash .codex/environments/setup.sh
+nice -n 10 bash tools/setup.sh
 nice -n 10 bash tools/build-engine.sh --install-wheel
 nice -n 10 .venv/bin/python analyses/reproduction/2018-wangler/figures/figure-10/scripts/generate_data.py
 nice -n 10 .venv/bin/python analyses/reproduction/2018-wangler/figures/figure-14/scripts/generate_data.py

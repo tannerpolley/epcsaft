@@ -19,7 +19,7 @@ archives, so it needs network access.
 ```bash
 git clone https://github.com/tannerpolley/ePC-SAFT.git
 cd ePC-SAFT
-nice -n 10 bash .codex/environments/setup.sh
+nice -n 10 bash tools/setup.sh
 .venv/bin/python -c 'import epcsaft; print(epcsaft.__file__)'
 ```
 

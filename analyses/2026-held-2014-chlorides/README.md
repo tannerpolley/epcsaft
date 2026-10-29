@@ -160,7 +160,7 @@ at the hard ceiling. Engine-only work; no application repository was touched.
 From the repository root, build/install the sole current wheel before replay:
 
 ```bash
-env EPCSAFT_BUILD_JOBS=2 bash .codex/environments/setup.sh
+env EPCSAFT_BUILD_JOBS=2 bash tools/setup.sh
 env EPCSAFT_BUILD_JOBS=2 .venv/bin/python analyses/2026-held-2014-chlorides/scripts/run.py
 env EPCSAFT_BUILD_JOBS=2 .venv/bin/python analyses/2026-held-2014-chlorides/scripts/plot.py
 env EPCSAFT_BUILD_JOBS=2 bash tools/check-all.sh

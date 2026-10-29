@@ -62,7 +62,7 @@ has its own environment; the timing tool reads only its installed wheel.
 From the repository root, the current native producers are:
 
 ```bash
-bash .codex/environments/setup.sh
+bash tools/setup.sh
 native_build_dir=$(<build/environment-wheel/meson-build-dir)
 "$native_build_dir/properties_checks"
 "$native_build_dir/equilibrium_checks" reference-caloric-identities

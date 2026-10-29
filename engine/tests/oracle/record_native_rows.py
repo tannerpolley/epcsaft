@@ -2,7 +2,7 @@
 
 Runs the Python-free native checks of the prepared build and keeps their full-precision
 `model` values once, in native-rows.tsv, with the commit and whether engine/ was clean beside them.
-Run after `bash .codex/environments/setup.sh`: `.venv/bin/python engine/tests/oracle/record_native_rows.py`.
+Run after `bash tools/setup.sh`: `.venv/bin/python engine/tests/oracle/record_native_rows.py`.
 """
 import json
 import subprocess
