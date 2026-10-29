@@ -1770,7 +1770,7 @@ BranchCheck admit_critical(const CompiledSystem& compiled, EquilibriumResult& re
 // equilibrium at the pressure seed, are the solution's present phases up to their pressure dependence. Their
 // compositions replace the caller's guesses before the ordinary boundary start, and an unguessed zero-amount
 // phase starts from the first present phase on its support (#152); none if any of it fails. It spends `limits`.
-std::optional<std::vector<double>> speciated_start(const CompiledSystem& compiled, const DriverLimits* limits, StageWork& stages) {
+std::optional<std::vector<double>> speciated_start(const CompiledSystem& compiled, const DriverLimits* limits, StageWork& stages, bool correct_dense = false) {
     const auto& problem = compiled.problem;
     EquilibriumProblem present = problem;
     present.phases.erase(std::remove_if(present.phases.begin(), present.phases.end(),
@@ -1797,7 +1797,7 @@ std::optional<std::vector<double>> speciated_start(const CompiledSystem& compile
             phase.declared_composition_guess = false;
             for (const std::size_t i : phase.support) phase.composition_guess.push_back(solved.mole_fractions[source * components + i]);
         }
-        return boundary_start(seeded, true, limits, &stages);
+        return boundary_start(seeded, true, limits, &stages, {}, correct_dense);
     } catch (const std::exception& error) {
         core::retain_failure(stages.first_numerical_failure, error, "speciated start");
         return std::nullopt;
@@ -2099,7 +2099,7 @@ EquilibriumResult continue_compiled(const CompiledSystem& compiled, const std::o
         if ((!select_endpoint && !recover) || scope.nested("solve_equilibrium")) return endpoint;
         return refine_selected_endpoint(compiled, std::move(endpoint), scope, remaining);
     };
-    auto seeded = start.has_value() || original ? std::nullopt : speciated_start(compiled, limits, stages);
+    auto seeded = start.has_value() || original ? std::nullopt : speciated_start(compiled, limits, stages, true);
     EquilibriumResult result;
     bool admission_refused = false;
     bool retry_eligible = false;
