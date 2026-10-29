@@ -10,7 +10,7 @@ private_prefix=$(cygpath -m "$PREFIX")
 library_prefix=$(cygpath -m "$LIBRARY_PREFIX")
 evidence="$private_prefix/share/epcsaft-ipopt-probe"
 mkdir -p "$evidence" "$source_dir/../ipopt-build"
-for library in dmumps blas lapack; do
+for library in dmumps openblas; do
     test -f "$library_prefix/lib/$library.lib"
     printf '%s\n' "$library_prefix/lib/$library.lib"
 done | tee "$evidence/link-inputs.txt"
@@ -35,7 +35,7 @@ trap 'find "$build_dir" -name config.log -exec cp --parents {} "$evidence" \;' E
     --disable-static --enable-dependency-linking \
     --disable-linear-solver-loader --without-hsl --without-asl \
     --without-pardiso --without-wsmp \
-    --with-blas=-lblas --with-lapack=-llapack \
+    --with-blas=-lopenblas --with-lapack=-lopenblas \
     --with-mumps-incdir="$library_prefix/include/mumps_seq" \
     --with-mumps-lib=-ldmumps 2>&1 | tee "$evidence/configure.txt"
 # The conda wrapper supplies COFF C++ exports. Rename the DLL before linking:
