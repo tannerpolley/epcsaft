@@ -1,7 +1,7 @@
 schema_version: 1
 
 context:
-  version: 1.1.0
+  version: 1.1.1
   release_sha256: 743bda9bd5850e39c688526f84d43f2e68d725a19333600ca73356a0caa634f2
 
 package:

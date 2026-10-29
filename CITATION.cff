@@ -7,7 +7,7 @@ authors:
     given-names: Tanner W.
     orcid: "https://orcid.org/0009-0008-5957-4152"
     affiliation: "Department of Chemical Engineering, Brigham Young University"
-version: 1.1.0
+version: 1.1.1
 doi: 10.5281/zenodo.23634228
 identifiers:
   - type: doi
