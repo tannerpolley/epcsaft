@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Sourced by run_autotools_clang_conda_build; PREFIX is the private install prefix.
 set -euo pipefail
-: "${LIBRARY_PREFIX:?}" "${SRC_DIR:?}" "${PREFIX:?}" "${BUILD_PREFIX:?}" "${FC:?classic Flang activation required}"
+: "${LIBRARY_PREFIX:?}" "${SRC_DIR:?}" "${PREFIX:?}" "${BUILD_PREFIX:?}"
 [[ ${target_platform:?} == win-64 ]]
 declare -F patch_libtool >/dev/null
 export EPCSAFT_BUILD_JOBS=${EPCSAFT_BUILD_JOBS:-6}
@@ -14,6 +14,8 @@ for library in dmumps blas lapack; do
     test -f "$library_prefix/lib/$library.lib"
     printf '%s\n' "$library_prefix/lib/$library.lib"
 done | tee "$evidence/link-inputs.txt"
+export FC="$(cygpath -u "$BUILD_PREFIX")/Library/bin/flang.exe"
+test -x "$FC"
 export F77="$FC"
 export CFLAGS="$CFLAGS -DIPOPT_BUILD"
 export CXXFLAGS="$CXXFLAGS -DIPOPT_BUILD -Wno-reserved-user-defined-literal"
