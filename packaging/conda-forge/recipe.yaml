@@ -44,7 +44,7 @@ requirements:
     - pkg-config
     - patchelf
   host:
-    - python 3.13.*
+    - python
     - pip
     - meson >=1.8
     - meson-python >=0.18
@@ -55,7 +55,7 @@ requirements:
     - libblas * *openblas
     - liblapack
   run:
-    - python >=3.13,<3.14.0a0
+    - python
     - ceres-solver >=2.2.0,<2.3.0 cpu*
     - mumps-seq >=5.8.2,<5.8.3.0a0
     - libblas * *openblas
