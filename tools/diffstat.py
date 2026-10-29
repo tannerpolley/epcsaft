@@ -142,7 +142,7 @@ def formatted_lines(path: Path) -> int:
             raise ValueError(f"{path}:{number}: formatter-disable directive bypasses line counting")
     if path.suffix in {".py", ".pyx", ".pxd"}:
         if not RUFF.is_file():
-            raise ValueError(f"missing {RUFF}: run bash .codex/environments/setup.sh")
+            raise ValueError(f"missing {RUFF}: run bash tools/setup.sh")
         # A magic trailing comma does not choose the Python layout (clang-format still honours one in a braced
         # list; code-budgets.md); 120 columns in both languages.
         command = [str(RUFF), "format", "--isolated", "--line-length=120", "--target-version=py313",

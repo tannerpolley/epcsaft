@@ -3,7 +3,7 @@ version = 1
 name = "ePC-SAFT"
 
 [setup]
-script = "bash .codex/environments/setup.sh"
+script = "bash tools/setup.sh"
 
 [[actions]]
 name = "Status"

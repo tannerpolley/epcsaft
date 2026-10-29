@@ -7,7 +7,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 # Meson regeneration finds python3 on PATH; it needs the .venv one with nanobind.
 export PATH="$PWD/.venv/bin:$PATH" NINJA="$PWD/tools/locked-ninja"
 (($# >= 1 && $# <= 2)) || { echo "usage: tools/native-run <program> [case|--list] | <meson test name>" >&2; exit 2; }
-[[ -f build/environment-wheel/build-jobs ]] || bash .codex/environments/setup.sh >&2
+[[ -f build/environment-wheel/build-jobs ]] || bash tools/setup.sh >&2
 build_dir="$(<build/environment-wheel/meson-build-dir)"
 if (($# == 1)); then
     # A Meson test name as run-native-tests.sh prints it (equilibrium/Automatic_fast/e5-neutral) runs that test's program and arguments.
