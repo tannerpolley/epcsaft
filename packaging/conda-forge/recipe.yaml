@@ -68,6 +68,7 @@ requirements:
       then: mumps-seq ==5.8.2
     - if: win
       then:
+        - pytest
         - numpy
         - scipy
         - pandas

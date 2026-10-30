@@ -39,7 +39,7 @@ TPD = ROOT / 'analyses/2026-tpd-phase-discovery/scripts'
 SECTIONS = ('declared', 'continuation', 'fitting', 'asl')
 REPORTED = {'seconds', 'iterations', 'evaluations', 'hessians', 'message', 'residual', 'raw', 'classified',
             'default_iterations', 'default_residual', 'declared_iterations', 'declared_residual',
-            'wall_seconds', 'parallel_solve_seconds', 'numerical_operands'}
+            'wall_seconds', 'parallel_solve_seconds', 'numerical_operands', 'numerical_estimates'}
 # value - reference, 100|value/reference - 1| and, for liquid volume, 100|reference/value - 1|
 # (2002-gross calculate.py:217-223); `value` itself is compared.
 GROSS_REPORTED = REPORTED | {'deviation', 'absolute_relative_percent', 'pressure_aad_percent',
@@ -138,19 +138,14 @@ def differences(a_rows, b_rows, reported=REPORTED, operands=None, comparisons=No
 
 
 def neutral_comparison_operands(a_rows, b_rows):
-    from epcsaft.equilibrium import ComparisonEligibility, ComparisonMode, NumericalEstimate, Quantity, compile_problem
-    declaration = runpy.run_path(str(TPD / 'neutral.py'))
-    model, problem = declaration['model'], declaration['problem']
+    from epcsaft.equilibrium import ComparisonEligibility, ComparisonMode, NumericalEstimate, Quantity
     operands = {}
     # #861 authority covers the original #853 rows 49-62; other comparisons remain strict.
     for i in range(49, min(63, len(a_rows), len(b_rows))):
         a, b = a_rows[i], b_rows[i]
-        estimates = []
-        for r in (a, b):
-            frozen = r.get('numerical_operands')
-            estimates.append(compile_problem(model, problem(r['T'], r['P0'])).numerical_estimates(
-                frozen['coordinates'], r['T'], r['P'][0], frozen['amounts'], r['x'], r['rho'], frozen['packing'])
-                if frozen and r['success'] else None)
+        estimates = [r.get('numerical_estimates') for r in (a, b)]
+        if any(r['success'] and e is None for r, e in zip((a, b), estimates)):
+            raise ValueError('neutral collection lacks error estimates from its originating Engine')
         eligibility = ComparisonEligibility()
         eligibility.declaration = all(a[k] == b[k] for k in ('T', 'P0'))
         eligibility.phase_matching = len(a.get('rho', [])) == len(b.get('rho', [])) == 2 and len(a.get('x', [])) == len(b.get('x', [])) == 4
@@ -165,13 +160,9 @@ def neutral_comparison_operands(a_rows, b_rows):
                 errors = []
                 for e in estimates:
                     error = NumericalEstimate()
-                    if e is not None:
-                        error.cause = e.cause
-                        values = getattr(e, field)
-                        if key == 'P':
-                            error = values
-                        elif j < len(values):
-                            error = values[j]
+                    if e is not None and j < len(e[field]):
+                        for name, value in e[field][j].items():
+                            setattr(error, name, value)
                     errors.append(error)
                 operands[i,key,j] = quantity, *errors, eligibility, ComparisonMode.EstimatedError
     return operands
