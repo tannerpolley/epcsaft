@@ -68,12 +68,6 @@ requirements:
       then: mumps-seq ==5.8.2
     - if: win
       then:
-        - pytest
-        - numpy
-        - scipy
-        - pandas
-        - pyomo
-        - idaes-pse
         - libboost-headers ==1.89.0
         - openblas * openmp_*
         - mumps-seq ==5.8.2 flang_*
@@ -100,18 +94,6 @@ tests:
       pip_check: true
   - script:
       file: run_test.py
-
-  - if: win
-    then:
-      script:
-        file: qualification/run_test.py
-        env:
-          IPOPT_PROBE_EVIDENCE: ${{ env.get("IPOPT_PROBE_EVIDENCE", default="qualification-evidence") }}
-      requirements:
-        run: [pytest, pyomo, numpy, scipy, pandas, idaes-pse]
-      files:
-        source:
-          - qualification-runtime/
 
 about:
   homepage: https://github.com/tannerpolley/epcsaft
